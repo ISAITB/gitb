@@ -4,12 +4,10 @@ import com.gitb.utils.HmacUtils
 import config.Configurations
 import controllers.util.{ParameterExtractor, RequestWithAttributes}
 import exceptions.UnauthorizedAccessException
-
-import javax.inject.{Inject, Singleton}
 import models.Enums.{SelfRegistrationType, UserRole}
 import models._
 import org.pac4j.core.context.session.SessionStore
-import org.pac4j.core.profile.{CommonProfile, ProfileManager}
+import org.pac4j.core.profile.ProfileManager
 import org.pac4j.play.PlayWebContext
 import org.slf4j.{Logger, LoggerFactory}
 import play.api.db.slick.DatabaseConfigProvider
@@ -17,6 +15,7 @@ import play.api.libs.Files
 import play.api.mvc.{AnyContent, MultipartFormData}
 import utils.RepositoryUtils
 
+import javax.inject.{Inject, Singleton}
 import scala.collection.mutable
 
 object AuthorizationManager {
@@ -48,60 +47,60 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
 
   private final val logger: Logger = LoggerFactory.getLogger(classOf[AuthorizationManager])
 
-  def getAccountInfo(request: RequestWithAttributes[_]): ActualUserInfo = {
-    val accountInfo = getPrincipal(request)
-    val userAccounts = accountManager.getUserAccountsForUid(accountInfo.uid)
-    val userInfo = new ActualUserInfo(accountInfo.uid, accountInfo.email, accountInfo.firstName, accountInfo.lastName, userAccounts)
-    userInfo
+  def canViewOrganisationAutomationKeys(request: RequestWithAttributes[_], organisationId: Long): Boolean = {
+    val ok = canViewOrganisation(request, organisationId) && Configurations.AUTOMATION_API_ENABLED
+    setAuthResult(request, ok, "User not allowed to view the organisation's automation keys")
   }
 
-  def getPrincipal(request: RequestWithAttributes[_]): ActualUserInfo = {
-    var userInfo: ActualUserInfo = null
-    val webContext = new PlayWebContext(request)
-    val profileManager = new ProfileManager(webContext, playSessionStore)
-    val profile = profileManager.getProfile()
-    if (profile.isEmpty) {
-      logger.error("Lookup for a real user's data failed due to a missing profile.")
-    } else {
-      val uid = profile.get().getId
-      val userAttributes = profile.get().getAttributes
-      var email: String = null
-      var firstName: String = null
-      var lastName: String = null
-      if (userAttributes != null) {
-        email = userAttributes.get("email").asInstanceOf[String]
-        firstName = userAttributes.get("firstName").asInstanceOf[String]
-        lastName = userAttributes.get("lastName").asInstanceOf[String]
-      }
-      if (uid == null || email == null || firstName == null || lastName == null) {
-        logger.error("User profile did not contain expected information [" + uid + "][" + email + "][" + firstName + "][" + lastName + "]")
-      } else {
-        userInfo = new ActualUserInfo(uid, email, firstName, lastName)
-      }
-    }
-    userInfo
-  }
-
-  private def checkHasPrincipal(request: RequestWithAttributes[_], skipForNonSSO: Boolean): Boolean = {
+  private def checkApiKeyUpdateForOrganisation(request: RequestWithAttributes[_], organisation: Option[Organizations]): Boolean = {
     var ok = false
-    if (Configurations.AUTHENTICATION_SSO_ENABLED) {
-      val principal = getPrincipal(request)
-      if (principal != null) {
+    if (Configurations.AUTOMATION_API_ENABLED) {
+      val userId = getRequestUserId(request)
+      val userInfo = getUser(userId)
+      if (isTestBedAdmin(userInfo)) {
+        // Anything goes for the Test Bed admin.
         ok = true
-      }
-    } else {
-      if (skipForNonSSO) {
-        ok = true
-      } else {
-        ok = false
+      } else if (userInfo.organization.isDefined) {
+        if (organisation.isDefined) {
+          if (isCommunityAdmin(userInfo)) {
+            // The community admin can edit any settings within her community even if API usage is currently
+            // not allowed for community members.
+            if (organisation.get.community == userInfo.organization.get.community) {
+              ok = true
+            }
+          } else if (isOrganisationAdmin(userInfo)
+            && userInfo.organization.get.id == organisation.get.id
+            && communityManager.checkCommunityAllowsAutomationApi(userInfo.organization.get.community)) {
+            // The organisation admin needs to be updating her own organisation and be part of a community that allows
+            // the automation API.
+            ok = true
+          }
+        }
       }
     }
-    setAuthResult(request, ok, "User is not authenticated")
+    ok
+  }
+
+  def canUpdateSystemApiKey(request: RequestWithAttributes[_], systemId: Long): Boolean = {
+    val organisation = organizationManager.getOrganizationBySystemId(systemId)
+    val ok = checkApiKeyUpdateForOrganisation(request, Some(organisation))
+    setAuthResult(request, ok, "User not allowed to update system API key")
+  }
+
+  def canUpdateOrganisationApiKey(request: RequestWithAttributes[_], organisationId: Long): Boolean = {
+    val organisation = organizationManager.getById(organisationId)
+    val ok = checkApiKeyUpdateForOrganisation(request, organisation)
+    setAuthResult(request, ok, "User not allowed to update organisation API key")
+  }
+
+  def canManageSessionsThroughAutomationApi(request: RequestWithAttributes[_]): Boolean = {
+    val ok = Configurations.AUTOMATION_API_ENABLED && request.headers.get(Constants.AutomationHeader).isDefined
+    setAuthResult(request, ok, "You are not allowed to manage test sessions through the automation API")
   }
 
   def canSelfRegister(request: RequestWithAttributes[_], organisation: Organizations, organisationAdmin: Users, selfRegToken: Option[String], templateId: Option[Long]): Boolean = {
     var ok = false
-    if (Configurations.REGISTRATION_ENABLED && checkHasPrincipal(request, true)) {
+    if (Configurations.REGISTRATION_ENABLED && checkHasPrincipal(request, skipForNonSSO = true)) {
       val targetCommunity = communityManager.getById(organisation.community)
       if (targetCommunity.isDefined) {
         var communityOk = false
@@ -673,7 +672,7 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     val userInfo = getUser(getRequestUserId(request))
     if (isTestBedAdmin(userInfo)) {
       ok = true
-    } else if (isCommunityAdmin(userInfo) && userInfo.organization.isDefined) {
+    } else if (userInfo.organization.isDefined) {
       val communityInfo = communityManager.getById(userInfo.organization.get.community)
       ok = communityInfo.isDefined && communityInfo.get.domain.isEmpty
     }
@@ -1625,4 +1624,56 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     }
     ok
   }
+
+  def getAccountInfo(request: RequestWithAttributes[_]): ActualUserInfo = {
+    val accountInfo = getPrincipal(request)
+    val userAccounts = accountManager.getUserAccountsForUid(accountInfo.uid)
+    val userInfo = new ActualUserInfo(accountInfo.uid, accountInfo.email, accountInfo.firstName, accountInfo.lastName, userAccounts)
+    userInfo
+  }
+
+  def getPrincipal(request: RequestWithAttributes[_]): ActualUserInfo = {
+    var userInfo: ActualUserInfo = null
+    val webContext = new PlayWebContext(request)
+    val profileManager = new ProfileManager(webContext, playSessionStore)
+    val profile = profileManager.getProfile()
+    if (profile.isEmpty) {
+      logger.error("Lookup for a real user's data failed due to a missing profile.")
+    } else {
+      val uid = profile.get().getId
+      val userAttributes = profile.get().getAttributes
+      var email: String = null
+      var firstName: String = null
+      var lastName: String = null
+      if (userAttributes != null) {
+        email = userAttributes.get("email").asInstanceOf[String]
+        firstName = userAttributes.get("firstName").asInstanceOf[String]
+        lastName = userAttributes.get("lastName").asInstanceOf[String]
+      }
+      if (uid == null || email == null || firstName == null || lastName == null) {
+        logger.error("User profile did not contain expected information [" + uid + "][" + email + "][" + firstName + "][" + lastName + "]")
+      } else {
+        userInfo = new ActualUserInfo(uid, email, firstName, lastName)
+      }
+    }
+    userInfo
+  }
+
+  private def checkHasPrincipal(request: RequestWithAttributes[_], skipForNonSSO: Boolean): Boolean = {
+    var ok = false
+    if (Configurations.AUTHENTICATION_SSO_ENABLED) {
+      val principal = getPrincipal(request)
+      if (principal != null) {
+        ok = true
+      }
+    } else {
+      if (skipForNonSSO) {
+        ok = true
+      } else {
+        ok = false
+      }
+    }
+    setAuthResult(request, ok, "User is not authenticated")
+  }
+
 }

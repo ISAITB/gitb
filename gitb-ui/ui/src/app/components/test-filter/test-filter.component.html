@@ -1,225 +1,136 @@
 <div class="panel panel-default">
     <div class="panel-heading" (click)="clickedHeader()" [ngClass]="{'clickable': enableFiltering}">
         <h4 class="title">Filters</h4>
-        <div class="btn-toolbar pull-right" (click)="$event.stopPropagation()">
-            <button type="button" class="btn btn-default" (click)="applyFilters()" [pending]="filterState.updatePending || (enableFiltering && !filterDataLoaded)">Refresh</button>
-            <app-toggle id="sessions-toggle-filter" class="btn-group" name="filterToggle" [(ngModel)]="enableFiltering" on="Enabled" off="Disabled" (toggle)="toggleFiltering()"></app-toggle>
+        <div class="btn-toolbar">
+            <button type="button" class="btn btn-default" (click)="applyFilters(); $event.stopPropagation()" [pending]="filterState.updatePending">Refresh</button>
+            <app-toggle id="sessions-toggle-filter" class="btn-group" name="filterToggle" (click)="$event.stopPropagation()" [(ngModel)]="enableFiltering" on="Enabled" off="Disabled" (toggle)="toggleFiltering()"></app-toggle>
         </div>
     </div>
     <div [collapse]="!showFiltering" [isAnimated]="true">
       <div class="table-responsive session-filter">
-        <div *ngIf="!filterDataLoaded" class="div-padded-small">
-          <app-pending-block [icon]="true"></app-pending-block>
+        <div class="filterRow" *ngIf="filterDefined(Constants.FILTER_TYPE.DOMAIN) || filterDefined(Constants.FILTER_TYPE.SPECIFICATION) || filterDefined(Constants.FILTER_TYPE.ACTOR) || filterDefined(Constants.FILTER_TYPE.TEST_SUITE) || filterDefined(Constants.FILTER_TYPE.TEST_CASE) || filterDefined(Constants.FILTER_TYPE.COMMUNITY) || filterDefined(Constants.FILTER_TYPE.ORGANISATION) || filterDefined(Constants.FILTER_TYPE.SYSTEM)">
+          <div class="filterCell" *ngIf="filterDefined(Constants.FILTER_TYPE.DOMAIN)">
+            <div class="filterName"><span>{{names[Constants.FILTER_TYPE.DOMAIN]}}</span></div>
+            <div class="filterValue">
+              <app-multi-select-filter [config]="filterDropdownSettings[Constants.FILTER_TYPE.DOMAIN]" (apply)="domainsChanged($event)"></app-multi-select-filter>
+            </div>
+          </div>
+          <div class="filterCell" *ngIf="filterDefined(Constants.FILTER_TYPE.SPECIFICATION)">
+            <div class="filterName"><span>{{names[Constants.FILTER_TYPE.SPECIFICATION]}}</span></div>
+            <div class="filterValue">
+              <app-multi-select-filter [config]="filterDropdownSettings[Constants.FILTER_TYPE.SPECIFICATION]" (apply)="specificationsChanged($event)"></app-multi-select-filter>
+            </div>
+          </div>
+          <div class="filterCell" *ngIf="filterDefined(Constants.FILTER_TYPE.ACTOR)">
+            <div class="filterName"><span>{{names[Constants.FILTER_TYPE.ACTOR]}}</span></div>
+            <div class="filterValue">
+              <app-multi-select-filter [config]="filterDropdownSettings[Constants.FILTER_TYPE.ACTOR]" (apply)="actorsChanged($event)"></app-multi-select-filter>
+            </div>
+          </div>
+          <div class="filterCell" *ngIf="filterDefined(Constants.FILTER_TYPE.TEST_SUITE)">
+            <div class="filterName"><span>{{names[Constants.FILTER_TYPE.TEST_SUITE]}}</span></div>
+            <div class="filterValue">
+              <app-multi-select-filter [config]="filterDropdownSettings[Constants.FILTER_TYPE.TEST_SUITE]" (apply)="testSuitesChanged($event)"></app-multi-select-filter>
+            </div>
+          </div>
+          <div class="filterCell" *ngIf="filterDefined(Constants.FILTER_TYPE.TEST_CASE)">
+            <div class="filterName"><span>{{names[Constants.FILTER_TYPE.TEST_CASE]}}</span></div>
+            <div class="filterValue">
+              <app-multi-select-filter [config]="filterDropdownSettings[Constants.FILTER_TYPE.TEST_CASE]" (apply)="testCasesChanged($event)"></app-multi-select-filter>
+            </div>
+          </div>
+          <div class="filterCell" *ngIf="filterDefined(Constants.FILTER_TYPE.COMMUNITY)">
+            <div class="filterName"><span>{{names[Constants.FILTER_TYPE.COMMUNITY]}}</span></div>
+            <div class="filterValue">
+              <app-multi-select-filter [config]="filterDropdownSettings[Constants.FILTER_TYPE.COMMUNITY]" (apply)="communitiesChanged($event)"></app-multi-select-filter>
+            </div>
+          </div>
+          <div class="filterCell" *ngIf="filterDefined(Constants.FILTER_TYPE.ORGANISATION)">
+            <div class="filterName"><span>{{names[Constants.FILTER_TYPE.ORGANISATION]}}</span></div>
+            <div class="filterValue">
+              <app-multi-select-filter [config]="filterDropdownSettings[Constants.FILTER_TYPE.ORGANISATION]" (apply)="organisationsChanged($event)"></app-multi-select-filter>
+            </div>
+          </div>
+          <div class="filterCell" *ngIf="filterDefined(Constants.FILTER_TYPE.SYSTEM)">
+            <div class="filterName"><span>{{names[Constants.FILTER_TYPE.SYSTEM]}}</span></div>
+            <div class="filterValue">
+              <app-multi-select-filter [config]="filterDropdownSettings[Constants.FILTER_TYPE.SYSTEM]" (apply)="systemsChanged($event)"></app-multi-select-filter>
+            </div>
+          </div>
         </div>
-        <div [collapse]="!filterDataLoaded" [isAnimated]="true">
-
-          <div class="filterRow" *ngIf="filterDefined(Constants.FILTER_TYPE.DOMAIN) || filterDefined(Constants.FILTER_TYPE.SPECIFICATION) || filterDefined(Constants.FILTER_TYPE.ACTOR) || filterDefined(Constants.FILTER_TYPE.TEST_SUITE) || filterDefined(Constants.FILTER_TYPE.TEST_CASE) || filterDefined(Constants.FILTER_TYPE.COMMUNITY) || filterDefined(Constants.FILTER_TYPE.ORGANISATION) || filterDefined(Constants.FILTER_TYPE.SYSTEM)">
-            <div class="filterCell" *ngIf="filterDefined(Constants.FILTER_TYPE.DOMAIN)">
-              <div class="filterName"><span>{{names[Constants.FILTER_TYPE.DOMAIN]}}</span></div>
-              <div class="filterValue">
-                <ng-multiselect-dropdown 
-                  [placeholder]="'All'" 
-                  [settings]="filterDropdownSettings[Constants.FILTER_TYPE.DOMAIN]"
-                  [data]="filtering[Constants.FILTER_TYPE.DOMAIN].filter" 
-                  [(ngModel)]="filtering[Constants.FILTER_TYPE.DOMAIN].selection" 
-                  (onSelectAll)="filterItemTicked(Constants.FILTER_TYPE.DOMAIN)"
-                  (onDeSelectAll)="filterItemTicked(Constants.FILTER_TYPE.DOMAIN)"
-                  (onSelect)="filterItemTicked(Constants.FILTER_TYPE.DOMAIN)"
-                  (onDeSelect)="filterItemTicked(Constants.FILTER_TYPE.DOMAIN)">
-                </ng-multiselect-dropdown>
-              </div>
-            </div>
-            <div class="filterCell" *ngIf="filterDefined(Constants.FILTER_TYPE.SPECIFICATION)">
-              <div class="filterName"><span>{{names[Constants.FILTER_TYPE.SPECIFICATION]}}</span></div>
-              <div class="filterValue">
-                <ng-multiselect-dropdown 
-                  [placeholder]="'All'" 
-                  [settings]="filterDropdownSettings[Constants.FILTER_TYPE.SPECIFICATION]"
-                  [data]="filtering[Constants.FILTER_TYPE.SPECIFICATION].filter" 
-                  [(ngModel)]="filtering[Constants.FILTER_TYPE.SPECIFICATION].selection" 
-                  (onSelectAll)="filterItemTicked(Constants.FILTER_TYPE.SPECIFICATION)"
-                  (onDeSelectAll)="filterItemTicked(Constants.FILTER_TYPE.SPECIFICATION)"
-                  (onSelect)="filterItemTicked(Constants.FILTER_TYPE.SPECIFICATION)"
-                  (onDeSelect)="filterItemTicked(Constants.FILTER_TYPE.SPECIFICATION)">
-                </ng-multiselect-dropdown>
-              </div>
-            </div>
-            <div class="filterCell" *ngIf="filterDefined(Constants.FILTER_TYPE.ACTOR)">
-              <div class="filterName"><span>{{names[Constants.FILTER_TYPE.ACTOR]}}</span></div>
-              <div class="filterValue">
-                <ng-multiselect-dropdown 
-                  [placeholder]="'All'" 
-                  [settings]="filterDropdownSettings[Constants.FILTER_TYPE.ACTOR]"
-                  [data]="filtering[Constants.FILTER_TYPE.ACTOR].filter" 
-                  [(ngModel)]="filtering[Constants.FILTER_TYPE.ACTOR].selection" 
-                  (onSelectAll)="filterItemTicked(Constants.FILTER_TYPE.ACTOR)"
-                  (onDeSelectAll)="filterItemTicked(Constants.FILTER_TYPE.ACTOR)"
-                  (onSelect)="filterItemTicked(Constants.FILTER_TYPE.ACTOR)"
-                  (onDeSelect)="filterItemTicked(Constants.FILTER_TYPE.ACTOR)">
-                </ng-multiselect-dropdown>
-              </div>
-            </div>
-            <div class="filterCell" *ngIf="filterDefined(Constants.FILTER_TYPE.TEST_SUITE)">
-              <div class="filterName"><span>{{names[Constants.FILTER_TYPE.TEST_SUITE]}}</span></div>
-              <div class="filterValue">
-                <ng-multiselect-dropdown 
-                  [placeholder]="'All'" 
-                  [settings]="filterDropdownSettings[Constants.FILTER_TYPE.TEST_SUITE]"
-                  [data]="filtering[Constants.FILTER_TYPE.TEST_SUITE].filter" 
-                  [(ngModel)]="filtering[Constants.FILTER_TYPE.TEST_SUITE].selection" 
-                  (onSelectAll)="filterItemTicked(Constants.FILTER_TYPE.TEST_SUITE)"
-                  (onDeSelectAll)="filterItemTicked(Constants.FILTER_TYPE.TEST_SUITE)"
-                  (onSelect)="filterItemTicked(Constants.FILTER_TYPE.TEST_SUITE)"
-                  (onDeSelect)="filterItemTicked(Constants.FILTER_TYPE.TEST_SUITE)">
-                </ng-multiselect-dropdown>
-              </div>
-            </div>
-            <div class="filterCell" *ngIf="filterDefined(Constants.FILTER_TYPE.TEST_CASE)">
-              <div class="filterName"><span>{{names[Constants.FILTER_TYPE.TEST_CASE]}}</span></div>
-              <div class="filterValue">
-                <ng-multiselect-dropdown 
-                  [placeholder]="'All'" 
-                  [settings]="filterDropdownSettings[Constants.FILTER_TYPE.TEST_CASE]"
-                  [data]="filtering[Constants.FILTER_TYPE.TEST_CASE].filter" 
-                  [(ngModel)]="filtering[Constants.FILTER_TYPE.TEST_CASE].selection" 
-                  (onSelectAll)="filterItemTicked(Constants.FILTER_TYPE.TEST_CASE)"
-                  (onDeSelectAll)="filterItemTicked(Constants.FILTER_TYPE.TEST_CASE)"
-                  (onSelect)="filterItemTicked(Constants.FILTER_TYPE.TEST_CASE)"
-                  (onDeSelect)="filterItemTicked(Constants.FILTER_TYPE.TEST_CASE)">
-                </ng-multiselect-dropdown>
-              </div>
-            </div>
-            <div class="filterCell" *ngIf="filterDefined(Constants.FILTER_TYPE.COMMUNITY)">
-              <div class="filterName"><span>{{names[Constants.FILTER_TYPE.COMMUNITY]}}</span></div>
-              <div class="filterValue">
-                <ng-multiselect-dropdown 
-                  [placeholder]="'All'" 
-                  [settings]="filterDropdownSettings[Constants.FILTER_TYPE.COMMUNITY]"
-                  [data]="filtering[Constants.FILTER_TYPE.COMMUNITY].filter" 
-                  [(ngModel)]="filtering[Constants.FILTER_TYPE.COMMUNITY].selection" 
-                  (onSelectAll)="filterItemTicked(Constants.FILTER_TYPE.COMMUNITY)"
-                  (onDeSelectAll)="filterItemTicked(Constants.FILTER_TYPE.COMMUNITY)"
-                  (onSelect)="filterItemTicked(Constants.FILTER_TYPE.COMMUNITY)"
-                  (onDeSelect)="filterItemTicked(Constants.FILTER_TYPE.COMMUNITY)">
-                </ng-multiselect-dropdown>
-              </div>
-            </div>
-            <div class="filterCell" *ngIf="filterDefined(Constants.FILTER_TYPE.ORGANISATION)">
-              <div class="filterName"><span>{{names[Constants.FILTER_TYPE.ORGANISATION]}}</span></div>
-              <div class="filterValue">
-                <ng-multiselect-dropdown 
-                  class="left-side"
-                  [placeholder]="'All'" 
-                  [settings]="filterDropdownSettings[Constants.FILTER_TYPE.ORGANISATION]"
-                  [data]="filtering[Constants.FILTER_TYPE.ORGANISATION].filter" 
-                  [(ngModel)]="filtering[Constants.FILTER_TYPE.ORGANISATION].selection" 
-                  (onSelectAll)="filterItemTicked(Constants.FILTER_TYPE.ORGANISATION)"
-                  (onDeSelectAll)="filterItemTicked(Constants.FILTER_TYPE.ORGANISATION)"
-                  (onSelect)="filterItemTicked(Constants.FILTER_TYPE.ORGANISATION)"
-                  (onDeSelect)="filterItemTicked(Constants.FILTER_TYPE.ORGANISATION)">
-                </ng-multiselect-dropdown>
-              </div>
-            </div>
-            <div class="filterCell" *ngIf="filterDefined(Constants.FILTER_TYPE.SYSTEM)">
-              <div class="filterName"><span>{{names[Constants.FILTER_TYPE.SYSTEM]}}</span></div>
-              <div class="filterValue">
-                <ng-multiselect-dropdown 
-                  class="left-side"
-                  [placeholder]="'All'" 
-                  [settings]="filterDropdownSettings[Constants.FILTER_TYPE.SYSTEM]"
-                  [data]="filtering[Constants.FILTER_TYPE.SYSTEM].filter" 
-                  [(ngModel)]="filtering[Constants.FILTER_TYPE.SYSTEM].selection" 
-                  (onSelectAll)="filterItemTicked(Constants.FILTER_TYPE.SYSTEM)"
-                  (onDeSelectAll)="filterItemTicked(Constants.FILTER_TYPE.SYSTEM)"
-                  (onSelect)="filterItemTicked(Constants.FILTER_TYPE.SYSTEM)"
-                  (onDeSelect)="filterItemTicked(Constants.FILTER_TYPE.SYSTEM)">
-                </ng-multiselect-dropdown>
-              </div>
+        <div class="filterRow" *ngIf="filterDefined(Constants.FILTER_TYPE.RESULT) || filterDefined(Constants.FILTER_TYPE.START_TIME) || filterDefined(Constants.FILTER_TYPE.END_TIME) || filterDefined(Constants.FILTER_TYPE.SESSION)">
+          <div class="filterCell" *ngIf="filterDefined(Constants.FILTER_TYPE.RESULT)">
+            <div class="filterName"><span>{{names[Constants.FILTER_TYPE.RESULT]}}</span></div>
+            <div class="filterValue">
+              <app-multi-select-filter [config]="filterDropdownSettings[Constants.FILTER_TYPE.RESULT]" [typeahead]="false" (apply)="resultsChanged($event)"></app-multi-select-filter>
             </div>
           </div>
-          <div class="filterRow" *ngIf="filterDefined(Constants.FILTER_TYPE.RESULT) || filterDefined(Constants.FILTER_TYPE.START_TIME) || filterDefined(Constants.FILTER_TYPE.END_TIME) || filterDefined(Constants.FILTER_TYPE.SESSION)">
-            <div class="filterCell" *ngIf="filterDefined(Constants.FILTER_TYPE.RESULT)">
-              <div class="filterName"><span>{{names[Constants.FILTER_TYPE.RESULT]}}</span></div>
-              <div class="filterValue">
-                <ng-multiselect-dropdown 
-                  [placeholder]="'All'" 
-                  [settings]="filterDropdownSettings[Constants.FILTER_TYPE.RESULT]"
-                  [data]="filtering[Constants.FILTER_TYPE.RESULT].filter" 
-                  [(ngModel)]="filtering[Constants.FILTER_TYPE.RESULT].selection" 
-                  (onSelectAll)="filterItemTicked(Constants.FILTER_TYPE.RESULT)"
-                  (onDeSelectAll)="filterItemTicked(Constants.FILTER_TYPE.RESULT)"
-                  (onSelect)="filterItemTicked(Constants.FILTER_TYPE.RESULT)"
-                  (onDeSelect)="filterItemTicked(Constants.FILTER_TYPE.RESULT)">
-                </ng-multiselect-dropdown>
-              </div>
-            </div>
-            <div class="filterCell timeFilter" *ngIf="filterDefined(Constants.FILTER_TYPE.START_TIME)">
-              <div class="filterName"><span>{{names[Constants.FILTER_TYPE.START_TIME]}}</span></div>
-              <div class="filterValue">
-                <div class="input-group">
-                  <input class="form-control pointer" bsDaterangepicker [(ngModel)]="startDateModel" [bsConfig]="datePickerSettings" (bsValueChange)="applyTimeFiltering()" readonly="readonly">
-                  <div class="input-group-btn">
-                    <button class="btn btn-default" type="button" (click)="clearStartRange()" [disabled]="startDateModel == undefined"><i class="fa fa-times" [ngClass]="{'faded': startDateModel == undefined}"></i></button>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="filterCell timeFilter" *ngIf="filterDefined(Constants.FILTER_TYPE.END_TIME)">
-              <div class="filterName"><span>{{names[Constants.FILTER_TYPE.END_TIME]}}</span></div>
-              <div class="filterValue">
-                <div class="input-group">
-                  <input class="form-control pointer" bsDaterangepicker [(ngModel)]="endDateModel" [bsConfig]="datePickerSettings" (bsValueChange)="applyTimeFiltering()" readonly="readonly">
-                  <div class="input-group-btn">
-                    <button class="btn btn-default" type="button" (click)="clearEndRange()" [disabled]="endDateModel == undefined"><i class="fa fa-times" [ngClass]="{'faded': endDateModel == undefined}"></i></button>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="filterCell sessionFilter" *ngIf="filterDefined(Constants.FILTER_TYPE.SESSION)">
-              <div class="filterName"><span>{{names[Constants.FILTER_TYPE.SESSION]}}</span></div>
-              <div class="filterValue">
-                <app-text-filter name="sessionFilter" [(ngModel)]="sessionId" (apply)="applyFilters()"></app-text-filter>
-              </div>
-            </div>
-          </div>
-          <div class="filterRow" *ngIf="filterDefined(Constants.FILTER_TYPE.ORGANISATION_PROPERTY)">
-            <div class="filterCell">
-              <div class="filterName"><span>{{names[Constants.FILTER_TYPE.ORGANISATION_PROPERTY]}}</span></div>
-              <div class="filterValue">
-                <div class="property-filters-container">
-                  <div class="property-filter" *ngFor="let propFilter of organisationProperties">
-                    <app-custom-property-filter
-                      [propertyFilter]="propFilter"
-                      [properties]="availableOrganisationProperties"
-                      (onApply)="applyOrganisationProperty()" 
-                      (onClear)="clearOrganisationProperty($event)"
-                      (onCancel)="cancelOrganisationProperty()">
-                    </app-custom-property-filter>
-                  </div>
-                  <div class="property-filters-control" [ngClass]="{'padded': organisationProperties && organisationProperties.length > 0}">
-                    <button [disable]="applicableCommunityId == undefined" [pending]="loadingOrganisationProperties" *ngIf="!addingOrganisationProperty || loadingOrganisationProperties" class="btn btn-default" (click)="addOrganisationProperty()">Add</button>
-                  </div>
+          <div class="filterCell timeFilter" *ngIf="filterDefined(Constants.FILTER_TYPE.START_TIME)">
+            <div class="filterName"><span>{{names[Constants.FILTER_TYPE.START_TIME]}}</span></div>
+            <div class="filterValue">
+              <div class="input-group">
+                <input class="form-control pointer" bsDaterangepicker [(ngModel)]="startDateModel" [bsConfig]="datePickerSettings" (bsValueChange)="applyTimeFiltering()" readonly="readonly">
+                <div class="input-group-btn">
+                  <button class="btn btn-default" type="button" (click)="clearStartRange()" [disabled]="startDateModel == undefined" containerClass="shortTooltip" tooltip="Clear" [delay]="Constants.TOOLTIP_DELAY"><i class="fa fa-times" [ngClass]="{'faded': startDateModel == undefined}"></i></button>
                 </div>
               </div>
             </div>
           </div>
-          <div class="filterRow" *ngIf="filterDefined(Constants.FILTER_TYPE.SYSTEM_PROPERTY)">
-            <div class="filterCell">
-              <div class="filterName"><span>{{names[Constants.FILTER_TYPE.SYSTEM_PROPERTY]}}</span></div>
-              <div class="filterValue">
-                <div class="property-filters-container">
-                  <div class="property-filter" *ngFor="let propFilter of systemProperties">
-                    <app-custom-property-filter
-                      [propertyFilter]="propFilter"
-                      [properties]="availableSystemProperties"
-                      (onApply)="applySystemProperty()" 
-                      (onClear)="clearSystemProperty($event)"
-                      (onCancel)="cancelSystemProperty()">
-                    </app-custom-property-filter>
-                  </div>
-                  <div class="property-filters-control" [ngClass]="{'padded': systemProperties && systemProperties.length > 0}">
-                    <button [disable]="applicableCommunityId == undefined" [pending]="loadingSystemProperties" *ngIf="!addingSystemProperty || loadingSystemProperties" class="btn btn-default" (click)="addSystemProperty()">Add</button>
-                  </div>
+          <div class="filterCell timeFilter" *ngIf="filterDefined(Constants.FILTER_TYPE.END_TIME)">
+            <div class="filterName"><span>{{names[Constants.FILTER_TYPE.END_TIME]}}</span></div>
+            <div class="filterValue">
+              <div class="input-group">
+                <input class="form-control pointer" bsDaterangepicker [(ngModel)]="endDateModel" [bsConfig]="datePickerSettings" (bsValueChange)="applyTimeFiltering()" readonly="readonly">
+                <div class="input-group-btn">
+                  <button class="btn btn-default" type="button" (click)="clearEndRange()" [disabled]="endDateModel == undefined" containerClass="shortTooltip" tooltip="Clear" [delay]="Constants.TOOLTIP_DELAY"><i class="fa fa-times" [ngClass]="{'faded': endDateModel == undefined}"></i></button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="filterCell sessionFilter" *ngIf="filterDefined(Constants.FILTER_TYPE.SESSION)">
+            <div class="filterName"><span>{{names[Constants.FILTER_TYPE.SESSION]}}</span></div>
+            <div class="filterValue">
+              <app-text-filter name="sessionFilter" [(ngModel)]="sessionId" (apply)="applyFilters()"></app-text-filter>
+            </div>
+          </div>
+        </div>
+        <div class="filterRow" *ngIf="filterDefined(Constants.FILTER_TYPE.ORGANISATION_PROPERTY)">
+          <div class="filterCell">
+            <div class="filterName"><span>{{names[Constants.FILTER_TYPE.ORGANISATION_PROPERTY]}}</span></div>
+            <div class="filterValue">
+              <div class="property-filters-container">
+                <div class="property-filter" *ngFor="let propFilter of organisationProperties">
+                  <app-custom-property-filter
+                    [propertyFilter]="propFilter"
+                    [properties]="availableOrganisationProperties"
+                    (onApply)="applyOrganisationProperty()" 
+                    (onClear)="clearOrganisationProperty($event)"
+                    (onCancel)="cancelOrganisationProperty()">
+                  </app-custom-property-filter>
+                </div>
+                <div class="property-filters-control" [ngClass]="{'padded': organisationProperties && organisationProperties.length > 0}">
+                  <button [disable]="applicableCommunityId == undefined" [pending]="loadingOrganisationProperties" *ngIf="!addingOrganisationProperty || loadingOrganisationProperties" class="btn btn-default" (click)="addOrganisationProperty()">Add</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="filterRow" *ngIf="filterDefined(Constants.FILTER_TYPE.SYSTEM_PROPERTY)">
+          <div class="filterCell">
+            <div class="filterName"><span>{{names[Constants.FILTER_TYPE.SYSTEM_PROPERTY]}}</span></div>
+            <div class="filterValue">
+              <div class="property-filters-container">
+                <div class="property-filter" *ngFor="let propFilter of systemProperties">
+                  <app-custom-property-filter
+                    [propertyFilter]="propFilter"
+                    [properties]="availableSystemProperties"
+                    (onApply)="applySystemProperty()" 
+                    (onClear)="clearSystemProperty($event)"
+                    (onCancel)="cancelSystemProperty()">
+                  </app-custom-property-filter>
+                </div>
+                <div class="property-filters-control" [ngClass]="{'padded': systemProperties && systemProperties.length > 0}">
+                  <button [disable]="applicableCommunityId == undefined" [pending]="loadingSystemProperties" *ngIf="!addingSystemProperty || loadingSystemProperties" class="btn btn-default" (click)="addSystemProperty()">Add</button>
                 </div>
               </div>
             </div>

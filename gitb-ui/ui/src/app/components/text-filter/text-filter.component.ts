@@ -1,5 +1,6 @@
-import { Component, EventEmitter, forwardRef, Input, OnInit, Output } from '@angular/core';
+import { Component, ElementRef, EventEmitter, forwardRef, Input, OnInit, Output, ViewChild } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { Constants } from 'src/app/common/constants';
 
 @Component({
   selector: 'app-text-filter',
@@ -19,8 +20,13 @@ export class TextFilterComponent implements OnInit, ControlValueAccessor {
   @Input() placeholder = ''
   @Input() width?: number
   @Output() apply = new EventEmitter<string|undefined>()
+  @ViewChild('filterText') filterTextElement?: ElementRef
+  @ViewChild('filterButtonSearch') filterButtonSearchElement?: ElementRef
+  @ViewChild('filterButtonClear') filterButtonClearElement?: ElementRef
+  Constants = Constants
   _filterValue?: string
   readonly = true
+  submitOngoing = false
   onChange = (_: any) => {}
   onTouched = () => {}
 
@@ -64,13 +70,27 @@ export class TextFilterComponent implements OnInit, ControlValueAccessor {
     }
   }
 
-  applyFilter() {
+  filterBlurred() {
+    if (!this.submitOngoing) {
+      this.applyFilter(true)
+    }
+  }
+
+  clear() {
+    this.submitOngoing = true
+    this.applyFilter(false)
+    this.submitOngoing = false
+  }
+
+  search() {
+    this.submitOngoing = true
+    this.applyFilter(true)
+    this.submitOngoing = false
+  }
+
+  applyFilter(isSearch: boolean) {
     if (this.value != undefined) {
-      if (this.readonly) {
-        // Clear
-        this.value = undefined
-        this.apply.emit(this.value)
-      } else {
+      if (isSearch) {
         // Apply
         this.value = this.value.trim()
         if (this.value.length == 0) {
@@ -78,8 +98,18 @@ export class TextFilterComponent implements OnInit, ControlValueAccessor {
         }
         this.readonly = true
         this.apply.emit(this.value)
+      } else {
+        // Clear
+        this.value = undefined
+        this.apply.emit(this.value)
+      }
+      if (this.readonly) {
+        this.filterTextElement?.nativeElement.blur()
+        this.filterButtonSearchElement?.nativeElement.blur()
+        this.filterButtonClearElement?.nativeElement.blur()
       }
     }
+    this.submitOngoing = false
   }
 
 }

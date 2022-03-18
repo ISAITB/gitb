@@ -7,13 +7,13 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.classic.spi.IThrowableProxy;
 import ch.qos.logback.core.AppenderBase;
 import com.gitb.core.AnyContent;
+import com.gitb.core.LogLevel;
 import com.gitb.core.StepStatus;
 import com.gitb.engine.TestEngine;
 import com.gitb.engine.actors.SessionActor;
 import com.gitb.engine.actors.processors.AbstractTestStepActor;
 import com.gitb.engine.commands.interaction.LogCommand;
 import com.gitb.tbs.TestStepStatus;
-import com.gitb.tdl.LogLevel;
 import com.gitb.tr.TAR;
 
 /**

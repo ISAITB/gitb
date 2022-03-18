@@ -6,11 +6,13 @@ import com.gitb.engine.utils.ArtifactUtils;
 import com.gitb.engine.utils.TemplateUtils;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.tdl.Imports;
+import com.gitb.tdl.Namespaces;
 import com.gitb.tdl.TestArtifact;
 import com.gitb.types.*;
 import com.gitb.utils.ErrorUtils;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -33,15 +35,18 @@ public class TestCaseScope {
 	private final Map<String, DataType> symbols;
 	private final Map<String, DataType> resolvedArtifacts;
 	private final Imports scopeImports;
+	private final Namespaces scopeNamespaces;
+	private Map<String, String> namespaceDefinitions;
 	private final String testSuiteContext;
 
-	public TestCaseScope(TestCaseContext context, Imports imports) {
-		this(context, imports, null);
+	public TestCaseScope(TestCaseContext context, Imports imports, Namespaces namespaces) {
+		this(context, imports, namespaces, null);
 	}
 
-	private TestCaseScope(TestCaseContext context, Imports imports, String testSuiteContext) {
+	private TestCaseScope(TestCaseContext context, Imports imports, Namespaces namespaces, String testSuiteContext) {
 		this.context   = context;
 		this.scopeImports = imports;
+		this.scopeNamespaces = namespaces;
 		this.symbols   = new ConcurrentHashMap<>();
 		this.resolvedArtifacts   = new ConcurrentHashMap<>();
 		this.children  = new CopyOnWriteArrayList<>();
@@ -53,14 +58,14 @@ public class TestCaseScope {
 	}
 
 	public TestCaseScope createChildScope() {
-		return createChildScope(null, null);
+		return createChildScope(this.scopeImports, this.scopeNamespaces, this.testSuiteContext);
 	}
 
-	public TestCaseScope createChildScope(Imports imports, String testSuiteContext) {
+	public TestCaseScope createChildScope(Imports imports, Namespaces namespaces, String testSuiteContext) {
 		if (testSuiteContext == null && this.testSuiteContext != null) {
 			testSuiteContext = this.testSuiteContext;
 		}
-		TestCaseScope child = new TestCaseScope(context, imports, testSuiteContext);
+		TestCaseScope child = new TestCaseScope(context, imports, namespaces, testSuiteContext);
 		child.parent = this;
 		children.add(child);
 		return child;
@@ -114,6 +119,27 @@ public class TestCaseScope {
 		// When we have a scope from another test suite (i.e. a scriptlet) we should not propagate variable searches to parent scopes.
 		boolean searchAncestors = testSuiteContext == null;
 		return getVariable(name, searchAncestors);
+	}
+
+	public Map<String, String> getNamespaceDefinitions() {
+		if (namespaceDefinitions == null) {
+			var namespaces = new HashMap<String, String>();
+			TestCaseScope current = this;
+			do {
+				if (current.scopeNamespaces != null) {
+					for (var ns: current.scopeNamespaces.getNs()) {
+						// Ignore NS with a prefix that is already recorded (use only latest scope).
+						if (!namespaces.containsKey(ns.getPrefix())) {
+							namespaces.put(ns.getPrefix(), ns.getValue());
+						}
+					}
+				}
+				// Now process parent scope.
+				current = current.parent;
+			} while (current != null);
+			namespaceDefinitions = namespaces;
+		}
+		return namespaceDefinitions;
 	}
 
 	public ScopedVariable getVariable(String name, boolean searchAncestors) {

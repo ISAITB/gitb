@@ -36,9 +36,13 @@ public class CheckTestCaseActors extends AbstractTestCaseObserver {
     @Override
     public void handleActor(TestRole testRole) {
         if (testRole.getRole() == TestRoleEnumeration.SUT) {
-            sutDefined = true;
-            if (defaultActor != null && testRole.getId().equals(defaultActor.getId())) {
-                defaultActorDefinedAsSUT = true;
+            if (sutDefined) {
+                addReportItem(ErrorCode.MULTIPLE_SUT_ACTORS_DEFINED_IN_TEST_CASE, currentTestCase.getId());
+            } else {
+                sutDefined = true;
+                if (defaultActor != null && testRole.getId().equals(defaultActor.getId())) {
+                    defaultActorDefinedAsSUT = true;
+                }
             }
         }
         if (!context.getTestSuiteActors().containsKey(testRole.getId())) {

@@ -17,5 +17,8 @@ export interface WebSocketMessage {
     interactions?: UserInteraction[],
     inputTitle?: string
     stepHistory: { stepId: string, status: number, path: string }[]
+    configs?: SUTConfiguration[]
+    errorCode?: string
+    errorDescription?: string
 
 }

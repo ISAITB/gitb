@@ -38,7 +38,11 @@ export class CommunityFormComponent extends BaseComponent implements OnInit {
   ngOnInit(): void {
     if (this.community.id != undefined) {
       // Update case.
-      this.selfRegOptionsCollapsed = true
+      if (this.community.selfRegType != Constants.SELF_REGISTRATION_TYPE.NOT_SUPPORTED) {
+        // If not support we want the self-reg options to be collapsed to avoid a double expand if selected.
+        // The options are anyway not displayed as the whole self-reg block is hidden.
+        this.selfRegOptionsCollapsed = true
+      }
       this.userPermissionsCollapsed = true
     }
     this.selfRegEnabled = this.dataService.configuration.registrationEnabled
@@ -59,15 +63,24 @@ export class CommunityFormComponent extends BaseComponent implements OnInit {
       this.community.activeDescription = this.community.description
     }
   }
-
-  showToken() {
-    return this.community.selfRegType == Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING_WITH_TOKEN || this.community.selfRegType == Constants.SELF_REGISTRATION_TYPE.TOKEN
-  }
     
-  selfRegTypeChanged() {
-    this.selfRegOptionsVisible = this.community.selfRegType != Constants.SELF_REGISTRATION_TYPE.NOT_SUPPORTED
-    if (this.showToken()) {
-      this.dataService.focus('selfRegToken', 200)
+  selfRegTypeChanged(newValue: number) {
+    if (newValue != this.community.selfRegType) {
+      if (this.community.selfRegType == Constants.SELF_REGISTRATION_TYPE.NOT_SUPPORTED) {
+        // From not supported to supported
+        this.selfRegOptionsVisible = true
+        this.selfRegOptionsCollapsed = false
+      } else if (newValue == Constants.SELF_REGISTRATION_TYPE.NOT_SUPPORTED) {
+        // From supported to not supported
+        this.selfRegOptionsVisible = false
+        this.selfRegOptionsCollapsed = false
+      } else {
+        // One supported type to another
+        this.selfRegOptionsCollapsed = false
+      }
+      if (this.selfRegOptionsVisible && !this.selfRegOptionsCollapsed && (newValue == Constants.SELF_REGISTRATION_TYPE.TOKEN || newValue == Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING_WITH_TOKEN)) {
+        this.dataService.focus('selfRegToken', 200)
+      }
     }
   }
 

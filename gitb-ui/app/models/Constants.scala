@@ -18,14 +18,18 @@ object Constants {
   val DefaultTheme = "gitb"
   val EcTheme = "ec"
   val ImagePath = "assets/images/"
-  val EcLogo = ImagePath + "ec.png"
-  val GitbLogo = ImagePath + "gitb.png"
+  val EcLogo: String = ImagePath + "ec.png"
+  val GitbLogo: String = ImagePath + "gitb.png"
   val EcFavicon = "public/images/favicon-ec.gif"
   val GitbFavicon = "public/images/favicon.png"
 
-  val domainConfigurationName = "com.gitb.DOMAIN"
-  val organisationConfigurationName = "com.gitb.ORGANISATION"
-  val systemConfigurationName = "com.gitb.SYSTEM"
+  val domainTestVariable = "DOMAIN"
+  val organisationTestVariable = "ORGANISATION"
+  val systemTestVariable = "SYSTEM"
+
+  val domainConfigurationName: String = "com.gitb."+domainTestVariable
+  val organisationConfigurationName: String = "com.gitb."+organisationTestVariable
+  val systemConfigurationName: String = "com.gitb."+systemTestVariable
 
   val organisationConfiguration_shortName = "shortName"
   val organisationConfiguration_fullName = "fullName"
@@ -44,7 +48,8 @@ object Constants {
   val SandboxMode = "sandbox"
 
   val FilterDateFormat = "dd-MM-yyyy HH:mm:ss"
+  val AutomationHeader = "ITB_API_KEY"
 
-  val VersionNumber = "1.15.1"
-  val ResourceVersionNumber = "1.15.1"
+  val VersionNumber = "1.16.0"
+  val ResourceVersionNumber = "1.16.0"
 }

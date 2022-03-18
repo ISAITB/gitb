@@ -64,7 +64,7 @@ public abstract class AbstractIterationStepActor<T> extends AbstractTestStepActo
 		if (status == StepStatus.ERROR || status == StepStatus.WARNING || status == StepStatus.COMPLETED) {
 			boolean shouldContinue = true;
 			if (scope.getContext().getCurrentState() == TestCaseContext.TestCaseStateEnum.STOPPING
-					|| (status == StepStatus.ERROR && ((step instanceof TestConstruct && ((TestConstruct) step).isStopOnError())))
+					|| (status == StepStatus.ERROR && ((step instanceof TestConstruct && (((TestConstruct) step).isStopOnError() != null && ((TestConstruct) step).isStopOnError()))))
 			) {
 				shouldContinue = false;
 			}

@@ -128,6 +128,7 @@ object Configurations {
   var TESTBED_MODE:String = ""
 
   var API_ROOT = ""
+  var AUTOMATION_API_ENABLED = false
 
   def loadConfigurations(): Unit = {
     if (!_IS_LOADED) {
@@ -336,6 +337,7 @@ object Configurations {
       TEST_SESSION_EMBEDDED_REPORT_DATA_THRESHOLD = fromEnv("TEST_SESSION_EMBEDDED_REPORT_DATA_THRESHOLD", conf.getString("testsession.embeddedReportData.threshold")).toLong
       API_ROOT = conf.getString("apiPrefix")
       PASSWORD_COMPLEXITY_RULE_REGEX = new Regex(conf.getString("passwordComplexityRule"))
+      AUTOMATION_API_ENABLED = fromEnv("AUTOMATION_API_ENABLED", "false").toBoolean
       _IS_LOADED = true
     }
   }

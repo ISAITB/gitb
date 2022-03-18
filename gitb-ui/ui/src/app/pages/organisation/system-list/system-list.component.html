@@ -2,7 +2,9 @@
 	<div class="panel panel-default">
 		<div class="panel-heading">
 			<h4 class="title">{{dataService.labelSystems()}}</h4>
-			<button type="button" (click)="createSystem()" class="btn btn-default pull-right" *ngIf="showCreate()">Create {{dataService.labelSystemLower()}}</button>
+			<div class="btn-toolbar" *ngIf="showCreate()">
+				<button type="button" (click)="createSystem()" class="btn btn-default">Create {{dataService.labelSystemLower()}}</button>
+			</div>
 		</div>
 		<div table-directive 
             id="systems-table"
@@ -13,6 +15,7 @@
 			[actionVisible]="showAction" 
 			[actionVisibleForRow]="isSystemEditable" 
 			[actionIcon]="'fa fa-pencil'" 
+			[actionTooltip]="'Edit'"
 			[allowSelect]="true"
             (onAction)="onSystemEdit($event)"
             (onSelect)="onSystemSelect($event)">

@@ -1,0 +1,45 @@
+@import '../../../styles/less/_common.less';
+
+.test-case-list-table{
+    margin-bottom: 0px;
+    .testCaseName {
+        display: flex;
+        align-items: center;
+        &.padded {
+            min-height: 34px;
+        }
+    }
+}
+.test-case-list-table {
+    span.caret {
+        margin-left: 10px;
+    }
+}
+.sessionDiagramDiv {
+    margin-bottom: 20px;
+}
+.missingConfigurationDiv {
+    padding: 20px;
+}
+.pendingDiv {
+    padding: 20px;
+}
+.no-display {
+    display: none;
+}
+.viewLogButton {
+    position: relative;
+    .unreadBadge {
+        background-color: @gray-button;
+        position: absolute;
+        height: 7px;
+        width: 7px;
+        border-radius: 50%;
+        right: 3px;
+        top: 3px;
+        cursor: pointer;
+        &.hidden {
+            display: none;
+        }
+    }
+}

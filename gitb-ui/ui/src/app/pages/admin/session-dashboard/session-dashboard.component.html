@@ -1,80 +1,75 @@
 <div class="page dashboard">
-    <app-test-filter
-        [filterState]="filterState"
-        [communityId]="communityId"
-        [loadDomainsFn]="domainLoader"
-        [loadSpecificationsFn]="specificationLoader"
-        [loadActorsFn]="actorLoader"
-        [loadTestSuitesFn]="testSuiteLoader"
-        [loadTestCasesFn]="testCaseLoader"
-        [loadCommunitiesFn]="communityLoader"
-        [loadOrganisationsFn]="organisationLoader"
-        [loadSystemsFn]="systemLoader"
-        [loadOrganisationPropertiesFn]="organisationPropertyLoader"
-        [loadSystemPropertiesFn]="systemPropertyLoader"
-        (onApply)="applyFilters()">
-    </app-test-filter>
+    <app-test-filter [filterState]="filterState" [communityId]="communityId" (onApply)="applyFilters()"></app-test-filter>
     <div class="panel panel-default">
-        <div class="panel-heading">
+        <div class="panel-heading clickable" (click)="activeSessionsCollapsed = !activeSessionsCollapsed">
             <h4 class="title">Active test sessions</h4>
-            <div class="btn-toolbar pull-right">
-                <button type="button" class="btn btn-default" (click)="stopAll()" [pending]="stopAllPending" [disable]="activeTests.length == 0 || exportActivePending">Terminate all</button>
-                <button type="button" class="btn btn-default" (click)="exportActiveSessionsToCsv()" [pending]="exportActivePending" [disable]="activeTests.length == 0 || stopAllPending">Export CSV</button>
-                <button type="button" class="btn btn-default" *ngIf="showCollapseAllActive()" (click)="onCollapseAllActive()">Collapse all</button>
+            <div class="btn-toolbar" [class.disable-events]="filterState.updatePending">
+                <button type="button" class="btn btn-default" (click)="stopAll();$event.stopPropagation()" [pending]="stopAllPending" [disable]="activeTests.length == 0 || exportActivePending">Terminate all</button>
+                <button type="button" class="btn btn-default" (click)="exportActiveSessionsToCsv();$event.stopPropagation()" [pending]="exportActivePending" [disable]="activeTests.length == 0 || stopAllPending">Export CSV</button>
+                <button type="button" class="btn btn-default" *ngIf="showCollapseAllActive()" (click)="onCollapseAllActive();$event.stopPropagation()">Collapse all</button>
             </div>
         </div>
-        <div app-session-table
-            [sessionTableId]="'dashboard-table-active'"
-            [expandedCounter]="activeExpandedCounter"
-            [columns]="activeTestsColumns"
-            [data]="activeTests"
-            [noDataMessage]="'No sessions found'"
-			[loadingStatus]="activeStatus"
-            [operationsVisible]="true"
-            [rowStyle]="rowStyle"
-            (onSort)="sortActiveSessions($event)"
-            (onDelete)="stopSession($event)">
+        <div [collapse]="activeSessionsCollapsed" [isAnimated]="true">
+            <div app-session-table
+                [sessionTableId]="'dashboard-table-active'"
+                [expandedCounter]="activeExpandedCounter"
+                [columns]="activeTestsColumns"
+                [data]="activeTests"
+                [noDataMessage]="'No sessions found'"
+                [loadingStatus]="activeStatus"
+                [operationsVisible]="true"
+                [rowStyle]="rowStyle"
+                [supportRefresh]="true"
+                (onSort)="sortActiveSessions($event)"
+                (onDelete)="stopSession($event)"
+                (onRefresh)="refreshForSession($event)"
+                [refreshComplete]="sessionRefreshCompleteEmitter"
+                [contentRefreshing]="filterState.updatePending">
+            </div>
         </div>
     </div>
     <!-- completed sessions -->
     <div class="panel panel-default">
-        <div class="panel-heading">
+        <div class="panel-heading clickable" (click)="completedSessionsCollapsed = !completedSessionsCollapsed">
             <h4 class="title">Completed test sessions</h4>
-            <div class="btn-toolbar pull-right">
-                <button type="button" class="btn btn-default" (click)="selectDeleteSessions()" *ngIf="!selectingForDelete" [disable]="completedTests.length == 0 || deletePending" [pending]="deleteSessionsPending">Delete sessions...</button>
-                <button type="button" class="btn btn-default" (click)="confirmDeleteSessions()" *ngIf="selectingForDelete" [disable]="!testsChecked()" [pending]="deleteSessionsPending">Confirm</button>
-                <button type="button" class="btn btn-default" (click)="cancelDeleteSessions()" *ngIf="selectingForDelete" [disabled]="deleteSessionsPending">Cancel</button>
-                <button type="button" class="btn btn-default" (click)="deleteObsolete()" [disable]="selectingForDelete || deleteSessionsPending" [pending]="deletePending">Delete obsolete sessions</button>
-                <button type="button" class="btn btn-default" (click)="exportCompletedSessionsToCsv()" [disable]="completedTests.length == 0 || selectingForDelete || deleteSessionsPending" [pending]="exportCompletedPending">Export CSV</button>
-				<button type="button" class="btn btn-default" *ngIf="showCollapseAll()" (click)="onCollapseAll()">Collapse all</button>
+            <div class="btn-toolbar" [class.disable-events]="filterState.updatePending">
+                <button type="button" class="btn btn-default" (click)="selectDeleteSessions();$event.stopPropagation()" *ngIf="!selectingForDelete" [disable]="completedTests.length == 0 || deletePending" [pending]="deleteSessionsPending">Delete sessions...</button>
+                <button type="button" class="btn btn-default" (click)="confirmDeleteSessions();$event.stopPropagation()" *ngIf="selectingForDelete" [disable]="!testsChecked()" [pending]="deleteSessionsPending">Confirm</button>
+                <button type="button" class="btn btn-default" (click)="cancelDeleteSessions();$event.stopPropagation()" *ngIf="selectingForDelete" [disabled]="deleteSessionsPending">Cancel</button>
+                <button type="button" class="btn btn-default" (click)="deleteObsolete();$event.stopPropagation()" [disable]="selectingForDelete || deleteSessionsPending" [pending]="deletePending">Delete obsolete sessions</button>
+                <button type="button" class="btn btn-default" (click)="exportCompletedSessionsToCsv();$event.stopPropagation()" [disable]="completedTests.length == 0 || selectingForDelete || deleteSessionsPending" [pending]="exportCompletedPending">Export CSV</button>
+				<button type="button" class="btn btn-default" *ngIf="showCollapseAll()" (click)="onCollapseAll();$event.stopPropagation()">Collapse all</button>
             </div>
         </div>
-        <div app-session-table
-            [sessionTableId]="'dashboard-table'"
-            [expandedCounter]="completedExpandedCounter"
-            [columns]="completedTestsColumns"
-            [data]="completedTests"
-            [noDataMessage]="'No sessions found'"
-			[loadingStatus]="completedStatus"
-            [exportVisible]="true"
-            (onExport)="onReportExport($event)"
-            [exportVisibleForRow]="exportVisible"
-            (firstPage)="goFirstPage()"
-            (prevPage)="goPreviousPage()"
-            (onSort)="sortCompletedSessions($event)"
-            (nextPage)="goNextPage()"
-            (lastPage)="goLastPage()"
-            [nextDisabled]="isNextPageDisabled"
-            [prevDisabled]="isPreviousPageDisabled"
-            [rowStyle]="rowStyle"
-            [checkboxEnabled]="viewCheckbox">
+        <div [collapse]="completedSessionsCollapsed" [isAnimated]="true">
+            <div app-session-table
+                [sessionTableId]="'dashboard-table'"
+                [expandedCounter]="completedExpandedCounter"
+                [columns]="completedTestsColumns"
+                [data]="completedTests"
+                [noDataMessage]="'No sessions found'"
+                [loadingStatus]="completedStatus"
+                [exportVisible]="true"
+                (onExport)="onReportExport($event)"
+                [exportVisibleForRow]="exportVisible"
+                (firstPage)="goFirstPage()"
+                (prevPage)="goPreviousPage()"
+                (onSort)="sortCompletedSessions($event)"
+                (nextPage)="goNextPage()"
+                (lastPage)="goLastPage()"
+                [nextDisabled]="isNextPageDisabled"
+                [prevDisabled]="isPreviousPageDisabled"
+                [rowStyle]="rowStyle"
+                [checkboxEnabled]="viewCheckbox"
+                [contentRefreshing]="filterState.updatePending">
+            </div>
         </div>
     </div>
     <!-- configuration -->
     <div class="panel panel-default" *ngIf="dataService.isSystemAdmin">
         <div class="panel-heading">
             <h4 class="title">Automatically terminate idle sessions</h4>
-            <div class="btn-group pull-right">
+            <div class="btn-toolbar">
                 <app-toggle id="dashboard-toggle-ttl" class="btn-group" name="ttlToggle" [(ngModel)]="ttlEnabled" on="Enabled" off="Disabled" (toggle)="ttlToggled()"></app-toggle>
             </div>
         </div>

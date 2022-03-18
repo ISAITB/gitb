@@ -3,7 +3,6 @@ package hooks
 import actors.WebSocketActor
 import akka.actor.ActorSystem
 import config.Configurations
-import controllers.TestService
 import jaxws.TestbedService
 import managers._
 import managers.export.ImportCompleteManager
@@ -24,7 +23,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.DurationInt
 
 @Singleton
-class PostStartHook @Inject() (implicit ec: ExecutionContext, appLifecycle: ApplicationLifecycle, actorSystem: ActorSystem, systemConfigurationManager: SystemConfigurationManager, testResultManager: TestResultManager, testService: TestService, testSuiteManager: TestSuiteManager, reportManager: ReportManager, webSocketActor: WebSocketActor, testbedBackendClient: TestbedBackendClient, importCompleteManager: ImportCompleteManager, triggerManager: TriggerManager, repositoryUtils: RepositoryUtils) {
+class PostStartHook @Inject() (implicit ec: ExecutionContext, appLifecycle: ApplicationLifecycle, actorSystem: ActorSystem, systemConfigurationManager: SystemConfigurationManager, testResultManager: TestResultManager, testExecutionManager: TestExecutionManager, testSuiteManager: TestSuiteManager, reportManager: ReportManager, webSocketActor: WebSocketActor, testbedBackendClient: TestbedBackendClient, importCompleteManager: ImportCompleteManager, triggerManager: TriggerManager, repositoryUtils: RepositoryUtils) {
 
   private def logger = LoggerFactory.getLogger(this.getClass)
 
@@ -40,7 +39,7 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext, appLifecycle: Appl
     cleanupTempFiles()
     loadDataExports()
     archiveOldTestSessions()
-    logger.info("Application has started in "+Configurations.TESTBED_MODE+" mode")
+    logger.info("Application has started in "+Configurations.TESTBED_MODE+" mode - release "+Constants.VersionNumber)
   }
 
   private def checkMasterPassword(): Unit = {
@@ -126,7 +125,7 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext, appLifecycle: Appl
             val difference = TimeUtil.getTimeDifferenceInSeconds(result.startTime)
             if (difference >= aliveTime.get.toInt) {
               val sessionId = result.sessionId
-              testService.endSession(sessionId)
+              testExecutionManager.endSession(sessionId)
               logger.info("Terminated idle session [" + sessionId + "]")
             }
           }
@@ -152,7 +151,7 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext, appLifecycle: Appl
     }
   }
 
-  private def deleteSubfolders(rootFolder: File, gracePeriodMillis: Long) = {
+  private def deleteSubfolders(rootFolder: File, gracePeriodMillis: Long): Unit = {
     if (rootFolder.exists() && rootFolder.isDirectory) {
       for (file <- rootFolder.listFiles()) {
         if (file.lastModified() + gracePeriodMillis < System.currentTimeMillis) {

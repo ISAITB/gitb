@@ -1,7 +1,17 @@
-<div #wrapperElement class="toggle btn off" [ngStyle]="wrapperStyle" (click)="onSwitch($event)">
-  <div class="toggle-group" [ngClass]="toggleClass">
-    <label #onElement class="btn btn-primary toggle-on-pad" [ngClass]="{'disabled': disabled}">{{on}}</label>
-    <label #offElement class="btn btn-default toggle-off-pad active" [ngClass]="{'disabled': disabled}">{{off}}</label>
-    <span #handleElement class="btn btn-default toggle-handle" [ngClass]="{'disabled': disabled}"></span>
+<ng-container [ngSwitch]="initialOn">
+  <div *ngSwitchCase="true" #wrapperElement class="toggle btn" [ngClass]="{'btn-default':!_value, 'btn-primary': _value}" [ngStyle]="wrapperStyle" (click)="onSwitch($event)">
+    <div class="toggle-group" [ngClass]="toggleClass">
+      <label #onElement class="btn btn-primary toggle-on-pad" [ngClass]="{'disabled': disabled}">{{on}}</label>
+      <label #offElement class="btn btn-default toggle-off-pad active" [ngClass]="{'disabled': disabled}">{{off}}</label>
+      <span #handleElement class="btn btn-default toggle-handle" [ngClass]="{'disabled': disabled}"></span>
+    </div>
   </div>
-</div>
+  <div *ngSwitchCase="false" #wrapperElement class="toggle btn" [ngClass]="{'off': !_value, 'btn-default':!_value, 'btn-primary': _value}" [ngStyle]="wrapperStyle" (click)="onSwitch($event)">
+    <div class="toggle-group" [ngClass]="toggleClass">
+      <label #onElement class="btn btn-primary toggle-on-pad" [ngClass]="{'disabled': disabled}">{{on}}</label>
+      <label #offElement class="btn btn-default toggle-off-pad active" [ngClass]="{'disabled': disabled}">{{off}}</label>
+      <span #handleElement class="btn btn-default toggle-handle" [ngClass]="{'disabled': disabled}"></span>
+    </div>
+  </div>
+</ng-container>
+

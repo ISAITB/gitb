@@ -1,5 +1,5 @@
-import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { AfterViewInit, Component, OnInit, ViewChild } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 import { BsModalService } from 'ngx-bootstrap/modal';
 import { Constants } from 'src/app/common/constants';
 import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
@@ -23,28 +23,35 @@ import { cloneDeep, find, map, remove } from 'lodash'
 import { ParameterPresetValue } from 'src/app/types/parameter-preset-value';
 import { SystemConfigurationParameter } from 'src/app/types/system-configuration-parameter';
 import { Organisation } from 'src/app/types/organisation.type';
-import { forkJoin, Observable } from 'rxjs'
+import { forkJoin } from 'rxjs'
 import { MissingConfigurationModalComponent } from 'src/app/modals/missing-configuration-modal/missing-configuration-modal.component';
 import { EditEndpointConfigurationModalComponent } from 'src/app/modals/edit-endpoint-configuration-modal/edit-endpoint-configuration-modal.component';
 import { RoutingService } from 'src/app/services/routing.service';
+import { TabsetComponent } from 'ngx-bootstrap/tabs';
+import { ConformanceStatementTab } from './conformance-statement-tab';
+import { LoadingStatus } from 'src/app/types/loading-status.type';
+import { MissingConfigurationAction } from 'src/app/components/missing-configuration-display/missing-configuration-action';
+import { Counters } from 'src/app/components/test-status-icons/counters';
+import { saveAs } from 'file-saver'
 
 @Component({
   selector: 'app-conformance-statement',
   templateUrl: './conformance-statement.component.html',
-  styles: [
-  ]
+  styleUrls: ['./conformance-statement.component.less']
 })
-export class ConformanceStatementComponent implements OnInit {
+export class ConformanceStatementComponent implements OnInit, AfterViewInit {
 
   systemId!: number
   actorId!: number
   specId!: number
   organisationId!: number
-  loadingStatus = {status: Constants.STATUS.PENDING}
+  loadingTests = true
+  loadingConfiguration: LoadingStatus = {status: Constants.STATUS.NONE}
   Constants = Constants
   hasTests = false
+  displayedTestSuites: ConformanceTestSuite[] = []
   testSuites: ConformanceTestSuite[] = []
-  testStatus = ''
+  statusCounters?: Counters  
   lastUpdate?: string
   conformanceStatus = ''
   allTestsSuccessful = false
@@ -57,15 +64,36 @@ export class ConformanceStatementComponent implements OnInit {
   hasEndpoints = false
   hasMultipleEndpoints = false
   runTestClicked = false
-  endpointsExpanded = false
-  backgroundMode = false
   deletePending = false
   exportPending = false
   exportCertificatePending = false
+  tabToShow = ConformanceStatementTab.tests
+  @ViewChild('tabs', { static: false }) tabs?: TabsetComponent;
+  collapsedDetails = false
+  
+  resultFilterAll = "any"
+  resultFilterLabelAll = "Show all tests"
+  resultFilterLabelSucceeded = "Show succeeded tests"
+  resultFilterLabelFailed = "Show failed tests"
+  resultFilterLabelUndefined = "Show incomplete tests"
+  resultFilter = this.resultFilterAll
+  resultFilterButton = this.resultFilterLabelAll
+
+  executionModeSequential = "backgroundSequential"
+  executionModeParallel = "backgroundParallel"
+  executionModeInteractive = "interactive"
+  executionModeLabelSequential = "Sequential background execution"
+  executionModeLabelParallel = "Parallel background execution"
+  executionModeLabelInteractive = "Interactive execution"
+  
+  executionMode = this.executionModeInteractive
+  executionModeButton = this.executionModeLabelInteractive
+  testCaseFilter?: string  
 
   constructor(
     public dataService: DataService,
     private route: ActivatedRoute,
+    router: Router,
     private conformanceService: ConformanceService,
     private modalService: BsModalService,
     private systemService: SystemService,
@@ -76,17 +104,34 @@ export class ConformanceStatementComponent implements OnInit {
     private htmlService: HtmlService,
     private organisationService: OrganisationService,
     private routingService: RoutingService
-  ) { }
+  ) { 
+    // Access the tab to show via router state to have it cleared upon refresh.
+    const tabParam = router.getCurrentNavigation()?.extras?.state?.tab
+    if (tabParam != undefined) {
+      this.tabToShow = ConformanceStatementTab[tabParam as keyof typeof ConformanceStatementTab]
+    }
+  }
+
+  ngAfterViewInit(): void {
+    setTimeout(() => {
+      if (this.tabToShow == ConformanceStatementTab.configuration) {
+        this.showConfigurationTab()
+      }
+    })
+  }
+
+  private showConfigurationTab() {
+    this.loadConfigurations()
+    if (this.tabs) {
+      this.tabs.tabs[1].active = true
+    }
+  }
 
   ngOnInit(): void {
     this.systemId = Number(this.route.snapshot.paramMap.get('id'))
     this.actorId = Number(this.route.snapshot.paramMap.get('actor_id'))
     this.specId = Number(this.route.snapshot.paramMap.get('spec_id'))
     this.organisationId = Number(this.route.snapshot.paramMap.get('org_id'))
-    const viewPropertiesParam = this.route.snapshot.queryParamMap.get('viewProperties')
-    if (viewPropertiesParam != undefined) {
-      this.endpointsExpanded = Boolean(viewPropertiesParam)
-    }
     // Load conformance results.
     this.conformanceService.getConformanceStatus(this.actorId, this.systemId)
     .subscribe((data) => {
@@ -133,13 +178,17 @@ export class ConformanceStatementComponent implements OnInit {
       for (let testSuiteId of testSuiteIds) {
         testSuiteResults.push(testSuiteData[testSuiteId])
       }
+      if (testSuiteResults.length == 1) {
+        testSuiteResults[0].expanded = true
+      }
       this.testSuites = testSuiteResults
-      this.testStatus = this.dataService.testStatusText(data.summary.completed, data.summary.failed, data.summary.undefined)
+      this.displayedTestSuites = this.testSuites
+      this.statusCounters = { completed: data.summary.completed, failed: data.summary.failed, other: data.summary.undefined}
       this.lastUpdate = data.summary.updateTime
       this.conformanceStatus = data.summary.result
       this.allTestsSuccessful = data.summary.failed == 0 && data.summary.undefined == 0
     }).add(() => {
-      this.loadingStatus.status = Constants.STATUS.FINISHED
+      this.loadingTests = false
     })
     // Load actor.
     this.conformanceService.getActorsWithIds([this.actorId])
@@ -156,39 +205,46 @@ export class ConformanceStatementComponent implements OnInit {
     .subscribe((data) => {
       this.specification = data[0]
     })
-    // Load configurations.
-    this.conformanceService.getSystemConfigurations(this.actorId, this.systemId)
-    .subscribe((data) => {
-      const endpointsTemp: ConformanceEndpoint[] = []
-      const configurations: ConformanceConfiguration[] = []
-      for (let endpointConfig of data) {
-        let endpoint: ConformanceEndpoint = {
-          id: endpointConfig.id,
-          name: endpointConfig.name,
-          description: endpointConfig.description,
-          parameters: []
-        }
-        for (let parameterConfig of endpointConfig.parameters) {
-          endpoint.parameters.push(parameterConfig)
-          if (parameterConfig.configured) {
-            configurations.push({
-              system: this.systemId,
-              value: parameterConfig.value,
-              endpoint: endpointConfig.id,
-              parameter: parameterConfig.id,
-              mimeType: parameterConfig.mimeType,
-              configured: parameterConfig.configured
-            })
+  }
+
+  loadConfigurations() {
+    if (this.loadingConfiguration.status == Constants.STATUS.NONE) {
+      this.loadingConfiguration.status = Constants.STATUS.PENDING
+      this.conformanceService.getSystemConfigurations(this.actorId, this.systemId)
+      .subscribe((data) => {
+        const endpointsTemp: ConformanceEndpoint[] = []
+        const configurations: ConformanceConfiguration[] = []
+        for (let endpointConfig of data) {
+          let endpoint: ConformanceEndpoint = {
+            id: endpointConfig.id,
+            name: endpointConfig.name,
+            description: endpointConfig.description,
+            parameters: []
+          }
+          for (let parameterConfig of endpointConfig.parameters) {
+            endpoint.parameters.push(parameterConfig)
+            if (parameterConfig.configured) {
+              configurations.push({
+                system: this.systemId,
+                value: parameterConfig.value,
+                endpoint: endpointConfig.id,
+                parameter: parameterConfig.id,
+                mimeType: parameterConfig.mimeType,
+                configured: parameterConfig.configured
+              })
+            }
+          }
+          if (endpoint.parameters.length > 0) {
+            endpointsTemp.push(endpoint)
           }
         }
-        if (endpoint.parameters.length > 0) {
-          endpointsTemp.push(endpoint)
-        }
-      }
-      this.endpoints = endpointsTemp
-      this.configurations = configurations
-      this.constructEndpointRepresentations()
-    })
+        this.endpoints = endpointsTemp
+        this.configurations = configurations
+        this.constructEndpointRepresentations()
+      }).add(() => {
+        this.loadingConfiguration.status = Constants.STATUS.FINISHED
+      })
+    }
   }
 
   checkPrerequisite(parameterMap: {[key: string]: SystemConfigurationParameter}, repr: SystemConfigurationParameter): boolean {
@@ -282,7 +338,50 @@ export class ConformanceStatementComponent implements OnInit {
     return organisation!
   }
 
-  executeHeadless(testCases: ConformanceTestCase[]) {
+  resultFilterSelected(itemValue: string, itemLabel: string) {
+    this.resultFilter = itemValue
+    this.resultFilterButton = itemLabel
+    this.applySearchFilters()
+  }
+
+  applySearchFilters() {
+    let testCaseFilter = this.testCaseFilter
+    if (testCaseFilter != undefined) {
+      testCaseFilter = testCaseFilter.trim()
+      if (testCaseFilter.length == 0) {
+        testCaseFilter = undefined
+      } else {
+        testCaseFilter = testCaseFilter.toLocaleLowerCase()
+      }
+    }
+    let resultFilter = this.resultFilter
+    let filteredTestSuites: ConformanceTestSuite[] = []
+    for (let testSuite of this.testSuites) {
+      let testCases: ConformanceTestCase[] = []
+      for (let testCase of testSuite.testCases) {
+        if ((resultFilter == this.resultFilterAll || testCase.result == resultFilter) &&
+            (testCaseFilter == undefined || 
+              (testCase.sname.toLocaleLowerCase().indexOf(testCaseFilter) >= 0) || 
+              (testCase.description != undefined && testCase.description.toLocaleLowerCase().indexOf(testCaseFilter) >= 0))) {
+          testCases.push(testCase)
+        }
+      }
+      if (testCases.length > 0) {
+        filteredTestSuites.push({
+          id: testSuite.id,
+          sname: testSuite.sname,
+          result: testSuite.result,
+          hasDocumentation: testSuite.hasDocumentation,
+          expanded: true,
+          description: testSuite.description,
+          testCases: testCases
+        })
+      }
+    }
+    this.displayedTestSuites = filteredTestSuites
+  }
+
+  private executeHeadless(testCases: ConformanceTestCase[]) {
     // Check configurations
     const organisationParameterCheck = this.organisationService.checkOrganisationParameterValues(this.getOrganisation().id)
     const systemParameterCheck = this.systemService.checkSystemParameterValues(this.systemId)
@@ -293,18 +392,12 @@ export class ConformanceStatementComponent implements OnInit {
       const organisationProperties = data[0]
       const systemProperties = data[1]
       const endpoints = data[2]
+      const statementProperties = this.dataService.getEndpointParametersToDisplay(endpoints)
       let organisationConfigurationValid = this.dataService.isMemberConfigurationValid(organisationProperties)
       let systemConfigurationValid = this.dataService.isMemberConfigurationValid(systemProperties)
       let configurationValid = this.dataService.isConfigurationValid(endpoints)
       if (!configurationValid || !systemConfigurationValid || !organisationConfigurationValid) {
         // Missing configuration.
-        let statementProperties: SystemConfigurationParameter[] = []
-        if (endpoints != undefined && endpoints.length > 0) {
-          statementProperties = endpoints[0].parameters
-        }
-        const organisationPropertyVisibility = this.dataService.checkPropertyVisibility(organisationProperties)
-        const systemPropertyVisibility = this.dataService.checkPropertyVisibility(systemProperties)
-        const statementPropertyVisibility = this.dataService.checkPropertyVisibility(statementProperties)
         const modalRef = this.modalService.show(MissingConfigurationModalComponent, {
           class: 'modal-lg',
           initialState: {
@@ -312,17 +405,14 @@ export class ConformanceStatementComponent implements OnInit {
             organisationConfigurationValid: organisationConfigurationValid,
             systemProperties: systemProperties,
             systemConfigurationValid: systemConfigurationValid,
-            endpointRepresentations: endpoints,
-            configurationValid: configurationValid,
-            organisationPropertyVisibility: organisationPropertyVisibility,
-            systemPropertyVisibility: systemPropertyVisibility,
-            statementPropertyVisibility: statementPropertyVisibility
+            statementProperties: statementProperties,
+            configurationValid: configurationValid
           }
         })
-        modalRef.content?.action.subscribe((actionType: string) => {
-          if (actionType == 'statement') {
-            this.endpointsExpanded = true
-          } else if (actionType == 'organisation') {
+        modalRef.content?.action.subscribe((actionType: MissingConfigurationAction) => {
+          if (actionType == MissingConfigurationAction.viewStatement) {
+            this.showConfigurationTab()
+          } else if (actionType == MissingConfigurationAction.viewOrganisation) {
             if (this.dataService.isVendorUser || this.dataService.isVendorAdmin) {
               this.routingService.toOwnOrganisationDetails(true)
             } else {
@@ -336,7 +426,7 @@ export class ConformanceStatementComponent implements OnInit {
                 })
               }
             }
-          } else if (actionType == 'system') {
+          } else if (actionType == MissingConfigurationAction.viewSystem) {
             if (this.dataService.isVendorUser) {
               this.routingService.toSystemInfo(this.organisationId, this.systemId, true)
             } else {
@@ -347,7 +437,7 @@ export class ConformanceStatementComponent implements OnInit {
       } else {
         // Proceed with execution.
         const testCaseIds = map(testCases, (test) => { return test.id } )
-        this.testService.startHeadlessTestSessions(testCaseIds, this.specId, this.systemId, this.actorId)
+        this.testService.startHeadlessTestSessions(testCaseIds, this.specId, this.systemId, this.actorId, this.executionMode == this.executionModeSequential)
         .subscribe(() => {
           if (testCaseIds.length == 1) {
             this.popupService.success('Started test session.<br/>Check <b>Test Sessions</b> for progress.')
@@ -360,27 +450,24 @@ export class ConformanceStatementComponent implements OnInit {
   }
 
   onTestSelect(test: ConformanceTestCase) {
-    if (this.backgroundMode) {
-      this.executeHeadless([test])
-    } else {
+    if (this.executionMode == this.executionModeInteractive) {
       this.dataService.setTestsToExecute([test])
       this.routingService.toTestCaseExecution(this.organisationId, this.systemId, this.actorId, this.specId, test.id)
+    } else {
+      this.executeHeadless([test])
     }
   }
 
-  onTestSuiteSelect(testSuite?: ConformanceTestSuite) {
-    if (testSuite == undefined) {
-      testSuite = this.testSuites[0]
-    }
+  onTestSuiteSelect(testSuite: ConformanceTestSuite) {
     const testsToExecute: ConformanceTestCase[] = []
     for (let testCase of testSuite.testCases) {
       testsToExecute.push(testCase)
     }
-    if (this.backgroundMode) {
-      this.executeHeadless(testsToExecute)
-    } else {
+    if (this.executionMode == this.executionModeInteractive) {
       this.dataService.setTestsToExecute(testsToExecute)
       this.routingService.toTestSuiteExecution(this.organisationId, this.systemId, this.actorId, this.specId, testSuite.id)
+    } else {
+      this.executeHeadless(testsToExecute)
     }
   }
 

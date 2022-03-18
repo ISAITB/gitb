@@ -1,175 +1,149 @@
 <div class="child col-md-12">
-    <div class="page conformance">
-        <div class="panel panel-default">
+    <div class="page">
+        <div class="panel panel-default test-case-list-table">
             <div class="panel-heading">
-                <h4 class="title">Test cases to execute</h4>
-                <div class="btn-toolbar pull-right">
-                    <button type="button" class="btn btn-primary" (click)="nextStep()" *ngIf="wizardStep == 2">Next</button>
-                    <button type="button" class="btn btn-primary" *ngIf="wizardStep == 3 && !started && !startAutomatically && reload" (click)="reinitialise()">Reset</button>
-                    <button type="button" class="btn btn-primary" *ngIf="wizardStep == 3 && firstTestStarted && !reload && testsToExecute.length > 1" (click)="stopAll()">Stop All</button>
-                    <button type="button" class="btn btn-primary" *ngIf="wizardStep == 3 && testsToExecute.length == 1 && !started && !startAutomatically && !reload" (click)="start(session!)">Start</button>
-                    <button type="button" class="btn btn-primary" *ngIf="wizardStep == 3 && testsToExecute.length == 1 && started" (click)="stop(session!)">Stop</button>
-                </div>
-            </div>
-            <div class="panel-body">
-                <div class="test-case-list-table">
-                    <table class="table test-case-table">
-                        <thead>
-                            <tr>
-                                <th width="10%">Name</th>
-                                <th>Description</th>
-                                <th class="td-doc" *ngIf="documentationExists" width="1%"></th>
-                                <th class="td-centered" width="1%">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr *ngFor="let testCase of testsToExecute" (click)="viewTestCase(testCase)" [ngClass]="tableRowClass(testCase)">
-                                <td>{{testCase.sname}}</td>
-                                <td>{{testCase.description}}</td>
-                                <td class="td-doc" *ngIf="documentationExists"><button *ngIf="testCase.hasDocumentation" type="button" class="btn btn-primary" (click)="showTestCaseDocumentation(testCase.id)"><i class="fa fa-info-circle"></i></button></td>
-                                <td class="td-centered"><i class="fa testsuite-progress-icon" style="vertical-align:middle" [ngClass]="progressIcon(testCase.id)"></i></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-                <ng-container [ngSwitch]="wizardStep">
-                    <div *ngSwitchCase="1">
-                        <div class="panel panel-default" *ngIf="showOrganisationProperties">
-                            <div class="panel-heading">
-                                <h5 class="title">Missing organisation properties</h5>
-                                <div class="pull-right">
-                                    <button type="button" class="btn btn-default" (click)="toOrganisationProperties()">View</button>
-                                </div>
-                            </div>
-                            <app-parameter-display 
-                                [parameters]="organisationProperties!" 
-                                [onlyMissing]="true" 
-                                [showValues]="false" 
-                                [editable]="false"
-                                [parameterLabel]="'Property'"></app-parameter-display>
-                        </div>
-                        <div class="panel panel-default" *ngIf="showSystemProperties">
-                            <div class="panel-heading">
-                                <h5 class="title">Missing system properties</h5>
-                                <div class="pull-right">
-                                    <button type="button" class="btn btn-default" (click)="toSystemProperties()">View</button>
-                                </div>
-                            </div>
-                            <app-parameter-display 
-                                [parameters]="systemProperties!" 
-                                [onlyMissing]="true" 
-                                [showValues]="false" 
-                                [editable]="false"
-                                [parameterLabel]="'Property'"></app-parameter-display>
-                        </div>
-                        <div class="panel panel-default" *ngIf="showStatementProperties">
-                            <div class="panel-heading">
-                                <h5 class="title">Missing conformance statement parameters</h5>
-                                <div class="pull-right">
-                                    <button type="button" class="btn btn-default" (click)="toConfigurationProperties()">View</button>
-                                </div>
-                            </div>
-                            <app-parameter-display 
-                                [parameters]="endpointRepresentations![0].parameters"
-                                [onlyMissing]="true" 
-                                [showValues]="false" 
-                                [editable]="false"></app-parameter-display>
-                        </div>
-                        <div *ngIf="!somethingIsVisible && requiredPropertiesAreHidden">
-                            <div class="bg-info div-rounded div-padded">
-                                <span>Certain configuration must be completed for you by an administrator before you can proceed with testing.</span>
-                            </div>                    
-                        </div>
-                        <div *ngIf="somethingIsVisible && requiredPropertiesAreHidden">
-                            <div class="bg-info div-rounded div-padded">
-                                <span><b>Note: </b></span><span>Certain additional configuration must be completed for you by an administrator before you can proceed with testing.</span>
-                            </div>                    
-                        </div>
-                    </div>
-                    <div *ngSwitchCase="2" class="panel panel-default">
-                        <div class="panel-heading no-top-bottom-padding">
-                            <div class="session-execution-info">
-                                <div class="session-table-title">
-                                    <div class="session-table-title-part">
-                                        <div class="session-table-title-label">Test case</div>
-                                        <div class="session-table-title-value">{{currentTest?.sname}}</div>
-                                    </div>
-                                    <div class="session-table-title-part">
-                                        <div class="session-table-title-label">Session</div>
-                                        <div class="session-table-title-value">{{currentTest?.sessionId}}</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="panel-body">
-                            <div *ngFor="let simulatedConfig of simulatedConfigs">
-                                <p>Simulated configurations for {{getActorName(simulatedConfig.actor)}}</p>
-                                <ul *ngFor="let config of simulatedConfig.configs">
-                                    <li><label>{{getActorName(config.actor)}}</label>
-                                        <ul *ngFor="let parameter of config.config">
-                                            <li>
-                                                <span>{{parameter.name}}:</span>
-                                                <ng-container [ngSwitch]="dataService.isDataURL(parameter.value)">
-                                                    <span *ngSwitchCase="true" class="tab"><a href (click)="download(parameter);$event.preventDefault();">Download</a></span>
-                                                    <span *ngSwitchCase="false" class="tab">{{parameter.value}}</span>
-                                                </ng-container>
-                                            </li>
-                                        </ul>
-                                    </li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                    <ng-container *ngSwitchCase="3">
-                        <div *ngFor="let test of testsToExecute" [class.no-display]="test.id != visibleTest!.id">
-                            <div class="panel panel-default select-execution">
-                                <div class="panel-heading no-top-bottom-padding">
-                                    <div class="session-execution-info">
-                                        <div class="session-table-title">
-                                            <div class="session-table-title-part">
-                                                <div class="session-table-title-label">Test case</div>
-                                                <div class="session-table-title-value">{{test.sname}}</div>
-                                            </div>
-                                            <div class="session-table-title-part">
-                                                <div class="session-table-title-label">Session</div>
-                                                <div class="session-table-title-value"><app-copy-enabled-text [value]="test.sessionId"></app-copy-enabled-text></div>
-                                            </div>
-                                        </div>
-                                        <div class="session-table-operations btn-toolbar">
-                                            <button type="button" class="btn btn-primary" *ngIf="testsToExecute.length > 1 && !started && !startAutomatically && !reload" (click)="start(session!)">Start</button>
-                                            <button type="button" class="btn btn-primary" *ngIf="testsToExecute.length > 1 && started && test.id == currentTest!.id" (click)="stop(session!)">Stop</button>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="panel-body" style="overflow-x: auto; overflow-y: hidden;">
-                                    <div>
-                                        <div class="child">
-                                            <app-sequence-diagram 
-                                                [stepsOfTests]="stepsOfTests"
-                                                [test]="test.id+''"
-                                                [actorInfoOfTests]="actorInfoOfTests"
-                                                [events]="testEvents[test.id]">
-                                            </app-sequence-diagram>
-                                            <div class="test-output-container" *ngIf="testCaseOutput[test.id]">
-                                                <alert [type]="alertTypeForStatus(testCaseStatus[test.id])" [dismissible]="false">{{testCaseOutput[test.id]}}</alert>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </ng-container>
-                    <div *ngSwitchDefault>
-                        <app-pending-block [pending]="true" [icon]="true"></app-pending-block>
-                    </div>
-                </ng-container>
-            </div>
-            <div class="panel-footer">
+                <h4 class="title">Test execution</h4>
                 <div class="btn-toolbar">
                     <button type="button" class="btn btn-default" (click)="back()">Back</button>
-                    <button type="button" class="btn btn-default" (click)="viewLog()" *ngIf="wizardStep > 1 && visibleTest != undefined">View log</button>
+                    <ng-container *ngIf="testsToExecute.length > 0">
+                        <ng-container *ngIf="testsToExecute.length > 1">
+                            <div class="btn-group" dropdown>
+                                <button id="button-completed" dropdownToggle type="button" class="btn btn-default dropdown-toggle" aria-controls="dropdown-completed">{{showCompletedLabel}}<span class="caret"></span></button>
+                                <ul id="dropdown-stopType" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-completed">
+                                    <li role="menuitem"><a class="dropdown-item" href (click)="showCompleted = false; showCompletedLabel = showCompletedLabelOff; updateTestCaseVisibility(); $event.preventDefault()">{{showCompletedLabelOff}}</a></li>
+                                    <li role="menuitem"><a class="dropdown-item" href (click)="showCompleted = true; showCompletedLabel = showCompletedLabelOn; updateTestCaseVisibility(); $event.preventDefault()">{{showCompletedLabelOn}}</a></li>
+                                </ul>
+                            </div>
+                            <div class="btn-group" dropdown>
+                                <button id="button-pending" dropdownToggle type="button" class="btn btn-default dropdown-toggle" aria-controls="dropdown-pending">{{showPendingLabel}}<span class="caret"></span></button>
+                                <ul id="dropdown-stopType" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-pending">
+                                    <li role="menuitem"><a class="dropdown-item" href (click)="showPending = false; showPendingLabel = showPendingLabelOff; updateTestCaseVisibility(); $event.preventDefault()">{{showPendingLabelOff}}</a></li>
+                                    <li role="menuitem"><a class="dropdown-item" href (click)="showPending = true; showPendingLabel = showPendingLabelOn; updateTestCaseVisibility(); $event.preventDefault()">{{showPendingLabelOn}}</a></li>
+                                </ul>
+                            </div>
+                            <div class="btn-group" dropdown>
+                                <button id="button-automatic" dropdownToggle type="button" class="btn btn-default dropdown-toggle" aria-controls="dropdown-automatic">{{startAutomaticallyLabel}}<span class="caret"></span></button>
+                                <ul id="dropdown-stopType" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-automatic">
+                                    <li role="menuitem"><a class="dropdown-item" href (click)="startAutomatically = false; startAutomaticallyLabel = startAutomaticallyLabelOff; $event.preventDefault()">{{startAutomaticallyLabelOff}}</a></li>
+                                    <li role="menuitem"><a class="dropdown-item" href (click)="startAutomatically = true; startAutomaticallyLabel = startAutomaticallyLabelOn; $event.preventDefault()">{{startAutomaticallyLabelOn}}</a></li>
+                                </ul>
+                            </div>                            
+                        </ng-container>
+                        <ng-container *ngIf="testsToExecute.length > 1 && firstTestStarted && !reload">
+                            <div class="btn-group" dropdown>
+                                <button id="button-stop" dropdownToggle type="button" class="btn btn-primary dropdown-toggle" aria-controls="dropdown-stop">Stop<span class="caret"></span></button>
+                                <ul id="dropdown-stopType" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-stop">
+                                    <li role="menuitem" [class.disabled]="!started || stopped"><a class="dropdown-item" href (click)="stop(session!); $event.preventDefault()">Stop current test</a></li>
+                                    <li role="menuitem"><a class="dropdown-item" href (click)="stopAll(); $event.preventDefault()">Stop all tests</a></li>
+                                </ul>
+                            </div>
+                        </ng-container>
+                        <button type="button" class="btn btn-primary" *ngIf="testsToExecute.length == 1 && started && !stopped && !reload" (click)="stop(session!)">Stop</button>
+                        <button *ngIf="nextWaitingToStart" type="button" class="btn btn-primary" (click)="start(session!)">Start</button>
+                        <button type="button" class="btn btn-primary" *ngIf="reload" (click)="reinitialise()">Reset</button>
+                    </ng-container>
                 </div>
             </div>
+            <ng-container [ngSwitch]="configCheckStatus.status == Constants.STATUS.FINISHED">
+                <ng-container *ngSwitchCase="true" [ngSwitch]="!statementConfigurationValid || !systemConfigurationValid || !organisationConfigurationValid">
+                    <div *ngSwitchCase="true" class="missingConfigurationDiv">
+                        <app-missing-configuration-display 
+                            [organisationProperties]="organisationProperties"
+                            [organisationConfigurationValid]="organisationConfigurationValid"
+                            [systemProperties]="systemProperties"
+                            [systemConfigurationValid]="systemConfigurationValid"
+                            [statementProperties]="statementProperties"
+                            [configurationValid]="statementConfigurationValid"
+                            (action)="handleMissingConfigurationAction($event)"
+                        ></app-missing-configuration-display>
+                    </div>
+                    <div *ngSwitchDefault [ngSwitch]="testCaseLoadStatus.status == Constants.STATUS.FINISHED" class="table-container">
+                        <table *ngSwitchCase="true" class="table table-directive expandable-table test-case-table">
+                            <thead>
+                                <tr>
+                                    <th>Test case</th>
+                                    <th>Description</th>
+                                    <th class="td-doc" *ngIf="documentationExists" width="1%"></th>
+                                    <th class="td-centered" width="1%">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <ng-container *ngFor="let testCase of testsToExecute">
+                                    <tr (click)="viewTestCase(testCase)" 
+                                        [class.expandable-table-row-collapsed]="isTestCaseClickable(testCase)"
+                                        [class.no-display]="!testCaseVisible[testCase.id]">
+                                        <td><div class="testCaseName" [class.padded]="documentationExists">{{testCase.sname}}</div></td>
+                                        <td>{{testCase.description}}</td>
+                                        <td class="td-doc" *ngIf="documentationExists"><button *ngIf="testCase.hasDocumentation" type="button" class="btn btn-default" (click)="showTestCaseDocumentation(testCase.id); $event.stopPropagation()" containerClass="shortTooltip" tooltip="Documentation" [delay]="Constants.TOOLTIP_DELAY"><i class="fa fa-info-circle"></i></button></td>
+                                        <td class="td-centered"><i class="fa testsuite-progress-icon" style="vertical-align:middle" [ngClass]="progressIcon(testCase.id)"></i></td>
+                                    </tr>
+                                    <tr class="expandable-table-row-expanded" [class.no-display]="!testCaseVisible[testCase.id]">
+                                        <td [attr.colspan]="columnCount" class="expandable-table-expandable-cell-no-spacings">
+                                            <table width="100%" style="table-layout:fixed;">
+                                                <tr class="tr-expandable-inner">
+                                                    <td>
+                                                        <div [collapse]="!testCaseExpanded[testCase.id]" [isAnimated]="true">
+                                                            <div class="collapsing-div">
+                                                                <div class="panel panel-default">
+                                                                    <div class="panel-heading no-top-bottom-padding">
+                                                                        <div class="session-execution-info">
+                                                                            <div class="session-table-title">
+                                                                                <div class="session-table-title-part" *ngIf="testsToExecute.length > 1">
+                                                                                    <div class="session-table-title-label">Test</div>
+                                                                                    <div class="session-table-title-value">{{testCaseCounter[testCase.id] + ' of ' + testsToExecute.length}}</div>
+                                                                                </div>
+                                                                                <div class="session-table-title-part">
+                                                                                    <div class="session-table-title-label">Session</div>
+                                                                                    <div class="session-table-title-value">
+                                                                                        <ng-container [ngSwitch]="testCase.sessionId != undefined">
+                                                                                            <app-copy-enabled-text *ngSwitchCase="true" [value]="testCase.sessionId"></app-copy-enabled-text>
+                                                                                            <app-pending-block *ngSwitchDefault></app-pending-block>
+                                                                                        </ng-container>
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+                                                                            <div class="session-table-operations btn-toolbar" *ngIf="stepsOfTests[testCase.id] != undefined">
+                                                                                <div class="viewLogButton">
+                                                                                    <button type="button" class="btn btn-default" (click)="viewLog(testCase)">View log</button>
+                                                                                    <div class="unreadBadge" [class.hidden]="!unreadLogMessages[testCase.id]" (click)="viewLog(testCase)"></div>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="panel-body" style="overflow-x: auto; overflow-y: hidden;" [ngSwitch]="stepsOfTests[testCase.id] == undefined">
+                                                                        <app-pending-block *ngSwitchCase="true"></app-pending-block>
+                                                                        <div *ngSwitchDefault class="sessionDiagramDiv">
+                                                                            <app-sequence-diagram 
+                                                                                [stepsOfTests]="stepsOfTests"
+                                                                                [test]="testCase.id+''"
+                                                                                [actorInfoOfTests]="actorInfoOfTests"
+                                                                                [events]="testEvents[testCase.id]">
+                                                                            </app-sequence-diagram>
+                                                                            <div class="test-output-container" *ngIf="testCaseOutput[testCase.id]">
+                                                                                <alert [type]="alertTypeForStatus(testCaseStatus[testCase.id])" [dismissible]="false">{{testCaseOutput[testCase.id]}}</alert>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            </table>
+                                        </td>
+                                    </tr>
+                                </ng-container>
+                            </tbody>
+                        </table>
+                        <div *ngSwitchDefault class="pendingDiv">
+                            <app-pending-block></app-pending-block>
+                        </div>
+                    </div>
+                </ng-container>
+                <div *ngSwitchDefault class="pendingDiv">
+                    <app-pending-block></app-pending-block>
+                </div>
+            </ng-container>
         </div>
     </div>
 </div>

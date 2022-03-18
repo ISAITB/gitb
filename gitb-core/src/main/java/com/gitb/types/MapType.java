@@ -104,4 +104,15 @@ public class MapType extends ContainerType {
         type.setValue(str.toString());
         return type;
     }
+
+    public static MapType fromMap(Map<String, String> map) {
+        var mapType = new MapType();
+        if (map != null) {
+            for (var entry: map.entrySet()) {
+                mapType.addItem(entry.getKey(), new StringType(entry.getValue()));
+            }
+        }
+        return mapType;
+    }
+
 }

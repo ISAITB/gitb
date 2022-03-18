@@ -2,6 +2,7 @@ package filters
 
 import akka.stream.Materializer
 import com.gitb.utils.HmacUtils
+import config.Configurations
 import config.Configurations.API_ROOT
 import controllers.util.{Parameters, ResponseConstructor}
 import exceptions._
@@ -9,6 +10,7 @@ import exceptions._
 import javax.inject.Inject
 import org.slf4j.{Logger, LoggerFactory}
 import managers.AccountManager
+import models.Constants
 import persistence.cache.TokenCache
 import play.api.mvc._
 import play.mvc.Http.HeaderNames._
@@ -67,9 +69,27 @@ class AuthenticationFilter @Inject() (implicit ec: ExecutionContext, implicit va
               next(requestHeader)
             } else {
               //Requires authorization to execute this service
-              logger.warn("Request blocked due to missing user or HMAC authentication token ["+requestHeader.path+"]")
-              Future{
+              logger.warn("Request blocked due to missing user or HMAC authentication token [" + requestHeader.path + "]")
+              Future {
                 ResponseConstructor.constructUnauthorizedResponse(ErrorCodes.AUTHORIZATION_REQUIRED, "Needs authorization header")
+              }
+            }
+          } else if (isAutomationAccessAllowed(requestHeader)) {
+            if (Configurations.AUTOMATION_API_ENABLED) {
+              val apiKeyHeader = requestHeader.headers.get(Constants.AutomationHeader)
+              if (apiKeyHeader.isDefined) {
+                next(requestHeader)
+              } else {
+                //Requires authorization to execute this service
+                logger.warn("Request blocked due to missing API key header [" + requestHeader.path + "]")
+                Future {
+                  ResponseConstructor.constructUnauthorizedResponse(ErrorCodes.AUTHORIZATION_REQUIRED, "Needs API key header")
+                }
+              }
+            } else {
+              logger.warn("Request blocked because the Test Bed's automation API is disabled [" + requestHeader.path + "]")
+              Future {
+                ResponseConstructor.constructUnauthorizedResponse(ErrorCodes.UNAUTHORIZED_ACCESS, "Automation API not enabled")
               }
             }
           } else {
@@ -82,6 +102,10 @@ class AuthenticationFilter @Inject() (implicit ec: ExecutionContext, implicit va
         }
       }
     }
+  }
+
+  def isAutomationAccessAllowed(request:RequestHeader): Boolean = {
+    request.path.startsWith("/"+API_ROOT+"/rest/")
   }
 
   def isHmacAuthenticationAllowed(request:RequestHeader):Boolean = {

@@ -1,6 +1,5 @@
 package com.gitb.tbs.impl;
 
-import com.gitb.core.ActorConfiguration;
 import com.gitb.core.ErrorCode;
 import com.gitb.engine.TestCaseManager;
 import com.gitb.exceptions.GITBEngineInternalError;
@@ -60,12 +59,11 @@ public class TestbedServiceImpl implements TestbedService {
     }
 
     @Override
-    public InitiateResponse initiate(BasicRequest parameters) throws Error {
+    public InitiateResponse initiate(InitiateRequest parameters) throws Error {
         String sessionId = null;
         try {
-            String testCaseId = parameters.getTcId();
             //Call the real TestbedService
-            sessionId = com.gitb.engine.TestbedService.initiate(testCaseId);
+            sessionId = com.gitb.engine.TestbedService.initiate(parameters.getTcId(), parameters.getTcInstanceId());
             //Save the WSAddressing properties so we can use callbacks
             TestbedServiceCallbackHandler.
                     getInstance().
@@ -92,17 +90,13 @@ public class TestbedServiceImpl implements TestbedService {
     }
 
     @Override
-    public ConfigureResponse configure(ConfigureRequest parameters) throws Error {
+    public Void configure(ConfigureRequest parameters) throws Error {
         String sessionId = null;
         try {
             sessionId = parameters.getTcInstanceId();
-            List<ActorConfiguration> actorConfigurations = parameters.getConfigs();
-            //Call the real TestbedService
-            List<SUTConfiguration> simulatedActorsConfigurations = com.gitb.engine.TestbedService.configure(sessionId, actorConfigurations);
-            //Construct Response
-            ConfigureResponse response = new ConfigureResponse();
-            response.getConfigs().addAll(simulatedActorsConfigurations);
-            return response;
+            // Call the real TestbedService
+            com.gitb.engine.TestbedService.configure(sessionId, parameters.getConfigs(), parameters.getInputs());
+            return new Void();
         } catch (GITBEngineInternalError e) {
             logger.error(MarkerFactory.getDetachedMarker(sessionId), "An error occurred", e);
             throw new Error(e.getMessage(), e.getErrorInfo());

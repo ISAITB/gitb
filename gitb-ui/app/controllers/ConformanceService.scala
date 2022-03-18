@@ -14,7 +14,6 @@ import org.apache.commons.lang3.RandomStringUtils
 import org.slf4j.{Logger, LoggerFactory}
 import play.api.mvc._
 import utils._
-import utils.signature.SigUtils
 
 import java.io.File
 import java.nio.file.{Files, Paths}
@@ -23,6 +22,7 @@ import java.security.{KeyStore, NoSuchAlgorithmException}
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.util.Using
+import utils.signature.SigUtils
 
 class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAction: AuthorizedAction, cc: ControllerComponents, communityManager: CommunityManager, conformanceManager: ConformanceManager, accountManager: AccountManager, actorManager: ActorManager, testSuiteManager: TestSuiteManager, systemManager: SystemManager, testResultManager: TestResultManager, organizationManager: OrganizationManager, testCaseManager: TestCaseManager, endPointManager: EndPointManager, parameterManager: ParameterManager, authorizationManager: AuthorizationManager, communityLabelManager: CommunityLabelManager, repositoryUtils: RepositoryUtils) extends AbstractController(cc) {
   private final val logger: Logger = LoggerFactory.getLogger(classOf[ConformanceService])
@@ -59,34 +59,14 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
     }
   }
 
-  def getSpecsForSystem(systemId: Long) = authorizedAction { request =>
-    authorizationManager.canViewSpecificationsBySystemId(request, systemId)
-    val result = conformanceManager.getSpecificationsBySystem(systemId)
-    val json = JsonUtil.jsSpecifications(result).toString()
-    ResponseConstructor.constructJsonResponse(json)
-  }
-
-  def getActorsForSystem(systemId: Long) = authorizedAction { request =>
-    authorizationManager.canViewActorsBySystemId(request, systemId)
-    val result = conformanceManager.getActorsWithSpecificationIdBySystem(systemId)
-    val json = JsonUtil.jsActorsNonCase(result).toString()
-    ResponseConstructor.constructJsonResponse(json)
-  }
-
-  def getDomainsForSystem(systemId: Long) = authorizedAction { request =>
-    authorizationManager.canViewDomainsBySystemId(request, systemId)
-    val result = conformanceManager.getDomainsBySystem(systemId)
-    val json = JsonUtil.jsDomains(result).toString()
-    ResponseConstructor.constructJsonResponse(json)
-  }
-
   /**
    * Gets the list of specifications
    */
   def getSpecs = authorizedAction { request =>
-    val ids = ParameterExtractor.extractLongIdsQueryParameter(request)
+    val ids = ParameterExtractor.extractLongIdsBodyParameter(request)
+    val domainIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.DOMAIN_IDS)
     authorizationManager.canViewSpecifications(request, ids)
-    val result = conformanceManager.getSpecifications(ids)
+    val result = conformanceManager.getSpecifications(ids, domainIds)
     val json = JsonUtil.jsSpecifications(result).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
@@ -95,16 +75,29 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
    * Gets the list of specifications
    */
   def getActors = authorizedAction { request =>
-    val ids = ParameterExtractor.extractLongIdsQueryParameter(request)
+    val ids = ParameterExtractor.extractLongIdsBodyParameter(request)
     authorizationManager.canViewActors(request, ids)
-    val result = conformanceManager.getActorsWithSpecificationId(ids, None)
+    val specificationIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.SPEC_IDS)
+
+    val result = conformanceManager.getActorsWithSpecificationId(ids, specificationIds)
     val json = JsonUtil.jsActorsNonCase(result).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
 
-  def getActorsForDomain(domainId: Long) = authorizedAction { request =>
+  def searchActors() = authorizedAction { request =>
+    authorizationManager.canViewActors(request, None)
+    val domainIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.DOMAIN_IDS)
+    val specificationIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.SPEC_IDS)
+    val result = conformanceManager.searchActors(domainIds, specificationIds)
+    val json = JsonUtil.jsActorsNonCase(result).toString()
+    ResponseConstructor.constructJsonResponse(json)
+  }
+
+  def searchActorsInDomain() = authorizedAction { request =>
+    val domainId = ParameterExtractor.requiredBodyParameter(request, Parameters.DOMAIN_ID).toLong
     authorizationManager.canViewActorsByDomainId(request, domainId)
-    val result = conformanceManager.getActorsByDomainIdWithSpecificationId(domainId)
+    val specificationIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.SPEC_IDS)
+    val result = conformanceManager.searchActors(Some(List(domainId)), specificationIds)
     val json = JsonUtil.jsActorsNonCase(result).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
@@ -124,7 +117,7 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
    */
   def getSpecActors(spec_id: Long) = authorizedAction { request =>
     authorizationManager.canViewActorsBySpecificationId(request, spec_id)
-    val actors = conformanceManager.getActorsWithSpecificationId(None, Some(spec_id))
+    val actors = conformanceManager.getActorsWithSpecificationId(None, Some(List(spec_id)))
     val json = JsonUtil.jsActorsNonCase(actors).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
@@ -171,7 +164,8 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
       val labels = communityLabelManager.getLabels(request)
       ResponseConstructor.constructBadRequestResponse(500, communityLabelManager.getLabel(labels, LabelType.Actor)+" already exists for this ID in the " + communityLabelManager.getLabel(labels, LabelType.Specification, true, true)+".")
     } else {
-      conformanceManager.createActorWrapper(actor, specificationId)
+      val domainId = ParameterExtractor.requiredBodyParameter(request, Parameters.DOMAIN_ID).toLong
+      conformanceManager.createActorWrapper(actor.toCaseObject(CryptoUtil.generateApiKey(), domainId), specificationId)
       ResponseConstructor.constructEmptyResponse
     }
   }

@@ -29,8 +29,7 @@ import { CommunityTab } from './community-tab.enum';
 @Component({
   selector: 'app-community-details',
   templateUrl: './community-details.component.html',
-  styles: [
-  ]
+  styleUrls: ['./community-details.component.less']
 })
 export class CommunityDetailsComponent extends BaseComponent implements OnInit, AfterViewInit {
 
@@ -94,6 +93,17 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
   organisationSortColumn = 'shortname'
   isNextPageOrganisationsDisabled = false
   isPreviousPageOrganisationsDisabled = false
+
+  sortByCreationOrderNone = "none"
+  sortByCreationOrderAsc = "asc"
+  sortByCreationOrderDesc = "desc"
+  sortByCreationOrderLabelNone = "Sort by creation order"
+  sortByCreationOrderLabelAsc = "Earliest created first"
+  sortByCreationOrderLabelDesc = "Latest created first"
+  sortByCreationOrderLabel = this.sortByCreationOrderLabelNone
+  sortByCreationOrder = this.sortByCreationOrderNone
+
+  organisationsRefreshing = false
 
   constructor(
     public dataService: DataService,
@@ -176,19 +186,24 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
 
   showOrganisations() {
     if (this.organisationStatus.status == Constants.STATUS.NONE) {
-      this.organisationStatus.status = Constants.STATUS.PENDING
       this.goFirstPageOrganisations()
     }
   }
 
   private queryOrganisations() {
-    this.organisationService.searchOrganisationsByCommunity(this.communityId, this.organisationFilter, this.organisationSortOrder, this.organisationSortColumn, this.currentOrganisationsPage, Constants.TABLE_PAGE_SIZE)
+    if (this.organisationStatus.status == Constants.STATUS.FINISHED) {
+      this.organisationsRefreshing = true
+    } else {
+      this.organisationStatus.status = Constants.STATUS.PENDING
+    }
+    this.organisationService.searchOrganisationsByCommunity(this.communityId, this.organisationFilter, this.organisationSortOrder, this.organisationSortColumn, this.currentOrganisationsPage, Constants.TABLE_PAGE_SIZE, this.sortByCreationOrder)
     .subscribe((data) => {
         this.organizations = data.data
         this.organisationCount = data.count!
         this.updatePagination()
     })
     .add(() => {
+      this.organisationsRefreshing = false
       this.organisationStatus.status = Constants.STATUS.FINISHED
     })
 }
@@ -295,7 +310,7 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
 
   private updateCommunityInternal(descriptionToUse?: string) {
     this.savePending = true
-    this.communityService.updateCommunity(this.communityId, this.community.sname!, this.community.fname!, this.community.email, this.community.selfRegType!, this.community.selfRegRestriction!, this.community.selfRegToken, this.community.selfRegTokenHelpText, this.community.selfRegNotification, descriptionToUse, this.community.selfRegForceTemplateSelection, this.community.selfRegForceRequiredProperties, this.community.allowCertificateDownload!, this.community.allowStatementManagement!, this.community.allowSystemManagement!, this.community.allowPostTestOrganisationUpdates!, this.community.allowPostTestSystemUpdates!, this.community.allowPostTestStatementUpdates!, this.community.domainId)
+    this.communityService.updateCommunity(this.communityId, this.community.sname!, this.community.fname!, this.community.email, this.community.selfRegType!, this.community.selfRegRestriction!, this.community.selfRegToken, this.community.selfRegTokenHelpText, this.community.selfRegNotification, descriptionToUse, this.community.selfRegForceTemplateSelection, this.community.selfRegForceRequiredProperties, this.community.allowCertificateDownload!, this.community.allowStatementManagement!, this.community.allowSystemManagement!, this.community.allowPostTestOrganisationUpdates!, this.community.allowPostTestSystemUpdates!, this.community.allowPostTestStatementUpdates!, this.community.allowAutomationApi, this.community.domainId)
     .subscribe(() => {
       this.originalDomainId = this.community.domainId
       this.popupService.success('Community updated.')
@@ -459,6 +474,23 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
 
   applyOrganisationFilter() {
     this.goFirstPageOrganisations()
+  }
+
+  applyCreationOrderSort(type: string, label: string) {
+    this.sortByCreationOrderLabel = label
+    this.sortByCreationOrder = type
+    if (type == "none") {
+      for (let column of this.organizationColumns) {
+        if (column.field == "sname") column.order = "asc"
+        column.sortable = true
+      }
+    } else {
+      for (let column of this.organizationColumns) {
+        column.sortable = false
+        column.order = undefined
+      }
+    }
+    this.applyOrganisationFilter()
   }
 
 }

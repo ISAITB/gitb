@@ -8,6 +8,7 @@ import { Domain } from 'src/app/types/domain';
 import { BaseComponent } from '../../base-component.component';
 import { ExportSettings } from '../../../types/export-settings';
 import { PopupService } from 'src/app/services/popup.service';
+import { saveAs } from 'file-saver'
 
 @Component({
   selector: 'app-export',

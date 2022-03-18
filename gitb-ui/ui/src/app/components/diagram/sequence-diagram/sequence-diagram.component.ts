@@ -1,7 +1,7 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { ActorInfo } from '../actor-info';
 import { StepData } from '../step-data';
-import { filter, find, map, flatten, uniq, forEach, indexOf, minBy, maxBy } from 'lodash'
+import { filter, find, map, flatten, uniq, forEach, indexOf, minBy, maxBy, sortBy } from 'lodash'
 import { Constants } from 'src/app/common/constants';
 import { DiagramEvents } from '../diagram-events';
 
@@ -19,6 +19,7 @@ export class SequenceDiagramComponent implements OnInit {
   @Input() events!: DiagramEvents
 
   actorInfo?: ActorInfo[]
+  sutActor?: ActorInfo
   actors: string[] = []
   messages: StepData[] = []
 
@@ -38,8 +39,12 @@ export class SequenceDiagramComponent implements OnInit {
   }
 
   updateState() {
+    this.sutActor = this.getSutActor(this.actorInfoOfTests[this.test])
     let steps = this.stepsOfTests[this.test]
-    this.actorInfo = this.actorInfoOfTests[this.test]
+    this.actorInfo = this.actorInfoOfTests[this.test].concat([
+      {id: Constants.TEST_ENGINE_ACTOR_ID, name: Constants.TEST_ENGINE_ACTOR_NAME},
+      {id: Constants.TESTER_ACTOR_ID, name: this.getTesterActorName()}
+    ])
     if (steps != undefined) {
       this.messages = this.extractSteps(steps, this.actorInfo)
       this.actors = this.extractActors(this.messages, this.actorInfo)
@@ -62,8 +67,8 @@ export class SequenceDiagramComponent implements OnInit {
   processStep(step: StepData, actorInfo: ActorInfo[]) {
     step.level = (step.id.split('.')).length
     if (step.type == 'verify' || step.type == 'process' || step.type == 'exit') {
-      step.from = Constants.TEST_ENGINE_ACTOR
-      step.to = Constants.TEST_ENGINE_ACTOR
+      step.from = Constants.TEST_ENGINE_ACTOR_ID
+      step.to = Constants.TEST_ENGINE_ACTOR_ID
     } else if (step.type == 'group') {
       step.steps = this.extractSteps(step.steps, actorInfo)
     } else if (step.type == 'loop') {
@@ -83,17 +88,26 @@ export class SequenceDiagramComponent implements OnInit {
         this.extractSteps(thread, actorInfo)
       }
     } else if (step.type == 'interact') {
-      for (let interaction of step.interactions!) {
-        if (interaction.type == 'request') {
-          interaction.from = this.getTesterNameForActor(interaction.with, actorInfo)
-          interaction.to = Constants.TEST_ENGINE_ACTOR
-        } else {
-          interaction.from = this.getTesterNameForActor(interaction.with, actorInfo)
-          interaction.to = this.getSutActorIfMissing(interaction.with, actorInfo)
-        }
+      if (this.hasRequests(step.interactions)) {
+        step.from = Constants.TESTER_ACTOR_ID
+        step.to = Constants.TEST_ENGINE_ACTOR_ID
+      } else {
+        step.from = Constants.TEST_ENGINE_ACTOR_ID
+        step.to = Constants.TESTER_ACTOR_ID
       }
     }
     return step
+  }
+
+  private hasRequests(interactions?: StepData[]) {
+    if (interactions) {
+      for (let interaction of interactions) {
+        if (interaction.type == 'request') {
+          return true
+        }
+      }
+    }
+    return false
   }
 
   extractSteps(s: StepData[]|undefined, actorInfo: ActorInfo[]) {
@@ -107,31 +121,21 @@ export class SequenceDiagramComponent implements OnInit {
     return results
   }
 
-  getSutActorIfMissing(actor: string|undefined, actorInfo: ActorInfo[]) {
-    let result = actor
-    if (result == undefined) {
-      let sutActor = find(actorInfo, (a) =>
-        a.role == 'SUT'
-      )
-      result = sutActor!.id
-    }
-    return result
-  }
-
-  getTesterNameForActor(actor: string|undefined, actorInfo: ActorInfo[]) {
-    let actorId = this.getSutActorIfMissing(actor, actorInfo)
-    let actorName = actorId + ' - ' + Constants.TESTER_ACTOR
-    for (let info of actorInfo) {
-      if (actor == info.id) {
-        if (info.name != undefined) {
-          actorName = info.name + ' - ' + Constants.TESTER_ACTOR
-        } else {
-          actorName = info.id + ' - ' + Constants.TESTER_ACTOR
-        }
-        break
+  getSutActor(actorInfo: ActorInfo[]) {
+    for (let actor of actorInfo) {
+      if (actor.role == 'SUT') {
+        return actor
       }
     }
-    return actorName
+    throw Error("Test case without SUT actor")
+  }
+
+  getTesterActorName() {
+    if (this.sutActor?.name != undefined) {
+      return this.sutActor?.name + ' - ' + Constants.TESTER_ACTOR_NAME
+    } else {
+      return this.sutActor?.id + ' - ' + Constants.TESTER_ACTOR_NAME
+    }
   }
 
   extractActors(messages: StepData[]|undefined, actorInfo: ActorInfo[]) {
@@ -145,7 +149,9 @@ export class SequenceDiagramComponent implements OnInit {
     } else {
       actorsToReturn = actors
     }
-    return this.moveTestEngineToTheEnd(actorsToReturn)
+    actorsToReturn = this.moveActorToTheEnd(actorsToReturn, Constants.TESTER_ACTOR_ID)
+    actorsToReturn = this.moveActorToTheEnd(actorsToReturn, Constants.TEST_ENGINE_ACTOR_ID)
+    return actorsToReturn
   }
 
   extractActorsInternal(messages: StepData[]|undefined, actorInfo: ActorInfo[]): string[] {
@@ -170,12 +176,10 @@ export class SequenceDiagramComponent implements OnInit {
           }
           return threadData
         } else if (message.type == 'exit') {
-          return [Constants.TEST_ENGINE_ACTOR, Constants.TEST_ENGINE_ACTOR]
+          return [Constants.TEST_ENGINE_ACTOR_ID, Constants.TEST_ENGINE_ACTOR_ID]
         } else if (message.type == 'interact') {
-          let instructions = filter(message.interactions, (interaction) => interaction.type == 'instruction')
-          let requests = filter(message.interactions, (interaction) => interaction.type == 'request')
-          let instructionActors = map(instructions, (instruction) => { return [this.getTesterNameForActor(instruction.with, actorInfo), this.getSutActorIfMissing(instruction.with, actorInfo)] })
-          let requestActors = map(requests, (request) => { return [this.getTesterNameForActor(request.with, actorInfo), Constants.TEST_ENGINE_ACTOR] })
+          let instructionActors = [Constants.TEST_ENGINE_ACTOR_ID, Constants.TESTER_ACTOR_ID]
+          let requestActors = [Constants.TESTER_ACTOR_ID, Constants.TEST_ENGINE_ACTOR_ID]
           return flatten(instructionActors.concat(requestActors))
         } else {
           return []
@@ -186,41 +190,36 @@ export class SequenceDiagramComponent implements OnInit {
     }
   }
 
-  moveTestEngineToTheEnd(actors: string[]) {
-    let testEngineIndex = actors.indexOf(Constants.TEST_ENGINE_ACTOR)
+  moveActorToTheEnd(actors: string[], actorId: string) {
+    let testEngineIndex = actors.indexOf(actorId)
     if (testEngineIndex != -1) {
       actors.splice(testEngineIndex, 1)
-      actors.push(Constants.TEST_ENGINE_ACTOR)
+      actors.push(actorId)
     }
     return actors
   }
 
   sortActors(actors: string[], actorInfo: ActorInfo[]) {
-    let sortedArray: (string|undefined)[] = []
-    for (let actor of actors) {
-      let actorDef = find(actorInfo, (actorDef) => { return actor == actorDef.id })
-      if (actorDef != undefined) {
-        sortedArray.push(undefined)
+    let actorsWithOrder = map(actors, (actorId) => {
+      const match = find(actorInfo, (info) => {
+        return info.id == actorId
+      })
+      if (match == undefined || match.displayOrder == undefined) {
+        return { id: actorId }
       } else {
-        sortedArray.push(actor)
+        return { id: actorId, order: match.displayOrder }
       }
-    }
-    for (let actor of actorInfo) {
-      for (let sortedIndex = 0; sortedIndex < sortedArray.length; sortedIndex++) {
-        let sortedActor = sortedArray[sortedIndex]
-        if (sortedActor == undefined) {
-          sortedArray[sortedIndex] = actor.id
-          break
-        }
-      }
-    }
-    return sortedArray as string[]
+    })
+    const sortedArray = sortBy(actorsWithOrder, ['order'])
+    return map(sortedArray, (item) => {
+      return item.id
+    })
   }
 
   setStepIndexes(this: SequenceDiagramComponent, messages: StepData[]) {
     forEach(messages, (message, i) => {
       message.order = i
-      if (message.type == 'verify' || message.type == 'process' || message.type == 'msg' || message.type == 'exit') {
+      if (message.type == 'verify' || message.type == 'process' || message.type == 'msg' || message.type == 'exit' || message.type == 'interact') {
         this.setIndexes(message)
       } else if (message.type == 'group') {
         this.setGroupStepChildIndexes(message)
@@ -230,8 +229,6 @@ export class SequenceDiagramComponent implements OnInit {
         this.setDecisionStepChildIndexes(message)
       } else if (message.type == 'flow') {
         this.setFlowStepChildIndexes(message)
-      } else if (message.type == 'interact') {
-        this.setInteractionStepChildIndexes(message)
       }
     })
   }
@@ -242,14 +239,28 @@ export class SequenceDiagramComponent implements OnInit {
     message.span = Math.abs(message.fromIndex - message.toIndex)
   }
 
+  private isRightToLeft(step: StepData) {
+    return step.fromIndex! > step.toIndex!
+  }
+
   private setMessageSpan(message: StepData, firstChild: StepData, lastChild: StepData, extend: boolean) {
-    message.from = firstChild.from
-    message.to = lastChild.to
-    message.fromIndex = firstChild.fromIndex
-    message.toIndex = lastChild.toIndex
+    if (this.isRightToLeft(firstChild)) {
+      message.from = firstChild.to
+      message.fromIndex = firstChild.toIndex
+    } else {
+      message.from = firstChild.from
+      message.fromIndex = firstChild.fromIndex
+    }
+    if (this.isRightToLeft(lastChild)) {
+      message.to = lastChild.from
+      message.toIndex = lastChild.fromIndex
+    } else {
+      message.to = lastChild.to
+      message.toIndex = lastChild.toIndex
+    }
     let span = Math.abs(message.fromIndex! - message.toIndex!)
     if (extend) {
-      if (message.from == Constants.TEST_ENGINE_ACTOR || message.to == Constants.TEST_ENGINE_ACTOR) {
+      if (message.from == Constants.TEST_ENGINE_ACTOR_ID || message.to == Constants.TEST_ENGINE_ACTOR_ID) {
         // Extend the span because we may have here validation or processing with a message and a report.
         span += 1
       }
@@ -260,10 +271,28 @@ export class SequenceDiagramComponent implements OnInit {
     message.span = span
   }
 
+  private leftMostStepActorIndex(step: StepData) {
+    if (this.isRightToLeft(step)) {
+      // Right-to-left message
+      return step.toIndex!
+    } else {
+      return step.fromIndex!
+    }
+  }
+
+  private rightMostStepActorIndex(step: StepData) {
+    if (this.isRightToLeft(step)) {
+      // Right-to-left message
+      return step.fromIndex!
+    } else {
+      return step.toIndex!
+    }
+  }
+
   setLoopStepChildIndexes(message: StepData) {
     this.setStepIndexes(message.steps)
-    let firstChild = minBy(message.steps, (childStep) => { return childStep.fromIndex })
-    let lastChild = maxBy(message.steps, (childStep) => { return childStep.toIndex })
+    let firstChild = minBy(message.steps, this.leftMostStepActorIndex.bind(this))
+    let lastChild = maxBy(message.steps, this.rightMostStepActorIndex.bind(this))
     this.setMessageSpan(message, firstChild!, lastChild!, true)
     if (message.sequences != undefined) {
       for (let sequence of message.sequences) {
@@ -275,8 +304,8 @@ export class SequenceDiagramComponent implements OnInit {
   setGroupStepChildIndexes(message: StepData) {
     let childSteps = message.steps
     this.setStepIndexes(childSteps)
-    let firstChild = minBy(childSteps, (childStep) => {return childStep.fromIndex})
-    let lastChild = maxBy(childSteps, (childStep) => {return childStep.toIndex})
+    let firstChild = minBy(childSteps, this.leftMostStepActorIndex.bind(this))
+    let lastChild = maxBy(childSteps, this.rightMostStepActorIndex.bind(this))
     this.setMessageSpan(message, firstChild!, lastChild!, true)
   }
 
@@ -286,23 +315,16 @@ export class SequenceDiagramComponent implements OnInit {
       childSteps = childSteps.concat(message.else)
     }
     this.setStepIndexes(childSteps)
-    let firstChild = minBy(childSteps, (childStep) => {return childStep.fromIndex})
-    let lastChild = maxBy(childSteps, (childStep) => {return childStep.toIndex})
+    let firstChild = minBy(childSteps, this.leftMostStepActorIndex.bind(this))
+    let lastChild = maxBy(childSteps, this.rightMostStepActorIndex.bind(this))
     this.setMessageSpan(message, firstChild!, lastChild!, true)
   }
 
   setFlowStepChildIndexes(message: StepData) {
     forEach(message.threads, this.setStepIndexes.bind(this))
-    let firstChild = minBy(flatten(message.threads), (childStep) => {return childStep.fromIndex})
-    let lastChild = maxBy(flatten(message.threads), (childStep) => { return childStep.toIndex})
+    let firstChild = minBy(flatten(message.threads), this.leftMostStepActorIndex.bind(this))
+    let lastChild = maxBy(flatten(message.threads), this.rightMostStepActorIndex.bind(this))
     this.setMessageSpan(message, firstChild!, lastChild!, true)
-  }
-
-  setInteractionStepChildIndexes(message: StepData) {
-    forEach(message.interactions, this.setIndexes.bind(this))
-    let firstChild = minBy(message.interactions, (interaction) => {return Math.min(interaction.fromIndex!, interaction.toIndex!)})
-    let lastChild = maxBy(message.interactions, (interaction) => {return Math.max(interaction.fromIndex!, interaction.toIndex!)})
-    this.setMessageSpan(message, firstChild!, lastChild!, false)
   }
 
 }

@@ -1,13 +1,13 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { TableColumnDefinition } from 'src/app/types/table-column-definition.type';
-import { isBoolean, map } from 'lodash'
+import { isBoolean } from 'lodash'
 import { TableColumnData } from 'src/app/types/table-column-data.type';
+import { Constants } from 'src/app/common/constants';
 
 @Component({
   selector: '[table-row-directive]',
   templateUrl: './table-row.component.html',
-  styles: [
-  ]
+  styles: [ 'div.btn-toolbar {display: flex; flex-wrap: nowrap; justify-content: right;}' ]
 })
 export class TableRowComponent implements OnInit {
 
@@ -25,18 +25,24 @@ export class TableRowComponent implements OnInit {
   @Input() deleteVisibleForRow?: (row: any) => boolean
   @Input() deletePendingProperty = 'deletePending'
   @Input() actionIcon = ''
+  @Input() actionTooltip = ''
+  @Input() deleteTooltip = 'Delete'
+  @Input() exportTooltip = 'Export'
 
   @Output() onAction: EventEmitter<any> = new EventEmitter()
   @Output() onExport: EventEmitter<any> = new EventEmitter()
   @Output() onCheck: EventEmitter<any> = new EventEmitter()
   @Output() onDelete: EventEmitter<any> = new EventEmitter()
 
-  columnDataItems: TableColumnData[] = []
+  Constants = Constants
+
+  columnDataItemsAtLeft: TableColumnData[] = []
+  columnDataItemsAtRight: TableColumnData[] = []
 
   constructor() { }
 
   ngOnInit(): void {
-    this.columnDataItems = map(this.columns, (column) => {
+    for (let column of this.columns) {
       let columnDataItem: TableColumnData = {
         data: this.data[column.field],
         boolean: isBoolean(this.data[column.field]),
@@ -47,8 +53,12 @@ export class TableRowComponent implements OnInit {
       } else {
         columnDataItem.class = 'tb-'+column.title.toLowerCase().replace(' ', '-')
       }
-      return columnDataItem
-    })
+      if (column.atEnd) {
+        this.columnDataItemsAtRight.push(columnDataItem)
+      } else {
+        this.columnDataItemsAtLeft.push(columnDataItem)
+      }
+    }
   }
 
   delete() {
@@ -69,7 +79,7 @@ export class TableRowComponent implements OnInit {
 
   iconForAction(index: number): string {
     if (this.columns[index].iconFn !== undefined) {
-      return this.columns[index].iconFn!(this.columnDataItems[index])
+      return this.columns[index].iconFn!(this.columnDataItemsAtLeft[index])
     } else {
       return ''
     }

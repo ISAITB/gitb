@@ -12,12 +12,12 @@ import { TestSuiteService } from 'src/app/services/test-suite.service';
 import { TableColumnDefinition } from 'src/app/types/table-column-definition.type';
 import { TestCase } from 'src/app/types/test-case';
 import { TestSuiteWithTestCases } from 'src/app/types/test-suite-with-test-cases';
+import { saveAs } from 'file-saver'
 
 @Component({
   selector: 'app-test-suite-details',
   templateUrl: './test-suite-details.component.html',
-  styles: [
-  ]
+  styleUrls: [ './test-suite-details.component.less' ]
 })
 export class TestSuiteDetailsComponent extends BaseComponent implements OnInit, AfterViewInit {
 

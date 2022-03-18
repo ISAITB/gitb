@@ -142,6 +142,17 @@ class ReportService @Inject() (authorizedAction: AuthorizedAction, cc: Controlle
     ResponseConstructor.constructJsonResponse(json)
   }
 
+  def getTestResult(sessionId: String) = authorizedAction { request =>
+    authorizationManager.canViewTestResultForSession(request, sessionId)
+    val result = this.reportManager.getTestResult(sessionId)
+    if (result.isDefined) {
+      val json = JsonUtil.jsTestResultReport(result.get, None, None, None, None, withOutputMessage = true).toString()
+      ResponseConstructor.constructJsonResponse(json)
+    } else {
+      ResponseConstructor.constructEmptyResponse
+    }
+  }
+
   private def getPageOrDefault(_page: Option[String] = None) = _page match {
     case Some(p) => p.toLong
     case None => defaultPage
@@ -155,7 +166,7 @@ class ReportService @Inject() (authorizedAction: AuthorizedAction, cc: Controlle
   def getTestResultOfSession(sessionId: String) = authorizedAction { request =>
     authorizationManager.canViewTestResultForSession(request, sessionId)
     val response = reportManager.getTestResultOfSession(sessionId)
-    val json = JsonUtil.jsTestResult(response, withExtendedInformation = true).toString()
+    val json = JsonUtil.jsTestResult(response, withTpl = true, withOutputMessage = true).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
 

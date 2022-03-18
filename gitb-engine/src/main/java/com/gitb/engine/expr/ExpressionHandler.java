@@ -10,6 +10,7 @@ import com.gitb.tdl.Expression;
 import com.gitb.types.DataType;
 import com.gitb.types.DataTypeFactory;
 import com.gitb.utils.ErrorUtils;
+import com.gitb.utils.NamespaceContext;
 import com.sun.org.apache.xpath.internal.jaxp.XPathFactoryImpl;
 
 import javax.xml.xpath.XPath;
@@ -22,15 +23,15 @@ import javax.xml.xpath.XPathFactory;
  */
 public class ExpressionHandler{
     private final TestCaseScope scope;
-    private VariableResolver variableResolver;
-    private FunctionResolver functionResolver;
-    private NamespaceContext namespaceContext;
+    private final VariableResolver variableResolver;
+    private final FunctionResolver functionResolver;
+    private final NamespaceContext namespaceContext;
 
     public ExpressionHandler(TestCaseScope scope) {
         this.scope = scope;
         variableResolver = new VariableResolver(scope);
         functionResolver = new FunctionResolver(scope);
-        namespaceContext = new NamespaceContext(scope);
+        namespaceContext = new NamespaceContext(scope.getNamespaceDefinitions());
     }
 
     public DataType processExpression(Expression expression) {

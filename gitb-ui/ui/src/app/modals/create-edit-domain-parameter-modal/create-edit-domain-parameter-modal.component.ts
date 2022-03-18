@@ -9,6 +9,7 @@ import { cloneDeep } from 'lodash'
 import { BaseComponent } from 'src/app/pages/base-component.component';
 import { FileData } from 'src/app/types/file-data.type';
 import { ParameterFormData } from './parameter-form-data';
+import { saveAs } from 'file-saver'
 
 @Component({
   selector: 'app-create-edit-domain-parameter-modal',

@@ -1,169 +1,158 @@
 <div id="conformanceDetailPage" class="page conformance">
 	<div class="panel panel-default">
-		<div class="panel-heading">
+		<div class="panel-heading clickable" (click)="collapsedDetails = !collapsedDetails">
 			<h4 class="title">Conformance statement details</h4>
 		</div>
-		<div class="panel-body">
-			<div class="row row-display-first">
-				<div class="col-md-2"><strong>{{dataService.labelDomain()}}</strong></div>
-				<div class="col-md-10">{{domain?.fname}}</div>
-				<div class="col-md-10 col-md-offset-2 row-display-inner" *ngIf="domain?.description">{{domain?.description}}</div>
+		<div [collapse]="collapsedDetails" [isAnimated]="true">
+			<div class="panel-body">
+				<div class="row row-display-first">
+					<div class="col-md-2"><strong>{{dataService.labelDomain()}}</strong></div>
+					<div class="col-md-10">{{domain?.fname}}</div>
+					<div class="col-md-10 col-md-offset-2 row-display-inner" *ngIf="domain?.description">{{domain?.description}}</div>
+				</div>
+				<div class="row row-display">
+					<div class="col-md-2"><strong>{{dataService.labelSpecification()}}</strong></div>
+					<div class="col-md-10">{{specification?.fname}}</div>
+					<div class="col-md-10 col-md-offset-2 row-display-inner" *ngIf="specification?.description">{{specification?.description}}</div>
+				</div>
+				<div class="row row-display">
+					<div class="col-md-2"><strong>{{dataService.labelActor()}}</strong></div>
+					<div class="col-md-10">{{actor?.name}}</div>
+					<div class="col-md-10 col-md-offset-2 row-display-inner" *ngIf="actor?.description">{{actor?.description}}</div>
+				</div>
+				<div class="row row-display oneLineDiv" *ngIf="lastUpdate">
+					<div class="col-md-2"><strong>Last update</strong></div>
+					<div class="col-md-10"><span>{{lastUpdate}}</span></div>
+				</div>
+				<div class="row row-display oneLineDiv">
+					<div class="col-md-2"><strong>Test results</strong></div>
+					<div class="col-md-10"><app-test-status-icons *ngIf="statusCounters" [counters]="statusCounters" [centerAligned]="false"></app-test-status-icons></div>
+				</div>
+				<div class="row row-display-last oneLineDiv conformanceStatusDiv">
+					<div class="col-md-2"><strong>Status</strong></div>
+					<div class="col-md-10"><span><i [ngClass]="dataService.iconForTestResult(conformanceStatus)"></i></span></div>
+				</div>
 			</div>
-			<div class="row row-display">
-				<div class="col-md-2"><strong>{{dataService.labelSpecification()}}</strong></div>
-				<div class="col-md-10">{{specification?.fname}}</div>
-				<div class="col-md-10 col-md-offset-2 row-display-inner" *ngIf="specification?.description">{{specification?.description}}</div>
-			</div>
-			<div class="row row-display">
-				<div class="col-md-2"><strong>{{dataService.labelActor()}}</strong></div>
-				<div class="col-md-10">{{actor?.name}}</div>
-				<div class="col-md-10 col-md-offset-2 row-display-inner" *ngIf="actor?.description">{{actor?.description}}</div>
-			</div>
-			<div class="row row-display">
-				<div class="col-md-2"><strong>Updated</strong></div>
-				<div class="col-md-10"><span>{{lastUpdate}}</span></div>
-			</div>
-			<div class="row row-display">
-				<div class="col-md-2"><strong>Test results</strong></div>
-				<div class="col-md-10"><span>{{testStatus}}</span></div>
-			</div>
-			<div class="row row-display-last" style="display:flex; margin-bottom:-2px;">
-				<div class="col-md-2" style="display:inline-flex"><strong>Status</strong></div>
-				<div class="col-md-10" style="display:inline-flex; align-items: center; line-height:0px"><span><i [ngClass]="dataService.iconForTestResult(conformanceStatus)"></i></span></div>
+			<div class="panel-footer">
+				<div class="btn-toolbar">
+					<button *ngIf="canExportConformanceCertificate()" type="button" class="btn btn-default" (click)="onExportConformanceCertificate()" [pending]="exportCertificatePending" [disable]="exportCertificatePending">Download conformance certificate</button>
+					<button type="button" class="btn btn-default" (click)="onExportConformanceStatement()" [pending]="exportPending">Download report</button>
+					<button type="button" class="btn btn-default" *ngIf="canDelete()" (click)="deleteConformanceStatement()" [pending]="deletePending">Delete statement</button>
+				</div>
 			</div>
 		</div>
-        <div class="panel-footer">
-			<div class="btn-toolbar">
-				<button *ngIf="canExportConformanceCertificate()" type="button" class="btn btn-default" (click)="onExportConformanceCertificate()" [pending]="exportCertificatePending" [disable]="exportCertificatePending">Download conformance certificate</button>
-				<button type="button" class="btn btn-default" (click)="onExportConformanceStatement()" [pending]="exportPending">Download report</button>
-				<button type="button" class="btn btn-default" *ngIf="canDelete()" (click)="deleteConformanceStatement()" [pending]="deletePending">Delete statement</button>
-			</div>
-        </div>
 	</div>
-	<div class="panel panel-default" *ngIf="hasEndpoints">
-		<div class="panel-heading panel-heading-tests">
-			<h4 class="title">Configuration parameters</h4>
-            <div class="btn-toolbar pull-right" [ngClass]="{'padded': testSuites.length > 1}">
-                <app-toggle id="conformance-toggle-configuration" class="btn-group" name="conformanceToggleConfiguration" [(ngModel)]="endpointsExpanded" on="Visible" off="Hidden"></app-toggle>
-			</div>
-		</div>
-        <div [collapse]="!endpointsExpanded" [isAnimated]="true">
-            <div [ngClass]="{'list-group': hasMultipleEndpoints}">
-                <div class="endpoint" [ngClass]="{'list-group-item': hasMultipleEndpoints}" *ngFor="let endpoint of endpointRepresentations">
-                    <app-endpoint-display
-                        [endpoint]="endpoint"
-                        [hideEndpointInfo]="!hasMultipleEndpoints"
-                        [editable]="!dataService.isVendorUser"
-                        [canEdit]="canEditParameter"
-                        [showValues]="true"
-                        (edit)="onParameterSelect($event)"
-						            (download)="onParameterDownload($event)"
-                    ></app-endpoint-display>
-                </div>
-            </div>
-        </div>
-	</div>
-
-	<div class="panel panel-default" *ngIf="testSuites.length > 0">
-		<div class="panel-heading panel-heading-tests">
-			<h4 class="title">Conformance tests</h4>
-            <div class="btn-toolbar pull-right" [ngClass]="{'padded': testSuites.length > 1}">
-                <app-toggle id="conformance-toggle" class="btn-group" name="conformanceToggle" [(ngModel)]="backgroundMode" on="Background execution" off="Interactive execution" [width]="'185px'"></app-toggle>
-				<button type="button" [ngStyle]="{'margin-right':(testSuites.length == 1 && testSuites[0].testCases.length > 1)?'-3px':'8px'}" class="btn btn-primary" *ngIf="testSuites.length == 1 && testSuites[0].hasDocumentation" (click)="showTestSuiteDocumentation(testSuites[0].id)"><i class="fa fa-info-circle"></i></button>
-				<button type="button" class="btn btn-primary" *ngIf="testSuites.length == 1 && testSuites[0].testCases.length > 1" (click)="onTestSuiteSelect()"><i class="fa fa-play"></i></button>
-			</div>
-		</div>
-
-		<table id="conformance-statement-details" class="table table-directive" [ngClass]="{'expandable-table': (testSuites.length > 1),'padded-table': (testSuites.length == 1)}">
-			<thead>
-                <tr>
-                    <th style="white-space: nowrap;">{{testSuites.length == 1?"Test case":"Test suite"}}</th>
-                    <th>Description</th>
-					<th *ngIf="testSuites.length <= 1" class="th-min">Updated</th>
-                    <th *ngIf="testSuites.length <= 1" class="operations">Session</th>
-                    <th class="tb-result">Result</th>
-                    <th style="width:118px;"></th>
-                </tr>
-			</thead>
-			<tbody *ngIf="loadingStatus.status != Constants.STATUS.FINISHED">
-				<td colspan="6" class="td-data-loading"><span><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span></td>
-			</tbody>
-			<tbody *ngIf="loadingStatus.status == Constants.STATUS.FINISHED && testSuites.length == 0">
-				<td colspan="6" class="td-no-data"><span>No test cases found</span></td>
-			</tbody>
-			<tbody *ngIf="testSuites.length == 1">
-				<tr *ngFor="let testCase of testSuites[0].testCases">
-					<td>{{testCase.sname}}</td>
-					<td>{{testCase.description}}</td>
-					<td class="td-min">{{testCase.updateTime}}</td>
-					<td class="operations">
-						<button *ngIf="testCase.sessionId != undefined" class="btn btn-default" (click)="toTestSession(testCase.sessionId)"><i class="fa fa-search"></i></button>
-					</td>
-					<td class="tb-result">
-                        <app-test-result-status-display [message]="testCase.outputMessage" [result]="testCase.result"></app-test-result-status-display>
-					</td>
-					<td class="operation-cell">
-						<div class="btn-toolbar pull-right">
-							<button type="button" class="btn btn-primary" *ngIf="testCase.hasDocumentation" (click)="showTestCaseDocumentation(testCase.id)"><i class="fa fa-info-circle"></i></button>
-							<button class="btn btn-primary" (click)="onTestSelect(testCase)"><i class="fa fa-play"></i></button>
+	<tabset #tabs>
+		<tab heading="Conformance tests">
+			<div class="tabPanel">
+				<div class="tabControls">
+					<div class="testFilters">
+						<app-text-filter name="testCaseFilter" [width]="250" [placeholder]="'Search test cases...'" [(ngModel)]="testCaseFilter" (apply)="applySearchFilters()"></app-text-filter>
+						<div class="btn-group resultFilterDiv" dropdown>
+							<button id="button-result" dropdownToggle type="button" class="btn btn-default dropdown-toggle" aria-controls="dropdown-result"><i *ngIf="resultFilter != resultFilterAll" class="resultIcon" [ngClass]="dataService.iconForTestResult(resultFilter)"></i>{{resultFilterButton}}<span class="caret"></span></button>
+							<ul id="dropdown-result" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-result">
+								<li role="menuitem"><a class="dropdown-item" href (click)="resultFilterSelected(resultFilterAll, resultFilterLabelAll); $event.preventDefault()">{{resultFilterLabelAll}}</a></li>
+								<li class="divider dropdown-divider"></li>
+								<li role="menuitem"><a class="dropdown-item" href (click)="resultFilterSelected(Constants.TEST_CASE_RESULT.SUCCESS, resultFilterLabelSucceeded); $event.preventDefault()"><i class="resultIcon" [ngClass]="dataService.iconForTestResult(Constants.TEST_CASE_RESULT.SUCCESS)"></i> {{resultFilterLabelSucceeded}}</a></li>
+								<li role="menuitem"><a class="dropdown-item" href (click)="resultFilterSelected(Constants.TEST_CASE_RESULT.FAILURE, resultFilterLabelFailed); $event.preventDefault()"><i class="resultIcon" [ngClass]="dataService.iconForTestResult(Constants.TEST_CASE_RESULT.FAILURE)"></i> {{resultFilterLabelFailed}}</a></li>
+								<li role="menuitem"><a class="dropdown-item" href (click)="resultFilterSelected(Constants.TEST_CASE_RESULT.UNDEFINED, resultFilterLabelUndefined); $event.preventDefault()"><i class="resultIcon" [ngClass]="dataService.iconForTestResult(Constants.TEST_CASE_RESULT.UNDEFINED)"></i> {{resultFilterLabelUndefined}}</a></li>
+							</ul>
 						</div>
-					</td>
-				</tr>
-			</tbody>
-			<tbody *ngIf="testSuites.length > 1">
-                <ng-container *ngFor="let testSuite of testSuites">
-                    <tr (click)="onExpand(testSuite)" class="expandable-table-row-collapsed">
-                        <td>{{testSuite.sname}}</td>
-                        <td>{{testSuite.description}}</td>
-                        <td class="tb-result"><i [ngClass]="dataService.iconForTestResult(testSuite.result)"></i></td>
-                        <td style="padding-right: 17px;">
-                            <div class="btn-toolbar pull-right">
-                                <button type="button" class="btn btn-primary" *ngIf="testSuite.hasDocumentation" (click)="showTestSuiteDocumentation(testSuite.id); $event.stopPropagation();"><i class="fa fa-info-circle"></i></button>
-                                <button class="btn btn-primary" (click)="onTestSuiteSelect(testSuite); $event.stopPropagation();"><i class="fa fa-play"></i></button>
-                            </div>
-                        </td>
-    				</tr>
-                    <tr class="expandable-table-row-expanded">
-                        <td colspan="4" class="expandable-table-expandable-cell">
-                            <div [collapse]="!testSuite.expanded" [isAnimated]="true">
-                                <div class="collapsing-div">
-                                    <table class="table table-directive expandable-table">
-                                        <thead>
-                                            <tr>
-                                                <th style="white-space: nowrap;">Test case</th>
-                                                <th>Description</th>
-                                                <th class="th-min">Updated</th>
-                                                <th class="operations">Session</th>
-                                                <th class="td-centered" style="width:90px">Result</th>
-                                                <th style="width:110px"></th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr *ngFor="let testCase of testSuite.testCases">
-                                                <td>{{testCase.sname}}</td>
-                                                <td>{{testCase.description}}</td>
-                                                <td class="td-min">{{testCase.updateTime}}</td>
-                                                <td class="operations">
-                                                    <button *ngIf="testCase.sessionId != undefined" class="btn btn-default" (click)="toTestSession(testCase.sessionId)"><i class="fa fa-search"></i></button>
-                                                </td>
-                                                <td class="tb-result">
-                                                    <app-test-result-status-display [message]="testCase.outputMessage" [result]="testCase.result"></app-test-result-status-display>
-                                                </td>
-                                                <td>
-                                                    <div class="btn-toolbar pull-right">
-                                                        <button type="button" class="btn btn-primary" *ngIf="testCase.hasDocumentation" (click)="showTestCaseDocumentation(testCase.id)"><i class="fa fa-info-circle"></i></button>
-                                                        <button class="btn btn-primary" (click)="onTestSelect(testCase)"><i class="fa fa-play"></i></button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </td>
-                    </tr>
-                </ng-container>
-			</tbody>
-		</table>
-	</div>
+					</div>
+					<div class="testSettings">
+						<div class="btn-group" dropdown>
+							<button id="button-executionType" dropdownToggle type="button" class="btn btn-default dropdown-toggle" aria-controls="dropdown-executionType">{{executionModeButton}}<span class="caret"></span></button>
+							<ul id="dropdown-executionType" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-executionType">
+							  <li role="menuitem"><a class="dropdown-item" href (click)="executionMode = executionModeInteractive; executionModeButton = executionModeLabelInteractive; $event.preventDefault()">{{executionModeLabelInteractive}}</a></li>
+							  <li class="divider dropdown-divider"></li>
+							  <li role="menuitem"><a class="dropdown-item" href (click)="executionMode = executionModeParallel; executionModeButton = executionModeLabelParallel; $event.preventDefault()">{{executionModeLabelParallel}}</a></li>
+							  <li role="menuitem"><a class="dropdown-item" href (click)="executionMode = executionModeSequential; executionModeButton = executionModeLabelSequential; $event.preventDefault()">{{executionModeLabelSequential}}</a></li>
+							</ul>
+						</div>
+					</div>
+				</div>
+				<ng-container [ngSwitch]="loadingTests">
+					<app-pending-block *ngSwitchCase="true"></app-pending-block>
+					<ng-container *ngSwitchDefault [ngSwitch]="displayedTestSuites.length">
+						<div class="panel panel-default panel-body noTestCasesDiv" *ngSwitchCase="0" [ngSwitch]="testSuites.length">
+							<span *ngSwitchCase="0">No test cases are defined in this conformance statement.</span>
+							<span *ngSwitchDefault>No test cases were found matching your search criteria.</span>
+						</div>
+						<ng-container *ngSwitchDefault>
+							<div class="panel panel-default testSuitePanel" *ngFor="let testSuite of displayedTestSuites">
+								<div class="testSuiteDisplay" [class.expanded]="testSuite.expanded" (click)="onExpand(testSuite)">
+									<div class="testSuiteName">{{testSuite.sname}}</div>
+									<div *ngIf="testSuite.description != undefined && testSuite.description.trim() != ''" class="testSuiteDescription">{{testSuite.description}}</div>
+									<div class="testSuiteControls">
+										<div class="btn-toolbar">
+											<button type="button" class="btn btn-default" *ngIf="testSuite.hasDocumentation" (click)="showTestSuiteDocumentation(testSuite.id); $event.stopPropagation();" containerClass="shortTooltip" tooltip="Documentation" [delay]="Constants.TOOLTIP_DELAY"><i class="fa fa-info-circle"></i></button>
+											<button class="btn btn-primary" (click)="onTestSuiteSelect(testSuite); $event.stopPropagation();" containerClass="shortTooltip" tooltip="Run all" [delay]="Constants.TOOLTIP_DELAY"><i class="fa fa-play"></i></button>
+										</div>
+									</div>
+									<div class="testSuiteResult"><i [ngClass]="dataService.iconForTestResult(testSuite.result)"></i></div>
+								</div>
+								<div class="collapsibleTestCaseDiv" [collapse]="!testSuite.expanded" [isAnimated]="true">
+									<div class="testCaseContainer">
+										<div class="testCaseDisplay table-container">
+											<table id="conformance-statement-details" class="table table-directive expandable-table">
+												<thead>
+													<tr>
+														<th class="th-nowrap">Test case</th>
+														<th>Description</th>
+														<th class="th-min">Last run</th>
+														<th class="testcase-controls"></th>
+														<th class="testcase-result"></th>
+													</tr>								
+												</thead>
+												<tbody>
+													<tr *ngFor="let testCase of testSuite.testCases">
+														<td>{{testCase.sname}}</td>
+														<td>{{testCase.description}}</td>
+														<td class="td-min">{{testCase.updateTime}}</td>
+														<td class="testcase-controls">
+															<div class="btn-toolbar">
+																<button *ngIf="testCase.sessionId != undefined" class="btn btn-default" (click)="toTestSession(testCase.sessionId)" containerClass="shortTooltip" tooltip="View session" [delay]="Constants.TOOLTIP_DELAY"><i class="fa fa-search"></i></button>
+																<button type="button" class="btn btn-default" *ngIf="testCase.hasDocumentation" (click)="showTestCaseDocumentation(testCase.id)" containerClass="shortTooltip" tooltip="Documentation" [delay]="Constants.TOOLTIP_DELAY"><i class="fa fa-info-circle"></i></button>
+																<button class="btn btn-primary" (click)="onTestSelect(testCase)" containerClass="shortTooltip" tooltip="Run" [delay]="Constants.TOOLTIP_DELAY"><i class="fa fa-play"></i></button>
+															</div>
+														</td>
+														<td class="testcase-result">
+															<app-test-result-status-display [message]="testCase.outputMessage" [result]="testCase.result"></app-test-result-status-display>
+														</td>
+													</tr>
+												</tbody>
+											</table>
+										</div>
+									</div>
+								</div>
+							</div>
+						</ng-container>
+					</ng-container>
+				</ng-container>
+			</div>
+		</tab>
+		<tab heading="Configuration parameters" (selectTab)="loadConfigurations()">
+			<div class="tabPanel" [ngSwitch]="loadingConfiguration.status != Constants.STATUS.FINISHED">
+				<app-pending-block *ngSwitchCase="true"></app-pending-block>
+				<ng-container *ngSwitchDefault [ngSwitch]="endpointRepresentations.length">
+					<div class="panel panel-default panel-body noConfigurationDiv" *ngSwitchCase="0">
+						<span>No configuration parameters are foreseen for this conformance statement.</span>
+					</div>
+					<div *ngSwitchDefault class="endpointPanelContainer" [ngClass]="{'list-group': hasMultipleEndpoints}">
+						<div class="endpoint" class="panel panel-default endpointPanel" [ngClass]="{'list-group-item': hasMultipleEndpoints}" *ngFor="let endpoint of endpointRepresentations">
+							<app-endpoint-display
+								[endpoint]="endpoint"
+								[hideEndpointInfo]="!hasMultipleEndpoints"
+								[editable]="!dataService.isVendorUser"
+								[canEdit]="canEditParameter"
+								[showValues]="true"
+								(edit)="onParameterSelect($event)"
+								(download)="onParameterDownload($event)"
+							></app-endpoint-display>
+						</div>
+					</div>
+				</ng-container>
+			</div>
+		</tab>
+	</tabset>
 </div>

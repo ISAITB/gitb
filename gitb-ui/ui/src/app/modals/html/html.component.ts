@@ -1,5 +1,4 @@
 import { Component, OnInit } from '@angular/core';
-import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { BsModalRef } from 'ngx-bootstrap/modal'
 
 @Component({
@@ -14,8 +13,7 @@ export class HtmlComponent implements OnInit {
   html: string = ''
 
   constructor(
-    public modalRef: BsModalRef,
-    public sanitizer: DomSanitizer
+    public modalRef: BsModalRef
   ) { }
 
   ngOnInit(): void {

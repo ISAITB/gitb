@@ -1,4 +1,5 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { Constants } from 'src/app/common/constants';
 import { CustomPropertyPresetValue } from 'src/app/types/custom-property-preset-value.type';
 import { CustomProperty } from './custom-property';
 
@@ -16,6 +17,8 @@ export class CustomPropertyFilterComponent implements OnInit {
   @Output() onApply = new EventEmitter<CustomProperty>()
   @Output() onClear = new EventEmitter<CustomProperty>()
   @Output() onCancel = new EventEmitter<CustomProperty>()
+
+  Constants = Constants
 
   applied = false
   appliedName?: string

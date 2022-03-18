@@ -13,13 +13,12 @@ import com.gitb.tdl.ErrorLevel;
 import com.gitb.tdl.Verify;
 import com.gitb.tr.ObjectFactory;
 import com.gitb.tr.*;
-import com.gitb.types.BooleanType;
-import com.gitb.types.DataType;
-import com.gitb.types.DataTypeFactory;
+import com.gitb.types.*;
 import com.gitb.utils.BindingUtils;
 import com.gitb.utils.ErrorUtils;
 import com.gitb.validation.IValidationHandler;
 import com.gitb.validation.common.AbstractValidator;
+import com.gitb.validation.xpath.XPathValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MarkerFactory;
@@ -65,13 +64,10 @@ public class VerifyProcessor implements IProcessor {
 		}
 
 		if (isURL(handlerIdentifier)) {
-			validator = getRemoteValidator(handlerIdentifier, TestCaseUtils.getStepProperties(verify.getProperty(), resolver));
+			validator = getRemoteValidator(handlerIdentifier, TestCaseUtils.getStepProperties(verify.getProperty(), resolver), scope.getContext().getSessionId());
 		} else {
-			validator = ModuleManager.getInstance().getValidationHandler(handlerIdentifier);
 			// This is a local validator.
-			if (validator instanceof AbstractValidator) {
-				((AbstractValidator)validator).setTestCaseId(scope.getContext().getTestCase().getId());
-			}
+			validator = ModuleManager.getInstance().getValidationHandler(handlerIdentifier);
 		}
 		if (validator == null) {
 			throw new IllegalStateException("Validation handler for ["+handlerIdentifier+"] could not be resolved");
@@ -116,6 +112,15 @@ public class VerifyProcessor implements IProcessor {
 		if (validatorDefinition != null && validatorDefinition.getInputs() != null) {
 			failIfMissingRequiredParameter(inputs, validatorDefinition.getInputs().getParam());
 		}
+
+		// Add validator-specific inputs
+		if (validator instanceof AbstractValidator) {
+			inputs.put(AbstractValidator.TEST_CASE_ID_INPUT, new StringType(scope.getContext().getTestCase().getId()));
+			if (validator instanceof XPathValidator) {
+				inputs.put(XPathValidator.NAMESPACE_MAP_INPUT, MapType.fromMap(scope.getNamespaceDefinitions()));
+			}
+		}
+
 		// Validate content with given configurations and inputs; and return the report
 		TestStepReportType report = validator.validate(verify.getConfig(), inputs);
 
@@ -243,9 +248,9 @@ public class VerifyProcessor implements IProcessor {
 		return true;
 	}
 
-	private IValidationHandler getRemoteValidator(String handler, Properties connectionProperties) {
+	private IValidationHandler getRemoteValidator(String handler, Properties connectionProperties, String sessionId) {
 		try {
-			return new RemoteValidationModuleClient(new URI(handler).toURL(), connectionProperties);
+			return new RemoteValidationModuleClient(new URI(handler).toURL(), connectionProperties, sessionId);
 		} catch (MalformedURLException e) {
 			throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INTERNAL_ERROR, "Remote validation module found with an malformed URL ["+handler+"]"), e);
 		} catch (URISyntaxException e) {

@@ -28,6 +28,10 @@ export abstract class BaseTableComponent extends BaseComponent {
   @Input() prevDisabled = true
   @Input() allowSelect = false
   @Input() allowMultiSelect = false
+  @Input() actionTooltip = ''
+  @Input() deleteTooltip = 'Delete'
+  @Input() exportTooltip = 'Export'
+  @Input() contentRefreshing = false
 
   @Output() onSelect: EventEmitter<any> = new EventEmitter()
   @Output() onDeselect: EventEmitter<any> = new EventEmitter()
@@ -42,24 +46,38 @@ export abstract class BaseTableComponent extends BaseComponent {
   @Output() onSort: EventEmitter<TableColumnDefinition> = new EventEmitter()
 
   tableCaptionVisible = false
+  columnsLeft: TableColumnDefinition[] = []
+  columnsRight: TableColumnDefinition[] = []
 
   constructor() { super() }
 
-  headerColumnClicked(column: TableColumnDefinition) {
-    for (let col of this.columns!) {
-      if (col.field == column.field) {
-        if (!col.order) {
-          col.order = 'asc'
-        } else if (col.order == 'asc') {
-          col.order = 'desc'
-        } else {
-          col.order = 'asc'
-        }
+  splitColumns() {
+    for (let column of this.columns) {
+      if (column.atEnd) {
+        this.columnsRight.push(column)
       } else {
-        col.order = null
+        this.columnsLeft.push(column)
       }
     }
-    this.onSort.emit(column)
+  }
+
+  headerColumnClicked(column: TableColumnDefinition) {
+    if (column.sortable) {
+      for (let col of this.columns!) {
+        if (col.field == column.field) {
+          if (!col.order) {
+            col.order = 'asc'
+          } else if (col.order == 'asc') {
+            col.order = 'desc'
+          } else {
+            col.order = 'asc'
+          }
+        } else {
+          col.order = null
+        }
+      }
+      this.onSort.emit(column)
+    }
   }
 
   handleAction(row: any) {

@@ -1,0 +1,8 @@
+<ng-template #popTemplate><div [innerHtml]="tooltipText"></div></ng-template>
+<div class="overallContainer" [class.centerAligned]="centerAligned">
+    <div class="statusRootContainer" [tooltip]="popTemplate">
+        <div class="statusContainer"><div class="statusCount">{{ counters.completed }}</div><div class="statusIcon"><span><i [class]="successIcon"></i></span></div></div>
+        <div class="statusContainer"><div class="statusCount">{{ counters.failed }}</div><div class="statusIcon"><span><i [class]="failedIcon"></i></span></div></div>
+        <div class="statusContainer"><div class="statusCount">{{ counters.other }}</div><div class="statusIcon"><span><i [class]="otherIcon"></i></span></div></div>
+    </div>
+</div>

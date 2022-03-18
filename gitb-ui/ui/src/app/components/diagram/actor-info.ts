@@ -2,6 +2,6 @@ export interface ActorInfo {
 
     id: string
     name?: string
-    role: string
+    role?: string
     displayOrder?: number
 }

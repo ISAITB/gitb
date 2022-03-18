@@ -28,12 +28,21 @@
             <tab heading="{{dataService.labelOrganisations()}}" *ngIf="true" (selectTab)="showOrganisations()">
                 <!-- Organisations -->
                 <div class="tabPanel">
-                    <div class="tabControls">
-                        <div class="form-inline">
-                            <div class="btn-toolbar">
-                                <app-text-filter name="organisationFilter" [width]="300" [placeholder]="'Search '+dataService.labelOrganisationsLower()+'...'" [(ngModel)]="organisationFilter" (apply)="applyOrganisationFilter()"></app-text-filter>
-                                <button type="button" class="btn btn-default" (click)="createOrganisation()">Create {{dataService.labelOrganisationLower()}}</button>
-                            </div>
+                    <div class="tabControls form-inline">
+                        <div class="searchControls btn-toolbar">
+                            <app-text-filter name="organisationFilter" [width]="300" [placeholder]="'Search '+dataService.labelOrganisationsLower()+'...'" [(ngModel)]="organisationFilter" (apply)="applyOrganisationFilter()"></app-text-filter>
+                            <div class="btn-group" dropdown>
+                                <button id="button-order" dropdownToggle type="button" class="btn btn-default dropdown-toggle" aria-controls="dropdown-result">{{sortByCreationOrderLabel}}<span class="caret"></span></button>
+                                <ul id="dropdown-order" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-order">
+                                    <li role="menuitem"><a class="dropdown-item" href (click)="applyCreationOrderSort(sortByCreationOrderNone, sortByCreationOrderLabelNone); $event.preventDefault()">Do not apply</a></li>
+                                    <li class="divider dropdown-divider"></li>
+                                    <li role="menuitem"><a class="dropdown-item" href (click)="applyCreationOrderSort(sortByCreationOrderAsc, sortByCreationOrderLabelAsc); $event.preventDefault()">{{sortByCreationOrderLabelAsc}}</a></li>
+                                    <li role="menuitem"><a class="dropdown-item" href (click)="applyCreationOrderSort(sortByCreationOrderDesc, sortByCreationOrderLabelDesc); $event.preventDefault()">{{sortByCreationOrderLabelDesc}}</a></li>
+                                </ul>
+                            </div>                                
+                        </div>
+                        <div class="otherControls">
+                            <button type="button" class="btn btn-default" (click)="createOrganisation()">Create {{dataService.labelOrganisationLower()}}</button>
                         </div>
                     </div>
                     <div class="panel panel-default">
@@ -42,6 +51,7 @@
                             [data]="organizations"
                             [noDataMessage]="'No '+dataService.labelOrganisationsLower()+' found'"
                             [loadingStatus]="organisationStatus" 
+                            [contentRefreshing]="organisationsRefreshing"
                             [allowSelect]="true"
                             [nextDisabled]="isNextPageOrganisationsDisabled"
                             [prevDisabled]="isPreviousPageOrganisationsDisabled"

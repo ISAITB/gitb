@@ -17,18 +17,31 @@ public class MimeUtil {
 
     private final static Tika tika = new Tika();
 
-    public static String getFileAsDataURL(File file, String mimeType) {
+    public static String base64AsDataURL(String base64Content) {
+        if (base64Content.startsWith("data:")) {
+            return base64Content;
+        } else {
+            return createDataURLString(base64Content, null);
+        }
+    }
+
+    private static String createDataURLString(String base64, String mimeType) {
         if (mimeType == null) {
             mimeType = "application/octet-stream";
         }
-        StringBuilder builder = new StringBuilder();
-        builder.append("data:").append(mimeType).append(";base64,");
+        return "data:" + mimeType + ";base64," + base64;
+    }
+
+    private static String getBytesAsDataURL(byte[] content, String mimeType) {
+        return createDataURLString(Base64.encodeBase64String(content), mimeType);
+    }
+
+    public static String getFileAsDataURL(File file, String mimeType) {
         try {
-            builder.append(Base64.encodeBase64String(Files.readAllBytes(file.toPath())));
+            return getBytesAsDataURL(Files.readAllBytes(file.toPath()), mimeType);
         } catch (IOException e) {
             throw new IllegalStateException("Unable to convert file to Base64 string", e);
         }
-        return builder.toString();
     }
 
     public static String getBase64FromDataURL(String dataURL) {

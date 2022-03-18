@@ -2,6 +2,7 @@ package com.gitb.engine.testcase;
 
 import com.gitb.ModuleManager;
 import com.gitb.core.*;
+import com.gitb.engine.SessionManager;
 import com.gitb.engine.TestEngineConfiguration;
 import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.messaging.MessagingContext;
@@ -15,7 +16,6 @@ import com.gitb.messaging.layer.AbstractMessagingHandler;
 import com.gitb.ms.InitiateResponse;
 import com.gitb.tbs.SUTConfiguration;
 import com.gitb.tdl.*;
-import com.gitb.types.BooleanType;
 import com.gitb.types.DataType;
 import com.gitb.types.DataTypeFactory;
 import com.gitb.types.MapType;
@@ -48,9 +48,14 @@ public class TestCaseContext {
 	private static final Logger logger = LoggerFactory.getLogger(TestCaseContext.class);
 
 	/**
-	 * The map containing the status values for each executed step.
+	 * The map containing the success flags for each executed step.
 	 */
 	public static final String STEP_SUCCESS_MAP = "STEP_SUCCESS";
+
+	/**
+	 * The map containing the status values for all steps.
+	 */
+	public static final String STEP_STATUS_MAP = "STEP_STATUS";
 
 	/**
 	 * The scope variable holding the overall result of the test session.
@@ -148,7 +153,7 @@ public class TestCaseContext {
 		STOPPING
     }
 
-	private LogLevel logLevelToSignal = LogLevel.DEBUG;
+	private com.gitb.core.LogLevel logLevelToSignal = com.gitb.core.LogLevel.DEBUG;
 	private boolean logLevelIsExpression = false;
 	private boolean reportedInvalidLogLevel = false;
 	private Path dataFolder;
@@ -161,12 +166,12 @@ public class TestCaseContext {
         this.sutHandlerConfigurations = new ConcurrentHashMap<>();
         this.messagingContexts = new ConcurrentHashMap<>();
 		this.processingContexts = new ConcurrentHashMap<>();
-        this.scope = new TestCaseScope(this, testCase.getImports());
+        this.scope = new TestCaseScope(this, testCase.getImports(), testCase.getNamespaces());
 		this.variableResolver = new VariableResolver(scope);
 		if (testCase.getSteps() != null) {
 			this.logLevelIsExpression = this.variableResolver.isVariableReference(testCase.getSteps().getLogLevel());
 			if (!this.logLevelIsExpression) {
-				this.logLevelToSignal = LogLevel.fromValue(testCase.getSteps().getLogLevel());
+				this.logLevelToSignal = com.gitb.core.LogLevel.fromValue(testCase.getSteps().getLogLevel());
 			}
 		}
 		if (TestEngineConfiguration.TEMP_STORAGE_ENABLED) {
@@ -197,41 +202,12 @@ public class TestCaseContext {
     	return this.scriptletCache;
 	}
 
-    private void addStepStatusForStep(MapType map, Object step) {
-    	if (step != null) {
-			if (step instanceof TestConstruct) {
-				if (((TestConstruct)step).getId() != null) {
-					map.addItem(((TestConstruct)step).getId(), new BooleanType(false));
-				}
-			}
-			if (step instanceof IfStep) {
-				addStepStatusForStep(map, ((IfStep)step).getThen());
-				addStepStatusForStep(map, ((IfStep)step).getElse());
-			} else if (step instanceof WhileStep) {
-				addStepStatusForStep(map, ((WhileStep)step).getDo());
-			} else if (step instanceof RepeatUntilStep) {
-				addStepStatusForStep(map, ((RepeatUntilStep)step).getDo());
-			} else if (step instanceof ForEachStep) {
-				addStepStatusForStep(map, ((ForEachStep)step).getDo());
-			} else if (step instanceof FlowStep) {
-				if (((FlowStep)step).getThread() != null) {
-					for (Sequence flowSequence: ((FlowStep)step).getThread()) {
-						addStepStatusForStep(map, flowSequence);
-					}
-				}
-			} else if (step instanceof Sequence) {
-				for (Object sequenceStep: ((Sequence) step).getSteps()) {
-					addStepStatusForStep(map, sequenceStep);
-				}
-			}
-		}
-	}
-
 	private void addStepStatus() {
-		TestCaseScope.ScopedVariable variable = scope.createVariable(STEP_SUCCESS_MAP);
-		MapType map = (MapType) DataTypeFactory.getInstance().create(DataType.MAP_DATA_TYPE);
-		addStepStatusForStep(map, testCase.getSteps());
-		variable.setValue(map);
+		MapType successMap = (MapType) DataTypeFactory.getInstance().create(DataType.MAP_DATA_TYPE);
+		MapType statusMap = (MapType) DataTypeFactory.getInstance().create(DataType.MAP_DATA_TYPE);
+		scope.createVariable(STEP_SUCCESS_MAP).setValue(successMap);
+		scope.createVariable(STEP_STATUS_MAP).setValue(statusMap);
+		TestCaseUtils.initialiseStepStatusMaps(successMap, statusMap, testCase.getSteps());
 	}
 
 	private void processVariables() {
@@ -264,7 +240,7 @@ public class TestCaseContext {
 		for(ActorConfiguration actorConfiguration : configurations) {
 		    Tuple<String> actorIdEndpointTupleKey = new Tuple<>(new String[] {actorConfiguration.getActor(), actorConfiguration.getEndpoint()});
 		    sutConfigurations.put(actorIdEndpointTupleKey, actorConfiguration);
-		    sutHandlerConfigurations.put(actorIdEndpointTupleKey, new CopyOnWriteArrayList<ActorConfiguration>());
+		    sutHandlerConfigurations.put(actorIdEndpointTupleKey, new CopyOnWriteArrayList<>());
 	    }
 
 	    List<SUTConfiguration> sutConfigurations = configureSimulatedActorsForSUTs(configurations);
@@ -426,16 +402,16 @@ public class TestCaseContext {
 
 		List<SUTConfiguration> handlerConfigurations = new ArrayList<>();
 
-		for(MessagingContextBuilder builder : messagingContextBuilders.values()) {
+		for (MessagingContextBuilder builder : messagingContextBuilders.values()) {
 			MessagingContext messagingContext = builder.build(sessionId);
 			handlerConfigurations.addAll(messagingContext.getSutHandlerConfigurations());
-
 			messagingContexts.put(builder.getHandler(), messagingContext);
+			SessionManager.getInstance().mapMessagingSessionToTestSession(messagingContext.getSessionId(), sessionId);
 		}
 
         List<SUTConfiguration> configurationsBySUTActor = groupGeneratedSUTConfigurationsBySUTActor(handlerConfigurations);
 
-        for(SUTConfiguration sutConfiguration : configurationsBySUTActor) {
+        for (SUTConfiguration sutConfiguration : configurationsBySUTActor) {
             List<ActorConfiguration> actorConfigurations = sutHandlerConfigurations.get(new Tuple<>(new String[] {sutConfiguration.getActor(), sutConfiguration.getEndpoint()}));
 
             actorConfigurations.addAll(sutConfiguration.getConfigs());
@@ -537,22 +513,22 @@ public class TestCaseContext {
         return sessionId;
     }
 
-	public LogLevel getLogLevelToSignal() {
+	public com.gitb.core.LogLevel getLogLevelToSignal() {
 		if (logLevelIsExpression) {
-			LogLevel resolvedLevel;
+			com.gitb.core.LogLevel resolvedLevel;
 			String resolvedValue = (String) variableResolver.resolveVariable(testCase.getSteps().getLogLevel()).convertTo(DataType.STRING_DATA_TYPE).getValue();
 			String warningMessage = null;
 			if (resolvedValue == null || resolvedValue.isBlank()) {
-				resolvedLevel = LogLevel.DEBUG;
+				resolvedLevel = com.gitb.core.LogLevel.DEBUG;
 				warningMessage = String.format("Unable to resolve test case log level using expression [%s]. Considering %s as default.", testCase.getSteps().getLogLevel(), resolvedLevel);
 			} else {
 				try {
-					resolvedLevel = LogLevel.fromValue(resolvedValue);
+					resolvedLevel = com.gitb.core.LogLevel.fromValue(resolvedValue);
 					if (reportedInvalidLogLevel) {
 						reportedInvalidLogLevel = false;
 					}
 				} catch (Exception e) {
-					resolvedLevel = LogLevel.DEBUG;
+					resolvedLevel = com.gitb.core.LogLevel.DEBUG;
 					warningMessage = String.format("Invalid test case log level [%s]. Considering %s as default.", resolvedValue, resolvedLevel);
 				}
 			}
@@ -593,13 +569,10 @@ public class TestCaseContext {
 		for(MessagingContext messagingContext:messagingContexts.values()){
 			messagingContext.getHandler().endSession(messagingContext.getSessionId());
             messagingContext.cleanup();
+			SessionManager.getInstance().removeMessagingSession(messagingContext.getSessionId());
 		}
 		messagingContexts.clear();
 	}
-
-    public MessagingContext endMessagingContext(String handler) {
-        return messagingContexts.remove(handler);
-    }
 
     public Collection<MessagingContext> getMessagingContexts() {
         return messagingContexts.values();
@@ -607,6 +580,7 @@ public class TestCaseContext {
 
 	public void addProcessingContext(String txId, ProcessingContext ctx) {
 		processingContexts.put(txId, ctx);
+		SessionManager.getInstance().mapProcessingSessionToTestSession(ctx.getSession(), sessionId);
 	}
 
 	public ProcessingContext getProcessingContext(String txId) {
@@ -614,7 +588,10 @@ public class TestCaseContext {
 	}
 
 	public void removeProcessingContext(String txId) {
-		processingContexts.remove(txId);
+		if (processingContexts.containsKey(txId)) {
+			processingContexts.remove(txId);
+			SessionManager.getInstance().removeProcessingSession(processingContexts.get(txId).getSession());
+		}
 	}
 
 	private static class MessagingContextBuilder {
@@ -675,7 +652,7 @@ public class TestCaseContext {
 				messagingHandler = ModuleManager.getInstance().getMessagingHandler(transactionInfo.handler);
 			}
 			if (messagingHandler == null) {
-				throw new IllegalStateException("Validation handler for ["+transactionInfo.handler+"] could not be resolved");
+				throw new IllegalStateException("Messaging handler for ["+transactionInfo.handler+"] could not be resolved");
 			}
 
 			List<ActorConfiguration> configurations = new ArrayList<>(sutConfigurations.values());

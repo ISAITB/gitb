@@ -55,7 +55,7 @@ public class SchematronValidator extends AbstractValidator {
             convertXPathExpressions = true;
         } else {
             schematron = new SchematronResourceXSLT(new StringResource(sch.toString(), sch.getImportPath()));
-            ((SchematronResourceXSLT) schematron).setURIResolver(new SchematronResolver(sch.getImportTestSuite(), getTestCaseId(), sch.getImportPath()));
+            ((SchematronResourceXSLT) schematron).setURIResolver(new SchematronResolver(sch.getImportTestSuite(), getTestCaseId(inputs), sch.getImportPath()));
         }
         schematron.setUseCache(false);
         // Carry out validation.

@@ -1,19 +1,21 @@
-<div>
+<div class="table-container">
     <table class="table table-directive">
         <caption *ngIf="tableCaptionVisible">{{tableCaption}}</caption>
         <thead>
             <tr>
                 <th *ngIf="checkboxEnabled"></th>
-                <th [ngClass]="classForColumn(column)" *ngFor="let column of columns" (click)="!column.sortable || headerColumnClicked(column)">
+                <th [ngClass]="classForColumn(column)" *ngFor="let column of columnsLeft" [class.sortable]="column.sortable" (click)="headerColumnClicked(column)">
                     {{column.title}} 
                     <i *ngIf="column.order != undefined" [ngClass]="{'fa-caret-down': column.order == 'desc', 'fa-caret-up': column.order == 'asc'}" class="fa"></i>
                 </th>
-                <th *ngIf="actionVisible" class="operations">Action</th>
-                <th *ngIf="operationsVisible" class="operations">Operation</th>
-                <th *ngIf="exportVisible" class="operations">Export</th>
+                <th *ngIf="actionVisible || operationsVisible || exportVisible" class="th-min-centered"></th>
+                <th [ngClass]="classForColumn(column)" *ngFor="let column of columnsRight" [class.sortable]="column.sortable" (click)="headerColumnClicked(column)">
+                    {{column.title}} 
+                    <i *ngIf="column.order != undefined" [ngClass]="{'fa-caret-down': column.order == 'desc', 'fa-caret-up': column.order == 'asc'}" class="fa"></i>
+                </th>
             </tr>
         </thead>
-        <tbody>
+        <tbody [class.disable-events]="contentRefreshing">
             <tr *ngIf="loadingStatus && loadingStatus.status != Constants.STATUS.FINISHED">
                 <td [attr.colspan]="columnCount" class="td-data-loading"><app-pending-block></app-pending-block></td>
             </tr>
@@ -42,11 +44,14 @@
                 [actionVisibleForRow]="actionVisibleForRow"
                 [actionPendingProperty]="actionPendingProperty"
                 [deletePendingProperty]="deletePendingProperty"
-                [exportPendingProperty]="exportPendingProperty"></tr>
+                [exportPendingProperty]="exportPendingProperty"
+                [actionTooltip]="actionTooltip"
+                [deleteTooltip]="deleteTooltip"
+                [exportTooltip]="exportTooltip"></tr>
         </tbody>
     </table>
     <div *ngIf="(!prevDisabled || !nextDisabled) && data && data.length > 0" class="text-center table-paging-controls">
-        <ul class="pagination pagination-sm">
+        <ul class="pagination pagination-sm" [class.disable-events]="contentRefreshing">
             <li [class.disabled]="prevDisabled"><a href (click)="doFirstPage();$event.preventDefault()">First</a></li>
             <li [class.disabled]="prevDisabled"><a href (click)="doPrevPage();$event.preventDefault()">Previous</a></li>
             <li [class.disabled]="nextDisabled"><a href (click)="doNextPage();$event.preventDefault()">Next</a></li>

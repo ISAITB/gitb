@@ -50,10 +50,11 @@ class AccountManager @Inject()(dbConfigProvider: DatabaseConfigProvider) extends
     )
       .map(x => new UserAccount(
         Users(x._1, x._2, x._3, null, onetimePassword = false, x._4, x._5, None, None, UserSSOStatus.NotLinked.id.toShort),
-        Organizations(x._5, x._6, x._7, -1, x._8, null, null, null, template = false, None, x._9),
+        Organizations(x._5, x._6, x._7, -1, x._8, null, null, null, template = false, None, None, x._9),
         Communities(x._9, x._10, x._11, None, -1, None, None, selfregNotification = false, None, SelfRegistrationRestriction.NoRestriction.id.toShort, selfRegForceTemplateSelection = false, selfRegForceRequiredProperties = false,
           allowCertificateDownload = false, allowStatementManagement = false, allowSystemManagement = false,
           allowPostTestOrganisationUpdates = false, allowPostTestSystemUpdates = false, allowPostTestStatementUpdates = false,
+          allowAutomationApi = false,
           None)
       ))
     results.sorted
@@ -84,10 +85,11 @@ class AccountManager @Inject()(dbConfigProvider: DatabaseConfigProvider) extends
     )
     .map(x => new UserAccount(
       Users(x._1, x._2, x._3, null, onetimePassword = false, x._4, x._5, None, None, UserSSOStatus.Linked.id.toShort),
-      Organizations(x._5, x._6, x._7, -1, x._8, null, null, null, template = false, None, x._9),
+      Organizations(x._5, x._6, x._7, -1, x._8, null, null, null, template = false, None, None, x._9),
       Communities(x._9, x._10, x._11, None, -1, None, None, selfregNotification = false, None, SelfRegistrationRestriction.NoRestriction.id.toShort, selfRegForceTemplateSelection = false, selfRegForceRequiredProperties = false,
         allowCertificateDownload = false, allowStatementManagement = false, allowSystemManagement = false,
         allowPostTestOrganisationUpdates = false, allowPostTestSystemUpdates = false, allowPostTestStatementUpdates = false,
+        allowAutomationApi = false,
         None)
     ))
     results.sorted

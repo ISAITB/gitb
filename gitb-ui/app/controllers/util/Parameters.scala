@@ -25,7 +25,7 @@ object Parameters {
   //Dashboard sorting
   val SORT_COLUMN = "sort_column"
   val SORT_ORDER = "sort_order"
-
+  val CREATION_ORDER_SORT = "creationOrderSort"
   //Some common parameters
   val USERNAME = "username"
   val PASSWORD = "password"
@@ -131,6 +131,7 @@ object Parameters {
   val ALLOW_POST_TEST_ORG_UPDATE = "allow_post_test_org_update"
   val ALLOW_POST_TEST_SYS_UPDATE = "allow_post_test_sys_update"
   val ALLOW_POST_TEST_STM_UPDATE = "allow_post_test_stm_update"
+  val ALLOW_AUTOMATION_API = "allow_automation_api"
   //TestService parameters
   val ACTOR_ID   = "actor_id"
   val ACTOR_DEFAULT   = "default"
@@ -174,5 +175,7 @@ object Parameters {
 
   val FILTERING = "filtering"
   val FILTER = "filter"
+
+  val SEQUENTIAL = "sequential"
 
 }

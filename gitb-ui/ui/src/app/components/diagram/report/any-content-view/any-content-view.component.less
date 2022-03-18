@@ -1,3 +1,5 @@
+@import "../../../../../styles/less/_common.less";
+
 .any-content-view-container { 
     display: flex; 
 }
@@ -18,4 +20,28 @@
     align-items: center; 
     flex-shrink: 0; 
     height: 50px;
+}
+
+.any-content-view {
+    padding: 0 15px;
+    margin: 8px 0;
+    border: 1px solid @gray-light;
+    border-radius: 3px;
+    .content-view {
+        padding: 5px 0;
+        .simple-content-view {
+            display: block;
+            padding: 8px 0;
+            border-bottom: 1px solid @gray-light;
+            &:last-child {
+                border-bottom: none;
+            }
+            .value {
+                display: block;
+            }
+        }
+    }
+}
+.content-container {
+    margin-top: 8px;
 }

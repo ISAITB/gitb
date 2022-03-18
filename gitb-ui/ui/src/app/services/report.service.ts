@@ -5,9 +5,9 @@ import { StepReport } from '../components/diagram/report/step-report';
 import { TestCase } from '../types/test-case';
 import { TestResult } from '../types/test-result';
 import { TestResultData } from '../types/test-result-data';
+import { TestResultReport } from '../types/test-result-report';
 import { TestResultSearchCriteria } from '../types/test-result-search-criteria';
 import { TestStepResult } from '../types/test-step-result';
-import { DataService } from './data.service';
 import { RestService } from './rest.service';
 
 @Injectable({
@@ -16,27 +16,53 @@ import { RestService } from './rest.service';
 export class ReportService {
 
   constructor(
-    private dataService: DataService,
     private restService: RestService
   ) { }
 
-  getTestCasesForSystem(systemId: number) {
-    return this.restService.get<TestCase[]>({
-      path: ROUTES.controllers.RepositoryService.getTestCasesForSystem(systemId).url,
-      authenticate: true
-    })
+  searchTestCasesInDomain(domainId: number, specificationIds: number[]|undefined, actorIds: number[]|undefined, testSuiteIds: number[]|undefined) {
+		const data: any = {
+			domain_id: domainId
+		}
+		if (specificationIds && specificationIds.length > 0) {
+		  data["specification_ids"] = specificationIds.join(',')
+		}
+		if (actorIds && actorIds.length > 0) {
+			data["actor_ids"] = actorIds.join(',')
+		}
+		if (testSuiteIds && testSuiteIds.length > 0) {
+			data["test_suite_ids"] = testSuiteIds.join(',')
+		}
+		return this.restService.post<TestCase[]>({
+			path: ROUTES.controllers.RepositoryService.searchTestCasesInDomain().url,
+			authenticate: true,
+			data: data
+		})
+  }
+
+  searchTestCases(domainIds: number[]|undefined, specificationIds: number[]|undefined, actorIds: number[]|undefined, testSuiteIds: number[]|undefined) {
+		const data: any = {}
+		if (domainIds && domainIds.length > 0) {
+		  data["domain_ids"] = domainIds.join(',')
+		}
+		if (specificationIds && specificationIds.length > 0) {
+		  data["specification_ids"] = specificationIds.join(',')
+		}
+		if (actorIds && actorIds.length > 0) {
+			data["actor_ids"] = actorIds.join(',')
+		}
+		if (testSuiteIds && testSuiteIds.length > 0) {
+			data["test_suite_ids"] = testSuiteIds.join(',')
+		}
+		return this.restService.post<TestCase[]>({
+			path: ROUTES.controllers.RepositoryService.searchTestCases().url,
+			authenticate: true,
+			data: data
+		})
   }
 
   getAllTestCases() {
     return this.restService.get<TestCase[]>({
       path: ROUTES.controllers.RepositoryService.getAllTestCases().url,
-      authenticate: true
-    })
-  }
-
-  getTestCasesForCommunity() {
-    return this.restService.get<TestCase[]>({
-      path: ROUTES.controllers.RepositoryService.getTestCasesForCommunity(this.dataService.community!.id).url,
       authenticate: true
     })
   }
@@ -115,6 +141,13 @@ export class ReportService {
       }
     }
     return params
+  }
+
+  getTestResult(sessionId: string) {
+    return this.restService.get<TestResultReport|undefined>({
+      path: ROUTES.controllers.ReportService.getTestResult(sessionId).url,
+      authenticate: true
+    })
   }
 
   getActiveTestResults(criteria: TestResultSearchCriteria, forExport?: boolean) {
@@ -243,10 +276,9 @@ export class ReportService {
   }
 
   getTestSessionLog(session: string) {
-    return this.restService.get<string>({
+    return this.restService.get<string[]>({
       path: ROUTES.controllers.RepositoryService.getTestSessionLog(session).url,
-      authenticate: true,
-      text: true
+      authenticate: true
     })
   }
 

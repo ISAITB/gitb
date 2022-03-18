@@ -1,9 +1,9 @@
-<div class="clearfix modal-header">
-	<h5 class="pull-left" *ngIf="isNameVisible">{{documentName}}</h5>
+<div class="modal-header">
+	<h5 *ngIf="isNameVisible">{{documentName}}</h5>
 	<div class="btn-toolbar">
-		<button type="button" class="pull-right btn btn-default" (click)="close()">Close</button>
-		<button type="button" class="pull-right btn btn-default" (click)="download()" *ngIf="isDownloadVisible">Download</button>
-		<button type="button" class="pull-right btn btn-default" (click)="copyToClipboard()" *ngIf="isCopyVisible">Copy to clipboard</button>
+		<button type="button" class="btn btn-default" (click)="copyToClipboard()" *ngIf="isCopyVisible">Copy to clipboard</button>
+		<button type="button" class="btn btn-default" (click)="download()" *ngIf="isDownloadVisible">Download</button>
+		<button type="button" class="btn btn-default" (click)="close()">Close</button>
 	</div>
 </div>
 <div class="modal-body">

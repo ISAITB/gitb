@@ -22,6 +22,7 @@ import utils.{JacksonUtil, MimeUtil, RepositoryUtils, TimeUtil}
 
 import java.io.{File, FileOutputStream, StringReader}
 import java.nio.file.{Files, Path, Paths, StandardOpenOption}
+import java.sql.Timestamp
 import java.text.SimpleDateFormat
 import java.util
 import java.util.{Date, UUID}
@@ -29,6 +30,7 @@ import javax.inject.{Inject, Singleton}
 import javax.xml.transform.stream.StreamSource
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.jdk.CollectionConverters.CollectionHasAsScala
 import scala.util.Using
 
 /**
@@ -137,6 +139,11 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
       } yield (results, resultCount)
     )
     output
+  }
+
+  def getTestResult(sessionId: String): Option[TestResult] = {
+    val query = getTestResultsQuery(None, None, None, None, None, None, None, None, None, None, None, None, None, Some(sessionId), None, None, None)
+    exec(query.result.headOption)
   }
 
   private def getTestResultsQuery(communityIds: Option[List[Long]],
@@ -325,6 +332,32 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
     repositoryUtils.getPathForTestSession(sessionId, isExpected)
   }
 
+  private def getTestSessionLog(sessionId: String, sessionFolderInfo: SessionFolderInfo): Option[List[String]] = {
+    if (!sessionFolderInfo.archived) {
+      flushSessionLogs(sessionId, Some(sessionFolderInfo.path.toFile))
+    }
+    try {
+      val file = new File(sessionFolderInfo.path.toFile, "log.txt")
+      if (file.exists()) {
+        Some(Files.readAllLines(Paths.get(file.getAbsolutePath)).asScala.toList)
+      } else {
+        None
+      }
+    } finally {
+      if (sessionFolderInfo.archived) {
+        FileUtils.deleteQuietly(sessionFolderInfo.path.toFile)
+      }
+    }
+  }
+
+  def getTestSessionLog(sessionId: String, startTime: Option[Timestamp], isExpected: Boolean): Option[List[String]] = {
+    getTestSessionLog(sessionId, repositoryUtils.getPathForTestSessionObj(sessionId, startTime, isExpected))
+  }
+
+  def getTestSessionLog(sessionId: String, isExpected: Boolean): Option[List[String]] = {
+    getTestSessionLog(sessionId, getPathForTestSessionWrapper(sessionId, isExpected))
+  }
+
   private def writeValueToFile(item: AnyContent, sessionFolder: Path, writeFn: Path => Unit) = {
     val dataFolder = repositoryUtils.getPathForTestSessionData(sessionFolder)
     Files.createDirectories(dataFolder)
@@ -394,12 +427,14 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
     savedPath
   }
 
-  private def flushSessionLogs(sessionId: String, sessionFolder: Option[File]): Unit = {
+  def flushSessionLogs(sessionId: String, sessionFolder: Option[File]): Unit = {
     val messages = testResultManager.consumeSessionLogs(sessionId)
     if (messages.nonEmpty) {
       val logFilePath = new File(sessionFolder.getOrElse(repositoryUtils.getPathForTestSession(sessionId, isExpected = false).path.toFile), "log.txt")
-      logFilePath.getParentFile.mkdirs()
-      logFilePath.createNewFile()
+      if (!logFilePath.exists()) {
+        logFilePath.getParentFile.mkdirs()
+        logFilePath.createNewFile()
+      }
       import scala.jdk.CollectionConverters._
       Files.write(logFilePath.toPath, messages.asJava, StandardOpenOption.APPEND)
     }
@@ -719,7 +754,7 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
               testCaseOverview.setEndTime(sdf.format(new Date(testResult.endTime.get.getTime)))
             }
             val testcasePresentation = XMLUtils.unmarshal(classOf[TestCase], new StreamSource(new StringReader(testResult.tpl)))
-            val sessionFolderInfo = repositoryUtils.getPathForTestSessionObj(info.sessionId.get, Some(testResult), isExpected = true)
+            val sessionFolderInfo = repositoryUtils.getPathForTestSessionObj(info.sessionId.get, Some(testResult.startTime), isExpected = true)
             try {
               val list = getListOfTestSteps(testcasePresentation, sessionFolderInfo.path.toFile)
               for (stepReport <- list) {

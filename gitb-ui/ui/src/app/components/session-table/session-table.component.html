@@ -1,20 +1,23 @@
-<div>
+<div class="table-container">
     <table [attr.id]="sessionTableId" class="table table-directive expandable-table">
         <caption *ngIf="tableCaptionVisible">{{tableCaption}}</caption>
         <thead>
             <tr>
                 <th *ngIf="checkboxEnabled"></th>
-                <th [ngClass]="column.headerClass!" *ngFor="let column of columns" (click)="!column.sortable || headerColumnClicked(column)">
+                <th [ngClass]="column.headerClass!" *ngFor="let column of columnsLeft" (click)="!column.sortable || headerColumnClicked(column)">
                     {{column.title}} 
                     <i *ngIf="column.order == 'desc'" class="fa fa-caret-down"></i>
                     <i *ngIf="column.order == 'asc'" class="fa fa-caret-up"></i>
                 </th>
-                <th *ngIf="actionVisible" class="operations">Action</th>
-                <th *ngIf="operationsVisible" class="operations">Operation</th>
-                <th *ngIf="exportVisible" class="operations">Export</th>
+                <th *ngIf="actionVisible || exportVisible || operationsVisible" class="th-min-centered"></th>
+                <th [ngClass]="column.headerClass!" *ngFor="let column of columnsRight" (click)="!column.sortable || headerColumnClicked(column)">
+                    {{column.title}} 
+                    <i *ngIf="column.order == 'desc'" class="fa fa-caret-down"></i>
+                    <i *ngIf="column.order == 'asc'" class="fa fa-caret-up"></i>
+                </th>
             </tr>
         </thead>
-        <tbody>
+        <tbody [class.disable-events]="contentRefreshing">
             <tr *ngIf="loadingStatus && loadingStatus.status != Constants.STATUS.FINISHED">
                 <td [attr.colspan]="columnCount" class="td-data-loading"><span><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span></td>
             </tr>
@@ -23,7 +26,7 @@
             </tr>
             <ng-container *ngFor="let row of data; let i = index">
                 <tr table-row-directive
-                    class="table-row-directive expandable-table-row-collapsed" 
+                    class="table-row-directive expandable-table-row-collapsed session-table-row" 
                     [ngClass]="rowClass(row)" 
                     (click)="onExpand(row)"
                     [data]="row"
@@ -43,7 +46,10 @@
                     [actionVisibleForRow]="actionVisibleForRow"
                     [actionPendingProperty]="actionPendingProperty"
                     [deletePendingProperty]="deletePendingProperty"
-                    [exportPendingProperty]="exportPendingProperty"></tr>
+                    [exportPendingProperty]="exportPendingProperty"
+                    [actionTooltip]="actionTooltip"
+                    [deleteTooltip]="'Terminate'"
+                    [exportTooltip]="exportTooltip"></tr>
                 <tr class="expandable-table-row-expanded">
                     <td [attr.colspan]="columnCount" class="expandable-table-expandable-cell-no-spacings">
                         <table width="100%" style="table-layout:fixed;">
@@ -51,6 +57,15 @@
                                 <td>
                                     <div [collapse]="!row.expanded" [isAnimated]="true">
                                         <div class="collapsing-div">
+                                            <div class="sessionControls">
+                                                <div class="btn-toolbar">
+                                                    <button *ngIf="supportRefresh" type="button" class="btn btn-default" (click)="refresh(row)" [pending]="sessionBeingRefreshed?.session == row.session" [disable]="row.endTime != undefined">Refresh</button>
+                                                    <button type="button" class="btn btn-default" (click)="showTestSessionLog(row)" [pending]="viewLogPending[row.session]">View log</button>
+                                                    <button *ngIf="row.organizationId != undefined" type="button" class="btn btn-default" (click)="goToOrganisation(row)">View {{dataService.labelOrganisationLower()}}</button>
+                                                    <button *ngIf="row.organizationId != undefined && row.systemId != undefined" type="button" class="btn btn-default" (click)="goToSystem(row)">View {{dataService.labelSystemLower()}}</button>
+                                                    <button *ngIf="row.organizationId != undefined && row.systemId != undefined && row.actorId != undefined && row.specificationId != undefined" type="button" class="btn btn-default" (click)="goToStatement(row)">View conformance statement</button>
+                                                </div>
+                                            </div>
                                             <div class="panel panel-default">
                                                 <div class="panel-heading session-table-title clickable" (click)="diagramCollapsed[row.session] = !diagramCollapsed[row.session]">
                                                     <div class="session-table-title-part">
@@ -67,14 +82,13 @@
                                                     </div>
                                                 </div>
                                                 <div [collapse]="diagramCollapsed[row.session]" [isAnimated]="true">
-                                                    <div class="panel-body" style="overflow-x: auto; overflow-y: hidden;">
+                                                    <div class="panel-body" [class.disable-events]="sessionBeingRefreshed?.session == row.session" style="overflow-x: auto; overflow-y: hidden;">
                                                         <div *ngIf="!row.hideLoadingIcon"><span><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span></div>
                                                         <div [collapse]="!row.diagramExpanded" [isAnimated]="true">
                                                             <div class="no-margin">
                                                                 <div *ngIf="row.expanded || row.diagramLoaded">
-                                                                    <app-test-session-presentation 
-                                                                        [sessionId]="row.session" 
-                                                                        [sessionObject]="row" 
+                                                                    <app-test-session-presentation
+                                                                        [session]="row" 
                                                                         (ready)="diagramReady($event)">
                                                                     </app-test-session-presentation>
                                                                 </div>
@@ -82,14 +96,6 @@
                                                         </div>
                                                     </div>
                                                 </div>                                                
-                                            </div>
-                                            <div class="sessionControls">
-                                                <div class="btn-toolbar">
-                                                    <button type="button" class="btn btn-default" (click)="showTestSessionLog(row)" [pending]="viewLogPending[row.session]">View log</button>
-                                                    <button *ngIf="row.organizationId != undefined" type="button" class="btn btn-default" (click)="goToOrganisation(row)">View {{dataService.labelOrganisationLower()}}</button>
-                                                    <button *ngIf="row.organizationId != undefined && row.systemId != undefined" type="button" class="btn btn-default" (click)="goToSystem(row)">View {{dataService.labelSystemLower()}}</button>
-                                                    <button *ngIf="row.organizationId != undefined && row.systemId != undefined && row.actorId != undefined && row.specificationId != undefined" type="button" class="btn btn-default" (click)="goToStatement(row)">View conformance statement</button>
-                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -102,7 +108,7 @@
         </tbody>
     </table>
     <div *ngIf="(!prevDisabled || !nextDisabled) && data && data.length > 0" class="text-center table-paging-controls-expandable">
-        <ul class="pagination pagination-sm">
+        <ul class="pagination pagination-sm" [class.disable-events]="contentRefreshing">
             <li [ngClass]="prevDisabled ? 'disabled' : ''"><a href (click)="doFirstPage(); $event.preventDefault()">First</a></li>
             <li [ngClass]="prevDisabled ? 'disabled' : ''"><a href (click)="doPrevPage(); $event.preventDefault()">Previous</a></li>
             <li [ngClass]="nextDisabled ? 'disabled' : ''"><a href (click)="doNextPage(); $event.preventDefault()">Next</a></li>

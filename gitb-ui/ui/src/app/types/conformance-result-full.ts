@@ -1,3 +1,4 @@
+import { Counters } from "../components/test-status-icons/counters";
 import { ConformanceStatusItem } from "./conformance-status-item";
 
 export interface ConformanceResultFull {
@@ -26,6 +27,7 @@ export interface ConformanceResultFull {
 
     testCasesLoaded?: boolean
     testCases?: Partial<ConformanceStatusItem>[]
+    counters?: Counters
     [key: string]: any
 
 }

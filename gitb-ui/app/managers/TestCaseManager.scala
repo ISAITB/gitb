@@ -1,11 +1,11 @@
 package managers
 
-import javax.inject.{Inject, Singleton}
 import models.{TestCase, TestCases}
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
 import slick.lifted.Rep
 
+import javax.inject.{Inject, Singleton}
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -75,35 +75,6 @@ class TestCaseManager @Inject() (testResultManager: TestResultManager, dbConfigP
 		}
 	}
 
-	def getAllTestCases(): List[TestCases] = {
-		exec(PersistenceSchema.testCases.sortBy(_.shortname.asc).map(x => TestCaseManager.withoutDocumentation(x))
-			.result
-			.map(_.toList))
-			.map(TestCaseManager.tupleToTestCase)
-	}
-
-	def getTestCasesForSystem(systemId: Long): List[TestCases] = {
-		val query = PersistenceSchema.testCases
-  		.join(PersistenceSchema.conformanceResults).on(_.id === _.testcase)
-  		.filter(_._2.sut === systemId)
-			.sortBy(_._1.shortname.asc)
-  		.map(r => TestCaseManager.withoutDocumentation(r._1))
-  	exec(query.result.map(_.toList)).map(TestCaseManager.tupleToTestCase)
-	}
-
-	def getTestCasesForCommunity(communityId: Long): List[TestCases] = {
-		exec(PersistenceSchema.testCases
-			.join(PersistenceSchema.testSuiteHasTestCases).on(_.id === _.testcase)
-			.join(PersistenceSchema.testSuites).on(_._2.testsuite === _.id)
-			.join(PersistenceSchema.specifications).on(_._2.specification === _.id)
-			.join(PersistenceSchema.communities).on(_._2.domain === _.domain)
-			.filter(_._2.id === communityId)
-			.sortBy(_._1._1._1._1.shortname.asc)
-			.map(r => TestCaseManager.withoutDocumentation(r._1._1._1._1))
-			.result.map(_.toList)
-		).map(TestCaseManager.tupleToTestCase)
-	}
-
 	def updateTestCaseWithoutMetadata(testCaseId: Long, path: String, testSuiteOrder: Short, targetActors: String): DBIO[_] = {
 		val q1 = for {t <- PersistenceSchema.testCases if t.id === testCaseId} yield (t.path, t.testSuiteOrder, t.targetActors)
 		q1.update(path, testSuiteOrder, Some(targetActors))
@@ -152,4 +123,32 @@ class TestCaseManager @Inject() (testResultManager: TestResultManager, dbConfigP
 		}
 	}
 
+	def searchTestCases(domainIds: Option[List[Long]], specificationIds: Option[List[Long]], actorIds: Option[List[Long]], testSuiteIds: Option[List[Long]]): List[TestCases] = {
+		val results = exec(
+			for {
+				allowedTestCasesByActor <- {
+					if (actorIds.isDefined) {
+						PersistenceSchema.testCaseHasActors.filter(_.actor inSet actorIds.get).map(x => x.testcase).result.map(x => Some(x.toSet))
+					} else {
+						DBIO.successful(None)
+					}
+				}
+				testCases <- {
+					PersistenceSchema.testCases
+						.join(PersistenceSchema.specifications).on(_.targetSpec === _.id)
+						.join(PersistenceSchema.testSuiteHasTestCases).on(_._1.id === _.testcase)
+						.filterOpt(domainIds)((q, ids) => q._1._2.domain inSet ids)
+						.filterOpt(specificationIds)((q, ids) => q._1._1.targetSpec inSet ids)
+						.filterOpt(testSuiteIds)((q, ids) => q._2.testsuite inSet ids)
+						.filterOpt(allowedTestCasesByActor)((q, ids) => q._1._1.id inSet ids)
+						.sortBy(_._1._1.shortname.asc)
+						.map(x => TestCaseManager.withoutDocumentation(x._1._1))
+						.result
+						.map(_.toList)
+						.map(x => x.map(TestCaseManager.tupleToTestCase))
+				}
+			} yield testCases
+		)
+		results
+	}
 }

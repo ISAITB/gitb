@@ -6,7 +6,7 @@ import models._
 import org.slf4j.LoggerFactory
 import persistence.db._
 import play.api.db.slick.DatabaseConfigProvider
-import utils.{MimeUtil, RepositoryUtils}
+import utils.{CryptoUtil, RepositoryUtils}
 
 import java.io.File
 import java.sql.Timestamp
@@ -15,6 +15,7 @@ import javax.inject.{Inject, Singleton}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
+import utils.MimeUtil
 
 @Singleton
 class SystemManager @Inject() (repositoryUtils: RepositoryUtils, testResultManager: TestResultManager, triggerHelper: TriggerHelper, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
@@ -191,42 +192,30 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils, testResultManag
       DBIO.successful(())
   }
 
-  def updateSystemProfile(userId: Long, systemId: Long, sname: Option[String], fname: Option[String], description: Option[String], version: Option[String], otherSystem: Option[Long], propertyValues: Option[List[SystemParameterValues]], propertyFiles: Option[Map[Long, FileInfo]], copySystemParameters: Boolean, copyStatementParameters: Boolean) = {
+  def updateSystemProfile(userId: Long, systemId: Long, sname: String, fname: String, description: Option[String], version: String, otherSystem: Option[Long], propertyValues: Option[List[SystemParameterValues]], propertyFiles: Option[Map[Long, FileInfo]], copySystemParameters: Boolean, copyStatementParameters: Boolean): Unit = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction = for {
       communityId <- getCommunityIdForSystemId(systemId)
-      linkedActorIds <- updateSystemProfileInternal(Some(userId), None, systemId, sname, fname, description, version, otherSystem, propertyValues, propertyFiles, copySystemParameters, copyStatementParameters, onSuccessCalls)
+      linkedActorIds <- updateSystemProfileInternal(Some(userId), None, systemId, sname, fname, description, version, None, otherSystem, propertyValues, propertyFiles, copySystemParameters, copyStatementParameters, onSuccessCalls)
     } yield (communityId, linkedActorIds)
     val result = exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
     triggerHelper.publishTriggerEvent(new SystemUpdatedEvent(result._1, systemId))
     triggerHelper.triggersFor(result._1, systemId, Some(result._2))
   }
 
-  def updateSystemProfileInternal(userId: Option[Long], communityId: Option[Long], systemId: Long, sname: Option[String], fname: Option[String], description: Option[String], version: Option[String], otherSystem: Option[Long], propertyValues: Option[List[SystemParameterValues]], propertyFiles: Option[Map[Long, FileInfo]], copySystemParameters: Boolean, copyStatementParameters: Boolean, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[List[Long]] = {
+  def updateSystemProfileInternal(userId: Option[Long], communityId: Option[Long], systemId: Long, sname: String, fname: String, description: Option[String], version: String, apiKey: Option[Option[String]], otherSystem: Option[Long], propertyValues: Option[List[SystemParameterValues]], propertyFiles: Option[Map[Long, FileInfo]], copySystemParameters: Boolean, copyStatementParameters: Boolean, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[List[Long]] = {
     for {
       _ <- {
         val actions = new ListBuffer[DBIO[_]]()
-        // Update short name of the system
-        if (sname.isDefined) {
-          val q = for {s <- PersistenceSchema.systems if s.id === systemId} yield s.shortname
-          actions += q.update(sname.get)
-          actions += testResultManager.updateForUpdatedSystem(systemId, sname.get)
+        if (apiKey.isDefined) {
+          // Update the API key conditionally.
+          val q = for {s <- PersistenceSchema.systems if s.id === systemId} yield (s.shortname, s.fullname, s.version, s.description, s.apiKey)
+          actions += q.update(sname, fname, version, description, apiKey.get)
+        } else {
+          val q = for {s <- PersistenceSchema.systems if s.id === systemId} yield (s.shortname, s.fullname, s.version, s.description)
+          actions += q.update(sname, fname, version, description)
         }
-        // Update full name of the system
-        if (fname.isDefined) {
-          val q = for {s <- PersistenceSchema.systems if s.id === systemId} yield s.fullname
-          actions += q.update(fname.get)
-        }
-        // Update version of the system
-        if (version.isDefined) {
-          val q = for {s <- PersistenceSchema.systems if s.id === systemId} yield s.version
-          actions += q.update(version.get)
-        }
-        // Update description of the system
-        if (description.isDefined) {
-          val q = for {s <- PersistenceSchema.systems if s.id === systemId} yield s.description
-          actions += q.update(description)
-        }
+        actions += testResultManager.updateForUpdatedSystem(systemId, sname)
         toDBIO(actions)
       }
       // Update test configuration
@@ -310,17 +299,6 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils, testResultManag
     PersistenceSchema.systems.filter(_.owner === orgId)
       .sortBy(_.shortname.asc)
       .result.map(_.toList)
-  }
-
-  def getSystemsByCommunity(communityId: Long): List[Systems] = {
-    val systems = exec(
-      PersistenceSchema.systems
-        .join(PersistenceSchema.organizations).on(_.owner === _.id)
-        .filter(_._2.community === communityId)
-        .map(r => r._1)
-      .sortBy(_.shortname.asc)
-      .result.map(_.toList))
-    systems
   }
 
   def getVendorSystems(userId: Long): List[Systems] = {
@@ -666,4 +644,29 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils, testResultManag
     ).toList.map(r => new SystemParametersWithValue(r._1, r._2))
   }
 
+  def updateSystemApiKey(systemId: Long): String = {
+    val newApiKey = CryptoUtil.generateApiKey()
+    updateSystemApiKeyInternal(systemId, Some(newApiKey))
+    newApiKey
+  }
+
+  def deleteSystemApiKey(systemId: Long): Unit = {
+    updateSystemApiKeyInternal(systemId, None)
+  }
+
+  private def updateSystemApiKeyInternal(systemId: Long, apiKey: Option[String]): Unit = {
+    exec(PersistenceSchema.systems.filter(_.id === systemId).map(_.apiKey).update(apiKey).transactionally)
+  }
+
+  def searchSystems(communityIds: Option[List[Long]], organisationIds: Option[List[Long]]): List[Systems] = {
+    exec(
+      PersistenceSchema.systems
+        .join(PersistenceSchema.organizations).on(_.owner === _.id)
+        .filterOpt(organisationIds)((q, ids) => q._1.owner inSet ids)
+        .filterOpt(communityIds)((q, ids) => q._2.community inSet ids)
+        .map(_._1)
+        .result
+        .map(_.toList)
+    )
+  }
 }

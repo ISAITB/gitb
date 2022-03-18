@@ -1,11 +1,11 @@
 package com.gitb.engine.actors.processors;
 
 import akka.actor.ActorRef;
+import com.gitb.core.LogLevel;
 import com.gitb.engine.expr.ExpressionHandler;
 import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.tdl.Log;
-import com.gitb.tdl.LogLevel;
 import com.gitb.types.DataType;
 import com.gitb.types.StringType;
 import org.slf4j.Logger;

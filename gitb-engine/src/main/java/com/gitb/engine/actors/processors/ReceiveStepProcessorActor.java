@@ -12,7 +12,7 @@ import com.gitb.engine.actors.ActorSystem;
 import com.gitb.engine.commands.messaging.NotificationReceived;
 import com.gitb.engine.commands.messaging.TimeoutExpired;
 import com.gitb.engine.expr.resolvers.VariableResolver;
-import com.gitb.engine.messaging.CallbackManager;
+import com.gitb.engine.CallbackManager;
 import com.gitb.engine.messaging.MessagingContext;
 import com.gitb.engine.messaging.TransactionContext;
 import com.gitb.engine.remote.messaging.RemoteMessagingModuleClient;

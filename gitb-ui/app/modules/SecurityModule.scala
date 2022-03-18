@@ -114,6 +114,7 @@ class SecurityModule extends AbstractModule {
       .excludeBranch("/callback")
       .excludeBranch("/"+API_ROOT+"/repository/tests")
       .excludeBranch("/"+API_ROOT+"/repository/resource")
+      .excludeBranch("/"+API_ROOT+"/rest")
     )
     config
   }

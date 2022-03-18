@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { ROUTES } from '../common/global';
+import { ApiKeyInfo } from '../types/api-key-info';
 import { CustomProperty } from '../types/custom-property.type';
 import { ErrorDescription } from '../types/error-description';
 import { FileParam } from '../types/file-param.type';
@@ -26,6 +27,18 @@ export class OrganisationService {
     })
   }
 
+  searchOrganizations(communityIds: number[]|undefined) {
+		const data: any = {}
+		if (communityIds && communityIds.length > 0) {
+		  data["community_ids"] = communityIds.join(',')
+		}
+    return this.restService.post<Organisation[]>({
+      path: ROUTES.controllers.OrganizationService.searchOrganizations().url,
+      authenticate: true,
+      data: data
+    })
+  }
+
   getOrganisationById(orgId: number) {
     return this.restService.get<Organisation>({
       path: ROUTES.controllers.OrganizationService.getOrganizationById(orgId).url,
@@ -47,7 +60,7 @@ export class OrganisationService {
     })
   }
 
-  searchOrganisationsByCommunity(communityId: number, filter: string|undefined, sortOrder: string|undefined, sortColumn: string|undefined, page: number|undefined, limit: number|undefined) {
+  searchOrganisationsByCommunity(communityId: number, filter: string|undefined, sortOrder: string|undefined, sortColumn: string|undefined, page: number|undefined, limit: number|undefined, creationOrderSort: string) {
     return this.restService.get<OrganisationSearchResult>({
       path: ROUTES.controllers.OrganizationService.searchOrganizationsByCommunity(communityId).url,
       authenticate: true,
@@ -56,7 +69,8 @@ export class OrganisationService {
         sort_order: sortOrder,
         sort_column: sortColumn,
         page: page,
-        limit: limit
+        limit: limit,
+        creationOrderSort: creationOrderSort
       }
     })
   }
@@ -186,5 +200,29 @@ export class OrganisationService {
 			arrayBuffer: true
 		})
   }
+
+  getAutomationKeysForOrganisation(organisationId: number) {
+    return this.restService.get<ApiKeyInfo>({
+      path: ROUTES.controllers.OrganizationService.getAutomationKeysForOrganisation(organisationId).url,
+      authenticate: true
+    })
+  }
+
+  updateOrganisationApiKey(organisationId: number) {
+    return this.restService.post<string>({
+      path: ROUTES.controllers.OrganizationService.updateOrganisationApiKey(organisationId).url,
+      authenticate: true,
+      text: true
+    })
+  }
+
+  deleteOrganisationApiKey(organisationId: number) {
+    return this.restService.delete<void>({
+      path: ROUTES.controllers.OrganizationService.deleteOrganisationApiKey(organisationId).url,
+      authenticate: true
+    })
+  }
+
+  
 
 }

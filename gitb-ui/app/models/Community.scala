@@ -19,6 +19,7 @@ case class Communities(
                         allowPostTestOrganisationUpdates: Boolean,
                         allowPostTestSystemUpdates: Boolean,
                         allowPostTestStatementUpdates : Boolean,
+                        allowAutomationApi : Boolean,
                         domain: Option[Long]) {}
 
 class Community(
@@ -40,6 +41,7 @@ class Community(
                  _allowPostTestOrganisationUpdates: Boolean,
                  _allowPostTestSystemUpdates: Boolean,
                  _allowPostTestStatementUpdates : Boolean,
+                 _allowAutomationApi: Boolean,
                  _domain:Option[Domain]) {
   var id:Long = _id
   var shortname:String = _shortname
@@ -59,6 +61,7 @@ class Community(
   var allowPostTestOrganisationUpdates: Boolean = _allowPostTestOrganisationUpdates
   var allowPostTestSystemUpdates: Boolean = _allowPostTestSystemUpdates
   var allowPostTestStatementUpdates : Boolean = _allowPostTestStatementUpdates
+  var allowAutomationApi: Boolean  = _allowAutomationApi
   var domain:Option[Domain] = _domain
 
   def this(_case:Communities, _domain:Option[Domain]) =
@@ -81,6 +84,7 @@ class Community(
       _case.allowPostTestOrganisationUpdates,
       _case.allowPostTestSystemUpdates,
       _case.allowPostTestStatementUpdates,
+      _case.allowAutomationApi,
       _domain
     )
 
@@ -108,6 +112,7 @@ class Community(
       allowPostTestOrganisationUpdates,
       allowPostTestSystemUpdates,
       allowPostTestStatementUpdates,
+      allowAutomationApi,
       d
     )
   }

@@ -1,26 +1,21 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, EventEmitter, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { map } from 'lodash';
-import { Observable } from 'rxjs';
 import { Constants } from 'src/app/common/constants';
+import { DiagramLoaderService } from 'src/app/components/diagram/test-session-presentation/diagram-loader.service';
 import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
 import { ConformanceService } from 'src/app/services/conformance.service';
 import { DataService } from 'src/app/services/data.service';
 import { PopupService } from 'src/app/services/popup.service';
 import { ReportService } from 'src/app/services/report.service';
-import { TestSuiteService } from 'src/app/services/test-suite.service';
 import { TestService } from 'src/app/services/test.service';
-import { Actor } from 'src/app/types/actor';
-import { Domain } from 'src/app/types/domain';
 import { FilterState } from 'src/app/types/filter-state';
 import { Organisation } from 'src/app/types/organisation.type';
-import { Specification } from 'src/app/types/specification';
 import { TableColumnDefinition } from 'src/app/types/table-column-definition.type';
-import { TestCase } from 'src/app/types/test-case';
 import { TestResultReport } from 'src/app/types/test-result-report';
 import { TestResultSearchCriteria } from 'src/app/types/test-result-search-criteria';
-import { TestSuiteWithTestCases } from 'src/app/types/test-suite-with-test-cases';
 import { TestResultForDisplay } from '../../../types/test-result-for-display';
+import { saveAs } from 'file-saver'
 
 @Component({
   selector: 'app-system-tests',
@@ -60,27 +55,26 @@ export class SystemTestsComponent implements OnInit {
   deletePending = false
   stopAllPending = false
   sessionIdToShow?: string
-
-  domainLoader?: () => Observable<Domain[]>
-  specificationLoader?: () => Observable<Specification[]>
-  actorLoader?: () => Observable<Actor[]>
-  testSuiteLoader?: () => Observable<TestSuiteWithTestCases[]>
-  testCaseLoader?: () => Observable<TestCase[]>
+  sessionRefreshCompleteEmitter = new EventEmitter<void>()
+  activeSessionsCollapsed = false
+  completedSessionsCollapsed = false
+  showTerminateAll = false
 
   constructor(
     private route: ActivatedRoute,
     private reportService: ReportService,
-    private testSuiteService: TestSuiteService,
     private conformanceService: ConformanceService,
     private dataService: DataService,
     private confirmationDialogService: ConfirmationDialogService,
     private testService: TestService,
-    private popupService: PopupService
+    private popupService: PopupService,
+    private diagramLoaderService: DiagramLoaderService
   ) { }
 
   ngOnInit(): void {
     this.systemId = Number(this.route.snapshot.paramMap.get('id'))
     this.organisation = JSON.parse(localStorage.getItem(Constants.LOCAL_DATA.ORGANISATION)!)
+    this.showTerminateAll = this.dataService.isCommunityAdmin || this.dataService.isVendorAdmin || this.dataService.isSystemAdmin
     const sessionIdValue = this.route.snapshot.queryParamMap.get('sessionId')
     if (sessionIdValue != undefined) {
       this.sessionIdToShow = sessionIdValue
@@ -88,7 +82,6 @@ export class SystemTestsComponent implements OnInit {
     if (!this.dataService.isSystemAdmin && this.dataService.community?.domainId != undefined) {
       this.domainId = this.dataService.community.domainId
     }
-    this.initFilterDataLoaders()
     if (this.domainId == undefined) {
       this.filterState.filters.push(Constants.FILTER_TYPE.DOMAIN)
     }
@@ -107,29 +100,6 @@ export class SystemTestsComponent implements OnInit {
       { field: 'result', title: 'Result', sortable: true, iconFn: this.dataService.iconForTestResult }
     ]
     this.goFirstPage()
-  }
-
-  private initFilterDataLoaders() {
-    // Domains
-    this.domainLoader = (() => {
-      return this.conformanceService.getDomainsForSystem(this.systemId)
-    }).bind(this)
-    // Specifications
-    this.specificationLoader = (() => {
-      return this.conformanceService.getSpecificationsForSystem(this.systemId)
-    }).bind(this)
-    // Actors
-    this.actorLoader = (() => {
-      return this.conformanceService.getActorsForSystem(this.systemId)
-      }).bind(this)
-    // Test cases
-    this.testCaseLoader = (() => {
-      return this.reportService.getTestCasesForSystem(this.systemId)
-    }).bind(this)
-    // Test suites
-    this.testSuiteLoader = (() => {
-      return this.testSuiteService.getTestSuitesWithTestCasesForSystem(this.systemId)
-    }).bind(this)
   }
 
   queryDatabase() {
@@ -241,6 +211,16 @@ export class SystemTestsComponent implements OnInit {
     return searchCriteria
   }
 
+  private applyCompletedDataToTestSession(displayedResult: TestResultForDisplay, loadedResult: TestResultReport) {
+    displayedResult.endTime = loadedResult.result.endTime
+    displayedResult.result = loadedResult.result.result
+    displayedResult.obsolete = loadedResult.result.obsolete
+    if (displayedResult.diagramState && loadedResult.result.outputMessage) {
+      displayedResult.diagramState.outputMessage = loadedResult.result.outputMessage
+      displayedResult.diagramState.outputMessageType = this.diagramLoaderService.determineOutputMessageType(loadedResult.result.result)
+    }
+  }
+
   private newTestResult(testResult: TestResultReport, completed: boolean): TestResultForDisplay {
     const result: Partial<TestResultForDisplay> = {
       session: testResult.result.sessionId,
@@ -257,9 +237,7 @@ export class SystemTestsComponent implements OnInit {
       communityId: testResult.organization?.community
     }
     if (completed) {
-      result.endTime = testResult.result.endTime
-      result.result = testResult.result.result
-      result.obsolete = testResult.result.obsolete
+      this.applyCompletedDataToTestSession(result as TestResultForDisplay, testResult)
     }
     return result as TestResultForDisplay
   }
@@ -410,6 +388,30 @@ export class SystemTestsComponent implements OnInit {
       }).add(() => {
         this.deletePending = false
       })
+    })
+  }
+
+  refreshForSession(session: TestResultForDisplay) {
+    this.reportService.getTestResult(session.session).subscribe((result) => {
+      if (result == undefined) {
+        // Session was deleted
+        this.popupService.warning("The test session has been deleted by an administrator.")
+        this.goFirstPage()
+        this.sessionRefreshCompleteEmitter.emit()
+      } else {
+        this.diagramLoaderService.loadTestStepResults(session.session)
+        .subscribe((data) => {
+          const currentState = session.diagramState!
+          if (result.result.endTime) {
+            // Session completed
+            this.popupService.info("The test session has completed.")
+            this.applyCompletedDataToTestSession(session, result)
+          }
+          this.diagramLoaderService.updateStatusOfSteps(session, currentState.stepsOfTests[session.session], data)
+        }).add(() => {
+          this.sessionRefreshCompleteEmitter.emit()
+        })
+      }
     })
   }
 

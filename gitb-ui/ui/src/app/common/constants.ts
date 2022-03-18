@@ -6,13 +6,16 @@ export class Constants {
     public static TABLE_PAGE_SIZE = 10
     public static DEFAULT_LOGO = '/assets/images/gitb.png'
 	public static DEFAULT_COMMUNITY_ID = 0
+	public static TOOLTIP_DELAY = 500
 
 	public static TOKEN_COOKIE_EXPIRE = 2592000000 // 1 month in millis
 	public static ACCESS_TOKEN_COOKIE_KEY = 'tat'
 	public static LOGIN_OPTION_COOKIE_KEY = 'LOGIN_OPTION'
 
-	public static TEST_ENGINE_ACTOR = 'Test Engine'
-	public static TESTER_ACTOR = 'Operator'
+	public static TEST_ENGINE_ACTOR_ID = 'com.gitb.TestEngine'
+	public static TESTER_ACTOR_ID = 'com.gitb.Operator'
+	public static TEST_ENGINE_ACTOR_NAME = 'Test Engine'
+	public static TESTER_ACTOR_NAME = 'Operator'
 
 	public static LOCAL_DATA = {
 		ORGANISATION: 'organisation'
@@ -146,7 +149,8 @@ export class Constants {
 		PENDING : 2,
 		ERROR : 3,
 		COMPLETED: 4,
-		STOPPED: 5
+		STOPPED: 5,
+		CONFIGURING: 6
 	}
 
 	public static TEST_CASE_RESULT = {
@@ -266,11 +270,12 @@ export class Constants {
 
 	public static PASSWORD_REGEX = /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#&()_–\[{}\]:;'",?/\\*~$^+=<>]).{8,}$/
 	public static END_OF_TEST_STEP = "-1"
+	public static END_OF_TEST_STEP_EXTERNAL = "-2"
 	public static LOG_EVENT_TEST_STEP = "-999"
 	public static EMAIL_REGEX = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
 	public static DATA_URL_REGEX = /^data:.+\/(.+);base64,(.*)$/
 	public static VARIABLE_NAME_REGEX = /^[a-zA-Z][a-zA-Z\-_\.0-9]*$/
 
-	public static VERSION = "v1.15.1"
+	public static VERSION = "v1.16.0"
 
 }

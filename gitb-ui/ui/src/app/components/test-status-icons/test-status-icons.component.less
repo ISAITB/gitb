@@ -1,0 +1,44 @@
+@import '../../../styles/less/_common.less';
+
+.overallContainer {
+    display: flex;
+    align-items: flex-start;
+    &.centerAligned {
+        justify-content: center;
+    }
+    .statusRootContainer {
+        display: flex;
+        flex-wrap: nowrap;
+        border-radius: 5px;
+        padding: 4px 8px;
+        border: 1px solid @gray-light;
+        justify-content: center;
+        .statusContainer {
+            display: flex;
+            align-items: center;
+            .statusCount {
+                margin-left: 10px;
+                margin-right: 3px;            
+                display: flex;
+            }
+            .statusIcon {
+                display: flex;
+                i {
+                    font-size: 14px;                
+                }
+            }
+        }
+        :first-child.statusContainer{
+            .statusCount {
+                margin-left: 0px;
+            }    
+        }
+    }
+}
+::ng-deep {
+    .tooltip-inner {
+        min-width: auto !important;
+        max-width: inherit !important;
+        white-space: nowrap;
+    }
+}

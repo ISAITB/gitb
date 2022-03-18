@@ -1,10 +1,11 @@
-import { AfterViewInit, Component, Input, OnInit, ViewChild } from '@angular/core';
+import { Component, Input, OnInit, ViewChild } from '@angular/core';
 import { BsModalRef } from 'ngx-bootstrap/modal';
 import { EditorOptions } from './code-editor-options';
 import { CodemirrorComponent } from '@ctrl/ngx-codemirror';
 import { Indicator } from './indicator';
 import { DataService } from 'src/app/services/data.service';
 import { PopupService } from 'src/app/services/popup.service';
+import { BaseCodeEditorModalComponent } from '../base-code-editor-modal/base-code-editor-modal.component';
 
 @Component({
   selector: 'app-code-editor-modal',
@@ -12,7 +13,7 @@ import { PopupService } from 'src/app/services/popup.service';
   styles: [
   ]
 })
-export class CodeEditorModalComponent implements OnInit, AfterViewInit {
+export class CodeEditorModalComponent extends BaseCodeEditorModalComponent implements OnInit {
 
   @Input() documentName?: string
   @Input() editorOptions!: EditorOptions
@@ -27,10 +28,10 @@ export class CodeEditorModalComponent implements OnInit, AfterViewInit {
   styleClass = 'editor-normal'
 
   constructor(
-    private modalRef: BsModalRef,
-    private dataService: DataService,
-    private popupService: PopupService
-  ) { }
+    modalRef: BsModalRef,
+    dataService: DataService,
+    popupService: PopupService
+  ) { super(modalRef, dataService, popupService) }
 
   ngOnInit(): void {
     this.isNameVisible = this.documentName != undefined
@@ -45,7 +46,7 @@ export class CodeEditorModalComponent implements OnInit, AfterViewInit {
     }
   }
 
-  applyIndicators() {
+  applyLineStyles(): boolean {
     if (this.indicators != undefined) {
       for (let i=0; i < this.indicators.length; i++) {
         let indicator = this.indicators[i]
@@ -66,55 +67,23 @@ export class CodeEditorModalComponent implements OnInit, AfterViewInit {
                               '<span class="indicator-icon">'+indicatorIcon+'</span>'+
                               '<span class="indicator-desc">'+indicator.description+'</span>'+
                             '</div>';
-
-        this.codeEditor.codeMirror?.addLineClass(indicator.location.line-1, 'background', 'indicator-widget-line')
-        this.codeEditor.codeMirror?.addLineWidget(indicator.location.line-1, widget, {
-          coverGutter: false,
-          noHScroll: true,
-          above: true   
-        })
+        if (this.codeEditor) {
+          this.codeEditor.codeMirror?.addLineClass(indicator.location.line-1, 'background', 'indicator-widget-line')
+          this.codeEditor.codeMirror?.addLineWidget(indicator.location.line-1, widget, {
+            coverGutter: false,
+            noHScroll: true,
+            above: true   
+          })
+        }
       }
       if (this.lineNumber != undefined) {
         this.jumpToPosition(this.lineNumber, 0)
       }
+      return true
+    } else {
+      return false
     }
   }
 
-  ngAfterViewInit(): void {
-    setTimeout(() => {
-      this.applyIndicators()
-      this.codeEditor.codeMirror!.refresh()
-    })
-  }
-
-  close() {
-    this.modalRef.hide()
-  }
-
-  copyToClipboard() {
-    let cm = 
-    this.dataService.copyToClipboard(this.codeEditor.codeMirror?.getValue()).subscribe(() => {
-      this.popupService.success('Content copied to clipboard.')
-    })
-  }
-
-  download() {
-    const bb = new Blob([this.editorOptions.value!], {type: this.editorOptions.download!.mimeType})
-    saveAs(bb, this.editorOptions.download!.fileName)
-  }
-
-  jumpToPosition(line: number, ch: number) {
-    setTimeout(() => {
-      let pos = {
-        line: line,
-        ch: ch
-      }
-      let coordinates = this.codeEditor.codeMirror!.charCoords(pos, 'local')
-      let top = coordinates?.top
-      let middleHeight = this.codeEditor.codeMirror!.getScrollerElement().offsetHeight / 2
-      this.codeEditor.codeMirror!.scrollTo(null, top - middleHeight - 5)
-    }, 100)
-  }
-  
 }
  

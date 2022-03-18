@@ -1,15 +1,15 @@
 package controllers
 
 import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, ResponseConstructor}
-import javax.inject.Inject
 import managers._
 import org.apache.commons.io.FileUtils
 import org.slf4j.{Logger, LoggerFactory}
 import play.api.mvc.{AbstractController, ControllerComponents}
-import utils.{HtmlUtil, JsonUtil}
+import utils.JsonUtil
 
+import javax.inject.Inject
 import scala.concurrent.ExecutionContext
-
+import utils.HtmlUtil
 
 /**
  * Created by serbay.Tes
@@ -49,11 +49,23 @@ class TestSuiteService @Inject() (implicit ec: ExecutionContext, authorizedActio
 		ResponseConstructor.constructEmptyResponse
 	}
 
-	def getAllTestSuitesWithTestCases() = authorizedAction { request =>
+	def searchTestSuites() = authorizedAction { request =>
 		authorizationManager.canViewAllTestSuites(request)
+		val domainIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.DOMAIN_IDS)
+		val specificationIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.SPEC_IDS)
+		val actorIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.ACTOR_IDS)
+		val results = testSuiteManager.searchTestSuites(domainIds, specificationIds, actorIds)
+		val json = JsonUtil.jsTestSuiteList(results).toString()
+		ResponseConstructor.constructJsonResponse(json)
+	}
 
-		val testSuites = testSuiteManager.getTestSuitesWithTestCases()
-		val json = JsonUtil.jsTestSuiteList(testSuites).toString()
+	def searchTestSuitesInDomain() = authorizedAction { request =>
+		val domainId = ParameterExtractor.requiredBodyParameter(request, Parameters.DOMAIN_ID).toLong
+		authorizationManager.canViewDomains(request, Some(List(domainId)))
+		val specificationIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.SPEC_IDS)
+		val actorIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.ACTOR_IDS)
+		val results = testSuiteManager.searchTestSuites(Some(List(domainId)), specificationIds, actorIds)
+		val json = JsonUtil.jsTestSuiteList(results).toString()
 		ResponseConstructor.constructJsonResponse(json)
 	}
 
@@ -70,22 +82,6 @@ class TestSuiteService @Inject() (implicit ec: ExecutionContext, authorizedActio
 
 		val testCase = testCaseManager.getTestCaseWithDocumentation(testCaseId)
 		val json = JsonUtil.jsTestCases(testCase, withDocumentation = true).toString()
-		ResponseConstructor.constructJsonResponse(json)
-	}
-
-	def getTestSuitesWithTestCasesForCommunity(communityId: Long) = authorizedAction { request =>
-		authorizationManager.canViewTestSuitesByCommunityId(request, communityId)
-
-		val testSuites = testSuiteManager.getTestSuitesWithTestCasesForCommunity(communityId)
-		val json = JsonUtil.jsTestSuiteList(testSuites).toString()
-		ResponseConstructor.constructJsonResponse(json)
-	}
-
-	def getTestSuitesWithTestCasesForSystem(systemId: Long) = authorizedAction { request =>
-		authorizationManager.canViewTestSuitesBySystemId(request, systemId)
-
-		val testSuites = testSuiteManager.getTestSuitesWithTestCasesForSystem(systemId)
-		val json = JsonUtil.jsTestSuiteList(testSuites).toString()
 		ResponseConstructor.constructJsonResponse(json)
 	}
 

@@ -3,6 +3,7 @@ import { BsModalRef } from 'ngx-bootstrap/modal';
 import { ReportService } from 'src/app/services/report.service';
 import { StepReport } from '../report/step-report';
 import { StepData } from '../step-data';
+import { saveAs } from 'file-saver'
 
 @Component({
   selector: 'app-test-step-report-modal',

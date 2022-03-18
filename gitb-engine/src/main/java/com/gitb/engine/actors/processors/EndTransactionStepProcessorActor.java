@@ -1,6 +1,5 @@
 package com.gitb.engine.actors.processors;
 
-import akka.actor.ActorContext;
 import akka.actor.ActorRef;
 import com.gitb.engine.messaging.MessagingContext;
 import com.gitb.engine.testcase.TestCaseContext;
@@ -38,16 +37,6 @@ public class EndTransactionStepProcessorActor extends AbstractTestStepActor<EndT
 					.endTransaction(messagingContext.getSessionId(), step.getTxnId());
 
 				messagingContext.removeTransaction(step.getTxnId());
-
-				// end the messaging session if no other transaction is present
-				if(messagingContext.getTransactions().size() == 0 && !messagingContext.hasMoreTransactions()) {
-					messagingContext
-						.getHandler()
-						.endSession(messagingContext.getSessionId());
-
-					context.endMessagingContext(messagingContext.getHandlerId());
-				}
-
 				break;
 			}
 		}

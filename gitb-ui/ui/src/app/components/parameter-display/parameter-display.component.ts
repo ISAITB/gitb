@@ -3,6 +3,7 @@ import { DataService } from 'src/app/services/data.service';
 import { filter } from 'lodash'
 import { Parameter } from 'src/app/types/parameter';
 import { SystemService } from 'src/app/services/system.service';
+import { Constants } from 'src/app/common/constants';
 
 @Component({
   selector: 'app-parameter-display',
@@ -18,8 +19,11 @@ export class ParameterDisplayComponent<T extends Parameter> implements OnInit {
   @Input() editable = false
   @Input() canEdit?: (p: T) => boolean
   @Input() parameterLabel = 'Parameter'
+  @Input() styleAsNestedTable = false
   @Output() edit = new EventEmitter<T>()
   @Output() download = new EventEmitter<T>()
+
+  Constants = Constants
 
   isAdmin!: boolean
   showActions = false

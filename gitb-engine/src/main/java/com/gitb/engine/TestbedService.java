@@ -1,11 +1,10 @@
 package com.gitb.engine;
 
 import akka.actor.ActorRef;
-import akka.actor.ActorSystem;
 import com.gitb.core.ActorConfiguration;
+import com.gitb.core.AnyContent;
 import com.gitb.core.ErrorCode;
 import com.gitb.engine.actors.SessionActor;
-import com.gitb.engine.actors.util.ActorUtils;
 import com.gitb.engine.commands.interaction.*;
 import com.gitb.engine.commands.session.CreateCommand;
 import com.gitb.engine.events.TestStepInputEventBus;
@@ -17,8 +16,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MarkerFactory;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 /**
  * Created by serbay on 9/5/14.
@@ -34,11 +34,11 @@ public class TestbedService {
 	 * @param testCaseId
 	 * @return
 	 */
-	public static String initiate(String testCaseId) {
+	public static String initiate(String testCaseId, String sessionIdToAssign) {
 		//Create a Session in TestEngine and return session id
 		String sessionId = SessionManager
 			.getInstance()
-			.newSession(testCaseId);
+			.newSession(testCaseId, sessionIdToAssign);
 		TestEngine
 			.getInstance()
 			.getEngineActorSystem()
@@ -53,21 +53,12 @@ public class TestbedService {
 	 * @param sessionId
 	 * @param allConfigurations
 	 */
-	public static List<SUTConfiguration> configure(String sessionId, List<ActorConfiguration> allConfigurations) {
+	public static void configure(String sessionId, List<ActorConfiguration> allConfigurations, List<AnyContent> inputs) {
 		logger.debug(MarkerFactory.getDetachedMarker(sessionId), String.format("Configuring session [%s]", sessionId));
-
-		//Find the Processor for the session
-		ActorSystem actorSystem = TestEngine
-			.getInstance()
-			.getEngineActorSystem()
-			.getActorSystem();
-
 		SessionManager sessionManager = SessionManager.getInstance();
-
-		if(sessionManager.getContext(sessionId) == null) {
+		if (sessionManager.notExists(sessionId)) {
 			throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_SESSION, "Could not find session [" + sessionId + "]..."));
 		}
-
 		List<ActorConfiguration> actorConfigurations = new ArrayList<>();
 		ActorConfiguration domainConfiguration = null;
 		ActorConfiguration organisationConfiguration = null;
@@ -85,18 +76,29 @@ public class TestbedService {
 				}
 			}
 		}
+		TestEngine
+				.getInstance()
+				.getEngineActorSystem()
+				.getActorSystem()
+				.actorSelection(SessionActor.getPath(sessionId))
+				.tell(new ConfigureCommand(sessionId, actorConfigurations, domainConfiguration, organisationConfiguration, systemConfiguration, inputs), ActorRef.noSender());
+	}
 
-		try {
-			ActorRef sessionActor = ActorUtils.getIdentity(actorSystem, SessionActor.getPath(sessionId));
-			//Call the configure command
-			Object response = ActorUtils.askBlocking(sessionActor, new ConfigureCommand(sessionId, actorConfigurations, domainConfiguration, organisationConfiguration, systemConfiguration));
-			return (List<SUTConfiguration>) response;
-		} catch (GITBEngineInternalError e) {
-			throw e;
-		} catch (Exception e) {
-			throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INTERNAL_ERROR, "Exception during configuration phase of session [" + sessionId + "]..."), e);
+	private static List<String> extractFailureDetails(Throwable error) {
+		var messages = new ArrayList<String>();
+		var handledErrors = new HashSet<Throwable>();
+		extractFailureDetailsInternal(error, handledErrors, messages);
+		return messages.stream().filter(Objects::nonNull).collect(Collectors.toList());
+	}
+
+	private static void extractFailureDetailsInternal(Throwable error, Set<Throwable> handledErrors, List<String> messages) {
+		if (error != null && !handledErrors.contains(error)) {
+			handledErrors.add(error);
+			messages.add(error.getMessage());
+			extractFailureDetailsInternal(error.getCause(), handledErrors, messages);
 		}
 	}
+
 
 	/**
 	 * Provide the expected user inputs to the test engine for the interaction step or preliminary phase
@@ -106,10 +108,7 @@ public class TestbedService {
 	 * @param userInputs
 	 */
 	public static void provideInput(String sessionId, String stepId, List<UserInput> userInputs) {
-		logger.debug(MarkerFactory.getDetachedMarker(sessionId), String.format("Handling user-provided inputs - step [UserInteraction] - ID [%s]", stepId));
-		//Fire TestStepInputEvent
-		TestStepInputEventBus
-			.getInstance().publish(new InputEvent(sessionId, stepId, userInputs));
+		TestStepInputEventBus.getInstance().publish(new InputEvent(sessionId, stepId, userInputs));
 	}
 
 	public static void initiatePreliminary(String sessionId) {
@@ -157,7 +156,7 @@ public class TestbedService {
 				// Regular stop
 				logger.debug("Stopping session {}", sessionId);
 				sessionLogger.info(MarkerFactory.getDetachedMarker(sessionId), "Stopping session");
-				msg = new StopCommand(sessionId);
+				msg = new StopCommand(sessionId, true);
 			}
 			TestEngine
 					.getInstance()
@@ -195,19 +194,43 @@ public class TestbedService {
 		return newSessionId;
 	}
 
-	public static void sendStatusUpdate(String sessionId, TestStepStatus testStepStatus) {
-		//Get the Callback client
-		ITestbedServiceCallbackHandler tbsCallbackHandle = TestEngine
+	private static void sendToClient(String sessionId, Consumer<TestbedClient> fn) {
+		var tbsCallbackHandle = TestEngine
 				.getInstance()
 				.getTbsCallbackHandle();
-		if (tbsCallbackHandle == null) {
-			return;
+		if (tbsCallbackHandle != null) {
+			var testbedClient = tbsCallbackHandle.getTestbedClient(sessionId);
+			if (testbedClient != null) {
+				fn.accept(testbedClient);
+			}
 		}
-		TestbedClient testbedClient = tbsCallbackHandle.getTestbedClient(sessionId);
-		if (testbedClient != null) {
-			//Call the UpdateStatus callback
-			testbedClient.updateStatus(testStepStatus);
+	}
+
+	public static void sendConfigurationFailure(String sessionId, Throwable error) {
+		var details = extractFailureDetails(error);
+		String message;
+		if (details.isEmpty()) {
+			message = "Error during test session configuration";
+		} else {
+			message = details.get(details.size() - 1);
 		}
+
+		var request = new ConfigurationCompleteRequest();
+		request.setTcInstanceId(sessionId);
+		request.setErrorCode("INTERNAL_ERROR");
+		request.setErrorDescription(message);
+		sendToClient(sessionId, (client) -> client.configurationComplete(request));
+	}
+
+	public static void sendConfigurationResult(String sessionId, List<SUTConfiguration> configurations) {
+		var request = new ConfigurationCompleteRequest();
+		request.setTcInstanceId(sessionId);
+		request.getConfigs().addAll(configurations);
+		sendToClient(sessionId, (client) -> client.configurationComplete(request));
+	}
+
+	public static void sendStatusUpdate(String sessionId, TestStepStatus testStepStatus) {
+		sendToClient(sessionId, (client) -> client.updateStatus(testStepStatus));
 	}
 
 	/**
@@ -217,24 +240,12 @@ public class TestbedService {
 	 * @param interaction
 	 */
 	public static void interactWithUsers(String sessionId, String stepId, UserInteractionRequest interaction) {
-		logger.debug(MarkerFactory.getDetachedMarker(sessionId), String.format("Triggering user interaction - step [UserInteraction] - ID [%s]", stepId));
-		//Get the Callback client
-		ITestbedServiceCallbackHandler tbsCallbackHandle = TestEngine
-			.getInstance()
-			.getTbsCallbackHandle();
-
-		if(tbsCallbackHandle == null) {
-			return;
-		}
-
-		TestbedClient testbedClient = tbsCallbackHandle
-			.getTestbedClient(sessionId);
 		//Construct the Callback
-		InteractWithUsersRequest request = new InteractWithUsersRequest();
+		var request = new InteractWithUsersRequest();
 		request.setTcInstanceid(sessionId);
 		request.setStepId(stepId);
 		request.setInteraction(interaction);
-		//Call the InteractWithUsers callback
-		testbedClient.interactWithUsers(request);
+		sendToClient(sessionId, (client) -> client.interactWithUsers(request));
 	}
+
 }

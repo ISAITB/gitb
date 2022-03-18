@@ -59,6 +59,14 @@ class OrganizationService @Inject() (implicit ec: ExecutionContext, repositoryUt
     ResponseConstructor.constructJsonResponse(json)
   }
 
+  def searchOrganizations() = authorizedAction { request =>
+    authorizationManager.canViewAllOrganisations(request)
+    val communityIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.COMMUNITY_IDS)
+    val list = organizationManager.searchOrganizations(communityIds)
+    val json: String = JsonUtil.jsOrganizations(list).toString
+    ResponseConstructor.constructJsonResponse(json)
+  }
+
   /**
    * Gets the organizations with specified community
    */
@@ -76,8 +84,12 @@ class OrganizationService @Inject() (implicit ec: ExecutionContext, repositoryUt
       case Some(v) => v.toLong
       case None => 10L
     }
-
-    val result = organizationManager.searchOrganizationsByCommunity(communityId, page, limit, filter, sortOrder, sortColumn)
+    var creationOrderSort: Option[String] = None
+    val creationOrderSortParam = ParameterExtractor.optionalQueryParameter(request, Parameters.CREATION_ORDER_SORT).getOrElse("none")
+    if (!creationOrderSortParam.equals("none")) {
+      creationOrderSort = Some(creationOrderSortParam)
+    }
+    val result = organizationManager.searchOrganizationsByCommunity(communityId, page, limit, filter, sortOrder, sortColumn, creationOrderSort)
     val json: String = JsonUtil.jsOrganizationSearchResults(result._1, result._2).toString
     ResponseConstructor.constructJsonResponse(json)
   }
@@ -225,6 +237,24 @@ class OrganizationService @Inject() (implicit ec: ExecutionContext, repositoryUt
     val userId = ParameterExtractor.extractUserId(request)
     val hasTests = testResultManager.testSessionsExistForUserOrganisation(userId)
     ResponseConstructor.constructJsonResponse(Json.obj("hasTests" -> hasTests).toString())
+  }
+
+  def updateOrganisationApiKey(organisationId: Long) = authorizedAction { request =>
+    authorizationManager.canUpdateOrganisationApiKey(request, organisationId)
+    val newApiKey = organizationManager.updateOrganisationApiKey(organisationId)
+    ResponseConstructor.constructStringResponse(newApiKey)
+  }
+
+  def deleteOrganisationApiKey(organisationId: Long) = authorizedAction { request =>
+    authorizationManager.canUpdateOrganisationApiKey(request, organisationId)
+    organizationManager.deleteOrganisationApiKey(organisationId)
+    ResponseConstructor.constructEmptyResponse
+  }
+
+  def getAutomationKeysForOrganisation(organisationId: Long) = authorizedAction { request =>
+    authorizationManager.canViewOrganisationAutomationKeys(request, organisationId)
+    val result = organizationManager.getAutomationKeysForOrganisation(organisationId)
+    ResponseConstructor.constructJsonResponse(JsonUtil.jsApiKeyInfo(result).toString)
   }
 
 }

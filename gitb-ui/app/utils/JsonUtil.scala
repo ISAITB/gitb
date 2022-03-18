@@ -1,6 +1,6 @@
 package utils
 
-import com.gitb.core.ValueEmbeddingEnumeration
+import com.gitb.core.{AnyContent, ValueEmbeddingEnumeration}
 import com.gitb.tbs.UserInput
 import com.gitb.tr._
 import config.Configurations
@@ -10,6 +10,7 @@ import models.Enums.TestSuiteReplacementChoiceHistory.TestSuiteReplacementChoice
 import models.Enums.TestSuiteReplacementChoiceMetadata.TestSuiteReplacementChoiceMetadata
 import models.Enums._
 import models._
+import models.automation.{ApiKeyActorInfo, ApiKeyInfo, ApiKeySpecificationInfo, ApiKeySystemInfo, ApiKeyTestCaseInfo, ApiKeyTestSuiteInfo, InputMapping, TestSessionLaunchInfo, TestSessionLaunchRequest, TestSessionStatus}
 import org.apache.commons.codec.binary.Base64
 import play.api.libs.json.{JsObject, _}
 
@@ -18,7 +19,7 @@ import java.util
 import javax.xml.bind.JAXBElement
 import scala.collection.mutable.ListBuffer
 import scala.collection.{immutable, mutable}
-import scala.jdk.CollectionConverters.CollectionHasAsScala
+import scala.jdk.CollectionConverters.{CollectionHasAsScala, IterableHasAsJava}
 
 object JsonUtil {
 
@@ -30,6 +31,121 @@ object JsonUtil {
     val json = Json.obj(
       "texts" -> textArray
     )
+    json
+  }
+
+  def jsStringArray(texts: List[String]): JsValue = {
+    var textArray = Json.arr()
+    texts.foreach { text =>
+      textArray = textArray.append(JsString(text))
+    }
+    textArray
+  }
+
+  def jsApiKeyInfo(apiKeyInfo: ApiKeyInfo): JsObject = {
+    val json = Json.obj(
+      "organisation" -> (if (apiKeyInfo.organisation.isDefined) apiKeyInfo.organisation.get else JsNull),
+      "systems" -> jsApiKeySystemInfo(apiKeyInfo.systems),
+      "specifications" -> jsApiKeySpecificationsInfo(apiKeyInfo.specifications)
+    )
+    json
+  }
+
+  private def jsApiKeySystemInfo(systems: List[ApiKeySystemInfo]) = {
+    var json = Json.arr()
+    systems.foreach { system =>
+      json = json.append(Json.obj(
+        "id" -> system.id,
+        "name" -> system.name,
+        "key" -> (if (system.key.isDefined) system.key.get else JsNull)
+      ))
+    }
+    json
+  }
+
+  private def jsApiKeySpecificationsInfo(specifications: List[ApiKeySpecificationInfo]) = {
+    var json = Json.arr()
+    specifications.foreach { specification =>
+      json = json.append(Json.obj(
+        "name" -> specification.name,
+        "actors" -> jsApiKeyActorsInfo(specification.actors),
+        "testSuites" -> jsApiKeyTestSuiteInfo(specification.testSuites)
+      ))
+    }
+    json
+  }
+
+  private def jsApiKeyActorsInfo(actors: List[ApiKeyActorInfo]) = {
+    var json = Json.arr()
+    actors.foreach { actor =>
+      json = json.append(Json.obj(
+        "name" -> actor.name,
+        "key" -> actor.key
+      ))
+    }
+    json
+  }
+
+  private def jsApiKeyTestSuiteInfo(testSuites: List[ApiKeyTestSuiteInfo]) = {
+    var json = Json.arr()
+    testSuites.foreach { testSuite =>
+      json = json.append(Json.obj(
+        "name" -> testSuite.name,
+        "key" -> testSuite.key,
+        "testCases" -> jsApiKeyTestCaseInfo(testSuite.testcases)
+      ))
+    }
+    json
+  }
+
+  private def jsApiKeyTestCaseInfo(testCases: List[ApiKeyTestCaseInfo]) = {
+    var json = Json.arr()
+    testCases.foreach { testCase =>
+      json = json.append(Json.obj(
+        "name" -> testCase.name,
+        "key" -> testCase.key
+      ))
+    }
+    json
+  }
+
+  def jsTestSessionLaunchInfo(sessionInfo: Seq[TestSessionLaunchInfo]): JsObject = {
+    var jsonItems = Json.arr()
+    sessionInfo.foreach{ item =>
+      jsonItems = jsonItems.append(Json.obj(
+        "testSuite" -> item.testSuiteIdentifier,
+        "testCase" -> item.testCaseIdentifier,
+        "session" -> item.testSessionIdentifier
+      ))
+    }
+    val json = Json.obj("createdSessions" -> jsonItems)
+    json
+  }
+
+  def jsTestSessionStatusInfo(statusItems: Seq[TestSessionStatus]): JsObject = {
+    var jsonItems = Json.arr()
+    statusItems.foreach{ item =>
+      var obj = Json.obj(
+        "session" -> item.sessionId,
+        "result" -> item.result,
+        "startTime" -> TimeUtil.serializeTimestampUTC(item.startTime)
+      )
+      if (item.endTime.isDefined) {
+        obj = obj.+("endTime", JsString(TimeUtil.serializeTimestampUTC(item.endTime.get)))
+      }
+      if (item.outputMessage.isDefined) {
+        obj = obj.+("message", JsString(item.outputMessage.get))
+      }
+      if (item.logs.isDefined) {
+        var logItems = Json.arr()
+        item.logs.get.foreach { log =>
+          logItems = logItems.append(JsString(log))
+        }
+        obj = obj.+("logs", logItems)
+      }
+      jsonItems = jsonItems.append(obj)
+    }
+    val json = Json.obj("sessions" -> jsonItems)
     json
   }
 
@@ -142,7 +258,7 @@ object JsonUtil {
     jTestSuite
   }
 
-  def jsTestSuiteList(testSuites: List[TestSuite]): JsArray = {
+  def jsTestSuiteList(testSuites: Seq[TestSuite]): JsArray = {
     var json = Json.arr()
     testSuites.foreach { testSuite =>
       json = json.append(jsTestSuite(testSuite, withDocumentation = false))
@@ -480,6 +596,7 @@ object JsonUtil {
       "allowPostTestOrganisationUpdates" -> community.allowPostTestOrganisationUpdates,
       "allowPostTestSystemUpdates" -> community.allowPostTestSystemUpdates,
       "allowPostTestStatementUpdates" -> community.allowPostTestStatementUpdates,
+      "allowAutomationApi" -> community.allowAutomationApi,
       "domainId" -> community.domain
     )
     if (includeAdminInfo) {
@@ -612,7 +729,7 @@ object JsonUtil {
   }
 
   def jsActor(actor:Actor) : JsObject = {
-    val json = Json.obj(
+    var json = Json.obj(
       "id" -> actor.id,
       "actorId" -> actor.actorId,
       "name"   -> actor.name,
@@ -623,18 +740,8 @@ object JsonUtil {
       "domain"  -> (if(actor.domain.isDefined) actor.domain.get.id else JsNull),
       "specification"  -> (if(actor.specificationId.isDefined) actor.specificationId.get else JsNull)
     )
-    json
-  }
-
-  /**
-   * Converts a List of Actors into Play!'s JSON notation
-   * @param list List of Actors to be converted
-   * @return JsArray
-   */
-  def jsActors(list:List[Actors]):JsArray = {
-    var json = Json.arr()
-    list.foreach{ actor =>
-      json = json.append(jsActor(actor))
+    if (Configurations.AUTOMATION_API_ENABLED) {
+      json = json.+("apiKey"  -> (if(actor.apiKey.isDefined) JsString(actor.apiKey.get) else JsNull))
     }
     json
   }
@@ -712,6 +819,58 @@ object JsonUtil {
       json = json.append(jsConfig(config))
     }
     json
+  }
+
+  def parseJsSessions(jsonConfig: JsValue): List[String] = {
+    val sessionIds: List[String] = (jsonConfig \ "session").asOpt[JsArray].getOrElse(JsArray.empty).value.map { jsValue =>
+      jsValue.as[String]
+    }.toList
+    sessionIds
+  }
+
+  def parseJsSessionStatusRequest(jsonConfig: JsValue): (List[String], Boolean) = {
+    val sessionIds: List[String] = (jsonConfig \ "session").asOpt[JsArray].getOrElse(JsArray.empty).value.map { jsValue =>
+      jsValue.as[String]
+    }.toList
+    val withLogs = (jsonConfig \ "withLogs").asOpt[Boolean].getOrElse(false)
+    (sessionIds, withLogs)
+  }
+
+  def parseJsTestSessionLaunchRequest(jsonConfig: JsValue, organisationKey: String): TestSessionLaunchRequest = {
+    val system = (jsonConfig \ "system").as[String]
+    val actor = (jsonConfig \ "actor").as[String]
+    val testSuites: List[String] = (jsonConfig \ "testSuite").asOpt[JsArray].getOrElse(JsArray.empty).value.map { jsValue =>
+      jsValue.as[JsString].value
+    }.toList
+    val testCases: List[String] = (jsonConfig \ "testCase").asOpt[JsArray].getOrElse(JsArray.empty).value.map { jsValue =>
+      jsValue.as[JsString].value
+    }.toList
+    val inputMappings: List[InputMapping] = (jsonConfig \ "inputMapping").asOpt[JsArray].getOrElse(JsArray.empty).value.map { jsValue =>
+      parseJsInputMapping(jsValue)
+    }.toList
+    val forceSequential = (jsonConfig \ "forceSequentialExecution").asOpt[Boolean].getOrElse(false)
+    TestSessionLaunchRequest(organisationKey, system, actor, testSuites, testCases, inputMappings, forceSequential)
+  }
+
+  private def parseJsInputMapping(json: JsValue): InputMapping = {
+    val testSuites: List[String] = (json \ "testSuite").asOpt[JsArray].getOrElse(JsArray.empty).value.map { jsValue =>
+      jsValue.as[JsString].value
+    }.toList
+    val testCases: List[String] = (json \ "testCase").asOpt[JsArray].getOrElse(JsArray.empty).value.map { jsValue =>
+      jsValue.as[JsString].value
+    }.toList
+    InputMapping(testSuites, testCases, parseJsAnyContent((json \ "input").get))
+  }
+
+  def parseJsAnyContent(json: JsValue): AnyContent = {
+    val anyContent = new AnyContent
+    anyContent.setName((json \ "name").asOpt[String].orNull)
+    anyContent.setEmbeddingMethod(ValueEmbeddingEnumeration.fromValue((json \ "embeddingMethod").asOpt[String].getOrElse(ValueEmbeddingEnumeration.STRING.value())))
+    anyContent.setValue((json \ "value").asOpt[String].orNull)
+    anyContent.setType((json \ "type").asOpt[String].orNull)
+    anyContent.setType((json \ "encoding").asOpt[String].orNull)
+    anyContent.getItem.addAll((json \ "item").asOpt[JsArray].getOrElse(JsArray.empty).value.map { jsValue => parseJsAnyContent(jsValue)}.toList.asJavaCollection)
+    anyContent
   }
 
   def parseJsOrganisationParameterValues(json:String):List[OrganisationParameterValues] = {
@@ -838,10 +997,14 @@ object JsonUtil {
     list.toList
   }
 
-  def parseStringArray(json: String): List[String] = {
-    Json.parse(json).as[JsArray].value.iterator.map { value =>
+  def parseStringArray(json: JsValue): List[String] = {
+    json.as[JsArray].value.iterator.map { value =>
       value.as[JsString].value
     }.toList
+  }
+
+  def parseStringArray(json: String): List[String] = {
+    parseStringArray(Json.parse(json))
   }
 
   def parseJsImportSettings(json:String):ImportSettings = {
@@ -933,7 +1096,7 @@ object JsonUtil {
 
   def parseJsUserInputs(json:String): List[UserInput] = {
     val jsArray = Json.parse(json).as[JsArray].value
-    var list:List[UserInput] = List()
+    val list = ListBuffer[UserInput]()
     jsArray.foreach { jsonInput =>
       val input = new UserInput()
       input.setId((jsonInput \ "id").as[String])
@@ -942,9 +1105,9 @@ object JsonUtil {
       input.setEmbeddingMethod(ValueEmbeddingEnumeration.fromValue((jsonInput \ "embeddingMethod").as[String]))
       val inputValue = (jsonInput \ "value").asOpt[String]
       input.setValue(inputValue.orNull)
-      list ::= input
+      list += input
     }
-    list
+    list.toList
   }
 
   def parseJsDomainParameter(json:String, domainParameterId: Option[Long], domainId: Long): DomainParameter = {
@@ -1120,7 +1283,7 @@ object JsonUtil {
    * @param testResult TestResult object to be converted
    * @return JsObject
    */
-  def jsTestResult(testResult:TestResult, withExtendedInformation:Boolean):JsObject = {
+  def jsTestResult(testResult:TestResult, withTpl:Boolean, withOutputMessage:Boolean):JsObject = {
     val json = Json.obj(
       "sessionId" -> testResult.sessionId,
       "systemId"  -> (if (testResult.systemId.isDefined) testResult.systemId else JsNull),
@@ -1130,8 +1293,8 @@ object JsonUtil {
       "result"    -> testResult.result,
       "startTime" -> TimeUtil.serializeTimestamp(testResult.startTime),
       "endTime"   -> (if(testResult.endTime.isDefined) TimeUtil.serializeTimestamp(testResult.endTime.get) else JsNull),
-      "tpl"       -> (if(withExtendedInformation) testResult.tpl else JsNull),
-      "outputMessage" -> (if (withExtendedInformation && testResult.outputMessage.isDefined) testResult.outputMessage.get else JsNull),
+      "tpl"       -> (if(withTpl) testResult.tpl else JsNull),
+      "outputMessage" -> (if (withOutputMessage && testResult.outputMessage.isDefined) testResult.outputMessage.get else JsNull),
       "obsolete"  -> (if (testResult.testSuiteId.isDefined && testResult.testCaseId.isDefined && testResult.systemId.isDefined && testResult.organizationId.isDefined && testResult.communityId.isDefined && testResult.domainId.isDefined && testResult.specificationId.isDefined && testResult.actorId.isDefined) false else true)
     )
     json
@@ -1208,9 +1371,9 @@ object JsonUtil {
     json
   }
 
-  def jsTestResultReport(result: TestResult, orgParameterDefinitions: Option[List[OrganisationParameters]], orgParameterValues: Option[scala.collection.mutable.Map[Long, scala.collection.mutable.Map[Long, String]]], sysParameterDefinitions: Option[List[SystemParameters]], sysParameterValues: Option[scala.collection.mutable.Map[Long, scala.collection.mutable.Map[Long, String]]]): JsObject = {
+  def jsTestResultReport(result: TestResult, orgParameterDefinitions: Option[List[OrganisationParameters]], orgParameterValues: Option[scala.collection.mutable.Map[Long, scala.collection.mutable.Map[Long, String]]], sysParameterDefinitions: Option[List[SystemParameters]], sysParameterValues: Option[scala.collection.mutable.Map[Long, scala.collection.mutable.Map[Long, String]]], withOutputMessage: Boolean = false): JsObject = {
     val json = Json.obj(
-      "result" -> jsTestResult(result, withExtendedInformation = false),
+      "result" -> jsTestResult(result, withTpl = false, withOutputMessage),
       "test" ->  {
         Json.obj(
           "id"      -> (if (result.testCaseId.isDefined) result.testCaseId.get else JsNull),
@@ -1411,7 +1574,8 @@ object JsonUtil {
       "demosAccount" -> config.get("demos.account").toLong,
       "registrationEnabled" -> config.get("registration.enabled").toBoolean,
       "savedFileMaxSize" -> config.get("savedFile.maxSize").toLong,
-      "mode" -> config.get("mode")
+      "mode" -> config.get("mode"),
+      "automationApiEnabled" -> config.get("automationApi.enabled").toBoolean
     )
     json
   }

@@ -1,13 +1,11 @@
 package models
 
-case class Organizations(id: Long = 0, shortname: String, fullname: String, organizationType: Short, adminOrganization: Boolean, landingPage: Option[Long], legalNotice: Option[Long], errorTemplate: Option[Long], template: Boolean, templateName: Option[String], community: Long) {
-
-}
+case class Organizations(id: Long = 0, shortname: String, fullname: String, organizationType: Short, adminOrganization: Boolean, landingPage: Option[Long], legalNotice: Option[Long], errorTemplate: Option[Long], template: Boolean, templateName: Option[String], apiKey: Option[String], community: Long) {}
 
 class Organization(_id: Long, _sname: String, _fname: String, _otype: Short, _adminOrganization: Boolean,
                    _systems: Option[List[Systems]], _admin: Option[Users],
                    _landingPage: Option[Long], _landingPageObj: Option[LandingPages], _legalNotice: Option[Long], _legalNoticeObj: Option[LegalNotices], _errorTemplate: Option[Long], _errorTemplateObj: Option[ErrorTemplates],
-                   _template: Boolean, _templateName: Option[String],
+                   _template: Boolean, _templateName: Option[String], _apiKey: Option[String],
                    _community: Option[Communities], _communityId: Long) {
   var id: Long = _id
   var shortname: String = _sname
@@ -24,17 +22,18 @@ class Organization(_id: Long, _sname: String, _fname: String, _otype: Short, _ad
   var errorTemplateObj: Option[ErrorTemplates] = _errorTemplateObj
   var template: Boolean = _template
   var templateName: Option[String] = _templateName
+  var apiKey: Option[String] = _apiKey
   var community: Option[Communities] = _community
   var communityId: Long = _communityId
 
   def this(_case: Organizations, _landingPageObj: LandingPages, _legalNoticeObj: LegalNotices, _errorTemplateObj: ErrorTemplates) =
-    this(_case.id, _case.shortname, _case.fullname, _case.organizationType, _case.adminOrganization, None, None, _case.landingPage, Option(_landingPageObj), _case.legalNotice, Option(_legalNoticeObj), _case.errorTemplate, Option(_errorTemplateObj), _case.template, _case.templateName, None, _case.community)
+    this(_case.id, _case.shortname, _case.fullname, _case.organizationType, _case.adminOrganization, None, None, _case.landingPage, Option(_landingPageObj), _case.legalNotice, Option(_legalNoticeObj), _case.errorTemplate, Option(_errorTemplateObj), _case.template, _case.templateName, _case.apiKey, None, _case.community)
 
   def this(_case: Organizations, _systems: List[Systems], _admin: Users, _landingPageObj: LandingPages, _legalNoticeObj: LegalNotices, _errorTemplateObj: ErrorTemplates, _community:Option[Communities]) =
-    this(_case.id, _case.shortname, _case.fullname, _case.organizationType, _case.adminOrganization, Some(_systems), Option(_admin), _case.landingPage, Option(_landingPageObj), _case.legalNotice, Option(_legalNoticeObj), _case.errorTemplate, Option(_errorTemplateObj), _case.template, _case.templateName, _community, _case.community)
+    this(_case.id, _case.shortname, _case.fullname, _case.organizationType, _case.adminOrganization, Some(_systems), Option(_admin), _case.landingPage, Option(_landingPageObj), _case.legalNotice, Option(_legalNoticeObj), _case.errorTemplate, Option(_errorTemplateObj), _case.template, _case.templateName, _case.apiKey, _community, _case.community)
 
   def toCaseObject: Organizations = {
-    Organizations(id, shortname, fullname, organizationType, adminOrganization, landingPage, legalNotice, errorTemplate, template, templateName, communityId)
+    Organizations(id, shortname, fullname, organizationType, adminOrganization, landingPage, legalNotice, errorTemplate, template, templateName, apiKey, communityId)
   }
 
 }

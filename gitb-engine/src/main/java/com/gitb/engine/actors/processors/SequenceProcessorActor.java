@@ -4,7 +4,6 @@ import akka.actor.ActorRef;
 import com.gitb.core.ErrorCode;
 import com.gitb.core.StepStatus;
 import com.gitb.engine.commands.interaction.StartCommand;
-import com.gitb.engine.commands.interaction.StopCommand;
 import com.gitb.engine.events.model.StatusEvent;
 import com.gitb.engine.testcase.TestCaseContext;
 import com.gitb.engine.testcase.TestCaseScope;
@@ -146,17 +145,8 @@ public class SequenceProcessorActor<T extends Sequence> extends AbstractTestStep
                 || status == StepStatus.SKIPPED) {
 
             ActorRef nextStep = null;
-            boolean loadNextStep = true;
-            if (scope.getContext().getCurrentState() == TestCaseContext.TestCaseStateEnum.STOPPING
-                    || (status == StepStatus.ERROR && (
-                            (childStep instanceof TestConstruct && ((TestConstruct) childStep).isStopOnError())
-                                    || step.isStopOnError()
-                        )
-                    )
-            ) {
-                loadNextStep = false;
-            }
-            if (loadNextStep) {
+            boolean childStopOnError = (childStep instanceof TestConstruct) && ((TestConstruct)childStep).isStopOnError() != null && ((TestConstruct)childStep).isStopOnError();
+            if (scope.getContext().getCurrentState() != TestCaseContext.TestCaseStateEnum.STOPPING && (status != StepStatus.ERROR || !childStopOnError)) {
                 nextStep = startTestStepAtIndex(completedStepIndex + 1);
             }
             if (nextStep == null) {

@@ -1,5 +1,6 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { BsModalService } from 'ngx-bootstrap/modal';
+import { Constants } from 'src/app/common/constants';
 import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
 import { DataService } from 'src/app/services/data.service';
 import { PopupService } from 'src/app/services/popup.service';
@@ -8,6 +9,7 @@ import { TestService } from 'src/app/services/test.service';
 import { AnyContent } from '../../any-content';
 import { ReportSupport } from '../report-support';
 import { StepReport } from '../step-report';
+import { saveAs } from 'file-saver'
 
 @Component({
   selector: 'app-any-content-view',
@@ -19,7 +21,9 @@ export class AnyContentViewComponent extends ReportSupport implements OnInit {
   @Input() context!: AnyContent
   @Input() fileNameDownload?: string
   @Input() report?: StepReport
-  @Input() sessionId!: string
+  @Input() sessionId?: string
+
+  Constants = Constants
 
   value?: string
   showValueInline = true
@@ -44,7 +48,7 @@ export class AnyContentViewComponent extends ReportSupport implements OnInit {
 
   open(lineNumber?: number) {
     try {
-      if (this.isFileReference(this.context)) {
+      if (this.isFileReference(this.context) && this.sessionId) {
         this.openPending = true
         this.downloadFileReference(this.sessionId, this.context)
         .subscribe((data) => {
@@ -93,7 +97,7 @@ export class AnyContentViewComponent extends ReportSupport implements OnInit {
   }
 
   download() {
-    if (this.isFileReference(this.context)) {
+    if (this.isFileReference(this.context) && this.sessionId) {
       this.downloadPending = true
       this.downloadFileReference(this.sessionId, this.context)
       .subscribe((data) => {

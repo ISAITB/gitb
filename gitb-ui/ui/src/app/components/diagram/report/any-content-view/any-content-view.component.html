@@ -1,7 +1,7 @@
 <div class="any-content-view" *ngIf="context != undefined">
   <div class="any-content-view-container">
     <div class="any-content-view-texts">
-      <div *ngIf="context.name != undefined"><strong>{{context!.name}}</strong></div>
+      <div *ngIf="context.name != undefined" [class.content-container]="value == undefined && context?.item != undefined"><strong>{{context!.name}}</strong></div>
       <div [class.named]="context.name != undefined" class="value" *ngIf="value != undefined">
         <div>
           <span *ngIf="showValueInline">{{value}}</span>
@@ -10,11 +10,11 @@
     </div>
     <div class="any-content-view-controls" *ngIf="value != undefined">
       <div class="btn-toolbar" *ngIf="showValueInline">
-        <button class="btn btn-default" type="button" (click)="copy()"><i class="fa fa-clipboard" aria-hidden="true"></i></button>
+        <button class="btn btn-default" type="button" (click)="copy()" containerClass="shortTooltip" tooltip="Copy" [delay]="Constants.TOOLTIP_DELAY"><i class="fa fa-clipboard" aria-hidden="true"></i></button>
       </div>
       <div class="btn-toolbar" *ngIf="!showValueInline">
-        <button class="btn btn-default" type="button" (click)="download()" [class.pending]="downloadPending" [pending]="downloadPending" [icon]="true"><i class="fa fa-download" aria-hidden="true"></i></button>
-        <button class="btn btn-default" type="button" (click)="open()" [class.pending]="openPending" [pending]="openPending" [icon]="true"><i class="fa fa-search" aria-hidden="true"></i></button>
+        <button class="btn btn-default" type="button" (click)="download()" [class.pending]="downloadPending" [pending]="downloadPending" [icon]="true" containerClass="shortTooltip" tooltip="Download" [delay]="Constants.TOOLTIP_DELAY"><i class="fa fa-download" aria-hidden="true"></i></button>
+        <button class="btn btn-default" type="button" (click)="open()" [class.pending]="openPending" [pending]="openPending" [icon]="true" containerClass="shortTooltip" tooltip="View" [delay]="Constants.TOOLTIP_DELAY"><i class="fa fa-search" aria-hidden="true"></i></button>
       </div>
     </div>
   </div>

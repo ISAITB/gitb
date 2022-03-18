@@ -1,8 +1,9 @@
 package actors
 
+import actors.events.sessions.TestSessionCompletedEvent
 import akka.actor.{Actor, PoisonPill}
 import com.gitb.core.ValueEmbeddingEnumeration
-import com.gitb.tbs.{Instruction, InteractWithUsersRequest, ProvideInputRequest, TestStepStatus}
+import com.gitb.tbs.{Instruction, InteractWithUsersRequest, TestStepStatus}
 import com.gitb.tr.TAR
 import managers.{ReportManager, TestResultManager, TestbedBackendClient}
 import models.TestStepResultInfo
@@ -23,15 +24,16 @@ class SessionUpdateActor @Inject() (reportManager: ReportManager, testResultMana
 
   private val LOGGER = LoggerFactory.getLogger(classOf[SessionUpdateActor])
   private val END_STEP_ID = "-1"
+  private val END_STOP_STEP_ID = "-2"
   private val LOG_EVENT_STEP_ID = "-999"
 
   override def preStart():Unit = {
-    LOGGER.info(s"Starting session update actor [${self.path.name}]")
+    LOGGER.debug(s"Starting session update actor [${self.path.name}]")
     super.preStart()
   }
 
   override def postStop(): Unit = {
-    LOGGER.info(s"Stopping session update actor [${self.path.name}]")
+    LOGGER.debug(s"Stopping session update actor [${self.path.name}]")
     super.postStop()
   }
 
@@ -47,7 +49,7 @@ class SessionUpdateActor @Inject() (reportManager: ReportManager, testResultMana
       val session: String = testStepStatus.getTcInstanceId
       val step: String = testStepStatus.getStepId
       // Save report
-      if (step == END_STEP_ID) {
+      if (step == END_STEP_ID || step == END_STOP_STEP_ID) {
         try {
           var outputMessage: String = null
           testStepStatus.getReport match {
@@ -55,12 +57,14 @@ class SessionUpdateActor @Inject() (reportManager: ReportManager, testResultMana
               outputMessage = tar.getContext.getValue.trim
             case _ => // Do nothing
           }
-          reportManager.finishTestReport(session, testStepStatus.getReport.getResult, Option.apply(outputMessage))
+          reportManager.finishTestReport(session, testStepStatus.getReport.getResult, Option(outputMessage))
           val statusUpdates: List[(String, TestStepResultInfo)] = testResultManager.sessionRemove(session)
-          val resultInfo: TestStepResultInfo = new TestStepResultInfo(testStepStatus.getStatus.ordinal.toShort, Option.empty)
-          val message: String = JsonUtil.jsTestStepResultInfo(session, step, resultInfo, Option.apply(outputMessage), statusUpdates).toString
+          val resultInfo: TestStepResultInfo = new TestStepResultInfo(testStepStatus.getStatus.ordinal.toShort, None)
+          val message: String = JsonUtil.jsTestStepResultInfo(session, step, resultInfo, Option(outputMessage), statusUpdates).toString
           webSocketActor.testSessionEnded(session, message)
         } finally {
+          // Notify that a test session has completed.
+          context.system.eventStream.publish(TestSessionCompletedEvent(session))
           // Stop the current actor
           self ! PoisonPill.getInstance
         }
@@ -109,10 +113,7 @@ class SessionUpdateActor @Inject() (reportManager: ReportManager, testResultMana
         }
       } else { // This is a headless session - automatically dismiss or complete with an empty request.
         LOGGER.warn(s"Headless session [$session] expected interaction for step [${interactWithUsersRequest.getStepId}]. Completed automatically with empty result.")
-        val interactionResult = new ProvideInputRequest
-        interactionResult.setTcInstanceId(session)
-        interactionResult.setStepId(interactWithUsersRequest.getStepId)
-        testbedBackendClient.service().provideInput(interactionResult)
+        testbedBackendClient.provideInput(session, interactWithUsersRequest.getStepId, None)
       }
     } catch {
       case e: Exception =>

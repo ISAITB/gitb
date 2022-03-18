@@ -9,30 +9,15 @@
 .table-directive {
 	padding: 0;
 	margin: 0;
-	&.with-actions {
-		tbody > tr > td {
-			padding-top: 15px;
-			padding-bottom: 15px;
-		}
-	}
-	thead {
-		th {
-			&.operations {
-				white-space: nowrap;
-				text-align: center;
-				width: 1px;
-			}
-		}
-	}
 	tbody {
 		tr {
 			&.selectable {
 				&:hover {
 					cursor: pointer;
-					background-color: fade(@gray-light, 50%);
+					background-color: @gray-highlight;
 				}
 				&.selected {
-					background-color: fade(@gray-light, 50%);
+					background-color: @gray-highlight;
 				}
 			}
 			td {
@@ -46,11 +31,6 @@
 				}
 				&.td-data-loading {
 					background: white;
-				}
-				&.operations {
-					padding-top: 8px;
-					padding-bottom: 8px;
-					text-align: center;
 				}
 			}
 		}
@@ -85,13 +65,8 @@ button.btn {
 }
 
 #systems-table, #members-table {
-	td.operations {
-		padding-top: 8px;
-		padding-bottom: 8px;
-	}
 	td {
-		padding-top: 15px;
-		padding-bottom: 15px;
+		height: 51px;
 	}
 }
 
@@ -162,10 +137,6 @@ tr.test-result-obsolete {
 		min-height: 160px;
 		margin-bottom: 20px;
 	}
-}
-
-.test-case-list-table {
-	padding-bottom: 20px;
 }
 
 .td-centered {
@@ -751,4 +722,72 @@ table.table {
 
 .test-session-presentation-div {
 	padding-bottom: 20px;
+}
+
+.panel-heading {
+	display: flex;
+	align-items: center;
+	.btn-toolbar {
+		display: flex;
+		flex-grow: 1;
+		justify-content: right;
+		flex-wrap: wrap;		
+	}
+}
+
+.modal-header {
+	display: flex;
+	align-items: center;
+	.btn-toolbar {
+		display: flex;
+		flex-grow: 1;
+		justify-content: right;
+		flex-wrap: wrap;		
+	}
+}
+
+.assertion-report-nolink {
+    display: block;
+    margin-bottom: 10px;
+    &.warning-assertion-report {
+        background-color: @orange-light;
+    }
+    &.error-assertion-report {
+        background-color: @red-light;
+    }
+    &.info-assertion-report {
+        background-color: @gray-light-2;
+    }
+}
+.assertion-report {
+    display: block;
+    margin-bottom: 10px;
+    &:hover {
+        cursor: pointer;
+    }
+    &.warning-assertion-report {
+        background-color: @orange-light;
+    }
+    &.error-assertion-report {
+        background-color: @red-light;
+    }
+    &.info-assertion-report {
+        background-color: @gray-light-2;
+    }
+}
+
+.disable-select {
+    user-select: none; /* supported by Chrome and Opera */
+   -webkit-user-select: none; /* Safari */
+   -khtml-user-select: none; /* Konqueror HTML */
+   -moz-user-select: none; /* Firefox */
+   -ms-user-select: none; /* Internet Explorer/Edge */
+}
+
+.disable-events {
+	opacity: 0.5;
+	pointer-events: none;
+}
+div.table-container {
+	overflow: auto;
 }

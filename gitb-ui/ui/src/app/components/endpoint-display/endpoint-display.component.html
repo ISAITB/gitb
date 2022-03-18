@@ -15,6 +15,7 @@
         [showValues]="showValues" 
         [editable]="editable" 
         [canEdit]="canEdit" 
+        [styleAsNestedTable]="!hideEndpointInfo"
         (edit)="onEdit($event)"
         (download)="onDownload($event)"></app-parameter-display>
 </div>

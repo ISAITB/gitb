@@ -44,7 +44,6 @@ import { AdminComponent } from './pages/admin/admin.component';
 import { SessionDashboardComponent } from './pages/admin/session-dashboard/session-dashboard.component';
 import { SessionTableComponent } from './components/session-table/session-table.component';
 import { TestFilterComponent } from './components/test-filter/test-filter.component';
-import { NgMultiSelectDropDownModule } from 'ng-multiselect-dropdown';
 import { CustomPropertyFilterComponent } from './components/custom-property-filter/custom-property-filter.component';
 import { ToggleComponent } from './components/toggle/toggle.component';
 import { TestSessionPresentationComponent } from './components/diagram/test-session-presentation/test-session-presentation.component';
@@ -137,6 +136,16 @@ import { SecretInputComponent } from './components/secret-input/secret-input.com
 import { TabsModule } from 'ngx-bootstrap/tabs';
 import { TextFilterComponent } from './components/text-filter/text-filter.component';
 import { CopyEnabledTextComponent } from './components/copy-enabled-text/copy-enabled-text.component';
+import { SanitizeHtmlPipe } from './pipes/sanitize-html.pipe';
+import { ApiKeyTextComponent } from './components/api-key-text/api-key-text.component';
+import { ApiKeyInfoComponent } from './components/api-key-info/api-key-info.component';
+import { MissingConfigurationDisplayComponent } from './components/missing-configuration-display/missing-configuration-display.component';
+import { SimulatedConfigurationDisplayModalComponent } from './components/simulated-configuration-display-modal/simulated-configuration-display-modal.component';
+import { SessionLogModalComponent } from './components/session-log-modal/session-log-modal.component';
+import { BaseCodeEditorModalComponent } from './components/base-code-editor-modal/base-code-editor-modal.component';
+import { MultiSelectFilterComponent } from './components/multi-select-filter/multi-select-filter.component';
+import { TestStatusIconsComponent } from './components/test-status-icons/test-status-icons.component';
+import { TableColumnContentComponent } from './components/table-row/table-column-content/table-column-content.component';
 
 @NgModule({
   providers: [ 
@@ -262,7 +271,17 @@ import { CopyEnabledTextComponent } from './components/copy-enabled-text/copy-en
     ProvideInputModalComponent,
     SecretInputComponent,
     TextFilterComponent,
-    CopyEnabledTextComponent],
+    CopyEnabledTextComponent,
+    SanitizeHtmlPipe,
+    ApiKeyTextComponent,
+    ApiKeyInfoComponent,
+    MissingConfigurationDisplayComponent,
+    SimulatedConfigurationDisplayModalComponent,
+    SessionLogModalComponent,
+    BaseCodeEditorModalComponent,
+    MultiSelectFilterComponent,
+    TestStatusIconsComponent,
+    TableColumnContentComponent],
   imports: [
     BrowserModule,
     BrowserAnimationsModule,
@@ -276,7 +295,6 @@ import { CopyEnabledTextComponent } from './components/copy-enabled-text/copy-en
     AlertModule.forRoot(),
     CollapseModule.forRoot(),
     BsDatepickerModule.forRoot(),
-    NgMultiSelectDropDownModule.forRoot(),
     CodemirrorModule,
     BsDropdownModule.forRoot(),
     PopoverModule.forRoot(),

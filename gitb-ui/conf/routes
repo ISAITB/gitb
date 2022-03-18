@@ -61,22 +61,20 @@ POST    /api/suts/:sut_id/conformance           @controllers.SystemService.defin
 DELETE  /api/suts/:sut_id/conformance           @controllers.SystemService.deleteConformanceStatement(sut_id: Long)
 GET     /api/suts/:sut_id/conformance           @controllers.SystemService.getConformanceStatements(sut_id : Long)
 GET	    /api/vendor/systems                     @controllers.SystemService.getSystemsByOrganization()
-GET	    /api/vendor/systems/community           @controllers.SystemService.getSystemsByCommunity(communityId: Long)
 POST	/api/vendor/systems/register            @controllers.SystemService.registerSystemWithOrganization()
+POST    /api/suts/:sut_id/apiKey                @controllers.SystemService.updateSystemApiKey(sut_id: Long)
+DELETE  /api/suts/:sut_id/apiKey                @controllers.SystemService.deleteSystemApiKey(sut_id: Long)
 
 # Test Case management API
 GET	    /api/specDomain                         @controllers.ConformanceService.getDomainOfSpecification(spec_id: Long)
 GET	    /api/domains                            @controllers.ConformanceService.getDomains()
-GET	    /api/domains/system                     @controllers.ConformanceService.getDomainsForSystem(systemId: Long)
 GET	    /api/domains/community                  @controllers.ConformanceService.getCommunityDomain()
 POST    /api/domains/conformance                @controllers.ConformanceService.getConformanceOverview()
 POST    /api/domains                            @controllers.ConformanceService.createDomain()
 DELETE  /api/domains/:domain_id                 @controllers.ConformanceService.deleteDomain(domain_id: Long)
 POST    /api/domains/:domain_id                 @controllers.ConformanceService.updateDomain(domain_id: Long)
 GET	    /api/domains/:domain_id/specs           @controllers.ConformanceService.getDomainSpecs(domain_id : Long)
-GET     /api/specs                              @controllers.ConformanceService.getSpecs()
-GET     /api/specs/system                       @controllers.ConformanceService.getSpecsForSystem(systemId: Long)
-GET     /api/actors/system                      @controllers.ConformanceService.getActorsForSystem(systemId: Long)
+POST    /api/search/specs                       @controllers.ConformanceService.getSpecs()
 POST    /api/specs                              @controllers.ConformanceService.createSpecification()
 GET	    /api/specs/:spec_id/actors              @controllers.ConformanceService.getSpecActors(spec_id : Long)
 GET	    /api/specs/:spec_id/suites              @controllers.ConformanceService.getSpecTestSuites(spec_id : Long)
@@ -84,8 +82,9 @@ POST    /api/specs/deploy                       @controllers.ConformanceService.
 POST    /api/specs/deploy/resolve               @controllers.ConformanceService.resolvePendingTestSuites()
 DELETE  /api/specs/:spec_id                     @controllers.SpecificationService.deleteSpecification(spec_id: Long)
 POST    /api/specs/:spec_id                     @controllers.SpecificationService.updateSpecification(spec_id: Long)
-GET     /api/actors                             @controllers.ConformanceService.getActors()
-GET     /api/actors/domain                      @controllers.ConformanceService.getActorsForDomain(domainId: Long)
+POST    /api/search/actors                      @controllers.ConformanceService.searchActors()
+POST    /api/search/actorsInDomain              @controllers.ConformanceService.searchActorsInDomain()
+POST    /api/search/actorsForIds                @controllers.ConformanceService.getActors()
 POST    /api/actors                             @controllers.ConformanceService.createActor()
 DELETE  /api/actors/:actor_id                   @controllers.ActorService.deleteActor(actor_id : Long)
 POST    /api/actors/:actor_id                   @controllers.ActorService.updateActor(actor_id : Long)
@@ -128,17 +127,17 @@ POST    /api/admins/:id                         @controllers.UserService.updateS
 DELETE  /api/admins/:id                         @controllers.UserService.deleteAdmin(id : Long)
 
 # Session management API
-GET     /api/dashboard/tests/all                @controllers.RepositoryService.getAllTestCases()
-GET     /api/dashboard/tests/system             @controllers.RepositoryService.getTestCasesForSystem(systemId: Long)
-GET     /api/dashboard/tests/community          @controllers.RepositoryService.getTestCasesForCommunity(communityId: Long)
+POST    /api/search/tests                       @controllers.RepositoryService.searchTestCases()
+POST    /api/search/testsByDomain               @controllers.RepositoryService.searchTestCasesInDomain()
 GET     /api/dashboard/systems                  @controllers.SystemService.getSystems()
+POST    /api/search/systems                     @controllers.SystemService.searchSystems()
+POST    /api/search/systemsInCommunity          @controllers.SystemService.searchSystemsInCommunity()
 POST    /api/dashboard/active                   @controllers.ReportService.getActiveTestResults()
 POST    /api/dashboard/finished                 @controllers.ReportService.getFinishedTestResults()
 GET     /api/dashboard/config                   @controllers.SystemConfigurationService.getSessionAliveTime()
 POST    /api/dashboard/config                   @controllers.SystemConfigurationService.updateSessionAliveTime()
-GET     /api/dashboard/suites/all               @controllers.TestSuiteService.getAllTestSuitesWithTestCases()
-GET     /api/dashboard/suites/community         @controllers.TestSuiteService.getTestSuitesWithTestCasesForCommunity(communityId: Long)
-GET     /api/dashboard/suites/system            @controllers.TestSuiteService.getTestSuitesWithTestCasesForSystem(systemId: Long)
+POST    /api/dashboard/suites/search            @controllers.TestSuiteService.searchTestSuites()
+POST    /api/dashboard/suites/searchInDomain    @controllers.TestSuiteService.searchTestSuitesInDomain()
 
 GET     /api/pages/default                      @controllers.LandingPageService.getCommunityDefaultLandingPage()
 GET     /api/pages/:id                          @controllers.LandingPageService.getLandingPageById(id : Long)
@@ -179,6 +178,9 @@ GET     /api/organizations/orgparam/check/:id   @controllers.OrganizationService
 GET     /api/organizations/own/orgparam         @controllers.OrganizationService.getOwnOrganisationParameterValues()
 POST    /api/organizations/orgparam/:id         @controllers.OrganizationService.updateOrganisationParameterValues(id: Long)
 GET     /api/organizations/orgparam/:orgId/parameters/:parameterId/download @controllers.OrganizationService.downloadOrganisationParameterFile(orgId : Long, parameterId : Long)
+POST    /api/organizations/:id/apiKey           @controllers.OrganizationService.updateOrganisationApiKey(id: Long)
+DELETE  /api/organizations/:id/apiKey           @controllers.OrganizationService.deleteOrganisationApiKey(id: Long)
+GET     /api/organizations/:id/apiKey           @controllers.OrganizationService.getAutomationKeysForOrganisation(id: Long)
 
 GET     /api/communities/all                    @controllers.CommunityService.getCommunities()
 POST    /api/communities/create                 @controllers.CommunityService.createCommunity()
@@ -196,6 +198,7 @@ DELETE  /api/communities/sysparam/:id           @controllers.CommunityService.de
 GET     /api/communities/sysparam/:id           @controllers.CommunityService.getSystemParameters(id: Long)
 POST    /api/communities/sysparam/order/:id     @controllers.CommunityService.orderSystemParameters(id: Long)
 GET     /api/communities/organizations/:id      @controllers.OrganizationService.getOrganizationsByCommunity(id: Long)
+POST    /api/search/communities/organizations   @controllers.OrganizationService.searchOrganizations()
 GET     /api/communities/organizations/:id/search @controllers.OrganizationService.searchOrganizationsByCommunity(id: Long)
 GET     /api/communities/pages/:id              @controllers.LandingPageService.getLandingPagesByCommunity(id: Long)
 POST    /api/communities/pages/create           @controllers.LandingPageService.createLandingPage()
@@ -214,6 +217,7 @@ POST    /api/communities/labels/:id             @controllers.CommunityService.se
 
 # Test Result management API
 POST    /api/tests/binaryMetadata               @controllers.TestResultService.getBinaryMetadata()
+GET     /api/tests/result/:sessionId            @controllers.ReportService.getTestResult(sessionId: String)
 
 # Test management API
 GET	    /api/tests/:test_id/definition          @controllers.TestService.getTestCaseDefinition(test_id : String)
@@ -285,7 +289,10 @@ POST    /api/domains/import/confirm/:id                         @controllers.Rep
 POST    /api/domains/import/confirm/admin/:id                   @controllers.RepositoryService.confirmDomainImportTestBedAdmin(id: Long)
 POST    /api/initdata                                           @controllers.RepositoryService.applySandboxData()
 
+POST    /api/rest/tests/start                                    @controllers.TestAutomationService.start()
+POST    /api/rest/tests/stop                                     @controllers.TestAutomationService.stop()
+GET     /api/rest/tests/status                                   @controllers.TestAutomationService.status()
+
 # Map static resources from the /public folder to the /assets URL path
-# TODO CHECK
 GET     /assets/*file               controllers.Assets.at(path="/public", file)
 GET     /webjars/*file              @org.webjars.play.WebJarAssets.at(file)

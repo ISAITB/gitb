@@ -22,6 +22,7 @@ export class ToggleComponent implements AfterViewInit, ControlValueAccessor {
   @Input() toggleClass = ''
   @Input() size = ''
   @Input() disabled = false
+  @Input() initialOn = false
 
   @Output('toggle') $toggle = new EventEmitter<boolean>()
 
@@ -88,7 +89,7 @@ export class ToggleComponent implements AfterViewInit, ControlValueAccessor {
         this.renderer.addClass(this.wrapperElement.nativeElement, 'btn-default')
         this.renderer.removeClass(this.wrapperElement.nativeElement, 'btn-primary')
       }
-    }
+    } //'off': !_value, 
   }
 
   onSwitch(event: any) {

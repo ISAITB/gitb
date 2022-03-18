@@ -1,6 +1,7 @@
 import { Injectable, Renderer2, RendererFactory2 } from '@angular/core';
 import { Observable } from 'rxjs';
 import { Constants } from '../common/constants'
+import { ObjectWithId } from '../components/test-filter/object-with-id';
 import { ConformanceTestCase } from '../pages/organisation/conformance-statement/conformance-test-case';
 import { ActualUserInfo } from '../types/actual-user-info';
 import { AppConfigurationProperties } from '../types/app-configuration-properties';
@@ -10,12 +11,15 @@ import { CustomPropertySubmissionInfo } from '../types/custom-property-submissio
 import { CustomProperty } from '../types/custom-property.type';
 import { FileParam } from '../types/file-param.type';
 import { IdLabel } from '../types/id-label';
+import { NumberSet } from '../types/number-set';
 import { Organisation } from '../types/organisation.type';
 import { Parameter } from '../types/parameter';
 import { SystemConfigurationEndpoint } from '../types/system-configuration-endpoint';
+import { SystemConfigurationParameter } from '../types/system-configuration-parameter';
 import { TypedLabelConfig } from '../types/typed-label-config.type'
 import { UserAccount } from '../types/user-account';
 import { User } from '../types/user.type';
+import { saveAs } from 'file-saver'
 
 @Injectable({
   providedIn: 'root'
@@ -86,7 +90,8 @@ export class DataService {
       demosAccount: (this.configuration?.demosAccount != undefined)?this.configuration!.demosAccount:-1,
       registrationEnabled: (this.configuration?.registrationEnabled != undefined)?this.configuration!.registrationEnabled:false,
       savedFileMaxSize: (this.configuration?.savedFileMaxSize != undefined)?this.configuration!.savedFileMaxSize:5,
-      mode: (this.configuration?.mode != undefined)?this.configuration!.mode:'development'
+      mode: (this.configuration?.mode != undefined)?this.configuration!.mode:'development',
+      automationApiEnabled: (this.configuration?.automationApiEnabled != undefined)?this.configuration!.automationApiEnabled:false
     }
   }
 
@@ -579,25 +584,6 @@ export class DataService {
     }
   }
 
-  testStatusText(completedCount: number, failedCount: number, undefinedCount: number) {
-    let totalCount = completedCount + failedCount + undefinedCount
-    let resultText = completedCount + ' of ' + totalCount + ' passed'
-    if (totalCount > completedCount) {
-      resultText += ' ('
-      if (failedCount > 0) {
-        resultText += failedCount + ' failed'
-        if (undefinedCount > 0) {
-          resultText += ', '
-        }
-      }
-      if (undefinedCount > 0) {
-        resultText += undefinedCount + ' undefined'
-      }
-      resultText += ')'
-    }
-    return resultText
-  }
-
   conformanceStatusForTests(completedCount: number, failedCount: number, undefinedCount: number) {
     let totalCount = completedCount + failedCount + undefinedCount
     if (completedCount == totalCount) {
@@ -791,17 +777,37 @@ export class DataService {
   }
 
 	isConfigurationValid(endpointRepresentations: SystemConfigurationEndpoint[]) {
-		let valid = true
 		if (endpointRepresentations != undefined) {
 			for (let endpoint of endpointRepresentations) {
-				for (let parameter of endpoint.parameters) {
-					if (!parameter.configured && parameter.use == "R") {
-						return false
-          }
+        let endpointValid = this.isConfigurationOfEndpointValid(endpoint)
+        if (!endpointValid) {
+          return false
         }
       }
     }
-		return valid
+		return true
+  }
+
+  getEndpointParametersToDisplay(endpoints: SystemConfigurationEndpoint[]): SystemConfigurationParameter[] {
+    if (endpoints.length > 0) {
+			for (let endpoint of endpoints) {
+        let endpointValid = this.isConfigurationOfEndpointValid(endpoint)
+        if (!endpointValid) {
+          return endpoint.parameters
+        }
+      }
+      return endpoints[0].parameters
+    }
+    return []
+  }
+
+	isConfigurationOfEndpointValid(endpoint: SystemConfigurationEndpoint) {
+    for (let parameter of endpoint.parameters) {
+      if (!parameter.configured && parameter.use == "R") {
+        return false
+      }
+    }
+		return true
   }
 
 	setTestsToExecute(tests: ConformanceTestCase[]) {
@@ -910,6 +916,14 @@ export class DataService {
         observer.complete()
       }
     })
+  }
+
+  asIdSet(items: ObjectWithId[]): NumberSet {
+    const idSet: NumberSet = {}
+    for (let item of items) {
+      idSet[item.id] = true
+    }
+    return idSet
   }
 
 }

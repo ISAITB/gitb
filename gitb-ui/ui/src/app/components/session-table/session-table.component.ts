@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { BsModalService } from 'ngx-bootstrap/modal';
 import { Constants } from 'src/app/common/constants';
 import { DataService } from 'src/app/services/data.service';
@@ -6,8 +6,9 @@ import { ReportService } from 'src/app/services/report.service';
 import { RoutingService } from 'src/app/services/routing.service';
 import { TestResultForDisplay } from 'src/app/types/test-result-for-display';
 import { BaseTableComponent } from '../base-table/base-table.component';
-import { CodeEditorModalComponent } from '../code-editor-modal/code-editor-modal.component';
 import { SessionData } from '../diagram/test-session-presentation/session-data';
+import { SessionPresentationData } from '../diagram/test-session-presentation/session-presentation-data';
+import { SessionLogModalComponent } from '../session-log-modal/session-log-modal.component';
 
 @Component({
   selector: '[app-session-table]',
@@ -18,11 +19,17 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
 
   @Input() sessionTableId = 'session-table'
   @Input() expandedCounter?: { count: number }
+  @Input() supportRefresh = false
+  @Input() refreshComplete?: EventEmitter<void>
+  @Output() onRefresh = new EventEmitter<TestResultForDisplay>()
 
   Constants = Constants
   columnCount = 0
   diagramCollapsed: {[key: string]: boolean} = {}
   viewLogPending: {[key: string]: boolean} = {}
+  stateEmitters: {[key: string]: EventEmitter<void>} = {}
+  sessionBeingRefreshed?: TestResultForDisplay
+  diagramStateForSessionBeingRefreshed?: SessionPresentationData
 
   constructor(
     private reportService: ReportService,
@@ -38,11 +45,22 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
         column.headerClass = column.headerClass + ' sortable'
       }
     }
+    this.splitColumns()
     this.columnCount = this.columns.length
     if (this.checkboxEnabled) this.columnCount += 1
-    if (this.actionVisible) this.columnCount += 1
-    if (this.operationsVisible) this.columnCount += 1
-    if (this.exportVisible) this.columnCount += 1
+    if (this.actionVisible || this.operationsVisible || this.exportVisible) this.columnCount += 1
+    if (this.operationsVisible) {
+      // Session termination
+      this.deleteVisibleForRow = (row: TestResultForDisplay) => {
+        // This is needed because we may have refreshed a session in a table displaying active sessions that has completed.
+        return row.endTime == undefined
+      }
+    }
+    if (this.refreshComplete) {
+      this.refreshComplete.subscribe(() => {
+        this.sessionBeingRefreshed = undefined
+      })
+    }
   }
 
   diagramReady(test: SessionData) {
@@ -82,23 +100,11 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
     const sessionId = row.session
     this.viewLogPending[sessionId] = true
     this.reportService.getTestSessionLog(sessionId)
-    .subscribe((logs: string) => {
-      this.modalService.show(CodeEditorModalComponent, {
+    .subscribe((logs: string[]) => {
+      this.modalService.show(SessionLogModalComponent, {
         class: 'modal-lg',
         initialState: {
-          documentName: 'Test session log',
-          editorOptions: {
-            value: logs,
-            readOnly: true,
-            lineNumbers: true,
-            smartIndent: false,
-            electricChars: false,
-            mode: 'text/plain',
-            download: {
-              fileName: 'log.txt',
-              mimeType: 'text/plain'
-            }
-          }
+          messages: logs
         }
       })
     }).add(() => {
@@ -126,6 +132,13 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
     } else {
       // Another organisation
       this.routingService.toOrganisationDetails(row.communityId!, targetOrganisationId)
+    }
+  }
+
+  refresh(row: TestResultForDisplay) {
+    if (this.supportRefresh) {
+      this.sessionBeingRefreshed = row
+      this.onRefresh.emit(row)
     }
   }
 

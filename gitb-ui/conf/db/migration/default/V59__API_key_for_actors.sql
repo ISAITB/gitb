@@ -1,0 +1,1 @@
+ALTER TABLE `actors` ADD COLUMN `api_key` varchar(254);

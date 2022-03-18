@@ -66,10 +66,7 @@
             <app-sequence-diagram-message *ngFor="let subMessage of thread" [message]="subMessage" [events]="events"></app-sequence-diagram-message>
           </div>
       </ng-container>
-      <div class="child-steps interactions" [ngClass]="classForReverseOffset" *ngIf="message.type == 'interact'">
-        <app-sequence-diagram-message *ngFor="let subMessage of message.interactions" [message]="subMessage" [events]="events"></app-sequence-diagram-message>
-      </div>
-      <div class="arrow" [ngClass]="{'reply': message.reply, 'normal': message.reply == undefined || !message.reply}" *ngIf="message.type == 'msg' || message.type == 'instruction' || message.type == 'request'"></div>
+      <div class="arrow" [ngClass]="{'reply': message.reply, 'normal': message.reply == undefined || !message.reply}" *ngIf="message.type == 'msg' || message.type == 'interact'"></div>
     </div>
     <app-sequence-diagram-message-status [message]="message" [events]="events"></app-sequence-diagram-message-status>
   </div>

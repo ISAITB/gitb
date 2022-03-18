@@ -21,9 +21,12 @@ export class SequenceDiagramActorComponent implements OnInit {
     for (let info of this.actorInfo) {
       if (this.actor == info.id) {
         if (info.name != undefined) {
-          this.actorForDisplay = info.name + " (" + info.role + ")"
+          this.actorForDisplay = info.name
         } else {
-          this.actorForDisplay = info.id + " (" + info.role + ")"
+          this.actorForDisplay = info.id
+        }
+        if (info.role != undefined) {
+          this.actorForDisplay += " (" + info.role + ")"
         }
       }
     }

@@ -1,8 +1,9 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { BsModalRef } from 'ngx-bootstrap/modal';
+import { MissingConfigurationAction } from 'src/app/components/missing-configuration-display/missing-configuration-action';
 import { ConfigurationPropertyVisibility } from 'src/app/types/configuration-property-visibility';
 import { OrganisationParameterWithValue } from 'src/app/types/organisation-parameter-with-value';
-import { SystemConfigurationEndpoint } from 'src/app/types/system-configuration-endpoint';
+import { SystemConfigurationParameter } from 'src/app/types/system-configuration-parameter';
 import { SystemParameterWithValue } from 'src/app/types/system-parameter-with-value';
 
 @Component({
@@ -17,44 +18,20 @@ export class MissingConfigurationModalComponent implements OnInit {
   @Input() organisationConfigurationValid!: boolean
   @Input() systemProperties!: SystemParameterWithValue[]
   @Input() systemConfigurationValid!: boolean
-  @Input() endpointRepresentations!: SystemConfigurationEndpoint[]
+  @Input() statementProperties!: SystemConfigurationParameter[]
   @Input() configurationValid!: boolean
   @Input() organisationPropertyVisibility!: ConfigurationPropertyVisibility
   @Input() systemPropertyVisibility!: ConfigurationPropertyVisibility
   @Input() statementPropertyVisibility!: ConfigurationPropertyVisibility
-  @Output() action = new EventEmitter<string>()
-
-  showOrganisationProperties = false
-  showSystemProperties = false
-  showStatementProperties = false
-  somethingIsVisible = false
-  requiredPropertiesAreHidden = false
+  @Output() action = new EventEmitter<MissingConfigurationAction>()
 
   constructor(
     private modalRef: BsModalRef
   ) { }
 
-  ngOnInit(): void {
-    this.showOrganisationProperties = this.organisationPropertyVisibility.hasVisibleMissingRequiredProperties || this.organisationPropertyVisibility.hasVisibleMissingOptionalProperties
-    this.showSystemProperties = this.systemPropertyVisibility.hasVisibleMissingRequiredProperties || this.systemPropertyVisibility.hasVisibleMissingOptionalProperties
-    this.showStatementProperties = this.statementPropertyVisibility.hasVisibleMissingRequiredProperties || this.statementPropertyVisibility.hasVisibleMissingOptionalProperties
-    this.somethingIsVisible = this.showOrganisationProperties || this.showSystemProperties || this.showStatementProperties
-    this.requiredPropertiesAreHidden = this.organisationPropertyVisibility.hasNonVisibleMissingRequiredProperties || this.systemPropertyVisibility.hasNonVisibleMissingRequiredProperties || this.statementPropertyVisibility.hasNonVisibleMissingRequiredProperties
-  }
+  ngOnInit(): void {}
 
-  toOrganisationProperties() {
-    this.close('organisation')
-  }
-
-  toSystemProperties() {
-    this.close('system')
-  }
-
-  toConfigurationProperties() {
-    this.close('statement')
-  }
-
-  close(action?: string) {
+  close(action?: MissingConfigurationAction) {
     if (action != undefined) {
       this.action.emit(action)
     }

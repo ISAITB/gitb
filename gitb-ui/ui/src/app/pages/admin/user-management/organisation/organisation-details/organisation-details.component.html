@@ -43,6 +43,15 @@
                     </div>
                 </div>
             </tab>
+            <tab heading="REST API keys" (selectTab)="apiInfoSelected()" *ngIf="dataService.configuration.automationApiEnabled">
+                <div class="tabPanel">
+                    <app-api-key-info 
+                        [organisationId]="orgId" 
+                        [organisationName]="organisation.fname"
+                        [loadData]="loadApiInfo">
+                    </app-api-key-info>
+                </div>
+            </tab>
         </tabset>
     </div>
 </div>

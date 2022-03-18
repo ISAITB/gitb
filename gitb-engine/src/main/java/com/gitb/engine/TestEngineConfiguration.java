@@ -14,6 +14,8 @@ public class TestEngineConfiguration {
 
 	public static int ITERATION_LIMIT;
 	public static String MESSAGING_CALLBACK_URL;
+	public static String VALIDATION_CALLBACK_URL;
+	public static String PROCESSING_CALLBACK_URL;
 	public static Boolean TEMP_STORAGE_ENABLED;
 	public static String TEMP_STORAGE_LOCATION;
 	public static Boolean TEMP_STORAGE_BINARY_ENABLED;
@@ -35,6 +37,9 @@ public class TestEngineConfiguration {
 
 			ITERATION_LIMIT = config.getInt("gitb.engine.iteration-limit", 1000);
 			MESSAGING_CALLBACK_URL = config.getString("gitb.messaging.callbackURL");
+			// By default, infer the processing and validation callback URLs from the messaging callback to avoid requiring their explicit definition.
+			VALIDATION_CALLBACK_URL = config.getString("gitb.validation.callbackURL", inferCallbackURL("ValidationClient", MESSAGING_CALLBACK_URL));
+			PROCESSING_CALLBACK_URL = config.getString("gitb.processing.callbackURL", inferCallbackURL("ProcessingClient", MESSAGING_CALLBACK_URL));
 			// Temp storage properties - start.
 			TEMP_STORAGE_ENABLED = config.getBoolean("gitb.engine.storage.enabled", Boolean.TRUE);
 			TEMP_STORAGE_LOCATION = config.getString("gitb.engine.storage.location", "./temp/session/");
@@ -48,6 +53,14 @@ public class TestEngineConfiguration {
 		} catch (ConfigurationException e) {
 			throw new IllegalStateException("Error loading configuration", e);
 		}
-
 	}
+
+	private static String inferCallbackURL(String endpointName, String referenceCallbackURL) {
+		int index = referenceCallbackURL.lastIndexOf('/');
+		if (index >= 0) {
+			return referenceCallbackURL.substring(0, index) + "/" + endpointName;
+		}
+		return null;
+	}
+
 }

@@ -11,6 +11,7 @@ import { PopupService } from 'src/app/services/popup.service';
 import { RoutingService } from 'src/app/services/routing.service';
 import { ConformanceCertificateSettings } from 'src/app/types/conformance-certificate-settings';
 import { FileData } from 'src/app/types/file-data.type';
+import { saveAs } from 'file-saver'
 
 @Component({
   selector: 'app-community-certificate',

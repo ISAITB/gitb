@@ -42,6 +42,35 @@ export class SystemService {
     })
   }
 
+  searchSystems(communityIds: number[]|undefined, organisationIds: number[]|undefined) {
+		const data: any = {}
+		if (communityIds && communityIds.length > 0) {
+		  data["community_ids"] = communityIds.join(',')
+		}
+		if (organisationIds && organisationIds.length > 0) {
+		  data["organization_ids"] = organisationIds.join(',')
+		}
+    return this.restService.post<System[]>({
+      path: ROUTES.controllers.SystemService.searchSystems().url,
+      authenticate: true,
+      data: data
+    })
+  }
+
+  searchSystemsInCommunity(communityId: number, organisationIds: number[]|undefined) {
+		const data: any = {
+      community_id: communityId
+    }
+		if (organisationIds && organisationIds.length > 0) {
+		  data["organization_ids"] = organisationIds.join(',')
+		}
+    return this.restService.post<System[]>({
+      path: ROUTES.controllers.SystemService.searchSystemsInCommunity().url,
+      authenticate: true,
+      data: data
+    })
+  }
+
   getSystems(systemIds?: number[]) {
     let params: any = {}
     if (systemIds !== undefined && systemIds.length > 0) {
@@ -51,13 +80,6 @@ export class SystemService {
       path: ROUTES.controllers.SystemService.getSystems().url,
       authenticate: true,
       params: params
-    })
-  }
-
-  getSystemsByCommunity() {
-    return this.restService.get<System[]>({
-      path: ROUTES.controllers.SystemService.getSystemsByCommunity(this.dataService.community!.id).url,
-      authenticate: true
     })
   }
 
@@ -231,6 +253,21 @@ export class SystemService {
       data: {
         config: JSON.stringify(configToSend)
       }
+    })
+  }
+
+  updateSystemApiKey(systemId: number) {
+    return this.restService.post<string>({
+      path: ROUTES.controllers.SystemService.updateSystemApiKey(systemId).url,
+      authenticate: true,
+      text: true
+    })
+  }
+
+  deleteSystemApiKey(systemId: number) {
+    return this.restService.delete<void>({
+      path: ROUTES.controllers.SystemService.deleteSystemApiKey(systemId).url,
+      authenticate: true
     })
   }
 

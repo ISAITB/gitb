@@ -3,29 +3,19 @@ import { BsModalService } from 'ngx-bootstrap/modal';
 import { Observable } from 'rxjs';
 import { Constants } from 'src/app/common/constants';
 import { ConformanceCertificateModalComponent } from 'src/app/modals/conformance-certificate-modal/conformance-certificate-modal.component';
-import { CommunityService } from 'src/app/services/community.service';
 import { ConformanceService } from 'src/app/services/conformance.service';
 import { DataService } from 'src/app/services/data.service';
-import { OrganisationService } from 'src/app/services/organisation.service';
 import { ReportService } from 'src/app/services/report.service';
 import { RoutingService } from 'src/app/services/routing.service';
-import { SystemService } from 'src/app/services/system.service';
-import { Actor } from 'src/app/types/actor';
-import { Community } from 'src/app/types/community';
 import { ConformanceCertificateSettings } from 'src/app/types/conformance-certificate-settings';
 import { ConformanceResultFull } from 'src/app/types/conformance-result-full';
 import { ConformanceResultFullList } from 'src/app/types/conformance-result-full-list';
 import { ConformanceResultFullWithTestSuites } from 'src/app/types/conformance-result-full-with-test-suites';
 import { ConformanceResultTestSuite } from 'src/app/types/conformance-result-test-suite';
 import { ConformanceStatusItem } from 'src/app/types/conformance-status-item';
-import { Domain } from 'src/app/types/domain';
 import { FilterState } from 'src/app/types/filter-state';
-import { OrganisationParameter } from 'src/app/types/organisation-parameter';
-import { Organisation } from 'src/app/types/organisation.type';
-import { Specification } from 'src/app/types/specification';
-import { System } from 'src/app/types/system';
-import { SystemParameter } from 'src/app/types/system-parameter';
 import { TestResultSearchCriteria } from 'src/app/types/test-result-search-criteria';
+import { saveAs } from 'file-saver'
 
 @Component({
   selector: 'app-conformance-dashboard',
@@ -48,14 +38,6 @@ export class ConformanceDashboardComponent implements OnInit {
   conformanceStatements: ConformanceResultFullWithTestSuites[] = []
   conformanceStatementsPage: ConformanceResultFullWithTestSuites[] = []
   settings?: Partial<ConformanceCertificateSettings>
-  domainLoader?: () => Observable<Domain[]>
-  specificationLoader?: () => Observable<Specification[]>
-  actorLoader?: () => Observable<Actor[]>
-  communityLoader?: () => Observable<Community[]>
-  organisationLoader?: () => Observable<Organisation[]>
-  systemLoader?: () => Observable<System[]>
-  organisationPropertyLoader?: (_:number) => Observable<OrganisationParameter[]>
-  systemPropertyLoader?: (_:number) => Observable<SystemParameter[]>
   Constants = Constants
 
   conformanceStatementsTotalCount = 0
@@ -68,9 +50,6 @@ export class ConformanceDashboardComponent implements OnInit {
   constructor(
     public dataService: DataService,
     private conformanceService: ConformanceService,
-    private communityService: CommunityService,
-    private organisationService: OrganisationService,
-    private systemService: SystemService,
     private reportService: ReportService,
     private modalService: BsModalService,
     private routingService: RoutingService
@@ -94,59 +73,7 @@ export class ConformanceDashboardComponent implements OnInit {
 				this.columnCount = 7
       }
     }
-    this.initFilterDataLoaders()
     this.getConformanceStatements()
-  }
-
-  private initFilterDataLoaders() {
-    // Domains
-    this.domainLoader = (() => {
-      return this.conformanceService.getDomains()
-    }).bind(this)
-    // Specifications
-    this.specificationLoader = (() => {
-      if (this.dataService.isCommunityAdmin && this.dataService.community!.domainId != undefined) {
-        return this.conformanceService.getSpecifications(this.dataService.community!.domainId)
-      } else {
-        return this.conformanceService.getSpecificationsWithIds()
-      }
-    }).bind(this)
-    // Actors
-    this.actorLoader = (() => {
-        if (this.dataService.isCommunityAdmin && this.dataService.community!.domainId != undefined) {
-          return this.conformanceService.getActorsForDomain(this.dataService.community!.domainId)
-        } else {
-          return this.conformanceService.getActorsWithIds()
-        }
-      }).bind(this)
-    // Communities
-    this.communityLoader = (() => {
-      return this.communityService.getCommunities()
-    }).bind(this)
-    // Organisations
-    this.organisationLoader = (() => {
-      if (this.dataService.isCommunityAdmin) {
-        return this.organisationService.getOrganisationsByCommunity(this.dataService.community!.id)
-      } else {
-        return this.organisationService.getOrganisations()
-      }
-    }).bind(this)
-    // Systems
-    this.systemLoader = (() => {
-      if (this.dataService.isSystemAdmin) {
-        return this.systemService.getSystems()
-      } else {
-        return this.systemService.getSystemsByCommunity()
-      }
-    }).bind(this)
-    // Organisation properties
-    this.organisationPropertyLoader = ((communityId: number) => {
-      return this.communityService.getOrganisationParameters(communityId, true)
-    }).bind(this)
-    // System properties
-    this.systemPropertyLoader = ((communityId: number) => {
-      return this.communityService.getSystemParameters(communityId, true)
-    }).bind(this)
   }
 
 	getCurrentSearchCriteria() {
@@ -192,7 +119,7 @@ export class ConformanceDashboardComponent implements OnInit {
           const completedCount = Number(conformanceStatement.completed)
           const failedCount = Number(conformanceStatement.failed)
           const undefinedCount = Number(conformanceStatement.undefined)
-          conformanceStatement.status = this.dataService.testStatusText(completedCount, failedCount, undefinedCount)
+          conformanceStatement.counters = { completed: completedCount, failed: failedCount, other: undefinedCount}
           conformanceStatement.overallStatus = this.dataService.conformanceStatusForTests(completedCount, failedCount, undefinedCount)
         }
         subscriber.next(data)
@@ -246,6 +173,11 @@ export class ConformanceDashboardComponent implements OnInit {
       }
       if (testSuite != undefined) {
         testSuites.push(testSuite)
+      }
+      if (testSuites.length > 1) {
+        for (let testSuite of testSuites) {
+          testSuite.expanded = false
+        }
       }
       statement.testSuites = testSuites
     }

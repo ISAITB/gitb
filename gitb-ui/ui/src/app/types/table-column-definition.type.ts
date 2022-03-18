@@ -6,5 +6,6 @@ export interface TableColumnDefinition {
     headerClass?: string,
     sortable?: boolean,
     order?: 'asc'|'desc'|null
+    atEnd?: boolean
 
 }

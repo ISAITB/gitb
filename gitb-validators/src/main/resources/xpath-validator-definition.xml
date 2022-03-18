@@ -7,7 +7,7 @@
         <version>1.0</version>
     </metadata>
     <inputs>
-        <param type="object" use="R" name="xmldocument" desc="XML Document to be validated" />
-        <param type="string" use="R" name="xpathexpression" desc="XPath Expression" />
+        <param type="object" name="xmldocument" desc="XML Document to be validated" />
+        <param type="string" name="xpathexpression" desc="XPath Expression" />
     </inputs>
 </module>

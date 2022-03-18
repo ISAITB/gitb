@@ -15,9 +15,7 @@ public abstract class Actor extends UntypedAbstractActor {
 	Logger logger = LoggerFactory.getLogger(Actor.class);
 
 	@Override
-	public void onReceive(Object message) throws Exception {
-//		logger.debug(self().path() + " - received - " + message + " - from " + getSender().path());
-	}
+	public void onReceive(Object message) throws Exception {}
 
 	@Override
 	public void preStart()  throws Exception{

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, EventEmitter, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { Constants } from 'src/app/common/constants';
 import { OptionalCustomPropertyFormData } from 'src/app/components/optional-custom-property-form/optional-custom-property-form-data.type';
@@ -16,9 +16,7 @@ import { OrganisationFormData } from '../organisation-form/organisation-form-dat
 
 @Component({
   selector: 'app-organisation-details',
-  templateUrl: './organisation-details.component.html',
-  styles: [
-  ]
+  templateUrl: './organisation-details.component.html'
 })
 export class OrganisationDetailsComponent extends BaseComponent implements OnInit {
 
@@ -35,6 +33,7 @@ export class OrganisationDetailsComponent extends BaseComponent implements OnIni
   userColumns: TableColumnDefinition[] = []
   savePending = false
   deletePending = false
+  loadApiInfo = new EventEmitter<void>()
 
   constructor(
     private route: ActivatedRoute,
@@ -141,4 +140,9 @@ export class OrganisationDetailsComponent extends BaseComponent implements OnIni
   createUser() {
     this.routingService.toCreateOrganisationUser(this.communityId, this.organisation.id!)
   }
+
+  apiInfoSelected() {
+    this.loadApiInfo.emit()
+  }
+
 }

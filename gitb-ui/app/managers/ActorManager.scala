@@ -57,10 +57,10 @@ class ActorManager @Inject() (testResultManager: TestResultManager, endPointMana
   }
 
   def updateActorWrapper(id: Long, actorId: String, name: String, description: Option[String], default: Option[Boolean], hidden: Boolean, displayOrder: Option[Short], specificationId: Long) = {
-    exec(updateActor(id, actorId, name, description, default, hidden, displayOrder, specificationId).transactionally)
+    exec(updateActor(id, actorId, name, description, default, hidden, displayOrder, specificationId, None).transactionally)
   }
 
-  def updateActor(id: Long, actorId: String, name: String, description: Option[String], default: Option[Boolean], hidden: Boolean, displayOrder: Option[Short], specificationId: Long) = {
+  def updateActor(id: Long, actorId: String, name: String, description: Option[String], default: Option[Boolean], hidden: Boolean, displayOrder: Option[Short], specificationId: Long, apiKey: Option[String]) = {
     var defaultToSet: Option[Boolean] = null
     if (default.isEmpty) {
       defaultToSet = Some(false)
@@ -71,6 +71,13 @@ class ActorManager @Inject() (testResultManager: TestResultManager, endPointMana
       _ <- {
         val q1 = for {a <- PersistenceSchema.actors if a.id === id} yield (a.name, a.desc, a.actorId, a.default, a.hidden, a.displayOrder)
         q1.update((name, description, actorId, defaultToSet, hidden, displayOrder))
+      }
+      _ <- {
+        if (apiKey.isDefined) {
+          PersistenceSchema.actors.filter(_.id === id).map(_.apiKey).update(apiKey.get)
+        } else {
+          DBIO.successful(())
+        }
       }
       _ <- {
         if (default.isDefined && default.get) {

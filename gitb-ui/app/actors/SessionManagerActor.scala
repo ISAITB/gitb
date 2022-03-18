@@ -1,10 +1,13 @@
 package actors
 
+import actors.events.sessions.{PrepareTestSessionsEvent, TestSessionConfiguredEvent}
 import akka.actor.{Actor, ActorContext, ActorRef}
-import com.gitb.tbs.{InteractWithUsersRequest, TestStepStatus}
+import com.gitb.tbs.{ConfigurationCompleteRequest, InteractWithUsersRequest, TestStepStatus}
 import org.slf4j.LoggerFactory
 import play.api.libs.concurrent.InjectedActorSupport
+import utils.JacksonUtil
 
+import java.util.UUID
 import javax.inject.Inject
 
 object SessionManagerActor {
@@ -13,7 +16,7 @@ object SessionManagerActor {
 
 }
 
-class SessionManagerActor @Inject() (childFactory: SessionUpdateActor.Factory) extends Actor with InjectedActorSupport {
+class SessionManagerActor @Inject() (sessionUpdateActorFactory: SessionUpdateActor.Factory, sessionLaunchActorFactory: SessionLaunchActor.Factory, webSocketActor: WebSocketActor) extends Actor with InjectedActorSupport {
 
   private val LOGGER = LoggerFactory.getLogger(classOf[SessionManagerActor])
 
@@ -32,17 +35,41 @@ class SessionManagerActor @Inject() (childFactory: SessionUpdateActor.Factory) e
       getSessionUpdateActor(msg.getTcInstanceId, context) ! msg
     case msg: InteractWithUsersRequest =>
       getSessionUpdateActor(msg.getTcInstanceid, context) ! msg
+    case msg: ConfigurationCompleteRequest =>
+      notifyConfigurationCompleteEvent(msg)
+    case msg: PrepareTestSessionsEvent =>
+      prepareTestSessions(msg)
     case msg: Object =>
       LOGGER.warn(s"Session manager received unexpected message [${msg.getClass.getName}]")
   }
 
+  private def notifyConfigurationCompleteEvent(event: ConfigurationCompleteRequest) = {
+    try {
+      // Notify open web sockets in case this is an interactive session
+      webSocketActor.broadcast(event.getTcInstanceId, JacksonUtil.serializeConfigurationCompleteRequest(event))
+      // Publish event in case this is a headless session
+      context.system.eventStream.publish(TestSessionConfiguredEvent(event))
+    } catch {
+      case e: Exception =>
+        LOGGER.error(s"Error during configuration of session [${event.getTcInstanceId}]", e)
+    }
+  }
+
   private def getSessionUpdateActor(sessionId: String, context: ActorContext): ActorRef = {
-    context.child(sessionId) match {
+    context.child("session-"+sessionId) match {
       case Some(actorRef) => actorRef
       case None =>
+        LOGGER.info("Starting test session ["+sessionId+"]")
         implicit val context: ActorContext = this.context
-        injectedChild(childFactory(), sessionId, props => props.withDispatcher("session-actor-dispatcher"))
+        injectedChild(sessionUpdateActorFactory(), "session-"+sessionId, props => props.withDispatcher("session-actor-dispatcher"))
     }
+  }
+
+  private def prepareTestSessions(event: PrepareTestSessionsEvent): Unit = {
+    LOGGER.info("Starting batch of "+event.launchData.testCases.size+" test session(s)")
+    implicit val context: ActorContext = this.context
+    val actor = injectedChild(sessionLaunchActorFactory(), "launch-"+UUID.randomUUID().toString, props => props.withDispatcher("session-actor-dispatcher"))
+    actor ! event
   }
 
 }

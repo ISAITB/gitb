@@ -2,15 +2,39 @@
 	<div class="panel panel-default">
 		<div class="panel-heading">
 			<h4 class="title">Conformance statements</h4>
-            <a (click)="routingService.toCreateConformanceStatement(organisationId, systemId)" class="btn btn-default pull-right" *ngIf="showCreate">Create conformance statement</a>
+			<div class="btn-toolbar" *ngIf="showCreate">
+				<button (click)="routingService.toCreateConformanceStatement(organisationId, systemId)" class="btn btn-default">Create conformance statement</button>
+			</div>
 		</div>
-		<div id="conformance-statements-table" table-directive 
-			[columns]="tableColumns" 
-			[data]="conformanceStatementRepresentations" 
-            [noDataMessage]="'No statements found'"
-			[loadingStatus]="dataStatus" 
-			[allowSelect]="true"
-			(onSelect)="onConformanceStatementSelect($event)">
+		<div class="table-container">
+			<table class="table table-directive">
+				<thead>
+					<tr>
+						<th>{{dataService.labelDomain()}}</th>
+						<th>{{dataService.labelSpecification()}}</th>
+						<th>{{dataService.labelActor()}}</th>
+						<th class="th-update">Last update</th>
+						<th class="th-min-centered">Test results</th>
+						<th class="th-min-centered">Status</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr *ngIf="dataStatus && dataStatus.status != Constants.STATUS.FINISHED">
+						<td colspan="6" class="td-data-loading"><app-pending-block></app-pending-block></td>
+					</tr>
+					<tr *ngIf="dataStatus && dataStatus.status == Constants.STATUS.FINISHED && (!conformanceStatementRepresentations || conformanceStatementRepresentations.length == 0)">
+						<td [attr.colspan]="6" class="td-no-data"><span>No statements found</span></td>
+					</tr>
+					<tr *ngFor="let statement of conformanceStatementRepresentations" class="selectable" (click)="onConformanceStatementSelect(statement)">
+						<td>{{statement.domainFull}}</td>
+						<td>{{statement.specificationFull}}</td>
+						<td>{{statement.actorFull}}</td>
+						<td class="td-update">{{statement.updateTime}}</td>
+						<td class="td-min-centered"><app-test-status-icons [counters]="statement.counters!"></app-test-status-icons></td>
+						<td class="td-min-centered"><span><i [ngClass]="dataService.iconForTestResult(statement.status)"></i></span></td>
+					</tr>
+				</tbody>
+			</table>
 		</div>
 	</div>
 </div>
