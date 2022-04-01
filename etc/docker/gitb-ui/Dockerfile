@@ -1,4 +1,4 @@
-FROM openjdk:11.0.11-jre
+FROM openjdk:11.0.14-jre
 
 ENV PATH /usr/local/gitb-ui/bin:$PATH
 ENV TESTBED_SERVICE_URL http://gitb-srv:8080/itbsrv/TestbedService
