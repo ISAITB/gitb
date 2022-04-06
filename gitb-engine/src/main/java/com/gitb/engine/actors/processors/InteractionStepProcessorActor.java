@@ -311,7 +311,10 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
         DataTypeFactory dataTypeFactory = DataTypeFactory.getInstance();
         //Create the Variable for Interaction Result if an id is given for the Interaction
         MapType interactionResult = (MapType) dataTypeFactory.create(DataType.MAP_DATA_TYPE);
-        if (step.getId() != null) {
+        if (step.getId() != null && (!userInputs.isEmpty() || !scope.getVariable(step.getId()).isDefined())) {
+            // We may want to skip creating a map in the scope in case this is a headless session (in which case no inputs
+            // are provided) but we already have a variable in the session matching the step ID. This can be the case if
+            // The test has started via REST call and the relevant map is provided as input.
             scopedVariable = scope.createVariable(step.getId());
             scopedVariable.setValue(interactionResult);
         }

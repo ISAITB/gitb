@@ -868,7 +868,7 @@ object JsonUtil {
     anyContent.setEmbeddingMethod(ValueEmbeddingEnumeration.fromValue((json \ "embeddingMethod").asOpt[String].getOrElse(ValueEmbeddingEnumeration.STRING.value())))
     anyContent.setValue((json \ "value").asOpt[String].orNull)
     anyContent.setType((json \ "type").asOpt[String].orNull)
-    anyContent.setType((json \ "encoding").asOpt[String].orNull)
+    anyContent.setEncoding((json \ "encoding").asOpt[String].orNull)
     anyContent.getItem.addAll((json \ "item").asOpt[JsArray].getOrElse(JsArray.empty).value.map { jsValue => parseJsAnyContent(jsValue)}.toList.asJavaCollection)
     anyContent
   }
