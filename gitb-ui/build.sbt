@@ -7,8 +7,9 @@ lazy val root = (project in file(".")).enablePlugins(PlayScala, SbtWeb)
   .settings(dependencyCheckSuppressionFile := Some(file("project/owasp-suppressions.xml")))
 
 scalaVersion := "2.13.6"
-val akkaVersion = "2.6.18"
+val akkaVersion = "2.6.19"
 val jacksonVersion = "2.13.2"
+val jacksonDataBindVersion = "2.13.2.2"
 val cxfVersion = "3.5.1"
 val jettyVersion = "9.4.43.v20210629"
 val guiceVersion = "5.1.0"
@@ -21,7 +22,7 @@ libraryDependencies ++= Seq(
   cacheApi,
   "com.google.inject" % "guice" % guiceVersion,
   "com.google.inject.extensions" % "guice-assistedinject" % guiceVersion,
-  "eu.europa.ec.itb" % "gitb-types" % "1.16.0",
+  "eu.europa.ec.itb" % "gitb-types" % "1.16.1",
   "com.gitb" % "gitb-core" % "1.0-SNAPSHOT",
   "com.gitb" % "gitb-lib" % "1.0-SNAPSHOT",
   "com.gitb" % "gitb-reports" % "1.0-SNAPSHOT",
@@ -37,11 +38,11 @@ libraryDependencies ++= Seq(
   "com.typesafe.play" %% "play-slick" % "5.0.0",
   "com.typesafe.play" %% "play-json" % "2.9.2",
   "org.pac4j" %% "play-pac4j" % "11.1.0-PLAY2.8",
-  "org.pac4j" % "pac4j-cas" % "5.3.0",
+  "org.pac4j" % "pac4j-cas" % "5.3.1",
   "ch.qos.logback" % "logback-classic" % "1.2.11",
   "org.apache.commons" % "commons-lang3" % "3.12.0",
   "com.fasterxml.jackson.module" %% "jackson-module-scala" % jacksonVersion,
-  "com.fasterxml.jackson.core" % "jackson-databind" % jacksonVersion,
+  "com.fasterxml.jackson.core" % "jackson-databind" % jacksonDataBindVersion,
   "com.fasterxml.jackson.core" % "jackson-core" % jacksonVersion,
   "com.fasterxml.jackson.core" % "jackson-annotations" % jacksonVersion,
   "com.fasterxml.jackson.module" % "jackson-module-jaxb-annotations" % jacksonVersion,
@@ -62,7 +63,7 @@ libraryDependencies ++= Seq(
   // ---
   "org.apache.tika" % "tika-core" % "2.3.0",
   "org.webjars" %% "webjars-play" % "2.8.13",
-  "org.webjars" % "jquery" % "3.5.1",
+  "org.webjars" % "jquery" % "3.6.0",
   "org.webjars" % "bootstrap" % "3.4.1" exclude("org.webjars", "jquery"),
   "javax.mail" % "mail" % "1.4.7",
   "javax.activation" % "activation" % "1.1.1",
