@@ -78,12 +78,12 @@ libraryDependencies ++= Seq(
   "com.sun.xml.ws" % "policy" % "2.7.10",
   "org.glassfish.gmbal" % "gmbal-api-only" % "4.0.3",
   "org.bouncycastle" % "bcmail-jdk15on" % "1.69",
-  "org.apache.pdfbox" % "pdfbox" % "2.0.24",
+  "org.apache.pdfbox" % "pdfbox" % "2.0.25",
   "org.jasypt" % "jasypt" % "1.9.3",
   "org.apache.httpcomponents" % "httpclient" % "4.5.13",
   "org.flywaydb" %% "flyway-play" % "7.14.0",
   "com.googlecode.owasp-java-html-sanitizer" % "owasp-java-html-sanitizer" % "20211018.2",
-  "net.lingala.zip4j" % "zip4j" % "2.9.1"
+  "net.lingala.zip4j" % "zip4j" % "2.10.0"
 )
 
 // Add assets build folder to clean task
