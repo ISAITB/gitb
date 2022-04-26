@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Created with Jaspersoft Studio version 6.5.1.final using JasperReports Library version 6.5.1  -->
+<!-- Created with Jaspersoft Studio version 6.19.1.final using JasperReports Library version 6.19.1-867c00bf88cd4d784d404379d6c05e1b419e8a4c  -->
 <jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="TAR" pageWidth="842" pageHeight="595" orientation="Landscape" columnWidth="802" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" whenResourceMissingType="Empty" uuid="32c3bb60-28b6-431c-90a2-6d105676246d">
 	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="One Empty Record"/>
 	<style name="titleStyle" mode="Opaque" backcolor="#EDEDED" radius="0">
@@ -127,67 +127,67 @@
 			</line>
 			<frame>
 				<reportElement x="20" y="63" width="760" height="22" uuid="d5d94009-78df-4bab-b4db-470968842bcb"/>
-				<textField isStretchWithOverflow="true">
+				<textField textAdjust="StretchHeight">
 					<reportElement x="1" y="1" width="118" height="20" uuid="6d4548b6-87b4-4f95-8df1-0017b8104dd2"/>
 					<textElement textAlignment="Right">
 						<font isBold="true"/>
 					</textElement>
 					<textFieldExpression><![CDATA[$P{labelOrganisation}+":"]]></textFieldExpression>
 				</textField>
-				<textField isStretchWithOverflow="true">
+				<textField textAdjust="StretchHeight">
 					<reportElement x="130" y="1" width="220" height="20" uuid="ac28a499-90ae-4d09-a983-c01e202ed0a8"/>
 					<textFieldExpression><![CDATA[$P{organisation}]]></textFieldExpression>
 				</textField>
-				<textField isStretchWithOverflow="true">
+				<textField textAdjust="StretchHeight">
 					<reportElement x="360" y="1" width="150" height="20" uuid="70e3562e-0ef7-4cb7-8e96-277732559602"/>
 					<textElement textAlignment="Right">
 						<font isBold="true"/>
 					</textElement>
 					<textFieldExpression><![CDATA[$P{labelSystem}+":"]]></textFieldExpression>
 				</textField>
-				<textField isStretchWithOverflow="true">
+				<textField textAdjust="StretchHeight">
 					<reportElement x="520" y="1" width="239" height="20" uuid="6c580cb2-5575-4157-bb6f-d3ea0b35fc2b"/>
 					<textFieldExpression><![CDATA[$P{system}]]></textFieldExpression>
 				</textField>
 			</frame>
 			<frame>
 				<reportElement positionType="Float" x="20" y="109" width="350" height="22" uuid="e2084f8d-0de5-4935-acf9-cdfa9c85a004"/>
-				<textField isStretchWithOverflow="true">
+				<textField textAdjust="StretchHeight">
 					<reportElement x="1" y="1" width="118" height="20" uuid="d13e6478-4699-4e16-a629-bc9c65b4d011"/>
 					<textElement textAlignment="Right">
 						<font isBold="true"/>
 					</textElement>
 					<textFieldExpression><![CDATA[$P{labelDomain}+":"]]></textFieldExpression>
 				</textField>
-				<textField isStretchWithOverflow="true">
+				<textField textAdjust="StretchHeight">
 					<reportElement x="130" y="1" width="208" height="20" uuid="5eb201ea-b945-46c8-b8aa-414c2563c75e"/>
 					<textFieldExpression><![CDATA[$P{testDomain}]]></textFieldExpression>
 				</textField>
 			</frame>
 			<frame>
 				<reportElement positionType="Float" x="20" y="131" width="350" height="22" uuid="17b550ac-325c-489a-b1c9-8c54167c9df5"/>
-				<textField isStretchWithOverflow="true">
+				<textField textAdjust="StretchHeight">
 					<reportElement x="1" y="1" width="118" height="20" uuid="d4b55d43-7b06-44f1-97cd-2885aada99fc"/>
 					<textElement textAlignment="Right">
 						<font isBold="true"/>
 					</textElement>
 					<textFieldExpression><![CDATA[$P{labelSpecification}+":"]]></textFieldExpression>
 				</textField>
-				<textField isStretchWithOverflow="true">
+				<textField textAdjust="StretchHeight">
 					<reportElement x="130" y="1" width="208" height="20" uuid="6c20047b-18b5-4a09-8289-35f835f1e4ad"/>
 					<textFieldExpression><![CDATA[$P{testSpecification}]]></textFieldExpression>
 				</textField>
 			</frame>
 			<frame>
 				<reportElement positionType="Float" x="20" y="153" width="350" height="22" uuid="bb3c1b9e-7c92-44e0-96d4-47da72ee0687"/>
-				<textField isStretchWithOverflow="true">
+				<textField textAdjust="StretchHeight">
 					<reportElement x="1" y="1" width="118" height="20" uuid="5949ed63-f128-42bd-82f7-fb31df29c661"/>
 					<textElement textAlignment="Right">
 						<font isBold="true"/>
 					</textElement>
 					<textFieldExpression><![CDATA[$P{labelActor}+":"]]></textFieldExpression>
 				</textField>
-				<textField isStretchWithOverflow="true">
+				<textField textAdjust="StretchHeight">
 					<reportElement x="130" y="1" width="208" height="20" uuid="3a52e3e7-5a47-413a-9b0b-05c480c6d6f6"/>
 					<textFieldExpression><![CDATA[$P{testActor}]]></textFieldExpression>
 				</textField>
@@ -201,7 +201,7 @@
 					</textElement>
 					<textFieldExpression><![CDATA["Test name:"]]></textFieldExpression>
 				</textField>
-				<textField isStretchWithOverflow="true">
+				<textField textAdjust="StretchHeight">
 					<reportElement x="100" y="1" width="309" height="20" uuid="eec9039b-9c35-4c70-8f49-bc9c99947d9d"/>
 					<textFieldExpression><![CDATA[$P{testName}]]></textFieldExpression>
 				</textField>
@@ -217,7 +217,7 @@
 					</textElement>
 					<textFieldExpression><![CDATA["Description:"]]></textFieldExpression>
 				</textField>
-				<textField isStretchWithOverflow="true">
+				<textField textAdjust="StretchHeight">
 					<reportElement x="100" y="1" width="309" height="20" uuid="7bfeb633-763c-4507-b684-7db8542a706b"/>
 					<textFieldExpression><![CDATA[$P{testDescription}]]></textFieldExpression>
 				</textField>
@@ -243,7 +243,7 @@
 				</textElement>
 				<textFieldExpression><![CDATA[$P{reportResult}]]></textFieldExpression>
 			</textField>
-			<textField isStretchWithOverflow="true">
+			<textField textAdjust="StretchHeight">
 				<reportElement key="" style="resultStyle" positionType="Float" x="151" y="210" width="392" height="20" uuid="e4a03859-2f65-4c21-b3bc-71569f33b1e2">
 					<printWhenExpression><![CDATA[$P{outputMessage} != null]]></printWhenExpression>
 				</reportElement>

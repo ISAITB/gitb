@@ -264,7 +264,7 @@ public class PeppolAS2Receiver extends HttpsReceiver{
             }
 
             //validate disposition type
-            DispositionType.createFromString(disposition).validate();
+            DispositionType.createFromString(disposition);
         } catch (Exception e) {
             throw new GITBEngineInternalError("An error occurred while parsing MDN content. " +
                     "Please check the following error description: " + e.getMessage());

@@ -83,7 +83,7 @@ public class AS2MessagingHandler extends AbstractMessagingHandler{
 
     public static MimeBodyPart sign(MimeBodyPart mimeBody, X509Certificate senderCerificate, PrivateKey privateKey) throws Exception {
         ICryptoHelper cryptoHelper = AS2Helper.getCryptoHelper();
-        return cryptoHelper.sign(mimeBody, senderCerificate, privateKey, ECryptoAlgorithmSign.DIGEST_SHA1, false, false, EContentTransferEncoding.AS2_DEFAULT);
+        return cryptoHelper.sign(mimeBody, senderCerificate, privateKey, ECryptoAlgorithmSign.DIGEST_SHA1, false, false, false, EContentTransferEncoding.AS2_DEFAULT);
     }
 
     public static MimeBodyPart encrypt(MimeBodyPart mimeBody, X509Certificate receiverCertificate) throws Exception {

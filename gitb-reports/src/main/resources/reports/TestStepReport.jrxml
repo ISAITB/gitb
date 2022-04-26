@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Created with Jaspersoft Studio version 6.5.1.final using JasperReports Library version 6.5.1  -->
+<!-- Created with Jaspersoft Studio version 6.19.1.final using JasperReports Library version 6.19.1-867c00bf88cd4d784d404379d6c05e1b419e8a4c  -->
 <jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="TestStepReport" pageWidth="842" pageHeight="595" orientation="Landscape" columnWidth="802" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="238cbedd-eead-48c1-898d-94d7fd145839">
 	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="One Empty Record"/>
 	<style name="itemStyle" mode="Opaque" backcolor="#FFFFFF">
@@ -212,7 +212,7 @@
 									<dataSourceExpression><![CDATA[new net.sf.jasperreports.engine.data.JRBeanCollectionDataSource($F{reportItems})]]></dataSourceExpression>
 								</datasetRun>
 								<jr:listContents height="30" width="740">
-									<textField isStretchWithOverflow="true">
+									<textField textAdjust="StretchHeight">
 										<reportElement style="itemStyle" x="10" y="2" width="730" height="19" uuid="800e0d35-d3b7-4265-a298-b37ad4d75152"/>
 										<textElement verticalAlignment="Top" markup="html">
 											<paragraph firstLineIndent="17" leftIndent="5" rightIndent="5" spacingBefore="3" spacingAfter="10"/>
@@ -223,7 +223,7 @@
 										<reportElement x="13" y="5" width="15" height="15" uuid="f7ffb854-10cc-4373-ad94-f7251e1788e4"/>
 										<imageExpression><![CDATA["error".equals($F{level})?"reports/images/error.png":("warning".equals($F{level})?"reports/images/warning.png":"reports/images/info.png")]]></imageExpression>
 									</image>
-									<textField isStretchWithOverflow="true">
+									<textField textAdjust="StretchHeight">
 										<reportElement style="itemStyle" positionType="Float" x="10" y="21" width="730" height="3" isRemoveLineWhenBlank="true" uuid="69a2916c-8564-43d2-b14a-3a1fddd45e7b">
 											<printWhenExpression><![CDATA[$F{test} != null]]></printWhenExpression>
 										</reportElement>
@@ -232,7 +232,7 @@
 										</textElement>
 										<textFieldExpression><![CDATA["<b>Test:</b> " + $F{test} + (($F{location} !=null)?"<br/>":"")]]></textFieldExpression>
 									</textField>
-									<textField isStretchWithOverflow="true">
+									<textField textAdjust="StretchHeight">
 										<reportElement style="itemStyle" positionType="Float" x="10" y="24" width="730" height="3" isRemoveLineWhenBlank="true" uuid="201ecfec-8c16-4bf2-ba20-692c8ebb82c4">
 											<printWhenExpression><![CDATA[$F{location} != null]]></printWhenExpression>
 										</reportElement>
@@ -272,7 +272,7 @@
 										<textElement verticalAlignment="Middle" markup="html"/>
 										<textFieldExpression><![CDATA["<b>Name:</b> " + $F{key}]]></textFieldExpression>
 									</textField>
-									<textField isStretchWithOverflow="true">
+									<textField textAdjust="StretchHeight">
 										<reportElement stretchType="RelativeToBandHeight" x="11" y="30" width="728" height="10" uuid="264a8c26-99e0-458b-bdba-a7abd7e524d0"/>
 										<box>
 											<pen lineWidth="0.5"/>
@@ -282,7 +282,7 @@
 								</jr:listContents>
 							</jr:list>
 						</componentElement>
-						<textField isStretchWithOverflow="true">
+						<textField textAdjust="StretchHeight">
 							<reportElement x="10" y="10" width="740" height="30" uuid="462b2204-896b-45a7-b30a-1a23d53ed480"/>
 							<textElement>
 								<font size="20"/>

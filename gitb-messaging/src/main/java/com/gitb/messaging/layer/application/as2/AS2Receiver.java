@@ -137,7 +137,7 @@ public class AS2Receiver extends HttpReceiver {
         }
 
         //validate disposition type
-        DispositionType.createFromString(disposition).validate();
+        DispositionType.createFromString(disposition);
     }
 
     /** MDN section **/

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Created with Jaspersoft Studio version 6.5.1.final using JasperReports Library version 6.5.1  -->
+<!-- Created with Jaspersoft Studio version 6.19.1.final using JasperReports Library version 6.19.1-867c00bf88cd4d784d404379d6c05e1b419e8a4c  -->
 <jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="ConformanceStatementOverview" pageWidth="842" pageHeight="595" orientation="Landscape" columnWidth="802" leftMargin="20" rightMargin="20" topMargin="35" bottomMargin="25" uuid="ce1d3ae2-4014-4537-9bbf-15dd533d0dc6">
 	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="One Empty Record"/>
 	<property name="com.jaspersoft.studio.unit." value="pixel"/>
@@ -137,7 +137,7 @@
 	</queryString>
 	<title>
 		<band height="79" splitType="Stretch">
-			<textField isStretchWithOverflow="true">
+			<textField textAdjust="StretchHeight">
 				<reportElement style="titleStyle" x="20" y="10" width="760" height="44" uuid="491e1116-2e5c-447c-9a13-d4d8d568a806"/>
 				<textElement verticalAlignment="Middle">
 					<font size="26"/>
@@ -150,7 +150,7 @@
 	<detail>
 		<band height="50">
 			<printWhenExpression><![CDATA[$P{includeMessage} != null && $P{includeMessage}]]></printWhenExpression>
-			<textField isStretchWithOverflow="true">
+			<textField textAdjust="StretchHeight">
 				<reportElement x="20" y="0" width="759" height="39" uuid="e7053c20-bc32-429e-a3f3-462cca1b4d9d"/>
 				<textElement textAlignment="Justified" markup="html"/>
 				<textFieldExpression><![CDATA[$P{message}]]></textFieldExpression>
@@ -160,56 +160,56 @@
 			<printWhenExpression><![CDATA[$P{includeDetails} != null && $P{includeDetails}]]></printWhenExpression>
 			<frame>
 				<reportElement positionType="Float" x="21" y="60" width="348" height="22" uuid="1da3e70a-e193-4d17-84a0-33eae3d63d7a"/>
-				<textField isStretchWithOverflow="true">
+				<textField textAdjust="StretchHeight">
 					<reportElement x="0" y="1" width="120" height="15" uuid="63e59957-ca59-4540-89ec-f6a4af0c1649"/>
 					<textElement textAlignment="Right">
 						<font isBold="true"/>
 					</textElement>
 					<textFieldExpression><![CDATA[$P{labelDomain}+":"]]></textFieldExpression>
 				</textField>
-				<textField isStretchWithOverflow="true">
+				<textField textAdjust="StretchHeight">
 					<reportElement x="130" y="1" width="218" height="15" uuid="3de022ec-6c37-4f68-b1e1-7bfd008a5db0"/>
 					<textFieldExpression><![CDATA[$P{testDomain}]]></textFieldExpression>
 				</textField>
 			</frame>
 			<frame>
 				<reportElement positionType="Float" x="21" y="82" width="348" height="22" uuid="cbc9e8b2-b1d4-4ae1-95e6-e7d7fd3ea41f"/>
-				<textField isStretchWithOverflow="true">
+				<textField textAdjust="StretchHeight">
 					<reportElement x="0" y="1" width="120" height="15" uuid="d402e378-27ec-4d22-898d-8d4fada26ed6"/>
 					<textElement textAlignment="Right">
 						<font isBold="true"/>
 					</textElement>
 					<textFieldExpression><![CDATA[$P{labelSpecification}+":"]]></textFieldExpression>
 				</textField>
-				<textField isStretchWithOverflow="true">
+				<textField textAdjust="StretchHeight">
 					<reportElement x="130" y="1" width="218" height="15" uuid="24513e86-fab5-411b-9b79-dcefe9d79c3d"/>
 					<textFieldExpression><![CDATA[$P{testSpecification}]]></textFieldExpression>
 				</textField>
 			</frame>
 			<frame>
 				<reportElement positionType="Float" x="21" y="104" width="348" height="22" uuid="5bd49fd4-94ae-41d0-9fed-264835eb4978"/>
-				<textField isStretchWithOverflow="true">
+				<textField textAdjust="StretchHeight">
 					<reportElement x="0" y="1" width="120" height="15" uuid="78707d81-7a26-4862-8fbe-e1a28dba4c74"/>
 					<textElement textAlignment="Right">
 						<font isBold="true"/>
 					</textElement>
 					<textFieldExpression><![CDATA[$P{labelActor}+":"]]></textFieldExpression>
 				</textField>
-				<textField isStretchWithOverflow="true">
+				<textField textAdjust="StretchHeight">
 					<reportElement x="130" y="1" width="218" height="15" uuid="c67fc845-8bc0-453a-8079-38260fa3043d"/>
 					<textFieldExpression><![CDATA[$P{testActor}]]></textFieldExpression>
 				</textField>
 			</frame>
 			<frame>
 				<reportElement positionType="Float" x="384" y="60" width="396" height="22" uuid="104e0dc4-31ba-46f0-805d-50872cdc8972"/>
-				<textField isStretchWithOverflow="true">
+				<textField textAdjust="StretchHeight">
 					<reportElement x="0" y="1" width="140" height="15" uuid="a4d45b66-42a4-4e95-a6b4-fd525c7b5cf4"/>
 					<textElement textAlignment="Right">
 						<font isBold="true"/>
 					</textElement>
 					<textFieldExpression><![CDATA[$P{labelOrganisation}+":"]]></textFieldExpression>
 				</textField>
-				<textField isStretchWithOverflow="true">
+				<textField textAdjust="StretchHeight">
 					<reportElement x="150" y="1" width="246" height="15" uuid="39e69103-6c40-471d-80e9-28f519d0a6ee"/>
 					<textFieldExpression><![CDATA[$P{organisation}]]></textFieldExpression>
 				</textField>
@@ -218,14 +218,14 @@
 				<reportElement positionType="Float" x="384" y="82" width="396" height="22" uuid="838ff642-b4e7-47e9-8d79-c6b59c326d2d">
 					<printWhenExpression><![CDATA[$P{system} != null]]></printWhenExpression>
 				</reportElement>
-				<textField isStretchWithOverflow="true">
+				<textField textAdjust="StretchHeight">
 					<reportElement x="0" y="1" width="140" height="15" uuid="0ba7e889-ec1e-40fd-9a44-4902251cd2aa"/>
 					<textElement textAlignment="Right">
 						<font isBold="true"/>
 					</textElement>
 					<textFieldExpression><![CDATA[$P{labelSystem}+":"]]></textFieldExpression>
 				</textField>
-				<textField isStretchWithOverflow="true">
+				<textField textAdjust="StretchHeight">
 					<reportElement x="150" y="1" width="246" height="15" uuid="f4c9ea4e-7136-4dbb-88c1-396a30b66680"/>
 					<textFieldExpression><![CDATA[$P{system}]]></textFieldExpression>
 				</textField>
@@ -297,20 +297,20 @@
 						<dataSourceExpression><![CDATA[new net.sf.jasperreports.engine.data.JRBeanCollectionDataSource($P{testCases})]]></dataSourceExpression>
 					</datasetRun>
 					<jr:listContents height="26" width="761">
-						<textField isStretchWithOverflow="true">
+						<textField textAdjust="StretchHeight">
 							<reportElement stretchType="RelativeToTallestObject" x="4" y="5" width="36" height="15" uuid="e7ec837c-cdda-43dc-93da-e94d438b3f2b"/>
 							<textElement textAlignment="Center"/>
 							<textFieldExpression><![CDATA[$F{id}]]></textFieldExpression>
 						</textField>
-						<textField isStretchWithOverflow="true">
+						<textField textAdjust="StretchHeight">
 							<reportElement stretchType="RelativeToTallestObject" x="46" y="5" width="134" height="15" uuid="ae11cdc8-f5a5-4ca4-91f9-5072f260b2c1"/>
 							<textFieldExpression><![CDATA[$F{testSuiteName}]]></textFieldExpression>
 						</textField>
-						<textField isStretchWithOverflow="true">
+						<textField textAdjust="StretchHeight">
 							<reportElement stretchType="RelativeToTallestObject" x="186" y="5" width="176" height="15" uuid="84c73860-9268-4ed5-bb65-ab22de684cf8"/>
 							<textFieldExpression><![CDATA[$F{testName}]]></textFieldExpression>
 						</textField>
-						<textField isStretchWithOverflow="true">
+						<textField textAdjust="StretchHeight">
 							<reportElement style="resultStyle" x="690" y="5" width="66" height="15" uuid="e3542c44-01ca-43a9-9feb-23f4b37b1b16"/>
 							<textElement textAlignment="Center">
 								<font isBold="true"/>
@@ -320,7 +320,7 @@
 						<line>
 							<reportElement positionType="Float" x="1" y="25" width="760" height="1" uuid="87148405-aaaf-4388-b3a6-6acd82837753"/>
 						</line>
-						<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+						<textField textAdjust="StretchHeight" isBlankWhenNull="true">
 							<reportElement stretchType="RelativeToTallestObject" x="368" y="5" width="316" height="15" uuid="ef47e31b-b99f-4b55-9d36-fa0ae6cae26b"/>
 							<textFieldExpression><![CDATA[$F{testDescription}]]></textFieldExpression>
 						</textField>
@@ -415,7 +415,7 @@
 								</textElement>
 								<textFieldExpression><![CDATA["Test case:"]]></textFieldExpression>
 							</textField>
-							<textField isStretchWithOverflow="true">
+							<textField textAdjust="StretchHeight">
 								<reportElement x="88" y="1" width="315" height="20" uuid="6877b40f-8cca-4e06-9f03-bbc2f96613e4"/>
 								<textFieldExpression><![CDATA[$F{testName}]]></textFieldExpression>
 							</textField>
@@ -429,7 +429,7 @@
 								</textElement>
 								<textFieldExpression><![CDATA["Test suite:"]]></textFieldExpression>
 							</textField>
-							<textField isStretchWithOverflow="true">
+							<textField textAdjust="StretchHeight">
 								<reportElement x="88" y="1" width="315" height="20" uuid="6aee223e-86ee-47f5-bb72-1cc42111375d"/>
 								<textFieldExpression><![CDATA[$F{testSuiteName}]]></textFieldExpression>
 							</textField>
@@ -445,7 +445,7 @@
 								</textElement>
 								<textFieldExpression><![CDATA["Description:"]]></textFieldExpression>
 							</textField>
-							<textField isStretchWithOverflow="true">
+							<textField textAdjust="StretchHeight">
 								<reportElement x="88" y="1" width="315" height="20" uuid="047d22f0-f94d-48ab-ae1b-9700ad2ab782"/>
 								<textFieldExpression><![CDATA[$F{testDescription}]]></textFieldExpression>
 							</textField>
@@ -492,7 +492,7 @@
 							<textElement verticalAlignment="Top"/>
 							<textFieldExpression><![CDATA[$F{endTime}]]></textFieldExpression>
 						</textField>
-						<textField isStretchWithOverflow="true">
+						<textField textAdjust="StretchHeight">
 							<reportElement style="resultStyle" positionType="Float" x="128" y="215" width="372" height="20" uuid="0201f39f-7601-47ce-a443-29f681fc9b39">
 								<printWhenExpression><![CDATA[$F{outputMessage} != null]]></printWhenExpression>
 							</reportElement>
