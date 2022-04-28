@@ -14,11 +14,13 @@ import java.util.Properties;
 
 public final class ProcessingContext {
 
-    private IProcessingHandler handler;
+    private final IProcessingHandler handler;
     private String session;
+    private String testSessionId;
 
     public ProcessingContext(String handler, Properties transactionProperties, String testSessionId) {
         this.handler = resolveHandler(handler, transactionProperties, testSessionId);
+        this.testSessionId = testSessionId;
     }
 
     public void setSession(String session) {
@@ -26,6 +28,9 @@ public final class ProcessingContext {
     }
 
     public String getSession() {
+        if (session == null) {
+            return testSessionId;
+        }
         return session;
     }
 

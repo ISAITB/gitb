@@ -47,10 +47,6 @@
 			<groupId>com.gitb</groupId>
 			<artifactId>gitb-validators</artifactId>
 		</dependency>
-		<dependency>
-			<groupId>com.gitb</groupId>
-			<artifactId>gitb-processing</artifactId>
-		</dependency>
         <dependency>
             <groupId>com.gitb</groupId>
             <artifactId>gitb-remote-modules</artifactId>
@@ -115,6 +111,18 @@
 		<dependency>
 			<groupId>com.sun.org.apache</groupId>
 			<artifactId>jaxp-ri</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.github.mifmif</groupId>
+			<artifactId>generex</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.tika</groupId>
+			<artifactId>tika-core</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.freemarker</groupId>
+			<artifactId>freemarker</artifactId>
 		</dependency>
 	</dependencies>
 </project>

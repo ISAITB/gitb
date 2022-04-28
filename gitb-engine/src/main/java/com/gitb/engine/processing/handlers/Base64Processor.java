@@ -1,6 +1,9 @@
-package com.gitb.processing;
+package com.gitb.engine.processing.handlers;
 
 import com.gitb.core.*;
+import com.gitb.processing.IProcessingHandler;
+import com.gitb.processing.ProcessingData;
+import com.gitb.processing.ProcessingReport;
 import com.gitb.ps.ProcessingModule;
 import com.gitb.tr.TestResultType;
 import com.gitb.types.BinaryType;
@@ -16,7 +19,7 @@ import java.util.Collections;
 @MetaInfServices(IProcessingHandler.class)
 public class Base64Processor extends AbstractProcessingHandler {
 
-    private Tika tika = new Tika();
+    private final Tika tika = new Tika();
 
     private static final String OPERATION__ENCODE = "encode";
     private static final String OPERATION__DECODE = "decode";

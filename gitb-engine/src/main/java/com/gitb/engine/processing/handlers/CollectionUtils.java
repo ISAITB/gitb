@@ -1,9 +1,12 @@
-package com.gitb.processing;
+package com.gitb.engine.processing.handlers;
 
 import com.gitb.core.ConfigurationParameters;
 import com.gitb.core.ConfigurationType;
 import com.gitb.core.Metadata;
 import com.gitb.core.UsageEnumeration;
+import com.gitb.processing.IProcessingHandler;
+import com.gitb.processing.ProcessingData;
+import com.gitb.processing.ProcessingReport;
 import com.gitb.ps.ProcessingModule;
 import com.gitb.tr.TestResultType;
 import com.gitb.types.DataType;

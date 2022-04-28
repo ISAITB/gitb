@@ -75,6 +75,7 @@
         <version.xmlUnit>2.9.0</version.xmlUnit>
         <version.jerseyClient>1.19.4</version.jerseyClient>
         <version.beanUtils>1.9.4</version.beanUtils>
+        <version.freeMarker>2.3.31</version.freeMarker>
     </properties>
 
     <repositories>
@@ -218,11 +219,6 @@
             <dependency>
                 <groupId>com.gitb</groupId>
                 <artifactId>gitb-validators</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.gitb</groupId>
-                <artifactId>gitb-processing</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -526,6 +522,11 @@
                 <artifactId>jersey-client</artifactId>
                 <version>${version.jerseyClient}</version>
             </dependency>
+            <dependency>
+                <groupId>org.freemarker</groupId>
+                <artifactId>freemarker</artifactId>
+                <version>${version.freeMarker}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -541,7 +542,6 @@
         <module>gitb-validators</module>
         <module>gitb-reports</module>
         <module>gitb-validator-tdl</module>
-        <module>gitb-processing</module>
         <module>gitb-xml-resources</module>
     </modules>
 </project>

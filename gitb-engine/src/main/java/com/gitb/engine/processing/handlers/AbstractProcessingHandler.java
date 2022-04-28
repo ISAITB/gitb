@@ -1,6 +1,8 @@
-package com.gitb.processing;
+package com.gitb.engine.processing.handlers;
 
 import com.gitb.core.*;
+import com.gitb.processing.IProcessingHandler;
+import com.gitb.processing.ProcessingData;
 import com.gitb.ps.ProcessingOperation;
 import com.gitb.tr.TAR;
 import com.gitb.tr.TestResultType;
@@ -61,13 +63,16 @@ public abstract class AbstractProcessingHandler implements IProcessingHandler {
     <T extends DataType> T getInputForName(ProcessingData data, String inputName, Class<T> type) {
         if (data.getData() != null) {
             DataType value = data.getData().get(inputName);
-            if (type.isInstance(value)) {
-                return (T)value;
-            } else {
-                try {
-                    type.getDeclaredConstructor().newInstance();
-                } catch (InstantiationException|IllegalAccessException| InvocationTargetException |NoSuchMethodException e) {
-                    throw new IllegalArgumentException("Unable to cast provided input ["+value.getClass().getName()+"] to ["+type.getName()+"]", e);
+            if (value != null) {
+                if (type.isInstance(value)) {
+                    return (T)value;
+                } else {
+                    try {
+                        var returnType = type.getDeclaredConstructor().newInstance();
+                        return (T)value.convertTo(returnType.getType());
+                    } catch (InstantiationException|IllegalAccessException| InvocationTargetException |NoSuchMethodException e) {
+                        throw new IllegalArgumentException("Unable to cast provided input ["+value.getClass().getName()+"] to ["+type.getName()+"]", e);
+                    }
                 }
             }
         }
