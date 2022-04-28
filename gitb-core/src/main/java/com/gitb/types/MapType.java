@@ -1,7 +1,7 @@
 package com.gitb.types;
 
 import javax.xml.xpath.XPathExpression;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -12,7 +12,7 @@ public class MapType extends ContainerType {
     private Map<String, DataType> elements;
 
 	public MapType() {
-		elements = new HashMap<>();
+		elements = new LinkedHashMap<>();
 	}
 
 	public void addItem(String key, DataType element){
