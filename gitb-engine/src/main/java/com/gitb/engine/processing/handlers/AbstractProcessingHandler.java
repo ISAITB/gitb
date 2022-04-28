@@ -60,21 +60,32 @@ public abstract class AbstractProcessingHandler implements IProcessingHandler {
         return report;
     }
 
-    <T extends DataType> T getInputForName(ProcessingData data, String inputName, Class<T> type) {
-        if (data.getData() != null) {
-            DataType value = data.getData().get(inputName);
-            if (value != null) {
-                if (type.isInstance(value)) {
-                    return (T)value;
-                } else {
-                    try {
-                        var returnType = type.getDeclaredConstructor().newInstance();
-                        return (T)value.convertTo(returnType.getType());
-                    } catch (InstantiationException|IllegalAccessException| InvocationTargetException |NoSuchMethodException e) {
-                        throw new IllegalArgumentException("Unable to cast provided input ["+value.getClass().getName()+"] to ["+type.getName()+"]", e);
-                    }
+    private <T extends DataType> T getDataForType(DataType value, Class<T> type) {
+        if (value != null) {
+            if (type.isInstance(value)) {
+                return (T)value;
+            } else {
+                try {
+                    var returnType = type.getDeclaredConstructor().newInstance();
+                    return (T)value.convertTo(returnType.getType());
+                } catch (InstantiationException|IllegalAccessException| InvocationTargetException |NoSuchMethodException e) {
+                    throw new IllegalArgumentException("Unable to cast provided input ["+value.getClass().getName()+"] to ["+type.getName()+"]", e);
                 }
             }
+        }
+        return null;
+    }
+
+    <T extends DataType> T getDefaultInput(ProcessingData data, Class<T> type) {
+        if (data.getData() != null && data.getData().size() == 1) {
+            return getDataForType(data.getData().values().stream().findFirst().get(), type);
+        }
+        return null;
+    }
+
+    <T extends DataType> T getInputForName(ProcessingData data, String inputName, Class<T> type) {
+        if (data.getData() != null) {
+            return getDataForType(data.getData().get(inputName), type);
         }
         return null;
     }
