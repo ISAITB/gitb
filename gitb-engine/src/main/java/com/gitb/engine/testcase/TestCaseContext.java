@@ -190,8 +190,8 @@ public class TestCaseContext {
 
         // Initialize configuration lists for SutHandlerConfigurations
         for(TestRole role : this.testCase.getActors().getActor()) {
-            actorRoles.put(role.getId(), role);
-        }
+			actorRoles.put(role.getId(), role);
+		}
 	}
 
 	public Path getDataFolder() {
@@ -366,14 +366,21 @@ public class TestCaseContext {
 		}
 	}
 
+	private TestRoleEnumeration actorRole(TestRole role) {
+		if (role != null && role.getRole() != null) {
+			return role.getRole();
+		}
+		return TestRoleEnumeration.SIMULATED;
+	}
+
 	private List<SUTConfiguration> configureSimulatedActorsForSUTs(List<ActorConfiguration> configurations) {
 		List<TransactionInfo> testCaseTransactions = createTransactionInfo(testCase.getSteps(), null);
 		Map<String, MessagingContextBuilder> messagingContextBuilders = new HashMap<>();
 
         // collect all transactions needed to configure the messaging handlers
 		for(TransactionInfo transactionInfo : testCaseTransactions) {
-			TestRole fromRole = actorRoles.get(transactionInfo.fromActorId);
-			TestRole toRole = actorRoles.get(transactionInfo.toActorId);
+			var fromRole = actorRole(actorRoles.get(transactionInfo.fromActorId));
+			var toRole = actorRole(actorRoles.get(transactionInfo.toActorId));
 
 			if(!messagingContextBuilders.containsKey(transactionInfo.handler)) {
 				messagingContextBuilders.put(transactionInfo.handler, new MessagingContextBuilder(transactionInfo));
@@ -382,15 +389,15 @@ public class TestCaseContext {
 			MessagingContextBuilder builder = messagingContextBuilders.get(transactionInfo.handler);
             builder.incrementTransactionCount();
 
-			if(fromRole.getRole() == TestRoleEnumeration.SUT
-				&& toRole.getRole() == TestRoleEnumeration.SUT) {
+			if(fromRole == TestRoleEnumeration.SUT
+				&& toRole == TestRoleEnumeration.SUT) {
 				// both of them are SUTs, messaging handler acts as a proxy between them
 				builder.addActorConfiguration(transactionInfo.toActorId, transactionInfo.toEndpointName, ActorUtils.getActorConfiguration(configurations, transactionInfo.fromActorId, transactionInfo.fromEndpointName))
 					   .addActorConfiguration(transactionInfo.fromActorId, transactionInfo.fromEndpointName, ActorUtils.getActorConfiguration(configurations, transactionInfo.toActorId, transactionInfo.toEndpointName));
-			} else if(fromRole.getRole() == TestRoleEnumeration.SUT && toRole.getRole() == TestRoleEnumeration.SIMULATED) {
+			} else if(fromRole == TestRoleEnumeration.SUT && toRole == TestRoleEnumeration.SIMULATED) {
 				// just one of them is SUT, messaging handler acts as the simulated actor
 				builder.addActorConfiguration(transactionInfo.toActorId, transactionInfo.toEndpointName, ActorUtils.getActorConfiguration(configurations, transactionInfo.fromActorId, transactionInfo.fromEndpointName));
-			} else if(fromRole.getRole() == TestRoleEnumeration.SIMULATED && toRole.getRole() == TestRoleEnumeration.SUT) {
+			} else if(fromRole == TestRoleEnumeration.SIMULATED && toRole == TestRoleEnumeration.SUT) {
 				// just one of them is SUT, messaging handler acts as the simulated actor
 				builder.addActorConfiguration(transactionInfo.fromActorId, transactionInfo.fromEndpointName, ActorUtils.getActorConfiguration(configurations, transactionInfo.toActorId, transactionInfo.toEndpointName));
 			} else {
