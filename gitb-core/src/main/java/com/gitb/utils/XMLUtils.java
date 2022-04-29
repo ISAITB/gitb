@@ -1,5 +1,6 @@
 package com.gitb.utils;
 
+import net.sf.saxon.jaxp.SaxonTransformerFactory;
 import org.apache.xerces.jaxp.DocumentBuilderFactoryImpl;
 import org.apache.xerces.jaxp.SAXParserFactoryImpl;
 import org.apache.xerces.jaxp.validation.XMLSchemaFactory;
@@ -328,7 +329,17 @@ public class XMLUtils {
     }
 
     public static TransformerFactory getSecureTransformerFactory() {
-        return TransformerFactory.newInstance();
+        var factory = new SaxonTransformerFactory();
+        factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+        factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "");
+        return factory;
+    }
+
+    public static XMLInputFactory getSecureXMLInputFactory() {
+        XMLInputFactory xmlInputFactory = XMLInputFactory.newInstance();
+        xmlInputFactory.setProperty(XMLInputFactory.SUPPORT_DTD, false);
+        xmlInputFactory.setProperty("javax.xml.stream.isSupportingExternalEntities", false);
+        return xmlInputFactory;
     }
 
     public static byte[] convertDocumentToByteArray(Document document) throws TransformerException {
@@ -339,8 +350,7 @@ public class XMLUtils {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         StreamResult result = new StreamResult(bos);
         transformer.transform(source, result);
-        byte []array = bos.toByteArray();
-        return array;
+        return bos.toByteArray();
     }
 
     /**
