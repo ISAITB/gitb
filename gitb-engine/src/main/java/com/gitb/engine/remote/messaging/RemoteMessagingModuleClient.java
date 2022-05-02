@@ -9,7 +9,7 @@ import com.gitb.messaging.DeferredMessagingReport;
 import com.gitb.messaging.IMessagingHandler;
 import com.gitb.messaging.Message;
 import com.gitb.messaging.MessagingReport;
-import com.gitb.messaging.utils.MessagingHandlerUtils;
+import com.gitb.engine.messaging.handlers.utils.MessagingHandlerUtils;
 import com.gitb.ms.Void;
 import com.gitb.ms.*;
 import com.gitb.types.DataType;

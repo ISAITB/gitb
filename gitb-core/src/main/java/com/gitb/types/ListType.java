@@ -67,7 +67,6 @@ public class ListType extends ContainerType {
         if (returnType == null) {
             returnType = DataType.STRING_DATA_TYPE;
         }
-        DataTypeFactory dataTypeFactory = DataTypeFactory.getInstance();
         //TODO Check is return type is list type and handle the casting exception
         ListType result = (ListType) DataTypeFactory.getInstance().create(returnType);
         for(DataType item:elements){

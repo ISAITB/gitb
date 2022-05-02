@@ -15,12 +15,11 @@ import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.CallbackManager;
 import com.gitb.engine.messaging.MessagingContext;
 import com.gitb.engine.messaging.TransactionContext;
-import com.gitb.engine.remote.messaging.RemoteMessagingModuleClient;
 import com.gitb.engine.testcase.TestCaseContext;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.messaging.*;
-import com.gitb.messaging.utils.MessagingHandlerUtils;
+import com.gitb.engine.messaging.handlers.utils.MessagingHandlerUtils;
 import com.gitb.tr.TAR;
 import com.gitb.tr.TestResultType;
 import com.gitb.tr.TestStepReportType;
@@ -131,11 +130,7 @@ public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorAct
 				}
 				Message inputMessage = getMessageFromBindings(step.getInput());
 				String callId = UUID.randomUUID().toString();
-				if (messagingHandler instanceof RemoteMessagingModuleClient) {
-					CallbackManager.getInstance().registerForNotification(self(), messagingContext.getSessionId(), callId);
-				} else {
-					SynchronousCallbackManager.getInstance().prepareForCallback(messagingContext.getSessionId(), callId);
-				}
+				CallbackManager.getInstance().registerForNotification(self(), messagingContext.getSessionId(), callId);
 				if (!StringUtils.isBlank(step.getTimeout())) {
 					long timeout;
 					if (resolver.isVariableReference(step.getTimeout())) {

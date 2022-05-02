@@ -1,6 +1,5 @@
 package com.gitb.engine;
 
-import com.gitb.ModuleManager;
 import com.gitb.core.ErrorCode;
 import com.gitb.engine.utils.TestCaseConverter;
 import com.gitb.exceptions.GITBEngineInternalError;

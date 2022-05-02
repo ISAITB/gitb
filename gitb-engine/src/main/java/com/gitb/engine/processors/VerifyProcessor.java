@@ -1,6 +1,6 @@
 package com.gitb.engine.processors;
 
-import com.gitb.ModuleManager;
+import com.gitb.engine.ModuleManager;
 import com.gitb.core.*;
 import com.gitb.engine.expr.ExpressionHandler;
 import com.gitb.engine.expr.resolvers.VariableResolver;
@@ -17,8 +17,8 @@ import com.gitb.types.*;
 import com.gitb.utils.BindingUtils;
 import com.gitb.utils.ErrorUtils;
 import com.gitb.validation.IValidationHandler;
-import com.gitb.validation.common.AbstractValidator;
-import com.gitb.validation.xpath.XPathValidator;
+import com.gitb.engine.validation.handlers.common.AbstractValidator;
+import com.gitb.engine.validation.handlers.xpath.XPathValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MarkerFactory;

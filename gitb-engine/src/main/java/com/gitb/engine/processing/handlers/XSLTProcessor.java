@@ -4,14 +4,13 @@ import com.gitb.core.ConfigurationParameters;
 import com.gitb.core.ConfigurationType;
 import com.gitb.core.Metadata;
 import com.gitb.core.UsageEnumeration;
-import com.gitb.processing.IProcessingHandler;
+import com.gitb.engine.processing.ProcessingHandler;
 import com.gitb.processing.ProcessingData;
 import com.gitb.processing.ProcessingReport;
 import com.gitb.ps.ProcessingModule;
 import com.gitb.tr.TestResultType;
 import com.gitb.types.StringType;
 import com.gitb.utils.XMLUtils;
-import org.kohsuke.MetaInfServices;
 
 import javax.xml.stream.XMLStreamException;
 import javax.xml.transform.Source;
@@ -24,7 +23,7 @@ import java.io.StringWriter;
 import java.util.List;
 import java.util.Objects;
 
-@MetaInfServices(IProcessingHandler.class)
+@ProcessingHandler(name="XSLTProcessor")
 public class XSLTProcessor extends AbstractProcessingHandler {
 
     private static final String OPERATION__PROCESS = "process";

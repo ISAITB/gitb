@@ -5,8 +5,8 @@ import com.gitb.core.ConfigurationType;
 import com.gitb.core.Metadata;
 import com.gitb.core.UsageEnumeration;
 import com.gitb.engine.SessionManager;
+import com.gitb.engine.processing.ProcessingHandler;
 import com.gitb.engine.utils.TemplateUtils;
-import com.gitb.processing.IProcessingHandler;
 import com.gitb.processing.ProcessingData;
 import com.gitb.processing.ProcessingReport;
 import com.gitb.ps.ProcessingModule;
@@ -19,7 +19,6 @@ import freemarker.cache.TemplateLoader;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
 import freemarker.template.TemplateException;
-import org.kohsuke.MetaInfServices;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MarkerFactory;
@@ -30,11 +29,10 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.*;
 
-@MetaInfServices(IProcessingHandler.class)
+@ProcessingHandler(name="TemplateProcessor")
 public class TemplateProcessor extends AbstractProcessingHandler {
 
     private static final Logger LOG = LoggerFactory.getLogger(TemplateProcessor.class);
-
     private static final String OPERATION__PROCESS = "process";
     private static final String INPUT__TEMPLATE = "template";
     private static final String INPUT__SYNTAX = "syntax";

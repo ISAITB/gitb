@@ -1,6 +1,5 @@
 package com.gitb.types;
 
-import com.gitb.ModuleManager;
 import com.gitb.core.AnyContent;
 import com.gitb.core.ValueEmbeddingEnumeration;
 import com.gitb.tdl.NamedTypedString;
@@ -15,7 +14,7 @@ import java.util.regex.Pattern;
  * Created by tuncay on 9/24/14.
  */
 public class DataTypeFactory {
-    private static Pattern containerTypePattern = Pattern.compile("^(list)(?:\\[([a-z]+)\\])?$");
+    private static final Pattern containerTypePattern = Pattern.compile("^(list)(?:\\[([a-z]+)\\])?$");
     private static DataTypeFactory instance = null;
 
     public static DataTypeFactory getInstance(){
@@ -108,8 +107,7 @@ public class DataTypeFactory {
                         throw new IllegalStateException("Unsupported container type ["+containerType+"]");
                     }
                 } else {
-                   // It is a plugged in type
-                    data = ModuleManager.getInstance().getDataType(type);
+                    throw new IllegalStateException("Unknown data type ["+type+"]");
                 }
         }
         return data;

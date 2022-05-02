@@ -1,6 +1,6 @@
 package com.gitb.engine.testcase;
 
-import com.gitb.ModuleManager;
+import com.gitb.engine.ModuleManager;
 import com.gitb.core.*;
 import com.gitb.engine.SessionManager;
 import com.gitb.engine.TestEngineConfiguration;
@@ -12,7 +12,7 @@ import com.gitb.engine.utils.ScriptletCache;
 import com.gitb.engine.utils.TestCaseUtils;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.messaging.IMessagingHandler;
-import com.gitb.messaging.layer.AbstractMessagingHandler;
+import com.gitb.engine.messaging.handlers.layer.AbstractMessagingHandler;
 import com.gitb.ms.InitiateResponse;
 import com.gitb.tbs.SUTConfiguration;
 import com.gitb.tdl.*;

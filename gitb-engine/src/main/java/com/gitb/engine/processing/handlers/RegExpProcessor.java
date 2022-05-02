@@ -4,7 +4,7 @@ import com.gitb.core.ConfigurationParameters;
 import com.gitb.core.ConfigurationType;
 import com.gitb.core.Metadata;
 import com.gitb.core.UsageEnumeration;
-import com.gitb.processing.IProcessingHandler;
+import com.gitb.engine.processing.ProcessingHandler;
 import com.gitb.processing.ProcessingData;
 import com.gitb.processing.ProcessingReport;
 import com.gitb.ps.ProcessingModule;
@@ -14,13 +14,12 @@ import com.gitb.types.DataType;
 import com.gitb.types.ListType;
 import com.gitb.types.StringType;
 import org.apache.commons.lang3.StringUtils;
-import org.kohsuke.MetaInfServices;
 
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-@MetaInfServices(IProcessingHandler.class)
+@ProcessingHandler(name="RegExpProcessor")
 public class RegExpProcessor extends AbstractProcessingHandler {
 
     private static final String OPERATION__CHECK = "check";

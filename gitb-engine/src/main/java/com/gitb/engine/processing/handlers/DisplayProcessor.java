@@ -4,19 +4,18 @@ import com.gitb.core.ConfigurationParameters;
 import com.gitb.core.ConfigurationType;
 import com.gitb.core.Metadata;
 import com.gitb.core.UsageEnumeration;
-import com.gitb.processing.IProcessingHandler;
+import com.gitb.engine.processing.ProcessingHandler;
 import com.gitb.processing.ProcessingData;
 import com.gitb.processing.ProcessingReport;
 import com.gitb.ps.ProcessingModule;
 import com.gitb.tr.TestResultType;
 import com.gitb.types.MapType;
 import com.gitb.utils.DataTypeUtils;
-import org.kohsuke.MetaInfServices;
 
 import java.util.Collections;
 import java.util.List;
 
-@MetaInfServices(IProcessingHandler.class)
+@ProcessingHandler(name="DisplayProcessor")
 public class DisplayProcessor extends AbstractProcessingHandler {
 
     private static final String OPERATION__DISPLAY = "display";

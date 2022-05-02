@@ -1,7 +1,6 @@
 package com.gitb.engine.expr;
 
 import com.gitb.core.ErrorCode;
-import com.gitb.engine.expr.resolvers.FunctionResolver;
 import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.engine.utils.TemplateUtils;
@@ -24,13 +23,11 @@ import javax.xml.xpath.XPathFactory;
 public class ExpressionHandler{
     private final TestCaseScope scope;
     private final VariableResolver variableResolver;
-    private final FunctionResolver functionResolver;
     private final NamespaceContext namespaceContext;
 
     public ExpressionHandler(TestCaseScope scope) {
         this.scope = scope;
         variableResolver = new VariableResolver(scope);
-        functionResolver = new FunctionResolver(scope);
         namespaceContext = new NamespaceContext(scope.getNamespaceDefinitions());
     }
 
@@ -87,7 +84,6 @@ public class ExpressionHandler{
         try {
             //create an XPath processor
             XPathFactory factory = new XPathFactoryImpl();
-            factory.setXPathFunctionResolver(functionResolver);
             factory.setXPathVariableResolver(variableResolver);
             XPath xPath = factory.newXPath();
             xPath.setNamespaceContext(namespaceContext);

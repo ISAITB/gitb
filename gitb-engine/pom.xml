@@ -31,26 +31,6 @@
             <groupId>com.gitb</groupId>
             <artifactId>gitb-lib</artifactId>
         </dependency>
-        <dependency>
-            <groupId>com.gitb</groupId>
-            <artifactId>gitb-remote-testcase-repository</artifactId>
-        </dependency>
-		<dependency>
-			<groupId>com.gitb</groupId>
-			<artifactId>gitb-local-testcase-repository</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>com.gitb</groupId>
-			<artifactId>gitb-messaging</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>com.gitb</groupId>
-			<artifactId>gitb-validators</artifactId>
-		</dependency>
-        <dependency>
-            <groupId>com.gitb</groupId>
-            <artifactId>gitb-remote-modules</artifactId>
-        </dependency>
 		<dependency>
 			<groupId>org.apache.cxf</groupId>
 			<artifactId>cxf-spring-boot-starter-jaxws</artifactId>
@@ -70,11 +50,6 @@
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-lang3</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.kohsuke.metainf-services</groupId>
-			<artifactId>metainf-services</artifactId>
-			<optional>true</optional>
 		</dependency>
         <dependency>
             <groupId>com.google.guava</groupId>
@@ -123,6 +98,82 @@
 		<dependency>
 			<groupId>org.freemarker</groupId>
 			<artifactId>freemarker</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.httpcomponents</groupId>
+			<artifactId>httpclient</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.httpcomponents</groupId>
+			<artifactId>httpmime</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>commons-codec</groupId>
+			<artifactId>commons-codec</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>javax.xml.soap</groupId>
+			<artifactId>saaj-api</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.sun.xml.messaging.saaj</groupId>
+			<artifactId>saaj-impl</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.helger.as2</groupId>
+			<artifactId>as2-lib</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.helger.peppol</groupId>
+			<artifactId>peppol-sbdh</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.helger.commons</groupId>
+			<artifactId>ph-datetime</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.helger.peppol</groupId>
+			<artifactId>peppol-commons</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.helger.ubl</groupId>
+			<artifactId>ph-ubl21</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.helger.commons</groupId>
+			<artifactId>ph-commons</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.helger.commons</groupId>
+			<artifactId>ph-jaxb</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.helger.schematron</groupId>
+			<artifactId>ph-schematron-api</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.helger.schematron</groupId>
+			<artifactId>ph-schematron-xslt</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.helger.schematron</groupId>
+			<artifactId>ph-schematron-pure</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>dnsjava</groupId>
+			<artifactId>dnsjava</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>commons-fileupload</groupId>
+			<artifactId>commons-fileupload</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.xmlunit</groupId>
+			<artifactId>xmlunit-core</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-collections4</artifactId>
 		</dependency>
 	</dependencies>
 </project>

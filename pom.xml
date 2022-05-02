@@ -203,39 +203,8 @@
             </dependency>
             <dependency>
                 <groupId>com.gitb</groupId>
-                <artifactId>gitb-remote-testcase-repository</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.gitb</groupId>
-                <artifactId>gitb-local-testcase-repository</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.gitb</groupId>
-                <artifactId>gitb-messaging</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.gitb</groupId>
-                <artifactId>gitb-validators</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.gitb</groupId>
-                <artifactId>gitb-remote-modules</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.gitb</groupId>
                 <artifactId>gitb-engine</artifactId>
                 <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.kohsuke.metainf-services</groupId>
-                <artifactId>metainf-services</artifactId>
-                <version>${version.metaInfServices}</version>
-                <optional>true</optional>
             </dependency>
             <dependency>
                 <groupId>org.apache.cxf</groupId>
@@ -534,12 +503,7 @@
         <module>gitb-core</module>
         <module>gitb-engine</module>
         <module>gitb-lib</module>
-        <module>gitb-local-testcase-repository</module>
-        <module>gitb-messaging</module>
-        <module>gitb-remote-testcase-repository</module>
-        <module>gitb-remote-modules</module>
         <module>gitb-testbed-service</module>
-        <module>gitb-validators</module>
         <module>gitb-reports</module>
         <module>gitb-validator-tdl</module>
         <module>gitb-xml-resources</module>

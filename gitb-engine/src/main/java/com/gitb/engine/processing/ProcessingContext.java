@@ -1,6 +1,6 @@
 package com.gitb.engine.processing;
 
-import com.gitb.ModuleManager;
+import com.gitb.engine.ModuleManager;
 import com.gitb.core.ErrorCode;
 import com.gitb.engine.remote.processing.RemoteProcessingModuleClient;
 import com.gitb.exceptions.GITBEngineInternalError;
@@ -16,7 +16,7 @@ public final class ProcessingContext {
 
     private final IProcessingHandler handler;
     private String session;
-    private String testSessionId;
+    private final String testSessionId;
 
     public ProcessingContext(String handler, Properties transactionProperties, String testSessionId) {
         this.handler = resolveHandler(handler, transactionProperties, testSessionId);

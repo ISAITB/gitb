@@ -1,6 +1,6 @@
 package com.gitb.engine.utils;
 
-import com.gitb.ModuleManager;
+import com.gitb.engine.ModuleManager;
 import com.gitb.core.Configuration;
 import com.gitb.core.ErrorCode;
 import com.gitb.engine.PropertyConstants;

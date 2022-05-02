@@ -1,7 +1,10 @@
 package com.gitb.engine.processing.handlers;
 
-import com.gitb.core.*;
-import com.gitb.processing.IProcessingHandler;
+import com.gitb.core.ConfigurationParameters;
+import com.gitb.core.ConfigurationType;
+import com.gitb.core.Metadata;
+import com.gitb.core.UsageEnumeration;
+import com.gitb.engine.processing.ProcessingHandler;
 import com.gitb.processing.ProcessingData;
 import com.gitb.processing.ProcessingReport;
 import com.gitb.ps.ProcessingModule;
@@ -11,19 +14,16 @@ import com.gitb.types.BooleanType;
 import com.gitb.types.StringType;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.tika.Tika;
-import org.kohsuke.MetaInfServices;
 
 import java.util.Arrays;
 import java.util.Collections;
 
-@MetaInfServices(IProcessingHandler.class)
+@ProcessingHandler(name="Base64Processor")
 public class Base64Processor extends AbstractProcessingHandler {
 
-    private final Tika tika = new Tika();
-
+    private static final Tika TIKA = new Tika();
     private static final String OPERATION__ENCODE = "encode";
     private static final String OPERATION__DECODE = "decode";
-
     private static final String INPUT__INPUT = "input";
     private static final String INPUT__DATA_URL = "dataUrl";
     private static final String OUTPUT__OUTPUT = "output";
@@ -87,7 +87,7 @@ public class Base64Processor extends AbstractProcessingHandler {
     }
 
     private String getMimeType(byte[] bytes) {
-        return tika.detect(bytes);
+        return TIKA.detect(bytes);
     }
 
     private boolean isDataURL(String value) {

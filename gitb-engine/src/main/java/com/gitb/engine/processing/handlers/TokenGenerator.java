@@ -1,7 +1,7 @@
 package com.gitb.engine.processing.handlers;
 
 import com.gitb.core.*;
-import com.gitb.processing.IProcessingHandler;
+import com.gitb.engine.processing.ProcessingHandler;
 import com.gitb.processing.ProcessingData;
 import com.gitb.processing.ProcessingReport;
 import com.gitb.ps.ProcessingModule;
@@ -10,7 +10,6 @@ import com.gitb.types.NumberType;
 import com.gitb.types.StringType;
 import com.mifmif.common.regex.Generex;
 import org.apache.commons.lang3.StringUtils;
-import org.kohsuke.MetaInfServices;
 
 import java.time.Instant;
 import java.time.ZoneId;
@@ -22,22 +21,19 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.UUID;
 
-@MetaInfServices(IProcessingHandler.class)
+@ProcessingHandler(name="TokenGenerator")
 public class TokenGenerator extends AbstractProcessingHandler {
 
     private static final ZoneId DEFAULT_ZONE = ZoneId.of("UTC");
-
     private static final String OPERATION__TIMESTAMP = "timestamp";
     private static final String OPERATION__UUID = "uuid";
     private static final String OPERATION__STRING = "string";
-
     private static final String INPUT__FORMAT = "format";
     private static final String INPUT__TIME = "time";
     private static final String INPUT__DATE = "date";
     private static final String INPUT__INPUT_FORMAT = "inputFormat";
     private static final String INPUT__DIFF = "diff";
     private static final String INPUT__ZONE = "zone";
-
     private static final String OUTPUT__VALUE = "value";
 
     @Override
