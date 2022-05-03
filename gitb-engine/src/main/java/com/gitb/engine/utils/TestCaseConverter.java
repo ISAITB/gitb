@@ -203,7 +203,7 @@ public class TestCaseConverter {
     private DecisionStep convertDecisionStep(String testCaseId, String id, IfStep description) {
         DecisionStep decision = new DecisionStep();
         decision.setId(id);
-        decision.setTitle(description.getTitle());
+        decision.setTitle(fixedOrVariableValue(description.getTitle()));
         decision.setDesc(fixedOrVariableValue(description.getDesc()));
         decision.setDocumentation(getDocumentation(testCaseId, description.getDocumentation()));
         decision.setHidden(description.isHidden() != null && description.isHidden());
@@ -218,7 +218,7 @@ public class TestCaseConverter {
     private LoopStep convertRepUntilStep(String testCaseId, String id, RepeatUntilStep description) {
         LoopStep loop = new LoopStep();
         loop.setId(id);
-        loop.setTitle(description.getTitle());
+        loop.setTitle(fixedOrVariableValue(description.getTitle()));
         loop.setDesc(fixedOrVariableValue(description.getDesc()));
         loop.setDocumentation(getDocumentation(testCaseId, description.getDocumentation()));
         loop.setHidden(description.isHidden() != null && description.isHidden());
@@ -231,7 +231,7 @@ public class TestCaseConverter {
     private LoopStep convertForEachStep(String testCaseId, String id, ForEachStep description) {
         LoopStep loop = new LoopStep();
         loop.setId(id);
-        loop.setTitle(description.getTitle());
+        loop.setTitle(fixedOrVariableValue(description.getTitle()));
         loop.setDesc(fixedOrVariableValue(description.getDesc()));
         loop.setDocumentation(getDocumentation(testCaseId, description.getDocumentation()));
         loop.setHidden(description.isHidden() != null && description.isHidden());
@@ -244,7 +244,7 @@ public class TestCaseConverter {
     private LoopStep convertWhileStep(String testCaseId, String id, WhileStep description) {
         LoopStep loop = new LoopStep();
         loop.setId(id);
-        loop.setTitle(description.getTitle());
+        loop.setTitle(fixedOrVariableValue(description.getTitle()));
         loop.setDesc(fixedOrVariableValue(description.getDesc()));
         loop.setDocumentation(getDocumentation(testCaseId, description.getDocumentation()));
         loop.setHidden(description.isHidden() != null && description.isHidden());
@@ -257,7 +257,7 @@ public class TestCaseConverter {
     private com.gitb.tpl.FlowStep convertFlowStep(String testCaseId, String id, com.gitb.tdl.FlowStep description) {
         com.gitb.tpl.FlowStep flow = new com.gitb.tpl.FlowStep();
         flow.setId(id);
-        flow.setTitle(description.getTitle());
+        flow.setTitle(fixedOrVariableValue(description.getTitle()));
         flow.setDesc(fixedOrVariableValue(description.getDesc()));
         flow.setDocumentation(getDocumentation(testCaseId, description.getDocumentation()));
         flow.setHidden(description.isHidden() != null && description.isHidden());
@@ -273,7 +273,7 @@ public class TestCaseConverter {
     private com.gitb.tpl.GroupStep convertGroupStep(String testCaseId, String id, com.gitb.tdl.Group description) {
         GroupStep group = new GroupStep();
         group.setId(id);
-        group.setTitle(description.getTitle());
+        group.setTitle(fixedOrVariableValue(description.getTitle()));
         group.setDesc(fixedOrVariableValue(description.getDesc()));
         group.setDocumentation(getDocumentation(testCaseId, description.getDocumentation()));
         group.setHidden(description.isHidden() != null && description.isHidden());
@@ -318,7 +318,7 @@ public class TestCaseConverter {
     private UserInteractionStep convertUserInteraction(String testCaseId, String id, UserInteraction description) {
         UserInteractionStep interactionStep = new UserInteractionStep();
         interactionStep.setId(id);
-        interactionStep.setTitle(description.getTitle());
+        interactionStep.setTitle(fixedOrVariableValue(description.getTitle()));
         interactionStep.setDesc(fixedOrVariableValue(description.getDesc()));
         interactionStep.setDocumentation(getDocumentation(testCaseId, description.getDocumentation()));
         interactionStep.setHidden(description.isHidden() != null && description.isHidden());
