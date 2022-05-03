@@ -17,6 +17,7 @@ import com.gitb.engine.expr.ExpressionHandler;
 import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.engine.utils.TemplateUtils;
+import com.gitb.engine.utils.TestCaseUtils;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.tbs.InputRequest;
 import com.gitb.tbs.Instruction;
@@ -75,7 +76,7 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
         promise.future().failed().foreach(new OnFailure() {
             @Override
             public void onFailure(Throwable failure) {
-                updateTestStepStatus(context, new ErrorStatusEvent(failure), null, true);
+                updateTestStepStatus(context, new ErrorStatusEvent(failure, scope), null, true);
             }
         }, getContext().dispatcher());
     }
@@ -159,7 +160,7 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
                     }
                     childStepId++;
                 }
-                logger.debug(MarkerFactory.getDetachedMarker(scope.getContext().getSessionId()), String.format("Triggering user interaction - step [%s] - ID [%s]", ErrorUtils.extractStepDescription(step), stepId));
+                logger.debug(MarkerFactory.getDetachedMarker(scope.getContext().getSessionId()), String.format("Triggering user interaction - step [%s] - ID [%s]", TestCaseUtils.extractStepDescription(step, scope), stepId));
                 TestbedService.interactWithUsers(scope.getContext().getSessionId(), stepId, userInteractionRequest);
                 return null;
             } catch (Exception e) {
@@ -305,7 +306,7 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
     @Override
     protected void handleInputEvent(InputEvent event) {
         processing();
-        logger.debug(MarkerFactory.getDetachedMarker(scope.getContext().getSessionId()), String.format("Handling user-provided inputs - step [%s] - ID [%s]", ErrorUtils.extractStepDescription(step), stepId));
+        logger.debug(MarkerFactory.getDetachedMarker(scope.getContext().getSessionId()), String.format("Handling user-provided inputs - step [%s] - ID [%s]", TestCaseUtils.extractStepDescription(step, scope), stepId));
         List<UserInput> userInputs = event.getUserInputs();
         TestCaseScope.ScopedVariable scopedVariable;
         DataTypeFactory dataTypeFactory = DataTypeFactory.getInstance();

@@ -21,6 +21,7 @@ import com.gitb.engine.events.model.StatusEvent;
 import com.gitb.engine.events.model.TestStepStatusEvent;
 import com.gitb.engine.testcase.TestCaseContext;
 import com.gitb.engine.testcase.TestCaseScope;
+import com.gitb.engine.utils.TestCaseUtils;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.tdl.IfStep;
 import com.gitb.tdl.TestConstruct;
@@ -28,7 +29,6 @@ import com.gitb.tr.*;
 import com.gitb.types.BooleanType;
 import com.gitb.types.MapType;
 import com.gitb.types.StringType;
-import com.gitb.utils.ErrorUtils;
 import com.gitb.utils.XMLDateTimeUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.reflect.ConstructorUtils;
@@ -201,11 +201,11 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 	}
 
 	protected void childrenHasWarning() {
-		updateTestStepStatus(new StatusEvent(StepStatus.WARNING), null);
+		updateTestStepStatus(new StatusEvent(StepStatus.WARNING, scope), null);
 	}
 
 	protected void childrenHasError() {
-		updateTestStepStatus(new StatusEvent(StepStatus.ERROR), null);
+		updateTestStepStatus(new StatusEvent(StepStatus.ERROR, scope), null);
 	}
 
 	protected void error(Throwable throwable) {
@@ -233,13 +233,13 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 	}
 
 	protected void updateTestStepStatus(Throwable throwable, TestStepReportType report) {
-		ErrorStatusEvent statusEvent = new ErrorStatusEvent(throwable);
+		ErrorStatusEvent statusEvent = new ErrorStatusEvent(throwable, scope);
 
 		updateTestStepStatus(statusEvent, report);
 	}
 
 	protected void updateTestStepStatus(StepStatus status, TestStepReportType report) {
-		StatusEvent statusEvent = new StatusEvent(status);
+		StatusEvent statusEvent = new StatusEvent(status, scope);
 		updateTestStepStatus(statusEvent, report);
 	}
 
@@ -248,7 +248,7 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 	}
 
 	protected void updateTestStepStatus(ActorContext context, StepStatus status, TestStepReportType report) {
-		StatusEvent statusEvent = new StatusEvent(status);
+		StatusEvent statusEvent = new StatusEvent(status, scope);
 		updateTestStepStatus(context, statusEvent, report);
 	}
 
@@ -271,7 +271,7 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 	protected void updateTestStepStatus(ActorContext context, StatusEvent statusEvent, TestStepReportType report, boolean reportTestStepStatus, boolean logError) {
 
 		if (logError && statusEvent instanceof ErrorStatusEvent) {
-			logger.error(addMarker(), String.format("Unexpected error - step [%s] - ID [%s]", ErrorUtils.extractStepDescription(step), stepId), ((ErrorStatusEvent) statusEvent).getException());
+			logger.error(addMarker(), String.format("Unexpected error - step [%s] - ID [%s]", TestCaseUtils.extractStepDescription(step, statusEvent.getScope()), stepId), ((ErrorStatusEvent) statusEvent).getException());
 		}
 
 		StepStatus status = statusEvent.getStatus();
@@ -318,7 +318,7 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 						break;
 				}
 			}
-			final TestStepStatusEvent event = new TestStepStatusEvent(scope.getContext().getSessionId(), stepId, status, report, self(), step);
+			final TestStepStatusEvent event = new TestStepStatusEvent(scope.getContext().getSessionId(), stepId, status, report, self(), step, scope);
 			TestStepStatusEventBus.getInstance().publish(event);
 		}
 		// If this is the final status for the step stop the actor.
@@ -418,10 +418,10 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 	protected void handleFutureFailure(Throwable failure) {
 		if (failure instanceof GITBEngineInternalError && ((GITBEngineInternalError)failure).getErrorInfo() != null && ((GITBEngineInternalError)failure).getErrorInfo().getErrorCode() == ErrorCode.CANCELLATION) {
 			// This is a cancelled step due to a session being stopped.
-			updateTestStepStatus(getContext(), new StatusEvent(StepStatus.SKIPPED), null, true, false);
+			updateTestStepStatus(getContext(), new StatusEvent(StepStatus.SKIPPED, scope), null, true, false);
 		} else {
 			// Unexpected error.
-			updateTestStepStatus(getContext(), new ErrorStatusEvent(failure), null, true, true);
+			updateTestStepStatus(getContext(), new ErrorStatusEvent(failure, scope), null, true, true);
 		}
 	}
 

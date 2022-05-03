@@ -6,11 +6,13 @@ import com.gitb.core.ErrorCode;
 import com.gitb.engine.PropertyConstants;
 import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.remote.RemoteCallContext;
+import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.repository.ITestCaseRepository;
 import com.gitb.tdl.*;
 import com.gitb.tdl.Process;
 import com.gitb.types.BooleanType;
+import com.gitb.types.DataType;
 import com.gitb.types.MapType;
 import com.gitb.types.StringType;
 import com.gitb.utils.ErrorUtils;
@@ -193,5 +195,33 @@ public class TestCaseUtils {
             }
         }
     }
+
+    private static String extractStepName(Object step) {
+        String name = step.getClass().getSimpleName();
+        if (name.endsWith("Step")) {
+            return name.substring(0, name.indexOf("Step"));
+        } else {
+            return name;
+        }
+    }
+
+    public static String extractStepDescription(Object step, TestCaseScope scope) {
+        String description = null;
+        if (step instanceof TestStep) {
+            description = ((TestStep) step).getDesc();
+            if (description != null && description.isBlank()) {
+                description = null;
+            }
+        }
+        if (description == null) {
+            description = extractStepName(step);
+        } else {
+            if (VariableResolver.isVariableReference(description)) {
+                description = (String) new VariableResolver(scope).resolveVariable(description).convertTo(DataType.STRING_DATA_TYPE).getValue();
+            }
+        }
+        return description;
+    }
+
 }
 

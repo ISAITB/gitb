@@ -74,7 +74,7 @@ public class IfStepProcessorActor extends AbstractTestStepActor<IfStep> {
         report.setResult(TestResultType.UNDEFINED);
         report.setDate(XMLDateTimeUtils.getXMLGregorianCalendarDateTime());
 
-        TestStepStatusEvent event = new TestStepStatusEvent(scope.getContext().getSessionId(), stepId, StepStatus.SKIPPED, report, step);
+        TestStepStatusEvent event = new TestStepStatusEvent(scope.getContext().getSessionId(), stepId, StepStatus.SKIPPED, report, step, scope);
 
         TestStepStatusEventBus.getInstance().publish(event);
     }

@@ -43,10 +43,10 @@ public class ExitStepProcessorActor extends AbstractTestStepActor<ExitStep> {
 		StatusEvent status;
 		if (isSuccess) {
 			report.setResult(TestResultType.SUCCESS);
-			status = new StatusEvent(StepStatus.COMPLETED);
+			status = new StatusEvent(StepStatus.COMPLETED, scope);
 		} else {
 			report.setResult(TestResultType.FAILURE);
-			status = new StatusEvent(StepStatus.ERROR);
+			status = new StatusEvent(StepStatus.ERROR, scope);
 		}
 		// Prepare the rest of the test case for the stop.
 		if (scope.getContext().getCurrentState() != TestCaseContext.TestCaseStateEnum.STOPPING && scope.getContext().getCurrentState() != TestCaseContext.TestCaseStateEnum.STOPPED) {
