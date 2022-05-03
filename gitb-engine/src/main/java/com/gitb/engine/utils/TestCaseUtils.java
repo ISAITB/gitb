@@ -38,7 +38,7 @@ public class TestCaseUtils {
         if (properties != null && !properties.isEmpty()) {
             for (Configuration config: properties) {
                 String value = config.getValue();
-                if (resolver.isVariableReference(value)) {
+                if (VariableResolver.isVariableReference(value)) {
                     value = resolver.resolveVariableAsString(value).toString();
                 }
                 result.setProperty(config.getName(), value);

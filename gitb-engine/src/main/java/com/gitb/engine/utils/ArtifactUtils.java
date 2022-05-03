@@ -28,7 +28,7 @@ public class ArtifactUtils {
 		}
 		String pathToLookup = artifact.getValue();
 		VariableResolver variableResolver = new VariableResolver(scope);
-		if (variableResolver.isVariableReference(pathToLookup)) {
+		if (VariableResolver.isVariableReference(pathToLookup)) {
 			DataType resolvedType = variableResolver.resolveVariable(pathToLookup);
 			pathToLookup = (String)(resolvedType.convertTo(DataType.STRING_DATA_TYPE).getValue());
 		}

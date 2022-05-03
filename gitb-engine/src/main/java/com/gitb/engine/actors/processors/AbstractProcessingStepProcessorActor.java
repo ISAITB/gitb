@@ -74,7 +74,7 @@ public abstract class AbstractProcessingStepProcessorActor<T extends Process> ex
         // Resolve the variable.
         var variableResolver = new VariableResolver(scope);
         DataType inputType;
-        if (variableResolver.isVariableReference(inputValue)) {
+        if (VariableResolver.isVariableReference(inputValue)) {
             inputType = variableResolver.resolveVariable(inputValue);
         } else {
             inputType = new StringType(inputValue);

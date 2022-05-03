@@ -119,7 +119,7 @@ public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorAct
 				VariableResolver resolver = new VariableResolver(scope);
 				if (step.getConfig() != null) {
 					for (Configuration config : step.getConfig()) {
-						if (resolver.isVariableReference(config.getValue())) {
+						if (VariableResolver.isVariableReference(config.getValue())) {
 							config.setValue(resolver.resolveVariableAsString(config.getValue()).toString());
 						}
 					}
@@ -133,7 +133,7 @@ public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorAct
 				CallbackManager.getInstance().registerForNotification(self(), messagingContext.getSessionId(), callId);
 				if (!StringUtils.isBlank(step.getTimeout())) {
 					long timeout;
-					if (resolver.isVariableReference(step.getTimeout())) {
+					if (VariableResolver.isVariableReference(step.getTimeout())) {
 						timeout = resolver.resolveVariableAsNumber(step.getTimeout()).longValue();
 					} else {
 						timeout = Double.valueOf(step.getTimeout()).longValue();
@@ -196,7 +196,7 @@ public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorAct
 					VariableResolver resolver = new VariableResolver(scope);
 					String flagName = null;
 					if (!StringUtils.isBlank(step.getTimeoutFlag())) {
-						if (resolver.isVariableReference(step.getTimeoutFlag())) {
+						if (VariableResolver.isVariableReference(step.getTimeoutFlag())) {
 							flagName = resolver.resolveVariableAsString(step.getTimeoutFlag()).toString();
 						} else {
 							flagName = step.getTimeoutFlag();
@@ -204,7 +204,7 @@ public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorAct
 					}
 					boolean errorIfTimeout = false;
 					if (!StringUtils.isBlank(step.getTimeoutIsError())) {
-						if (resolver.isVariableReference(step.getTimeoutIsError())) {
+						if (VariableResolver.isVariableReference(step.getTimeoutIsError())) {
 							errorIfTimeout = (Boolean) resolver.resolveVariableAsBoolean(step.getTimeoutIsError()).getValue();
 						} else {
 							errorIfTimeout = Boolean.parseBoolean(step.getTimeoutIsError());
@@ -229,7 +229,7 @@ public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorAct
 				if (step.getTimeout() != null && !StringUtils.isBlank(step.getTimeoutFlag())) {
 					String flagName;
 					VariableResolver resolver = new VariableResolver(scope);
-					if (resolver.isVariableReference(step.getTimeoutFlag())) {
+					if (VariableResolver.isVariableReference(step.getTimeoutFlag())) {
 						flagName = resolver.resolveVariableAsString(step.getTimeoutFlag()).toString();
 					} else {
 						flagName = step.getTimeoutFlag();

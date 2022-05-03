@@ -180,7 +180,7 @@ public class CallStepProcessorActor extends AbstractTestStepActor<CallStep> {
 				var variable = scriptlet.getParams().getVar().iterator().next();
 				var resolver = new VariableResolver(scope);
 				DataType value;
-				if (resolver.isVariableReference(step.getInputAttribute())) {
+				if (VariableResolver.isVariableReference(step.getInputAttribute())) {
 					var resolvedVariable = resolver.resolveVariable(step.getInputAttribute());
 					value = DataTypeFactory.getInstance().create(resolvedVariable.getType());
 					value.copyFrom(resolvedVariable);

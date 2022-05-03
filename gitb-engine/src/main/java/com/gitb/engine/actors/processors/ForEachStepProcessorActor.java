@@ -72,8 +72,8 @@ public class ForEachStepProcessorActor extends AbstractIterationStepActor<ForEac
 
 	private BigInteger getNumber(String expression) {
 		VariableResolver resolver = new VariableResolver(scope);
-		BigInteger number = BigInteger.valueOf(0L);
-		if (resolver.isVariableReference(expression)) {
+		BigInteger number;
+		if (VariableResolver.isVariableReference(expression)) {
 			number = BigInteger.valueOf(resolver.resolveVariableAsNumber(expression).longValue());
 		} else {
 			number = BigInteger.valueOf(Long.parseLong(expression));

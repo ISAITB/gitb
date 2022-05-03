@@ -81,7 +81,7 @@ public class ProcessStepProcessorActor extends AbstractProcessingStepProcessorAc
             }
             String handlerIdentifier = step.getHandler();
             VariableResolver resolver = new VariableResolver(scope);
-            if (resolver.isVariableReference(handlerIdentifier)) {
+            if (VariableResolver.isVariableReference(handlerIdentifier)) {
                 handlerIdentifier = resolver.resolveVariableAsString(handlerIdentifier).toString();
             }
             context = new ProcessingContext(handlerIdentifier, null, scope.getContext().getSessionId());

@@ -99,7 +99,7 @@ public class SendStepProcessorActor extends AbstractMessagingStepProcessorActor<
 				VariableResolver resolver = new VariableResolver(scope);
 				if (step.getConfig() != null) {
 					for (Configuration config : step.getConfig()) {
-						if (resolver.isVariableReference(config.getValue())) {
+						if (VariableResolver.isVariableReference(config.getValue())) {
 							config.setValue(resolver.resolveVariableAsString(config.getValue()).toString());
 						}
 					}

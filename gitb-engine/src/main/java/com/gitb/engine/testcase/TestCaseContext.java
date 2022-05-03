@@ -169,7 +169,7 @@ public class TestCaseContext {
         this.scope = new TestCaseScope(this, testCase.getImports(), testCase.getNamespaces());
 		this.variableResolver = new VariableResolver(scope);
 		if (testCase.getSteps() != null) {
-			this.logLevelIsExpression = this.variableResolver.isVariableReference(testCase.getSteps().getLogLevel());
+			this.logLevelIsExpression = VariableResolver.isVariableReference(testCase.getSteps().getLogLevel());
 			if (!this.logLevelIsExpression) {
 				this.logLevelToSignal = com.gitb.core.LogLevel.fromValue(testCase.getSteps().getLogLevel());
 			}
@@ -468,7 +468,7 @@ public class TestCaseContext {
 	            String toEndpoint = ActorUtils.extractEndpointName(beginTransactionStep.getTo());
 
 				String handlerIdentifier = beginTransactionStep.getHandler();
-				if (resolver.isVariableReference(handlerIdentifier)) {
+				if (VariableResolver.isVariableReference(handlerIdentifier)) {
 					handlerIdentifier = resolver.resolveVariableAsString(handlerIdentifier).toString();
 				}
 

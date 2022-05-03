@@ -115,7 +115,7 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
                             // if the contentType is set to BASE64 or the inputType is UPLOAD this will be a file.
                             instructionOrRequest.setType(DataType.BINARY_DATA_TYPE);
                         } else {
-                            if (variableResolver.isVariableReference(instructionOrRequest.getValue())) {
+                            if (VariableResolver.isVariableReference(instructionOrRequest.getValue())) {
                                 // If a target variable is referenced we can use this to determine the type.
                                 DataType targetVariable = variableResolver.resolveVariable(instructionOrRequest.getValue());
                                 if (targetVariable == null) {
@@ -233,7 +233,7 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
             // Select options.
             if (instructionCommand.getOptions() != null) {
                 String options = instructionCommand.getOptions();
-                if (variableResolver.isVariableReference(options)) {
+                if (VariableResolver.isVariableReference(options)) {
                     options = resolveTokenValues(variableResolver, options);
                 }
                 inputRequest.setOptions(options);
@@ -242,7 +242,7 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
                     inputRequest.setOptionLabels(inputRequest.getOptions());
                 } else {
                     String labels = instructionCommand.getOptionLabels();
-                    if (variableResolver.isVariableReference(labels)) {
+                    if (VariableResolver.isVariableReference(labels)) {
                         labels = resolveTokenValues(variableResolver, labels);
                     }
                     inputRequest.setOptionLabels(labels);
@@ -259,7 +259,7 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
                         inputRequest.setMultiple(Boolean.TRUE);
                     }
                 } else {
-                    if (variableResolver.isVariableReference(instructionCommand.getMultiple())) {
+                    if (VariableResolver.isVariableReference(instructionCommand.getMultiple())) {
                         inputRequest.setMultiple((Boolean)(variableResolver.resolveVariableAsBoolean(instructionCommand.getMultiple()).getValue()));
                     } else {
                         inputRequest.setMultiple(Boolean.parseBoolean(instructionCommand.getMultiple()));

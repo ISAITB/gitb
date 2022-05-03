@@ -33,7 +33,7 @@ public class ExitStepProcessorActor extends AbstractTestStepActor<ExitStep> {
 
 		VariableResolver resolver = new VariableResolver(scope);
 		boolean isSuccess;
-		if (resolver.isVariableReference(step.getSuccess())) {
+		if (VariableResolver.isVariableReference(step.getSuccess())) {
 			isSuccess = (Boolean)resolver.resolveVariableAsBoolean(step.getSuccess()).getValue();
 		} else {
 			isSuccess = Boolean.parseBoolean(step.getSuccess());

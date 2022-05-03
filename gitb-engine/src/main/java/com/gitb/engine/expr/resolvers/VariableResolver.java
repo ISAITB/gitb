@@ -8,6 +8,7 @@ import com.gitb.types.*;
 import com.gitb.utils.ErrorUtils;
 import com.gitb.utils.XMLUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MarkerFactory;
@@ -114,16 +115,21 @@ public class VariableResolver implements XPathVariableResolver{
         throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Variable ["+variableExpression +"] is not resolved!"));
     }
 
-    public DataType resolveVariable(String variableExpression, boolean tolerateMissing) {
-        DataType result = null;
+    public static Pair<String, String> extractVariableNameFromExpression(String variableExpression) {
         Matcher matcher = VARIABLE_EXPRESSION_PATTERN.matcher(variableExpression);
         if(!matcher.matches()){
             throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Invalid variable reference ["+variableExpression+"]"));
         }
+        return Pair.of(matcher.group(1), variableExpression.substring(matcher.end(1)));
+    }
+
+    public DataType resolveVariable(String variableExpression, boolean tolerateMissing) {
+        DataType result = null;
+        var variableName = extractVariableNameFromExpression(variableExpression);
         try {
-            String containerVariableName = matcher.group(1);
+            String containerVariableName = variableName.getLeft();
             //The remaining part
-            String indexOrKeyExpression = variableExpression.substring(matcher.end(1));
+            String indexOrKeyExpression = variableName.getRight();
             TestCaseScope.ScopedVariable scopeVariable = scope.getVariable(containerVariableName);
             if (scopeVariable == null || !scopeVariable.isDefined()) {
                 // No variable could be matched.
@@ -136,7 +142,6 @@ public class VariableResolver implements XPathVariableResolver{
             }
         } catch (Exception e) {
             logger.warn(MarkerFactory.getDetachedMarker(scope.getContext().getSessionId()), "An exception occurred when resolving variable [" + variableExpression + "]", e);
-            result = null;
         }
         if (result == null && !tolerateMissing) {
             result = new StringType();
@@ -166,10 +171,9 @@ public class VariableResolver implements XPathVariableResolver{
         return (NumberType)resolveVariable(variableExpression).convertTo(DataType.NUMBER_DATA_TYPE);
     }
 
-    public boolean isVariableReference(String variableExpression) {
+    public static boolean isVariableReference(String variableExpression) {
 	    if (!StringUtils.isBlank(variableExpression)) {
-            Matcher matcher = VARIABLE_EXPRESSION_PATTERN.matcher(variableExpression);
-            return matcher.matches();
+            return VARIABLE_EXPRESSION_PATTERN.matcher(variableExpression).matches();
         }
         return false;
     }
@@ -299,12 +303,4 @@ public class VariableResolver implements XPathVariableResolver{
         }
     }
 
-    /**
-     * Checks if an expression is a valid TDL Variable Expression used in TDL expressions
-     * @param expression
-     * @return
-     */
-    public static boolean isVariableExpression(String expression){
-        return VARIABLE_EXPRESSION_PATTERN.matcher(expression).matches();
-    }
 }

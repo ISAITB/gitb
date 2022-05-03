@@ -52,12 +52,12 @@ public class VerifyProcessor implements IProcessor {
 
 		String handlerIdentifier = verify.getHandler();
 		VariableResolver resolver = new VariableResolver(scope);
-		if (resolver.isVariableReference(handlerIdentifier)) {
+		if (VariableResolver.isVariableReference(handlerIdentifier)) {
 			handlerIdentifier = resolver.resolveVariableAsString(handlerIdentifier).toString();
 		}
 		if (verify.getConfig() != null) {
 			for (Configuration config: verify.getConfig()) {
-				if (resolver.isVariableReference(config.getValue())) {
+				if (VariableResolver.isVariableReference(config.getValue())) {
 					config.setValue(resolver.resolveVariableAsString(config.getValue()).toString());
 				}
 			}
@@ -125,7 +125,7 @@ public class VerifyProcessor implements IProcessor {
 		TestStepReportType report = validator.validate(verify.getConfig(), inputs);
 
 		var errorLevel = ErrorLevel.ERROR;
-		if (resolver.isVariableReference(verify.getLevel())) {
+		if (VariableResolver.isVariableReference(verify.getLevel())) {
 			var resolvedErrorLevel = resolver.resolveVariableAsString(verify.getLevel());
 			try {
 				errorLevel = ErrorLevel.valueOf((String) resolvedErrorLevel.getValue());

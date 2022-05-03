@@ -37,7 +37,7 @@ public class LogStepProcessorActor extends AbstractTestStepActor<Log> {
             var variableResolver = new VariableResolver(scope);
             var level = LogLevel.INFO;
             try {
-                if (variableResolver.isVariableReference(step.getLevel())) {
+                if (VariableResolver.isVariableReference(step.getLevel())) {
                     level = LogLevel.fromValue((String) variableResolver.resolveVariable(step.getLevel()).convertTo(DataType.STRING_DATA_TYPE).getValue());
                 } else {
                     level = LogLevel.fromValue(step.getLevel());
