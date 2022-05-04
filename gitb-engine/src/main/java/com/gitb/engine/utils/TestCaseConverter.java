@@ -3,8 +3,6 @@ package com.gitb.engine.utils;
 import com.gitb.core.Documentation;
 import com.gitb.core.ErrorCode;
 import com.gitb.engine.ModuleManager;
-import com.gitb.engine.expr.StaticExpressionHandler;
-import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.repository.ITestCaseRepository;
 import com.gitb.tdl.Instruction;
@@ -15,7 +13,6 @@ import com.gitb.tpl.Sequence;
 import com.gitb.tpl.TestCase;
 import com.gitb.tpl.TestStep;
 import com.gitb.tpl.*;
-import com.gitb.types.DataType;
 import com.gitb.utils.ErrorUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -24,10 +21,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.InputStream;
 import java.nio.charset.Charset;
-import java.util.LinkedList;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Stack;
+import java.util.*;
 
 public class TestCaseConverter {
 
@@ -42,7 +36,7 @@ public class TestCaseConverter {
     private final LinkedList<CallStep> scriptletStepStack = new LinkedList<>();
     private final com.gitb.tdl.TestCase testCase;
     private final ScriptletCache scriptletCache;
-    private final StaticExpressionHandler expressionHandler = new StaticExpressionHandler();
+    private Set<String> actorIds = null;
 
     public TestCaseConverter(com.gitb.tdl.TestCase testCase) {
         this(testCase, null);
@@ -127,30 +121,21 @@ public class TestCaseConverter {
     }
 
     private String fixedOrVariableValue(String originalValue) {
-        if (!scriptletStepStack.isEmpty() && VariableResolver.isVariableReference(originalValue)) {
-            // The description may be set dynamically from the call inputs.
-            return getConstantCallInput(VariableResolver.extractVariableNameFromExpression(originalValue).getLeft()).orElse(originalValue);
-        }
-        return originalValue;
+        return TestCaseUtils.fixedOrVariableValue(originalValue, scriptletStepStack);
     }
 
-    private Optional<String> getConstantCallInput(String inputName) {
-        var iterator = scriptletStepStack.descendingIterator();
-        while (iterator.hasNext()) {
-            var call = iterator.next();
-            var inputToLookFor = inputName;
-            var matchedInput = call.getInput().stream().filter(input -> inputToLookFor.equals(input.getName())).findFirst();
-            if (matchedInput.isPresent()) {
-                var inputValue = matchedInput.get().getValue();
-                if (VariableResolver.isVariableReference(inputValue)) {
-                    // The input's value is itself a variable reference.
-                    inputName = VariableResolver.extractVariableNameFromExpression(inputValue).getLeft();
-                    continue;
-                }
-                return Optional.of((String) expressionHandler.processExpression(matchedInput.get(), DataType.STRING_DATA_TYPE).getValue());
+    private String fixedOrVariableValueForActor(String originalValue) {
+        var value = TestCaseUtils.fixedOrVariableValue(originalValue, scriptletStepStack);
+        if (actorIds == null) {
+            actorIds = new HashSet<>();
+            if (testCase.getActors() != null) {
+                testCase.getActors().getActor().forEach(actor -> actorIds.add(actor.getId()));
             }
         }
-        return Optional.empty();
+        if (!actorIds.contains(value)) {
+            throw new IllegalStateException("Actor identifier reference ["+originalValue+"] resolved to ["+value+"] which is not a valid actor");
+        }
+        return value;
     }
 
     private Preliminary convertPreliminary(UserInteraction description) {
@@ -192,8 +177,8 @@ public class TestCaseConverter {
         com.gitb.tpl.MessagingStep messaging = new com.gitb.tpl.MessagingStep();
         messaging.setId(id);
         messaging.setDesc(fixedOrVariableValue(description.getDesc()));
-        messaging.setFrom(description.getFrom());
-        messaging.setTo(description.getTo());
+        messaging.setFrom(fixedOrVariableValueForActor(description.getFrom()));
+        messaging.setTo(fixedOrVariableValueForActor(description.getTo()));
         messaging.setDocumentation(getDocumentation(testCaseId, description.getDocumentation()));
         messaging.setHidden(description.isHidden() != null && description.isHidden());
         messaging.setReply(description.isReply());

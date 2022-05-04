@@ -374,7 +374,7 @@ public class TestCaseContext {
 	}
 
 	private List<SUTConfiguration> configureSimulatedActorsForSUTs(List<ActorConfiguration> configurations) {
-		List<TransactionInfo> testCaseTransactions = createTransactionInfo(testCase.getSteps(), null);
+		List<TransactionInfo> testCaseTransactions = createTransactionInfo(testCase.getSteps(), null, new VariableResolver(scope), new LinkedList<>());
 		Map<String, MessagingContextBuilder> messagingContextBuilders = new HashMap<>();
 
         // collect all transactions needed to configure the messaging handlers
@@ -452,20 +452,19 @@ public class TestCaseContext {
      * @param sequence test step sequence
      * @return transactions occurring in the given sequence
      */
-    private List<TransactionInfo> createTransactionInfo(Sequence sequence, String testSuiteContext) {
+    private List<TransactionInfo> createTransactionInfo(Sequence sequence, String testSuiteContext, VariableResolver resolver, LinkedList<CallStep> scriptletCallStack) {
         List<TransactionInfo> transactions = new ArrayList<>();
-		VariableResolver resolver = new VariableResolver(scope);
         for(Object step : sequence.getSteps()) {
             if(step instanceof Sequence) {
-                transactions.addAll(createTransactionInfo((Sequence) step, testSuiteContext));
+                transactions.addAll(createTransactionInfo((Sequence) step, testSuiteContext, resolver, scriptletCallStack));
             } else if(step instanceof BeginTransaction) {
                 BeginTransaction beginTransactionStep = (BeginTransaction) step;
 
-	            String fromActorId = ActorUtils.extractActorId(beginTransactionStep.getFrom());
-	            String fromEndpoint = ActorUtils.extractEndpointName(beginTransactionStep.getFrom());
+	            String fromActorId = TestCaseUtils.fixedOrVariableValue(ActorUtils.extractActorId(beginTransactionStep.getFrom()), scriptletCallStack);
+	            String fromEndpoint = TestCaseUtils.fixedOrVariableValue(ActorUtils.extractEndpointName(beginTransactionStep.getFrom()), scriptletCallStack);
 
-	            String toActorId = ActorUtils.extractActorId(beginTransactionStep.getTo());
-	            String toEndpoint = ActorUtils.extractEndpointName(beginTransactionStep.getTo());
+	            String toActorId = TestCaseUtils.fixedOrVariableValue(ActorUtils.extractActorId(beginTransactionStep.getTo()), scriptletCallStack);
+	            String toEndpoint = TestCaseUtils.fixedOrVariableValue(ActorUtils.extractEndpointName(beginTransactionStep.getTo()), scriptletCallStack);
 
 				String handlerIdentifier = beginTransactionStep.getHandler();
 				if (VariableResolver.isVariableReference(handlerIdentifier)) {
@@ -474,19 +473,19 @@ public class TestCaseContext {
 
                 transactions.add(new TransactionInfo(fromActorId, fromEndpoint, toActorId, toEndpoint, handlerIdentifier, TestCaseUtils.getStepProperties(beginTransactionStep.getProperty(), resolver)));
             } else if (step instanceof IfStep) {
-	            transactions.addAll(createTransactionInfo(((IfStep) step).getThen(), testSuiteContext));
+	            transactions.addAll(createTransactionInfo(((IfStep) step).getThen(), testSuiteContext, resolver, scriptletCallStack));
 	            if (((IfStep) step).getElse() != null) {
-					transactions.addAll(createTransactionInfo(((IfStep) step).getElse(), testSuiteContext));
+					transactions.addAll(createTransactionInfo(((IfStep) step).getElse(), testSuiteContext, resolver, scriptletCallStack));
 				}
             } else if(step instanceof WhileStep) {
-	            transactions.addAll(createTransactionInfo(((WhileStep) step).getDo(), testSuiteContext));
+	            transactions.addAll(createTransactionInfo(((WhileStep) step).getDo(), testSuiteContext, resolver, scriptletCallStack));
             } else if(step instanceof ForEachStep) {
-	            transactions.addAll(createTransactionInfo(((ForEachStep) step).getDo(), testSuiteContext));
+	            transactions.addAll(createTransactionInfo(((ForEachStep) step).getDo(), testSuiteContext, resolver, scriptletCallStack));
             } else if(step instanceof RepeatUntilStep) {
-	            transactions.addAll(createTransactionInfo(((RepeatUntilStep) step).getDo(), testSuiteContext));
+	            transactions.addAll(createTransactionInfo(((RepeatUntilStep) step).getDo(), testSuiteContext, resolver, scriptletCallStack));
             } else if(step instanceof FlowStep) {
 	            for(Sequence thread : ((FlowStep) step).getThread()) {
-		            transactions.addAll(createTransactionInfo(thread, testSuiteContext));
+		            transactions.addAll(createTransactionInfo(thread, testSuiteContext, resolver, scriptletCallStack));
 	            }
             } else if(step instanceof CallStep) {
             	String testSuiteContextToUse = ((CallStep) step).getFrom();
@@ -494,7 +493,9 @@ public class TestCaseContext {
 					testSuiteContextToUse = testSuiteContext;
 				}
 	            Scriptlet scriptlet = getScriptlet(testSuiteContextToUse, ((CallStep) step).getPath(), true);
-				transactions.addAll(createTransactionInfo(scriptlet.getSteps(), testSuiteContextToUse));
+				scriptletCallStack.addLast((CallStep) step);
+				transactions.addAll(createTransactionInfo(scriptlet.getSteps(), testSuiteContextToUse, resolver, scriptletCallStack));
+				scriptletCallStack.removeLast();
             }
         }
         return transactions;

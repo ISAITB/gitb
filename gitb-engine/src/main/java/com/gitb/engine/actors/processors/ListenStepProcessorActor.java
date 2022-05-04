@@ -9,7 +9,6 @@ import com.gitb.core.ErrorCode;
 import com.gitb.core.MessagingModule;
 import com.gitb.core.StepStatus;
 import com.gitb.engine.actors.ActorSystem;
-import com.gitb.engine.events.model.ErrorStatusEvent;
 import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.messaging.MessagingContext;
 import com.gitb.engine.messaging.TransactionContext;
@@ -113,14 +112,15 @@ public class ListenStepProcessorActor extends AbstractMessagingStepProcessorActo
                 }
 
                 Message inputMessage = getMessageFromBindings(step.getInput());
-
+                var from = VariableResolver.isVariableReference(step.getFrom())?(String) resolver.resolveVariableAsString(step.getFrom()).getValue():step.getFrom();
+                var to = VariableResolver.isVariableReference(step.getTo())?(String) resolver.resolveVariableAsString(step.getTo()).getValue():step.getTo();
                 MessagingReport report =
                         messagingHandler
                                 .listenMessage(
                                         messagingContext.getSessionId(),
                                         transactionContext.getTransactionId(),
-                                        step.getFrom(),
-                                        step.getTo(),
+                                        from,
+                                        to,
                                         step.getConfig(),
                                         inputMessage
                                 );
