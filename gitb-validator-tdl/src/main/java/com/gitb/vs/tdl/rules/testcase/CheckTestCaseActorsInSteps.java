@@ -17,11 +17,13 @@ import java.util.TreeSet;
 public class CheckTestCaseActorsInSteps extends AbstractTestCaseObserver {
 
     private Set<String> actorsInScriptlets;
+    private Set<String> actorsReferencesInScriptlets;
 
     @Override
     public void initialise(Context context, ValidationReport report) {
         super.initialise(context, report);
         actorsInScriptlets = new TreeSet<>();
+        actorsReferencesInScriptlets = new TreeSet<>();
     }
 
     @Override
@@ -48,13 +50,22 @@ public class CheckTestCaseActorsInSteps extends AbstractTestCaseObserver {
     private void validateActorReference(String actorId, TestRoleEnumeration expectedRole, Object currentStep) {
         if (actorId != null) {
             if (testCaseIsWrappedScriptlet) {
-                actorsInScriptlets.add(actorId);
+                // Scriptlet
+                if (Utils.isVariableExpression(actorId)) {
+                    actorsReferencesInScriptlets.add(actorId);
+                } else {
+                    actorsInScriptlets.add(actorId);
+                }
             } else {
-                TestRole role = context.getTestCaseActors().get(currentTestCase.getId()).get(actorId);
-                if (role == null) {
-                    addReportItem(ErrorCode.INVALID_ACTOR_REFERENCE_IN_STEP, currentTestCase.getId(), Utils.stepNameWithScriptlet(currentStep, currentScriptlet), actorId);
-                } else if (expectedRole != null && expectedRole != role.getRole()) {
-                    addReportItem(ErrorCode.REFERENCED_ACTOR_IN_STEP_HAS_UNEXPECTED_ROLE, currentTestCase.getId(), Utils.stepNameWithScriptlet(currentStep, currentScriptlet), actorId, role.getRole().value(), expectedRole.value());
+                // Test case
+                if (!Utils.isVariableExpression(actorId)) {
+                    // Actors defined as expressions are covered in [TDL-108]. We only test fixed values here.
+                    TestRole role = context.getTestCaseActors().get(currentTestCase.getId()).get(actorId);
+                    if (role == null) {
+                        addReportItem(ErrorCode.INVALID_ACTOR_REFERENCE_IN_STEP, currentTestCase.getId(), Utils.stepNameWithScriptlet(currentStep, currentScriptlet), actorId);
+                    } else if (expectedRole != null && expectedRole != role.getRole()) {
+                        addReportItem(ErrorCode.REFERENCED_ACTOR_IN_STEP_HAS_UNEXPECTED_ROLE, currentTestCase.getId(), Utils.stepNameWithScriptlet(currentStep, currentScriptlet), actorId, role.getRole().value(), expectedRole.value());
+                    }
                 }
             }
         }
@@ -63,8 +74,14 @@ public class CheckTestCaseActorsInSteps extends AbstractTestCaseObserver {
     @Override
     public void finalise() {
         super.finalise();
-        if (testCaseIsWrappedScriptlet && actorsInScriptlets.size() > 0) {
-            addReportItem(ErrorCode.ACTOR_REFERENCES_IN_SCRIPTLET, "["+String.join(", ", actorsInScriptlets)+"]");
+        if (testCaseIsWrappedScriptlet) {
+            if (!actorsInScriptlets.isEmpty() && !actorsReferencesInScriptlets.isEmpty()) {
+                addReportItem(ErrorCode.ACTOR_REFERENCES_IN_SCRIPTLET_VALUES_AND_REFS, "["+String.join(", ", actorsInScriptlets)+"]", "["+String.join(", ", actorsReferencesInScriptlets)+"]");
+            } else if (!actorsInScriptlets.isEmpty()) {
+                addReportItem(ErrorCode.ACTOR_REFERENCES_IN_SCRIPTLET_VALUES, "["+String.join(", ", actorsInScriptlets)+"]");
+            } else if (!actorsReferencesInScriptlets.isEmpty()) {
+                addReportItem(ErrorCode.ACTOR_REFERENCES_IN_SCRIPTLET_REFS, "["+String.join(", ", actorsReferencesInScriptlets)+"]");
+            }
         }
     }
 }

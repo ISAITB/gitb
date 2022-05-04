@@ -81,6 +81,16 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
         }, getContext().dispatcher());
     }
 
+    private String fixedValueOrVariable(String value, VariableResolver variableResolver, String defaultValue) {
+        if (VariableResolver.isVariableReference(value)) {
+            value = (String) variableResolver.resolveVariableAsString(value).getValue();
+        }
+        if (StringUtils.isBlank(value) && StringUtils.isNotBlank(defaultValue)) {
+            value = defaultValue;
+        }
+        return value;
+    }
+
     @Override
     protected void start() {
         processing();
@@ -98,17 +108,12 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
             try {
                 VariableResolver variableResolver = new VariableResolver(scope);
                 List<InstructionOrRequest> instructionAndRequests = step.getInstructOrRequest();
-                String sutActorId = getSUTActor().getId();
-                if (StringUtils.isBlank(step.getWith())) {
-                    step.setWith(sutActorId);
-                } else {
-                    step.setWith(step.getWith());
-                }
+                var withValue = fixedValueOrVariable(step.getWith(), variableResolver, getSUTActor().getId());
                 int childStepId = 1;
                 // Prepare the message to send to the frontend.
                 UserInteractionRequest userInteractionRequest = new UserInteractionRequest();
-                userInteractionRequest.setInputTitle(step.getInputTitle() == null?"Server interaction":step.getInputTitle());
-                userInteractionRequest.setWith(step.getWith());
+                userInteractionRequest.setInputTitle(fixedValueOrVariable(step.getInputTitle(), variableResolver, "Server interaction"));
+                userInteractionRequest.setWith(withValue);
                 for (InstructionOrRequest instructionOrRequest : instructionAndRequests) {
                     // Set the type in case this is missing.
                     if (StringUtils.isBlank(instructionOrRequest.getType())) {
@@ -154,9 +159,9 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
                         if (StringUtils.isBlank(instructionOrRequest.getValue())) {
                             instructionOrRequest.setValue("''");
                         }
-                        userInteractionRequest.getInstructionOrRequest().add(processInstruction(instructionOrRequest, "" + childStepId));
+                        userInteractionRequest.getInstructionOrRequest().add(processInstruction(instructionOrRequest, "" + childStepId, withValue, variableResolver));
                     } else { // If it is a request
-                        userInteractionRequest.getInstructionOrRequest().add(processRequest((UserRequest) instructionOrRequest, "" + childStepId));
+                        userInteractionRequest.getInstructionOrRequest().add(processRequest((UserRequest) instructionOrRequest, "" + childStepId, withValue, variableResolver));
                     }
                     childStepId++;
                 }
@@ -192,10 +197,10 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
      * @param stepId step id
      * @return instruction
      */
-    private Instruction processInstruction(InstructionOrRequest instructionCommand, String stepId) {
+    private Instruction processInstruction(InstructionOrRequest instructionCommand, String stepId, String withValue, VariableResolver variableResolver) {
         Instruction instruction = new Instruction();
-        instruction.setWith(instructionCommand.getWith());
-        instruction.setDesc(instructionCommand.getDesc());
+        instruction.setWith(withValue);
+        instruction.setDesc(fixedValueOrVariable(instructionCommand.getDesc(), variableResolver, null));
         instruction.setId(stepId);
         instruction.setName(instructionCommand.getName());
         instruction.setEncoding(instructionCommand.getEncoding());
@@ -217,11 +222,10 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
      * @param stepId step id
      * @return input request
      */
-    private InputRequest processRequest(UserRequest instructionCommand, String stepId) {
-        VariableResolver variableResolver = new VariableResolver(scope);
+    private InputRequest processRequest(UserRequest instructionCommand, String stepId, String withValue, VariableResolver variableResolver) {
         InputRequest inputRequest = new InputRequest();
-        inputRequest.setWith(instructionCommand.getWith());
-        inputRequest.setDesc(instructionCommand.getDesc());
+        inputRequest.setWith(withValue);
+        inputRequest.setDesc(fixedValueOrVariable(instructionCommand.getDesc(), variableResolver, null));
         inputRequest.setName(instructionCommand.getValue()); //name is provided from value node
         inputRequest.setContentType(instructionCommand.getContentType());
         inputRequest.setType(instructionCommand.getType());

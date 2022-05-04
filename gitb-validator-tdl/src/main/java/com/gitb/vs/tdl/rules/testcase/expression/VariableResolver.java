@@ -10,8 +10,7 @@ import java.util.Map;
 
 public class VariableResolver implements XPathVariableResolver {
 
-    private VariableResolverProvider provider;
-
+    private final VariableResolverProvider provider;
 
     public VariableResolver(VariableResolverProvider provider) {
         this.provider = provider;
