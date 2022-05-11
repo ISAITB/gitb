@@ -132,6 +132,9 @@ public enum ErrorCode {
     SCRIPTLET_ACTOR_REFERENCED_NOT_IN_TEST_CASE(        "TDL-111", "Test case [%s] calls scriptlet [%s] but provides a value for the actor reference [%s] in step %s that does not match a test case actor.", ERROR, false),
     SCRIPTLET_ACTOR_REFERENCE_WITHOUT_INPUT(            "TDL-112", "Test case [%s] calls scriptlet [%s] but does not provides an input for the actor reference [%s] in step %s.", ERROR, false),
     SCRIPTLET_ACTOR_NOT_DEFINED_IN_TEST_CASE(           "TDL-113", "Test case [%s] calls scriptlet [%s] but does not define actor [%s] referenced by the scriptlet in step %s.", ERROR, false),
+    MISSING_TX_AND_HANDLER_FOR_MESSAGING_STEP(          "TDL-114", "%s [%s] defines messaging step (%s) with no transaction ID reference and no handler definition.", ERROR, true),
+    STEP_CONNECTION_PROPERTIES_IGNORED(                 "TDL-115", "%s [%s] defines for step (%s) connection properties that will be ignored. When the step references a transaction ([%s] in this case) connection properties are taken from the transaction's definition.", WARNING, true),
+    STEP_WITH_BOTH_TX_AND_HANDLER(                      "TDL-116", "%s [%s] defines step (%s) with both a transaction ID reference and a handler. The provided handler will be ignored.", WARNING, true),
     ;
 
     private final String code;

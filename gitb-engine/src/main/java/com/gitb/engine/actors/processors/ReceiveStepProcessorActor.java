@@ -8,18 +8,20 @@ import com.gitb.core.Configuration;
 import com.gitb.core.ErrorCode;
 import com.gitb.core.MessagingModule;
 import com.gitb.core.StepStatus;
+import com.gitb.engine.CallbackManager;
 import com.gitb.engine.actors.ActorSystem;
 import com.gitb.engine.commands.messaging.NotificationReceived;
 import com.gitb.engine.commands.messaging.TimeoutExpired;
 import com.gitb.engine.expr.resolvers.VariableResolver;
-import com.gitb.engine.CallbackManager;
 import com.gitb.engine.messaging.MessagingContext;
 import com.gitb.engine.messaging.TransactionContext;
-import com.gitb.engine.testcase.TestCaseContext;
+import com.gitb.engine.messaging.handlers.utils.MessagingHandlerUtils;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.exceptions.GITBEngineInternalError;
-import com.gitb.messaging.*;
-import com.gitb.engine.messaging.handlers.utils.MessagingHandlerUtils;
+import com.gitb.messaging.DeferredMessagingReport;
+import com.gitb.messaging.IMessagingHandler;
+import com.gitb.messaging.Message;
+import com.gitb.messaging.MessagingReport;
 import com.gitb.tr.TAR;
 import com.gitb.tr.TestResultType;
 import com.gitb.tr.TestStepReportType;
@@ -92,17 +94,11 @@ public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorAct
 	@Override
 	protected void start() {
 		processing();
+		VariableResolver resolver = new VariableResolver(scope);
 
-        TestCaseContext testCaseContext = scope.getContext();
-
-        for(MessagingContext mc : testCaseContext.getMessagingContexts()) {
-            if(mc.getTransaction(step.getTxnId()) != null) {
-                messagingContext = mc;
-                break;
-            }
-        }
-
-        transactionContext = messagingContext.getTransaction(step.getTxnId());
+		var contexts = determineMessagingContexts(resolver);
+		messagingContext = contexts.getLeft();
+        transactionContext = contexts.getRight();
 
 		final IMessagingHandler messagingHandler = messagingContext.getHandler();
 		final ActorContext context = getContext();
@@ -116,7 +112,6 @@ public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorAct
 			Make sure we have the flag set as false in the response.
 			 */
 			Future<TestStepReportType> future = Futures.future(() -> {
-				VariableResolver resolver = new VariableResolver(scope);
 				if (step.getConfig() != null) {
 					for (Configuration config : step.getConfig()) {
 						if (VariableResolver.isVariableReference(config.getValue())) {
@@ -164,20 +159,8 @@ public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorAct
 				}
 			}, context.dispatcher());
 
-			future.foreach(new OnSuccess<>() {
-				@Override
-				public void onSuccess(TestStepReportType result) {
-					promise.trySuccess(result);
-				}
-			}, context.dispatcher());
-
-			future.failed().foreach(new OnFailure() {
-				@Override
-				public void onFailure(Throwable failure) {
-					messagingHandler.endTransaction(messagingContext.getSessionId(), transactionContext.getTransactionId());
-					promise.tryFailure(failure);
-				}
-			}, context.dispatcher());
+			future.foreach(handleSuccess(promise, messagingHandler, transactionContext), getContext().dispatcher());
+			future.failed().foreach(handleFailure(promise, messagingHandler, transactionContext), getContext().dispatcher());
 		} else {
 			throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Messaging handler is not available"));
 		}
@@ -274,11 +257,6 @@ public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorAct
     @Override
     protected MessagingContext getMessagingContext() {
         return messagingContext;
-    }
-
-    @Override
-    protected TransactionContext getTransactionContext() {
-        return transactionContext;
     }
 
 	public static ActorRef create(ActorContext context, com.gitb.tdl.Receive step, TestCaseScope scope, String stepId) throws Exception {

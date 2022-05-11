@@ -1,18 +1,18 @@
 package com.gitb.engine.testcase;
 
-import com.gitb.engine.ModuleManager;
 import com.gitb.core.*;
+import com.gitb.engine.ModuleManager;
 import com.gitb.engine.SessionManager;
 import com.gitb.engine.TestEngineConfiguration;
 import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.messaging.MessagingContext;
+import com.gitb.engine.messaging.handlers.layer.AbstractMessagingHandler;
 import com.gitb.engine.processing.ProcessingContext;
 import com.gitb.engine.remote.messaging.RemoteMessagingModuleClient;
 import com.gitb.engine.utils.ScriptletCache;
 import com.gitb.engine.utils.TestCaseUtils;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.messaging.IMessagingHandler;
-import com.gitb.engine.messaging.handlers.layer.AbstractMessagingHandler;
 import com.gitb.ms.InitiateResponse;
 import com.gitb.tbs.SUTConfiguration;
 import com.gitb.tdl.*;
@@ -24,6 +24,7 @@ import com.gitb.utils.ErrorUtils;
 import com.gitb.utils.map.Tuple;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MarkerFactory;
@@ -387,7 +388,6 @@ public class TestCaseContext {
 			}
 
 			MessagingContextBuilder builder = messagingContextBuilders.get(transactionInfo.handler);
-            builder.incrementTransactionCount();
 
 			if(fromRole == TestRoleEnumeration.SUT
 				&& toRole == TestRoleEnumeration.SUT) {
@@ -447,6 +447,17 @@ public class TestCaseContext {
 		return new ArrayList<>(groups.values());
 	}
 
+	private TransactionInfo buildTransactionInfo(String from, String to, String handler, List<Configuration> properties, VariableResolver resolver, LinkedList<CallStep> scriptletCallStack) {
+		return new TransactionInfo(
+				TestCaseUtils.fixedOrVariableValue(ActorUtils.extractActorId(from), scriptletCallStack),
+				TestCaseUtils.fixedOrVariableValue(ActorUtils.extractEndpointName(from), scriptletCallStack),
+				TestCaseUtils.fixedOrVariableValue(ActorUtils.extractActorId(to), scriptletCallStack),
+				TestCaseUtils.fixedOrVariableValue(ActorUtils.extractEndpointName(to), scriptletCallStack),
+				VariableResolver.isVariableReference(handler)?resolver.resolveVariableAsString(handler).toString():handler,
+				TestCaseUtils.getStepProperties(properties, resolver)
+		);
+	}
+
     /**
      * Traverses test case steps to generate transaction information containing (from, handler, to) information
      * @param sequence test step sequence
@@ -458,20 +469,13 @@ public class TestCaseContext {
             if(step instanceof Sequence) {
                 transactions.addAll(createTransactionInfo((Sequence) step, testSuiteContext, resolver, scriptletCallStack));
             } else if(step instanceof BeginTransaction) {
-                BeginTransaction beginTransactionStep = (BeginTransaction) step;
-
-	            String fromActorId = TestCaseUtils.fixedOrVariableValue(ActorUtils.extractActorId(beginTransactionStep.getFrom()), scriptletCallStack);
-	            String fromEndpoint = TestCaseUtils.fixedOrVariableValue(ActorUtils.extractEndpointName(beginTransactionStep.getFrom()), scriptletCallStack);
-
-	            String toActorId = TestCaseUtils.fixedOrVariableValue(ActorUtils.extractActorId(beginTransactionStep.getTo()), scriptletCallStack);
-	            String toEndpoint = TestCaseUtils.fixedOrVariableValue(ActorUtils.extractEndpointName(beginTransactionStep.getTo()), scriptletCallStack);
-
-				String handlerIdentifier = beginTransactionStep.getHandler();
-				if (VariableResolver.isVariableReference(handlerIdentifier)) {
-					handlerIdentifier = resolver.resolveVariableAsString(handlerIdentifier).toString();
+				var beginTransactionStep = (BeginTransaction) step;
+				transactions.add(buildTransactionInfo(beginTransactionStep.getFrom(), beginTransactionStep.getTo(), beginTransactionStep.getHandler(), beginTransactionStep.getProperty(), resolver, scriptletCallStack));
+			} else if (step instanceof MessagingStep) {
+				var messagingStep = (MessagingStep) step;
+				if (StringUtils.isBlank(messagingStep.getTxnId()) && StringUtils.isNotBlank(messagingStep.getHandler())) {
+					transactions.add(buildTransactionInfo(messagingStep.getFrom(), messagingStep.getTo(), messagingStep.getHandler(), messagingStep.getProperty(), resolver, scriptletCallStack));
 				}
-
-                transactions.add(new TransactionInfo(fromActorId, fromEndpoint, toActorId, toEndpoint, handlerIdentifier, TestCaseUtils.getStepProperties(beginTransactionStep.getProperty(), resolver)));
             } else if (step instanceof IfStep) {
 	            transactions.addAll(createTransactionInfo(((IfStep) step).getThen(), testSuiteContext, resolver, scriptletCallStack));
 	            if (((IfStep) step).getElse() != null) {
@@ -605,17 +609,11 @@ public class TestCaseContext {
 	private static class MessagingContextBuilder {
 		private final TransactionInfo transactionInfo;
 		private final Map<Tuple<String>, ActorConfiguration> sutConfigurations;
-        private int transactionCount;
 
 		public MessagingContextBuilder(TransactionInfo transactionInfo) {
 			this.transactionInfo = transactionInfo;
 			this.sutConfigurations = new HashMap<>();
-            this.transactionCount = 0;
 		}
-
-        public void incrementTransactionCount() {
-            this.transactionCount++;
-        }
 
 		public MessagingContextBuilder addActorConfiguration(String actorIdToBeSimulated, String endpointNameToBeSimulated,
 		                                                     ActorConfiguration sutActorConfiguration) {
@@ -715,8 +713,8 @@ public class TestCaseContext {
 			if (initiateResponse.getSessionId() == null) {
 				throw new IllegalStateException("The remote messaging service must return a session identifier");
 			}
-			return new MessagingContext(messagingHandler, initiateResponse.getSessionId(),
-				initiateResponse.getActorConfiguration(), new ArrayList<>(sutHandlerConfigurations.values()), transactionCount);
+			return new MessagingContext(messagingHandler, transactionInfo.handler, initiateResponse.getSessionId(),
+				new ArrayList<>(sutHandlerConfigurations.values()));
 		}
 
 		public String getHandler() {

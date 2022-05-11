@@ -11,12 +11,12 @@ import java.util.Set;
 
 public class CheckTransactions extends AbstractTestCaseObserver {
 
-    private Set<String> allMessagingTransactionIds = new HashSet<>();
-    private Set<String> allProcessingTransactionIds = new HashSet<>();
-    private Set<String> openMessagingTransactionIds = new HashSet<>();
-    private Set<String> openProcessingTransactionIds = new HashSet<>();
-    private Set<String> referencedMessagingTransactionIds = new HashSet<>();
-    private Set<String> referencedProcessingTransactionIds = new HashSet<>();
+    private final Set<String> allMessagingTransactionIds = new HashSet<>();
+    private final Set<String> allProcessingTransactionIds = new HashSet<>();
+    private final Set<String> openMessagingTransactionIds = new HashSet<>();
+    private final Set<String> openProcessingTransactionIds = new HashSet<>();
+    private final Set<String> referencedMessagingTransactionIds = new HashSet<>();
+    private final Set<String> referencedProcessingTransactionIds = new HashSet<>();
 
     @Override
     public void initialiseTestCase(TestCase currentTestCase) {
@@ -71,23 +71,38 @@ public class CheckTransactions extends AbstractTestCaseObserver {
                 }
             }
         } else if (stepObj instanceof MessagingStep) {
-            if (openMessagingTransactionIds.isEmpty()) {
-                addReportItem(ErrorCode.MESSAGING_STEP_OUTSIDE_TX, currentTestCase.getId(), Utils.stepNameWithScriptlet(stepObj, currentScriptlet));
+            String txId = ((MessagingStep) stepObj).getTxnId();
+            if (StringUtils.isBlank(txId)) {
+                if (StringUtils.isBlank(((MessagingStep)stepObj).getHandler())) {
+                    addReportItem(ErrorCode.MISSING_TX_AND_HANDLER_FOR_MESSAGING_STEP, currentTestCase.getId(), Utils.stepNameWithScriptlet(stepObj, currentScriptlet));
+                }
             } else {
-                String txId = ((MessagingStep)stepObj).getTxnId();
-                if (!openMessagingTransactionIds.contains(txId)) {
-                    addReportItem(ErrorCode.INVALID_TX_REFERENCE_FOR_MESSAGING_STEP, currentTestCase.getId(), Utils.stepNameWithScriptlet(stepObj, currentScriptlet), txId);
+                if (StringUtils.isNotBlank(((MessagingStep) stepObj).getHandler())) {
+                    addReportItem(ErrorCode.STEP_WITH_BOTH_TX_AND_HANDLER, currentTestCase.getId(), Utils.stepNameWithScriptlet(stepObj, currentScriptlet));
+                }
+                if (openMessagingTransactionIds.isEmpty()) {
+                    addReportItem(ErrorCode.MESSAGING_STEP_OUTSIDE_TX, currentTestCase.getId(), Utils.stepNameWithScriptlet(stepObj, currentScriptlet));
                 } else {
-                    referencedMessagingTransactionIds.add(txId);
+                    if (!openMessagingTransactionIds.contains(txId)) {
+                        addReportItem(ErrorCode.INVALID_TX_REFERENCE_FOR_MESSAGING_STEP, currentTestCase.getId(), Utils.stepNameWithScriptlet(stepObj, currentScriptlet), txId);
+                    } else {
+                        referencedMessagingTransactionIds.add(txId);
+                    }
+                }
+                if (!((MessagingStep) stepObj).getProperty().isEmpty()) {
+                    addReportItem(ErrorCode.STEP_CONNECTION_PROPERTIES_IGNORED, currentTestCase.getId(), Utils.stepNameWithScriptlet(stepObj, currentScriptlet), txId);
                 }
             }
         } else if (stepObj instanceof Process) {
             String txId = ((Process)stepObj).getTxnId();
             if (StringUtils.isBlank(txId)) {
                 if (StringUtils.isBlank(((Process)stepObj).getHandler())) {
-                    addReportItem(ErrorCode.MISSING_TX_AND_HANDLER_FOR_PROCESSING_STEP, currentTestCase.getId());
+                    addReportItem(ErrorCode.MISSING_TX_AND_HANDLER_FOR_MESSAGING_STEP, currentTestCase.getId());
                 }
             } else {
+                if (StringUtils.isNotBlank(((Process) stepObj).getHandler())) {
+                    addReportItem(ErrorCode.STEP_WITH_BOTH_TX_AND_HANDLER, currentTestCase.getId(), Utils.stepNameWithScriptlet(stepObj, currentScriptlet));
+                }
                 if (openProcessingTransactionIds.isEmpty()) {
                     addReportItem(ErrorCode.PROCESSING_STEP_OUTSIDE_TX, currentTestCase.getId());
                 } else {
@@ -97,6 +112,9 @@ public class CheckTransactions extends AbstractTestCaseObserver {
                         referencedProcessingTransactionIds.add(txId);
                     }
                 }
+            }
+            if (!((Process) stepObj).getProperty().isEmpty()) {
+                addReportItem(ErrorCode.STEP_CONNECTION_PROPERTIES_IGNORED, currentTestCase.getId(), Utils.stepNameWithScriptlet(stepObj, currentScriptlet), txId);
             }
         }
     }

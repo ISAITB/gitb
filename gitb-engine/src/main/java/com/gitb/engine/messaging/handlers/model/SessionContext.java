@@ -130,7 +130,7 @@ public class SessionContext {
             List<TransactionContext> transactions  = new ArrayList<>();
 
             for (ActorConfiguration actorConfiguration : actorConfigurations) {
-                ActorConfiguration serverActorConfiguration = null;
+                ActorConfiguration serverActorConfiguration;
                 TransactionContext transactionContext = null;
                 if ((fromEndpointName == null && actorConfiguration.getActor().equals(from))
                         || (fromEndpointName != null && actorConfiguration.getActor().equals(fromActorId) && actorConfiguration.getEndpoint().equals(fromEndpointName))) {

@@ -1,26 +1,31 @@
 package com.gitb.engine.actors.processors;
 
+import akka.dispatch.OnFailure;
+import akka.dispatch.OnSuccess;
 import com.gitb.core.*;
 import com.gitb.engine.expr.ExpressionHandler;
+import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.messaging.MessagingContext;
 import com.gitb.engine.messaging.TransactionContext;
+import com.gitb.engine.messaging.handlers.layer.AbstractMessagingHandler;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.messaging.IMessagingHandler;
 import com.gitb.messaging.Message;
 import com.gitb.tdl.Binding;
 import com.gitb.tdl.MessagingStep;
+import com.gitb.tr.TestStepReportType;
 import com.gitb.types.DataType;
 import com.gitb.types.DataTypeFactory;
 import com.gitb.types.MapType;
 import com.gitb.utils.BindingUtils;
 import com.gitb.utils.ConfigurationUtils;
 import com.gitb.utils.ErrorUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
+import scala.concurrent.Promise;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by serbay.
@@ -39,8 +44,6 @@ public abstract class AbstractMessagingStepProcessorActor<T extends MessagingSte
     }
 
     protected abstract MessagingContext getMessagingContext();
-
-    protected abstract TransactionContext getTransactionContext();
 
     protected MapType generateOutputWithModuleDefinition(MessagingContext messagingContext, Message message) {
         final IMessagingHandler messagingHandler = messagingContext.getHandler();
@@ -100,18 +103,6 @@ public abstract class AbstractMessagingStepProcessorActor<T extends MessagingSte
         }
 
         return map;
-    }
-
-    protected List<TypedParameter> getRequiredOutputParameters(List<TypedParameter> outputParameters) {
-        List<TypedParameter> requiredOutputParameters = new ArrayList<>();
-
-        for(TypedParameter outputParameter : outputParameters) {
-            if(outputParameter.getUse() == UsageEnumeration.R) {
-                requiredOutputParameters.add(outputParameter);
-            }
-        }
-
-        return requiredOutputParameters;
     }
 
     private void setInputWithModuleDefinition(Message message, List<Binding> input, List<TypedParameter> expectedParameters) {
@@ -183,4 +174,69 @@ public abstract class AbstractMessagingStepProcessorActor<T extends MessagingSte
         return message;
     }
 
+    protected Pair<MessagingContext, TransactionContext> determineMessagingContexts(VariableResolver resolver) {
+        var testCaseContext = scope.getContext();
+        // Find the applicable messaging context.
+        Optional<MessagingContext> messagingContext;
+        if (StringUtils.isNotBlank(step.getTxnId())) {
+            // Find by transaction ID
+            messagingContext = testCaseContext.getMessagingContexts().stream().filter(ctx -> ctx.getTransaction(step.getTxnId()) != null).findFirst();
+        } else if (StringUtils.isNotBlank(step.getHandler())) {
+            // Find by handler.
+            var handler = VariableResolver.isVariableReference(step.getHandler())?resolver.resolveVariableAsString(step.getHandler()).toString():step.getHandler();
+            messagingContext = testCaseContext.getMessagingContexts().stream().filter(ctx -> handler.equals(ctx.getHandlerIdentifier())).findFirst();
+        } else {
+            throw new IllegalStateException("Messaging step missing both a transaction ID and handler identifier");
+        }
+        if (messagingContext.isPresent()) {
+            // Find the applicable transaction context.
+            TransactionContext transactionContext;
+            if (StringUtils.isNotBlank(step.getTxnId())) {
+                transactionContext = messagingContext.get().getTransaction(step.getTxnId());
+                if (transactionContext == null) {
+                    throw new IllegalStateException("Transaction not found for ID ["+step.getTxnId()+"]");
+                }
+            } else {
+                // Check if an implicit transaction has already been created.
+                transactionContext = messagingContext.get().getTransaction(messagingContext.get().getHandlerIdentifier());
+                if (transactionContext == null) {
+                    var txIdToUse = messagingContext.get().getHandlerIdentifier();
+                    if (messagingContext.get().getHandler() instanceof AbstractMessagingHandler) {
+                        // We need to signal a start
+                        messagingContext.get().getHandler().beginTransaction(
+                                messagingContext.get().getSessionId(),
+                                txIdToUse,
+                                step.getFrom(),
+                                step.getTo(),
+                                step.getConfig()
+                        );
+                    }
+                    // Create an implicit transaction context.
+                    transactionContext = new TransactionContext(txIdToUse);
+                    messagingContext.get().setTransaction(txIdToUse, transactionContext);
+                }
+            }
+            return Pair.of(messagingContext.get(), transactionContext);
+        } else {
+            throw new IllegalStateException("Unable to determine the messaging context for a messaging step");
+        }
+    }
+
+    protected OnSuccess<TestStepReportType> handleSuccess(Promise<TestStepReportType> promise, IMessagingHandler handler, TransactionContext transaction) {
+        return new OnSuccess<>() {
+            @Override
+            public void onSuccess(TestStepReportType result) {
+                promise.trySuccess(result);
+            }
+        };
+    }
+
+    protected OnFailure handleFailure(Promise<TestStepReportType> promise, IMessagingHandler handler, TransactionContext transaction) {
+        return new OnFailure() {
+            @Override
+            public void onFailure(Throwable failure) {
+                promise.tryFailure(failure);
+            }
+        };
+    }
 }

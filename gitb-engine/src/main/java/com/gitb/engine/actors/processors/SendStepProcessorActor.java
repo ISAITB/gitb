@@ -8,11 +8,9 @@ import com.gitb.core.Configuration;
 import com.gitb.core.ErrorCode;
 import com.gitb.core.StepStatus;
 import com.gitb.engine.actors.ActorSystem;
-import com.gitb.engine.events.model.ErrorStatusEvent;
 import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.messaging.MessagingContext;
 import com.gitb.engine.messaging.TransactionContext;
-import com.gitb.engine.testcase.TestCaseContext;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.messaging.IMessagingHandler;
@@ -78,16 +76,11 @@ public class SendStepProcessorActor extends AbstractMessagingStepProcessorActor<
 	@Override
 	protected void start() {
 		processing();
-        TestCaseContext testCaseContext = scope.getContext();
+		VariableResolver resolver = new VariableResolver(scope);
 
-        for(MessagingContext mc : testCaseContext.getMessagingContexts()) {
-            if(mc.getTransaction(step.getTxnId()) != null) {
-                messagingContext = mc;
-                break;
-            }
-        }
-
-        transactionContext = messagingContext.getTransaction(step.getTxnId());
+		var contexts = determineMessagingContexts(resolver);
+		messagingContext = contexts.getLeft();
+		transactionContext = contexts.getRight();
 
 		final IMessagingHandler messagingHandler = messagingContext.getHandler();
 
@@ -95,8 +88,6 @@ public class SendStepProcessorActor extends AbstractMessagingStepProcessorActor<
 			//id parameter must be set for Send steps, so that sent message
 			//is saved to scope
 			Future<TestStepReportType> future = Futures.future(() -> {
-
-				VariableResolver resolver = new VariableResolver(scope);
 				if (step.getConfig() != null) {
 					for (Configuration config : step.getConfig()) {
 						if (VariableResolver.isVariableReference(config.getValue())) {
@@ -132,21 +123,11 @@ public class SendStepProcessorActor extends AbstractMessagingStepProcessorActor<
 				}
 			}, getContext().dispatcher());
 
-			future.foreach(new OnSuccess<>() {
-				@Override
-				public void onSuccess(TestStepReportType result) {
-					promise.trySuccess(result);
-				}
-			}, getContext().dispatcher());
-
-			future.failed().foreach(new OnFailure() {
-				@Override
-				public void onFailure(Throwable failure) {
-					promise.tryFailure(failure);
-				}
-			}, getContext().dispatcher());
+			future.foreach(handleSuccess(promise, messagingHandler, transactionContext), getContext().dispatcher());
+			future.failed().foreach(handleFailure(promise, messagingHandler, transactionContext), getContext().dispatcher());
+		} else {
+			throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Messaging handler is not available"));
 		}
-
 	}
 
 	@Override
@@ -159,11 +140,6 @@ public class SendStepProcessorActor extends AbstractMessagingStepProcessorActor<
     @Override
     protected MessagingContext getMessagingContext() {
         return messagingContext;
-    }
-
-    @Override
-    protected TransactionContext getTransactionContext() {
-        return transactionContext;
     }
 
 	public static ActorRef create(ActorContext context, Send step, TestCaseScope scope, String stepId) throws Exception {

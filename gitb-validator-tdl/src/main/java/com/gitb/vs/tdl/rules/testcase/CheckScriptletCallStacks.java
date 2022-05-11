@@ -128,46 +128,48 @@ public class CheckScriptletCallStacks extends AbstractTestCaseObserver {
     }
 
     private void checkActorId(String actorReference, Object step) {
-        var scriptlet = scriptletStack.getLast();
-        if (Utils.isVariableExpression(actorReference)) {
-            boolean inputFound = false;
-            var inputName = actorReference.substring(1); // Ignore first '$'
-            var iterator = callStack.descendingIterator();
-            while (iterator.hasNext()) {
-                var call = iterator.next();
-                var inputToLookFor = inputName;
-                var matchedInput = call.getInput().stream().filter(input -> inputToLookFor.equals(input.getName())).findFirst();
-                if (matchedInput.isPresent()) {
-                    var inputValue = matchedInput.get().getValue();
-                    if (Utils.isVariableExpression(inputValue)) {
-                        // The input's value is itself a variable reference.
-                        inputName = inputValue.substring(1); // Ignore first '$'
-                        continue;
-                    }
-                    inputFound = true;
-                    // The input has been matched but also needs to resolve to a fixed string.
-                    String resolvedActorId = null;
-                    try {
-                        resolvedActorId = XPathFactory.newInstance().newXPath().compile(inputValue).evaluate(Utils.getSecureDocumentBuilderFactory().newDocumentBuilder().newDocument());
-                    } catch (XPathExpressionException e) {
-                        invalidErrors.add(Triple.of(scriptlet.getId(), actorReference, Utils.stepNameWithScriptlet(step, null)));
-                    } catch (ParserConfigurationException e) {
-                        throw new IllegalStateException(e);
-                    }
-                    if (resolvedActorId != null) {
-                        if (!actorDefinedInTestCase(resolvedActorId)) {
-                            referenceNotInTestCaseErrors.add(Triple.of(scriptlet.getId(), actorReference, Utils.stepNameWithScriptlet(step, null)));
+        if (actorReference != null) {
+            var scriptlet = scriptletStack.getLast();
+            if (Utils.isVariableExpression(actorReference)) {
+                boolean inputFound = false;
+                var inputName = actorReference.substring(1); // Ignore first '$'
+                var iterator = callStack.descendingIterator();
+                while (iterator.hasNext()) {
+                    var call = iterator.next();
+                    var inputToLookFor = inputName;
+                    var matchedInput = call.getInput().stream().filter(input -> inputToLookFor.equals(input.getName())).findFirst();
+                    if (matchedInput.isPresent()) {
+                        var inputValue = matchedInput.get().getValue();
+                        if (Utils.isVariableExpression(inputValue)) {
+                            // The input's value is itself a variable reference.
+                            inputName = inputValue.substring(1); // Ignore first '$'
+                            continue;
                         }
+                        inputFound = true;
+                        // The input has been matched but also needs to resolve to a fixed string.
+                        String resolvedActorId = null;
+                        try {
+                            resolvedActorId = XPathFactory.newInstance().newXPath().compile(inputValue).evaluate(Utils.getSecureDocumentBuilderFactory().newDocumentBuilder().newDocument());
+                        } catch (XPathExpressionException e) {
+                            invalidErrors.add(Triple.of(scriptlet.getId(), actorReference, Utils.stepNameWithScriptlet(step, null)));
+                        } catch (ParserConfigurationException e) {
+                            throw new IllegalStateException(e);
+                        }
+                        if (resolvedActorId != null) {
+                            if (!actorDefinedInTestCase(resolvedActorId)) {
+                                referenceNotInTestCaseErrors.add(Triple.of(scriptlet.getId(), actorReference, Utils.stepNameWithScriptlet(step, null)));
+                            }
+                        }
+                        break;
                     }
-                    break;
                 }
-            }
-            if (!inputFound) {
-                noInputErrors.add(Triple.of(scriptlet.getId(), actorReference, Utils.stepNameWithScriptlet(step, null)));
-            }
-        } else {
-            if (!actorDefinedInTestCase(actorReference)) {
-                notInTestCaseErrors.add(Triple.of(scriptlet.getId(), actorReference, Utils.stepNameWithScriptlet(step, null)));
+                if (!inputFound) {
+                    noInputErrors.add(Triple.of(scriptlet.getId(), actorReference, Utils.stepNameWithScriptlet(step, null)));
+                }
+            } else {
+                if (!actorDefinedInTestCase(actorReference)) {
+                    notInTestCaseErrors.add(Triple.of(scriptlet.getId(), actorReference, Utils.stepNameWithScriptlet(step, null)));
+                }
             }
         }
     }

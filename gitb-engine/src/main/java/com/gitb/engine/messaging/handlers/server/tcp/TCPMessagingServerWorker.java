@@ -102,8 +102,8 @@ public class TCPMessagingServerWorker extends AbstractMessagingServerWorker {
 
     private class TCPListenerThread extends Thread {
 
-        private int port;
-        private ServerSocket serverSocket;
+        private final int port;
+        private final ServerSocket serverSocket;
 
         private TCPListenerThread(int port) throws IOException {
             super(TCPListenerThread.class.getSimpleName() + ":" + port);

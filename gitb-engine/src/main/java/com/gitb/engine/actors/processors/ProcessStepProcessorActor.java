@@ -10,6 +10,7 @@ import com.gitb.core.StepStatus;
 import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.processing.ProcessingContext;
 import com.gitb.engine.testcase.TestCaseScope;
+import com.gitb.engine.utils.TestCaseUtils;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.processing.IProcessingHandler;
 import com.gitb.processing.ProcessingReport;
@@ -84,7 +85,7 @@ public class ProcessStepProcessorActor extends AbstractProcessingStepProcessorAc
             if (VariableResolver.isVariableReference(handlerIdentifier)) {
                 handlerIdentifier = resolver.resolveVariableAsString(handlerIdentifier).toString();
             }
-            context = new ProcessingContext(handlerIdentifier, null, scope.getContext().getSessionId());
+            context = new ProcessingContext(handlerIdentifier, TestCaseUtils.getStepProperties(step.getProperty(), resolver), scope.getContext().getSessionId());
         } else {
             // A processing transaction is referenced.
             context = this.scope.getContext().getProcessingContext(step.getTxnId());
