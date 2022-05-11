@@ -1,24 +1,26 @@
-<div class="any-content-view" *ngIf="context != undefined">
-  <div class="any-content-view-container">
-    <div class="any-content-view-texts">
-      <div *ngIf="context.name != undefined" [class.content-container]="value == undefined && context?.item != undefined"><strong>{{context!.name}}</strong></div>
-      <div [class.named]="context.name != undefined" class="value" *ngIf="value != undefined">
-        <div>
-          <span *ngIf="showValueInline">{{value}}</span>
+<div (click)="containerClicked();$event.stopPropagation()">
+  <div class="any-content-view" [class.no-border]="noBorder" [class.hovering]="hoveringTitle && withItems" *ngIf="context != undefined">
+    <div class="any-content-view-container" *ngIf="context.name != undefined || value != undefined">
+      <div class="any-content-view-texts">
+        <div *ngIf="context.name != undefined" class="content-name" [class.with-items]="withItems" (mouseover)="hoverUpdate(true)" (mouseout)="hoverUpdate(false)">{{context!.name}}</div>
+        <div *ngIf="value != undefined && showValueInline" class="content-value" [class.with-name]="withName">{{value}}</div>
+      </div>
+      <div class="any-content-view-controls" *ngIf="value != undefined">
+        <div class="btn-toolbar" [ngSwitch]="showValueInline">
+          <ng-container *ngSwitchCase="true">
+            <button class="btn btn-default" type="button" (click)="copy()" containerClass="shortTooltip" tooltip="Copy" [delay]="Constants.TOOLTIP_DELAY"><i class="fa fa-clipboard" aria-hidden="true"></i></button>
+          </ng-container>
+          <ng-container *ngSwitchDefault>
+            <button class="btn btn-default" type="button" (click)="download()" [class.pending]="downloadPending" [pending]="downloadPending" [icon]="true" containerClass="shortTooltip" tooltip="Download" [delay]="Constants.TOOLTIP_DELAY"><i class="fa fa-download" aria-hidden="true"></i></button>
+            <button class="btn btn-default" type="button" (click)="open()" [class.pending]="openPending" [pending]="openPending" [icon]="true" containerClass="shortTooltip" tooltip="View" [delay]="Constants.TOOLTIP_DELAY"><i class="fa fa-search" aria-hidden="true"></i></button>
+          </ng-container>
         </div>
       </div>
     </div>
-    <div class="any-content-view-controls" *ngIf="value != undefined">
-      <div class="btn-toolbar" *ngIf="showValueInline">
-        <button class="btn btn-default" type="button" (click)="copy()" containerClass="shortTooltip" tooltip="Copy" [delay]="Constants.TOOLTIP_DELAY"><i class="fa fa-clipboard" aria-hidden="true"></i></button>
-      </div>
-      <div class="btn-toolbar" *ngIf="!showValueInline">
-        <button class="btn btn-default" type="button" (click)="download()" [class.pending]="downloadPending" [pending]="downloadPending" [icon]="true" containerClass="shortTooltip" tooltip="Download" [delay]="Constants.TOOLTIP_DELAY"><i class="fa fa-download" aria-hidden="true"></i></button>
-        <button class="btn btn-default" type="button" (click)="open()" [class.pending]="openPending" [pending]="openPending" [icon]="true" containerClass="shortTooltip" tooltip="View" [delay]="Constants.TOOLTIP_DELAY"><i class="fa fa-search" aria-hidden="true"></i></button>
+    <div *ngIf="withItems" [collapse]="collapsed" [isAnimated]="true">
+      <div class="content-items" [class.with-name]="withName">
+        <app-any-content-view *ngFor="let item of context!.item!" [context]="item" [report]="report" [sessionId]="sessionId" [root]="false"></app-any-content-view>
       </div>
     </div>
-  </div>
-  <div class="items" *ngIf="context != undefined && context.item != undefined">
-    <app-any-content-view *ngFor="let item of context!.item!" [context]="item" [report]="report" [sessionId]="sessionId"></app-any-content-view>
   </div>
 </div>

@@ -33,7 +33,7 @@ public class ExitStepProcessorActor extends AbstractTestStepActor<ExitStep> {
 
 		VariableResolver resolver = new VariableResolver(scope);
 		boolean isSuccess;
-		if (resolver.isVariableReference(step.getSuccess())) {
+		if (VariableResolver.isVariableReference(step.getSuccess())) {
 			isSuccess = (Boolean)resolver.resolveVariableAsBoolean(step.getSuccess()).getValue();
 		} else {
 			isSuccess = Boolean.parseBoolean(step.getSuccess());
@@ -43,10 +43,10 @@ public class ExitStepProcessorActor extends AbstractTestStepActor<ExitStep> {
 		StatusEvent status;
 		if (isSuccess) {
 			report.setResult(TestResultType.SUCCESS);
-			status = new StatusEvent(StepStatus.COMPLETED);
+			status = new StatusEvent(StepStatus.COMPLETED, scope);
 		} else {
 			report.setResult(TestResultType.FAILURE);
-			status = new StatusEvent(StepStatus.ERROR);
+			status = new StatusEvent(StepStatus.ERROR, scope);
 		}
 		// Prepare the rest of the test case for the stop.
 		if (scope.getContext().getCurrentState() != TestCaseContext.TestCaseStateEnum.STOPPING && scope.getContext().getCurrentState() != TestCaseContext.TestCaseStateEnum.STOPPED) {

@@ -9,11 +9,9 @@ import com.gitb.core.ErrorCode;
 import com.gitb.core.MessagingModule;
 import com.gitb.core.StepStatus;
 import com.gitb.engine.actors.ActorSystem;
-import com.gitb.engine.events.model.ErrorStatusEvent;
 import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.messaging.MessagingContext;
 import com.gitb.engine.messaging.TransactionContext;
-import com.gitb.engine.testcase.TestCaseContext;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.messaging.IMessagingHandler;
@@ -79,17 +77,11 @@ public class ListenStepProcessorActor extends AbstractMessagingStepProcessorActo
     @Override
     protected void start() {
         processing();
+        VariableResolver resolver = new VariableResolver(scope);
 
-        TestCaseContext testCaseContext = scope.getContext();
-
-        for(MessagingContext mc : testCaseContext.getMessagingContexts()) {
-            if(mc.getTransaction(step.getTxnId()) != null) {
-                messagingContext = mc;
-                break;
-            }
-        }
-
-        transactionContext = messagingContext.getTransaction(step.getTxnId());
+        var contexts = determineMessagingContexts(resolver);
+        messagingContext = contexts.getLeft();
+        transactionContext = contexts.getRight();
 
         final IMessagingHandler messagingHandler = messagingContext.getHandler();
         final ActorContext context = getContext();
@@ -98,11 +90,9 @@ public class ListenStepProcessorActor extends AbstractMessagingStepProcessorActo
 
         if(messagingHandler != null) {
             Future<TestStepReportType> future = Futures.future(() -> {
-
-                VariableResolver resolver = new VariableResolver(scope);
                 if (step.getConfig() != null) {
                     for (Configuration config : step.getConfig()) {
-                        if (resolver.isVariableReference(config.getValue())) {
+                        if (VariableResolver.isVariableReference(config.getValue())) {
                             config.setValue(resolver.resolveVariableAsString(config.getValue()).toString());
                         }
                     }
@@ -113,14 +103,15 @@ public class ListenStepProcessorActor extends AbstractMessagingStepProcessorActo
                 }
 
                 Message inputMessage = getMessageFromBindings(step.getInput());
-
+                var from = VariableResolver.isVariableReference(step.getFrom())?(String) resolver.resolveVariableAsString(step.getFrom()).getValue():step.getFrom();
+                var to = VariableResolver.isVariableReference(step.getTo())?(String) resolver.resolveVariableAsString(step.getTo()).getValue():step.getTo();
                 MessagingReport report =
                         messagingHandler
                                 .listenMessage(
                                         messagingContext.getSessionId(),
                                         transactionContext.getTransactionId(),
-                                        step.getFrom(),
-                                        step.getTo(),
+                                        from,
+                                        to,
                                         step.getConfig(),
                                         inputMessage
                                 );
@@ -155,20 +146,8 @@ public class ListenStepProcessorActor extends AbstractMessagingStepProcessorActo
 
             }, context.dispatcher());
 
-            future.foreach(new OnSuccess<>() {
-                @Override
-                public void onSuccess(TestStepReportType result) {
-                    promise.trySuccess(result);
-                }
-            }, context.dispatcher());
-
-            future.failed().foreach(new OnFailure() {
-                @Override
-                public void onFailure(Throwable failure) {
-                    messagingHandler.endTransaction(messagingContext.getSessionId(), transactionContext.getTransactionId());
-                    promise.tryFailure(failure);
-                }
-            }, context.dispatcher());
+            future.foreach(handleSuccess(promise, messagingHandler, transactionContext), getContext().dispatcher());
+            future.failed().foreach(handleFailure(promise, messagingHandler, transactionContext), getContext().dispatcher());
         } else {
             throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Messaging handler is not available"));
         }
@@ -184,11 +163,6 @@ public class ListenStepProcessorActor extends AbstractMessagingStepProcessorActo
     @Override
     protected MessagingContext getMessagingContext() {
         return messagingContext;
-    }
-
-    @Override
-    protected TransactionContext getTransactionContext() {
-        return transactionContext;
     }
 
     public static ActorRef create(ActorContext context, Listen step, TestCaseScope scope, String stepId) throws Exception {

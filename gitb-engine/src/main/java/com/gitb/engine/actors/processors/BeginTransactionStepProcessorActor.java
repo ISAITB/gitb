@@ -31,12 +31,12 @@ public class BeginTransactionStepProcessorActor extends AbstractTestStepActor<Be
 
 		String handlerIdentifier = step.getHandler();
 		VariableResolver resolver = new VariableResolver(scope);
-		if (resolver.isVariableReference(handlerIdentifier)) {
+		if (VariableResolver.isVariableReference(handlerIdentifier)) {
 			handlerIdentifier = resolver.resolveVariableAsString(handlerIdentifier).toString();
 		}
 		if (step.getConfig() != null) {
 			for (Configuration config: step.getConfig()) {
-				if (resolver.isVariableReference(config.getValue())) {
+				if (VariableResolver.isVariableReference(config.getValue())) {
 					config.setValue(resolver.resolveVariableAsString(config.getValue()).toString());
 				}
 			}

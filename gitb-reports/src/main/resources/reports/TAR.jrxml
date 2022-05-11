@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Created with Jaspersoft Studio version 6.5.1.final using JasperReports Library version 6.5.1  -->
+<!-- Created with Jaspersoft Studio version 6.19.1.final using JasperReports Library version 6.19.1-867c00bf88cd4d784d404379d6c05e1b419e8a4c  -->
 <jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="TAR" pageWidth="842" pageHeight="595" orientation="Landscape" columnWidth="802" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="32c3bb60-28b6-431c-90a2-6d105676246d">
 	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="One Empty Record"/>
 	<style name="titleStyle" mode="Opaque" backcolor="#EDEDED" radius="0">
@@ -231,7 +231,7 @@
 						<dataSourceExpression><![CDATA[new net.sf.jasperreports.engine.data.JRBeanCollectionDataSource($P{reportItems})]]></dataSourceExpression>
 					</datasetRun>
 					<jr:listContents height="66" width="752">
-						<textField isStretchWithOverflow="true">
+						<textField textAdjust="StretchHeight">
 							<reportElement style="itemStyle" x="10" y="2" width="730" height="19" uuid="52e228b3-178c-422b-bddd-14e1b8028d82"/>
 							<textElement verticalAlignment="Top" markup="html">
 								<paragraph firstLineIndent="17" leftIndent="5" rightIndent="5" spacingBefore="3" spacingAfter="10"/>
@@ -242,7 +242,7 @@
 							<reportElement x="13" y="5" width="15" height="15" uuid="341261d9-6352-46d2-a4bf-36aabf94217d"/>
 							<imageExpression><![CDATA["error".equals($F{level})?"reports/images/error.png":("warning".equals($F{level})?"reports/images/warning.png":"reports/images/info.png")]]></imageExpression>
 						</image>
-						<textField isStretchWithOverflow="true">
+						<textField textAdjust="StretchHeight">
 							<reportElement key="" style="itemStyle" positionType="Float" x="10" y="21" width="730" height="22" isRemoveLineWhenBlank="true" uuid="09292200-f190-43ec-8781-aa3c3d39d35c">
 								<printWhenExpression><![CDATA[$F{test} != null]]></printWhenExpression>
 							</reportElement>
@@ -251,7 +251,7 @@
 							</textElement>
 							<textFieldExpression><![CDATA["<b>Test:</b> " + $F{test} + (($F{location} !=null)?"<br/>":"")]]></textFieldExpression>
 						</textField>
-						<textField isStretchWithOverflow="true">
+						<textField textAdjust="StretchHeight">
 							<reportElement style="itemStyle" positionType="Float" x="10" y="43" width="730" height="21" isRemoveLineWhenBlank="true" uuid="af8d6fc2-0f6e-4719-86da-e355fd85880c">
 								<printWhenExpression><![CDATA[$F{location} != null]]></printWhenExpression>
 							</reportElement>
@@ -294,7 +294,7 @@
 							<textElement verticalAlignment="Middle" markup="html"/>
 							<textFieldExpression><![CDATA["<b>Name:</b> " + $F{key}]]></textFieldExpression>
 						</textField>
-						<textField isStretchWithOverflow="true">
+						<textField textAdjust="StretchHeight">
 							<reportElement x="11" y="30" width="728" height="30" uuid="2191a8bb-2231-4575-95e1-fe8e66695395"/>
 							<box>
 								<pen lineWidth="0.5"/>

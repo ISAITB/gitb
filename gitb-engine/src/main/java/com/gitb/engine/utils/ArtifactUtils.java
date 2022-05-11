@@ -1,6 +1,6 @@
 package com.gitb.engine.utils;
 
-import com.gitb.ModuleManager;
+import com.gitb.engine.ModuleManager;
 import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.testcase.TestCaseContext;
 import com.gitb.engine.testcase.TestCaseScope;
@@ -8,7 +8,6 @@ import com.gitb.repository.ITestCaseRepository;
 import com.gitb.tdl.TestArtifact;
 import com.gitb.types.DataType;
 import com.gitb.types.DataTypeFactory;
-import com.gitb.types.SchemaType;
 import org.apache.commons.io.IOUtils;
 
 import java.io.IOException;
@@ -29,7 +28,7 @@ public class ArtifactUtils {
 		}
 		String pathToLookup = artifact.getValue();
 		VariableResolver variableResolver = new VariableResolver(scope);
-		if (variableResolver.isVariableReference(pathToLookup)) {
+		if (VariableResolver.isVariableReference(pathToLookup)) {
 			DataType resolvedType = variableResolver.resolveVariable(pathToLookup);
 			pathToLookup = (String)(resolvedType.convertTo(DataType.STRING_DATA_TYPE).getValue());
 		}

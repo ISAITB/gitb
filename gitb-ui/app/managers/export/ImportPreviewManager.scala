@@ -865,7 +865,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
       if (migrationsToApply.isEmpty) {
         logger.info("No migration needed")
       } else {
-        val factory = TransformerFactory.newInstance
+        val factory = XMLUtils.getSecureTransformerFactory()
         migrationsToApply.foreach { migration =>
           val fromVersion = migration._1.toString
           val toVersion = migration._2.toString

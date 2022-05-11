@@ -1,6 +1,7 @@
 package com.gitb.engine.events.model;
 
 import com.gitb.core.StepStatus;
+import com.gitb.engine.testcase.TestCaseScope;
 
 /**
  * Created by serbay on 9/17/14.
@@ -8,8 +9,8 @@ import com.gitb.core.StepStatus;
 public class ErrorStatusEvent extends StatusEvent {
 	private final Throwable e;
 
-	public ErrorStatusEvent(Throwable e) {
-		super(StepStatus.ERROR);
+	public ErrorStatusEvent(Throwable e, TestCaseScope scope) {
+		super(StepStatus.ERROR, scope);
 		this.e = e;
 	}
 

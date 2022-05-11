@@ -106,7 +106,10 @@ public enum ErrorCode {
     EXTERNAL_DYNAMIC_IMPORT_USED(                       "TDL-090", "Imports are made from test suite [%s] using expression [%s]. Ensure these will be available at runtime.", INFO),
     DUPLICATE_INPUT(                                    "TDL-091", "%s [%s] defines a %s step with a duplicate input [%s].", ERROR, true),
     DUPLICATE_CONFIG(                                   "TDL-092", "%s [%s] defines a %s step with a duplicate configuration value [%s].", ERROR, true),
-    ACTOR_REFERENCES_IN_SCRIPTLET(                      "TDL-093", "Scriptlets reference actors %s in messaging steps. Ensure these will be defined by their calling test cases at runtime.", INFO),
+
+    ACTOR_REFERENCES_IN_SCRIPTLET_VALUES(               "TDL-093", "Scriptlets refer to actors %s. Ensure these are defined by their calling test cases.", INFO),
+    ACTOR_REFERENCES_IN_SCRIPTLET_REFS(                 "TDL-093", "Scriptlets use actor references %s. Ensure these are set as scriptlet inputs by their calling test cases.", INFO),
+    ACTOR_REFERENCES_IN_SCRIPTLET_VALUES_AND_REFS(      "TDL-093", "Scriptlets refer to actors %s and use actor references %s. Ensure these are defined by their calling test cases and that actor references are set as scriptlet inputs.", INFO),
 
     DUPLICATE_INTERNAL_SCRIPTLET_PROPERTY_NAME(         "TDL-094", "Test case [%s] includes a scriptlet [%s] that defines the same %s [%s] multiple times.", ERROR),
     DUPLICATE_PROPERTY_NAME(                            "TDL-095", "%s [%s] defines the same %s [%s] multiple times.", ERROR, true),
@@ -123,12 +126,21 @@ public enum ErrorCode {
     DOUBLE_PROCESSING_INPUTS(                           "TDL-105", "%s [%s] in step %s for handler %s provides inputs both as an attribute and as child elements. The attribute definition will be ignored.", WARNING, true),
     DOUBLE_CALL_INPUTS(                                 "TDL-106", "%s [%s] defines a call step for scriptlet [%s] that provides inputs both as an attribute and as child elements. The attribute definition will be ignored.", WARNING, true),
     MULTIPLE_SUT_ACTORS_DEFINED_IN_TEST_CASE(           "TDL-107", "%s [%s] defines multiple actors with role 'SUT'. A test case can only have one actor define as the 'SUT'.", ERROR, true),
+    CONSTANT_REFERENCE_OUTSIDE_SCRIPTLET(               "TDL-108", "Test case [%s] in step %s defines a variable reference [%s] for attribute [%s]. The [%s] attribute can only be a (constant) reference within scriptlets.", ERROR, false),
+    SCRIPTLET_CALLED_RECURSIVELY(                       "TDL-109", "Test case [%s] calls a scriptlet [%s] that recursively calls itself. Such calls (direct or indirect) are not allowed as this could lead to infinite recursion.", ERROR, false),
+    SCRIPTLET_ACTOR_REFERENCE_INVALID(                  "TDL-110", "Test case [%s] calls scriptlet [%s] but does not provide a valid value for the actor reference [%s] in step %s.", ERROR, false),
+    SCRIPTLET_ACTOR_REFERENCED_NOT_IN_TEST_CASE(        "TDL-111", "Test case [%s] calls scriptlet [%s] but provides a value for the actor reference [%s] in step %s that does not match a test case actor.", ERROR, false),
+    SCRIPTLET_ACTOR_REFERENCE_WITHOUT_INPUT(            "TDL-112", "Test case [%s] calls scriptlet [%s] but does not provides an input for the actor reference [%s] in step %s.", ERROR, false),
+    SCRIPTLET_ACTOR_NOT_DEFINED_IN_TEST_CASE(           "TDL-113", "Test case [%s] calls scriptlet [%s] but does not define actor [%s] referenced by the scriptlet in step %s.", ERROR, false),
+    MISSING_TX_AND_HANDLER_FOR_MESSAGING_STEP(          "TDL-114", "%s [%s] defines messaging step (%s) with no transaction ID reference and no handler definition.", ERROR, true),
+    STEP_CONNECTION_PROPERTIES_IGNORED(                 "TDL-115", "%s [%s] defines for step (%s) connection properties that will be ignored. When the step references a transaction ([%s] in this case) connection properties are taken from the transaction's definition.", WARNING, true),
+    STEP_WITH_BOTH_TX_AND_HANDLER(                      "TDL-116", "%s [%s] defines step (%s) with both a transaction ID reference and a handler. The provided handler will be ignored.", WARNING, true),
     ;
 
-    private String code;
-    private String message;
-    private ErrorLevel level;
-    private boolean prefixWithResourceType;
+    private final String code;
+    private final String message;
+    private final ErrorLevel level;
+    private final boolean prefixWithResourceType;
 
     ErrorCode(String code, String message, ErrorLevel level) {
         this(code, message, level, false);

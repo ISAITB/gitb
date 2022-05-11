@@ -234,6 +234,8 @@ export class TestSuiteUploadModalComponent implements OnInit {
             this.showErrorMessage()
           }
         }
+      } else if (!this.uploadResult.success) {
+        this.showErrorMessage()
       }
     }).add(() => {
       this.actionPending = false

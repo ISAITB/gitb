@@ -1,6 +1,5 @@
 package com.gitb.engine;
 
-import com.gitb.ModuleManager;
 import com.gitb.engine.actors.ActorSystem;
 
 /**
@@ -8,7 +7,7 @@ import com.gitb.engine.actors.ActorSystem;
  */
 public class TestEngine {
 	private static TestEngine instance;
-	private ActorSystem actorSystem;
+	private final ActorSystem actorSystem;
     private ITestbedServiceCallbackHandler tbsCallbackHandle;
 
 	private TestEngine() {

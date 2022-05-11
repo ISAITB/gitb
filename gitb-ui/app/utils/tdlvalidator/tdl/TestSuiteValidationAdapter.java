@@ -80,8 +80,8 @@ public class TestSuiteValidationAdapter {
                 config.getRequiredConfigs().addAll(asSet(getConfigValue("validator.processingHandlers." + handler + ".config.required", configProperties)));
                 config.getOptionalConfigs().addAll(asSet(getConfigValue("validator.processingHandlers." + handler + ".config.optional", configProperties)));
                 // Default configuration.
-                config.getRequiredConfigs().addAll(asSet(getConfigValue("validator.processingHandlers." + handler + ".input.required", configProperties)));
-                config.getOptionalConfigs().addAll(asSet(getConfigValue("validator.processingHandlers." + handler + ".input.optional", configProperties)));
+                config.getDefaultRequiredInputs().addAll(asSet(getConfigValue("validator.processingHandlers." + handler + ".input.required", configProperties)));
+                config.getDefaultOptionalInputs().addAll(asSet(getConfigValue("validator.processingHandlers." + handler + ".input.optional", configProperties)));
                 // Operation-specific configuration.
                 Set<String> operations = asSet(getConfigValue("validator.processingHandlers." + handler + ".operations", configProperties));
                 for (String operation: operations) {

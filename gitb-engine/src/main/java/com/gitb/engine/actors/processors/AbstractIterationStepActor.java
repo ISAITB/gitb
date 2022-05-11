@@ -5,15 +5,13 @@ import com.gitb.core.StepStatus;
 import com.gitb.engine.TestEngineConfiguration;
 import com.gitb.engine.events.model.StatusEvent;
 import com.gitb.engine.testcase.TestCaseContext;
-import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.engine.testcase.TestCaseScope;
+import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.tdl.ForEachStep;
 import com.gitb.tdl.RepeatUntilStep;
 import com.gitb.tdl.TestConstruct;
 import com.gitb.tdl.WhileStep;
 import com.gitb.utils.ErrorUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Created by serbay on 9/15/14.
@@ -22,7 +20,7 @@ import org.slf4j.LoggerFactory;
  *
  */
 public abstract class AbstractIterationStepActor<T> extends AbstractTestStepActor<T> {
-    private static Logger logger = LoggerFactory.getLogger(AbstractIterationStepActor.class);
+
     public static final String ITERATION_OPENING_TAG = "[";
 	public static final String ITERATION_CLOSING_TAG = "]";
 

@@ -17,6 +17,7 @@ import com.gitb.engine.expr.ExpressionHandler;
 import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.engine.utils.TemplateUtils;
+import com.gitb.engine.utils.TestCaseUtils;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.tbs.InputRequest;
 import com.gitb.tbs.Instruction;
@@ -75,9 +76,19 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
         promise.future().failed().foreach(new OnFailure() {
             @Override
             public void onFailure(Throwable failure) {
-                updateTestStepStatus(context, new ErrorStatusEvent(failure), null, true);
+                updateTestStepStatus(context, new ErrorStatusEvent(failure, scope), null, true);
             }
         }, getContext().dispatcher());
+    }
+
+    private String fixedValueOrVariable(String value, VariableResolver variableResolver, String defaultValue) {
+        if (VariableResolver.isVariableReference(value)) {
+            value = (String) variableResolver.resolveVariableAsString(value).getValue();
+        }
+        if (StringUtils.isBlank(value) && StringUtils.isNotBlank(defaultValue)) {
+            value = defaultValue;
+        }
+        return value;
     }
 
     @Override
@@ -97,17 +108,12 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
             try {
                 VariableResolver variableResolver = new VariableResolver(scope);
                 List<InstructionOrRequest> instructionAndRequests = step.getInstructOrRequest();
-                String sutActorId = getSUTActor().getId();
-                if (StringUtils.isBlank(step.getWith())) {
-                    step.setWith(sutActorId);
-                } else {
-                    step.setWith(step.getWith());
-                }
+                var withValue = fixedValueOrVariable(step.getWith(), variableResolver, getSUTActor().getId());
                 int childStepId = 1;
                 // Prepare the message to send to the frontend.
                 UserInteractionRequest userInteractionRequest = new UserInteractionRequest();
-                userInteractionRequest.setInputTitle(step.getInputTitle() == null?"Server interaction":step.getInputTitle());
-                userInteractionRequest.setWith(step.getWith());
+                userInteractionRequest.setInputTitle(fixedValueOrVariable(step.getInputTitle(), variableResolver, "Server interaction"));
+                userInteractionRequest.setWith(withValue);
                 for (InstructionOrRequest instructionOrRequest : instructionAndRequests) {
                     // Set the type in case this is missing.
                     if (StringUtils.isBlank(instructionOrRequest.getType())) {
@@ -115,7 +121,7 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
                             // if the contentType is set to BASE64 or the inputType is UPLOAD this will be a file.
                             instructionOrRequest.setType(DataType.BINARY_DATA_TYPE);
                         } else {
-                            if (variableResolver.isVariableReference(instructionOrRequest.getValue())) {
+                            if (VariableResolver.isVariableReference(instructionOrRequest.getValue())) {
                                 // If a target variable is referenced we can use this to determine the type.
                                 DataType targetVariable = variableResolver.resolveVariable(instructionOrRequest.getValue());
                                 if (targetVariable == null) {
@@ -153,13 +159,13 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
                         if (StringUtils.isBlank(instructionOrRequest.getValue())) {
                             instructionOrRequest.setValue("''");
                         }
-                        userInteractionRequest.getInstructionOrRequest().add(processInstruction(instructionOrRequest, "" + childStepId));
+                        userInteractionRequest.getInstructionOrRequest().add(processInstruction(instructionOrRequest, "" + childStepId, withValue, variableResolver));
                     } else { // If it is a request
-                        userInteractionRequest.getInstructionOrRequest().add(processRequest((UserRequest) instructionOrRequest, "" + childStepId));
+                        userInteractionRequest.getInstructionOrRequest().add(processRequest((UserRequest) instructionOrRequest, "" + childStepId, withValue, variableResolver));
                     }
                     childStepId++;
                 }
-                logger.debug(MarkerFactory.getDetachedMarker(scope.getContext().getSessionId()), String.format("Triggering user interaction - step [%s] - ID [%s]", ErrorUtils.extractStepDescription(step), stepId));
+                logger.debug(MarkerFactory.getDetachedMarker(scope.getContext().getSessionId()), String.format("Triggering user interaction - step [%s] - ID [%s]", TestCaseUtils.extractStepDescription(step, scope), stepId));
                 TestbedService.interactWithUsers(scope.getContext().getSessionId(), stepId, userInteractionRequest);
                 return null;
             } catch (Exception e) {
@@ -191,10 +197,10 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
      * @param stepId step id
      * @return instruction
      */
-    private Instruction processInstruction(InstructionOrRequest instructionCommand, String stepId) {
+    private Instruction processInstruction(InstructionOrRequest instructionCommand, String stepId, String withValue, VariableResolver variableResolver) {
         Instruction instruction = new Instruction();
-        instruction.setWith(instructionCommand.getWith());
-        instruction.setDesc(instructionCommand.getDesc());
+        instruction.setWith(withValue);
+        instruction.setDesc(fixedValueOrVariable(instructionCommand.getDesc(), variableResolver, null));
         instruction.setId(stepId);
         instruction.setName(instructionCommand.getName());
         instruction.setEncoding(instructionCommand.getEncoding());
@@ -216,11 +222,10 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
      * @param stepId step id
      * @return input request
      */
-    private InputRequest processRequest(UserRequest instructionCommand, String stepId) {
-        VariableResolver variableResolver = new VariableResolver(scope);
+    private InputRequest processRequest(UserRequest instructionCommand, String stepId, String withValue, VariableResolver variableResolver) {
         InputRequest inputRequest = new InputRequest();
-        inputRequest.setWith(instructionCommand.getWith());
-        inputRequest.setDesc(instructionCommand.getDesc());
+        inputRequest.setWith(withValue);
+        inputRequest.setDesc(fixedValueOrVariable(instructionCommand.getDesc(), variableResolver, null));
         inputRequest.setName(instructionCommand.getValue()); //name is provided from value node
         inputRequest.setContentType(instructionCommand.getContentType());
         inputRequest.setType(instructionCommand.getType());
@@ -233,7 +238,7 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
             // Select options.
             if (instructionCommand.getOptions() != null) {
                 String options = instructionCommand.getOptions();
-                if (variableResolver.isVariableReference(options)) {
+                if (VariableResolver.isVariableReference(options)) {
                     options = resolveTokenValues(variableResolver, options);
                 }
                 inputRequest.setOptions(options);
@@ -242,7 +247,7 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
                     inputRequest.setOptionLabels(inputRequest.getOptions());
                 } else {
                     String labels = instructionCommand.getOptionLabels();
-                    if (variableResolver.isVariableReference(labels)) {
+                    if (VariableResolver.isVariableReference(labels)) {
                         labels = resolveTokenValues(variableResolver, labels);
                     }
                     inputRequest.setOptionLabels(labels);
@@ -259,7 +264,7 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
                         inputRequest.setMultiple(Boolean.TRUE);
                     }
                 } else {
-                    if (variableResolver.isVariableReference(instructionCommand.getMultiple())) {
+                    if (VariableResolver.isVariableReference(instructionCommand.getMultiple())) {
                         inputRequest.setMultiple((Boolean)(variableResolver.resolveVariableAsBoolean(instructionCommand.getMultiple()).getValue()));
                     } else {
                         inputRequest.setMultiple(Boolean.parseBoolean(instructionCommand.getMultiple()));
@@ -305,7 +310,7 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
     @Override
     protected void handleInputEvent(InputEvent event) {
         processing();
-        logger.debug(MarkerFactory.getDetachedMarker(scope.getContext().getSessionId()), String.format("Handling user-provided inputs - step [%s] - ID [%s]", ErrorUtils.extractStepDescription(step), stepId));
+        logger.debug(MarkerFactory.getDetachedMarker(scope.getContext().getSessionId()), String.format("Handling user-provided inputs - step [%s] - ID [%s]", TestCaseUtils.extractStepDescription(step, scope), stepId));
         List<UserInput> userInputs = event.getUserInputs();
         TestCaseScope.ScopedVariable scopedVariable;
         DataTypeFactory dataTypeFactory = DataTypeFactory.getInstance();

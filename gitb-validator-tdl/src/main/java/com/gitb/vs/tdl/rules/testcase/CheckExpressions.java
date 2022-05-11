@@ -24,6 +24,11 @@ import java.util.regex.Pattern;
 public class CheckExpressions extends AbstractTestCaseObserver implements VariableResolverProvider {
 
     private static final Pattern MAP_APPEND_EXPRESSION_PATTERN = Pattern.compile("(\\$?[a-zA-Z][a-zA-Z\\-_0-9]*(?:\\{(?:[\\$\\{\\}a-zA-Z\\-\\._0-9]*)\\})*)\\{(\\$?[a-zA-Z][a-zA-Z\\-\\._0-9]*)\\}");
+    private static final String ATTRIBUTE_DESC = "desc";
+    private static final String ATTRIBUTE_TITLE = "title";
+    private static final String ATTRIBUTE_WITH = "with";
+    private static final String ATTRIBUTE_FROM = "from";
+    private static final String ATTRIBUTE_TO = "to";
 
     private final Map<String, Boolean> testCaseScope = new HashMap<>();
     private final Map<String, Boolean> internalScriptletScope = new HashMap<>();
@@ -156,11 +161,18 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
         if (step instanceof TestConstruct && ((TestConstruct)step).getId() != null) {
             recordVariable(((TestConstruct)step).getId(), true);
         }
+        if (step instanceof TestStep) {
+            checkConstantReferenceInScriptlet(((TestStep) step).getDesc(), ATTRIBUTE_DESC);
+        }
         if (step instanceof BeginTransaction) {
+            checkConstantReferenceInScriptlet(((BeginTransaction) step).getFrom(), ATTRIBUTE_FROM);
+            checkConstantReferenceInScriptlet(((BeginTransaction) step).getTo(), ATTRIBUTE_TO);
             checkToken(((BeginTransaction) step).getHandler(), TokenType.STRING_OR_VARIABLE_REFERENCE);
             checkConfigurations(((BeginTransaction) step).getProperty());
             checkConfigurations(((BeginTransaction) step).getConfig());
         } else if (step instanceof MessagingStep) {
+            checkConstantReferenceInScriptlet(((MessagingStep) step).getFrom(), ATTRIBUTE_FROM);
+            checkConstantReferenceInScriptlet(((MessagingStep) step).getTo(), ATTRIBUTE_TO);
             checkConfigurations(((MessagingStep) step).getConfig());
             checkBindings(((MessagingStep) step).getInput());
             if (step instanceof Receive) {
@@ -179,12 +191,16 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
                 recordVariable(((Process)step).getOutput(), true);
             }
         } else if (step instanceof IfStep) {
+            checkConstantReferenceInScriptlet(((IfStep) step).getTitle(), ATTRIBUTE_TITLE);
             checkExpression(((IfStep) step).getCond());
         } else if (step instanceof WhileStep) {
+            checkConstantReferenceInScriptlet(((WhileStep) step).getTitle(), ATTRIBUTE_TITLE);
             checkExpression(((WhileStep) step).getCond());
         } else if (step instanceof RepeatUntilStep) {
+            checkConstantReferenceInScriptlet(((RepeatUntilStep) step).getTitle(), ATTRIBUTE_TITLE);
             checkExpression(((RepeatUntilStep) step).getCond());
         } else if (step instanceof ForEachStep) {
+            checkConstantReferenceInScriptlet(((ForEachStep) step).getTitle(), ATTRIBUTE_TITLE);
             checkToken(((ForEachStep) step).getStart(), TokenType.STRING_OR_VARIABLE_REFERENCE);
             checkToken(((ForEachStep) step).getEnd(), TokenType.STRING_OR_VARIABLE_REFERENCE);
             if (((ForEachStep) step).getCounter() != null) {
@@ -232,8 +248,14 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
                 recordVariable(((CallStep)step).getOutputAttribute(), true);
             }
         } else if (step instanceof UserInteraction) {
+            checkConstantReferenceInScriptlet(((UserInteraction) step).getTitle(), ATTRIBUTE_TITLE);
+            checkConstantReferenceInScriptlet(((UserInteraction) step).getDesc(), ATTRIBUTE_DESC);
+            checkConstantReferenceInScriptlet(((UserInteraction) step).getWith(), ATTRIBUTE_WITH);
+            checkToken(((UserInteraction) step).getInputTitle(), TokenType.STRING_OR_VARIABLE_REFERENCE);
             if (((UserInteraction)step).getInstructOrRequest() != null) {
                 for (InstructionOrRequest ir: ((UserInteraction)step).getInstructOrRequest()) {
+                    checkConstantReferenceInScriptlet(ir.getDesc(), ATTRIBUTE_DESC);
+                    checkConstantReferenceInScriptlet(ir.getWith(), ATTRIBUTE_WITH);
                     if (ir instanceof UserRequest) {
                         checkToken(ir.getValue(), TokenType.VARIABLE_REFERENCE);
                         checkToken(((UserRequest) ir).getOptions(), TokenType.STRING_OR_VARIABLE_REFERENCE);
@@ -244,6 +266,12 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
                     }
                 }
             }
+        } else if (step instanceof Group) {
+            checkConstantReferenceInScriptlet(((Group) step).getDesc(), ATTRIBUTE_DESC);
+            checkConstantReferenceInScriptlet(((Group) step).getTitle(), ATTRIBUTE_TITLE);
+        } else if (step instanceof FlowStep) {
+            checkConstantReferenceInScriptlet(((FlowStep) step).getDesc(), ATTRIBUTE_DESC);
+            checkConstantReferenceInScriptlet(((FlowStep) step).getTitle(), ATTRIBUTE_TITLE);
         }
     }
 
@@ -268,6 +296,12 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
             for (Configuration config: configs) {
                 checkToken(config.getValue(), TokenType.STRING_OR_VARIABLE_REFERENCE);
             }
+        }
+    }
+
+    private void checkConstantReferenceInScriptlet(String value, String attribute) {
+        if (!testCaseIsWrappedScriptlet && Utils.isVariableExpression(value)) {
+            addReportItem(ErrorCode.CONSTANT_REFERENCE_OUTSIDE_SCRIPTLET, currentTestCase.getId(), Utils.stepNameWithScriptlet(currentStep, currentScriptlet), value, attribute, attribute);
         }
     }
 

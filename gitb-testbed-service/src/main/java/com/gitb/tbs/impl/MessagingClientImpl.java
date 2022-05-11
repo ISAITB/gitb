@@ -2,7 +2,7 @@ package com.gitb.tbs.impl;
 
 import com.gitb.engine.CallbackManager;
 import com.gitb.engine.SessionManager;
-import com.gitb.messaging.utils.MessagingHandlerUtils;
+import com.gitb.engine.messaging.handlers.utils.MessagingHandlerUtils;
 import com.gitb.ms.LogRequest;
 import com.gitb.ms.MessagingClient;
 import com.gitb.ms.NotifyForMessageRequest;

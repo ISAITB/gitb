@@ -1,6 +1,6 @@
 package com.gitb.engine.processors;
 
-import com.gitb.ModuleManager;
+import com.gitb.engine.ModuleManager;
 import com.gitb.core.*;
 import com.gitb.engine.expr.ExpressionHandler;
 import com.gitb.engine.expr.resolvers.VariableResolver;
@@ -17,8 +17,8 @@ import com.gitb.types.*;
 import com.gitb.utils.BindingUtils;
 import com.gitb.utils.ErrorUtils;
 import com.gitb.validation.IValidationHandler;
-import com.gitb.validation.common.AbstractValidator;
-import com.gitb.validation.xpath.XPathValidator;
+import com.gitb.engine.validation.handlers.common.AbstractValidator;
+import com.gitb.engine.validation.handlers.xpath.XPathValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MarkerFactory;
@@ -52,12 +52,12 @@ public class VerifyProcessor implements IProcessor {
 
 		String handlerIdentifier = verify.getHandler();
 		VariableResolver resolver = new VariableResolver(scope);
-		if (resolver.isVariableReference(handlerIdentifier)) {
+		if (VariableResolver.isVariableReference(handlerIdentifier)) {
 			handlerIdentifier = resolver.resolveVariableAsString(handlerIdentifier).toString();
 		}
 		if (verify.getConfig() != null) {
 			for (Configuration config: verify.getConfig()) {
-				if (resolver.isVariableReference(config.getValue())) {
+				if (VariableResolver.isVariableReference(config.getValue())) {
 					config.setValue(resolver.resolveVariableAsString(config.getValue()).toString());
 				}
 			}
@@ -125,7 +125,7 @@ public class VerifyProcessor implements IProcessor {
 		TestStepReportType report = validator.validate(verify.getConfig(), inputs);
 
 		var errorLevel = ErrorLevel.ERROR;
-		if (resolver.isVariableReference(verify.getLevel())) {
+		if (VariableResolver.isVariableReference(verify.getLevel())) {
 			var resolvedErrorLevel = resolver.resolveVariableAsString(verify.getLevel());
 			try {
 				errorLevel = ErrorLevel.valueOf((String) resolvedErrorLevel.getValue());

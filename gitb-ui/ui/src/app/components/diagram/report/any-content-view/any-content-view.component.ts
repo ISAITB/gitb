@@ -22,6 +22,8 @@ export class AnyContentViewComponent extends ReportSupport implements OnInit {
   @Input() fileNameDownload?: string
   @Input() report?: StepReport
   @Input() sessionId?: string
+  @Input() noBorder = false
+  @Input() root = false
 
   Constants = Constants
 
@@ -29,6 +31,10 @@ export class AnyContentViewComponent extends ReportSupport implements OnInit {
   showValueInline = true
   downloadPending = false
   openPending = false
+  collapsed = false
+  withItems = false
+  withName = false
+  hoveringTitle = false
 
   constructor(
     private testService: TestService,
@@ -44,6 +50,8 @@ export class AnyContentViewComponent extends ReportSupport implements OnInit {
     if (this.value != undefined) {
       this.showValueInline = this.value.length <= 100 && this.context.embeddingMethod != 'BASE64' && !this.isFileReference(this.context)
     }
+    this.withItems = this.context?.item != undefined
+    this.withName = this.context?.name != undefined
   }
 
   open(lineNumber?: number) {
@@ -153,4 +161,11 @@ export class AnyContentViewComponent extends ReportSupport implements OnInit {
     return extension
   }
 
+  containerClicked() {
+    this.collapsed = !this.collapsed
+  }
+
+  hoverUpdate(hovering: boolean) {
+    this.hoveringTitle = hovering
+  }
 }

@@ -2,6 +2,7 @@ package com.gitb.engine.events.model;
 
 import akka.actor.ActorRef;
 import com.gitb.core.StepStatus;
+import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.tr.TestStepReportType;
 
 /**
@@ -14,8 +15,8 @@ public class TestStepStatusEvent extends StatusEvent {
 	private final ActorRef actorRef;
 	private final Object step;
 
-	public TestStepStatusEvent(String sessionId, String stepId, StepStatus status, TestStepReportType report, ActorRef actorRef, Object step) {
-		super(status);
+	public TestStepStatusEvent(String sessionId, String stepId, StepStatus status, TestStepReportType report, ActorRef actorRef, Object step, TestCaseScope scope) {
+		super(status, scope);
 		this.sessionId = sessionId;
 		this.stepId = stepId;
 		this.report = report;
@@ -23,8 +24,8 @@ public class TestStepStatusEvent extends StatusEvent {
 		this.step = step;
 	}
 
-	public TestStepStatusEvent(String sessionId, String stepId, StepStatus status, TestStepReportType report, Object step) {
-		this(sessionId, stepId, status, report, null, step);
+	public TestStepStatusEvent(String sessionId, String stepId, StepStatus status, TestStepReportType report, Object step, TestCaseScope scope) {
+		this(sessionId, stepId, status, report, null, step, scope);
 	}
 
 	public String getSessionId() {

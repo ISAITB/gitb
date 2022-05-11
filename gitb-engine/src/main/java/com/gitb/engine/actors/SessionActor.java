@@ -12,10 +12,10 @@ import com.gitb.engine.SessionManager;
 import com.gitb.engine.TestbedService;
 import com.gitb.engine.actors.processors.TestCaseProcessorActor;
 import com.gitb.engine.actors.supervisors.SessionSupervisor;
-import com.gitb.engine.commands.interaction.SessionCleanupCommand;
 import com.gitb.engine.commands.interaction.*;
 import com.gitb.engine.events.model.TestStepStatusEvent;
 import com.gitb.engine.testcase.TestCaseContext;
+import com.gitb.engine.utils.TestCaseUtils;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.tbs.SUTConfiguration;
 import com.gitb.tbs.TestStepStatus;
@@ -23,7 +23,6 @@ import com.gitb.tr.SR;
 import com.gitb.tr.TestResultType;
 import com.gitb.tr.TestStepReportType;
 import com.gitb.utils.DataTypeUtils;
-import com.gitb.utils.ErrorUtils;
 import com.gitb.utils.XMLDateTimeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,8 +36,8 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
-import static com.gitb.engine.actors.processors.TestCaseProcessorActor.TEST_SESSION_END_STEP_ID;
 import static com.gitb.engine.actors.processors.TestCaseProcessorActor.TEST_SESSION_END_EXTERNAL_STEP_ID;
+import static com.gitb.engine.actors.processors.TestCaseProcessorActor.TEST_SESSION_END_STEP_ID;
 import static com.gitb.engine.testcase.TestCaseContext.TestCaseStateEnum.*;
 
 /**
@@ -354,7 +353,7 @@ public class SessionActor extends AbstractActor {
     }
 
     private UpdateMessage prepareStatusUpdate(TestStepStatusEvent event) {
-        return prepareStatusUpdate(event.getSessionId(), event.getStepId(), event.getStatus(), event.getReport(), true, ErrorUtils.extractStepDescription(event.getStep()));
+        return prepareStatusUpdate(event.getSessionId(), event.getStepId(), event.getStatus(), event.getReport(), true, TestCaseUtils.extractStepDescription(event.getStep(), event.getScope()));
     }
 
     private UpdateMessage prepareStatusUpdate(String sessionId, String stepId, StepStatus status, TestStepReportType report, boolean sendLogMessage, String stepDescription) {
@@ -394,7 +393,7 @@ public class SessionActor extends AbstractActor {
 
     private void ignoredStatusUpdate(TestStepStatusEvent message) {
         if (message.getStep() != null && message.getStepId() != null) {
-            logger.debug(MarkerFactory.getDetachedMarker(message.getSessionId()), String.format("Ignoring status update - step [%s]- ID [%s]", ErrorUtils.extractStepDescription(message.getStep()), message.getStepId()));
+            logger.debug(MarkerFactory.getDetachedMarker(message.getSessionId()), String.format("Ignoring status update - step [%s]- ID [%s]", TestCaseUtils.extractStepDescription(message.getStep(), message.getScope()), message.getStepId()));
         } else {
             logger.debug(MarkerFactory.getDetachedMarker(message.getSessionId()), String.format("Ignoring status update [%s]", message));
         }

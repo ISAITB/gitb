@@ -1,16 +1,19 @@
 package com.gitb.engine.utils;
 
-import com.gitb.ModuleManager;
 import com.gitb.core.Configuration;
 import com.gitb.core.ErrorCode;
+import com.gitb.engine.ModuleManager;
 import com.gitb.engine.PropertyConstants;
+import com.gitb.engine.expr.StaticExpressionHandler;
 import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.remote.RemoteCallContext;
+import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.repository.ITestCaseRepository;
-import com.gitb.tdl.*;
 import com.gitb.tdl.Process;
+import com.gitb.tdl.*;
 import com.gitb.types.BooleanType;
+import com.gitb.types.DataType;
 import com.gitb.types.MapType;
 import com.gitb.types.StringType;
 import com.gitb.utils.ErrorUtils;
@@ -18,7 +21,9 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.net.Authenticator;
 import java.net.PasswordAuthentication;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Properties;
 
 /**
@@ -38,7 +43,7 @@ public class TestCaseUtils {
         if (properties != null && !properties.isEmpty()) {
             for (Configuration config: properties) {
                 String value = config.getValue();
-                if (resolver.isVariableReference(value)) {
+                if (VariableResolver.isVariableReference(value)) {
                     value = resolver.resolveVariableAsString(value).toString();
                 }
                 result.setProperty(config.getName(), value);
@@ -193,5 +198,60 @@ public class TestCaseUtils {
             }
         }
     }
+
+    private static String extractStepName(Object step) {
+        String name = step.getClass().getSimpleName();
+        if (name.endsWith("Step")) {
+            return name.substring(0, name.indexOf("Step"));
+        } else {
+            return name;
+        }
+    }
+
+    public static String extractStepDescription(Object step, TestCaseScope scope) {
+        String description = null;
+        if (step instanceof TestStep) {
+            description = ((TestStep) step).getDesc();
+            if (description != null && description.isBlank()) {
+                description = null;
+            }
+        }
+        if (description == null) {
+            description = extractStepName(step);
+        } else {
+            if (VariableResolver.isVariableReference(description)) {
+                description = (String) new VariableResolver(scope).resolveVariable(description).convertTo(DataType.STRING_DATA_TYPE).getValue();
+            }
+        }
+        return description;
+    }
+
+    public static String fixedOrVariableValue(String originalValue, LinkedList<CallStep> scriptletStepStack) {
+        if (!scriptletStepStack.isEmpty() && VariableResolver.isVariableReference(originalValue)) {
+            // The description may be set dynamically from the call inputs.
+            return TestCaseUtils.getConstantCallInput(VariableResolver.extractVariableNameFromExpression(originalValue).getLeft(), scriptletStepStack).orElse(originalValue);
+        }
+        return originalValue;
+    }
+
+    private static Optional<String> getConstantCallInput(String inputName, LinkedList<CallStep> scriptletStepStack) {
+        var iterator = scriptletStepStack.descendingIterator();
+        while (iterator.hasNext()) {
+            var call = iterator.next();
+            var inputToLookFor = inputName;
+            var matchedInput = call.getInput().stream().filter(input -> inputToLookFor.equals(input.getName())).findFirst();
+            if (matchedInput.isPresent()) {
+                var inputValue = matchedInput.get().getValue();
+                if (VariableResolver.isVariableReference(inputValue)) {
+                    // The input's value is itself a variable reference.
+                    inputName = VariableResolver.extractVariableNameFromExpression(inputValue).getLeft();
+                    continue;
+                }
+                return Optional.of((String) new StaticExpressionHandler().processExpression(matchedInput.get(), DataType.STRING_DATA_TYPE).getValue());
+            }
+        }
+        return Optional.empty();
+    }
+
 }
 

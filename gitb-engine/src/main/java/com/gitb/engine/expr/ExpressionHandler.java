@@ -1,7 +1,6 @@
 package com.gitb.engine.expr;
 
 import com.gitb.core.ErrorCode;
-import com.gitb.engine.expr.resolvers.FunctionResolver;
 import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.engine.utils.TemplateUtils;
@@ -21,17 +20,20 @@ import javax.xml.xpath.XPathFactory;
 /**
  * Created by senan on 9/5/14.
  */
-public class ExpressionHandler{
+public class ExpressionHandler {
+
     private final TestCaseScope scope;
     private final VariableResolver variableResolver;
-    private final FunctionResolver functionResolver;
     private final NamespaceContext namespaceContext;
 
     public ExpressionHandler(TestCaseScope scope) {
+        this(scope, new VariableResolver(scope), new NamespaceContext(scope.getNamespaceDefinitions()));
+    }
+
+    ExpressionHandler(TestCaseScope scope, VariableResolver variableResolver, NamespaceContext namespaceContext) {
         this.scope = scope;
-        variableResolver = new VariableResolver(scope);
-        functionResolver = new FunctionResolver(scope);
-        namespaceContext = new NamespaceContext(scope.getNamespaceDefinitions());
+        this.variableResolver = variableResolver;
+        this.namespaceContext = namespaceContext;
     }
 
     public DataType processExpression(Expression expression) {
@@ -43,24 +45,43 @@ public class ExpressionHandler{
         String xpathExpression = expression.getValue();
         boolean asTemplate = expression.isAsTemplate();
         DataType expressionResult;
-        if(sourceVariableExpression != null) {
-            DataType source = variableResolver.resolveVariable(sourceVariableExpression);
-            if(xpathExpression == null || xpathExpression.equals("")) {
-                //if nothing to process, return the source immediately
-                expressionResult = source;
-            } else {
-                expressionResult = processExpression(source, xpathExpression, expectedReturnType);
-            }
+        if (sourceVariableExpression != null) {
+            expressionResult = processSourceExpression(expectedReturnType, sourceVariableExpression, xpathExpression);
         } else {
             expressionResult = processExpression(xpathExpression, expectedReturnType);
         }
         if (asTemplate) {
-            if (expectedReturnType == null) {
-                expectedReturnType = expressionResult.getType();
-            }
-            expressionResult = TemplateUtils.generateDataTypeFromTemplate(scope, expressionResult, expectedReturnType);
+            expressionResult = processTemplate(expectedReturnType, expressionResult);
         }
         return expressionResult;
+    }
+
+    DataType processTemplate(String expectedReturnType, DataType expressionResult) {
+        if (expectedReturnType == null) {
+            expectedReturnType = expressionResult.getType();
+        }
+        expressionResult = TemplateUtils.generateDataTypeFromTemplate(scope, expressionResult, expectedReturnType);
+        return expressionResult;
+    }
+
+    DataType processSourceExpression(String expectedReturnType, String sourceVariableExpression, String xpathExpression) {
+        DataType expressionResult;
+        DataType source = variableResolver.resolveVariable(sourceVariableExpression);
+        if(xpathExpression == null || xpathExpression.equals("")) {
+            //if nothing to process, return the source immediately
+            expressionResult = source;
+        } else {
+            expressionResult = processExpression(source, xpathExpression, expectedReturnType);
+        }
+        return expressionResult;
+    }
+
+    DataType processVariableReference(String expression, String expectedReturnType) {
+        DataType result = variableResolver.resolveVariable(expression);
+        if (result == null) {
+            throw new IllegalStateException("Expression ["+ expression +"] did not resolve an existing session variable");
+        }
+        return result.convertTo(expectedReturnType);
     }
 
     private DataType processExpression(DataType source, String expression, String expectedReturnType)  {
@@ -69,13 +90,9 @@ public class ExpressionHandler{
     }
 
     private DataType processExpression(String expression, String expectedReturnType)  {
-        if (variableResolver.isVariableReference(expression)) {
+        if (VariableResolver.isVariableReference(expression)) {
             // This is a pure reference to a context variable
-            DataType result = variableResolver.resolveVariable(expression);
-            if (result == null) {
-                throw new IllegalStateException("Expression ["+expression+"] did not resolve an existing session variable");
-            }
-            return result.convertTo(expectedReturnType);
+            return processVariableReference(expression, expectedReturnType);
         } else {
             // This is a complete XPath expression
             DataType emptySource = DataTypeFactory.getInstance().create(DataType.OBJECT_DATA_TYPE);
@@ -87,10 +104,13 @@ public class ExpressionHandler{
         try {
             //create an XPath processor
             XPathFactory factory = new XPathFactoryImpl();
-            factory.setXPathFunctionResolver(functionResolver);
-            factory.setXPathVariableResolver(variableResolver);
+            if (variableResolver != null) {
+                factory.setXPathVariableResolver(variableResolver);
+            }
             XPath xPath = factory.newXPath();
-            xPath.setNamespaceContext(namespaceContext);
+            if (namespaceContext != null) {
+                xPath.setNamespaceContext(namespaceContext);
+            }
             //compile the expression and return it
             return xPath.compile(expression);
         }catch (XPathExpressionException e){

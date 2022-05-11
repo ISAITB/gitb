@@ -63,7 +63,38 @@ public class AssignProcessor implements IProcessor {
 				}
 				mapKey = (String)(keyValue.convertTo(StringType.STRING_DATA_TYPE).getValue());
             }
-			((MapType)lValue).addItem(mapKey, result);
+			var existingValue = ((MapType)lValue).getItems().get(mapKey);
+			if (existingValue == null) {
+				if (assign.isAppend()) {
+					// This is the first item of a list being assigned to a key in the map.
+					var list = new ListType(result.getType());
+					list.append(result);
+					((MapType)lValue).addItem(mapKey, list);
+				} else {
+					// Map the result to the map.
+					((MapType)lValue).addItem(mapKey, result);
+				}
+			} else {
+				if (assign.isAppend()) {
+					if (DataType.isListType(existingValue.getType())) {
+						// Appending to an existing list.
+						String containedType = ((ListType)existingValue).getContainedType();
+						if (containedType != null) {
+							((ListType)existingValue).append(result.convertTo(containedType));
+						} else {
+							((ListType)existingValue).append(result);
+						}
+					} else {
+						// Append to an existing non-list value - convert existing value to list.
+						var list = new ListType(existingValue.getType());
+						list.append(existingValue);
+						list.append(result.convertTo(existingValue.getType()));
+					}
+				} else {
+					// Replace the key mapping of the map.
+					((MapType)lValue).addItem(mapKey, result);
+				}
+			}
 	    } else {
 	    	// Regular assignment.
 			String expectedReturnType = assign.getType();

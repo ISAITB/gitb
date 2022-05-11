@@ -10,8 +10,7 @@ scalaVersion := "2.13.6"
 val akkaVersion = "2.6.19"
 val jacksonVersion = "2.13.2"
 val jacksonDataBindVersion = "2.13.2.2"
-val cxfVersion = "3.5.1"
-val jettyVersion = "9.4.43.v20210629"
+val cxfVersion = "3.5.2"
 val guiceVersion = "5.1.0"
 
 useCoursier := false
@@ -22,13 +21,13 @@ libraryDependencies ++= Seq(
   cacheApi,
   "com.google.inject" % "guice" % guiceVersion,
   "com.google.inject.extensions" % "guice-assistedinject" % guiceVersion,
-  "eu.europa.ec.itb" % "gitb-types" % "1.16.1",
+  "eu.europa.ec.itb" % "gitb-types" % "1.17.0-SNAPSHOT",
   "com.gitb" % "gitb-core" % "1.0-SNAPSHOT",
   "com.gitb" % "gitb-lib" % "1.0-SNAPSHOT",
   "com.gitb" % "gitb-reports" % "1.0-SNAPSHOT",
   "com.gitb" % "gitb-validator-tdl" % "1.0-SNAPSHOT",
   "com.gitb" % "gitb-xml-resources" % "1.0-SNAPSHOT",
-  "mysql" % "mysql-connector-java" % "8.0.28",
+  "mysql" % "mysql-connector-java" % "8.0.29",
   "com.typesafe.akka" %% "akka-actor" % akkaVersion,
   "com.typesafe.akka" %% "akka-actor-typed" % akkaVersion,
   "com.typesafe.akka" %% "akka-remote" % akkaVersion,
@@ -38,7 +37,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.play" %% "play-slick" % "5.0.0",
   "com.typesafe.play" %% "play-json" % "2.9.2",
   "org.pac4j" %% "play-pac4j" % "11.1.0-PLAY2.8",
-  "org.pac4j" % "pac4j-cas" % "5.3.1",
+  "org.pac4j" % "pac4j-cas" % "5.4.3",
   "ch.qos.logback" % "logback-classic" % "1.2.11",
   "org.apache.commons" % "commons-lang3" % "3.12.0",
   "com.fasterxml.jackson.module" %% "jackson-module-scala" % jacksonVersion,
@@ -52,14 +51,6 @@ libraryDependencies ++= Seq(
   "org.apache.cxf" % "cxf-rt-frontend-jaxws" % cxfVersion,
   "org.apache.cxf" % "cxf-rt-transports-http" % cxfVersion,
   "org.apache.cxf" % "cxf-rt-transports-http-jetty" % cxfVersion,
-  // ---
-  // Jetty dependencies set explicitly to address CVEs. If CXF transitive dependencies increase the version to at least 9.4.43 these can be removed.
-  "org.eclipse.jetty" % "jetty-continuation" % jettyVersion,
-  "org.eclipse.jetty" % "jetty-http" % jettyVersion,
-  "org.eclipse.jetty" % "jetty-io" % jettyVersion,
-  "org.eclipse.jetty" % "jetty-security" % jettyVersion,
-  "org.eclipse.jetty" % "jetty-server" % jettyVersion,
-  "org.eclipse.jetty" % "jetty-util" % jettyVersion,
   // ---
   "org.apache.tika" % "tika-core" % "2.3.0",
   "org.webjars" %% "webjars-play" % "2.8.13",
@@ -77,11 +68,12 @@ libraryDependencies ++= Seq(
   "com.sun.xml.stream.buffer" % "streambuffer" % "1.5.9", // Do not update version
   "com.sun.xml.ws" % "policy" % "2.7.10",
   "org.glassfish.gmbal" % "gmbal-api-only" % "4.0.3",
-  "org.bouncycastle" % "bcmail-jdk15on" % "1.69",
-  "org.apache.pdfbox" % "pdfbox" % "2.0.25",
+  "org.bouncycastle" % "bcmail-jdk15on" % "1.70",
+  "org.apache.pdfbox" % "pdfbox" % "2.0.26",
   "org.jasypt" % "jasypt" % "1.9.3",
   "org.apache.httpcomponents" % "httpclient" % "4.5.13",
-  "org.flywaydb" %% "flyway-play" % "7.14.0",
+  "org.flywaydb" %% "flyway-play" % "7.20.0",
+  "org.flywaydb" % "flyway-mysql" % "8.5.9",
   "com.googlecode.owasp-java-html-sanitizer" % "owasp-java-html-sanitizer" % "20211018.2",
   "net.lingala.zip4j" % "zip4j" % "2.10.0"
 )
