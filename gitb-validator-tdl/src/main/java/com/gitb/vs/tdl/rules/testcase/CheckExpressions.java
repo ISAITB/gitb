@@ -10,7 +10,9 @@ import com.gitb.vs.tdl.rules.TestCaseSection;
 import com.gitb.vs.tdl.rules.testcase.expression.VariableResolver;
 import com.gitb.vs.tdl.rules.testcase.expression.VariableResolverProvider;
 import com.gitb.vs.tdl.util.Utils;
-import com.sun.org.apache.xpath.internal.jaxp.XPathFactoryImpl;
+import net.sf.saxon.expr.instruct.DummyNamespaceResolver;
+import net.sf.saxon.pull.NamespaceContextImpl;
+import net.sf.saxon.xpath.XPathFactoryImpl;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -351,7 +353,8 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
         XPathFactoryImpl factory = new XPathFactoryImpl();
         factory.setXPathVariableResolver(variableResolver);
         XPath xPath = factory.newXPath();
-        return xPath.compile(expression);
+        xPath.setNamespaceContext(new NamespaceContextImpl(DummyNamespaceResolver.getInstance()));
+        return xPath.compile(VariableResolver.toLegalXPath(expression));
     }
 
     private void recordVariable(String name, Boolean isContainer) {

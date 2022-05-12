@@ -10,12 +10,11 @@ import com.gitb.types.DataType;
 import com.gitb.types.DataTypeFactory;
 import com.gitb.utils.ErrorUtils;
 import com.gitb.utils.NamespaceContext;
-import com.sun.org.apache.xpath.internal.jaxp.XPathFactoryImpl;
+import net.sf.saxon.xpath.XPathFactoryImpl;
 
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
-import javax.xml.xpath.XPathFactory;
 
 /**
  * Created by senan on 9/5/14.
@@ -101,9 +100,10 @@ public class ExpressionHandler {
     }
 
     private XPathExpression createXPathExpression(String expression) {
+        expression = VariableResolver.toLegalXPath(expression);
         try {
-            //create an XPath processor
-            XPathFactory factory = new XPathFactoryImpl();
+            // Create an XPath processor
+            var factory = new XPathFactoryImpl();
             if (variableResolver != null) {
                 factory.setXPathVariableResolver(variableResolver);
             }
@@ -111,7 +111,7 @@ public class ExpressionHandler {
             if (namespaceContext != null) {
                 xPath.setNamespaceContext(namespaceContext);
             }
-            //compile the expression and return it
+            // Compile the expression and return it
             return xPath.compile(expression);
         }catch (XPathExpressionException e){
             throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Invalid XPath expression"),e);

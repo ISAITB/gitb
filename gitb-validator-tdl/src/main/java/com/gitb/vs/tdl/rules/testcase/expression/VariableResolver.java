@@ -7,8 +7,15 @@ import javax.xml.namespace.QName;
 import javax.xml.xpath.XPathVariableResolver;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class VariableResolver implements XPathVariableResolver {
+
+    private static final Pattern BRACKET_DETECTION_PATTERN = Pattern.compile("(?:'[^']*'|(\\$(?:[a-zA-Z][a-zA-Z\\-_0-9]*)(?:\\{(?:[\\$\\{\\}a-zA-Z\\-\\._0-9]*)\\})*))|(?:\"[^\"]*\"|(\\$(?:[a-zA-Z][a-zA-Z\\-_0-9]*)(?:\\{(?:[\\$\\{\\}a-zA-Z\\-\\._0-9]*)\\})*))");
+    private static final String CURLY_BRACKET_OPEN_REPLACEMENT = "_com.gitb.OPEN_";
+    private static final String CURLY_BRACKET_CLOSE_REPLACEMENT = "_com.gitb.CLOSE_";
+    private static final String DOLLAR_REPLACEMENT = "_com.gitb.DOLLAR_";
 
     private final VariableResolverProvider provider;
 
@@ -18,7 +25,8 @@ public class VariableResolver implements XPathVariableResolver {
 
     @Override
     public Object resolveVariable(QName variableName) {
-        checkVariablesInToken("$"+variableName.getLocalPart());
+        String variableExpression = "$"+toTDLExpression(variableName.getLocalPart());
+        checkVariablesInToken(variableExpression);
         return "";
     }
 
@@ -79,6 +87,40 @@ public class VariableResolver implements XPathVariableResolver {
                 }
             }
         }
+    }
+
+    private static String processMatch(Matcher matcher, int group, String expression) {
+        var matchedText = matcher.group(group);
+        if (matchedText != null) {
+            // Replace all curly brackets and all dollar signs except the first one (which is always there for matches).
+            var variableExpression = matchedText.substring(1) // Remove initial dollar.
+                    .replace("{", CURLY_BRACKET_OPEN_REPLACEMENT)       // Replace curly brace open.
+                    .replace("}", CURLY_BRACKET_CLOSE_REPLACEMENT)      // Replace curly brace close.
+                    .replace("$", DOLLAR_REPLACEMENT);                  // Replace dollars.
+            variableExpression = "$"+variableExpression;                      // Add initial dollar.
+            return new StringBuilder(expression)
+                    .replace(matcher.start(group), matcher.end(group), variableExpression)
+                    .toString();
+        } else {
+            return expression;
+        }
+    }
+
+    public static String toLegalXPath(String expression) {
+        // GITB TDL expressions contain curly braces for container types which are reserved characters in XPath 2.0+
+        var matcher = BRACKET_DETECTION_PATTERN.matcher(expression);
+        while (matcher.find()) {
+            for (int i=1; i <= matcher.groupCount(); i++) {
+                expression = processMatch(matcher, i, expression);
+            }
+        }
+        return expression;
+    }
+
+    public static String toTDLExpression(String expression) {
+        return expression.replace(CURLY_BRACKET_OPEN_REPLACEMENT, "{")
+                .replace(CURLY_BRACKET_CLOSE_REPLACEMENT, "}")
+                .replace(DOLLAR_REPLACEMENT, "$");
     }
 
     static class VariableData {
