@@ -44,7 +44,7 @@
         <version.reflections>0.10.2</version.reflections>
         <version.commonsIo>2.11.0</version.commonsIo>
         <version.commonsLang3>3.12.0</version.commonsLang3>
-        <version.tika>2.3.0</version.tika>
+        <version.tika>2.4.0</version.tika>
         <version.xerces>2.12.2</version.xerces>
         <version.jaxbApi>2.3.1</version.jaxbApi>
         <version.jaxbRuntime>2.3.3</version.jaxbRuntime>
