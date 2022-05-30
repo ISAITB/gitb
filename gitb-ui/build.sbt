@@ -52,7 +52,7 @@ libraryDependencies ++= Seq(
   "org.apache.cxf" % "cxf-rt-transports-http" % cxfVersion,
   "org.apache.cxf" % "cxf-rt-transports-http-jetty" % cxfVersion,
   // ---
-  "org.apache.tika" % "tika-core" % "2.3.0",
+  "org.apache.tika" % "tika-core" % "2.4.0",
   "org.webjars" %% "webjars-play" % "2.8.13",
   "org.webjars" % "jquery" % "3.6.0",
   "org.webjars" % "bootstrap" % "3.4.1" exclude("org.webjars", "jquery"),
