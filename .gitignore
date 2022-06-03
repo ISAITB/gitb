@@ -35,3 +35,4 @@ test/resources/repository
 /gitb-ui/app/assets/build
 /temp/
 /gitb-ui/null/
+/gitb-ui/.bsp/

@@ -6,7 +6,7 @@ lazy val root = (project in file(".")).enablePlugins(PlayScala, SbtWeb)
   .settings(dependencyCheckFailBuildOnCVSS := 0)
   .settings(dependencyCheckSuppressionFile := Some(file("project/owasp-suppressions.xml")))
 
-scalaVersion := "2.13.6"
+scalaVersion := "2.13.8"
 val akkaVersion = "2.6.19"
 val jacksonVersion = "2.13.2"
 val jacksonDataBindVersion = "2.13.2.2"
@@ -73,17 +73,20 @@ libraryDependencies ++= Seq(
   "org.jasypt" % "jasypt" % "1.9.3",
   "org.apache.httpcomponents" % "httpclient" % "4.5.13",
   "org.flywaydb" %% "flyway-play" % "7.20.0",
-  "org.flywaydb" % "flyway-mysql" % "8.5.9",
+  "org.flywaydb" % "flyway-mysql" % "8.5.10",
   "com.googlecode.owasp-java-html-sanitizer" % "owasp-java-html-sanitizer" % "20211018.2",
   "net.lingala.zip4j" % "zip4j" % "2.10.0"
 )
+
+// Deactivate repeatable builds to speed up via parallelization
+ThisBuild / assemblyRepeatableBuild := false
 
 // Add assets build folder to clean task
 cleanFiles += baseDirectory.value / "app" / "assets" / "build"
 
 // Exclude sources and documentation
-sources in (Compile, doc) := Seq.empty
-publishArtifact in (Compile, packageDoc) := false
+Compile / doc / sources := Seq.empty
+Compile / packageDoc / publishArtifact := false
 
 resolvers += Resolver.mavenLocal
 
