@@ -8,8 +8,7 @@ lazy val root = (project in file(".")).enablePlugins(PlayScala, SbtWeb)
 
 scalaVersion := "2.13.8"
 val akkaVersion = "2.6.19"
-val jacksonVersion = "2.13.2"
-val jacksonDataBindVersion = "2.13.2.2"
+val jacksonVersion = "2.13.3"
 val cxfVersion = "3.5.2"
 val guiceVersion = "5.1.0"
 
@@ -34,14 +33,14 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-stream" % akkaVersion,
   "com.typesafe.akka" %% "akka-slf4j" % akkaVersion,
   "com.typesafe.akka" %% "akka-serialization-jackson" % akkaVersion,
-  "com.typesafe.play" %% "play-slick" % "5.0.0",
+  "com.typesafe.play" %% "play-slick" % "5.0.2",
   "com.typesafe.play" %% "play-json" % "2.9.2",
   "org.pac4j" %% "play-pac4j" % "11.1.0-PLAY2.8",
   "org.pac4j" % "pac4j-cas" % "5.4.3",
   "ch.qos.logback" % "logback-classic" % "1.2.11",
   "org.apache.commons" % "commons-lang3" % "3.12.0",
   "com.fasterxml.jackson.module" %% "jackson-module-scala" % jacksonVersion,
-  "com.fasterxml.jackson.core" % "jackson-databind" % jacksonDataBindVersion,
+  "com.fasterxml.jackson.core" % "jackson-databind" % jacksonVersion,
   "com.fasterxml.jackson.core" % "jackson-core" % jacksonVersion,
   "com.fasterxml.jackson.core" % "jackson-annotations" % jacksonVersion,
   "com.fasterxml.jackson.module" % "jackson-module-jaxb-annotations" % jacksonVersion,
@@ -73,8 +72,8 @@ libraryDependencies ++= Seq(
   "org.jasypt" % "jasypt" % "1.9.3",
   "org.apache.httpcomponents" % "httpclient" % "4.5.13",
   "org.flywaydb" %% "flyway-play" % "7.20.0",
-  "org.flywaydb" % "flyway-mysql" % "8.5.10",
-  "com.googlecode.owasp-java-html-sanitizer" % "owasp-java-html-sanitizer" % "20211018.2",
+  "org.flywaydb" % "flyway-mysql" % "8.5.12",
+  "com.googlecode.owasp-java-html-sanitizer" % "owasp-java-html-sanitizer" % "20220608.1",
   "net.lingala.zip4j" % "zip4j" % "2.10.0"
 )
 
