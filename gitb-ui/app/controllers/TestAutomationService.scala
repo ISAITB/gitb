@@ -12,7 +12,7 @@ import javax.inject.{Inject, Singleton}
 class TestAutomationService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerComponents, authorizationManager: AuthorizationManager, testExecutionManager: TestExecutionManager) extends BaseAutomationService(cc) {
 
   def start: Action[AnyContent] = authorizedAction { request =>
-    processAsJson(request, authorizationManager.canManageSessionsThroughAutomationApi,
+    processAsJson(request, Some(authorizationManager.canManageSessionsThroughAutomationApi),
       { body =>
         val organisationKey = request.headers.get(Constants.AutomationHeader).get
         val input = JsonUtil.parseJsTestSessionLaunchRequest(body, organisationKey)
@@ -23,7 +23,7 @@ class TestAutomationService @Inject() (authorizedAction: AuthorizedAction, cc: C
   }
 
   def stop: Action[AnyContent] = authorizedAction { request =>
-    processAsJson(request, authorizationManager.canManageSessionsThroughAutomationApi,
+    processAsJson(request, Some(authorizationManager.canManageSessionsThroughAutomationApi),
       { body =>
         val organisationKey = request.headers.get(Constants.AutomationHeader).get
         val sessionIds = JsonUtil.parseJsSessions(body)
@@ -34,7 +34,7 @@ class TestAutomationService @Inject() (authorizedAction: AuthorizedAction, cc: C
   }
 
   def status: Action[AnyContent] = authorizedAction { request =>
-    processAsJson(request, authorizationManager.canManageSessionsThroughAutomationApi,
+    processAsJson(request, Some(authorizationManager.canManageSessionsThroughAutomationApi),
       { body =>
         val organisationKey = request.headers.get(Constants.AutomationHeader).get
         val query = JsonUtil.parseJsSessionStatusRequest(body)

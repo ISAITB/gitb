@@ -22,8 +22,10 @@ abstract class BaseAutomationService(protected val cc: ControllerComponents) ext
     result
   }
 
-  protected def processAsJson(request: RequestWithAttributes[AnyContent], authorisationFn: RequestWithAttributes[AnyContent] => _, processFn: JsValue => Result): Result = {
-    authorisationFn(request)
+  protected def processAsJson(request: RequestWithAttributes[AnyContent], authorisationFn: Option[RequestWithAttributes[AnyContent] => _], processFn: JsValue => Result): Result = {
+    if (authorisationFn.isDefined) {
+      authorisationFn.get.apply(request)
+    }
     var result: Result = null
     try {
       val json = bodyToJson(request)

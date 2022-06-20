@@ -10,7 +10,7 @@ import models.Enums.TestSuiteReplacementChoiceHistory.TestSuiteReplacementChoice
 import models.Enums.TestSuiteReplacementChoiceMetadata.TestSuiteReplacementChoiceMetadata
 import models.Enums._
 import models._
-import models.automation.{ApiKeyActorInfo, ApiKeyInfo, ApiKeySpecificationInfo, ApiKeySystemInfo, ApiKeyTestCaseInfo, ApiKeyTestSuiteInfo, InputMapping, TestSessionLaunchInfo, TestSessionLaunchRequest, TestSessionStatus, TestSuiteDeployRequest, TestSuiteUndeployRequest}
+import models.automation._
 import org.apache.commons.codec.binary.Base64
 import play.api.libs.json.{JsObject, _}
 
@@ -858,13 +858,13 @@ object JsonUtil {
     TestSessionLaunchRequest(organisationKey, system, actor, testSuites, testCases, inputMappings, forceSequential)
   }
 
-  def parseJsTestSuiteDeployRequest(jsonConfig: JsValue): TestSuiteDeployRequest = {
+  def parseJsTestSuiteDeployRequest(jsonConfig: JsValue): (TestSuiteDeployRequest, String) = {
     val specification = (jsonConfig \ "specification").as[String]
     val testSuite = (jsonConfig \ "testSuite").as[String]
     val ignoreWarnings = (jsonConfig \ "ignoreWarnings").asOpt[Boolean].getOrElse(false)
     val replaceTestHistory = (jsonConfig \ "replaceTestHistory").asOpt[Boolean].getOrElse(false)
     val updateSpecification = (jsonConfig \ "updateSpecification").asOpt[Boolean].getOrElse(false)
-    TestSuiteDeployRequest(specification, testSuite, ignoreWarnings, replaceTestHistory, updateSpecification)
+    (TestSuiteDeployRequest(specification, ignoreWarnings, replaceTestHistory, updateSpecification), testSuite)
   }
 
   def parseJsTestSuiteUndeployRequest(jsonConfig: JsValue): TestSuiteUndeployRequest = {
