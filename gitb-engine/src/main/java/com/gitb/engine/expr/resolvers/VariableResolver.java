@@ -22,9 +22,12 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.XPathVariableResolver;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.regex.MatchResult;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * Created by senan on 9/8/14.
@@ -308,8 +311,8 @@ public class VariableResolver implements XPathVariableResolver{
         }
     }
 
-    private static String processMatch(Matcher matcher, int group, String expression) {
-        var matchedText = matcher.group(group);
+    private static String processMatch(MatchResult match, int group, String expression) {
+        var matchedText = match.group(group);
         if (matchedText != null) {
             // Replace all curly brackets and all dollar signs except the first one (which is always there for matches).
             var variableExpression = matchedText.substring(1)      // Remove initial dollar.
@@ -318,7 +321,7 @@ public class VariableResolver implements XPathVariableResolver{
                     .replace("$", DOLLAR_REPLACEMENT);             // Replace dollars.
             variableExpression = "$"+variableExpression;           // Add initial dollar.
             return new StringBuilder(expression)
-                        .replace(matcher.start(group), matcher.end(group), variableExpression)
+                        .replace(match.start(group), match.end(group), variableExpression)
                         .toString();
         } else {
             return expression;
@@ -328,9 +331,12 @@ public class VariableResolver implements XPathVariableResolver{
     public static String toLegalXPath(String expression) {
         // GITB TDL expressions contain curly braces for container types which are reserved characters in XPath 2.0+
         var matcher = BRACKET_DETECTION_PATTERN.matcher(expression);
-        while (matcher.find()) {
+        List<MatchResult> matches = matcher.results().collect(Collectors.toList());
+        // Reverse so that the sections to replace don't overlap with the replacements.
+        Collections.reverse(matches);
+        for (var match: matches) {
             for (int i=1; i <= matcher.groupCount(); i++) {
-                expression = processMatch(matcher, i, expression);
+                expression = processMatch(match, i, expression);
             }
         }
         return expression;
