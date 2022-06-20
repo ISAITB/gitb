@@ -135,6 +135,10 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, triggerHelpe
     exec(getByIdInternal(id))
   }
 
+  def getByApiKey(apiKey: String): Option[Communities] = {
+    exec(PersistenceSchema.communities.filter(_.apiKey === apiKey).result.headOption)
+  }
+
   private def getByIdInternal(id: Long) = {
     PersistenceSchema.communities.filter(_.id === id).result.headOption
   }
@@ -238,7 +242,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, triggerHelpe
                                                 description: Option[String], selfRegRestriction: Short, selfRegForceTemplateSelection: Boolean, selfRegForceRequiredProperties: Boolean,
                                                 allowCertificateDownload: Boolean, allowStatementManagement: Boolean, allowSystemManagement: Boolean,
                                                 allowPostTestOrganisationUpdates: Boolean, allowPostTestSystemUpdates: Boolean, allowPostTestStatementUpdates: Boolean, allowAutomationApi: Option[Boolean],
-                                                domainId: Option[Long], onSuccess: mutable.ListBuffer[() => _]) = {
+                                                apiKey: Option[String], domainId: Option[Long], onSuccess: mutable.ListBuffer[() => _]) = {
     val actions = new ListBuffer[DBIO[_]]()
     if (shortName.nonEmpty && community.shortname != shortName) {
       val q = for {c <- PersistenceSchema.communities if c.id === community.id} yield c.shortname
@@ -264,6 +268,9 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, triggerHelpe
         allowCertificateDownload, allowStatementManagement, allowSystemManagement,
         allowPostTestOrganisationUpdates, allowPostTestSystemUpdates, allowPostTestStatementUpdates, allowAutomationApi.getOrElse(community.allowAutomationApi)
       )
+    if (apiKey.isDefined) {
+      actions += PersistenceSchema.communities.filter(_.id === community.id).map(_.apiKey).update(apiKey.get)
+    }
     toDBIO(actions)
   }
 
@@ -288,7 +295,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, triggerHelpe
             community.get, shortName, fullName, supportEmail, selfRegType, selfRegToken, selfRegTokenHelpText,
             selfRegNotification, description, selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties,
             allowCertificateDownload, allowStatementManagement, allowSystemManagement,
-            allowPostTestOrganisationUpdates, allowPostTestSystemUpdates, allowPostTestStatementUpdates, allowAutomationApi,
+            allowPostTestOrganisationUpdates, allowPostTestSystemUpdates, allowPostTestStatementUpdates, allowAutomationApi, None,
             domainId, onSuccess
           )
         } else {

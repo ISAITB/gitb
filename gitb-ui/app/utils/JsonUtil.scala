@@ -10,7 +10,7 @@ import models.Enums.TestSuiteReplacementChoiceHistory.TestSuiteReplacementChoice
 import models.Enums.TestSuiteReplacementChoiceMetadata.TestSuiteReplacementChoiceMetadata
 import models.Enums._
 import models._
-import models.automation.{ApiKeyActorInfo, ApiKeyInfo, ApiKeySpecificationInfo, ApiKeySystemInfo, ApiKeyTestCaseInfo, ApiKeyTestSuiteInfo, InputMapping, TestSessionLaunchInfo, TestSessionLaunchRequest, TestSessionStatus}
+import models.automation.{ApiKeyActorInfo, ApiKeyInfo, ApiKeySpecificationInfo, ApiKeySystemInfo, ApiKeyTestCaseInfo, ApiKeyTestSuiteInfo, InputMapping, TestSessionLaunchInfo, TestSessionLaunchRequest, TestSessionStatus, TestSuiteDeployRequest, TestSuiteUndeployRequest}
 import org.apache.commons.codec.binary.Base64
 import play.api.libs.json.{JsObject, _}
 
@@ -609,6 +609,9 @@ object JsonUtil {
       json = json.+("selfRegForceTemplateSelection" -> JsBoolean(community.selfRegForceTemplateSelection))
       json = json.+("selfRegForceRequiredProperties" -> JsBoolean(community.selfRegForceRequiredProperties))
       json = json.+("description" -> (if(community.description.isDefined) JsString(community.description.get) else JsNull))
+      if (Configurations.AUTOMATION_API_ENABLED) {
+        json = json.+("apiKey" -> JsString(community.apiKey))
+      }
     }
     json
   }
@@ -684,8 +687,8 @@ object JsonUtil {
    * @param spec Specification object to be converted
    * @return JsObject
    */
-  def jsSpecification(spec:Specifications) : JsObject = {
-    val json = Json.obj(
+  def jsSpecification(spec:Specifications, withApiKeys:Boolean = false) : JsObject = {
+    var json = Json.obj(
       "id"      -> spec.id,
       "sname"   -> spec.shortname,
       "fname"   -> spec.fullname,
@@ -693,6 +696,9 @@ object JsonUtil {
       "hidden" -> spec.hidden,
       "domain"  -> spec.domain
     )
+    if (withApiKeys && Configurations.AUTOMATION_API_ENABLED) {
+      json = json.+("apiKey" -> JsString(spec.apiKey))
+    }
     json
   }
 
@@ -701,10 +707,10 @@ object JsonUtil {
    * @param list List of Specifications to be converted
    * @return JsArray
    */
-  def jsSpecifications(list:List[Specifications]):JsArray = {
+  def jsSpecifications(list:List[Specifications], withApiKeys:Boolean = false):JsArray = {
     var json = Json.arr()
     list.foreach{ spec =>
-      json = json.append(jsSpecification(spec))
+      json = json.append(jsSpecification(spec, withApiKeys))
     }
     json
   }
@@ -850,6 +856,21 @@ object JsonUtil {
     }.toList
     val forceSequential = (jsonConfig \ "forceSequentialExecution").asOpt[Boolean].getOrElse(false)
     TestSessionLaunchRequest(organisationKey, system, actor, testSuites, testCases, inputMappings, forceSequential)
+  }
+
+  def parseJsTestSuiteDeployRequest(jsonConfig: JsValue): TestSuiteDeployRequest = {
+    val specification = (jsonConfig \ "specification").as[String]
+    val testSuite = (jsonConfig \ "testSuite").as[String]
+    val ignoreWarnings = (jsonConfig \ "ignoreWarnings").asOpt[Boolean].getOrElse(false)
+    val replaceTestHistory = (jsonConfig \ "replaceTestHistory").asOpt[Boolean].getOrElse(false)
+    val updateSpecification = (jsonConfig \ "updateSpecification").asOpt[Boolean].getOrElse(false)
+    TestSuiteDeployRequest(specification, testSuite, ignoreWarnings, replaceTestHistory, updateSpecification)
+  }
+
+  def parseJsTestSuiteUndeployRequest(jsonConfig: JsValue): TestSuiteUndeployRequest = {
+    val specification = (jsonConfig \ "specification").as[String]
+    val testSuite = (jsonConfig \ "testSuite").as[String]
+    TestSuiteUndeployRequest(specification, testSuite)
   }
 
   private def parseJsInputMapping(json: JsValue): InputMapping = {
@@ -1901,6 +1922,41 @@ object JsonUtil {
     )
     json
   }
+
+  def jsTestSuiteDeployInfo(result: TestSuiteUploadResult):JsObject = {
+    var errors = Json.arr()
+    var warnings = Json.arr()
+    var messages = Json.arr()
+    if (result.validationReport != null && result.validationReport.getReports != null) {
+      result.validationReport.getReports.getInfoOrWarningOrError.asScala.toList.foreach(item => {
+        var itemJson = Json.obj("description" -> item.getValue.asInstanceOf[BAR].getDescription)
+        if (item.getValue.asInstanceOf[BAR].getLocation != null) {
+          itemJson = itemJson.+("location", JsString(item.getValue.asInstanceOf[BAR].getLocation))
+        }
+        if (item.getName.getLocalPart == "error") {
+          errors = errors.append(itemJson)
+        } else if (item.getName.getLocalPart == "warning") {
+          warnings = warnings.append(itemJson)
+        } else {
+          messages = messages.append(itemJson)
+        }
+      })
+    }
+    var json = Json.obj(
+      "completed" -> result.success
+    )
+    if (errors.value.nonEmpty) {
+      json = json.+("errors", errors)
+    }
+    if (warnings.value.nonEmpty) {
+      json = json.+("warnings", warnings)
+    }
+    if (messages.value.nonEmpty) {
+      json = json.+("messages", messages)
+    }
+    json
+  }
+
 
   def jsTAR(report: TAR): JsObject = {
     val json = Json.obj(

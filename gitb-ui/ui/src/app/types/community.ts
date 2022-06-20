@@ -24,6 +24,7 @@ export interface Community {
     allowPostTestSystemUpdates: boolean
     allowPostTestStatementUpdates: boolean
     allowAutomationApi?: boolean
+    apiKey?: string
 
     sameDescriptionAsDomain: boolean
     activeDescription?: string

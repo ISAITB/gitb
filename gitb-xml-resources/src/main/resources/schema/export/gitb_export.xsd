@@ -21,6 +21,7 @@
                     <xsd:element name="fullName" type="xsd:string"/>
                     <xsd:element name="supportEmail" type="xsd:string" minOccurs="0"/>
                     <xsd:element name="description" type="xsd:string" minOccurs="0"/>
+                    <xsd:element name="apiKey" type="xsd:string" minOccurs="0"/>
                     <xsd:element name="selfRegistrationSettings" type="SelfRegistrationSettings" minOccurs="0"/>
                     <xsd:element name="conformanceCertificateSettings" type="ConformanceCertificateSettings" minOccurs="0"/>
                     <xsd:element name="organisationProperties" type="OrganisationProperties" minOccurs="0"/>
@@ -390,6 +391,7 @@
                     <xsd:element name="shortName" type="xsd:string"/>
                     <xsd:element name="fullName" type="xsd:string"/>
                     <xsd:element name="description" type="xsd:string" minOccurs="0"/>
+                    <xsd:element name="apiKey" type="xsd:string" minOccurs="0"/>
                     <xsd:element name="actors" type="Actors" minOccurs="0"/>
                     <xsd:element name="testSuites" type="TestSuites" minOccurs="0"/>
                 </xsd:sequence>

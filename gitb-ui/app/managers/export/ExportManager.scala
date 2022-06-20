@@ -388,6 +388,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, triggerManager:
           exportedSpecification.setShortName(specification.shortname)
           exportedSpecification.setFullName(specification.fullname)
           exportedSpecification.setDescription(specification.description.orNull)
+          exportedSpecification.setApiKey(specification.apiKey)
           exportedSpecification.setHidden(specification.hidden)
           // Actors
           if (exportSettings.actors && specificationActorMap.contains(specification.id)) {
@@ -593,6 +594,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, triggerManager:
     communityData.setFullName(community.get.fullname)
     communityData.setSupportEmail(community.get.supportEmail.orNull)
     communityData.setDescription(community.get.description.orNull)
+    communityData.setApiKey(community.get.apiKey)
     communityData.setAllowCertificateDownload(community.get.allowCertificateDownload)
     communityData.setAllowStatementManagement(community.get.allowStatementManagement)
     communityData.setAllowSystemManagement(community.get.allowSystemManagement)

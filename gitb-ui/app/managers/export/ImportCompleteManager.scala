@@ -761,10 +761,12 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
             dbActions += processFromArchive(ImportItemType.Specification, exportedSpecification, exportedSpecification.getId, ctx,
               ImportCallbacks.set(
                 (data: com.gitb.xml.export.Specification, item: ImportItem) => {
-                  conformanceManager.createSpecificationsInternal(models.Specifications(0L, data.getShortName, data.getFullName, Option(data.getDescription), data.isHidden, item.parentItem.get.targetKey.get.toLong))
+                  val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
+                  conformanceManager.createSpecificationsInternal(models.Specifications(0L, data.getShortName, data.getFullName, Option(data.getDescription), data.isHidden, apiKey, item.parentItem.get.targetKey.get.toLong))
                 },
                 (data: com.gitb.xml.export.Specification, targetKey: String, item: ImportItem) => {
-                  specificationManager.updateSpecificationInternal(targetKey.toLong, data.getShortName, data.getFullName, Option(data.getDescription), data.isHidden)
+                  val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
+                  specificationManager.updateSpecificationInternal(targetKey.toLong, data.getShortName, data.getFullName, Option(data.getDescription), data.isHidden, Some(apiKey))
                 },
                 (data: com.gitb.xml.export.Specification, targetKey: Any, item: ImportItem) => {
                   // In case of a failure delete the created domain test suite folder (if one was created later on).
@@ -1127,24 +1129,26 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
           ImportCallbacks.set(
             (data: com.gitb.xml.export.Community, item: ImportItem) => {
               val domainId = determineDomainIdForCommunityUpdate(exportedCommunity, None, ctx)
+              val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
               // This returns a tuple: (community ID, admin organisation ID)
               communityManager.createCommunityInternal(models.Communities(0L, data.getShortName, data.getFullName, Option(data.getSupportEmail),
                 selfRegistrationMethodToModel(data.getSelfRegistrationSettings.getMethod), Option(data.getSelfRegistrationSettings.getToken), Option(data.getSelfRegistrationSettings.getTokenHelpText),
                 data.getSelfRegistrationSettings.isNotifications, Option(data.getDescription), selfRegistrationRestrictionToModel(data.getSelfRegistrationSettings.getRestriction),
                 data.getSelfRegistrationSettings.isForceTemplateSelection, data.getSelfRegistrationSettings.isForceRequiredProperties,
                 data.isAllowCertificateDownload, data.isAllowStatementManagement, data.isAllowSystemManagement,
-                data.isAllowPostTestOrganisationUpdates, data.isAllowSystemManagement, data.isAllowPostTestStatementUpdates, data.isAllowAutomationApi,
+                data.isAllowPostTestOrganisationUpdates, data.isAllowSystemManagement, data.isAllowPostTestStatementUpdates, data.isAllowAutomationApi, apiKey,
                 domainId
               ))
             },
             (data: com.gitb.xml.export.Community, targetKey: String, item: ImportItem) => {
               val domainId = determineDomainIdForCommunityUpdate(exportedCommunity, targetCommunity, ctx)
+              val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
               communityManager.updateCommunityInternal(targetCommunity.get, data.getShortName, data.getFullName, Option(data.getSupportEmail),
                 selfRegistrationMethodToModel(data.getSelfRegistrationSettings.getMethod), Option(data.getSelfRegistrationSettings.getToken), Option(data.getSelfRegistrationSettings.getTokenHelpText), data.getSelfRegistrationSettings.isNotifications,
                 Option(data.getDescription), selfRegistrationRestrictionToModel(data.getSelfRegistrationSettings.getRestriction),
                 data.getSelfRegistrationSettings.isForceTemplateSelection, data.getSelfRegistrationSettings.isForceRequiredProperties,
                 data.isAllowCertificateDownload, data.isAllowStatementManagement, data.isAllowSystemManagement,
-                data.isAllowPostTestOrganisationUpdates, data.isAllowSystemManagement, data.isAllowPostTestStatementUpdates, Some(data.isAllowAutomationApi),
+                data.isAllowPostTestOrganisationUpdates, data.isAllowSystemManagement, data.isAllowPostTestStatementUpdates, Some(data.isAllowAutomationApi), Some(apiKey),
                 domainId, ctx.onSuccessCalls
               )
             },

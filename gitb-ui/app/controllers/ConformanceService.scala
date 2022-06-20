@@ -65,9 +65,10 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
   def getSpecs = authorizedAction { request =>
     val ids = ParameterExtractor.extractLongIdsBodyParameter(request)
     val domainIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.DOMAIN_IDS)
+    val withApiKeys = ParameterExtractor.optionalBooleanBodyParameter(request, Parameters.WITH_API_KEYS)
     authorizationManager.canViewSpecifications(request, ids)
     val result = conformanceManager.getSpecifications(ids, domainIds)
-    val json = JsonUtil.jsSpecifications(result).toString()
+    val json = JsonUtil.jsSpecifications(result, withApiKeys.getOrElse(false)).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
 

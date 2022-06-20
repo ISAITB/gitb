@@ -70,13 +70,16 @@ export class ConformanceService {
     })
   }
 
-  getSpecificationsWithIds(ids?: number[], domainIds?: number[]) {
+  getSpecificationsWithIds(ids?: number[], domainIds?: number[], withApiKeys?: boolean) {
     let params: any = {}
     if (ids != undefined && ids.length > 0) {
       params['ids'] = ids.join(',')
     }
     if (domainIds != undefined && domainIds.length > 0) {
       params['domain_ids'] = domainIds.join(',')
+    }
+    if (withApiKeys != undefined && withApiKeys) {
+      params['with_api_keys'] = withApiKeys
     }
     return this.restService.post<Specification[]>({
       path: ROUTES.controllers.ConformanceService.getSpecs().url,

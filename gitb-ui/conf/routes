@@ -292,6 +292,8 @@ POST    /api/initdata                                           @controllers.Rep
 POST    /api/rest/tests/start                                    @controllers.TestAutomationService.start()
 POST    /api/rest/tests/stop                                     @controllers.TestAutomationService.stop()
 GET     /api/rest/tests/status                                   @controllers.TestAutomationService.status()
+POST    /api/rest/testsuite/deploy                               @controllers.TestSuiteAutomationService.deploy()
+POST    /api/rest/testsuite/undeploy                             @controllers.TestSuiteAutomationService.undeploy()
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)
