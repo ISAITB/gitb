@@ -1,15 +1,14 @@
 import config.Configurations
 import controllers.util.ResponseConstructor
-import javax.inject.{Inject, Singleton}
 import managers.{LegalNoticeManager, SystemConfigurationManager}
 import models.{Constants, ErrorPageData}
 import org.apache.commons.lang3.{RandomStringUtils, StringUtils}
 import org.slf4j.LoggerFactory
-import org.webjars.play.WebJarsUtil
 import play.api.http.HttpErrorHandler
 import play.api.mvc.Results.BadRequest
 import play.api.mvc.{RequestHeader, Result}
 
+import javax.inject.{Inject, Singleton}
 import scala.concurrent.Future
 
 @Singleton
@@ -26,7 +25,7 @@ class ErrorHandler @Inject() (systemConfigurationManager: SystemConfigurationMan
     val requestedWithHeader = request.headers.get("X-Requested-With")
     val acceptHeader = request.headers.get("Accept")
     val errorAsJson = requestedWithHeader.isDefined || (acceptHeader.isDefined && StringUtils.contains(acceptHeader.get.toLowerCase, "application/json"))
-    val errorIdentifier = RandomStringUtils.randomAlphabetic(10)
+    val errorIdentifier = RandomStringUtils.randomAlphabetic(10).toUpperCase()
     logger.error("Error ["+errorIdentifier+"]", ex)
     if (errorAsJson) {
       val result = ResponseConstructor.constructServerError("Unexpected error", ex.getMessage, Some(errorIdentifier))
@@ -48,6 +47,7 @@ class ErrorHandler @Inject() (systemConfigurationManager: SystemConfigurationMan
           systemConfigurationManager.getLogoPath(),
           systemConfigurationManager.getFooterLogoPath(),
           Constants.VersionNumber,
+          Constants.ResourceVersionNumber,
           legalNoticeContent,
           Configurations.USERGUIDE_OU,
           errorIdentifier,

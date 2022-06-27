@@ -76,14 +76,18 @@ class AuthenticationFilter @Inject() (implicit ec: ExecutionContext, implicit va
             }
           } else if (isAutomationAccessAllowed(requestHeader)) {
             if (Configurations.AUTOMATION_API_ENABLED) {
-              val apiKeyHeader = requestHeader.headers.get(Constants.AutomationHeader)
-              if (apiKeyHeader.isDefined) {
+              if (isPublicAutomationAccessAllowed(requestHeader)) {
                 next(requestHeader)
               } else {
-                //Requires authorization to execute this service
-                logger.warn("Request blocked due to missing API key header [" + requestHeader.path + "]")
-                Future {
-                  ResponseConstructor.constructUnauthorizedResponse(ErrorCodes.AUTHORIZATION_REQUIRED, "Needs API key header")
+                val apiKeyHeader = requestHeader.headers.get(Constants.AutomationHeader)
+                if (apiKeyHeader.isDefined) {
+                  next(requestHeader)
+                } else {
+                  //Requires authorization to execute this service
+                  logger.warn("Request blocked due to missing API key header [" + requestHeader.path + "]")
+                  Future {
+                    ResponseConstructor.constructUnauthorizedResponse(ErrorCodes.AUTHORIZATION_REQUIRED, "Needs API key header")
+                  }
                 }
               }
             } else {
@@ -105,7 +109,17 @@ class AuthenticationFilter @Inject() (implicit ec: ExecutionContext, implicit va
   }
 
   def isAutomationAccessAllowed(request:RequestHeader): Boolean = {
-    request.path.startsWith("/"+API_ROOT+"/rest/")
+    isPublicAutomationAccessAllowed(request) ||
+      isProtectedAutomationAccessAllowed(request)
+  }
+
+  def isProtectedAutomationAccessAllowed(request:RequestHeader): Boolean = {
+      request.path.startsWith("/"+API_ROOT+ "/rest/")
+  }
+
+  def isPublicAutomationAccessAllowed(request:RequestHeader): Boolean = {
+    request.path.equals("/"+API_ROOT+ "/rest") ||
+    request.path.equals("/"+API_ROOT+ "/rest/")
   }
 
   def isHmacAuthenticationAllowed(request:RequestHeader):Boolean = {

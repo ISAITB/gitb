@@ -1,0 +1,649 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "Interoperability Test Bed REST API",
+    "description": "REST API for machine-to-machine integration with the Test Bed.",
+    "contact": {
+      "email": "${contactEmail}"
+    },
+    "version": "${version}"
+  },
+  "externalDocs": {
+    "description": "Test Bed user guide.",
+    "url": "${userGuideAddress}"
+  },
+  "servers": [
+    {
+      "url": "${apiUrl}"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Test sessions",
+      "description": "Operations on test sessions."
+    },
+    {
+      "name": "Test suites",
+      "description": "Operations on test suites."
+    }
+  ],
+  "paths": {
+    "/tests/start": {
+      "post": {
+        "tags": [
+          "Test sessions"
+        ],
+        "summary": "Launch one or more test sessions.",
+        "security": [
+          {
+            "OrganisationApiKeyAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "Information on the test session(s) to start.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SessionStartRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Test session(s) successfully created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionStartResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tests/status": {
+      "post": {
+        "tags": [
+          "Test sessions"
+        ],
+        "summary": "Query the status, logs and results of one or more test sessions.",
+        "security": [
+          {
+            "OrganisationApiKeyAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "Query parameters and information options for the test sessions to lookup.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SessionStatusRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Test sessions' status successfully returned.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionStatusResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tests/stop": {
+      "post": {
+        "tags": [
+          "Test sessions"
+        ],
+        "summary": "Stop one or more test sessions.",
+        "security": [
+          {
+            "OrganisationApiKeyAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "The test sessions to stop.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SessionStopRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Test session(s) successfully stopped.",
+            "content": {}
+          },
+          "400": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/testsuite/deploy": {
+      "post": {
+        "tags": [
+          "Test suites"
+        ],
+        "summary": "Deploy a test suite to a specification.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "The test suite archive to deploy and the deployment's parameters.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestSuiteDeployViaBase64Request"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/TestSuiteDeployViaFileRequest"
+              },
+              "encoding": {
+                "testSuite": {
+                  "contentType": "application/zip"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Test suite undeployed",
+            "content": {}
+          },
+          "400": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/testsuite/undeploy": {
+      "post": {
+        "tags": [
+          "Test suites"
+        ],
+        "summary": "Undeploy an existing test suite.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "Information on the test suite to be undeployed.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestSuiteUndeployRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Test suite successfully undeployed.",
+            "content": {}
+          },
+          "400": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "SessionStartRequest": {
+        "description": "Information on the test session(s) to start.",
+        "type": "object",
+        "properties": {
+          "system": {
+            "description": "The API KEY identifying the target system.",
+            "type": "string"
+          },
+          "actor": {
+            "description": "The API KEY identifying the target actor.",
+            "type": "string"
+          },
+          "forceSequentialExecution": {
+            "description": "Whether the test sessions should be forced to execute sequentially.",
+            "type": "boolean",
+            "default": false
+          },
+          "testSuite": {
+            "description": "The identifier(s) of the test suites to execute.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "testCase": {
+            "description": "The identifier(s) of the test cases to execute.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "inputMapping": {
+            "description": "Inputs to provide to test sessions. These can be applied to all test sessions, or certain test sessions identified by their relevant test case or test suite identifiers.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InputMapping"
+            }
+          }
+        },
+        "required": [
+          "system",
+          "actor"
+        ],
+        "additionalProperties": false
+      },
+      "InputMapping": {
+        "description": "Data relevant to an input provided to create one or more test sessions.",
+        "type": "object",
+        "properties": {
+          "testSuite": {
+            "description": "The identifiers of the test suite for which this input is to be provided.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "testCase": {
+            "description": "The identifiers of the test case for which this input is to be provided.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "input": {
+            "$ref": "#/components/schemas/AnyContent"
+          }
+        },
+        "required": [
+          "input"
+        ],
+        "additionalProperties": false
+      },
+      "AnyContent": {
+        "description": "The data and metadata relevant to a given test session input.",
+        "type": "object",
+        "properties": {
+          "name": {
+            "description": "The name of the input through which it is referenced in test cases.",
+            "type": "string"
+          },
+          "embeddingMethod": {
+            "description": "The way in which the value of the input is to be interpreted (as the actual string value, as a Base64-encoded string or as a remote URI location).",
+            "type": "string",
+            "enum": [
+              "STRING",
+              "BASE64",
+              "URI"
+            ],
+            "default": "STRING"
+          },
+          "value": {
+            "description": "The value of the input provided as a string, to be interpreted based on the embeddingMethod input. This may be missing in case of a complex type (list or map).",
+            "type": "string"
+          },
+          "type": {
+            "description": "The data type of this input.",
+            "type": "string",
+            "enum": [
+              "string",
+              "number",
+              "boolean",
+              "binary",
+              "object",
+              "schema",
+              "map",
+              "list"
+            ],
+            "default": "string"
+          },
+          "encoding": {
+            "type": "string"
+          },
+          "item": {
+            "description": "In case this is a complex data type (list or map) this is the array of child (contained) types.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AnyContent"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "SessionStartResponse": {
+        "description": "Information on the created test sessions.",
+        "type": "object",
+        "properties": {
+          "createdSessions": {
+            "description": "Information on the created test session(s).",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SessionCreationInformation"
+            }
+          }
+        },
+        "required": [
+          "createdSessions"
+        ],
+        "additionalProperties": false
+      },
+      "SessionStatusRequest": {
+        "type": "object",
+        "description": "Query parameters and information options for the test sessions to lookup.",
+        "additionalProperties": false,
+        "required": [
+          "session"
+        ],
+        "properties": {
+          "session": {
+            "description": "The session identifier(s) to look up.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "withLogs": {
+            "description": "Whether or not the log output for each session should be returned.",
+            "type": "boolean",
+            "default": false
+          }
+        }
+      },
+      "SessionStatusResponse": {
+        "description": "Response for the test session status operation.",
+        "type": "object",
+        "properties": {
+          "sessions": {
+            "description": "The list of status information for retrieved test sessions.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SessionStatus"
+            }
+          }
+        },
+        "required": [
+          "sessions"
+        ],
+        "additionalProperties": false
+      },
+      "SessionStopRequest": {
+        "description": "Request to stop one or more test sessions.",
+        "type": "object",
+        "properties": {
+          "session": {
+            "description": "The identifier(s) of the test session(s) to stop.",
+            "type": "array",
+            "items": {
+              "description": "Test session identifier.",
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "session"
+        ],
+        "additionalProperties": false
+      },
+      "SessionCreationInformation": {
+        "description": "The metadata for a created test session.",
+        "type": "object",
+        "properties": {
+          "testSuite": {
+            "description": "The identifier of the test session's relevant test suite.",
+            "type": "string"
+          },
+          "testCase": {
+            "description": "The identifier of the test session's relevant test case.",
+            "type": "string"
+          },
+          "session": {
+            "description": "The identifier assigned to the test session.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "testSuite",
+          "testCase",
+          "session"
+        ],
+        "additionalProperties": false
+      },
+      "TestSuiteDeployViaFileRequest": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/BaseTestSuiteDeployRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "testSuite": {
+                "description": "The test suite archive to deploy.",
+                "type": "string",
+                "format": "binary"
+              }
+            },
+            "required": [
+              "testSuite"
+            ]
+          }
+        ]
+      },
+      "TestSuiteDeployViaBase64Request": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/BaseTestSuiteDeployRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "testSuite": {
+                "description": "The test suite archive to deploy provided as a Base64-encoded string.",
+                "type": "string",
+                "format": "base64"
+              }
+            },
+            "required": [
+              "testSuite"
+            ]
+          }
+        ]
+      },
+      "BaseTestSuiteDeployRequest": {
+        "description": "Common information on the test suite to deploy.",
+        "type": "object",
+        "properties": {
+          "specification": {
+            "description": "The API KEY identifying the target specification.",
+            "type": "string"
+          },
+          "ignoreWarnings": {
+            "description": "Whether test suite validation warnings should be ignored.",
+            "type": "boolean",
+            "default": false
+          },
+          "replaceTestHistory": {
+            "description": "Whether the test history linked to the test suite should be reset.",
+            "type": "boolean",
+            "default": false
+          },
+          "updateSpecification": {
+            "description": "Whether the specification's metadata should be updated using the provided test suite's content.",
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": [
+          "specification"
+        ],
+        "additionalProperties": false
+      },
+      "TestSuiteUndeployRequest": {
+        "description": "Request to undeploy a given test suite.",
+        "type": "object",
+        "properties": {
+          "specification": {
+            "description": "The API key value to uniquely identify the specification from which the test suite will be undeployed from.",
+            "type": "string"
+          },
+          "testSuite": {
+            "description": "The identifier of the test suite that will be undeployed.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "specification",
+          "testSuite"
+        ],
+        "additionalProperties": false
+      },
+      "ErrorInformation": {
+        "description": "Information on an encountered error.",
+        "type": "object",
+        "properties": {
+          "error_code": {
+            "description": "The code used to identify the type of error encountered.",
+            "type": "string"
+          },
+          "error_description": {
+            "description": "The description of the error.",
+            "type": "string"
+          },
+          "error_id": {
+            "description": "An optional error identifier to refer to the specific error in logs.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "error_code",
+          "error_description"
+        ],
+        "additionalProperties": false
+      },
+      "SessionStatus": {
+        "description": "Status information for a test session.",
+        "type": "object",
+        "properties": {
+          "session": {
+            "description": "The session's unique identifier.",
+            "type": "string"
+          },
+          "result": {
+            "description": "The session's result.",
+            "type": "string",
+            "enum": [
+              "SUCCESS",
+              "FAILURE",
+              "UNDEFINED"
+            ]
+          },
+          "startTime": {
+            "description": "The session start time.",
+            "type": "string",
+            "format": "yyyy-MM-ddTHH:mm:ssZ"
+          },
+          "endTime": {
+            "description": "The session end time (if the session is completed).",
+            "type": "string",
+            "format": "yyyy-MM-ddTHH:mm:ssZ"
+          },
+          "message": {
+            "description": "The resultinh output message of the session.",
+            "type": "string"
+          },
+          "logs": {
+            "description": "The list of log entries produced by the session.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "session",
+          "result",
+          "startTime"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "OrganisationApiKeyAuth": {
+        "description": "The API key to identify a specific organisation.",
+        "type": "apiKey",
+        "in": "header",
+        "name": "ITB_API_KEY"
+      },
+      "CommunityApiKeyAuth": {
+        "description": "The API key to identify a specific community.",
+        "type": "apiKey",
+        "in": "header",
+        "name": "ITB_API_KEY"
+      }
+    }
+  }
+}

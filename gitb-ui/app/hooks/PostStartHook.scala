@@ -8,19 +8,21 @@ import managers._
 import managers.export.ImportCompleteManager
 import models.Constants
 import org.apache.commons.io.FileUtils
-import org.apache.commons.lang3.RandomStringUtils
+import org.apache.commons.lang3.{RandomStringUtils, StringUtils}
 import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
 import play.api.inject.ApplicationLifecycle
 import utils.{RepositoryUtils, TimeUtil, ZipArchiver}
 
 import java.io.{File, FileFilter}
+import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 import java.time.LocalDate
 import javax.inject.{Inject, Singleton}
 import javax.xml.ws.Endpoint
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.DurationInt
+import scala.util.Using
 
 @Singleton
 class PostStartHook @Inject() (implicit ec: ExecutionContext, appLifecycle: ApplicationLifecycle, actorSystem: ActorSystem, systemConfigurationManager: SystemConfigurationManager, testResultManager: TestResultManager, testExecutionManager: TestExecutionManager, testSuiteManager: TestSuiteManager, reportManager: ReportManager, webSocketActor: WebSocketActor, testbedBackendClient: TestbedBackendClient, importCompleteManager: ImportCompleteManager, triggerManager: TriggerManager, repositoryUtils: RepositoryUtils) {
@@ -39,6 +41,7 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext, appLifecycle: Appl
     cleanupTempFiles()
     loadDataExports()
     archiveOldTestSessions()
+    prepareRestApiDocumentation()
     logger.info("Application has started in "+Configurations.TESTBED_MODE+" mode - release "+Constants.VersionNumber)
   }
 
@@ -238,6 +241,33 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext, appLifecycle: Appl
           }
         }
       }
+    }
+  }
+
+  private def prepareRestApiDocumentation(): Unit = {
+    val apiDocsFile = repositoryUtils.getRestApiDocsDocumentation()
+    if (apiDocsFile.exists()) {
+      FileUtils.deleteQuietly(apiDocsFile)
+    }
+    if (Configurations.AUTOMATION_API_ENABLED) {
+      var apiUrl = Configurations.TESTBED_HOME_LINK
+      if (apiUrl == "/") {
+        apiUrl = s"http://localhost:${sys.env.getOrElse("http.port", 9000)}/${Configurations.API_ROOT}/rest"
+      } else {
+        if (!apiUrl.endsWith("/")) {
+          apiUrl += "/"
+        }
+        apiUrl += Configurations.API_ROOT+"/rest"
+      }
+      Using (Thread.currentThread().getContextClassLoader.getResourceAsStream("api/openapi.json")) { stream =>
+        var template = new String(stream.readAllBytes(), StandardCharsets.UTF_8)
+        template = StringUtils.replaceEach(template,
+          Array("${version}", "${contactEmail}", "${userGuideAddress}", "${apiUrl}"),
+          Array(Constants.VersionNumber, Configurations.EMAIL_TO.headOption.getOrElse("-"), Configurations.USERGUIDE_OU, apiUrl)
+        )
+        FileUtils.writeStringToFile(apiDocsFile, template, StandardCharsets.UTF_8)
+      }
+      logger.info("Prepared REST API documentation")
     }
   }
 
