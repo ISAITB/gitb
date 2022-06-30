@@ -20,7 +20,7 @@ libraryDependencies ++= Seq(
   cacheApi,
   "com.google.inject" % "guice" % guiceVersion,
   "com.google.inject.extensions" % "guice-assistedinject" % guiceVersion,
-  "eu.europa.ec.itb" % "gitb-types" % "1.17.0-SNAPSHOT",
+  "eu.europa.ec.itb" % "gitb-types" % "1.17.0",
   "com.gitb" % "gitb-core" % "1.0-SNAPSHOT",
   "com.gitb" % "gitb-lib" % "1.0-SNAPSHOT",
   "com.gitb" % "gitb-reports" % "1.0-SNAPSHOT",
@@ -51,7 +51,7 @@ libraryDependencies ++= Seq(
   "org.apache.cxf" % "cxf-rt-transports-http" % cxfVersion,
   "org.apache.cxf" % "cxf-rt-transports-http-jetty" % cxfVersion,
   // ---
-  "org.apache.tika" % "tika-core" % "2.4.0",
+  "org.apache.tika" % "tika-core" % "2.4.1",
   "org.webjars" %% "webjars-play" % "2.8.13",
   "org.webjars" % "jquery" % "3.6.0",
   "org.webjars" % "bootstrap" % "3.4.1" exclude("org.webjars", "jquery"),

@@ -31,7 +31,7 @@
         <version.plugin.maven-compiler-plugin>3.10.1</version.plugin.maven-compiler-plugin>
         <!-- Dependency versions -->
         <version.springBoot>2.7.1</version.springBoot>
-        <version.gitbTypes>1.17.0-SNAPSHOT</version.gitbTypes>
+        <version.gitbTypes>1.17.0</version.gitbTypes>
         <version.jasperReports>6.19.1</version.jasperReports>
         <version.bouncycastle>1.70</version.bouncycastle>
         <version.helgerSchematron>6.3.0</version.helgerSchematron>

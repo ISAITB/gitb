@@ -28,4 +28,11 @@
         <packageUrl regex="true">^pkg:maven/org\.springframework/spring\-.*@.*$</packageUrl>
         <cve>CVE-2016-1000027</cve>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: xercesImpl-2.12.2.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/xerces/xercesImpl@.*$</packageUrl>
+        <cpe>cpe:/a:apache:xerces2_java</cpe>
+    </suppress>
 </suppressions>
