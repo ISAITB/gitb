@@ -159,4 +159,11 @@
         <packageUrl regex="true">^pkg:maven/xerces/xercesImpl@.*$</packageUrl>
         <cpe>cpe:/a:apache:xerces-j</cpe>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: xercesImpl-2.12.2.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/xerces/xercesImpl@.*$</packageUrl>
+        <vulnerabilityName>CVE-2017-10355</vulnerabilityName>
+    </suppress>
 </suppressions>
