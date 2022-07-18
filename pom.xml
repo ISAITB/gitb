@@ -58,7 +58,7 @@
         <version.xmlWsRuntime>2.3.3</version.xmlWsRuntime>
         <version.gmbalApi>4.0.3</version.gmbalApi>
         <version.jaxpRi>1.4</version.jaxpRi>
-        <version.commonsConfiguration>2.7</version.commonsConfiguration>
+        <version.commonsConfiguration>2.8.0</version.commonsConfiguration>
         <version.akka>2.6.19</version.akka>
         <version.guava>31.1-jre</version.guava>
         <version.generex>1.0.2</version.generex>
