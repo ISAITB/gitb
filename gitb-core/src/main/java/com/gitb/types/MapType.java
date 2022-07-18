@@ -3,6 +3,7 @@ package com.gitb.types;
 import javax.xml.xpath.XPathExpression;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Created by senan on 9/8/14.
@@ -50,13 +51,16 @@ public class MapType extends ContainerType {
 
     @Override
     public void setValue(Object value) {
-        // The only allowed case is a direct assignment of another list of the same type.
+        Optional<Map<String, DataType>> itemsToSet = Optional.empty();
+        // The only allowed case is a direct assignment of another map.
         if (value instanceof MapType) {
+            itemsToSet = Optional.of((Map<String, DataType>)((MapType) value).getValue());
+        } else if (value instanceof Map) {
+            itemsToSet = Optional.of((Map<String, DataType>)value);
+        }
+        if (itemsToSet.isPresent()) {
             elements.clear();
-            Map<String, DataType> items = (Map<String, DataType>)((MapType) value).getValue();
-            for (Map.Entry<String, DataType> entry: items.entrySet()) {
-                elements.put(entry.getKey(), entry.getValue());
-            }
+            elements.putAll(itemsToSet.get());
         } else {
             throw new IllegalStateException("Only map types can be directly assigned to other map types.");
         }
