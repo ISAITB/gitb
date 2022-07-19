@@ -36,7 +36,7 @@
         <version.bouncycastle>1.70</version.bouncycastle>
         <version.helgerSchematron>6.3.0</version.helgerSchematron>
         <version.metaInfServices>1.9</version.metaInfServices>
-        <version.cxf>3.5.2</version.cxf>
+        <version.cxf>3.5.3</version.cxf>
         <version.httpComponents>4.5.13</version.httpComponents>
         <version.logback>1.2.11</version.logback>
         <version.slf4j>1.7.36</version.slf4j>
