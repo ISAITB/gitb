@@ -194,8 +194,14 @@
         },
         "responses": {
           "200": {
-            "description": "Test suite undeployed",
-            "content": {}
+            "description": "Test suite deployed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TestSuiteDeployResponse"
+                }
+              }
+            }
           },
           "400": {
             "description": "The received request was invalid.",
@@ -474,6 +480,7 @@
         "additionalProperties": false
       },
       "TestSuiteDeployViaFileRequest": {
+        "description": "Information on the test suite to deploy when the call is made as a multipart form submission.",
         "allOf": [
           {
             "$ref": "#/components/schemas/BaseTestSuiteDeployRequest"
@@ -494,6 +501,7 @@
         ]
       },
       "TestSuiteDeployViaBase64Request": {
+        "description": "Information on the test suite to deploy when the call is made as JSON.",
         "allOf": [
           {
             "$ref": "#/components/schemas/BaseTestSuiteDeployRequest"
@@ -539,6 +547,59 @@
         },
         "required": [
           "specification"
+        ],
+        "additionalProperties": false
+      },
+      "TestSuiteDeployResponse": {
+        "description": "Response for the test session deploy operation.",
+        "type": "object",
+        "properties": {
+          "completed": {
+            "description": "Whether or not the deployment was completed.",
+            "type": "boolean"
+          },
+          "errors": {
+            "description": "The list of errors resulting from the test suite's validation.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TestSuiteValidationReportItem"
+            }
+          },
+          "warnings": {
+            "description": "The list of warnings resulting from the test suite's validation.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TestSuiteValidationReportItem"
+            }
+          },
+          "messages": {
+            "description": "The list of information messages resulting from the test suite's validation.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TestSuiteValidationReportItem"
+            }
+          }
+        },
+        "required": [
+          "completed"
+        ],
+        "additionalProperties": false
+      },
+      "TestSuiteValidationReportItem": {
+        "description": "A test suite validation report finding.",
+        "type": "object",
+        "properties": {
+          "description": {
+            "description": "The finding's description.",
+            "type": "string"
+          },
+          "location": {
+            "description": "The path of the resource within the test suite that resulted in this finding.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "description"
         ],
         "additionalProperties": false
       },
