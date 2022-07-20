@@ -21,4 +21,46 @@
         <packageUrl regex="true">^pkg:maven/com\.lowagie/itext@.*$</packageUrl>
         <vulnerabilityName>CVE-2021-43113</vulnerabilityName>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: spring-aop-5.3.19.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.springframework/spring\-.*@.*$</packageUrl>
+        <cve>CVE-2016-1000027</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: xercesImpl-2.12.2.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/xerces/xercesImpl@.*$</packageUrl>
+        <cpe>cpe:/a:apache:xerces2_java</cpe>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: xercesImpl-2.12.2.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/xerces/xercesImpl@.*$</packageUrl>
+        <cpe>cpe:/a:apache:xerces-j</cpe>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: xercesImpl-2.12.2.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/xerces/xercesImpl@.*$</packageUrl>
+        <vulnerabilityName>CVE-2017-10355</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: tomcat-embed-core-9.0.64.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.tomcat\.embed/tomcat\-embed\-.+@.*$</packageUrl>
+        <cve>CVE-2022-34305</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: log4j-api-2.17.2.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.logging\.log4j/log4j\-api@.*$</packageUrl>
+        <cve>CVE-2022-33915</cve>
+    </suppress>
 </suppressions>

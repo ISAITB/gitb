@@ -6,5 +6,6 @@ export interface Specification {
     description?: string
     hidden: boolean
     domain: number
+    apiKey?: string
 
 }

@@ -193,6 +193,10 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 		new File(getTempFolder(), "reports")
 	}
 
+	def getRestApiDocsDocumentation(): File = {
+		new File(getTempFolder(), "openapi.json")
+	}
+
 	def getTempArchivedSessionWorkspaceFolder(): File = {
 		new File(getTempFolder(), "session_archive")
 	}

@@ -22,14 +22,18 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.XPathVariableResolver;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.regex.MatchResult;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * Created by senan on 9/8/14.
  */
 public class VariableResolver implements XPathVariableResolver{
+
     private static final Logger logger = LoggerFactory.getLogger(VariableResolver.class);
     //Regular expression for Variable Expressions and L-Values (Assignment to variables, Expression.source) in TDL
     // Valid Examples ('x' is the variable name):
@@ -52,6 +56,10 @@ public class VariableResolver implements XPathVariableResolver{
 	public static final Pattern INDEX_OR_KEY_PATTERN = Pattern.compile(INDEX_OR_KEY);
     public static final Pattern VARIABLE_PATTERN = Pattern.compile(VARIABLE);
 
+    private static final Pattern BRACKET_DETECTION_PATTERN = Pattern.compile("(?:'[^']*'|(\\$(?:[a-zA-Z][a-zA-Z\\-_0-9]*)(?:\\{(?:[\\$\\{\\}a-zA-Z\\-\\._0-9]*)\\})*))|(?:\"[^\"]*\"|(\\$(?:[a-zA-Z][a-zA-Z\\-_0-9]*)(?:\\{(?:[\\$\\{\\}a-zA-Z\\-\\._0-9]*)\\})*))");
+    private static final String CURLY_BRACKET_OPEN_REPLACEMENT = "_com.gitb.OPEN_";
+    private static final String CURLY_BRACKET_CLOSE_REPLACEMENT = "_com.gitb.CLOSE_";
+    private static final String DOLLAR_REPLACEMENT = "_com.gitb.DOLLAR_";
 
     private final TestCaseScope scope;
 
@@ -79,7 +87,7 @@ public class VariableResolver implements XPathVariableResolver{
      */
     @Override
     public Object resolveVariable(QName name) {
-        String variableExpression = "$"+name.getLocalPart();
+        String variableExpression = "$"+toTDLExpression(name.getLocalPart());
         DataType value = resolveVariable(variableExpression);
         if(value instanceof PrimitiveType){
             if(value instanceof BinaryType){
@@ -90,11 +98,11 @@ public class VariableResolver implements XPathVariableResolver{
             return value.getValue();
         }else if(value instanceof ListType){
             ListType list = (ListType)value;
-            List itemValues = new ArrayList();
+            var itemValues = new ArrayList<>();
             for(int i=0;i<list.getSize();i++) {
                 itemValues.add(list.getItem(i).getValue());
             }
-            NodeList result = null;
+            NodeList result;
             switch(list.getContainedType()){
                 case DataType.NUMBER_DATA_TYPE:
                 case DataType.STRING_DATA_TYPE:
@@ -303,4 +311,40 @@ public class VariableResolver implements XPathVariableResolver{
         }
     }
 
+    private static String processMatch(MatchResult match, int group, String expression) {
+        var matchedText = match.group(group);
+        if (matchedText != null) {
+            // Replace all curly brackets and all dollar signs except the first one (which is always there for matches).
+            var variableExpression = matchedText.substring(1)      // Remove initial dollar.
+                    .replace("{", CURLY_BRACKET_OPEN_REPLACEMENT)  // Replace curly brace open.
+                    .replace("}", CURLY_BRACKET_CLOSE_REPLACEMENT) // Replace curly brace close.
+                    .replace("$", DOLLAR_REPLACEMENT);             // Replace dollars.
+            variableExpression = "$"+variableExpression;           // Add initial dollar.
+            return new StringBuilder(expression)
+                        .replace(match.start(group), match.end(group), variableExpression)
+                        .toString();
+        } else {
+            return expression;
+        }
+    }
+
+    public static String toLegalXPath(String expression) {
+        // GITB TDL expressions contain curly braces for container types which are reserved characters in XPath 2.0+
+        var matcher = BRACKET_DETECTION_PATTERN.matcher(expression);
+        List<MatchResult> matches = matcher.results().collect(Collectors.toList());
+        // Reverse so that the sections to replace don't overlap with the replacements.
+        Collections.reverse(matches);
+        for (var match: matches) {
+            for (int i=1; i <= matcher.groupCount(); i++) {
+                expression = processMatch(match, i, expression);
+            }
+        }
+        return expression;
+    }
+
+    public static String toTDLExpression(String expression) {
+        return expression.replace(CURLY_BRACKET_OPEN_REPLACEMENT, "{")
+                .replace(CURLY_BRACKET_CLOSE_REPLACEMENT, "}")
+                .replace(DOLLAR_REPLACEMENT, "$");
+    }
 }

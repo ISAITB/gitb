@@ -25,6 +25,13 @@
             <div class="col-xs-7"><input id="email" name="email" [(ngModel)]="community.email" class="form-control" type="text"></div>
             <app-tooltip tbTooltip="This email address is used to receive contact form submissions (if supported) from community members and other notifications."></app-tooltip>
         </div>
+        <div class="form-group" *ngIf="dataService.configuration.automationApiEnabled && community.id != undefined">
+            <label class="col-xs-3 control-label" for="apiKey">API key:</label>
+            <div class="col-xs-7">
+                <app-api-key-text id="apiKey" name="apiKey" [key]="community.apiKey!"></app-api-key-text>
+            </div>
+            <app-tooltip [tbTooltip]="'The key to use when calling the Test Bed\'s REST API to identify the community.'"></app-tooltip>
+        </div>
         <div *ngIf="selfRegEnabled" class="form-group">
             <label class="col-xs-3 control-label" for="selfRegType">* Self-registration method:</label>
             <div class="col-xs-7">

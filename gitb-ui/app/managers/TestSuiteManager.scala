@@ -6,6 +6,7 @@ import models.Enums.TestSuiteReplacementChoiceHistory.TestSuiteReplacementChoice
 import models.Enums.TestSuiteReplacementChoiceMetadata.TestSuiteReplacementChoiceMetadata
 import models.Enums.{TestResultStatus, TestSuiteReplacementChoice, TestSuiteReplacementChoiceHistory, TestSuiteReplacementChoiceMetadata}
 import models._
+import models.automation.TestSuiteDeployRequest
 import org.apache.commons.io.FileUtils
 import org.slf4j.{Logger, LoggerFactory}
 import persistence.db.PersistenceSchema
@@ -66,6 +67,29 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 
 	def getById(testSuiteId: Long): Option[TestSuites] = {
 		exec(PersistenceSchema.testSuites.filter(_.id === testSuiteId).map(TestSuiteManager.withoutDocumentation).result.headOption).map(TestSuiteManager.tupleToTestSuite)
+	}
+
+	def getTestSuiteIdByApiKeys(communityApiKey: String, specificationApiKey: String, testSuiteIdentifier: String): Option[Long] = {
+		exec(for {
+			communityDomainId <- {
+				PersistenceSchema.communities.filter(_.apiKey === communityApiKey).map(_.domain).result.headOption
+			}
+			relevantDomainId <- {
+				if (communityDomainId.isDefined) {
+					DBIO.successful(communityDomainId.get)
+				} else {
+					throw new IllegalStateException("Community not found for API provided key")
+				}
+			}
+			specificationId <- PersistenceSchema.specifications.filter(_.apiKey === specificationApiKey).filterOpt(relevantDomainId)((q, id) => q.domain === id).map(_.id).result.headOption
+			testSuiteId <- {
+				if (specificationId.isDefined) {
+					PersistenceSchema.testSuites.filter(_.specification === specificationId.get).filter(_.identifier === testSuiteIdentifier).map(_.id).result.headOption
+				} else {
+					throw new IllegalArgumentException("Specification not found for provided API key")
+				}
+			}
+		} yield testSuiteId)
 	}
 
 	def getTestSuitesWithSpecificationId(specification: Long): List[TestSuites] = {
@@ -219,6 +243,39 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 			  .result
 			  .headOption
 		).isDefined
+	}
+
+	def deployTestSuiteFromApi(specification: Specifications, deployRequest: TestSuiteDeployRequest, tempTestSuiteArchive: File): TestSuiteUploadResult = {
+		val result = new TestSuiteUploadResult()
+		result.validationReport = validateTestSuite(List(specification.id), tempTestSuiteArchive)
+		val hasErrors = result.validationReport.getCounters.getNrOfErrors.longValue() > 0
+		val hasWarnings = result.validationReport.getCounters.getNrOfWarnings.longValue() > 0
+		if (!hasErrors && (!hasWarnings || deployRequest.ignoreWarnings)) {
+			// Go ahead
+			val testSuite = repositoryUtils.getTestSuiteFromZip(specification.id, tempTestSuiteArchive, completeParse = true)
+			if (testSuite.isDefined) {
+				setTestSuiteSpecification(testSuite.get, specification.id)
+				val onSuccessCalls = mutable.ListBuffer[() => _]()
+				val onFailureCalls = mutable.ListBuffer[() => _]()
+				var historyReplace = TestSuiteReplacementChoiceHistory.KEEP
+				if (deployRequest.replaceTestHistory) {
+					historyReplace = TestSuiteReplacementChoiceHistory.DROP
+				}
+				var metadataReplace = TestSuiteReplacementChoiceMetadata.SKIP
+				if (deployRequest.updateSpecification) {
+					metadataReplace = TestSuiteReplacementChoiceMetadata.UPDATE
+				}
+				val action = replaceTestSuiteInternal(testSuite.get.toCaseObject, testSuite.get.actors, testSuite.get.testCases, tempTestSuiteArchive, historyReplace, metadataReplace, onSuccessCalls, onFailureCalls)
+				import scala.jdk.CollectionConverters._
+				result.items.addAll(exec(dbActionFinalisation(Some(onSuccessCalls), Some(onFailureCalls), action).transactionally).asJavaCollection)
+				result.success = true
+			} else {
+				throw new IllegalArgumentException("Test suite could be read from archive")
+			}
+		} else {
+			result.needsConfirmation = true
+		}
+		result
 	}
 
 	def deployTestSuiteFromZipFile(specifications: List[Long], tempTestSuiteArchive: File): TestSuiteUploadResult = {

@@ -1,10 +1,11 @@
 package managers
 
 import javax.inject.{Inject, Singleton}
-import models.Specifications
+import models.{Constants, Specifications}
 import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
+
 import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
@@ -30,14 +31,45 @@ class SpecificationManager @Inject() (actorManager: ActorManager, testResultMana
     exec(PersistenceSchema.specifications.filter(_.id inSet specIds).result.map(_.toList))
   }
 
-  def updateSpecificationInternal(specId: Long, sname: String, fname: String, descr: Option[String], hidden:Boolean): DBIO[_] = {
-    val q = for {s <- PersistenceSchema.specifications if s.id === specId} yield (s.shortname, s.fullname, s.description, s.hidden)
-    q.update(sname, fname, descr, hidden) andThen
-      testResultManager.updateForUpdatedSpecification(specId, sname)
+  def getSpecificationByApiKeys(apiKey: String, communityApiKey: String): Option[Specifications] = {
+    exec(for {
+      communityIds <- {
+        PersistenceSchema.communities.filter(_.apiKey === communityApiKey).map(x => (x.id, x.domain)).result.headOption
+      }
+      relevantDomainId <- {
+        if (communityIds.isDefined) {
+          var domainId: Option[Long] = None
+          if (communityIds.get._1 != Constants.DefaultCommunityId) {
+            domainId = communityIds.get._2
+          }
+          DBIO.successful(domainId)
+        } else {
+          throw new IllegalStateException("Community not found for provided API key")
+        }
+      }
+      specification <- PersistenceSchema.specifications.filter(_.apiKey === apiKey).filterOpt(relevantDomainId)((q, id) => q.domain === id).result.headOption
+    } yield specification)
+  }
+
+  def updateSpecificationInternal(specId: Long, sname: String, fname: String, descr: Option[String], hidden:Boolean, apiKey: Option[String]): DBIO[_] = {
+    for {
+      _ <- {
+        val q = for {s <- PersistenceSchema.specifications if s.id === specId} yield (s.shortname, s.fullname, s.description, s.hidden)
+        q.update(sname, fname, descr, hidden) andThen
+          testResultManager.updateForUpdatedSpecification(specId, sname)
+      }
+      _ <- {
+        if (apiKey.isDefined) {
+          PersistenceSchema.specifications.filter(_.id === specId).map(_.apiKey).update(apiKey.get)
+        } else {
+          DBIO.successful(())
+        }
+      }
+    } yield ()
   }
 
   def updateSpecification(specId: Long, sname: String, fname: String, descr: Option[String], hidden:Boolean) = {
-    exec(updateSpecificationInternal(specId, sname, fname, descr, hidden).transactionally)
+    exec(updateSpecificationInternal(specId, sname, fname, descr, hidden, None).transactionally)
   }
 
   def getSpecificationIdOfActor(actorId: Long) = {

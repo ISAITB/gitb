@@ -54,7 +54,7 @@ class AccountManager @Inject()(dbConfigProvider: DatabaseConfigProvider) extends
         Communities(x._9, x._10, x._11, None, -1, None, None, selfregNotification = false, None, SelfRegistrationRestriction.NoRestriction.id.toShort, selfRegForceTemplateSelection = false, selfRegForceRequiredProperties = false,
           allowCertificateDownload = false, allowStatementManagement = false, allowSystemManagement = false,
           allowPostTestOrganisationUpdates = false, allowPostTestSystemUpdates = false, allowPostTestStatementUpdates = false,
-          allowAutomationApi = false,
+          allowAutomationApi = false, "",
           None)
       ))
     results.sorted
@@ -89,7 +89,7 @@ class AccountManager @Inject()(dbConfigProvider: DatabaseConfigProvider) extends
       Communities(x._9, x._10, x._11, None, -1, None, None, selfregNotification = false, None, SelfRegistrationRestriction.NoRestriction.id.toShort, selfRegForceTemplateSelection = false, selfRegForceRequiredProperties = false,
         allowCertificateDownload = false, allowStatementManagement = false, allowSystemManagement = false,
         allowPostTestOrganisationUpdates = false, allowPostTestSystemUpdates = false, allowPostTestStatementUpdates = false,
-        allowAutomationApi = false,
+        allowAutomationApi = false, "",
         None)
     ))
     results.sorted

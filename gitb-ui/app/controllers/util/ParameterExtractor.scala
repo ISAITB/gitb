@@ -8,7 +8,7 @@ import models.{Actor, Actors, Communities, Domain, Endpoints, ErrorTemplates, Fi
 import org.apache.commons.lang3.StringUtils
 import org.mindrot.jbcrypt.BCrypt
 import play.api.mvc._
-import utils.{ClamAVClient, HtmlUtil, JsonUtil}
+import utils.{ClamAVClient, CryptoUtil, HtmlUtil, JsonUtil}
 
 import java.io.File
 import java.util.concurrent.ThreadLocalRandom
@@ -310,7 +310,7 @@ object ParameterExtractor {
       selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties,
       allowCertificateDownload, allowStatementManagement, allowSystemManagement,
       allowPostTestOrganisationUpdate, allowPostTestSystemUpdate, allowPostTestStatementUpdate, allowAutomationApi,
-      domainId
+      CryptoUtil.generateApiKey(), domainId
     )
   }
 
@@ -421,7 +421,7 @@ object ParameterExtractor {
 			case _ => None
 		}
 
-		Specifications(0L, sname, fname, descr, hidden, domain.getOrElse(0L))
+		Specifications(0L, sname, fname, descr, hidden, CryptoUtil.generateApiKey(), domain.getOrElse(0L))
 	}
 
 	def extractActor(request:Request[AnyContent]):Actor = {

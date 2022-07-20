@@ -94,8 +94,36 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
   }
 
   def canManageSessionsThroughAutomationApi(request: RequestWithAttributes[_]): Boolean = {
-    val ok = Configurations.AUTOMATION_API_ENABLED && request.headers.get(Constants.AutomationHeader).isDefined
+    var ok = false
+    if (Configurations.AUTOMATION_API_ENABLED) {
+      val apiKey = request.headers.get(Constants.AutomationHeader)
+      if (apiKey.isDefined) {
+        // Check to see that the api key identifies an organisation in a community that allows API usage.
+        val organisation = organizationManager.getByApiKey(apiKey.get)
+        if (organisation.isDefined) {
+          val community = communityManager.getById(organisation.get.community)
+          if (community.isDefined && community.get.allowAutomationApi) {
+            ok = true
+          }
+        }
+      }
+    }
     setAuthResult(request, ok, "You are not allowed to manage test sessions through the automation API")
+  }
+
+  def canManageTestSuitesThroughAutomationApi(request: RequestWithAttributes[_]): Boolean = {
+    var ok = false
+    if (Configurations.AUTOMATION_API_ENABLED) {
+      val apiKey = request.headers.get(Constants.AutomationHeader)
+      if (apiKey.isDefined) {
+        // Check to see that the API key identifies a community that allows API usage.
+        val community = communityManager.getByApiKey(apiKey.get)
+        if (community.isDefined && (community.get.allowAutomationApi || (community.get.id == Constants.DefaultCommunityId))) {
+          ok = true
+        }
+      }
+    }
+    setAuthResult(request, ok, "You are not allowed to manage test suites through the automation API")
   }
 
   def canSelfRegister(request: RequestWithAttributes[_], organisation: Organizations, organisationAdmin: Users, selfRegToken: Option[String], templateId: Option[Long]): Boolean = {

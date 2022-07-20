@@ -12,8 +12,9 @@ import utils.RepositoryUtils
 
 import javax.inject.Inject
 import scala.collection.mutable.ListBuffer
+import scala.concurrent.ExecutionContext
 
-class Application @Inject() (cc: ControllerComponents, defaultAction: DefaultActionBuilder, systemConfigurationManager: SystemConfigurationManager, legalNoticeManager: LegalNoticeManager, environment: Environment, repositoryUtils: RepositoryUtils) extends AbstractController(cc) {
+class Application @Inject() (implicit ec: ExecutionContext, cc: ControllerComponents, defaultAction: DefaultActionBuilder, systemConfigurationManager: SystemConfigurationManager, legalNoticeManager: LegalNoticeManager, environment: Environment, repositoryUtils: RepositoryUtils) extends AbstractController(cc) {
 
   def index() = defaultAction {
     val legalNotice = legalNoticeManager.getCommunityDefaultLegalNotice(Constants.DefaultCommunityId)
@@ -70,6 +71,17 @@ class Application @Inject() (cc: ControllerComponents, defaultAction: DefaultAct
       ACCESS_CONTROL_ALLOW_METHODS -> CorsFilter.methods,
       ACCESS_CONTROL_ALLOW_HEADERS -> CorsFilter.headers
     )
+  }
+
+  def restApiInfo = defaultAction {
+    if (Configurations.AUTOMATION_API_ENABLED) {
+      Ok.sendFile(
+        content = repositoryUtils.getRestApiDocsDocumentation(),
+        fileName = _ => Some("openapi.json")
+      ).as("application/json")
+    } else {
+      NotFound
+    }
   }
 
   def javascriptRoutes = defaultAction { implicit request =>

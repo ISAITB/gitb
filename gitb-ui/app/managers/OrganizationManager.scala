@@ -118,6 +118,10 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils, systemMan
     exec(PersistenceSchema.organizations.filter(_.id === id).result.headOption)
   }
 
+  def getByApiKey(apiKey: String): Option[Organizations] = {
+    exec(PersistenceSchema.organizations.filter(_.apiKey === apiKey).result.headOption)
+  }
+
   /**
     * Gets organization with specified id
     */

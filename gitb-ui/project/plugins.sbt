@@ -6,7 +6,7 @@ resolvers += Resolver.url(
        Resolver.ivyStylePatterns)
 
 // The Play plugin
-addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.8.15")
+addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.8.16")
 
 // web plugins
 
@@ -18,9 +18,9 @@ addSbtPlugin("com.typesafe.sbt" % "sbt-digest" % "1.1.4")
 
 addSbtPlugin("com.typesafe.sbt" % "sbt-gzip" % "1.0.2")
 
-addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "1.2.0")
+addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "2.0.0-RC1")
 
-addSbtPlugin("net.virtual-void" % "sbt-dependency-graph" % "0.10.0-RC1")
+addDependencyTreePlugin
 
 // Run manually with "sbt dependencyCheck".
-addSbtPlugin("net.vonbuchholtz" % "sbt-dependency-check" % "4.0.0")
+addSbtPlugin("net.vonbuchholtz" % "sbt-dependency-check" % "4.1.0")

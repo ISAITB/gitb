@@ -22,3 +22,10 @@
         <app-tooltip [tbTooltip]="'Check this to hide the '+dataService.labelSpecificationLower()+' as an available option for new conformance statements. Doing so effectively deprecates the '+dataService.labelSpecificationLower()+' but keeps testing history intact.'" [inline]="true"></app-tooltip>
     </div>
 </div>
+<div class="form-group" *ngIf="dataService.configuration.automationApiEnabled && specification.id != undefined">
+    <label class="col-xs-3 control-label" for="apiKey">API key:</label>
+    <div class="col-xs-7">
+        <app-api-key-text id="apiKey" name="apiKey" [key]="specification.apiKey!"></app-api-key-text>
+    </div>
+    <app-tooltip [tbTooltip]="'The key to use when calling the Test Bed\'s REST API to identify the '+dataService.labelSpecificationLower()+'.'"></app-tooltip>
+</div>

@@ -75,7 +75,7 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
   ngOnInit(): void {
     this.domainId = Number(this.route.snapshot.paramMap.get('id'))
     this.specificationId = Number(this.route.snapshot.paramMap.get('spec_id'))
-		this.conformanceService.getSpecificationsWithIds([this.specificationId])
+		this.conformanceService.getSpecificationsWithIds([this.specificationId], undefined, true)
 		.subscribe((data) => {
       this.specification = data[0]
     })

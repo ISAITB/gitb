@@ -31,8 +31,9 @@ object PersistenceSchema {
     def allowPostTestSystemUpdates = column[Boolean]("allow_post_test_sys_updates")
     def allowPostTestStatementUpdates = column[Boolean]("allow_post_test_stm_updates")
     def allowAutomationApi = column[Boolean]("allow_automation_api")
+    def apiKey = column[String]("api_key")
     def domain = column[Option[Long]] ("domain")
-    def * = (id, shortname, fullname, supportEmail, selfRegType, selfRegToken, selfRegTokenHelpText, selfregNotification, description, selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties, allowCertificateDownload, allowStatementManagement, allowSystemManagement, allowPostTestOrganisationUpdates, allowPostTestSystemUpdates, allowPostTestStatementUpdates, allowAutomationApi, domain) <> (Communities.tupled, Communities.unapply)
+    def * = (id, shortname, fullname, supportEmail, selfRegType, selfRegToken, selfRegTokenHelpText, selfregNotification, description, selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties, allowCertificateDownload, allowStatementManagement, allowSystemManagement, allowPostTestOrganisationUpdates, allowPostTestSystemUpdates, allowPostTestStatementUpdates, allowAutomationApi, apiKey, domain) <> (Communities.tupled, Communities.unapply)
   }
   val communities = TableQuery[CommunitiesTable]
   val insertCommunity = communities returning communities.map(_.id)
@@ -101,8 +102,9 @@ object PersistenceSchema {
     def fullname = column[String]("fname")
     def description = column[Option[String]]("description", O.SqlType("TEXT"))
     def hidden = column[Boolean]("is_hidden")
+    def apiKey = column[String]("api_key")
     def domain = column[Long]("domain")
-    def * = (id, shortname, fullname, description, hidden, domain) <> (Specifications.tupled, Specifications.unapply)
+    def * = (id, shortname, fullname, description, hidden, apiKey, domain) <> (Specifications.tupled, Specifications.unapply)
   }
   val specifications = TableQuery[SpecificationsTable]
 
