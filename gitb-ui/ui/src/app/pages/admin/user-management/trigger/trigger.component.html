@@ -107,7 +107,7 @@
                                             </thead>
                                             <tbody>
                                                 <tr *ngFor="let parameter of domainParameters; let index = index" (click)="parameter.selected = !parameter.selected">
-                                                   <td><input type="checkbox" [name]="'parameterData'+index" [(ngModel)]="parameter.selected"></td>
+                                                   <td><input type="checkbox" [name]="'parameterData'+index" [(ngModel)]="parameter.selected" (click)="$event.stopPropagation()"></td>
                                                    <td>{{parameter.name}}</td> 
                                                    <td>{{parameterType(parameter)}}</td>
                                                 </tr>
@@ -135,7 +135,7 @@
                                             </thead>
                                             <tbody>
                                                 <tr *ngFor="let parameter of organisationParameters; let index = index" (click)="parameter.selected = !parameter.selected">
-                                                   <td><input type="checkbox" [name]="'orgParameter'+index" [(ngModel)]="parameter.selected"></td>
+                                                   <td><input type="checkbox" [name]="'orgParameter'+index" [(ngModel)]="parameter.selected" (click)="$event.stopPropagation()"></td>
                                                    <td>{{parameter.name}}</td> 
                                                    <td>{{parameterType(parameter)}}</td>
                                                    <td>{{parameter.testKey}}</td> 
@@ -164,7 +164,7 @@
                                             </thead>
                                             <tbody>
                                                 <tr *ngFor="let parameter of systemParameters; let index = index" (click)="parameter.selected = !parameter.selected">
-                                                   <td><input type="checkbox" [name]="'sysParam'+index" [(ngModel)]="parameter.selected"></td>
+                                                   <td><input type="checkbox" [name]="'sysParam'+index" [(ngModel)]="parameter.selected" (click)="$event.stopPropagation()"></td>
                                                    <td>{{parameter.name}}</td> 
                                                    <td>{{parameterType(parameter)}}</td>
                                                    <td>{{parameter.testKey}}</td> 
@@ -192,7 +192,7 @@
                                             </thead>
                                             <tbody>
                                                 <tr *ngFor="let parameter of statementParameters; let index = index" (click)="parameter.selected = !parameter.selected">
-                                                   <td><input type="checkbox" [name]="'stmtParam'+index" [(ngModel)]="parameter.selected"></td>
+                                                   <td><input type="checkbox" [name]="'stmtParam'+index" [(ngModel)]="parameter.selected" (click)="$event.stopPropagation()"></td>
                                                    <td>{{parameter.name}}</td> 
                                                    <td>{{parameterType(parameter)}}</td>
                                                 </tr>
