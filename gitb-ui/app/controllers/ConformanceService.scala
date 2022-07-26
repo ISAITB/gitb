@@ -740,4 +740,10 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
     }
   }
 
+  def getStatementParametersOfCommunity(communityId: Long) = authorizedAction { request =>
+    authorizationManager.canManageCommunity(request, communityId)
+    val result = conformanceManager.getStatementParametersByCommunityId(communityId)
+    val json = JsonUtil.jsStatementParametersMinimal(result).toString()
+    ResponseConstructor.constructJsonResponse(json)
+  }
 }

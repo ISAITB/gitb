@@ -49,20 +49,20 @@
                     <div class="col-xs-10 col-xs-offset-1">
                         <div class="form-group">
                             <label class="col-xs-3 control-label" for="url">* Endpoint URL:</label>
-                            <div class="col-xs-7">
-                                <input id="url" name="url" [(ngModel)]="trigger.url" class="form-control" type="text">
-                            </div>
-                            <div class="col-xs-1">
-                                <button style="width:55px" class="btn btn-default" type="button" (click)="testEndpoint()" [pending]="testPending" [disable]="!trigger.url" [icon]="true">Test</button>
+                            <div class="col-xs-8">
+                                <div class="input-group">
+                                    <input id="url" name="url" [(ngModel)]="trigger.url" class="form-control" type="text">
+                                    <div class="input-group-btn">
+                                        <button class="btn btn-default" type="button" (click)="testEndpoint()" [pending]="testPending" [disable]="!trigger.url">Test</button>
+                                    </div>
+                                </div>
                             </div>
                             <app-tooltip tbTooltip="The URL of the web service that will be called when the trigger fires. This URL must be provided as the full address needed to resolve the service's WSDL. Note that the URL provided is the one the Test Bed will use internally for the call (i.e. it doesn't have to be publicly available)."></app-tooltip>
                         </div>
                         <div class="form-group">
                             <label class="col-xs-3 control-label" for="operation">Operation:</label>
-                            <div class="col-xs-7"><input id="operation" name="operation" [(ngModel)]="trigger.operation" class="form-control" type="text"></div>
-                            <div class="col-xs-offset-1 col-xs-1 no-left-padding">
-                                <app-tooltip tbTooltip="An optional operation identifier to pass to the service. As a GITB processing service may define multiple operations this identifier can be used to determine the one intended by this trigger."></app-tooltip>
-                            </div>
+                            <div class="col-xs-8"><input id="operation" name="operation" [(ngModel)]="trigger.operation" class="form-control" type="text"></div>
+                            <app-tooltip tbTooltip="An optional operation identifier to pass to the service. As a GITB processing service may define multiple operations this identifier can be used to determine the one intended by this trigger."></app-tooltip>
                         </div>
                         <div class="form-group">
                             <label class="col-xs-3 control-label">Input data:</label>
@@ -82,6 +82,9 @@
                                 <label class="checkbox-inline" *ngIf="triggerData.actor.visible">
                                     <input type="checkbox" name="actorData" [(ngModel)]="triggerData.actor.selected">{{dataTypeMap[triggerData.actor.dataType]}}
                                 </label>
+                                <label class="checkbox-inline" *ngIf="triggerData.testSession.visible">
+                                    <input type="checkbox" name="testSessionData" [(ngModel)]="triggerData.testSession.selected">{{dataTypeMap[triggerData.testSession.dataType]}}
+                                </label>
                             </div>
                             <div class="col-xs-1 no-left-padding">
                                 <app-tooltip tbTooltip="Optional data that will be provided as input to the service when it is called. The type of data available depends on the trigger's event type."></app-tooltip>
@@ -97,7 +100,7 @@
                                         <table class="table">
                                             <thead>
                                                 <tr>
-                                                    <th></th>
+                                                    <th class="checkColumn"></th>
                                                     <th>Identifier</th>
                                                     <th>Type</th>
                                                 </tr>
@@ -124,7 +127,7 @@
                                         <table class="table">
                                             <thead>
                                                 <tr>
-                                                    <th></th>
+                                                    <th class="checkColumn"></th>
                                                     <th>Name</th>
                                                     <th>Type</th>
                                                     <th>Identifier</th>
@@ -153,7 +156,7 @@
                                         <table class="table">
                                             <thead>
                                                 <tr>
-                                                    <th></th>
+                                                    <th class="checkColumn"></th>
                                                     <th>Name</th>
                                                     <th>Type</th>
                                                     <th>Identifier</th>
@@ -165,6 +168,33 @@
                                                    <td>{{parameter.name}}</td> 
                                                    <td>{{parameterType(parameter)}}</td>
                                                    <td>{{parameter.testKey}}</td> 
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                            <div *ngIf="triggerData.statementParameter.visible">
+                                <div class="col-xs-offset-3 col-xs-8 trigger-data-checks">
+                                    <label class="checkbox-inline">
+                                        <input type="checkbox" name="stmtParameterData" [(ngModel)]="triggerData.statementParameter.selected">{{dataTypeMap[triggerData.statementParameter.dataType]}}
+                                    </label>
+                                </div>
+                                <div class="col-xs-offset-3 col-xs-8" [collapse]="!triggerData.statementParameter.selected" [isAnimated]="true">
+                                    <div class="trigger-data-properties-container table-container">
+                                        <table class="table">
+                                            <thead>
+                                                <tr>
+                                                    <th class="checkColumn"></th>
+                                                    <th>Identifier</th>
+                                                    <th>Type</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr *ngFor="let parameter of statementParameters; let index = index" (click)="parameter.selected = !parameter.selected">
+                                                   <td><input type="checkbox" [name]="'stmtParam'+index" [(ngModel)]="parameter.selected"></td>
+                                                   <td>{{parameter.name}}</td> 
+                                                   <td>{{parameterType(parameter)}}</td>
                                                 </tr>
                                             </tbody>
                                         </table>

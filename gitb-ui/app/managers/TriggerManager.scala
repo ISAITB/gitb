@@ -3,9 +3,9 @@ package managers
 import com.gitb.core.{AnyContent, ValueEmbeddingEnumeration}
 import com.gitb.ps.{GetModuleDefinitionResponse, ProcessRequest, ProcessingServiceService}
 import com.gitb.utils.XMLUtils
+import models.Enums.TriggerDataType
 import models.Enums.TriggerDataType.TriggerDataType
-import models.Enums.TriggerEventType.TriggerEventType
-import models.Enums.{TriggerDataType, TriggerEventType}
+import models.Enums.TriggerEventType._
 import models._
 import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
@@ -19,13 +19,14 @@ import java.util.Base64
 import javax.inject.{Inject, Singleton}
 import javax.xml.bind.JAXBElement
 import javax.xml.namespace.QName
+import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 
 @Singleton
-class TriggerManager @Inject()(repositoryUtils: RepositoryUtils, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class TriggerManager @Inject()(repositoryUtils: RepositoryUtils, triggerDataLoader: TriggerDataLoader, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
 
@@ -293,6 +294,33 @@ class TriggerManager @Inject()(repositoryUtils: RepositoryUtils, dbConfigProvide
     resultMap.iterator.toMap
   }
 
+  private def loadStatementParameterKeys(parameterIds: List[Long]): Map[Long, String] = {
+    exec(PersistenceSchema.parameters.filter(_.id inSet parameterIds).map(x => (x.id, x.name)).result).toMap
+  }
+
+  private def loadStatementParameterData(parameterKeys: Map[Long, String], actorId: Option[Long], systemId: Option[Long]): Map[String, (Long, String, Option[String], Option[Long], Option[String])] = {
+    var data: List[(String, Long, String, Option[String], Option[Long], Option[String])] = null // key, ID, kind, value, system ID, contentType
+    if (systemId.isDefined && actorId.isDefined) {
+      data = exec(
+        PersistenceSchema.parameters
+          .join(PersistenceSchema.configs).on(_.id === _.parameter)
+          .join(PersistenceSchema.endpoints).on(_._1.endpoint === _.id)
+          .filter(_._2.actor === actorId.get)
+          .filter(_._1._2.system === systemId.get)
+          .filter(_._1._1.name inSet parameterKeys.values)
+          .map(x => (x._1._1.name, x._1._1.id, x._1._1.kind, x._1._2.value, x._1._2.contentType))
+          .result
+      ).map(x => (x._1, x._2, x._3, Some(x._4), systemId, x._5)).toList
+    } else {
+      data = parameterKeys.map(x => (x._2, x._1, "SIMPLE", None, None, None)).toList
+    }
+    val resultMap = mutable.Map[String, (Long, String, Option[String], Option[Long], Option[String])]()
+    data.foreach { dataItem =>
+      resultMap += (dataItem._1 -> ((dataItem._2, dataItem._3, dataItem._4, dataItem._5, dataItem._6)))
+    }
+    resultMap.iterator.toMap
+  }
+
   private def fromCache[T](cache: mutable.Map[String, Any], cacheKey: String, fnLoad: () => T): T = {
     if (cache.contains(cacheKey)) {
       cache(cacheKey).asInstanceOf[T]
@@ -307,6 +335,8 @@ class TriggerManager @Inject()(repositoryUtils: RepositoryUtils, dbConfigProvide
     var organisationParameterData: Map[Long, (String, String, Option[String], Option[Long], Option[String])] = null
     var systemParameterData: Map[Long, (String, String, Option[String], Option[Long], Option[String])] = null
     var domainParameterData: Map[Long, (String, String, Option[String], Long, Option[String])] = null
+    var statementParameterData: Map[String, (Long, String, Option[String], Option[Long], Option[String])] = null // key => (kind, value, system ID, contentType)
+    var statementParameterKeys: Map[Long, String] = null
     if (trigger.data.isDefined) {
       if (hasTriggerDataType(trigger.data.get, TriggerDataType.OrganisationParameter)) {
         organisationParameterData = fromCache(dataCache, "organisationParameterData", () => loadOrganisationParameterData(trigger.data.get.map(x => x.dataId), TriggerCallbacks.organisationId(callbacks)))
@@ -316,6 +346,11 @@ class TriggerManager @Inject()(repositoryUtils: RepositoryUtils, dbConfigProvide
       }
       if (hasTriggerDataType(trigger.data.get, TriggerDataType.DomainParameter)) {
         domainParameterData = fromCache(dataCache, "domainParameterData", () => loadDomainParameterData(trigger.data.get.map(x => x.dataId)))
+      }
+      if (hasTriggerDataType(trigger.data.get, TriggerDataType.StatementParameter)) {
+        // Load the parameter keys (names) (the recorded IDs in the trigger definition are only indicative).
+        statementParameterKeys = fromCache(dataCache, "statementParameterKeys", () => loadStatementParameterKeys(trigger.data.get.map(x => x.dataId)))
+        statementParameterData = fromCache(dataCache, "statementParameterData", () => loadStatementParameterData(statementParameterKeys, TriggerCallbacks.actorId(callbacks), TriggerCallbacks.systemId(callbacks)))
       }
     }
     val request = new ProcessRequest()
@@ -327,9 +362,11 @@ class TriggerManager @Inject()(repositoryUtils: RepositoryUtils, dbConfigProvide
     var systemData: Option[AnyContent] = None
     var actorData: Option[AnyContent] = None
     var specificationData: Option[AnyContent] = None
+    var testSessionData: Option[AnyContent] = None
     var orgParamData: Option[AnyContent] = None
     var sysParamData: Option[AnyContent] = None
     var domainParamData: Option[AnyContent] = None
+    var statementParamData: Option[AnyContent] = None
     if (trigger.data.isDefined) {
       trigger.data.get.foreach { dataItem =>
         TriggerDataType.apply(dataItem.dataType) match {
@@ -347,7 +384,7 @@ class TriggerManager @Inject()(repositoryUtils: RepositoryUtils, dbConfigProvide
               organisationData.get.getItem.add(toAnyContent("shortName", "string", "Organisation short name", None))
               organisationData.get.getItem.add(toAnyContent("fullName", "string", "Organisation full name", None))
             } else {
-              val organisation:Option[(String, String)] = fromCache(dataCache, "organisationData", () => exec(PersistenceSchema.organizations.filter(_.id === organisationId.get).map(x => (x.shortname, x.fullname)).result.headOption))
+              val organisation = fromCache(dataCache, "organisationData", () => exec(PersistenceSchema.organizations.filter(_.id === organisationId.get).map(x => (x.shortname, x.fullname)).result.headOption))
               if (organisation.isDefined) {
                 organisationData.get.getItem.add(toAnyContent("id", "number", organisationId.get.toString, None))
                 organisationData.get.getItem.add(toAnyContent("shortName", "string", organisation.get._1, None))
@@ -362,7 +399,7 @@ class TriggerManager @Inject()(repositoryUtils: RepositoryUtils, dbConfigProvide
               systemData.get.getItem.add(toAnyContent("shortName", "string", "System short name", None))
               systemData.get.getItem.add(toAnyContent("fullName", "string", "System full name", None))
             } else {
-              val system:Option[(String, String)] = fromCache(dataCache, "systemData", () => exec(PersistenceSchema.systems.filter(_.id === systemId.get).map(x => (x.shortname, x.fullname)).result.headOption))
+              val system = fromCache(dataCache, "systemData", () => exec(PersistenceSchema.systems.filter(_.id === systemId.get).map(x => (x.shortname, x.fullname)).result.headOption))
               if (system.isDefined) {
                 systemData.get.getItem.add(toAnyContent("id", "number", systemId.get.toString, None))
                 systemData.get.getItem.add(toAnyContent("shortName", "string", system.get._1, None))
@@ -381,7 +418,7 @@ class TriggerManager @Inject()(repositoryUtils: RepositoryUtils, dbConfigProvide
               specificationData.get.getItem.add(toAnyContent("shortName", "string", "Specification short name", None))
               specificationData.get.getItem.add(toAnyContent("fullName", "string", "Specification full name", None))
             } else {
-              val specification:Option[(String, String)] = fromCache(dataCache, "specificationData", () => exec(PersistenceSchema.specifications.filter(_.id === specificationId.get).map(x => (x.shortname, x.fullname)).result.headOption))
+              val specification = fromCache(dataCache, "specificationData", () => exec(PersistenceSchema.specifications.filter(_.id === specificationId.get).map(x => (x.shortname, x.fullname)).result.headOption))
               if (specification.isDefined) {
                 specificationData.get.getItem.add(toAnyContent("id", "number", specificationId.get.toString, None))
                 specificationData.get.getItem.add(toAnyContent("shortName", "string", specification.get._1, None))
@@ -396,12 +433,51 @@ class TriggerManager @Inject()(repositoryUtils: RepositoryUtils, dbConfigProvide
               actorData.get.getItem.add(toAnyContent("actorIdentifier", "string", "Actor identifier", None))
               actorData.get.getItem.add(toAnyContent("name", "string", "Actor name", None))
             } else {
-              val actor: Option[(String, String)] = fromCache(dataCache, "actorData", () => exec(PersistenceSchema.actors.filter(_.id === actorId.get).map(x => (x.actorId, x.name)).result.headOption))
+              val actor = fromCache(dataCache, "actorData", () => exec(PersistenceSchema.actors.filter(_.id === actorId.get).map(x => (x.actorId, x.name)).result.headOption))
               if (actor.isDefined) {
                 actorData.get.getItem.add(toAnyContent("id", "number", actorId.get.toString, None))
                 actorData.get.getItem.add(toAnyContent("actorIdentifier", "string", actor.get._1, None))
                 actorData.get.getItem.add(toAnyContent("name", "string", actor.get._2, None))
               }
+            }
+          case TriggerDataType.TestSession =>
+            testSessionData = getOrInitiatizeContentMap("testSession", testSessionData)
+            val testSessionId:Option[String] = fromCache(dataCache, "testSessionId", () => TriggerCallbacks.testSessionId(callbacks))
+            if (testSessionId.isEmpty) {
+              testSessionData.get.getItem.add(toAnyContent("testSuiteIdentifier", "string", "TestSuiteID", None))
+              testSessionData.get.getItem.add(toAnyContent("testCaseIdentifier", "string", "TestCaseID", None))
+              testSessionData.get.getItem.add(toAnyContent("testSessionIdentifier", "string", "TestSessionID", None))
+            } else {
+              val testSession: (Option[String], Option[String], String) = fromCache(dataCache, "testSessionData",
+                () => {
+                  exec(
+                    for {
+                      sessionIds <- PersistenceSchema.testResults.filter(_.testSessionId === testSessionId.get).map(x => (x.testSuiteId, x.testCaseId)).result.headOption
+                      testSuiteIdentifier <- {
+                        if (sessionIds.isDefined && sessionIds.get._1.isDefined) {
+                          PersistenceSchema.testSuites.filter(_.id === sessionIds.get._1.get).map(_.identifier).result.headOption
+                        } else {
+                          DBIO.successful(None)
+                        }
+                      }
+                      testCaseIdentifier <- {
+                        if (sessionIds.isDefined && sessionIds.get._2.isDefined) {
+                          PersistenceSchema.testCases.filter(_.id === sessionIds.get._2.get).map(_.identifier).result.headOption
+                        } else {
+                          DBIO.successful(None)
+                        }
+                      }
+                    } yield (testSuiteIdentifier, testCaseIdentifier, testSessionId.get)
+                  )
+                }
+              )
+              if (testSession._1.isDefined) {
+                testSessionData.get.getItem.add(toAnyContent("testSuiteIdentifier", "string", testSession._1.get, None))
+              }
+              if (testSession._2.isDefined) {
+                testSessionData.get.getItem.add(toAnyContent("testCaseIdentifier", "string", testSession._2.get, None))
+              }
+              testSessionData.get.getItem.add(toAnyContent("testSessionIdentifier", "string", testSession._3, None))
             }
           case TriggerDataType.OrganisationParameter =>
             orgParamData = getOrInitiatizeContentMap("organisationProperties", orgParamData)
@@ -429,6 +505,23 @@ class TriggerManager @Inject()(repositoryUtils: RepositoryUtils, dbConfigProvide
                 sysParamData.get.getItem.add(toAnyContent(paramInfo.get._1, "binary", value, Some(ValueEmbeddingEnumeration.BASE_64)))
               } else {
                 sysParamData.get.getItem.add(toAnyContent(paramInfo.get._1, "string", paramInfo.get._3.getOrElse("Sample data"), None))
+              }
+            }
+          case TriggerDataType.StatementParameter =>
+            statementParamData = getOrInitiatizeContentMap("statementProperties", statementParamData)
+            val paramKey = statementParameterKeys.get(dataItem.dataId)
+            if (paramKey.isDefined) {
+              val paramInfo = statementParameterData.get(paramKey.get)
+              if (paramInfo.isDefined) {
+                if ("BINARY".equals(paramInfo.get._2)) {
+                  var value = "BASE64_CONTENT_OF_FILE"
+                  if (paramInfo.get._3.isDefined) {
+                    value = Base64.getEncoder.encodeToString(Files.readAllBytes(repositoryUtils.getStatementParameterFile(paramInfo.get._1, paramInfo.get._4.get).toPath))
+                  }
+                  statementParamData.get.getItem.add(toAnyContent(paramKey.get, "binary", value, Some(ValueEmbeddingEnumeration.BASE_64)))
+                } else {
+                  statementParamData.get.getItem.add(toAnyContent(paramKey.get, "string", paramInfo.get._3.getOrElse("Sample data"), None))
+                }
               }
             }
           case TriggerDataType.DomainParameter =>
@@ -462,6 +555,9 @@ class TriggerManager @Inject()(repositoryUtils: RepositoryUtils, dbConfigProvide
       if (actorData.isDefined) {
         request.getInput.add(actorData.get)
       }
+      if (testSessionData.isDefined) {
+        request.getInput.add(testSessionData.get)
+      }
       if (domainParamData.isDefined) {
         request.getInput.add(domainParamData.get)
       }
@@ -470,6 +566,9 @@ class TriggerManager @Inject()(repositoryUtils: RepositoryUtils, dbConfigProvide
       }
       if (sysParamData.isDefined) {
         request.getInput.add(sysParamData.get)
+      }
+      if (statementParamData.isDefined) {
+        request.getInput.add(statementParamData.get)
       }
     }
     request
@@ -507,49 +606,28 @@ class TriggerManager @Inject()(repositoryUtils: RepositoryUtils, dbConfigProvide
     if (triggers.isDefined) {
       // Use a cache to avoid the same DB operations.
       val dataCache = mutable.Map[String, Any]()
+      val callbacks = TriggerCallbacks.newInstance(triggerData, triggerDataLoader)
+      eventType match {
+        // Organisation events: Data is a Long (organisation ID)
+        case OrganisationCreated | OrganisationUpdated =>
+          callbacks.fnOrganisation = Some(() => triggerData.asInstanceOf[Long])
+        // System events: Data is a Long (system ID)
+        case SystemCreated | SystemUpdated =>
+          callbacks.fnSystem = Some(() => triggerData.asInstanceOf[Long])
+        case ConformanceStatementCreated | ConformanceStatementUpdated | ConformanceStatementSucceeded =>
+          // Conformance statement events: Data is a (Long, Long) (system ID, actor ID)
+          callbacks.fnSystem = Some(() => triggerData.asInstanceOf[(Long, Long)]._1)
+          callbacks.fnActor = Some(() => triggerData.asInstanceOf[(Long, Long)]._2)
+        case TestSessionSucceeded | TestSessionFailed | TestSessionStarted =>
+          // Test session events: Data is a String (test session ID)
+          callbacks.fnTestSession = Some(() => triggerData.asInstanceOf[String])
+      }
       triggers.get.foreach { trigger =>
-        val callbacks = TriggerCallbacks.newInstance(triggerData)
-        eventType match {
-          // Organisation events: Data is a Long (organisation ID)
-          case TriggerEventType.OrganisationCreated =>
-            callbacks.fnOrganisation = Some(() => triggerData.asInstanceOf[Long])
-          case TriggerEventType.OrganisationUpdated =>
-            callbacks.fnOrganisation = Some(() => triggerData.asInstanceOf[Long])
-          // System events: Data is a Long (system ID)
-          case TriggerEventType.SystemCreated =>
-            callbacks.fnSystem = Some(() => triggerData.asInstanceOf[Long])
-            callbacks.fnOrganisation = Some(() => exec(PersistenceSchema.systems.filter(_.id === triggerData.asInstanceOf[Long]).map(x => x.owner).result.head))
-          case TriggerEventType.SystemUpdated =>
-            callbacks.fnSystem = Some(() => triggerData.asInstanceOf[Long])
-            callbacks.fnOrganisation = Some(() => exec(PersistenceSchema.systems.filter(_.id === triggerData.asInstanceOf[Long]).map(x => x.owner).result.head))
-          // Conformance statement and test session events: Data is a (Long, Long) (system ID, actor ID)
-          case TriggerEventType.ConformanceStatementCreated =>
-            callbacks.fnSystem = Some(() => triggerData.asInstanceOf[(Long, Long)]._1)
-            callbacks.fnOrganisation = Some(() => exec(PersistenceSchema.systems.filter(_.id === triggerData.asInstanceOf[(Long, Long)]._1).map(x => x.owner).result.head))
-            callbacks.fnActor = Some(() => triggerData.asInstanceOf[(Long, Long)]._2)
-          case TriggerEventType.ConformanceStatementUpdated =>
-            callbacks.fnSystem = Some(() => triggerData.asInstanceOf[(Long, Long)]._1)
-            callbacks.fnOrganisation = Some(() => exec(PersistenceSchema.systems.filter(_.id === triggerData.asInstanceOf[(Long, Long)]._1).map(x => x.owner).result.head))
-            callbacks.fnActor = Some(() => triggerData.asInstanceOf[(Long, Long)]._2)
-          case TriggerEventType.ConformanceStatementSucceeded =>
-            callbacks.fnSystem = Some(() => triggerData.asInstanceOf[(Long, Long)]._1)
-            callbacks.fnOrganisation = Some(() => exec(PersistenceSchema.systems.filter(_.id === triggerData.asInstanceOf[(Long, Long)]._1).map(x => x.owner).result.head))
-            callbacks.fnActor = Some(() => triggerData.asInstanceOf[(Long, Long)]._2)
-          case TriggerEventType.TestSessionSucceeded =>
-            callbacks.fnSystem = Some(() => triggerData.asInstanceOf[(Long, Long)]._1)
-            callbacks.fnOrganisation = Some(() => exec(PersistenceSchema.systems.filter(_.id === triggerData.asInstanceOf[(Long, Long)]._1).map(x => x.owner).result.head))
-            callbacks.fnActor = Some(() => triggerData.asInstanceOf[(Long, Long)]._2)
-          case TriggerEventType.TestSessionFailed =>
-            callbacks.fnSystem = Some(() => triggerData.asInstanceOf[(Long, Long)]._1)
-            callbacks.fnOrganisation = Some(() => exec(PersistenceSchema.systems.filter(_.id === triggerData.asInstanceOf[(Long, Long)]._1).map(x => x.owner).result.head))
-            callbacks.fnActor = Some(() => triggerData.asInstanceOf[(Long, Long)]._2)
-        }
         val triggerInput = prepareTriggerInput(trigger, dataCache, Some(callbacks))
         fireTrigger(trigger.trigger, callbacks, triggerInput)
       }
     }
   }
-
 
   def getParameterValue(item: AnyContent, parameterType: String, handleBinary: Array[Byte] => _): (String, Option[String]) = {
     var value: Option[String] = None
@@ -595,14 +673,16 @@ class TriggerManager @Inject()(repositoryUtils: RepositoryUtils, dbConfigProvide
       parameterMap += (param._2 -> (param._1, param._3))
     }
     items.foreach { item =>
-      val paramReference = parameterMap.get(item.getName)
-      if (paramReference.isDefined) {
-        onSuccess += (() => repositoryUtils.deleteOrganisationPropertyFile(paramReference.get._1, organisation))
-        val paramData = getParameterValue(item, paramReference.get._2, bytes => {
-          onSuccess += (() => repositoryUtils.setOrganisationPropertyFile(paramReference.get._1, organisation, Files.write(Files.createTempFile("itb", "trigger"), bytes).toFile))
-        })
-        dbActions += PersistenceSchema.organisationParameterValues.filter(_.organisation === organisation).filter(_.parameter === paramReference.get._1).delete
-        dbActions += (PersistenceSchema.organisationParameterValues += OrganisationParameterValues(organisation, paramReference.get._1, paramData._1, paramData._2))
+      if (item.getName != null && item.getValue != null) {
+        val paramReference = parameterMap.get(item.getName)
+        if (paramReference.isDefined) {
+          onSuccess += (() => repositoryUtils.deleteOrganisationPropertyFile(paramReference.get._1, organisation))
+          val paramData = getParameterValue(item, paramReference.get._2, bytes => {
+            onSuccess += (() => repositoryUtils.setOrganisationPropertyFile(paramReference.get._1, organisation, Files.write(Files.createTempFile("itb", "trigger"), bytes).toFile))
+          })
+          dbActions += PersistenceSchema.organisationParameterValues.filter(_.organisation === organisation).filter(_.parameter === paramReference.get._1).delete
+          dbActions += (PersistenceSchema.organisationParameterValues += OrganisationParameterValues(organisation, paramReference.get._1, paramData._1, paramData._2))
+        }
       }
     }
     toDBIO(dbActions)
@@ -615,34 +695,38 @@ class TriggerManager @Inject()(repositoryUtils: RepositoryUtils, dbConfigProvide
       parameterMap += (param._2 -> (param._1, param._3))
     }
     items.foreach { item =>
-      val paramReference = parameterMap.get(item.getName)
-      if (paramReference.isDefined) {
-        onSuccess += (() => repositoryUtils.deleteSystemPropertyFile(paramReference.get._1, system))
-        val paramData = getParameterValue(item, paramReference.get._2, bytes => {
-          onSuccess += (() => repositoryUtils.setSystemPropertyFile(paramReference.get._1, system, Files.write(Files.createTempFile("itb", "trigger"), bytes).toFile))
-        })
-        dbActions += PersistenceSchema.systemParameterValues.filter(_.system === system).filter(_.parameter === paramReference.get._1).delete
-        dbActions += (PersistenceSchema.systemParameterValues += SystemParameterValues(system, paramReference.get._1, paramData._1, paramData._2))
+      if (item.getName != null && item.getValue != null) {
+        val paramReference = parameterMap.get(item.getName)
+        if (paramReference.isDefined) {
+          onSuccess += (() => repositoryUtils.deleteSystemPropertyFile(paramReference.get._1, system))
+          val paramData = getParameterValue(item, paramReference.get._2, bytes => {
+            onSuccess += (() => repositoryUtils.setSystemPropertyFile(paramReference.get._1, system, Files.write(Files.createTempFile("itb", "trigger"), bytes).toFile))
+          })
+          dbActions += PersistenceSchema.systemParameterValues.filter(_.system === system).filter(_.parameter === paramReference.get._1).delete
+          dbActions += (PersistenceSchema.systemParameterValues += SystemParameterValues(system, paramReference.get._1, paramData._1, paramData._2))
+        }
       }
     }
     toDBIO(dbActions)
   }
 
-  private def saveAsStatementPropertyValues(community: Long, system: Long, actor: Long, items: Iterable[AnyContent], onSuccess: mutable.ListBuffer[() => _]): DBIO[_] = {
+  private def saveAsStatementPropertyValues(system: Long, actor: Long, items: Iterable[AnyContent], onSuccess: mutable.ListBuffer[() => _]): DBIO[_] = {
     val dbActions = ListBuffer[DBIO[_]]()
     val parameterMap = mutable.Map[String, (Long, String, Long)]()
     exec(PersistenceSchema.parameters.join(PersistenceSchema.endpoints).on(_.endpoint === _.id).filter(_._2.actor === actor).map(x => (x._1.id, x._1.name, x._1.kind, x._1.endpoint)).result).foreach { param =>
       parameterMap += (param._2 -> (param._1, param._3, param._4))
     }
     items.foreach { item =>
-      val paramReference = parameterMap.get(item.getName)
-      if (paramReference.isDefined) {
-        onSuccess += (() => repositoryUtils.deleteStatementParameterFile(paramReference.get._1, system))
-        val paramData = getParameterValue(item, paramReference.get._2, bytes => {
-          onSuccess += (() => repositoryUtils.setStatementParameterFile(paramReference.get._1, system, Files.write(Files.createTempFile("itb", "trigger"), bytes).toFile))
-        })
-        dbActions += PersistenceSchema.configs.filter(_.system === system).filter(_.parameter === paramReference.get._1).delete
-        dbActions += (PersistenceSchema.configs += Configs(system, paramReference.get._1, paramReference.get._3, paramData._1, paramData._2))
+      if (item.getName != null && item.getValue != null) {
+        val paramReference = parameterMap.get(item.getName)
+        if (paramReference.isDefined) {
+          onSuccess += (() => repositoryUtils.deleteStatementParameterFile(paramReference.get._1, system))
+          val paramData = getParameterValue(item, paramReference.get._2, bytes => {
+            onSuccess += (() => repositoryUtils.setStatementParameterFile(paramReference.get._1, system, Files.write(Files.createTempFile("itb", "trigger"), bytes).toFile))
+          })
+          dbActions += PersistenceSchema.configs.filter(_.system === system).filter(_.parameter === paramReference.get._1).delete
+          dbActions += (PersistenceSchema.configs += Configs(system, paramReference.get._1, paramReference.get._3, paramData._1, paramData._2))
+        }
       }
     }
     toDBIO(dbActions)
@@ -656,31 +740,22 @@ class TriggerManager @Inject()(repositoryUtils: RepositoryUtils, dbConfigProvide
         val onSuccessCalls = mutable.ListBuffer[() => _]()
         val dbActions = ListBuffer[DBIO[_]]()
         if (response != null) {
-          val triggerEvent = TriggerEventType.apply(trigger.eventType)
           response.getOutput.asScala.foreach { output =>
-            if ("organisationProperties".equals(output.getName) &&
-              (TriggerEventType.OrganisationCreated == triggerEvent || TriggerEventType.SystemCreated == triggerEvent || TriggerEventType.ConformanceStatementCreated == triggerEvent ||
-                TriggerEventType.OrganisationUpdated == triggerEvent || TriggerEventType.SystemUpdated == triggerEvent || TriggerEventType.ConformanceStatementUpdated == triggerEvent)
-            ) {
+            if ("organisationProperties".equals(output.getName)) {
               val organisationId = callbacks.organisationId()
               if (organisationId.isDefined) {
                 dbActions += saveAsOrganisationPropertyValues(trigger.community, organisationId.get, output.getItem.asScala, onSuccessCalls)
               }
-            } else if ("systemProperties".equals(output.getName) &&
-              (TriggerEventType.SystemCreated == triggerEvent || TriggerEventType.ConformanceStatementCreated == triggerEvent ||
-                TriggerEventType.SystemUpdated == triggerEvent || TriggerEventType.ConformanceStatementUpdated == triggerEvent)
-            ) {
+            } else if ("systemProperties".equals(output.getName)) {
               val systemId = callbacks.systemId()
               if (systemId.isDefined) {
                 dbActions += saveAsSystemPropertyValues(trigger.community, systemId.get, output.getItem.asScala, onSuccessCalls)
               }
-            } else if ("statementProperties".equals(output.getName) &&
-              (TriggerEventType.ConformanceStatementCreated == triggerEvent || TriggerEventType.ConformanceStatementUpdated == triggerEvent)
-            ) {
+            } else if ("statementProperties".equals(output.getName)) {
               val systemId = callbacks.systemId()
               val actorId = callbacks.actorId()
               if (systemId.isDefined && actorId.isDefined) {
-                dbActions += saveAsStatementPropertyValues(trigger.community, systemId.get, actorId.get, output.getItem.asScala, onSuccessCalls)
+                dbActions += saveAsStatementPropertyValues(systemId.get, actorId.get, output.getItem.asScala, onSuccessCalls)
               }
             }
           }
@@ -714,6 +789,7 @@ class TriggerManager @Inject()(repositoryUtils: RepositoryUtils, dbConfigProvide
     messages.filter(_.isDefined).toList.map(_.get)
   }
 
+  @tailrec
   private def extractFailureDetailsInternal(error: Throwable, handledErrors: ListBuffer[Throwable], messages: ListBuffer[Option[String]]): Unit = {
     if (error != null && !handledErrors.contains(error)) {
       handledErrors += error

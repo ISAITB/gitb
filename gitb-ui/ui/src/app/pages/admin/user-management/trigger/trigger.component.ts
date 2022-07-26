@@ -23,12 +23,12 @@ import { CodeEditorModalComponent } from 'src/app/components/code-editor-modal/c
 import { CustomProperty } from 'src/app/types/custom-property.type';
 import { RoutingService } from 'src/app/services/routing.service';
 import { CommunityTab } from '../community/community-details/community-tab.enum';
+import { StatementParameterMinimal } from 'src/app/types/statement-parameter-minimal';
 
 @Component({
   selector: 'app-trigger',
   templateUrl: './trigger.component.html',
-  styles: [
-  ]
+  styleUrls: [ './trigger.component.less' ]
 })
 export class TriggerComponent extends BaseComponent implements OnInit, AfterViewInit {
 
@@ -47,6 +47,7 @@ export class TriggerComponent extends BaseComponent implements OnInit, AfterView
   trigger: Partial<Trigger> = {}
   organisationParameters: OrganisationParameter[] = []
   systemParameters: SystemParameter[] = []
+  statementParameters: StatementParameterMinimal[] = []
   domainParameters: DomainParameter[] = []
   eventTypes!: IdLabel[]
   eventTypeMap!: {[key: number]: string}
@@ -54,6 +55,7 @@ export class TriggerComponent extends BaseComponent implements OnInit, AfterView
   dataTypeMap!: {[key: number]: string}
   organisationParameterMap: {[key: number]: OrganisationParameter} = {}
   systemParameterMap: {[key: number]: SystemParameter} = {}
+  statementParameterMap: {[key: number]: StatementParameterMinimal} = {}
   domainParameterMap: {[key: number]: DomainParameter} = {}
 
   triggerData = {
@@ -64,7 +66,9 @@ export class TriggerComponent extends BaseComponent implements OnInit, AfterView
     actor: {dataType: Constants.TRIGGER_DATA_TYPE.ACTOR, visible: true, selected: false},
     organisationParameter: {dataType: Constants.TRIGGER_DATA_TYPE.ORGANISATION_PARAMETER, visible: true, selected: false},
     systemParameter: {dataType: Constants.TRIGGER_DATA_TYPE.SYSTEM_PARAMETER, visible: true, selected: false},
-    domainParameter: {dataType: Constants.TRIGGER_DATA_TYPE.DOMAIN_PARAMETER, visible: true, selected: false}
+    domainParameter: {dataType: Constants.TRIGGER_DATA_TYPE.DOMAIN_PARAMETER, visible: true, selected: false},
+    statementParameter: {dataType: Constants.TRIGGER_DATA_TYPE.STATEMENT_PARAMETER, visible: true, selected: false},
+    testSession: {dataType: Constants.TRIGGER_DATA_TYPE.TEST_SESSION, visible: true, selected: false},
   }
 
   constructor(
@@ -124,6 +128,19 @@ export class TriggerComponent extends BaseComponent implements OnInit, AfterView
       }),
       share()
     ))
+    loadPromises.push(this.conformanceService.getStatementParametersOfCommunity(this.communityId).pipe(
+      map((data) => {
+        this.statementParameters = data
+        for (let parameter of this.statementParameters) {
+          parameter.selected = false
+          this.statementParameterMap[parameter.id] = parameter
+        }
+        if (this.statementParameters.length == 0) {
+          remove(this.dataTypes, (current) => current.id == Constants.TRIGGER_DATA_TYPE.STATEMENT_PARAMETER)
+        }
+      }),
+      share()
+    ))    
 
     let domainParameterFnResult: Observable<DomainParameter[]>|undefined
     if (this.dataService.isCommunityAdmin && this.dataService.community!.domainId != undefined) {
@@ -173,6 +190,8 @@ export class TriggerComponent extends BaseComponent implements OnInit, AfterView
                 this.triggerData.specification.selected = true
               } else if (item.dataType == Constants.TRIGGER_DATA_TYPE.ACTOR) {
                 this.triggerData.actor.selected = true
+              } else if (item.dataType == Constants.TRIGGER_DATA_TYPE.TEST_SESSION) {
+                this.triggerData.testSession.selected = true
               } else if (item.dataType == Constants.TRIGGER_DATA_TYPE.ORGANISATION_PARAMETER) {
                 this.triggerData.organisationParameter.selected = true
                 if (this.organisationParameterMap[item.dataId] != undefined) {
@@ -187,6 +206,11 @@ export class TriggerComponent extends BaseComponent implements OnInit, AfterView
                 this.triggerData.domainParameter.selected = true
                 if (this.domainParameterMap[item.dataId] != undefined) {
                   this.domainParameterMap[item.dataId].selected = true
+                }
+              } else if (item.dataType == Constants.TRIGGER_DATA_TYPE.STATEMENT_PARAMETER) {
+                this.triggerData.statementParameter.selected = true
+                if (this.statementParameterMap[item.dataId] != undefined) {
+                  this.statementParameterMap[item.dataId].selected = true
                 }
               }
             }
@@ -236,6 +260,9 @@ export class TriggerComponent extends BaseComponent implements OnInit, AfterView
     if (this.triggerData.actor.visible && this.triggerData.actor.selected) {
       dataItems.push({dataType: Constants.TRIGGER_DATA_TYPE.ACTOR, dataId: -1})
     }
+    if (this.triggerData.testSession.visible && this.triggerData.testSession.selected) {
+      dataItems.push({dataType: Constants.TRIGGER_DATA_TYPE.TEST_SESSION, dataId: -1})
+    }
     if (this.triggerData.organisationParameter.visible && this.triggerData.organisationParameter.selected) {
       for (let parameter of this.organisationParameters) {
         if (parameter.selected) {
@@ -254,6 +281,13 @@ export class TriggerComponent extends BaseComponent implements OnInit, AfterView
       for (let parameter of this.domainParameters) {
         if (parameter.selected) {
           dataItems.push({dataType: Constants.TRIGGER_DATA_TYPE.DOMAIN_PARAMETER, dataId: parameter.id})
+        }
+      }
+    }
+    if (this.triggerData.statementParameter.visible && this.triggerData.statementParameter.selected) {
+      for (let parameter of this.statementParameters) {
+        if (parameter.selected) {
+          dataItems.push({dataType: Constants.TRIGGER_DATA_TYPE.STATEMENT_PARAMETER, dataId: parameter.id})
         }
       }
     }
@@ -425,12 +459,14 @@ export class TriggerComponent extends BaseComponent implements OnInit, AfterView
     this.triggerData.system.visible = eventType == undefined || this.dataService.triggerDataTypeAllowedForEvent(eventType, this.triggerData.system.dataType)
     this.triggerData.specification.visible = eventType == undefined || this.dataService.triggerDataTypeAllowedForEvent(eventType, this.triggerData.specification.dataType)
     this.triggerData.actor.visible = eventType == undefined || this.dataService.triggerDataTypeAllowedForEvent(eventType, this.triggerData.actor.dataType)
+    this.triggerData.testSession.visible = eventType == undefined || this.dataService.triggerDataTypeAllowedForEvent(eventType, this.triggerData.testSession.dataType)
     this.triggerData.organisationParameter.visible = this.organisationParameters.length > 0 && (eventType == undefined || this.dataService.triggerDataTypeAllowedForEvent(eventType, this.triggerData.organisationParameter.dataType))
     this.triggerData.systemParameter.visible = this.systemParameters.length > 0 && (eventType == undefined || this.dataService.triggerDataTypeAllowedForEvent(eventType, this.triggerData.systemParameter.dataType))
     this.triggerData.domainParameter.visible = this.domainParameters.length > 0 && (eventType == undefined || this.dataService.triggerDataTypeAllowedForEvent(eventType, this.triggerData.domainParameter.dataType))
+    this.triggerData.statementParameter.visible = this.statementParameters.length > 0 && (eventType == undefined || this.dataService.triggerDataTypeAllowedForEvent(eventType, this.triggerData.statementParameter.dataType))
   }
 
-  parameterType(parameter: CustomProperty|DomainParameter) {
+  parameterType(parameter: CustomProperty|DomainParameter|StatementParameterMinimal) {
     if (parameter.kind == 'SIMPLE') {
       parameter.kindLabel = 'Simple'
     } else if (parameter.kind == 'BINARY') {

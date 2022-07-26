@@ -1,5 +1,7 @@
 package managers
 
+import models.Enums.TriggerDataType
+
 import javax.inject.{Inject, Singleton}
 import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
@@ -52,13 +54,58 @@ class ParameterManager @Inject() (repositoryUtils: RepositoryUtils, dbConfigProv
     onSuccessCalls += (() => repositoryUtils.deleteStatementParametersFolder(parameterId))
     PersistenceSchema.configs.filter(_.parameter === parameterId).delete andThen
         (for {
-          existingParameter <- PersistenceSchema.parameters.filter(_.id === parameterId).map(x => (x.endpoint, x.name, x.kind)).result.head
+          existingParameterData <- PersistenceSchema.parameters
+            .join(PersistenceSchema.endpoints).on(_.endpoint === _.id)
+            .join(PersistenceSchema.actors).on(_._2.actor === _.id)
+            .filter(_._1._1.id === parameterId)
+            .map(x => (x._1._1.endpoint, x._1._1.name, x._1._1.kind, x._2.domain)) // Endpoint ID, Parameter name, Parameter kind, Domain ID
+            .result.head
           _ <- {
-            if (existingParameter._3.equals("SIMPLE")) {
-              setParameterPrerequisitesForKey(existingParameter._1, existingParameter._2, None)
+            if ("SIMPLE".equals(existingParameterData._3)) {
+              setParameterPrerequisitesForKey(existingParameterData._1, existingParameterData._2, None)
             } else {
               DBIO.successful(())
             }
+          }
+          triggerDataItemsReferringToParameter <- PersistenceSchema.triggerData
+            .filter(_.dataId === parameterId)
+            .filter(_.dataType === TriggerDataType.StatementParameter.id.toShort)
+            .result
+            .headOption
+          replacementParameterId <- {
+            // See if there is a parameter linked to the same domain with the same name.
+            // If yes, set the parameter reference in the trigger data items to that.
+            // If no, just delete the trigger data items.
+            if (triggerDataItemsReferringToParameter.isDefined) {
+              PersistenceSchema.parameters
+                .join(PersistenceSchema.endpoints).on(_.endpoint === _.id)
+                .join(PersistenceSchema.actors).on(_._2.actor === _.id)
+                .filter(_._2.domain === existingParameterData._4)
+                .filter(_._1._1.name === existingParameterData._2)
+                .filter(_._1._1.id =!= parameterId)
+                .map(_._1._1.id)
+                .result.headOption
+            } else {
+              DBIO.successful(None)
+            }
+          }
+          _ <- {
+            val dbActions = ListBuffer[DBIO[_]]()
+            if (replacementParameterId.isDefined && triggerDataItemsReferringToParameter.isDefined) {
+              // Replace the parameter ID reference in the trigger data items.
+              dbActions += PersistenceSchema.triggerData
+                .filter(_.dataId === parameterId)
+                .filter(_.dataType === TriggerDataType.StatementParameter.id.toShort)
+                .map(_.dataId)
+                .update(replacementParameterId.get)
+            } else if (triggerDataItemsReferringToParameter.isDefined) {
+              // Delete the trigger data items.
+              dbActions += PersistenceSchema.triggerData
+                .filter(_.dataId === parameterId)
+                .filter(_.dataType === TriggerDataType.StatementParameter.id.toShort)
+                .delete
+            }
+            toDBIO(dbActions)
           }
         } yield ()) andThen
       PersistenceSchema.parameters.filter(_.id === parameterId).delete
