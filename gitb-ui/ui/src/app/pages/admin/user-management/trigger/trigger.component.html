@@ -24,7 +24,24 @@
                             <label class="col-xs-3 control-label" for="event">* Event type:</label>
                             <div class="col-xs-8">
                                 <select id="event" name="event" (change)="eventTypeChanged()" [(ngModel)]="trigger.eventType" class="form-control">
-                                    <option *ngFor="let eventType of eventTypes" [ngValue]="eventType.id">{{eventType.label}}</option>
+                                    <optgroup label="{{dataService.labelOrganisation() + ' events'}}">
+                                        <option [ngValue]="Constants.TRIGGER_EVENT_TYPE.ORGANISATION_CREATED">{{dataService.triggerEventTypeLabel(Constants.TRIGGER_EVENT_TYPE.ORGANISATION_CREATED)}}</option>
+                                        <option [ngValue]="Constants.TRIGGER_EVENT_TYPE.ORGANISATION_UPDATED">{{dataService.triggerEventTypeLabel(Constants.TRIGGER_EVENT_TYPE.ORGANISATION_UPDATED)}}</option>
+                                    </optgroup>
+                                    <optgroup label="{{dataService.labelSystem() + ' events'}}">
+                                        <option [ngValue]="Constants.TRIGGER_EVENT_TYPE.SYSTEM_CREATED">{{dataService.triggerEventTypeLabel(Constants.TRIGGER_EVENT_TYPE.SYSTEM_CREATED)}}</option>
+                                        <option [ngValue]="Constants.TRIGGER_EVENT_TYPE.SYSTEM_UPDATED">{{dataService.triggerEventTypeLabel(Constants.TRIGGER_EVENT_TYPE.SYSTEM_UPDATED)}}</option>
+                                    </optgroup>
+                                    <optgroup label="Conformance statement events">
+                                        <option [ngValue]="Constants.TRIGGER_EVENT_TYPE.CONFORMANCE_STATEMENT_CREATED">{{dataService.triggerEventTypeLabel(Constants.TRIGGER_EVENT_TYPE.CONFORMANCE_STATEMENT_CREATED)}}</option>
+                                        <option [ngValue]="Constants.TRIGGER_EVENT_TYPE.CONFORMANCE_STATEMENT_UPDATED">{{dataService.triggerEventTypeLabel(Constants.TRIGGER_EVENT_TYPE.CONFORMANCE_STATEMENT_UPDATED)}}</option>
+                                        <option [ngValue]="Constants.TRIGGER_EVENT_TYPE.CONFORMANCE_STATEMENT_SUCCEEDED">{{dataService.triggerEventTypeLabel(Constants.TRIGGER_EVENT_TYPE.CONFORMANCE_STATEMENT_SUCCEEDED)}}</option>
+                                    </optgroup>
+                                    <optgroup label="Test session events">
+                                        <option [ngValue]="Constants.TRIGGER_EVENT_TYPE.TEST_SESSION_STARTED">{{dataService.triggerEventTypeLabel(Constants.TRIGGER_EVENT_TYPE.TEST_SESSION_STARTED)}}</option>
+                                        <option [ngValue]="Constants.TRIGGER_EVENT_TYPE.TEST_SESSION_SUCCEEDED">{{dataService.triggerEventTypeLabel(Constants.TRIGGER_EVENT_TYPE.TEST_SESSION_SUCCEEDED)}}</option>
+                                        <option [ngValue]="Constants.TRIGGER_EVENT_TYPE.TEST_SESSION_FAILED">{{dataService.triggerEventTypeLabel(Constants.TRIGGER_EVENT_TYPE.TEST_SESSION_FAILED)}}</option>
+                                    </optgroup>
                                 </select>
                             </div>
                             <app-tooltip tbTooltip="The event that will cause this trigger to fire."></app-tooltip>

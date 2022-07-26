@@ -49,8 +49,6 @@ export class TriggerComponent extends BaseComponent implements OnInit, AfterView
   systemParameters: SystemParameter[] = []
   statementParameters: StatementParameterMinimal[] = []
   domainParameters: DomainParameter[] = []
-  eventTypes!: IdLabel[]
-  eventTypeMap!: {[key: number]: string}
   dataTypes!: IdLabel[]
   dataTypeMap!: {[key: number]: string}
   organisationParameterMap: {[key: number]: OrganisationParameter} = {}
@@ -80,7 +78,7 @@ export class TriggerComponent extends BaseComponent implements OnInit, AfterView
     private communityService: CommunityService,
     private confirmationDialogService: ConfirmationDialogService,
     private popupService: PopupService,
-    private dataService: DataService
+    public dataService: DataService
   ) {
     super();
   }
@@ -95,8 +93,6 @@ export class TriggerComponent extends BaseComponent implements OnInit, AfterView
       this.triggerId = Number(triggerIdParam)
       this.update = true
     }
-    this.eventTypes = this.dataService.triggerEventTypes()
-    this.eventTypeMap = this.dataService.idToLabelMap(this.eventTypes)
     this.dataTypes = this.dataService.triggerDataTypes()
     this.dataTypeMap = this.dataService.idToLabelMap(this.dataTypes)
 
