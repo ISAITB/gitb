@@ -23,6 +23,7 @@ import { SystemConfigurationEndpoint } from '../types/system-configuration-endpo
 import { TestCase } from '../types/test-case';
 import { ConformanceStatus } from '../types/conformance-status';
 import { FileParam } from '../types/file-param.type';
+import { StatementParameterMinimal } from '../types/statement-parameter-minimal';
 
 @Injectable({
   providedIn: 'root'
@@ -739,6 +740,13 @@ export class ConformanceService {
   getTestSuiteTestCase(testCaseId: number) {
     return this.restService.get<TestCase>({
       path: ROUTES.controllers.ConformanceService.getTestSuiteTestCase(testCaseId).url,
+      authenticate: true
+    })
+  }
+
+  getStatementParametersOfCommunity(communityId: number) {
+    return this.restService.get<StatementParameterMinimal[]>({
+      path: ROUTES.controllers.ConformanceService.getStatementParametersOfCommunity(communityId).url,
       authenticate: true
     })
   }

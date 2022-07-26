@@ -113,6 +113,7 @@ GET     /api/testsuites/:test_suite_id                              @controllers
 POST    /api/testsuites/:test_suite_id                              @controllers.TestSuiteService.updateTestSuiteMetadata(test_suite_id: Long)
 GET     /api/fulltestcases/:test_case_id                            @controllers.TestSuiteService.getTestCase(test_case_id: Long)
 POST    /api/fulltestcases/:test_case_id                            @controllers.TestSuiteService.updateTestCaseMetadata(test_case_id: Long)
+GET     /api/communities/:community_id/statementParameters          @controllers.ConformanceService.getStatementParametersOfCommunity(community_id : Long)
 
 DELETE  /api/testresults/obsolete/all           @controllers.ConformanceService.deleteAllObsoleteTestResults()
 DELETE  /api/testresults/obsolete/system        @controllers.ConformanceService.deleteObsoleteTestResultsForSystem()

@@ -1,5 +1,6 @@
 package controllers
 
+import actors.events.TestSessionStartedEvent
 import actors.events.sessions.TerminateAllSessionsEvent
 import akka.actor.ActorSystem
 import com.gitb.tbs._
@@ -14,7 +15,7 @@ import utils._
 import javax.inject.{Inject, Singleton}
 
 @Singleton
-class TestService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerComponents, conformanceManager: ConformanceManager, authorizationManager: AuthorizationManager, testbedClient: managers.TestbedBackendClient, actorSystem: ActorSystem, testResultManager: TestResultManager, testExecutionManager: TestExecutionManager) extends AbstractController(cc) {
+class TestService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerComponents, conformanceManager: ConformanceManager, authorizationManager: AuthorizationManager, testbedClient: managers.TestbedBackendClient, actorSystem: ActorSystem, testResultManager: TestResultManager, testExecutionManager: TestExecutionManager, triggerHelper: TriggerHelper) extends AbstractController(cc) {
 
   def getTestCasePresentation(testId:String, sessionId: Option[String]): GetTestCaseDefinitionResponse = {
     testbedClient.getTestCaseDefinition(testId, sessionId)
@@ -115,13 +116,21 @@ class TestService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerC
     authorizationManager.canExecuteTestSession(request, session_id)
     testbedClient.initiatePreliminary(session_id)
     ResponseConstructor.constructEmptyResponse
-
   }
+
+  private def callSessionStartTrigger(sessionId: String) = {
+    val ids = testResultManager.getCommunityIdForTestSession(sessionId)
+    if (ids.isDefined && ids.get._2.isDefined) {
+      triggerHelper.publishTriggerEvent(new TestSessionStartedEvent(ids.get._2.get, ids.get._1))
+    }
+  }
+
   /**
    * Starts the test case
    */
   def start(sessionId:String): Action[AnyContent] = authorizedAction { request =>
     authorizationManager.canExecuteTestSession(request, sessionId)
+    callSessionStartTrigger(sessionId)
     testbedClient.start(sessionId)
     ResponseConstructor.constructEmptyResponse
   }
@@ -167,6 +176,7 @@ class TestService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerC
    */
   def restart(session_id:String): Action[AnyContent] = authorizedAction { request =>
     authorizationManager.canExecuteTestSession(request, session_id)
+    callSessionStartTrigger(session_id)
     testbedClient.restart(session_id)
     ResponseConstructor.constructEmptyResponse
   }

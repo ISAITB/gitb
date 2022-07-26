@@ -98,13 +98,23 @@ object Enums {
         ConformanceStatementUpdated,
         TestSessionSucceeded,
         TestSessionFailed,
-        ConformanceStatementSucceeded
+        ConformanceStatementSucceeded,
+        TestSessionStarted
         = Value
   }
 
   object TriggerDataType extends Enumeration(1) {
     type TriggerDataType = Value
-    val Community, Organisation, System, Specification, Actor, OrganisationParameter, SystemParameter, DomainParameter = Value
+    val Community,
+        Organisation,
+        System,
+        Specification,
+        Actor,
+        OrganisationParameter,
+        SystemParameter,
+        DomainParameter,
+        TestSession,
+        StatementParameter = Value
   }
 
   object InputMappingMatchType extends Enumeration(1) {

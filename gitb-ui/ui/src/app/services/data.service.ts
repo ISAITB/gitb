@@ -612,6 +612,7 @@ export class DataService {
       {id: Constants.TRIGGER_EVENT_TYPE.CONFORMANCE_STATEMENT_CREATED, label: 'Conformance statement created'},
       {id: Constants.TRIGGER_EVENT_TYPE.CONFORMANCE_STATEMENT_UPDATED, label: 'Conformance statement updated'},
       {id: Constants.TRIGGER_EVENT_TYPE.CONFORMANCE_STATEMENT_SUCCEEDED, label: 'Conformance statement succeeded'},
+      {id: Constants.TRIGGER_EVENT_TYPE.TEST_SESSION_STARTED, label: 'Test session started'},
       {id: Constants.TRIGGER_EVENT_TYPE.TEST_SESSION_SUCCEEDED, label: 'Test session succeeded'},
       {id: Constants.TRIGGER_EVENT_TYPE.TEST_SESSION_FAILED, label: 'Test session failed'}
     ]
@@ -624,9 +625,11 @@ export class DataService {
       {id: Constants.TRIGGER_DATA_TYPE.SYSTEM, label: this.labelSystem()},
       {id: Constants.TRIGGER_DATA_TYPE.SPECIFICATION, label: this.labelSpecification()},
       {id: Constants.TRIGGER_DATA_TYPE.ACTOR, label: this.labelActor()},
+      {id: Constants.TRIGGER_DATA_TYPE.TEST_SESSION, label: 'Test session'},
       {id: Constants.TRIGGER_DATA_TYPE.ORGANISATION_PARAMETER, label: this.labelOrganisation() + ' properties'},
       {id: Constants.TRIGGER_DATA_TYPE.SYSTEM_PARAMETER, label: this.labelSystem() + ' properties'},
-      {id: Constants.TRIGGER_DATA_TYPE.DOMAIN_PARAMETER, label: this.labelDomain() + ' properties'}
+      {id: Constants.TRIGGER_DATA_TYPE.DOMAIN_PARAMETER, label: this.labelDomain() + ' properties'},
+      {id: Constants.TRIGGER_DATA_TYPE.STATEMENT_PARAMETER, label: 'Conformance statement properties'}
     ]
   }
 
@@ -686,7 +689,8 @@ export class DataService {
         Constants.TRIGGER_DATA_TYPE.SYSTEM_PARAMETER,
         Constants.TRIGGER_DATA_TYPE.SPECIFICATION,
         Constants.TRIGGER_DATA_TYPE.ACTOR,
-        Constants.TRIGGER_DATA_TYPE.DOMAIN_PARAMETER
+        Constants.TRIGGER_DATA_TYPE.DOMAIN_PARAMETER,
+        Constants.TRIGGER_DATA_TYPE.STATEMENT_PARAMETER
       ])
       this.addIdMapEntry(tempMap, Constants.TRIGGER_EVENT_TYPE.TEST_SESSION_SUCCEEDED, [
         Constants.TRIGGER_DATA_TYPE.COMMUNITY,
@@ -696,7 +700,9 @@ export class DataService {
         Constants.TRIGGER_DATA_TYPE.SYSTEM_PARAMETER,
         Constants.TRIGGER_DATA_TYPE.SPECIFICATION,
         Constants.TRIGGER_DATA_TYPE.ACTOR,
-        Constants.TRIGGER_DATA_TYPE.DOMAIN_PARAMETER
+        Constants.TRIGGER_DATA_TYPE.DOMAIN_PARAMETER,
+        Constants.TRIGGER_DATA_TYPE.TEST_SESSION,
+        Constants.TRIGGER_DATA_TYPE.STATEMENT_PARAMETER
       ])
       this.addIdMapEntry(tempMap, Constants.TRIGGER_EVENT_TYPE.TEST_SESSION_FAILED, [
         Constants.TRIGGER_DATA_TYPE.COMMUNITY,
@@ -706,7 +712,21 @@ export class DataService {
         Constants.TRIGGER_DATA_TYPE.SYSTEM_PARAMETER,
         Constants.TRIGGER_DATA_TYPE.SPECIFICATION,
         Constants.TRIGGER_DATA_TYPE.ACTOR,
-        Constants.TRIGGER_DATA_TYPE.DOMAIN_PARAMETER
+        Constants.TRIGGER_DATA_TYPE.DOMAIN_PARAMETER,
+        Constants.TRIGGER_DATA_TYPE.TEST_SESSION,
+        Constants.TRIGGER_DATA_TYPE.STATEMENT_PARAMETER
+      ])
+      this.addIdMapEntry(tempMap, Constants.TRIGGER_EVENT_TYPE.TEST_SESSION_STARTED, [
+        Constants.TRIGGER_DATA_TYPE.COMMUNITY,
+        Constants.TRIGGER_DATA_TYPE.ORGANISATION,
+        Constants.TRIGGER_DATA_TYPE.ORGANISATION_PARAMETER,
+        Constants.TRIGGER_DATA_TYPE.SYSTEM,
+        Constants.TRIGGER_DATA_TYPE.SYSTEM_PARAMETER,
+        Constants.TRIGGER_DATA_TYPE.SPECIFICATION,
+        Constants.TRIGGER_DATA_TYPE.ACTOR,
+        Constants.TRIGGER_DATA_TYPE.DOMAIN_PARAMETER,
+        Constants.TRIGGER_DATA_TYPE.TEST_SESSION,
+        Constants.TRIGGER_DATA_TYPE.STATEMENT_PARAMETER
       ])
       this.addIdMapEntry(tempMap, Constants.TRIGGER_EVENT_TYPE.CONFORMANCE_STATEMENT_SUCCEEDED, [
         Constants.TRIGGER_DATA_TYPE.COMMUNITY,
@@ -716,7 +736,8 @@ export class DataService {
         Constants.TRIGGER_DATA_TYPE.SYSTEM_PARAMETER,
         Constants.TRIGGER_DATA_TYPE.SPECIFICATION,
         Constants.TRIGGER_DATA_TYPE.ACTOR,
-        Constants.TRIGGER_DATA_TYPE.DOMAIN_PARAMETER
+        Constants.TRIGGER_DATA_TYPE.DOMAIN_PARAMETER,
+        Constants.TRIGGER_DATA_TYPE.STATEMENT_PARAMETER
       ])
       this.triggerEventToDataTypeMap = tempMap
     }

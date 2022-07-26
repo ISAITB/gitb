@@ -996,7 +996,7 @@ object JsonUtil {
     val dataType = (jsonConfig \ "dataType").as[Short]
     val dataTypeEnum = TriggerDataType.apply(dataType)
     var dataIdToUse: Long = -1
-    if (dataTypeEnum == TriggerDataType.OrganisationParameter || dataTypeEnum == TriggerDataType.SystemParameter || dataTypeEnum == TriggerDataType.DomainParameter) {
+    if (dataTypeEnum == TriggerDataType.OrganisationParameter || dataTypeEnum == TriggerDataType.SystemParameter || dataTypeEnum == TriggerDataType.DomainParameter || dataTypeEnum == TriggerDataType.StatementParameter) {
       dataIdToUse = (jsonConfig \ "dataId").as[Long]
     }
     val data = TriggerData(
@@ -2224,6 +2224,18 @@ object JsonUtil {
       "pluralForm"    -> label.pluralForm,
       "fixedCase" -> JsBoolean(label.fixedCase)
     )
+    json
+  }
+
+  def jsStatementParametersMinimal(items: List[StatementParameterMinimal]): JsArray = {
+    var json = Json.arr()
+    items.foreach { item =>
+      json = json.append(Json.obj(
+        "id" -> item.id,
+        "name" -> item.name,
+        "kind" -> item.kind
+      ))
+    }
     json
   }
 

@@ -1,10 +1,11 @@
 package actors
 
+import actors.events.TestSessionStartedEvent
 import actors.events.sessions.{PrepareTestSessionsEvent, SessionLaunchState, StartNextTestSessionEvent, TerminateAllSessionsEvent, TestSessionCompletedEvent, TestSessionConfiguredEvent}
 import akka.actor.{Actor, PoisonPill}
 import com.gitb.core.AnyContent
 import com.gitb.tpl.TestCase
-import managers.{ReportManager, TestbedBackendClient}
+import managers.{ReportManager, TestbedBackendClient, TriggerHelper}
 import org.slf4j.LoggerFactory
 
 import javax.inject.Inject
@@ -15,7 +16,7 @@ object SessionLaunchActor {
   }
 }
 
-class SessionLaunchActor @Inject() (reportManager: ReportManager, testbedBackendClient: TestbedBackendClient, webSocketActor: WebSocketActor) extends Actor {
+class SessionLaunchActor @Inject() (reportManager: ReportManager, testbedBackendClient: TestbedBackendClient, webSocketActor: WebSocketActor, triggerHelper: TriggerHelper) extends Actor {
 
   private val LOGGER = LoggerFactory.getLogger(classOf[SessionLaunchActor])
 
@@ -148,6 +149,7 @@ class SessionLaunchActor @Inject() (reportManager: ReportManager, testbedBackend
       // No need to signal any simulated configurations (the result of the configure step) as there is no one to present these to.
       // Preliminary step is skipped as this is a headless session. If input was expected during this step the test session may fail.
       reportManager.createTestReport(testSessionId, state.data.get.systemId, testCaseId.toString, state.data.get.actorId, testCaseDefinition)
+      triggerHelper.publishTriggerEvent(new TestSessionStartedEvent(state.data.get.communityId, testSessionId))
       testbedBackendClient.start(testSessionId)
       LOGGER.debug("Session launch actor ["+self.path+"] started test session ["+testSessionId+"] for test case ["+testCaseId+"]")
     } catch {
