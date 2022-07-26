@@ -603,19 +603,20 @@ export class DataService {
     return map
   }
 
-  triggerEventTypes(): IdLabel[] {
-    return [
-      {id: Constants.TRIGGER_EVENT_TYPE.ORGANISATION_CREATED, label: this.labelOrganisation() + ' created'},
-      {id: Constants.TRIGGER_EVENT_TYPE.ORGANISATION_UPDATED, label: this.labelOrganisation() + ' updated'},
-      {id: Constants.TRIGGER_EVENT_TYPE.SYSTEM_CREATED, label: this.labelSystem() + ' created'},
-      {id: Constants.TRIGGER_EVENT_TYPE.SYSTEM_UPDATED, label: this.labelSystem() + ' updated'},
-      {id: Constants.TRIGGER_EVENT_TYPE.CONFORMANCE_STATEMENT_CREATED, label: 'Conformance statement created'},
-      {id: Constants.TRIGGER_EVENT_TYPE.CONFORMANCE_STATEMENT_UPDATED, label: 'Conformance statement updated'},
-      {id: Constants.TRIGGER_EVENT_TYPE.CONFORMANCE_STATEMENT_SUCCEEDED, label: 'Conformance statement succeeded'},
-      {id: Constants.TRIGGER_EVENT_TYPE.TEST_SESSION_STARTED, label: 'Test session started'},
-      {id: Constants.TRIGGER_EVENT_TYPE.TEST_SESSION_SUCCEEDED, label: 'Test session succeeded'},
-      {id: Constants.TRIGGER_EVENT_TYPE.TEST_SESSION_FAILED, label: 'Test session failed'}
-    ]
+  triggerEventTypeLabel(eventType: number): string {
+    switch (eventType) {
+      case Constants.TRIGGER_EVENT_TYPE.ORGANISATION_CREATED: return this.labelOrganisation() + ' created'
+      case Constants.TRIGGER_EVENT_TYPE.ORGANISATION_UPDATED: return this.labelOrganisation() + ' updated'
+      case Constants.TRIGGER_EVENT_TYPE.SYSTEM_CREATED: return this.labelSystem() + ' created'
+      case Constants.TRIGGER_EVENT_TYPE.SYSTEM_UPDATED: return this.labelSystem() + ' updated'
+      case Constants.TRIGGER_EVENT_TYPE.CONFORMANCE_STATEMENT_CREATED: return 'Conformance statement created'
+      case Constants.TRIGGER_EVENT_TYPE.CONFORMANCE_STATEMENT_UPDATED: return 'Conformance statement updated'
+      case Constants.TRIGGER_EVENT_TYPE.CONFORMANCE_STATEMENT_SUCCEEDED: return 'Conformance statement succeeded'
+      case Constants.TRIGGER_EVENT_TYPE.TEST_SESSION_STARTED: return 'Test session started'
+      case Constants.TRIGGER_EVENT_TYPE.TEST_SESSION_SUCCEEDED: return 'Test session succeeded'
+      case Constants.TRIGGER_EVENT_TYPE.TEST_SESSION_FAILED: return 'Test session failed'
+      default: throw new Error('Unknown trigger event type ['+eventType+']')
+    }
   }
 
   triggerDataTypes(): IdLabel[] {

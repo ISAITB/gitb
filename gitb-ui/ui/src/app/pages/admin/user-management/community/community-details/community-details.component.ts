@@ -78,7 +78,6 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
   legalNotices: LegalNotice[] = []
   errorTemplates: ErrorTemplate[] = []
   triggers: Trigger[] = []
-  triggerEventTypeMap: {[key: number]: string} = {}
   testBedLegalNotice?: LegalNotice
   testBedLandingPage?: LandingPage
   testBedErrorTemplate?: ErrorTemplate
@@ -151,7 +150,6 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
     if (this.dataService.configuration.registrationEnabled) {
       this.organizationColumns.push({ field: 'templateName', title: 'Set as template', sortable: true })
     }
-    this.triggerEventTypeMap = this.dataService.idToLabelMap(this.dataService.triggerEventTypes())
     if (this.dataService.isSystemAdmin) {
       this.conformanceService.getDomains()
       .subscribe((data) => {
@@ -277,7 +275,7 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
       this.triggerService.getTriggersByCommunity(this.communityId)
       .subscribe((data) => {
         for (let trigger of data) {
-          trigger.eventTypeLabel = this.triggerEventTypeMap[trigger.eventType]
+          trigger.eventTypeLabel = this.dataService.triggerEventTypeLabel(trigger.eventType)
           if (trigger.latestResultOk != undefined) {
             if (trigger.latestResultOk) {
               trigger.statusText = 'Success'
