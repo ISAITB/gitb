@@ -1,12 +1,18 @@
 package controllers
 
+import com.gitb.ps.{ObjectFactory, ProcessRequest}
+import com.gitb.utils.XMLUtils
 import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, ResponseConstructor}
 import exceptions.ErrorCodes
+
 import javax.inject.Inject
 import managers.{AuthorizationManager, TriggerManager}
 import play.api.libs.json.{JsBoolean, Json}
 import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents}
 import utils.JsonUtil
+
+import java.io.StringReader
+import javax.xml.transform.stream.StreamSource
 
 class TriggerService @Inject()(authorizedAction: AuthorizedAction, cc: ControllerComponents, triggerManager: TriggerManager, authorizationManager: AuthorizationManager) extends AbstractController(cc) {
 
@@ -73,6 +79,17 @@ class TriggerService @Inject()(authorizedAction: AuthorizedAction, cc: Controlle
     val json = Json.obj(
       "message"    -> message
     )
+    ResponseConstructor.constructJsonResponse(json.toString())
+  }
+
+  def testTriggerCall(): Action[AnyContent] = authorizedAction { request =>
+    val communityId = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_ID).toLong
+    authorizationManager.canManageCommunity(request, communityId)
+    val url = ParameterExtractor.requiredBodyParameter(request, Parameters.URL)
+    val payloadString = ParameterExtractor.requiredBodyParameter(request, Parameters.PAYLOAD);
+    val result = triggerManager.testTriggerCall(url, payloadString)
+    var json = JsonUtil.jsTextArray(result._2)
+    json = json+("success", JsBoolean(result._1))
     ResponseConstructor.constructJsonResponse(json.toString())
   }
 

@@ -178,5 +178,5 @@ object Parameters {
 
   val SEQUENTIAL = "sequential"
   var WITH_API_KEYS = "with_api_keys"
-
+  var PAYLOAD = "payload"
 }
