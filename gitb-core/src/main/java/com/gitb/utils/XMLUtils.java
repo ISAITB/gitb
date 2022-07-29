@@ -6,6 +6,7 @@ import org.apache.xerces.jaxp.SAXParserFactoryImpl;
 import org.apache.xerces.jaxp.validation.XMLSchemaFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
+import org.w3c.dom.ls.LSResourceResolver;
 import org.xml.sax.*;
 import org.xml.sax.helpers.DefaultHandler;
 
@@ -57,11 +58,36 @@ public class XMLUtils {
      * @param source An XML source
      * @param <T> Type of the object
      * @return Object which is converted from an XML file
-     * @throws JAXBException
      */
     public static <T> T unmarshal(Class<T> clazz, StreamSource source) throws JAXBException {
+	    return unmarshal(clazz, source, null, null);
+    }
+
+    /**
+     * Converts an XML content into a corresponding Object model following schema validation.
+     * A common interface (StreamSource) is used to support different XML sources, i.e. String, File, etc.
+     * For a String s, new StreamSource(new StringReader(s)) can be used.
+     * For a File f, new StreamSource(f) can be used.
+     * @param clazz Class type of the Object
+     * @param source An XML source
+     * @param schemaSource The XML source to read the schema from.
+     * @param resourceResolver A resource resolver to resolve relevant schemas.
+     * @param <T> Type of the object
+     * @return Object which is converted from an XML file
+     */
+    public static <T> T unmarshal(Class<T> clazz, StreamSource source, StreamSource schemaSource, LSResourceResolver resourceResolver) throws JAXBException {
         JAXBContext context       = JAXBContext.newInstance(clazz);
         Unmarshaller unmarshaller = context.createUnmarshaller();
+        try {
+            var schemaFactory = getSecureSchemaFactory();
+            if (resourceResolver != null) {
+                schemaFactory.setResourceResolver(resourceResolver);
+            }
+            var schema = schemaFactory.newSchema(schemaSource);
+            unmarshaller.setSchema(schema);
+        } catch (SAXException e) {
+            throw new IllegalStateException("Provided schema could not be parsed", e);
+        }
         /*
          Use a factory that disables XML External Entity (XXE) attacks.
          This cannot be done by defining a bean since the XMLInputFactory
@@ -77,7 +103,7 @@ public class XMLUtils {
             throw new IllegalStateException(e);
         }
         JAXBElement<T> element    =  unmarshaller.unmarshal(xsr, clazz);
-	    return (T) element.getValue();
+        return (T) element.getValue();
     }
 
     /**
@@ -163,6 +189,10 @@ public class XMLUtils {
     }
 
     public static String LINE_NUMBER_KEY_NAME = "lineNumber";
+
+    public static SchemaFactory getSecureSchemaFactory() throws SAXNotSupportedException, SAXNotRecognizedException {
+        return SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
+    }
 
     public static SAXParserFactory getSecureSAXParserFactory() throws ParserConfigurationException, SAXNotRecognizedException, SAXNotSupportedException {
         // Use Xerces implementation for its advanced security features.

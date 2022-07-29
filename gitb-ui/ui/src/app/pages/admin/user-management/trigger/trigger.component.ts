@@ -24,6 +24,7 @@ import { CustomProperty } from 'src/app/types/custom-property.type';
 import { RoutingService } from 'src/app/services/routing.service';
 import { CommunityTab } from '../community/community-details/community-tab.enum';
 import { StatementParameterMinimal } from 'src/app/types/statement-parameter-minimal';
+import { TestTriggerModalComponent } from './test-trigger-modal/test-trigger-modal.component';
 
 @Component({
   selector: 'app-trigger',
@@ -364,18 +365,12 @@ export class TriggerComponent extends BaseComponent implements OnInit, AfterView
     this.previewPending = true
     this.triggerService.preview(this.trigger.operation, this.dataItemsToSave(), this.communityId)
     .subscribe((result) => {
-      this.modalService.show(CodeEditorModalComponent, {
+      this.modalService.show(TestTriggerModalComponent, {
         class: 'modal-lg',
         initialState: {
-          documentName: 'Sample service call',
-          editorOptions: {
-            value: result.message,
-            readOnly: true,
-            copy: true,
-            lineNumbers: true,
-            smartIndent: false,
-            electricChars: false
-          }
+          request: result.message,
+          communityId: this.communityId,
+          url: this.trigger.url
         }
       })
     }).add(() => {
@@ -405,20 +400,7 @@ export class TriggerComponent extends BaseComponent implements OnInit, AfterView
   }
 
   popupErrorsArray(errorArray: string[]|undefined) {
-    let content = ''
-    if (errorArray != undefined) {
-      let counter = -1
-      let padding = 4
-      for (let text of errorArray) {
-        if (counter == -1) {
-          content += text
-        } else {
-          content += ('\n'+(' '.repeat(counter*padding))+'|\n')
-          content += (' '.repeat(counter*padding)+'+-- ' + text)
-        }
-        counter += 1
-      }
-    }
+    let content = this.dataService.errorArrayToString(errorArray)
     this.modalService.show(CodeEditorModalComponent, {
       class: 'modal-lg',
       initialState: {

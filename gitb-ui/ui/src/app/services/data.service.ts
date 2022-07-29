@@ -603,6 +603,24 @@ export class DataService {
     return map
   }
 
+  errorArrayToString(errorArray: string[]|undefined): string {
+    let content = ''
+    if (errorArray != undefined) {
+      let counter = -1
+      let padding = 4
+      for (let text of errorArray) {
+        if (counter == -1) {
+          content += text
+        } else {
+          content += ('\n'+(' '.repeat(counter*padding))+'|\n')
+          content += (' '.repeat(counter*padding)+'+-- ' + text)
+        }
+        counter += 1
+      }
+    }
+    return content;
+  }
+
   triggerEventTypeLabel(eventType: number): string {
     switch (eventType) {
       case Constants.TRIGGER_EVENT_TYPE.ORGANISATION_CREATED: return this.labelOrganisation() + ' created'

@@ -162,6 +162,7 @@ POST    /api/triggers/:id                       @controllers.TriggerService.upda
 POST    /api/triggers/:id/clearStatus           @controllers.TriggerService.clearStatus(id : Long)
 POST    /api/trigger/test                       @controllers.TriggerService.testTriggerEndpoint()
 POST    /api/trigger/previewTriggerCall         @controllers.TriggerService.previewTriggerCall()
+POST    /api/trigger/testTriggerCall            @controllers.TriggerService.testTriggerCall()
 
 GET     /api/organizations/all                  @controllers.OrganizationService.getOrganizations()
 POST    /api/organizations/create               @controllers.OrganizationService.createOrganization()

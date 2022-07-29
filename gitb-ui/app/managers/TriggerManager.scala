@@ -1,8 +1,8 @@
 package managers
 
 import com.gitb.core.{AnyContent, ValueEmbeddingEnumeration}
-import com.gitb.ps.{GetModuleDefinitionResponse, ProcessRequest, ProcessingServiceService}
-import com.gitb.utils.XMLUtils
+import com.gitb.ps.{GetModuleDefinitionResponse, ProcessRequest, ProcessResponse, ProcessingService, ProcessingServiceService}
+import com.gitb.utils.{ClasspathResourceResolver, XMLUtils}
 import models.Enums.TriggerDataType
 import models.Enums.TriggerDataType.TriggerDataType
 import models.Enums.TriggerEventType._
@@ -12,13 +12,14 @@ import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
 import utils.{JsonUtil, MimeUtil, RepositoryUtils}
 
-import java.io.ByteArrayOutputStream
+import java.io.{ByteArrayOutputStream, StringReader}
 import java.nio.charset.{Charset, StandardCharsets}
 import java.nio.file.Files
 import java.util.Base64
 import javax.inject.{Inject, Singleton}
 import javax.xml.bind.JAXBElement
 import javax.xml.namespace.QName
+import javax.xml.transform.stream.StreamSource
 import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
@@ -298,7 +299,7 @@ class TriggerManager @Inject()(repositoryUtils: RepositoryUtils, triggerDataLoad
     exec(PersistenceSchema.parameters.filter(_.id inSet parameterIds).map(x => (x.id, x.name)).result).toMap
   }
 
-  private def loadStatementParameterData(parameterKeys: Map[Long, String], actorId: Option[Long], systemId: Option[Long]): Map[String, (Long, String, Option[String], Option[Long], Option[String])] = {
+  private def loadStatementParameterData(parameterKeys: Map[Long, String], actorId: Option[Long], systemId: Option[Long], communityId: Long): Map[String, (Long, String, Option[String], Option[Long], Option[String])] = {
     var data: List[(String, Long, String, Option[String], Option[Long], Option[String])] = null // key, ID, kind, value, system ID, contentType
     if (systemId.isDefined && actorId.isDefined) {
       data = exec(
@@ -312,7 +313,19 @@ class TriggerManager @Inject()(repositoryUtils: RepositoryUtils, triggerDataLoad
           .result
       ).map(x => (x._1, x._2, x._3, Some(x._4), systemId, x._5)).toList
     } else {
-      data = parameterKeys.map(x => (x._2, x._1, "SIMPLE", None, None, None)).toList
+      data = exec(
+        for {
+          domainId <- PersistenceSchema.communities.filter(_.id === communityId).map(_.domain).result.head
+          parameterData <-
+              PersistenceSchema.parameters
+                .join(PersistenceSchema.endpoints).on(_.endpoint === _.id)
+                .join(PersistenceSchema.actors).on(_._2.actor === _.id)
+                .filterOpt(domainId)((table, domainIdValue) => table._2.domain === domainIdValue)
+                .filter(_._1._1.name inSet parameterKeys.values)
+                .map(x => (x._1._1.name, x._1._1.id, x._1._1.kind))
+                .result
+        } yield parameterData
+      ).map(x => (x._1, x._2, x._3, None, None, None)).toList
     }
     val resultMap = mutable.Map[String, (Long, String, Option[String], Option[Long], Option[String])]()
     data.foreach { dataItem =>
@@ -350,7 +363,7 @@ class TriggerManager @Inject()(repositoryUtils: RepositoryUtils, triggerDataLoad
       if (hasTriggerDataType(trigger.data.get, TriggerDataType.StatementParameter)) {
         // Load the parameter keys (names) (the recorded IDs in the trigger definition are only indicative).
         statementParameterKeys = fromCache(dataCache, "statementParameterKeys", () => loadStatementParameterKeys(trigger.data.get.map(x => x.dataId)))
-        statementParameterData = fromCache(dataCache, "statementParameterData", () => loadStatementParameterData(statementParameterKeys, TriggerCallbacks.actorId(callbacks), TriggerCallbacks.systemId(callbacks)))
+        statementParameterData = fromCache(dataCache, "statementParameterData", () => loadStatementParameterData(statementParameterKeys, TriggerCallbacks.actorId(callbacks), TriggerCallbacks.systemId(callbacks), trigger.trigger.community))
       }
     }
     val request = new ProcessRequest()
@@ -582,15 +595,14 @@ class TriggerManager @Inject()(repositoryUtils: RepositoryUtils, triggerDataLoad
     new String(bos.toByteArray, StandardCharsets.UTF_8)
   }
 
-  def testTriggerEndpoint(url: String): (Boolean, List[String]) = {
+  private def callService(url: String, fnCallOperation: (ProcessingService) => JAXBElement[_]): (Boolean, List[String]) = {
     var success = false
     var result: List[String] = null
     try {
       val service = new ProcessingServiceService(new java.net.URL(url))
-      val response = service.getProcessingServicePort.getModuleDefinition(new com.gitb.ps.Void())
-      val responseWrapper = new JAXBElement[GetModuleDefinitionResponse](new QName("http://www.gitb.com/ps/v1/", "GetModuleDefinitionResponse"), classOf[GetModuleDefinitionResponse], response)
+      val response = fnCallOperation.apply(service.getProcessingServicePort)
       val bos = new ByteArrayOutputStream()
-      XMLUtils.marshalToStream(responseWrapper, bos)
+      XMLUtils.marshalToStream(response, bos)
       result = List(new String(bos.toByteArray, StandardCharsets.UTF_8))
       success = true
     } catch {
@@ -599,6 +611,24 @@ class TriggerManager @Inject()(repositoryUtils: RepositoryUtils, triggerDataLoad
         result = extractFailureDetails(e)
     }
     (success, result)
+  }
+
+  def testTriggerEndpoint(url: String): (Boolean, List[String]) = {
+    callService(url, service => {
+      val response = service.getModuleDefinition(new com.gitb.ps.Void())
+      new JAXBElement[GetModuleDefinitionResponse](new QName("http://www.gitb.com/ps/v1/", "GetModuleDefinitionResponse"), classOf[GetModuleDefinitionResponse], response)
+    })
+  }
+
+  def testTriggerCall(url: String, payload: String): (Boolean, List[String]) = {
+    callService(url, service => {
+      val request = XMLUtils.unmarshal(classOf[ProcessRequest],
+        new StreamSource(new StringReader(payload)),
+        new StreamSource(this.getClass.getResourceAsStream("/schema/gitb_ps.xsd")),
+        new ClasspathResourceResolver())
+      val response = service.process(request)
+      new JAXBElement[ProcessResponse](new QName("http://www.gitb.com/ps/v1/", "ProcessResponse"), classOf[ProcessResponse], response)
+    })
   }
 
   def fireTriggers(communityId: Long, eventType: TriggerEventType, triggerData: Any): Unit = {

@@ -252,7 +252,7 @@
             <div class="panel-footer">
                 <div class="btn-toolbar">
                     <button class="btn btn-default" type="submit" (click)="save()" [disable]="saveDisabled()" [pending]="savePending">Save</button>
-                    <button class="btn btn-default" type="button" (click)="preview()" [disable]="previewDisabled()" [pending]="previewPending">Preview service call</button>
+                    <button class="btn btn-default" type="button" (click)="preview()" [disable]="previewDisabled()" [pending]="previewPending">Preview and test service call</button>
                     <button *ngIf="update" class="btn btn-default" type="button" [disable]="deleteDisabled()" [pending]="deletePending" (click)="delete()">Delete</button>
                     <button class="btn btn-default" type="button" (click)="back()">{{ update?'Back':'Cancel' }}</button>
                 </div>
