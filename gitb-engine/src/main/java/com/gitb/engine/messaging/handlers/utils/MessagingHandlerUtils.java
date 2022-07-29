@@ -47,16 +47,26 @@ public class MessagingHandlerUtils {
 	private static Message getMessageFromReport(TAR report) {
 		Message message = new Message();
 		AnyContent context = report.getContext();
-		if (context.isForContext()) {
-			if (DataType.MAP_DATA_TYPE.equals(context.getType())) {
-				for (AnyContent child: context.getItem()) {
-					var dataType = DataTypeFactory.getInstance().create(child, AnyContent::isForContext);
-					if (dataType != null) {
-						message.getFragments().put(child.getName(), dataType);
+		if (context.isForContext() && (context.getValue() != null || !context.getItem().isEmpty())) {
+			var declaredType = DataTypeFactory.determineDataType(context);
+			if (DataType.MAP_DATA_TYPE.equals(declaredType)) {
+				for (AnyContent child : context.getItem()) {
+					if (child.getName() != null) {
+						var dataType = DataTypeFactory.getInstance().create(child, AnyContent::isForContext);
+						if (dataType != null) {
+							message.getFragments().put(child.getName(), dataType);
+						}
 					}
 				}
+			} else if (context.getName() != null) {
+				var dataType = DataTypeFactory.getInstance().create(context, AnyContent::isForContext);
+				if (dataType != null) {
+					message.getFragments().put(context.getName(), dataType);
+				}
 			} else {
-				throw new IllegalStateException("Invalid context type of report");
+				throw new IllegalStateException("The type of the context set in the TAR report was invalid. " +
+						"This should either be a 'map' with named child elements, or a named element of another type ('list', 'string', 'number', 'binary', 'object', 'schema'). " +
+						"Returning an unnamed 'list' element is not allowed.");
 			}
 		}
 		return message;
