@@ -78,15 +78,17 @@ public class XMLUtils {
     public static <T> T unmarshal(Class<T> clazz, StreamSource source, StreamSource schemaSource, LSResourceResolver resourceResolver) throws JAXBException {
         JAXBContext context       = JAXBContext.newInstance(clazz);
         Unmarshaller unmarshaller = context.createUnmarshaller();
-        try {
-            var schemaFactory = getSecureSchemaFactory();
-            if (resourceResolver != null) {
-                schemaFactory.setResourceResolver(resourceResolver);
+        if (schemaSource != null) {
+            try {
+                var schemaFactory = getSecureSchemaFactory();
+                if (resourceResolver != null) {
+                    schemaFactory.setResourceResolver(resourceResolver);
+                }
+                var schema = schemaFactory.newSchema(schemaSource);
+                unmarshaller.setSchema(schema);
+            } catch (SAXException e) {
+                throw new IllegalStateException("Provided schema could not be parsed", e);
             }
-            var schema = schemaFactory.newSchema(schemaSource);
-            unmarshaller.setSchema(schema);
-        } catch (SAXException e) {
-            throw new IllegalStateException("Provided schema could not be parsed", e);
         }
         /*
          Use a factory that disables XML External Entity (XXE) attacks.
