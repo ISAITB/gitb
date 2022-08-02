@@ -966,4 +966,8 @@ export class DataService {
     return idSet
   }
 
+  prettifyJSON(content: string) {
+    return JSON.stringify(JSON.parse(content), null, 3)
+  }
+
 }

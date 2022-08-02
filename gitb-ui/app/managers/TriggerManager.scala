@@ -1,15 +1,18 @@
 package managers
 
 import com.gitb.core.{AnyContent, ValueEmbeddingEnumeration}
-import com.gitb.ps.{GetModuleDefinitionResponse, ProcessRequest, ProcessResponse, ProcessingService, ProcessingServiceService}
+import com.gitb.ps._
 import com.gitb.utils.{ClasspathResourceResolver, XMLUtils}
-import models.Enums.TriggerDataType
 import models.Enums.TriggerDataType.TriggerDataType
 import models.Enums.TriggerEventType._
+import models.Enums.TriggerServiceType.TriggerServiceType
+import models.Enums.{TriggerDataType, TriggerServiceType}
 import models._
 import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
+import play.api.libs.json._
+import play.api.libs.ws.WSClient
 import utils.{JsonUtil, MimeUtil, RepositoryUtils}
 
 import java.io.{ByteArrayOutputStream, StringReader}
@@ -24,10 +27,12 @@ import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{Future, Promise}
 import scala.jdk.CollectionConverters.CollectionHasAsScala
+import scala.util.{Failure, Success}
 
 @Singleton
-class TriggerManager @Inject()(repositoryUtils: RepositoryUtils, triggerDataLoader: TriggerDataLoader, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class TriggerManager @Inject()(ws: WSClient, repositoryUtils: RepositoryUtils, triggerDataLoader: TriggerDataLoader, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
 
@@ -50,10 +55,10 @@ class TriggerManager @Inject()(repositoryUtils: RepositoryUtils, triggerDataLoad
   def getTriggersByCommunity(communityId: Long): List[Triggers] = {
     exec(PersistenceSchema.triggers
       .filter(_.community === communityId)
-      .map(x => (x.id, x.name, x.description, x.url, x.eventType, x.active, x.community, x.latestResultOk))
+      .map(x => (x.id, x.name, x.description, x.url, x.eventType, x.serviceType, x.active, x.community, x.latestResultOk))
       .sortBy(_._2.asc)
       .result
-    ).map(x => Triggers(x._1, x._2, x._3, x._4, x._5, None, x._6, x._8, None, x._7)).toList
+    ).map(x => Triggers(x._1, x._2, x._3, x._4, x._5, x._6, None, x._7, x._9, None, x._8)).toList
   }
 
   def createTrigger(trigger: Trigger): Long = {
@@ -97,36 +102,48 @@ class TriggerManager @Inject()(repositoryUtils: RepositoryUtils, triggerDataLoad
   }
 
   def getTriggersAndDataByCommunityAndType(communityId: Long, eventType: TriggerEventType): Option[List[Trigger]] = {
-    var result: Option[List[Trigger]] = None
-    val triggers = exec(PersistenceSchema.triggers
-      .filter(_.community === communityId)
-      .filter(_.eventType === eventType.id.toShort)
-      .filter(_.active === true)
-      .map(x => (x.id, x.url, x.operation, x.latestResultOk))
-      .result)
+    val result = exec(
+      for {
+        triggers <- PersistenceSchema.triggers
+          .filter(_.community === communityId)
+          .filter(_.eventType === eventType.id.toShort)
+          .filter(_.active === true)
+          .map(x => (x.id, x.url, x.operation, x.latestResultOk, x.serviceType))
+          .result
+        triggerData <- {
+          if (triggers.nonEmpty) {
+            PersistenceSchema.triggerData.filter(_.trigger inSet triggers.map(t => t._1)).result
+          } else {
+            DBIO.successful(List())
+          }
+        }
+      } yield (triggers, triggerData)
+    )
+    val triggers = result._1
+    val triggerData = result._2
     if (triggers.nonEmpty) {
-      val triggerIds = triggers.map(t => t._1)
-      val triggerDataItemMap = mutable.Map[Long, ListBuffer[TriggerData]]()
-      exec(PersistenceSchema.triggerData.filter(_.trigger inSet triggerIds).result).foreach { triggerItem =>
-        var data = triggerDataItemMap.get(triggerItem.trigger)
+      val itemMap = mutable.Map[Long, ListBuffer[TriggerData]]()
+      triggerData.foreach { triggerItem =>
+        var data = itemMap.get(triggerItem.trigger)
         if (data.isEmpty) {
           data = Some(new ListBuffer[TriggerData]())
-          triggerDataItemMap += (triggerItem.trigger -> data.get)
+          itemMap += (triggerItem.trigger -> data.get)
         }
         data.get += TriggerData(triggerItem.dataType, triggerItem.dataId, triggerItem.trigger)
       }
-      result = Some(triggers.map { trigger =>
+      Some(triggers.map { trigger =>
         var triggerData: Option[List[TriggerData]] = None
-        if (triggerDataItemMap.contains(trigger._1)) {
-          triggerData = Some(triggerDataItemMap(trigger._1).toList)
+        if (itemMap.contains(trigger._1)) {
+          triggerData = Some(itemMap(trigger._1).toList)
         }
         new Trigger(
-          Triggers(trigger._1, "", None, trigger._2, eventType.id.toShort, trigger._3, active = true, trigger._4, None, communityId),
+          Triggers(trigger._1, "", None, trigger._2, eventType.id.toShort, trigger._5, trigger._3, active = true, trigger._4, None, communityId),
           triggerData
         )
       }.toList)
+    } else {
+      None
     }
-    result
   }
 
   def updateTrigger(trigger: Trigger): Unit = {
@@ -138,8 +155,8 @@ class TriggerManager @Inject()(repositoryUtils: RepositoryUtils, triggerDataLoad
   }
 
   private[managers] def updateTriggerInternal(trigger: Trigger): DBIO[_] = {
-    val q = for { t <- PersistenceSchema.triggers if t.id === trigger.trigger.id } yield (t.name, t.description, t.url, t.eventType, t.operation, t.active)
-    q.update(trigger.trigger.name, trigger.trigger.description, trigger.trigger.url, trigger.trigger.eventType, trigger.trigger.operation, trigger.trigger.active) andThen
+    val q = for { t <- PersistenceSchema.triggers if t.id === trigger.trigger.id } yield (t.name, t.description, t.url, t.eventType, t.serviceType, t.operation, t.active)
+    q.update(trigger.trigger.name, trigger.trigger.description, trigger.trigger.url, trigger.trigger.eventType, trigger.trigger.serviceType, trigger.trigger.operation, trigger.trigger.active) andThen
       setTriggerDataInternal(trigger.trigger.id, trigger.data, isNewTrigger = false)
   }
 
@@ -587,48 +604,80 @@ class TriggerManager @Inject()(repositoryUtils: RepositoryUtils, triggerDataLoad
     request
   }
 
-  def previewTriggerCall(communityId: Long, operation: Option[String], data: Option[List[TriggerData]]): String = {
-    val request = prepareTriggerInput(new Trigger(Triggers(-1, "", None, "", -1, operation, active = false, None, None, communityId), data), mutable.Map[String, Any](), None)
-    val requestWrapper = new JAXBElement[ProcessRequest](new QName("http://www.gitb.com/ps/v1/", "ProcessRequest"), classOf[ProcessRequest], request)
-    val bos = new ByteArrayOutputStream()
-    XMLUtils.marshalToStream(requestWrapper, bos)
-    new String(bos.toByteArray, StandardCharsets.UTF_8)
+  def previewTriggerCall(communityId: Long, operation: Option[String], serviceType: TriggerServiceType, data: Option[List[TriggerData]]): String = {
+    val request = prepareTriggerInput(new Trigger(Triggers(-1, "", None, "", -1, serviceType.id.toShort, operation, active = false, None, None, communityId), data), mutable.Map[String, Any](), None)
+    if (serviceType == TriggerServiceType.GITB) {
+      val requestWrapper = new JAXBElement[ProcessRequest](new QName("http://www.gitb.com/ps/v1/", "ProcessRequest"), classOf[ProcessRequest], request)
+      val bos = new ByteArrayOutputStream()
+      XMLUtils.marshalToStream(requestWrapper, bos)
+      new String(bos.toByteArray, StandardCharsets.UTF_8)
+    } else {
+      JsonUtil.jsProcessRequest(request).toString()
+    }
   }
 
-  private def callService(url: String, fnCallOperation: (ProcessingService) => JAXBElement[_]): (Boolean, List[String]) = {
-    var success = false
-    var result: List[String] = null
-    try {
+  private def callHttpService(url: String, fnPayloadProvider: () => String): Future[(Boolean, List[String], String)] = {
+    for {
+      payload <- Future { fnPayloadProvider.apply() }
+      response <- ws.url(url)
+        .addHttpHeaders("Content-Type" -> "application/json")
+        .post(payload)
+        .map(response => (response.status == 200, List(response.body), response.headers.getOrElse("Content-Type", List("text/plain")).head))
+    } yield response
+  }
+
+  private def callProcessingService(url: String, fnCallOperation: ProcessingService => JAXBElement[_]): Future[(Boolean, List[String], String)] = {
+    Future {
       val service = new ProcessingServiceService(new java.net.URL(url))
       val response = fnCallOperation.apply(service.getProcessingServicePort)
       val bos = new ByteArrayOutputStream()
       XMLUtils.marshalToStream(response, bos)
-      result = List(new String(bos.toByteArray, StandardCharsets.UTF_8))
-      success = true
-    } catch {
-      case e:Exception =>
-        success = false
-        result = extractFailureDetails(e)
+      (true, List(new String(bos.toByteArray, StandardCharsets.UTF_8)), "application/xml")
     }
-    (success, result)
   }
 
-  def testTriggerEndpoint(url: String): (Boolean, List[String]) = {
-    callService(url, service => {
-      val response = service.getModuleDefinition(new com.gitb.ps.Void())
-      new JAXBElement[GetModuleDefinitionResponse](new QName("http://www.gitb.com/ps/v1/", "GetModuleDefinitionResponse"), classOf[GetModuleDefinitionResponse], response)
-    })
+  def testTriggerEndpoint(url: String, serviceType: TriggerServiceType): Future[(Boolean, List[String], String)] = {
+    val promise = Promise[(Boolean, List[String], String)]()
+    var future: Future[(Boolean, List[String], String)] = null
+    if (serviceType == TriggerServiceType.GITB) {
+      future = callProcessingService(url, service => {
+        val response = service.getModuleDefinition(new com.gitb.ps.Void())
+        new JAXBElement[GetModuleDefinitionResponse](new QName("http://www.gitb.com/ps/v1/", "GetModuleDefinitionResponse"), classOf[GetModuleDefinitionResponse], response)
+      })
+    } else {
+      future = callHttpService(url, () => "{}")
+    }
+    future.onComplete {
+      case Success(result) => promise.success(result)
+      case Failure(exception) => promise.success(false, extractFailureDetails(exception), "text/plain")
+    }
+    promise.future
   }
 
-  def testTriggerCall(url: String, payload: String): (Boolean, List[String]) = {
-    callService(url, service => {
-      val request = XMLUtils.unmarshal(classOf[ProcessRequest],
-        new StreamSource(new StringReader(payload)),
-        new StreamSource(this.getClass.getResourceAsStream("/schema/gitb_ps.xsd")),
-        new ClasspathResourceResolver())
-      val response = service.process(request)
-      new JAXBElement[ProcessResponse](new QName("http://www.gitb.com/ps/v1/", "ProcessResponse"), classOf[ProcessResponse], response)
-    })
+  def testTriggerCall(url: String, serviceType: TriggerServiceType, payload: String): Future[(Boolean, List[String], String)] = {
+    val promise = Promise[(Boolean, List[String], String)]()
+    var future: Future[(Boolean, List[String], String)] = null
+    if (serviceType == TriggerServiceType.GITB) {
+      future = callProcessingService(url, service => {
+        val request = XMLUtils.unmarshal(classOf[ProcessRequest],
+          new StreamSource(new StringReader(payload)),
+          new StreamSource(this.getClass.getResourceAsStream("/schema/gitb_ps.xsd")),
+          new ClasspathResourceResolver())
+        val response = service.process(request)
+        new JAXBElement[ProcessResponse](new QName("http://www.gitb.com/ps/v1/", "ProcessResponse"), classOf[ProcessResponse], response)
+      })
+    } else {
+      future = callHttpService(url, () => {
+        val payloadAsJson = Json.parse(payload)
+        payloadAsJson.validate(JsonUtil.validatorForProcessRequest())
+        payloadAsJson.toString()
+      })
+    }
+    future.onComplete {
+      case Success(result) => promise.success(result)
+      case Failure(exception) => promise.success(false, extractFailureDetails(exception), "text/plain")
+    }
+    promise.future
   }
 
   def fireTriggers(communityId: Long, eventType: TriggerEventType, triggerData: Any): Unit = {
@@ -762,11 +811,28 @@ class TriggerManager @Inject()(repositoryUtils: RepositoryUtils, triggerDataLoad
     toDBIO(dbActions)
   }
 
-  private def fireTrigger(trigger: Triggers, callbacks: TriggerCallbacks, request: ProcessRequest): Unit = {
-    scala.concurrent.Future {
-      try {
+  private def callTriggerService(trigger: Triggers, request: ProcessRequest): Future[ProcessResponse] = {
+    if (TriggerServiceType.apply(trigger.serviceType) == TriggerServiceType.GITB) {
+      Future {
         val service = new ProcessingServiceService(new java.net.URL(trigger.url))
-        val response = service.getProcessingServicePort.process(request)
+        service.getProcessingServicePort.process(request)
+      }
+    } else {
+      callHttpService(trigger.url, () => {
+        JsonUtil.jsProcessRequest(request).toString()
+      }).map { result =>
+        if (result._1) {
+          JsonUtil.parseJsProcessResponse(Json.parse(result._2.headOption.getOrElse("{}")))
+        } else {
+          throw new IllegalStateException(result._2.headOption.getOrElse("Unexpected error"))
+        }
+      }
+    }
+  }
+
+  private def fireTrigger(trigger: Triggers, callbacks: TriggerCallbacks, request: ProcessRequest): Unit = {
+    callTriggerService(trigger, request).onComplete {
+      case Success(response) =>
         val onSuccessCalls = mutable.ListBuffer[() => _]()
         val dbActions = ListBuffer[DBIO[_]]()
         if (response != null) {
@@ -795,11 +861,9 @@ class TriggerManager @Inject()(repositoryUtils: RepositoryUtils, triggerDataLoad
           dbActions += recordTriggerResultInternal(trigger.id, success = true, None)
         }
         exec(dbActionFinalisation(Some(onSuccessCalls), None, toDBIO(dbActions)).transactionally)
-      } catch {
-        case e:Exception =>
-          logger.warn("Trigger call resulted in error [community: "+trigger.community+"][type: "+trigger.eventType+"][url: "+trigger.url+"]", e)
-          recordTriggerResult(trigger.id, success = false, Some(JsonUtil.jsTextArray(extractFailureDetails(e)).toString()))
-      }
+      case Failure(error) =>
+        logger.warn("Trigger call resulted in error [community: "+trigger.community+"][type: "+trigger.eventType+"][url: "+trigger.url+"]", error)
+        recordTriggerResult(trigger.id, success = false, Some(JsonUtil.jsTextArray(extractFailureDetails(error)).toString()))
     }
   }
 

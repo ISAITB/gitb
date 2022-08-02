@@ -5,6 +5,7 @@ import { PopupService } from 'src/app/services/popup.service';
 import { EditorOptions } from 'src/app/components/code-editor-modal/code-editor-options';
 import { TriggerService } from 'src/app/services/trigger.service';
 import { Subscription } from 'rxjs';
+import { Constants } from 'src/app/common/constants';
 
 @Component({
   selector: 'app-test-trigger-modal',
@@ -17,6 +18,7 @@ export class TestTriggerModalComponent implements OnInit {
   @Input() request!: string
   @Input() communityId!: number
   @Input() url!: string
+  @Input() serviceType!: number
   initialRequest!: string
   callSubscription?: Subscription
   editorOptionsRequest!: EditorOptions
@@ -35,20 +37,23 @@ export class TestTriggerModalComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
+    if (this.serviceType == Constants.TRIGGER_SERVICE_TYPE.JSON) {
+      this.request = this.dataService.prettifyJSON(this.request)
+    }
     this.initialRequest = this.request
     this.editorOptionsRequest = {
       readOnly: false,
       lineNumbers: true,
       smartIndent: false,
       electricChars: false,
-      mode: 'application/xml'
+      mode: ((this.serviceType == Constants.TRIGGER_SERVICE_TYPE.GITB)? 'application/xml' : 'application/json')
     }
     this.editorOptionsResponse = {
       readOnly: true,
       lineNumbers: true,
       smartIndent: false,
       electricChars: false,
-      mode: 'application/xml'
+      mode: ((this.serviceType == Constants.TRIGGER_SERVICE_TYPE.GITB)? 'application/xml' : 'application/json')
     }
     this.editorOptionsResponseError = {
       readOnly: true,
@@ -61,12 +66,16 @@ export class TestTriggerModalComponent implements OnInit {
 
   callService() {
     this.actionPending = true
-    this.callSubscription = this.triggerService.test(this.url, this.request, this.communityId)
+    this.callSubscription = this.triggerService.test(this.url, this.serviceType, this.request, this.communityId)
     .subscribe((data) => {
       if (data?.texts?.length) {
         if (data.success) {
           this.responseSuccess = true
-          this.response = data.texts[0]
+          if (this.serviceType == Constants.TRIGGER_SERVICE_TYPE.JSON) {
+            this.response = this.dataService.prettifyJSON(data.texts[0])
+          } else {
+            this.response = data.texts[0]
+          }
         } else {
           this.responseSuccess = false
           this.response = this.dataService.errorArrayToString(data.texts)

@@ -23,7 +23,7 @@ export class TriggerService {
     })
   }
 
-  createTrigger(name: string, description: string|undefined, operation: string|undefined, active: boolean|undefined, url: string, event: number, communityId: number, dataItems?: TriggerDataItem[]) {
+  createTrigger(name: string, description: string|undefined, operation: string|undefined, active: boolean|undefined, url: string, event: number, serviceType: number, communityId: number, dataItems?: TriggerDataItem[]) {
     const data: any = {
         name: name,
         description: description,
@@ -31,6 +31,7 @@ export class TriggerService {
         active: active != undefined && active,
         operation: operation,
         event: event,
+        type: serviceType,
         community_id: communityId
     }
     if (dataItems != undefined) {
@@ -43,9 +44,10 @@ export class TriggerService {
     })
   }
 
-  preview(operation: string|undefined, dataItems: TriggerDataItem[]|undefined, communityId: number) {
+  preview(operation: string|undefined, serviceType: number, dataItems: TriggerDataItem[]|undefined, communityId: number) {
     const data: any = {
-        community_id: communityId
+        community_id: communityId,
+        type: serviceType
     }
     if (operation != undefined) {
       data.operation = operation
@@ -60,13 +62,14 @@ export class TriggerService {
     })
   }
 
-  test(url: string, payload: string, communityId: number) {
+  test(url: string, serviceType: number, payload: string, communityId: number) {
     return this.restService.post<TriggerCallResult>({
       path: ROUTES.controllers.TriggerService.testTriggerCall().url,
       authenticate: true,
       data: {
         url: url,
         community_id: communityId,
+        type: serviceType,
         payload: payload
       }
     })
@@ -79,7 +82,7 @@ export class TriggerService {
     })
   }
 
-  updateTrigger(triggerId: number, name: string, description: string|undefined, operation: string|undefined, active: boolean|undefined, url: string, event: number, communityId: number, dataItems?: TriggerDataItem[]) {
+  updateTrigger(triggerId: number, name: string, description: string|undefined, operation: string|undefined, active: boolean|undefined, url: string, event: number, serviceType: number, communityId: number, dataItems?: TriggerDataItem[]) {
     const data: any = {
         name: name,
         description: description,
@@ -87,6 +90,7 @@ export class TriggerService {
         active: active != undefined && active,
         operation: operation,
         event: event,
+        type: serviceType,
         community_id: communityId
     }
     if (dataItems != undefined) {
@@ -113,12 +117,13 @@ export class TriggerService {
     })
   }
 
-  testTriggerEndpoint(url: string, communityId: number) {
+  testTriggerEndpoint(url: string, serviceType: number, communityId: number) {
     return this.restService.post<TriggerCallResult>({
       path: ROUTES.controllers.TriggerService.testTriggerEndpoint().url,
       authenticate: true,
       data: {
         url: url,
+        type: serviceType,
         community_id: communityId
       }  
     })

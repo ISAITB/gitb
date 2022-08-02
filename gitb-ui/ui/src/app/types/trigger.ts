@@ -7,6 +7,7 @@ export interface Trigger {
     url: string
     eventType: number
     eventTypeLabel?: string
+    serviceType: number
     latestResultOk?: boolean
     active: boolean
     status?: number
