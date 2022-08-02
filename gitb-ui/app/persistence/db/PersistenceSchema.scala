@@ -521,12 +521,13 @@ object PersistenceSchema {
     def description = column[Option[String]]("description", O.SqlType("TEXT"))
     def url = column[String]("url")
     def eventType = column[Short]("event_type")
+    def serviceType = column[Short]("service_type")
     def operation = column[Option[String]]("operation")
     def active = column[Boolean]("active")
     def latestResultOk = column[Option[Boolean]]("latest_result_ok")
     def latestResultOutput = column[Option[String]]("latest_result_output", O.SqlType("TEXT"))
     def community = column[Long] ("community")
-    def * = (id, name, description, url, eventType, operation, active, latestResultOk, latestResultOutput, community) <> (Triggers.tupled, Triggers.unapply)
+    def * = (id, name, description, url, eventType, serviceType, operation, active, latestResultOk, latestResultOutput, community) <> (Triggers.tupled, Triggers.unapply)
     def pk = primaryKey("triggers_pk", id)
   }
   val triggers = TableQuery[TriggersTable]

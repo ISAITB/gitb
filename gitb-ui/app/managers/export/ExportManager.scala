@@ -828,6 +828,10 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, triggerManager:
             case models.Enums.TriggerEventType.ConformanceStatementSucceeded => exportedTrigger.setEventType(TriggerEventType.CONFORMANCE_STATEMENT_SUCCEEDED)
             case models.Enums.TriggerEventType.TestSessionStarted => exportedTrigger.setEventType(TriggerEventType.TEST_SESSION_STARTED)
           }
+          models.Enums.TriggerServiceType.apply(trigger.trigger.serviceType) match {
+            case models.Enums.TriggerServiceType.GITB => exportedTrigger.setServiceType(TriggerServiceType.GITB)
+            case models.Enums.TriggerServiceType.JSON => exportedTrigger.setServiceType(TriggerServiceType.JSON)
+          }
           if (trigger.data.isDefined && trigger.data.get.nonEmpty) {
             exportedTrigger.setDataItems(new TriggerDataItems)
             trigger.data.get.foreach { dataItem =>

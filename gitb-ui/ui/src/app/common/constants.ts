@@ -187,6 +187,11 @@ export class Constants {
 		INVALID_CREDENTIALS: 104
 	}
 
+	public static TRIGGER_SERVICE_TYPE = {
+		GITB: 1,
+		JSON: 2
+	}
+
 	public static TRIGGER_EVENT_TYPE = {
 		ORGANISATION_CREATED: 1,
 		SYSTEM_CREATED: 2,

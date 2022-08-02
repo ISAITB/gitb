@@ -1,0 +1,1 @@
+ALTER TABLE `triggers` ADD COLUMN `service_type` tinyint NOT NULL DEFAULT 1;

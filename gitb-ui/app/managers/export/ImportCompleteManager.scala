@@ -411,6 +411,15 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
     }
   }
 
+  private def toModelTriggerServiceType(serviceType: com.gitb.xml.export.TriggerServiceType): Short = {
+    require(serviceType != null, "Enum value cannot be null")
+    serviceType match {
+      case com.gitb.xml.export.TriggerServiceType.GITB => Enums.TriggerServiceType.GITB.id.toShort
+      case com.gitb.xml.export.TriggerServiceType.JSON => Enums.TriggerServiceType.JSON.id.toShort
+      case _ => throw new IllegalArgumentException("Unknown enum value ["+serviceType+"]")
+    }
+  }
+
   private def toModelTriggerDataType(dataType: com.gitb.xml.export.TriggerDataType): Short = {
     require(dataType != null, "Enum value cannot be null")
     dataType match {
@@ -429,7 +438,9 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
   }
 
   private def toModelTrigger(modelTriggerId: Option[Long], data: com.gitb.xml.export.Trigger, communityId: Long, ctx: ImportContext): models.Trigger = {
-    val modelTrigger = models.Triggers(modelTriggerId.getOrElse(0L), data.getName, Option(data.getDescription), data.getUrl, toModelTriggerEventType(data.getEventType), Option(data.getOperation), data.isActive, None, None, communityId)
+    val modelTrigger = models.Triggers(modelTriggerId.getOrElse(0L), data.getName, Option(data.getDescription),
+      data.getUrl, toModelTriggerEventType(data.getEventType), toModelTriggerServiceType(data.getServiceType),
+      Option(data.getOperation), data.isActive, None, None, communityId)
     var modelDataItems: Option[List[models.TriggerData]] = None
     if (data.getDataItems != null) {
       val modelDataItemsToProcess = ListBuffer[models.TriggerData]()

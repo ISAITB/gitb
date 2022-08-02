@@ -20,13 +20,13 @@
 <div class="form-group">
     <label class="col-xs-3 control-label" for="kind_1">* Value type:</label>
     <div class="col-xs-7">
-        <label class="radio-inline"><input type="radio" name="kind" [(ngModel)]="parameter.kind" name="kinds" id="kind_1" value="SIMPLE">Simple
+        <label class="radio-inline"><input type="radio" name="kind" [(ngModel)]="parameter.kind" id="kind_1" value="SIMPLE">Simple
             <app-tooltip [inline]="true" inlineType="checkLabel" tbTooltip="A plain text value."></app-tooltip>
         </label>
-        <label class="radio-inline"><input type="radio" name="kind" [(ngModel)]="parameter.kind" name="kinds" id="kind_2" value="BINARY">Binary
+        <label class="radio-inline"><input type="radio" name="kind" [(ngModel)]="parameter.kind" id="kind_2" value="BINARY">Binary
             <app-tooltip [inline]="true" inlineType="checkLabel" tbTooltip="A file."></app-tooltip>
         </label>
-        <label class="radio-inline"><input type="radio" name="kind" [(ngModel)]="parameter.kind" name="kinds" id="kind_3" value="SECRET">Secret
+        <label class="radio-inline"><input type="radio" name="kind" [(ngModel)]="parameter.kind" id="kind_3" value="SECRET">Secret
             <app-tooltip [inline]="true" inlineType="checkLabel" tbTooltip="A secret text value such as a password."></app-tooltip>
         </label>
     </div>
