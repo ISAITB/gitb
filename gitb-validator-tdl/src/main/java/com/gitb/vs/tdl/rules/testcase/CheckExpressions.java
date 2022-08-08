@@ -248,6 +248,7 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
                 recordVariable(((Verify)step).getOutput(), true);
             }
         } else if (step instanceof CallStep) {
+            checkConstantReferenceInScriptlet(((CallStep) step).getHidden(), ATTRIBUTE_HIDDEN);
             checkBindings(((CallStep) step).getInput());
             checkToken(((CallStep) step).getInputAttribute(), TokenType.STRING_OR_VARIABLE_REFERENCE);
             if (((CallStep)step).getOutputAttribute() != null) {
