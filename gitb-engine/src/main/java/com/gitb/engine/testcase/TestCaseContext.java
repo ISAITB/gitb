@@ -449,10 +449,10 @@ public class TestCaseContext {
 
 	private TransactionInfo buildTransactionInfo(String from, String to, String handler, List<Configuration> properties, VariableResolver resolver, LinkedList<CallStep> scriptletCallStack) {
 		return new TransactionInfo(
-				TestCaseUtils.fixedOrVariableValue(ActorUtils.extractActorId(from), scriptletCallStack),
-				TestCaseUtils.fixedOrVariableValue(ActorUtils.extractEndpointName(from), scriptletCallStack),
-				TestCaseUtils.fixedOrVariableValue(ActorUtils.extractActorId(to), scriptletCallStack),
-				TestCaseUtils.fixedOrVariableValue(ActorUtils.extractEndpointName(to), scriptletCallStack),
+				TestCaseUtils.fixedOrVariableValue(ActorUtils.extractActorId(from), String.class, scriptletCallStack),
+				TestCaseUtils.fixedOrVariableValue(ActorUtils.extractEndpointName(from), String.class, scriptletCallStack),
+				TestCaseUtils.fixedOrVariableValue(ActorUtils.extractActorId(to), String.class, scriptletCallStack),
+				TestCaseUtils.fixedOrVariableValue(ActorUtils.extractEndpointName(to), String.class, scriptletCallStack),
 				VariableResolver.isVariableReference(handler)?resolver.resolveVariableAsString(handler).toString():handler,
 				TestCaseUtils.getStepProperties(properties, resolver)
 		);
