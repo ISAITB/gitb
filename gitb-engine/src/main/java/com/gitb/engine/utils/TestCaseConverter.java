@@ -34,6 +34,7 @@ public class TestCaseConverter {
     private final Stack<String> testSuiteContexts = new Stack<>();
     private final Stack<String> scriptletCallStack = new Stack<>();
     private final LinkedList<CallStep> scriptletStepStack = new LinkedList<>();
+    private final LinkedList<Boolean> scriptletStepHiddenAttributeStack = new LinkedList<>();
     private final com.gitb.tdl.TestCase testCase;
     private final ScriptletCache scriptletCache;
     private Set<String> actorIds = null;
@@ -102,9 +103,11 @@ public class TestCaseConverter {
             } else if (step instanceof CallStep) {
                 String childId = childIdPrefix + index++;
                 scriptletStepStack.addLast((CallStep) step);
+                scriptletStepHiddenAttributeStack.addLast(hiddenValueToUse(((CallStep) step).getHidden(), false));
                 for (TestStep childStep: convertCallStep(testCaseId, childId, (CallStep)step).getSteps()) {
                     addToSequence(sequence, childStep);
                 }
+                scriptletStepHiddenAttributeStack.removeLast();
                 scriptletStepStack.removeLast();
             } else if (step instanceof UserInteraction) {
                 String childId = childIdPrefix + index++;
@@ -164,7 +167,7 @@ public class TestCaseConverter {
         verify.setId(id);
         verify.setDesc(fixedOrVariableValueAsString(description.getDesc()));
         verify.setDocumentation(getDocumentation(testCaseId, description.getDocumentation()));
-        verify.setHidden(fixedOrVariableValueAsBoolean(description.getHidden(), false));
+        verify.setHidden(hiddenValueToUse(description.getHidden(), false));
         return verify;
     }
 
@@ -174,7 +177,7 @@ public class TestCaseConverter {
         process.setDesc(fixedOrVariableValueAsString(description.getDesc()));
         process.setDocumentation(getDocumentation(testCaseId, description.getDocumentation()));
         // Process steps are by default hidden.
-        process.setHidden(fixedOrVariableValueAsBoolean(description.getHidden(), true));
+        process.setHidden(hiddenValueToUse(description.getHidden(), true));
         return process;
     }
 
@@ -185,7 +188,7 @@ public class TestCaseConverter {
         messaging.setFrom(fixedOrVariableValueForActor(description.getFrom()));
         messaging.setTo(fixedOrVariableValueForActor(description.getTo()));
         messaging.setDocumentation(getDocumentation(testCaseId, description.getDocumentation()));
-        messaging.setHidden(fixedOrVariableValueAsBoolean(description.getHidden(), false));
+        messaging.setHidden(hiddenValueToUse(description.getHidden(), false));
         messaging.setReply(fixedOrVariableValueAsBoolean(description.getReply(), false));
         return messaging;
     }
@@ -196,7 +199,7 @@ public class TestCaseConverter {
         decision.setTitle(fixedOrVariableValueAsString(description.getTitle()));
         decision.setDesc(fixedOrVariableValueAsString(description.getDesc()));
         decision.setDocumentation(getDocumentation(testCaseId, description.getDocumentation()));
-        decision.setHidden(fixedOrVariableValueAsBoolean(description.getHidden(), false));
+        decision.setHidden(hiddenValueToUse(description.getHidden(), false));
         decision.setCollapsed(description.isCollapsed());
         decision.setThen(convertSequence(testCaseId, id + TRUE , description.getThen()));
         if (description.getElse() != null) {
@@ -211,7 +214,7 @@ public class TestCaseConverter {
         loop.setTitle(fixedOrVariableValueAsString(description.getTitle()));
         loop.setDesc(fixedOrVariableValueAsString(description.getDesc()));
         loop.setDocumentation(getDocumentation(testCaseId, description.getDocumentation()));
-        loop.setHidden(fixedOrVariableValueAsBoolean(description.getHidden(), false));
+        loop.setHidden(hiddenValueToUse(description.getHidden(), false));
         loop.setCollapsed(description.isCollapsed());
         loop.getSteps().addAll(
                 convertSequence(testCaseId, id+ITERATION_OPENING_TAG+1+ITERATION_CLOSING_TAG, description.getDo()).getSteps());
@@ -224,7 +227,7 @@ public class TestCaseConverter {
         loop.setTitle(fixedOrVariableValueAsString(description.getTitle()));
         loop.setDesc(fixedOrVariableValueAsString(description.getDesc()));
         loop.setDocumentation(getDocumentation(testCaseId, description.getDocumentation()));
-        loop.setHidden(fixedOrVariableValueAsBoolean(description.getHidden(), false));
+        loop.setHidden(hiddenValueToUse(description.getHidden(), false));
         loop.setCollapsed(description.isCollapsed());
         loop.getSteps().addAll(
                 convertSequence(testCaseId, id+ITERATION_OPENING_TAG+1+ITERATION_CLOSING_TAG, description.getDo()).getSteps());
@@ -237,7 +240,7 @@ public class TestCaseConverter {
         loop.setTitle(fixedOrVariableValueAsString(description.getTitle()));
         loop.setDesc(fixedOrVariableValueAsString(description.getDesc()));
         loop.setDocumentation(getDocumentation(testCaseId, description.getDocumentation()));
-        loop.setHidden(fixedOrVariableValueAsBoolean(description.getHidden(), false));
+        loop.setHidden(hiddenValueToUse(description.getHidden(), false));
         loop.setCollapsed(description.isCollapsed());
         loop.getSteps().addAll(
                 convertSequence(testCaseId, id+ITERATION_OPENING_TAG+1+ITERATION_CLOSING_TAG, description.getDo()).getSteps());
@@ -250,7 +253,7 @@ public class TestCaseConverter {
         flow.setTitle(fixedOrVariableValueAsString(description.getTitle()));
         flow.setDesc(fixedOrVariableValueAsString(description.getDesc()));
         flow.setDocumentation(getDocumentation(testCaseId, description.getDocumentation()));
-        flow.setHidden(fixedOrVariableValueAsBoolean(description.getHidden(), false));
+        flow.setHidden(hiddenValueToUse(description.getHidden(), false));
         flow.setCollapsed(description.isCollapsed());
         for(int i=0; i<description.getThread().size(); i++) {
             com.gitb.tdl.Sequence thread = description.getThread().get(i);
@@ -266,7 +269,7 @@ public class TestCaseConverter {
         group.setTitle(fixedOrVariableValueAsString(description.getTitle()));
         group.setDesc(fixedOrVariableValueAsString(description.getDesc()));
         group.setDocumentation(getDocumentation(testCaseId, description.getDocumentation()));
-        group.setHidden(fixedOrVariableValueAsBoolean(description.getHidden(), false));
+        group.setHidden(hiddenValueToUse(description.getHidden(), false));
         group.setCollapsed(description.isCollapsed());
         group.getSteps().addAll(convertSequence(testCaseId, id, description).getSteps());
         return group;
@@ -305,13 +308,23 @@ public class TestCaseConverter {
         return sequence;
     }
 
+    private boolean hiddenValueToUse(String hiddenExpression, boolean defaultIfMissing) {
+        /*
+        We check to see first if this step is within a scriptlet. If yes and a parent scriptlet
+        has been set to be hidden this will forcefully make everything beneath it hidden. These
+        flag values are still maintained in a stack because we might have an internal scriptlet set
+        as hidden that will at some point be popped.
+         */
+        return scriptletStepHiddenAttributeStack.stream().filter(Boolean.TRUE::equals).findAny().orElseGet(() -> fixedOrVariableValueAsBoolean(hiddenExpression, defaultIfMissing));
+    }
+
     private UserInteractionStep convertUserInteraction(String testCaseId, String id, UserInteraction description) {
         UserInteractionStep interactionStep = new UserInteractionStep();
         interactionStep.setId(id);
         interactionStep.setTitle(fixedOrVariableValueAsString(description.getTitle()));
         interactionStep.setDesc(fixedOrVariableValueAsString(description.getDesc()));
         interactionStep.setDocumentation(getDocumentation(testCaseId, description.getDocumentation()));
-        interactionStep.setHidden(fixedOrVariableValueAsBoolean(description.getHidden(), false));
+        interactionStep.setHidden(hiddenValueToUse(description.getHidden(), false));
         interactionStep.setCollapsed(description.isCollapsed());
         interactionStep.setWith(description.getWith());
 
@@ -340,7 +353,7 @@ public class TestCaseConverter {
         exit.setId(id);
         exit.setDesc(fixedOrVariableValueAsString(description.getDesc()));
         exit.setDocumentation(getDocumentation(testCaseId, description.getDocumentation()));
-        exit.setHidden(fixedOrVariableValueAsBoolean(description.getHidden(), false));
+        exit.setHidden(hiddenValueToUse(description.getHidden(), false));
         return exit;
     }
 
