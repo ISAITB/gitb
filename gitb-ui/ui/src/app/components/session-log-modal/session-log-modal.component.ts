@@ -1,11 +1,12 @@
 import { Component, EventEmitter, Input } from '@angular/core';
 import * as CodeMirror from 'codemirror';
 import { BsModalRef } from 'ngx-bootstrap/modal';
+import { Constants } from 'src/app/common/constants';
 import { DataService } from 'src/app/services/data.service';
 import { PopupService } from 'src/app/services/popup.service';
 import { BaseCodeEditorModalComponent } from '../base-code-editor-modal/base-code-editor-modal.component';
 import { LineInfo } from './line-info';
-import { LogLevel } from './log-level';
+import { LogLevel } from '../../types/log-level';
 
 @Component({
   selector: 'app-session-log-modal',
@@ -14,7 +15,6 @@ import { LogLevel } from './log-level';
 })
 export class SessionLogModalComponent extends BaseCodeEditorModalComponent {
 
-  static LOG_MESSAGE_REGEX = /^\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\] (DEBUG|ERROR|WARN|INFO) /
   static LINE_PARTS_REGEX = /^(.+)/gm
 
   @Input() messages!: string[]
@@ -91,7 +91,7 @@ export class SessionLogModalComponent extends BaseCodeEditorModalComponent {
       if (messageParts) {
         for (let part of messageParts) {
           if (part.length > 0) {
-            const partLevel = this.messageLevel(part, previousLevel)
+            const partLevel = this.dataService.logMessageLevel(part, previousLevel)
             previousLevel = partLevel
             createdLines.push({
               text: part,
@@ -114,24 +114,6 @@ export class SessionLogModalComponent extends BaseCodeEditorModalComponent {
         this.content += line.text + '\n'
       }
     }
-  }
-
-  private messageLevel(message: string, defaultLevel: LogLevel): LogLevel {
-    let logLevel = defaultLevel
-    let match = SessionLogModalComponent.LOG_MESSAGE_REGEX.exec(message)
-    if (match != null) {
-      const logLevelStr = match[1]
-      if (logLevelStr == 'DEBUG') {
-        logLevel = LogLevel.DEBUG
-      } else if (logLevelStr == 'INFO') {
-        logLevel = LogLevel.INFO
-      } else if (logLevelStr == 'WARN') {
-        logLevel = LogLevel.WARN
-      } else if (logLevelStr == 'ERROR') {
-        logLevel = LogLevel.ERROR
-      }
-    }
-    return logLevel
   }
 
   applyLineStyles(): boolean {

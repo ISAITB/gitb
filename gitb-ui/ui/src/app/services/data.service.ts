@@ -20,6 +20,7 @@ import { TypedLabelConfig } from '../types/typed-label-config.type'
 import { UserAccount } from '../types/user-account';
 import { User } from '../types/user.type';
 import { saveAs } from 'file-saver'
+import { LogLevel } from '../types/log-level';
 
 @Injectable({
   providedIn: 'root'
@@ -968,6 +969,24 @@ export class DataService {
 
   prettifyJSON(content: string) {
     return JSON.stringify(JSON.parse(content), null, 3)
+  }
+
+  logMessageLevel(message: string, defaultLevel: LogLevel): LogLevel {
+    let logLevel = defaultLevel
+    let match = Constants.LOG_LEVEL_REGEX.exec(message)
+    if (match != null) {
+      const logLevelStr = match[1]
+      if (logLevelStr == 'DEBUG') {
+        logLevel = LogLevel.DEBUG
+      } else if (logLevelStr == 'INFO') {
+        logLevel = LogLevel.INFO
+      } else if (logLevelStr == 'WARN') {
+        logLevel = LogLevel.WARN
+      } else if (logLevelStr == 'ERROR') {
+        logLevel = LogLevel.ERROR
+      }
+    }
+    return logLevel
   }
 
 }

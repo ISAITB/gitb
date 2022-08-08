@@ -18,7 +18,7 @@ export class BaseCodeEditorModalComponent implements AfterViewInit {
 
   constructor(
     private modalRef: BsModalRef,
-    private dataService: DataService,
+    protected dataService: DataService,
     private popupService: PopupService
   ) { }
 

@@ -30,7 +30,15 @@
 .viewLogButton {
     position: relative;
     .unreadBadge {
-        background-color: @gray-button;
+        &.badgeLogErrors {
+            background-color: @error-red;
+        }
+        &.badgeLogWarnings {
+            background-color: @warning-yellow;
+        }
+        &.badgeLogMessages {
+            background-color: @gray-button;
+        }
         position: absolute;
         height: 7px;
         width: 7px;
