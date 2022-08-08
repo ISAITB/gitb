@@ -105,7 +105,12 @@
                                                                             <div class="session-table-operations btn-toolbar" *ngIf="stepsOfTests[testCase.id] != undefined">
                                                                                 <div class="viewLogButton">
                                                                                     <button type="button" class="btn btn-default" (click)="viewLog(testCase)">View log</button>
-                                                                                    <div class="unreadBadge" [class.hidden]="!unreadLogMessages[testCase.id]" (click)="viewLog(testCase)"></div>
+                                                                                    <div class="unreadBadge" 
+                                                                                        [class.badgeLogErrors]="unreadLogErrors[testCase.id]" 
+                                                                                        [class.badgeLogWarnings]="unreadLogWarnings[testCase.id] && !unreadLogErrors[testCase.id]" 
+                                                                                        [class.badgeLogMessages]="unreadLogMessages[testCase.id] && !unreadLogWarnings[testCase.id] && !unreadLogErrors[testCase.id]"
+                                                                                        [class.hidden]="!unreadLogErrors[testCase.id] && !unreadLogWarnings[testCase.id] && !unreadLogMessages[testCase.id]" 
+                                                                                        (click)="viewLog(testCase)"></div>
                                                                                 </div>
                                                                             </div>
                                                                         </div>

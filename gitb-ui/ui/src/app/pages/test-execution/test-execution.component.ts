@@ -37,6 +37,7 @@ import { MissingConfigurationAction } from 'src/app/components/missing-configura
 import { LoadingStatus } from 'src/app/types/loading-status.type';
 import { SimulatedConfigurationDisplayModalComponent } from 'src/app/components/simulated-configuration-display-modal/simulated-configuration-display-modal.component';
 import { SessionLogModalComponent } from 'src/app/components/session-log-modal/session-log-modal.component';
+import { LogLevel } from 'src/app/types/log-level';
 
 @Component({
   selector: 'app-test-execution',
@@ -87,6 +88,8 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
   logMessages: {[key: number]: string[]} = {}
   logMessageEventEmitters: {[key: number]: EventEmitter<string>} = {}
   unreadLogMessages: {[key: number]: boolean} = {}
+  unreadLogErrors: {[key: number]: boolean} = {}
+  unreadLogWarnings: {[key: number]: boolean} = {}
   testCaseWithOpenLogView?: number
 
   organisationProperties: OrganisationParameterWithValue[] = []
@@ -176,6 +179,8 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
       this.logMessages[test.id] = []
       this.logMessageEventEmitters[test.id] = new EventEmitter<string>()
       this.unreadLogMessages[test.id] = false
+      this.unreadLogErrors[test.id] = false
+      this.unreadLogWarnings[test.id] = false
     }
   }
 
@@ -503,7 +508,14 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
         this.logMessages[this.currentTest!.id].push(logMessage)
         this.logMessageEventEmitters[this.currentTest!.id].emit(logMessage)
         if (this.currentTest!.id != this.testCaseWithOpenLogView) {
-          this.unreadLogMessages[this.currentTest!.id] = true
+          const messageLevel = this.dataService.logMessageLevel(logMessage, LogLevel.DEBUG)
+          if (messageLevel == LogLevel.ERROR) {
+            this.unreadLogErrors[this.currentTest!.id] = true
+          } else if (messageLevel == LogLevel.WARN) {
+            this.unreadLogWarnings[this.currentTest!.id] = true
+          } else {
+            this.unreadLogMessages[this.currentTest!.id] = true
+          }
         }
       }
     } else if (response.configs != undefined) {
@@ -963,6 +975,8 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
   viewLog(test: ConformanceTestCase) {
     this.testCaseWithOpenLogView = test.id
     this.unreadLogMessages[test.id] = false
+    this.unreadLogErrors[test.id] = false
+    this.unreadLogWarnings[test.id] = false
     const modalRef = this.modalService.show(SessionLogModalComponent, {
       class: 'modal-lg',
       initialState: {
