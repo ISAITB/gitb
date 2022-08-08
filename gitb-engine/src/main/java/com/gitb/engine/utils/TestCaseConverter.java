@@ -120,12 +120,17 @@ public class TestCaseConverter {
         return sequence;
     }
 
-    private String fixedOrVariableValue(String originalValue) {
-        return TestCaseUtils.fixedOrVariableValue(originalValue, scriptletStepStack);
+    private String fixedOrVariableValueAsString(String originalValue) {
+        return TestCaseUtils.fixedOrVariableValue(originalValue, String.class, scriptletStepStack);
+    }
+
+    private Boolean fixedOrVariableValueAsBoolean(String originalValue, boolean defaultIfMissing) {
+        var result = TestCaseUtils.fixedOrVariableValue(originalValue, Boolean.class, scriptletStepStack);
+        return Objects.requireNonNullElse(result, defaultIfMissing);
     }
 
     private String fixedOrVariableValueForActor(String originalValue) {
-        var value = TestCaseUtils.fixedOrVariableValue(originalValue, scriptletStepStack);
+        var value = TestCaseUtils.fixedOrVariableValue(originalValue, String.class, scriptletStepStack);
         if (actorIds == null) {
             actorIds = new HashSet<>();
             if (testCase.getActors() != null) {
@@ -157,41 +162,41 @@ public class TestCaseConverter {
     private com.gitb.tpl.VerifyStep convertVerifyStep(String testCaseId, String id, Verify description) {
         com.gitb.tpl.VerifyStep verify = new com.gitb.tpl.VerifyStep();
         verify.setId(id);
-        verify.setDesc(fixedOrVariableValue(description.getDesc()));
+        verify.setDesc(fixedOrVariableValueAsString(description.getDesc()));
         verify.setDocumentation(getDocumentation(testCaseId, description.getDocumentation()));
-        verify.setHidden(description.isHidden() != null && description.isHidden());
+        verify.setHidden(fixedOrVariableValueAsBoolean(description.getHidden(), false));
         return verify;
     }
 
     private com.gitb.tpl.ProcessStep convertProcessStep(String testCaseId, String id, Process description) {
         com.gitb.tpl.ProcessStep process = new com.gitb.tpl.ProcessStep();
         process.setId(id);
-        process.setDesc(fixedOrVariableValue(description.getDesc()));
+        process.setDesc(fixedOrVariableValueAsString(description.getDesc()));
         process.setDocumentation(getDocumentation(testCaseId, description.getDocumentation()));
         // Process steps are by default hidden.
-        process.setHidden(description.isHidden() == null || description.isHidden());
+        process.setHidden(fixedOrVariableValueAsBoolean(description.getHidden(), true));
         return process;
     }
 
     private com.gitb.tpl.MessagingStep convertMessagingStep(String testCaseId, String id, com.gitb.tdl.MessagingStep description) {
         com.gitb.tpl.MessagingStep messaging = new com.gitb.tpl.MessagingStep();
         messaging.setId(id);
-        messaging.setDesc(fixedOrVariableValue(description.getDesc()));
+        messaging.setDesc(fixedOrVariableValueAsString(description.getDesc()));
         messaging.setFrom(fixedOrVariableValueForActor(description.getFrom()));
         messaging.setTo(fixedOrVariableValueForActor(description.getTo()));
         messaging.setDocumentation(getDocumentation(testCaseId, description.getDocumentation()));
-        messaging.setHidden(description.isHidden() != null && description.isHidden());
-        messaging.setReply(description.isReply());
+        messaging.setHidden(fixedOrVariableValueAsBoolean(description.getHidden(), false));
+        messaging.setReply(fixedOrVariableValueAsBoolean(description.getReply(), false));
         return messaging;
     }
 
     private DecisionStep convertDecisionStep(String testCaseId, String id, IfStep description) {
         DecisionStep decision = new DecisionStep();
         decision.setId(id);
-        decision.setTitle(fixedOrVariableValue(description.getTitle()));
-        decision.setDesc(fixedOrVariableValue(description.getDesc()));
+        decision.setTitle(fixedOrVariableValueAsString(description.getTitle()));
+        decision.setDesc(fixedOrVariableValueAsString(description.getDesc()));
         decision.setDocumentation(getDocumentation(testCaseId, description.getDocumentation()));
-        decision.setHidden(description.isHidden() != null && description.isHidden());
+        decision.setHidden(fixedOrVariableValueAsBoolean(description.getHidden(), false));
         decision.setCollapsed(description.isCollapsed());
         decision.setThen(convertSequence(testCaseId, id + TRUE , description.getThen()));
         if (description.getElse() != null) {
@@ -203,10 +208,10 @@ public class TestCaseConverter {
     private LoopStep convertRepUntilStep(String testCaseId, String id, RepeatUntilStep description) {
         LoopStep loop = new LoopStep();
         loop.setId(id);
-        loop.setTitle(fixedOrVariableValue(description.getTitle()));
-        loop.setDesc(fixedOrVariableValue(description.getDesc()));
+        loop.setTitle(fixedOrVariableValueAsString(description.getTitle()));
+        loop.setDesc(fixedOrVariableValueAsString(description.getDesc()));
         loop.setDocumentation(getDocumentation(testCaseId, description.getDocumentation()));
-        loop.setHidden(description.isHidden() != null && description.isHidden());
+        loop.setHidden(fixedOrVariableValueAsBoolean(description.getHidden(), false));
         loop.setCollapsed(description.isCollapsed());
         loop.getSteps().addAll(
                 convertSequence(testCaseId, id+ITERATION_OPENING_TAG+1+ITERATION_CLOSING_TAG, description.getDo()).getSteps());
@@ -216,10 +221,10 @@ public class TestCaseConverter {
     private LoopStep convertForEachStep(String testCaseId, String id, ForEachStep description) {
         LoopStep loop = new LoopStep();
         loop.setId(id);
-        loop.setTitle(fixedOrVariableValue(description.getTitle()));
-        loop.setDesc(fixedOrVariableValue(description.getDesc()));
+        loop.setTitle(fixedOrVariableValueAsString(description.getTitle()));
+        loop.setDesc(fixedOrVariableValueAsString(description.getDesc()));
         loop.setDocumentation(getDocumentation(testCaseId, description.getDocumentation()));
-        loop.setHidden(description.isHidden() != null && description.isHidden());
+        loop.setHidden(fixedOrVariableValueAsBoolean(description.getHidden(), false));
         loop.setCollapsed(description.isCollapsed());
         loop.getSteps().addAll(
                 convertSequence(testCaseId, id+ITERATION_OPENING_TAG+1+ITERATION_CLOSING_TAG, description.getDo()).getSteps());
@@ -229,10 +234,10 @@ public class TestCaseConverter {
     private LoopStep convertWhileStep(String testCaseId, String id, WhileStep description) {
         LoopStep loop = new LoopStep();
         loop.setId(id);
-        loop.setTitle(fixedOrVariableValue(description.getTitle()));
-        loop.setDesc(fixedOrVariableValue(description.getDesc()));
+        loop.setTitle(fixedOrVariableValueAsString(description.getTitle()));
+        loop.setDesc(fixedOrVariableValueAsString(description.getDesc()));
         loop.setDocumentation(getDocumentation(testCaseId, description.getDocumentation()));
-        loop.setHidden(description.isHidden() != null && description.isHidden());
+        loop.setHidden(fixedOrVariableValueAsBoolean(description.getHidden(), false));
         loop.setCollapsed(description.isCollapsed());
         loop.getSteps().addAll(
                 convertSequence(testCaseId, id+ITERATION_OPENING_TAG+1+ITERATION_CLOSING_TAG, description.getDo()).getSteps());
@@ -242,10 +247,10 @@ public class TestCaseConverter {
     private com.gitb.tpl.FlowStep convertFlowStep(String testCaseId, String id, com.gitb.tdl.FlowStep description) {
         com.gitb.tpl.FlowStep flow = new com.gitb.tpl.FlowStep();
         flow.setId(id);
-        flow.setTitle(fixedOrVariableValue(description.getTitle()));
-        flow.setDesc(fixedOrVariableValue(description.getDesc()));
+        flow.setTitle(fixedOrVariableValueAsString(description.getTitle()));
+        flow.setDesc(fixedOrVariableValueAsString(description.getDesc()));
         flow.setDocumentation(getDocumentation(testCaseId, description.getDocumentation()));
-        flow.setHidden(description.isHidden() != null && description.isHidden());
+        flow.setHidden(fixedOrVariableValueAsBoolean(description.getHidden(), false));
         flow.setCollapsed(description.isCollapsed());
         for(int i=0; i<description.getThread().size(); i++) {
             com.gitb.tdl.Sequence thread = description.getThread().get(i);
@@ -258,10 +263,10 @@ public class TestCaseConverter {
     private com.gitb.tpl.GroupStep convertGroupStep(String testCaseId, String id, com.gitb.tdl.Group description) {
         GroupStep group = new GroupStep();
         group.setId(id);
-        group.setTitle(fixedOrVariableValue(description.getTitle()));
-        group.setDesc(fixedOrVariableValue(description.getDesc()));
+        group.setTitle(fixedOrVariableValueAsString(description.getTitle()));
+        group.setDesc(fixedOrVariableValueAsString(description.getDesc()));
         group.setDocumentation(getDocumentation(testCaseId, description.getDocumentation()));
-        group.setHidden(description.isHidden() != null && description.isHidden());
+        group.setHidden(fixedOrVariableValueAsBoolean(description.getHidden(), false));
         group.setCollapsed(description.isCollapsed());
         group.getSteps().addAll(convertSequence(testCaseId, id, description).getSteps());
         return group;
@@ -303,10 +308,10 @@ public class TestCaseConverter {
     private UserInteractionStep convertUserInteraction(String testCaseId, String id, UserInteraction description) {
         UserInteractionStep interactionStep = new UserInteractionStep();
         interactionStep.setId(id);
-        interactionStep.setTitle(fixedOrVariableValue(description.getTitle()));
-        interactionStep.setDesc(fixedOrVariableValue(description.getDesc()));
+        interactionStep.setTitle(fixedOrVariableValueAsString(description.getTitle()));
+        interactionStep.setDesc(fixedOrVariableValueAsString(description.getDesc()));
         interactionStep.setDocumentation(getDocumentation(testCaseId, description.getDocumentation()));
-        interactionStep.setHidden(description.isHidden() != null && description.isHidden());
+        interactionStep.setHidden(fixedOrVariableValueAsBoolean(description.getHidden(), false));
         interactionStep.setCollapsed(description.isCollapsed());
         interactionStep.setWith(description.getWith());
 
@@ -321,7 +326,7 @@ public class TestCaseConverter {
             }
             if(ior != null) {
                 ior.setId("" + childIndex);
-                ior.setDesc(fixedOrVariableValue(interaction.getDesc()));
+                ior.setDesc(fixedOrVariableValueAsString(interaction.getDesc()));
                 ior.setWith(interaction.getWith());
             }
             interactionStep.getInstructOrRequest().add(ior);
@@ -333,9 +338,9 @@ public class TestCaseConverter {
     private com.gitb.tpl.ExitStep convertExitStep(String testCaseId, String id, com.gitb.tdl.ExitStep description) {
         com.gitb.tpl.ExitStep exit = new com.gitb.tpl.ExitStep();
         exit.setId(id);
-        exit.setDesc(fixedOrVariableValue(description.getDesc()));
+        exit.setDesc(fixedOrVariableValueAsString(description.getDesc()));
         exit.setDocumentation(getDocumentation(testCaseId, description.getDocumentation()));
-        exit.setHidden(description.isHidden() != null && description.isHidden());
+        exit.setHidden(fixedOrVariableValueAsBoolean(description.getHidden(), false));
         return exit;
     }
 

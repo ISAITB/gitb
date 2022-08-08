@@ -25,6 +25,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.function.Supplier;
 
 /**
  * Created by senan on 10/13/14.
@@ -226,28 +227,48 @@ public class TestCaseUtils {
         return description;
     }
 
-    public static String fixedOrVariableValue(String originalValue, LinkedList<CallStep> scriptletStepStack) {
+    public static <T> T fixedOrVariableValue(String originalValue, Class<T> variableClass,  LinkedList<CallStep> scriptletStepStack) {
+        Supplier<T> nonVariableValueFn;
+        String dataType;
+        if (String.class.equals(variableClass)) {
+            dataType = DataType.STRING_DATA_TYPE;
+            nonVariableValueFn = () -> variableClass.cast(originalValue);
+        } else if (Boolean.class.equals(variableClass)) {
+            dataType = DataType.BOOLEAN_DATA_TYPE;
+            nonVariableValueFn = () -> variableClass.cast(Boolean.valueOf(originalValue));
+        } else {
+            throw new IllegalArgumentException("Unsupported variable class ["+variableClass+"]");
+        }
         if (!scriptletStepStack.isEmpty() && VariableResolver.isVariableReference(originalValue)) {
             // The description may be set dynamically from the call inputs.
-            return TestCaseUtils.getConstantCallInput(VariableResolver.extractVariableNameFromExpression(originalValue).getLeft(), scriptletStepStack).orElse(originalValue);
+            return TestCaseUtils.getConstantCallInput(
+                        VariableResolver.extractVariableNameFromExpression(originalValue).getLeft(),
+                        variableClass,
+                        dataType, scriptletStepStack
+                    ).orElseGet(nonVariableValueFn);
         }
-        return originalValue;
+        return nonVariableValueFn.get();
     }
 
-    private static Optional<String> getConstantCallInput(String inputName, LinkedList<CallStep> scriptletStepStack) {
+    private static <T> Optional<T> getConstantCallInput(String inputName, Class<T> constantClass, String constantDataType, LinkedList<CallStep> scriptletStepStack) {
         var iterator = scriptletStepStack.descendingIterator();
         while (iterator.hasNext()) {
             var call = iterator.next();
             var inputToLookFor = inputName;
             var matchedInput = call.getInput().stream().filter(input -> inputToLookFor.equals(input.getName())).findFirst();
             if (matchedInput.isPresent()) {
-                var inputValue = matchedInput.get().getValue();
-                if (VariableResolver.isVariableReference(inputValue)) {
+                var inputValueExpression = matchedInput.get().getValue();
+                if (VariableResolver.isVariableReference(inputValueExpression)) {
                     // The input's value is itself a variable reference.
-                    inputName = VariableResolver.extractVariableNameFromExpression(inputValue).getLeft();
+                    inputName = VariableResolver.extractVariableNameFromExpression(inputValueExpression).getLeft();
                     continue;
                 }
-                return Optional.of((String) new StaticExpressionHandler().processExpression(matchedInput.get(), DataType.STRING_DATA_TYPE).getValue());
+                var inputValue = new StaticExpressionHandler().processExpression(matchedInput.get(), constantDataType).getValue();
+                if (inputValue != null && constantClass.equals(inputValue.getClass())) {
+                    return Optional.of(constantClass.cast(inputValue));
+                } else {
+                    return Optional.empty();
+                }
             }
         }
         return Optional.empty();
