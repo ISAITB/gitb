@@ -90,7 +90,7 @@ export class EndpointDetailsComponent extends BaseComponent implements OnInit, A
 					p.adminOnlyLabel = !e.adminOnly
 					p.notForTestsLabel = !e.notForTests
           this.parameters.push(p as ParameterData)
-					const itemRef: Partial<ParameterReference> = {id: e.id, name: e.name, key: e.name, kind: e.kind}
+					const itemRef: Partial<ParameterReference> = {id: e.id, name: e.name, key: e.testKey, kind: e.kind}
 					itemRef.hasPresetValues = false
 					if (p.allowedValues != undefined) {
 						itemRef.presetValues = JSON.parse(p.allowedValues)
@@ -186,13 +186,14 @@ export class EndpointDetailsComponent extends BaseComponent implements OnInit, A
         options: {
           hideInExport: true,
           hideInRegistration: true,
+          hasKey: true,
           existingValues: this.parameterValues
         }
       }
     })
     modal.content!.created.subscribe((parameter: Parameter) => {
       this.preparePresetValues(parameter)
-      this.conformanceService.createParameter(parameter.name, parameter.desc, parameter.use, parameter.kind, parameter.adminOnly, parameter.notForTests, parameter.hidden, parameter.allowedValues, parameter.dependsOn, parameter.dependsOnValue, this.endpointId)
+      this.conformanceService.createParameter(parameter.name, parameter.testKey, parameter.desc, parameter.use, parameter.kind, parameter.adminOnly, parameter.notForTests, parameter.hidden, parameter.allowedValues, parameter.dependsOn, parameter.dependsOnValue, this.endpointId)
       .subscribe(() => {
         this.loadEndpointData()
         this.popupService.success('Parameter created.')
@@ -208,13 +209,14 @@ export class EndpointDetailsComponent extends BaseComponent implements OnInit, A
         options: {
 					hideInExport: true,
 					hideInRegistration: true,
+          hasKey: true,
 					existingValues: this.parameterValues
         }
       }
     })
     modal.content!.updated.subscribe((parameter: Parameter) => {
       this.preparePresetValues(parameter)
-      this.parameterService.updateParameter(parameter.id, parameter.name, parameter.desc, parameter.use, parameter.kind, parameter.adminOnly, parameter.notForTests, parameter.hidden, parameter.allowedValues, parameter.dependsOn, parameter.dependsOnValue, this.endpointId)
+      this.parameterService.updateParameter(parameter.id, parameter.name, parameter.testKey, parameter.desc, parameter.use, parameter.kind, parameter.adminOnly, parameter.notForTests, parameter.hidden, parameter.allowedValues, parameter.dependsOn, parameter.dependsOnValue, this.endpointId)
       .subscribe(() => {
         this.loadEndpointData()
         this.popupService.success('Parameter updated.')

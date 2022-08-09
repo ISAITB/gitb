@@ -125,6 +125,7 @@
             <xsd:extension base="ExportType">
                 <xsd:sequence>
                     <xsd:element name="name" type="xsd:string"/>
+                    <xsd:element name="label" type="xsd:string" minOccurs="0"/>
                     <xsd:element name="description" type="xsd:string" minOccurs="0"/>
                 </xsd:sequence>
                 <xsd:attribute name="type" use="required" type="PropertyType"/>
@@ -142,9 +143,6 @@
     <xsd:complexType name="BaseCustomProperty" abstract="true">
         <xsd:complexContent>
             <xsd:extension base="BaseProperty">
-                <xsd:sequence>
-                    <xsd:element name="label" type="xsd:string"/>
-                </xsd:sequence>
                 <xsd:attribute name="inExports" type="xsd:boolean" default="false"/>
             </xsd:extension>
         </xsd:complexContent>

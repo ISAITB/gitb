@@ -135,8 +135,8 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
           }
           if (targetActorEndpointMap.nonEmpty) {
             exportManager.loadEndpointParameterMap(targetDomain.get.id).foreach { x =>
-              targetEndpointParameterMap += (x._1 -> listBufferToNameMap(x._2, { p => p.name }))
-              referenceEndpointParameterMap += (x._1 -> listBufferToNameMap(x._2, { p => p.name }))
+              targetEndpointParameterMap += (x._1 -> listBufferToNameMap(x._2, { p => p.testKey }))
+              referenceEndpointParameterMap += (x._1 -> listBufferToNameMap(x._2, { p => p.testKey }))
               x._2.foreach { p =>
                 referenceEndpointParameterIdMap += (p.id -> p)
               }
@@ -440,7 +440,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
             if (domainImportInfo.targetEndpointParameterIdMap.nonEmpty) {
               exportManager.loadSystemConfigurationsMap(targetCommunity.get).foreach { x =>
                 // [actor ID]_[endpoint ID]_[System ID]_[Parameter ID]
-                targetStatementConfigurationMap += (x._1 -> listBufferToNameMap(x._2, { v => domainImportInfo.targetEndpointParameterIdMap(v.parameter).name }))
+                targetStatementConfigurationMap += (x._1 -> listBufferToNameMap(x._2, { v => domainImportInfo.targetEndpointParameterIdMap(v.parameter).testKey }))
               }
             }
           }
@@ -733,7 +733,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
                     }
                     if (targetConfig.isDefined) {
                       // [Actor ID]_[Endpoint ID]_[System ID]_[Parameter ID]
-                      new ImportItem(Some(targetConfigParam.get.name), ImportItemType.StatementConfiguration, ImportItemMatch.Both, Some(s"${targetEndpoint.get.actor}_${targetEndpoint.get.id}_${targetConfig.get.system}_${targetConfig.get.parameter}"), Some(exportedConfig.getId), importItemStatement)
+                      new ImportItem(Some(targetConfigParam.get.testKey), ImportItemType.StatementConfiguration, ImportItemMatch.Both, Some(s"${targetEndpoint.get.actor}_${targetEndpoint.get.id}_${targetConfig.get.system}_${targetConfig.get.parameter}"), Some(exportedConfig.getId), importItemStatement)
                     } else {
                       new ImportItem(Some(exportedConfig.getParameter.getName), ImportItemType.StatementConfiguration, ImportItemMatch.ArchiveOnly, None, Some(exportedConfig.getId), importItemStatement)
                     }

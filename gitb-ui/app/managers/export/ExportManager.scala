@@ -87,7 +87,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, triggerManager:
       .join(PersistenceSchema.actors).on(_._2.actor === _.id)
       .filter(_._2.domain === domainId)
       .map(x => x._1._1)
-      .sortBy(x=> (x.endpoint.asc, x.displayOrder.asc, x.name.asc))
+      .sortBy(x=> (x.endpoint.asc, x.displayOrder.asc, x.testKey.asc))
       .result
     ).foreach { x =>
       var parameters = endpointParameterMap.get(x.endpoint)
@@ -425,7 +425,8 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, triggerManager:
                       idSequence += 1
                       exportedParameter.setId(toId(idSequence))
                       exportedParameter.setEndpoint(exportedEndpoint)
-                      exportedParameter.setName(parameter.name)
+                      exportedParameter.setLabel(parameter.name)
+                      exportedParameter.setName(parameter.testKey)
                       exportedParameter.setDescription(parameter.desc.orNull)
                       exportedParameter.setType(propertyTypeForExport(parameter.kind))
                       exportedParameter.setEditable(!parameter.adminOnly)

@@ -486,7 +486,11 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 										dependsOnValue = None
 									}
 									val allowedValues = getAllowedValuesStr(tdlParameter)
-									models.Parameters(0L, tdlParameter.getName, Option(tdlParameter.getDesc), tdlParameter.getUse.value(), tdlParameter.getKind.value(), tdlParameter.isAdminOnly, tdlParameter.isNotForTests, tdlParameter.isHidden, allowedValues, 0, dependsOn, dependsOnValue, 0L)
+									var labelToUse = tdlParameter.getLabel
+									if (labelToUse == null) {
+										labelToUse = tdlParameter.getName
+									}
+									models.Parameters(0L, labelToUse, tdlParameter.getName, Option(tdlParameter.getDesc), tdlParameter.getUse.value(), tdlParameter.getKind.value(), tdlParameter.isAdminOnly, tdlParameter.isNotForTests, tdlParameter.isHidden, allowedValues, 0, dependsOn, dependsOnValue, 0L)
 								}.toList
 								new Endpoint(Endpoints(0L, tdlEndpoint.getName, Option(tdlEndpoint.getDesc), 0L), parameters)
 							}.toList

@@ -465,6 +465,7 @@ object ParameterExtractor {
       case _ => 0L
     }
     val name:String = ParameterExtractor.requiredBodyParameter(request, Parameters.NAME)
+    val testKey:String = ParameterExtractor.requiredBodyParameter(request, Parameters.TEST_KEY)
     val desc:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DESC)
     val use:String = ParameterExtractor.requiredBodyParameter(request, Parameters.USE)
     val kind:String = ParameterExtractor.requiredBodyParameter(request, Parameters.KIND)
@@ -487,7 +488,7 @@ object ParameterExtractor {
     if (!adminOnly) {
       hidden = false
     }
-    models.Parameters(id, name, desc, use, kind, adminOnly, notForTests, hidden, allowedValues, 0, dependsOn, dependsOnValue, endpointId)
+    models.Parameters(id, name, testKey, desc, use, kind, adminOnly, notForTests, hidden, allowedValues, 0, dependsOn, dependsOnValue, endpointId)
   }
 
   def extractOrganisationParameter(request:Request[AnyContent]):models.OrganisationParameters = {

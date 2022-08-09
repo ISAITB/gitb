@@ -629,12 +629,13 @@ export class ConformanceService {
     })
   }
 
-  createParameter(name: string, description: string|undefined, use: string, kind: string, adminOnly: boolean, notForTests: boolean, hidden: boolean, allowedValues: string|undefined, dependsOn: string|undefined, dependsOnValue: string|undefined, endpointId: number) {
+  createParameter(name: string, testKey: string, description: string|undefined, use: string, kind: string, adminOnly: boolean, notForTests: boolean, hidden: boolean, allowedValues: string|undefined, dependsOn: string|undefined, dependsOnValue: string|undefined, endpointId: number) {
     return this.restService.post<EndpointParameter>({
       path: ROUTES.controllers.ConformanceService.createParameter().url,
       authenticate: true,
       data: {
         name: name,
+        test_key: testKey,
         description: description,
         use: use,
         kind: kind,

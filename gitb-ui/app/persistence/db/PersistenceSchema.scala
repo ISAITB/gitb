@@ -134,6 +134,7 @@ object PersistenceSchema {
 	class ParametersTable(tag: Tag) extends Table[models.Parameters] (tag, "Parameters") {
 		def id    = column[Long]("id", O.PrimaryKey, O.AutoInc)
 		def name  = column[String]("name")
+    def testKey = column[String]("test_key")
 		def desc  = column[Option[String]]("description", O.SqlType("TEXT"))
 		def use   = column[String]("use")
 		def kind  = column[String]("kind")
@@ -146,7 +147,7 @@ object PersistenceSchema {
     def dependsOnValue  = column[Option[String]]("depends_on_value")
 		def endpoint = column[Long]("endpoint")
 
-		def * = (id, name, desc, use, kind, adminOnly, notForTests, hidden, allowedValues, displayOrder, dependsOn, dependsOnValue, endpoint) <> (models.Parameters.tupled, models.Parameters.unapply)
+		def * = (id, name, testKey, desc, use, kind, adminOnly, notForTests, hidden, allowedValues, displayOrder, dependsOn, dependsOnValue, endpoint) <> (models.Parameters.tupled, models.Parameters.unapply)
 	}
 	val parameters = TableQuery[ParametersTable]
 

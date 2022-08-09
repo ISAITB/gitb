@@ -879,7 +879,7 @@ class ConformanceManager @Inject() (systemManager: SystemManager, triggerManager
 							.join(PersistenceSchema.actors).on(_._2.actor === _.id)
 							.filter(_._2.domain === domainId.get)
 							.sortBy(_._1._1.name.asc)
-							.map(x => (x._1._1.id, x._1._1.name, x._1._1.kind))
+							.map(x => (x._1._1.id, x._1._1.name, x._1._1.testKey, x._1._1.kind))
 							.result
 					} else {
 						DBIO.successful(Seq.empty)
@@ -891,9 +891,9 @@ class ConformanceManager @Inject() (systemManager: SystemManager, triggerManager
 		val addedNames = new mutable.HashSet[String]()
 		val parametersToUse = new ListBuffer[StatementParameterMinimal]()
 		results.foreach { param =>
-			if (!addedNames.contains(param._2)) {
-				parametersToUse += StatementParameterMinimal(param._1, param._2, param._3)
-				addedNames += param._2
+			if (!addedNames.contains(param._3)) {
+				parametersToUse += StatementParameterMinimal(param._1, param._2, param._3, param._4)
+				addedNames += param._3
 			}
 		}
 		parametersToUse.toList
