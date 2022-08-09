@@ -235,6 +235,7 @@
                     <xsd:element name="dataItems" type="TriggerDataItems" minOccurs="0"/>
                 </xsd:sequence>
                 <xsd:attribute name="eventType" type="TriggerEventType" use="required"/>
+                <xsd:attribute name="serviceType" type="TriggerServiceType" default="GITB"/>
             </xsd:extension>
         </xsd:complexContent>
     </xsd:complexType>
@@ -530,6 +531,13 @@
             <xsd:enumeration value="TEST_SESSION_SUCCEEDED"/>
             <xsd:enumeration value="TEST_SESSION_FAILED"/>
             <xsd:enumeration value="CONFORMANCE_STATEMENT_SUCCEEDED"/>
+            <xsd:enumeration value="TEST_SESSION_STARTED"/>
+        </xsd:restriction>
+    </xsd:simpleType>
+    <xsd:simpleType name="TriggerServiceType">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="GITB"/>
+            <xsd:enumeration value="JSON"/>
         </xsd:restriction>
     </xsd:simpleType>
     <xsd:simpleType name="TriggerDataType">
@@ -542,6 +550,8 @@
             <xsd:enumeration value="ORGANISATION_PARAMETER"/>
             <xsd:enumeration value="SYSTEM_PARAMETER"/>
             <xsd:enumeration value="DOMAIN_PARAMETER"/>
+            <xsd:enumeration value="TEST_SESSION"/>
+            <xsd:enumeration value="STATEMENT_PARAMETER"/>
         </xsd:restriction>
     </xsd:simpleType>
     <xsd:complexType name="TestSuite">

@@ -4,7 +4,7 @@ import config.Configurations
 import exceptions.{ErrorCodes, InvalidRequestException}
 import models.Enums._
 import controllers.util.Parameters
-import models.{Actor, Actors, Communities, Domain, Endpoints, ErrorTemplates, FileInfo, LandingPages, LegalNotices, Options, OrganisationParameterValues, Organizations, Specifications, SystemParameterValues, Systems, Trigger, TriggerData, Triggers, Users}
+import models.{Actor, Communities, Domain, Endpoints, ErrorTemplates, FileInfo, LandingPages, LegalNotices, Options, OrganisationParameterValues, Organizations, Specifications, SystemParameterValues, Systems, Trigger, TriggerData, Triggers, Users}
 import org.apache.commons.lang3.StringUtils
 import org.mindrot.jbcrypt.BCrypt
 import play.api.mvc._
@@ -583,11 +583,12 @@ object ParameterExtractor {
     val operation = optionalBodyParameter(request, Parameters.OPERATION)
     val active = requiredBodyParameter(request, Parameters.ACTIVE).toBoolean
     val eventType = requiredBodyParameter(request, Parameters.EVENT).toShort
+    val serviceType = requiredBodyParameter(request, Parameters.TYPE).toShort
     // Check that this is a valid value (otherwise throw exception)
     TriggerEventType.apply(eventType)
     val communityId = requiredBodyParameter(request, Parameters.COMMUNITY_ID).toLong
     new Trigger(
-      Triggers(triggerId.getOrElse(0L), name, description, url, eventType, operation, active, None, None, communityId),
+      Triggers(triggerId.getOrElse(0L), name, description, url, eventType, serviceType, operation, active, None, None, communityId),
       extractTriggerDataItems(request, Parameters.DATA, triggerId)
     )
   }

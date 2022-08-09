@@ -1,3 +1,5 @@
+@import '../../../../../../styles/less/components/common.less';
+
 .caret {
     margin-left: 10px;
 }
@@ -11,5 +13,11 @@
         display: flex;
         flex-grow: 1;
         justify-content: right;
+    }
+}
+::ng-deep {
+    .tb-active, .tb-status, .tb-default {
+        .min-width;
+        .td-centered;
     }
 }

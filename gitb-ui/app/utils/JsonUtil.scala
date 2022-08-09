@@ -1,9 +1,11 @@
 package utils
 
 import com.gitb.core.{AnyContent, ValueEmbeddingEnumeration}
+import com.gitb.ps.{ProcessRequest, ProcessResponse}
 import com.gitb.tbs.UserInput
 import com.gitb.tr._
 import config.Configurations
+import exceptions.JsonValidationException
 import managers.export.{ExportSettings, ImportItem, ImportSettings}
 import models.Enums.TestSuiteReplacementChoice.TestSuiteReplacementChoice
 import models.Enums.TestSuiteReplacementChoiceHistory.TestSuiteReplacementChoiceHistory
@@ -883,10 +885,20 @@ object JsonUtil {
     InputMapping(testSuites, testCases, parseJsAnyContent((json \ "input").get))
   }
 
+  def parseJsProcessResponse(json: JsValue): ProcessResponse = {
+    val response = new ProcessResponse
+    response.getOutput.addAll((json \ "output").asOpt[JsArray].getOrElse(JsArray.empty).value.map { jsValue => parseJsAnyContent(jsValue)}.toList.asJavaCollection)
+    response
+  }
+
   def parseJsAnyContent(json: JsValue): AnyContent = {
     val anyContent = new AnyContent
     anyContent.setName((json \ "name").asOpt[String].orNull)
-    anyContent.setEmbeddingMethod(ValueEmbeddingEnumeration.fromValue((json \ "embeddingMethod").asOpt[String].getOrElse(ValueEmbeddingEnumeration.STRING.value())))
+    var enumValue = (json \ "embeddingMethod").asOpt[String].getOrElse(ValueEmbeddingEnumeration.STRING.value())
+    if (enumValue == "BASE_64") {
+      enumValue = ValueEmbeddingEnumeration.BASE_64.value()
+    }
+    anyContent.setEmbeddingMethod(ValueEmbeddingEnumeration.fromValue(enumValue))
     anyContent.setValue((json \ "value").asOpt[String].orNull)
     anyContent.setType((json \ "type").asOpt[String].orNull)
     anyContent.setEncoding((json \ "encoding").asOpt[String].orNull)
@@ -996,7 +1008,7 @@ object JsonUtil {
     val dataType = (jsonConfig \ "dataType").as[Short]
     val dataTypeEnum = TriggerDataType.apply(dataType)
     var dataIdToUse: Long = -1
-    if (dataTypeEnum == TriggerDataType.OrganisationParameter || dataTypeEnum == TriggerDataType.SystemParameter || dataTypeEnum == TriggerDataType.DomainParameter) {
+    if (dataTypeEnum == TriggerDataType.OrganisationParameter || dataTypeEnum == TriggerDataType.SystemParameter || dataTypeEnum == TriggerDataType.DomainParameter || dataTypeEnum == TriggerDataType.StatementParameter) {
       dataIdToUse = (jsonConfig \ "dataId").as[Long]
     }
     val data = TriggerData(
@@ -1758,6 +1770,7 @@ object JsonUtil {
       "description" -> (if(trigger.description.isDefined) trigger.description.get else JsNull),
       "url"  -> trigger.url,
       "eventType" -> trigger.eventType,
+      "serviceType" -> trigger.serviceType,
       "active" -> trigger.active,
       "latestResultOk" -> (if(trigger.latestResultOk.isDefined) trigger.latestResultOk.get else JsNull),
       "latestResultOutput" -> (if(trigger.latestResultOutput.isDefined) trigger.latestResultOutput.get else JsNull),
@@ -2225,6 +2238,133 @@ object JsonUtil {
       "fixedCase" -> JsBoolean(label.fixedCase)
     )
     json
+  }
+
+  def jsStatementParametersMinimal(items: List[StatementParameterMinimal]): JsArray = {
+    var json = Json.arr()
+    items.foreach { item =>
+      json = json.append(Json.obj(
+        "id" -> item.id,
+        "name" -> item.name,
+        "kind" -> item.kind
+      ))
+    }
+    json
+  }
+
+  def jsProcessRequest(processRequest: ProcessRequest): JsObject = {
+    var json = Json.obj()
+    if (processRequest.getOperation != null) {
+      json += ("operation" -> JsString(processRequest.getOperation))
+    }
+    if (processRequest.getInput.asScala.nonEmpty) {
+      var inputs = Json.arr()
+      processRequest.getInput.asScala.foreach { input =>
+        inputs = inputs.append(jsAnyContent(input))
+      }
+      json += ("inputs" -> inputs)
+    }
+    json
+  }
+
+  def jsAnyContent(content: AnyContent): JsObject = {
+    var json = Json.obj()
+    if (content.getName != null) json = json + ("name" -> JsString(content.getName))
+    if (content.getType != null) {
+      json = json + ("type" -> JsString(content.getType))
+      if (content.getType == "binary") {
+        json = json + ("embeddingMethod" -> JsString(ValueEmbeddingEnumeration.BASE_64.value()))
+      }
+    }
+    if (content.getValue != null) {
+      json = json + ("value" -> JsString(content.getValue))
+    }
+    if (content.getEncoding != null) json = json + ("encoding" -> JsString(content.getEncoding))
+    if (content.getMimeType != null) json = json + ("mimeType" -> JsString(content.getMimeType))
+    if (content.getItem.asScala.nonEmpty) {
+      var children = Json.arr()
+      content.getItem.asScala.foreach { item =>
+        children = children.append(jsAnyContent(item))
+      }
+      json = json + ("item" -> children)
+    }
+    json
+  }
+
+  def validatorForAnyContent(): Reads[AnyContent] = {
+    (js: JsValue) => {
+      val content = new AnyContent()
+      val obj = js.asInstanceOf[JsObject]
+      val definedKeys = new mutable.HashSet[String]()
+      definedKeys.addAll(obj.keys)
+      content.setName(parseOptionalStringField(obj, "name", definedKeys).orNull)
+      content.setType(parseOptionalStringField(obj, "type", definedKeys).orNull)
+      content.setValue(parseOptionalStringField(obj, "value", definedKeys).orNull)
+      content.setEncoding(parseOptionalStringField(obj, "encoding", definedKeys).orNull)
+      content.setMimeType(parseOptionalStringField(obj, "mimeType", definedKeys).orNull)
+      val embeddingMethod = parseOptionalStringField(obj, "embeddingMethod", definedKeys)
+      if (embeddingMethod.nonEmpty) {
+        content.setEmbeddingMethod(ValueEmbeddingEnumeration.fromValue(embeddingMethod.get))
+      }
+      parseOptionalArrayField(obj, "item", validatorForAnyContent(), definedKeys).foreach { item =>
+        content.getItem.add(item)
+      }
+      ensureNoExtraFields(definedKeys.toSet)
+      JsSuccess(content)
+    }
+  }
+
+  private def ensureNoExtraFields(extraFields: Set[String]): Unit = {
+    if (extraFields.nonEmpty) {
+      throw JsonValidationException("Unexpected fields found: ["+extraFields.mkString(",")+"]")
+    }
+  }
+
+  def validatorForProcessRequest(): Reads[ProcessRequest] = {
+    (js: JsValue) => {
+      val processRequest = new ProcessRequest()
+      val obj = js.asInstanceOf[JsObject]
+      val definedKeys = new mutable.HashSet[String]()
+      definedKeys.addAll(obj.keys)
+      processRequest.setOperation(parseOptionalStringField(obj, "operation", definedKeys).orNull)
+      parseOptionalArrayField(obj, "inputs", validatorForAnyContent(), definedKeys).foreach { item =>
+        processRequest.getInput.add(item)
+      }
+      ensureNoExtraFields(definedKeys.toSet)
+      JsSuccess(processRequest)
+    }
+  }
+
+  private def parseOptionalStringField(obj: JsObject, fieldName: String, remainingKeys: mutable.HashSet[String]): Option[String] = {
+    if (obj.keys.contains(fieldName)) {
+      remainingKeys.remove(fieldName)
+      val field = obj(fieldName)
+      field match {
+        case string: JsString => Some(string.value)
+        case _ => throw JsonValidationException("Field [" + fieldName + "] must be defined as a string.")
+      }
+    } else {
+      None
+    }
+  }
+
+  private def parseOptionalArrayField[A](obj: JsObject, fieldName: String, reader: Reads[A], remainingKeys: mutable.HashSet[String]): List[A] = {
+    if (obj.keys.contains(fieldName)) {
+      remainingKeys.remove(fieldName)
+      val field = obj(fieldName)
+      field match {
+        case array: JsArray => {
+          val items = new ListBuffer[A]()
+          array.value.toList.foreach { item =>
+            items += reader.reads(item).get
+          }
+          items.toList
+        }
+        case _ => throw JsonValidationException("Field [" + fieldName + "] must be defined as an array.")
+      }
+    } else {
+      List()
+    }
   }
 
 }

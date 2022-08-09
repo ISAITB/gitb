@@ -23,12 +23,13 @@ import { CodeEditorModalComponent } from 'src/app/components/code-editor-modal/c
 import { CustomProperty } from 'src/app/types/custom-property.type';
 import { RoutingService } from 'src/app/services/routing.service';
 import { CommunityTab } from '../community/community-details/community-tab.enum';
+import { StatementParameterMinimal } from 'src/app/types/statement-parameter-minimal';
+import { TestTriggerModalComponent } from './test-trigger-modal/test-trigger-modal.component';
 
 @Component({
   selector: 'app-trigger',
   templateUrl: './trigger.component.html',
-  styles: [
-  ]
+  styleUrls: [ './trigger.component.less' ]
 })
 export class TriggerComponent extends BaseComponent implements OnInit, AfterViewInit {
 
@@ -47,13 +48,13 @@ export class TriggerComponent extends BaseComponent implements OnInit, AfterView
   trigger: Partial<Trigger> = {}
   organisationParameters: OrganisationParameter[] = []
   systemParameters: SystemParameter[] = []
+  statementParameters: StatementParameterMinimal[] = []
   domainParameters: DomainParameter[] = []
-  eventTypes!: IdLabel[]
-  eventTypeMap!: {[key: number]: string}
   dataTypes!: IdLabel[]
   dataTypeMap!: {[key: number]: string}
   organisationParameterMap: {[key: number]: OrganisationParameter} = {}
   systemParameterMap: {[key: number]: SystemParameter} = {}
+  statementParameterMap: {[key: number]: StatementParameterMinimal} = {}
   domainParameterMap: {[key: number]: DomainParameter} = {}
 
   triggerData = {
@@ -64,8 +65,11 @@ export class TriggerComponent extends BaseComponent implements OnInit, AfterView
     actor: {dataType: Constants.TRIGGER_DATA_TYPE.ACTOR, visible: true, selected: false},
     organisationParameter: {dataType: Constants.TRIGGER_DATA_TYPE.ORGANISATION_PARAMETER, visible: true, selected: false},
     systemParameter: {dataType: Constants.TRIGGER_DATA_TYPE.SYSTEM_PARAMETER, visible: true, selected: false},
-    domainParameter: {dataType: Constants.TRIGGER_DATA_TYPE.DOMAIN_PARAMETER, visible: true, selected: false}
+    domainParameter: {dataType: Constants.TRIGGER_DATA_TYPE.DOMAIN_PARAMETER, visible: true, selected: false},
+    statementParameter: {dataType: Constants.TRIGGER_DATA_TYPE.STATEMENT_PARAMETER, visible: true, selected: false},
+    testSession: {dataType: Constants.TRIGGER_DATA_TYPE.TEST_SESSION, visible: true, selected: false},
   }
+  Constants = Constants
 
   constructor(
     private routingService: RoutingService,
@@ -76,7 +80,7 @@ export class TriggerComponent extends BaseComponent implements OnInit, AfterView
     private communityService: CommunityService,
     private confirmationDialogService: ConfirmationDialogService,
     private popupService: PopupService,
-    private dataService: DataService
+    public dataService: DataService
   ) {
     super();
   }
@@ -90,9 +94,9 @@ export class TriggerComponent extends BaseComponent implements OnInit, AfterView
     if (triggerIdParam != undefined) {
       this.triggerId = Number(triggerIdParam)
       this.update = true
+    } else {
+      this.trigger.serviceType = Constants.TRIGGER_SERVICE_TYPE.GITB
     }
-    this.eventTypes = this.dataService.triggerEventTypes()
-    this.eventTypeMap = this.dataService.idToLabelMap(this.eventTypes)
     this.dataTypes = this.dataService.triggerDataTypes()
     this.dataTypeMap = this.dataService.idToLabelMap(this.dataTypes)
 
@@ -124,6 +128,19 @@ export class TriggerComponent extends BaseComponent implements OnInit, AfterView
       }),
       share()
     ))
+    loadPromises.push(this.conformanceService.getStatementParametersOfCommunity(this.communityId).pipe(
+      map((data) => {
+        this.statementParameters = data
+        for (let parameter of this.statementParameters) {
+          parameter.selected = false
+          this.statementParameterMap[parameter.id] = parameter
+        }
+        if (this.statementParameters.length == 0) {
+          remove(this.dataTypes, (current) => current.id == Constants.TRIGGER_DATA_TYPE.STATEMENT_PARAMETER)
+        }
+      }),
+      share()
+    ))    
 
     let domainParameterFnResult: Observable<DomainParameter[]>|undefined
     if (this.dataService.isCommunityAdmin && this.dataService.community!.domainId != undefined) {
@@ -173,6 +190,8 @@ export class TriggerComponent extends BaseComponent implements OnInit, AfterView
                 this.triggerData.specification.selected = true
               } else if (item.dataType == Constants.TRIGGER_DATA_TYPE.ACTOR) {
                 this.triggerData.actor.selected = true
+              } else if (item.dataType == Constants.TRIGGER_DATA_TYPE.TEST_SESSION) {
+                this.triggerData.testSession.selected = true
               } else if (item.dataType == Constants.TRIGGER_DATA_TYPE.ORGANISATION_PARAMETER) {
                 this.triggerData.organisationParameter.selected = true
                 if (this.organisationParameterMap[item.dataId] != undefined) {
@@ -188,6 +207,11 @@ export class TriggerComponent extends BaseComponent implements OnInit, AfterView
                 if (this.domainParameterMap[item.dataId] != undefined) {
                   this.domainParameterMap[item.dataId].selected = true
                 }
+              } else if (item.dataType == Constants.TRIGGER_DATA_TYPE.STATEMENT_PARAMETER) {
+                this.triggerData.statementParameter.selected = true
+                if (this.statementParameterMap[item.dataId] != undefined) {
+                  this.statementParameterMap[item.dataId].selected = true
+                }
               }
             }
           }
@@ -201,7 +225,7 @@ export class TriggerComponent extends BaseComponent implements OnInit, AfterView
 
   saveDisabled() {
     return !(
-      !this.savePending && !this.deletePending && this.textProvided(this.trigger.name) && this.textProvided(this.trigger.url) && this.trigger.eventType != undefined
+      !this.savePending && !this.deletePending && this.textProvided(this.trigger.name) && this.textProvided(this.trigger.url) && this.trigger.eventType != undefined && this.trigger.serviceType != undefined
     )
   }
 
@@ -236,6 +260,9 @@ export class TriggerComponent extends BaseComponent implements OnInit, AfterView
     if (this.triggerData.actor.visible && this.triggerData.actor.selected) {
       dataItems.push({dataType: Constants.TRIGGER_DATA_TYPE.ACTOR, dataId: -1})
     }
+    if (this.triggerData.testSession.visible && this.triggerData.testSession.selected) {
+      dataItems.push({dataType: Constants.TRIGGER_DATA_TYPE.TEST_SESSION, dataId: -1})
+    }
     if (this.triggerData.organisationParameter.visible && this.triggerData.organisationParameter.selected) {
       for (let parameter of this.organisationParameters) {
         if (parameter.selected) {
@@ -257,6 +284,13 @@ export class TriggerComponent extends BaseComponent implements OnInit, AfterView
         }
       }
     }
+    if (this.triggerData.statementParameter.visible && this.triggerData.statementParameter.selected) {
+      for (let parameter of this.statementParameters) {
+        if (parameter.selected) {
+          dataItems.push({dataType: Constants.TRIGGER_DATA_TYPE.STATEMENT_PARAMETER, dataId: parameter.id})
+        }
+      }
+    }
     return dataItems
   }
 
@@ -265,9 +299,9 @@ export class TriggerComponent extends BaseComponent implements OnInit, AfterView
     this.savePending = true
     let callResult: Observable<ErrorDescription|undefined>
     if (this.update) {
-      callResult = this.triggerService.updateTrigger(this.triggerId!, this.trigger.name!, this.trigger.description, this.trigger.operation, this.trigger.active, this.trigger.url!, this.trigger.eventType!, this.communityId, this.dataItemsToSave())
+      callResult = this.triggerService.updateTrigger(this.triggerId!, this.trigger.name!, this.trigger.description, this.trigger.operation, this.trigger.active, this.trigger.url!, this.trigger.eventType!, this.trigger.serviceType!, this.communityId, this.dataItemsToSave())
     } else {
-      callResult = this.triggerService.createTrigger(this.trigger.name!, this.trigger.description, this.trigger.operation, this.trigger.active, this.trigger.url!, this.trigger.eventType!, this.communityId, this.dataItemsToSave())
+      callResult = this.triggerService.createTrigger(this.trigger.name!, this.trigger.description, this.trigger.operation, this.trigger.active, this.trigger.url!, this.trigger.eventType!, this.trigger.serviceType!, this.communityId, this.dataItemsToSave())
     }
     callResult.subscribe((data) => {
       if (data?.error_code != undefined) {
@@ -306,7 +340,7 @@ export class TriggerComponent extends BaseComponent implements OnInit, AfterView
 
   testEndpoint() {
     this.testPending = true
-    this.triggerService.testTriggerEndpoint(this.trigger.url!, this.communityId)
+    this.triggerService.testTriggerEndpoint(this.trigger.url!, this.trigger.serviceType!, this.communityId)
     .subscribe((result) => {
       if (result.success) {
         this.modalService.show(CodeEditorModalComponent, {
@@ -314,16 +348,17 @@ export class TriggerComponent extends BaseComponent implements OnInit, AfterView
           initialState: {
             documentName: 'Test success',
             editorOptions: {
-              value: result.texts[0],
+              value: (result.contentType == 'application/json')? this.dataService.prettifyJSON(result.texts[0]) : result.texts[0],
               readOnly: true,
               lineNumbers: true,
               smartIndent: false,
-              electricChars: false
+              electricChars: false,
+              mode: result.contentType
             }
           }
         })
       } else {
-        this.popupErrorsArray(result.texts)
+        this.popupErrorsArray(result.texts, result.contentType)
       }
     }).add(() => {
       this.testPending = false
@@ -332,20 +367,15 @@ export class TriggerComponent extends BaseComponent implements OnInit, AfterView
 
   preview() {
     this.previewPending = true
-    this.triggerService.preview(this.trigger.operation, this.dataItemsToSave(), this.communityId)
+    this.triggerService.preview(this.trigger.operation, this.trigger.serviceType!, this.dataItemsToSave(), this.communityId)
     .subscribe((result) => {
-      this.modalService.show(CodeEditorModalComponent, {
+      this.modalService.show(TestTriggerModalComponent, {
         class: 'modal-lg',
         initialState: {
-          documentName: 'Sample service call',
-          editorOptions: {
-            value: result.message,
-            readOnly: true,
-            copy: true,
-            lineNumbers: true,
-            smartIndent: false,
-            electricChars: false
-          }
+          request: result.message,
+          communityId: this.communityId,
+          url: this.trigger.url,
+          serviceType: this.trigger.serviceType!
         }
       })
     }).add(() => {
@@ -374,25 +404,17 @@ export class TriggerComponent extends BaseComponent implements OnInit, AfterView
     this.popupErrorsArray(arrayToUse)
   }
 
-  popupErrorsArray(errorArray: string[]|undefined) {
-    let content = ''
-    if (errorArray != undefined) {
-      let counter = -1
-      let padding = 4
-      for (let text of errorArray) {
-        if (counter == -1) {
-          content += text
-        } else {
-          content += ('\n'+(' '.repeat(counter*padding))+'|\n')
-          content += (' '.repeat(counter*padding)+'+-- ' + text)
-        }
-        counter += 1
-      }
+  popupErrorsArray(errorArray: string[]|undefined, contentType?: string) {
+    let content = this.dataService.errorArrayToString(errorArray)
+    if (contentType == undefined) {
+      contentType = 'text/plain'
+    } else if (contentType == 'application/json') {
+      content = this.dataService.prettifyJSON(content)
     }
     this.modalService.show(CodeEditorModalComponent, {
       class: 'modal-lg',
       initialState: {
-        documentName: 'Error messages',
+        documentName: 'Error message(s)',
         editorOptions: {
           value: content,
           readOnly: true,
@@ -400,7 +422,8 @@ export class TriggerComponent extends BaseComponent implements OnInit, AfterView
           lineNumbers: false,
           smartIndent: false,
           electricChars: false,
-          styleClass: 'editor-short'
+          styleClass: 'editor-short',
+          mode: contentType
         }
       }
     })
@@ -425,12 +448,14 @@ export class TriggerComponent extends BaseComponent implements OnInit, AfterView
     this.triggerData.system.visible = eventType == undefined || this.dataService.triggerDataTypeAllowedForEvent(eventType, this.triggerData.system.dataType)
     this.triggerData.specification.visible = eventType == undefined || this.dataService.triggerDataTypeAllowedForEvent(eventType, this.triggerData.specification.dataType)
     this.triggerData.actor.visible = eventType == undefined || this.dataService.triggerDataTypeAllowedForEvent(eventType, this.triggerData.actor.dataType)
+    this.triggerData.testSession.visible = eventType == undefined || this.dataService.triggerDataTypeAllowedForEvent(eventType, this.triggerData.testSession.dataType)
     this.triggerData.organisationParameter.visible = this.organisationParameters.length > 0 && (eventType == undefined || this.dataService.triggerDataTypeAllowedForEvent(eventType, this.triggerData.organisationParameter.dataType))
     this.triggerData.systemParameter.visible = this.systemParameters.length > 0 && (eventType == undefined || this.dataService.triggerDataTypeAllowedForEvent(eventType, this.triggerData.systemParameter.dataType))
     this.triggerData.domainParameter.visible = this.domainParameters.length > 0 && (eventType == undefined || this.dataService.triggerDataTypeAllowedForEvent(eventType, this.triggerData.domainParameter.dataType))
+    this.triggerData.statementParameter.visible = this.statementParameters.length > 0 && (eventType == undefined || this.dataService.triggerDataTypeAllowedForEvent(eventType, this.triggerData.statementParameter.dataType))
   }
 
-  parameterType(parameter: CustomProperty|DomainParameter) {
+  parameterType(parameter: CustomProperty|DomainParameter|StatementParameterMinimal) {
     if (parameter.kind == 'SIMPLE') {
       parameter.kindLabel = 'Simple'
     } else if (parameter.kind == 'BINARY') {

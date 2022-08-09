@@ -20,6 +20,7 @@ import { TypedLabelConfig } from '../types/typed-label-config.type'
 import { UserAccount } from '../types/user-account';
 import { User } from '../types/user.type';
 import { saveAs } from 'file-saver'
+import { LogLevel } from '../types/log-level';
 
 @Injectable({
   providedIn: 'root'
@@ -603,18 +604,38 @@ export class DataService {
     return map
   }
 
-  triggerEventTypes(): IdLabel[] {
-    return [
-      {id: Constants.TRIGGER_EVENT_TYPE.ORGANISATION_CREATED, label: this.labelOrganisation() + ' created'},
-      {id: Constants.TRIGGER_EVENT_TYPE.ORGANISATION_UPDATED, label: this.labelOrganisation() + ' updated'},
-      {id: Constants.TRIGGER_EVENT_TYPE.SYSTEM_CREATED, label: this.labelSystem() + ' created'},
-      {id: Constants.TRIGGER_EVENT_TYPE.SYSTEM_UPDATED, label: this.labelSystem() + ' updated'},
-      {id: Constants.TRIGGER_EVENT_TYPE.CONFORMANCE_STATEMENT_CREATED, label: 'Conformance statement created'},
-      {id: Constants.TRIGGER_EVENT_TYPE.CONFORMANCE_STATEMENT_UPDATED, label: 'Conformance statement updated'},
-      {id: Constants.TRIGGER_EVENT_TYPE.CONFORMANCE_STATEMENT_SUCCEEDED, label: 'Conformance statement succeeded'},
-      {id: Constants.TRIGGER_EVENT_TYPE.TEST_SESSION_SUCCEEDED, label: 'Test session succeeded'},
-      {id: Constants.TRIGGER_EVENT_TYPE.TEST_SESSION_FAILED, label: 'Test session failed'}
-    ]
+  errorArrayToString(errorArray: string[]|undefined): string {
+    let content = ''
+    if (errorArray != undefined) {
+      let counter = -1
+      let padding = 4
+      for (let text of errorArray) {
+        if (counter == -1) {
+          content += text
+        } else {
+          content += ('\n'+(' '.repeat(counter*padding))+'|\n')
+          content += (' '.repeat(counter*padding)+'+-- ' + text)
+        }
+        counter += 1
+      }
+    }
+    return content;
+  }
+
+  triggerEventTypeLabel(eventType: number): string {
+    switch (eventType) {
+      case Constants.TRIGGER_EVENT_TYPE.ORGANISATION_CREATED: return this.labelOrganisation() + ' created'
+      case Constants.TRIGGER_EVENT_TYPE.ORGANISATION_UPDATED: return this.labelOrganisation() + ' updated'
+      case Constants.TRIGGER_EVENT_TYPE.SYSTEM_CREATED: return this.labelSystem() + ' created'
+      case Constants.TRIGGER_EVENT_TYPE.SYSTEM_UPDATED: return this.labelSystem() + ' updated'
+      case Constants.TRIGGER_EVENT_TYPE.CONFORMANCE_STATEMENT_CREATED: return 'Conformance statement created'
+      case Constants.TRIGGER_EVENT_TYPE.CONFORMANCE_STATEMENT_UPDATED: return 'Conformance statement updated'
+      case Constants.TRIGGER_EVENT_TYPE.CONFORMANCE_STATEMENT_SUCCEEDED: return 'Conformance statement succeeded'
+      case Constants.TRIGGER_EVENT_TYPE.TEST_SESSION_STARTED: return 'Test session started'
+      case Constants.TRIGGER_EVENT_TYPE.TEST_SESSION_SUCCEEDED: return 'Test session succeeded'
+      case Constants.TRIGGER_EVENT_TYPE.TEST_SESSION_FAILED: return 'Test session failed'
+      default: throw new Error('Unknown trigger event type ['+eventType+']')
+    }
   }
 
   triggerDataTypes(): IdLabel[] {
@@ -624,9 +645,11 @@ export class DataService {
       {id: Constants.TRIGGER_DATA_TYPE.SYSTEM, label: this.labelSystem()},
       {id: Constants.TRIGGER_DATA_TYPE.SPECIFICATION, label: this.labelSpecification()},
       {id: Constants.TRIGGER_DATA_TYPE.ACTOR, label: this.labelActor()},
+      {id: Constants.TRIGGER_DATA_TYPE.TEST_SESSION, label: 'Test session'},
       {id: Constants.TRIGGER_DATA_TYPE.ORGANISATION_PARAMETER, label: this.labelOrganisation() + ' properties'},
       {id: Constants.TRIGGER_DATA_TYPE.SYSTEM_PARAMETER, label: this.labelSystem() + ' properties'},
-      {id: Constants.TRIGGER_DATA_TYPE.DOMAIN_PARAMETER, label: this.labelDomain() + ' properties'}
+      {id: Constants.TRIGGER_DATA_TYPE.DOMAIN_PARAMETER, label: this.labelDomain() + ' properties'},
+      {id: Constants.TRIGGER_DATA_TYPE.STATEMENT_PARAMETER, label: 'Conformance statement properties'}
     ]
   }
 
@@ -686,7 +709,8 @@ export class DataService {
         Constants.TRIGGER_DATA_TYPE.SYSTEM_PARAMETER,
         Constants.TRIGGER_DATA_TYPE.SPECIFICATION,
         Constants.TRIGGER_DATA_TYPE.ACTOR,
-        Constants.TRIGGER_DATA_TYPE.DOMAIN_PARAMETER
+        Constants.TRIGGER_DATA_TYPE.DOMAIN_PARAMETER,
+        Constants.TRIGGER_DATA_TYPE.STATEMENT_PARAMETER
       ])
       this.addIdMapEntry(tempMap, Constants.TRIGGER_EVENT_TYPE.TEST_SESSION_SUCCEEDED, [
         Constants.TRIGGER_DATA_TYPE.COMMUNITY,
@@ -696,7 +720,9 @@ export class DataService {
         Constants.TRIGGER_DATA_TYPE.SYSTEM_PARAMETER,
         Constants.TRIGGER_DATA_TYPE.SPECIFICATION,
         Constants.TRIGGER_DATA_TYPE.ACTOR,
-        Constants.TRIGGER_DATA_TYPE.DOMAIN_PARAMETER
+        Constants.TRIGGER_DATA_TYPE.DOMAIN_PARAMETER,
+        Constants.TRIGGER_DATA_TYPE.TEST_SESSION,
+        Constants.TRIGGER_DATA_TYPE.STATEMENT_PARAMETER
       ])
       this.addIdMapEntry(tempMap, Constants.TRIGGER_EVENT_TYPE.TEST_SESSION_FAILED, [
         Constants.TRIGGER_DATA_TYPE.COMMUNITY,
@@ -706,7 +732,21 @@ export class DataService {
         Constants.TRIGGER_DATA_TYPE.SYSTEM_PARAMETER,
         Constants.TRIGGER_DATA_TYPE.SPECIFICATION,
         Constants.TRIGGER_DATA_TYPE.ACTOR,
-        Constants.TRIGGER_DATA_TYPE.DOMAIN_PARAMETER
+        Constants.TRIGGER_DATA_TYPE.DOMAIN_PARAMETER,
+        Constants.TRIGGER_DATA_TYPE.TEST_SESSION,
+        Constants.TRIGGER_DATA_TYPE.STATEMENT_PARAMETER
+      ])
+      this.addIdMapEntry(tempMap, Constants.TRIGGER_EVENT_TYPE.TEST_SESSION_STARTED, [
+        Constants.TRIGGER_DATA_TYPE.COMMUNITY,
+        Constants.TRIGGER_DATA_TYPE.ORGANISATION,
+        Constants.TRIGGER_DATA_TYPE.ORGANISATION_PARAMETER,
+        Constants.TRIGGER_DATA_TYPE.SYSTEM,
+        Constants.TRIGGER_DATA_TYPE.SYSTEM_PARAMETER,
+        Constants.TRIGGER_DATA_TYPE.SPECIFICATION,
+        Constants.TRIGGER_DATA_TYPE.ACTOR,
+        Constants.TRIGGER_DATA_TYPE.DOMAIN_PARAMETER,
+        Constants.TRIGGER_DATA_TYPE.TEST_SESSION,
+        Constants.TRIGGER_DATA_TYPE.STATEMENT_PARAMETER
       ])
       this.addIdMapEntry(tempMap, Constants.TRIGGER_EVENT_TYPE.CONFORMANCE_STATEMENT_SUCCEEDED, [
         Constants.TRIGGER_DATA_TYPE.COMMUNITY,
@@ -716,7 +756,8 @@ export class DataService {
         Constants.TRIGGER_DATA_TYPE.SYSTEM_PARAMETER,
         Constants.TRIGGER_DATA_TYPE.SPECIFICATION,
         Constants.TRIGGER_DATA_TYPE.ACTOR,
-        Constants.TRIGGER_DATA_TYPE.DOMAIN_PARAMETER
+        Constants.TRIGGER_DATA_TYPE.DOMAIN_PARAMETER,
+        Constants.TRIGGER_DATA_TYPE.STATEMENT_PARAMETER
       ])
       this.triggerEventToDataTypeMap = tempMap
     }
@@ -924,6 +965,28 @@ export class DataService {
       idSet[item.id] = true
     }
     return idSet
+  }
+
+  prettifyJSON(content: string) {
+    return JSON.stringify(JSON.parse(content), null, 3)
+  }
+
+  logMessageLevel(message: string, defaultLevel: LogLevel): LogLevel {
+    let logLevel = defaultLevel
+    let match = Constants.LOG_LEVEL_REGEX.exec(message)
+    if (match != null) {
+      const logLevelStr = match[1]
+      if (logLevelStr == 'DEBUG') {
+        logLevel = LogLevel.DEBUG
+      } else if (logLevelStr == 'INFO') {
+        logLevel = LogLevel.INFO
+      } else if (logLevelStr == 'WARN') {
+        logLevel = LogLevel.WARN
+      } else if (logLevelStr == 'ERROR') {
+        logLevel = LogLevel.ERROR
+      }
+    }
+    return logLevel
   }
 
 }

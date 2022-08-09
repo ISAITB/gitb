@@ -73,7 +73,7 @@ export class UserService {
       role_id: role
     }
     if (name != undefined) {
-      data.name = name
+      data.user_name = name
     }
     if (password != undefined) {
       data.password = password

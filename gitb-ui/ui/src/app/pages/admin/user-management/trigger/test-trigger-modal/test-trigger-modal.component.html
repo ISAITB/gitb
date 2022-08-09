@@ -1,0 +1,42 @@
+<div class="modal-header">
+	<h4>Preview and test service call</h4>
+</div>
+<div class="modal-body">
+    <ng-container [ngSwitch]="editStep">
+        <ng-container *ngSwitchCase="true">
+            <div class="bg-info div-rounded div-padded bottom-margin">
+                <span>This is a sample payload based on the configured input data which you may edit and use to call the service to test its operation. If this call results in the service returning output data, it will be displayed but not used for actual updates.</span>
+            </div>
+            <div class="editor editor-normal" [class.disable-events]="actionPending">
+                <ngx-codemirror [(ngModel)]="request" [options]="editorOptionsRequest"></ngx-codemirror>
+            </div>
+        </ng-container>
+        <ng-container *ngSwitchDefault>
+            <ng-container [ngSwitch]="responseSuccess">
+                <ng-container *ngSwitchCase="true">
+                    <div class="bg-success div-rounded div-padded bottom-margin">
+                        <span>The service call succeeded and produced the following output. Any output data returned was not used for actual updates.</span>
+                    </div>
+                    <div class="editor editor-normal">
+                        <ngx-codemirror [(ngModel)]="response" [options]="editorOptionsResponse"></ngx-codemirror>
+                    </div>
+                </ng-container>
+                <ng-container *ngSwitchDefault>
+                    <div class="bg-danger div-rounded div-padded bottom-margin">
+                        <span>The service call failed. The errors raised during the call are listed below.</span>
+                    </div>
+                    <div class="editor editor-short">
+                        <ngx-codemirror [(ngModel)]="response" [options]="editorOptionsResponseError"></ngx-codemirror>
+                    </div>
+                </ng-container>
+            </ng-container>
+        </ng-container>
+    </ng-container>
+</div>
+<div class="modal-footer">
+	<button type="button" *ngIf="editStep" class="btn btn-default" (click)="callService()" [pending]="actionPending">Call service</button>
+	<button type="button" *ngIf="editStep && request != initialRequest" class="btn btn-default" (click)="reset()" [disabled]="actionPending">Reset sample payload</button>
+	<button type="button" *ngIf="!editStep" class="btn btn-default" (click)="back()">Back</button>
+	<button type="button" class="btn btn-default" (click)="copyToClipboard()" [disabled]="actionPending">Copy to clipboard</button>
+	<button type="button" class="btn btn-default" (click)="close()">{{actionPending?'Cancel':'Close'}}</button>
+</div>

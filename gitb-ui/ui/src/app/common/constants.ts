@@ -187,6 +187,11 @@ export class Constants {
 		INVALID_CREDENTIALS: 104
 	}
 
+	public static TRIGGER_SERVICE_TYPE = {
+		GITB: 1,
+		JSON: 2
+	}
+
 	public static TRIGGER_EVENT_TYPE = {
 		ORGANISATION_CREATED: 1,
 		SYSTEM_CREATED: 2,
@@ -196,7 +201,8 @@ export class Constants {
 		CONFORMANCE_STATEMENT_UPDATED: 6,
 		TEST_SESSION_SUCCEEDED: 7,
 		TEST_SESSION_FAILED: 8,
-		CONFORMANCE_STATEMENT_SUCCEEDED: 9
+		CONFORMANCE_STATEMENT_SUCCEEDED: 9,
+		TEST_SESSION_STARTED: 10,
 	}
 
 	public static TRIGGER_DATA_TYPE = {
@@ -207,7 +213,9 @@ export class Constants {
 		ACTOR: 5,
 		ORGANISATION_PARAMETER: 6,
 		SYSTEM_PARAMETER: 7,
-		DOMAIN_PARAMETER: 8
+		DOMAIN_PARAMETER: 8,
+		TEST_SESSION: 9,
+		STATEMENT_PARAMETER: 10
 	}
 
 	public static IMPORT_ITEM_TYPE = {
@@ -275,7 +283,8 @@ export class Constants {
 	public static EMAIL_REGEX = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
 	public static DATA_URL_REGEX = /^data:.+\/(.+);base64,(.*)$/
 	public static VARIABLE_NAME_REGEX = /^[a-zA-Z][a-zA-Z\-_\.0-9]*$/
+	public static LOG_LEVEL_REGEX = /^\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\] (DEBUG|ERROR|WARN|INFO) /
 
-	public static VERSION = "v1.17.0"
+	public static VERSION = "v1.18.0-snapshot"
 
 }

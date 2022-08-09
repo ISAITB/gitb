@@ -20,10 +20,7 @@ import com.gitb.types.StringType;
 import com.gitb.utils.BindingUtils;
 import com.gitb.utils.ErrorUtils;
 
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public abstract class AbstractProcessingStepProcessorActor<T extends Process> extends AbstractTestStepActor<T> {
 
@@ -55,22 +52,6 @@ public abstract class AbstractProcessingStepProcessorActor<T extends Process> ex
     }
 
     private void setInputWithInputValue(ProcessingData processingData, String inputValue, List<TypedParameter> params) {
-        // Find the first required parameter or, if no required parameter exists, the first optional parameter.
-        TypedParameter requiredParameter = null;
-        TypedParameter optionalParameter = null;
-        for (var param: params) {
-            if (param.getUse() == UsageEnumeration.R && requiredParameter == null) {
-                requiredParameter = param;
-                if (optionalParameter != null) {
-                    break;
-                }
-            } else if (param.getUse() == UsageEnumeration.O && optionalParameter == null) {
-                optionalParameter = param;
-                if (requiredParameter != null) {
-                    break;
-                }
-            }
-        }
         // Resolve the variable.
         var variableResolver = new VariableResolver(scope);
         DataType inputType;
@@ -79,10 +60,22 @@ public abstract class AbstractProcessingStepProcessorActor<T extends Process> ex
         } else {
             inputType = new StringType(inputValue);
         }
-        var parameterToUse = (requiredParameter == null)?optionalParameter:requiredParameter;
-        if (parameterToUse != null) {
-            inputType = inputType.convertTo(parameterToUse.getType());
-            processingData.addInput(parameterToUse.getName(), inputType);
+        // Find the first required parameter matching the input's type.
+        var locatedParam = params.stream().filter(p -> p.getUse() == UsageEnumeration.R && Objects.equals(p.getType(), inputType.getType())).findFirst();
+        if (locatedParam.isEmpty()) {
+            // Find the first required parameter regardless of type.
+            locatedParam = params.stream().filter(p -> p.getUse() == UsageEnumeration.R).findFirst();
+            if (locatedParam.isEmpty()) {
+                // Find the first optional parameter matching the input's type.
+                locatedParam = params.stream().filter(p -> p.getUse() == UsageEnumeration.O && Objects.equals(p.getType(), inputType.getType())).findFirst();
+                if (locatedParam.isEmpty()) {
+                    // Find the first optional parameter regardless of type.
+                    locatedParam = params.stream().filter(p -> p.getUse() == UsageEnumeration.O).findFirst();
+                }
+            }
+        }
+        if (locatedParam.isPresent()) {
+            processingData.addInput(locatedParam.get().getName(), inputType.convertTo(locatedParam.get().getType()));
         } else {
             processingData.addInput("", inputType);
         }

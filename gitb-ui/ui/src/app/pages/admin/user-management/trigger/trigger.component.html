@@ -24,7 +24,24 @@
                             <label class="col-xs-3 control-label" for="event">* Event type:</label>
                             <div class="col-xs-8">
                                 <select id="event" name="event" (change)="eventTypeChanged()" [(ngModel)]="trigger.eventType" class="form-control">
-                                    <option *ngFor="let eventType of eventTypes" [ngValue]="eventType.id">{{eventType.label}}</option>
+                                    <optgroup label="{{dataService.labelOrganisation() + ' events'}}">
+                                        <option [ngValue]="Constants.TRIGGER_EVENT_TYPE.ORGANISATION_CREATED">{{dataService.triggerEventTypeLabel(Constants.TRIGGER_EVENT_TYPE.ORGANISATION_CREATED)}}</option>
+                                        <option [ngValue]="Constants.TRIGGER_EVENT_TYPE.ORGANISATION_UPDATED">{{dataService.triggerEventTypeLabel(Constants.TRIGGER_EVENT_TYPE.ORGANISATION_UPDATED)}}</option>
+                                    </optgroup>
+                                    <optgroup label="{{dataService.labelSystem() + ' events'}}">
+                                        <option [ngValue]="Constants.TRIGGER_EVENT_TYPE.SYSTEM_CREATED">{{dataService.triggerEventTypeLabel(Constants.TRIGGER_EVENT_TYPE.SYSTEM_CREATED)}}</option>
+                                        <option [ngValue]="Constants.TRIGGER_EVENT_TYPE.SYSTEM_UPDATED">{{dataService.triggerEventTypeLabel(Constants.TRIGGER_EVENT_TYPE.SYSTEM_UPDATED)}}</option>
+                                    </optgroup>
+                                    <optgroup label="Conformance statement events">
+                                        <option [ngValue]="Constants.TRIGGER_EVENT_TYPE.CONFORMANCE_STATEMENT_CREATED">{{dataService.triggerEventTypeLabel(Constants.TRIGGER_EVENT_TYPE.CONFORMANCE_STATEMENT_CREATED)}}</option>
+                                        <option [ngValue]="Constants.TRIGGER_EVENT_TYPE.CONFORMANCE_STATEMENT_UPDATED">{{dataService.triggerEventTypeLabel(Constants.TRIGGER_EVENT_TYPE.CONFORMANCE_STATEMENT_UPDATED)}}</option>
+                                        <option [ngValue]="Constants.TRIGGER_EVENT_TYPE.CONFORMANCE_STATEMENT_SUCCEEDED">{{dataService.triggerEventTypeLabel(Constants.TRIGGER_EVENT_TYPE.CONFORMANCE_STATEMENT_SUCCEEDED)}}</option>
+                                    </optgroup>
+                                    <optgroup label="Test session events">
+                                        <option [ngValue]="Constants.TRIGGER_EVENT_TYPE.TEST_SESSION_STARTED">{{dataService.triggerEventTypeLabel(Constants.TRIGGER_EVENT_TYPE.TEST_SESSION_STARTED)}}</option>
+                                        <option [ngValue]="Constants.TRIGGER_EVENT_TYPE.TEST_SESSION_SUCCEEDED">{{dataService.triggerEventTypeLabel(Constants.TRIGGER_EVENT_TYPE.TEST_SESSION_SUCCEEDED)}}</option>
+                                        <option [ngValue]="Constants.TRIGGER_EVENT_TYPE.TEST_SESSION_FAILED">{{dataService.triggerEventTypeLabel(Constants.TRIGGER_EVENT_TYPE.TEST_SESSION_FAILED)}}</option>
+                                    </optgroup>
                                 </select>
                             </div>
                             <app-tooltip tbTooltip="The event that will cause this trigger to fire."></app-tooltip>
@@ -48,21 +65,38 @@
                 <div class="row">
                     <div class="col-xs-10 col-xs-offset-1">
                         <div class="form-group">
-                            <label class="col-xs-3 control-label" for="url">* Endpoint URL:</label>
+                            <label class="col-xs-3 control-label" for="service_type_1">* Service type:</label>
                             <div class="col-xs-7">
-                                <input id="url" name="url" [(ngModel)]="trigger.url" class="form-control" type="text">
+                                <label class="radio-inline"><input type="radio" name="serviceType" [(ngModel)]="trigger.serviceType" id="service_type_1" [value]="Constants.TRIGGER_SERVICE_TYPE.GITB">GITB processing service
+                                    <app-tooltip [inline]="true" inlineType="checkLabel" tbTooltip="A SOAP service endpoint that realises the GITB processing service API."></app-tooltip>
+                                </label>
+                                <label class="radio-inline"><input type="radio" name="serviceType" [(ngModel)]="trigger.serviceType" id="service_type_2" [value]="Constants.TRIGGER_SERVICE_TYPE.JSON">JSON HTTP Service
+                                    <app-tooltip [inline]="true" inlineType="checkLabel" tbTooltip="A HTTP service listening for POST operations. The payloads sent to and (optionally) received from the service will be JSON."></app-tooltip>
+                                </label>
                             </div>
-                            <div class="col-xs-1">
-                                <button style="width:55px" class="btn btn-default" type="button" (click)="testEndpoint()" [pending]="testPending" [disable]="!trigger.url" [icon]="true">Test</button>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-xs-3 control-label" for="url">* Endpoint URL:</label>
+                            <div class="col-xs-8">
+                                <div class="input-group">
+                                    <input id="url" name="url" [(ngModel)]="trigger.url" class="form-control" type="text">
+                                    <div class="input-group-btn">
+                                        <button class="btn btn-default" type="button" (click)="testEndpoint()" [pending]="testPending" [disable]="!trigger.url">Test</button>
+                                    </div>
+                                </div>
                             </div>
-                            <app-tooltip tbTooltip="The URL of the web service that will be called when the trigger fires. This URL must be provided as the full address needed to resolve the service's WSDL. Note that the URL provided is the one the Test Bed will use internally for the call (i.e. it doesn't have to be publicly available)."></app-tooltip>
+                            <ng-container [ngSwitch]="trigger.serviceType">
+                                <app-tooltip *ngSwitchCase="Constants.TRIGGER_SERVICE_TYPE.GITB" tbTooltip="The URL of the web service that will be called when the trigger fires. This URL must be provided as the full address needed to resolve the processing service's WSDL. Note that the URL provided is the one the Test Bed will use internally for the call (i.e. it doesn't have to be publicly available)."></app-tooltip>
+                                <app-tooltip *ngSwitchDefault tbTooltip="The URL of the web service that will be called when the trigger fires. Note that the URL provided is the one the Test Bed will use internally for the call (i.e. it doesn't have to be publicly available)."></app-tooltip>
+                            </ng-container>
                         </div>
                         <div class="form-group">
                             <label class="col-xs-3 control-label" for="operation">Operation:</label>
-                            <div class="col-xs-7"><input id="operation" name="operation" [(ngModel)]="trigger.operation" class="form-control" type="text"></div>
-                            <div class="col-xs-offset-1 col-xs-1 no-left-padding">
-                                <app-tooltip tbTooltip="An optional operation identifier to pass to the service. As a GITB processing service may define multiple operations this identifier can be used to determine the one intended by this trigger."></app-tooltip>
-                            </div>
+                            <div class="col-xs-8"><input id="operation" name="operation" [(ngModel)]="trigger.operation" class="form-control" type="text"></div>
+                            <ng-container [ngSwitch]="trigger.serviceType">
+                                <app-tooltip *ngSwitchCase="Constants.TRIGGER_SERVICE_TYPE.GITB" tbTooltip="An optional operation identifier to pass to the service. As a GITB processing service may define multiple operations this identifier can be used to determine the one intended by this trigger."></app-tooltip>
+                                <app-tooltip *ngSwitchDefault tbTooltip="An optional operation identifier to pass to the service. This could be used to identify the trigger's type in case the service is used in multiple scenarios."></app-tooltip>
+                            </ng-container>
                         </div>
                         <div class="form-group">
                             <label class="col-xs-3 control-label">Input data:</label>
@@ -82,6 +116,9 @@
                                 <label class="checkbox-inline" *ngIf="triggerData.actor.visible">
                                     <input type="checkbox" name="actorData" [(ngModel)]="triggerData.actor.selected">{{dataTypeMap[triggerData.actor.dataType]}}
                                 </label>
+                                <label class="checkbox-inline" *ngIf="triggerData.testSession.visible">
+                                    <input type="checkbox" name="testSessionData" [(ngModel)]="triggerData.testSession.selected">{{dataTypeMap[triggerData.testSession.dataType]}}
+                                </label>
                             </div>
                             <div class="col-xs-1 no-left-padding">
                                 <app-tooltip tbTooltip="Optional data that will be provided as input to the service when it is called. The type of data available depends on the trigger's event type."></app-tooltip>
@@ -97,14 +134,14 @@
                                         <table class="table">
                                             <thead>
                                                 <tr>
-                                                    <th></th>
+                                                    <th class="checkColumn"></th>
                                                     <th>Identifier</th>
                                                     <th>Type</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 <tr *ngFor="let parameter of domainParameters; let index = index" (click)="parameter.selected = !parameter.selected">
-                                                   <td><input type="checkbox" [name]="'parameterData'+index" [(ngModel)]="parameter.selected"></td>
+                                                   <td><input type="checkbox" [name]="'parameterData'+index" [(ngModel)]="parameter.selected" (click)="$event.stopPropagation()"></td>
                                                    <td>{{parameter.name}}</td> 
                                                    <td>{{parameterType(parameter)}}</td>
                                                 </tr>
@@ -124,7 +161,7 @@
                                         <table class="table">
                                             <thead>
                                                 <tr>
-                                                    <th></th>
+                                                    <th class="checkColumn"></th>
                                                     <th>Name</th>
                                                     <th>Type</th>
                                                     <th>Identifier</th>
@@ -132,7 +169,7 @@
                                             </thead>
                                             <tbody>
                                                 <tr *ngFor="let parameter of organisationParameters; let index = index" (click)="parameter.selected = !parameter.selected">
-                                                   <td><input type="checkbox" [name]="'orgParameter'+index" [(ngModel)]="parameter.selected"></td>
+                                                   <td><input type="checkbox" [name]="'orgParameter'+index" [(ngModel)]="parameter.selected" (click)="$event.stopPropagation()"></td>
                                                    <td>{{parameter.name}}</td> 
                                                    <td>{{parameterType(parameter)}}</td>
                                                    <td>{{parameter.testKey}}</td> 
@@ -153,7 +190,7 @@
                                         <table class="table">
                                             <thead>
                                                 <tr>
-                                                    <th></th>
+                                                    <th class="checkColumn"></th>
                                                     <th>Name</th>
                                                     <th>Type</th>
                                                     <th>Identifier</th>
@@ -161,10 +198,37 @@
                                             </thead>
                                             <tbody>
                                                 <tr *ngFor="let parameter of systemParameters; let index = index" (click)="parameter.selected = !parameter.selected">
-                                                   <td><input type="checkbox" [name]="'sysParam'+index" [(ngModel)]="parameter.selected"></td>
+                                                   <td><input type="checkbox" [name]="'sysParam'+index" [(ngModel)]="parameter.selected" (click)="$event.stopPropagation()"></td>
                                                    <td>{{parameter.name}}</td> 
                                                    <td>{{parameterType(parameter)}}</td>
                                                    <td>{{parameter.testKey}}</td> 
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                            <div *ngIf="triggerData.statementParameter.visible">
+                                <div class="col-xs-offset-3 col-xs-8 trigger-data-checks">
+                                    <label class="checkbox-inline">
+                                        <input type="checkbox" name="stmtParameterData" [(ngModel)]="triggerData.statementParameter.selected">{{dataTypeMap[triggerData.statementParameter.dataType]}}
+                                    </label>
+                                </div>
+                                <div class="col-xs-offset-3 col-xs-8" [collapse]="!triggerData.statementParameter.selected" [isAnimated]="true">
+                                    <div class="trigger-data-properties-container table-container">
+                                        <table class="table">
+                                            <thead>
+                                                <tr>
+                                                    <th class="checkColumn"></th>
+                                                    <th>Identifier</th>
+                                                    <th>Type</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr *ngFor="let parameter of statementParameters; let index = index" (click)="parameter.selected = !parameter.selected">
+                                                   <td><input type="checkbox" [name]="'stmtParam'+index" [(ngModel)]="parameter.selected" (click)="$event.stopPropagation()"></td>
+                                                   <td>{{parameter.name}}</td> 
+                                                   <td>{{parameterType(parameter)}}</td>
                                                 </tr>
                                             </tbody>
                                         </table>
@@ -205,7 +269,7 @@
             <div class="panel-footer">
                 <div class="btn-toolbar">
                     <button class="btn btn-default" type="submit" (click)="save()" [disable]="saveDisabled()" [pending]="savePending">Save</button>
-                    <button class="btn btn-default" type="button" (click)="preview()" [disable]="previewDisabled()" [pending]="previewPending">Preview service call</button>
+                    <button class="btn btn-default" type="button" (click)="preview()" [disable]="previewDisabled()" [pending]="previewPending">Preview and test service call</button>
                     <button *ngIf="update" class="btn btn-default" type="button" [disable]="deleteDisabled()" [pending]="deletePending" (click)="delete()">Delete</button>
                     <button class="btn btn-default" type="button" (click)="back()">{{ update?'Back':'Cancel' }}</button>
                 </div>

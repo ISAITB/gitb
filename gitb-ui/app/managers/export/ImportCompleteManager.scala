@@ -406,7 +406,17 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
       case com.gitb.xml.export.TriggerEventType.TEST_SESSION_SUCCEEDED => Enums.TriggerEventType.TestSessionSucceeded.id.toShort
       case com.gitb.xml.export.TriggerEventType.TEST_SESSION_FAILED => Enums.TriggerEventType.TestSessionFailed.id.toShort
       case com.gitb.xml.export.TriggerEventType.CONFORMANCE_STATEMENT_SUCCEEDED => Enums.TriggerEventType.ConformanceStatementSucceeded.id.toShort
+      case com.gitb.xml.export.TriggerEventType.TEST_SESSION_STARTED => Enums.TriggerEventType.TestSessionStarted.id.toShort
       case _ => throw new IllegalArgumentException("Unknown enum value ["+eventType+"]")
+    }
+  }
+
+  private def toModelTriggerServiceType(serviceType: com.gitb.xml.export.TriggerServiceType): Short = {
+    require(serviceType != null, "Enum value cannot be null")
+    serviceType match {
+      case com.gitb.xml.export.TriggerServiceType.GITB => Enums.TriggerServiceType.GITB.id.toShort
+      case com.gitb.xml.export.TriggerServiceType.JSON => Enums.TriggerServiceType.JSON.id.toShort
+      case _ => throw new IllegalArgumentException("Unknown enum value ["+serviceType+"]")
     }
   }
 
@@ -418,15 +428,19 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
       case com.gitb.xml.export.TriggerDataType.SYSTEM => Enums.TriggerDataType.System.id.toShort
       case com.gitb.xml.export.TriggerDataType.SPECIFICATION => Enums.TriggerDataType.Specification.id.toShort
       case com.gitb.xml.export.TriggerDataType.ACTOR => Enums.TriggerDataType.Actor.id.toShort
+      case com.gitb.xml.export.TriggerDataType.TEST_SESSION => Enums.TriggerDataType.TestSession.id.toShort
       case com.gitb.xml.export.TriggerDataType.ORGANISATION_PARAMETER => Enums.TriggerDataType.OrganisationParameter.id.toShort
       case com.gitb.xml.export.TriggerDataType.SYSTEM_PARAMETER => Enums.TriggerDataType.SystemParameter.id.toShort
       case com.gitb.xml.export.TriggerDataType.DOMAIN_PARAMETER => Enums.TriggerDataType.DomainParameter.id.toShort
+      case com.gitb.xml.export.TriggerDataType.STATEMENT_PARAMETER => Enums.TriggerDataType.StatementParameter.id.toShort
       case _ => throw new IllegalArgumentException("Unknown enum value ["+dataType+"]")
     }
   }
 
   private def toModelTrigger(modelTriggerId: Option[Long], data: com.gitb.xml.export.Trigger, communityId: Long, ctx: ImportContext): models.Trigger = {
-    val modelTrigger = models.Triggers(modelTriggerId.getOrElse(0L), data.getName, Option(data.getDescription), data.getUrl, toModelTriggerEventType(data.getEventType), Option(data.getOperation), data.isActive, None, None, communityId)
+    val modelTrigger = models.Triggers(modelTriggerId.getOrElse(0L), data.getName, Option(data.getDescription),
+      data.getUrl, toModelTriggerEventType(data.getEventType), toModelTriggerServiceType(data.getServiceType),
+      Option(data.getOperation), data.isActive, None, None, communityId)
     var modelDataItems: Option[List[models.TriggerData]] = None
     if (data.getDataItems != null) {
       val modelDataItemsToProcess = ListBuffer[models.TriggerData]()
@@ -438,6 +452,8 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
           dataId = getProcessedDbId(dataItem.getData, ImportItemType.SystemProperty, ctx)
         } else if (dataItem.getDataType == com.gitb.xml.export.TriggerDataType.DOMAIN_PARAMETER) {
           dataId = getProcessedDbId(dataItem.getData, ImportItemType.DomainParameter, ctx)
+        } else if (dataItem.getDataType == com.gitb.xml.export.TriggerDataType.STATEMENT_PARAMETER) {
+          dataId = getProcessedDbId(dataItem.getData, ImportItemType.EndpointParameter, ctx)
         } else {
           dataId = Some(-1)
         }

@@ -826,6 +826,11 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, triggerManager:
             case models.Enums.TriggerEventType.TestSessionSucceeded => exportedTrigger.setEventType(TriggerEventType.TEST_SESSION_SUCCEEDED)
             case models.Enums.TriggerEventType.TestSessionFailed => exportedTrigger.setEventType(TriggerEventType.TEST_SESSION_FAILED)
             case models.Enums.TriggerEventType.ConformanceStatementSucceeded => exportedTrigger.setEventType(TriggerEventType.CONFORMANCE_STATEMENT_SUCCEEDED)
+            case models.Enums.TriggerEventType.TestSessionStarted => exportedTrigger.setEventType(TriggerEventType.TEST_SESSION_STARTED)
+          }
+          models.Enums.TriggerServiceType.apply(trigger.trigger.serviceType) match {
+            case models.Enums.TriggerServiceType.GITB => exportedTrigger.setServiceType(TriggerServiceType.GITB)
+            case models.Enums.TriggerServiceType.JSON => exportedTrigger.setServiceType(TriggerServiceType.JSON)
           }
           if (trigger.data.isDefined && trigger.data.get.nonEmpty) {
             exportedTrigger.setDataItems(new TriggerDataItems)
@@ -834,7 +839,8 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, triggerManager:
               // Check to ensure we have the dependent properties exported (if applicable).
               if ((dataType != models.Enums.TriggerDataType.OrganisationParameter && dataType != models.Enums.TriggerDataType.SystemParameter && dataType != models.Enums.TriggerDataType.DomainParameter) ||
                   ((dataType == models.Enums.TriggerDataType.OrganisationParameter || dataType == models.Enums.TriggerDataType.SystemParameter) && exportSettings.customProperties) ||
-                  (dataType == models.Enums.TriggerDataType.DomainParameter && exportSettings.domain && exportSettings.domainParameters)
+                  (dataType == models.Enums.TriggerDataType.DomainParameter && exportSettings.domain && exportSettings.domainParameters) ||
+                  (dataType == models.Enums.TriggerDataType.StatementParameter && exportSettings.endpoints)
               ) {
                 val exportedDataItem = new TriggerDataItem
                 idSequence += 1
@@ -845,6 +851,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, triggerManager:
                   case models.Enums.TriggerDataType.System => exportedDataItem.setDataType(TriggerDataType.SYSTEM)
                   case models.Enums.TriggerDataType.Specification => exportedDataItem.setDataType(TriggerDataType.SPECIFICATION)
                   case models.Enums.TriggerDataType.Actor => exportedDataItem.setDataType(TriggerDataType.ACTOR)
+                  case models.Enums.TriggerDataType.TestSession => exportedDataItem.setDataType(TriggerDataType.TEST_SESSION)
                   case models.Enums.TriggerDataType.OrganisationParameter =>
                     exportedDataItem.setDataType(TriggerDataType.ORGANISATION_PARAMETER)
                     exportedDataItem.setData(exportedOrganisationPropertyMap(dataItem.dataId))
@@ -854,6 +861,9 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, triggerManager:
                   case models.Enums.TriggerDataType.DomainParameter =>
                     exportedDataItem.setDataType(TriggerDataType.DOMAIN_PARAMETER)
                     exportedDataItem.setData(domainExportInfo.exportedDomainParameterMap(dataItem.dataId))
+                  case models.Enums.TriggerDataType.StatementParameter =>
+                    exportedDataItem.setDataType(TriggerDataType.STATEMENT_PARAMETER)
+                    exportedDataItem.setData(domainExportInfo.exportedEndpointParameterMap(dataItem.dataId))
                 }
                 exportedTrigger.getDataItems.getTriggerDataItem.add(exportedDataItem)
               }

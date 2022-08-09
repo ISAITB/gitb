@@ -289,9 +289,9 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
       val actorId = sessionIds.get._3.get
       // We have all the data we need to fire the triggers.
       if (status == TestResultType.SUCCESS) {
-        triggerHelper.publishTriggerEvent(new TestSessionSucceededEvent(communityId, systemId, actorId))
+        triggerHelper.publishTriggerEvent(new TestSessionSucceededEvent(communityId, sessionId))
       } else if (status == TestResultType.FAILURE) {
-        triggerHelper.publishTriggerEvent(new TestSessionFailedEvent(communityId, systemId, actorId))
+        triggerHelper.publishTriggerEvent(new TestSessionFailedEvent(communityId, sessionId))
       }
       // See if the conformance statement is now successfully completed and fire an additional trigger if so.
       val statementStatus = conformanceManager.getConformanceStatus(actorId, systemId, None)

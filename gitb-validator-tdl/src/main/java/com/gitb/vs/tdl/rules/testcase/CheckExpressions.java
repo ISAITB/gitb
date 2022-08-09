@@ -27,10 +27,12 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
 
     private static final Pattern MAP_APPEND_EXPRESSION_PATTERN = Pattern.compile("(\\$?[a-zA-Z][a-zA-Z\\-_0-9]*(?:\\{(?:[\\$\\{\\}a-zA-Z\\-\\._0-9]*)\\})*)\\{(\\$?[a-zA-Z][a-zA-Z\\-\\._0-9]*)\\}");
     private static final String ATTRIBUTE_DESC = "desc";
+    private static final String ATTRIBUTE_HIDDEN = "hidden";
     private static final String ATTRIBUTE_TITLE = "title";
     private static final String ATTRIBUTE_WITH = "with";
     private static final String ATTRIBUTE_FROM = "from";
     private static final String ATTRIBUTE_TO = "to";
+    private static final String ATTRIBUTE_REPLY = "reply";
 
     private final Map<String, Boolean> testCaseScope = new HashMap<>();
     private final Map<String, Boolean> internalScriptletScope = new HashMap<>();
@@ -165,6 +167,7 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
         }
         if (step instanceof TestStep) {
             checkConstantReferenceInScriptlet(((TestStep) step).getDesc(), ATTRIBUTE_DESC);
+            checkConstantReferenceInScriptlet(((TestStep) step).getHidden(), ATTRIBUTE_HIDDEN);
         }
         if (step instanceof BeginTransaction) {
             checkConstantReferenceInScriptlet(((BeginTransaction) step).getFrom(), ATTRIBUTE_FROM);
@@ -175,6 +178,7 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
         } else if (step instanceof MessagingStep) {
             checkConstantReferenceInScriptlet(((MessagingStep) step).getFrom(), ATTRIBUTE_FROM);
             checkConstantReferenceInScriptlet(((MessagingStep) step).getTo(), ATTRIBUTE_TO);
+            checkConstantReferenceInScriptlet(((MessagingStep) step).getReply(), ATTRIBUTE_REPLY);
             checkConfigurations(((MessagingStep) step).getConfig());
             checkBindings(((MessagingStep) step).getInput());
             if (step instanceof Receive) {
@@ -244,6 +248,7 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
                 recordVariable(((Verify)step).getOutput(), true);
             }
         } else if (step instanceof CallStep) {
+            checkConstantReferenceInScriptlet(((CallStep) step).getHidden(), ATTRIBUTE_HIDDEN);
             checkBindings(((CallStep) step).getInput());
             checkToken(((CallStep) step).getInputAttribute(), TokenType.STRING_OR_VARIABLE_REFERENCE);
             if (((CallStep)step).getOutputAttribute() != null) {
