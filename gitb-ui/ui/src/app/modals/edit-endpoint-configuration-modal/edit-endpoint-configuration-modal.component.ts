@@ -98,7 +98,7 @@ export class EditEndpointConfigurationModalComponent extends BaseComponent imple
     } else {
       if (this.configuration?.configured) {
         const extension = this.dataService.extensionFromMimeType(this.parameter.mimeType)
-        name = this.parameter.name + extension
+        name = this.parameter.testKey + extension
       }
     }
     return name
