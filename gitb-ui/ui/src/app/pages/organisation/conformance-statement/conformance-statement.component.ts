@@ -285,7 +285,7 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
         }
         if (repr.configured) {
           if (parameter.kind == 'BINARY') {
-            repr.fileName = parameter.name
+            repr.fileName = parameter.testKey
             if (relevantConfig.mimeType != undefined) {
               repr.fileName += this.dataService.extensionFromMimeType(relevantConfig.mimeType)
             }
@@ -520,7 +520,7 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
     this.systemService.downloadEndpointConfigurationFile(this.systemId, parameter.id, parameter.endpoint)
     .subscribe((data) => {
       const extension = this.dataService.extensionFromMimeType(parameter.mimeType)
-      let fileName = parameter.name + extension      
+      let fileName = parameter.testKey + extension      
       const blobData = new Blob([data], {type: parameter.mimeType})
       saveAs(blobData, fileName)
     })
