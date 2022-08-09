@@ -300,6 +300,7 @@ object JsonUtil {
 		val json = Json.obj(
 			"id" -> parameter.id,
 			"name" -> parameter.name,
+      "testKey" -> parameter.testKey,
 			"desc" -> (if (parameter.desc.isDefined) parameter.desc.get else JsNull),
 			"use" -> parameter.use,
 			"kind" -> parameter.kind,
@@ -2246,6 +2247,7 @@ object JsonUtil {
       json = json.append(Json.obj(
         "id" -> item.id,
         "name" -> item.name,
+        "testKey" -> item.testKey,
         "kind" -> item.kind
       ))
     }

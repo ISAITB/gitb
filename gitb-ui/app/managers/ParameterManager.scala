@@ -18,9 +18,9 @@ class ParameterManager @Inject() (repositoryUtils: RepositoryUtils, dbConfigProv
 
   import dbConfig.profile.api._
 
-  def checkParameterExistsForEndpoint(parameterName: String, endpointId: Long, otherThanId: Option[Long]): Boolean = {
+  def checkParameterExistsForEndpoint(parameterKey: String, endpointId: Long, otherThanId: Option[Long]): Boolean = {
     var parameterQuery = PersistenceSchema.parameters
-      .filter(_.name === parameterName)
+      .filter(_.testKey === parameterKey)
       .filter(_.endpoint === endpointId)
     if (otherThanId.isDefined) {
       parameterQuery = parameterQuery.filter(_.id =!= otherThanId.get)
@@ -58,7 +58,7 @@ class ParameterManager @Inject() (repositoryUtils: RepositoryUtils, dbConfigProv
             .join(PersistenceSchema.endpoints).on(_.endpoint === _.id)
             .join(PersistenceSchema.actors).on(_._2.actor === _.id)
             .filter(_._1._1.id === parameterId)
-            .map(x => (x._1._1.endpoint, x._1._1.name, x._1._1.kind, x._2.domain)) // Endpoint ID, Parameter name, Parameter kind, Domain ID
+            .map(x => (x._1._1.endpoint, x._1._1.testKey, x._1._1.kind, x._2.domain)) // Endpoint ID, Parameter key, Parameter kind, Domain ID
             .result.head
           _ <- {
             if ("SIMPLE".equals(existingParameterData._3)) {
@@ -81,7 +81,7 @@ class ParameterManager @Inject() (repositoryUtils: RepositoryUtils, dbConfigProv
                 .join(PersistenceSchema.endpoints).on(_.endpoint === _.id)
                 .join(PersistenceSchema.actors).on(_._2.actor === _.id)
                 .filter(_._2.domain === existingParameterData._4)
-                .filter(_._1._1.name === existingParameterData._2)
+                .filter(_._1._1.testKey === existingParameterData._2)
                 .filter(_._1._1.id =!= parameterId)
                 .map(_._1._1.id)
                 .result.headOption
@@ -111,9 +111,9 @@ class ParameterManager @Inject() (repositoryUtils: RepositoryUtils, dbConfigProv
       PersistenceSchema.parameters.filter(_.id === parameterId).delete
   }
 
-  def updateParameterWrapper(parameterId: Long, name: String, description: Option[String], use: String, kind: String, adminOnly: Boolean, notForTests: Boolean, hidden: Boolean, allowedValues: Option[String], dependsOn: Option[String], dependsOnValue: Option[String]): Unit = {
+  def updateParameterWrapper(parameterId: Long, name: String, testKey: String, description: Option[String], use: String, kind: String, adminOnly: Boolean, notForTests: Boolean, hidden: Boolean, allowedValues: Option[String], dependsOn: Option[String], dependsOnValue: Option[String]): Unit = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
-    val dbAction = updateParameter(parameterId, name, description, use, kind, adminOnly, notForTests, hidden, allowedValues, dependsOn, dependsOnValue, onSuccessCalls)
+    val dbAction = updateParameter(parameterId, name, testKey, description, use, kind, adminOnly, notForTests, hidden, allowedValues, dependsOn, dependsOnValue, onSuccessCalls)
     exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
   }
 
@@ -121,23 +121,23 @@ class ParameterManager @Inject() (repositoryUtils: RepositoryUtils, dbConfigProv
     exec(PersistenceSchema.parameters.filter(_.id === parameterId).result.headOption)
   }
 
-  private def setParameterPrerequisitesForKey(endpointId: Long, name: String, newName: Option[String]): DBIO[_] = {
-    if (newName.isDefined) {
-      val q = for {p <- PersistenceSchema.parameters.filter(_.endpoint === endpointId).filter(_.dependsOn === name)} yield p.dependsOn
-      q.update(newName)
+  private def setParameterPrerequisitesForKey(endpointId: Long, testKey: String, newTestKey: Option[String]): DBIO[_] = {
+    if (newTestKey.isDefined) {
+      val q = for {p <- PersistenceSchema.parameters.filter(_.endpoint === endpointId).filter(_.dependsOn === testKey)} yield p.dependsOn
+      q.update(newTestKey)
     } else {
-      val q = for {p <- PersistenceSchema.parameters.filter(_.endpoint === endpointId).filter(_.dependsOn === name)} yield (p.dependsOn, p.dependsOnValue)
+      val q = for {p <- PersistenceSchema.parameters.filter(_.endpoint === endpointId).filter(_.dependsOn === testKey)} yield (p.dependsOn, p.dependsOnValue)
       q.update(None, None)
     }
   }
 
-  def updateParameter(parameterId: Long, name: String, description: Option[String], use: String, kind: String, adminOnly: Boolean, notForTests: Boolean, hidden: Boolean, allowedValues: Option[String], dependsOn: Option[String], dependsOnValue: Option[String], onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
+  def updateParameter(parameterId: Long, name: String, testKey: String, description: Option[String], use: String, kind: String, adminOnly: Boolean, notForTests: Boolean, hidden: Boolean, allowedValues: Option[String], dependsOn: Option[String], dependsOnValue: Option[String], onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
     for {
-      existingParameter <- PersistenceSchema.parameters.filter(_.id === parameterId).map(x => (x.endpoint, x.name, x.kind)).result.head
+      existingParameter <- PersistenceSchema.parameters.filter(_.id === parameterId).map(x => (x.endpoint, x.testKey, x.kind)).result.head
       _ <- {
-        if (!existingParameter._2.equals(name)) {
+        if (!existingParameter._2.equals(testKey)) {
           // Update the dependsOn of other properties.
-          setParameterPrerequisitesForKey(existingParameter._1, existingParameter._2, Some(name))
+          setParameterPrerequisitesForKey(existingParameter._1, existingParameter._2, Some(testKey))
         } else if (existingParameter._3.equals("SIMPLE") && !existingParameter._3.equals(kind)) {
           // Remove the dependsOn of other properties.
           setParameterPrerequisitesForKey(existingParameter._1, existingParameter._2, None)
@@ -156,8 +156,8 @@ class ParameterManager @Inject() (repositoryUtils: RepositoryUtils, dbConfigProv
       }
       _ <- {
         // Don't update display order here.
-        val q = for {p <- PersistenceSchema.parameters if p.id === parameterId} yield (p.desc, p.use, p.kind, p.name, p.adminOnly, p.notForTests, p.hidden, p.allowedValues, p.dependsOn, p.dependsOnValue)
-        q.update(description, use, kind, name, adminOnly, notForTests, hidden, allowedValues, dependsOn, dependsOnValue)
+        val q = for {p <- PersistenceSchema.parameters if p.id === parameterId} yield (p.desc, p.use, p.kind, p.name, p.testKey, p.adminOnly, p.notForTests, p.hidden, p.allowedValues, p.dependsOn, p.dependsOnValue)
+        q.update(description, use, kind, name, testKey, adminOnly, notForTests, hidden, allowedValues, dependsOn, dependsOnValue)
       }
     } yield ()
   }

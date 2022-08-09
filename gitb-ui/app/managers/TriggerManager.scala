@@ -313,7 +313,7 @@ class TriggerManager @Inject()(ws: WSClient, repositoryUtils: RepositoryUtils, t
   }
 
   private def loadStatementParameterKeys(parameterIds: List[Long]): Map[Long, String] = {
-    exec(PersistenceSchema.parameters.filter(_.id inSet parameterIds).map(x => (x.id, x.name)).result).toMap
+    exec(PersistenceSchema.parameters.filter(_.id inSet parameterIds).map(x => (x.id, x.testKey)).result).toMap
   }
 
   private def loadStatementParameterData(parameterKeys: Map[Long, String], actorId: Option[Long], systemId: Option[Long], communityId: Long): Map[String, (Long, String, Option[String], Option[Long], Option[String])] = {
@@ -326,7 +326,7 @@ class TriggerManager @Inject()(ws: WSClient, repositoryUtils: RepositoryUtils, t
           .filter(_._2.actor === actorId.get)
           .filter(_._1._2.system === systemId.get)
           .filter(_._1._1.name inSet parameterKeys.values)
-          .map(x => (x._1._1.name, x._1._1.id, x._1._1.kind, x._1._2.value, x._1._2.contentType))
+          .map(x => (x._1._1.testKey, x._1._1.id, x._1._1.kind, x._1._2.value, x._1._2.contentType))
           .result
       ).map(x => (x._1, x._2, x._3, Some(x._4), systemId, x._5)).toList
     } else {
@@ -338,8 +338,8 @@ class TriggerManager @Inject()(ws: WSClient, repositoryUtils: RepositoryUtils, t
                 .join(PersistenceSchema.endpoints).on(_.endpoint === _.id)
                 .join(PersistenceSchema.actors).on(_._2.actor === _.id)
                 .filterOpt(domainId)((table, domainIdValue) => table._2.domain === domainIdValue)
-                .filter(_._1._1.name inSet parameterKeys.values)
-                .map(x => (x._1._1.name, x._1._1.id, x._1._1.kind))
+                .filter(_._1._1.testKey inSet parameterKeys.values)
+                .map(x => (x._1._1.testKey, x._1._1.id, x._1._1.kind))
                 .result
         } yield parameterData
       ).map(x => (x._1, x._2, x._3, None, None, None)).toList
@@ -792,7 +792,12 @@ class TriggerManager @Inject()(ws: WSClient, repositoryUtils: RepositoryUtils, t
   private def saveAsStatementPropertyValues(system: Long, actor: Long, items: Iterable[AnyContent], onSuccess: mutable.ListBuffer[() => _]): DBIO[_] = {
     val dbActions = ListBuffer[DBIO[_]]()
     val parameterMap = mutable.Map[String, (Long, String, Long)]()
-    exec(PersistenceSchema.parameters.join(PersistenceSchema.endpoints).on(_.endpoint === _.id).filter(_._2.actor === actor).map(x => (x._1.id, x._1.name, x._1.kind, x._1.endpoint)).result).foreach { param =>
+    exec(PersistenceSchema.parameters
+      .join(PersistenceSchema.endpoints).on(_.endpoint === _.id)
+      .filter(_._2.actor === actor)
+      .map(x => (x._1.id, x._1.testKey, x._1.kind, x._1.endpoint))
+      .result
+    ).foreach { param =>
       parameterMap += (param._2 -> (param._1, param._3, param._4))
     }
     items.foreach { item =>
@@ -862,8 +867,9 @@ class TriggerManager @Inject()(ws: WSClient, repositoryUtils: RepositoryUtils, t
         }
         exec(dbActionFinalisation(Some(onSuccessCalls), None, toDBIO(dbActions)).transactionally)
       case Failure(error) =>
-        logger.warn("Trigger call resulted in error [community: "+trigger.community+"][type: "+trigger.eventType+"][url: "+trigger.url+"]", error)
-        recordTriggerResult(trigger.id, success = false, Some(JsonUtil.jsTextArray(extractFailureDetails(error)).toString()))
+        val details = extractFailureDetails(error)
+        logger.warn("Trigger call resulted in error [community: "+trigger.community+"][type: "+trigger.eventType+"][url: "+trigger.url+"]: " + details.mkString(" | "))
+        recordTriggerResult(trigger.id, success = false, Some(JsonUtil.jsTextArray(details).toString()))
     }
   }
 

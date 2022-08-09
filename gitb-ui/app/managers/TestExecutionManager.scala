@@ -71,14 +71,15 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
           x._1._2.kind, // Kind [6]
           x._1._2.id, // Parameter ID [7]
           x._1._2.use, // Parameter use [8]
-          x._1._2.notForTests // Parameter not for tests [9]
+          x._1._2.notForTests, // Parameter not for tests [9]
+          x._1._2.testKey // Parameter test key [10]
         )).result
       parameters <- DBIO.successful(parameterData.map { x =>
         val parameterValueData: (Option[String], Option[String]) = x._3 match {
           case Some(v) => (Some(v.value), v.contentType)
           case None => (None, None)
         }
-        new SystemConfigurationParameterMinimal(x._7, x._1, x._2, parameterValueData._1, x._4, x._5, x._6, x._8, parameterValueData._2, x._9)
+        new SystemConfigurationParameterMinimal(x._7, x._1, x._2, x._10, parameterValueData._1, x._4, x._5, x._6, x._8, parameterValueData._2, x._9)
       })
     } yield (actorIdentifier, parameters))
     // Keep only the values that have valid prerequisites defined.
@@ -97,7 +98,7 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
           actorConfigEntry = Some(actorConfig)
         }
         val config = new Configuration()
-        config.setName(p.parameterName)
+        config.setName(p.parameterKey)
         if (p.parameterKind == "SECRET") {
           config.setValue(MimeUtil.decryptString(p.parameterValue.get))
         } else if (p.parameterKind == "BINARY") {
