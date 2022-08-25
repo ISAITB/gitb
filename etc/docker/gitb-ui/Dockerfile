@@ -11,5 +11,5 @@ COPY gitb-ui /usr/local/gitb-ui
 
 EXPOSE 9000
 EXPOSE 9090
-
+WORKDIR /usr/local/gitb-ui
 CMD ["gitb"]
