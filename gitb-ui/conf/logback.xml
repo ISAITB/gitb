@@ -5,10 +5,10 @@
         </encoder>
     </appender>
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-      <file>./logs/gitb.log</file>
+      <file>./logs/gitb-ui.log</file>
       <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
          <!-- daily rollover -->
-        <fileNamePattern>./logs/gitb.%d{yyyy-MM-dd}.log</fileNamePattern>
+        <fileNamePattern>./logs/gitb-ui.%d{yyyy-MM-dd}.log</fileNamePattern>
         <!-- keep 10 days' worth of history -->
         <maxHistory>10</maxHistory>
       </rollingPolicy>
