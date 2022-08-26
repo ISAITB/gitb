@@ -2,12 +2,14 @@ package com.gitb.types;
 
 import javax.xml.xpath.XPathExpression;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 
 /**
  * Created by tuncay on 9/2/14.
  */
-public class ListType extends ContainerType {
+public class ListType extends ContainerType implements Iterable<DataType> {
     //Elements of the list
     protected List<DataType> elements;
     //The type for all elements
@@ -183,5 +185,13 @@ public class ListType extends ContainerType {
         }
         type.setValue(str.toString());
         return type;
+    }
+
+    @Override
+    public Iterator<DataType> iterator() {
+        if (elements != null) {
+            return elements.iterator();
+        }
+        return Collections.emptyListIterator();
     }
 }

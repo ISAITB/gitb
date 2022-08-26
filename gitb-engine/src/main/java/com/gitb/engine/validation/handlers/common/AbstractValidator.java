@@ -40,4 +40,14 @@ public abstract class AbstractValidator implements IValidationHandler {
     protected String getTestCaseId(Map<String, DataType> inputs) {
         return (String) inputs.get(TEST_CASE_ID_INPUT).getValue();
     }
+
+    protected <T extends DataType> T getAndConvert(Map<String, DataType> inputs, String inputName, String dataType, Class<T> dataTypeClass) {
+        var input = inputs.get(inputName);
+        if (input != null) {
+            return dataTypeClass.cast(input.convertTo(dataType));
+        } else {
+            return null;
+        }
+    }
+
 }

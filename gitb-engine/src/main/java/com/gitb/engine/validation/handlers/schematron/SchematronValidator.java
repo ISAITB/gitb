@@ -1,10 +1,12 @@
 package com.gitb.engine.validation.handlers.schematron;
 
 import com.gitb.core.Configuration;
+import com.gitb.engine.utils.ReportItemComparator;
 import com.gitb.engine.validation.ValidationHandler;
 import com.gitb.engine.validation.handlers.common.AbstractValidator;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.tr.TestStepReportType;
+import com.gitb.types.BooleanType;
 import com.gitb.types.DataType;
 import com.gitb.types.ObjectType;
 import com.gitb.types.SchemaType;
@@ -29,9 +31,12 @@ import java.util.Optional;
 @ValidationHandler(name="SchematronValidator")
 public class SchematronValidator extends AbstractValidator {
 
-    private final static String CONTENT_ARGUMENT_NAME     = "xmldocument";
-    private final static String SCHEMATRON_ARGUMENT_NAME  = "schematron";
-    private final static String SCHEMATRON_TYPE  = "type";
+    public final static String CONTENT_ARGUMENT_NAME     = "xmldocument";
+    public final static String SCHEMATRON_ARGUMENT_NAME  = "schematron";
+    public final static String SCHEMATRON_TYPE_ARGUMENT_NAME = "type";
+    public final static String SHOW_SCHEMATRON_ARGUMENT_NAME = "showSchematron";
+    public final static String SORT_BY_SEVERITY_ARGUMENT_NAME  = "sortBySeverity";
+    public final static String SHOW_TESTS_ARGUMENT_NAME = "showTests";
     private final static String MODULE_DEFINITION_XML = "/validation/schematron-validator-definition.xml";
 
     public SchematronValidator() {
@@ -43,12 +48,15 @@ public class SchematronValidator extends AbstractValidator {
         // Process inputs.
         ObjectType xml = (ObjectType) inputs.get(CONTENT_ARGUMENT_NAME).convertTo(DataType.OBJECT_DATA_TYPE);
         SchemaType sch = (SchemaType) inputs.get(SCHEMATRON_ARGUMENT_NAME).convertTo(DataType.SCHEMA_DATA_TYPE);
+        var showSchematron = getAndConvert(inputs, SHOW_SCHEMATRON_ARGUMENT_NAME, DataType.BOOLEAN_DATA_TYPE, BooleanType.class);
+        var sortBySeverity = getAndConvert(inputs, SORT_BY_SEVERITY_ARGUMENT_NAME, DataType.BOOLEAN_DATA_TYPE, BooleanType.class);
+        var showTests = getAndConvert(inputs, SHOW_TESTS_ARGUMENT_NAME, DataType.BOOLEAN_DATA_TYPE, BooleanType.class);
         // Process schematron resource.
         SchematronType validationType = determineSchematronType(inputs, sch);
         ISchematronResource schematron;
         boolean convertXPathExpressions = false;
         if (validationType == SchematronType.SCH) {
-            // Use the pure implementation as SCH can be very resource and time consuming
+            // Use the pure implementation as SCH can be very resource and time-consuming
             schematron = new SchematronResourcePure(new StringResource(sch.toString(), sch.getImportPath()));
             convertXPathExpressions = true;
         } else {
@@ -75,15 +83,24 @@ public class SchematronValidator extends AbstractValidator {
         SVRLMarshaller marshaller = new SVRLMarshaller(false);
         SchematronOutputType svrlOutput = marshaller.read(resultDocument);
         // Produce validation report.
-        SchematronReportHandler handler = new SchematronReportHandler(xml, sch, inputDocument, svrlOutput, convertXPathExpressions);
-        return handler.createReport();
+        SchematronReportHandler handler = new SchematronReportHandler(
+                xml,
+                (showSchematron == null || (Boolean)showSchematron.getValue())?sch:null, inputDocument, svrlOutput,
+                convertXPathExpressions,
+                (showTests != null && ((Boolean) showTests.getValue()))
+        );
+        var report = handler.createReport();
+        if (sortBySeverity != null && ((Boolean) sortBySeverity.getValue()) && report.getReports() != null) {
+            report.getReports().getInfoOrWarningOrError().sort(new ReportItemComparator(ReportItemComparator.SortType.SEVERITY_THEN_LOCATION));
+        }
+        return report;
     }
 
     private SchematronType determineSchematronType(Map<String, DataType> inputs, SchemaType schematron) {
         Optional<String> extensionToCheck = Optional.empty();
-        if (inputs.containsKey(SCHEMATRON_TYPE)) {
+        if (inputs.containsKey(SCHEMATRON_TYPE_ARGUMENT_NAME)) {
             // Determine from input.
-            String providedType = ((String) inputs.get(SCHEMATRON_TYPE).getValue()).toLowerCase(Locale.ROOT);
+            String providedType = ((String) inputs.get(SCHEMATRON_TYPE_ARGUMENT_NAME).getValue()).toLowerCase(Locale.ROOT);
             extensionToCheck = Optional.of(providedType);
         }
         if (extensionToCheck.isEmpty()) {
