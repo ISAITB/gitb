@@ -591,6 +591,47 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
     return id.indexOf(parentId) == 0 && (periodIndex == parentId.length || parenthesesIndex == parentId.length)
   }
 
+  findChildrenByParentId(step: StepData, id: string): StepData[] {
+    let foundSteps: StepData[] = []
+    if (step != undefined) {
+      if (step.id.startsWith(id)) {
+        foundSteps.push(step)
+      } else {
+        if (step.type == 'loop') {
+          if (step.steps != undefined) {
+            for (let childStep of step.steps) {
+              foundSteps = foundSteps.concat(this.findChildrenByParentId(childStep, id))
+            }
+          }
+        } else if (step.type == 'group') {
+          for (let childStep of step.steps) {
+            foundSteps = foundSteps.concat(this.findChildrenByParentId(childStep, id))
+          }
+        } else if (step.type == 'decision') {
+          if (step.then != undefined) {
+            for (let childStep of step.then) {
+              foundSteps = foundSteps.concat(this.findChildrenByParentId(childStep, id))
+            }
+          }
+          if (step.else != undefined) {
+            for (let childStep of step.else) {
+              foundSteps = foundSteps.concat(this.findChildrenByParentId(childStep, id))
+            }
+          }
+        } else if (step.type == 'flow') {
+          if (step.threads != undefined) {
+            for (let thread of step.threads) {
+              for (let childStep of thread) {
+                foundSteps = foundSteps.concat(this.findChildrenByParentId(childStep, id))
+              }
+            }
+          }
+        }
+      }
+    }
+    return foundSteps
+  }
+
   filterStep(step: StepData, id: string): StepData|undefined {
     if (step.id == id) {
       return step
@@ -730,21 +771,38 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
       } else {
         current = step
       }
-      if (current != undefined && current.id == stepId && current.status != status) {
-        if ((status == Constants.TEST_STATUS.COMPLETED) ||
-        (status == Constants.TEST_STATUS.ERROR) ||
-        (status == Constants.TEST_STATUS.WARNING) ||
-        (status == Constants.TEST_STATUS.SKIPPED && (current.status != Constants.TEST_STATUS.COMPLETED && current.status != Constants.TEST_STATUS.ERROR && current.status != Constants.TEST_STATUS.WARNING)) ||
-        (status == Constants.TEST_STATUS.WAITING && (this.started && current.status != Constants.TEST_STATUS.SKIPPED && current.status != Constants.TEST_STATUS.COMPLETED && current.status != Constants.TEST_STATUS.ERROR && current.status != Constants.TEST_STATUS.WARNING)) ||
-        (status == Constants.TEST_STATUS.PROCESSING && (this.started && current.status != Constants.TEST_STATUS.WAITING && current.status != Constants.TEST_STATUS.SKIPPED && current.status != Constants.TEST_STATUS.COMPLETED && current.status != Constants.TEST_STATUS.ERROR && current.status != Constants.TEST_STATUS.WARNING))) {
-          current.status = status
-          current.report = report
-          // If skipped, marked all children as skipped.
-          if (status == Constants.TEST_STATUS.SKIPPED) {
-            this.setChildrenAsSkipped(current, stepId, stepId)
+      if (current != undefined) {
+        if (current.id == stepId && current.status != status) {
+          if ((status == Constants.TEST_STATUS.COMPLETED) ||
+          (status == Constants.TEST_STATUS.ERROR) ||
+          (status == Constants.TEST_STATUS.WARNING) ||
+          (status == Constants.TEST_STATUS.SKIPPED && (current.status != Constants.TEST_STATUS.COMPLETED && current.status != Constants.TEST_STATUS.ERROR && current.status != Constants.TEST_STATUS.WARNING)) ||
+          (status == Constants.TEST_STATUS.WAITING && (this.started && current.status != Constants.TEST_STATUS.SKIPPED && current.status != Constants.TEST_STATUS.COMPLETED && current.status != Constants.TEST_STATUS.ERROR && current.status != Constants.TEST_STATUS.WARNING)) ||
+          (status == Constants.TEST_STATUS.PROCESSING && (this.started && current.status != Constants.TEST_STATUS.WAITING && current.status != Constants.TEST_STATUS.SKIPPED && current.status != Constants.TEST_STATUS.COMPLETED && current.status != Constants.TEST_STATUS.ERROR && current.status != Constants.TEST_STATUS.WARNING))) {
+            current.status = status
+            current.report = report
+            // If skipped, marked all children as skipped.
+            if (status == Constants.TEST_STATUS.SKIPPED) {
+              this.setChildrenAsSkipped(current, stepId, stepId)
+            }
+          }
+        } else if (current.type == 'decision' && status == Constants.TEST_STATUS.SKIPPED) {
+          // We do this to immediately mark as skipped decision branches that were not taken.
+          if (current.id + '[T]' == stepId) {
+            this.setChildrenSequenceAsSkipped(current.then, current.id)
+          } else if (current.id + '[F]' == stepId) {
+            this.setChildrenSequenceAsSkipped(current.else, current.id)
           }
         }
       }
+    } else if ((stepId.endsWith('[T]') || stepId.endsWith('[F]')) && status == Constants.TEST_STATUS.SKIPPED) {
+      // This scenario can come up if we have a decision step that is hidden but has visible children.
+      // In this case we want to immediately illustrate skip decision branches.
+      let childSteps: StepData[] = []
+      for (let step of this.stepsOfTests[this.currentTest!.id]) {
+        childSteps = childSteps.concat(this.findChildrenByParentId(step, stepId))
+      }
+      this.setChildrenSequenceAsSkipped(childSteps, stepId)
     }
   }
 
