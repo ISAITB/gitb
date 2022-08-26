@@ -8,10 +8,9 @@ import com.gitb.tr.*;
 import com.gitb.types.DataType;
 import com.gitb.types.ObjectType;
 import com.gitb.types.SchemaType;
+import com.helger.commons.error.level.EErrorLevel;
 import com.helger.schematron.svrl.AbstractSVRLMessage;
-import com.helger.schematron.svrl.SVRLFailedAssert;
 import com.helger.schematron.svrl.SVRLHelper;
-import com.helger.schematron.svrl.SVRLSuccessfulReport;
 import com.helger.schematron.svrl.jaxb.SchematronOutputType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,14 +45,16 @@ public class SchematronReportHandler extends AbstractReportHandler {
     private final SchematronOutputType svrlReport;
     private NamespaceContext namespaceContext;
     private final boolean convertXPathExpressions;
+    private final boolean showTests;
     private Boolean hasDefaultNamespace;
 
-    protected SchematronReportHandler(ObjectType xml, SchemaType sch, Document node, SchematronOutputType svrl, boolean convertXPathExpressions) {
+    protected SchematronReportHandler(ObjectType xml, SchemaType sch, Document node, SchematronOutputType svrl, boolean convertXPathExpressions, boolean showTests) {
         super();
 
         this.node = node;
         this.svrlReport = svrl;
         this.convertXPathExpressions = convertXPathExpressions;
+        this.showTests = showTests;
 
         report.setName("Schematron Validation");
         report.setReports(new TestAssertionGroupReportsType());
@@ -68,67 +69,82 @@ public class SchematronReportHandler extends AbstractReportHandler {
 	    xmlAttachment.setValue(new String(xml.serializeByDefaultEncoding()));
 	    attachment.getItem().add(xmlAttachment);
 
-	    AnyContent schemaAttachment = new AnyContent();
-	    schemaAttachment.setName(SCH_ITEM_NAME);
-	    schemaAttachment.setType(DataType.SCHEMA_DATA_TYPE);
-	    schemaAttachment.setEmbeddingMethod(ValueEmbeddingEnumeration.STRING);
-	    schemaAttachment.setValue(new String(sch.serializeByDefaultEncoding()));
-	    attachment.getItem().add(schemaAttachment);
+        if (sch != null) {
+            AnyContent schemaAttachment = new AnyContent();
+            schemaAttachment.setName(SCH_ITEM_NAME);
+            schemaAttachment.setType(DataType.SCHEMA_DATA_TYPE);
+            schemaAttachment.setEmbeddingMethod(ValueEmbeddingEnumeration.STRING);
+            schemaAttachment.setValue(new String(sch.serializeByDefaultEncoding()));
+            attachment.getItem().add(schemaAttachment);
+        }
 
 	    report.setContext(attachment);
+    }
+
+    private <T extends AbstractSVRLMessage> TestResultType getErrorLevel(List<T> messages) {
+        for (AbstractSVRLMessage item: messages) {
+            if (item.getFlag().getNumericLevel() == EErrorLevel.ERROR.getNumericLevel()
+                    || item.getFlag().getNumericLevel() == EErrorLevel.FATAL_ERROR.getNumericLevel()) {
+                return TestResultType.FAILURE;
+            }
+        }
+        return TestResultType.SUCCESS;
     }
 
     @Override
     public TAR createReport() {
         if (svrlReport != null) {
-            List<SVRLFailedAssert> failedAssertions = SVRLHelper.getAllFailedAssertions(this.svrlReport);
+            var failedAssertions = SVRLHelper.getAllFailedAssertions(this.svrlReport);
 
-            if(failedAssertions.size() > 0) {
-                report.setResult(TestResultType.FAILURE);
-
-                List<JAXBElement<TestAssertionReportType>> errorReports = traverseSVRLMessages(failedAssertions, true);
+            if (!failedAssertions.isEmpty()) {
+                report.setResult(getErrorLevel(failedAssertions));
+                var errorReports = traverseSVRLMessages(failedAssertions);
                 report.getReports().getInfoOrWarningOrError().addAll(errorReports);
             }
 
-            List<SVRLSuccessfulReport> successfulReports = SVRLHelper.getAllSuccessfulReports(this.svrlReport);
-            if(successfulReports.size() > 0) {
-                List<JAXBElement<TestAssertionReportType>> successReports = traverseSVRLMessages(successfulReports, false);
+            var successfulReports = SVRLHelper.getAllSuccessfulReports(this.svrlReport);
+            if (!successfulReports.isEmpty()) {
+                var successReports = traverseSVRLMessages(successfulReports);
                 report.getReports().getInfoOrWarningOrError().addAll(successReports);
             }
         } else {
-            //occurs when validator fails to generate SVRL, so create a default error an add to the report
+            // Occurs when validator fails to generate SVRL, so create a default error an add to the report
             report.setResult(TestResultType.FAILURE);
 
-            BAR error = new BAR();
+            var error = new BAR();
             error.setDescription("An error occurred when generating Schematron output due to a problem in given XML content.");
             error.setLocation(XML_ITEM_NAME + ":1:0");
 
-            JAXBElement<TestAssertionReportType> element = objectFactory.createTestAssertionGroupReportsTypeError(error);
+            var element = objectFactory.createTestAssertionGroupReportsTypeError(error);
             report.getReports().getInfoOrWarningOrError().add(element);
         }
 
         return report;
     }
 
-    private <T extends AbstractSVRLMessage> List<JAXBElement<TestAssertionReportType> > traverseSVRLMessages(List<T> svrlMessages, boolean failure){
-        List<JAXBElement<TestAssertionReportType>> reports = new ArrayList<>();
+    private <T extends AbstractSVRLMessage> List<JAXBElement<TestAssertionReportType> > traverseSVRLMessages(List<T> svrlMessages){
+        var reports = new ArrayList<JAXBElement<TestAssertionReportType>>();
 
-        for(T message : svrlMessages) {
-            BAR error = new BAR();
+        for (T message : svrlMessages) {
+            var error = new BAR();
             error.setDescription(message.getText());
             error.setLocation(XML_ITEM_NAME + ":" + getLineNumbeFromXPath(message.getLocation()) + ":0");
-            error.setTest(message.getTest());
-
+            if (showTests) {
+                error.setTest(message.getTest());
+            }
             JAXBElement<TestAssertionReportType> element;
-
-            if(failure) {
-                element = objectFactory.createTestAssertionGroupReportsTypeError(error);
-            } else {
-                element = objectFactory.createTestAssertionGroupReportsTypeInfo(error);
+            int level = message.getFlag().getNumericLevel();
+            if (level == EErrorLevel.SUCCESS.getNumericLevel()) {
+                element = this.objectFactory.createTestAssertionGroupReportsTypeInfo(error);
+            } else if (level == EErrorLevel.INFO.getNumericLevel()) {
+                element = this.objectFactory.createTestAssertionGroupReportsTypeInfo(error);
+            } else if (level == EErrorLevel.WARN.getNumericLevel()) {
+                element = this.objectFactory.createTestAssertionGroupReportsTypeWarning(error);
+            } else { // ERROR, FATAL_ERROR
+                element = this.objectFactory.createTestAssertionGroupReportsTypeError(error);
             }
             reports.add(element);
         }
-
         return reports;
     }
 

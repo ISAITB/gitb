@@ -33,12 +33,14 @@ public class XSDReportHandler extends AbstractReportHandler implements ErrorHand
 	    xmlAttachment.setValue(new String(xml.serializeByDefaultEncoding()));
 	    attachment.getItem().add(xmlAttachment);
 
-	    AnyContent xsdAttachment = new AnyContent();
-	    xsdAttachment.setName(XSD_ITEM_NAME);
-	    xmlAttachment.setType(DataType.SCHEMA_DATA_TYPE);
-	    xsdAttachment.setEmbeddingMethod(ValueEmbeddingEnumeration.STRING);
-	    xsdAttachment.setValue(new String(xsd.serializeByDefaultEncoding()));
-	    attachment.getItem().add(xsdAttachment);
+        if (xsd != null) {
+            AnyContent xsdAttachment = new AnyContent();
+            xsdAttachment.setName(XSD_ITEM_NAME);
+            xmlAttachment.setType(DataType.SCHEMA_DATA_TYPE);
+            xsdAttachment.setEmbeddingMethod(ValueEmbeddingEnumeration.STRING);
+            xsdAttachment.setValue(new String(xsd.serializeByDefaultEncoding()));
+            attachment.getItem().add(xsdAttachment);
+        }
 
         report.setName("XML Schema Validation");
         report.setReports(new TestAssertionGroupReportsType());

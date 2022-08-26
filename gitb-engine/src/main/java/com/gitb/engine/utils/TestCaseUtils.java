@@ -1,5 +1,6 @@
 package com.gitb.engine.utils;
 
+import com.gitb.core.AnyContent;
 import com.gitb.core.Configuration;
 import com.gitb.core.ErrorCode;
 import com.gitb.engine.ModuleManager;
@@ -12,19 +13,23 @@ import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.repository.ITestCaseRepository;
 import com.gitb.tdl.Process;
 import com.gitb.tdl.*;
+import com.gitb.tr.TAR;
+import com.gitb.tr.TestAssertionGroupReportsType;
+import com.gitb.tr.TestResultType;
+import com.gitb.tr.ValidationCounters;
 import com.gitb.types.BooleanType;
 import com.gitb.types.DataType;
 import com.gitb.types.MapType;
 import com.gitb.types.StringType;
 import com.gitb.utils.ErrorUtils;
+import com.gitb.utils.XMLDateTimeUtils;
 import org.apache.commons.lang3.StringUtils;
 
+import javax.xml.datatype.DatatypeConfigurationException;
+import java.math.BigInteger;
 import java.net.Authenticator;
 import java.net.PasswordAuthentication;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Properties;
+import java.util.*;
 import java.util.function.Supplier;
 
 /**
@@ -228,26 +233,30 @@ public class TestCaseUtils {
     }
 
     public static <T> T fixedOrVariableValue(String originalValue, Class<T> variableClass,  LinkedList<CallStep> scriptletStepStack) {
-        Supplier<T> nonVariableValueFn;
-        String dataType;
-        if (String.class.equals(variableClass)) {
-            dataType = DataType.STRING_DATA_TYPE;
-            nonVariableValueFn = () -> variableClass.cast(originalValue);
-        } else if (Boolean.class.equals(variableClass)) {
-            dataType = DataType.BOOLEAN_DATA_TYPE;
-            nonVariableValueFn = () -> variableClass.cast(Boolean.valueOf(originalValue));
-        } else {
-            throw new IllegalArgumentException("Unsupported variable class ["+variableClass+"]");
-        }
-        if (!scriptletStepStack.isEmpty() && VariableResolver.isVariableReference(originalValue)) {
-            // The description may be set dynamically from the call inputs.
-            return TestCaseUtils.getConstantCallInput(
+        if (originalValue != null) {
+            String dataType;
+            Supplier<T> nonVariableValueFn;
+            if (String.class.equals(variableClass)) {
+                dataType = DataType.STRING_DATA_TYPE;
+                nonVariableValueFn = () -> variableClass.cast(originalValue);
+            } else if (Boolean.class.equals(variableClass)) {
+                dataType = DataType.BOOLEAN_DATA_TYPE;
+                nonVariableValueFn = () -> variableClass.cast(Boolean.valueOf(originalValue));
+            } else {
+                throw new IllegalArgumentException("Unsupported variable class ["+variableClass+"]");
+            }
+            if (!scriptletStepStack.isEmpty() && VariableResolver.isVariableReference(originalValue)) {
+                // The description may be set dynamically from the call inputs.
+                return TestCaseUtils.getConstantCallInput(
                         VariableResolver.extractVariableNameFromExpression(originalValue).getLeft(),
                         variableClass,
                         dataType, scriptletStepStack
-                    ).orElseGet(nonVariableValueFn);
+                ).orElseGet(nonVariableValueFn);
+            }
+            return nonVariableValueFn.get();
+        } else {
+            return null;
         }
-        return nonVariableValueFn.get();
     }
 
     private static <T> Optional<T> getConstantCallInput(String inputName, Class<T> constantClass, String constantDataType, LinkedList<CallStep> scriptletStepStack) {
@@ -274,5 +283,95 @@ public class TestCaseUtils {
         return Optional.empty();
     }
 
+    public static TAR mergeReports(List<TAR> reports) {
+        return mergeReports(reports.toArray(new TAR[0]));
+    }
+
+    public static TAR mergeReports(TAR[] reports) {
+        TAR mergedReport = reports[0];
+        if (reports.length > 1) {
+            for(int i = 1; i < reports.length; ++i) {
+                TAR report = reports[i];
+                if (report != null) {
+                    if (report.getCounters() != null) {
+                        if (mergedReport.getCounters() == null) {
+                            mergedReport.setCounters(new ValidationCounters());
+                            mergedReport.getCounters().setNrOfAssertions(BigInteger.ZERO);
+                            mergedReport.getCounters().setNrOfWarnings(BigInteger.ZERO);
+                            mergedReport.getCounters().setNrOfErrors(BigInteger.ZERO);
+                        }
+
+                        if (report.getCounters().getNrOfAssertions() != null) {
+                            mergedReport.getCounters().setNrOfAssertions(mergedReport.getCounters().getNrOfAssertions().add(report.getCounters().getNrOfAssertions()));
+                        }
+
+                        if (report.getCounters().getNrOfWarnings() != null) {
+                            mergedReport.getCounters().setNrOfWarnings(mergedReport.getCounters().getNrOfWarnings().add(report.getCounters().getNrOfWarnings()));
+                        }
+
+                        if (report.getCounters().getNrOfErrors() != null) {
+                            mergedReport.getCounters().setNrOfErrors(mergedReport.getCounters().getNrOfErrors().add(report.getCounters().getNrOfErrors()));
+                        }
+                    }
+
+                    if (report.getReports() != null) {
+                        if (mergedReport.getReports() == null) {
+                            mergedReport.setReports(new TestAssertionGroupReportsType());
+                        }
+
+                        mergedReport.getReports().getInfoOrWarningOrError().addAll(report.getReports().getInfoOrWarningOrError());
+                    }
+
+                    if (mergedReport.getResult() == null) {
+                        mergedReport.setResult(TestResultType.UNDEFINED);
+                    }
+
+                    if (report.getResult() != null && report.getResult() != TestResultType.UNDEFINED && (mergedReport.getResult() == TestResultType.UNDEFINED || mergedReport.getResult() == TestResultType.SUCCESS && report.getResult() != TestResultType.SUCCESS || mergedReport.getResult() == TestResultType.WARNING && report.getResult() == TestResultType.FAILURE)) {
+                        mergedReport.setResult(report.getResult());
+                    }
+
+                    if (report.getContext() != null) {
+                        if (mergedReport.getContext() == null) {
+                            mergedReport.setContext(report.getContext());
+                        } else if (report.getContext().getItem() != null) {
+                            for (AnyContent item : report.getContext().getItem()) {
+                                if (item.getName() != null) {
+                                    List<AnyContent> matchedInputs = getInputFor(mergedReport.getContext().getItem(), item.getName());
+                                    if (matchedInputs.isEmpty()) {
+                                        mergedReport.getContext().getItem().add(item);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return mergedReport;
+    }
+
+    public static List<AnyContent> getInputFor(List<AnyContent> inputsToConsider, String name) {
+        List<AnyContent> inputs = new ArrayList<>();
+        if (inputsToConsider != null) {
+            for (AnyContent anInput : inputsToConsider) {
+                if (name.equals(anInput.getName())) {
+                    inputs.add(anInput);
+                }
+            }
+        }
+        return inputs;
+    }
+
+    public static TAR createEmptyReport() {
+        var report = new TAR();
+        report.setResult(TestResultType.SUCCESS);
+        try {
+            report.setDate(XMLDateTimeUtils.getXMLGregorianCalendarDateTime());
+        } catch (DatatypeConfigurationException e) {
+            throw new IllegalStateException("Exception while creating XMLGregorianCalendar", e);
+        }
+        return report;
+    }
 }
 
