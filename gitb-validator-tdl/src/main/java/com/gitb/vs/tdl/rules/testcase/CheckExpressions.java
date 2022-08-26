@@ -204,6 +204,7 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
             }
         } else if (step instanceof IfStep) {
             checkConstantReferenceInScriptlet(((IfStep) step).getTitle(), ATTRIBUTE_TITLE);
+            checkConstantReferenceInScriptlet(((IfStep) step).getThen().getHidden(), ATTRIBUTE_HIDDEN);
             checkExpression(((IfStep) step).getCond());
         } else if (step instanceof WhileStep) {
             checkConstantReferenceInScriptlet(((WhileStep) step).getTitle(), ATTRIBUTE_TITLE);

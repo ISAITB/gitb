@@ -87,7 +87,18 @@ public class TestCaseConverter {
                 addToSequence(sequence, convertMessagingStep(testCaseId, childId, (com.gitb.tdl.MessagingStep) step));
             } else if (step instanceof IfStep) {
                 String childId = childIdPrefix + index++;
-                addToSequence(sequence, convertDecisionStep(testCaseId, childId, (IfStep) step));
+                var ifStep = convertDecisionStep(testCaseId, childId, (IfStep) step);
+                if (ifStep.isHidden() && !ifStep.getThen().isHidden()) {
+                    /*
+                    Hidden if step with explicitly visible then block. Convert the then block to top level steps so that
+                    they are visible without the if boundaries.
+                     */
+                    for (var thenStep: ifStep.getThen().getSteps()) {
+                        addToSequence(sequence, thenStep);
+                    }
+                } else {
+                    addToSequence(sequence, ifStep);
+                }
             } else if (step instanceof RepeatUntilStep) {
                 String childId = childIdPrefix + index++;
                 addToSequence(sequence, convertRepUntilStep(testCaseId, childId, (RepeatUntilStep) step));
@@ -201,7 +212,18 @@ public class TestCaseConverter {
         decision.setDocumentation(getDocumentation(testCaseId, description.getDocumentation()));
         decision.setHidden(hiddenValueToUse(description.getHidden(), false));
         decision.setCollapsed(description.isCollapsed());
-        decision.setThen(convertSequence(testCaseId, id + TRUE , description.getThen()));
+        var thenSequence = convertSequence(testCaseId, id + TRUE , description.getThen());
+        // For a hidden if step without an else block, the then block is considered hidden by default unless explicitly set to non-hidden to show only its steps.
+        if (decision.isHidden()) {
+            if (description.getElse() == null) {
+                thenSequence.setHidden(hiddenValueToUse(description.getThen().getHidden(), true));
+            } else {
+                thenSequence.setHidden(true);
+            }
+        } else {
+            thenSequence.setHidden(false);
+        }
+        decision.setThen(thenSequence);
         if (description.getElse() != null) {
             decision.setElse(convertSequence(testCaseId, id + FALSE, description.getElse()));
         }
