@@ -2,15 +2,12 @@ package com.gitb.vs.tdl.rules.testcase.expression;
 
 import com.gitb.vs.tdl.ErrorCode;
 import com.gitb.vs.tdl.util.Utils;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.xml.namespace.QName;
 import javax.xml.xpath.XPathVariableResolver;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.MatchResult;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -22,6 +19,7 @@ public class VariableResolver implements XPathVariableResolver {
     private static final String DOLLAR_REPLACEMENT = "_com.gitb.DOLLAR_";
 
     private final VariableResolverProvider provider;
+    private final Set<String> scriptletMissingVariables = new TreeSet<>();
 
     public VariableResolver(VariableResolverProvider provider) {
         this.provider = provider;
@@ -72,7 +70,13 @@ public class VariableResolver implements XPathVariableResolver {
                     }
                 } else {
                     // Variable not found in scope.
-                    provider.addReportItem(ErrorCode.VARIABLE_NOT_IN_SCOPE, provider.getCurrentTestCase().getId(), Utils.stepNameWithScriptlet(provider.getCurrentStep(), provider.getCurrentScriptlet()), entry.getKey());
+                    if (provider.isStandaloneScriptlet()) {
+                        // Scriptlet - report once at the end for all such variables.
+                        scriptletMissingVariables.add(entry.getKey());
+                    } else {
+                        // Test case.
+                        provider.addReportItem(ErrorCode.VARIABLE_NOT_IN_SCOPE, provider.getCurrentTestCase().getId(), Utils.stepNameWithScriptlet(provider.getCurrentStep(), provider.getCurrentScriptlet()), entry.getKey());
+                    }
                 }
                 if (Utils.DOMAIN_MAP.equals(entry.getKey()) && !Utils.isVariableExpression(entry.getValue().containerExpression)) {
                     if (!provider.getContext().getExternalConfiguration().getExternalParameters().contains(entry.getValue().containerExpression)) {
@@ -90,6 +94,12 @@ public class VariableResolver implements XPathVariableResolver {
                     }
                 }
             }
+        }
+    }
+
+    public void scopeFinished() {
+        if (!scriptletMissingVariables.isEmpty()) {
+            provider.addReportItem(ErrorCode.POTENTIALLY_INVALID_SCRIPTLET_CONTEXT_VARIABLE, provider.getCurrentTestCase().getId(), StringUtils.joinWith(", ", scriptletMissingVariables.toArray()));
         }
     }
 

@@ -135,6 +135,7 @@ public enum ErrorCode {
     MISSING_TX_AND_HANDLER_FOR_MESSAGING_STEP(          "TDL-114", "%s [%s] defines messaging step (%s) with no transaction ID reference and no handler definition.", ERROR, true),
     STEP_CONNECTION_PROPERTIES_IGNORED(                 "TDL-115", "%s [%s] defines for step (%s) connection properties that will be ignored. When the step references a transaction ([%s] in this case) connection properties are taken from the transaction's definition.", WARNING, true),
     STEP_WITH_BOTH_TX_AND_HANDLER(                      "TDL-116", "%s [%s] defines step (%s) with both a transaction ID reference and a handler. The provided handler will be ignored.", WARNING, true),
+    POTENTIALLY_INVALID_SCRIPTLET_CONTEXT_VARIABLE(     "TDL-117", "Scriptlet [%s] refers to variables [%s] that are not defined in its own scope. When the scriptlet is called these will need to be present in the parent scope (that of the calling test case or scriptlet).", INFO, false),
     ;
 
     private final String code;

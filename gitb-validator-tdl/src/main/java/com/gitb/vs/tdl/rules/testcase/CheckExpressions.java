@@ -54,6 +54,12 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
     }
 
     @Override
+    public void finaliseTestCase() {
+        variableResolver.scopeFinished();
+        super.finaliseTestCase();
+    }
+
+    @Override
     public void initialiseScriptlet(Scriptlet scriptlet) {
         super.initialiseScriptlet(scriptlet);
         inInternalScriptlet = true;
@@ -397,6 +403,16 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
     @Override
     public Object getCurrentStep() {
         return currentStep;
+    }
+
+    @Override
+    public boolean isInternalScriptlet() {
+        return currentScriptlet != null;
+    }
+
+    @Override
+    public boolean isStandaloneScriptlet() {
+        return testCaseIsWrappedScriptlet;
     }
 
     @Override
