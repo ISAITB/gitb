@@ -255,9 +255,11 @@ public class TestCaseConverter {
         flow.setDocumentation(getDocumentation(testCaseId, description.getDocumentation()));
         flow.setHidden(hiddenValueToUse(description.getHidden(), false));
         flow.setCollapsed(description.isCollapsed());
-        for(int i=0; i<description.getThread().size(); i++) {
+        for (int i=0; i<description.getThread().size(); i++) {
             com.gitb.tdl.Sequence thread = description.getThread().get(i);
-            flow.getThread().add(convertSequence(testCaseId, id+ITERATION_OPENING_TAG+(i+1)+ITERATION_CLOSING_TAG, thread));
+            if (!hiddenValueToUse(thread.getHidden(), false)) {
+                flow.getThread().add(convertSequence(testCaseId, id+ITERATION_OPENING_TAG+(i+1)+ITERATION_CLOSING_TAG, thread));
+            }
         }
 
         return flow;

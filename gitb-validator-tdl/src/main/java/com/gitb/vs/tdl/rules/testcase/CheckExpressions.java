@@ -285,6 +285,9 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
         } else if (step instanceof FlowStep) {
             checkConstantReferenceInScriptlet(((FlowStep) step).getDesc(), ATTRIBUTE_DESC);
             checkConstantReferenceInScriptlet(((FlowStep) step).getTitle(), ATTRIBUTE_TITLE);
+            for (var thread: ((FlowStep) step).getThread()) {
+                checkConstantReferenceInScriptlet(thread.getHidden(), ATTRIBUTE_HIDDEN);
+            }
         }
     }
 
