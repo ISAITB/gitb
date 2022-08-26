@@ -15,5 +15,7 @@ public interface VariableResolverProvider {
     TestCase getCurrentTestCase();
     Scriptlet getCurrentScriptlet();
     Object getCurrentStep();
+    boolean isInternalScriptlet();
+    boolean isStandaloneScriptlet();
 
 }
