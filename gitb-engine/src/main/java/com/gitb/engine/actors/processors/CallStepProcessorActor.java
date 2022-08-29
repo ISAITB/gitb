@@ -157,17 +157,6 @@ public class CallStepProcessorActor extends AbstractTestStepActor<CallStep> {
 	}
 
 	private TestCaseScope createChildScope() {
-		int parameterCount = 0;
-		if (scriptlet.getParams() != null) {
-			parameterCount = scriptlet.getParams().getVar().size();
-		}
-		var inputCount = step.getInput().size();
-		if (inputCount == 0 && step.getInputAttribute() != null) {
-			inputCount = 1;
-		}
-		if (parameterCount != inputCount) {
-			throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Wrong number of parameters for scriptlet ["+scriptlet.getId()+"]. Expected ["+parameterCount+"] but encountered ["+step.getInput().size()+"]."));
-		}
 		TestCaseScope childScope = scope.createChildScope(scriptlet.getImports(), scriptlet.getNamespaces(), step.getFrom());
 		createScriptletVariables(childScope);
 		return childScope;
@@ -175,35 +164,54 @@ public class CallStepProcessorActor extends AbstractTestStepActor<CallStep> {
 
 	private void createScriptletVariables(TestCaseScope childScope) {
 		// Parameters.
-		if (step.getInput().isEmpty()) {
-			if (step.getInputAttribute() != null && scriptlet.getParams() != null && scriptlet.getParams().getVar().size() == 1) {
-				var variable = scriptlet.getParams().getVar().iterator().next();
-				var resolver = new VariableResolver(scope);
-				DataType value;
-				if (VariableResolver.isVariableReference(step.getInputAttribute())) {
-					var resolvedVariable = resolver.resolveVariable(step.getInputAttribute());
-					value = DataTypeFactory.getInstance().create(resolvedVariable.getType());
-					value.copyFrom(resolvedVariable);
-				} else {
-					value = new StringType(step.getInputAttribute());
+		if (scriptlet.getParams() != null && !scriptlet.getParams().getVar().isEmpty()) {
+			var parameters = new HashSet<String>();
+			scriptlet.getParams().getVar().forEach(variable -> parameters.add(variable.getName()));
+			if (step.getInput().isEmpty()) {
+				if (step.getInputAttribute() != null && scriptlet.getParams().getVar().size() == 1) {
+					var variable = scriptlet.getParams().getVar().iterator().next();
+					var resolver = new VariableResolver(scope);
+					DataType value;
+					if (VariableResolver.isVariableReference(step.getInputAttribute())) {
+						var resolvedVariable = resolver.resolveVariable(step.getInputAttribute());
+						value = DataTypeFactory.getInstance().create(resolvedVariable.getType());
+						value.copyFrom(resolvedVariable);
+					} else {
+						value = new StringType(step.getInputAttribute());
+					}
+					value = value.convertTo(variable.getType());
+					setContextVariable(childScope, value, null, variable);
+					parameters.remove(variable.getName());
 				}
-				value = value.convertTo(variable.getType());
-				setInputVariable(childScope, value, null, variable);
-			}
-		} else {
-			boolean isNameBinding = BindingUtils.isNameBinding(step.getInput());
-			if (isNameBinding) {
-				setInputWithNameBinding(childScope);
 			} else {
-				setInputWithIndexBinding(childScope);
+				boolean isNameBinding = BindingUtils.isNameBinding(step.getInput());
+				if (isNameBinding) {
+					setInputWithNameBinding(childScope);
+					step.getInput().forEach(input -> parameters.remove(input.getName()));
+					if (!parameters.isEmpty()) {
+						// Consider also default values for parameters.
+						scriptlet.getParams().getVar().forEach(variable -> {
+							if (parameters.contains(variable.getName()) && !variable.getValue().isEmpty()) {
+								setContextVariable(childScope, DataTypeFactory.getInstance().create(variable), null, variable);
+								parameters.remove(variable.getName());
+							}
+						});
+					}
+				} else {
+					if (step.getInput().size() != scriptlet.getParams().getVar().size()) {
+						throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Wrong number of parameters for scriptlet ["+scriptlet.getId()+"]. Expected ["+scriptlet.getParams().getVar().size()+"] but encountered ["+step.getInput().size()+"]."));
+					}
+					setInputWithIndexBinding(childScope);
+				}
+			}
+			if (!parameters.isEmpty()) {
+				throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, String.format("All scriptlet parameters must either be provided explicitly via call inputs or have default values. No values could be determined for parameters [%s].", StringUtils.join(parameters, ", "))));
 			}
 		}
 		// Variables.
 		if (scriptlet.getVariables() != null) {
 			for (Variable variable : scriptlet.getVariables().getVar()) {
-				childScope
-						.createVariable(variable.getName())
-						.setValue(DataTypeFactory.getInstance().create(variable));
+				childScope.createVariable(variable.getName()).setValue(DataTypeFactory.getInstance().create(variable));
 			}
 		}
 		// Outputs.
@@ -220,7 +228,7 @@ public class CallStepProcessorActor extends AbstractTestStepActor<CallStep> {
 			Binding input = step.getInput().get(i);
 			Variable variable = scriptlet.getParams().getVar().get(i);
 
-			setInputVariable(childScope, expressionHandler, input, variable);
+			setContextVariableFromInput(childScope, expressionHandler, input, variable);
 		}
 	}
 
@@ -228,7 +236,7 @@ public class CallStepProcessorActor extends AbstractTestStepActor<CallStep> {
 		ExpressionHandler expressionHandler = new ExpressionHandler(scope);
 		for (var input: step.getInput()) {
 			Variable variable = getScriptletInputVariable(input.getName());
-			setInputVariable(childScope, expressionHandler, input, variable);
+			setContextVariableFromInput(childScope, expressionHandler, input, variable);
 		}
 	}
 
@@ -254,22 +262,18 @@ public class CallStepProcessorActor extends AbstractTestStepActor<CallStep> {
 		return variable;
 	}
 
-	private void setInputVariable(TestCaseScope childScope, ExpressionHandler expressionHandler, Binding input, Variable variable) {
+	private void setContextVariableFromInput(TestCaseScope childScope, ExpressionHandler expressionHandler, Binding input, Variable variable) {
 		DataType resolvedValue = expressionHandler.processExpression(input, variable.getType());
 		DataType valueToSet = DataTypeFactory.getInstance().create(variable.getType());
 		valueToSet.copyFrom(resolvedValue, variable.getType());
-		setInputVariable(childScope, valueToSet, input.getName(), variable);
+		setContextVariable(childScope, valueToSet, input.getName(), variable);
 	}
 
-	private void setInputVariable(TestCaseScope childScope, DataType value, String inputName, Variable variable) {
-		if (inputName == null) {
-			childScope
-					.createVariable(variable.getName())
-					.setValue(value);
+	private void setContextVariable(TestCaseScope childScope, DataType value, String variableName, Variable variable) {
+		if (variableName == null) {
+			childScope.createVariable(variable.getName()).setValue(value);
 		} else {
-			childScope
-					.createVariable(inputName)
-					.setValue(value);
+			childScope.createVariable(variableName).setValue(value);
 		}
 	}
 
