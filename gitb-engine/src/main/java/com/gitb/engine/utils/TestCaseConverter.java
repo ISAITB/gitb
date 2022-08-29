@@ -88,13 +88,16 @@ public class TestCaseConverter {
             } else if (step instanceof IfStep) {
                 String childId = childIdPrefix + index++;
                 var ifStep = convertDecisionStep(testCaseId, childId, (IfStep) step);
-                if (ifStep.isHidden() && !ifStep.getThen().isHidden()) {
+                if (ifStep.isHidden()) {
                     /*
-                    Hidden if step with explicitly visible then block. Convert the then block to top level steps so that
+                    Hidden if step with explicitly visible then or else block. Convert the visible block of steps to top level steps so that
                     they are visible without the if boundaries.
                      */
-                    for (var thenStep: ifStep.getThen().getSteps()) {
-                        addToSequence(sequence, thenStep);
+                    if (ifStep.getThen() != null && !ifStep.getThen().isHidden()) {
+                        ifStep.getThen().getSteps().forEach(childStep -> addToSequence(sequence, childStep));
+                    }
+                    if (ifStep.getElse() != null && !ifStep.getElse().isHidden()) {
+                        ifStep.getElse().getSteps().forEach(childStep -> addToSequence(sequence, childStep));
                     }
                 } else {
                     addToSequence(sequence, ifStep);
@@ -212,20 +215,33 @@ public class TestCaseConverter {
         decision.setDocumentation(getDocumentation(testCaseId, description.getDocumentation()));
         decision.setHidden(hiddenValueToUse(description.getHidden(), false));
         decision.setCollapsed(description.isCollapsed());
-        var thenSequence = convertSequence(testCaseId, id + TRUE , description.getThen());
-        // For a hidden if step without an else block, the then block is considered hidden by default unless explicitly set to non-hidden to show only its steps.
-        if (decision.isHidden()) {
-            if (description.getElse() == null) {
-                thenSequence.setHidden(hiddenValueToUse(description.getThen().getHidden(), true));
-            } else {
-                thenSequence.setHidden(true);
-            }
-        } else {
-            thenSequence.setHidden(false);
-        }
-        decision.setThen(thenSequence);
+        decision.setThen(convertSequence(testCaseId, id + TRUE , description.getThen()));
         if (description.getElse() != null) {
             decision.setElse(convertSequence(testCaseId, id + FALSE, description.getElse()));
+        }
+        // Determine step visibilities.
+        if (description.isStatic()) {
+            // The If is always hidden and its condition evaluated at load time to determine whether to include the then or else block.
+            decision.setHidden(true);
+            var includeThenBlock = fixedOrVariableValueAsBoolean(description.getCond().getValue(), false);
+            decision.getThen().setHidden(hiddenValueToUse(description.getThen().getHidden(), !includeThenBlock));
+            if (description.getElse() != null) {
+                decision.getElse().setHidden(hiddenValueToUse(description.getElse().getHidden(), includeThenBlock));
+            }
+        } else if (decision.isHidden()) {
+            // For a hidden if step without an else block, the then block is considered hidden by default unless explicitly set to non-hidden to show only its steps.
+            if (decision.getElse() == null) {
+                decision.getThen().setHidden(hiddenValueToUse(description.getThen().getHidden(), true));
+            } else {
+                decision.getThen().setHidden(true);
+                decision.getElse().setHidden(true);
+            }
+        } else {
+            // Regular if (non-static, non-hidden). Force everything to be not hidden.
+            decision.getThen().setHidden(false);
+            if (decision.getElse() != null) {
+                decision.getElse().setHidden(false);
+            }
         }
         return decision;
     }
