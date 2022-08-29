@@ -4,6 +4,7 @@ import com.gitb.tdl.*;
 import com.gitb.vs.tdl.ErrorCode;
 import com.gitb.vs.tdl.util.Utils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -16,8 +17,7 @@ import java.util.TreeSet;
 
 public class CheckScriptletCallStacks extends AbstractTestCaseObserver {
 
-    private LinkedList<Scriptlet> scriptletStack;
-    private LinkedList<CallStep> callStack;
+    private LinkedList<Pair<CallStep, Scriptlet>> callStack;
     private Set<String> recursiveScriptlets;
     private Set<Triple<String, String, String>> invalidErrors;
     private Set<Triple<String, String, String>> referenceNotInTestCaseErrors;
@@ -27,7 +27,6 @@ public class CheckScriptletCallStacks extends AbstractTestCaseObserver {
     @Override
     public void initialiseTestCase(TestCase currentTestCase) {
         super.initialiseTestCase(currentTestCase);
-        scriptletStack = new LinkedList<>();
         callStack = new LinkedList<>();
         recursiveScriptlets = new TreeSet<>();
         invalidErrors = new TreeSet<>();
@@ -44,10 +43,8 @@ public class CheckScriptletCallStacks extends AbstractTestCaseObserver {
             if (step instanceof CallStep) {
                 var scriptlet = findScriptlet((CallStep) step);
                 if (scriptlet != null) {
-                    callStack.addLast((CallStep) step);
-                    scriptletStack.addLast(scriptlet);
+                    callStack.addLast(Pair.of((CallStep) step, scriptlet));
                     validateCallStack(scriptlet.getSteps());
-                    scriptletStack.removeLast();
                     callStack.removeLast();
                 }
             }
@@ -55,7 +52,7 @@ public class CheckScriptletCallStacks extends AbstractTestCaseObserver {
     }
 
     private boolean scriptletAlreadyInCallStack(Scriptlet scriptlet) {
-        return scriptletStack.stream().anyMatch(existing -> Objects.equals(existing.getId(), scriptlet.getId()));
+        return callStack.stream().anyMatch(existing -> Objects.equals(existing.getRight().getId(), scriptlet.getId()));
     }
 
     private Scriptlet findScriptlet(CallStep step) {
@@ -117,10 +114,8 @@ public class CheckScriptletCallStacks extends AbstractTestCaseObserver {
                 if (scriptletAlreadyInCallStack(scriptlet)) {
                     recursiveScriptlets.add(scriptlet.getId());
                 } else {
-                    callStack.addLast((CallStep) step);
-                    scriptletStack.addLast(scriptlet);
+                    callStack.addLast(Pair.of((CallStep) step, scriptlet));
                     validateCallStack(scriptlet.getSteps());
-                    scriptletStack.removeLast();
                     callStack.removeLast();
                 }
             }
@@ -129,15 +124,16 @@ public class CheckScriptletCallStacks extends AbstractTestCaseObserver {
 
     private void checkActorId(String actorReference, Object step) {
         if (actorReference != null) {
-            var scriptlet = scriptletStack.getLast();
+            var callData = callStack.getLast();
             if (Utils.isVariableExpression(actorReference)) {
                 boolean inputFound = false;
                 var inputName = actorReference.substring(1); // Ignore first '$'
                 var iterator = callStack.descendingIterator();
+                var originalInputName = inputName;
                 while (iterator.hasNext()) {
-                    var call = iterator.next();
+                    var currentCallData = iterator.next();
                     var inputToLookFor = inputName;
-                    var matchedInput = call.getInput().stream().filter(input -> inputToLookFor.equals(input.getName())).findFirst();
+                    var matchedInput = currentCallData.getLeft().getInput().stream().filter(input -> inputToLookFor.equals(input.getName())).findFirst();
                     if (matchedInput.isPresent()) {
                         var inputValue = matchedInput.get().getValue();
                         if (Utils.isVariableExpression(inputValue)) {
@@ -151,24 +147,39 @@ public class CheckScriptletCallStacks extends AbstractTestCaseObserver {
                         try {
                             resolvedActorId = XPathFactory.newInstance().newXPath().compile(inputValue).evaluate(Utils.getSecureDocumentBuilderFactory().newDocumentBuilder().newDocument());
                         } catch (XPathExpressionException e) {
-                            invalidErrors.add(Triple.of(scriptlet.getId(), actorReference, Utils.stepNameWithScriptlet(step, null)));
+                            invalidErrors.add(Triple.of(callData.getRight().getId(), actorReference, Utils.stepNameWithScriptlet(step, null)));
                         } catch (ParserConfigurationException e) {
                             throw new IllegalStateException(e);
                         }
                         if (resolvedActorId != null) {
                             if (!actorDefinedInTestCase(resolvedActorId)) {
-                                referenceNotInTestCaseErrors.add(Triple.of(scriptlet.getId(), actorReference, Utils.stepNameWithScriptlet(step, null)));
+                                referenceNotInTestCaseErrors.add(Triple.of(callData.getRight().getId(), actorReference, Utils.stepNameWithScriptlet(step, null)));
                             }
                         }
-                        break;
+                    }
+                    break;
+                }
+                if (!inputFound) {
+                    // No input found. Look also at variable default values.
+                    var scriptlet = callData.getRight();
+                    if (scriptlet.getParams() != null) {
+                        var matchedVariableValue = scriptlet.getParams().getVar().stream().filter(variable -> originalInputName.equals(variable.getName()) && !variable.getValue().isEmpty()).findFirst();
+                        if (matchedVariableValue.isPresent()) {
+                            // The parameter defines a default value.
+                            inputFound = true;
+                            var resolvedActorId = matchedVariableValue.get().getValue().get(0).getValue();
+                            if (!actorDefinedInTestCase(resolvedActorId)) {
+                                referenceNotInTestCaseErrors.add(Triple.of(callData.getRight().getId(), actorReference, Utils.stepNameWithScriptlet(step, null)));
+                            }
+                        }
                     }
                 }
                 if (!inputFound) {
-                    noInputErrors.add(Triple.of(scriptlet.getId(), actorReference, Utils.stepNameWithScriptlet(step, null)));
+                    noInputErrors.add(Triple.of(callData.getRight().getId(), actorReference, Utils.stepNameWithScriptlet(step, null)));
                 }
             } else {
                 if (!actorDefinedInTestCase(actorReference)) {
-                    notInTestCaseErrors.add(Triple.of(scriptlet.getId(), actorReference, Utils.stepNameWithScriptlet(step, null)));
+                    notInTestCaseErrors.add(Triple.of(callData.getRight().getId(), actorReference, Utils.stepNameWithScriptlet(step, null)));
                 }
             }
         }

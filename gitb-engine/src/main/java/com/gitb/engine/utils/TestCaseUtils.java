@@ -17,13 +17,11 @@ import com.gitb.tr.TAR;
 import com.gitb.tr.TestAssertionGroupReportsType;
 import com.gitb.tr.TestResultType;
 import com.gitb.tr.ValidationCounters;
-import com.gitb.types.BooleanType;
-import com.gitb.types.DataType;
-import com.gitb.types.MapType;
-import com.gitb.types.StringType;
+import com.gitb.types.*;
 import com.gitb.utils.ErrorUtils;
 import com.gitb.utils.XMLDateTimeUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 
 import javax.xml.datatype.DatatypeConfigurationException;
 import java.math.BigInteger;
@@ -232,7 +230,7 @@ public class TestCaseUtils {
         return description;
     }
 
-    public static <T> T fixedOrVariableValue(String originalValue, Class<T> variableClass,  LinkedList<CallStep> scriptletStepStack) {
+    public static <T> T fixedOrVariableValue(String originalValue, Class<T> variableClass, LinkedList<Pair<CallStep, Scriptlet>> scriptletStepStack) {
         if (originalValue != null) {
             String dataType;
             Supplier<T> nonVariableValueFn;
@@ -259,25 +257,41 @@ public class TestCaseUtils {
         }
     }
 
-    private static <T> Optional<T> getConstantCallInput(String inputName, Class<T> constantClass, String constantDataType, LinkedList<CallStep> scriptletStepStack) {
+    private static <T> Optional<T> getConstantCallInput(String inputName, Class<T> constantClass, String constantDataType, LinkedList<Pair<CallStep, Scriptlet>> scriptletStepStack) {
+        var originalInputName = inputName;
+        DataType dataToUse = null;
         var iterator = scriptletStepStack.descendingIterator();
         while (iterator.hasNext()) {
-            var call = iterator.next();
+            var callData = iterator.next();
             var inputToLookFor = inputName;
-            var matchedInput = call.getInput().stream().filter(input -> inputToLookFor.equals(input.getName())).findFirst();
+            var matchedInput = callData.getLeft().getInput().stream().filter(input -> inputToLookFor.equals(input.getName())).findFirst();
             if (matchedInput.isPresent()) {
+                // We found a matching input.
                 var inputValueExpression = matchedInput.get().getValue();
                 if (VariableResolver.isVariableReference(inputValueExpression)) {
                     // The input's value is itself a variable reference.
                     inputName = VariableResolver.extractVariableNameFromExpression(inputValueExpression).getLeft();
                     continue;
                 }
-                var inputValue = new StaticExpressionHandler().processExpression(matchedInput.get(), constantDataType).getValue();
-                if (inputValue != null && constantClass.equals(inputValue.getClass())) {
-                    return Optional.of(constantClass.cast(inputValue));
-                } else {
-                    return Optional.empty();
+                dataToUse = new StaticExpressionHandler().processExpression(matchedInput.get(), constantDataType);
+            }
+            break;
+        }
+        if (dataToUse == null && !scriptletStepStack.isEmpty()) {
+            // No input found. Look also at variable default values.
+            var scriptlet = scriptletStepStack.getLast().getRight();
+            if (scriptlet.getParams() != null) {
+                var matchedVariableValue = scriptlet.getParams().getVar().stream().filter(variable -> originalInputName.equals(variable.getName()) && !variable.getValue().isEmpty()).findFirst();
+                if (matchedVariableValue.isPresent()) {
+                    // The parameter defines a default value.
+                    dataToUse = DataTypeFactory.getInstance().create(matchedVariableValue.get());
                 }
+            }
+        }
+        if (dataToUse != null) {
+            var valueToUse = dataToUse.convertTo(constantDataType).getValue();
+            if (valueToUse != null && constantClass.equals(valueToUse.getClass())) {
+                return Optional.of(constantClass.cast(valueToUse));
             }
         }
         return Optional.empty();

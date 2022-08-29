@@ -16,6 +16,7 @@ import com.gitb.tpl.*;
 import com.gitb.utils.ErrorUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,7 +34,7 @@ public class TestCaseConverter {
 
     private final Stack<String> testSuiteContexts = new Stack<>();
     private final Stack<String> scriptletCallStack = new Stack<>();
-    private final LinkedList<CallStep> scriptletStepStack = new LinkedList<>();
+    private final LinkedList<Pair<CallStep, Scriptlet>> scriptletStepStack = new LinkedList<>();
     private final LinkedList<Boolean> scriptletStepHiddenAttributeStack = new LinkedList<>();
     private final com.gitb.tdl.TestCase testCase;
     private final ScriptletCache scriptletCache;
@@ -116,13 +117,9 @@ public class TestCaseConverter {
                 addToSequence(sequence, convertFlowStep(testCaseId, childId, (com.gitb.tdl.FlowStep) step));
             } else if (step instanceof CallStep) {
                 String childId = childIdPrefix + index++;
-                scriptletStepStack.addLast((CallStep) step);
-                scriptletStepHiddenAttributeStack.addLast(hiddenValueToUse(((CallStep) step).getHidden(), false));
                 for (TestStep childStep: convertCallStep(testCaseId, childId, (CallStep)step).getSteps()) {
                     addToSequence(sequence, childStep);
                 }
-                scriptletStepHiddenAttributeStack.removeLast();
-                scriptletStepStack.removeLast();
             } else if (step instanceof UserInteraction) {
                 String childId = childIdPrefix + index++;
                 addToSequence(sequence, convertUserInteraction(testCaseId, childId, (UserInteraction) step));
@@ -340,11 +337,15 @@ public class TestCaseConverter {
             scriptletCallStack.push(callKey);
         }
         Scriptlet scriptlet = scriptletCache.getScriptlet(testSuiteContext, callStep.getPath(), testCase, true);
+        scriptletStepStack.addLast(Pair.of(callStep, scriptlet));
+        scriptletStepHiddenAttributeStack.addLast(hiddenValueToUse(callStep.getHidden(), false));
         Sequence sequence = convertSequence(testCaseId, id, scriptlet.getSteps());
         if (callStep.getFrom() != null) {
             testSuiteContexts.pop();
         }
         scriptletCallStack.pop();
+        scriptletStepHiddenAttributeStack.removeLast();
+        scriptletStepStack.removeLast();
         return sequence;
     }
 

@@ -25,6 +25,7 @@ import com.gitb.utils.map.Tuple;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MarkerFactory;
@@ -447,7 +448,7 @@ public class TestCaseContext {
 		return new ArrayList<>(groups.values());
 	}
 
-	private TransactionInfo buildTransactionInfo(String from, String to, String handler, List<Configuration> properties, VariableResolver resolver, LinkedList<CallStep> scriptletCallStack) {
+	private TransactionInfo buildTransactionInfo(String from, String to, String handler, List<Configuration> properties, VariableResolver resolver, LinkedList<Pair<CallStep, Scriptlet>> scriptletCallStack) {
 		return new TransactionInfo(
 				TestCaseUtils.fixedOrVariableValue(ActorUtils.extractActorId(from), String.class, scriptletCallStack),
 				TestCaseUtils.fixedOrVariableValue(ActorUtils.extractEndpointName(from), String.class, scriptletCallStack),
@@ -463,7 +464,7 @@ public class TestCaseContext {
      * @param sequence test step sequence
      * @return transactions occurring in the given sequence
      */
-    private List<TransactionInfo> createTransactionInfo(Sequence sequence, String testSuiteContext, VariableResolver resolver, LinkedList<CallStep> scriptletCallStack) {
+    private List<TransactionInfo> createTransactionInfo(Sequence sequence, String testSuiteContext, VariableResolver resolver, LinkedList<Pair<CallStep, Scriptlet>> scriptletCallStack) {
         List<TransactionInfo> transactions = new ArrayList<>();
         for(Object step : sequence.getSteps()) {
             if(step instanceof Sequence) {
@@ -497,7 +498,7 @@ public class TestCaseContext {
 					testSuiteContextToUse = testSuiteContext;
 				}
 	            Scriptlet scriptlet = getScriptlet(testSuiteContextToUse, ((CallStep) step).getPath(), true);
-				scriptletCallStack.addLast((CallStep) step);
+				scriptletCallStack.addLast(Pair.of((CallStep) step, scriptlet));
 				transactions.addAll(createTransactionInfo(scriptlet.getSteps(), testSuiteContextToUse, resolver, scriptletCallStack));
 				scriptletCallStack.removeLast();
             }
