@@ -76,6 +76,9 @@
         <version.jerseyClient>1.19.4</version.jerseyClient>
         <version.beanUtils>1.9.4</version.beanUtils>
         <version.freeMarker>2.3.31</version.freeMarker>
+        <!-- Version overrides in Spring Boot - START -->
+        <snakeyaml.version>1.31</snakeyaml.version> <!-- To resolve CVE-2022-25857 -->
+        <!-- Version overrides in Spring Boot - END -->
     </properties>
 
     <repositories>
