@@ -72,10 +72,12 @@ public class SessionManager {
 		}
 		//Load the tdl:TestCase definition
         TestCase testCase = TestCaseManager.getTestCaseDescription(testCaseId);
+		// We need to maintain the TDL identifier as this is sent to remote services as metadata
+		var testCaseIdentifier = testCase.getId();
         // Ensure we replace the text ID with the internal fully unique ID
 		testCase.setId(testCaseId);
         //Create the test case context
-		TestCaseContext testCaseContext = new TestCaseContext(testCase, sessionId);
+		TestCaseContext testCaseContext = new TestCaseContext(testCase, testCaseIdentifier, sessionId);
         //Put the context into the map
 		contexts.put(sessionId, testCaseContext);
         //Return the session id

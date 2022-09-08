@@ -1,45 +1,35 @@
 package com.gitb.engine.remote.messaging;
 
-import com.gitb.core.*;
+import com.gitb.core.ActorConfiguration;
+import com.gitb.core.AnyContent;
+import com.gitb.core.Configuration;
+import com.gitb.core.MessagingModule;
 import com.gitb.engine.CallbackManager;
-import com.gitb.engine.remote.RemoteCallContext;
+import com.gitb.engine.messaging.handlers.utils.MessagingHandlerUtils;
+import com.gitb.engine.remote.RemoteServiceClient;
 import com.gitb.engine.utils.TestCaseUtils;
-import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.messaging.DeferredMessagingReport;
 import com.gitb.messaging.IMessagingHandler;
 import com.gitb.messaging.Message;
 import com.gitb.messaging.MessagingReport;
-import com.gitb.engine.messaging.handlers.utils.MessagingHandlerUtils;
 import com.gitb.ms.Void;
 import com.gitb.ms.*;
 import com.gitb.types.DataType;
 import com.gitb.utils.DataTypeUtils;
-import com.gitb.utils.ErrorUtils;
 
 import javax.xml.ws.soap.AddressingFeature;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.function.Supplier;
 
 /**
  * Created by serbay.
  */
-public class RemoteMessagingModuleClient implements IMessagingHandler {
+public class RemoteMessagingModuleClient extends RemoteServiceClient<MessagingModule> implements IMessagingHandler {
 
-	private final String testSessionId;
-	private URL serviceURL;
-	private MessagingModule messagingModule;
-	private final Properties transactionProperties;
-
-	public RemoteMessagingModuleClient(URL serviceURL, Properties transactionProperties, String sessionId) {
-		this.serviceURL = serviceURL;
-		this.testSessionId = sessionId;
-		this.transactionProperties = transactionProperties;
+	public RemoteMessagingModuleClient(URL serviceURL, Properties callProperties, String sessionId) {
+		super(serviceURL, callProperties, sessionId);
 	}
 
 	@Override
@@ -47,43 +37,17 @@ public class RemoteMessagingModuleClient implements IMessagingHandler {
 		return true;
 	}
 
-	private URL getServiceURL() {
-		if (serviceURL == null) {
-			if (messagingModule == null) {
-				throw new IllegalStateException("Remote messaging module found but with no URL or MessagingModule definition");
-			} else {
-				try {
-					serviceURL = new URI(messagingModule.getServiceLocation()).toURL();
-				} catch (MalformedURLException e) {
-					throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INTERNAL_ERROR, "Remote messaging module found named ["+messagingModule.getId()+"] with an malformed URL ["+messagingModule.getServiceLocation()+"]"), e);
-				} catch (URISyntaxException e) {
-					throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INTERNAL_ERROR, "Remote messaging module found named ["+messagingModule.getId()+"] with an invalid URI syntax ["+messagingModule.getServiceLocation()+"]"), e);
-				}
-			}
-		}
-		return serviceURL;
-	}
-
 	private MessagingService getServiceClient() {
-		TestCaseUtils.prepareRemoteServiceLookup(transactionProperties);
+		TestCaseUtils.prepareRemoteServiceLookup(getCallProperties());
 		return new MessagingServiceClient(getServiceURL()).getMessagingServicePort(new AddressingFeature(true));
-	}
-
-	private <T> T call(Supplier<T> supplier) {
-		try {
-			RemoteCallContext.setCallProperties(transactionProperties);
-			return supplier.get();
-		} finally {
-			RemoteCallContext.clearCallProperties();
-		}
 	}
 
 	@Override
 	public MessagingModule getModuleDefinition() {
-		if (messagingModule == null) {
-			messagingModule = call(() -> getServiceClient().getModuleDefinition(new Void()).getModule());
+		if (serviceModule == null) {
+			serviceModule = call(() -> getServiceClient().getModuleDefinition(new Void()).getModule());
 		}
-		return messagingModule;
+		return serviceModule;
 	}
 
 	@Override

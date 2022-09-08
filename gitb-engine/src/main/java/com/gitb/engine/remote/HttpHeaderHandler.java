@@ -8,6 +8,7 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.xml.namespace.QName;
 import javax.xml.soap.SOAPElement;
 import javax.xml.soap.SOAPEnvelope;
+import javax.xml.soap.SOAPException;
 import javax.xml.soap.SOAPHeader;
 import javax.xml.ws.handler.MessageContext;
 import javax.xml.ws.handler.soap.SOAPHandler;
@@ -20,25 +21,30 @@ import java.util.*;
 
 public class HttpHeaderHandler implements SOAPHandler<SOAPMessageContext> {
 
-    private static String WSS_URI_BASE = "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-";
-    private static String WSS_URI_CORE = WSS_URI_BASE + "wssecurity-secext-1.0.xsd";
-    private static String WSS_URI_UTIL = WSS_URI_BASE + "wssecurity-utility-1.0.xsd";
-    private static String WSS_URI_UTP = WSS_URI_BASE + "username-token-profile-1.0";
-    private static String WSS_URI_SOAP_MS = WSS_URI_BASE + "soap-message-security-1.0";
+    private static final String WSS_URI_BASE = "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-";
+    private static final String WSS_URI_CORE = WSS_URI_BASE + "wssecurity-secext-1.0.xsd";
+    private static final String WSS_URI_UTIL = WSS_URI_BASE + "wssecurity-utility-1.0.xsd";
+    private static final String WSS_URI_UTP = WSS_URI_BASE + "username-token-profile-1.0";
+    private static final String WSS_URI_SOAP_MS = WSS_URI_BASE + "soap-message-security-1.0";
+    private static final String GITB_BASE = "http://www.gitb.com";
+    private static final String GITB_PREFIX = "gitb";
 
-    private static QName SECURITY_NAME =  new QName(WSS_URI_CORE, "Security", "wsse");
-    private static QName USERNAMETOKEN_NAME =  new QName(SECURITY_NAME.getNamespaceURI(), "UsernameToken", SECURITY_NAME.getPrefix());
-    private static QName USERNAME_NAME =  new QName(SECURITY_NAME.getNamespaceURI(), "Username", SECURITY_NAME.getPrefix());
-    private static QName PASSWORD_NAME =  new QName(SECURITY_NAME.getNamespaceURI(), "Password", SECURITY_NAME.getPrefix());
-    private static QName PASSWORDTYPE_NAME =  new QName("Type");
-    private static QName ENCODINGTYPE_NAME =  new QName("EncodingType");
-    private static QName UID_NAME =  new QName(WSS_URI_UTIL, "Id", "wsu");
-    private static QName CREATED_NAME =  new QName(UID_NAME.getNamespaceURI(), "Created", UID_NAME.getPrefix());
-    private static QName NONCE_NAME =  new QName(SECURITY_NAME.getNamespaceURI(), "Nonce", SECURITY_NAME.getPrefix());
+    private static final QName SECURITY_NAME =  new QName(WSS_URI_CORE, "Security", "wsse");
+    private static final QName USERNAMETOKEN_NAME =  new QName(SECURITY_NAME.getNamespaceURI(), "UsernameToken", SECURITY_NAME.getPrefix());
+    private static final QName USERNAME_NAME =  new QName(SECURITY_NAME.getNamespaceURI(), "Username", SECURITY_NAME.getPrefix());
+    private static final QName PASSWORD_NAME =  new QName(SECURITY_NAME.getNamespaceURI(), "Password", SECURITY_NAME.getPrefix());
+    private static final QName PASSWORDTYPE_NAME =  new QName("Type");
+    private static final QName ENCODINGTYPE_NAME =  new QName("EncodingType");
+    private static final QName UID_NAME =  new QName(WSS_URI_UTIL, "Id", "wsu");
+    private static final QName CREATED_NAME =  new QName(UID_NAME.getNamespaceURI(), "Created", UID_NAME.getPrefix());
+    private static final QName NONCE_NAME =  new QName(SECURITY_NAME.getNamespaceURI(), "Nonce", SECURITY_NAME.getPrefix());
 
-    private static String PASSWORDTYPE_TEXT_VALUE = WSS_URI_UTP+"#PasswordText";
-    private static String PASSWORDTYPE_DIGEST_VALUE = WSS_URI_UTP+"#PasswordDigest";
-    private static String ENCODINGTYPE_BASE64BINARY_VALUE = WSS_URI_SOAP_MS+"#Base64Binary";
+    private static final QName TEST_SESSION_ID_NAME =  new QName(GITB_BASE, "TestSessionIdentifier", GITB_PREFIX);
+    private static final QName TEST_CASE_ID_NAME =  new QName(GITB_BASE, "TestCaseIdentifier", GITB_PREFIX);
+
+    private static final String PASSWORDTYPE_TEXT_VALUE = WSS_URI_UTP+"#PasswordText";
+    private static final String PASSWORDTYPE_DIGEST_VALUE = WSS_URI_UTP+"#PasswordDigest";
+    private static final String ENCODINGTYPE_BASE64BINARY_VALUE = WSS_URI_SOAP_MS+"#Base64Binary";
 
     @Override
     public Set<QName> getHeaders() {
@@ -54,21 +60,49 @@ public class HttpHeaderHandler implements SOAPHandler<SOAPMessageContext> {
         return requestHeaders;
     }
 
+    private void addTestIdentifiers(SOAPMessageContext context, Properties callProperties) {
+        String testSessionIdentifier = callProperties.getProperty(PropertyConstants.TEST_SESSION_ID);
+        String testCaseIdentifier = callProperties.getProperty(PropertyConstants.TEST_CASE_ID);
+        boolean addTestSessionIdentifier = StringUtils.isNotBlank(testSessionIdentifier);
+        boolean addTestCaseIdentifier = StringUtils.isNotBlank(testCaseIdentifier);
+        if (addTestSessionIdentifier || addTestCaseIdentifier) {
+            try {
+                SOAPEnvelope envelope = context.getMessage().getSOAPPart().getEnvelope();
+                SOAPHeader header = envelope.getHeader();
+                if (header == null) {
+                    header = envelope.addHeader();
+                }
+                if (addTestSessionIdentifier) {
+                    var element = header.addChildElement(TEST_SESSION_ID_NAME);
+                    element.addTextNode(testSessionIdentifier);
+                }
+                if (addTestCaseIdentifier) {
+                    var element = header.addChildElement(TEST_CASE_ID_NAME);
+                    element.addTextNode(testCaseIdentifier);
+                }
+            } catch (SOAPException e) {
+                throw new IllegalStateException("Error generating headers for test identifiers", e);
+            }
+        }
+    }
+
     @Override
     public boolean handleMessage(SOAPMessageContext context) {
         Boolean outboundProperty = (Boolean)context.get (MessageContext.MESSAGE_OUTBOUND_PROPERTY);
         if (outboundProperty) {
             Properties callProperties = RemoteCallContext.getCallProperties();
             if (callProperties != null) {
+                // Add test session and test case identifiers.
+                addTestIdentifiers(context, callProperties);
                 // Add basic HTTP authentication header.
-                if (!StringUtils.isBlank(callProperties.getProperty(PropertyConstants.AUTH_BASIC_USERNAME))) {
+                if (StringUtils.isNotBlank(callProperties.getProperty(PropertyConstants.AUTH_BASIC_USERNAME))) {
                     Map<String, List<String>> requestHeaders = getRequestHeaders(context);
                     String auth = callProperties.getProperty(PropertyConstants.AUTH_BASIC_USERNAME) + ":" + callProperties.getProperty(PropertyConstants.AUTH_BASIC_PASSWORD);
                     String authHeader = "Basic " + org.apache.commons.codec.binary.Base64.encodeBase64String(auth.getBytes());
                     requestHeaders.put(HttpHeaders.AUTHORIZATION, Collections.singletonList(authHeader));
                 }
-                if (!StringUtils.isBlank(callProperties.getProperty(PropertyConstants.AUTH_USERNAMETOKEN_USERNAME))) {
-                    // Add WS-Security UsernameToken.
+                // Add WS-Security UsernameToken.
+                if (StringUtils.isNotBlank(callProperties.getProperty(PropertyConstants.AUTH_USERNAMETOKEN_USERNAME))) {
                     try {
                         SOAPEnvelope envelope = context.getMessage().getSOAPPart().getEnvelope();
                         SOAPHeader header = envelope.getHeader();
