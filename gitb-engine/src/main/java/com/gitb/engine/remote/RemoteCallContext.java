@@ -4,7 +4,7 @@ import java.util.Properties;
 
 public final class RemoteCallContext {
 
-    private static ThreadLocal<Properties> tl = new ThreadLocal<>();
+    private static final ThreadLocal<Properties> tl = new ThreadLocal<>();
 
     private RemoteCallContext() {}
 

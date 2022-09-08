@@ -11,4 +11,7 @@ public class PropertyConstants {
     public static final String AUTH_BASIC_USERNAME = "auth.basic.username";
     public static final String AUTH_BASIC_PASSWORD = "auth.basic.password";
 
+    public static final String TEST_SESSION_ID = "TEST_SESSION_ID";
+    public static final String TEST_CASE_ID = "TEST_CASE_ID";
+
 }

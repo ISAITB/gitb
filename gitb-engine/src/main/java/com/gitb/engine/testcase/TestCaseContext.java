@@ -73,8 +73,12 @@ public class TestCaseContext {
      * Test session id given to the testbed service client to control the execution
      */
     private final String sessionId;
+	/**
+	 * Test case identifier as stated in its TDL definition
+	 */
+	private final String testCaseIdentifier;
 
-    /**
+	/**
      * Test case scope where all the variables, artifacts are stored and accessed.
      */
     private TestCaseScope scope;
@@ -160,9 +164,10 @@ public class TestCaseContext {
 	private boolean reportedInvalidLogLevel = false;
 	private Path dataFolder;
 
-    public TestCaseContext(TestCase testCase, String sessionId) {
+    public TestCaseContext(TestCase testCase, String testCaseIdentifier, String sessionId) {
         this.currentState = TestCaseStateEnum.IDLE;
         this.testCase = testCase;
+		this.testCaseIdentifier = testCaseIdentifier;
         this.sessionId = sessionId;
         this.sutConfigurations = new ConcurrentHashMap<>();
         this.sutHandlerConfigurations = new ConcurrentHashMap<>();
@@ -525,6 +530,10 @@ public class TestCaseContext {
     public String getSessionId() {
         return sessionId;
     }
+
+	public String getTestCaseIdentifier() {
+		return testCaseIdentifier;
+	}
 
 	public com.gitb.core.LogLevel getLogLevelToSignal() {
 		if (logLevelIsExpression) {
