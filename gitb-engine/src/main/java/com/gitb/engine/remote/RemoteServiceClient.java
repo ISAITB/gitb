@@ -11,6 +11,7 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.function.Supplier;
 
@@ -24,11 +25,7 @@ public abstract class RemoteServiceClient <T extends BaseTestModule> {
     protected RemoteServiceClient(URL serviceURL, Properties callProperties, String sessionId) {
         this.serviceURL = serviceURL;
         this.testSessionId = sessionId;
-        if (callProperties == null) {
-            this.callProperties = new Properties();
-        } else {
-            this.callProperties = callProperties;
-        }
+        this.callProperties = Objects.requireNonNullElseGet(callProperties, Properties::new);
         this.callProperties.put(PropertyConstants.TEST_SESSION_ID, sessionId);
         this.callProperties.put(PropertyConstants.TEST_CASE_ID, SessionManager.getInstance().getContext(sessionId).getTestCaseIdentifier());
     }
