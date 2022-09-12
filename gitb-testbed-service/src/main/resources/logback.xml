@@ -6,7 +6,7 @@
             <level>INFO</level>
         </filter>
         <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
-            <pattern>%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - [%marker] %msg%n</pattern>
+            <pattern>%d{dd/MM/yyyy HH:mm:ss} %-5level %logger{36} - [%marker] %msg%n</pattern>
         </encoder>
     </appender>
     <appender name="TEST_SESSION" class="com.gitb.tbs.logging.TestSessionAppender">
@@ -20,7 +20,7 @@
             <level>INFO</level>
         </filter>
         <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
-            <pattern>%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - [%marker] %msg%n</pattern>
+            <pattern>%d{dd/MM/yyyy HH:mm:ss} %-5level %logger{36} - [%marker] %msg%n</pattern>
         </encoder>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <fileNamePattern>./logs/gitb-srv.%d{yyyy-MM-dd}.log</fileNamePattern>
