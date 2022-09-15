@@ -1,0 +1,49 @@
+version: '2.1'
+
+volumes:
+   gitb-repo:
+   gitb-dbdata:
+
+services:
+   gitb-redis:
+      image: redis:6.2.7
+      restart: unless-stopped
+   gitb-mysql:
+      build:
+        context: ./
+        context: etc/docker/gitb-mysql
+      restart: unless-stopped
+      volumes:
+       - gitb-dbdata:/var/lib/mysql
+      healthcheck:
+       test: "/usr/bin/mysql --user=root --password=$$MYSQL_ROOT_PASSWORD --execute \"SHOW DATABASES;\""
+       interval: 3s
+       retries: 10
+   gitb-srv:
+      build:
+        context: ./
+        dockerfile: etc/docker/build/Dockerfile-srv
+      restart: unless-stopped
+      environment:
+       - gitb.messaging.server-ip-address=localhost
+       - gitb.messaging.callbackURL=http://localhost:8080/itbsrv/MessagingClient
+      ports:
+       - "8080:8080"
+   gitb-ui:
+      build:
+        context: ./
+        dockerfile: etc/docker/build/Dockerfile-ui   
+      restart: unless-stopped
+      ports:
+       - "9000:9000"
+      environment:
+       - THEME=ec
+      volumes:
+       - gitb-repo:/gitb-repository
+      depends_on:
+       gitb-redis:
+         condition: service_started
+       gitb-mysql:
+         condition: service_healthy
+       gitb-srv:
+         condition: service_started 

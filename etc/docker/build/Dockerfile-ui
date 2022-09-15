@@ -1,0 +1,48 @@
+# Stage 1: Build app
+FROM sbtscala/scala-sbt:11.0.15_1.6.2_3.1.3 AS builder
+
+# Install nodejs and npm (to build frontend app)
+SHELL ["/bin/bash", "--login", "-c"]
+RUN curl https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash 
+RUN nvm install 16.17.0
+# Install Maven to build shared snapshot dependencies
+ARG MAVEN_VERSION=3.8.6
+ARG BASE_URL=https://apache.osuosl.org/maven/maven-3/${MAVEN_VERSION}/binaries
+ARG USER_HOME_DIR="/root"
+RUN mkdir -p /usr/share/maven /usr/share/maven/ref \
+    && curl -fsSL -o /tmp/apache-maven.tar.gz ${BASE_URL}/apache-maven-${MAVEN_VERSION}-bin.tar.gz \
+    && tar -xzf /tmp/apache-maven.tar.gz -C /usr/share/maven --strip-components=1 \
+    && rm -f /tmp/apache-maven.tar.gz \
+    && ln -s /usr/share/maven/bin/mvn /usr/bin/mvn
+ENV JAVA_HOME /usr/local/openjdk-11
+ENV MAVEN_HOME /usr/share/maven
+ENV MAVEN_CONFIG "$USER_HOME_DIR/.m2"
+ENV PATH $MAVEN_HOME/bin:$JAVA_HOME/bin:$PATH
+# Build snapshot dependencies
+COPY . /app
+WORKDIR /app
+RUN mvn clean install -DskipTests=true -Denv=docker
+# Build and prepare gitb-ui app
+WORKDIR /app/gitb-ui
+RUN /usr/local/openjdk-11/bin/java -Dfile.encoding=UTF-8 -Xss2M -Dsbt.log.noformat=true -Dsbt.script=/usr/local/bin/sbt -Dscala.ext.dirs= -jar /usr/share/sbt/bin/sbt-launch.jar clean dist
+WORKDIR /app
+RUN mkdir -p /app/tmp \ 
+    && unzip /app/gitb-ui/target/universal/gitb-1.0-SNAPSHOT.zip -d /app/tmp/gitb-ui \
+    && mv /app/tmp/gitb-ui/gitb-1.0-SNAPSHOT /app/tmp/gitb-ui/gitb-ui
+
+# Stage 2: Run application
+FROM openjdk:11.0.14-jre
+
+ENV PATH /usr/local/gitb-ui/bin:$PATH
+ENV TESTBED_SERVICE_URL http://gitb-srv:8080/itbsrv/TestbedService
+ENV TESTBED_CLIENT_URL http://gitb-ui:9090/TestbedClient
+ENV DB_DEFAULT_URL jdbc:mysql://gitb-mysql/gitb?characterEncoding=UTF-8&useUnicode=true&autoReconnect=true&useSSL=false&verifyServerCertificate=false&allowPublicKeyRetrieval=true
+ENV DB_DEFAULT_ROOTURL jdbc:mysql://gitb-mysql/
+ENV REDIS_HOST gitb-redis
+
+COPY --from=builder /app/tmp/gitb-ui/gitb-ui /usr/local/gitb-ui
+
+EXPOSE 9000
+EXPOSE 9090
+WORKDIR /usr/local/gitb-ui
+CMD ["gitb"]
