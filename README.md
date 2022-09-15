@@ -7,13 +7,15 @@ These are:
 - The **frontend**, responsible for the Test Bed's user interface and its test, user, and configuration
   management features. In terms of Docker images, this component represents the ``gitb-ui`` image.
 
-In the subsequent sections each of these components will be refered to using their Docker image names\
+In the subsequent sections each of these components will be referred to using their Docker image names\
 (``gitb-srv`` and ``gitb-ui``).
 
 > **Note**  
 > This repository is used to build the Test Bed's software components from their source. The simplest approach
 > to use the Test Bed is via its **published Docker images** ([gitb-ui](https://hub.docker.com/r/isaitb/gitb-ui) and [gitb-srv](https://hub.docker.com/r/isaitb/gitb-srv)) for which you can follow the installation
 > guides [for development](https://www.itb.ec.europa.eu/docs/guides/latest/installingTheTestBed/index.html) and [for production](https://www.itb.ec.europa.eu/docs/guides/latest/installingTheTestBedProduction/index.html). All other documentation (guides, tutorials, reference documentation) is available [here](https://joinup.ec.europa.eu/collection/interoperability-test-bed-repository/solution/interoperability-test-bed/documentation-and-resources).
+>
+> Alternatively, you may also build and launch the Docker service directly from the provided sources. See [here](#build-for-deployment) for details.
 
 # Technology stack
 
@@ -30,6 +32,7 @@ To build and run the Test Bed's components you need to have the following tools:
 - JDK 11+, used as the base platform for both ``gitb-srv`` and ``gitb-ui``.
 - Maven 3+, used to build ``gitb-srv``.
 - SBT 1.3.13+, used to build ``gitb-ui``.
+- Scala 2.13+, used to build the backend app of ``gitb-ui``.
 - NPM version 6.14+, used to build the frontend app of ``gitb-ui``.
 
 Although not mandatory, the proposed IDE to use is IntelliJ, and VS Code for ``gitb-ui``'s Angular app.  
@@ -38,13 +41,17 @@ Although not mandatory, the proposed IDE to use is IntelliJ, and VS Code for ``g
 
 The focus of this README file is the ``gitb-srv`` and ``gitb-ui`` components. To run a complete Test Bed instance 
 you will also require at least:
-- A MySQL database (version 5.*) for its persistence.
+- A MySQL database (version 8.*) for its persistence.
 - A REDIS instance for the caching of user sessions.
 
 Both these instances are set up separately (e.g. via Docker) environment. These can be set-up from Docker 
 as follows:
 - MySQL: ``docker run --name gitb-mysql -p 3306:3306 -d isaitb/gitb-mysql``
-- REDIS: ``docker run --name gitb-redis -p 6379:6379 -d redis:6.0.8``
+- REDIS: ``docker run --name gitb-redis -p 6379:6379 -d redis:6.2.7``
+
+> **Note**  
+> All images and containers are defined in ``docker-compose.yml`` and explained in detail the [developer installation guide](https://www.itb.ec.europa.eu/docs/guides/latest/installingTheTestBed/index.html). You may build and launch the complete service as described [here](#build-for-deployment).
+
 
 # Configuration properties
 
@@ -52,7 +59,7 @@ The main configuration file of interest is ``application.conf`` from ``gitb-ui``
 to be adapted directly. All properties can be set through environment variables, provided either via Docker
 or through the IDE used for development.
 
-The full listing and documentation of properties is available at https://www.itb.ec.europa.eu/docs/guides/latest/installingTheTestBedProduction/index.html#configuration-properties.
+The full listing and documentation of properties is available [here](https://www.itb.ec.europa.eu/docs/guides/latest/installingTheTestBedProduction/index.html#configuration-properties).
 
 # Build for development
 
@@ -126,27 +133,56 @@ cases where you need to test interactions with the Play application (e.g. when E
 Having said this however, you can still use this after you have authenticated using the Play application given that
 authentication cookies are shared.
 
-# Build for production
+# Build for deployment
 
-Follow these steps to make the components' production builds.
+Follow these steps to build the components for deployment as a Dockerised service. Two approaches are available:
+* [Build using the project's development tools](#build-using-development-tools).
+* [Build using Docker Compose (containerised build)](#build-using-docker-compose).
 
-## Test engine (gitb-srv)
+## Build using development tools
 
-1. From the current (root) folder issue ``mvn clean install -DskipTests=true``
+This approach is more suitable is you have set up the repository for development and have installed all necessary tooling.
+Producing build artefacts is faster but expects the necessary tools (Java, Maven, NPM, SBT, Scala) to be installed, and manual steps
+to build Docker images.
+
+### Test engine (gitb-srv)
+
+1. From the current (root) folder issue ``mvn clean install -DskipTests=true -Denv=docker``
 2. Copy file ``gitb-testbed-service/target/itbsrv.war`` to a separate folder to build its Docker image.
-3. Use Dockerfile ``etc/docker/gitb-srv/Dockerfile`` from the same folder to build the image.
+3. Use Dockerfile ``etc/docker/gitb-srv/Dockerfile`` from the same folder to build the image with `docker build -t isaitb/gitb-srv .`.
 
-## Frontend (gitb-ui)
+### Frontend (gitb-ui)
 
 1. From the ``gitb-ui`` folder issue ``sbt clean dist``. This builds all Play code and automatically calls the required
    prod build target from its Angular app.
 2. Unzip the contents of the ``gitb-ui/target/universal/gitb-1.0-SNAPSHOT.zip`` archive to a separate folder. The name of the resulting unzipped folder should be ``gitb-ui``.
-3. Use the Dockerfile ``etc/docker/gitb-ui/Dockerfile`` from the same folder to build the image.
+3. Use the Dockerfile ``etc/docker/gitb-ui/Dockerfile`` from the same folder to build the image with `docker build -t isaitb/gitb-ui .`.
+
+### Database (gitb-mysql)
+
+1. From the `etc/docker/gitb-mysql` folder build the image with `docker build -t isaitb/gitb-mysql .`
+
+### Create the overall service
+
+1. Follow the [development installation guide](https://www.itb.ec.europa.eu/docs/guides/latest/installingTheTestBed/index.html).
+2. Create or [download](https://www.itb.ec.europa.eu/docs/guides/latest/_downloads/d863ccca4f45b40bb17be79b4841ad4b/docker-compose.yml) your docker-compose.yml file
+   making use of the locally built images (see previous steps).
+3. Launch the service from the folder containing your `docker-compose.yml` file with `docker-compose up -d`.
+
+## Build using Docker Compose
+
+This approach is more suitable for a containerised build, avoiding any manual steps and developer tool installations (apart from Docker Compose). Make sure that your 
+Docker Compose is at least at version `1.29.0`. Note that the overall build time in this case is slower compared to building with the relevant tools.
+
+To build and launch all containers, issue from the repository's root folder: `docker-compose up -d --build`.
 
 # Using the application
 
-Once a complete Test Bed instance has been setup, either in development or production mode, access using the default
+Once a complete Test Bed instance has been setup, either in development or as a Dockerised service, access using the default
 Test Bed administrator account as follows:
 1. Go to http://localhost:9000.
 2. Click on the login button.
 3. Authenticate using ``test@test.com`` with a password of ``test``.
+
+For information on how to proceed you may refer to the Test Bed's [user guide](https://www.itb.ec.europa.eu/docs/itb-ta/latest/) 
+and [sample usage tutorials](https://www.itb.ec.europa.eu/docs/guides/latest/definingYourTestConfiguration/index.html).
