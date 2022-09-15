@@ -1,0 +1,18 @@
+# Stage 1: Build app
+FROM maven:3.8.6-jdk-11 AS builder
+
+WORKDIR /app
+COPY . /app
+RUN mvn clean install -DskipTests=true -Denv=docker
+
+# Stage 1: Run application
+FROM openjdk:11.0.14-jre
+
+RUN mkdir /itbsrv
+COPY --from=builder /app/gitb-testbed-service/target/itbsrv.war /itbsrv
+RUN sh -c 'touch /itbsrv/itbsrv.war'
+
+ENTRYPOINT ["java","-Djava.security.egd=file:/dev/./urandom","-Xmx2048m","-jar","/itbsrv/itbsrv.war"]
+EXPOSE 8080-8380
+EXPOSE 80
+WORKDIR /itbsrv
