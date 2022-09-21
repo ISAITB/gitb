@@ -186,3 +186,30 @@ Test Bed administrator account as follows:
 
 For information on how to proceed you may refer to the Test Bed's [user guide](https://www.itb.ec.europa.eu/docs/itb-ta/latest/) 
 and [sample usage tutorials](https://www.itb.ec.europa.eu/docs/guides/latest/definingYourTestConfiguration/index.html).
+
+# Licence
+
+This software is shared under the European Union Public Licence (EUPL) version 1.1, featuring a CEN-specific extension for 
+the GITB CWA to limit its liability and trademark use. See [here](https://github.com/ISAITB/gitb/blob/master/LICENCE.md) for details.
+
+# Legal notice
+
+The authors of this software waive any and all liability linked to its usage, or the interpretation of any results it may produce.
+Any data, including data of private nature that it may store, is defined by the eventual downstream user's configuration. A detailed
+legal notice of the [shared instance](https://www/itb.ec.europa.eu/itb) hosted by the European Commission is available via the 
+relevant welcome page link. 
+
+# Contact
+
+For feedback or questions regarding this library you are invited to post issues in the current repository. In addition,
+feel free to contact the Test Bed team via email at [DIGIT-ITB@ec.europa.eu](mailto:DIGIT-ITB@ec.europa.eu).
+
+# See also
+
+For general information on all aspects of the Interoperability Test Bed and the GITB software in particular you may refer
+to its [Joinup space](https://joinup.ec.europa.eu/collection/interoperability-test-bed-repository/solution/interoperability-test-bed).
+
+The GITB software is used to realise a complete conformance testing platform. If you are more interested in standalone 
+data validation you may find interesting the Test Bed's validators for [XML](https://github.com/ISAITB/xml-validator),
+[RDF](https://github.com/ISAITB/shacl-validator), [JSON](https://github.com/ISAITB/json-validator) and [CSV](https://github.com/ISAITB/csv-validator)
+content.
