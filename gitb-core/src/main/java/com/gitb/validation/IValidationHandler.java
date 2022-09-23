@@ -26,6 +26,6 @@ public interface IValidationHandler extends StepHandler {
      * @param inputs
      * @return
      */
-    TestStepReportType validate(List<Configuration> configurations, Map<String, DataType> inputs);
+    TestStepReportType validate(List<Configuration> configurations, Map<String, DataType> inputs, String stepId);
 
 }

@@ -206,6 +206,7 @@ public abstract class AbstractMessagingStepProcessorActor<T extends MessagingSte
                         messagingContext.get().getHandler().beginTransaction(
                                 messagingContext.get().getSessionId(),
                                 txIdToUse,
+                                step.getId(),
                                 step.getFrom(),
                                 step.getTo(),
                                 step.getConfig()

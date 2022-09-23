@@ -1,13 +1,16 @@
 package com.gitb.engine.validation.handlers.common;
 
+import com.gitb.core.Configuration;
 import com.gitb.core.ValidationModule;
 import com.gitb.exceptions.GITBEngineInternalError;
+import com.gitb.tr.TestStepReportType;
 import com.gitb.types.DataType;
 import com.gitb.utils.XMLUtils;
 import com.gitb.validation.IValidationHandler;
 
 import javax.xml.transform.stream.StreamSource;
 import java.io.InputStream;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -22,6 +25,12 @@ public abstract class AbstractValidator implements IValidationHandler {
     @Override
     public ValidationModule getModuleDefinition() {
         return this.validatorDefinition;
+    }
+
+    @Override
+    public TestStepReportType validate(List<Configuration> configurations, Map<String, DataType> inputs, String stepId) {
+        // Ignore the step ID for embedded validators.
+        return validate(configurations, inputs);
     }
 
     protected static ValidationModule readModuleDefinition(String fileName) {
@@ -49,5 +58,7 @@ public abstract class AbstractValidator implements IValidationHandler {
             return null;
         }
     }
+
+    public abstract TestStepReportType validate(List<Configuration> configurations, Map<String, DataType> inputs);
 
 }

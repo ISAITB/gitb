@@ -147,6 +147,7 @@ public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorAct
 							messagingContext.getSessionId(),
 							transactionContext.getTransactionId(),
 							callId,
+							step.getId(),
 							step.getConfig(),
 							inputMessage,
 							messagingContext.getMessagingThreads()

@@ -42,14 +42,14 @@ public class RemoteValidationModuleClient extends RemoteServiceClient<Validation
 	}
 
 	@Override
-	public TestStepReportType validate(List<Configuration> configurations, Map<String, DataType> inputs) {
+	public TestStepReportType validate(List<Configuration> configurations, Map<String, DataType> inputs, String stepId) {
 		ValidateRequest validateRequest = new ValidateRequest();
 		validateRequest.setSessionId(testSessionId);
 		validateRequest.getConfig().addAll(configurations);
 		for(Map.Entry<String, DataType> input: inputs.entrySet()) {
 			validateRequest.getInput().add(DataTypeUtils.convertDataTypeToAnyContent(input.getKey(), input.getValue()));
 		}
-		ValidationResponse response = call(() -> getServiceClient().validate(validateRequest));
+		ValidationResponse response = call(() -> getServiceClient().validate(validateRequest), stepIdMap(stepId));
 		return response.getReport();
 	}
 

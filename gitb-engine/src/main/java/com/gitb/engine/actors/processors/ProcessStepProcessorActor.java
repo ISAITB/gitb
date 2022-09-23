@@ -99,7 +99,7 @@ public class ProcessStepProcessorActor extends AbstractProcessingStepProcessorAc
             } else if (step.getOperationAttribute() != null) {
                 operation = step.getOperationAttribute();
             }
-            ProcessingReport report = handler.process(context.getSession(), operation, getData(handler, operation));
+            ProcessingReport report = handler.process(context.getSession(), step.getId(), operation, getData(handler, operation));
             if (report.getData() != null && (step.getId() != null || step.getOutput() != null)) {
                 if (step.getOutput() != null) {
                     if (report.getData().getData() != null && report.getData().getData().size() == 1) {

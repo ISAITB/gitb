@@ -47,7 +47,7 @@ public class BeginTransactionStepProcessorActor extends AbstractTestStepActor<Be
 
         messagingContext
                 .getHandler()
-                .beginTransaction(messagingSessionId, step.getTxnId(), step.getFrom(), step.getTo(), step.getConfig());
+                .beginTransaction(messagingSessionId, step.getTxnId(), step.getId(), step.getFrom(), step.getTo(), step.getConfig());
 
         TransactionContext transactionContext = new TransactionContext(step.getTxnId());
 

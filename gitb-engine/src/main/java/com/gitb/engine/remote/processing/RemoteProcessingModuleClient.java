@@ -40,10 +40,10 @@ public class RemoteProcessingModuleClient extends RemoteServiceClient<Processing
     }
 
     @Override
-    public String beginTransaction(List<Configuration> config) {
+    public String beginTransaction(String stepId, List<Configuration> config) {
         BeginTransactionRequest transactionRequest = new BeginTransactionRequest();
         transactionRequest.getConfig().addAll(config);
-        return call(() -> getServiceClient().beginTransaction(transactionRequest).getSessionId());
+        return call(() -> getServiceClient().beginTransaction(transactionRequest).getSessionId(), stepIdMap(stepId));
     }
 
     private String sessionIdToUse(String processingSessionId) {
@@ -55,12 +55,12 @@ public class RemoteProcessingModuleClient extends RemoteServiceClient<Processing
     }
 
     @Override
-    public ProcessingReport process(String processingSessionId, String operation, ProcessingData data) {
+    public ProcessingReport process(String processingSessionId, String stepId, String operation, ProcessingData data) {
         ProcessRequest processRequest = new ProcessRequest();
         processRequest.setSessionId(sessionIdToUse(processingSessionId));
         processRequest.setOperation(operation);
         processRequest.getInput().addAll(getInput(data));
-        ProcessResponse processResponse = call(() -> getServiceClient().process(processRequest));
+        ProcessResponse processResponse = call(() -> getServiceClient().process(processRequest), stepIdMap(stepId));
         return new ProcessingReport(processResponse.getReport(), getOutput(processResponse.getOutput()));
     }
 
@@ -82,10 +82,10 @@ public class RemoteProcessingModuleClient extends RemoteServiceClient<Processing
     }
 
     @Override
-    public void endTransaction(String processingSessionId) {
+    public void endTransaction(String processingSessionId, String stepId) {
         BasicRequest basicRequest = new BasicRequest();
         basicRequest.setSessionId(sessionIdToUse(processingSessionId));
-        call(() -> getServiceClient().endTransaction(basicRequest));
+        call(() -> getServiceClient().endTransaction(basicRequest), stepIdMap(stepId));
     }
 
     private ProcessingService getServiceClient() {

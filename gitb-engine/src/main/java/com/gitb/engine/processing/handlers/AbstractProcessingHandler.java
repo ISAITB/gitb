@@ -3,6 +3,7 @@ package com.gitb.engine.processing.handlers;
 import com.gitb.core.*;
 import com.gitb.processing.IProcessingHandler;
 import com.gitb.processing.ProcessingData;
+import com.gitb.processing.ProcessingReport;
 import com.gitb.ps.ProcessingOperation;
 import com.gitb.tr.TAR;
 import com.gitb.tr.TestResultType;
@@ -17,14 +18,19 @@ import java.util.List;
 public abstract class AbstractProcessingHandler implements IProcessingHandler {
 
     @Override
-    public String beginTransaction(List<Configuration> config) {
+    public String beginTransaction(String stepId, List<Configuration> config) {
         // Transactions not needed.
         return "";
     }
 
     @Override
-    public void endTransaction(String session) {
+    public void endTransaction(String session, String stepId) {
         // Do nothing.
+    }
+
+    @Override
+    public ProcessingReport process(String session, String stepId, String operation, ProcessingData input) {
+        return process(session, operation, input);
     }
 
     ProcessingOperation createProcessingOperation(String name, List<TypedParameter> input, List<TypedParameter> output) {
@@ -89,5 +95,7 @@ public abstract class AbstractProcessingHandler implements IProcessingHandler {
         }
         return null;
     }
+
+    public abstract ProcessingReport process(String session, String operation, ProcessingData input);
 
 }

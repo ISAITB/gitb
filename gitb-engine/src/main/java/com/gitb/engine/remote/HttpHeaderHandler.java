@@ -39,6 +39,7 @@ public class HttpHeaderHandler implements SOAPHandler<SOAPMessageContext> {
     private static final QName CREATED_NAME =  new QName(UID_NAME.getNamespaceURI(), "Created", UID_NAME.getPrefix());
     private static final QName NONCE_NAME =  new QName(SECURITY_NAME.getNamespaceURI(), "Nonce", SECURITY_NAME.getPrefix());
 
+    private static final QName TEST_STEP_ID_NAME =  new QName(GITB_BASE, "TestStepIdentifier", GITB_PREFIX);
     private static final QName TEST_SESSION_ID_NAME =  new QName(GITB_BASE, "TestSessionIdentifier", GITB_PREFIX);
     private static final QName TEST_CASE_ID_NAME =  new QName(GITB_BASE, "TestCaseIdentifier", GITB_PREFIX);
 
@@ -63,9 +64,11 @@ public class HttpHeaderHandler implements SOAPHandler<SOAPMessageContext> {
     private void addTestIdentifiers(SOAPMessageContext context, Properties callProperties) {
         String testSessionIdentifier = callProperties.getProperty(PropertyConstants.TEST_SESSION_ID);
         String testCaseIdentifier = callProperties.getProperty(PropertyConstants.TEST_CASE_ID);
+        String testStepIdentifier = callProperties.getProperty(PropertyConstants.TEST_STEP_ID);
         boolean addTestSessionIdentifier = StringUtils.isNotBlank(testSessionIdentifier);
         boolean addTestCaseIdentifier = StringUtils.isNotBlank(testCaseIdentifier);
-        if (addTestSessionIdentifier || addTestCaseIdentifier) {
+        boolean addTestStepIdentifier = StringUtils.isNotBlank(testStepIdentifier);
+        if (addTestSessionIdentifier || addTestCaseIdentifier || addTestStepIdentifier) {
             try {
                 SOAPEnvelope envelope = context.getMessage().getSOAPPart().getEnvelope();
                 SOAPHeader header = envelope.getHeader();
@@ -79,6 +82,10 @@ public class HttpHeaderHandler implements SOAPHandler<SOAPMessageContext> {
                 if (addTestCaseIdentifier) {
                     var element = header.addChildElement(TEST_CASE_ID_NAME);
                     element.addTextNode(testCaseIdentifier);
+                }
+                if (addTestStepIdentifier) {
+                    var element = header.addChildElement(TEST_STEP_ID_NAME);
+                    element.addTextNode(testStepIdentifier);
                 }
             } catch (SOAPException e) {
                 throw new IllegalStateException("Error generating headers for test identifiers", e);

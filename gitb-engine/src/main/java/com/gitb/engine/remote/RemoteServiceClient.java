@@ -11,6 +11,7 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.function.Supplier;
@@ -48,8 +49,17 @@ public abstract class RemoteServiceClient <T extends BaseTestModule> {
     }
 
     protected <Y> Y call(Supplier<Y> supplier) {
+        return call(supplier, null);
+    }
+
+    protected <Y> Y call(Supplier<Y> supplier, Map<String, String> extraCallProperties) {
         try {
-            RemoteCallContext.setCallProperties(getCallProperties());
+            var propertiesToUse = new Properties();
+            propertiesToUse.putAll(getCallProperties());
+            if (extraCallProperties != null) {
+                propertiesToUse.putAll(extraCallProperties);
+            }
+            RemoteCallContext.setCallProperties(propertiesToUse);
             return supplier.get();
         } finally {
             RemoteCallContext.clearCallProperties();
@@ -58,6 +68,13 @@ public abstract class RemoteServiceClient <T extends BaseTestModule> {
 
     protected Properties getCallProperties() {
         return callProperties;
+    }
+
+    protected Map<String, String> stepIdMap(String stepId) {
+        if (stepId != null) {
+            return Map.of(PropertyConstants.TEST_STEP_ID, stepId);
+        }
+        return null;
     }
 
 }

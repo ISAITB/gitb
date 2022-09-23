@@ -37,7 +37,7 @@ public interface IMessagingHandler extends StepHandler {
      * @param configurations configurations related to the transaction
      * @return the unique transactionId
      */
-    void beginTransaction(String sessionId, String transactionId, String from, String to, List<Configuration> configurations);
+    void beginTransaction(String sessionId, String transactionId, String stepId, String from, String to, List<Configuration> configurations);
 
     /**
      *
@@ -47,7 +47,7 @@ public interface IMessagingHandler extends StepHandler {
      * @param message
      * @return
      */
-    MessagingReport sendMessage(String sessionId, String transactionId, List<Configuration> configurations, Message message);
+    MessagingReport sendMessage(String sessionId, String transactionId, String stepId, List<Configuration> configurations, Message message);
 
     /**
      *
@@ -56,7 +56,7 @@ public interface IMessagingHandler extends StepHandler {
      * @param configurations
      * @return
      */
-    MessagingReport receiveMessage(String sessionId, String transactionId, String callId, List<Configuration> configurations, Message message, List<Thread> messagingThreads);
+    MessagingReport receiveMessage(String sessionId, String transactionId, String callId, String stepId, List<Configuration> configurations, Message message, List<Thread> messagingThreads);
 
     /**
      *
@@ -67,13 +67,13 @@ public interface IMessagingHandler extends StepHandler {
      * @param configurations
      * @return
      */
-    MessagingReport listenMessage(String sessionId, String transactionId, String from, String to, List<Configuration> configurations, Message inputs);
+    MessagingReport listenMessage(String sessionId, String transactionId, String stepId, String from, String to, List<Configuration> configurations, Message inputs);
 
     /**
      * Close the transaction (Connection)
      * @param transactionId transaction id
      */
-    void endTransaction(String sessionId, String transactionId);
+    void endTransaction(String sessionId, String transactionId, String stepId);
 
     /**
      * Close the session with the transactions in it

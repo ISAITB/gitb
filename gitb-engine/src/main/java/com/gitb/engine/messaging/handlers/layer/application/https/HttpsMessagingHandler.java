@@ -28,8 +28,8 @@ public class HttpsMessagingHandler extends AbstractMessagingHandler{
     private static final MessagingModule module = MessagingHandlerUtils.readModuleDefinition(MODULE_DEFINITION_XML);
 
     @Override
-    public void beginTransaction(String sessionId, String transactionId, String from, String to, List<Configuration> configurations) {
-        super.beginTransaction(sessionId, transactionId, from, to, configurations);
+    public void beginTransaction(String sessionId, String transactionId, String stepId, String from, String to, List<Configuration> configurations) {
+        super.beginTransaction(sessionId, transactionId, stepId, from, to, configurations);
 
         SessionContext sessionContext = SessionManager.getInstance().getSession(sessionId);
         List<TransactionContext> transactions = sessionContext.getTransactions(transactionId);

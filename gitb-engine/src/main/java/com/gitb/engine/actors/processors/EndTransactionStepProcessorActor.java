@@ -34,7 +34,7 @@ public class EndTransactionStepProcessorActor extends AbstractTestStepActor<EndT
 
 				messagingContext
 					.getHandler()
-					.endTransaction(messagingContext.getSessionId(), step.getTxnId());
+					.endTransaction(messagingContext.getSessionId(), step.getTxnId(), step.getId());
 
 				messagingContext.removeTransaction(step.getTxnId());
 				break;

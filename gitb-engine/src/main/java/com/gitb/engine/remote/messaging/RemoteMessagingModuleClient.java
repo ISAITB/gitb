@@ -63,24 +63,24 @@ public class RemoteMessagingModuleClient extends RemoteServiceClient<MessagingMo
 	}
 
 	@Override
-	public void beginTransaction(String sessionId, String transactionId, String from, String to, List<Configuration> configurations) {
+	public void beginTransaction(String sessionId, String transactionId, String stepId, String from, String to, List<Configuration> configurations) {
         BeginTransactionRequest request = new BeginTransactionRequest();
         request.setSessionId(sessionId);
         request.setFrom(from);
         request.setTo(to);
         request.getConfig().addAll(configurations);
-        call(() -> getServiceClient().beginTransaction(request));
+        call(() -> getServiceClient().beginTransaction(request), stepIdMap(stepId));
 	}
 
 	@Override
-	public MessagingReport sendMessage(String sessionId, String transactionId, List<Configuration> configurations, Message message) {
+	public MessagingReport sendMessage(String sessionId, String transactionId, String stepId, List<Configuration> configurations, Message message) {
 		SendRequest request = new SendRequest();
 		request.setSessionId(sessionId);
 		for (Map.Entry<String, DataType> fragmentEntry: message.getFragments().entrySet()) {
 			AnyContent attachment = DataTypeUtils.convertDataTypeToAnyContent(fragmentEntry.getKey(), fragmentEntry.getValue());
 			request.getInput().add(attachment);
 		}
-		SendResponse response = call(() -> getServiceClient().send(request));
+		SendResponse response = call(() -> getServiceClient().send(request), stepIdMap(stepId));
 		if (response == null || response.getReport() == null) {
 			return MessagingHandlerUtils.generateErrorReport("No response received");
 		} else {
@@ -89,7 +89,7 @@ public class RemoteMessagingModuleClient extends RemoteServiceClient<MessagingMo
 	}
 
 	@Override
-	public MessagingReport receiveMessage(String sessionId, String transactionId, String callId, List<Configuration> configurations, Message inputs, List<Thread> messagingThreads) {
+	public MessagingReport receiveMessage(String sessionId, String transactionId, String callId, String stepId, List<Configuration> configurations, Message inputs, List<Thread> messagingThreads) {
 		ReceiveRequest request = new ReceiveRequest();
 		request.setCallId(callId);
 		request.setSessionId(sessionId);
@@ -98,21 +98,21 @@ public class RemoteMessagingModuleClient extends RemoteServiceClient<MessagingMo
 			AnyContent input = DataTypeUtils.convertDataTypeToAnyContent(fragmentEntry.getKey(), fragmentEntry.getValue());
 			request.getInput().add(input);
 		}
-		call(() -> getServiceClient().receive(request));
+		call(() -> getServiceClient().receive(request), stepIdMap(stepId));
 		return new DeferredMessagingReport();
 	}
 
 	@Override
-	public MessagingReport listenMessage(String sessionId, String transactionId, String from, String to, List<Configuration> configurations, Message inputs) {
+	public MessagingReport listenMessage(String sessionId, String transactionId, String stepId, String from, String to, List<Configuration> configurations, Message inputs) {
 		// Not applicable
 		return null;
 	}
 
 	@Override
-	public void endTransaction(String sessionId, String transactionId) {
+	public void endTransaction(String sessionId, String transactionId, String stepId) {
         BasicRequest request = new BasicRequest();
         request.setSessionId(sessionId);
-        call(() -> getServiceClient().endTransaction(request));
+        call(() -> getServiceClient().endTransaction(request), stepIdMap(stepId));
 	}
 
 	@Override

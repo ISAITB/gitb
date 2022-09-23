@@ -10,10 +10,10 @@ public interface IProcessingHandler extends StepHandler {
 
     ProcessingModule getModuleDefinition();
 
-    String beginTransaction(List<Configuration> config);
+    String beginTransaction(String stepId, List<Configuration> config);
 
-    ProcessingReport process(String session, String operation, ProcessingData input);
+    ProcessingReport process(String session, String stepId, String operation, ProcessingData input);
 
-    void endTransaction(String session);
+    void endTransaction(String session, String stepId);
 
 }

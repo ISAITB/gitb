@@ -13,5 +13,6 @@ public class PropertyConstants {
 
     public static final String TEST_SESSION_ID = "TEST_SESSION_ID";
     public static final String TEST_CASE_ID = "TEST_CASE_ID";
+    public static final String TEST_STEP_ID = "TEST_STEP_ID";
 
 }

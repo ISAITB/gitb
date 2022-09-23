@@ -68,7 +68,7 @@ public class XmlMatchValidator implements IValidationHandler {
     }
 
     @Override
-    public TestStepReportType validate(List<Configuration> configurations, Map<String, DataType> inputs) {
+    public TestStepReportType validate(List<Configuration> configurations, Map<String, DataType> inputs, String stepId) {
         if (!inputs.containsKey(INPUT__XML)) {
             throw new IllegalArgumentException("The ["+INPUT__XML+"] input is required.");
         }

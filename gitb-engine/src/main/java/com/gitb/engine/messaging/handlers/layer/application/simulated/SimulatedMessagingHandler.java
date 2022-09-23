@@ -71,12 +71,12 @@ public class SimulatedMessagingHandler extends AbstractMessagingHandler {
     }
 
     @Override
-    public MessagingReport sendMessage(String sessionId, String transactionId, List<Configuration> configurations, Message message) {
+    public MessagingReport sendMessage(String sessionId, String transactionId, String stepId, List<Configuration> configurations, Message message) {
         return createReport(message);
     }
 
     @Override
-    public MessagingReport receiveMessage(String sessionId, String transactionId, String callId, List<Configuration> configurations, Message message, List<Thread> messagingThreads) {
+    public MessagingReport receiveMessage(String sessionId, String transactionId, String callId, String stepId, List<Configuration> configurations, Message message, List<Thread> messagingThreads) {
         var report = createReport(message);
         if (message.getFragments().containsKey(INPUT__DELAY)) {
             var delay = ((Double)message.getFragments().get(INPUT__DELAY).convertTo(DataType.NUMBER_DATA_TYPE).getValue()).longValue();
@@ -91,17 +91,17 @@ public class SimulatedMessagingHandler extends AbstractMessagingHandler {
     }
 
     @Override
-    public void beginTransaction(String sessionId, String transactionId, String from, String to, List<Configuration> configurations) {
+    public void beginTransaction(String sessionId, String transactionId, String stepId, String from, String to, List<Configuration> configurations) {
         // Do nothing.
     }
 
     @Override
-    public MessagingReport listenMessage(String sessionId, String transactionId, String from, String to, List<Configuration> configurations, Message inputs) {
+    public MessagingReport listenMessage(String sessionId, String transactionId, String stepId, String from, String to, List<Configuration> configurations, Message inputs) {
         throw new IllegalStateException("The SimulatedMessaging handler can only be used for send and receive operations");
     }
 
     @Override
-    public void endTransaction(String sessionId, String transactionId) {
+    public void endTransaction(String sessionId, String transactionId, String stepId) {
         // Do nothing.
     }
 
