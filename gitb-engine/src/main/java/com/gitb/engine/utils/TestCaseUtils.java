@@ -387,5 +387,27 @@ public class TestCaseUtils {
         }
         return report;
     }
+
+    public static void applyContentTypes(DataType contentType, AnyContent reportItem) {
+        if (contentType != null && reportItem != null) {
+            if (contentType instanceof MapType) {
+                for (var childItem: ((MapType) contentType).getItems().entrySet()) {
+                    applyContentTypes(childItem.getValue(), reportItem.getItem().stream().filter(item -> Objects.equals(childItem.getKey(), item.getName())).findFirst().orElse(null));
+                }
+            } else if (contentType instanceof ListType) {
+                var childContentItemIterator = ((ListType) contentType).iterator();
+                var childReportItemIterator = reportItem.getItem().iterator();
+                while (childContentItemIterator.hasNext() && childReportItemIterator.hasNext()) {
+                    var childContentItem = childContentItemIterator.next();
+                    var childReportItem = childReportItemIterator.next();
+                    applyContentTypes(childContentItem, childReportItem);
+                }
+            } else if (contentType instanceof StringType) {
+                // Apply the defined content type.
+                reportItem.setMimeType((String) contentType.getValue());
+            }
+        }
+    }
+
 }
 
