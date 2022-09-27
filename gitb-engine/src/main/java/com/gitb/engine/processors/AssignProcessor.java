@@ -50,7 +50,8 @@ public class AssignProcessor implements IProcessor {
 					throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Cannot create a new variable based on the provided name ["+stripExpressionStart(containerVariableExpression)+"]"));
 				}
 			} else if (!lValue.getType().equals(DataType.MAP_DATA_TYPE)) {
-				throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Expression ["+containerVariableExpression+"] was expected to evaluate a map but evaluated a "+lValue.getType()));
+				// Matched an existing variable that is not a map that will be replaced.
+				lValue = new MapType();
 			}
             DataType result = exprHandler.processExpression(assign, assign.getType());
 		    String mapKey = keyExpression;
