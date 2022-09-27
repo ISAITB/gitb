@@ -55,7 +55,7 @@ public enum ErrorCode {
     MISSING_HANDLER_INPUT(                              "TDL-044", "%s [%s] in step %s for handler %s does not provide a required input [%s].", ERROR, true),
     UNEXPECTED_HANDLER_CONFIG(                          "TDL-045", "%s [%s] in step %s for handler %s defines an unexpected configuration parameter [%s].", WARNING, true),
     MISSING_HANDLER_CONFIG(                             "TDL-046", "%s [%s] in step %s for handler %s does not provide a required configuration parameter [%s].", ERROR, true),
-    INVALID_PROCESSING_HANDLER_OPERATION(               "TDL-047", "%s [%s] in step %s refers to invalid processing operation [%s].", ERROR, true),
+    INVALID_PROCESSING_HANDLER_OPERATION(               "TDL-047", "%s [%s] in step %s refers to invalid processing operation [%s]. One of [%s] was expected.", ERROR, true),
 
     DUPLICATE_SCRIPTLET_ID(                             "TDL-048", "Test case [%s] defines multiple scriptlets for ID [%s].", ERROR),
 
@@ -69,7 +69,7 @@ public enum ErrorCode {
     PROCESSING_TX_NOT_CLOSED(                           "TDL-056", "%s [%s] defines a processing transaction [%s] that is not closed.", WARNING, true),
     MESSAGING_TX_NOT_USED(                              "TDL-057", "%s [%s] defines a messaging transaction [%s] that is never used.", WARNING, true),
     PROCESSING_TX_NOT_USED(                             "TDL-058", "%s [%s] defines a processing transaction [%s] that is never used.", WARNING, true),
-    DOUBLE_PROCESSING_HANDLER(                          "TDL-059", "%s [%s] defines a process step that defined both a transaction reference [%s] and a handler [%s].", ERROR, true),
+//    DOUBLE_HANDLER_DEFINITION(                          "TDL-059", "%s [%s] in step %s defines both a transaction reference [%s] and a handler [%s].", ERROR, true),
     VALUE_OF_MAP_VARIABLE_WITHOUT_NAME_OR_TYPE(         "TDL-060", "%s [%s] defines for map variable [%s] a value with no name or type.", ERROR, true),
     VALUE_OF_NON_MAP_VARIABLE_WITH_NAME_OR_TYPE(        "TDL-061", "%s [%s] defines for variable [%s] a value with name and type information that will be ignored.", WARNING, true),
     MULTIPLE_VALUES_FOR_PRIMITIVE_VARIABLE(             "TDL-062", "%s [%s] defines a simple variable [%s] with multiple values.", ERROR, true),
@@ -132,10 +132,11 @@ public enum ErrorCode {
     SCRIPTLET_ACTOR_REFERENCED_NOT_IN_TEST_CASE(        "TDL-111", "Test case [%s] calls scriptlet [%s] but provides a value for the actor reference [%s] in step %s that does not match a test case actor.", ERROR, false),
     SCRIPTLET_ACTOR_REFERENCE_WITHOUT_INPUT(            "TDL-112", "Test case [%s] calls scriptlet [%s] but does not provides an input or default value for the actor reference [%s] in step %s.", ERROR, false),
     SCRIPTLET_ACTOR_NOT_DEFINED_IN_TEST_CASE(           "TDL-113", "Test case [%s] calls scriptlet [%s] but does not define actor [%s] referenced by the scriptlet in step %s.", ERROR, false),
-    MISSING_TX_AND_HANDLER_FOR_MESSAGING_STEP(          "TDL-114", "%s [%s] defines messaging step (%s) with no transaction ID reference and no handler definition.", ERROR, true),
+    MISSING_TX_AND_HANDLER_STEP(                        "TDL-114", "%s [%s] in step %s defines no transaction ID reference and no handler definition.", ERROR, true),
     STEP_CONNECTION_PROPERTIES_IGNORED(                 "TDL-115", "%s [%s] defines for step (%s) connection properties that will be ignored. When the step references a transaction ([%s] in this case) connection properties are taken from the transaction's definition.", WARNING, true),
     STEP_WITH_BOTH_TX_AND_HANDLER(                      "TDL-116", "%s [%s] defines step (%s) with both a transaction ID reference and a handler. The provided handler will be ignored.", WARNING, true),
     POTENTIALLY_INVALID_SCRIPTLET_CONTEXT_VARIABLE(     "TDL-117", "Scriptlet [%s] refers to variables [%s] that are not defined in its own scope. When the scriptlet is called these will need to be present in the parent scope (that of the calling test case or scriptlet).", INFO, false),
+    MISSING_PROCESSING_OPERATION(                       "TDL-118", "%s [%s] in step %s does not specify which operation to perform. Handler %s defines multiple operations (%s), so the step may fail or at least may not be deterministic.", WARNING, true),
     ;
 
     private final String code;

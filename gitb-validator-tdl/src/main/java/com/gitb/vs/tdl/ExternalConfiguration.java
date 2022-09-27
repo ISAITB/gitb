@@ -128,8 +128,6 @@ public class ExternalConfiguration {
         private Map<String, BasicConfiguration> operations = new HashMap<>();
         private Set<String> requiredConfigs = new HashSet<>();
         private Set<String> optionalConfigs = new HashSet<>();
-        private Set<String> defaultRequiredInputs = new HashSet<>();
-        private Set<String> defaultOptionalInputs = new HashSet<>();
 
         public Map<String, BasicConfiguration> getOperations() {
             return operations;
@@ -143,21 +141,6 @@ public class ExternalConfiguration {
             return optionalConfigs;
         }
 
-        public Set<String> getDefaultRequiredInputs() {
-            return defaultRequiredInputs;
-        }
-
-        public void setDefaultRequiredInputs(Set<String> defaultRequiredInputs) {
-            this.defaultRequiredInputs = defaultRequiredInputs;
-        }
-
-        public Set<String> getDefaultOptionalInputs() {
-            return defaultOptionalInputs;
-        }
-
-        public void setDefaultOptionalInputs(Set<String> defaultOptionalInputs) {
-            this.defaultOptionalInputs = defaultOptionalInputs;
-        }
     }
 
     public static class ValidationHandlerConfiguration extends BasicConfiguration {
