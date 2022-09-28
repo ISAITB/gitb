@@ -3,44 +3,31 @@
         <div class="panel panel-default test-case-list-table">
             <div class="panel-heading">
                 <h4 class="title">Test execution</h4>
-                <div class="btn-toolbar">
-                    <button type="button" class="btn btn-default" (click)="back()">Back</button>
+                <div class="sessionButtonDiv">
+                    <div class="backDiv">
+                        <button type="button" class="btn btn-default" (click)="back()">Go to conformance statement</button>
+                    </div>
                     <ng-container *ngIf="testsToExecute.length > 0">
-                        <ng-container *ngIf="testsToExecute.length > 1">
-                            <div class="btn-group" dropdown>
-                                <button id="button-completed" dropdownToggle type="button" class="btn btn-default dropdown-toggle" aria-controls="dropdown-completed">{{showCompletedLabel}}<span class="caret"></span></button>
-                                <ul id="dropdown-stopType" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-completed">
-                                    <li role="menuitem"><a class="dropdown-item" href (click)="showCompleted = false; showCompletedLabel = showCompletedLabelOff; updateTestCaseVisibility(); $event.preventDefault()">{{showCompletedLabelOff}}</a></li>
-                                    <li role="menuitem"><a class="dropdown-item" href (click)="showCompleted = true; showCompletedLabel = showCompletedLabelOn; updateTestCaseVisibility(); $event.preventDefault()">{{showCompletedLabelOn}}</a></li>
-                                </ul>
-                            </div>
-                            <div class="btn-group" dropdown>
-                                <button id="button-pending" dropdownToggle type="button" class="btn btn-default dropdown-toggle" aria-controls="dropdown-pending">{{showPendingLabel}}<span class="caret"></span></button>
-                                <ul id="dropdown-stopType" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-pending">
-                                    <li role="menuitem"><a class="dropdown-item" href (click)="showPending = false; showPendingLabel = showPendingLabelOff; updateTestCaseVisibility(); $event.preventDefault()">{{showPendingLabelOff}}</a></li>
-                                    <li role="menuitem"><a class="dropdown-item" href (click)="showPending = true; showPendingLabel = showPendingLabelOn; updateTestCaseVisibility(); $event.preventDefault()">{{showPendingLabelOn}}</a></li>
-                                </ul>
-                            </div>
-                            <div class="btn-group" dropdown>
-                                <button id="button-automatic" dropdownToggle type="button" class="btn btn-default dropdown-toggle" aria-controls="dropdown-automatic">{{startAutomaticallyLabel}}<span class="caret"></span></button>
-                                <ul id="dropdown-stopType" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-automatic">
-                                    <li role="menuitem"><a class="dropdown-item" href (click)="startAutomatically = false; startAutomaticallyLabel = startAutomaticallyLabelOff; $event.preventDefault()">{{startAutomaticallyLabelOff}}</a></li>
-                                    <li role="menuitem"><a class="dropdown-item" href (click)="startAutomatically = true; startAutomaticallyLabel = startAutomaticallyLabelOn; $event.preventDefault()">{{startAutomaticallyLabelOn}}</a></li>
-                                </ul>
-                            </div>                            
-                        </ng-container>
-                        <ng-container *ngIf="testsToExecute.length > 1 && firstTestStarted && !reload">
-                            <div class="btn-group" dropdown>
-                                <button id="button-stop" dropdownToggle type="button" class="btn btn-primary dropdown-toggle" aria-controls="dropdown-stop">Stop<span class="caret"></span></button>
-                                <ul id="dropdown-stopType" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-stop">
-                                    <li role="menuitem" [class.disabled]="!started || stopped"><a class="dropdown-item" href (click)="stop(session!); $event.preventDefault()">Stop current test</a></li>
-                                    <li role="menuitem"><a class="dropdown-item" href (click)="stopAll(); $event.preventDefault()">Stop all tests</a></li>
-                                </ul>
-                            </div>
-                        </ng-container>
-                        <button type="button" class="btn btn-primary" *ngIf="testsToExecute.length == 1 && started && !stopped && !reload" (click)="stop(session!)">Stop</button>
-                        <button *ngIf="nextWaitingToStart" type="button" class="btn btn-primary" (click)="start(session!)">Start</button>
-                        <button type="button" class="btn btn-primary" *ngIf="reload" (click)="reinitialise()">Reset</button>
+                        <div *ngIf="testsToExecute.length > 1" class="optionsDiv btn-toolbar">
+                            <app-test-option-button 
+                                [showCompletedValue]="showCompleted" (showCompleted)="showCompleted = $event; updateTestCaseVisibility()"
+                                [showPendingValue]="showPending" (showPending)="showPending = $event; updateTestCaseVisibility()"
+                                [startAutomaticallyValue]="startAutomatically" (startAutomatically)="startAutomatically = $event"></app-test-option-button>
+                        </div>
+                        <div class="btn-toolbar actionButtonDiv">
+                            <ng-container *ngIf="testsToExecute.length > 1">
+                                <div class="btn-group" dropdown [isDisabled]="!firstTestStarted || reload">
+                                    <button id="button-stop" dropdownToggle type="button" class="btn btn-default dropdown-toggle" aria-controls="dropdown-stop">Stop<span class="caret"></span></button>
+                                    <ul id="dropdown-stopType" *dropdownMenu class="dropdown-menu dropdown-menu" role="menu" aria-labelledby="button-stop">
+                                        <li role="menuitem" [class.disabled]="!started || stopped"><a class="dropdown-item" href (click)="stop(session!); $event.preventDefault()">Stop current test</a></li>
+                                        <li role="menuitem"><a class="dropdown-item" href (click)="stopAll(); $event.preventDefault()">Stop all tests</a></li>
+                                    </ul>
+                                </div>
+                            </ng-container>
+                            <button *ngIf="testsToExecute.length == 1" type="button" class="btn btn-default" [disabled]="!firstTestStarted || stopped || reload" (click)="stop(session!)">Stop</button>
+                            <button type="button" class="btn btn-default" [disabled]="!firstTestStarted" (click)="reinitialise()">Reset</button>
+                            <button type="button" class="btn btn-primary" [disabled]="!nextWaitingToStart" (click)="start(session!)">Start</button>
+                        </div>
                     </ng-container>
                 </div>
             </div>

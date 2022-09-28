@@ -901,6 +901,7 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
         this.prepareNextTest(this.startAutomatically)
       })
     } else {
+      this.allStopped = true
       this.reload = true
     }
   }
@@ -956,13 +957,18 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
   }
 
   stop(session: string) {
-    this.stopped = true
-    this.started = false
-    this.testService.stop(session).subscribe(() => {
-      this.closeWebSocket()
-      this.session = undefined
-      this.testCaseFinished()
-    })
+    if (this.started && !this.stopped) {
+      this.stopped = true
+      if (this.testsToExecute.length == 1) {
+        this.allStopped = true
+      }
+      this.started = false
+      this.testService.stop(session).subscribe(() => {
+        this.closeWebSocket()
+        this.session = undefined
+        this.testCaseFinished()
+      })
+    }
   }
 
   back() {
@@ -970,6 +976,9 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
   }
 
   reinitialise() {
+    if (!this.allStopped) {
+      this.stopAll()
+    }
     this.popupService.closeAll()
     if (this.heartbeat) {
       this.heartbeat.unsubscribe()

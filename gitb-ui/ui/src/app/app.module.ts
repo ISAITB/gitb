@@ -147,6 +147,7 @@ import { MultiSelectFilterComponent } from './components/multi-select-filter/mul
 import { TestStatusIconsComponent } from './components/test-status-icons/test-status-icons.component';
 import { TableColumnContentComponent } from './components/table-row/table-column-content/table-column-content.component';
 import { TestTriggerModalComponent } from './pages/admin/user-management/trigger/test-trigger-modal/test-trigger-modal.component';
+import { TestOptionButtonComponent } from './pages/test-execution/test-option-button/test-option-button.component';
 
 @NgModule({
   providers: [ 
@@ -283,7 +284,8 @@ import { TestTriggerModalComponent } from './pages/admin/user-management/trigger
     MultiSelectFilterComponent,
     TestStatusIconsComponent,
     TableColumnContentComponent,
-    TestTriggerModalComponent],
+    TestTriggerModalComponent,
+    TestOptionButtonComponent],
   imports: [
     BrowserModule,
     BrowserAnimationsModule,

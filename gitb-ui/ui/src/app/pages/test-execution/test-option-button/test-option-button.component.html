@@ -1,0 +1,25 @@
+<div class="rootDiv">
+    <button id="button-options" type="button" [class.open]="open" class="btn btn-default" (click)="buttonClicked()">Options<span class="caret"></span></button>
+    <div *ngIf="optionFormVisible" class="optionForm">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-xs-12">
+                    <label class="checkbox-inline disable-select" (click)="$event.stopPropagation()">
+                        <input type="checkbox" [(ngModel)]="showCompletedValue" (ngModelChange)="showCompleted.emit($event)">Show completed tests
+                    </label>
+                </div>
+                <div class="col-xs-12">
+                    <label class="checkbox-inline disable-select" (click)="$event.stopPropagation()">
+                        <input type="checkbox" [(ngModel)]="showPendingValue" (ngModelChange)="showPending.emit($event)">Show pending tests
+                    </label>
+                </div>
+                <div class="separator"></div>
+                <div class="col-xs-12">
+                    <label class="checkbox-inline disable-select" (click)="$event.stopPropagation()">
+                        <input type="checkbox" [(ngModel)]="startAutomaticallyValue" (ngModelChange)="startAutomatically.emit($event)">Continue automatically
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
