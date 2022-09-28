@@ -254,11 +254,12 @@ export class ReportService {
     })
   }
 
-  exportTestStepReport(sessionId: string, reportPath: string) {
+  exportTestStepReport(sessionId: string, reportPath: string, reportContentType: string) {
     return this.restService.get<ArrayBuffer>({
       path: ROUTES.controllers.RepositoryService.exportTestStepReport(sessionId, reportPath).url,
       authenticate: true,
-      arrayBuffer: true
+      arrayBuffer: true,
+      accept: reportContentType
     })
   }
 

@@ -10,7 +10,7 @@ import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, Respo
 import exceptions.ErrorCodes
 import managers._
 import managers.export._
-import models.{ConformanceCertificate, ConformanceCertificates, Constants, TestSuites}
+import models._
 import org.apache.commons.codec.net.URLCodec
 import org.apache.commons.io.FileUtils
 import org.apache.commons.lang3.{RandomStringUtils, StringUtils}
@@ -35,7 +35,6 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
 	private val logger = LoggerFactory.getLogger(classOf[RepositoryService])
 	private val codec = new URLCodec()
   private val EXPORT_QNAME:QName = new QName("http://www.gitb.com/export/v1/", "export")
-  private val TESTCASE_STEP_REPORT_NAME = "step.pdf"
 
 	def getTestSuiteResource(locationKey: String, filePath:String): Action[AnyContent] = authorizedAction { request =>
     // Location key is either a test case ID (e.g. '123') or a test case ID prefixed by a test suite string identifier [TEST_SUITE_IDENTIFIER]|123.
@@ -177,20 +176,23 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
     path = codec.decode(path)
     val sessionFolderInfo = reportManager.getPathForTestSessionWrapper(sessionId, isExpected = true)
     try {
-      val file = new File(sessionFolderInfo.path.toFile, path)
-      val pdf = new File(sessionFolderInfo.path.toFile, path.toLowerCase().replace(".xml", ".pdf"))
-
-      if (!pdf.exists()) {
-        if (file.exists()) {
-          reportManager.generateTestStepReport(file.toPath, pdf.toPath)
+      val reportData = request.headers.get("Accept") match {
+        case Some("application/pdf") => (".pdf", "step.pdf", (stepDataFile: File, report: File) => reportManager.generateTestStepReport(stepDataFile.toPath, report.toPath))
+        case _ => (".report.xml", "step.xml", (stepDataFile: File, report: File) => reportManager.generateTestStepXmlReport(stepDataFile.toPath, report.toPath))
+      }
+      var report = new File(sessionFolderInfo.path.toFile, path.toLowerCase().replace(".xml", reportData._1))
+      if (!report.exists()) {
+        val stepDataFile = new File(sessionFolderInfo.path.toFile, path)
+        if (stepDataFile.exists()) {
+          report = reportData._3.apply(stepDataFile, report).toFile
         }
       }
-      if (!pdf.exists()) {
+      if (!report.exists()) {
         NotFound
       } else {
         Ok.sendFile(
-          content = pdf,
-          fileName = _ => Some(TESTCASE_STEP_REPORT_NAME),
+          content = report,
+          fileName = _ => Some(reportData._2),
           onClose = () => {
             if (sessionFolderInfo.archived) {
               FileUtils.deleteQuietly(sessionFolderInfo.path.toFile)

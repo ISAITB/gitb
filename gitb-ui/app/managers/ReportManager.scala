@@ -487,6 +487,22 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
     list
   }
 
+  def generateTestStepXmlReport(xmlFile: Path, xmlReport: Path): Path = {
+    val fis = Files.newInputStream(xmlFile)
+    val fos = Files.newOutputStream(xmlReport)
+    try {
+      generator.writeTestStepStatusXmlReport(fis, fos, false)
+      fos.flush()
+    } catch {
+      case e: Exception =>
+        throw new IllegalStateException("Unable to generate XML report", e)
+    } finally {
+      if (fis != null) fis.close()
+      if (fos != null) fos.close()
+    }
+    xmlReport
+  }
+
   def generateTestStepReport(xmlFile: Path, pdfReport: Path): Path = {
     val fis = Files.newInputStream(xmlFile)
     val fos = Files.newOutputStream(pdfReport)
