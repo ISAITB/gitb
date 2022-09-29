@@ -1,7 +1,6 @@
 package controllers
 
 import com.gitb.tbs.TestStepStatus
-import com.gitb.tpl.TestCase
 import com.gitb.utils.{XMLDateTimeUtils, XMLUtils}
 import com.gitb.xml.export.Export
 import config.Configurations
@@ -24,7 +23,6 @@ import javax.inject.Inject
 import javax.xml.bind.JAXBElement
 import javax.xml.namespace.QName
 import javax.xml.transform.stream.StreamSource
-import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 
@@ -213,43 +211,16 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
   def exportTestCaseReport(): Action[AnyContent] = authorizedAction { request =>
     val session = ParameterExtractor.requiredQueryParameter(request, Parameters.SESSION_ID)
     authorizationManager.canViewTestResultForSession(request, session)
-    val testCaseId = ParameterExtractor.requiredQueryParameter(request, Parameters.TEST_ID)
-
-    val sessionFolderInfo = reportManager.getPathForTestSessionWrapper(codec.decode(session), isExpected = true)
+    var result: (Option[Path], SessionFolderInfo) = null
     try {
-      logger.debug("Reading test case report [" + codec.decode(session) + "] from the file [" + sessionFolderInfo + "]")
-      val testResult = testResultManager.getTestResultForSessionWrapper(session)
-      if (testResult.isDefined) {
-
-        val reportData = request.headers.get("Accept") match {
-          case Some("application/pdf") => (".pdf", (list: ListBuffer[TitledTestStepReportType], exportedReportPath: File, testCase: Option[models.TestCase], session: String) => {
-            reportManager.generateDetailedTestCaseReport(list, exportedReportPath.getAbsolutePath, testCase, session, addContext = false, communityLabelManager.getLabels(request))
-          })
-          case _ => (".report.xml", (list: ListBuffer[TitledTestStepReportType], exportedReportPath: File, testCase: Option[models.TestCase], session: String) => {
-            reportManager.generateDetailedTestCaseReportXml(list, exportedReportPath.getAbsolutePath, testCase, session)
-          })
-        }
-
-        var exportedReport: File = null
-        if (testResult.get.endTime.isEmpty) {
-          // This name will be unique to ensure that a report generated for a pending session never gets cached.
-          exportedReport = new File(sessionFolderInfo.path.toFile, "report_" + System.currentTimeMillis() + reportData._1)
-          FileUtils.forceDeleteOnExit(exportedReport)
-        } else {
-          exportedReport = new File(sessionFolderInfo.path.toFile, "report"+reportData._1)
-        }
-        val testcasePresentation = XMLUtils.unmarshal(classOf[TestCase], new StreamSource(new StringReader(testResult.get.tpl)))
-        val testCase = testCaseManager.getTestCase(testCaseId)
-        if (!exportedReport.exists()) {
-          val list = reportManager.getListOfTestSteps(testcasePresentation, sessionFolderInfo.path.toFile)
-          reportData._2.apply(list, exportedReport, testCase, session)
-        }
+      result = reportManager.generateDetailedTestCaseReport(session, request.headers.get("Accept"), Some(() => communityLabelManager.getLabels(request)))
+      if (result._1.isDefined) {
         Ok.sendFile(
-          content = exportedReport,
-          fileName = _ => Some(exportedReport.getName),
+          content = result._1.get.toFile,
+          fileName = _ => Some(result._1.get.toFile.getName),
           onClose = () => {
-            if (sessionFolderInfo.archived) {
-              FileUtils.deleteQuietly(sessionFolderInfo.path.toFile)
+            if (result._2.archived) {
+              FileUtils.deleteQuietly(result._2.path.toFile)
             }
           }
         )
@@ -258,8 +229,8 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
       }
     } catch {
       case e: Exception =>
-        if (sessionFolderInfo.archived) {
-          FileUtils.deleteQuietly(sessionFolderInfo.path.toFile)
+        if (result._2.archived) {
+          FileUtils.deleteQuietly(result._2.path.toFile)
         }
         throw e
     }

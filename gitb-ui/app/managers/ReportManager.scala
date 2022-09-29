@@ -12,6 +12,7 @@ import config.Configurations
 import models.Enums.TestResultStatus
 import models._
 import org.apache.commons.codec.binary.Base64
+import org.apache.commons.codec.net.URLCodec
 import org.apache.commons.io.FileUtils
 import org.apache.commons.lang3.StringUtils
 import org.slf4j.{Logger, LoggerFactory}
@@ -40,7 +41,7 @@ import scala.util.Using
 class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: ActorManager, systemManager: SystemManager, organizationManager: OrganizationManager, communityManager: CommunityManager, testCaseManager: TestCaseManager, testSuiteManager: TestSuiteManager, specificationManager: SpecificationManager, conformanceManager: ConformanceManager, dbConfigProvider: DatabaseConfigProvider, communityLabelManager: CommunityLabelManager, repositoryUtils: RepositoryUtils, testResultManager: TestResultManager) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
-
+  private val codec = new URLCodec()
   val logger: Logger = LoggerFactory.getLogger("ReportManager")
 
   private val generator = new ReportGenerator()
@@ -519,12 +520,47 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
     pdfReport
   }
 
-  def generateDetailedTestCaseReportXml(list: ListBuffer[TitledTestStepReportType], path: String, testCase: Option[models.TestCase], sessionId: String): Path = {
+  def generateDetailedTestCaseReport(sessionId: String, contentType: Option[String], labelSupplier: Option[() => Map[Short, CommunityLabels]]): (Option[Path], SessionFolderInfo) = {
+    var report: Option[Path] = None
+    val sessionFolderInfo = getPathForTestSessionWrapper(codec.decode(sessionId), isExpected = true)
+    logger.debug("Reading test case report [" + codec.decode(sessionId) + "] from the file [" + sessionFolderInfo + "]")
+    val testResult = testResultManager.getTestResultForSessionWrapper(sessionId)
+    if (testResult.isDefined) {
+      val reportData = contentType match {
+        case Some("application/pdf") => (".pdf", (list: ListBuffer[TitledTestStepReportType], exportedReportPath: File, testCase: Option[models.TestCase], session: String) => {
+          generateDetailedTestCaseReportPdf(list, exportedReportPath.getAbsolutePath, testCase, session, addContext = false, labelSupplier.getOrElse(() => Map.empty[Short, CommunityLabels]).apply())
+        })
+        case _ => (".report.xml", (list: ListBuffer[TitledTestStepReportType], exportedReportPath: File, testCase: Option[models.TestCase], session: String) => {
+          generateDetailedTestCaseReportXml(list, exportedReportPath.getAbsolutePath, testCase, session)
+        })
+      }
+      var exportedReport: File = null
+      if (testResult.get.endTime.isEmpty) {
+        // This name will be unique to ensure that a report generated for a pending session never gets cached.
+        exportedReport = new File(sessionFolderInfo.path.toFile, "report_" + System.currentTimeMillis() + reportData._1)
+        FileUtils.forceDeleteOnExit(exportedReport)
+      } else {
+        exportedReport = new File(sessionFolderInfo.path.toFile, "report" + reportData._1)
+      }
+      val testcasePresentation = XMLUtils.unmarshal(classOf[TestCase], new StreamSource(new StringReader(testResult.get.tpl)))
+      if (!exportedReport.exists() && testResult.get.testCaseId.isDefined) {
+        val testCase = testCaseManager.getTestCase(testResult.get.testCaseId.get.toString)
+        val list = getListOfTestSteps(testcasePresentation, sessionFolderInfo.path.toFile)
+        reportData._2.apply(list, exportedReport, testCase, sessionId)
+      }
+      if (exportedReport.exists()) {
+        report = Some(exportedReport.toPath)
+      }
+    }
+    (report, sessionFolderInfo)
+  }
+
+  private def generateDetailedTestCaseReportXml(list: ListBuffer[TitledTestStepReportType], path: String, testCase: Option[models.TestCase], sessionId: String): Path = {
     val reportPath = Paths.get(path)
     val overview = new TestCaseOverviewReportType()
     val testResult = exec(PersistenceSchema.testResults.filter(_.testSessionId === sessionId).result.head)
     overview.setResult(TestResultType.fromValue(testResult.result))
-    overview.setResultMessage(testResult.outputMessage.orNull)
+    overview.setMessage(testResult.outputMessage.orNull)
     overview.setStartTime(XMLDateTimeUtils.getXMLGregorianCalendarDateTime(testResult.startTime))
     if (testResult.endTime.isDefined) {
       overview.setEndTime(XMLDateTimeUtils.getXMLGregorianCalendarDateTime(testResult.endTime.get))
@@ -553,7 +589,7 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
     reportPath
   }
 
-  def generateDetailedTestCaseReport(list: ListBuffer[TitledTestStepReportType], path: String, testCase: Option[models.TestCase], sessionId: String, addContext: Boolean, labels: Map[Short, CommunityLabels]): Path = {
+  private def generateDetailedTestCaseReportPdf(list: ListBuffer[TitledTestStepReportType], path: String, testCase: Option[models.TestCase], sessionId: String, addContext: Boolean, labels: Map[Short, CommunityLabels]): Path = {
     val reportPath = Paths.get(path)
     val sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss")
     val overview = new TestCaseOverview()

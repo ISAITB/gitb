@@ -145,6 +145,9 @@ object JsonUtil {
         }
         obj = obj.+("logs", logItems)
       }
+      if (item.report.isDefined) {
+        obj = obj.+("report", JsString(item.report.get))
+      }
       jsonItems = jsonItems.append(obj)
     }
     val json = Json.obj("sessions" -> jsonItems)
@@ -837,12 +840,13 @@ object JsonUtil {
     sessionIds
   }
 
-  def parseJsSessionStatusRequest(jsonConfig: JsValue): (List[String], Boolean) = {
+  def parseJsSessionStatusRequest(jsonConfig: JsValue): (List[String], Boolean, Boolean) = {
     val sessionIds: List[String] = (jsonConfig \ "session").asOpt[JsArray].getOrElse(JsArray.empty).value.map { jsValue =>
       jsValue.as[String]
     }.toList
     val withLogs = (jsonConfig \ "withLogs").asOpt[Boolean].getOrElse(false)
-    (sessionIds, withLogs)
+    val withReports = (jsonConfig \ "withReports").asOpt[Boolean].getOrElse(false)
+    (sessionIds, withLogs, withReports)
   }
 
   def parseJsTestSessionLaunchRequest(jsonConfig: JsValue, organisationKey: String): TestSessionLaunchRequest = {

@@ -296,6 +296,7 @@ POST    /api/rest/tests/start                                    @controllers.Te
 POST    /api/rest/tests/stop                                     @controllers.TestAutomationService.stop()
 GET     /api/rest/tests/status                                   @controllers.TestAutomationService.status()
 POST    /api/rest/tests/status                                   @controllers.TestAutomationService.status()
+GET     /api/rest/tests/report/:sessionId                        @controllers.TestAutomationService.report(sessionId: String)
 POST    /api/rest/testsuite/deploy                               @controllers.TestSuiteAutomationService.deploy()
 POST    /api/rest/testsuite/undeploy                             @controllers.TestSuiteAutomationService.undeploy()
 
