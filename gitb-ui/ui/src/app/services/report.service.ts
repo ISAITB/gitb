@@ -205,7 +205,7 @@ export class ReportService {
     })
   }
 
-  exportTestCaseReport(session: string, testCaseId: number) {
+  exportTestCaseReport(session: string, testCaseId: number, contentType: string) {
     return this.restService.get<ArrayBuffer>(({
       path: ROUTES.controllers.RepositoryService.exportTestCaseReport().url,
       params: {
@@ -213,7 +213,8 @@ export class ReportService {
         test_id: testCaseId
       },
       authenticate: true,
-      arrayBuffer: true
+      arrayBuffer: true,
+      accept: contentType
     }))
   }
 

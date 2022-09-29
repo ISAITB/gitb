@@ -14,7 +14,7 @@ import { TestResultForDisplay } from '../../../types/test-result-for-display';
 import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
 import { TestService } from 'src/app/services/test.service';
 import { PopupService } from 'src/app/services/popup.service';
-import { Observable } from 'rxjs';
+import { mergeMap, Observable, of, share } from 'rxjs';
 import { ActivatedRoute } from '@angular/router';
 import { DiagramLoaderService } from 'src/app/components/diagram/test-session-presentation/diagram-loader.service';
 import { saveAs } from 'file-saver'
@@ -397,17 +397,36 @@ export class SessionDashboardComponent implements OnInit {
     return session.obsolete === undefined || !session.obsolete
   }
 
-  onReportExport(testResult: TestResultForDisplay) {
+  onReportExportPdf(testResult: TestResultForDisplay) {
     if (!testResult.obsolete) {
       testResult.exportPending = true
-      this.reportService.exportTestCaseReport(testResult.session, testResult.testCaseId!)
-      .subscribe((data) => {
-        const blobData = new Blob([data], {type: 'application/pdf'});
-        saveAs(blobData, "report.pdf");
-      }).add(() => {
+      this.onReportExport(testResult, 'application/pdf', 'report.pdf')
+      .subscribe(() => {
         testResult.exportPending = false
-      }) 
+      })
     }
+  }
+
+  onReportExportXml(testResult: TestResultForDisplay) {
+    if (!testResult.obsolete) {
+      testResult.actionPending = true
+      this.onReportExport(testResult, 'application/xml', 'report.xml')
+      .subscribe(() => {
+        testResult.actionPending = false
+      })
+    }
+  }
+
+  onReportExport(testResult: TestResultForDisplay, contentType: string, fileName: string) {
+    return this.reportService.exportTestCaseReport(testResult.session, testResult.testCaseId!, contentType)
+    .pipe(
+      mergeMap((data) => {
+        const blobData = new Blob([data], {type: contentType});
+        saveAs(blobData, fileName);
+        return of(data)
+      }),
+      share()
+    )
   }
 
   exportCompletedSessionsToCsv() {

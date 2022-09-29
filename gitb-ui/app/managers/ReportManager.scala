@@ -1,13 +1,13 @@
 package managers
 
 import actors.events.{ConformanceStatementSucceededEvent, TestSessionFailedEvent, TestSessionSucceededEvent}
-import com.gitb.core.{AnyContent, StepStatus, ValueEmbeddingEnumeration}
+import com.gitb.core.{AnyContent, Metadata, StepStatus, ValueEmbeddingEnumeration}
 import com.gitb.reports.ReportGenerator
 import com.gitb.reports.dto.{ConformanceStatementOverview, TestCaseOverview}
 import com.gitb.tbs.{ObjectFactory, TestStepStatus}
 import com.gitb.tpl.{DecisionStep, FlowStep, TestCase, TestStep}
 import com.gitb.tr._
-import com.gitb.utils.XMLUtils
+import com.gitb.utils.{XMLDateTimeUtils, XMLUtils}
 import config.Configurations
 import models.Enums.TestResultStatus
 import models._
@@ -517,6 +517,40 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
       if (fos != null) fos.close()
     }
     pdfReport
+  }
+
+  def generateDetailedTestCaseReportXml(list: ListBuffer[TitledTestStepReportType], path: String, testCase: Option[models.TestCase], sessionId: String): Path = {
+    val reportPath = Paths.get(path)
+    val overview = new TestCaseOverviewReportType()
+    val testResult = exec(PersistenceSchema.testResults.filter(_.testSessionId === sessionId).result.head)
+    overview.setResult(TestResultType.fromValue(testResult.result))
+    overview.setResultMessage(testResult.outputMessage.orNull)
+    overview.setStartTime(XMLDateTimeUtils.getXMLGregorianCalendarDateTime(testResult.startTime))
+    if (testResult.endTime.isDefined) {
+      overview.setEndTime(XMLDateTimeUtils.getXMLGregorianCalendarDateTime(testResult.endTime.get))
+    }
+    if (testCase.isDefined) {
+      overview.setId(testCase.get.identifier)
+      overview.setMetadata(new Metadata())
+      overview.getMetadata.setName(testCase.get.fullname)
+      overview.getMetadata.setDescription(testCase.get.description.orNull)
+    }
+    if (list.nonEmpty) {
+      overview.setSteps(new TestCaseStepsType())
+      list.foreach { stepReport =>
+        val report = new TestCaseStepReportType()
+        report.setId(stepReport.getWrapped.getId)
+        report.setDescription(stepReport.getTitle)
+        report.setReport(stepReport.getWrapped)
+        overview.getSteps.getStep.add(report)
+      }
+    }
+    Files.createDirectories(reportPath.getParent)
+    Using(Files.newOutputStream(reportPath)) { fos =>
+      generator.writeTestCaseOverviewXmlReport(overview, fos)
+      fos.flush()
+    }
+    reportPath
   }
 
   def generateDetailedTestCaseReport(list: ListBuffer[TitledTestStepReportType], path: String, testCase: Option[models.TestCase], sessionId: String, addContext: Boolean, labels: Map[Short, CommunityLabels]): Path = {

@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { BsModalService } from 'ngx-bootstrap/modal';
-import { Observable } from 'rxjs';
+import { mergeMap, Observable, of, share } from 'rxjs';
 import { Constants } from 'src/app/common/constants';
 import { ConformanceCertificateModalComponent } from 'src/app/modals/conformance-certificate-modal/conformance-certificate-modal.component';
 import { ConformanceService } from 'src/app/services/conformance.service';
@@ -279,15 +279,32 @@ export class ConformanceDashboardComponent implements OnInit {
     })
   }
 
-	onExportTestCase(statement: ConformanceResultFull, testCase: Partial<ConformanceStatusItem>) {
-		testCase.exportPending = true
-		this.reportService.exportTestCaseReport(testCase.sessionId!, testCase.id!)
-    .subscribe((stepResults) => {
-			const blobData = new Blob([stepResults], {type: 'application/pdf'});
-			saveAs(blobData, "test_case_report.pdf");
-    }).add(() => {
+	onExportTestCaseXml(testCase: Partial<ConformanceStatusItem>) {
+    testCase.actionPending = true
+    this.onExportTestCase(testCase, 'application/xml', 'test_case_report.xml')
+    .subscribe(() => {
+      testCase.actionPending = false
+    })
+  }
+  
+	onExportTestCasePdf(testCase: Partial<ConformanceStatusItem>) {
+    testCase.exportPending = true
+    this.onExportTestCase(testCase, 'application/pdf', 'test_case_report.pdf')
+    .subscribe(() => {
       testCase.exportPending = false
     })
+  }
+
+	onExportTestCase(testCase: Partial<ConformanceStatusItem>, contentType: string, fileName: string) {
+    return this.reportService.exportTestCaseReport(testCase.sessionId!, testCase.id!, contentType)
+    .pipe(
+      mergeMap((data) => {
+        const blobData = new Blob([data], {type: contentType});
+        saveAs(blobData, fileName);
+        return of(data)
+      }),
+      share()
+    )
   }
 
 	onExportConformanceStatement(statement?: ConformanceResultFull) {

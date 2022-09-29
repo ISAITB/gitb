@@ -28,6 +28,7 @@ public class ReportGenerator {
         try {
             jaxbContext = JAXBContext.newInstance(
                     TAR.class,
+                    TestCaseOverviewReportType.class,
                     TestCaseReportType.class,
                     TestStepStatus.class);
         } catch (JAXBException e) {
@@ -265,6 +266,23 @@ public class ReportGenerator {
             parameters.put("labelSystem", overview.getLabelSystem());
             writeClasspathReport("reports/ConformanceStatementOverview.jasper", parameters, outputStream);
         } catch (Exception e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    public void writeTestCaseOverviewXmlReport(TestCaseOverviewReportType testCaseOverview, OutputStream outputStream) {
+        try {
+            Marshaller marshaller = jaxbContext.createMarshaller();
+            marshaller.setProperty("jaxb.formatted.output", Boolean.TRUE);
+            if (testCaseOverview.getSteps() != null) {
+                for (TestCaseStepReportType step: testCaseOverview.getSteps().getStep()) {
+                    if (step.getReport() instanceof TAR) {
+                        ((TAR) step.getReport()).setContext(null);
+                    }
+                }
+            }
+            marshaller.marshal(new ObjectFactory().createTestCaseOverviewReport(testCaseOverview), outputStream);
+        } catch(Exception e) {
             throw new IllegalStateException(e);
         }
     }

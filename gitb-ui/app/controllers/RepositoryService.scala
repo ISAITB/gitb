@@ -24,6 +24,7 @@ import javax.inject.Inject
 import javax.xml.bind.JAXBElement
 import javax.xml.namespace.QName
 import javax.xml.transform.stream.StreamSource
+import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 
@@ -219,20 +220,29 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
       logger.debug("Reading test case report [" + codec.decode(session) + "] from the file [" + sessionFolderInfo + "]")
       val testResult = testResultManager.getTestResultForSessionWrapper(session)
       if (testResult.isDefined) {
+
+        val reportData = request.headers.get("Accept") match {
+          case Some("application/pdf") => (".pdf", (list: ListBuffer[TitledTestStepReportType], exportedReportPath: File, testCase: Option[models.TestCase], session: String) => {
+            reportManager.generateDetailedTestCaseReport(list, exportedReportPath.getAbsolutePath, testCase, session, addContext = false, communityLabelManager.getLabels(request))
+          })
+          case _ => (".report.xml", (list: ListBuffer[TitledTestStepReportType], exportedReportPath: File, testCase: Option[models.TestCase], session: String) => {
+            reportManager.generateDetailedTestCaseReportXml(list, exportedReportPath.getAbsolutePath, testCase, session)
+          })
+        }
+
         var exportedReport: File = null
         if (testResult.get.endTime.isEmpty) {
           // This name will be unique to ensure that a report generated for a pending session never gets cached.
-          exportedReport = new File(sessionFolderInfo.path.toFile, "report_" + System.currentTimeMillis() + ".pdf")
+          exportedReport = new File(sessionFolderInfo.path.toFile, "report_" + System.currentTimeMillis() + reportData._1)
           FileUtils.forceDeleteOnExit(exportedReport)
         } else {
-          exportedReport = new File(sessionFolderInfo.path.toFile, "report.pdf")
+          exportedReport = new File(sessionFolderInfo.path.toFile, "report"+reportData._1)
         }
         val testcasePresentation = XMLUtils.unmarshal(classOf[TestCase], new StreamSource(new StringReader(testResult.get.tpl)))
         val testCase = testCaseManager.getTestCase(testCaseId)
         if (!exportedReport.exists()) {
           val list = reportManager.getListOfTestSteps(testcasePresentation, sessionFolderInfo.path.toFile)
-          val labels = communityLabelManager.getLabels(request)
-          reportManager.generateDetailedTestCaseReport(list, exportedReport.getAbsolutePath, testCase, session, addContext = false, labels)
+          reportData._2.apply(list, exportedReport, testCase, session)
         }
         Ok.sendFile(
           content = exportedReport,

@@ -1,7 +1,5 @@
 package com.gitb.utils;
 
-import com.gitb.types.DataTypeFactory;
-
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
@@ -14,10 +12,17 @@ import java.util.concurrent.TimeUnit;
  * Created by serbay.
  */
 public class XMLDateTimeUtils {
+
     public static XMLGregorianCalendar getXMLGregorianCalendarDateTime() throws DatatypeConfigurationException {
         GregorianCalendar calendar = new GregorianCalendar();
         return DatatypeFactory.newInstance().newXMLGregorianCalendar(calendar);
     }
+
+	public static XMLGregorianCalendar getXMLGregorianCalendarDateTime(Date date) throws DatatypeConfigurationException {
+		GregorianCalendar calendar = new GregorianCalendar();
+		calendar.setTime(date);
+		return DatatypeFactory.newInstance().newXMLGregorianCalendar(calendar);
+	}
 
 	public static XMLGregorianCalendar getXMLGregorianCalendarDate(Date date) throws DatatypeConfigurationException {
 		Calendar calendar = Calendar.getInstance();

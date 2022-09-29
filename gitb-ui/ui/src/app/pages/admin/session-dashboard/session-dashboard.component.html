@@ -49,9 +49,18 @@
                 [data]="completedTests"
                 [noDataMessage]="'No sessions found'"
                 [loadingStatus]="completedStatus"
+
+                [actionVisible]="true"
+                [actionIcon]="'fa fa-file-text-o'"
+                (onAction)="onReportExportXml($event)"
+                [actionVisibleForRow]="exportVisible"
+                [actionTooltip]="'Export (XML)'"
+
                 [exportVisible]="true"
-                (onExport)="onReportExport($event)"
+                (onExport)="onReportExportPdf($event)"
                 [exportVisibleForRow]="exportVisible"
+                [exportTooltip]="'Export (PDF)'"
+
                 (firstPage)="goFirstPage()"
                 (prevPage)="goPreviousPage()"
                 (onSort)="sortCompletedSessions($event)"
