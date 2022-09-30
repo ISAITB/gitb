@@ -8,9 +8,10 @@ import models.Enums.TriggerEventType._
 import models.Enums.TriggerServiceType.TriggerServiceType
 import models.Enums.{TriggerDataType, TriggerServiceType}
 import models._
-import org.apache.commons.io.FileUtils
+import org.apache.commons.io.{FileUtils, IOUtils}
 import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
+import play.api.Environment
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.json._
 import play.api.libs.ws.WSClient
@@ -33,7 +34,7 @@ import scala.jdk.CollectionConverters.CollectionHasAsScala
 import scala.util.{Failure, Success}
 
 @Singleton
-class TriggerManager @Inject()(ws: WSClient, repositoryUtils: RepositoryUtils, triggerDataLoader: TriggerDataLoader, testCaseReportProducer: TestCaseReportProducer, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class TriggerManager @Inject()(env: Environment, ws: WSClient, repositoryUtils: RepositoryUtils, triggerDataLoader: TriggerDataLoader, testCaseReportProducer: TestCaseReportProducer, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
 
@@ -370,6 +371,10 @@ class TriggerManager @Inject()(ws: WSClient, repositoryUtils: RepositoryUtils, t
     }
   }
 
+  private def getSampleTestReport(): String = {
+    IOUtils.resourceToString("other/sampleTestCaseReport.xml", StandardCharsets.UTF_8, env.classLoader)
+  }
+
   private def prepareTriggerInput(trigger: Trigger, dataCache: mutable.Map[String, Any], callbacks: Option[TriggerCallbacks]): ProcessRequest = {
     var organisationParameterData: Map[Long, (String, String, Option[String], Option[Long], Option[String])] = null
     var systemParameterData: Map[Long, (String, String, Option[String], Option[Long], Option[String])] = null
@@ -523,7 +528,7 @@ class TriggerManager @Inject()(ws: WSClient, repositoryUtils: RepositoryUtils, t
             testReportData = getOrInitiatizeContentMap("testReport", testReportData)
             val testSessionId:Option[String] = fromCache(dataCache, "testSessionId", () => TriggerCallbacks.testSessionId(callbacks))
             if (testSessionId.isEmpty) {
-              populateAnyContent(testReportData, "testReport", "string", "<TestCaseOverviewReport>...</TestCaseOverviewReport>", None)
+              populateAnyContent(testReportData, "testReport", "string", getSampleTestReport(), None)
             } else {
               val testReportAsString: Option[String] = fromCache(dataCache, "testReportData", () => {
                 val reportData = testCaseReportProducer.generateDetailedTestCaseReport(testSessionId.get, Some("application/xml"), None)
