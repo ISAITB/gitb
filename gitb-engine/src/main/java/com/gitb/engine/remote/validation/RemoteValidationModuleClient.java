@@ -22,10 +22,20 @@ import java.util.Properties;
 /**
  * Created by serbay.
  */
-public class RemoteValidationModuleClient extends RemoteServiceClient<ValidationModule> implements IValidationHandler {
+public class RemoteValidationModuleClient extends RemoteServiceClient implements IValidationHandler {
+
+	private ValidationModule serviceModule;
 
 	public RemoteValidationModuleClient(URL serviceURL, Properties callProperties, String sessionId) {
 		super(serviceURL, callProperties, sessionId);
+	}
+
+	@Override
+	protected String getServiceLocation() {
+		if (serviceModule != null) {
+			return serviceModule.getServiceLocation();
+		}
+		return null;
 	}
 
 	@Override

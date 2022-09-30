@@ -20,10 +20,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-public class RemoteProcessingModuleClient extends RemoteServiceClient<ProcessingModule> implements IProcessingHandler {
+public class RemoteProcessingModuleClient extends RemoteServiceClient implements IProcessingHandler {
+
+    private ProcessingModule serviceModule;
 
     public RemoteProcessingModuleClient(URL serviceURL, Properties callProperties, String sessionId) {
         super(serviceURL, callProperties, sessionId);
+    }
+
+    @Override
+    protected String getServiceLocation() {
+        if (serviceModule != null) {
+            return serviceModule.getServiceLocation();
+        }
+        return null;
     }
 
     @Override

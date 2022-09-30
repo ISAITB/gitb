@@ -26,10 +26,20 @@ import java.util.Properties;
 /**
  * Created by serbay.
  */
-public class RemoteMessagingModuleClient extends RemoteServiceClient<MessagingModule> implements IMessagingHandler {
+public class RemoteMessagingModuleClient extends RemoteServiceClient implements IMessagingHandler {
+
+	private MessagingModule serviceModule;
 
 	public RemoteMessagingModuleClient(URL serviceURL, Properties callProperties, String sessionId) {
 		super(serviceURL, callProperties, sessionId);
+	}
+
+	@Override
+	protected String getServiceLocation() {
+		if (serviceModule != null) {
+			return serviceModule.getServiceLocation();
+		}
+		return null;
 	}
 
 	@Override
