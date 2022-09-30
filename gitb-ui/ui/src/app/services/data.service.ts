@@ -646,6 +646,7 @@ export class DataService {
       {id: Constants.TRIGGER_DATA_TYPE.SPECIFICATION, label: this.labelSpecification()},
       {id: Constants.TRIGGER_DATA_TYPE.ACTOR, label: this.labelActor()},
       {id: Constants.TRIGGER_DATA_TYPE.TEST_SESSION, label: 'Test session'},
+      {id: Constants.TRIGGER_DATA_TYPE.TEST_REPORT, label: 'Test report'},
       {id: Constants.TRIGGER_DATA_TYPE.ORGANISATION_PARAMETER, label: this.labelOrganisation() + ' properties'},
       {id: Constants.TRIGGER_DATA_TYPE.SYSTEM_PARAMETER, label: this.labelSystem() + ' properties'},
       {id: Constants.TRIGGER_DATA_TYPE.DOMAIN_PARAMETER, label: this.labelDomain() + ' properties'},
@@ -722,7 +723,8 @@ export class DataService {
         Constants.TRIGGER_DATA_TYPE.ACTOR,
         Constants.TRIGGER_DATA_TYPE.DOMAIN_PARAMETER,
         Constants.TRIGGER_DATA_TYPE.TEST_SESSION,
-        Constants.TRIGGER_DATA_TYPE.STATEMENT_PARAMETER
+        Constants.TRIGGER_DATA_TYPE.STATEMENT_PARAMETER,
+        Constants.TRIGGER_DATA_TYPE.TEST_REPORT
       ])
       this.addIdMapEntry(tempMap, Constants.TRIGGER_EVENT_TYPE.TEST_SESSION_FAILED, [
         Constants.TRIGGER_DATA_TYPE.COMMUNITY,
@@ -734,7 +736,8 @@ export class DataService {
         Constants.TRIGGER_DATA_TYPE.ACTOR,
         Constants.TRIGGER_DATA_TYPE.DOMAIN_PARAMETER,
         Constants.TRIGGER_DATA_TYPE.TEST_SESSION,
-        Constants.TRIGGER_DATA_TYPE.STATEMENT_PARAMETER
+        Constants.TRIGGER_DATA_TYPE.STATEMENT_PARAMETER,
+        Constants.TRIGGER_DATA_TYPE.TEST_REPORT
       ])
       this.addIdMapEntry(tempMap, Constants.TRIGGER_EVENT_TYPE.TEST_SESSION_STARTED, [
         Constants.TRIGGER_DATA_TYPE.COMMUNITY,

@@ -853,6 +853,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, triggerManager:
                   case models.Enums.TriggerDataType.Specification => exportedDataItem.setDataType(TriggerDataType.SPECIFICATION)
                   case models.Enums.TriggerDataType.Actor => exportedDataItem.setDataType(TriggerDataType.ACTOR)
                   case models.Enums.TriggerDataType.TestSession => exportedDataItem.setDataType(TriggerDataType.TEST_SESSION)
+                  case models.Enums.TriggerDataType.TestReport => exportedDataItem.setDataType(TriggerDataType.TEST_REPORT)
                   case models.Enums.TriggerDataType.OrganisationParameter =>
                     exportedDataItem.setDataType(TriggerDataType.ORGANISATION_PARAMETER)
                     exportedDataItem.setData(exportedOrganisationPropertyMap(dataItem.dataId))

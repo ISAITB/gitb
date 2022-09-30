@@ -119,7 +119,8 @@ object Enums {
         SystemParameter,
         DomainParameter,
         TestSession,
-        StatementParameter = Value
+        StatementParameter,
+        TestReport = Value
   }
 
   object InputMappingMatchType extends Enumeration(1) {

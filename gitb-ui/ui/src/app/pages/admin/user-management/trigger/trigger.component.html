@@ -119,6 +119,9 @@
                                 <label class="checkbox-inline" *ngIf="triggerData.testSession.visible">
                                     <input type="checkbox" name="testSessionData" [(ngModel)]="triggerData.testSession.selected">{{dataTypeMap[triggerData.testSession.dataType]}}
                                 </label>
+                                <label class="checkbox-inline" *ngIf="triggerData.testReport.visible">
+                                    <input type="checkbox" name="testReportData" [(ngModel)]="triggerData.testReport.selected">{{dataTypeMap[triggerData.testReport.dataType]}}
+                                </label>
                             </div>
                             <div class="col-xs-1 no-left-padding">
                                 <app-tooltip tbTooltip="Optional data that will be provided as input to the service when it is called. The type of data available depends on the trigger's event type."></app-tooltip>

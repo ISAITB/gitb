@@ -8,6 +8,7 @@ import models.Enums.TriggerEventType._
 import models.Enums.TriggerServiceType.TriggerServiceType
 import models.Enums.{TriggerDataType, TriggerServiceType}
 import models._
+import org.apache.commons.io.FileUtils
 import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
@@ -32,7 +33,7 @@ import scala.jdk.CollectionConverters.CollectionHasAsScala
 import scala.util.{Failure, Success}
 
 @Singleton
-class TriggerManager @Inject()(ws: WSClient, repositoryUtils: RepositoryUtils, triggerDataLoader: TriggerDataLoader, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class TriggerManager @Inject()(ws: WSClient, repositoryUtils: RepositoryUtils, triggerDataLoader: TriggerDataLoader, testCaseReportProducer: TestCaseReportProducer, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
 
@@ -242,7 +243,15 @@ class TriggerManager @Inject()(ws: WSClient, repositoryUtils: RepositoryUtils, t
   }
 
   private def toAnyContent(name: String, dataType: String, value: String, embeddingMethod: Option[ValueEmbeddingEnumeration]): AnyContent = {
-    val result = new AnyContent()
+    populateAnyContent(None, name, dataType, value, embeddingMethod)
+  }
+
+  private def populateAnyContent(target: Option[AnyContent], name: String, dataType: String, value: String, embeddingMethod: Option[ValueEmbeddingEnumeration]): AnyContent = {
+    val result = if (target.isDefined) {
+      target.get
+    } else {
+      new AnyContent()
+    }
     result.setName(name)
     result.setType(dataType)
     result.setValue(value)
@@ -393,6 +402,7 @@ class TriggerManager @Inject()(ws: WSClient, repositoryUtils: RepositoryUtils, t
     var actorData: Option[AnyContent] = None
     var specificationData: Option[AnyContent] = None
     var testSessionData: Option[AnyContent] = None
+    var testReportData: Option[AnyContent] = None
     var orgParamData: Option[AnyContent] = None
     var sysParamData: Option[AnyContent] = None
     var domainParamData: Option[AnyContent] = None
@@ -509,6 +519,28 @@ class TriggerManager @Inject()(ws: WSClient, repositoryUtils: RepositoryUtils, t
               }
               testSessionData.get.getItem.add(toAnyContent("testSessionIdentifier", "string", testSession._3, None))
             }
+          case TriggerDataType.TestReport =>
+            testReportData = getOrInitiatizeContentMap("testReport", testReportData)
+            val testSessionId:Option[String] = fromCache(dataCache, "testSessionId", () => TriggerCallbacks.testSessionId(callbacks))
+            if (testSessionId.isEmpty) {
+              populateAnyContent(testReportData, "testReport", "string", "<TestCaseOverviewReport>...</TestCaseOverviewReport>", None)
+            } else {
+              val testReportAsString: Option[String] = fromCache(dataCache, "testReportData", () => {
+                val reportData = testCaseReportProducer.generateDetailedTestCaseReport(testSessionId.get, Some("application/xml"), None)
+                if (reportData._1.isDefined) {
+                  val reportAsString = Some(Files.readString(reportData._1.get))
+                  if (reportData._2.archived) {
+                    FileUtils.deleteQuietly(reportData._2.path.toFile)
+                  }
+                  reportAsString
+                } else {
+                  None
+                }
+              })
+              if (testReportAsString.isDefined) {
+                populateAnyContent(testReportData, "testReport", "string", testReportAsString.get, None)
+              }
+            }
           case TriggerDataType.OrganisationParameter =>
             orgParamData = getOrInitiatizeContentMap("organisationProperties", orgParamData)
             val paramInfo = organisationParameterData.get(dataItem.dataId)
@@ -599,6 +631,9 @@ class TriggerManager @Inject()(ws: WSClient, repositoryUtils: RepositoryUtils, t
       }
       if (statementParamData.isDefined) {
         request.getInput.add(statementParamData.get)
+      }
+      if (testReportData.isDefined) {
+        request.getInput.add(testReportData.get)
       }
     }
     request

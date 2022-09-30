@@ -26,7 +26,7 @@ import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
-class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClient, reportManager: ReportManager, conformanceManager: ConformanceManager, repositoryUtils: RepositoryUtils, actorManager: ActorManager, actorSystem: ActorSystem, organisationManager: OrganizationManager, systemManager: SystemManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClient, testCaseReportProducer: TestCaseReportProducer, reportManager: ReportManager, conformanceManager: ConformanceManager, repositoryUtils: RepositoryUtils, actorManager: ActorManager, actorSystem: ActorSystem, organisationManager: OrganizationManager, systemManager: SystemManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
   private val logger = LoggerFactory.getLogger(classOf[TestExecutionManager])
@@ -462,7 +462,7 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
     if (result.isDefined) {
       var reportData: (Option[Path], SessionFolderInfo) = null
       try {
-        reportData = reportManager.generateDetailedTestCaseReport(result.get, Some("application/xml"), None)
+        reportData = testCaseReportProducer.generateDetailedTestCaseReport(result.get, Some("application/xml"), None)
         if (reportData._1.isDefined) {
           Some(Files.readString(reportData._1.get))
         } else {
@@ -501,7 +501,7 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
       val report = if (withReports) {
         var reportData: (Option[Path], SessionFolderInfo) = null
         try {
-          reportData = reportManager.generateDetailedTestCaseReport(result._1, Some("application/xml"), None)
+          reportData = testCaseReportProducer.generateDetailedTestCaseReport(result._1, Some("application/xml"), None)
           if (reportData._1.isDefined) {
             Some(Files.readString(reportData._1.get))
           } else {

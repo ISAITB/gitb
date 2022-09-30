@@ -429,6 +429,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
       case com.gitb.xml.export.TriggerDataType.SPECIFICATION => Enums.TriggerDataType.Specification.id.toShort
       case com.gitb.xml.export.TriggerDataType.ACTOR => Enums.TriggerDataType.Actor.id.toShort
       case com.gitb.xml.export.TriggerDataType.TEST_SESSION => Enums.TriggerDataType.TestSession.id.toShort
+      case com.gitb.xml.export.TriggerDataType.TEST_REPORT => Enums.TriggerDataType.TestReport.id.toShort
       case com.gitb.xml.export.TriggerDataType.ORGANISATION_PARAMETER => Enums.TriggerDataType.OrganisationParameter.id.toShort
       case com.gitb.xml.export.TriggerDataType.SYSTEM_PARAMETER => Enums.TriggerDataType.SystemParameter.id.toShort
       case com.gitb.xml.export.TriggerDataType.DOMAIN_PARAMETER => Enums.TriggerDataType.DomainParameter.id.toShort

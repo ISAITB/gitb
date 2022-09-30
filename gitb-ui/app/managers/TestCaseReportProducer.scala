@@ -1,0 +1,230 @@
+package managers
+
+import com.gitb.core.Metadata
+import com.gitb.reports.ReportGenerator
+import com.gitb.reports.dto.TestCaseOverview
+import com.gitb.tbs.TestStepStatus
+import com.gitb.tpl.{DecisionStep, FlowStep, TestCase, TestStep}
+import com.gitb.tr.{TestCaseOverviewReportType, TestCaseStepReportType, TestCaseStepsType, TestResultType}
+import com.gitb.utils.{XMLDateTimeUtils, XMLUtils}
+import models.{CommunityLabels, SessionFolderInfo}
+import org.apache.commons.codec.net.URLCodec
+import org.apache.commons.io.FileUtils
+import org.apache.commons.lang3.StringUtils
+import org.slf4j.{Logger, LoggerFactory}
+import persistence.db.PersistenceSchema
+import play.api.db.slick.DatabaseConfigProvider
+import utils.RepositoryUtils
+
+import java.io.{File, StringReader}
+import java.nio.file.{Files, Path, Paths}
+import java.text.SimpleDateFormat
+import java.util.Date
+import javax.inject.{Inject, Singleton}
+import javax.xml.transform.stream.StreamSource
+import scala.collection.mutable.ListBuffer
+import scala.util.Using
+
+@Singleton
+class TestCaseReportProducer @Inject() (testResultManager: TestResultManager, testCaseManager: TestCaseManager, communityLabelManager: CommunityLabelManager, repositoryUtils: RepositoryUtils, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+
+  val logger: Logger = LoggerFactory.getLogger("TestCaseReportProducer")
+  private val codec = new URLCodec()
+  import dbConfig.profile.api._
+  private val generator = new ReportGenerator()
+
+  def generateDetailedTestCaseReport(sessionId: String, contentType: Option[String], labelSupplier: Option[() => Map[Short, CommunityLabels]]): (Option[Path], SessionFolderInfo) = {
+    var report: Option[Path] = None
+    val sessionFolderInfo = repositoryUtils.getPathForTestSession(codec.decode(sessionId), isExpected = true)
+    logger.debug("Reading test case report [" + codec.decode(sessionId) + "] from the file [" + sessionFolderInfo + "]")
+    val testResult = testResultManager.getTestResultForSessionWrapper(sessionId)
+    if (testResult.isDefined) {
+      val reportData = contentType match {
+        case Some("application/pdf") => (".pdf", (list: ListBuffer[TitledTestStepReportType], exportedReportPath: File, testCase: Option[models.TestCase], session: String) => {
+          generateDetailedTestCaseReportPdf(list, exportedReportPath.getAbsolutePath, testCase, session, addContext = false, labelSupplier.getOrElse(() => Map.empty[Short, CommunityLabels]).apply())
+        })
+        case _ => (".report.xml", (list: ListBuffer[TitledTestStepReportType], exportedReportPath: File, testCase: Option[models.TestCase], session: String) => {
+          generateDetailedTestCaseReportXml(list, exportedReportPath.getAbsolutePath, testCase, session)
+        })
+      }
+      var exportedReport: File = null
+      if (testResult.get.endTime.isEmpty) {
+        // This name will be unique to ensure that a report generated for a pending session never gets cached.
+        exportedReport = new File(sessionFolderInfo.path.toFile, "report_" + System.currentTimeMillis() + reportData._1)
+        FileUtils.forceDeleteOnExit(exportedReport)
+      } else {
+        exportedReport = new File(sessionFolderInfo.path.toFile, "report" + reportData._1)
+      }
+      val testcasePresentation = XMLUtils.unmarshal(classOf[TestCase], new StreamSource(new StringReader(testResult.get.tpl)))
+      if (!exportedReport.exists() && testResult.get.testCaseId.isDefined) {
+        val testCase = testCaseManager.getTestCase(testResult.get.testCaseId.get.toString)
+        val list = getListOfTestSteps(testcasePresentation, sessionFolderInfo.path.toFile)
+        reportData._2.apply(list, exportedReport, testCase, sessionId)
+      }
+      if (exportedReport.exists()) {
+        report = Some(exportedReport.toPath)
+      }
+    }
+    (report, sessionFolderInfo)
+  }
+
+  private def generateDetailedTestCaseReportXml(list: ListBuffer[TitledTestStepReportType], path: String, testCase: Option[models.TestCase], sessionId: String): Path = {
+    val reportPath = Paths.get(path)
+    val overview = new TestCaseOverviewReportType()
+    val testResult = exec(PersistenceSchema.testResults.filter(_.testSessionId === sessionId).result.head)
+    overview.setResult(TestResultType.fromValue(testResult.result))
+    overview.setMessage(testResult.outputMessage.orNull)
+    overview.setStartTime(XMLDateTimeUtils.getXMLGregorianCalendarDateTime(testResult.startTime))
+    if (testResult.endTime.isDefined) {
+      overview.setEndTime(XMLDateTimeUtils.getXMLGregorianCalendarDateTime(testResult.endTime.get))
+    }
+    if (testCase.isDefined) {
+      overview.setId(testCase.get.identifier)
+      overview.setMetadata(new Metadata())
+      overview.getMetadata.setName(testCase.get.fullname)
+      overview.getMetadata.setDescription(testCase.get.description.orNull)
+    }
+    if (list.nonEmpty) {
+      overview.setSteps(new TestCaseStepsType())
+      list.foreach { stepReport =>
+        val report = new TestCaseStepReportType()
+        report.setId(stepReport.getWrapped.getId)
+        report.setDescription(stepReport.getTitle)
+        report.setReport(stepReport.getWrapped)
+        overview.getSteps.getStep.add(report)
+      }
+    }
+    Files.createDirectories(reportPath.getParent)
+    Using(Files.newOutputStream(reportPath)) { fos =>
+      generator.writeTestCaseOverviewXmlReport(overview, fos)
+      fos.flush()
+    }
+    reportPath
+  }
+
+  private def generateDetailedTestCaseReportPdf(list: ListBuffer[TitledTestStepReportType], path: String, testCase: Option[models.TestCase], sessionId: String, addContext: Boolean, labels: Map[Short, CommunityLabels]): Path = {
+    val reportPath = Paths.get(path)
+    val sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss")
+    val overview = new TestCaseOverview()
+    overview.setTitle("Test Case Report")
+    // Labels
+    overview.setLabelDomain(communityLabelManager.getLabel(labels, models.Enums.LabelType.Domain))
+    overview.setLabelSpecification(communityLabelManager.getLabel(labels, models.Enums.LabelType.Specification))
+    overview.setLabelActor(communityLabelManager.getLabel(labels, models.Enums.LabelType.Actor))
+    overview.setLabelOrganisation(communityLabelManager.getLabel(labels, models.Enums.LabelType.Organisation))
+    overview.setLabelSystem(communityLabelManager.getLabel(labels, models.Enums.LabelType.System))
+    // Result
+    val testResult = exec(PersistenceSchema.testResults.filter(_.testSessionId === sessionId).result.head)
+    overview.setReportResult(testResult.result)
+    overview.setOutputMessage(testResult.outputMessage.orNull)
+    // Start time
+    val start = testResult.startTime
+    overview.setStartTime(sdf.format(new Date(start.getTime)));
+    // End time
+    if (testResult.endTime.isDefined) {
+      val end = testResult.endTime.get
+      overview.setEndTime(sdf.format(new Date(end.getTime)))
+    }
+    if (testResult.testCase.isDefined) {
+      overview.setTestName(testResult.testCase.get)
+    } else {
+      overview.setTestName("-")
+    }
+    if (testResult.system.isDefined) {
+      overview.setSystem(testResult.system.get)
+    } else {
+      overview.setSystem("-")
+    }
+    if (testResult.organization.isDefined) {
+      overview.setOrganisation(testResult.organization.get)
+    } else {
+      overview.setOrganisation("-")
+    }
+    if (testResult.actor.isDefined) {
+      overview.setTestActor(testResult.actor.get)
+    } else {
+      overview.setTestActor("-")
+    }
+    if (testResult.specification.isDefined) {
+      overview.setTestSpecification(testResult.specification.get)
+    } else {
+      overview.setTestSpecification("-")
+    }
+    if (testResult.domain.isDefined) {
+      overview.setTestDomain(testResult.domain.get)
+    } else {
+      overview.setTestDomain("-")
+    }
+    if (testCase.isDefined) {
+      if (testCase.get.description.isDefined) {
+        overview.setTestDescription(testCase.get.description.get)
+      }
+    } else {
+      // This is a deleted test case - get data as possible from TestResult
+      overview.setTestDescription("-")
+    }
+    for (stepReport <- list) {
+      overview.getSteps.add(generator.fromTestStepReportType(stepReport.getWrapped, stepReport.getTitle, addContext))
+    }
+    if (overview.getSteps.isEmpty) {
+      overview.setSteps(null)
+    }
+    // Needed if no reports have been received.
+    Files.createDirectories(reportPath.getParent)
+    val fos = Files.newOutputStream(reportPath)
+    try {
+      generator.writeTestCaseOverviewReport(overview, fos)
+      fos.flush()
+    } catch {
+      case e: Exception =>
+        throw new IllegalStateException("Unable to generate PDF report", e)
+    } finally {
+      if (fos != null) fos.close()
+    }
+    reportPath
+  }
+
+  private def collectStepReports(testStep: TestStep, collectedSteps: ListBuffer[TitledTestStepReportType], folder: File): Unit = {
+    val reportFile = new File(folder, testStep.getId + ".xml")
+    if (reportFile.exists()) {
+      val stepReport = new TitledTestStepReportType()
+      if (StringUtils.isBlank(testStep.getDesc)) {
+        stepReport.setTitle("Step " + testStep.getId)
+      } else {
+        stepReport.setTitle("Step " + testStep.getId + ": " + testStep.getDesc)
+      }
+      val bytes = Files.readAllBytes(Paths.get(reportFile.getAbsolutePath));
+      val string = new String(bytes)
+      //convert string in xml format into its object representation
+      val report = XMLUtils.unmarshal(classOf[TestStepStatus], new StreamSource(new StringReader(string)))
+      stepReport.setWrapped(report.getReport)
+      collectedSteps += stepReport
+      // Process child steps as well if applicable
+    }
+    if (testStep.isInstanceOf[DecisionStep]) {
+      collectStepReportsForSequence(testStep.asInstanceOf[DecisionStep].getThen, collectedSteps, folder)
+      if (testStep.asInstanceOf[DecisionStep].getElse != null) {
+        collectStepReportsForSequence(testStep.asInstanceOf[DecisionStep].getElse, collectedSteps, folder)
+      }
+    } else if (testStep.isInstanceOf[FlowStep]) {
+      import scala.jdk.CollectionConverters._
+      for (thread <- testStep.asInstanceOf[FlowStep].getThread.asScala) {
+        collectStepReportsForSequence(thread, collectedSteps, folder)
+      }
+    }
+  }
+
+  private def collectStepReportsForSequence(testStepSequence: com.gitb.tpl.Sequence, collectedSteps: ListBuffer[TitledTestStepReportType], folder: File): Unit = {
+    import scala.jdk.CollectionConverters._
+    for (testStep <- testStepSequence.getSteps.asScala) {
+      collectStepReports(testStep, collectedSteps, folder)
+    }
+  }
+
+  def getListOfTestSteps(testPresentation: TestCase, folder: File): ListBuffer[TitledTestStepReportType] = {
+    val list = ListBuffer[TitledTestStepReportType]()
+    collectStepReportsForSequence(testPresentation.getSteps, list, folder)
+    list
+  }
+
+}

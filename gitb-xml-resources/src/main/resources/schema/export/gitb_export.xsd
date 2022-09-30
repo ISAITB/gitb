@@ -550,6 +550,7 @@
             <xsd:enumeration value="DOMAIN_PARAMETER"/>
             <xsd:enumeration value="TEST_SESSION"/>
             <xsd:enumeration value="STATEMENT_PARAMETER"/>
+            <xsd:enumeration value="TEST_REPORT"/>
         </xsd:restriction>
     </xsd:simpleType>
     <xsd:complexType name="TestSuite">

@@ -68,6 +68,7 @@ export class TriggerComponent extends BaseComponent implements OnInit, AfterView
     domainParameter: {dataType: Constants.TRIGGER_DATA_TYPE.DOMAIN_PARAMETER, visible: true, selected: false},
     statementParameter: {dataType: Constants.TRIGGER_DATA_TYPE.STATEMENT_PARAMETER, visible: true, selected: false},
     testSession: {dataType: Constants.TRIGGER_DATA_TYPE.TEST_SESSION, visible: true, selected: false},
+    testReport: {dataType: Constants.TRIGGER_DATA_TYPE.TEST_REPORT, visible: true, selected: false}
   }
   Constants = Constants
 
@@ -192,6 +193,8 @@ export class TriggerComponent extends BaseComponent implements OnInit, AfterView
                 this.triggerData.actor.selected = true
               } else if (item.dataType == Constants.TRIGGER_DATA_TYPE.TEST_SESSION) {
                 this.triggerData.testSession.selected = true
+              } else if (item.dataType == Constants.TRIGGER_DATA_TYPE.TEST_REPORT) {
+                this.triggerData.testReport.selected = true
               } else if (item.dataType == Constants.TRIGGER_DATA_TYPE.ORGANISATION_PARAMETER) {
                 this.triggerData.organisationParameter.selected = true
                 if (this.organisationParameterMap[item.dataId] != undefined) {
@@ -262,6 +265,9 @@ export class TriggerComponent extends BaseComponent implements OnInit, AfterView
     }
     if (this.triggerData.testSession.visible && this.triggerData.testSession.selected) {
       dataItems.push({dataType: Constants.TRIGGER_DATA_TYPE.TEST_SESSION, dataId: -1})
+    }
+    if (this.triggerData.testReport.visible && this.triggerData.testReport.selected) {
+      dataItems.push({dataType: Constants.TRIGGER_DATA_TYPE.TEST_REPORT, dataId: -1})
     }
     if (this.triggerData.organisationParameter.visible && this.triggerData.organisationParameter.selected) {
       for (let parameter of this.organisationParameters) {
@@ -449,6 +455,7 @@ export class TriggerComponent extends BaseComponent implements OnInit, AfterView
     this.triggerData.specification.visible = eventType == undefined || this.dataService.triggerDataTypeAllowedForEvent(eventType, this.triggerData.specification.dataType)
     this.triggerData.actor.visible = eventType == undefined || this.dataService.triggerDataTypeAllowedForEvent(eventType, this.triggerData.actor.dataType)
     this.triggerData.testSession.visible = eventType == undefined || this.dataService.triggerDataTypeAllowedForEvent(eventType, this.triggerData.testSession.dataType)
+    this.triggerData.testReport.visible = eventType == undefined || this.dataService.triggerDataTypeAllowedForEvent(eventType, this.triggerData.testReport.dataType)
     this.triggerData.organisationParameter.visible = this.organisationParameters.length > 0 && (eventType == undefined || this.dataService.triggerDataTypeAllowedForEvent(eventType, this.triggerData.organisationParameter.dataType))
     this.triggerData.systemParameter.visible = this.systemParameters.length > 0 && (eventType == undefined || this.dataService.triggerDataTypeAllowedForEvent(eventType, this.triggerData.systemParameter.dataType))
     this.triggerData.domainParameter.visible = this.domainParameters.length > 0 && (eventType == undefined || this.dataService.triggerDataTypeAllowedForEvent(eventType, this.triggerData.domainParameter.dataType))
