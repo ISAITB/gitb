@@ -32,23 +32,23 @@
         <!-- Dependency versions -->
         <version.springBoot>2.7.4</version.springBoot>
         <version.gitbTypes>1.18.0-SNAPSHOT</version.gitbTypes>
-        <version.jasperReports>6.19.1</version.jasperReports>
+        <version.jasperReports>6.20.0</version.jasperReports>
         <version.bouncycastle>1.70</version.bouncycastle>
-        <version.helgerSchematron>6.3.0</version.helgerSchematron>
+        <version.helgerSchematron>6.3.3</version.helgerSchematron>
         <version.metaInfServices>1.9</version.metaInfServices>
         <version.cxf>3.5.3</version.cxf>
         <version.httpComponents>4.5.13</version.httpComponents>
-        <version.logback>1.2.11</version.logback>
+        <version.logback>1.4.3</version.logback>
         <version.slf4j>1.7.36</version.slf4j>
         <version.commonsCodec>1.15</version.commonsCodec>
         <version.reflections>0.10.2</version.reflections>
         <version.commonsIo>2.11.0</version.commonsIo>
         <version.commonsLang3>3.12.0</version.commonsLang3>
-        <version.tika>2.4.1</version.tika>
+        <version.tika>2.5.0</version.tika>
         <version.xerces>2.12.2</version.xerces>
         <version.jaxbApi>2.3.1</version.jaxbApi>
         <version.jaxbRuntime>2.3.3</version.jaxbRuntime>
-        <version.saxon>11.3</version.saxon>
+        <version.saxon>11.4</version.saxon>
         <version.jaxwsApi>2.3.1</version.jaxwsApi>
         <version.jwsApi>1.1</version.jwsApi>
         <version.activation>1.1.1</version.activation>
@@ -59,7 +59,7 @@
         <version.gmbalApi>4.0.3</version.gmbalApi>
         <version.jaxpRi>1.4</version.jaxpRi>
         <version.commonsConfiguration>2.8.0</version.commonsConfiguration>
-        <version.akka>2.6.19</version.akka>
+        <version.akka>2.6.20</version.akka>
         <version.guava>31.1-jre</version.guava>
         <version.generex>1.0.2</version.generex>
         <version.saajApi>1.3.5</version.saajApi>
