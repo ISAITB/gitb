@@ -61,7 +61,7 @@
         <version.commonsConfiguration>2.8.0</version.commonsConfiguration>
         <version.akka>2.6.20</version.akka>
         <version.guava>31.1-jre</version.guava>
-        <version.generex>1.0.2</version.generex>
+        <version.rgxgen>1.4</version.rgxgen>
         <version.saajApi>1.3.5</version.saajApi>
         <version.saajImpl>1.5.2</version.saajImpl>
         <version.helgerAs2>4.10.1</version.helgerAs2>
@@ -358,9 +358,9 @@
                 <version>${version.guava}</version>
             </dependency>
             <dependency>
-                <groupId>com.github.mifmif</groupId>
-                <artifactId>generex</artifactId>
-                <version>${version.generex}</version>
+                <groupId>com.github.curious-odd-man</groupId>
+                <artifactId>rgxgen</artifactId>
+                <version>${version.rgxgen}</version>
             </dependency>
             <!-- TODO check if needed -->
             <dependency>

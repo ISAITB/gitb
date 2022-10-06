@@ -8,7 +8,7 @@ import com.gitb.ps.ProcessingModule;
 import com.gitb.tr.TestResultType;
 import com.gitb.types.NumberType;
 import com.gitb.types.StringType;
-import com.mifmif.common.regex.Generex;
+import com.github.curiousoddman.rgxgen.RgxGen;
 import org.apache.commons.lang3.StringUtils;
 
 import java.time.Instant;
@@ -115,8 +115,8 @@ public class TokenGenerator extends AbstractProcessingHandler {
                 throw new IllegalArgumentException("Format to use for string generation is required");
             }
             try {
-                Generex generex = new Generex((String)format.getValue());
-                value = generex.random();
+                var generator = new RgxGen((String)format.getValue());
+                value = generator.generate();
             } catch (Exception e) {
                 throw new IllegalArgumentException("Generation of string failed for expression ["+format.getValue()+"]", e);
             }
