@@ -38,8 +38,6 @@
         <version.metaInfServices>1.9</version.metaInfServices>
         <version.cxf>3.5.3</version.cxf>
         <version.httpComponents>4.5.13</version.httpComponents>
-        <version.logback>1.4.3</version.logback>
-        <version.slf4j>1.7.36</version.slf4j>
         <version.commonsCodec>1.15</version.commonsCodec>
         <version.reflections>0.10.2</version.reflections>
         <version.commonsIo>2.11.0</version.commonsIo>
@@ -179,12 +177,8 @@
     </build>
     <dependencies>
         <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>ch.qos.logback</groupId>
-            <artifactId>logback-classic</artifactId>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-logging</artifactId>
         </dependency>
     </dependencies>
     <dependencyManagement>
@@ -221,6 +215,11 @@
             </dependency>
             <dependency>
                 <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-logging</artifactId>
+                <version>${version.springBoot}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-starter-validation</artifactId>
                 <version>${version.springBoot}</version>
             </dependency>
@@ -234,16 +233,11 @@
                 <artifactId>httpmime</artifactId>
                 <version>${version.httpComponents}</version>
             </dependency>
-            <dependency>
-                <groupId>ch.qos.logback</groupId>
-                <artifactId>logback-classic</artifactId>
-                <version>${version.logback}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-api</artifactId>
-                <version>${version.slf4j}</version>
-            </dependency>
+<!--            <dependency>-->
+<!--                <groupId>org.slf4j</groupId>-->
+<!--                <artifactId>slf4j-api</artifactId>-->
+<!--                <version>${version.slf4j}</version>-->
+<!--            </dependency>-->
             <dependency>
                 <groupId>commons-codec</groupId>
                 <artifactId>commons-codec</artifactId>
