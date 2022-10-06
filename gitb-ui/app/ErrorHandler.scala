@@ -42,12 +42,13 @@ class ErrorHandler @Inject() (systemConfigurationManager: SystemConfigurationMan
           logger.error("Error while creating error page content", e)
         }
       }
+      val versionInfo = Configurations.versionInfo()
       Future.successful(BadRequest(views.html.error(
         new ErrorPageData(
           systemConfigurationManager.getLogoPath(),
           systemConfigurationManager.getFooterLogoPath(),
-          Constants.VersionNumber,
-          Constants.ResourceVersionNumber,
+          versionInfo,
+          versionInfo.replace(' ', '_'),
           legalNoticeContent,
           Configurations.USERGUIDE_OU,
           errorIdentifier,

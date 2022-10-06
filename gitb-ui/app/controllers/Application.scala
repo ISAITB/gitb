@@ -53,11 +53,11 @@ class Application @Inject() (implicit ec: ExecutionContext, cc: ControllerCompon
   }
 
   private def resourceVersionToUse(): String = {
-    Constants.ResourceVersionNumber+"_"+Configurations.BUILD_TIMESTAMP.replace(' ', '_')
+    Configurations.versionInfo().replace(' ', '_')
   }
 
   def app() = defaultAction {
-    Ok(views.html.ngApp(new PublicConfig(Constants.VersionNumber, resourceVersionToUse(), Configurations.AUTHENTICATION_COOKIE_PATH, contextPath()), environment.mode))
+    Ok(views.html.ngApp(new PublicConfig(resourceVersionToUse(), Configurations.AUTHENTICATION_COOKIE_PATH, contextPath()), environment.mode))
   }
 
   private def contextPath(): String = {

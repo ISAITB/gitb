@@ -132,7 +132,7 @@ object Configurations {
   var BUILD_TIMESTAMP = ""
 
   def versionInfo(): String = {
-    if (Configurations.TESTBED_MODE == Constants.DevelopmentMode) {
+    if (Constants.VersionNumber.toLowerCase.endsWith("snapshot")) {
       Constants.VersionNumber + " (" + Configurations.BUILD_TIMESTAMP + ")"
     } else {
       Constants.VersionNumber
