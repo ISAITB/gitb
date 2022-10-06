@@ -137,6 +137,7 @@ class AccountService @Inject() (authorizedAction: AuthorizedAction, cc: Controll
     configProperties.put("savedFile.maxSize", String.valueOf(Configurations.SAVED_FILE_MAX_SIZE))
     configProperties.put("mode", String.valueOf(Configurations.TESTBED_MODE))
     configProperties.put("automationApi.enabled", String.valueOf(Configurations.AUTOMATION_API_ENABLED))
+    configProperties.put("versionNumber", Configurations.versionInfo())
     val json = JsonUtil.serializeConfigurationProperties(configProperties)
     ResponseConstructor.constructJsonResponse(json.toString())
   }

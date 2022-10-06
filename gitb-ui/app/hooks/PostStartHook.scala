@@ -3,6 +3,7 @@ package hooks
 import actors.WebSocketActor
 import akka.actor.ActorSystem
 import config.Configurations
+import config.Configurations.BUILD_TIMESTAMP
 import jaxws.TestbedService
 import managers._
 import managers.export.ImportCompleteManager
@@ -11,6 +12,7 @@ import org.apache.commons.io.FileUtils
 import org.apache.commons.lang3.{RandomStringUtils, StringUtils}
 import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
+import play.api.Environment
 import play.api.inject.ApplicationLifecycle
 import utils.{RepositoryUtils, TimeUtil, ZipArchiver}
 
@@ -18,6 +20,7 @@ import java.io.{File, FileFilter}
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 import java.time.LocalDate
+import java.util.Properties
 import javax.inject.{Inject, Singleton}
 import javax.xml.ws.Endpoint
 import scala.concurrent.ExecutionContext
@@ -25,7 +28,7 @@ import scala.concurrent.duration.DurationInt
 import scala.util.Using
 
 @Singleton
-class PostStartHook @Inject() (implicit ec: ExecutionContext, appLifecycle: ApplicationLifecycle, actorSystem: ActorSystem, systemConfigurationManager: SystemConfigurationManager, testResultManager: TestResultManager, testExecutionManager: TestExecutionManager, testSuiteManager: TestSuiteManager, reportManager: ReportManager, webSocketActor: WebSocketActor, testbedBackendClient: TestbedBackendClient, importCompleteManager: ImportCompleteManager, triggerManager: TriggerManager, repositoryUtils: RepositoryUtils) {
+class PostStartHook @Inject() (implicit ec: ExecutionContext, appLifecycle: ApplicationLifecycle, actorSystem: ActorSystem, systemConfigurationManager: SystemConfigurationManager, testResultManager: TestResultManager, testExecutionManager: TestExecutionManager, testSuiteManager: TestSuiteManager, reportManager: ReportManager, webSocketActor: WebSocketActor, testbedBackendClient: TestbedBackendClient, importCompleteManager: ImportCompleteManager, triggerManager: TriggerManager, repositoryUtils: RepositoryUtils, environment: Environment) {
 
   private def logger = LoggerFactory.getLogger(this.getClass)
 
@@ -34,6 +37,7 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext, appLifecycle: Appl
   def onStart(): Unit = {
     logger.info("Starting Application")
     System.setProperty("java.io.tmpdir", System.getProperty("user.dir"))
+    BUILD_TIMESTAMP = getBuildTimestamp()
     initialiseTestbedClient()
     checkMasterPassword()
     destroyIdleSessions()
@@ -42,7 +46,17 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext, appLifecycle: Appl
     loadDataExports()
     archiveOldTestSessions()
     prepareRestApiDocumentation()
-    logger.info("Application has started in "+Configurations.TESTBED_MODE+" mode - release "+Constants.VersionNumber)
+    logger.info("Application has started in "+Configurations.TESTBED_MODE+" mode - release "+Constants.VersionNumber + " built at "+Configurations.BUILD_TIMESTAMP)
+  }
+
+  private def getBuildTimestamp(): String = {
+    var timestamp = ""
+    Using(environment.classLoader.getResourceAsStream("core-module.properties")) { stream =>
+      val props = new Properties()
+      props.load(stream)
+      timestamp = props.getOrDefault("gitb.buildTimestamp", "").asInstanceOf[String]
+    }
+    timestamp
   }
 
   private def checkMasterPassword(): Unit = {

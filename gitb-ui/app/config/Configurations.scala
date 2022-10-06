@@ -129,6 +129,15 @@ object Configurations {
 
   var API_ROOT = ""
   var AUTOMATION_API_ENABLED = false
+  var BUILD_TIMESTAMP = ""
+
+  def versionInfo(): String = {
+    if (Configurations.TESTBED_MODE == Constants.DevelopmentMode) {
+      Constants.VersionNumber + " (" + Configurations.BUILD_TIMESTAMP + ")"
+    } else {
+      Constants.VersionNumber
+    }
+  }
 
   def loadConfigurations(): Unit = {
     if (!_IS_LOADED) {

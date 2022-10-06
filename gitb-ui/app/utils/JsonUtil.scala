@@ -1613,7 +1613,8 @@ object JsonUtil {
       "registrationEnabled" -> config.get("registration.enabled").toBoolean,
       "savedFileMaxSize" -> config.get("savedFile.maxSize").toLong,
       "mode" -> config.get("mode"),
-      "automationApiEnabled" -> config.get("automationApi.enabled").toBoolean
+      "automationApiEnabled" -> config.get("automationApi.enabled").toBoolean,
+      "versionNumber" -> config.get("versionNumber")
     )
     json
   }

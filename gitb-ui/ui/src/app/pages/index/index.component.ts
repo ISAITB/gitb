@@ -35,7 +35,7 @@ export class IndexComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.version = Constants.VERSION
+    this.version = this.dataService.configuration.versionNumber
     this.systemConfigurationService.getLogo().subscribe((data) => {
       this.logo = data
     })
