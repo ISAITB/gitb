@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
+import static com.gitb.engine.PropertyConstants.*;
 import static com.gitb.engine.actors.processors.TestCaseProcessorActor.TEST_SESSION_END_EXTERNAL_STEP_ID;
 import static com.gitb.engine.actors.processors.TestCaseProcessorActor.TEST_SESSION_END_STEP_ID;
 import static com.gitb.engine.testcase.TestCaseContext.TestCaseStateEnum.*;
@@ -277,7 +278,7 @@ public class SessionActor extends AbstractActor {
                 if (input != null) {
                     if (input.getName() == null) {
                         logger.warn("Session ["+getSessionId()+"] received input with no name");
-                    } else if (input.getName().equals("DOMAIN") || input.getName().equals("ORGANISATION") || input.getName().equals("SYSTEM")) {
+                    } else if (input.getName().equals(DOMAIN_MAP) || input.getName().equals(ORGANISATION_MAP) || input.getName().equals(SYSTEM_MAP) || input.getName().equals(SESSION_MAP)) {
                         logger.warn("Session ["+getSessionId()+"] received input with reserved name ["+input.getName()+"]");
                     } else {
                         // Add the input to the scope. Note that this may override existing (a) actor configs, (b) imports, or (c) variables

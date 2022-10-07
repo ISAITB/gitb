@@ -13,12 +13,13 @@ import javax.xml.soap.SOAPHeader;
 import javax.xml.ws.handler.MessageContext;
 import javax.xml.ws.handler.soap.SOAPHandler;
 import javax.xml.ws.handler.soap.SOAPMessageContext;
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.*;
+
+import static com.gitb.engine.utils.TestCaseUtils.TEST_ENGINE_VERSION;
 
 public class HttpHeaderHandler implements SOAPHandler<SOAPMessageContext> {
 
@@ -89,23 +90,9 @@ public class HttpHeaderHandler implements SOAPHandler<SOAPMessageContext> {
                 element.addTextNode(testStepIdentifier);
             }
             var versionElement = header.addChildElement(GITB_VERSION_NAME);
-            versionElement.addTextNode(getTestEngineVersion());
+            versionElement.addTextNode(TEST_ENGINE_VERSION);
         } catch (SOAPException e) {
             throw new IllegalStateException("Error generating headers for test identifiers", e);
-        }
-    }
-
-    private String getTestEngineVersion() {
-        try (var stream = Thread.currentThread().getContextClassLoader().getResourceAsStream("core-module.properties")) {
-            var props = new Properties();
-            props.load(stream);
-            var version = props.getProperty("gitb.version");
-            if (version.toLowerCase(Locale.getDefault()).endsWith("snapshot")) {
-                version += " ("+props.getProperty("gitb.buildTimestamp")+")";
-            }
-            return version;
-        } catch (IOException e) {
-            throw new IllegalStateException("Unable to read core properties", e);
         }
     }
 

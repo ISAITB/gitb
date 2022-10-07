@@ -24,6 +24,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
 import javax.xml.datatype.DatatypeConfigurationException;
+import java.io.IOException;
 import java.math.BigInteger;
 import java.net.Authenticator;
 import java.net.PasswordAuthentication;
@@ -34,6 +35,12 @@ import java.util.function.Supplier;
  * Created by senan on 10/13/14.
  */
 public class TestCaseUtils {
+
+    public static final String TEST_ENGINE_VERSION;
+
+    static {
+        TEST_ENGINE_VERSION = getTestEngineVersion();
+    }
 
 	// TODO add the test case construct classes to report their statuses (COMPLETED, ERROR, etc.)
 	private static final Class<?>[] TEST_CONSTRUCTS_TO_REPORT = {
@@ -406,6 +413,20 @@ public class TestCaseUtils {
                 // Apply the defined content type.
                 reportItem.setMimeType((String) contentType.getValue());
             }
+        }
+    }
+
+    private static String getTestEngineVersion() {
+        try (var stream = Thread.currentThread().getContextClassLoader().getResourceAsStream("core-module.properties")) {
+            var props = new Properties();
+            props.load(stream);
+            var version = props.getProperty("gitb.version");
+            if (version.toLowerCase(Locale.getDefault()).endsWith("snapshot")) {
+                version += " ("+props.getProperty("gitb.buildTimestamp")+")";
+            }
+            return version;
+        } catch (IOException e) {
+            throw new IllegalStateException("Unable to read core properties", e);
         }
     }
 

@@ -41,6 +41,7 @@ public class Utils {
     public static final String SYSTEM_MAP__SHORT_NAME = "shortName";
     public static final String SYSTEM_MAP__FULL_NAME = "fullName";
     public static final String SYSTEM_MAP__VERSION = "version";
+    public static final String SESSION_MAP = "SESSION";
     public static final String STEP_SUCCESS = "STEP_SUCCESS";
     public static final String STEP_STATUS = "STEP_STATUS";
     public static final String TEST_SUCCESS = "TEST_SUCCESS";

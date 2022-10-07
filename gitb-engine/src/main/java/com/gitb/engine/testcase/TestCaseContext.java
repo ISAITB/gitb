@@ -40,6 +40,9 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import static com.gitb.engine.PropertyConstants.*;
+import static com.gitb.engine.utils.TestCaseUtils.TEST_ENGINE_VERSION;
+
 /**
  * Created by serbay on 9/3/14.
  *
@@ -240,9 +243,10 @@ public class TestCaseContext {
      */
     public List<SUTConfiguration> configure(List<ActorConfiguration> configurations, ActorConfiguration domainConfiguration, ActorConfiguration organisationConfiguration, ActorConfiguration systemConfiguration){
 
-		addSpecialConfiguration("DOMAIN", domainConfiguration);
-		addSpecialConfiguration("ORGANISATION", organisationConfiguration);
-		addSpecialConfiguration("SYSTEM", systemConfiguration);
+		addSpecialConfiguration(DOMAIN_MAP, domainConfiguration);
+		addSpecialConfiguration(ORGANISATION_MAP, organisationConfiguration);
+		addSpecialConfiguration(SYSTEM_MAP, systemConfiguration);
+		addSessionMetadata();
 
 		for(ActorConfiguration actorConfiguration : configurations) {
 		    Tuple<String> actorIdEndpointTupleKey = new Tuple<>(new String[] {actorConfiguration.getActor(), actorConfiguration.getEndpoint()});
@@ -265,6 +269,22 @@ public class TestCaseContext {
 
 	    return sutConfigurations;
     }
+
+	private void addSessionMetadata() {
+		DataTypeFactory factory = DataTypeFactory.getInstance();
+		TestCaseScope.ScopedVariable variable = scope.createVariable(SESSION_MAP);
+		var map = (MapType) factory.create(DataType.MAP_DATA_TYPE);
+		var sessionId = factory.create(DataType.STRING_DATA_TYPE);
+		sessionId.setValue(getSessionId());
+		map.addItem(SESSION_MAP__TEST_SESSION_ID, sessionId);
+		var testCaseId = factory.create(DataType.STRING_DATA_TYPE);
+		testCaseId.setValue(getTestCaseIdentifier());
+		map.addItem(SESSION_MAP__TEST_CASE_ID, testCaseId);
+		var testEngineVersion = factory.create(DataType.STRING_DATA_TYPE);
+		testEngineVersion.setValue(TEST_ENGINE_VERSION);
+		map.addItem(SESSION_MAP__TEST_ENGINE_VERSION, testEngineVersion);
+		variable.setValue(map);
+	}
 
 	private void addSpecialConfiguration(String mapVariableName, ActorConfiguration domainConfiguration) {
 		if (domainConfiguration != null) {

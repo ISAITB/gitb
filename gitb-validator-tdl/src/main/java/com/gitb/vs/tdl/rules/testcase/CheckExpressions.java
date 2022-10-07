@@ -47,6 +47,7 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
         testCaseScope.put(Utils.DOMAIN_MAP, true);
         testCaseScope.put(Utils.ORGANISATION_MAP, true);
         testCaseScope.put(Utils.SYSTEM_MAP, true);
+        testCaseScope.put(Utils.SESSION_MAP, true);
         testCaseScope.put(Utils.STEP_SUCCESS, true);
         testCaseScope.put(Utils.STEP_STATUS, true);
         testCaseScope.put(Utils.TEST_SUCCESS, true);
