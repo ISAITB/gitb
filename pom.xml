@@ -21,7 +21,9 @@
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
         <maven.build.timestamp.format>yyyy-MM-dd HH:mm:ss</maven.build.timestamp.format>
+        <!-- Properties used for filtering replacements -->
         <timestamp>${maven.build.timestamp}</timestamp>
+        <version>${version.gitbTypes}</version>
         <!--
              Library versions. Check for updates using:
              mvn versions:display-dependency-updates -N -N

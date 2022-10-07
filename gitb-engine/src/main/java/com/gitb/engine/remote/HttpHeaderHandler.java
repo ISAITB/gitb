@@ -13,6 +13,7 @@ import javax.xml.soap.SOAPHeader;
 import javax.xml.ws.handler.MessageContext;
 import javax.xml.ws.handler.soap.SOAPHandler;
 import javax.xml.ws.handler.soap.SOAPMessageContext;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.ZoneOffset;
@@ -42,6 +43,7 @@ public class HttpHeaderHandler implements SOAPHandler<SOAPMessageContext> {
     private static final QName TEST_STEP_ID_NAME =  new QName(GITB_BASE, "TestStepIdentifier", GITB_PREFIX);
     private static final QName TEST_SESSION_ID_NAME =  new QName(GITB_BASE, "TestSessionIdentifier", GITB_PREFIX);
     private static final QName TEST_CASE_ID_NAME =  new QName(GITB_BASE, "TestCaseIdentifier", GITB_PREFIX);
+    private static final QName GITB_VERSION_NAME =  new QName(GITB_BASE, "TestEngineVersion", GITB_PREFIX);
 
     private static final String PASSWORDTYPE_TEXT_VALUE = WSS_URI_UTP+"#PasswordText";
     private static final String PASSWORDTYPE_DIGEST_VALUE = WSS_URI_UTP+"#PasswordDigest";
@@ -68,28 +70,42 @@ public class HttpHeaderHandler implements SOAPHandler<SOAPMessageContext> {
         boolean addTestSessionIdentifier = StringUtils.isNotBlank(testSessionIdentifier);
         boolean addTestCaseIdentifier = StringUtils.isNotBlank(testCaseIdentifier);
         boolean addTestStepIdentifier = StringUtils.isNotBlank(testStepIdentifier);
-        if (addTestSessionIdentifier || addTestCaseIdentifier || addTestStepIdentifier) {
-            try {
-                SOAPEnvelope envelope = context.getMessage().getSOAPPart().getEnvelope();
-                SOAPHeader header = envelope.getHeader();
-                if (header == null) {
-                    header = envelope.addHeader();
-                }
-                if (addTestSessionIdentifier) {
-                    var element = header.addChildElement(TEST_SESSION_ID_NAME);
-                    element.addTextNode(testSessionIdentifier);
-                }
-                if (addTestCaseIdentifier) {
-                    var element = header.addChildElement(TEST_CASE_ID_NAME);
-                    element.addTextNode(testCaseIdentifier);
-                }
-                if (addTestStepIdentifier) {
-                    var element = header.addChildElement(TEST_STEP_ID_NAME);
-                    element.addTextNode(testStepIdentifier);
-                }
-            } catch (SOAPException e) {
-                throw new IllegalStateException("Error generating headers for test identifiers", e);
+        try {
+            SOAPEnvelope envelope = context.getMessage().getSOAPPart().getEnvelope();
+            SOAPHeader header = envelope.getHeader();
+            if (header == null) {
+                header = envelope.addHeader();
             }
+            if (addTestSessionIdentifier) {
+                var element = header.addChildElement(TEST_SESSION_ID_NAME);
+                element.addTextNode(testSessionIdentifier);
+            }
+            if (addTestCaseIdentifier) {
+                var element = header.addChildElement(TEST_CASE_ID_NAME);
+                element.addTextNode(testCaseIdentifier);
+            }
+            if (addTestStepIdentifier) {
+                var element = header.addChildElement(TEST_STEP_ID_NAME);
+                element.addTextNode(testStepIdentifier);
+            }
+            var versionElement = header.addChildElement(GITB_VERSION_NAME);
+            versionElement.addTextNode(getTestEngineVersion());
+        } catch (SOAPException e) {
+            throw new IllegalStateException("Error generating headers for test identifiers", e);
+        }
+    }
+
+    private String getTestEngineVersion() {
+        try (var stream = Thread.currentThread().getContextClassLoader().getResourceAsStream("core-module.properties")) {
+            var props = new Properties();
+            props.load(stream);
+            var version = props.getProperty("gitb.version");
+            if (version.toLowerCase(Locale.getDefault()).endsWith("snapshot")) {
+                version += " ("+props.getProperty("gitb.buildTimestamp")+")";
+            }
+            return version;
+        } catch (IOException e) {
+            throw new IllegalStateException("Unable to read core properties", e);
         }
     }
 
