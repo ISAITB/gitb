@@ -488,7 +488,8 @@ object ParameterExtractor {
     if (!adminOnly) {
       hidden = false
     }
-    models.Parameters(id, name, testKey, desc, use, kind, adminOnly, notForTests, hidden, allowedValues, 0, dependsOn, dependsOnValue, endpointId)
+    val defaultValue = determineDefaultParameterValue(ParameterExtractor.optionalBodyParameter(request, Parameters.DEFAULT_VALUE), kind, allowedValues)
+    models.Parameters(id, name, testKey, desc, use, kind, adminOnly, notForTests, hidden, allowedValues, 0, dependsOn, dependsOnValue, defaultValue, endpointId)
   }
 
   def extractOrganisationParameter(request:Request[AnyContent]):models.OrganisationParameters = {
@@ -522,7 +523,24 @@ object ParameterExtractor {
     if (!adminOnly) {
       hidden = false
     }
-    models.OrganisationParameters(id, name, testKey, desc, use, kind, adminOnly, notForTests, inExports, inSelfRegistration, hidden, allowedValues, 0, dependsOn, dependsOnValue, communityId)
+    val defaultValue = determineDefaultParameterValue(ParameterExtractor.optionalBodyParameter(request, Parameters.DEFAULT_VALUE), kind, allowedValues)
+    models.OrganisationParameters(id, name, testKey, desc, use, kind, adminOnly, notForTests, inExports, inSelfRegistration, hidden, allowedValues, 0, dependsOn, dependsOnValue, defaultValue, communityId)
+  }
+
+  private def determineDefaultParameterValue(defaultValue: Option[String], kind: String, allowedValues: Option[String]): Option[String] = {
+    var defaultValueToUse = defaultValue
+    if (defaultValueToUse.isDefined) {
+      if (!kind.equals("SIMPLE")) {
+        defaultValueToUse = None
+      }
+    }
+    if (defaultValueToUse.isDefined && allowedValues.isDefined) {
+      val allowed = JsonUtil.parseAllowedParameterValues(allowedValues.get)
+      if (!allowed.keySet.contains(defaultValueToUse.get)) {
+        defaultValueToUse = None
+      }
+    }
+    defaultValueToUse
   }
 
   def extractSystemParameter(request:Request[AnyContent]):models.SystemParameters = {
@@ -555,7 +573,8 @@ object ParameterExtractor {
     if (!adminOnly) {
       hidden = false
     }
-    models.SystemParameters(id, name, testKey, desc, use, kind, adminOnly, notForTests, inExports, hidden, allowedValues, 0, dependsOn, dependsOnValue, communityId)
+    val defaultValue = determineDefaultParameterValue(ParameterExtractor.optionalBodyParameter(request, Parameters.DEFAULT_VALUE), kind, allowedValues)
+    models.SystemParameters(id, name, testKey, desc, use, kind, adminOnly, notForTests, inExports, hidden, allowedValues, 0, dependsOn, dependsOnValue, defaultValue, communityId)
   }
 
   def extractLandingPageInfo(request:Request[AnyContent]):LandingPages = {

@@ -121,4 +121,15 @@
             </div>
         </div>
     </div>
+    <div class="form-group">
+        <label class="col-xs-3 control-label" for="defaultValue">Default value:</label>
+        <div class="col-xs-7">
+            <input *ngIf="!parameter.hasPresetValues" id="defaultValue" name="defaultValue" [(ngModel)]="parameter.defaultValue" class="form-control" type="text">
+            <select *ngIf="parameter.hasPresetValues" name="defaultValue" [(ngModel)]="parameter.defaultValue" class="form-control">
+                <option></option>
+                <option *ngFor="let v of parameter.presetValues" [value]="v.value">{{v.label}}</option>
+            </select>
+        </div>
+        <app-tooltip tbTooltip="The default value to assign for this property for new instances if no value is provided."></app-tooltip>
+    </div>
 </div>

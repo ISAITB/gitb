@@ -299,7 +299,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
     try {
       MimeUtil.decryptString(value, importSettings.encryptionKey.get.toCharArray)
     } catch {
-      case e: Exception => throw new IllegalArgumentException("An encrypted value could not be successfully decrypted.")
+      case _: Exception => throw new IllegalArgumentException("An encrypted value could not be successfully decrypted.")
     }
   }
 
@@ -367,7 +367,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
     }
     models.OrganisationParameters(modelId.getOrElse(0L), data.getLabel, data.getName, Option(data.getDescription), requiredToUse(data.isRequired),
       propertyTypeToKind(data.getType), !data.isEditable, !data.isInTests, data.isInExports, data.isInSelfRegistration, data.isHidden, Option(data.getAllowedValues),
-      displayOrder, Option(data.getDependsOn), Option(data.getDependsOnValue), communityId
+      displayOrder, Option(data.getDependsOn), Option(data.getDependsOnValue), Option(data.getDefaultValue), communityId
     )
   }
 
@@ -378,7 +378,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
     }
     models.SystemParameters(modelId.getOrElse(0L), data.getLabel, data.getName, Option(data.getDescription), requiredToUse(data.isRequired),
       propertyTypeToKind(data.getType), !data.isEditable, !data.isInTests, data.isInExports, data.isHidden, Option(data.getAllowedValues),
-      displayOrder, Option(data.getDependsOn), Option(data.getDependsOnValue), communityId
+      displayOrder, Option(data.getDependsOn), Option(data.getDependsOnValue), Option(data.getDefaultValue), communityId
     )
   }
 
@@ -923,14 +923,19 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
                               if (labelToUse == null) {
                                 labelToUse = data.getName
                               }
-                              parameterManager.createParameter(models.Parameters(0L, labelToUse, data.getName, Option(data.getDescription), requiredToUse(data.isRequired), propertyTypeToKind(data.getType), !data.isEditable, !data.isInTests, data.isHidden, Option(data.getAllowedValues), displayOrderToUse.toShort, Option(data.getDependsOn), Option(data.getDependsOnValue), item.parentItem.get.targetKey.get.toLong))
+                              parameterManager.createParameter(models.Parameters(0L, labelToUse, data.getName, Option(data.getDescription),
+                                requiredToUse(data.isRequired), propertyTypeToKind(data.getType), !data.isEditable, !data.isInTests, data.isHidden,
+                                Option(data.getAllowedValues), displayOrderToUse.toShort, Option(data.getDependsOn), Option(data.getDependsOnValue), Option(data.getDefaultValue),
+                                item.parentItem.get.targetKey.get.toLong))
                             },
                             (data: com.gitb.xml.export.EndpointParameter, targetKey: String, item: ImportItem) => {
                               var labelToUse = data.getLabel
                               if (labelToUse == null) {
                                 labelToUse = data.getName
                               }
-                              parameterManager.updateParameter(targetKey.toLong, labelToUse, data.getName, Option(data.getDescription), requiredToUse(data.isRequired), propertyTypeToKind(data.getType), !data.isEditable, !data.isInTests, data.isHidden, Option(data.getAllowedValues), Option(data.getDependsOn), Option(data.getDependsOnValue), ctx.onSuccessCalls)
+                              parameterManager.updateParameter(targetKey.toLong, labelToUse, data.getName, Option(data.getDescription),
+                                requiredToUse(data.isRequired), propertyTypeToKind(data.getType), !data.isEditable, !data.isInTests, data.isHidden,
+                                Option(data.getAllowedValues), Option(data.getDependsOn), Option(data.getDependsOnValue), Option(data.getDefaultValue), ctx.onSuccessCalls)
                             }
                           )
                         )

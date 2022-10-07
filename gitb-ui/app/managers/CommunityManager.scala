@@ -378,8 +378,8 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, triggerHelpe
       }
       _ <- {
         // Don't update display order here.
-        val q = for {p <- PersistenceSchema.organisationParameters if p.id === parameter.id} yield (p.description, p.use, p.kind, p.name, p.testKey, p.adminOnly, p.notForTests, p.inExports, p.inSelfRegistration, p.hidden, p.allowedValues, p.dependsOn, p.dependsOnValue)
-        q.update(parameter.description, parameter.use, parameter.kind, parameter.name, parameter.testKey, parameter.adminOnly, parameter.notForTests, parameter.inExports, parameter.inSelfRegistration, parameter.hidden, parameter.allowedValues, parameter.dependsOn, parameter.dependsOnValue)
+        val q = for {p <- PersistenceSchema.organisationParameters if p.id === parameter.id} yield (p.description, p.use, p.kind, p.name, p.testKey, p.adminOnly, p.notForTests, p.inExports, p.inSelfRegistration, p.hidden, p.allowedValues, p.dependsOn, p.dependsOnValue, p.defaultValue)
+        q.update(parameter.description, parameter.use, parameter.kind, parameter.name, parameter.testKey, parameter.adminOnly, parameter.notForTests, parameter.inExports, parameter.inSelfRegistration, parameter.hidden, parameter.allowedValues, parameter.dependsOn, parameter.dependsOnValue, parameter.defaultValue)
       }
     } yield ()
   }
@@ -472,8 +472,8 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, triggerHelpe
       }
       _ <- {
         // Don't update display order here.
-        val q = for {p <- PersistenceSchema.systemParameters if p.id === parameter.id} yield (p.description, p.use, p.kind, p.name, p.testKey, p.adminOnly, p.notForTests, p.inExports, p.hidden, p.allowedValues, p.dependsOn, p.dependsOnValue)
-        q.update(parameter.description, parameter.use, parameter.kind, parameter.name, parameter.testKey, parameter.adminOnly, parameter.notForTests, parameter.inExports, parameter.hidden, parameter.allowedValues, parameter.dependsOn, parameter.dependsOnValue)
+        val q = for {p <- PersistenceSchema.systemParameters if p.id === parameter.id} yield (p.description, p.use, p.kind, p.name, p.testKey, p.adminOnly, p.notForTests, p.inExports, p.hidden, p.allowedValues, p.dependsOn, p.dependsOnValue, p.defaultValue)
+        q.update(parameter.description, parameter.use, parameter.kind, parameter.name, parameter.testKey, parameter.adminOnly, parameter.notForTests, parameter.inExports, parameter.hidden, parameter.allowedValues, parameter.dependsOn, parameter.dependsOnValue, parameter.defaultValue)
       }
     } yield ()
   }

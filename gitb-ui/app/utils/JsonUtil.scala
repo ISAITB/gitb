@@ -313,6 +313,7 @@ object JsonUtil {
       "allowedValues" -> (if (parameter.allowedValues.isDefined) parameter.allowedValues.get else JsNull),
       "dependsOn" -> (if (parameter.dependsOn.isDefined) parameter.dependsOn.get else JsNull),
       "dependsOnValue" -> (if (parameter.dependsOnValue.isDefined) parameter.dependsOnValue.get else JsNull),
+      "defaultValue" -> (if (parameter.defaultValue.isDefined) parameter.defaultValue.get else JsNull),
 			"endpoint" -> parameter.endpoint
 		)
 		json
@@ -350,6 +351,7 @@ object JsonUtil {
       "allowedValues" -> (if (parameter.allowedValues.isDefined) parameter.allowedValues.get else JsNull),
       "dependsOn" -> (if (parameter.dependsOn.isDefined) parameter.dependsOn.get else JsNull),
       "dependsOnValue" -> (if (parameter.dependsOnValue.isDefined) parameter.dependsOnValue.get else JsNull),
+      "defaultValue" -> (if (parameter.defaultValue.isDefined) parameter.defaultValue.get else JsNull),
       "community" -> parameter.community
     )
     json
@@ -378,6 +380,7 @@ object JsonUtil {
       "allowedValues" -> (if (parameter.allowedValues.isDefined) parameter.allowedValues.get else JsNull),
       "dependsOn" -> (if (parameter.dependsOn.isDefined) parameter.dependsOn.get else JsNull),
       "dependsOnValue" -> (if (parameter.dependsOnValue.isDefined) parameter.dependsOnValue.get else JsNull),
+      "defaultValue" -> (if (parameter.defaultValue.isDefined) parameter.defaultValue.get else JsNull),
       "community" -> parameter.community
     )
     json
@@ -1094,6 +1097,15 @@ object JsonUtil {
     settings.testSuites = (jsonConfig \ "testSuites").as[Boolean]
     settings.encryptionKey = (jsonConfig \ "encryptionKey").asOpt[String]
     settings
+  }
+
+  def parseAllowedParameterValues(json: String): Map[String, Option[String]] = {
+    val jsArray = Json.parse(json).as[JsArray].value
+    val items = mutable.LinkedHashMap[String, Option[String]]()
+    jsArray.foreach { jsItem =>
+      items += ((jsItem \ "value").as[String] -> (jsItem \ "label").asOpt[String])
+    }
+    items.toMap
   }
 
   def parseJsCommunityLabels(communityId: Long, json:String):List[CommunityLabels] = {

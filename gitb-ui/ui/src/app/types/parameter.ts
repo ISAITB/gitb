@@ -15,6 +15,7 @@ export interface Parameter {
     allowedValues?: string
     dependsOn?: string
     dependsOnValue?: string
+    defaultValue?: string
     hasPresetValues: boolean
     presetValues?: ParameterPresetValue[]
 

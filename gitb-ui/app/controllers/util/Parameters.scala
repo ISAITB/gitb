@@ -161,6 +161,7 @@ object Parameters {
   val HIDDEN = "hidden"
   val DEPENDS_ON = "dependsOn"
   val DEPENDS_ON_VALUE = "dependsOnValue"
+  val DEFAULT_VALUE = "defaultValue"
 
   val FILE       = "file"
 	val LIMIT      = "limit"

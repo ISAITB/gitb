@@ -137,6 +137,7 @@
                 <xsd:attribute name="displayOrder" type="xsd:short"/>
                 <xsd:attribute name="dependsOn" type="xsd:string"/>
                 <xsd:attribute name="dependsOnValue" type="xsd:string"/>
+                <xsd:attribute name="defaultValue" type="xsd:string"/>
             </xsd:extension>
         </xsd:complexContent>
     </xsd:complexType>

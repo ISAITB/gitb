@@ -193,7 +193,7 @@ export class EndpointDetailsComponent extends BaseComponent implements OnInit, A
     })
     modal.content!.created.subscribe((parameter: Parameter) => {
       this.preparePresetValues(parameter)
-      this.conformanceService.createParameter(parameter.name, parameter.testKey, parameter.desc, parameter.use, parameter.kind, parameter.adminOnly, parameter.notForTests, parameter.hidden, parameter.allowedValues, parameter.dependsOn, parameter.dependsOnValue, this.endpointId)
+      this.conformanceService.createParameter(parameter.name, parameter.testKey, parameter.desc, parameter.use, parameter.kind, parameter.adminOnly, parameter.notForTests, parameter.hidden, parameter.allowedValues, parameter.dependsOn, parameter.dependsOnValue, parameter.defaultValue, this.endpointId)
       .subscribe(() => {
         this.loadEndpointData()
         this.popupService.success('Parameter created.')
@@ -216,7 +216,7 @@ export class EndpointDetailsComponent extends BaseComponent implements OnInit, A
     })
     modal.content!.updated.subscribe((parameter: Parameter) => {
       this.preparePresetValues(parameter)
-      this.parameterService.updateParameter(parameter.id, parameter.name, parameter.testKey, parameter.desc, parameter.use, parameter.kind, parameter.adminOnly, parameter.notForTests, parameter.hidden, parameter.allowedValues, parameter.dependsOn, parameter.dependsOnValue, this.endpointId)
+      this.parameterService.updateParameter(parameter.id, parameter.name, parameter.testKey, parameter.desc, parameter.use, parameter.kind, parameter.adminOnly, parameter.notForTests, parameter.hidden, parameter.allowedValues, parameter.dependsOn, parameter.dependsOnValue, parameter.defaultValue, this.endpointId)
       .subscribe(() => {
         this.loadEndpointData()
         this.popupService.success('Parameter updated.')

@@ -201,6 +201,39 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils, systemMan
           DBIO.successful(Some(List[SystemCreationDbInfo]()))
         }
       }
+      /*
+      Set properties with default values.
+       */
+      // 1. Determine the properties that have default values.
+      propertiesWithDefaults <-
+        PersistenceSchema.organisationParameters
+          .filter(_.community === organization.community)
+          .filter(_.defaultValue.isDefined)
+          .map(x => (x.id, x.defaultValue.get))
+          .result
+      // 2. See which of these properties have values.
+      propertiesWithDefaultsThatAreSet <-
+        if (propertiesWithDefaults.isEmpty) {
+          DBIO.successful(List.empty)
+        } else {
+          PersistenceSchema.organisationParameterValues
+            .filter(_.organisation === newOrganisationId)
+            .filter(_.parameter inSet propertiesWithDefaults.map(x => x._1))
+            .map(x => x.parameter)
+            .result
+        }
+      // 3. Apply the default values for any properties that are not set.
+      _ <- {
+        val actions = new ListBuffer[DBIO[_]]()
+        if (propertiesWithDefaults.nonEmpty) {
+          propertiesWithDefaults.foreach { defaultPropertyInfo =>
+            if (!propertiesWithDefaultsThatAreSet.contains(defaultPropertyInfo._1)) {
+              actions += (PersistenceSchema.organisationParameterValues += OrganisationParameterValues(newOrganisationId, defaultPropertyInfo._1, defaultPropertyInfo._2, None))
+            }
+          }
+        }
+        toDBIO(actions)
+      }
       createdOrganisationInfo <- DBIO.successful(new OrganisationCreationDbInfo(newOrganisationId, createdSystemsInfo))
     } yield createdOrganisationInfo
   }

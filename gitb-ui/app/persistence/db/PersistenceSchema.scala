@@ -145,9 +145,10 @@ object PersistenceSchema {
     def displayOrder = column[Short]("display_order")
     def dependsOn  = column[Option[String]]("depends_on")
     def dependsOnValue  = column[Option[String]]("depends_on_value")
+    def defaultValue  = column[Option[String]]("default_value", O.SqlType("TEXT"))
 		def endpoint = column[Long]("endpoint")
 
-		def * = (id, name, testKey, desc, use, kind, adminOnly, notForTests, hidden, allowedValues, displayOrder, dependsOn, dependsOnValue, endpoint) <> (models.Parameters.tupled, models.Parameters.unapply)
+		def * = (id, name, testKey, desc, use, kind, adminOnly, notForTests, hidden, allowedValues, displayOrder, dependsOn, dependsOnValue, defaultValue, endpoint) <> (models.Parameters.tupled, models.Parameters.unapply)
 	}
 	val parameters = TableQuery[ParametersTable]
 
@@ -458,8 +459,9 @@ object PersistenceSchema {
     def displayOrder = column[Short]("display_order")
     def dependsOn  = column[Option[String]]("depends_on")
     def dependsOnValue  = column[Option[String]]("depends_on_value")
+    def defaultValue  = column[Option[String]]("default_value", O.SqlType("TEXT"))
     def community = column[Long]("community")
-    def * = (id, name, testKey, description, use, kind, adminOnly, notForTests, inExports, inSelfRegistration, hidden, allowedValues, displayOrder, dependsOn, dependsOnValue, community) <> (OrganisationParameters.tupled, OrganisationParameters.unapply)
+    def * = (id, name, testKey, description, use, kind, adminOnly, notForTests, inExports, inSelfRegistration, hidden, allowedValues, displayOrder, dependsOn, dependsOnValue, defaultValue, community) <> (OrganisationParameters.tupled, OrganisationParameters.unapply)
   }
   val organisationParameters = TableQuery[OrganisationParametersTable]
   val insertOrganisationParameters = organisationParameters returning organisationParameters.map(_.id)
@@ -479,8 +481,9 @@ object PersistenceSchema {
     def displayOrder = column[Short]("display_order")
     def dependsOn  = column[Option[String]]("depends_on")
     def dependsOnValue  = column[Option[String]]("depends_on_value")
+    def defaultValue  = column[Option[String]]("default_value", O.SqlType("TEXT"))
     def community = column[Long]("community")
-    def * = (id, name, testKey, description, use, kind, adminOnly, notForTests, inExports, hidden, allowedValues, displayOrder, dependsOn, dependsOnValue, community) <> (SystemParameters.tupled, SystemParameters.unapply)
+    def * = (id, name, testKey, description, use, kind, adminOnly, notForTests, inExports, hidden, allowedValues, displayOrder, dependsOn, dependsOnValue, defaultValue, community) <> (SystemParameters.tupled, SystemParameters.unapply)
   }
   val systemParameters = TableQuery[SystemParametersTable]
   val insertSystemParameters = systemParameters returning systemParameters.map(_.id)

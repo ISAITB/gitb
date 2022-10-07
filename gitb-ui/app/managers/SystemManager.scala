@@ -139,6 +139,39 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils, testResultManag
           DBIO.successful(())
         }
       }
+      /*
+      Set properties with default values.
+       */
+      // 1. Determine the properties that have default values.
+      propertiesWithDefaults <-
+        PersistenceSchema.systemParameters
+          .filter(_.community === communityId.get)
+          .filter(_.defaultValue.isDefined)
+          .map(x => (x.id, x.defaultValue.get))
+          .result
+      // 2. See which of these properties have values.
+      propertiesWithDefaultsThatAreSet <-
+        if (propertiesWithDefaults.isEmpty) {
+          DBIO.successful(List.empty)
+        } else {
+          PersistenceSchema.systemParameterValues
+            .filter(_.system === newSystemId)
+            .filter(_.parameter inSet propertiesWithDefaults.map(x => x._1))
+            .map(x => x.parameter)
+            .result
+        }
+      // 3. Apply the default values for any properties that are not set.
+      _ <- {
+        val actions = new ListBuffer[DBIO[_]]()
+        if (propertiesWithDefaults.nonEmpty) {
+          propertiesWithDefaults.foreach { defaultPropertyInfo =>
+            if (!propertiesWithDefaultsThatAreSet.contains(defaultPropertyInfo._1)) {
+              actions += (PersistenceSchema.systemParameterValues += SystemParameterValues(newSystemId, defaultPropertyInfo._1, defaultPropertyInfo._2, None))
+            }
+          }
+        }
+        toDBIO(actions)
+      }
     } yield newSystemId
   }
 
@@ -391,6 +424,40 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils, testResultManag
             updateTime = existingData._4
           }
           actions += (PersistenceSchema.conformanceResults += ConformanceResult(0L, system, spec, actor, testSuite, testCase, result.toString, outputMessage, sessionId, updateTime))
+        }
+        toDBIO(actions)
+      }
+      /*
+      Set properties with default values.
+       */
+      // 1. Determine the properties that have default values.
+      propertiesWithDefaults <-
+        PersistenceSchema.parameters
+          .join(PersistenceSchema.endpoints).on(_.endpoint === _.id)
+          .filter(_._2.actor === actor)
+          .filter(_._1.defaultValue.isDefined)
+          .map(x => (x._1.id, x._1.endpoint, x._1.defaultValue.get))
+          .result
+      // 2. See which of these properties have values.
+      propertiesWithDefaultsThatAreSet <-
+        if (propertiesWithDefaults.isEmpty) {
+          DBIO.successful(List.empty)
+        } else {
+          PersistenceSchema.configs
+            .filter(_.system === system)
+            .filter(_.parameter inSet propertiesWithDefaults.map(x => x._1))
+            .map(x => x.parameter)
+            .result
+        }
+      // 3. Apply the default values for any properties that are not set.
+      _ <- {
+        val actions = new ListBuffer[DBIO[_]]()
+        if (propertiesWithDefaults.nonEmpty) {
+          propertiesWithDefaults.foreach { defaultPropertyInfo =>
+            if (!propertiesWithDefaultsThatAreSet.contains(defaultPropertyInfo._1)) {
+              actions += (PersistenceSchema.configs += Configs(system, defaultPropertyInfo._1, defaultPropertyInfo._2, defaultPropertyInfo._3, None))
+            }
+          }
         }
         toDBIO(actions)
       }

@@ -437,6 +437,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, triggerManager:
                       exportedParameter.setDisplayOrder(parameter.displayOrder)
                       exportedParameter.setDependsOn(parameter.dependsOn.orNull)
                       exportedParameter.setDependsOnValue(parameter.dependsOnValue.orNull)
+                      exportedParameter.setDefaultValue(parameter.defaultValue.orNull)
                       exportedEndpointParameterMap += (parameter.id -> exportedParameter)
                       exportedEndpoint.getParameters.getParameter.add(exportedParameter)
                     }
@@ -693,6 +694,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, triggerManager:
           exportedProperty.setDisplayOrder(property.displayOrder)
           exportedProperty.setDependsOn(property.dependsOn.orNull)
           exportedProperty.setDependsOnValue(property.dependsOnValue.orNull)
+          exportedProperty.setDefaultValue(property.defaultValue.orNull)
           communityData.getOrganisationProperties.getProperty.add(exportedProperty)
           exportedOrganisationPropertyMap += (property.id -> exportedProperty)
         }
@@ -717,6 +719,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, triggerManager:
           exportedProperty.setDisplayOrder(property.displayOrder)
           exportedProperty.setDependsOn(property.dependsOn.orNull)
           exportedProperty.setDependsOnValue(property.dependsOnValue.orNull)
+          exportedProperty.setDefaultValue(property.defaultValue.orNull)
           communityData.getSystemProperties.getProperty.add(exportedProperty)
           exportedSystemPropertyMap += (property.id -> exportedProperty)
         }
