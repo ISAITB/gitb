@@ -140,12 +140,13 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils, systemMan
   private def copyTestSetup(fromOrganisation: Long, toOrganisation: Long, copyOrganisationParameters: Boolean, copySystemParameters: Boolean, copyStatementParameters: Boolean, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[Option[List[SystemCreationDbInfo]]] = {
     for {
       systems <- systemManager.getSystemsByOrganizationInternal(fromOrganisation)
+      communityId <- PersistenceSchema.organizations.filter(_.id === fromOrganisation).map(x => x.community).result.head
       createdSystemInfo <- {
         val actions = new ListBuffer[DBIO[Option[List[SystemCreationDbInfo]]]]()
         systems.foreach { otherSystem =>
           actions += (
             for {
-              newSystemId <- systemManager.registerSystem(Systems(0L, otherSystem.shortname, otherSystem.fullname, otherSystem.description, otherSystem.version, None, toOrganisation), None, None, None, None, onSuccessCalls)
+              newSystemId <- systemManager.registerSystem(Systems(0L, otherSystem.shortname, otherSystem.fullname, otherSystem.description, otherSystem.version, None, toOrganisation), communityId, None, None, None, onSuccessCalls)
               createdSystemInfo <- {
                 DBIO.successful(Some(List[SystemCreationDbInfo](new SystemCreationDbInfo(newSystemId, None))))
               }

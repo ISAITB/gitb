@@ -115,7 +115,7 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils, testResultManag
           DBIO.successful(None)
         }
       }
-      newSystemId <- registerSystem(system, Some(communityId), isAdmin, propertyValuesToUse, propertyFiles, onSuccessCalls)
+      newSystemId <- registerSystem(system, communityId, isAdmin, propertyValuesToUse, propertyFiles, onSuccessCalls)
       linkedActorIds <- {
         if (otherSystem.isDefined) {
           copyTestSetup(otherSystem.get, newSystemId, copySystemParameters, copyStatementParameters, onSuccessCalls)
@@ -129,12 +129,12 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils, testResultManag
     ids
   }
 
-  def registerSystem(system: Systems, communityId: Option[Long], isAdmin: Option[Boolean], propertyValues: Option[List[SystemParameterValues]], propertyFiles: Option[Map[Long, FileInfo]], onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[Long] = {
+  def registerSystem(system: Systems, communityId: Long, isAdmin: Option[Boolean], propertyValues: Option[List[SystemParameterValues]], propertyFiles: Option[Map[Long, FileInfo]], onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[Long] = {
     for {
       newSystemId <- PersistenceSchema.insertSystem += system
       _ <- {
         if (propertyValues.isDefined) {
-          saveSystemParameterValues(newSystemId, communityId.get, isAdmin.get, propertyValues.get, propertyFiles.get, onSuccessCalls)
+          saveSystemParameterValues(newSystemId, communityId, isAdmin.get, propertyValues.get, propertyFiles.get, onSuccessCalls)
         } else {
           DBIO.successful(())
         }
@@ -145,7 +145,7 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils, testResultManag
       // 1. Determine the properties that have default values.
       propertiesWithDefaults <-
         PersistenceSchema.systemParameters
-          .filter(_.community === communityId.get)
+          .filter(_.community === communityId)
           .filter(_.defaultValue.isDefined)
           .map(x => (x.id, x.defaultValue.get))
           .result
