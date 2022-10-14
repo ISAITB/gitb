@@ -66,7 +66,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, triggerHelpe
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction: DBIO[(Long, OrganisationCreationDbInfo)] = for {
       // Save organisation
-      organisationInfo <- organizationManager.createOrganizationWithRelatedData(organisation, templateId, None, None, copyOrganisationParameters = true, copySystemParameters = true, copyStatementParameters = true, checkApiKeyUniqueness = false, setDefaultPropertyValues = true, onSuccessCalls)
+      organisationInfo <- organizationManager.createOrganizationWithRelatedData(organisation, templateId, None, None, copyOrganisationParameters = true, copySystemParameters = true, copyStatementParameters = true, checkApiKeyUniqueness = false, setDefaultPropertyValues = false, onSuccessCalls)
       // Save custom organisation property values
       _ <- {
         if (customPropertyValues.isDefined && customPropertyFiles.isDefined) {
@@ -75,6 +75,8 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, triggerHelpe
           DBIO.successful(())
         }
       }
+      // Apply property defaults.
+      _ <- organizationManager.applyDefaultPropertyValues(organisationInfo.organisationId, organisation.community)
       // Save admin user account
       userId <- PersistenceSchema.insertUser += organisationAdmin.withOrganizationId(organisationInfo.organisationId)
       // Link current session user with created admin user account

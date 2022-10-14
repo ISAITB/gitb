@@ -16,6 +16,7 @@ export class OptionalCustomPropertyFormComponent implements OnInit {
   @Input() tbReadonly = false
   @Input() tbPropertyType!: 'organisation'|'system'
   @Input() tbOwner?: number
+  @Input() tbSetDefaults = false
 
   isAdmin = false
 

@@ -28,6 +28,7 @@ export class CustomPropertyFormComponent implements OnInit {
   @Input() tbOwner?: number
   @Input() tbExpandable = false
   @Input() tbCollapsed: boolean|undefined
+  @Input() tbSetDefaults = false
   @Input() refresh?: EventEmitter<{props?: CustomProperty[], asterisks: boolean}>
   @Output() collapseChange = new EventEmitter<boolean>()
 
@@ -69,6 +70,13 @@ export class CustomPropertyFormComponent implements OnInit {
     }
     if (this.tbFormPadded) {
       this.innerDivStyle = 'col-xs-'+(11-this.tbColOffset)+' col-xs-offset-'+this.tbColOffset
+    }
+    if (this.tbSetDefaults && this.tbProperties != undefined) {
+      for (let prop of this.tbProperties) {
+        if (prop.defaultValue != undefined) {
+          prop.value = prop.defaultValue
+        }
+      }
     }
     if (this.refresh) {
       this.refresh.subscribe((newValues) => {
