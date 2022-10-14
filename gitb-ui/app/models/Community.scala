@@ -21,7 +21,18 @@ case class Communities(
                         allowPostTestStatementUpdates : Boolean,
                         allowAutomationApi : Boolean,
                         apiKey: String,
-                        domain: Option[Long]) {}
+                        domain: Option[Long]) {
+
+  def withApiKey(apiKey: String): Communities = {
+    Communities(this.id, this.shortname, this.fullname, this.supportEmail, this.selfRegType, this.selfRegToken,
+      this.selfRegTokenHelpText, this.selfregNotification, this.description, this.selfRegRestriction,
+      this.selfRegForceTemplateSelection, this.selfRegForceRequiredProperties, this.allowCertificateDownload,
+      this.allowStatementManagement, this.allowSystemManagement, this.allowPostTestOrganisationUpdates,
+      this.allowPostTestSystemUpdates, this.allowPostTestStatementUpdates, this.allowAutomationApi,
+      apiKey, this.domain)
+  }
+
+}
 
 class Community(
                  _id:Long,

@@ -454,7 +454,7 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
     // Get export settings to apply.
     val exportSettings = JsonUtil.parseJsExportSettings(requiredBodyParameter(request, Parameters.VALUES))
     val exportData = fnExportData.apply(exportSettings)
-    exportData.setVersion(Constants.VersionNumber)
+    exportData.setVersion(Configurations.mainVersionNumber())
     exportData.setTimestamp(XMLDateTimeUtils.getXMLGregorianCalendarDateTime)
     // Define temp file paths.
     val randomToken = RandomStringUtils.random(10, false, true)

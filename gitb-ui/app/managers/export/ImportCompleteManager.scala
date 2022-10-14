@@ -779,11 +779,11 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
               ImportCallbacks.set(
                 (data: com.gitb.xml.export.Specification, item: ImportItem) => {
                   val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
-                  conformanceManager.createSpecificationsInternal(models.Specifications(0L, data.getShortName, data.getFullName, Option(data.getDescription), data.isHidden, apiKey, item.parentItem.get.targetKey.get.toLong))
+                  conformanceManager.createSpecificationsInternal(models.Specifications(0L, data.getShortName, data.getFullName, Option(data.getDescription), data.isHidden, apiKey, item.parentItem.get.targetKey.get.toLong), checkApiKeyUniqueness = true)
                 },
                 (data: com.gitb.xml.export.Specification, targetKey: String, item: ImportItem) => {
                   val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
-                  specificationManager.updateSpecificationInternal(targetKey.toLong, data.getShortName, data.getFullName, Option(data.getDescription), data.isHidden, Some(apiKey))
+                  specificationManager.updateSpecificationInternal(targetKey.toLong, data.getShortName, data.getFullName, Option(data.getDescription), data.isHidden, Some(apiKey), checkApiKeyUniqueness = true)
                 },
                 (data: com.gitb.xml.export.Specification, targetKey: Any, item: ImportItem) => {
                   // In case of a failure delete the created domain test suite folder (if one was created later on).
@@ -825,7 +825,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
                       val specificationId = item.parentItem.get.targetKey.get.toLong // Specification
                       val domainId = item.parentItem.get.parentItem.get.targetKey.get.toLong // Specification and then Domain
                       val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
-                      conformanceManager.createActor(models.Actors(0L, data.getActorId, data.getName, Option(data.getDescription), Some(data.isDefault), data.isHidden, order, apiKey, domainId), specificationId)
+                      conformanceManager.createActor(models.Actors(0L, data.getActorId, data.getName, Option(data.getDescription), Some(data.isDefault), data.isHidden, order, apiKey, domainId), specificationId, checkApiKeyUniqueness = true)
                     },
                     (data: com.gitb.xml.export.Actor, targetKey: String, item: ImportItem) => {
                       // Record actor info (needed for test suite processing).
@@ -840,7 +840,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
                         order = Some(data.getOrder.shortValue())
                       }
                       val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
-                      actorManager.updateActor(targetKey.toLong, data.getActorId, data.getName, Option(data.getDescription), Some(data.isDefault), data.isHidden, order, item.parentItem.get.targetKey.get.toLong, Some(apiKey))
+                      actorManager.updateActor(targetKey.toLong, data.getActorId, data.getName, Option(data.getDescription), Some(data.isDefault), data.isHidden, order, item.parentItem.get.targetKey.get.toLong, Some(apiKey), checkApiKeyUniqueness = true)
                     },
                     (data: com.gitb.xml.export.Actor, targetKey: Any, item: ImportItem) => {
                       // Record actor info (needed for test suite processing).
@@ -1168,7 +1168,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
                 data.isAllowCertificateDownload, data.isAllowStatementManagement, data.isAllowSystemManagement,
                 data.isAllowPostTestOrganisationUpdates, data.isAllowSystemManagement, data.isAllowPostTestStatementUpdates, data.isAllowAutomationApi, apiKey,
                 domainId
-              ))
+              ), checkApiKeyUniqueness = true)
             },
             (data: com.gitb.xml.export.Community, targetKey: String, item: ImportItem) => {
               val domainId = determineDomainIdForCommunityUpdate(exportedCommunity, targetCommunity, ctx)
@@ -1179,7 +1179,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
                 data.getSelfRegistrationSettings.isForceTemplateSelection, data.getSelfRegistrationSettings.isForceRequiredProperties,
                 data.isAllowCertificateDownload, data.isAllowStatementManagement, data.isAllowSystemManagement,
                 data.isAllowPostTestOrganisationUpdates, data.isAllowSystemManagement, data.isAllowPostTestStatementUpdates, Some(data.isAllowAutomationApi), Some(apiKey),
-                domainId, ctx.onSuccessCalls
+                domainId, checkApiKeyUniqueness = true, ctx.onSuccessCalls
               )
             },
             None,
@@ -1491,14 +1491,15 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
                 (data: com.gitb.xml.export.Organisation, item: ImportItem) => {
                   for {
                     orgInfo <- {
-                      organisationManager.createOrganizationInTrans(
+                      organisationManager.createOrganizationWithRelatedData(
                         models.Organizations(
                           0L, data.getShortName, data.getFullName, OrganizationType.Vendor.id.toShort, adminOrganization = false,
                           getProcessedDbId(data.getLandingPage, ImportItemType.LandingPage, ctx),
                           getProcessedDbId(data.getLegalNotice, ImportItemType.LegalNotice, ctx),
                           getProcessedDbId(data.getErrorTemplate, ImportItemType.ErrorTemplate, ctx),
                           template = data.isTemplate, Option(data.getTemplateName), Option(data.getApiKey), item.parentItem.get.targetKey.get.toLong
-                        ), None, None, None, copyOrganisationParameters = false, copySystemParameters = false, copyStatementParameters = false, ctx.onSuccessCalls
+                        ), None, None, None, copyOrganisationParameters = false, copySystemParameters = false, copyStatementParameters = false,
+                        checkApiKeyUniqueness = true, setDefaultPropertyValues = false, ctx.onSuccessCalls
                       )
                     }
                   } yield orgInfo.organisationId
@@ -1512,7 +1513,9 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
                       getProcessedDbId(data.getLandingPage, ImportItemType.LandingPage, ctx),
                       getProcessedDbId(data.getLegalNotice, ImportItemType.LegalNotice, ctx),
                       getProcessedDbId(data.getErrorTemplate, ImportItemType.ErrorTemplate, ctx),
-                      None, data.isTemplate, Option(data.getTemplateName), Some(Option(data.getApiKey)), None, None, copyOrganisationParameters = false, copySystemParameters = false, copyStatementParameters = false, ctx.onSuccessCalls
+                      None, data.isTemplate, Option(data.getTemplateName), Some(Option(data.getApiKey)), None, None,
+                      copyOrganisationParameters = false, copySystemParameters = false, copyStatementParameters = false,
+                      checkApiKeyUniqueness = true, ctx.onSuccessCalls
                     )
                   }
                 }
@@ -1652,11 +1655,12 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
                 dbActions += processFromArchive(ImportItemType.System, exportedSystem, exportedSystem.getId, ctx,
                   ImportCallbacks.set(
                     (data: com.gitb.xml.export.System, item: ImportItem) => {
-                      PersistenceSchema.insertSystem += models.Systems(0L, data.getShortName, data.getFullName, Option(data.getDescription), data.getVersion, Option(data.getApiKey), item.parentItem.get.targetKey.get.toLong)
+                      systemManager.registerSystemInternal(models.Systems(0L, data.getShortName, data.getFullName, Option(data.getDescription), data.getVersion, Option(data.getApiKey), item.parentItem.get.targetKey.get.toLong), checkApiKeyUniqueness = true)
                     },
                     (data: com.gitb.xml.export.System, targetKey: String, item: ImportItem) => {
                       systemManager.updateSystemProfileInternal(None, targetCommunityId, item.targetKey.get.toLong, data.getShortName, data.getFullName, Option(data.getDescription), data.getVersion, Some(Option(data.getApiKey)),
-                        None, None, None, copySystemParameters = false, copyStatementParameters = false, ctx.onSuccessCalls
+                        None, None, None, copySystemParameters = false, copyStatementParameters = false,
+                        checkApiKeyUniqueness = true, ctx.onSuccessCalls
                       )
                     }
                   )
@@ -1762,7 +1766,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
                             val systemId = item.parentItem.get.targetKey.get.toLong
                             val key = s"${systemId}_${relatedActorId.get}"
                             if (!hasExisting(ImportItemType.Statement, key, ctx)) {
-                              systemManager.defineConformanceStatement(systemId, relatedSpecId.get, relatedActorId.get, None) andThen
+                              systemManager.defineConformanceStatement(systemId, relatedSpecId.get, relatedActorId.get, None, setDefaultParameterValues = false) andThen
                                 DBIO.successful(key)
                             } else {
                               DBIO.successful(())
@@ -1815,9 +1819,9 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
                               if (data.getParameter != null) {
                                 relatedEndpointId = getProcessedDbId(data.getParameter.getEndpoint, ImportItemType.Endpoint, ctx)
                               }
-                              val statementTargetKeyParts = StringUtils.split(item.parentItem.get.targetKey.get, "_") // [System ID]_[Actor ID]
-                              val relatedActorId = statementTargetKeyParts(1).toLong
                               if (relatedParameterId.isDefined && relatedEndpointId.isDefined) {
+                                val statementTargetKeyParts = StringUtils.split(item.parentItem.get.targetKey.get, "_") // [System ID]_[Actor ID]
+                                val relatedActorId = statementTargetKeyParts(1).toLong
                                 val relatedSystemId = item.parentItem.get.parentItem.get.targetKey.get.toLong // Statement -> System
                                 val key = s"${relatedActorId}_${relatedEndpointId.get}_${relatedSystemId}_${relatedParameterId.get}"
                                 if (!hasExisting(ImportItemType.StatementConfiguration, key, ctx)) {

@@ -2,17 +2,16 @@ package managers
 
 import config.Configurations
 import exceptions._
-import javax.inject.{Inject, Singleton}
-import managers._
 import models.Enums.UserRole.UserRole
 import models.Enums._
-import models.{UserAccount, _}
+import models._
 import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
 import utils.EmailUtil
 
+import javax.inject.{Inject, Singleton}
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -93,15 +92,6 @@ class AccountManager @Inject()(dbConfigProvider: DatabaseConfigProvider) extends
         None)
     ))
     results.sorted
-  }
-
-  def registerVendor(organization: Organizations, admin: Users) = {
-    exec((for {
-      //1) Persist Organization
-      orgId <- PersistenceSchema.insertOrganization += organization
-      //2) Persist Admin
-      _ <- PersistenceSchema.insertUser += admin.withOrganizationId(orgId)
-    } yield ()).transactionally)
   }
 
   def getVendorProfile(userId: Long) = {

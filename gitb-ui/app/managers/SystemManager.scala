@@ -41,7 +41,8 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils, testResultManag
           if (!addedStatements.contains(key)) {
             addedStatements += key
             linkedActorIds += otherConformanceStatement.actor
-            actions += defineConformanceStatement(toSystem, otherConformanceStatement.spec, otherConformanceStatement.actor, None)
+            // We create default parameter values only if we are not copying the other system's parameter values.
+            actions += defineConformanceStatement(toSystem, otherConformanceStatement.spec, otherConformanceStatement.actor, None, setDefaultParameterValues = !copyStatementParameters)
           }
         }
         toDBIO(actions) andThen DBIO.successful(linkedActorIds.toList)
@@ -115,7 +116,7 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils, testResultManag
           DBIO.successful(None)
         }
       }
-      newSystemId <- registerSystem(system, communityId, isAdmin, propertyValuesToUse, propertyFiles, onSuccessCalls)
+      newSystemId <- registerSystem(system, communityId, isAdmin, propertyValuesToUse, propertyFiles, setPropertiesWithDefaultValues = true, onSuccessCalls)
       linkedActorIds <- {
         if (otherSystem.isDefined) {
           copyTestSetup(otherSystem.get, newSystemId, copySystemParameters, copyStatementParameters, onSuccessCalls)
@@ -129,9 +130,23 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils, testResultManag
     ids
   }
 
-  def registerSystem(system: Systems, communityId: Long, isAdmin: Option[Boolean], propertyValues: Option[List[SystemParameterValues]], propertyFiles: Option[Map[Long, FileInfo]], onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[Long] = {
+  def registerSystemInternal(system: Systems, checkApiKeyUniqueness: Boolean): DBIO[Long] = {
     for {
-      newSystemId <- PersistenceSchema.insertSystem += system
+      replaceApiKey <- if (checkApiKeyUniqueness && system.apiKey.isDefined) {
+        PersistenceSchema.systems.filter(_.apiKey === system.apiKey).exists.result
+      } else {
+        DBIO.successful(false)
+      }
+      newSysId <- {
+        val sysToUse = if (replaceApiKey) system.withApiKey(CryptoUtil.generateApiKey()) else system
+        PersistenceSchema.insertSystem += sysToUse
+      }
+    } yield newSysId
+  }
+
+  def registerSystem(system: Systems, communityId: Long, isAdmin: Option[Boolean], propertyValues: Option[List[SystemParameterValues]], propertyFiles: Option[Map[Long, FileInfo]], setPropertiesWithDefaultValues: Boolean, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[Long] = {
+    for {
+      newSystemId <- registerSystemInternal(system, checkApiKeyUniqueness = false)
       _ <- {
         if (propertyValues.isDefined) {
           saveSystemParameterValues(newSystemId, communityId, isAdmin.get, propertyValues.get, propertyFiles.get, onSuccessCalls)
@@ -144,11 +159,15 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils, testResultManag
        */
       // 1. Determine the properties that have default values.
       propertiesWithDefaults <-
-        PersistenceSchema.systemParameters
-          .filter(_.community === communityId)
-          .filter(_.defaultValue.isDefined)
-          .map(x => (x.id, x.defaultValue.get))
-          .result
+        if (setPropertiesWithDefaultValues) {
+          PersistenceSchema.systemParameters
+            .filter(_.community === communityId)
+            .filter(_.defaultValue.isDefined)
+            .map(x => (x.id, x.defaultValue.get))
+            .result
+        } else {
+          DBIO.successful(Seq.empty)
+        }
       // 2. See which of these properties have values.
       propertiesWithDefaultsThatAreSet <-
         if (propertiesWithDefaults.isEmpty) {
@@ -229,21 +248,33 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils, testResultManag
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction = for {
       communityId <- getCommunityIdForSystemId(systemId)
-      linkedActorIds <- updateSystemProfileInternal(Some(userId), None, systemId, sname, fname, description, version, None, otherSystem, propertyValues, propertyFiles, copySystemParameters, copyStatementParameters, onSuccessCalls)
+      linkedActorIds <- updateSystemProfileInternal(Some(userId), None, systemId, sname, fname, description, version, None, otherSystem, propertyValues, propertyFiles, copySystemParameters, copyStatementParameters, checkApiKeyUniqueness = false, onSuccessCalls)
     } yield (communityId, linkedActorIds)
     val result = exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
     triggerHelper.publishTriggerEvent(new SystemUpdatedEvent(result._1, systemId))
     triggerHelper.triggersFor(result._1, systemId, Some(result._2))
   }
 
-  def updateSystemProfileInternal(userId: Option[Long], communityId: Option[Long], systemId: Long, sname: String, fname: String, description: Option[String], version: String, apiKey: Option[Option[String]], otherSystem: Option[Long], propertyValues: Option[List[SystemParameterValues]], propertyFiles: Option[Map[Long, FileInfo]], copySystemParameters: Boolean, copyStatementParameters: Boolean, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[List[Long]] = {
+  def updateSystemProfileInternal(userId: Option[Long], communityId: Option[Long], systemId: Long, sname: String, fname: String, description: Option[String], version: String, apiKey: Option[Option[String]], otherSystem: Option[Long], propertyValues: Option[List[SystemParameterValues]], propertyFiles: Option[Map[Long, FileInfo]], copySystemParameters: Boolean, copyStatementParameters: Boolean, checkApiKeyUniqueness: Boolean, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[List[Long]] = {
     for {
       _ <- {
         val actions = new ListBuffer[DBIO[_]]()
         if (apiKey.isDefined) {
           // Update the API key conditionally.
-          val q = for {s <- PersistenceSchema.systems if s.id === systemId} yield (s.shortname, s.fullname, s.version, s.description, s.apiKey)
-          actions += q.update(sname, fname, version, description, apiKey.get)
+          actions += (for {
+            replaceApiKey <- {
+              if (apiKey.isDefined && apiKey.get.isDefined && checkApiKeyUniqueness) {
+                PersistenceSchema.systems.filter(_.apiKey === apiKey.get.get).filter(_.id =!= systemId).exists.result
+              } else {
+                DBIO.successful(false)
+              }
+            }
+            _ <- {
+              val apiKeyToUse = if (replaceApiKey) Some(CryptoUtil.generateApiKey()) else apiKey.get
+              val q = for {s <- PersistenceSchema.systems if s.id === systemId} yield (s.shortname, s.fullname, s.version, s.description, s.apiKey)
+              q.update(sname, fname, version, description, apiKeyToUse)
+            }
+          } yield ())
         } else {
           val q = for {s <- PersistenceSchema.systems if s.id === systemId} yield (s.shortname, s.fullname, s.version, s.description)
           actions += q.update(sname, fname, version, description)
@@ -348,7 +379,7 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils, testResultManag
   def defineConformanceStatementWrapper(system: Long, spec: Long, actor: Long, options: Option[List[Long]]):Unit = {
     val dbAction = for {
       communityId <- getCommunityIdForSystemId(system)
-      _ <- defineConformanceStatement(system, spec, actor, options)
+      _ <- defineConformanceStatement(system, spec, actor, options, setDefaultParameterValues = true)
     } yield communityId
     val communityId = exec(dbAction.transactionally)
     triggerHelper.publishTriggerEvent(new ConformanceStatementCreatedEvent(communityId, system, actor))
@@ -363,7 +394,7 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils, testResultManag
     result.isDefined
   }
 
-  def defineConformanceStatement(system: Long, spec: Long, actor: Long, options: Option[List[Long]]) = {
+  def defineConformanceStatement(system: Long, spec: Long, actor: Long, options: Option[List[Long]], setDefaultParameterValues: Boolean) = {
     for {
       conformanceInfo <- PersistenceSchema.testCaseHasActors
         .join(PersistenceSchema.testSuiteHasTestCases).on(_.testcase === _.testcase)
@@ -432,12 +463,16 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils, testResultManag
        */
       // 1. Determine the properties that have default values.
       propertiesWithDefaults <-
-        PersistenceSchema.parameters
-          .join(PersistenceSchema.endpoints).on(_.endpoint === _.id)
-          .filter(_._2.actor === actor)
-          .filter(_._1.defaultValue.isDefined)
-          .map(x => (x._1.id, x._1.endpoint, x._1.defaultValue.get))
-          .result
+        if (setDefaultParameterValues) {
+          PersistenceSchema.parameters
+            .join(PersistenceSchema.endpoints).on(_.endpoint === _.id)
+            .filter(_._2.actor === actor)
+            .filter(_._1.defaultValue.isDefined)
+            .map(x => (x._1.id, x._1.endpoint, x._1.defaultValue.get))
+            .result
+        } else {
+          DBIO.successful(Seq.empty)
+        }
       // 2. See which of these properties have values.
       propertiesWithDefaultsThatAreSet <-
         if (propertiesWithDefaults.isEmpty) {

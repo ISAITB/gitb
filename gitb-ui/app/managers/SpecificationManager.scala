@@ -5,6 +5,7 @@ import models.{Constants, Specifications}
 import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
+import utils.CryptoUtil
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -51,16 +52,24 @@ class SpecificationManager @Inject() (actorManager: ActorManager, testResultMana
     } yield specification)
   }
 
-  def updateSpecificationInternal(specId: Long, sname: String, fname: String, descr: Option[String], hidden:Boolean, apiKey: Option[String]): DBIO[_] = {
+  def updateSpecificationInternal(specId: Long, sname: String, fname: String, descr: Option[String], hidden:Boolean, apiKey: Option[String], checkApiKeyUniqueness: Boolean): DBIO[_] = {
     for {
       _ <- {
         val q = for {s <- PersistenceSchema.specifications if s.id === specId} yield (s.shortname, s.fullname, s.description, s.hidden)
         q.update(sname, fname, descr, hidden) andThen
           testResultManager.updateForUpdatedSpecification(specId, sname)
       }
+      replaceApiKey <- {
+        if (apiKey.isDefined && checkApiKeyUniqueness) {
+          PersistenceSchema.specifications.filter(_.apiKey === apiKey.get).filter(_.id =!= specId).exists.result
+        } else {
+          DBIO.successful(false)
+        }
+      }
       _ <- {
         if (apiKey.isDefined) {
-          PersistenceSchema.specifications.filter(_.id === specId).map(_.apiKey).update(apiKey.get)
+          val apiKeyToUse = if (replaceApiKey) CryptoUtil.generateApiKey() else apiKey.get
+          PersistenceSchema.specifications.filter(_.id === specId).map(_.apiKey).update(apiKeyToUse)
         } else {
           DBIO.successful(())
         }
@@ -69,7 +78,7 @@ class SpecificationManager @Inject() (actorManager: ActorManager, testResultMana
   }
 
   def updateSpecification(specId: Long, sname: String, fname: String, descr: Option[String], hidden:Boolean) = {
-    exec(updateSpecificationInternal(specId, sname, fname, descr, hidden, None).transactionally)
+    exec(updateSpecificationInternal(specId, sname, fname, descr, hidden, None, checkApiKeyUniqueness = false).transactionally)
   }
 
   def getSpecificationIdOfActor(actorId: Long) = {

@@ -5,6 +5,11 @@ case class Systems(id:Long, shortname:String, fullname:String, description:Optio
   def withOrganizationId(id:Long): Systems = {
     Systems(this.id, this.shortname, this.fullname, this.description, this.version, this.apiKey, id)
   }
+
+  def withApiKey(apiKey: String): Systems = {
+    Systems(this.id, this.shortname, this.fullname, this.description, this.version, Some(apiKey), this.owner)
+  }
+
 }
 
 class System(_id: Long, _shortname: String, _fullname:String, _description:Option[String], _version:String, _apiKey: Option[String],

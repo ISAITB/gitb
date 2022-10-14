@@ -1,17 +1,9 @@
 package managers.export
 
-import java.io.{File, InputStream}
-import java.nio.file.{Files, Path, Paths}
-import java.util.UUID
-import java.util.regex.Pattern
-
 import com.gitb.utils.XMLUtils
 import com.gitb.xml.export.Export
 import config.Configurations
 import exceptions.ErrorCodes
-import javax.inject.{Inject, Singleton}
-import javax.xml.transform.stream.{StreamResult, StreamSource}
-import javax.xml.xpath.XPathFactory
 import managers._
 import models.Enums.LabelType.LabelType
 import models.Enums.{ImportItemMatch, ImportItemType, LabelType}
@@ -25,6 +17,13 @@ import persistence.db._
 import play.api.db.slick.DatabaseConfigProvider
 import utils.{ClamAVClient, ZipArchiver}
 
+import java.io.{File, InputStream}
+import java.nio.file.{Files, Path, Paths}
+import java.util.UUID
+import java.util.regex.Pattern
+import javax.inject.{Inject, Singleton}
+import javax.xml.transform.stream.{StreamResult, StreamSource}
+import javax.xml.xpath.XPathFactory
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
@@ -32,6 +31,7 @@ import scala.collection.mutable.ListBuffer
 class ImportPreviewManager @Inject()(exportManager: ExportManager, communityManager: CommunityManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
+
   import scala.jdk.CollectionConverters._
 
   private val logger = LoggerFactory.getLogger(classOf[ImportPreviewManager])
@@ -851,8 +851,9 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
     var xmlFileToUse = xmlFile
     // Get the declared version number from the file.
     val clearVersionNumber = fileVersion.toString
-    if (!clearVersionNumber.equals(Constants.VersionNumber)) {
-      logger.info("Data archive at version ["+clearVersionNumber+"] - migrating to ["+Constants.VersionNumber+"]")
+    val targetVersionNumber = Configurations.mainVersionNumber()
+    if (!clearVersionNumber.equals(targetVersionNumber)) {
+      logger.info("Data archive at version ["+clearVersionNumber+"] - migrating to ["+targetVersionNumber+"]")
       // XML has a different version number than the current one.
       val migrationsToApply = new ListBuffer[(Version, Version)]()
       MIGRATIONS.foreach { migration =>

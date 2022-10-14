@@ -1,15 +1,15 @@
 package managers
 
-import java.util
-import javax.inject.{Inject, Singleton}
 import models.Enums._
 import models._
 import org.apache.commons.lang3.StringUtils
 import org.slf4j.LoggerFactory
 import persistence.db._
 import play.api.db.slick.DatabaseConfigProvider
-import utils.RepositoryUtils
+import utils.{CryptoUtil, RepositoryUtils}
 
+import java.util
+import javax.inject.{Inject, Singleton}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -66,7 +66,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, triggerHelpe
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction: DBIO[(Long, OrganisationCreationDbInfo)] = for {
       // Save organisation
-      organisationInfo <- organizationManager.createOrganizationInTrans(organisation, templateId, None, None, copyOrganisationParameters = true, copySystemParameters = true, copyStatementParameters = true, onSuccessCalls)
+      organisationInfo <- organizationManager.createOrganizationWithRelatedData(organisation, templateId, None, None, copyOrganisationParameters = true, copySystemParameters = true, copyStatementParameters = true, checkApiKeyUniqueness = false, setDefaultPropertyValues = true, onSuccessCalls)
       // Save custom organisation property values
       _ <- {
         if (customPropertyValues.isDefined && customPropertyFiles.isDefined) {
@@ -162,12 +162,23 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, triggerHelpe
     exec(createCommunityInternal(community).transactionally)
   }
 
-  def createCommunityInternal(community: Communities) = {
+  def createCommunityInternal(community: Communities): DBIO[(Long, Long)] = {
+    createCommunityInternal(community, checkApiKeyUniqueness = false)
+  }
+
+  def createCommunityInternal(community: Communities, checkApiKeyUniqueness: Boolean): DBIO[(Long, Long)] = {
     for {
-      communityId <- PersistenceSchema.insertCommunity += community
+      replaceApiKey <- if (checkApiKeyUniqueness) {
+        PersistenceSchema.communities.filter(_.apiKey === community.apiKey).exists.result
+      } else {
+        DBIO.successful(false)
+      }
+      communityId <- {
+        val communityToUse = if (replaceApiKey) community.withApiKey(CryptoUtil.generateApiKey()) else community
+        PersistenceSchema.insertCommunity += communityToUse
+      }
       adminOrganisationId <- {
-        val adminOrganization = Organizations(0L, Constants.AdminOrganizationName, Constants.AdminOrganizationName, OrganizationType.Vendor.id.toShort, adminOrganization = true, None, None, None, template = false, None, None, communityId)
-        PersistenceSchema.insertOrganization += adminOrganization
+        organizationManager.createOrganizationInTrans(Organizations(0L, Constants.AdminOrganizationName, Constants.AdminOrganizationName, OrganizationType.Vendor.id.toShort, adminOrganization = true, None, None, None, template = false, None, None, communityId))
       }
     } yield (communityId, adminOrganisationId)
   }
@@ -242,7 +253,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, triggerHelpe
                                                 description: Option[String], selfRegRestriction: Short, selfRegForceTemplateSelection: Boolean, selfRegForceRequiredProperties: Boolean,
                                                 allowCertificateDownload: Boolean, allowStatementManagement: Boolean, allowSystemManagement: Boolean,
                                                 allowPostTestOrganisationUpdates: Boolean, allowPostTestSystemUpdates: Boolean, allowPostTestStatementUpdates: Boolean, allowAutomationApi: Option[Boolean],
-                                                apiKey: Option[String], domainId: Option[Long], onSuccess: mutable.ListBuffer[() => _]) = {
+                                                apiKey: Option[String], domainId: Option[Long], checkApiKeyUniqueness: Boolean, onSuccess: mutable.ListBuffer[() => _]) = {
     val actions = new ListBuffer[DBIO[_]]()
     if (shortName.nonEmpty && community.shortname != shortName) {
       val q = for {c <- PersistenceSchema.communities if c.id === community.id} yield c.shortname
@@ -269,7 +280,23 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, triggerHelpe
         allowPostTestOrganisationUpdates, allowPostTestSystemUpdates, allowPostTestStatementUpdates, allowAutomationApi.getOrElse(community.allowAutomationApi)
       )
     if (apiKey.isDefined) {
-      actions += PersistenceSchema.communities.filter(_.id === community.id).map(_.apiKey).update(apiKey.get)
+      actions += (for {
+        replaceApiKey <- {
+          if (apiKey.isDefined && checkApiKeyUniqueness) {
+            PersistenceSchema.communities.filter(_.apiKey === apiKey.get).filter(_.id =!= community.id).exists.result
+          } else {
+            DBIO.successful(false)
+          }
+        }
+        _ <- {
+          if (apiKey.isDefined) {
+            val apiKeyToUse = if (replaceApiKey) CryptoUtil.generateApiKey() else apiKey.get
+            PersistenceSchema.communities.filter(_.id === community.id).map(_.apiKey).update(apiKeyToUse)
+          } else {
+            DBIO.successful(())
+          }
+        }
+      } yield ())
     }
     toDBIO(actions)
   }
@@ -296,7 +323,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, triggerHelpe
             selfRegNotification, description, selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties,
             allowCertificateDownload, allowStatementManagement, allowSystemManagement,
             allowPostTestOrganisationUpdates, allowPostTestSystemUpdates, allowPostTestStatementUpdates, allowAutomationApi, None,
-            domainId, onSuccess
+            domainId, checkApiKeyUniqueness = false, onSuccess
           )
         } else {
           throw new IllegalArgumentException("Community with ID '" + communityId + "' not found")

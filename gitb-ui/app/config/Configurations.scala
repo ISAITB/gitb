@@ -3,8 +3,9 @@ package config
 import com.gitb.utils.HmacUtils
 import com.typesafe.config.{Config, ConfigFactory}
 import models.Constants
+import org.apache.commons.lang3.StringUtils
 
-import java.util.Properties
+import java.util.{Locale, Properties}
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 import scala.util.matching.Regex
 
@@ -137,6 +138,10 @@ object Configurations {
     } else {
       Constants.VersionNumber
     }
+  }
+
+  def mainVersionNumber(): String = {
+    StringUtils.removeEnd(Constants.VersionNumber.toLowerCase(Locale.getDefault), "-snapshot")
   }
 
   def loadConfigurations(): Unit = {

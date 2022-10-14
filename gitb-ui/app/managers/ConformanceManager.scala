@@ -6,7 +6,7 @@ import org.apache.commons.io.FileUtils
 import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
-import utils.RepositoryUtils
+import utils.{CryptoUtil, MimeUtil, RepositoryUtils}
 
 import java.io.File
 import java.text.SimpleDateFormat
@@ -15,8 +15,6 @@ import javax.inject.{Inject, Singleton}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
-import utils.MimeUtil
-import utils.signature.SigUtils
 
 @Singleton
 class ConformanceManager @Inject() (systemManager: SystemManager, triggerManager: TriggerManager, actorManager: ActorManager, testResultManager: TestResultManager, testCaseManager: TestCaseManager, repositoryUtils: RepositoryUtils, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
@@ -71,7 +69,7 @@ class ConformanceManager @Inject() (systemManager: SystemManager, triggerManager
 		exec(createDomainInternal(domain))
 	}
 
-	def createDomainParameterInternal(parameter:DomainParameter, fileToStore: Option[File], onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
+	def createDomainParameterInternal(parameter:DomainParameter, fileToStore: Option[File], onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[Long] = {
 		for {
 			id <- PersistenceSchema.domainParameters.returning(PersistenceSchema.domainParameters.map(_.id)) += parameter
 			_ <- {
@@ -80,7 +78,7 @@ class ConformanceManager @Inject() (systemManager: SystemManager, triggerManager
 				}
 				DBIO.successful(())
 			}
-		} yield ()
+		} yield id
 	}
 
 	def createDomainParameter(parameter:DomainParameter, fileToStore: Option[File]) = {
@@ -328,8 +326,22 @@ class ConformanceManager @Inject() (systemManager: SystemManager, triggerManager
 			exec(specs)
   }
 
-	def createSpecificationsInternal(specification: Specifications): DBIO[_] = {
-		PersistenceSchema.specifications.returning(PersistenceSchema.specifications.map(_.id)) += specification
+	def createSpecificationsInternal(specification: Specifications): DBIO[Long] = {
+		createSpecificationsInternal(specification, checkApiKeyUniqueness = false)
+	}
+
+	def createSpecificationsInternal(specification: Specifications, checkApiKeyUniqueness: Boolean): DBIO[Long] = {
+		for {
+			replaceApiKey <- if (checkApiKeyUniqueness) {
+				PersistenceSchema.specifications.filter(_.apiKey === specification.apiKey).exists.result
+			} else {
+				DBIO.successful(false)
+			}
+			newSpecId <- {
+				val specToUse = if (replaceApiKey) specification.withApiKey(CryptoUtil.generateApiKey()) else specification
+				PersistenceSchema.specifications.returning(PersistenceSchema.specifications.map(_.id)) += specToUse
+			}
+		} yield newSpecId
 	}
 
 	def createSpecifications(specification: Specifications) = {
@@ -339,10 +351,21 @@ class ConformanceManager @Inject() (systemManager: SystemManager, triggerManager
 	def createActorWrapper(actor: Actors, specificationId: Long) = {
 		exec(createActor(actor, specificationId).transactionally)
 	}
-
 	def createActor(actor: Actors, specificationId: Long): DBIO[Long] = {
+		createActor(actor, specificationId, checkApiKeyUniqueness = false)
+	}
+
+	def createActor(actor: Actors, specificationId: Long, checkApiKeyUniqueness: Boolean): DBIO[Long] = {
 		for {
-			savedActorId <- PersistenceSchema.actors.returning(PersistenceSchema.actors.map(_.id)) += actor
+			replaceApiKey <- if (checkApiKeyUniqueness) {
+				PersistenceSchema.actors.filter(_.apiKey === actor.apiKey).exists.result
+			} else {
+				DBIO.successful(false)
+			}
+			savedActorId <- {
+				val actorToUse = if (replaceApiKey) actor.withApiKey(CryptoUtil.generateApiKey()) else actor
+				PersistenceSchema.actors.returning(PersistenceSchema.actors.map(_.id)) += actorToUse
+			}
 			_ <- {
 				val actions = new ListBuffer[DBIO[_]]()
 				actions += (PersistenceSchema.specificationHasActors += (specificationId, savedActorId))
