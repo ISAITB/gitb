@@ -76,8 +76,9 @@
         <version.beanUtils>1.9.4</version.beanUtils>
         <version.freeMarker>2.3.31</version.freeMarker>
         <!-- Version overrides in Spring Boot - START -->
-        <version.snakeyaml>1.32</version.snakeyaml> <!-- To resolve CVE-2022-25857 -->
-        <version.jacksonBom>2.13.4.20221013</version.jacksonBom> <!-- To resolve CVE-2022-42003 -->
+        <version.snakeyaml>1.32</version.snakeyaml> <!-- Spring Boot override to resolve CVE-2022-25857 -->
+        <version.jacksonBom>2.13.4.20221013</version.jacksonBom> <!-- Spring Boot override to resolve CVE-2022-42003 -->
+        <version.commonsText>1.10.0</version.commonsText> <!-- Apache Commons Configuration override to resolve CVE-2022-42889 -->
         <!-- Version overrides in Spring Boot - END -->
         <!-- Properties used for filtering replacements -->
         <timestamp>${maven.build.timestamp}</timestamp>
@@ -238,11 +239,6 @@
                 <artifactId>httpmime</artifactId>
                 <version>${version.httpComponents}</version>
             </dependency>
-<!--            <dependency>-->
-<!--                <groupId>org.slf4j</groupId>-->
-<!--                <artifactId>slf4j-api</artifactId>-->
-<!--                <version>${version.slf4j}</version>-->
-<!--            </dependency>-->
             <dependency>
                 <groupId>commons-codec</groupId>
                 <artifactId>commons-codec</artifactId>
@@ -503,12 +499,19 @@
                 <artifactId>snakeyaml</artifactId>
                 <version>${version.snakeyaml}</version>
             </dependency>
+            <!-- Spring Boot override -->
             <dependency>
                 <groupId>com.fasterxml.jackson</groupId>
                 <artifactId>jackson-bom</artifactId>
                 <version>${version.jacksonBom}</version>
                 <scope>import</scope>
                 <type>pom</type>
+            </dependency>
+            <!-- Apache Commons Configuration override -->
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-text</artifactId>
+                <version>${version.commonsText}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
