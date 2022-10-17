@@ -45,6 +45,6 @@ class PublicConfig(
   var releaseInfoEnabled: Boolean = _releaseInfoEnabled
   var releaseInfoLink: String = _releaseInfoLink
 
-  def this(_versionNumber: String, _resourceVersionNumber: String, _cookiePath: String, _contextPath: String) =
-    this(false, null, null, _versionNumber, _resourceVersionNumber, false, null, false, false, null, false, null, null, _cookiePath, false, false, _contextPath, false, null, false, null)
+  def this(_resourceVersionNumber: String, _cookiePath: String, _contextPath: String) =
+    this(false, null, null, null, _resourceVersionNumber, false, null, false, false, null, false, null, null, _cookiePath, false, false, _contextPath, false, null, false, null)
 }

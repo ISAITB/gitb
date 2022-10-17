@@ -88,8 +88,8 @@
 			<artifactId>jaxp-ri</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>com.github.mifmif</groupId>
-			<artifactId>generex</artifactId>
+			<groupId>com.github.curious-odd-man</groupId>
+			<artifactId>rgxgen</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.tika</groupId>

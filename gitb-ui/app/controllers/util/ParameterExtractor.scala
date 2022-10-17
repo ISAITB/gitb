@@ -4,7 +4,7 @@ import config.Configurations
 import exceptions.{ErrorCodes, InvalidRequestException}
 import models.Enums._
 import controllers.util.Parameters
-import models.{Actor, Actors, Communities, Domain, Endpoints, ErrorTemplates, FileInfo, LandingPages, LegalNotices, Options, OrganisationParameterValues, Organizations, Specifications, SystemParameterValues, Systems, Trigger, TriggerData, Triggers, Users}
+import models.{Actor, Communities, Domain, Endpoints, ErrorTemplates, FileInfo, LandingPages, LegalNotices, Options, OrganisationParameterValues, Organizations, Specifications, SystemParameterValues, Systems, Trigger, TriggerData, Triggers, Users}
 import org.apache.commons.lang3.StringUtils
 import org.mindrot.jbcrypt.BCrypt
 import play.api.mvc._
@@ -465,6 +465,7 @@ object ParameterExtractor {
       case _ => 0L
     }
     val name:String = ParameterExtractor.requiredBodyParameter(request, Parameters.NAME)
+    val testKey:String = ParameterExtractor.requiredBodyParameter(request, Parameters.TEST_KEY)
     val desc:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DESC)
     val use:String = ParameterExtractor.requiredBodyParameter(request, Parameters.USE)
     val kind:String = ParameterExtractor.requiredBodyParameter(request, Parameters.KIND)
@@ -487,7 +488,8 @@ object ParameterExtractor {
     if (!adminOnly) {
       hidden = false
     }
-    models.Parameters(id, name, desc, use, kind, adminOnly, notForTests, hidden, allowedValues, 0, dependsOn, dependsOnValue, endpointId)
+    val defaultValue = determineDefaultParameterValue(ParameterExtractor.optionalBodyParameter(request, Parameters.DEFAULT_VALUE), kind, allowedValues)
+    models.Parameters(id, name, testKey, desc, use, kind, adminOnly, notForTests, hidden, allowedValues, 0, dependsOn, dependsOnValue, defaultValue, endpointId)
   }
 
   def extractOrganisationParameter(request:Request[AnyContent]):models.OrganisationParameters = {
@@ -521,7 +523,24 @@ object ParameterExtractor {
     if (!adminOnly) {
       hidden = false
     }
-    models.OrganisationParameters(id, name, testKey, desc, use, kind, adminOnly, notForTests, inExports, inSelfRegistration, hidden, allowedValues, 0, dependsOn, dependsOnValue, communityId)
+    val defaultValue = determineDefaultParameterValue(ParameterExtractor.optionalBodyParameter(request, Parameters.DEFAULT_VALUE), kind, allowedValues)
+    models.OrganisationParameters(id, name, testKey, desc, use, kind, adminOnly, notForTests, inExports, inSelfRegistration, hidden, allowedValues, 0, dependsOn, dependsOnValue, defaultValue, communityId)
+  }
+
+  private def determineDefaultParameterValue(defaultValue: Option[String], kind: String, allowedValues: Option[String]): Option[String] = {
+    var defaultValueToUse = defaultValue
+    if (defaultValueToUse.isDefined) {
+      if (!kind.equals("SIMPLE")) {
+        defaultValueToUse = None
+      }
+    }
+    if (defaultValueToUse.isDefined && allowedValues.isDefined) {
+      val allowed = JsonUtil.parseAllowedParameterValues(allowedValues.get)
+      if (!allowed.keySet.contains(defaultValueToUse.get)) {
+        defaultValueToUse = None
+      }
+    }
+    defaultValueToUse
   }
 
   def extractSystemParameter(request:Request[AnyContent]):models.SystemParameters = {
@@ -554,7 +573,8 @@ object ParameterExtractor {
     if (!adminOnly) {
       hidden = false
     }
-    models.SystemParameters(id, name, testKey, desc, use, kind, adminOnly, notForTests, inExports, hidden, allowedValues, 0, dependsOn, dependsOnValue, communityId)
+    val defaultValue = determineDefaultParameterValue(ParameterExtractor.optionalBodyParameter(request, Parameters.DEFAULT_VALUE), kind, allowedValues)
+    models.SystemParameters(id, name, testKey, desc, use, kind, adminOnly, notForTests, inExports, hidden, allowedValues, 0, dependsOn, dependsOnValue, defaultValue, communityId)
   }
 
   def extractLandingPageInfo(request:Request[AnyContent]):LandingPages = {
@@ -583,11 +603,12 @@ object ParameterExtractor {
     val operation = optionalBodyParameter(request, Parameters.OPERATION)
     val active = requiredBodyParameter(request, Parameters.ACTIVE).toBoolean
     val eventType = requiredBodyParameter(request, Parameters.EVENT).toShort
+    val serviceType = requiredBodyParameter(request, Parameters.TYPE).toShort
     // Check that this is a valid value (otherwise throw exception)
     TriggerEventType.apply(eventType)
     val communityId = requiredBodyParameter(request, Parameters.COMMUNITY_ID).toLong
     new Trigger(
-      Triggers(triggerId.getOrElse(0L), name, description, url, eventType, operation, active, None, None, communityId),
+      Triggers(triggerId.getOrElse(0L), name, description, url, eventType, serviceType, operation, active, None, None, communityId),
       extractTriggerDataItems(request, Parameters.DATA, triggerId)
     )
   }

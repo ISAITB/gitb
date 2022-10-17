@@ -63,4 +63,11 @@
         <packageUrl regex="true">^pkg:maven/org\.apache\.logging\.log4j/log4j\-api@.*$</packageUrl>
         <cve>CVE-2022-33915</cve>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: snakeyaml-1.32.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.yaml/snakeyaml@.*$</packageUrl>
+        <vulnerabilityName>CVE-2022-38752</vulnerabilityName>
+    </suppress>
 </suppressions>

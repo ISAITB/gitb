@@ -299,7 +299,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
     try {
       MimeUtil.decryptString(value, importSettings.encryptionKey.get.toCharArray)
     } catch {
-      case e: Exception => throw new IllegalArgumentException("An encrypted value could not be successfully decrypted.")
+      case _: Exception => throw new IllegalArgumentException("An encrypted value could not be successfully decrypted.")
     }
   }
 
@@ -367,7 +367,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
     }
     models.OrganisationParameters(modelId.getOrElse(0L), data.getLabel, data.getName, Option(data.getDescription), requiredToUse(data.isRequired),
       propertyTypeToKind(data.getType), !data.isEditable, !data.isInTests, data.isInExports, data.isInSelfRegistration, data.isHidden, Option(data.getAllowedValues),
-      displayOrder, Option(data.getDependsOn), Option(data.getDependsOnValue), communityId
+      displayOrder, Option(data.getDependsOn), Option(data.getDependsOnValue), Option(data.getDefaultValue), communityId
     )
   }
 
@@ -378,7 +378,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
     }
     models.SystemParameters(modelId.getOrElse(0L), data.getLabel, data.getName, Option(data.getDescription), requiredToUse(data.isRequired),
       propertyTypeToKind(data.getType), !data.isEditable, !data.isInTests, data.isInExports, data.isHidden, Option(data.getAllowedValues),
-      displayOrder, Option(data.getDependsOn), Option(data.getDependsOnValue), communityId
+      displayOrder, Option(data.getDependsOn), Option(data.getDependsOnValue), Option(data.getDefaultValue), communityId
     )
   }
 
@@ -406,7 +406,17 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
       case com.gitb.xml.export.TriggerEventType.TEST_SESSION_SUCCEEDED => Enums.TriggerEventType.TestSessionSucceeded.id.toShort
       case com.gitb.xml.export.TriggerEventType.TEST_SESSION_FAILED => Enums.TriggerEventType.TestSessionFailed.id.toShort
       case com.gitb.xml.export.TriggerEventType.CONFORMANCE_STATEMENT_SUCCEEDED => Enums.TriggerEventType.ConformanceStatementSucceeded.id.toShort
+      case com.gitb.xml.export.TriggerEventType.TEST_SESSION_STARTED => Enums.TriggerEventType.TestSessionStarted.id.toShort
       case _ => throw new IllegalArgumentException("Unknown enum value ["+eventType+"]")
+    }
+  }
+
+  private def toModelTriggerServiceType(serviceType: com.gitb.xml.export.TriggerServiceType): Short = {
+    require(serviceType != null, "Enum value cannot be null")
+    serviceType match {
+      case com.gitb.xml.export.TriggerServiceType.GITB => Enums.TriggerServiceType.GITB.id.toShort
+      case com.gitb.xml.export.TriggerServiceType.JSON => Enums.TriggerServiceType.JSON.id.toShort
+      case _ => throw new IllegalArgumentException("Unknown enum value ["+serviceType+"]")
     }
   }
 
@@ -418,15 +428,20 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
       case com.gitb.xml.export.TriggerDataType.SYSTEM => Enums.TriggerDataType.System.id.toShort
       case com.gitb.xml.export.TriggerDataType.SPECIFICATION => Enums.TriggerDataType.Specification.id.toShort
       case com.gitb.xml.export.TriggerDataType.ACTOR => Enums.TriggerDataType.Actor.id.toShort
+      case com.gitb.xml.export.TriggerDataType.TEST_SESSION => Enums.TriggerDataType.TestSession.id.toShort
+      case com.gitb.xml.export.TriggerDataType.TEST_REPORT => Enums.TriggerDataType.TestReport.id.toShort
       case com.gitb.xml.export.TriggerDataType.ORGANISATION_PARAMETER => Enums.TriggerDataType.OrganisationParameter.id.toShort
       case com.gitb.xml.export.TriggerDataType.SYSTEM_PARAMETER => Enums.TriggerDataType.SystemParameter.id.toShort
       case com.gitb.xml.export.TriggerDataType.DOMAIN_PARAMETER => Enums.TriggerDataType.DomainParameter.id.toShort
+      case com.gitb.xml.export.TriggerDataType.STATEMENT_PARAMETER => Enums.TriggerDataType.StatementParameter.id.toShort
       case _ => throw new IllegalArgumentException("Unknown enum value ["+dataType+"]")
     }
   }
 
   private def toModelTrigger(modelTriggerId: Option[Long], data: com.gitb.xml.export.Trigger, communityId: Long, ctx: ImportContext): models.Trigger = {
-    val modelTrigger = models.Triggers(modelTriggerId.getOrElse(0L), data.getName, Option(data.getDescription), data.getUrl, toModelTriggerEventType(data.getEventType), Option(data.getOperation), data.isActive, None, None, communityId)
+    val modelTrigger = models.Triggers(modelTriggerId.getOrElse(0L), data.getName, Option(data.getDescription),
+      data.getUrl, toModelTriggerEventType(data.getEventType), toModelTriggerServiceType(data.getServiceType),
+      Option(data.getOperation), data.isActive, None, None, communityId)
     var modelDataItems: Option[List[models.TriggerData]] = None
     if (data.getDataItems != null) {
       val modelDataItemsToProcess = ListBuffer[models.TriggerData]()
@@ -438,6 +453,8 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
           dataId = getProcessedDbId(dataItem.getData, ImportItemType.SystemProperty, ctx)
         } else if (dataItem.getDataType == com.gitb.xml.export.TriggerDataType.DOMAIN_PARAMETER) {
           dataId = getProcessedDbId(dataItem.getData, ImportItemType.DomainParameter, ctx)
+        } else if (dataItem.getDataType == com.gitb.xml.export.TriggerDataType.STATEMENT_PARAMETER) {
+          dataId = getProcessedDbId(dataItem.getData, ImportItemType.EndpointParameter, ctx)
         } else {
           dataId = Some(-1)
         }
@@ -762,11 +779,11 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
               ImportCallbacks.set(
                 (data: com.gitb.xml.export.Specification, item: ImportItem) => {
                   val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
-                  conformanceManager.createSpecificationsInternal(models.Specifications(0L, data.getShortName, data.getFullName, Option(data.getDescription), data.isHidden, apiKey, item.parentItem.get.targetKey.get.toLong))
+                  conformanceManager.createSpecificationsInternal(models.Specifications(0L, data.getShortName, data.getFullName, Option(data.getDescription), data.isHidden, apiKey, item.parentItem.get.targetKey.get.toLong), checkApiKeyUniqueness = true)
                 },
                 (data: com.gitb.xml.export.Specification, targetKey: String, item: ImportItem) => {
                   val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
-                  specificationManager.updateSpecificationInternal(targetKey.toLong, data.getShortName, data.getFullName, Option(data.getDescription), data.isHidden, Some(apiKey))
+                  specificationManager.updateSpecificationInternal(targetKey.toLong, data.getShortName, data.getFullName, Option(data.getDescription), data.isHidden, Some(apiKey), checkApiKeyUniqueness = true)
                 },
                 (data: com.gitb.xml.export.Specification, targetKey: Any, item: ImportItem) => {
                   // In case of a failure delete the created domain test suite folder (if one was created later on).
@@ -808,7 +825,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
                       val specificationId = item.parentItem.get.targetKey.get.toLong // Specification
                       val domainId = item.parentItem.get.parentItem.get.targetKey.get.toLong // Specification and then Domain
                       val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
-                      conformanceManager.createActor(models.Actors(0L, data.getActorId, data.getName, Option(data.getDescription), Some(data.isDefault), data.isHidden, order, apiKey, domainId), specificationId)
+                      conformanceManager.createActor(models.Actors(0L, data.getActorId, data.getName, Option(data.getDescription), Some(data.isDefault), data.isHidden, order, apiKey, domainId), specificationId, checkApiKeyUniqueness = true)
                     },
                     (data: com.gitb.xml.export.Actor, targetKey: String, item: ImportItem) => {
                       // Record actor info (needed for test suite processing).
@@ -823,7 +840,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
                         order = Some(data.getOrder.shortValue())
                       }
                       val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
-                      actorManager.updateActor(targetKey.toLong, data.getActorId, data.getName, Option(data.getDescription), Some(data.isDefault), data.isHidden, order, item.parentItem.get.targetKey.get.toLong, Some(apiKey))
+                      actorManager.updateActor(targetKey.toLong, data.getActorId, data.getName, Option(data.getDescription), Some(data.isDefault), data.isHidden, order, item.parentItem.get.targetKey.get.toLong, Some(apiKey), checkApiKeyUniqueness = true)
                     },
                     (data: com.gitb.xml.export.Actor, targetKey: Any, item: ImportItem) => {
                       // Record actor info (needed for test suite processing).
@@ -902,10 +919,23 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
                         dbActions += processFromArchive(ImportItemType.EndpointParameter, exportedParameter, exportedParameter.getId, ctx,
                           ImportCallbacks.set(
                             (data: com.gitb.xml.export.EndpointParameter, item: ImportItem) => {
-                              parameterManager.createParameter(models.Parameters(0L, data.getName, Option(data.getDescription), requiredToUse(data.isRequired), propertyTypeToKind(data.getType), !data.isEditable, !data.isInTests, data.isHidden, Option(data.getAllowedValues), displayOrderToUse.toShort, Option(data.getDependsOn), Option(data.getDependsOnValue), item.parentItem.get.targetKey.get.toLong))
+                              var labelToUse = data.getLabel
+                              if (labelToUse == null) {
+                                labelToUse = data.getName
+                              }
+                              parameterManager.createParameter(models.Parameters(0L, labelToUse, data.getName, Option(data.getDescription),
+                                requiredToUse(data.isRequired), propertyTypeToKind(data.getType), !data.isEditable, !data.isInTests, data.isHidden,
+                                Option(data.getAllowedValues), displayOrderToUse.toShort, Option(data.getDependsOn), Option(data.getDependsOnValue), Option(data.getDefaultValue),
+                                item.parentItem.get.targetKey.get.toLong))
                             },
                             (data: com.gitb.xml.export.EndpointParameter, targetKey: String, item: ImportItem) => {
-                              parameterManager.updateParameter(targetKey.toLong, data.getName, Option(data.getDescription), requiredToUse(data.isRequired), propertyTypeToKind(data.getType), !data.isEditable, !data.isInTests, data.isHidden, Option(data.getAllowedValues), Option(data.getDependsOn), Option(data.getDependsOnValue), ctx.onSuccessCalls)
+                              var labelToUse = data.getLabel
+                              if (labelToUse == null) {
+                                labelToUse = data.getName
+                              }
+                              parameterManager.updateParameter(targetKey.toLong, labelToUse, data.getName, Option(data.getDescription),
+                                requiredToUse(data.isRequired), propertyTypeToKind(data.getType), !data.isEditable, !data.isInTests, data.isHidden,
+                                Option(data.getAllowedValues), Option(data.getDependsOn), Option(data.getDependsOnValue), Option(data.getDefaultValue), ctx.onSuccessCalls)
                             }
                           )
                         )
@@ -1138,7 +1168,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
                 data.isAllowCertificateDownload, data.isAllowStatementManagement, data.isAllowSystemManagement,
                 data.isAllowPostTestOrganisationUpdates, data.isAllowSystemManagement, data.isAllowPostTestStatementUpdates, data.isAllowAutomationApi, apiKey,
                 domainId
-              ))
+              ), checkApiKeyUniqueness = true)
             },
             (data: com.gitb.xml.export.Community, targetKey: String, item: ImportItem) => {
               val domainId = determineDomainIdForCommunityUpdate(exportedCommunity, targetCommunity, ctx)
@@ -1149,7 +1179,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
                 data.getSelfRegistrationSettings.isForceTemplateSelection, data.getSelfRegistrationSettings.isForceRequiredProperties,
                 data.isAllowCertificateDownload, data.isAllowStatementManagement, data.isAllowSystemManagement,
                 data.isAllowPostTestOrganisationUpdates, data.isAllowSystemManagement, data.isAllowPostTestStatementUpdates, Some(data.isAllowAutomationApi), Some(apiKey),
-                domainId, ctx.onSuccessCalls
+                domainId, checkApiKeyUniqueness = true, ctx.onSuccessCalls
               )
             },
             None,
@@ -1461,14 +1491,15 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
                 (data: com.gitb.xml.export.Organisation, item: ImportItem) => {
                   for {
                     orgInfo <- {
-                      organisationManager.createOrganizationInTrans(
+                      organisationManager.createOrganizationWithRelatedData(
                         models.Organizations(
                           0L, data.getShortName, data.getFullName, OrganizationType.Vendor.id.toShort, adminOrganization = false,
                           getProcessedDbId(data.getLandingPage, ImportItemType.LandingPage, ctx),
                           getProcessedDbId(data.getLegalNotice, ImportItemType.LegalNotice, ctx),
                           getProcessedDbId(data.getErrorTemplate, ImportItemType.ErrorTemplate, ctx),
                           template = data.isTemplate, Option(data.getTemplateName), Option(data.getApiKey), item.parentItem.get.targetKey.get.toLong
-                        ), None, None, None, copyOrganisationParameters = false, copySystemParameters = false, copyStatementParameters = false, ctx.onSuccessCalls
+                        ), None, None, None, copyOrganisationParameters = false, copySystemParameters = false, copyStatementParameters = false,
+                        checkApiKeyUniqueness = true, setDefaultPropertyValues = false, ctx.onSuccessCalls
                       )
                     }
                   } yield orgInfo.organisationId
@@ -1482,7 +1513,9 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
                       getProcessedDbId(data.getLandingPage, ImportItemType.LandingPage, ctx),
                       getProcessedDbId(data.getLegalNotice, ImportItemType.LegalNotice, ctx),
                       getProcessedDbId(data.getErrorTemplate, ImportItemType.ErrorTemplate, ctx),
-                      None, data.isTemplate, Option(data.getTemplateName), Some(Option(data.getApiKey)), None, None, copyOrganisationParameters = false, copySystemParameters = false, copyStatementParameters = false, ctx.onSuccessCalls
+                      None, data.isTemplate, Option(data.getTemplateName), Some(Option(data.getApiKey)), None, None,
+                      copyOrganisationParameters = false, copySystemParameters = false, copyStatementParameters = false,
+                      checkApiKeyUniqueness = true, ctx.onSuccessCalls
                     )
                   }
                 }
@@ -1622,11 +1655,12 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
                 dbActions += processFromArchive(ImportItemType.System, exportedSystem, exportedSystem.getId, ctx,
                   ImportCallbacks.set(
                     (data: com.gitb.xml.export.System, item: ImportItem) => {
-                      PersistenceSchema.insertSystem += models.Systems(0L, data.getShortName, data.getFullName, Option(data.getDescription), data.getVersion, Option(data.getApiKey), item.parentItem.get.targetKey.get.toLong)
+                      systemManager.registerSystemInternal(models.Systems(0L, data.getShortName, data.getFullName, Option(data.getDescription), data.getVersion, Option(data.getApiKey), item.parentItem.get.targetKey.get.toLong), checkApiKeyUniqueness = true)
                     },
                     (data: com.gitb.xml.export.System, targetKey: String, item: ImportItem) => {
                       systemManager.updateSystemProfileInternal(None, targetCommunityId, item.targetKey.get.toLong, data.getShortName, data.getFullName, Option(data.getDescription), data.getVersion, Some(Option(data.getApiKey)),
-                        None, None, None, copySystemParameters = false, copyStatementParameters = false, ctx.onSuccessCalls
+                        None, None, None, copySystemParameters = false, copyStatementParameters = false,
+                        checkApiKeyUniqueness = true, ctx.onSuccessCalls
                       )
                     }
                   )
@@ -1732,7 +1766,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
                             val systemId = item.parentItem.get.targetKey.get.toLong
                             val key = s"${systemId}_${relatedActorId.get}"
                             if (!hasExisting(ImportItemType.Statement, key, ctx)) {
-                              systemManager.defineConformanceStatement(systemId, relatedSpecId.get, relatedActorId.get, None) andThen
+                              systemManager.defineConformanceStatement(systemId, relatedSpecId.get, relatedActorId.get, None, setDefaultParameterValues = false) andThen
                                 DBIO.successful(key)
                             } else {
                               DBIO.successful(())
@@ -1785,9 +1819,9 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
                               if (data.getParameter != null) {
                                 relatedEndpointId = getProcessedDbId(data.getParameter.getEndpoint, ImportItemType.Endpoint, ctx)
                               }
-                              val statementTargetKeyParts = StringUtils.split(item.parentItem.get.targetKey.get, "_") // [System ID]_[Actor ID]
-                              val relatedActorId = statementTargetKeyParts(1).toLong
                               if (relatedParameterId.isDefined && relatedEndpointId.isDefined) {
+                                val statementTargetKeyParts = StringUtils.split(item.parentItem.get.targetKey.get, "_") // [System ID]_[Actor ID]
+                                val relatedActorId = statementTargetKeyParts(1).toLong
                                 val relatedSystemId = item.parentItem.get.parentItem.get.targetKey.get.toLong // Statement -> System
                                 val key = s"${relatedActorId}_${relatedEndpointId.get}_${relatedSystemId}_${relatedParameterId.get}"
                                 if (!hasExisting(ImportItemType.StatementConfiguration, key, ctx)) {

@@ -45,14 +45,13 @@ public class AssignProcessor implements IProcessor {
 			DataType lValue = variableResolver.resolveVariable(containerVariableExpression, true);
 			if (lValue == null) {
 				// New variable
-				String variableName = stripExpressionStart(containerVariableExpression);
-				if (VariableResolver.VARIABLE_PATTERN.matcher(variableName).matches()) {
-					lValue = scope.createVariable(variableName).setValue(new MapType());
-				} else {
-					throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Cannot create a new variable based on the provided name ["+variableName+"]"));
+				lValue = createIntermediateMaps(variableResolver, containerVariableExpression);
+				if (lValue == null) {
+					throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Cannot create a new variable based on the provided name ["+stripExpressionStart(containerVariableExpression)+"]"));
 				}
 			} else if (!lValue.getType().equals(DataType.MAP_DATA_TYPE)) {
-				throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Expression ["+containerVariableExpression+"] was expected to evaluate a map but evaluated a "+lValue.getType()));
+				// Matched an existing variable that is not a map that will be replaced.
+				lValue = new MapType();
 			}
             DataType result = exprHandler.processExpression(assign, assign.getType());
 		    String mapKey = keyExpression;
@@ -173,6 +172,35 @@ public class AssignProcessor implements IProcessor {
         return null;
     }
 
+	private DataType createIntermediateMaps(VariableResolver variableResolver, String expression) {
+		DataType resultingMap = null;
+		expression = addExpressionStart(expression);
+		if (VariableResolver.isVariableReference(expression)) {
+			resultingMap = variableResolver.resolveVariable(expression, true);
+		}
+		if (resultingMap == null) {
+			expression = stripExpressionStart(expression);
+			if (VariableResolver.VARIABLE_PATTERN.matcher(expression).matches()) {
+				resultingMap = scope.createVariable(expression).setValue(new MapType());
+			} else {
+				Matcher matcher = MAP_APPEND_EXPRESSION_PATTERN.matcher(expression);
+				if (matcher.matches()) {
+					String containerVariableExpression = matcher.group(1);
+					String keyExpression = matcher.group(2);
+					resultingMap = createIntermediateMaps(variableResolver, containerVariableExpression);
+					if (resultingMap instanceof MapType) {
+						DataType childMap = new MapType();
+						((MapType) resultingMap).addItem(keyExpression, childMap);
+						resultingMap = childMap;
+					} else {
+						throw new IllegalStateException("Variable ["+containerVariableExpression+"] was expected to be of type [map] but was of type ["+(resultingMap == null?"null":resultingMap.getType())+"]");
+					}
+				}
+			}
+		}
+		return resultingMap;
+	}
+
 	private String stripExpressionStart(String expression) {
 		String resultingExpression = expression;
 		if (expression.startsWith("$")) {
@@ -180,4 +208,13 @@ public class AssignProcessor implements IProcessor {
 		}
 		return resultingExpression;
 	}
+
+	private String addExpressionStart(String expression) {
+		String resultingExpression = expression;
+		if (!expression.startsWith("$")) {
+			resultingExpression = "$"+resultingExpression;
+		}
+		return resultingExpression;
+	}
+
 }

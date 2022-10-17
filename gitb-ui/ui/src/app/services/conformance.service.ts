@@ -23,6 +23,7 @@ import { SystemConfigurationEndpoint } from '../types/system-configuration-endpo
 import { TestCase } from '../types/test-case';
 import { ConformanceStatus } from '../types/conformance-status';
 import { FileParam } from '../types/file-param.type';
+import { StatementParameterMinimal } from '../types/statement-parameter-minimal';
 
 @Injectable({
   providedIn: 'root'
@@ -628,12 +629,13 @@ export class ConformanceService {
     })
   }
 
-  createParameter(name: string, description: string|undefined, use: string, kind: string, adminOnly: boolean, notForTests: boolean, hidden: boolean, allowedValues: string|undefined, dependsOn: string|undefined, dependsOnValue: string|undefined, endpointId: number) {
+  createParameter(name: string, testKey: string, description: string|undefined, use: string, kind: string, adminOnly: boolean, notForTests: boolean, hidden: boolean, allowedValues: string|undefined, dependsOn: string|undefined, dependsOnValue: string|undefined, defaultValue: string|undefined, endpointId: number) {
     return this.restService.post<EndpointParameter>({
       path: ROUTES.controllers.ConformanceService.createParameter().url,
       authenticate: true,
       data: {
         name: name,
+        test_key: testKey,
         description: description,
         use: use,
         kind: kind,
@@ -643,6 +645,7 @@ export class ConformanceService {
         allowedValues: allowedValues,
         dependsOn: dependsOn,
         dependsOnValue: dependsOnValue,
+        defaultValue: defaultValue,
         endpoint_id: endpointId
       }
     })
@@ -739,6 +742,13 @@ export class ConformanceService {
   getTestSuiteTestCase(testCaseId: number) {
     return this.restService.get<TestCase>({
       path: ROUTES.controllers.ConformanceService.getTestSuiteTestCase(testCaseId).url,
+      authenticate: true
+    })
+  }
+
+  getStatementParametersOfCommunity(communityId: number) {
+    return this.restService.get<StatementParameterMinimal[]>({
+      path: ROUTES.controllers.ConformanceService.getStatementParametersOfCommunity(communityId).url,
       authenticate: true
     })
   }

@@ -6,12 +6,14 @@ import com.gitb.engine.TestEngine;
 import com.gitb.engine.messaging.MessagingHandler;
 import com.gitb.engine.messaging.handlers.layer.AbstractMessagingHandler;
 import com.gitb.engine.messaging.handlers.utils.MessagingHandlerUtils;
+import com.gitb.engine.utils.TestCaseUtils;
 import com.gitb.messaging.DeferredMessagingReport;
 import com.gitb.messaging.Message;
 import com.gitb.messaging.MessagingReport;
 import com.gitb.ms.InitiateResponse;
 import com.gitb.tr.TestResultType;
 import com.gitb.types.DataType;
+import com.gitb.types.MapType;
 import com.gitb.types.StringType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,6 +26,7 @@ public class SimulatedMessagingHandler extends AbstractMessagingHandler {
 
     private static final Logger LOG = LoggerFactory.getLogger(SimulatedMessagingHandler.class);
     private static final String INPUT__PARAMETERS = "parameters";
+    private static final String INPUT__CONTENT_TYPES = "contentTypes";
     private static final String INPUT__RESULT = "result";
     private static final String INPUT__DELAY = "delay";
 
@@ -38,6 +41,7 @@ public class SimulatedMessagingHandler extends AbstractMessagingHandler {
         module.getInputs().getParam().add(createParameter(INPUT__PARAMETERS, "map", ConfigurationType.SIMPLE, UsageEnumeration.O, "The map of input parameters that will be displayed as data in the step's report."));
         module.getInputs().getParam().add(createParameter(INPUT__RESULT, "string", ConfigurationType.SIMPLE, UsageEnumeration.O, String.format("The result of the step. On of '%s', '%s' or '%s'. If not specified the default considered is '%s'.", TestResultType.SUCCESS, TestResultType.WARNING, TestResultType.WARNING, TestResultType.SUCCESS)));
         module.getInputs().getParam().add(createParameter(INPUT__DELAY, "number", ConfigurationType.SIMPLE, UsageEnumeration.O, "A duration in milliseconds after which the receive call should be completed."));
+        module.getInputs().getParam().add(createParameter(INPUT__CONTENT_TYPES, "map", ConfigurationType.SIMPLE, UsageEnumeration.O, "The map of content types to apply for the display of matching input parameters."));
         return module;
     }
 
@@ -63,20 +67,26 @@ public class SimulatedMessagingHandler extends AbstractMessagingHandler {
         }
         var messageForReport = new Message();
         if (message.hasInput(INPUT__PARAMETERS)) {
-            messageForReport.addInput(INPUT__PARAMETERS, message.getFragments().get(INPUT__PARAMETERS));
+            var fragments = message.getFragments().get(INPUT__PARAMETERS);
+            if (fragments instanceof MapType) {
+                for (var fragment: ((MapType) fragments).getItems().entrySet()) {
+                    messageForReport.addInput(fragment.getKey(), fragment.getValue());
+                }
+            }
         }
         var report = MessagingHandlerUtils.generateSuccessReport(messageForReport);
+        TestCaseUtils.applyContentTypes(message.getFragments().get(INPUT__CONTENT_TYPES), report.getReport().getContext());
         report.getReport().setResult(result);
         return report;
     }
 
     @Override
-    public MessagingReport sendMessage(String sessionId, String transactionId, List<Configuration> configurations, Message message) {
+    public MessagingReport sendMessage(String sessionId, String transactionId, String stepId, List<Configuration> configurations, Message message) {
         return createReport(message);
     }
 
     @Override
-    public MessagingReport receiveMessage(String sessionId, String transactionId, String callId, List<Configuration> configurations, Message message, List<Thread> messagingThreads) {
+    public MessagingReport receiveMessage(String sessionId, String transactionId, String callId, String stepId, List<Configuration> configurations, Message message, List<Thread> messagingThreads) {
         var report = createReport(message);
         if (message.getFragments().containsKey(INPUT__DELAY)) {
             var delay = ((Double)message.getFragments().get(INPUT__DELAY).convertTo(DataType.NUMBER_DATA_TYPE).getValue()).longValue();
@@ -91,17 +101,17 @@ public class SimulatedMessagingHandler extends AbstractMessagingHandler {
     }
 
     @Override
-    public void beginTransaction(String sessionId, String transactionId, String from, String to, List<Configuration> configurations) {
+    public void beginTransaction(String sessionId, String transactionId, String stepId, String from, String to, List<Configuration> configurations) {
         // Do nothing.
     }
 
     @Override
-    public MessagingReport listenMessage(String sessionId, String transactionId, String from, String to, List<Configuration> configurations, Message inputs) {
+    public MessagingReport listenMessage(String sessionId, String transactionId, String stepId, String from, String to, List<Configuration> configurations, Message inputs) {
         throw new IllegalStateException("The SimulatedMessaging handler can only be used for send and receive operations");
     }
 
     @Override
-    public void endTransaction(String sessionId, String transactionId) {
+    public void endTransaction(String sessionId, String transactionId, String stepId) {
         // Do nothing.
     }
 

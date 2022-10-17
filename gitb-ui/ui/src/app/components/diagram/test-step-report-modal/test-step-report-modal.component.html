@@ -5,6 +5,7 @@
 	<app-test-step-report id="report" [step]="step" [report]="report" [sessionId]="sessionId"></app-test-step-report>
 </div>
 <div class="modal-footer">
-    <button type="button" class="btn btn-default" (click)="export()" [pending]="exportDisabled">Export</button>
+    <button type="button" class="btn btn-default" (click)="exportPdf()" [pending]="exportPdfPending" [disable]="exportPdfPending || exportXmlPending">Export as PDF</button>
+    <button type="button" class="btn btn-default" (click)="exportXml()" [pending]="exportXmlPending" [disable]="exportPdfPending || exportXmlPending">Export as XML</button>
 	<button type="button" class="btn btn-default" (click)="close()">Close</button>
 </div>

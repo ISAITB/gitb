@@ -1,5 +1,4 @@
 import { share, forkJoin, mergeMap, Observable, of } from 'rxjs';
-import { cloneDeep } from 'lodash'
 import { Injectable } from '@angular/core';
 import { ReportService } from 'src/app/services/report.service';
 import { TestCaseDefinition } from 'src/app/types/test-case-definition';
@@ -11,7 +10,6 @@ import { SessionData } from './session-data';
 import { SessionPresentationData } from './session-presentation-data';
 import { TestStepResult } from 'src/app/types/test-step-result';
 import { DiagramEvents } from '../diagram-events';
-import { StepReport } from '../report/step-report';
 
 @Injectable({
   providedIn: 'root'

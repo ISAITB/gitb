@@ -7,8 +7,8 @@ lazy val root = (project in file(".")).enablePlugins(PlayScala, SbtWeb)
   .settings(dependencyCheckSuppressionFile := Some(file("project/owasp-suppressions.xml")))
 
 scalaVersion := "2.13.8"
-val akkaVersion = "2.6.19"
-val jacksonVersion = "2.13.3"
+val akkaVersion = "2.6.20"
+val jacksonVersion = "2.13.4"
 val cxfVersion = "3.5.3"
 val guiceVersion = "5.1.0"
 
@@ -18,26 +18,27 @@ libraryDependencies ++= Seq(
   guice,
   ehcache,
   cacheApi,
+  ws,
   "com.google.inject" % "guice" % guiceVersion,
   "com.google.inject.extensions" % "guice-assistedinject" % guiceVersion,
-  "eu.europa.ec.itb" % "gitb-types" % "1.17.0",
+  "eu.europa.ec.itb" % "gitb-types" % "1.18.0",
   "com.gitb" % "gitb-core" % "1.0-SNAPSHOT",
   "com.gitb" % "gitb-lib" % "1.0-SNAPSHOT",
   "com.gitb" % "gitb-reports" % "1.0-SNAPSHOT",
   "com.gitb" % "gitb-validator-tdl" % "1.0-SNAPSHOT",
   "com.gitb" % "gitb-xml-resources" % "1.0-SNAPSHOT",
-  "mysql" % "mysql-connector-java" % "8.0.29",
+  "mysql" % "mysql-connector-java" % "8.0.30",
   "com.typesafe.akka" %% "akka-actor" % akkaVersion,
   "com.typesafe.akka" %% "akka-actor-typed" % akkaVersion,
   "com.typesafe.akka" %% "akka-remote" % akkaVersion,
   "com.typesafe.akka" %% "akka-stream" % akkaVersion,
   "com.typesafe.akka" %% "akka-slf4j" % akkaVersion,
   "com.typesafe.akka" %% "akka-serialization-jackson" % akkaVersion,
-  "com.typesafe.play" %% "play-slick" % "5.0.2",
-  "com.typesafe.play" %% "play-json" % "2.9.2",
+  "com.typesafe.play" %% "play-slick" % "5.1.0",
+  "com.typesafe.play" %% "play-json" % "2.9.3",
   "org.pac4j" %% "play-pac4j" % "11.1.0-PLAY2.8",
-  "org.pac4j" % "pac4j-cas" % "5.4.3",
-  "ch.qos.logback" % "logback-classic" % "1.2.11",
+  "org.pac4j" % "pac4j-cas" % "5.6.0",
+  "ch.qos.logback" % "logback-classic" % "1.4.1",
   "org.apache.commons" % "commons-lang3" % "3.12.0",
   "com.fasterxml.jackson.module" %% "jackson-module-scala" % jacksonVersion,
   "com.fasterxml.jackson.core" % "jackson-databind" % jacksonVersion,
@@ -51,9 +52,9 @@ libraryDependencies ++= Seq(
   "org.apache.cxf" % "cxf-rt-transports-http" % cxfVersion,
   "org.apache.cxf" % "cxf-rt-transports-http-jetty" % cxfVersion,
   // ---
-  "org.apache.tika" % "tika-core" % "2.4.1",
+  "org.apache.tika" % "tika-core" % "2.5.0",
   "org.webjars" %% "webjars-play" % "2.8.13",
-  "org.webjars" % "jquery" % "3.6.0",
+  "org.webjars" % "jquery" % "3.6.1",
   "org.webjars" % "bootstrap" % "3.4.1" exclude("org.webjars", "jquery"),
   "javax.mail" % "mail" % "1.4.7",
   "javax.activation" % "activation" % "1.1.1",
@@ -71,10 +72,10 @@ libraryDependencies ++= Seq(
   "org.apache.pdfbox" % "pdfbox" % "2.0.26",
   "org.jasypt" % "jasypt" % "1.9.3",
   "org.apache.httpcomponents" % "httpclient" % "4.5.13",
-  "org.flywaydb" %% "flyway-play" % "7.20.0",
-  "org.flywaydb" % "flyway-mysql" % "8.5.12",
+  "org.flywaydb" %% "flyway-play" % "7.25.0",
+  "org.flywaydb" % "flyway-mysql" % "9.4.0",
   "com.googlecode.owasp-java-html-sanitizer" % "owasp-java-html-sanitizer" % "20220608.1",
-  "net.lingala.zip4j" % "zip4j" % "2.10.0"
+  "net.lingala.zip4j" % "zip4j" % "2.11.2"
 )
 
 // Deactivate repeatable builds to speed up via parallelization

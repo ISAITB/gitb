@@ -9,5 +9,7 @@
     <inputs>
         <param type="schema" use="R" name="xsddocument" desc="XSD Document" />
         <param type="object" use="R" name="xmldocument" desc="XML Document to be validated" />
+        <param type="boolean" use="O" name="showValidationArtefacts" desc="Whether or not to display the validation artefact(s) used in the resulting report (default is yes)."/>
+        <param type="boolean" use="O" name="sortBySeverity" desc="Whether sorting of findings should be done by severity or by location (the default)."/>
     </inputs>
 </module>

@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
 import slick.dbio.DBIOAction
+import utils.CryptoUtil
 
 import scala.collection.mutable
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -57,10 +58,10 @@ class ActorManager @Inject() (testResultManager: TestResultManager, endPointMana
   }
 
   def updateActorWrapper(id: Long, actorId: String, name: String, description: Option[String], default: Option[Boolean], hidden: Boolean, displayOrder: Option[Short], specificationId: Long) = {
-    exec(updateActor(id, actorId, name, description, default, hidden, displayOrder, specificationId, None).transactionally)
+    exec(updateActor(id, actorId, name, description, default, hidden, displayOrder, specificationId, None, checkApiKeyUniqueness = false).transactionally)
   }
 
-  def updateActor(id: Long, actorId: String, name: String, description: Option[String], default: Option[Boolean], hidden: Boolean, displayOrder: Option[Short], specificationId: Long, apiKey: Option[String]) = {
+  def updateActor(id: Long, actorId: String, name: String, description: Option[String], default: Option[Boolean], hidden: Boolean, displayOrder: Option[Short], specificationId: Long, apiKey: Option[String], checkApiKeyUniqueness: Boolean) = {
     var defaultToSet: Option[Boolean] = null
     if (default.isEmpty) {
       defaultToSet = Some(false)
@@ -72,9 +73,17 @@ class ActorManager @Inject() (testResultManager: TestResultManager, endPointMana
         val q1 = for {a <- PersistenceSchema.actors if a.id === id} yield (a.name, a.desc, a.actorId, a.default, a.hidden, a.displayOrder)
         q1.update((name, description, actorId, defaultToSet, hidden, displayOrder))
       }
+      replaceApiKey <- {
+        if (apiKey.isDefined && checkApiKeyUniqueness) {
+          PersistenceSchema.actors.filter(_.apiKey === apiKey.get).filter(_.id =!= id).exists.result
+        } else {
+          DBIO.successful(false)
+        }
+      }
       _ <- {
         if (apiKey.isDefined) {
-          PersistenceSchema.actors.filter(_.id === id).map(_.apiKey).update(apiKey.get)
+          val apiKeyToUse = if (replaceApiKey) CryptoUtil.generateApiKey() else apiKey.get
+          PersistenceSchema.actors.filter(_.id === id).map(_.apiKey).update(apiKeyToUse)
         } else {
           DBIO.successful(())
         }

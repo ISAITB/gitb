@@ -2,6 +2,7 @@ export interface ConformanceStatusItem {
 
     id?: number
     exportPending?: boolean
+    actionPending?: boolean
     
     testSuiteId: number
     testSuiteName: string

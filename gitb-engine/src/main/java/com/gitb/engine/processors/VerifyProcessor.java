@@ -122,7 +122,7 @@ public class VerifyProcessor implements IProcessor {
 		}
 
 		// Validate content with given configurations and inputs; and return the report
-		TestStepReportType report = validator.validate(verify.getConfig(), inputs);
+		TestStepReportType report = validator.validate(verify.getConfig(), inputs, verify.getId());
 
 		var errorLevel = ErrorLevel.ERROR;
 		if (VariableResolver.isVariableReference(verify.getLevel())) {

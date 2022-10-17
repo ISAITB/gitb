@@ -12,10 +12,7 @@ import com.gitb.tr.*;
 import net.sf.jasperreports.engine.*;
 import org.apache.commons.lang3.StringUtils;
 
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBElement;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Unmarshaller;
+import javax.xml.bind.*;
 import javax.xml.transform.stream.StreamSource;
 import java.io.IOException;
 import java.io.InputStream;
@@ -31,6 +28,7 @@ public class ReportGenerator {
         try {
             jaxbContext = JAXBContext.newInstance(
                     TAR.class,
+                    TestCaseOverviewReportType.class,
                     TestCaseReportType.class,
                     TestStepStatus.class);
         } catch (JAXBException e) {
@@ -61,6 +59,21 @@ public class ReportGenerator {
             Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
             JAXBElement<TestStepStatus> stepStatus = unmarshaller.unmarshal(new StreamSource(inputStream), TestStepStatus.class);
             writeTestStepStatusReport(stepStatus.getValue(), title, outputStream, addContext);
+        } catch(Exception e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    public void writeTestStepStatusXmlReport(InputStream inputStream, OutputStream outputStream, boolean addContext) {
+        try {
+            Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
+            JAXBElement<TestStepStatus> stepStatus = unmarshaller.unmarshal(new StreamSource(inputStream), TestStepStatus.class);
+            if (!addContext && stepStatus.getValue().getReport() instanceof TAR) {
+                ((TAR) stepStatus.getValue().getReport()).setContext(null);
+            }
+            Marshaller marshaller = jaxbContext.createMarshaller();
+            marshaller.setProperty("jaxb.formatted.output", Boolean.TRUE);
+            marshaller.marshal(new ObjectFactory().createTestStepReport(stepStatus.getValue().getReport()), outputStream);
         } catch(Exception e) {
             throw new IllegalStateException(e);
         }
@@ -253,6 +266,23 @@ public class ReportGenerator {
             parameters.put("labelSystem", overview.getLabelSystem());
             writeClasspathReport("reports/ConformanceStatementOverview.jasper", parameters, outputStream);
         } catch (Exception e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    public void writeTestCaseOverviewXmlReport(TestCaseOverviewReportType testCaseOverview, OutputStream outputStream) {
+        try {
+            Marshaller marshaller = jaxbContext.createMarshaller();
+            marshaller.setProperty("jaxb.formatted.output", Boolean.TRUE);
+            if (testCaseOverview.getSteps() != null) {
+                for (TestCaseStepReportType step: testCaseOverview.getSteps().getStep()) {
+                    if (step.getReport() instanceof TAR) {
+                        ((TAR) step.getReport()).setContext(null);
+                    }
+                }
+            }
+            marshaller.marshal(new ObjectFactory().createTestCaseOverviewReport(testCaseOverview), outputStream);
+        } catch(Exception e) {
             throw new IllegalStateException(e);
         }
     }

@@ -18,11 +18,12 @@ export class ParameterService {
     })
   }
 
-  updateParameter(parameterId: number, name: string, description: string|undefined, use: string, kind: string, adminOnly: boolean, notForTests: boolean, hidden: boolean, allowedValues: string|undefined, dependsOn: string|undefined, dependsOnValue: string|undefined, endpointId: number) {
+  updateParameter(parameterId: number, name: string, testKey: string, description: string|undefined, use: string, kind: string, adminOnly: boolean, notForTests: boolean, hidden: boolean, allowedValues: string|undefined, dependsOn: string|undefined, dependsOnValue: string|undefined, defaultValue: string|undefined, endpointId: number) {
     return this.restService.post<void>({
       path: ROUTES.controllers.ParameterService.updateParameter(parameterId).url,
       data: {
         name: name,
+        test_key: testKey,
         description: description,
         use: use,
         kind: kind,
@@ -32,6 +33,7 @@ export class ParameterService {
         allowedValues: allowedValues,
         dependsOn: dependsOn,
         dependsOnValue: dependsOnValue,
+        defaultValue: defaultValue,
         endpoint_id: endpointId
       },
       authenticate: true

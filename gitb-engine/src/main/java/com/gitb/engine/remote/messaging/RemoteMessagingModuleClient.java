@@ -1,45 +1,45 @@
 package com.gitb.engine.remote.messaging;
 
-import com.gitb.core.*;
+import com.gitb.core.ActorConfiguration;
+import com.gitb.core.AnyContent;
+import com.gitb.core.Configuration;
+import com.gitb.core.MessagingModule;
 import com.gitb.engine.CallbackManager;
-import com.gitb.engine.remote.RemoteCallContext;
+import com.gitb.engine.messaging.handlers.utils.MessagingHandlerUtils;
+import com.gitb.engine.remote.RemoteServiceClient;
 import com.gitb.engine.utils.TestCaseUtils;
-import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.messaging.DeferredMessagingReport;
 import com.gitb.messaging.IMessagingHandler;
 import com.gitb.messaging.Message;
 import com.gitb.messaging.MessagingReport;
-import com.gitb.engine.messaging.handlers.utils.MessagingHandlerUtils;
 import com.gitb.ms.Void;
 import com.gitb.ms.*;
 import com.gitb.types.DataType;
 import com.gitb.utils.DataTypeUtils;
-import com.gitb.utils.ErrorUtils;
 
 import javax.xml.ws.soap.AddressingFeature;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.function.Supplier;
 
 /**
  * Created by serbay.
  */
-public class RemoteMessagingModuleClient implements IMessagingHandler {
+public class RemoteMessagingModuleClient extends RemoteServiceClient implements IMessagingHandler {
 
-	private final String testSessionId;
-	private URL serviceURL;
-	private MessagingModule messagingModule;
-	private final Properties transactionProperties;
+	private MessagingModule serviceModule;
 
-	public RemoteMessagingModuleClient(URL serviceURL, Properties transactionProperties, String sessionId) {
-		this.serviceURL = serviceURL;
-		this.testSessionId = sessionId;
-		this.transactionProperties = transactionProperties;
+	public RemoteMessagingModuleClient(URL serviceURL, Properties callProperties, String sessionId) {
+		super(serviceURL, callProperties, sessionId);
+	}
+
+	@Override
+	protected String getServiceLocation() {
+		if (serviceModule != null) {
+			return serviceModule.getServiceLocation();
+		}
+		return null;
 	}
 
 	@Override
@@ -47,43 +47,17 @@ public class RemoteMessagingModuleClient implements IMessagingHandler {
 		return true;
 	}
 
-	private URL getServiceURL() {
-		if (serviceURL == null) {
-			if (messagingModule == null) {
-				throw new IllegalStateException("Remote messaging module found but with no URL or MessagingModule definition");
-			} else {
-				try {
-					serviceURL = new URI(messagingModule.getServiceLocation()).toURL();
-				} catch (MalformedURLException e) {
-					throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INTERNAL_ERROR, "Remote messaging module found named ["+messagingModule.getId()+"] with an malformed URL ["+messagingModule.getServiceLocation()+"]"), e);
-				} catch (URISyntaxException e) {
-					throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INTERNAL_ERROR, "Remote messaging module found named ["+messagingModule.getId()+"] with an invalid URI syntax ["+messagingModule.getServiceLocation()+"]"), e);
-				}
-			}
-		}
-		return serviceURL;
-	}
-
 	private MessagingService getServiceClient() {
-		TestCaseUtils.prepareRemoteServiceLookup(transactionProperties);
+		TestCaseUtils.prepareRemoteServiceLookup(getCallProperties());
 		return new MessagingServiceClient(getServiceURL()).getMessagingServicePort(new AddressingFeature(true));
-	}
-
-	private <T> T call(Supplier<T> supplier) {
-		try {
-			RemoteCallContext.setCallProperties(transactionProperties);
-			return supplier.get();
-		} finally {
-			RemoteCallContext.clearCallProperties();
-		}
 	}
 
 	@Override
 	public MessagingModule getModuleDefinition() {
-		if (messagingModule == null) {
-			messagingModule = call(() -> getServiceClient().getModuleDefinition(new Void()).getModule());
+		if (serviceModule == null) {
+			serviceModule = call(() -> getServiceClient().getModuleDefinition(new Void()).getModule());
 		}
-		return messagingModule;
+		return serviceModule;
 	}
 
 	@Override
@@ -99,24 +73,24 @@ public class RemoteMessagingModuleClient implements IMessagingHandler {
 	}
 
 	@Override
-	public void beginTransaction(String sessionId, String transactionId, String from, String to, List<Configuration> configurations) {
+	public void beginTransaction(String sessionId, String transactionId, String stepId, String from, String to, List<Configuration> configurations) {
         BeginTransactionRequest request = new BeginTransactionRequest();
         request.setSessionId(sessionId);
         request.setFrom(from);
         request.setTo(to);
         request.getConfig().addAll(configurations);
-        call(() -> getServiceClient().beginTransaction(request));
+        call(() -> getServiceClient().beginTransaction(request), stepIdMap(stepId));
 	}
 
 	@Override
-	public MessagingReport sendMessage(String sessionId, String transactionId, List<Configuration> configurations, Message message) {
+	public MessagingReport sendMessage(String sessionId, String transactionId, String stepId, List<Configuration> configurations, Message message) {
 		SendRequest request = new SendRequest();
 		request.setSessionId(sessionId);
 		for (Map.Entry<String, DataType> fragmentEntry: message.getFragments().entrySet()) {
 			AnyContent attachment = DataTypeUtils.convertDataTypeToAnyContent(fragmentEntry.getKey(), fragmentEntry.getValue());
 			request.getInput().add(attachment);
 		}
-		SendResponse response = call(() -> getServiceClient().send(request));
+		SendResponse response = call(() -> getServiceClient().send(request), stepIdMap(stepId));
 		if (response == null || response.getReport() == null) {
 			return MessagingHandlerUtils.generateErrorReport("No response received");
 		} else {
@@ -125,7 +99,7 @@ public class RemoteMessagingModuleClient implements IMessagingHandler {
 	}
 
 	@Override
-	public MessagingReport receiveMessage(String sessionId, String transactionId, String callId, List<Configuration> configurations, Message inputs, List<Thread> messagingThreads) {
+	public MessagingReport receiveMessage(String sessionId, String transactionId, String callId, String stepId, List<Configuration> configurations, Message inputs, List<Thread> messagingThreads) {
 		ReceiveRequest request = new ReceiveRequest();
 		request.setCallId(callId);
 		request.setSessionId(sessionId);
@@ -134,21 +108,21 @@ public class RemoteMessagingModuleClient implements IMessagingHandler {
 			AnyContent input = DataTypeUtils.convertDataTypeToAnyContent(fragmentEntry.getKey(), fragmentEntry.getValue());
 			request.getInput().add(input);
 		}
-		call(() -> getServiceClient().receive(request));
+		call(() -> getServiceClient().receive(request), stepIdMap(stepId));
 		return new DeferredMessagingReport();
 	}
 
 	@Override
-	public MessagingReport listenMessage(String sessionId, String transactionId, String from, String to, List<Configuration> configurations, Message inputs) {
+	public MessagingReport listenMessage(String sessionId, String transactionId, String stepId, String from, String to, List<Configuration> configurations, Message inputs) {
 		// Not applicable
 		return null;
 	}
 
 	@Override
-	public void endTransaction(String sessionId, String transactionId) {
+	public void endTransaction(String sessionId, String transactionId, String stepId) {
         BasicRequest request = new BasicRequest();
         request.setSessionId(sessionId);
-        call(() -> getServiceClient().endTransaction(request));
+        call(() -> getServiceClient().endTransaction(request), stepIdMap(stepId));
 	}
 
 	@Override

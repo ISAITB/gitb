@@ -10,6 +10,7 @@ import { BaseComponent } from 'src/app/pages/base-component.component';
 import { FileData } from 'src/app/types/file-data.type';
 import { ParameterFormData } from './parameter-form-data';
 import { saveAs } from 'file-saver'
+import { Constants } from 'src/app/common/constants';
 
 @Component({
   selector: 'app-create-edit-domain-parameter-modal',
@@ -82,46 +83,50 @@ export class CreateEditDomainParameterModalComponent extends BaseComponent imple
       this.addAlertError('The provided values must match.')
     } else {
       if (this.saveAllowed()) {
-        this.pending = true
-        this.savePending = true
-        if (this.domainParameter.id != undefined) {
-          // Update
-          let valueToSave: string|File|undefined
-          if (this.domainParameter.kind == 'HIDDEN' && this.formData.updateValue) {
-            valueToSave = this.formData.hiddenValue!
-          } else if (this.domainParameter.kind == 'BINARY' && this.formData.file != undefined) {
-            valueToSave = this.formData.file
-          } else if (this.domainParameter.kind == 'SIMPLE') {
-            valueToSave = this.domainParameter.value!
-          }
-          this.conformanceService.updateDomainParameter(this.domainParameter.id, this.domainParameter.name!, this.domainParameter.description, valueToSave, this.domainParameter.kind!, this.domainParameter.inTests, this.domainId)
-          .subscribe(() => {
-          }).add(() => {
-            this.pending = false
-            this.savePending = false
-            this.parametersUpdated.emit(true)
-            this.modalInstance.hide()
-            this.popupService.success('Parameter updated.')
-          })
+        if (!Constants.VARIABLE_NAME_REGEX.test(this.domainParameter.name!)) {
+          this.addAlertError('The provided name is invalid. A parameter name must begin with a character followed by zero or more characters, digits, or one of [\'.\', \'_\', \'-\'].')
         } else {
-          // Create
-          let valueToSave: string|File
-          if (this.domainParameter.kind == 'HIDDEN') {
-            valueToSave = this.formData.hiddenValue!
-          } else if (this.domainParameter.kind == 'BINARY') {
-            valueToSave = this.formData.file!
+          this.pending = true
+          this.savePending = true
+          if (this.domainParameter.id != undefined) {
+            // Update
+            let valueToSave: string|File|undefined
+            if (this.domainParameter.kind == 'HIDDEN' && this.formData.updateValue) {
+              valueToSave = this.formData.hiddenValue!
+            } else if (this.domainParameter.kind == 'BINARY' && this.formData.file != undefined) {
+              valueToSave = this.formData.file
+            } else if (this.domainParameter.kind == 'SIMPLE') {
+              valueToSave = this.domainParameter.value!
+            }
+            this.conformanceService.updateDomainParameter(this.domainParameter.id, this.domainParameter.name!, this.domainParameter.description, valueToSave, this.domainParameter.kind!, this.domainParameter.inTests, this.domainId)
+            .subscribe(() => {
+            }).add(() => {
+              this.pending = false
+              this.savePending = false
+              this.parametersUpdated.emit(true)
+              this.modalInstance.hide()
+              this.popupService.success('Parameter updated.')
+            })
           } else {
-            valueToSave = this.domainParameter.value!
+            // Create
+            let valueToSave: string|File
+            if (this.domainParameter.kind == 'HIDDEN') {
+              valueToSave = this.formData.hiddenValue!
+            } else if (this.domainParameter.kind == 'BINARY') {
+              valueToSave = this.formData.file!
+            } else {
+              valueToSave = this.domainParameter.value!
+            }
+            this.conformanceService.createDomainParameter(this.domainParameter.name!, this.domainParameter.description, valueToSave, this.domainParameter.kind!, this.domainParameter.inTests, this.domainId)
+            .subscribe(() => {
+              this.parametersUpdated.emit(true)
+              this.modalInstance.hide()
+              this.popupService.success('Parameter created.')
+            }).add(() => {
+              this.pending = false
+              this.savePending = false
+            })
           }
-          this.conformanceService.createDomainParameter(this.domainParameter.name!, this.domainParameter.description, valueToSave, this.domainParameter.kind!, this.domainParameter.inTests, this.domainId)
-          .subscribe(() => {
-            this.parametersUpdated.emit(true)
-            this.modalInstance.hide()
-            this.popupService.success('Parameter created.')
-          }).add(() => {
-            this.pending = false
-            this.savePending = false
-          })
         }
       }
     }

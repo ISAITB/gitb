@@ -1,13 +1,16 @@
 package com.gitb.engine.validation.handlers.common;
 
+import com.gitb.core.Configuration;
 import com.gitb.core.ValidationModule;
 import com.gitb.exceptions.GITBEngineInternalError;
+import com.gitb.tr.TestStepReportType;
 import com.gitb.types.DataType;
 import com.gitb.utils.XMLUtils;
 import com.gitb.validation.IValidationHandler;
 
 import javax.xml.transform.stream.StreamSource;
 import java.io.InputStream;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -22,6 +25,12 @@ public abstract class AbstractValidator implements IValidationHandler {
     @Override
     public ValidationModule getModuleDefinition() {
         return this.validatorDefinition;
+    }
+
+    @Override
+    public TestStepReportType validate(List<Configuration> configurations, Map<String, DataType> inputs, String stepId) {
+        // Ignore the step ID for embedded validators.
+        return validate(configurations, inputs);
     }
 
     protected static ValidationModule readModuleDefinition(String fileName) {
@@ -40,4 +49,16 @@ public abstract class AbstractValidator implements IValidationHandler {
     protected String getTestCaseId(Map<String, DataType> inputs) {
         return (String) inputs.get(TEST_CASE_ID_INPUT).getValue();
     }
+
+    protected <T extends DataType> T getAndConvert(Map<String, DataType> inputs, String inputName, String dataType, Class<T> dataTypeClass) {
+        var input = inputs.get(inputName);
+        if (input != null) {
+            return dataTypeClass.cast(input.convertTo(dataType));
+        } else {
+            return null;
+        }
+    }
+
+    public abstract TestStepReportType validate(List<Configuration> configurations, Map<String, DataType> inputs);
+
 }

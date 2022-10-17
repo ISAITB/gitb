@@ -1,10 +1,12 @@
 package com.gitb.engine.validation.handlers.xsd;
 
 import com.gitb.core.Configuration;
+import com.gitb.engine.utils.ReportItemComparator;
 import com.gitb.engine.validation.ValidationHandler;
 import com.gitb.engine.validation.handlers.common.AbstractValidator;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.tr.TestStepReportType;
+import com.gitb.types.BooleanType;
 import com.gitb.types.DataType;
 import com.gitb.types.ObjectType;
 import com.gitb.types.SchemaType;
@@ -30,8 +32,10 @@ import java.util.Map;
 public class XSDValidator extends AbstractValidator {
 
     private final static String SCHEMA_LANGUAGE = "http://www.w3.org/2001/XMLSchema";
-    private final static String CONTENT_ARGUMENT_NAME = "xmldocument";
-    private final static String SCHEMA_ARGUMENT_NAME  = "xsddocument";
+    public final static String CONTENT_ARGUMENT_NAME = "xmldocument";
+    public final static String SCHEMA_ARGUMENT_NAME  = "xsddocument";
+    public final static String SHOW_SCHEMA_ARGUMENT_NAME  = "showSchema";
+    public final static String SORT_BY_SEVERITY_ARGUMENT_NAME  = "sortBySeverity";
     private final static String MODULE_DEFINITION_XML = "/validation/xsd-validator-definition.xml";
 
     public XSDValidator() {
@@ -43,9 +47,11 @@ public class XSDValidator extends AbstractValidator {
         //get inputs
         ObjectType contentToProcess = (ObjectType) inputs.get(CONTENT_ARGUMENT_NAME).convertTo(DataType.OBJECT_DATA_TYPE);
         SchemaType xsd = (SchemaType) inputs.get(SCHEMA_ARGUMENT_NAME).convertTo(DataType.SCHEMA_DATA_TYPE);
+        var showSchema = getAndConvert(inputs, SHOW_SCHEMA_ARGUMENT_NAME, DataType.BOOLEAN_DATA_TYPE, BooleanType.class);
+        var sortBySeverity = getAndConvert(inputs, SORT_BY_SEVERITY_ARGUMENT_NAME, DataType.BOOLEAN_DATA_TYPE, BooleanType.class);
 
         //create error handler
-        XSDReportHandler handler = new XSDReportHandler(contentToProcess, xsd);
+        XSDReportHandler handler = new XSDReportHandler(contentToProcess, (showSchema == null || (Boolean)showSchema.getValue())?xsd:null);
 
         DocumentBuilderFactory factory;
         try {
@@ -78,7 +84,10 @@ public class XSDValidator extends AbstractValidator {
         } catch (Exception e) {
             throw new GITBEngineInternalError(e);
         }
-
-        return handler.createReport();
+        var report = handler.createReport();
+        if (sortBySeverity != null && ((Boolean) sortBySeverity.getValue()) && report.getReports() != null) {
+            report.getReports().getInfoOrWarningOrError().sort(new ReportItemComparator(ReportItemComparator.SortType.SEVERITY_THEN_LOCATION));
+        }
+        return report;
     }
 }

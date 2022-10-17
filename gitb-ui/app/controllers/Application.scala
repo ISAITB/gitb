@@ -1,6 +1,7 @@
 package controllers
 
 import config.Configurations
+import config.Configurations.versionInfo
 import filters.CorsFilter
 import managers.{LegalNoticeManager, SystemConfigurationManager}
 import models.{Constants, PublicConfig}
@@ -30,8 +31,8 @@ class Application @Inject() (implicit ec: ExecutionContext, cc: ControllerCompon
       Configurations.AUTHENTICATION_SSO_ENABLED,
       systemConfigurationManager.getLogoPath(),
       systemConfigurationManager.getFooterLogoPath(),
-      Constants.VersionNumber,
-      Constants.ResourceVersionNumber,
+      versionInfo(),
+      resourceVersionToUse(),
       hasDefaultLegalNotice,
       legalNoticeContent,
       Configurations.AUTHENTICATION_SSO_IN_MIGRATION_PERIOD,
@@ -51,8 +52,12 @@ class Application @Inject() (implicit ec: ExecutionContext, cc: ControllerCompon
     )))
   }
 
+  private def resourceVersionToUse(): String = {
+    Configurations.versionInfo().replace(' ', '_')
+  }
+
   def app() = defaultAction {
-    Ok(views.html.ngApp(new PublicConfig(Constants.VersionNumber, Constants.ResourceVersionNumber, Configurations.AUTHENTICATION_COOKIE_PATH, contextPath()), environment.mode))
+    Ok(views.html.ngApp(new PublicConfig(resourceVersionToUse(), Configurations.AUTHENTICATION_COOKIE_PATH, contextPath()), environment.mode))
   }
 
   private def contextPath(): String = {

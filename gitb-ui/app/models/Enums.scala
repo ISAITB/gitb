@@ -88,6 +88,11 @@ object Enums {
     val Skip, SkipProcessChildren, SkipDueToParent, Proceed = Value
   }
 
+  object TriggerServiceType extends Enumeration(1) {
+    type TriggerServiceType = Value
+    val GITB, JSON = Value
+  }
+
   object TriggerEventType extends Enumeration(1) {
     type TriggerEventType = Value
     val OrganisationCreated,
@@ -98,13 +103,24 @@ object Enums {
         ConformanceStatementUpdated,
         TestSessionSucceeded,
         TestSessionFailed,
-        ConformanceStatementSucceeded
+        ConformanceStatementSucceeded,
+        TestSessionStarted
         = Value
   }
 
   object TriggerDataType extends Enumeration(1) {
     type TriggerDataType = Value
-    val Community, Organisation, System, Specification, Actor, OrganisationParameter, SystemParameter, DomainParameter = Value
+    val Community,
+        Organisation,
+        System,
+        Specification,
+        Actor,
+        OrganisationParameter,
+        SystemParameter,
+        DomainParameter,
+        TestSession,
+        StatementParameter,
+        TestReport = Value
   }
 
   object InputMappingMatchType extends Enumeration(1) {

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<TestCaseOverviewReport xmlns="http://www.gitb.com/tr/v1/" xmlns:ns2="http://www.gitb.com/core/v1/" xmlns:ns3="http://www.gitb.com/tbs/v1/" id="TC1">
+    <metadata>
+        <ns2:name>Sample test case</ns2:name>
+        <ns2:description>Sample test case description.</ns2:description>
+    </metadata>
+    <startTime>2022-02-16T09:03:57.000+01:00</startTime>
+    <endTime>2022-02-16T09:04:01.000+01:00</endTime>
+    <result>SUCCESS</result>
+    <message>The test succeeded.</message>
+    <steps>
+        <step id="1">
+            <description>Step 1: Simple step</description>
+            <report xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="SR" id="1">
+                <date>2022-02-16T09:03:59.543+01:00</date>
+                <result>SUCCESS</result>
+            </report>
+        </step>
+        <step id="2">
+            <description>Step 2: Validation step</description>
+            <report xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="TAR" id="2">
+                <date>2022-02-16T09:03:59.799+01:00</date>
+                <result>FAILURE</result>
+                <reports>
+                    <error xsi:type="BAR">
+                        <description>A validation error.</description>
+                    </error>
+                </reports>
+            </report>
+        </step>
+    </steps>
+</TestCaseOverviewReport>

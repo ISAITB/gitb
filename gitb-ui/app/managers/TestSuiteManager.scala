@@ -520,6 +520,7 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 
 	private def theSameParameter(one: models.Parameters, two: models.Parameters): Boolean = {
 		(Objects.equals(one.name, two.name)
+				&& Objects.equals(one.testKey, two.testKey)
 				&& Objects.equals(one.desc, two.desc)
 				&& Objects.equals(one.kind, two.kind)
 				&& Objects.equals(one.use, two.use)
@@ -600,7 +601,7 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 				if (!updateMetadata || isActorReference(actorToSave) || theSameActor(savedActor.get, actorToSave)) {
 					result += new TestSuiteUploadItemResult(savedActor.get.name, TestSuiteUploadItemResult.ITEM_TYPE_ACTOR, TestSuiteUploadItemResult.ACTION_TYPE_UNCHANGED, suite.specification)
 				} else {
-					updateAction = Some(actorManager.updateActor(savedActor.get.id, actorToSave.actorId, actorToSave.name, actorToSave.description, actorToSave.default, actorToSave.hidden, actorToSave.displayOrder, suite.specification, None))
+					updateAction = Some(actorManager.updateActor(savedActor.get.id, actorToSave.actorId, actorToSave.name, actorToSave.description, actorToSave.default, actorToSave.hidden, actorToSave.displayOrder, suite.specification, None, checkApiKeyUniqueness = false))
 					result += new TestSuiteUploadItemResult(savedActor.get.name, TestSuiteUploadItemResult.ITEM_TYPE_ACTOR, TestSuiteUploadItemResult.ACTION_TYPE_UPDATE, suite.specification)
 				}
 				savedActorId = DBIO.successful(savedActor.get.id)
@@ -689,28 +690,28 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 		val result = new ListBuffer[TestSuiteUploadItemResult]()
 		val existingParameterMap = new util.HashMap[String, models.Parameters]()
 		for (existingParameter <- existingEndpointParameters) {
-			existingParameterMap.put(existingParameter.name, existingParameter)
+			existingParameterMap.put(existingParameter.testKey, existingParameter)
 		}
 		if (endpoint.parameters.isDefined) {
 			val parameters = endpoint.parameters.get
 			parameters.foreach { parameter =>
 				var action: Option[DBIO[_]] = None
-				val existingParameter = existingParameterMap.get(parameter.name)
+				val existingParameter = existingParameterMap.get(parameter.testKey)
 				var parameterId: Long = -1
 				if (existingParameter != null) {
 					// Existing parameter.
 					parameterId = existingParameter.id
-					existingParameterMap.remove(parameter.name)
+					existingParameterMap.remove(parameter.testKey)
 					if (!updateMetadata || theSameParameter(parameter, existingParameter)) {
-						result += new TestSuiteUploadItemResult(actorToSave.actorId+"["+endpoint.name+"]."+parameter.name, TestSuiteUploadItemResult.ITEM_TYPE_PARAMETER, TestSuiteUploadItemResult.ACTION_TYPE_UNCHANGED, suite.specification)
+						result += new TestSuiteUploadItemResult(actorToSave.actorId+"["+endpoint.name+"]."+parameter.testKey, TestSuiteUploadItemResult.ITEM_TYPE_PARAMETER, TestSuiteUploadItemResult.ACTION_TYPE_UNCHANGED, suite.specification)
 					} else {
-						action = Some(parameterManager.updateParameter(parameterId, parameter.name, parameter.desc, parameter.use, parameter.kind, parameter.adminOnly, parameter.notForTests, parameter.hidden, parameter.allowedValues, parameter.dependsOn, parameter.dependsOnValue, onSuccessCalls))
-						result += new TestSuiteUploadItemResult(actorToSave.actorId+"["+endpoint.name+"]."+parameter.name, TestSuiteUploadItemResult.ITEM_TYPE_PARAMETER, TestSuiteUploadItemResult.ACTION_TYPE_UPDATE, suite.specification)
+						action = Some(parameterManager.updateParameter(parameterId, parameter.name, parameter.testKey, parameter.desc, parameter.use, parameter.kind, parameter.adminOnly, parameter.notForTests, parameter.hidden, parameter.allowedValues, parameter.dependsOn, parameter.dependsOnValue, parameter.defaultValue, onSuccessCalls))
+						result += new TestSuiteUploadItemResult(actorToSave.actorId+"["+endpoint.name+"]."+parameter.testKey, TestSuiteUploadItemResult.ITEM_TYPE_PARAMETER, TestSuiteUploadItemResult.ACTION_TYPE_UPDATE, suite.specification)
 					}
 				} else {
 					// New parameter.
 					action = Some(parameterManager.createParameter(parameter.withEndpoint(endpointId, Some(0))))
-					result += new TestSuiteUploadItemResult(actorToSave.actorId+"["+endpoint.name+"]."+parameter.name, TestSuiteUploadItemResult.ITEM_TYPE_PARAMETER, TestSuiteUploadItemResult.ACTION_TYPE_ADD, suite.specification)
+					result += new TestSuiteUploadItemResult(actorToSave.actorId+"["+endpoint.name+"]."+parameter.testKey, TestSuiteUploadItemResult.ITEM_TYPE_PARAMETER, TestSuiteUploadItemResult.ACTION_TYPE_ADD, suite.specification)
 				}
 				actions += action.getOrElse(DBIO.successful(()))
 			}

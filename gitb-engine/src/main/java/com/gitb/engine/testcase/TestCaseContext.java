@@ -25,6 +25,7 @@ import com.gitb.utils.map.Tuple;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MarkerFactory;
@@ -38,6 +39,9 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+
+import static com.gitb.engine.PropertyConstants.*;
+import static com.gitb.engine.utils.TestCaseUtils.TEST_ENGINE_VERSION;
 
 /**
  * Created by serbay on 9/3/14.
@@ -72,8 +76,12 @@ public class TestCaseContext {
      * Test session id given to the testbed service client to control the execution
      */
     private final String sessionId;
+	/**
+	 * Test case identifier as stated in its TDL definition
+	 */
+	private final String testCaseIdentifier;
 
-    /**
+	/**
      * Test case scope where all the variables, artifacts are stored and accessed.
      */
     private TestCaseScope scope;
@@ -159,9 +167,10 @@ public class TestCaseContext {
 	private boolean reportedInvalidLogLevel = false;
 	private Path dataFolder;
 
-    public TestCaseContext(TestCase testCase, String sessionId) {
+    public TestCaseContext(TestCase testCase, String testCaseIdentifier, String sessionId) {
         this.currentState = TestCaseStateEnum.IDLE;
         this.testCase = testCase;
+		this.testCaseIdentifier = testCaseIdentifier;
         this.sessionId = sessionId;
         this.sutConfigurations = new ConcurrentHashMap<>();
         this.sutHandlerConfigurations = new ConcurrentHashMap<>();
@@ -234,9 +243,10 @@ public class TestCaseContext {
      */
     public List<SUTConfiguration> configure(List<ActorConfiguration> configurations, ActorConfiguration domainConfiguration, ActorConfiguration organisationConfiguration, ActorConfiguration systemConfiguration){
 
-		addSpecialConfiguration("DOMAIN", domainConfiguration);
-		addSpecialConfiguration("ORGANISATION", organisationConfiguration);
-		addSpecialConfiguration("SYSTEM", systemConfiguration);
+		addSpecialConfiguration(DOMAIN_MAP, domainConfiguration);
+		addSpecialConfiguration(ORGANISATION_MAP, organisationConfiguration);
+		addSpecialConfiguration(SYSTEM_MAP, systemConfiguration);
+		addSessionMetadata();
 
 		for(ActorConfiguration actorConfiguration : configurations) {
 		    Tuple<String> actorIdEndpointTupleKey = new Tuple<>(new String[] {actorConfiguration.getActor(), actorConfiguration.getEndpoint()});
@@ -259,6 +269,22 @@ public class TestCaseContext {
 
 	    return sutConfigurations;
     }
+
+	private void addSessionMetadata() {
+		DataTypeFactory factory = DataTypeFactory.getInstance();
+		TestCaseScope.ScopedVariable variable = scope.createVariable(SESSION_MAP);
+		var map = (MapType) factory.create(DataType.MAP_DATA_TYPE);
+		var sessionId = factory.create(DataType.STRING_DATA_TYPE);
+		sessionId.setValue(getSessionId());
+		map.addItem(SESSION_MAP__TEST_SESSION_ID, sessionId);
+		var testCaseId = factory.create(DataType.STRING_DATA_TYPE);
+		testCaseId.setValue(getTestCaseIdentifier());
+		map.addItem(SESSION_MAP__TEST_CASE_ID, testCaseId);
+		var testEngineVersion = factory.create(DataType.STRING_DATA_TYPE);
+		testEngineVersion.setValue(TEST_ENGINE_VERSION);
+		map.addItem(SESSION_MAP__TEST_ENGINE_VERSION, testEngineVersion);
+		variable.setValue(map);
+	}
 
 	private void addSpecialConfiguration(String mapVariableName, ActorConfiguration domainConfiguration) {
 		if (domainConfiguration != null) {
@@ -447,12 +473,12 @@ public class TestCaseContext {
 		return new ArrayList<>(groups.values());
 	}
 
-	private TransactionInfo buildTransactionInfo(String from, String to, String handler, List<Configuration> properties, VariableResolver resolver, LinkedList<CallStep> scriptletCallStack) {
+	private TransactionInfo buildTransactionInfo(String from, String to, String handler, List<Configuration> properties, VariableResolver resolver, LinkedList<Pair<CallStep, Scriptlet>> scriptletCallStack) {
 		return new TransactionInfo(
-				TestCaseUtils.fixedOrVariableValue(ActorUtils.extractActorId(from), scriptletCallStack),
-				TestCaseUtils.fixedOrVariableValue(ActorUtils.extractEndpointName(from), scriptletCallStack),
-				TestCaseUtils.fixedOrVariableValue(ActorUtils.extractActorId(to), scriptletCallStack),
-				TestCaseUtils.fixedOrVariableValue(ActorUtils.extractEndpointName(to), scriptletCallStack),
+				TestCaseUtils.fixedOrVariableValue(ActorUtils.extractActorId(from), String.class, scriptletCallStack),
+				TestCaseUtils.fixedOrVariableValue(ActorUtils.extractEndpointName(from), String.class, scriptletCallStack),
+				TestCaseUtils.fixedOrVariableValue(ActorUtils.extractActorId(to), String.class, scriptletCallStack),
+				TestCaseUtils.fixedOrVariableValue(ActorUtils.extractEndpointName(to), String.class, scriptletCallStack),
 				VariableResolver.isVariableReference(handler)?resolver.resolveVariableAsString(handler).toString():handler,
 				TestCaseUtils.getStepProperties(properties, resolver)
 		);
@@ -463,7 +489,7 @@ public class TestCaseContext {
      * @param sequence test step sequence
      * @return transactions occurring in the given sequence
      */
-    private List<TransactionInfo> createTransactionInfo(Sequence sequence, String testSuiteContext, VariableResolver resolver, LinkedList<CallStep> scriptletCallStack) {
+    private List<TransactionInfo> createTransactionInfo(Sequence sequence, String testSuiteContext, VariableResolver resolver, LinkedList<Pair<CallStep, Scriptlet>> scriptletCallStack) {
         List<TransactionInfo> transactions = new ArrayList<>();
         for(Object step : sequence.getSteps()) {
             if(step instanceof Sequence) {
@@ -497,7 +523,7 @@ public class TestCaseContext {
 					testSuiteContextToUse = testSuiteContext;
 				}
 	            Scriptlet scriptlet = getScriptlet(testSuiteContextToUse, ((CallStep) step).getPath(), true);
-				scriptletCallStack.addLast((CallStep) step);
+				scriptletCallStack.addLast(Pair.of((CallStep) step, scriptlet));
 				transactions.addAll(createTransactionInfo(scriptlet.getSteps(), testSuiteContextToUse, resolver, scriptletCallStack));
 				scriptletCallStack.removeLast();
             }
@@ -524,6 +550,10 @@ public class TestCaseContext {
     public String getSessionId() {
         return sessionId;
     }
+
+	public String getTestCaseIdentifier() {
+		return testCaseIdentifier;
+	}
 
 	public com.gitb.core.LogLevel getLogLevelToSignal() {
 		if (logLevelIsExpression) {

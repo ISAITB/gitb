@@ -1,7 +1,6 @@
 package controllers
 
 import com.gitb.tbs.TestStepStatus
-import com.gitb.tpl.TestCase
 import com.gitb.utils.{XMLDateTimeUtils, XMLUtils}
 import com.gitb.xml.export.Export
 import config.Configurations
@@ -10,7 +9,7 @@ import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, Respo
 import exceptions.ErrorCodes
 import managers._
 import managers.export._
-import models.{ConformanceCertificate, ConformanceCertificates, Constants, TestSuites}
+import models._
 import org.apache.commons.codec.net.URLCodec
 import org.apache.commons.io.FileUtils
 import org.apache.commons.lang3.{RandomStringUtils, StringUtils}
@@ -30,12 +29,11 @@ import scala.jdk.CollectionConverters.CollectionHasAsScala
 /**
  * Created by serbay on 10/16/14.
  */
-class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedAction: AuthorizedAction, cc: ControllerComponents, systemManager: SystemManager, testCaseManager: TestCaseManager, testSuiteManager: TestSuiteManager, reportManager: ReportManager, testResultManager: TestResultManager, conformanceManager: ConformanceManager, specificationManager: SpecificationManager, authorizationManager: AuthorizationManager, communityLabelManager: CommunityLabelManager, exportManager: ExportManager, importPreviewManager: ImportPreviewManager, importCompleteManager: ImportCompleteManager, repositoryUtils: RepositoryUtils) extends AbstractController(cc) {
+class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedAction: AuthorizedAction, cc: ControllerComponents, testCaseReportProducer: TestCaseReportProducer, systemManager: SystemManager, testCaseManager: TestCaseManager, testSuiteManager: TestSuiteManager, reportManager: ReportManager, testResultManager: TestResultManager, conformanceManager: ConformanceManager, specificationManager: SpecificationManager, authorizationManager: AuthorizationManager, communityLabelManager: CommunityLabelManager, exportManager: ExportManager, importPreviewManager: ImportPreviewManager, importCompleteManager: ImportCompleteManager, repositoryUtils: RepositoryUtils) extends AbstractController(cc) {
 
 	private val logger = LoggerFactory.getLogger(classOf[RepositoryService])
 	private val codec = new URLCodec()
   private val EXPORT_QNAME:QName = new QName("http://www.gitb.com/export/v1/", "export")
-  private val TESTCASE_STEP_REPORT_NAME = "step.pdf"
 
 	def getTestSuiteResource(locationKey: String, filePath:String): Action[AnyContent] = authorizedAction { request =>
     // Location key is either a test case ID (e.g. '123') or a test case ID prefixed by a test suite string identifier [TEST_SUITE_IDENTIFIER]|123.
@@ -177,20 +175,23 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
     path = codec.decode(path)
     val sessionFolderInfo = reportManager.getPathForTestSessionWrapper(sessionId, isExpected = true)
     try {
-      val file = new File(sessionFolderInfo.path.toFile, path)
-      val pdf = new File(sessionFolderInfo.path.toFile, path.toLowerCase().replace(".xml", ".pdf"))
-
-      if (!pdf.exists()) {
-        if (file.exists()) {
-          reportManager.generateTestStepReport(file.toPath, pdf.toPath)
+      val reportData = request.headers.get("Accept") match {
+        case Some("application/pdf") => (".pdf", "step.pdf", (stepDataFile: File, report: File) => reportManager.generateTestStepReport(stepDataFile.toPath, report.toPath))
+        case _ => (".report.xml", "step.xml", (stepDataFile: File, report: File) => reportManager.generateTestStepXmlReport(stepDataFile.toPath, report.toPath))
+      }
+      var report = new File(sessionFolderInfo.path.toFile, path.toLowerCase().replace(".xml", reportData._1))
+      if (!report.exists()) {
+        val stepDataFile = new File(sessionFolderInfo.path.toFile, path)
+        if (stepDataFile.exists()) {
+          report = reportData._3.apply(stepDataFile, report).toFile
         }
       }
-      if (!pdf.exists()) {
+      if (!report.exists()) {
         NotFound
       } else {
         Ok.sendFile(
-          content = pdf,
-          fileName = _ => Some(TESTCASE_STEP_REPORT_NAME),
+          content = report,
+          fileName = _ => Some(reportData._2),
           onClose = () => {
             if (sessionFolderInfo.archived) {
               FileUtils.deleteQuietly(sessionFolderInfo.path.toFile)
@@ -210,34 +211,16 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
   def exportTestCaseReport(): Action[AnyContent] = authorizedAction { request =>
     val session = ParameterExtractor.requiredQueryParameter(request, Parameters.SESSION_ID)
     authorizationManager.canViewTestResultForSession(request, session)
-    val testCaseId = ParameterExtractor.requiredQueryParameter(request, Parameters.TEST_ID)
-
-    val sessionFolderInfo = reportManager.getPathForTestSessionWrapper(codec.decode(session), isExpected = true)
+    var result: (Option[Path], SessionFolderInfo) = null
     try {
-      logger.debug("Reading test case report [" + codec.decode(session) + "] from the file [" + sessionFolderInfo + "]")
-      val testResult = testResultManager.getTestResultForSessionWrapper(session)
-      if (testResult.isDefined) {
-        var exportedReport: File = null
-        if (testResult.get.endTime.isEmpty) {
-          // This name will be unique to ensure that a report generated for a pending session never gets cached.
-          exportedReport = new File(sessionFolderInfo.path.toFile, "report_" + System.currentTimeMillis() + ".pdf")
-          FileUtils.forceDeleteOnExit(exportedReport)
-        } else {
-          exportedReport = new File(sessionFolderInfo.path.toFile, "report.pdf")
-        }
-        val testcasePresentation = XMLUtils.unmarshal(classOf[TestCase], new StreamSource(new StringReader(testResult.get.tpl)))
-        val testCase = testCaseManager.getTestCase(testCaseId)
-        if (!exportedReport.exists()) {
-          val list = reportManager.getListOfTestSteps(testcasePresentation, sessionFolderInfo.path.toFile)
-          val labels = communityLabelManager.getLabels(request)
-          reportManager.generateDetailedTestCaseReport(list, exportedReport.getAbsolutePath, testCase, session, addContext = false, labels)
-        }
+      result = testCaseReportProducer.generateDetailedTestCaseReport(session, request.headers.get("Accept"), Some(() => communityLabelManager.getLabels(request)))
+      if (result._1.isDefined) {
         Ok.sendFile(
-          content = exportedReport,
-          fileName = _ => Some(exportedReport.getName),
+          content = result._1.get.toFile,
+          fileName = _ => Some(result._1.get.toFile.getName),
           onClose = () => {
-            if (sessionFolderInfo.archived) {
-              FileUtils.deleteQuietly(sessionFolderInfo.path.toFile)
+            if (result._2.archived) {
+              FileUtils.deleteQuietly(result._2.path.toFile)
             }
           }
         )
@@ -246,8 +229,8 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
       }
     } catch {
       case e: Exception =>
-        if (sessionFolderInfo.archived) {
-          FileUtils.deleteQuietly(sessionFolderInfo.path.toFile)
+        if (result._2.archived) {
+          FileUtils.deleteQuietly(result._2.path.toFile)
         }
         throw e
     }
@@ -471,7 +454,7 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
     // Get export settings to apply.
     val exportSettings = JsonUtil.parseJsExportSettings(requiredBodyParameter(request, Parameters.VALUES))
     val exportData = fnExportData.apply(exportSettings)
-    exportData.setVersion(Constants.VersionNumber)
+    exportData.setVersion(Configurations.mainVersionNumber())
     exportData.setTimestamp(XMLDateTimeUtils.getXMLGregorianCalendarDateTime)
     // Define temp file paths.
     val randomToken = RandomStringUtils.random(10, false, true)

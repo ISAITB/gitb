@@ -8,7 +8,7 @@ import com.gitb.ps.ProcessingModule;
 import com.gitb.tr.TestResultType;
 import com.gitb.types.NumberType;
 import com.gitb.types.StringType;
-import com.mifmif.common.regex.Generex;
+import com.github.curiousoddman.rgxgen.RgxGen;
 import org.apache.commons.lang3.StringUtils;
 
 import java.time.Instant;
@@ -17,8 +17,7 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.temporal.ChronoField;
-import java.util.Arrays;
-import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 
 @ProcessingHandler(name="TokenGenerator")
@@ -34,6 +33,8 @@ public class TokenGenerator extends AbstractProcessingHandler {
     private static final String INPUT__INPUT_FORMAT = "inputFormat";
     private static final String INPUT__DIFF = "diff";
     private static final String INPUT__ZONE = "zone";
+    private static final String INPUT__PREFIX = "prefix";
+    private static final String INPUT__POSTFIX = "postfix";
     private static final String OUTPUT__VALUE = "value";
 
     @Override
@@ -45,6 +46,8 @@ public class TokenGenerator extends AbstractProcessingHandler {
         module.getMetadata().setVersion("1.0");
         module.setConfigs(new ConfigurationParameters());
 
+        TypedParameter uuidPrefix = createParameter(INPUT__PREFIX, "string", UsageEnumeration.O, ConfigurationType.SIMPLE, "A text to prepend to the generated UUID.");
+        TypedParameter uuidPostfix = createParameter(INPUT__POSTFIX, "string", UsageEnumeration.O, ConfigurationType.SIMPLE, "A text to append to the generated UUID.");
         TypedParameter outputText = createParameter(OUTPUT__VALUE, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The output value.");
         TypedParameter timestampFormat = createParameter(INPUT__FORMAT, "string", UsageEnumeration.O, ConfigurationType.SIMPLE, "The optional format string to apply (see https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/time/format/DateTimeFormatter.html). Default is the epoch milliseconds.");
         TypedParameter milliseconds = createParameter(INPUT__TIME, "number", UsageEnumeration.O, ConfigurationType.SIMPLE, "The optional time (in epoch milliseconds) to use as the value (default is the current time).");
@@ -54,9 +57,9 @@ public class TokenGenerator extends AbstractProcessingHandler {
         TypedParameter zone = createParameter(INPUT__ZONE, "string", UsageEnumeration.O, ConfigurationType.SIMPLE, "The timezone to consider (default is UTC).");
         TypedParameter regexpFormat = createParameter(INPUT__FORMAT, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "A regular expression defining the syntax and static parts of the returned string.");
 
-        module.getOperation().add(createProcessingOperation(OPERATION__UUID, Collections.emptyList(), Arrays.asList(outputText)));
-        module.getOperation().add(createProcessingOperation(OPERATION__TIMESTAMP, Arrays.asList(timestampFormat, milliseconds, inputDate, inputDateFormat, diff, zone), Arrays.asList(outputText)));
-        module.getOperation().add(createProcessingOperation(OPERATION__STRING, Arrays.asList(regexpFormat), Arrays.asList(outputText)));
+        module.getOperation().add(createProcessingOperation(OPERATION__UUID, List.of(uuidPrefix, uuidPostfix), List.of(outputText)));
+        module.getOperation().add(createProcessingOperation(OPERATION__TIMESTAMP, List.of(timestampFormat, milliseconds, inputDate, inputDateFormat, diff, zone), List.of(outputText)));
+        module.getOperation().add(createProcessingOperation(OPERATION__STRING, List.of(regexpFormat), List.of(outputText)));
         return module;
     }
 
@@ -67,7 +70,11 @@ public class TokenGenerator extends AbstractProcessingHandler {
         }
         String value;
         if (OPERATION__UUID.equalsIgnoreCase(operation)) {
-            value = UUID.randomUUID().toString();
+            var prefix = getInputForName(input, INPUT__PREFIX, StringType.class);
+            var postfix = getInputForName(input, INPUT__POSTFIX, StringType.class);
+            var prefixString = (prefix == null)?"":(String)prefix.getValue();
+            var postfixString = (postfix == null)?"":(String)postfix.getValue();
+            value = String.format("%s%s%s", prefixString, UUID.randomUUID(), postfixString);
         } else if (OPERATION__TIMESTAMP.equalsIgnoreCase(operation)) {
             StringType format = getInputForName(input, INPUT__FORMAT, StringType.class);
             NumberType time = getInputForName(input, INPUT__TIME, NumberType.class);
@@ -108,8 +115,8 @@ public class TokenGenerator extends AbstractProcessingHandler {
                 throw new IllegalArgumentException("Format to use for string generation is required");
             }
             try {
-                Generex generex = new Generex((String)format.getValue());
-                value = generex.random();
+                var generator = new RgxGen((String)format.getValue());
+                value = generator.generate();
             } catch (Exception e) {
                 throw new IllegalArgumentException("Generation of string failed for expression ["+format.getValue()+"]", e);
             }

@@ -1,5 +1,6 @@
 package com.gitb.engine.utils;
 
+import com.gitb.core.AnyContent;
 import com.gitb.core.Configuration;
 import com.gitb.core.ErrorCode;
 import com.gitb.engine.ModuleManager;
@@ -12,24 +13,34 @@ import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.repository.ITestCaseRepository;
 import com.gitb.tdl.Process;
 import com.gitb.tdl.*;
-import com.gitb.types.BooleanType;
-import com.gitb.types.DataType;
-import com.gitb.types.MapType;
-import com.gitb.types.StringType;
+import com.gitb.tr.TAR;
+import com.gitb.tr.TestAssertionGroupReportsType;
+import com.gitb.tr.TestResultType;
+import com.gitb.tr.ValidationCounters;
+import com.gitb.types.*;
 import com.gitb.utils.ErrorUtils;
+import com.gitb.utils.XMLDateTimeUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 
+import javax.xml.datatype.DatatypeConfigurationException;
+import java.io.IOException;
+import java.math.BigInteger;
 import java.net.Authenticator;
 import java.net.PasswordAuthentication;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Properties;
+import java.util.*;
+import java.util.function.Supplier;
 
 /**
  * Created by senan on 10/13/14.
  */
 public class TestCaseUtils {
+
+    public static final String TEST_ENGINE_VERSION;
+
+    static {
+        TEST_ENGINE_VERSION = getTestEngineVersion();
+    }
 
 	// TODO add the test case construct classes to report their statuses (COMPLETED, ERROR, etc.)
 	private static final Class<?>[] TEST_CONSTRUCTS_TO_REPORT = {
@@ -226,31 +237,197 @@ public class TestCaseUtils {
         return description;
     }
 
-    public static String fixedOrVariableValue(String originalValue, LinkedList<CallStep> scriptletStepStack) {
-        if (!scriptletStepStack.isEmpty() && VariableResolver.isVariableReference(originalValue)) {
-            // The description may be set dynamically from the call inputs.
-            return TestCaseUtils.getConstantCallInput(VariableResolver.extractVariableNameFromExpression(originalValue).getLeft(), scriptletStepStack).orElse(originalValue);
+    public static <T> T fixedOrVariableValue(String originalValue, Class<T> variableClass, LinkedList<Pair<CallStep, Scriptlet>> scriptletStepStack) {
+        if (originalValue != null) {
+            String dataType;
+            Supplier<T> nonVariableValueFn;
+            if (String.class.equals(variableClass)) {
+                dataType = DataType.STRING_DATA_TYPE;
+                nonVariableValueFn = () -> variableClass.cast(originalValue);
+            } else if (Boolean.class.equals(variableClass)) {
+                dataType = DataType.BOOLEAN_DATA_TYPE;
+                nonVariableValueFn = () -> variableClass.cast(Boolean.valueOf(originalValue));
+            } else {
+                throw new IllegalArgumentException("Unsupported variable class ["+variableClass+"]");
+            }
+            if (!scriptletStepStack.isEmpty() && VariableResolver.isVariableReference(originalValue)) {
+                // The description may be set dynamically from the call inputs.
+                return TestCaseUtils.getConstantCallInput(
+                        VariableResolver.extractVariableNameFromExpression(originalValue).getLeft(),
+                        variableClass,
+                        dataType, scriptletStepStack
+                ).orElseGet(nonVariableValueFn);
+            }
+            return nonVariableValueFn.get();
+        } else {
+            return null;
         }
-        return originalValue;
     }
 
-    private static Optional<String> getConstantCallInput(String inputName, LinkedList<CallStep> scriptletStepStack) {
+    private static <T> Optional<T> getConstantCallInput(String inputName, Class<T> constantClass, String constantDataType, LinkedList<Pair<CallStep, Scriptlet>> scriptletStepStack) {
+        var originalInputName = inputName;
+        DataType dataToUse = null;
         var iterator = scriptletStepStack.descendingIterator();
         while (iterator.hasNext()) {
-            var call = iterator.next();
+            var callData = iterator.next();
             var inputToLookFor = inputName;
-            var matchedInput = call.getInput().stream().filter(input -> inputToLookFor.equals(input.getName())).findFirst();
+            var matchedInput = callData.getLeft().getInput().stream().filter(input -> inputToLookFor.equals(input.getName())).findFirst();
             if (matchedInput.isPresent()) {
-                var inputValue = matchedInput.get().getValue();
-                if (VariableResolver.isVariableReference(inputValue)) {
+                // We found a matching input.
+                var inputValueExpression = matchedInput.get().getValue();
+                if (VariableResolver.isVariableReference(inputValueExpression)) {
                     // The input's value is itself a variable reference.
-                    inputName = VariableResolver.extractVariableNameFromExpression(inputValue).getLeft();
+                    inputName = VariableResolver.extractVariableNameFromExpression(inputValueExpression).getLeft();
                     continue;
                 }
-                return Optional.of((String) new StaticExpressionHandler().processExpression(matchedInput.get(), DataType.STRING_DATA_TYPE).getValue());
+                dataToUse = new StaticExpressionHandler().processExpression(matchedInput.get(), constantDataType);
+            }
+            break;
+        }
+        if (dataToUse == null && !scriptletStepStack.isEmpty()) {
+            // No input found. Look also at variable default values.
+            var scriptlet = scriptletStepStack.getLast().getRight();
+            if (scriptlet.getParams() != null) {
+                var matchedVariableValue = scriptlet.getParams().getVar().stream().filter(variable -> originalInputName.equals(variable.getName()) && !variable.getValue().isEmpty()).findFirst();
+                if (matchedVariableValue.isPresent()) {
+                    // The parameter defines a default value.
+                    dataToUse = DataTypeFactory.getInstance().create(matchedVariableValue.get());
+                }
+            }
+        }
+        if (dataToUse != null) {
+            var valueToUse = dataToUse.convertTo(constantDataType).getValue();
+            if (valueToUse != null && constantClass.equals(valueToUse.getClass())) {
+                return Optional.of(constantClass.cast(valueToUse));
             }
         }
         return Optional.empty();
+    }
+
+    public static TAR mergeReports(List<TAR> reports) {
+        return mergeReports(reports.toArray(new TAR[0]));
+    }
+
+    public static TAR mergeReports(TAR[] reports) {
+        TAR mergedReport = reports[0];
+        if (reports.length > 1) {
+            for(int i = 1; i < reports.length; ++i) {
+                TAR report = reports[i];
+                if (report != null) {
+                    if (report.getCounters() != null) {
+                        if (mergedReport.getCounters() == null) {
+                            mergedReport.setCounters(new ValidationCounters());
+                            mergedReport.getCounters().setNrOfAssertions(BigInteger.ZERO);
+                            mergedReport.getCounters().setNrOfWarnings(BigInteger.ZERO);
+                            mergedReport.getCounters().setNrOfErrors(BigInteger.ZERO);
+                        }
+
+                        if (report.getCounters().getNrOfAssertions() != null) {
+                            mergedReport.getCounters().setNrOfAssertions(mergedReport.getCounters().getNrOfAssertions().add(report.getCounters().getNrOfAssertions()));
+                        }
+
+                        if (report.getCounters().getNrOfWarnings() != null) {
+                            mergedReport.getCounters().setNrOfWarnings(mergedReport.getCounters().getNrOfWarnings().add(report.getCounters().getNrOfWarnings()));
+                        }
+
+                        if (report.getCounters().getNrOfErrors() != null) {
+                            mergedReport.getCounters().setNrOfErrors(mergedReport.getCounters().getNrOfErrors().add(report.getCounters().getNrOfErrors()));
+                        }
+                    }
+
+                    if (report.getReports() != null) {
+                        if (mergedReport.getReports() == null) {
+                            mergedReport.setReports(new TestAssertionGroupReportsType());
+                        }
+
+                        mergedReport.getReports().getInfoOrWarningOrError().addAll(report.getReports().getInfoOrWarningOrError());
+                    }
+
+                    if (mergedReport.getResult() == null) {
+                        mergedReport.setResult(TestResultType.UNDEFINED);
+                    }
+
+                    if (report.getResult() != null && report.getResult() != TestResultType.UNDEFINED && (mergedReport.getResult() == TestResultType.UNDEFINED || mergedReport.getResult() == TestResultType.SUCCESS && report.getResult() != TestResultType.SUCCESS || mergedReport.getResult() == TestResultType.WARNING && report.getResult() == TestResultType.FAILURE)) {
+                        mergedReport.setResult(report.getResult());
+                    }
+
+                    if (report.getContext() != null) {
+                        if (mergedReport.getContext() == null) {
+                            mergedReport.setContext(report.getContext());
+                        } else if (report.getContext().getItem() != null) {
+                            for (AnyContent item : report.getContext().getItem()) {
+                                if (item.getName() != null) {
+                                    List<AnyContent> matchedInputs = getInputFor(mergedReport.getContext().getItem(), item.getName());
+                                    if (matchedInputs.isEmpty()) {
+                                        mergedReport.getContext().getItem().add(item);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return mergedReport;
+    }
+
+    public static List<AnyContent> getInputFor(List<AnyContent> inputsToConsider, String name) {
+        List<AnyContent> inputs = new ArrayList<>();
+        if (inputsToConsider != null) {
+            for (AnyContent anInput : inputsToConsider) {
+                if (name.equals(anInput.getName())) {
+                    inputs.add(anInput);
+                }
+            }
+        }
+        return inputs;
+    }
+
+    public static TAR createEmptyReport() {
+        var report = new TAR();
+        report.setResult(TestResultType.SUCCESS);
+        try {
+            report.setDate(XMLDateTimeUtils.getXMLGregorianCalendarDateTime());
+        } catch (DatatypeConfigurationException e) {
+            throw new IllegalStateException("Exception while creating XMLGregorianCalendar", e);
+        }
+        return report;
+    }
+
+    public static void applyContentTypes(DataType contentType, AnyContent reportItem) {
+        if (contentType != null && reportItem != null) {
+            if (contentType instanceof MapType) {
+                for (var childItem: ((MapType) contentType).getItems().entrySet()) {
+                    applyContentTypes(childItem.getValue(), reportItem.getItem().stream().filter(item -> Objects.equals(childItem.getKey(), item.getName())).findFirst().orElse(null));
+                }
+            } else if (contentType instanceof ListType) {
+                var childContentItemIterator = ((ListType) contentType).iterator();
+                var childReportItemIterator = reportItem.getItem().iterator();
+                while (childContentItemIterator.hasNext() && childReportItemIterator.hasNext()) {
+                    var childContentItem = childContentItemIterator.next();
+                    var childReportItem = childReportItemIterator.next();
+                    applyContentTypes(childContentItem, childReportItem);
+                }
+            } else if (contentType instanceof StringType) {
+                // Apply the defined content type.
+                reportItem.setMimeType((String) contentType.getValue());
+            }
+        }
+    }
+
+    private static String getTestEngineVersion() {
+        try (var stream = Thread.currentThread().getContextClassLoader().getResourceAsStream("core-module.properties")) {
+            var props = new Properties();
+            props.load(stream);
+            var version = props.getProperty("gitb.version");
+            if (version.toLowerCase(Locale.getDefault()).endsWith("snapshot")) {
+                version += " ("+props.getProperty("gitb.buildTimestamp")+")";
+            }
+            return version;
+        } catch (IOException e) {
+            throw new IllegalStateException("Unable to read core properties", e);
+        }
     }
 
 }

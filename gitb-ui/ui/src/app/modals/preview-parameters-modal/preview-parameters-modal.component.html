@@ -36,16 +36,19 @@
             [tbProperties]="parameters"
             [tbPropertyType]="parameterType"
             [tbShowFormHeader]="false"
+            [tbSetDefaults]="true"
             [tbAdmin]="false"></app-custom-property-form>
         <app-custom-property-form *ngIf="mode == 'admin'"
             [tbProperties]="parameters"
             [tbPropertyType]="parameterType"
             [tbShowFormHeader]="false"
+            [tbSetDefaults]="true"
             [tbAdmin]="true"></app-custom-property-form>
         <app-custom-property-form *ngIf="hasRegistrationCase && mode == 'registration'"
             [tbProperties]="parametersForRegistration"
             [tbPropertyType]="parameterType"
             [tbShowFormHeader]="false"
+            [tbSetDefaults]="true"
             [tbAdmin]="false"></app-custom-property-form>
         <div *ngIf="!hasVisibleProperties()">
             <div class="row">

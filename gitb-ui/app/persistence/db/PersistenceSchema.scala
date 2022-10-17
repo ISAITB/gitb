@@ -134,6 +134,7 @@ object PersistenceSchema {
 	class ParametersTable(tag: Tag) extends Table[models.Parameters] (tag, "Parameters") {
 		def id    = column[Long]("id", O.PrimaryKey, O.AutoInc)
 		def name  = column[String]("name")
+    def testKey = column[String]("test_key")
 		def desc  = column[Option[String]]("description", O.SqlType("TEXT"))
 		def use   = column[String]("use")
 		def kind  = column[String]("kind")
@@ -144,9 +145,10 @@ object PersistenceSchema {
     def displayOrder = column[Short]("display_order")
     def dependsOn  = column[Option[String]]("depends_on")
     def dependsOnValue  = column[Option[String]]("depends_on_value")
+    def defaultValue  = column[Option[String]]("default_value", O.SqlType("TEXT"))
 		def endpoint = column[Long]("endpoint")
 
-		def * = (id, name, desc, use, kind, adminOnly, notForTests, hidden, allowedValues, displayOrder, dependsOn, dependsOnValue, endpoint) <> (models.Parameters.tupled, models.Parameters.unapply)
+		def * = (id, name, testKey, desc, use, kind, adminOnly, notForTests, hidden, allowedValues, displayOrder, dependsOn, dependsOnValue, defaultValue, endpoint) <> (models.Parameters.tupled, models.Parameters.unapply)
 	}
 	val parameters = TableQuery[ParametersTable]
 
@@ -457,8 +459,9 @@ object PersistenceSchema {
     def displayOrder = column[Short]("display_order")
     def dependsOn  = column[Option[String]]("depends_on")
     def dependsOnValue  = column[Option[String]]("depends_on_value")
+    def defaultValue  = column[Option[String]]("default_value", O.SqlType("TEXT"))
     def community = column[Long]("community")
-    def * = (id, name, testKey, description, use, kind, adminOnly, notForTests, inExports, inSelfRegistration, hidden, allowedValues, displayOrder, dependsOn, dependsOnValue, community) <> (OrganisationParameters.tupled, OrganisationParameters.unapply)
+    def * = (id, name, testKey, description, use, kind, adminOnly, notForTests, inExports, inSelfRegistration, hidden, allowedValues, displayOrder, dependsOn, dependsOnValue, defaultValue, community) <> (OrganisationParameters.tupled, OrganisationParameters.unapply)
   }
   val organisationParameters = TableQuery[OrganisationParametersTable]
   val insertOrganisationParameters = organisationParameters returning organisationParameters.map(_.id)
@@ -478,8 +481,9 @@ object PersistenceSchema {
     def displayOrder = column[Short]("display_order")
     def dependsOn  = column[Option[String]]("depends_on")
     def dependsOnValue  = column[Option[String]]("depends_on_value")
+    def defaultValue  = column[Option[String]]("default_value", O.SqlType("TEXT"))
     def community = column[Long]("community")
-    def * = (id, name, testKey, description, use, kind, adminOnly, notForTests, inExports, hidden, allowedValues, displayOrder, dependsOn, dependsOnValue, community) <> (SystemParameters.tupled, SystemParameters.unapply)
+    def * = (id, name, testKey, description, use, kind, adminOnly, notForTests, inExports, hidden, allowedValues, displayOrder, dependsOn, dependsOnValue, defaultValue, community) <> (SystemParameters.tupled, SystemParameters.unapply)
   }
   val systemParameters = TableQuery[SystemParametersTable]
   val insertSystemParameters = systemParameters returning systemParameters.map(_.id)
@@ -521,12 +525,13 @@ object PersistenceSchema {
     def description = column[Option[String]]("description", O.SqlType("TEXT"))
     def url = column[String]("url")
     def eventType = column[Short]("event_type")
+    def serviceType = column[Short]("service_type")
     def operation = column[Option[String]]("operation")
     def active = column[Boolean]("active")
     def latestResultOk = column[Option[Boolean]]("latest_result_ok")
     def latestResultOutput = column[Option[String]]("latest_result_output", O.SqlType("TEXT"))
     def community = column[Long] ("community")
-    def * = (id, name, description, url, eventType, operation, active, latestResultOk, latestResultOutput, community) <> (Triggers.tupled, Triggers.unapply)
+    def * = (id, name, description, url, eventType, serviceType, operation, active, latestResultOk, latestResultOutput, community) <> (Triggers.tupled, Triggers.unapply)
     def pk = primaryKey("triggers_pk", id)
   }
   val triggers = TableQuery[TriggersTable]

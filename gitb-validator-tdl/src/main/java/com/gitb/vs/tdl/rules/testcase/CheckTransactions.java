@@ -74,7 +74,7 @@ public class CheckTransactions extends AbstractTestCaseObserver {
             String txId = ((MessagingStep) stepObj).getTxnId();
             if (StringUtils.isBlank(txId)) {
                 if (StringUtils.isBlank(((MessagingStep)stepObj).getHandler())) {
-                    addReportItem(ErrorCode.MISSING_TX_AND_HANDLER_FOR_MESSAGING_STEP, currentTestCase.getId(), Utils.stepNameWithScriptlet(stepObj, currentScriptlet));
+                    addReportItem(ErrorCode.MISSING_TX_AND_HANDLER_STEP, currentTestCase.getId(), Utils.stepNameWithScriptlet(stepObj, currentScriptlet));
                 }
             } else {
                 if (StringUtils.isNotBlank(((MessagingStep) stepObj).getHandler())) {
@@ -97,7 +97,7 @@ public class CheckTransactions extends AbstractTestCaseObserver {
             String txId = ((Process)stepObj).getTxnId();
             if (StringUtils.isBlank(txId)) {
                 if (StringUtils.isBlank(((Process)stepObj).getHandler())) {
-                    addReportItem(ErrorCode.MISSING_TX_AND_HANDLER_FOR_MESSAGING_STEP, currentTestCase.getId());
+                    addReportItem(ErrorCode.MISSING_TX_AND_HANDLER_STEP, Utils.stepNameWithScriptlet(stepObj, currentScriptlet), currentTestCase.getId());
                 }
             } else {
                 if (StringUtils.isNotBlank(((Process) stepObj).getHandler())) {

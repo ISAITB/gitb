@@ -47,7 +47,7 @@ public class DNSMessagingHandler extends AbstractMessagingHandler {
 	}
 
 	@Override
-	public MessagingReport listenMessage(String sessionId, String transactionId, String from, String to, List<Configuration> configurations, Message inputs) {
+	public MessagingReport listenMessage(String sessionId, String transactionId, String stepId, String from, String to, List<Configuration> configurations, Message inputs) {
 		throw new GITBEngineInternalError("Operation is not supported for the ["+getModuleDefinition().getId()+"]");
 	}
 

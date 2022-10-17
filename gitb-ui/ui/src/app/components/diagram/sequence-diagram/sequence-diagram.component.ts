@@ -22,6 +22,7 @@ export class SequenceDiagramComponent implements OnInit {
   sutActor?: ActorInfo
   actors: string[] = []
   messages: StepData[] = []
+  includesNonSpecificationActor = true
 
   constructor() { }
 
@@ -35,7 +36,7 @@ export class SequenceDiagramComponent implements OnInit {
   }
 
   classValue() {
-    return 'sequence-diagram actor-diagram-' + this.actors.length
+    return 'sequence-diagram actor-diagram-' + (this.includesNonSpecificationActor?this.actors.length:(this.actors.length-1))
   }
 
   updateState() {
@@ -149,8 +150,13 @@ export class SequenceDiagramComponent implements OnInit {
     } else {
       actorsToReturn = actors
     }
-    actorsToReturn = this.moveActorToTheEnd(actorsToReturn, Constants.TESTER_ACTOR_ID)
-    actorsToReturn = this.moveActorToTheEnd(actorsToReturn, Constants.TEST_ENGINE_ACTOR_ID)
+    this.includesNonSpecificationActor = find(actorsToReturn, (actor) => {
+      return actor == Constants.TESTER_ACTOR_ID || actor == Constants.TEST_ENGINE_ACTOR_ID
+    }) != undefined
+    if (this.includesNonSpecificationActor) {
+      actorsToReturn = this.moveActorToTheEnd(actorsToReturn, Constants.TESTER_ACTOR_ID)
+      actorsToReturn = this.moveActorToTheEnd(actorsToReturn, Constants.TEST_ENGINE_ACTOR_ID)
+    }
     return actorsToReturn
   }
 

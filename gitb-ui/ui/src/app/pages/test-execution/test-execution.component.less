@@ -30,7 +30,15 @@
 .viewLogButton {
     position: relative;
     .unreadBadge {
-        background-color: @gray-button;
+        &.badgeLogErrors {
+            background-color: @error-red;
+        }
+        &.badgeLogWarnings {
+            background-color: @warning-yellow;
+        }
+        &.badgeLogMessages {
+            background-color: @gray-button;
+        }
         position: absolute;
         height: 7px;
         width: 7px;
@@ -41,5 +49,22 @@
         &.hidden {
             display: none;
         }
+    }
+}
+.sessionButtonDiv {
+    display: flex;
+    flex-grow: 1;
+    justify-content: right;
+    & > .optionsDiv {
+        flex-grow: 0;
+        border-left: 1px solid #ddd;
+        margin-left: 20px;
+        padding-left: 20px;
+    }
+    & > .actionButtonDiv {
+        flex-grow: 0;
+        border-left: 1px solid #ddd;
+        margin-left: 20px;
+        padding-left: 15px;
     }
 }

@@ -5,7 +5,7 @@ import com.gitb.core.{AnyContent, StepStatus, ValueEmbeddingEnumeration}
 import com.gitb.reports.ReportGenerator
 import com.gitb.reports.dto.{ConformanceStatementOverview, TestCaseOverview}
 import com.gitb.tbs.{ObjectFactory, TestStepStatus}
-import com.gitb.tpl.{DecisionStep, FlowStep, TestCase, TestStep}
+import com.gitb.tpl.TestCase
 import com.gitb.tr._
 import com.gitb.utils.XMLUtils
 import config.Configurations
@@ -37,10 +37,9 @@ import scala.util.Using
   * Created by senan on 03.12.2014.
   */
 @Singleton
-class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: ActorManager, systemManager: SystemManager, organizationManager: OrganizationManager, communityManager: CommunityManager, testCaseManager: TestCaseManager, testSuiteManager: TestSuiteManager, specificationManager: SpecificationManager, conformanceManager: ConformanceManager, dbConfigProvider: DatabaseConfigProvider, communityLabelManager: CommunityLabelManager, repositoryUtils: RepositoryUtils, testResultManager: TestResultManager) extends BaseManager(dbConfigProvider) {
+class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: ActorManager, testCaseReportProducer: TestCaseReportProducer, systemManager: SystemManager, organizationManager: OrganizationManager, communityManager: CommunityManager, testCaseManager: TestCaseManager, testSuiteManager: TestSuiteManager, specificationManager: SpecificationManager, conformanceManager: ConformanceManager, dbConfigProvider: DatabaseConfigProvider, communityLabelManager: CommunityLabelManager, repositoryUtils: RepositoryUtils, testResultManager: TestResultManager) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
-
   val logger: Logger = LoggerFactory.getLogger("ReportManager")
 
   private val generator = new ReportGenerator()
@@ -289,9 +288,9 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
       val actorId = sessionIds.get._3.get
       // We have all the data we need to fire the triggers.
       if (status == TestResultType.SUCCESS) {
-        triggerHelper.publishTriggerEvent(new TestSessionSucceededEvent(communityId, systemId, actorId))
+        triggerHelper.publishTriggerEvent(new TestSessionSucceededEvent(communityId, sessionId))
       } else if (status == TestResultType.FAILURE) {
-        triggerHelper.publishTriggerEvent(new TestSessionFailedEvent(communityId, systemId, actorId))
+        triggerHelper.publishTriggerEvent(new TestSessionFailedEvent(communityId, sessionId))
       }
       // See if the conformance statement is now successfully completed and fire an additional trigger if so.
       val statementStatus = conformanceManager.getConformanceStatus(actorId, systemId, None)
@@ -444,47 +443,20 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
     exec(PersistenceSchema.testStepReports.filter(_.testSessionId === sessionId).result.map(_.toList))
   }
 
-  def collectStepReports(testStep: TestStep, collectedSteps: ListBuffer[TitledTestStepReportType], folder: File): Unit = {
-    val reportFile = new File(folder, testStep.getId + ".xml")
-    if (reportFile.exists()) {
-      val stepReport = new TitledTestStepReportType()
-      if (StringUtils.isBlank(testStep.getDesc)) {
-        stepReport.setTitle("Step " + testStep.getId)
-      } else {
-        stepReport.setTitle("Step " + testStep.getId + ": " + testStep.getDesc)
-      }
-      val bytes = Files.readAllBytes(Paths.get(reportFile.getAbsolutePath));
-      val string = new String(bytes)
-      //convert string in xml format into its object representation
-      val report = XMLUtils.unmarshal(classOf[TestStepStatus], new StreamSource(new StringReader(string)))
-      stepReport.setWrapped(report.getReport)
-      collectedSteps += stepReport
-      // Process child steps as well if applicable
+  def generateTestStepXmlReport(xmlFile: Path, xmlReport: Path): Path = {
+    val fis = Files.newInputStream(xmlFile)
+    val fos = Files.newOutputStream(xmlReport)
+    try {
+      generator.writeTestStepStatusXmlReport(fis, fos, false)
+      fos.flush()
+    } catch {
+      case e: Exception =>
+        throw new IllegalStateException("Unable to generate XML report", e)
+    } finally {
+      if (fis != null) fis.close()
+      if (fos != null) fos.close()
     }
-    if (testStep.isInstanceOf[DecisionStep]) {
-      collectStepReportsForSequence(testStep.asInstanceOf[DecisionStep].getThen, collectedSteps, folder)
-      if (testStep.asInstanceOf[DecisionStep].getElse != null) {
-        collectStepReportsForSequence(testStep.asInstanceOf[DecisionStep].getElse, collectedSteps, folder)
-      }
-    } else if (testStep.isInstanceOf[FlowStep]) {
-      import scala.jdk.CollectionConverters._
-      for (thread <- testStep.asInstanceOf[FlowStep].getThread.asScala) {
-        collectStepReportsForSequence(thread, collectedSteps, folder)
-      }
-    }
-  }
-
-  def collectStepReportsForSequence(testStepSequence: com.gitb.tpl.Sequence, collectedSteps: ListBuffer[TitledTestStepReportType], folder: File): Unit = {
-    import scala.jdk.CollectionConverters._
-    for (testStep <- testStepSequence.getSteps.asScala) {
-      collectStepReports(testStep, collectedSteps, folder)
-    }
-  }
-
-  def getListOfTestSteps(testPresentation: TestCase, folder: File): ListBuffer[TitledTestStepReportType] = {
-    val list = ListBuffer[TitledTestStepReportType]()
-    collectStepReportsForSequence(testPresentation.getSteps, list, folder)
-    list
+    xmlReport
   }
 
   def generateTestStepReport(xmlFile: Path, pdfReport: Path): Path = {
@@ -501,88 +473,6 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
       if (fos != null) fos.close()
     }
     pdfReport
-  }
-
-  def generateDetailedTestCaseReport(list: ListBuffer[TitledTestStepReportType], path: String, testCase: Option[models.TestCase], sessionId: String, addContext: Boolean, labels: Map[Short, CommunityLabels]): Path = {
-    val reportPath = Paths.get(path)
-    val sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss")
-    val overview = new TestCaseOverview()
-    overview.setTitle("Test Case Report")
-    // Labels
-    overview.setLabelDomain(communityLabelManager.getLabel(labels, models.Enums.LabelType.Domain))
-    overview.setLabelSpecification(communityLabelManager.getLabel(labels, models.Enums.LabelType.Specification))
-    overview.setLabelActor(communityLabelManager.getLabel(labels, models.Enums.LabelType.Actor))
-    overview.setLabelOrganisation(communityLabelManager.getLabel(labels, models.Enums.LabelType.Organisation))
-    overview.setLabelSystem(communityLabelManager.getLabel(labels, models.Enums.LabelType.System))
-    // Result
-    val testResult = exec(PersistenceSchema.testResults.filter(_.testSessionId === sessionId).result.head)
-    overview.setReportResult(testResult.result)
-    overview.setOutputMessage(testResult.outputMessage.orNull)
-    // Start time
-    val start = testResult.startTime
-    overview.setStartTime(sdf.format(new Date(start.getTime)));
-    // End time
-    if (testResult.endTime.isDefined) {
-      val end = testResult.endTime.get
-      overview.setEndTime(sdf.format(new Date(end.getTime)))
-    }
-    if (testResult.testCase.isDefined) {
-      overview.setTestName(testResult.testCase.get)
-    } else {
-      overview.setTestName("-")
-    }
-    if (testResult.system.isDefined) {
-      overview.setSystem(testResult.system.get)
-    } else {
-      overview.setSystem("-")
-    }
-    if (testResult.organization.isDefined) {
-      overview.setOrganisation(testResult.organization.get)
-    } else {
-      overview.setOrganisation("-")
-    }
-    if (testResult.actor.isDefined) {
-      overview.setTestActor(testResult.actor.get)
-    } else {
-      overview.setTestActor("-")
-    }
-    if (testResult.specification.isDefined) {
-      overview.setTestSpecification(testResult.specification.get)
-    } else {
-      overview.setTestSpecification("-")
-    }
-    if (testResult.domain.isDefined) {
-      overview.setTestDomain(testResult.domain.get)
-    } else {
-      overview.setTestDomain("-")
-    }
-    if (testCase.isDefined) {
-      if (testCase.get.description.isDefined) {
-        overview.setTestDescription(testCase.get.description.get)
-      }
-    } else {
-      // This is a deleted test case - get data as possible from TestResult
-      overview.setTestDescription("-")
-    }
-    for (stepReport <- list) {
-      overview.getSteps.add(generator.fromTestStepReportType(stepReport.getWrapped, stepReport.getTitle, addContext))
-    }
-    if (overview.getSteps.isEmpty) {
-      overview.setSteps(null)
-    }
-    // Needed if no reports have been received.
-    Files.createDirectories(reportPath.getParent)
-    val fos = Files.newOutputStream(reportPath)
-    try {
-      generator.writeTestCaseOverviewReport(overview, fos)
-      fos.flush()
-    } catch {
-      case e: Exception =>
-        throw new IllegalStateException("Unable to generate PDF report", e)
-    } finally {
-      if (fos != null) fos.close()
-    }
-    reportPath
   }
 
   private def getSampleConformanceStatement(index: Int, labels: Map[Short, CommunityLabels]): ConformanceStatementFull = {
@@ -756,7 +646,7 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
             val testcasePresentation = XMLUtils.unmarshal(classOf[TestCase], new StreamSource(new StringReader(testResult.tpl)))
             val sessionFolderInfo = repositoryUtils.getPathForTestSessionObj(info.sessionId.get, Some(testResult.startTime), isExpected = true)
             try {
-              val list = getListOfTestSteps(testcasePresentation, sessionFolderInfo.path.toFile)
+              val list = testCaseReportProducer.getListOfTestSteps(testcasePresentation, sessionFolderInfo.path.toFile)
               for (stepReport <- list) {
                 testCaseOverview.getSteps.add(generator.fromTestStepReportType(stepReport.getWrapped, stepReport.getTitle, false))
               }

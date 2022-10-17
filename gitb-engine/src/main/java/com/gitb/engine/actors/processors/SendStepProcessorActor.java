@@ -103,6 +103,7 @@ public class SendStepProcessorActor extends AbstractMessagingStepProcessorActor<
 								.sendMessage(
 										messagingContext.getSessionId(),
 										transactionContext.getTransactionId(),
+										step.getId(),
 										step.getConfig(),
 										message
 								);

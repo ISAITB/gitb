@@ -263,6 +263,7 @@ export class CommunityService {
       allowedValues: parameter.allowedValues,
       dependsOn: parameter.dependsOn,
       dependsOnValue: parameter.dependsOnValue,
+      defaultValue: parameter.defaultValue,
       community_id: communityId
     }
     return this.restService.post<void>({
@@ -286,6 +287,7 @@ export class CommunityService {
       allowedValues: parameter.allowedValues,
       dependsOn: parameter.dependsOn,
       dependsOnValue: parameter.dependsOnValue,
+      defaultValue: parameter.defaultValue,
       community_id: communityId
     }
     return this.restService.post<void>({
@@ -311,6 +313,7 @@ export class CommunityService {
       allowedValues: parameter.allowedValues,
       dependsOn: parameter.dependsOn,
       dependsOnValue: parameter.dependsOnValue,
+      defaultValue: parameter.defaultValue,
       community_id: communityId
     }
     return this.restService.post<void>({
@@ -335,6 +338,7 @@ export class CommunityService {
       allowedValues: parameter.allowedValues,
       dependsOn: parameter.dependsOn,
       dependsOnValue: parameter.dependsOnValue,
+      defaultValue: parameter.defaultValue,
       community_id: communityId
     }
     return this.restService.post<void>({

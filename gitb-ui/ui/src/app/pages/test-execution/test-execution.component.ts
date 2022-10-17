@@ -37,6 +37,7 @@ import { MissingConfigurationAction } from 'src/app/components/missing-configura
 import { LoadingStatus } from 'src/app/types/loading-status.type';
 import { SimulatedConfigurationDisplayModalComponent } from 'src/app/components/simulated-configuration-display-modal/simulated-configuration-display-modal.component';
 import { SessionLogModalComponent } from 'src/app/components/session-log-modal/session-log-modal.component';
+import { LogLevel } from 'src/app/types/log-level';
 
 @Component({
   selector: 'app-test-execution',
@@ -87,6 +88,8 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
   logMessages: {[key: number]: string[]} = {}
   logMessageEventEmitters: {[key: number]: EventEmitter<string>} = {}
   unreadLogMessages: {[key: number]: boolean} = {}
+  unreadLogErrors: {[key: number]: boolean} = {}
+  unreadLogWarnings: {[key: number]: boolean} = {}
   testCaseWithOpenLogView?: number
 
   organisationProperties: OrganisationParameterWithValue[] = []
@@ -176,6 +179,8 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
       this.logMessages[test.id] = []
       this.logMessageEventEmitters[test.id] = new EventEmitter<string>()
       this.unreadLogMessages[test.id] = false
+      this.unreadLogErrors[test.id] = false
+      this.unreadLogWarnings[test.id] = false
     }
   }
 
@@ -503,7 +508,14 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
         this.logMessages[this.currentTest!.id].push(logMessage)
         this.logMessageEventEmitters[this.currentTest!.id].emit(logMessage)
         if (this.currentTest!.id != this.testCaseWithOpenLogView) {
-          this.unreadLogMessages[this.currentTest!.id] = true
+          const messageLevel = this.dataService.logMessageLevel(logMessage, LogLevel.DEBUG)
+          if (messageLevel == LogLevel.ERROR) {
+            this.unreadLogErrors[this.currentTest!.id] = true
+          } else if (messageLevel == LogLevel.WARN) {
+            this.unreadLogWarnings[this.currentTest!.id] = true
+          } else {
+            this.unreadLogMessages[this.currentTest!.id] = true
+          }
         }
       }
     } else if (response.configs != undefined) {
@@ -577,6 +589,47 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
     const periodIndex = id.indexOf('.', parentId.length)
     const parenthesesIndex = id.indexOf('[', parentId.length)
     return id.indexOf(parentId) == 0 && (periodIndex == parentId.length || parenthesesIndex == parentId.length)
+  }
+
+  findChildrenByParentId(step: StepData, id: string): StepData[] {
+    let foundSteps: StepData[] = []
+    if (step != undefined) {
+      if (step.id.startsWith(id)) {
+        foundSteps.push(step)
+      } else {
+        if (step.type == 'loop') {
+          if (step.steps != undefined) {
+            for (let childStep of step.steps) {
+              foundSteps = foundSteps.concat(this.findChildrenByParentId(childStep, id))
+            }
+          }
+        } else if (step.type == 'group') {
+          for (let childStep of step.steps) {
+            foundSteps = foundSteps.concat(this.findChildrenByParentId(childStep, id))
+          }
+        } else if (step.type == 'decision') {
+          if (step.then != undefined) {
+            for (let childStep of step.then) {
+              foundSteps = foundSteps.concat(this.findChildrenByParentId(childStep, id))
+            }
+          }
+          if (step.else != undefined) {
+            for (let childStep of step.else) {
+              foundSteps = foundSteps.concat(this.findChildrenByParentId(childStep, id))
+            }
+          }
+        } else if (step.type == 'flow') {
+          if (step.threads != undefined) {
+            for (let thread of step.threads) {
+              for (let childStep of thread) {
+                foundSteps = foundSteps.concat(this.findChildrenByParentId(childStep, id))
+              }
+            }
+          }
+        }
+      }
+    }
+    return foundSteps
   }
 
   filterStep(step: StepData, id: string): StepData|undefined {
@@ -718,21 +771,38 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
       } else {
         current = step
       }
-      if (current != undefined && current.id == stepId && current.status != status) {
-        if ((status == Constants.TEST_STATUS.COMPLETED) ||
-        (status == Constants.TEST_STATUS.ERROR) ||
-        (status == Constants.TEST_STATUS.WARNING) ||
-        (status == Constants.TEST_STATUS.SKIPPED && (current.status != Constants.TEST_STATUS.COMPLETED && current.status != Constants.TEST_STATUS.ERROR && current.status != Constants.TEST_STATUS.WARNING)) ||
-        (status == Constants.TEST_STATUS.WAITING && (this.started && current.status != Constants.TEST_STATUS.SKIPPED && current.status != Constants.TEST_STATUS.COMPLETED && current.status != Constants.TEST_STATUS.ERROR && current.status != Constants.TEST_STATUS.WARNING)) ||
-        (status == Constants.TEST_STATUS.PROCESSING && (this.started && current.status != Constants.TEST_STATUS.WAITING && current.status != Constants.TEST_STATUS.SKIPPED && current.status != Constants.TEST_STATUS.COMPLETED && current.status != Constants.TEST_STATUS.ERROR && current.status != Constants.TEST_STATUS.WARNING))) {
-          current.status = status
-          current.report = report
-          // If skipped, marked all children as skipped.
-          if (status == Constants.TEST_STATUS.SKIPPED) {
-            this.setChildrenAsSkipped(current, stepId, stepId)
+      if (current != undefined) {
+        if (current.id == stepId && current.status != status) {
+          if ((status == Constants.TEST_STATUS.COMPLETED) ||
+          (status == Constants.TEST_STATUS.ERROR) ||
+          (status == Constants.TEST_STATUS.WARNING) ||
+          (status == Constants.TEST_STATUS.SKIPPED && (current.status != Constants.TEST_STATUS.COMPLETED && current.status != Constants.TEST_STATUS.ERROR && current.status != Constants.TEST_STATUS.WARNING)) ||
+          (status == Constants.TEST_STATUS.WAITING && (this.started && current.status != Constants.TEST_STATUS.SKIPPED && current.status != Constants.TEST_STATUS.COMPLETED && current.status != Constants.TEST_STATUS.ERROR && current.status != Constants.TEST_STATUS.WARNING)) ||
+          (status == Constants.TEST_STATUS.PROCESSING && (this.started && current.status != Constants.TEST_STATUS.WAITING && current.status != Constants.TEST_STATUS.SKIPPED && current.status != Constants.TEST_STATUS.COMPLETED && current.status != Constants.TEST_STATUS.ERROR && current.status != Constants.TEST_STATUS.WARNING))) {
+            current.status = status
+            current.report = report
+            // If skipped, marked all children as skipped.
+            if (status == Constants.TEST_STATUS.SKIPPED) {
+              this.setChildrenAsSkipped(current, stepId, stepId)
+            }
+          }
+        } else if (current.type == 'decision' && status == Constants.TEST_STATUS.SKIPPED) {
+          // We do this to immediately mark as skipped decision branches that were not taken.
+          if (current.id + '[T]' == stepId) {
+            this.setChildrenSequenceAsSkipped(current.then, current.id)
+          } else if (current.id + '[F]' == stepId) {
+            this.setChildrenSequenceAsSkipped(current.else, current.id)
           }
         }
       }
+    } else if ((stepId.endsWith('[T]') || stepId.endsWith('[F]')) && status == Constants.TEST_STATUS.SKIPPED) {
+      // This scenario can come up if we have a decision step that is hidden but has visible children.
+      // In this case we want to immediately illustrate skip decision branches.
+      let childSteps: StepData[] = []
+      for (let step of this.stepsOfTests[this.currentTest!.id]) {
+        childSteps = childSteps.concat(this.findChildrenByParentId(step, stepId))
+      }
+      this.setChildrenSequenceAsSkipped(childSteps, stepId)
     }
   }
 
@@ -831,6 +901,7 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
         this.prepareNextTest(this.startAutomatically)
       })
     } else {
+      this.allStopped = true
       this.reload = true
     }
   }
@@ -886,13 +957,18 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
   }
 
   stop(session: string) {
-    this.stopped = true
-    this.started = false
-    this.testService.stop(session).subscribe(() => {
-      this.closeWebSocket()
-      this.session = undefined
-      this.testCaseFinished()
-    })
+    if (this.started && !this.stopped) {
+      this.stopped = true
+      if (this.testsToExecute.length == 1) {
+        this.allStopped = true
+      }
+      this.started = false
+      this.testService.stop(session).subscribe(() => {
+        this.closeWebSocket()
+        this.session = undefined
+        this.testCaseFinished()
+      })
+    }
   }
 
   back() {
@@ -900,6 +976,9 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
   }
 
   reinitialise() {
+    if (!this.allStopped) {
+      this.stopAll()
+    }
     this.popupService.closeAll()
     if (this.heartbeat) {
       this.heartbeat.unsubscribe()
@@ -963,6 +1042,8 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
   viewLog(test: ConformanceTestCase) {
     this.testCaseWithOpenLogView = test.id
     this.unreadLogMessages[test.id] = false
+    this.unreadLogErrors[test.id] = false
+    this.unreadLogWarnings[test.id] = false
     const modalRef = this.modalService.show(SessionLogModalComponent, {
       class: 'modal-lg',
       initialState: {

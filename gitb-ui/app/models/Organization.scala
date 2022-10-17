@@ -1,6 +1,14 @@
 package models
 
-case class Organizations(id: Long = 0, shortname: String, fullname: String, organizationType: Short, adminOrganization: Boolean, landingPage: Option[Long], legalNotice: Option[Long], errorTemplate: Option[Long], template: Boolean, templateName: Option[String], apiKey: Option[String], community: Long) {}
+case class Organizations(id: Long = 0, shortname: String, fullname: String, organizationType: Short, adminOrganization: Boolean, landingPage: Option[Long], legalNotice: Option[Long], errorTemplate: Option[Long], template: Boolean, templateName: Option[String], apiKey: Option[String], community: Long) {
+
+  def withApiKey(apiKey: String): Organizations = {
+    Organizations(this.id, this.shortname, this.fullname, this.organizationType, this.adminOrganization,
+      this.landingPage, this.legalNotice, this.errorTemplate, this.template, this.templateName,
+      Some(apiKey), this.community)
+  }
+
+}
 
 class Organization(_id: Long, _sname: String, _fname: String, _otype: Short, _adminOrganization: Boolean,
                    _systems: Option[List[Systems]], _admin: Option[Users],

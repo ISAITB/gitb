@@ -8,7 +8,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class AuthorizedAction @Inject() (val parser: BodyParsers.Default) (implicit val ec: ExecutionContext) extends ActionBuilder[RequestWithAttributes, AnyContent] {
 
-  def invokeBlock[A](request: Request[A], block: RequestWithAttributes[A] => Future[Result]): Future[Result] = {
+  def wrap[A](request: Request[A], block: RequestWithAttributes[A] => Future[Result]): Future[Result] = {
     // Perform an input sanitization check first. This is done here and not via filter to benefit from the already parsed request body.
     InputSanitizer.check(request)
     val enhancedRequest = new RequestWithAttributes(scala.collection.mutable.Map.empty[String, String], request)
@@ -19,6 +19,10 @@ class AuthorizedAction @Inject() (val parser: BodyParsers.Default) (implicit val
         throw new IllegalStateException("Authorization check missing for path ["+enhancedRequest.path+"]")
       }
     )
+  }
+
+  def invokeBlock[A](request: Request[A], block: RequestWithAttributes[A] => Future[Result]): Future[Result] = {
+    wrap(request, block)
   }
 
   override protected def executionContext: ExecutionContext = ec

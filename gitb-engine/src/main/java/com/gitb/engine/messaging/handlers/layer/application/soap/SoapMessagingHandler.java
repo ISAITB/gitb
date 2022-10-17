@@ -51,8 +51,8 @@ public class SoapMessagingHandler extends AbstractMessagingHandler {
     private static final MessagingModule module = MessagingHandlerUtils.readModuleDefinition(MODULE_DEFINITION_XML);
 
     @Override
-    public void beginTransaction(String sessionId, String transactionId, String from, String to, List<Configuration> configurations) {
-        super.beginTransaction(sessionId, transactionId, from, to, configurations);
+    public void beginTransaction(String sessionId, String transactionId, String stepId, String from, String to, List<Configuration> configurations) {
+        super.beginTransaction(sessionId, transactionId, stepId, from, to, configurations);
 
         Configuration sslConfig = ConfigurationUtils.getConfiguration(configurations, HTTP_SSL_CONFIG_NAME);
         if (sslConfig != null && sslConfig.getValue() != null && "true".equalsIgnoreCase(sslConfig.getValue())) {

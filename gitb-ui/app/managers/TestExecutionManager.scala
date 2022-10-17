@@ -8,12 +8,15 @@ import exceptions.{AutomationApiException, ErrorCodes, MissingRequiredParameterE
 import models.Enums.InputMappingMatchType
 import models.automation.{InputMappingContent, TestSessionLaunchInfo, TestSessionLaunchRequest, TestSessionStatus}
 import models.prerequisites.PrerequisiteUtil
-import models.{Constants, Organizations, SystemConfigurationParameterMinimal, TestSessionLaunchData}
+import models._
+import org.apache.commons.io.FileUtils
 import org.apache.commons.lang3.StringUtils
+import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
 import utils.{MimeUtil, RepositoryUtils}
 
+import java.nio.file.{Files, Path}
 import java.time.Duration
 import java.time.temporal.ChronoUnit
 import java.util.UUID
@@ -23,10 +26,10 @@ import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
-class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClient, reportManager: ReportManager, conformanceManager: ConformanceManager, repositoryUtils: RepositoryUtils, actorManager: ActorManager, actorSystem: ActorSystem, organisationManager: OrganizationManager, systemManager: SystemManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClient, testCaseReportProducer: TestCaseReportProducer, reportManager: ReportManager, conformanceManager: ConformanceManager, repositoryUtils: RepositoryUtils, actorManager: ActorManager, actorSystem: ActorSystem, organisationManager: OrganizationManager, systemManager: SystemManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
-
+  private val logger = LoggerFactory.getLogger(classOf[TestExecutionManager])
   private var sessionManagerActor: Option[ActorRef] = None
   private final val reservedInputNames = Set(
     Constants.systemTestVariable, Constants.organisationTestVariable, Constants.domainTestVariable,
@@ -71,14 +74,15 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
           x._1._2.kind, // Kind [6]
           x._1._2.id, // Parameter ID [7]
           x._1._2.use, // Parameter use [8]
-          x._1._2.notForTests // Parameter not for tests [9]
+          x._1._2.notForTests, // Parameter not for tests [9]
+          x._1._2.testKey // Parameter test key [10]
         )).result
       parameters <- DBIO.successful(parameterData.map { x =>
         val parameterValueData: (Option[String], Option[String]) = x._3 match {
           case Some(v) => (Some(v.value), v.contentType)
           case None => (None, None)
         }
-        new SystemConfigurationParameterMinimal(x._7, x._1, x._2, parameterValueData._1, x._4, x._5, x._6, x._8, parameterValueData._2, x._9)
+        new SystemConfigurationParameterMinimal(x._7, x._1, x._2, x._10, parameterValueData._1, x._4, x._5, x._6, x._8, parameterValueData._2, x._9)
       })
     } yield (actorIdentifier, parameters))
     // Keep only the values that have valid prerequisites defined.
@@ -97,7 +101,7 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
           actorConfigEntry = Some(actorConfig)
         }
         val config = new Configuration()
-        config.setName(p.parameterName)
+        config.setName(p.parameterKey)
         if (p.parameterKind == "SECRET") {
           config.setValue(MimeUtil.decryptString(p.parameterValue.get))
         } else if (p.parameterKind == "BINARY") {
@@ -442,7 +446,42 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
     }
   }
 
-  def processAutomationStatusRequest(organisationKey: String, sessionIds: List[String], withLogs: Boolean): Seq[TestSessionStatus] = {
+  def processAutomationReportRequest(organisationKey: String, sessionId: String): Option[String] = {
+    val result = exec(
+      for {
+        organisationData <- loadOrganisationDataForAutomationProcessing(organisationKey)
+        _ <- checkOrganisationForAutomationApiUse(organisationData)
+        sessionData <- PersistenceSchema.testResults
+          .filter(_.organizationId === organisationData.get._1)
+          .filter(_.testSessionId === sessionId)
+          .map(x => x.testSessionId)
+          .result
+          .headOption
+      } yield sessionData
+    )
+    if (result.isDefined) {
+      var reportData: (Option[Path], SessionFolderInfo) = null
+      try {
+        reportData = testCaseReportProducer.generateDetailedTestCaseReport(result.get, Some("application/xml"), None)
+        if (reportData._1.isDefined) {
+          Some(Files.readString(reportData._1.get))
+        } else {
+          logger.warn("No test case overview report could be produced for session [" + result.get + "]")
+          None
+        }
+      } catch {
+        case e: Exception =>
+          if (reportData._2.archived) {
+            FileUtils.deleteQuietly(reportData._2.path.toFile)
+          }
+          throw e
+      }
+    } else {
+      None
+    }
+  }
+
+  def processAutomationStatusRequest(organisationKey: String, sessionIds: List[String], withLogs: Boolean, withReports: Boolean): Seq[TestSessionStatus] = {
     exec(
       for {
         organisationData <- loadOrganisationDataForAutomationProcessing(organisationKey)
@@ -454,11 +493,32 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
           .result
       } yield sessionData
     ).map { result =>
-      if (withLogs) {
-        TestSessionStatus(result._1, result._2, result._3, result._4, result._5, reportManager.getTestSessionLog(result._1, Some(result._2), isExpected = true))
+      val logs = if (withLogs) {
+        reportManager.getTestSessionLog(result._1, Some(result._2), isExpected = true)
       } else {
-        TestSessionStatus(result._1, result._2, result._3, result._4, result._5, None)
+        None
       }
+      val report = if (withReports) {
+        var reportData: (Option[Path], SessionFolderInfo) = null
+        try {
+          reportData = testCaseReportProducer.generateDetailedTestCaseReport(result._1, Some("application/xml"), None)
+          if (reportData._1.isDefined) {
+            Some(Files.readString(reportData._1.get))
+          } else {
+            logger.warn("No test case overview report could be produced for session ["+result._1+"]")
+            None
+          }
+        } catch {
+          case e: Exception =>
+            if (reportData._2.archived) {
+              FileUtils.deleteQuietly(reportData._2.path.toFile)
+            }
+            throw e
+        }
+      } else {
+        None
+      }
+      TestSessionStatus(result._1, result._2, result._3, result._4, result._5, logs, report)
     }
   }
 

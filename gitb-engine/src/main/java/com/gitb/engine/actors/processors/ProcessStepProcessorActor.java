@@ -99,7 +99,7 @@ public class ProcessStepProcessorActor extends AbstractProcessingStepProcessorAc
             } else if (step.getOperationAttribute() != null) {
                 operation = step.getOperationAttribute();
             }
-            ProcessingReport report = handler.process(context.getSession(), operation, getData(handler, operation));
+            ProcessingReport report = handler.process(context.getSession(), step.getId(), operation, getData(handler, operation));
             if (report.getData() != null && (step.getId() != null || step.getOutput() != null)) {
                 if (step.getOutput() != null) {
                     if (report.getData().getData() != null && report.getData().getData().size() == 1) {
@@ -115,11 +115,20 @@ public class ProcessStepProcessorActor extends AbstractProcessingStepProcessorAc
                     scope.createVariable(step.getId()).setValue(getValue(report.getData()));
                 }
             }
-            if (step.isHidden() != null && !step.isHidden() && !handler.isRemote()) {
-                // We only add to the report's context the created data if this is visible and
-                // if the handler is not a custom one (for custom ones you can return anything
-                // you like).
-                completeProcessingReportContext(report);
+            if (step.getHidden() != null && !handler.isRemote()) {
+                var isHidden = true;
+                if (VariableResolver.isVariableReference(step.getHidden())) {
+                    var hiddenVariable = new VariableResolver(scope).resolveVariable(step.getHidden());
+                    isHidden = hiddenVariable != null && Boolean.TRUE.equals(hiddenVariable.convertTo(DataType.BOOLEAN_DATA_TYPE).getValue());
+                } else {
+                    isHidden = Boolean.parseBoolean(step.getHidden());
+                }
+                if (!isHidden) {
+                    // We only add to the report's context the created data if this is visible and
+                    // if the handler is not a custom one (for custom ones you can return anything
+                    // you like).
+                    completeProcessingReportContext(report);
+                }
             }
             return report.getReport();
         }, getContext().dispatcher());

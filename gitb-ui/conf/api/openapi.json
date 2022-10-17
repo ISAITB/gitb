@@ -160,6 +160,55 @@
         }
       }
     },
+    "/tests/report/{sessionId}": {
+      "get": {
+        "tags": [
+          "Test sessions"
+        ],
+        "summary": "Retrieve a test session report in the GITB TRL XML format.",
+        "security": [
+          {
+            "OrganisationApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "description": "The identifier of the test session of which the report is requested.",
+            "in": "path",
+            "name": "sessionId",
+            "schema": {
+              "type": "string"
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Report successfully created.",
+            "content": {
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/TestCaseOverviewReport"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No test session was not found matching the provided identifier."
+          }
+        }
+      }
+    },
     "/testsuite/deploy": {
       "post": {
         "tags": [
@@ -415,6 +464,11 @@
           },
           "withLogs": {
             "description": "Whether or not the log output for each session should be returned.",
+            "type": "boolean",
+            "default": false
+          },
+          "withReports": {
+            "description": "Whether or not the XML test case report should be returned.",
             "type": "boolean",
             "default": false
           }
@@ -673,7 +727,7 @@
             "format": "yyyy-MM-ddTHH:mm:ssZ"
           },
           "message": {
-            "description": "The resultinh output message of the session.",
+            "description": "The resulting output message of the session.",
             "type": "string"
           },
           "logs": {
@@ -682,6 +736,10 @@
             "items": {
               "type": "string"
             }
+          },
+          "report": {
+            "description": "The test session's XML report.",
+            "type": "string"
           }
         },
         "required": [
@@ -690,6 +748,191 @@
           "startTime"
         ],
         "additionalProperties": false
+      },
+      "TestCaseOverviewReport": {
+        "description": "XML test case report for a given test session.",
+        "type": "object",
+        "required": [
+          "id",
+          "startTime",
+          "result"
+        ],
+        "properties": {
+          "id": {
+            "description": "The relevant test case's identifier.",
+            "type": "string",
+            "xml": {
+              "attribute": true
+            }
+          },
+          "metadata": {
+            "description": "Metadata about the relevant test case.",
+            "type": "object",
+            "required": [
+              "name"
+            ],
+            "properties": {
+              "name": {
+                "description": "The test case's name.",
+                "type": "string"
+              },
+              "description": {
+                "description": "The test case's description.",
+                "type": "string"
+              }
+            }
+          },
+          "startTime": {
+            "description": "The test session's start time.",
+            "type": "string",
+            "format": "yyyy-MM-ddTHH:mm:ss.SSSZ"
+          },
+          "endTime": {
+            "description": "The test session's end time.",
+            "type": "string",
+            "format": "yyyy-MM-ddTHH:mm:ss.SSSZ"
+          },
+          "result": {
+            "description": "The test session's overall result.",
+            "type": "string",
+            "enum": [
+              "SUCCESS",
+              "FAILURE",
+              "UNDEFINED"
+            ]
+          },
+          "message": {
+            "description": "The resulting output message of the session.",
+            "type": "string"
+          },
+          "steps": {
+            "description": "The test step reports.",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "minLength": 0,
+              "properties": {
+                "step": {
+                  "description": "The report for a specific step.",
+                  "type": "object",
+                  "required": [
+                    "id",
+                    "report"
+                  ],
+                  "properties": {
+                    "id": {
+                      "description": "The test step's identifier'.",
+                      "type": "string",
+                      "xml": {
+                        "attribute": true
+                      }
+                    },
+                    "report": {
+                      "description": "The test step's report.",
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "description": "The test step's identifier'.",
+                          "type": "string",
+                          "xml": {
+                            "attribute": true
+                          }
+                        },
+                        "date": {
+                          "description": "The test step's completion date.",
+                          "type": "string",
+                          "format": "yyyy-MM-ddTHH:mm:ss.SSSZ"
+                        },
+                        "result": {
+                          "description": "The test step's result.",
+                          "type": "string",
+                          "enum": [
+                            "SUCCESS",
+                            "FAILURE",
+                            "WARNING",
+                            "UNDEFINED"
+                          ]
+                        },
+                        "reports": {
+                          "description": "The test step's report items.",
+                          "type": "object",
+                          "properties": {
+                            "error": {
+                              "description": "A step error.",
+                              "type": "array",
+                              "items": {
+                                "oneOf": [
+                                  {
+                                    "$ref": "#/components/schemas/ReportItem"
+                                  }
+                                ]
+                              }
+                            },
+                            "warning": {
+                              "description": "A step warning.",
+                              "type": "array",
+                              "items": {
+                                "oneOf": [
+                                  {
+                                    "$ref": "#/components/schemas/ReportItem"
+                                  }
+                                ]
+                              }
+                            },
+                            "info": {
+                              "description": "A step information message.",
+                              "type": "array",
+                              "items": {
+                                "oneOf": [
+                                  {
+                                    "$ref": "#/components/schemas/ReportItem"
+                                  }
+                                ]
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "ReportItem": {
+        "description": "Details of a specific test step report item.",
+        "type": "object",
+        "properties": {
+          "assertionID": {
+            "description": "The identifier of an assertion linked to the relevant rule.",
+            "type": "string"
+          },
+          "description": {
+            "description": "The message produced by the relevant rule.",
+            "type": "string"
+          },
+          "location": {
+            "description": "The location in the processed content relevant to this finding.",
+            "type": "string"
+          },
+          "test": {
+            "description": "The test that was executed.",
+            "type": "string"
+          },
+          "type": {
+            "description": "The type of test carried out.",
+            "type": "string"
+          },
+          "value": {
+            "description": "The detected value that lead to the finding being reported.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "description"
+        ]
       }
     },
     "securitySchemes": {

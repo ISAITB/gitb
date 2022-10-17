@@ -1,6 +1,5 @@
 package com.gitb.engine.actors.processors;
 
-import akka.actor.ActorContext;
 import akka.actor.ActorRef;
 import com.gitb.engine.processing.ProcessingContext;
 import com.gitb.engine.testcase.TestCaseScope;
@@ -27,7 +26,7 @@ public class EndProcessingTransactionStepProcessorActor extends AbstractTestStep
     protected void start() throws Exception {
         processing();
         ProcessingContext processingContext = this.scope.getContext().getProcessingContext(step.getTxnId());
-        processingContext.getHandler().endTransaction(processingContext.getSession());
+        processingContext.getHandler().endTransaction(processingContext.getSession(), step.getId());
         this.scope.getContext().removeProcessingContext(step.getTxnId());
         completed();
     }

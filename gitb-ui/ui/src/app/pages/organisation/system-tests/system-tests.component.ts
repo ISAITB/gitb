@@ -16,6 +16,7 @@ import { TestResultReport } from 'src/app/types/test-result-report';
 import { TestResultSearchCriteria } from 'src/app/types/test-result-search-criteria';
 import { TestResultForDisplay } from '../../../types/test-result-for-display';
 import { saveAs } from 'file-saver'
+import { mergeMap, share, map as rxMap, of } from 'rxjs';
 
 @Component({
   selector: 'app-system-tests',
@@ -164,17 +165,36 @@ export class SystemTestsComponent implements OnInit {
     this.getCompletedTests()
   }
 
-  onReportExport(testResult: TestResultForDisplay) {
+  onReportExportXml(testResult: TestResultForDisplay) {
+    if (!testResult.obsolete) {
+      testResult.actionPending = true
+      this.onReportExport(testResult, 'application/xml', 'report.xml')
+      .subscribe(() => {
+        testResult.actionPending = false
+      })
+    }
+  }
+
+  onReportExportPdf(testResult: TestResultForDisplay) {
     if (!testResult.obsolete) {
       testResult.exportPending = true
-      this.reportService.exportTestCaseReport(testResult.session, testResult.testCaseId!)
-      .subscribe((data) => {
-        const blobData = new Blob([data], {type: 'application/pdf'});
-        saveAs(blobData, "report.pdf");
-      }).add(() => {
+      this.onReportExport(testResult, 'application/pdf', 'report.pdf')
+      .subscribe(() => {
         testResult.exportPending = false
-      }) 
+      })
     }
+  }
+
+  private onReportExport(testResult: TestResultForDisplay, contentType: string, fileName: string) {
+    return this.reportService.exportTestCaseReport(testResult.session, testResult.testCaseId!, contentType)
+    .pipe(
+      mergeMap((data) => {
+        const blobData = new Blob([data], {type: contentType});
+        saveAs(blobData, fileName);
+        return of(data)
+      }),
+      share()
+    )
   }
 
   getCurrentSearchCriteria() {

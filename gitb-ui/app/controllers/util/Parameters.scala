@@ -161,6 +161,7 @@ object Parameters {
   val HIDDEN = "hidden"
   val DEPENDS_ON = "dependsOn"
   val DEPENDS_ON_VALUE = "dependsOnValue"
+  val DEFAULT_VALUE = "defaultValue"
 
   val FILE       = "file"
 	val LIMIT      = "limit"
@@ -178,5 +179,5 @@ object Parameters {
 
   val SEQUENTIAL = "sequential"
   var WITH_API_KEYS = "with_api_keys"
-
+  var PAYLOAD = "payload"
 }

@@ -1,18 +1,9 @@
 package managers.export
 
-import java.io.{File, InputStream}
-import java.nio.file.{Files, Path, Paths}
-import java.util.UUID
-import java.util.regex.Pattern
-
 import com.gitb.utils.XMLUtils
 import com.gitb.xml.export.Export
 import config.Configurations
 import exceptions.ErrorCodes
-import javax.inject.{Inject, Singleton}
-import javax.xml.transform.TransformerFactory
-import javax.xml.transform.stream.{StreamResult, StreamSource}
-import javax.xml.xpath.XPathFactory
 import managers._
 import models.Enums.LabelType.LabelType
 import models.Enums.{ImportItemMatch, ImportItemType, LabelType}
@@ -26,6 +17,13 @@ import persistence.db._
 import play.api.db.slick.DatabaseConfigProvider
 import utils.{ClamAVClient, ZipArchiver}
 
+import java.io.{File, InputStream}
+import java.nio.file.{Files, Path, Paths}
+import java.util.UUID
+import java.util.regex.Pattern
+import javax.inject.{Inject, Singleton}
+import javax.xml.transform.stream.{StreamResult, StreamSource}
+import javax.xml.xpath.XPathFactory
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
@@ -33,6 +31,7 @@ import scala.collection.mutable.ListBuffer
 class ImportPreviewManager @Inject()(exportManager: ExportManager, communityManager: CommunityManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
+
   import scala.jdk.CollectionConverters._
 
   private val logger = LoggerFactory.getLogger(classOf[ImportPreviewManager])
@@ -91,23 +90,23 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
     Maps named reference* are populated but never have elements removed from them. These are used to pass reference
     information back to the community preview processing.
      */
-    var targetSpecificationMap = mutable.Map[String, models.Specifications]()
-    var targetSpecificationIdMap = mutable.Map[Long, models.Specifications]()
-    var targetSpecificationTestSuiteMap = mutable.Map[Long, mutable.Map[String, models.TestSuites]]()
-    var targetSpecificationActorMap = mutable.Map[Long, mutable.Map[String, models.Actors]]()
-    var targetActorEndpointMap = mutable.Map[Long, mutable.Map[String, models.Endpoints]]()
-    var referenceActorEndpointMap = mutable.Map[Long, mutable.Map[String, models.Endpoints]]()
-    var referenceActorToSpecificationMap = mutable.Map[Long, models.Specifications]()
-    var targetEndpointParameterMap = mutable.Map[Long, mutable.Map[String, models.Parameters]]()
-    var referenceEndpointParameterMap = mutable.Map[Long, mutable.Map[String, models.Parameters]]()
-    var referenceEndpointParameterIdMap = mutable.Map[Long, models.Parameters]()
-    var targetDomainParametersMap = mutable.Map[String, models.DomainParameter]()
+    val targetSpecificationMap = mutable.Map[String, models.Specifications]()
+    val targetSpecificationIdMap = mutable.Map[Long, models.Specifications]()
+    val targetSpecificationTestSuiteMap = mutable.Map[Long, mutable.Map[String, models.TestSuites]]()
+    val targetSpecificationActorMap = mutable.Map[Long, mutable.Map[String, models.Actors]]()
+    val targetActorEndpointMap = mutable.Map[Long, mutable.Map[String, models.Endpoints]]()
+    val referenceActorEndpointMap = mutable.Map[Long, mutable.Map[String, models.Endpoints]]()
+    val referenceActorToSpecificationMap = mutable.Map[Long, models.Specifications]()
+    val targetEndpointParameterMap = mutable.Map[Long, mutable.Map[String, models.Parameters]]()
+    val referenceEndpointParameterMap = mutable.Map[Long, mutable.Map[String, models.Parameters]]()
+    val referenceEndpointParameterIdMap = mutable.Map[Long, models.Parameters]()
+    val targetDomainParametersMap = mutable.Map[String, models.DomainParameter]()
 
-    var importItemMapSpecification = mutable.Map[String, ImportItem]()
-    var importItemMapActor = mutable.Map[String, ImportItem]()
-    var importItemMapEndpoint = mutable.Map[String, ImportItem]()
+    val importItemMapSpecification = mutable.Map[String, ImportItem]()
+    val importItemMapActor = mutable.Map[String, ImportItem]()
+    val importItemMapEndpoint = mutable.Map[String, ImportItem]()
 
-    var actorXmlIdToImportItemMap = mutable.Map[String, ImportItem]()
+    val actorXmlIdToImportItemMap = mutable.Map[String, ImportItem]()
 
     var importItemDomain: ImportItem = null
     if (targetDomain.isDefined) {
@@ -136,8 +135,8 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
           }
           if (targetActorEndpointMap.nonEmpty) {
             exportManager.loadEndpointParameterMap(targetDomain.get.id).foreach { x =>
-              targetEndpointParameterMap += (x._1 -> listBufferToNameMap(x._2, { p => p.name }))
-              referenceEndpointParameterMap += (x._1 -> listBufferToNameMap(x._2, { p => p.name }))
+              targetEndpointParameterMap += (x._1 -> listBufferToNameMap(x._2, { p => p.testKey }))
+              referenceEndpointParameterMap += (x._1 -> listBufferToNameMap(x._2, { p => p.testKey }))
               x._2.foreach { p =>
                 referenceEndpointParameterIdMap += (p.id -> p)
               }
@@ -317,27 +316,27 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
     if (domainImportResult._2 != null) {
       importItemDomain = Some(domainImportResult._2)
     }
-    var targetAdministratorsMap = mutable.Map[String, models.Users]()
-    var targetOrganisationPropertyMap = mutable.Map[String, models.OrganisationParameters]()
-    var targetOrganisationPropertyIdMap = mutable.Map[Long, models.OrganisationParameters]()
-    var targetSystemPropertyMap = mutable.Map[String, models.SystemParameters]()
-    var targetSystemPropertyIdMap = mutable.Map[Long, models.SystemParameters]()
-    var targetCustomLabelMap = mutable.Map[LabelType, models.CommunityLabels]()
-    var targetLandingPageMap = mutable.Map[String, ListBuffer[Long]]()
-    var targetLegalNoticeMap = mutable.Map[String, ListBuffer[Long]]()
-    var targetErrorTemplateMap = mutable.Map[String, ListBuffer[Long]]()
-    var targetTriggerMap = mutable.Map[String, ListBuffer[Long]]()
-    var targetOrganisationMap = mutable.Map[String, mutable.ListBuffer[models.Organizations]]()
-    var targetOrganisationPropertyValueMap = mutable.Map[Long, mutable.Map[String, models.OrganisationParameterValues]]()
-    var targetOrganisationUserMap = mutable.Map[Long, mutable.Map[String, models.Users]]()
-    var targetSystemMap = mutable.Map[Long, mutable.Map[String, ListBuffer[models.Systems]]]()
-    var targetSystemIdMap = mutable.Map[Long, models.Systems]()
-    var targetSystemPropertyValueMap = mutable.Map[Long, mutable.Map[String, models.SystemParameterValues]]()
-    var targetStatementMap = mutable.Map[Long, mutable.Map[Long, (models.Specifications, models.Actors)]]() // System to [actor_DB_ID] to (specification, actor)]    WAS: System to [actor name to (specification name, actor)]
-    var targetStatementConfigurationMap = mutable.Map[String, mutable.Map[String, models.Configs]]() // [Actor ID]_[Endpoint ID]_[System ID]_[Endpoint parameter ID] to Parameter name to Configs
-    var importItemMapOrganisation = mutable.Map[String, ImportItem]()
-    var importItemMapSystem = mutable.Map[String, ImportItem]()
-    var importItemMapStatement = mutable.Map[String, ImportItem]()
+    val targetAdministratorsMap = mutable.Map[String, models.Users]()
+    val targetOrganisationPropertyMap = mutable.Map[String, models.OrganisationParameters]()
+    val targetOrganisationPropertyIdMap = mutable.Map[Long, models.OrganisationParameters]()
+    val targetSystemPropertyMap = mutable.Map[String, models.SystemParameters]()
+    val targetSystemPropertyIdMap = mutable.Map[Long, models.SystemParameters]()
+    val targetCustomLabelMap = mutable.Map[LabelType, models.CommunityLabels]()
+    val targetLandingPageMap = mutable.Map[String, ListBuffer[Long]]()
+    val targetLegalNoticeMap = mutable.Map[String, ListBuffer[Long]]()
+    val targetErrorTemplateMap = mutable.Map[String, ListBuffer[Long]]()
+    val targetTriggerMap = mutable.Map[String, ListBuffer[Long]]()
+    val targetOrganisationMap = mutable.Map[String, mutable.ListBuffer[models.Organizations]]()
+    val targetOrganisationPropertyValueMap = mutable.Map[Long, mutable.Map[String, models.OrganisationParameterValues]]()
+    val targetOrganisationUserMap = mutable.Map[Long, mutable.Map[String, models.Users]]()
+    val targetSystemMap = mutable.Map[Long, mutable.Map[String, ListBuffer[models.Systems]]]()
+    val targetSystemIdMap = mutable.Map[Long, models.Systems]()
+    val targetSystemPropertyValueMap = mutable.Map[Long, mutable.Map[String, models.SystemParameterValues]]()
+    val targetStatementMap = mutable.Map[Long, mutable.Map[Long, (models.Specifications, models.Actors)]]() // System to [actor_DB_ID] to (specification, actor)]    WAS: System to [actor name to (specification name, actor)]
+    val targetStatementConfigurationMap = mutable.Map[String, mutable.Map[String, models.Configs]]() // [Actor ID]_[Endpoint ID]_[System ID]_[Endpoint parameter ID] to Parameter name to Configs
+    val importItemMapOrganisation = mutable.Map[String, ImportItem]()
+    val importItemMapSystem = mutable.Map[String, ImportItem]()
+    val importItemMapStatement = mutable.Map[String, ImportItem]()
     var referenceUserEmails = mutable.Set[String]()
     // Load user emails for uniqueness checks.
     if (!Configurations.AUTHENTICATION_SSO_ENABLED && (importTargets.hasAdministrators || importTargets.hasOrganisationUsers)) {
@@ -441,7 +440,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
             if (domainImportInfo.targetEndpointParameterIdMap.nonEmpty) {
               exportManager.loadSystemConfigurationsMap(targetCommunity.get).foreach { x =>
                 // [actor ID]_[endpoint ID]_[System ID]_[Parameter ID]
-                targetStatementConfigurationMap += (x._1 -> listBufferToNameMap(x._2, { v => domainImportInfo.targetEndpointParameterIdMap(v.parameter).name }))
+                targetStatementConfigurationMap += (x._1 -> listBufferToNameMap(x._2, { v => domainImportInfo.targetEndpointParameterIdMap(v.parameter).testKey }))
               }
             }
           }
@@ -734,7 +733,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
                     }
                     if (targetConfig.isDefined) {
                       // [Actor ID]_[Endpoint ID]_[System ID]_[Parameter ID]
-                      new ImportItem(Some(targetConfigParam.get.name), ImportItemType.StatementConfiguration, ImportItemMatch.Both, Some(s"${targetEndpoint.get.actor}_${targetEndpoint.get.id}_${targetConfig.get.system}_${targetConfig.get.parameter}"), Some(exportedConfig.getId), importItemStatement)
+                      new ImportItem(Some(targetConfigParam.get.testKey), ImportItemType.StatementConfiguration, ImportItemMatch.Both, Some(s"${targetEndpoint.get.actor}_${targetEndpoint.get.id}_${targetConfig.get.system}_${targetConfig.get.parameter}"), Some(exportedConfig.getId), importItemStatement)
                     } else {
                       new ImportItem(Some(exportedConfig.getParameter.getName), ImportItemType.StatementConfiguration, ImportItemMatch.ArchiveOnly, None, Some(exportedConfig.getId), importItemStatement)
                     }
@@ -852,8 +851,9 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
     var xmlFileToUse = xmlFile
     // Get the declared version number from the file.
     val clearVersionNumber = fileVersion.toString
-    if (!clearVersionNumber.equals(Constants.VersionNumber)) {
-      logger.info("Data archive at version ["+clearVersionNumber+"] - migrating to ["+Constants.VersionNumber+"]")
+    val targetVersionNumber = Configurations.mainVersionNumber()
+    if (!clearVersionNumber.equals(targetVersionNumber)) {
+      logger.info("Data archive at version ["+clearVersionNumber+"] - migrating to ["+targetVersionNumber+"]")
       // XML has a different version number than the current one.
       val migrationsToApply = new ListBuffer[(Version, Version)]()
       MIGRATIONS.foreach { migration =>

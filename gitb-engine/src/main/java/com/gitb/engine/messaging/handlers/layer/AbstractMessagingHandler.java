@@ -65,7 +65,7 @@ public abstract class AbstractMessagingHandler implements IMessagingHandler {
     }
 
     @Override
-    public void beginTransaction(String sessionId, String transactionId, String from, String to, List<Configuration> configurations) {
+    public void beginTransaction(String sessionId, String transactionId, String stepId, String from, String to, List<Configuration> configurations) {
         try {
             SessionManager sessionManager = SessionManager.getInstance();
 
@@ -99,7 +99,7 @@ public abstract class AbstractMessagingHandler implements IMessagingHandler {
     }
 
     @Override
-    public MessagingReport sendMessage(String sessionId, String transactionId, List<Configuration> configurations, Message message) {
+    public MessagingReport sendMessage(String sessionId, String transactionId, String stepId, List<Configuration> configurations, Message message) {
         SessionManager sessionManager = SessionManager.getInstance();
 
         SessionContext sessionContext = sessionManager.getSession(sessionId);
@@ -143,7 +143,7 @@ public abstract class AbstractMessagingHandler implements IMessagingHandler {
     }
 
     @Override
-    public MessagingReport receiveMessage(String sessionId, String transactionId, String callId, List<Configuration> configurations, Message inputs, List<Thread> messagingThreads) {
+    public MessagingReport receiveMessage(String sessionId, String transactionId, String callId, String stepId, List<Configuration> configurations, Message inputs, List<Thread> messagingThreads) {
         Thread receiveThread = new Thread(new ReceiveRunner(sessionId, transactionId, callId, configurations, inputs, this));
         messagingThreads.add(receiveThread);
         receiveThread.start();
@@ -151,7 +151,7 @@ public abstract class AbstractMessagingHandler implements IMessagingHandler {
     }
 
     @Override
-    public MessagingReport listenMessage(String sessionId, String transactionId, String from, String to, List<Configuration> configurations, Message inputs) {
+    public MessagingReport listenMessage(String sessionId, String transactionId, String stepId, String from, String to, List<Configuration> configurations, Message inputs) {
         SessionManager sessionManager = SessionManager.getInstance();
 
         SessionContext sessionContext = sessionManager.getSession(sessionId);
@@ -215,7 +215,7 @@ public abstract class AbstractMessagingHandler implements IMessagingHandler {
     }
 
     @Override
-    public void endTransaction(String sessionId, String transactionId) {
+    public void endTransaction(String sessionId, String transactionId, String stepId) {
         SessionManager sessionManager = SessionManager.getInstance();
 
         SessionContext sessionContext = sessionManager.getSession(sessionId);

@@ -6,6 +6,7 @@ import models.Token
 import play.api.http.HeaderNames._
 import play.api.http.MimeTypes._
 import play.api.mvc._
+import utils.JsonUtil
 
 object ResponseConstructor extends Results{
 
@@ -37,20 +38,7 @@ object ResponseConstructor extends Results{
   }
 
   def constructErrorMessage(errorCode: Any, errorDesc:String, errorIdentifier: Option[String]): String = {
-    val code = {
-      var code = "\"\""
-      if(errorCode.isInstanceOf[Int])
-        code =  "" + errorCode
-      else if (errorCode.isInstanceOf[String])
-        code = "\"" + errorCode + "\""
-      code
-    }
-    var msg = "{\"error_code\":" + code + ", \"error_description\":\"" + errorDesc + "\""
-    if (errorIdentifier.isDefined) {
-      msg += ", \"error_id\": \""+errorIdentifier.get+"\""
-    }
-    msg += "}"
-    msg
+    JsonUtil.constructErrorMessage(errorCode, errorDesc, errorIdentifier).toString()
   }
 
   def constructErrorResponse(errorCode: Int, errorDesc: String):Result = {

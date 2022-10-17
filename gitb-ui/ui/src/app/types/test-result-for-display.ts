@@ -16,6 +16,7 @@ export interface TestResultForDisplay extends SessionData {
     testCaseId?: number,
     deletePending?: boolean,
     exportPending?: boolean,
+    actionPending?: boolean,
     checked?: boolean,
     communityId?: number
     

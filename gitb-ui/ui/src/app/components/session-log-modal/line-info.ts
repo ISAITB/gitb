@@ -1,4 +1,4 @@
-import { LogLevel } from "./log-level";
+import { LogLevel } from "../../types/log-level";
 
 export interface LineInfo {
 

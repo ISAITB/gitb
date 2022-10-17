@@ -110,6 +110,7 @@ public class ListenStepProcessorActor extends AbstractMessagingStepProcessorActo
                                 .listenMessage(
                                         messagingContext.getSessionId(),
                                         transactionContext.getTransactionId(),
+                                        step.getId(),
                                         from,
                                         to,
                                         step.getConfig(),

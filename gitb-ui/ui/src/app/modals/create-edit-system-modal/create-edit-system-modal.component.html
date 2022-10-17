@@ -54,9 +54,10 @@
 		</div>
         <app-optional-custom-property-form *ngIf="!copySystemParameters"
             [tbPropertyData]="propertyData"
-			      [tbPropertyType]="'system'"
-			      [tbOwner]="system.id"
+            [tbPropertyType]="'system'"
+            [tbOwner]="system.id"
             [tbColInputLess]="1"
+            [tbSetDefaults]="system.id == undefined"
             [tbPopup]="true"></app-optional-custom-property-form>
 	</div>
 	<div class="modal-footer">

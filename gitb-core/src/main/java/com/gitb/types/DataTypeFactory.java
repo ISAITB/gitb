@@ -157,10 +157,10 @@ public class DataTypeFactory {
         return create(content, (x) -> true);
     }
 
-    public DataType create(AnyContent content, Function<AnyContent, Boolean> filter) {
-        DataType type = null;
-        if (content != null && filter.apply(content)) {
-            String declaredType = content.getType();
+    public static String determineDataType(AnyContent content) {
+        String declaredType = null;
+        if (content != null) {
+            declaredType = content.getType();
             if (declaredType == null) {
                 if (content.getItem().size() > 0) {
                     boolean namedChildren = false;
@@ -186,6 +186,14 @@ public class DataTypeFactory {
                     }
                 }
             }
+        }
+        return declaredType;
+    }
+
+    public DataType create(AnyContent content, Function<AnyContent, Boolean> filter) {
+        DataType type = null;
+        if (content != null && filter.apply(content)) {
+            String declaredType = determineDataType(content);
             if (DataType.MAP_DATA_TYPE.equals(declaredType)) {
                 type = new MapType();
                 for (AnyContent child : content.getItem()) {

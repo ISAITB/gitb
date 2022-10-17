@@ -38,13 +38,13 @@ export class PendingButtonDirective implements AfterViewInit {
     this.applyStatus()
   }
 
-  @Input() set pending(value: boolean) {
-    this._pending = value
+  @Input() set pending(value: boolean|undefined) {
+    this._pending = value != undefined && value
     this.applyStatus()
   }
 
-  @Input() set disable(value: boolean) {
-    this._disable = value
+  @Input() set disable(value: boolean|undefined) {
+    this._disable = value != undefined && value
     this.applyStatus()
   }
 

@@ -146,6 +146,8 @@ import { BaseCodeEditorModalComponent } from './components/base-code-editor-moda
 import { MultiSelectFilterComponent } from './components/multi-select-filter/multi-select-filter.component';
 import { TestStatusIconsComponent } from './components/test-status-icons/test-status-icons.component';
 import { TableColumnContentComponent } from './components/table-row/table-column-content/table-column-content.component';
+import { TestTriggerModalComponent } from './pages/admin/user-management/trigger/test-trigger-modal/test-trigger-modal.component';
+import { TestOptionButtonComponent } from './pages/test-execution/test-option-button/test-option-button.component';
 
 @NgModule({
   providers: [ 
@@ -281,7 +283,9 @@ import { TableColumnContentComponent } from './components/table-row/table-column
     BaseCodeEditorModalComponent,
     MultiSelectFilterComponent,
     TestStatusIconsComponent,
-    TableColumnContentComponent],
+    TableColumnContentComponent,
+    TestTriggerModalComponent,
+    TestOptionButtonComponent],
   imports: [
     BrowserModule,
     BrowserAnimationsModule,

@@ -34,12 +34,12 @@
 						<table class="table table-directive thick">
 							<thead>
 								<tr>
-									<th>Name</th>
-									<th>Description</th>
+									<th>Label</th>
+									<th>Key</th>
 									<th>Type</th>
 									<th class="min-width">Required</th>
 									<th class="min-width">Editable</th>
-									<th class="min-width">Included&nbsp;in&nbsp;tests</th>
+									<th class="min-width">In&nbsp;tests</th>
 									<th class="min-width">Hidden</th>
 									<th class="min-width"></th>
 								</tr>
@@ -53,7 +53,7 @@
 								</tr>
 								<tr class="table-row-directive selectable" *ngFor="let parameter of parameters; let index = index; let first = first; let last = last" (click)="onParameterSelect(parameter)">
 									<td><div><span>{{parameter.name}}</span></div></td>
-									<td><div><span>{{parameter.desc}}</span></div></td>
+									<td><div><span>{{parameter.testKey}}</span></div></td>
 									<td><div><span>{{parameter.kindLabel}}</span></div></td>
 									<td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': parameter.useLabel, 'fa-times': !parameter.useLabel}"></i></span></div></td>
 									<td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': parameter.adminOnlyLabel, 'fa-times': !parameter.adminOnlyLabel}"></i></span></div></td>

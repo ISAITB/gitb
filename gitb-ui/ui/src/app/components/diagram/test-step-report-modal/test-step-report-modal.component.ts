@@ -17,7 +17,8 @@ export class TestStepReportModalComponent implements OnInit {
   @Input() report!: StepReport
   @Input() sessionId!: string
 
-  exportDisabled = false
+  exportPdfPending = false
+  exportXmlPending = false
 
   constructor(
     private modalRef: BsModalRef,
@@ -27,18 +28,28 @@ export class TestStepReportModalComponent implements OnInit {
   ngOnInit(): void {
   }
 
-  export() {
-    this.exportDisabled = true
+  exportPdf() {
+    this.exportPdfPending = true
+    this.export("application/pdf", "report.pdf")
+  }
+
+  exportXml() {
+    this.exportXmlPending = true
+    this.export("application/xml", "report.xml")
+  }
+
+  private export(contentType: string, fileName: string) {
     let pathForReport = this.step.report!.path
     if (pathForReport == undefined) {
       pathForReport = this.step.id + '.xml'
     }
-    this.reportService.exportTestStepReport(this.sessionId, escape(pathForReport))
+    this.reportService.exportTestStepReport(this.sessionId, escape(pathForReport), contentType)
     .subscribe((data) => {
-      const blobData = new Blob([data], {type: 'application/pdf'});
-      saveAs(blobData, "report.pdf");
+      const blobData = new Blob([data], {type: contentType});
+      saveAs(blobData, fileName);
     }).add(() => {
-      this.exportDisabled = false
+      this.exportPdfPending = false
+      this.exportXmlPending = false
     })
   }
 
