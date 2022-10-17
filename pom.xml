@@ -32,7 +32,7 @@
         <version.plugin.maven-compiler-plugin>3.10.1</version.plugin.maven-compiler-plugin>
         <!-- Dependency versions -->
         <version.springBoot>2.7.4</version.springBoot>
-        <version.gitbTypes>1.18.0-SNAPSHOT</version.gitbTypes>
+        <version.gitbTypes>1.18.0</version.gitbTypes>
         <version.jasperReports>6.20.0</version.jasperReports>
         <version.bouncycastle>1.70</version.bouncycastle>
         <version.helgerSchematron>6.3.3</version.helgerSchematron>
@@ -77,6 +77,7 @@
         <version.freeMarker>2.3.31</version.freeMarker>
         <!-- Version overrides in Spring Boot - START -->
         <version.snakeyaml>1.32</version.snakeyaml> <!-- To resolve CVE-2022-25857 -->
+        <version.jacksonBom>2.13.4.20221013</version.jacksonBom> <!-- To resolve CVE-2022-42003 -->
         <!-- Version overrides in Spring Boot - END -->
         <!-- Properties used for filtering replacements -->
         <timestamp>${maven.build.timestamp}</timestamp>
@@ -501,6 +502,13 @@
                 <groupId>org.yaml</groupId>
                 <artifactId>snakeyaml</artifactId>
                 <version>${version.snakeyaml}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson</groupId>
+                <artifactId>jackson-bom</artifactId>
+                <version>${version.jacksonBom}</version>
+                <scope>import</scope>
+                <type>pom</type>
             </dependency>
         </dependencies>
     </dependencyManagement>
