@@ -33,6 +33,7 @@ export class ExportComponent extends BaseComponent implements OnInit {
     landingPages: false,
     errorTemplates: false,
     triggers: false,
+    resources: false,
     legalNotices: false,
     certificateSettings: false,
     customLabels: false,
@@ -85,6 +86,7 @@ export class ExportComponent extends BaseComponent implements OnInit {
       landingPages: false,
       errorTemplates: false,
       triggers: false,
+      resources: false,
       legalNotices: false,
       certificateSettings: false,
       customLabels: false,
@@ -137,6 +139,7 @@ export class ExportComponent extends BaseComponent implements OnInit {
       this.settings.legalNotices = this.allCommunityData
       this.settings.errorTemplates = this.allCommunityData
       this.settings.triggers = this.allCommunityData
+      this.settings.resources = this.allCommunityData
       this.settings.certificateSettings = this.allCommunityData
       this.settings.customLabels = this.allCommunityData
       this.settings.customProperties = this.allCommunityData
@@ -311,6 +314,7 @@ export class ExportComponent extends BaseComponent implements OnInit {
       this.settings.errorTemplates ||
       this.settings.legalNotices ||
       this.settings.triggers ||
+      this.settings.resources ||
       this.settings.certificateSettings ||
       this.settings.customLabels ||
       this.settings.customProperties ||

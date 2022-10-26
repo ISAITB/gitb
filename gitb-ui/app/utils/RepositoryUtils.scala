@@ -41,6 +41,7 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 	private final val FILES_OP_PATH: String = "op"
 	private final val FILES_SP_PATH: String = "sp"
 	private final val FILES_EP_PATH: String = "ep"
+	private final val FILES_CR_PATH: String = "cr"
 	private final val DATA_PATH: String = "data"
 	private final val DATA_PATH_IN: String = "in"
 	private final val DATA_PATH_PROCESSED: String = "processed"
@@ -49,6 +50,22 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 
 	def getFilesRootFolder(): File = {
 		Paths.get(Configurations.TEST_CASE_REPOSITORY_PATH, FILES_PATH).toFile
+	}
+
+	def getCommunityResourceFolder(communityId: Long): File = {
+		Paths.get(Configurations.TEST_CASE_REPOSITORY_PATH, FILES_PATH, FILES_CR_PATH, communityId.toString).toFile
+	}
+
+	def setCommunityResourceFile(communityId: Long, resourceId: Long, content: File): Unit = {
+		_setFile(getCommunityResource(communityId, resourceId), content, copy = false)
+	}
+
+	def getCommunityResource(communityId: Long, resourceId: Long): File = {
+		Paths.get(Configurations.TEST_CASE_REPOSITORY_PATH, FILES_PATH, FILES_CR_PATH, communityId.toString, resourceId.toString).toFile
+	}
+
+	def deleteCommunityResource(communityId: Long, resourceId: Long): Unit = {
+		_deleteFile(getCommunityResource(communityId, resourceId))
 	}
 
 	def getDomainParametersFolder(domainId: Long): File = {

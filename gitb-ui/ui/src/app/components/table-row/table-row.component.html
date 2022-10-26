@@ -10,10 +10,10 @@
             <i [ngClass]="actionIcon"></i>
         </button>
         <button type="button" *ngIf="operationsVisible && (!deleteVisibleForRow || deleteVisibleForRow(data))" [ngClass]="{'pending': data[deletePendingProperty]}" [pending]="data[deletePendingProperty]" [icon]="true" class="btn btn-default" (click)="delete(); $event.stopPropagation();" containerClass="shortTooltip" [tooltip]="deleteTooltip" [delay]="Constants.TOOLTIP_DELAY">
-            <i class="fa fa-trash"></i>
+            <i [ngClass]="deleteIcon"></i>
         </button>
         <button type="button" *ngIf="exportVisible && (!exportVisibleForRow || exportVisibleForRow(data))" [ngClass]="{'pending': data[exportPendingProperty]}" [pending]="data[exportPendingProperty]" [icon]="true" class="btn btn-default" (click)="export(); $event.stopPropagation();" containerClass="shortTooltip" [tooltip]="exportTooltip" [delay]="Constants.TOOLTIP_DELAY">
-            <i class="fa fa-file-pdf-o"></i>
+            <i [ngClass]="exportIcon"></i>
         </button>
     </div>
 </td>

@@ -326,6 +326,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
     val targetLegalNoticeMap = mutable.Map[String, ListBuffer[Long]]()
     val targetErrorTemplateMap = mutable.Map[String, ListBuffer[Long]]()
     val targetTriggerMap = mutable.Map[String, ListBuffer[Long]]()
+    val targetResourceMap = mutable.Map[String, ListBuffer[Long]]()
     val targetOrganisationMap = mutable.Map[String, mutable.ListBuffer[models.Organizations]]()
     val targetOrganisationPropertyValueMap = mutable.Map[Long, mutable.Map[String, models.OrganisationParameterValues]]()
     val targetOrganisationUserMap = mutable.Map[Long, mutable.Map[String, models.Users]]()
@@ -390,6 +391,13 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
           targetTriggerMap += (x._1 -> new ListBuffer[Long]())
         }
         targetTriggerMap(x._1) += x._2
+      }
+      // Resources.
+      exec(PersistenceSchema.communityResources.filter(_.community === targetCommunity.get.id).map(x => (x.name, x.id)).result).map { x =>
+        if (!targetResourceMap.contains(x._1)) {
+          targetResourceMap += (x._1 -> new ListBuffer[Long]())
+        }
+        targetResourceMap(x._1) += x._2
       }
       // Organisations.
       exportManager.loadOrganisations(targetCommunity.get.id).foreach { x =>
@@ -598,6 +606,26 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
         }
       }
     }
+    // Resources.
+    if (importTargets.hasResources) {
+      exportedCommunity.getResources.getResource.asScala.foreach { exportedResource =>
+        var targetResource: Option[Long] = None
+        if (targetCommunity.isDefined) {
+          val foundContent = targetResourceMap.get(exportedResource.getName)
+          if (foundContent.isDefined && foundContent.get.nonEmpty) {
+            targetResource = Some(foundContent.get.remove(0))
+            if (foundContent.get.isEmpty) {
+              targetResourceMap.remove(exportedResource.getName)
+            }
+          }
+        }
+        if (targetResource.isDefined) {
+          new ImportItem(Some(exportedResource.getName), ImportItemType.CommunityResource, ImportItemMatch.Both, Some(targetResource.get.toString), Some(exportedResource.getId), importItemCommunity)
+        } else {
+          new ImportItem(Some(exportedResource.getName), ImportItemType.CommunityResource, ImportItemMatch.ArchiveOnly, None, Some(exportedResource.getId), importItemCommunity)
+        }
+      }
+    }
     // Organisations.
     if (importTargets.hasOrganisations) {
       exportedCommunity.getOrganisations.getOrganisation.asScala.foreach { exportedOrganisation =>
@@ -776,6 +804,11 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
     targetTriggerMap.foreach { entry =>
       entry._2.foreach { x =>
         new ImportItem(Some(entry._1), ImportItemType.Trigger, ImportItemMatch.DBOnly, Some(x.toString), None, importItemCommunity)
+      }
+    }
+    targetResourceMap.foreach { entry =>
+      entry._2.foreach { x =>
+        new ImportItem(Some(entry._1), ImportItemType.CommunityResource, ImportItemMatch.DBOnly, Some(x.toString), None, importItemCommunity)
       }
     }
     targetOrganisationMap.foreach { entry =>

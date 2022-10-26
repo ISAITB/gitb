@@ -38,6 +38,7 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
                                      landingPageManager: LandingPageManager,
                                      legalNoticeManager: LegalNoticeManager,
                                      triggerManager: TriggerManager,
+                                     communityResourceManager: CommunityResourceManager,
                                      parameterManager: ParameterManager,
                                      testResultManager: TestResultManager,
                                      actorManager: ActorManager,
@@ -983,6 +984,13 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
 
   def canManageTriggers(request: RequestWithAttributes[_], communityId: Long):Boolean = {
     canManageCommunity(request, communityId)
+  }
+
+  def canManageCommunityResource(request: RequestWithAttributes[_], resourceId: Long): Boolean = {
+    val load = () => {
+      communityResourceManager.getCommunityId(resourceId)
+    }
+    canManageCommunityArtifact(request, getUser(getRequestUserId(request)), load)
   }
 
   def canViewDefaultErrorTemplate(request: RequestWithAttributes[_], communityId: Long):Boolean = {

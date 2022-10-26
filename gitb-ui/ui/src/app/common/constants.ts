@@ -242,7 +242,8 @@ export class Constants {
 		SYSTEM_PROPERTY_VALUE: 20,
 		STATEMENT: 21,
 		STATEMENT_CONFIGURATION: 22,
-		TRIGGER: 23
+		TRIGGER: 23,
+		RESOURCE: 24
 	}
 
 	public static IMPORT_ITEM_MATCH = {

@@ -546,4 +546,14 @@ object PersistenceSchema {
   }
   val triggerData = TableQuery[TriggerDataTable]
 
+  class CommunityResourcesTable(tag: Tag) extends Table[CommunityResources](tag, "CommunityResources") {
+    def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
+    def name = column[String]("name")
+    def description = column[Option[String]]("description", O.SqlType("TEXT"))
+    def community = column[Long]("community")
+    def * = (id, name, description, community) <> (CommunityResources.tupled, CommunityResources.unapply)
+  }
+  val communityResources = TableQuery[CommunityResourcesTable]
+  val insertCommunityResources = communityResources returning communityResources.map(_.id)
+
 }

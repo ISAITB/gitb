@@ -12,6 +12,7 @@ import org.slf4j.{Logger, LoggerFactory}
 import managers.AccountManager
 import models.Constants
 import persistence.cache.TokenCache
+import play.api.mvc.Results.Unauthorized
 import play.api.mvc._
 import play.mvc.Http.HeaderNames._
 
@@ -23,6 +24,15 @@ class AuthenticationFilter @Inject() (implicit ec: ExecutionContext, implicit va
 
   val BEARER = "Bearer"
 
+  private def downstreamHeaderFromAccessToken(accessToken: String, originalRequest: RequestHeader): RequestHeader = {
+    // Check if access token exists for any user
+    val userId = TokenCache.checkAccessToken(accessToken)
+    // A workaround of customizing request headers to add our userId data, so that controllers can process it
+    val customHeaders = originalRequest.headers.add((Parameters.USER_ID, "" + userId))
+    val customRequestHeader = originalRequest.withHeaders(customHeaders)
+    customRequestHeader
+  }
+
   def apply(next: (RequestHeader) => Future[Result])
            (requestHeader: RequestHeader): Future[Result] = {
     //if public service called, execute it immediately
@@ -31,19 +41,12 @@ class AuthenticationFilter @Inject() (implicit ec: ExecutionContext, implicit va
     } else {
       // Check Authorization headers
       val authzHeader = requestHeader.headers.get(AUTHORIZATION)
-      if(authzHeader.isDefined){
+      if (authzHeader.isDefined) {
         try {
-          //parse access token info
+          // Parse access token info
           val list = authzHeader.get.split(BEARER + " ")
-
-          if(list.length == 2){
-            val accessToken = list(1)
-            //check if access token exists for any user
-            val userId = TokenCache.checkAccessToken(accessToken)
-            //a workaround of customizing request headers to add our userId data, so that controllers can process it
-            val customHeaders = requestHeader.headers.add((Parameters.USER_ID,  "" + userId))
-            val customRequestHeader = requestHeader.withHeaders(customHeaders)
-            next(customRequestHeader)
+          if (list.length == 2){
+            next(downstreamHeaderFromAccessToken(list(1), requestHeader))
           } else{
             //There is a problem with the authorization header
             Future{
@@ -59,7 +62,14 @@ class AuthenticationFilter @Inject() (implicit ec: ExecutionContext, implicit va
           }
         }
       } else {
-        if (isPublicWithOptionalAuthentication(requestHeader)) {
+        if (isAuthenticatedHttpAccessAllowed(requestHeader)) {
+          val sessionCookie = requestHeader.cookies.get("tat")
+          if (sessionCookie.isDefined) {
+            next(downstreamHeaderFromAccessToken(sessionCookie.get.value, requestHeader))
+          } else {
+            Future { Unauthorized }
+          }
+        } else if (isPublicWithOptionalAuthentication(requestHeader)) {
           // No authentication token but not a problem.
           next(requestHeader)
         } else {
@@ -124,6 +134,10 @@ class AuthenticationFilter @Inject() (implicit ec: ExecutionContext, implicit va
 
   def isHmacAuthenticationAllowed(request:RequestHeader):Boolean = {
     request.path.startsWith("/"+API_ROOT+"/repository/")
+  }
+
+  def isAuthenticatedHttpAccessAllowed(request:RequestHeader): Boolean = {
+    request.path.startsWith("/resources/")
   }
 
   def isPublic(request:RequestHeader):Boolean = {

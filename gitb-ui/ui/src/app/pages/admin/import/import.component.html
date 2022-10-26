@@ -48,7 +48,8 @@
                                         (onUpload)="uploadArchive($event)"
                                         [accepts]="['application/zip']" 
                                         [placeholder]="'Select data archive ...'"
-                                        [fileName]="archiveData?.name"></app-file-select>
+                                        [fileName]="archiveData?.name"
+                                        [maxSize]="52428800"></app-file-select>
                                 </div>
                                 <app-tooltip tbTooltip="The archive containing the data to import."></app-tooltip>
                             </div>

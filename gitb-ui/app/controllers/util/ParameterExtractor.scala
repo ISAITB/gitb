@@ -4,7 +4,7 @@ import config.Configurations
 import exceptions.{ErrorCodes, InvalidRequestException}
 import models.Enums._
 import controllers.util.Parameters
-import models.{Actor, Communities, Domain, Endpoints, ErrorTemplates, FileInfo, LandingPages, LegalNotices, Options, OrganisationParameterValues, Organizations, Specifications, SystemParameterValues, Systems, Trigger, TriggerData, Triggers, Users}
+import models.{Actor, Communities, CommunityResources, Domain, Endpoints, ErrorTemplates, FileInfo, LandingPages, LegalNotices, Options, OrganisationParameterValues, Organizations, Specifications, SystemParameterValues, Systems, Trigger, TriggerData, Triggers, Users}
 import org.apache.commons.lang3.StringUtils
 import org.mindrot.jbcrypt.BCrypt
 import play.api.mvc._
@@ -183,6 +183,20 @@ object ParameterExtractor {
       }
     } catch {
       case _:NoSuchElementException =>
+        None
+    }
+  }
+
+  def optionalBooleanBodyParameter(paramMap: Option[Map[String, Seq[String]]], parameter: String): Option[Boolean] = {
+    try {
+      val paramString = paramMap.get(parameter).headOption
+      if (paramString.isDefined) {
+        Some(paramString.get.toBoolean)
+      } else {
+        None
+      }
+    } catch {
+      case _: NoSuchElementException =>
         None
     }
   }
@@ -595,6 +609,12 @@ object ParameterExtractor {
     triggerData
   }
 
+  def extractCommunityResource(paramMap:Option[Map[String, Seq[String]]], communityId: Long): CommunityResources = {
+    val name = requiredBodyParameter(paramMap, Parameters.NAME)
+    val description = optionalBodyParameter(paramMap, Parameters.DESCRIPTION)
+    CommunityResources(0L, name, description, communityId)
+  }
+
   def extractTriggerInfo(request:Request[AnyContent], triggerId: Option[Long]): Trigger = {
     // Trigger.
     val name = requiredBodyParameter(request, Parameters.NAME)
@@ -640,7 +660,16 @@ object ParameterExtractor {
 		ids
 	}
 
-	def extractLongIdsQueryParameter(request:Request[AnyContent]): Option[List[Long]] = {
+  def extractIdsBodyParameter(request: Request[AnyContent]): Set[Long] = {
+    val idsStr = ParameterExtractor.optionalBodyParameter(request, Parameters.IDS)
+    val ids = idsStr match {
+      case Some(str) => str.split(",").map(x => x.toLong).toSet
+      case None => Set.empty[Long]
+    }
+    ids
+  }
+
+  def extractLongIdsQueryParameter(request:Request[AnyContent]): Option[List[Long]] = {
 		val idsStr = ParameterExtractor.optionalQueryParameter(request, Parameters.IDS)
 		val ids = idsStr match {
 			case Some(str) => Some(str.split(",").map(_.toLong).toList)

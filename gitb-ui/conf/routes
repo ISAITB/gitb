@@ -216,6 +216,14 @@ POST    /api/communities/admins/create          @controllers.UserService.createC
 POST    /api/communities/admins/:id             @controllers.UserService.updateCommunityAdminProfile(id : Long)
 GET     /api/communities/labels/:id             @controllers.CommunityService.getCommunityLabels(id: Long)
 POST    /api/communities/labels/:id             @controllers.CommunityService.setCommunityLabels(id: Long)
+POST    /api/communities/:communityId/resources @controllers.CommunityService.createCommunityResource(communityId: Long)
+POST    /api/communities/resources/:id          @controllers.CommunityService.updateCommunityResource(id: Long)
+DELETE  /api/communities/resources/:id          @controllers.CommunityService.deleteCommunityResource(id: Long)
+POST    /api/communities/:communityId/resources/delete @controllers.CommunityService.deleteCommunityResources(communityId: Long)
+GET     /api/communities/:communityId/resources @controllers.CommunityService.searchCommunityResources(communityId: Long)
+GET     /api/communities/resources/:id/download @controllers.CommunityService.downloadCommunityResourceById(id: Long)
+GET     /api/communities/:communityId/resources/archive @controllers.CommunityService.downloadCommunityResources(communityId: Long)
+POST    /api/communities/:communityId/resources/archive @controllers.CommunityService.uploadCommunityResourcesInBulk(communityId: Long)
 
 # Test Result management API
 POST    /api/tests/binaryMetadata               @controllers.TestResultService.getBinaryMetadata()
@@ -299,6 +307,8 @@ POST    /api/rest/tests/status                                   @controllers.Te
 GET     /api/rest/tests/report/:sessionId                        @controllers.TestAutomationService.report(sessionId: String)
 POST    /api/rest/testsuite/deploy                               @controllers.TestSuiteAutomationService.deploy()
 POST    /api/rest/testsuite/undeploy                             @controllers.TestSuiteAutomationService.undeploy()
+
+GET     /resources/:communityId/:resourceName                    @controllers.CommunityService.downloadCommunityResourceByName(communityId: Long, resourceName: String)
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)

@@ -17,7 +17,7 @@ import javax.inject.{Inject, Singleton}
 import scala.collection.mutable.ListBuffer
 
 @Singleton
-class ExportManager @Inject() (repositoryUtils: RepositoryUtils, triggerManager: TriggerManager, communityManager: CommunityManager, conformanceManager: ConformanceManager, testSuiteManager: TestSuiteManager, landingPageManager: LandingPageManager, legalNoticeManager: LegalNoticeManager, errorTemplateManager: ErrorTemplateManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class ExportManager @Inject() (repositoryUtils: RepositoryUtils, communityResourceManager: CommunityResourceManager, triggerManager: TriggerManager, communityManager: CommunityManager, conformanceManager: ConformanceManager, testSuiteManager: TestSuiteManager, landingPageManager: LandingPageManager, legalNoticeManager: LegalNoticeManager, errorTemplateManager: ErrorTemplateManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   private final val logger: Logger = LoggerFactory.getLogger(classOf[ExportManager])
   private final val DEFAULT_CONTENT_TYPE = "application/octet-stream"
@@ -878,6 +878,22 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, triggerManager:
             }
           }
           communityData.getTriggers.getTrigger.add(exportedTrigger)
+        }
+      }
+    }
+    // Resources
+    if (exportSettings.resources) {
+      val resources = communityResourceManager.getCommunityResources(communityId)
+      if (resources.nonEmpty) {
+        communityData.setResources(new com.gitb.xml.export.CommunityResources)
+        resources.foreach { resource =>
+          val exportedResource = new CommunityResource
+          idSequence += 1
+          exportedResource.setId(toId(idSequence))
+          exportedResource.setName(resource.name)
+          exportedResource.setDescription(resource.description.orNull)
+          exportedResource.setContent(MimeUtil.getFileAsDataURL(repositoryUtils.getCommunityResource(communityId, resource.id), DEFAULT_CONTENT_TYPE))
+          communityData.getResources.getResource.add(exportedResource)
         }
       }
     }

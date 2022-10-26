@@ -148,6 +148,8 @@ import { TestStatusIconsComponent } from './components/test-status-icons/test-st
 import { TableColumnContentComponent } from './components/table-row/table-column-content/table-column-content.component';
 import { TestTriggerModalComponent } from './pages/admin/user-management/trigger/test-trigger-modal/test-trigger-modal.component';
 import { TestOptionButtonComponent } from './pages/test-execution/test-option-button/test-option-button.component';
+import { CreateEditCommunityResourceModalComponent } from './modals/create-edit-community-resource-modal/create-edit-community-resource-modal.component';
+import { CommunityResourceBulkUploadModalComponent } from './modals/community-resource-bulk-upload-modal/community-resource-bulk-upload-modal.component';
 
 @NgModule({
   providers: [ 
@@ -285,7 +287,9 @@ import { TestOptionButtonComponent } from './pages/test-execution/test-option-bu
     TestStatusIconsComponent,
     TableColumnContentComponent,
     TestTriggerModalComponent,
-    TestOptionButtonComponent],
+    TestOptionButtonComponent,
+    CreateEditCommunityResourceModalComponent,
+    CommunityResourceBulkUploadModalComponent],
   imports: [
     BrowserModule,
     BrowserAnimationsModule,

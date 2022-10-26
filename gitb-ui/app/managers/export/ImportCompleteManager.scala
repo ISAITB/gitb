@@ -24,7 +24,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.Using
 
 @Singleton
-class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportManager: ExportManager, communityManager: CommunityManager, conformanceManager: ConformanceManager, specificationManager: SpecificationManager, actorManager: ActorManager, endpointManager: EndPointManager, parameterManager: ParameterManager, testSuiteManager: TestSuiteManager, landingPageManager: LandingPageManager, legalNoticeManager: LegalNoticeManager, errorTemplateManager: ErrorTemplateManager, organisationManager: OrganizationManager, systemManager: SystemManager, importPreviewManager: ImportPreviewManager, repositoryUtils: RepositoryUtils, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class ImportCompleteManager @Inject()(communityResourceManager: CommunityResourceManager, triggerManager: TriggerManager, exportManager: ExportManager, communityManager: CommunityManager, conformanceManager: ConformanceManager, specificationManager: SpecificationManager, actorManager: ActorManager, endpointManager: EndPointManager, parameterManager: ParameterManager, testSuiteManager: TestSuiteManager, landingPageManager: LandingPageManager, legalNoticeManager: LegalNoticeManager, errorTemplateManager: ErrorTemplateManager, organisationManager: OrganizationManager, systemManager: SystemManager, importPreviewManager: ImportPreviewManager, repositoryUtils: RepositoryUtils, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   private def logger = LoggerFactory.getLogger("ImportCompleteManager")
 
@@ -466,6 +466,10 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
       modelDataItems = Some(modelDataItemsToProcess.toList)
     }
     new models.Trigger(modelTrigger, modelDataItems)
+  }
+
+  private def toModelCommunityResource(data: com.gitb.xml.export.CommunityResource, communityId: Long): models.CommunityResources = {
+    models.CommunityResources(0L, data.getName, Option(data.getDescription), communityId)
   }
 
   private def toModelAdministrator(data: com.gitb.xml.export.CommunityAdministrator, userId: Option[Long], organisationId: Long, importSettings: ImportSettings): models.Users = {
@@ -1074,6 +1078,10 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
       if (ctx.importTargets.hasTriggers) {
         exec(PersistenceSchema.triggers.filter(_.community === targetCommunityId.get).map(x => x.id).result).foreach(x => ctx.existingIds.map(ImportItemType.Trigger) += x.toString)
       }
+      // Resources.
+      if (ctx.importTargets.hasResources) {
+        exec(PersistenceSchema.communityResources.filter(_.community === targetCommunityId.get).map(x => x.id).result).foreach(x => ctx.existingIds.map(ImportItemType.CommunityResource) += x.toString)
+      }
       // Administrators
       if (!Configurations.AUTHENTICATION_SSO_ENABLED && ctx.importTargets.hasAdministrators) {
         exportManager.loadAdministrators(targetCommunityId.get).foreach { x =>
@@ -1429,6 +1437,36 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
         processRemaining(ImportItemType.Trigger, ctx,
           (targetKey: String, item: ImportItem) => {
             triggerManager.deleteTriggerInternal(targetKey.toLong)
+          }
+        )
+      }
+      // Resources
+      _ <- {
+        val dbActions = ListBuffer[DBIO[_]]()
+        if (exportedCommunity.getResources != null) {
+          exportedCommunity.getResources.getResource.asScala.foreach { exportedContent =>
+            dbActions += processFromArchive(ImportItemType.CommunityResource, exportedContent, exportedContent.getId, ctx,
+              ImportCallbacks.set(
+                (data: com.gitb.xml.export.CommunityResource, item: ImportItem) => {
+                  val fileToStore = dataUrlToTempFile(data.getContent)
+                  ctx.onFailureCalls += (() => if (fileToStore.exists()) { FileUtils.deleteQuietly(fileToStore) })
+                  communityResourceManager.createCommunityResourceInternal(toModelCommunityResource(data, item.parentItem.get.targetKey.get.toLong), fileToStore, ctx.onSuccessCalls)
+                },
+                (data: com.gitb.xml.export.CommunityResource, targetKey: String, item: ImportItem) => {
+                  val fileToStore = dataUrlToTempFile(data.getContent)
+                  ctx.onFailureCalls += (() => if (fileToStore.exists()) { FileUtils.deleteQuietly(fileToStore) })
+                  communityResourceManager.updateCommunityResourceInternal(Some(item.parentItem.get.targetKey.get.toLong), targetKey.toLong, Some(data.getName), Some(Option(data.getDescription)), Some(fileToStore), ctx.onSuccessCalls)
+                }
+              )
+            )
+          }
+        }
+        toDBIO(dbActions)
+      }
+      _ <- {
+        processRemaining(ImportItemType.Trigger, ctx,
+          (targetKey: String, item: ImportItem) => {
+            communityResourceManager.deleteCommunityResourceInternal(Some(item.parentItem.get.targetKey.get.toLong), targetKey.toLong, ctx.onSuccessCalls)
           }
         )
       }

@@ -162,6 +162,14 @@ object JsonUtil {
     json
   }
 
+  def jsUpdateCounts(created: Int, updated: Int): JsObject = {
+    val json = Json.obj(
+      "created" -> created,
+      "updated" -> updated
+    )
+    json
+  }
+
   def jsImportItems(importItems: Iterable[ImportItem]): JsArray = {
     var json = Json.arr()
     importItems.foreach{ importItem =>
@@ -180,6 +188,37 @@ object JsonUtil {
       "children" -> jsImportItems(importItem.childrenItems)
     )
     json
+  }
+
+  def jsCommunityResourceSearchResult(list: Iterable[CommunityResources], resultCount: Int): JsObject = {
+    val jsonResult = Json.obj(
+      "data" -> jsCommunityResources(list),
+      "count" -> resultCount
+    )
+    jsonResult
+  }
+
+  def jsCommunityResources(resources: Iterable[CommunityResources]): JsArray = {
+    var json = Json.arr()
+    resources.foreach { resource =>
+      json = json.append(jsCommunityResource(resource))
+    }
+    json
+  }
+
+  def jsCommunityResource(resource: CommunityResources): JsObject = {
+    val json = Json.obj(
+      "id" -> resource.id,
+      "name" -> resource.name,
+      "description" -> (if(resource.description.isDefined) resource.description.get else JsNull),
+      "reference" -> pathForResource(resource),
+      "community" -> resource.community
+    )
+    json
+  }
+
+  private def pathForResource(resource: CommunityResources): String = {
+    "resources/" + resource.community + "/" + resource.name
   }
 
   def jsTestSuite(suite: TestSuites, withDocumentation: Boolean): JsObject = {
@@ -1079,6 +1118,7 @@ object JsonUtil {
     settings.errorTemplates = (jsonConfig \ "errorTemplates").as[Boolean]
     settings.legalNotices = (jsonConfig \ "legalNotices").as[Boolean]
     settings.triggers = (jsonConfig \ "triggers").as[Boolean]
+    settings.resources = (jsonConfig \ "resources").as[Boolean]
     settings.certificateSettings = (jsonConfig \ "certificateSettings").as[Boolean]
     settings.customLabels = (jsonConfig \ "customLabels").as[Boolean]
     settings.customProperties = (jsonConfig \ "customProperties").as[Boolean]

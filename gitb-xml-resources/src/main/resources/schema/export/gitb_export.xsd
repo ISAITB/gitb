@@ -31,6 +31,7 @@
                     <xsd:element name="legalNotices" type="LegalNotices" minOccurs="0"/>
                     <xsd:element name="errorTemplates" type="ErrorTemplates" minOccurs="0"/>
                     <xsd:element name="triggers" type="Triggers" minOccurs="0"/>
+                    <xsd:element name="resources" type="CommunityResources" minOccurs="0"/>
                     <xsd:element name="organisations" type="Organisations" minOccurs="0"/>
                     <xsd:element name="administrators" type="CommunityAdministrators" minOccurs="0"/>
                 </xsd:sequence>
@@ -202,6 +203,11 @@
             <xsd:element name="trigger" type="Trigger" maxOccurs="unbounded"/>
         </xsd:sequence>
     </xsd:complexType>
+    <xsd:complexType name="CommunityResources">
+        <xsd:sequence>
+            <xsd:element name="resource" type="CommunityResource" maxOccurs="unbounded"/>
+        </xsd:sequence>
+    </xsd:complexType>
     <xsd:complexType name="LegalNotices">
         <xsd:sequence>
             <xsd:element name="legalNotice" type="LegalNotice" maxOccurs="unbounded"/>
@@ -248,6 +254,17 @@
             <xsd:extension base="ExportType">
                 <xsd:attribute name="dataType" type="TriggerDataType" use="required"/>
                 <xsd:attribute name="dataId" type="xsd:IDREF"/>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+    <xsd:complexType name="CommunityResource">
+        <xsd:complexContent>
+            <xsd:extension base="ExportType">
+                <xsd:sequence>
+                    <xsd:element name="name" type="xsd:string"/>
+                    <xsd:element name="description" type="xsd:string" minOccurs="0"/>
+                    <xsd:element name="content" type="xsd:string"/>
+                </xsd:sequence>
             </xsd:extension>
         </xsd:complexContent>
     </xsd:complexType>
