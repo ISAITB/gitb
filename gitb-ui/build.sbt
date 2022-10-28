@@ -23,7 +23,7 @@ libraryDependencies ++= Seq(
   ws,
   "com.google.inject" % "guice" % guiceVersion,
   "com.google.inject.extensions" % "guice-assistedinject" % guiceVersion,
-  "eu.europa.ec.itb" % "gitb-types" % "1.18.0",
+  "eu.europa.ec.itb" % "gitb-types" % "1.19.0-SNAPSHOT",
   "com.gitb" % "gitb-core" % "1.0-SNAPSHOT",
   "com.gitb" % "gitb-lib" % "1.0-SNAPSHOT",
   "com.gitb" % "gitb-reports" % "1.0-SNAPSHOT",
