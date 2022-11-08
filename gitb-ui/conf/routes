@@ -308,7 +308,7 @@ GET     /api/rest/tests/report/:sessionId                        @controllers.Te
 POST    /api/rest/testsuite/deploy                               @controllers.TestSuiteAutomationService.deploy()
 POST    /api/rest/testsuite/undeploy                             @controllers.TestSuiteAutomationService.undeploy()
 
-GET     /resources/:communityId/:resourceName                    @controllers.CommunityService.downloadCommunityResourceByName(communityId: Long, resourceName: String)
+GET     /resources/:resourceName                    @controllers.CommunityService.downloadCommunityResourceByName(resourceName: String)
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)

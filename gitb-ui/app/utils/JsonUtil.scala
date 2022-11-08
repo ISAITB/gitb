@@ -218,7 +218,7 @@ object JsonUtil {
   }
 
   private def pathForResource(resource: CommunityResources): String = {
-    "resources/" + resource.community + "/" + resource.name
+    "resources/" + resource.name
   }
 
   def jsTestSuite(suite: TestSuites, withDocumentation: Boolean): JsObject = {

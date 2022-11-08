@@ -1634,7 +1634,7 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     request.headers.get(HmacUtils.HMAC_HEADER_TOKEN).isDefined && request.headers.get(HmacUtils.HMAC_HEADER_TIMESTAMP).isDefined
   }
 
-  private def getRequestUserId(request: RequestWithAttributes[_]): Long = {
+  def getRequestUserId(request: RequestWithAttributes[_]): Long = {
     val userId = ParameterExtractor.extractOptionalUserId(request)
     if (userId.isEmpty) {
       throwError("User is not authenticated.")

@@ -1,6 +1,6 @@
 package managers
 
-import models.CommunityResources
+import models.{CommunityResources, Constants}
 import org.apache.commons.io.{FileUtils, FilenameUtils}
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
@@ -42,15 +42,34 @@ class CommunityResourceManager @Inject()(repositoryUtils: RepositoryUtils, dbCon
     } yield (resourceInfo._1, file))
   }
 
-  def getCommunityResourceFileByName(communityId: Long, name: String): Option[File] = {
-    val resourceId = exec(PersistenceSchema.communityResources
-      .filter(_.community === communityId)
-      .filter(_.name === name)
-      .map(_.id)
-      .result
-      .headOption)
-    if (resourceId.isDefined) {
-      Some(repositoryUtils.getCommunityResource(communityId, resourceId.get))
+  def getCommunityResourceFileByName(userId: Long, name: String): Option[File] = {
+    val resourceIds = exec(for {
+      userCommunityResult <-
+        // Check first in the user's own community.
+        PersistenceSchema.users
+          .join(PersistenceSchema.organizations).on(_.organization === _.id)
+          .join(PersistenceSchema.communityResources).on(_._2.community === _.community)
+          .filter(_._1._1.id === userId)
+          .filter(_._2.name === name)
+          .map(x => (x._2.id, x._2.community))
+          .result
+          .headOption
+      finalResult <- {
+        if (userCommunityResult.isDefined) {
+          DBIO.successful(userCommunityResult)
+        } else {
+          // Check also in the default community.
+          PersistenceSchema.communityResources
+            .filter(_.community === Constants.DefaultCommunityId)
+            .filter(_.name === name)
+            .map(x => (x.id, x.community))
+            .result
+            .headOption
+        }
+      }
+    } yield finalResult)
+    if (resourceIds.isDefined) {
+      Some(repositoryUtils.getCommunityResource(resourceIds.get._2, resourceIds.get._1))
     } else {
       None
     }

@@ -478,9 +478,10 @@ class CommunityService @Inject() (implicit ec: ExecutionContext, authorizedActio
     ResponseConstructor.constructJsonResponse(JsonUtil.jsCommunityResourceSearchResult(result._1, result._2).toString)
   }
 
-  def downloadCommunityResourceByName(communityId: Long, resourceName: String) = authorizedAction { request =>
-    authorizationManager.canViewCommunityBasic(request, communityId)
-    val resource = communityResourceManager.getCommunityResourceFileByName(communityId, resourceName)
+  def downloadCommunityResourceByName(resourceName: String) = authorizedAction { request =>
+    authorizationManager.canViewOwnCommunity(request)
+    val userId = authorizationManager.getRequestUserId(request)
+    val resource = communityResourceManager.getCommunityResourceFileByName(userId, resourceName)
     if (resource.isDefined && resource.get.exists()) {
       Ok.sendFile(
         content = resource.get,
