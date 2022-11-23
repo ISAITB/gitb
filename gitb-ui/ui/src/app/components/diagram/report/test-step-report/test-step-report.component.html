@@ -1,9 +1,11 @@
 <div [ngClass]="classValue">
-    <div class="col-md-6">
-        <span class="report-item"><strong>Result: </strong>{{report.result}}</span>
-    </div>
-    <div class="col-md-6">
-        <span class="report-item"><strong>Time: </strong>{{report.date}}</span>
+    <div class="col-md-12">
+        <div class="result-container">
+            <div class="result-label">Result</div>
+            <div class="result-value"><span class="overall-result" [ngClass]="report.result!">{{report.result}}</span></div>
+            <div class="result-label">Time</div>
+            <div class="result-value">{{report.date}}</div>
+        </div>
     </div>
     <app-test-step-report-sr *ngIf="report.type == 'SR'" [report]="report"></app-test-step-report-sr>
     <app-test-step-report-dr *ngIf="report.type == 'DR'" [report]="report"></app-test-step-report-dr>

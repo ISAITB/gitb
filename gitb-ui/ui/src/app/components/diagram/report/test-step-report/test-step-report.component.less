@@ -1,0 +1,58 @@
+@import '../../../../../styles/less/_common.less';
+
+.result-container {
+    display: flex;
+    border: 1px solid @gray-light;
+    border-radius: 3px;
+    margin-top: 8px;
+    margin-bottom: 8px;
+    .result-label {
+        display:flex;
+        font-weight: bold;
+        border-left: 1px solid @gray-light;
+        border-right: 1px solid @gray-light;
+        padding-left: 20px;
+        padding-right: 20px;
+        align-items: center;
+        height: 40px;
+        background-color: @gray-light-1;
+        &:first-child {
+            border-left: 1px solid transparent;
+        }
+    }
+    .result-value {
+        display: flex;
+        padding-left: 30px;
+        padding-right: 30px;
+        align-items: center;
+        height: 40px;
+        .overall-result {
+            text-shadow: 1px 1px 0 rgb(90 90 90 / 50%);
+            padding: 0.3em 0.6em 0.3em;
+            font-weight: bold;
+            line-height: 1;
+            color: @white;
+            text-align: center;
+            white-space: nowrap;
+            vertical-align: baseline;
+            border-radius: 0.25em;
+            &.SUCCESS {
+                background-color: @success-green;
+            }
+            &.FAILURE {
+                background-color: @error-red;
+            }
+            &.WARNING {
+                background-color: @warning-yellow;
+            }
+            &.UNDEFINED {
+                background-color: @gray-dark;
+            }
+        }
+    }
+}
+
+.report-item-label {
+    font-weight: bold;
+    margin-right: 30px;
+}
