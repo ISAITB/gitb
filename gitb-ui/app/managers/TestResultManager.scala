@@ -83,7 +83,7 @@ class TestResultManager @Inject() (repositoryUtils: RepositoryUtils, dbConfigPro
     }
   }
 
-  def getTestResultForSessionWrapper(sessionId: String): Option[TestResult] = {
+  def getTestResultForSessionWrapper(sessionId: String): Option[(TestResult, String)] = {
     exec(getTestResultForSession(sessionId))
   }
 
@@ -97,8 +97,20 @@ class TestResultManager @Inject() (repositoryUtils: RepositoryUtils, dbConfigPro
     result
   }
 
-  def getTestResultForSession(sessionId: String): DBIO[Option[TestResult]] = {
-    PersistenceSchema.testResults.filter(_.testSessionId === sessionId).result.headOption
+  def getTestResultForSession(sessionId: String): DBIO[Option[(TestResult, String)]] = {
+    for {
+      testResult <- PersistenceSchema.testResults.filter(_.testSessionId === sessionId).result.headOption
+      testDefinition <- if (testResult.isDefined) {
+        PersistenceSchema.testResultDefinitions.filter(_.testSessionId === sessionId).result.headOption
+      } else {
+        DBIO.successful(None)
+      }
+      result <- if (testResult.isDefined) {
+        DBIO.successful(Some((testResult.get, testDefinition.get.tpl)))
+      } else {
+        DBIO.successful(None)
+      }
+    } yield result
   }
 
   /**
@@ -251,7 +263,6 @@ class TestResultManager @Inject() (repositoryUtils: RepositoryUtils, dbConfigPro
   }
 
   private def deleteTestSession(testSession: TestResult, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
-    val queryTestResult = PersistenceSchema.testResults.filter(_.testSessionId === testSession.sessionId)
     val queryConformanceResult = PersistenceSchema.conformanceResults.filter(_.testsession === testSession.sessionId)
     for {
       // Delete file system data (on success)
@@ -298,10 +309,12 @@ class TestResultManager @Inject() (repositoryUtils: RepositoryUtils, dbConfigPro
           DBIO.successful(())
         }
       }
-      // Delete test result
-      _ <- queryTestResult.delete
+      // Delete test result definition
+      _ <- PersistenceSchema.testResultDefinitions.filter(_.testSessionId === testSession.sessionId).delete
       // Delete test step reports
-      _ <- PersistenceSchema.testStepReports.filter(_.testSessionId ===testSession.sessionId).delete
+      _ <- PersistenceSchema.testStepReports.filter(_.testSessionId === testSession.sessionId).delete
+      // Delete test result
+      _ <- PersistenceSchema.testResults.filter(_.testSessionId === testSession.sessionId).delete
     } yield ()
   }
 

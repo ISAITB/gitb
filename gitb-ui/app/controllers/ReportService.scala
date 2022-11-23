@@ -166,7 +166,7 @@ class ReportService @Inject() (authorizedAction: AuthorizedAction, cc: Controlle
   def getTestResultOfSession(sessionId: String) = authorizedAction { request =>
     authorizationManager.canViewTestResultForSession(request, sessionId)
     val response = reportManager.getTestResultOfSession(sessionId)
-    val json = JsonUtil.jsTestResult(response, withTpl = true, withOutputMessage = true).toString()
+    val json = JsonUtil.jsTestResult(response._1, Some(response._2), withOutputMessage = true).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
 

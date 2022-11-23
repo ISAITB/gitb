@@ -1333,7 +1333,7 @@ object JsonUtil {
    * @param testResult TestResult object to be converted
    * @return JsObject
    */
-  def jsTestResult(testResult:TestResult, withTpl:Boolean, withOutputMessage:Boolean):JsObject = {
+  def jsTestResult(testResult:TestResult, tpl:Option[String], withOutputMessage:Boolean):JsObject = {
     val json = Json.obj(
       "sessionId" -> testResult.sessionId,
       "systemId"  -> (if (testResult.systemId.isDefined) testResult.systemId else JsNull),
@@ -1343,7 +1343,7 @@ object JsonUtil {
       "result"    -> testResult.result,
       "startTime" -> TimeUtil.serializeTimestamp(testResult.startTime),
       "endTime"   -> (if(testResult.endTime.isDefined) TimeUtil.serializeTimestamp(testResult.endTime.get) else JsNull),
-      "tpl"       -> (if(withTpl) testResult.tpl else JsNull),
+      "tpl"       -> (if(tpl.isDefined) tpl.get else JsNull),
       "outputMessage" -> (if (withOutputMessage && testResult.outputMessage.isDefined) testResult.outputMessage.get else JsNull),
       "obsolete"  -> (if (testResult.testSuiteId.isDefined && testResult.testCaseId.isDefined && testResult.systemId.isDefined && testResult.organizationId.isDefined && testResult.communityId.isDefined && testResult.domainId.isDefined && testResult.specificationId.isDefined && testResult.actorId.isDefined) false else true)
     )
@@ -1423,7 +1423,7 @@ object JsonUtil {
 
   def jsTestResultReport(result: TestResult, orgParameterDefinitions: Option[List[OrganisationParameters]], orgParameterValues: Option[scala.collection.mutable.Map[Long, scala.collection.mutable.Map[Long, String]]], sysParameterDefinitions: Option[List[SystemParameters]], sysParameterValues: Option[scala.collection.mutable.Map[Long, scala.collection.mutable.Map[Long, String]]], withOutputMessage: Boolean = false): JsObject = {
     val json = Json.obj(
-      "result" -> jsTestResult(result, withTpl = false, withOutputMessage),
+      "result" -> jsTestResult(result, None, withOutputMessage),
       "test" ->  {
         Json.obj(
           "id"      -> (if (result.testCaseId.isDefined) result.testCaseId.get else JsNull),

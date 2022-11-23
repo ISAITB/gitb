@@ -14,7 +14,6 @@ import models._
 import org.apache.commons.codec.binary.Base64
 import org.apache.commons.io.FileUtils
 import org.apache.commons.lang3.StringUtils
-import org.slf4j.{Logger, LoggerFactory}
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
 import utils.signature.{CreateSignature, SigUtils}
@@ -40,7 +39,6 @@ import scala.util.Using
 class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: ActorManager, testCaseReportProducer: TestCaseReportProducer, systemManager: SystemManager, organizationManager: OrganizationManager, communityManager: CommunityManager, testCaseManager: TestCaseManager, testSuiteManager: TestSuiteManager, specificationManager: SpecificationManager, conformanceManager: ConformanceManager, dbConfigProvider: DatabaseConfigProvider, communityLabelManager: CommunityLabelManager, repositoryUtils: RepositoryUtils, testResultManager: TestResultManager) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
-  val logger: Logger = LoggerFactory.getLogger("ReportManager")
 
   private val generator = new ReportGenerator()
 
@@ -212,12 +210,11 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
     query
   }
 
-  def getTestResultOfSession(sessionId: String): TestResult = {
-      val testResult = exec(PersistenceSchema.testResults.filter(_.testSessionId === sessionId).result.head)
-      val xml = testResult.tpl
-      val testcase = XMLUtils.unmarshal(classOf[TestCase], new StreamSource(new StringReader(xml)))
-      val json = JacksonUtil.serializeTestCasePresentation(testcase)
-      testResult.withPresentation(json)
+  def getTestResultOfSession(sessionId: String): (TestResult, String) = {
+    val result = testResultManager.getTestResultForSessionWrapper(sessionId)
+    val testcase = XMLUtils.unmarshal(classOf[TestCase], new StreamSource(new StringReader(result.get._2)))
+    val json = JacksonUtil.serializeTestCasePresentation(testcase)
+    (result.get._1, json)
   }
 
   private def removeStepDocumentation(testCase: com.gitb.tpl.TestCase): Unit = {
@@ -249,12 +246,14 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
 
     exec(
       (
-        // Insert.
+        // Insert test result.
         (PersistenceSchema.testResults += TestResult(
           sessionId, Some(systemId), Some(system.shortname), Some(organisation.id), Some(organisation.shortname),
           Some(community.id), Some(community.shortname), Some(testCase.id), Some(testCase.shortname), Some(testSuite.id), Some(testSuite.shortname),
           Some(actor.id), Some(actor.name), Some(specification.id), Some(specification.shortname), Some(domain.id), Some(domain.shortname),
-          initialStatus, startTime, None, None, presentation)) andThen
+          initialStatus, startTime, None, None)) andThen
+        // Insert TPL definition.
+        (PersistenceSchema.testResultDefinitions += TestResultDefinition(sessionId, presentation)) andThen
         // Update also the conformance results for the system
         q.update(Some(sessionId), initialStatus, None, Some(startTime))
       ).transactionally
@@ -638,13 +637,13 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
           testCaseOverview.setTestSpecification(info.specificationNameFull)
           testCaseOverview.setTestActor(info.actorFull)
           if (info.sessionId.isDefined) {
-            val testResult = exec(PersistenceSchema.testResults.filter(_.testSessionId === info.sessionId.get).result.head)
-            testCaseOverview.setStartTime(sdf.format(new Date(testResult.startTime.getTime)))
-            if (testResult.endTime.isDefined) {
-              testCaseOverview.setEndTime(sdf.format(new Date(testResult.endTime.get.getTime)))
+            val testResult = testResultManager.getTestResultForSessionWrapper(info.sessionId.get)
+            testCaseOverview.setStartTime(sdf.format(new Date(testResult.get._1.startTime.getTime)))
+            if (testResult.get._1.endTime.isDefined) {
+              testCaseOverview.setEndTime(sdf.format(new Date(testResult.get._1.endTime.get.getTime)))
             }
-            val testcasePresentation = XMLUtils.unmarshal(classOf[TestCase], new StreamSource(new StringReader(testResult.tpl)))
-            val sessionFolderInfo = repositoryUtils.getPathForTestSessionObj(info.sessionId.get, Some(testResult.startTime), isExpected = true)
+            val testcasePresentation = XMLUtils.unmarshal(classOf[TestCase], new StreamSource(new StringReader(testResult.get._2)))
+            val sessionFolderInfo = repositoryUtils.getPathForTestSessionObj(info.sessionId.get, Some(testResult.get._1.startTime), isExpected = true)
             try {
               val list = testCaseReportProducer.getListOfTestSteps(testcasePresentation, sessionFolderInfo.path.toFile)
               for (stepReport <- list) {

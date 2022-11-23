@@ -5,8 +5,7 @@ import { StepReport } from '../step-report';
 @Component({
   selector: 'app-test-step-report',
   templateUrl: './test-step-report.component.html',
-  styles: [
-  ]
+  styleUrls: [ './test-step-report.component.less' ]
 })
 export class TestStepReportComponent implements OnInit {
 
