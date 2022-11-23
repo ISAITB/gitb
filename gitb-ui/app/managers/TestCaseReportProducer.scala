@@ -48,16 +48,16 @@ class TestCaseReportProducer @Inject() (testResultManager: TestResultManager, te
         })
       }
       var exportedReport: File = null
-      if (testResult.get.endTime.isEmpty) {
+      if (testResult.get._1.endTime.isEmpty) {
         // This name will be unique to ensure that a report generated for a pending session never gets cached.
         exportedReport = new File(sessionFolderInfo.path.toFile, "report_" + System.currentTimeMillis() + reportData._1)
         FileUtils.forceDeleteOnExit(exportedReport)
       } else {
         exportedReport = new File(sessionFolderInfo.path.toFile, "report" + reportData._1)
       }
-      val testcasePresentation = XMLUtils.unmarshal(classOf[TestCase], new StreamSource(new StringReader(testResult.get.tpl)))
-      if (!exportedReport.exists() && testResult.get.testCaseId.isDefined) {
-        val testCase = testCaseManager.getTestCase(testResult.get.testCaseId.get.toString)
+      val testcasePresentation = XMLUtils.unmarshal(classOf[TestCase], new StreamSource(new StringReader(testResult.get._2)))
+      if (!exportedReport.exists() && testResult.get._1.testCaseId.isDefined) {
+        val testCase = testCaseManager.getTestCase(testResult.get._1.testCaseId.get.toString)
         val list = getListOfTestSteps(testcasePresentation, sessionFolderInfo.path.toFile)
         reportData._2.apply(list, exportedReport, testCase, sessionId)
       }

@@ -275,12 +275,18 @@ object PersistenceSchema {
 	  def startTime = column[Timestamp]("start_time")
 	  def endTime = column[Option[Timestamp]]("end_time", O.SqlType("TIMESTAMP"))
     def outputMessage = column[Option[String]]("output_message", O.SqlType("TEXT"))
-	  def tpl = column[String]("tpl", O.SqlType("BLOB"))
-    def * = (testSessionId, sutId, sut, organizationId, organization, communityId, community, testCaseId, testCase, testSuiteId, testSuite, actorId, actor, specificationId, specification, domainId, domain, result, startTime, endTime, outputMessage, tpl) <> (TestResult.tupled, TestResult.unapply)
+    def * = (testSessionId, sutId, sut, organizationId, organization, communityId, community, testCaseId, testCase, testSuiteId, testSuite, actorId, actor, specificationId, specification, domainId, domain, result, startTime, endTime, outputMessage) <> (TestResult.tupled, TestResult.unapply)
   }
   val testResults = TableQuery[TestResultsTable]
 
-	class TestStepReports(tag: Tag) extends Table[TestStepResult](tag, "TestStepReports") {
+  class TestResultDefinitionsTable(tag: Tag) extends Table[TestResultDefinition](tag, "TestResultDefinitions") {
+    def testSessionId = column[String]("test_session_id", O.PrimaryKey)
+    def tpl = column[String]("tpl", O.SqlType("BLOB"))
+    def * = (testSessionId, tpl) <> (TestResultDefinition.tupled, TestResultDefinition.unapply)
+  }
+  val testResultDefinitions = TableQuery[TestResultDefinitionsTable]
+
+  class TestStepReports(tag: Tag) extends Table[TestStepResult](tag, "TestStepReports") {
 		def testSessionId = column[String]("test_session_id")
 		def testStepId = column[String]("test_step_id")
 		def result = column[Short]("result")

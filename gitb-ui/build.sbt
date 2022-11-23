@@ -8,8 +8,7 @@ lazy val root = (project in file(".")).enablePlugins(PlayScala, SbtWeb)
 
 scalaVersion := "2.13.10"
 val akkaVersion = "2.6.20" // Keep to the 2.6.* version for the Apache 2.0 Licence (also, this needs to match the version in Play).
-val jacksonVersion = "2.13.4"
-val jacksonDatabindVersion = "2.13.4.2"
+val jacksonVersion = "2.14.1"
 val cxfVersion = "3.5.3"
 val guiceVersion = "5.1.0"
 val commonsTextVersion = "1.10.0"
@@ -40,10 +39,10 @@ libraryDependencies ++= Seq(
   "com.typesafe.play" %% "play-json" % "2.9.3",
   "org.pac4j" %% "play-pac4j" % "11.1.0-PLAY2.8",
   "org.pac4j" % "pac4j-cas" % "5.7.0",
-  "ch.qos.logback" % "logback-classic" % "1.4.4",
+  "ch.qos.logback" % "logback-classic" % "1.4.5",
   "org.apache.commons" % "commons-lang3" % "3.12.0",
   "com.fasterxml.jackson.module" %% "jackson-module-scala" % jacksonVersion,
-  "com.fasterxml.jackson.core" % "jackson-databind" % jacksonDatabindVersion,
+  "com.fasterxml.jackson.core" % "jackson-databind" % jacksonVersion,
   "com.fasterxml.jackson.core" % "jackson-core" % jacksonVersion,
   "com.fasterxml.jackson.core" % "jackson-annotations" % jacksonVersion,
   "com.fasterxml.jackson.module" % "jackson-module-jaxb-annotations" % jacksonVersion,
@@ -75,7 +74,7 @@ libraryDependencies ++= Seq(
   "org.jasypt" % "jasypt" % "1.9.3",
   "org.apache.httpcomponents" % "httpclient" % "4.5.13",
   "org.flywaydb" %% "flyway-play" % "7.25.0",
-  "org.flywaydb" % "flyway-mysql" % "9.5.1",
+  "org.flywaydb" % "flyway-mysql" % "9.8.2",
   "com.googlecode.owasp-java-html-sanitizer" % "owasp-java-html-sanitizer" % "20220608.1",
   "net.lingala.zip4j" % "zip4j" % "2.11.2",
   // Specific version overrides (to be removed if no longer needed)
