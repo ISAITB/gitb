@@ -9,7 +9,7 @@ lazy val root = (project in file(".")).enablePlugins(PlayScala, SbtWeb)
 scalaVersion := "2.13.10"
 val akkaVersion = "2.6.20" // Keep to the 2.6.* version for the Apache 2.0 Licence (also, this needs to match the version in Play).
 val jacksonVersion = "2.14.1"
-val cxfVersion = "3.5.3"
+val cxfVersion = "3.5.5"
 val guiceVersion = "5.1.0"
 val commonsTextVersion = "1.10.0"
 
