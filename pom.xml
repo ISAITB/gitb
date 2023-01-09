@@ -26,7 +26,7 @@
              mvn versions:display-dependency-updates -N -N
         -->
         <!-- Plugin versions -->
-        <version.plugin.dependency-check-maven>7.4.3</version.plugin.dependency-check-maven>
+        <version.plugin.dependency-check-maven>7.4.4</version.plugin.dependency-check-maven>
         <version.plugin.maven-deploy-plugin>3.0.0-M2</version.plugin.maven-deploy-plugin>
         <version.plugin.jasperreports-plugin>2.8</version.plugin.jasperreports-plugin>
         <version.plugin.maven-compiler-plugin>3.10.1</version.plugin.maven-compiler-plugin>
