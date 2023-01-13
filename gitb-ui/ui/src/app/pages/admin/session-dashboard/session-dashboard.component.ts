@@ -29,7 +29,6 @@ export class SessionDashboardComponent implements OnInit {
 
   exportActivePending = false
   exportCompletedPending = false
-  viewCheckbox = false
   selectingForDelete = false
   activeExpandedCounter = {count: 0}
   completedExpandedCounter = {count: 0}
@@ -40,6 +39,7 @@ export class SessionDashboardComponent implements OnInit {
   completedTestsColumns!: TableColumnDefinition[]
   activeTests: TestResultForDisplay[] = []
   completedTests: TestResultForDisplay[] = []
+  completedTestsCheckboxEmitter = new EventEmitter<boolean>()
   completedTestsTotalCount = 0
   activeSortOrder = "asc"
   activeSortColumn = "startTime"
@@ -198,7 +198,7 @@ export class SessionDashboardComponent implements OnInit {
   }
 
   getCompletedTests() {
-    this.viewCheckbox = false
+    this.completedTestsCheckboxEmitter.emit(false)
     this.completedExpandedCounter.count = 0
     this.selectingForDelete = false
     const params = this.getCurrentSearchCriteria()
@@ -529,7 +529,7 @@ export class SessionDashboardComponent implements OnInit {
   }
 
   selectDeleteSessions() {
-    this.viewCheckbox = true
+    this.completedTestsCheckboxEmitter.emit(true)
     this.selectingForDelete = true
   }
 
@@ -561,7 +561,7 @@ export class SessionDashboardComponent implements OnInit {
   }
 
   cancelDeleteSessions() {
-    this.viewCheckbox = false
+    this.completedTestsCheckboxEmitter.emit(false)
     this.selectingForDelete = false
     for (let test of this.completedTests) {
       test.checked = false
