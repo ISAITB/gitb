@@ -1,6 +1,5 @@
 import { HttpHeaders } from "@angular/common/http"
 import { HttpRequestConfig } from "../types/http-request-config.type"
-import { API_ROOT } from "./global"
 
 export class Utils {
 
@@ -30,13 +29,6 @@ export class Utils {
             headersToUse = headersToUse.set('Accept', config.accept)
         }
         return headersToUse
-    }
-
-    public static completePath(path: string): string {
-        if (API_ROOT != '/') {
-            return API_ROOT + path
-          }
-          return path
     }
 
 }

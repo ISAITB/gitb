@@ -69,7 +69,7 @@ export class AuthProviderService {
 			if (!this.logoutOngoing && (info.full || this.isAuthenticated())) {
         this.logoutOngoing = true
         this.httpClient.post(
-          Utils.completePath(ROUTES.controllers.AuthenticationService.logout().url), 
+          this.dataService.completePath(ROUTES.controllers.AuthenticationService.logout().url), 
           Utils.objectToFormRequest({full: info.full}).toString(),
           {
             headers: Utils.createHttpHeaders(this.accessToken)

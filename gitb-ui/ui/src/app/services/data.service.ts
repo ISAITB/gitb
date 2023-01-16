@@ -42,6 +42,7 @@ export class DataService {
   public isDomainUser = false
   public tests?: ConformanceTestCase[]
   public currentLandingPageContent?: string
+  private apiRoot?: string
 
   private renderer: Renderer2
   triggerEventToDataTypeMap?: {[key: number]: { [key: number]: boolean } }
@@ -994,4 +995,18 @@ export class DataService {
     return logLevel
   }
 
+  completePath(path: string): string {
+    if (this.apiRoot == undefined) {
+      const apiRootElement = document.getElementById('cp-div')
+      if (apiRootElement) {
+        this.apiRoot = apiRootElement.innerText
+      } else {
+        this.apiRoot = '/'
+      }
+    }
+    if (this.apiRoot != '/') {
+      return this.apiRoot + path
+    }
+    return path
+  }
 }
