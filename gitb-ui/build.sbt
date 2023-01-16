@@ -55,7 +55,7 @@ libraryDependencies ++= Seq(
   // ---
   "org.apache.tika" % "tika-core" % "2.6.0",
   "org.webjars" %% "webjars-play" % "2.8.18",
-  "org.webjars" % "jquery" % "3.6.1",
+  "org.webjars" % "jquery" % "3.6.3",
   "org.webjars" % "bootstrap" % "3.4.1" exclude("org.webjars", "jquery"),
   "javax.mail" % "mail" % "1.4.7",
   "javax.activation" % "activation" % "1.1.1",
