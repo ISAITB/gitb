@@ -24,4 +24,4 @@ addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "2.0.0-RC1")
 addDependencyTreePlugin
 
 // Run manually with "sbt dependencyCheck".
-addSbtPlugin("net.vonbuchholtz" % "sbt-dependency-check" % "4.1.0")
+addSbtPlugin("net.vonbuchholtz" % "sbt-dependency-check" % "4.3.0")
