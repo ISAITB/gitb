@@ -15,6 +15,7 @@ class LegalNoticeManager @Inject() (dbConfigProvider: DatabaseConfigProvider) ex
   import dbConfig.profile.api._
 
   def logger = LoggerFactory.getLogger("LegalNoticeManager")
+  private var globalDefaultLegalNotice: Option[LegalNotice] = _
 
   /**
    * Gets all legal notices for the specified community
@@ -67,8 +68,12 @@ class LegalNoticeManager @Inject() (dbConfigProvider: DatabaseConfigProvider) ex
       _ <- {
         val actions = new ListBuffer[DBIO[_]]()
         if (legalNotice.default) {
-          val q = for {l <- PersistenceSchema.legalNotices if l.default === true && l.community === legalNotice.community} yield (l.default)
+          val q = for {l <- PersistenceSchema.legalNotices if l.default === true && l.community === legalNotice.community} yield l.default
           actions += q.update(false)
+          // Remove global legal notice from the cache
+          if (legalNotice.default && legalNotice.community == Constants.DefaultCommunityId) {
+            globalDefaultLegalNotice = null
+          }
         }
         toDBIO(actions)
       }
@@ -90,25 +95,30 @@ class LegalNoticeManager @Inject() (dbConfigProvider: DatabaseConfigProvider) ex
         val actions = new ListBuffer[DBIO[_]]()
         if (legalNoticeOption.isDefined) {
           val legalNotice = legalNoticeOption.get
-          if (!name.isEmpty && legalNotice.name != name) {
-            val q = for {l <- PersistenceSchema.legalNotices if l.id === noticeId} yield (l.name)
+          if (name.nonEmpty && legalNotice.name != name) {
+            val q = for {l <- PersistenceSchema.legalNotices if l.id === noticeId} yield l.name
             actions += q.update(name)
           }
           if (content != legalNotice.content) {
-            val q = for {l <- PersistenceSchema.legalNotices if l.id === noticeId} yield (l.content)
+            val q = for {l <- PersistenceSchema.legalNotices if l.id === noticeId} yield l.content
             actions += q.update(content)
           }
 
           if (!legalNotice.default && default) {
-            var q = for {l <- PersistenceSchema.legalNotices if l.default === true && l.community === communityId} yield (l.default)
+            var q = for {l <- PersistenceSchema.legalNotices if l.default === true && l.community === communityId} yield l.default
             actions += q.update(false)
 
-            q = for {l <- PersistenceSchema.legalNotices if l.id === noticeId} yield (l.default)
+            q = for {l <- PersistenceSchema.legalNotices if l.id === noticeId} yield l.default
             actions += q.update(default)
+
           }
 
-          val q = for {l <- PersistenceSchema.legalNotices if l.id === noticeId} yield (l.description)
+          val q = for {l <- PersistenceSchema.legalNotices if l.id === noticeId} yield l.description
           actions += q.update(description)
+        }
+        // Remove global default notice from cache
+        if (communityId == Constants.DefaultCommunityId) {
+          globalDefaultLegalNotice = null
         }
         toDBIO(actions)
       }
@@ -124,13 +134,16 @@ class LegalNoticeManager @Inject() (dbConfigProvider: DatabaseConfigProvider) ex
 
   def deleteLegalNoticeInternal(noticeId: Long): DBIO[_] = {
     for {
-      _ <- {
-        (for {
-          x <- PersistenceSchema.organizations if x.legalNotice === noticeId
-        } yield x.legalNotice).update(None)
-
-      }
+      noticeInfo <- PersistenceSchema.legalNotices.filter(_.id === noticeId).map(x => (x.community, x.default)).result.headOption
+      _ <- PersistenceSchema.organizations.filter(_.legalNotice === noticeId).map(_.legalNotice).update(None)
       _ <- PersistenceSchema.legalNotices.filter(_.id === noticeId).delete
+      _ <- {
+        if (noticeInfo.isDefined && noticeInfo.get._1 == Constants.DefaultCommunityId && noticeInfo.get._2) {
+          // Remove the cached global legal notice
+          globalDefaultLegalNotice = null
+        }
+        DBIO.successful(())
+      }
     } yield ()
   }
 
@@ -138,16 +151,32 @@ class LegalNoticeManager @Inject() (dbConfigProvider: DatabaseConfigProvider) ex
    * Gets the default legal notice for given community
    */
   def getCommunityDefaultLegalNotice(communityId: Long): Option[LegalNotice] = {
-    val n = exec(PersistenceSchema.legalNotices.filter(_.community === communityId).filter(_.default === true).result.headOption)
-    val defaultLegalNotice = n match {
-      case Some(n) => Some(new LegalNotice(n))
-      case None => None
+    if (communityId == Constants.DefaultCommunityId && globalDefaultLegalNotice != null) {
+        globalDefaultLegalNotice
+    } else {
+      val n = exec(PersistenceSchema.legalNotices.filter(_.community === communityId).filter(_.default === true).result.headOption)
+      val defaultLegalNotice = n match {
+        case Some(n) => Some(new LegalNotice(n))
+        case None => None
+      }
+      if (communityId == Constants.DefaultCommunityId) {
+        globalDefaultLegalNotice = defaultLegalNotice
+      }
+      defaultLegalNotice
     }
-    defaultLegalNotice
   }
 
   def deleteLegalNoticeByCommunity(communityId: Long) = {
-    PersistenceSchema.legalNotices.filter(_.community === communityId).delete
+    for {
+      _ <- PersistenceSchema.legalNotices.filter(_.community === communityId).delete
+      _ <- {
+        if (communityId == Constants.DefaultCommunityId) {
+          // Remove the cached global legal notice
+          globalDefaultLegalNotice = null
+        }
+        DBIO.successful(())
+      }
+    } yield ()
   }
 
 }
