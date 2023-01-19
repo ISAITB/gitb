@@ -30,7 +30,7 @@ abstract class BaseAutomationService(protected val cc: ControllerComponents) ext
     try {
       val json = bodyToJson(request)
       if (json.isEmpty) {
-        ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_REQUEST, "Failed to parse provided payload as JSON")
+        result = ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_REQUEST, "Failed to parse provided payload as JSON")
       } else {
         result = processFn(json.get)
       }
