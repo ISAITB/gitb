@@ -10,15 +10,7 @@ import { UserInteractionInput } from 'src/app/types/user-interaction-input';
 @Component({
   selector: 'app-provide-input-modal',
   templateUrl: './provide-input-modal.component.html',
-  styles: [ 
-    '::ng-deep .CodeMirror { border: 1px solid #ccc; border-radius: 4px; transition: border-color ease-in-out .15s,box-shadow ease-in-out .15s; }' ,
-    '::ng-deep .focused .CodeMirror { '+
-      'border-color: rgba(82,168,236,.8); '+
-      'box-shadow: 0 0px 0px rgb(82 168 236 / 80%) inset, 0 0 5px rgb(82 168 236 / 80%);'+
-      'outline: 0 none; '+
-    '}' ,
-    'textarea { resize: vertical; }'
-  ]
+  styleUrls: [ './provide-input-modal.component.less' ]
 })
 export class ProvideInputModalComponent implements OnInit, AfterViewInit {
 
