@@ -16,8 +16,7 @@ import { saveAs } from 'file-saver'
 
 @Component({
   selector: 'app-test-suite-details',
-  templateUrl: './test-suite-details.component.html',
-  styleUrls: [ './test-suite-details.component.less' ]
+  templateUrl: './test-suite-details.component.html'
 })
 export class TestSuiteDetailsComponent extends BaseComponent implements OnInit, AfterViewInit {
 
