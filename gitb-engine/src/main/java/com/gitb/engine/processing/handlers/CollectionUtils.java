@@ -9,22 +9,22 @@ import com.gitb.processing.ProcessingData;
 import com.gitb.processing.ProcessingReport;
 import com.gitb.ps.ProcessingModule;
 import com.gitb.tr.TestResultType;
-import com.gitb.types.DataType;
-import com.gitb.types.ListType;
-import com.gitb.types.MapType;
-import com.gitb.types.NumberType;
+import com.gitb.types.*;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 @ProcessingHandler(name="CollectionUtils")
 public class CollectionUtils extends AbstractProcessingHandler {
 
     private static final String OPERATION__SIZE = "size";
     private static final String OPERATION__CLEAR = "clear";
+    private static final String OPERATION__CONTAINS = "contains";
     private static final String INPUT__LIST = "list";
     private static final String INPUT__MAP = "map";
+    private static final String INPUT__VALUE = "value";
     private static final String OUTPUT__OUTPUT = "output";
 
     @Override
@@ -48,6 +48,14 @@ public class CollectionUtils extends AbstractProcessingHandler {
                 List.of(
                         createParameter(INPUT__LIST, "list", UsageEnumeration.O, ConfigurationType.SIMPLE, "The list to consider (if the collection is expected to be a list)."),
                         createParameter(INPUT__MAP, "map", UsageEnumeration.O, ConfigurationType.SIMPLE, "The map to consider (if the collection is expected to be a map).")
+                ),
+                Collections.emptyList()
+        ));
+        module.getOperation().add(createProcessingOperation(OPERATION__CONTAINS,
+                List.of(
+                        createParameter(INPUT__LIST, "list", UsageEnumeration.O, ConfigurationType.SIMPLE, "The list to consider (if the collection is expected to be a list)."),
+                        createParameter(INPUT__MAP, "map", UsageEnumeration.O, ConfigurationType.SIMPLE, "The map to consider (if the collection is expected to be a map)."),
+                        createParameter(INPUT__VALUE, "string", UsageEnumeration.O, ConfigurationType.SIMPLE, "The value to look for (as an item for a list or as a key for a map).")
                 ),
                 Collections.emptyList()
         ));
@@ -95,6 +103,27 @@ public class CollectionUtils extends AbstractProcessingHandler {
             } else {
                 ((ListType) inputCollection).clear();
             }
+        } else if (OPERATION__CONTAINS.equalsIgnoreCase(operation)) {
+            if (!input.getData().containsKey(INPUT__VALUE)) {
+                throw new IllegalArgumentException("The value to check for must be provided");
+            }
+            var value = input.getData().get(INPUT__VALUE);
+            var contains = false;
+            if (inputCollection instanceof MapType) {
+                var valueToCheck = value.convertTo(DataType.STRING_DATA_TYPE);
+                var locatedItem = ((MapType) inputCollection).getItem((String) valueToCheck.getValue());
+                contains = locatedItem != null;
+            } else {
+                var iterator = ((ListType) inputCollection).iterator();
+                while (iterator.hasNext() && !contains) {
+                    var item = iterator.next();
+                    var valueToCheck = value.convertTo(item.getType());
+                    if (Objects.equals(item.getValue(), valueToCheck.getValue())) {
+                        contains = true;
+                    }
+                }
+            }
+            data.getData().put(OUTPUT__OUTPUT, new BooleanType(contains));
         } else {
             throw new IllegalArgumentException("Unknown operation [" + operation + "]");
         }
