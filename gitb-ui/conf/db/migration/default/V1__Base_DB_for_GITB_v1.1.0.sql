@@ -6,7 +6,6 @@ use gitb;
 -- Table structure for table `actors`
 --
 
-DROP TABLE IF EXISTS `actors`;
 CREATE TABLE `actors` (
   `id` BIGINT NOT NULL AUTO_INCREMENT,
   `actorId` varchar(254) NOT NULL,
@@ -21,7 +20,6 @@ CREATE TABLE `actors` (
 -- Table structure for table `configurations`
 --
 
-DROP TABLE IF EXISTS `configurations`;
 CREATE TABLE `configurations` (
   `system` BIGINT NOT NULL,
   `parameter` BIGINT NOT NULL,
@@ -34,7 +32,6 @@ CREATE TABLE `configurations` (
 -- Table structure for table `domains`
 --
 
-DROP TABLE IF EXISTS `domains`;
 CREATE TABLE `domains` (
   `id` BIGINT NOT NULL AUTO_INCREMENT,
   `sname` varchar(254) NOT NULL,
@@ -47,7 +44,6 @@ CREATE TABLE `domains` (
 -- Table structure for table `endpoints`
 --
 
-DROP TABLE IF EXISTS `endpoints`;
 CREATE TABLE `endpoints` (
   `id` BIGINT NOT NULL AUTO_INCREMENT,
   `name` varchar(254) NOT NULL,
@@ -61,7 +57,6 @@ CREATE TABLE `endpoints` (
 -- Table structure for table `endpointsupportstransactions`
 --
 
-DROP TABLE IF EXISTS `endpointsupportstransactions`;
 CREATE TABLE `endpointsupportstransactions` (
   `actor` BIGINT NOT NULL,
   `endpoint` varchar(254) NOT NULL,
@@ -73,7 +68,6 @@ CREATE TABLE `endpointsupportstransactions` (
 -- Table structure for table `options`
 --
 
-DROP TABLE IF EXISTS `options`;
 CREATE TABLE `options` (
   `id` BIGINT NOT NULL AUTO_INCREMENT,
   `sname` varchar(254) NOT NULL,
@@ -87,7 +81,6 @@ CREATE TABLE `options` (
 -- Table structure for table `organizations`
 --
 
-DROP TABLE IF EXISTS `organizations`;
 CREATE TABLE `organizations` (
   `id` BIGINT NOT NULL AUTO_INCREMENT,
   `sname` varchar(254) NOT NULL,
@@ -100,7 +93,6 @@ CREATE TABLE `organizations` (
 -- Table structure for table `parameters`
 --
 
-DROP TABLE IF EXISTS `parameters`;
 CREATE TABLE `parameters` (
   `id` BIGINT NOT NULL AUTO_INCREMENT,
   `name` varchar(254) NOT NULL,
@@ -115,7 +107,6 @@ CREATE TABLE `parameters` (
 -- Table structure for table `specificationhasactors`
 --
 
-DROP TABLE IF EXISTS `specificationhasactors`;
 CREATE TABLE `specificationhasactors` (
   `spec_id` BIGINT NOT NULL,
   `actor_id` BIGINT NOT NULL,
@@ -126,7 +117,6 @@ CREATE TABLE `specificationhasactors` (
 -- Table structure for table `specifications`
 --
 
-DROP TABLE IF EXISTS `specifications`;
 CREATE TABLE `specifications` (
   `id` BIGINT NOT NULL AUTO_INCREMENT,
   `sname` varchar(254) NOT NULL,
@@ -143,7 +133,6 @@ CREATE TABLE `specifications` (
 -- Table structure for table `systemhasadmins`
 --
 
-DROP TABLE IF EXISTS `systemhasadmins`;
 CREATE TABLE `systemhasadmins` (
   `sut_id` BIGINT NOT NULL,
   `user_id` BIGINT NOT NULL,
@@ -154,7 +143,6 @@ CREATE TABLE `systemhasadmins` (
 -- Table structure for table `systemimplementsactors`
 --
 
-DROP TABLE IF EXISTS `systemimplementsactors`;
 CREATE TABLE `systemimplementsactors` (
   `sut_id` BIGINT NOT NULL,
   `spec_id` BIGINT NOT NULL,
@@ -166,7 +154,6 @@ CREATE TABLE `systemimplementsactors` (
 -- Table structure for table `systemimplementsoptions`
 --
 
-DROP TABLE IF EXISTS `systemimplementsoptions`;
 CREATE TABLE `systemimplementsoptions` (
   `sut_id` BIGINT NOT NULL,
   `option_id` BIGINT NOT NULL,
@@ -177,7 +164,6 @@ CREATE TABLE `systemimplementsoptions` (
 -- Table structure for table `systems`
 --
 
-DROP TABLE IF EXISTS `systems`;
 CREATE TABLE `systems` (
   `id` BIGINT NOT NULL AUTO_INCREMENT,
   `sname` varchar(254) NOT NULL,
@@ -192,7 +178,6 @@ CREATE TABLE `systems` (
 -- Table structure for table `testcasecoversoptions`
 --
 
-DROP TABLE IF EXISTS `testcasecoversoptions`;
 CREATE TABLE `testcasecoversoptions` (
   `testcase` BIGINT NOT NULL,
   `option` BIGINT NOT NULL,
@@ -203,7 +188,6 @@ CREATE TABLE `testcasecoversoptions` (
 -- Table structure for table `testcasehasactors`
 --
 
-DROP TABLE IF EXISTS `testcasehasactors`;
 CREATE TABLE `testcasehasactors` (
   `testcase` BIGINT NOT NULL,
   `specification` BIGINT NOT NULL,
@@ -215,7 +199,6 @@ CREATE TABLE `testcasehasactors` (
 -- Table structure for table `testcases`
 --
 
-DROP TABLE IF EXISTS `testcases`;
 CREATE TABLE `testcases` (
   `id` BIGINT NOT NULL AUTO_INCREMENT,
   `sname` varchar(254) NOT NULL,
@@ -239,7 +222,6 @@ CREATE TABLE `testcases` (
 -- Table structure for table `testresults`
 --
 
-DROP TABLE IF EXISTS `testresults`;
 CREATE TABLE `testresults` (
   `test_session_id` varchar(254) NOT NULL,
   `sut_id` BIGINT NOT NULL,
@@ -257,7 +239,6 @@ CREATE TABLE `testresults` (
 -- Table structure for table `teststepreports`
 --
 
-DROP TABLE IF EXISTS `teststepreports`;
 CREATE TABLE `teststepreports` (
   `test_session_id` varchar(254) NOT NULL,
   `test_step_id` varchar(254) NOT NULL,
@@ -270,7 +251,6 @@ CREATE TABLE `teststepreports` (
 -- Table structure for table `testsuitehasactors`
 --
 
-DROP TABLE IF EXISTS `testsuitehasactors`;
 CREATE TABLE `testsuitehasactors` (
   `testsuite` BIGINT NOT NULL,
   `actor` BIGINT NOT NULL,
@@ -281,7 +261,6 @@ CREATE TABLE `testsuitehasactors` (
 -- Table structure for table `testsuitehastestcases`
 --
 
-DROP TABLE IF EXISTS `testsuitehastestcases`;
 CREATE TABLE `testsuitehastestcases` (
   `testsuite` BIGINT NOT NULL,
   `testcase` BIGINT NOT NULL,
@@ -292,7 +271,6 @@ CREATE TABLE `testsuitehastestcases` (
 -- Table structure for table `testsuites`
 --
 
-DROP TABLE IF EXISTS `testsuites`;
 CREATE TABLE `testsuites` (
   `id` BIGINT NOT NULL AUTO_INCREMENT,
   `sname` varchar(254) NOT NULL,
@@ -312,7 +290,6 @@ CREATE TABLE `testsuites` (
 -- Table structure for table `transactions`
 --
 
-DROP TABLE IF EXISTS `transactions`;
 CREATE TABLE `transactions` (
   `sname` varchar(254) NOT NULL,
   `fname` varchar(254) NOT NULL,
@@ -325,7 +302,6 @@ CREATE TABLE `transactions` (
 -- Table structure for table `users`
 --
 
-DROP TABLE IF EXISTS `users`;
 CREATE TABLE `users` (
   `id` BIGINT NOT NULL AUTO_INCREMENT,
   `name` varchar(254) NOT NULL,

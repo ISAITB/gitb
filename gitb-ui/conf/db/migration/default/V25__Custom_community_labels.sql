@@ -1,4 +1,3 @@
-DROP TABLE IF EXISTS `communitylabels`;
 CREATE TABLE `communitylabels` (
   `community` BIGINT NOT NULL,
   `label_type` TINYINT NOT NULL,

@@ -1,4 +1,3 @@
-DROP TABLE IF EXISTS `conformanceresults`;
 CREATE TABLE `conformanceresults` (
   `id` BIGINT NOT NULL AUTO_INCREMENT,
   `sut_id` BIGINT NOT NULL,
