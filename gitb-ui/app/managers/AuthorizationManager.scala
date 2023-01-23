@@ -119,7 +119,7 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
       if (apiKey.isDefined) {
         // Check to see that the API key identifies a community that allows API usage.
         val community = communityManager.getByApiKey(apiKey.get)
-        if (community.isDefined && (community.get.allowAutomationApi || (community.get.id == Constants.DefaultCommunityId))) {
+        if (community.isDefined) {
           ok = true
         }
       }
