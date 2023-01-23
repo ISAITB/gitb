@@ -2432,11 +2432,14 @@ object JsonUtil {
       case _: String => errorCode.asInstanceOf[String]
       case _ => ""
     }
-    Json.obj(
+    var obj = Json.obj(
       "error_code" -> code,
-      "error_description" -> errorDesc,
-      "error_id" -> (if (errorIdentifier.isDefined) errorIdentifier.get else JsNull)
+      "error_description" -> errorDesc
     )
+    if (errorIdentifier.isDefined) {
+      obj = obj.+("error_id" -> JsString(errorIdentifier.get))
+    }
+    obj
   }
 
 }

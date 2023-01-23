@@ -19,7 +19,7 @@ import javax.inject.{Inject, Singleton}
 import scala.collection.mutable
 
 object AuthorizationManager {
-  val AUTHORIZATION_OK = "AUTH_OK"
+  val AUTHORIZATION_CHECKED = "AUTH_CHECKED"
 }
 
 @Singleton
@@ -1317,7 +1317,6 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     val userInfo = getUser(getRequestUserId(request))
     if (isTestBedAdmin(userInfo)) {
       ok = true
-      request.attributes += (AuthorizationManager.AUTHORIZATION_OK -> "")
     } else {
       ok = canViewSystemsById(request, userInfo, Some(List(sutId)))
     }
@@ -1651,11 +1650,10 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
   }
 
   private def setAuthResult(request: RequestWithAttributes[_], ok: Boolean, message: String): Boolean = {
-    if (ok) {
-      if (!request.attributes.contains(AuthorizationManager.AUTHORIZATION_OK)) {
-        request.attributes += (AuthorizationManager.AUTHORIZATION_OK -> "")
-      }
-    } else {
+    if (!request.attributes.contains(AuthorizationManager.AUTHORIZATION_CHECKED)) {
+      request.attributes += (AuthorizationManager.AUTHORIZATION_CHECKED -> "")
+    }
+    if (!ok) {
       throwError(message)
     }
     ok
