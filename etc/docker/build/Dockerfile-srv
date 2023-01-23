@@ -5,7 +5,7 @@ WORKDIR /app
 COPY . /app
 RUN mvn clean install -DskipTests=true -Denv=docker
 
-# Stage 1: Run application
+# Stage 2: Run application
 FROM openjdk:11.0.14-jre
 
 RUN mkdir /itbsrv

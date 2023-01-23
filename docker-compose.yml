@@ -10,8 +10,7 @@ services:
       restart: unless-stopped
    gitb-mysql:
       build:
-        context: ./
-        context: etc/docker/gitb-mysql
+        context: ./etc/docker/gitb-mysql
       restart: unless-stopped
       volumes:
        - gitb-dbdata:/var/lib/mysql
