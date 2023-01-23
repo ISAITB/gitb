@@ -38,12 +38,14 @@ public class TestCaseScope {
 	private final Namespaces scopeNamespaces;
 	private Map<String, String> namespaceDefinitions;
 	private final String testSuiteContext;
+	private final String scopeId;
 
 	public TestCaseScope(TestCaseContext context, Imports imports, Namespaces namespaces) {
-		this(context, imports, namespaces, null);
+		this(null, context, imports, namespaces, null);
 	}
 
-	private TestCaseScope(TestCaseContext context, Imports imports, Namespaces namespaces, String testSuiteContext) {
+	private TestCaseScope(String scopeId, TestCaseContext context, Imports imports, Namespaces namespaces, String testSuiteContext) {
+		this.scopeId = scopeId;
 		this.context   = context;
 		this.scopeImports = imports;
 		this.scopeNamespaces = namespaces;
@@ -53,19 +55,27 @@ public class TestCaseScope {
 		this.testSuiteContext = testSuiteContext;
 	}
 
+	public TestCaseScope getParent() {
+		return parent;
+	}
+
+	public String getScopeId() {
+		return scopeId;
+	}
+
 	public String getTestSuiteContext() {
 		return testSuiteContext;
 	}
 
 	public TestCaseScope createChildScope() {
-		return createChildScope(this.scopeImports, this.scopeNamespaces, this.testSuiteContext);
+		return createChildScope(this.scopeId, this.scopeImports, this.scopeNamespaces, this.testSuiteContext);
 	}
 
-	public TestCaseScope createChildScope(Imports imports, Namespaces namespaces, String testSuiteContext) {
+	public TestCaseScope createChildScope(String scopeId, Imports imports, Namespaces namespaces, String testSuiteContext) {
 		if (testSuiteContext == null && this.testSuiteContext != null) {
 			testSuiteContext = this.testSuiteContext;
 		}
-		TestCaseScope child = new TestCaseScope(context, imports, namespaces, testSuiteContext);
+		TestCaseScope child = new TestCaseScope(scopeId, context, imports, namespaces, testSuiteContext);
 		child.parent = this;
 		children.add(child);
 		return child;

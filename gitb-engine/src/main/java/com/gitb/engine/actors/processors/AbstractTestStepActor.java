@@ -26,9 +26,7 @@ import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.tdl.IfStep;
 import com.gitb.tdl.TestConstruct;
 import com.gitb.tr.*;
-import com.gitb.types.BooleanType;
 import com.gitb.types.MapType;
-import com.gitb.types.StringType;
 import com.gitb.utils.XMLDateTimeUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.reflect.ConstructorUtils;
@@ -268,6 +266,12 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 		return ((MapType)(scope.getVariable(TestCaseContext.STEP_STATUS_MAP, true).getValue()));
 	}
 
+	protected void updateStepStatusMaps(StepStatus status) {
+		if (((TestConstruct)step).getId() != null) {
+			TestCaseUtils.updateStepStatusMaps(getStepSuccessMap(), getStepStatusMap(), (TestConstruct) step, scope, status);
+		}
+	}
+
 	protected void updateTestStepStatus(ActorContext context, StatusEvent statusEvent, TestStepReportType report, boolean reportTestStepStatus, boolean logError) {
 
 		if (logError && statusEvent instanceof ErrorStatusEvent) {
@@ -279,10 +283,7 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 
 		boolean stopTestSession = false;
 		if (step instanceof TestConstruct) {
-			if (((TestConstruct)step).getId() != null) {
-				getStepSuccessMap().addItem(((TestConstruct)step).getId(), new BooleanType(status == StepStatus.COMPLETED || status == StepStatus.WARNING));
-				getStepStatusMap().addItem(((TestConstruct)step).getId(), new StringType(status.toString()));
-			}
+			updateStepStatusMaps(status);
 			boolean stopOnError = ((TestConstruct)step).isStopOnError() != null && ((TestConstruct)step).isStopOnError();
 			if (status == StepStatus.ERROR && stopOnError) {
 				// We need to stop the complete test session. We only do this if not already signalled.

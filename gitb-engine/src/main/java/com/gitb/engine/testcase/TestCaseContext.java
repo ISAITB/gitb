@@ -217,7 +217,7 @@ public class TestCaseContext {
 		MapType statusMap = (MapType) DataTypeFactory.getInstance().create(DataType.MAP_DATA_TYPE);
 		scope.createVariable(STEP_SUCCESS_MAP).setValue(successMap);
 		scope.createVariable(STEP_STATUS_MAP).setValue(statusMap);
-		TestCaseUtils.initialiseStepStatusMaps(successMap, statusMap, testCase.getSteps());
+		TestCaseUtils.initialiseStepStatusMaps(successMap, statusMap, testCase.getSteps(), scope);
 	}
 
 	private void processVariables() {
