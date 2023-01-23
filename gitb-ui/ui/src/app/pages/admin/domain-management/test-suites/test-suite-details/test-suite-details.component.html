@@ -48,7 +48,7 @@
 					</div>
 					<div class="row form-group">
 						<div class="col-xs-offset-1 col-xs-10">
-							<button (click)="previewDocumentation()" type="button" class="btn btn-default">Preview documentation</button>
+							<button (click)="previewDocumentation()" type="button" class="btn btn-default" [disabled]="this.testSuite.documentation == undefined || this.testSuite.documentation.length == 0">Preview documentation</button>
 						</div>
 					</div>
 				</div>
