@@ -162,7 +162,9 @@ export class AnyContentViewComponent extends ReportSupport implements OnInit {
   }
 
   containerClicked() {
-    this.collapsed = !this.collapsed
+    if (this.context.name != undefined) {
+      this.collapsed = !this.collapsed
+    }
   }
 
   hoverUpdate(hovering: boolean) {
