@@ -29,7 +29,7 @@ object ParameterExtractor {
     val fileMap = scala.collection.mutable.Map[String, FileInfo]()
     if (request.body.asMultipartFormData.isDefined) {
       request.body.asMultipartFormData.get.files.foreach { file =>
-        fileMap += (file.key -> new FileInfo(file.key, file.contentType, file.ref))
+        fileMap += (file.key -> new FileInfo(file.key, file.filename, file.contentType, file.ref))
       }
     }
     fileMap.iterator.toMap
