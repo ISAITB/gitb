@@ -546,6 +546,34 @@
                 "description": "The test suite archive to deploy.",
                 "type": "string",
                 "format": "binary"
+              },
+              "testCaseWithSpecificationUpdate": {
+                "description": "Test case identifiers for which their definition will be updated.",
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "testCaseWithoutSpecificationUpdate": {
+                "description": "Test case identifiers for which their definition will be not updated.",
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "testCaseWithTestHistoryReplacement": {
+                "description": "Test case identifiers for which their testing history will be reset.",
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "testCaseWithoutTestHistoryReplacement": {
+                "description": "Test case identifiers for which their testing history will be not reset.",
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
               }
             },
             "required": [
@@ -567,6 +595,13 @@
                 "description": "The test suite archive to deploy provided as a Base64-encoded string.",
                 "type": "string",
                 "format": "base64"
+              },
+              "testCases": {
+                "description": "Update choices for specific test cases.",
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/TestCaseDeploymentAction"
+                }
               }
             },
             "required": [
@@ -589,12 +624,12 @@
             "default": false
           },
           "replaceTestHistory": {
-            "description": "Whether the test history linked to the test suite should be reset.",
+            "description": "Whether the test history linked to the test suite's test cases should be reset. This is the default setting to consider if no test case specific options are defined.",
             "type": "boolean",
             "default": false
           },
           "updateSpecification": {
-            "description": "Whether the specification's metadata should be updated using the provided test suite's content.",
+            "description": "Whether the specification's metadata should be updated using the provided test suite's content. For test cases' metadata this setting will be considered as the default, if no test case specific options are defined.",
             "type": "boolean",
             "default": false
           }
@@ -638,6 +673,26 @@
           "completed"
         ],
         "additionalProperties": false
+      },
+      "TestCaseDeploymentAction": {
+        "description": "Deployment choices for a given test case.",
+        "type": "object",
+        "properties": {
+          "identifier": {
+            "description": "The test case identifier.",
+            "type": "string"
+          },
+          "updateSpecification": {
+            "description": "Whether the metadata for this test case should be updated.",
+            "type": "boolean",
+            "default": false
+          },
+          "replaceTestHistory": {
+            "description": "Whether the testing history for this test case should be reset.",
+            "type": "boolean",
+            "default": false
+          }
+        }
       },
       "TestSuiteValidationReportItem": {
         "description": "A test suite validation report finding.",

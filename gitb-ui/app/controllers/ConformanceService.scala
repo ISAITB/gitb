@@ -222,7 +222,7 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
     ResponseConstructor.constructEmptyResponse
   }
 
-  private def specsMatch(allowedIds: Set[Long], actions: List[PendingTestSuiteAction]): Boolean = {
+  private def specsMatch(allowedIds: Set[Long], actions: List[TestSuiteDeploymentAction]): Boolean = {
     actions.foreach { action =>
       if (allowedIds.contains(action.specification)) {
         return false
@@ -246,7 +246,7 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
       result = testSuiteManager.cancelPendingTestSuiteActions(pendingFolderId)
     } else {
       val actionsStr = ParameterExtractor.optionalBodyParameter(request, Parameters.ACTIONS)
-      var actions: List[PendingTestSuiteAction] = null
+      var actions: List[TestSuiteDeploymentAction] = null
       if (actionsStr.isDefined) {
         actions = JsonUtil.parseJsPendingTestSuiteActions(actionsStr.get)
         // Ensure that the specification IDs in the individual actions match the list of specification IDs
@@ -255,7 +255,7 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
         }
       } else {
         actions = specificationIds.map { specId =>
-          new PendingTestSuiteAction(specId, TestSuiteReplacementChoice.PROCEED, Some(TestSuiteReplacementChoiceHistory.KEEP), Some(TestSuiteReplacementChoiceMetadata.SKIP))
+          new TestSuiteDeploymentAction(specId, TestSuiteReplacementChoice.PROCEED, updateTestSuite = false, updateActors = false, testCaseUpdates = None)
         }
       }
       if (response == null) {

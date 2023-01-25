@@ -1,6 +1,7 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { BsModalRef } from 'ngx-bootstrap/modal';
 import { Observable } from 'rxjs';
+import { Constants } from 'src/app/common/constants';
 import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
 import { ConformanceService } from 'src/app/services/conformance.service';
 import { DataService } from 'src/app/services/data.service';
@@ -12,7 +13,11 @@ import { PendingTestSuiteUploadChoice } from './pending-test-suite-upload-choice
 import { SpecificationChoice } from './specification-choice';
 import { SpecificationResult } from './specification-result';
 import { TestSuiteUploadResult } from './test-suite-upload-result';
+import { TestSuiteUploadTestCase } from './test-suite-upload-test-case';
+import { TestSuiteUploadTestCaseChoice } from './test-suite-upload-test-case-choice';
 import { ValidationReport } from './validation-report';
+import { find } from 'lodash';
+import { PendingTestSuiteUploadChoiceTestCase } from './pending-test-suite-upload-choice-test-case';
 
 @Component({
   selector: 'app-test-suite-upload-modal',
@@ -101,7 +106,7 @@ export class TestSuiteUploadModalComponent implements OnInit {
   }
 
   showUploadResults() {
-    this.popupService.success('Test suite uploaded.')    
+    this.popupService.success('Test suite uploaded.')
     this.step = 'results'
     const specificationIdToIndexMap: {[key: number]: number} = {}
     const specificationResults: SpecificationResult[] = []
@@ -172,19 +177,104 @@ export class TestSuiteUploadModalComponent implements OnInit {
       const existingData = matchingDataMap[spec.id] !=  undefined
       const existingTestSuite = existsMap[spec.id] != undefined
       if (existingData || existingTestSuite) {
+        const testCasesInArchiveAndDB: TestSuiteUploadTestCaseChoice[] = []
+        const testCasesInArchive: TestSuiteUploadTestCase[] = []
+        const testCasesInDB: TestSuiteUploadTestCase[] = []
+        const matchingSpecification = find(this.uploadResult!.testCases, (resultingSpec) => {
+          return resultingSpec.specification == spec.id
+        })
+        if (matchingSpecification) {
+          for (let testCase of matchingSpecification.testCases) {
+            if (testCase.status == Constants.TEST_CASE_UPLOAD_MATCH.IN_ARCHIVE_AND_DB) {
+              testCasesInArchiveAndDB.push({
+                identifier: testCase.identifier,
+                name: testCase.name,
+                updateDefinition: false,
+                resetTestHistory: false
+              })
+            } else {
+              const testCaseInfo = {
+                identifier: testCase.identifier,
+                name: testCase.name,
+                status: testCase.status
+              }
+              if (testCase.status == Constants.TEST_CASE_UPLOAD_MATCH.IN_ARCHIVE_ONLY) {
+                testCasesInArchive.push(testCaseInfo)
+              } else if (testCase.status == Constants.TEST_CASE_UPLOAD_MATCH.IN_DB_ONLY) {
+                testCasesInDB.push(testCaseInfo)
+              }
+            }
+          }
+        }
         const specData: SpecificationChoice = {
           specification: spec.id,
-          history: 'keep',
-          metadata: 'skip',
+          updateActors: false,
+          updateTestSuite: false,
           skipUpdate: false,
           dataExists: existingData,
-          testSuiteExists: existingTestSuite
+          testSuiteExists: existingTestSuite,
+          testCasesInArchiveAndDB: testCasesInArchiveAndDB,
+          testCasesInArchive: testCasesInArchive,
+          testCasesInDB: testCasesInDB,
+          showTestCasesToUpdate: false,
+          showTestCasesToAdd: false,
+          showTestCasesToDelete: false
         }
         this.specificationChoices.push(specData)
         this.specificationChoiceMap[spec.id] = specData
       }
     }
     this.hasMultipleChoices = this.specificationChoices.length > 1
+  }
+
+  toTestCaseChoices(testCases: TestSuiteUploadTestCase[]): TestSuiteUploadTestCaseChoice[] {
+    const choices: TestSuiteUploadTestCaseChoice[] = []
+    for (let testCase of testCases) {
+      choices.push({
+        identifier: testCase.identifier,
+        name: testCase.name,
+        updateDefinition: false,
+        resetTestHistory: false
+      })
+    }
+    return choices
+  }
+
+  toggleTestCaseChoices(choice: SpecificationChoice, selected: boolean) {
+    for (let testCase of choice.testCasesInArchiveAndDB) {
+      testCase.updateDefinition = selected
+      testCase.resetTestHistory = selected
+    }
+  }
+
+  toggleTestCaseDataChoice(choice: SpecificationChoice, selected: boolean) {
+    for (let testCase of choice.testCasesInArchiveAndDB) {
+      testCase.updateDefinition = selected
+    }
+  }
+
+  toggleTestCaseHistoryChoice(choice: SpecificationChoice, selected: boolean) {
+    for (let testCase of choice.testCasesInArchiveAndDB) {
+      testCase.resetTestHistory = selected
+    }
+  }
+
+  hasAllTestCaseDataChoice(choice: SpecificationChoice, selected: boolean) {
+    for (let testCase of choice.testCasesInArchiveAndDB) {
+      if (testCase.updateDefinition != selected) {
+        return false
+      }
+    }
+    return true
+  }
+
+  hasAllTestCaseHistoryChoice(choice: SpecificationChoice, selected: boolean) {
+    for (let testCase of choice.testCasesInArchiveAndDB) {
+      if (testCase.resetTestHistory != selected) {
+        return false
+      }
+    }
+    return true
   }
 
   specificationIds() {
@@ -195,9 +285,18 @@ export class TestSuiteUploadModalComponent implements OnInit {
     const reference = this.specificationChoiceMap[specification]
     for (let choice of this.specificationChoices!) {
       if (choice.specification != specification) {
-        choice.metadata = reference.metadata
+        choice.updateActors = reference.updateActors
         if (choice.testSuiteExists) {
-          choice.history = reference.history
+          choice.updateTestSuite = reference.updateTestSuite
+          for (let referenceTestCase of reference.testCasesInArchiveAndDB) {
+            const matchingTestCase = find(choice.testCasesInArchiveAndDB, (testCase) => {
+              return testCase.identifier == referenceTestCase.identifier
+            })
+            if (matchingTestCase) {
+              matchingTestCase.updateDefinition = referenceTestCase.updateDefinition
+              matchingTestCase.resetTestHistory = referenceTestCase.resetTestHistory
+            }
+          }
         }
       }
     }
@@ -269,23 +368,32 @@ export class TestSuiteUploadModalComponent implements OnInit {
         if (choice.skipUpdate) {
           action.action = 'cancel'
         } else {
-          if (choice.history == 'drop') {
-            hasDropHistory = true
-          }
           action.action = 'proceed'
-          action.pending_action_history = choice.history
-          action.pending_action_metadata = choice.metadata
+          action.updateActors = choice.updateActors
+          action.updateTestSuite = choice.updateTestSuite
+          const testCaseActions: PendingTestSuiteUploadChoiceTestCase[] = []
+          for (let testCase of choice.testCasesInArchiveAndDB) {
+            if (testCase.resetTestHistory) {
+              hasDropHistory = true
+            }
+            testCaseActions.push({
+              identifier: testCase.identifier,
+              resetTestHistory: testCase.resetTestHistory,
+              updateDefinition: testCase.updateDefinition
+            })
+          }
+          action.testCaseUpdates = testCaseActions
         }
       } else {
         action.action = 'proceed'
-        action.pending_action_history = 'keep'
-        action.pending_action_metadata = 'update'
+        action.updateActors = false
+        action.updateTestSuite = false
       }
       actions.push(action as PendingTestSuiteUploadChoice)
     }
     const resolve$ = new Observable<boolean>((subscriber) => {
       if (hasDropHistory) {
-        this.confirmationDialogService.confirm("Confirm test history deletion", "Dropping existing results will render this test suite's prior tests obsolete. Are you sure you want to proceed?", "Yes", "No")
+        this.confirmationDialogService.confirm("Confirm test history reset", "Resetting the testing history will render the selected test cases' existing tests obsolete. Are you sure you want to proceed?", "Yes", "No")
         .subscribe((choice: boolean) => {
           subscriber.next(choice)
           subscriber.complete()

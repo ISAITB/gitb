@@ -8,19 +8,51 @@
     padding-left: 15px;
     cursor: pointer;
 
-    &:hover { 
-        background-color: fade(@gray-light, 50%); 
+    &:hover {
+        background-color: fade(@gray-light, 50%);
     }
 }
 
 .report-details {
-    border: 1px solid @gray-light; 
-    border-radius: 5px; 
+    border: 1px solid @gray-light;
+    border-radius: 5px;
 }
 
 .report-details-items-inner {
-    padding-top: 10px; 
-    padding-left:10px; 
-    padding-right:10px; 
-    border-top: 1px solid @gray-light; 
+    padding-top: 10px;
+    padding-left:10px;
+    padding-right:10px;
+    border-top: 1px solid @gray-light;
+}
+.testcase-table {
+    margin-top: 15px;
+    margin-bottom: 15px;
+}
+.testcase-table-title {
+    background: @gray-light-1;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    & > .testcase-table-title-label {
+        padding-right: 15px;
+        padding-left: 15px;
+        padding-top: 10px;
+        padding-bottom: 10px;
+        font-weight: bold;
+        display: inline-flex;
+        flex-grow: 1;
+    }
+    & > .testcase-table-title-controls {
+        display: inline-flex;
+        padding-right: 8px;
+    }
+    &.expandable {
+        cursor: pointer;
+        &:hover {
+            background-color: @gray-highlight;
+        }
+    }
+}
+.testcase-table-contents {
+    border-top: 1px solid @gray-dark-1;
 }

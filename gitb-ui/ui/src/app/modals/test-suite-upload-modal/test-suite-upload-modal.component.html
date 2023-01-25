@@ -17,9 +17,9 @@
 			<div class="form-group">
 				<label class="col-xs-3 control-label">* Test suite:</label>
 				<div class="col-xs-8">
-					<app-file-select placeholder="Select test suite archive ..." 
-						[fileName]="file?.name" 
-						[accepts]="['application/zip']" 
+					<app-file-select placeholder="Select test suite archive ..."
+						[fileName]="file?.name"
+						[accepts]="['application/zip']"
 						(onUpload)="selectArchive($event)"
 						[maxSize]="-1">
 					</app-file-select>
@@ -37,7 +37,7 @@
 						<div *ngSwitchCase="false">
 							The provided test suite was successfully validated.
 						</div>
-					</div>                        
+					</div>
 				</div>
 			</div>
 			<div class="row test-step-report ts-upload-validation-report">
@@ -73,7 +73,7 @@
 						<span *ngIf="!hasMultipleChoices && !hasMatchingTestSuite">The selected {{dataService.labelSpecificationLower()}} defines matching data. Select how the update should take place.</span>
 						<span *ngIf="hasMultipleChoices && hasMatchingTestSuite">Selected {{dataService.labelSpecificationsLower()}} already contain this test suite and its data. Select how the update should take place.</span>
 						<span *ngIf="hasMultipleChoices && !hasMatchingTestSuite">Selected {{dataService.labelSpecificationsLower()}} define matching data. Select how the update should take place.</span>
-					</div>                        
+					</div>
 				</div>
 			</div>
 			<div class="container-fluid ts-upload-result-container">
@@ -87,30 +87,110 @@
 						</div>
 					</div>
 					<div [collapse]="choice.skipUpdate" [isAnimated]="true" class="ts-upload-result-actions col-xs-12">
-						<div class="form-group" *ngIf="choice.testSuiteExists">
-							<label class="col-xs-3 control-label" [attr.for]="'choice_history_keep_'+choice.specification">* Test history:</label>
-							<div class="col-xs-8">
-								<label class="radio-inline">
-									<input type="radio" [name]="'choice_history_keep_'+choice.specification" [(ngModel)]="choice.history" [attr.id]="'choice_history_keep_'+choice.specification" [value]="'keep'">Keep existing test results
-									<app-tooltip [inline]="true" inlineType="checkLabel" tbTooltip="Existing conformance testing results for updated test cases are considered valid and are left unaffected."></app-tooltip>
+						<div class="form-group">
+							<label class="col-xs-3 control-label" [attr.for]="'choice_metadata_skip_'+choice.specification">* {{dataService.labelSpecification()}} data:</label>
+							<div class="col-xs-9">
+								<label class="checkbox-inline">
+									<input type="checkbox" [name]="'choice_metadata_actors_'+choice.specification" [(ngModel)]="choice.updateActors">Update {{dataService.labelActorLower()}} definitions?
+									<app-tooltip [inline]="true" inlineType="checkLabel" [tbTooltip]="'Update any existing '+dataService.labelActorLower()+' definitions (including configuration parameters) to match the information contained in the provided archive. Only '+dataService.labelActorsLower()+' matching those contained in the archive will be updated.'"></app-tooltip>
 								</label>
-								<label class="radio-inline">
-									<input type="radio" [name]="'choice_history_keep_'+choice.specification" [(ngModel)]="choice.history" [attr.id]="'choice_history_keep_drop_'+choice.specification" [value]="'drop'">Drop existing test results
-									<app-tooltip [inline]="true" inlineType="checkLabel" tbTooltip="All existing conformance testing results for the test suite will be considered obsolete."></app-tooltip>
+								<label class="checkbox-inline" *ngIf="choice.testSuiteExists">
+									<input type="checkbox" [name]="'choice_metadata_test_suite_'+choice.specification" [(ngModel)]="choice.updateTestSuite">Update test suite metadata?
+									<app-tooltip [inline]="true" inlineType="checkLabel" tbTooltip="Update the metadata of the existing test suite (its name, description and documentation) to match the information contained in the provided archive. Note that test cases are always processed regardless of this option."></app-tooltip>
 								</label>
 							</div>
 						</div>
-						<div class="form-group">
-							<label class="col-xs-3 control-label" [attr.for]="'choice_metadata_skip_'+choice.specification">* {{dataService.labelSpecification()}} data:</label>
-							<div class="col-xs-8">
-								<label class="radio-inline">
-									<input type="radio" [name]="'choice_metadata_skip_'+choice.specification" [(ngModel)]="choice.metadata" [attr.id]="'choice_metadata_skip_'+choice.specification" [value]="'skip'">Keep existing values
-									<app-tooltip [inline]="true" inlineType="checkLabel" [tbTooltip]="'Keep the current '+dataService.labelSpecificationLower()+' data when matching values are defined in the new archive. This data includes '+dataService.labelActorsLower()+', '+dataService.labelEndpointsLower()+' and parameters, as well as the name, description and documentation of test suites and test cases.'"></app-tooltip>
-								</label>
-								<label class="radio-inline">
-									<input type="radio" [name]="'choice_metadata_skip_'+choice.specification" [(ngModel)]="choice.metadata" [attr.id]="'choice_metadata_update_'+choice.specification" [value]="'update'">Use archive data to replace existing values
-									<app-tooltip [inline]="true" inlineType="checkLabel" [tbTooltip]="'Replace matching '+dataService.labelSpecificationLower()+' data with the values from the new archive. This data includes '+dataService.labelActorsLower()+', '+dataService.labelEndpointsLower()+' and parameters, as well as the name, description and documentation of test suites and test cases.'"></app-tooltip>
-								</label>
+						<div *ngIf="choice.testCasesInArchiveAndDB.length > 0">
+							<div class="form-table table-container testcase-table">
+								<div class="testcase-table-title expandable" (click)="choice.showTestCasesToUpdate = !choice.showTestCasesToUpdate">
+									<div class="testcase-table-title-label">Existing test cases to update ({{choice.testCasesInArchiveAndDB.length}})<span class="inline-tooltip" boundariesElement="window" [tooltip]="'These are the test cases defined in the provided archive that match existing ones from the '+dataService.labelSpecificationLower()+'. The test steps of each of these will be updated, whereas the metadata (name, description, documentation) and test history will be updated according to your below choices.'"><i class="fa fa-question-circle"></i></span></div>
+									<div class="testcase-table-title-controls">
+										<div class="btn-toolbar" (click)="$event.stopPropagation()" *ngIf="choice.showTestCasesToUpdate">
+											<div class="btn-group" dropdown [isDisabled]="hasAllTestCaseDataChoice(choice, true) && hasAllTestCaseHistoryChoice(choice, true)">
+												<button type="button" class="btn btn-default btn-sm" (click)="toggleTestCaseChoices(choice, true)" [disabled]="hasAllTestCaseDataChoice(choice, true) && hasAllTestCaseHistoryChoice(choice, true)">Select all options</button>
+												<button [attr.id]="'button-all-'+choice.specification" dropdownToggle type="button" class="btn btn-default btn-sm dropdown-toggle" [attr.aria-controls]="'dropdown-all-'+choice.specification"><span class="caret"></span></button>
+												<ul [attr.id]="'dropdownType-all-'+choice.specification" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" [attr.aria-labelledby]="'button-all-'+choice.specification">
+													<li role="menuitem" [class.disabled]="hasAllTestCaseDataChoice(choice, true)"><a class="dropdown-item" href (click)="toggleTestCaseDataChoice(choice, true); $event.preventDefault()">Select all metadata update options</a></li>
+													<li role="menuitem" [class.disabled]="hasAllTestCaseHistoryChoice(choice, true)"><a class="dropdown-item" href (click)="toggleTestCaseHistoryChoice(choice, true); $event.preventDefault()">Select all history reset options</a></li>
+												</ul>
+											</div>
+											<div class="btn-group" dropdown [isDisabled]="hasAllTestCaseDataChoice(choice, false) && hasAllTestCaseHistoryChoice(choice, false)">
+												<button type="button" class="btn btn-default btn-sm" (click)="toggleTestCaseChoices(choice, false)" [disabled]="hasAllTestCaseDataChoice(choice, false) && hasAllTestCaseHistoryChoice(choice, false)">Clear all options</button>
+												<button [attr.id]="'button-none-'+choice.specification" dropdownToggle type="button" class="btn btn-default btn-sm dropdown-toggle" [attr.aria-controls]="'dropdown-all-'+choice.specification"><span class="caret"></span></button>
+												<ul [attr.id]="'dropdownType-all-'+choice.specification" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" [attr.aria-labelledby]="'button-none-'+choice.specification">
+													<li role="menuitem" [class.disabled]="hasAllTestCaseDataChoice(choice, false)"><a class="dropdown-item" href (click)="toggleTestCaseDataChoice(choice, false); $event.preventDefault()">Clear all metadata update options</a></li>
+													<li role="menuitem" [class.disabled]="hasAllTestCaseHistoryChoice(choice, false)"><a class="dropdown-item" href (click)="toggleTestCaseHistoryChoice(choice, false); $event.preventDefault()">Clear all history reset options</a></li>
+												</ul>
+											</div>
+										</div>
+									</div>
+								</div>
+								<div [collapse]="!choice.showTestCasesToUpdate" [isAnimated]="true" class="testcase-table-contents">
+									<table class="table">
+										<thead>
+											<tr>
+												<th>ID</th>
+												<th>Name</th>
+												<th class="th-min-centered">Update metadata?<app-tooltip [inline]="true" boundariesElement="window" tbTooltip="The test cases for which metadata (names, descriptions and documentation) shall be updated based on the information within the provided archive."></app-tooltip></th>
+												<th class="th-min-centered">Reset test history?<app-tooltip [inline]="true" boundariesElement="window" tbTooltip="The test cases for which the conformance testing status shall be reset and existing results considered obsolete."></app-tooltip></th>
+											</tr>
+										</thead>
+										<tbody>
+											<tr *ngFor="let testCase of choice.testCasesInArchiveAndDB">
+												<td>{{testCase.identifier}}</td>
+												<td>{{testCase.name}}</td>
+												<td class="centered"><input type="checkbox" [(ngModel)]="testCase.updateDefinition" [name]="'choice_data_'+choice.specification+'_'+testCase.identifier"></td>
+												<td class="centered"><input type="checkbox" [(ngModel)]="testCase.resetTestHistory" [name]="'choice_history_'+choice.specification+'_'+testCase.identifier"></td>
+											</tr>
+										</tbody>
+									</table>
+								</div>
+							</div>
+						</div>
+						<div *ngIf="choice.testCasesInArchive.length > 0">
+							<div class="form-table table-container testcase-table">
+								<div class="testcase-table-title expandable" (click)="choice.showTestCasesToAdd = !choice.showTestCasesToAdd">
+									<div class="testcase-table-title-label">New test cases to add ({{choice.testCasesInArchive.length}})<span class="inline-tooltip" boundariesElement="window" [tooltip]="'These are the test cases defined in the provided archive for which no match was found in the '+dataService.labelSpecificationLower()+'. They will be included as new test cases in the test suite.'"><i class="fa fa-question-circle"></i></span></div>
+								</div>
+								<div [collapse]="!choice.showTestCasesToAdd" [isAnimated]="true" class="testcase-table-contents">
+									<table class="table">
+										<thead>
+											<tr>
+												<th>ID</th>
+												<th>Name</th>
+											</tr>
+										</thead>
+										<tbody>
+											<tr *ngFor="let testCase of choice.testCasesInArchive">
+												<td>{{testCase.identifier}}</td>
+												<td>{{testCase.name}}</td>
+											</tr>
+										</tbody>
+									</table>
+								</div>
+							</div>
+						</div>
+						<div *ngIf="choice.testCasesInDB.length > 0">
+							<div class="form-table table-container testcase-table">
+								<div class="testcase-table-title expandable" (click)="choice.showTestCasesToDelete = !choice.showTestCasesToDelete">
+									<div class="testcase-table-title-label">Missing test cases to delete ({{choice.testCasesInDB.length}})<span class="inline-tooltip" boundariesElement="window" [tooltip]="'These are the test cases that exist in the '+dataService.labelSpecificationLower()+' for which no match was found in the provided archive. They will be deleted from the test suite, with any relevant test sessions considered obsolete.'"><i class="fa fa-question-circle"></i></span></div>
+								</div>
+								<div [collapse]="!choice.showTestCasesToDelete" [isAnimated]="true" class="testcase-table-contents">
+									<table class="table">
+										<thead>
+											<tr>
+												<th>ID</th>
+												<th>Name</th>
+											</tr>
+										</thead>
+										<tbody>
+											<tr *ngFor="let testCase of choice.testCasesInDB">
+												<td>{{testCase.identifier}}</td>
+												<td>{{testCase.name}}</td>
+											</tr>
+										</tbody>
+									</table>
+								</div>
 							</div>
 						</div>
 					</div>
@@ -122,7 +202,7 @@
 				<div class="row">
 					<div class="bg-info div-rounded div-padded">
 						<span>The test suite has been successfully uploaded. You can review below the changes that were applied.</span>
-					</div>                        
+					</div>
 				</div>
 			</div>
 			<div class="container-fluid ts-upload-result-container">

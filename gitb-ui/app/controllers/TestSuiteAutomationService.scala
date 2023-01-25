@@ -4,10 +4,10 @@ import config.Configurations
 import controllers.util.{AuthorizedAction, ParameterExtractor, ResponseConstructor}
 import exceptions.{ErrorCodes, InvalidRequestException}
 import managers.{AuthorizationManager, ConformanceManager, SpecificationManager, TestSuiteManager}
-import models.Constants
+import models.{Constants, TestCaseDeploymentAction}
 import models.automation.TestSuiteDeployRequest
 import org.apache.commons.io.FileUtils
-import org.apache.commons.lang3.RandomStringUtils
+import org.apache.commons.lang3.{RandomStringUtils, StringUtils}
 import play.api.mvc._
 import utils.{ClamAVClient, JsonUtil, RepositoryUtils}
 
@@ -15,6 +15,7 @@ import java.io.File
 import java.nio.file.{Files, Paths}
 import java.util.Base64
 import javax.inject.{Inject, Singleton}
+import scala.collection.mutable
 import scala.util.Using
 
 @Singleton
@@ -52,11 +53,40 @@ class TestSuiteAutomationService @Inject() (authorizedAction: AuthorizedAction, 
       if (request.body.asMultipartFormData.isDefined) {
         // Multipart form request.
         val params = Some(request.body.asMultipartFormData.get.dataParts)
+        val defaultReplaceTestHistory = ParameterExtractor.optionalBodyParameter(params, "replaceTestHistory").getOrElse("false").toBoolean
+        val defaultUpdateSpecification = ParameterExtractor.optionalBodyParameter(params, "updateSpecification").getOrElse("false").toBoolean
+        val testCaseActions = mutable.HashMap[String, TestCaseDeploymentAction]()
+        // Set update specification flags.
+        ParameterExtractor.optionalArrayBodyParameter(params, "testCaseWithSpecificationUpdate").getOrElse(List.empty).foreach { identifier =>
+          if (StringUtils.isNotBlank(identifier)) {
+            testCaseActions.put(identifier, new TestCaseDeploymentAction(identifier, true, defaultReplaceTestHistory))
+          }
+        }
+        ParameterExtractor.optionalArrayBodyParameter(params, "testCaseWithoutSpecificationUpdate").getOrElse(List.empty).foreach { identifier =>
+          if (StringUtils.isNotBlank(identifier)) {
+            val testCase = testCaseActions.getOrElseUpdate(identifier, new TestCaseDeploymentAction(identifier, false, defaultReplaceTestHistory))
+            testCase.updateDefinition = false
+          }
+        }
+        // Set replace test history flags.
+        ParameterExtractor.optionalArrayBodyParameter(params, "testCaseWithTestHistoryReplacement").getOrElse(List.empty).foreach { identifier =>
+          if (StringUtils.isNotBlank(identifier)) {
+            val testCase = testCaseActions.getOrElseUpdate(identifier, new TestCaseDeploymentAction(identifier, defaultUpdateSpecification, true))
+            testCase.resetTestHistory = true
+          }
+        }
+        ParameterExtractor.optionalArrayBodyParameter(params, "testCaseWithoutTestHistoryReplacement").getOrElse(List.empty).foreach { identifier =>
+          if (StringUtils.isNotBlank(identifier)) {
+          val testCase = testCaseActions.getOrElseUpdate(identifier, new TestCaseDeploymentAction(identifier, defaultUpdateSpecification, false))
+            testCase.resetTestHistory = false
+          }
+        }
         val input = TestSuiteDeployRequest(
           ParameterExtractor.requiredBodyParameter(params, "specification"),
           ParameterExtractor.optionalBodyParameter(params, "ignoreWarnings").getOrElse("false").toBoolean,
-          ParameterExtractor.optionalBodyParameter(params, "replaceTestHistory").getOrElse("false").toBoolean,
-          ParameterExtractor.optionalBodyParameter(params, "updateSpecification").getOrElse("false").toBoolean
+          defaultReplaceTestHistory,
+          defaultUpdateSpecification,
+          testCaseActions.toMap
         )
         val uploadedFile = request.body.asMultipartFormData.get.file("testSuite")
         if (uploadedFile.isDefined) {

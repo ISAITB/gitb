@@ -8,8 +8,6 @@ import config.Configurations
 import exceptions.JsonValidationException
 import managers.export.{ExportSettings, ImportItem, ImportSettings}
 import models.Enums.TestSuiteReplacementChoice.TestSuiteReplacementChoice
-import models.Enums.TestSuiteReplacementChoiceHistory.TestSuiteReplacementChoiceHistory
-import models.Enums.TestSuiteReplacementChoiceMetadata.TestSuiteReplacementChoiceMetadata
 import models.Enums._
 import models._
 import models.automation._
@@ -913,7 +911,18 @@ object JsonUtil {
     val ignoreWarnings = (jsonConfig \ "ignoreWarnings").asOpt[Boolean].getOrElse(false)
     val replaceTestHistory = (jsonConfig \ "replaceTestHistory").asOpt[Boolean].getOrElse(false)
     val updateSpecification = (jsonConfig \ "updateSpecification").asOpt[Boolean].getOrElse(false)
-    (TestSuiteDeployRequest(specification, ignoreWarnings, replaceTestHistory, updateSpecification), testSuite)
+    val testCaseActions = (jsonConfig \ "testCases").asOpt[List[JsValue]].getOrElse(List.empty).map { item =>
+      new TestCaseDeploymentAction(
+        (item \ "identifier").as[String],
+        (item \ "updateSpecification").asOpt[Boolean].getOrElse(updateSpecification),
+        (item \ "replaceTestHistory").asOpt[Boolean].getOrElse(replaceTestHistory)
+      )
+    }
+    val testCaseMap = new mutable.HashMap[String, TestCaseDeploymentAction]()
+    testCaseActions.foreach { action =>
+      testCaseMap.put(action.identifier, action)
+    }
+    (TestSuiteDeployRequest(specification, ignoreWarnings, replaceTestHistory, updateSpecification, testCaseMap.toMap), testSuite)
   }
 
   def parseJsTestSuiteUndeployRequest(jsonConfig: JsValue): TestSuiteUndeployRequest = {
@@ -968,41 +977,34 @@ object JsonUtil {
     list
   }
 
-  def parseJsPendingTestSuiteActions(json: String): List[PendingTestSuiteAction] = {
+  def parseJsPendingTestSuiteActions(json: String): List[TestSuiteDeploymentAction] = {
     val jsArray = Json.parse(json).as[JsArray].value
-    val values = new ListBuffer[PendingTestSuiteAction]()
+    val values = new ListBuffer[TestSuiteDeploymentAction]()
     jsArray.foreach { jsonConfig =>
       val pendingActionStr = (jsonConfig \ "action").as[String]
       var pendingAction: TestSuiteReplacementChoice = null
-      var pendingActionHistory: Option[TestSuiteReplacementChoiceHistory] = None
-      var pendingActionMetadata: Option[TestSuiteReplacementChoiceMetadata] = None
+      var testCasesToReset: Option[List[TestCaseDeploymentAction]] = None
       if ("proceed".equals(pendingActionStr)) {
         pendingAction = TestSuiteReplacementChoice.PROCEED
-        val pendingActionHistoryStr = (jsonConfig \ "pending_action_history").asOpt[String]
-        if (pendingActionHistoryStr.isDefined && "drop".equals(pendingActionHistoryStr.get)) {
-          // Drop testing history.
-          pendingActionHistory = Some(TestSuiteReplacementChoiceHistory.DROP)
-        } else {
-          // Keep testing history.
-          pendingActionHistory = Some(TestSuiteReplacementChoiceHistory.KEEP)
+        val testCaseActions = new ListBuffer[TestCaseDeploymentAction]()
+        testCaseActions ++= (jsonConfig \ "testCaseUpdates").as[List[JsValue]].map { item =>
+          new TestCaseDeploymentAction(
+            (item \ "identifier").as[String],
+            (item \ "updateDefinition").as[Boolean],
+            (item \ "resetTestHistory").as[Boolean]
+          )
         }
-        val pendingActionMetadataStr = (jsonConfig \ "pending_action_metadata").asOpt[String]
-        if (pendingActionMetadataStr.isDefined && "update".equals(pendingActionMetadataStr.get)) {
-          // Use metadata from archive.
-          pendingActionMetadata = Some(TestSuiteReplacementChoiceMetadata.UPDATE)
-        } else {
-          // Skip metadata from archive.
-          pendingActionMetadata = Some(TestSuiteReplacementChoiceMetadata.SKIP)
-        }
+        testCasesToReset = Some(testCaseActions.toList)
       } else {
         // Cancel
         pendingAction = TestSuiteReplacementChoice.CANCEL
       }
-      values += new PendingTestSuiteAction(
+      values += new TestSuiteDeploymentAction(
         (jsonConfig \ "specification").as[Long],
         pendingAction,
-        pendingActionHistory,
-        pendingActionMetadata
+        (jsonConfig \ "updateTestSuite").as[Boolean],
+        (jsonConfig \ "updateActors").as[Boolean],
+        testCasesToReset
       )
     }
     values.toList
@@ -1989,9 +1991,33 @@ object JsonUtil {
       "matchingDataExists" -> toJsArray(result.matchingDataExists),
       "items" -> jsTestSuiteUploadItemResults(result.items),
       "validationReport" -> (if (result.validationReport != null) jsTAR(result.validationReport) else JsNull),
-      "needsConfirmation" -> result.needsConfirmation
+      "needsConfirmation" -> result.needsConfirmation,
+      "testCases" -> (if (result.testCases.isDefined) jsTestSuiteUploadSpecificationTestCases(result.testCases.get) else JsNull)
     )
     json
+  }
+
+  private def jsTestSuiteUploadSpecificationTestCases(specTestCases: Map[Long, List[TestSuiteUploadTestCase]]): JsArray = {
+    var specArray = Json.arr()
+    specTestCases.foreach { entry =>
+      specArray = specArray.append(Json.obj(
+        "specification" -> entry._1,
+        "testCases" -> jsTestSuiteUploadTestCases(entry._2)
+      ))
+    }
+    specArray
+  }
+
+  private def jsTestSuiteUploadTestCases(testCases: List[TestSuiteUploadTestCase]): JsArray = {
+    var testCaseArray = Json.arr()
+    testCases.foreach { testCase =>
+      testCaseArray = testCaseArray.append(Json.obj(
+        "identifier" -> testCase.identifier,
+        "name" -> testCase.name,
+        "status" -> testCase.matchType.id
+      ))
+    }
+    testCaseArray
   }
 
   def jsTestSuiteDeployInfo(result: TestSuiteUploadResult):JsObject = {

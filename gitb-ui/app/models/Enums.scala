@@ -47,18 +47,6 @@ object Enums {
 		val FAILURE = Value("FAILURE")
 	}
 
-  object TestSuiteReplacementChoiceHistory extends Enumeration {
-    type TestSuiteReplacementChoiceHistory = Value
-    val KEEP = Value(0)
-    val DROP = Value(1)
-  }
-
-  object TestSuiteReplacementChoiceMetadata extends Enumeration {
-    type TestSuiteReplacementChoiceMetadata = Value
-    val SKIP = Value(0)
-    val UPDATE = Value(1)
-  }
-
   object TestSuiteReplacementChoice extends Enumeration {
     type TestSuiteReplacementChoice = Value
     val PROCEED = Value(0)
@@ -126,6 +114,11 @@ object Enums {
   object InputMappingMatchType extends Enumeration(1) {
     type InputMappingMatchType = Value
     val DEFAULT, TEST_SUITE, TEST_CASE, TEST_SUITE_AND_TEST_CASE = Value
+  }
+
+  object TestCaseUploadMatchType extends Enumeration(1) {
+    type TestCaseUploadMatchType = Value
+    val IN_ARCHIVE_ONLY, IN_DB_ONLY, IN_ARCHIVE_AND_DB = Value
   }
 
 }

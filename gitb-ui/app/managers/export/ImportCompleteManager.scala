@@ -8,8 +8,9 @@ import config.Configurations
 import javax.inject.{Inject, Singleton}
 import managers._
 import models.Enums.ImportItemType.ImportItemType
+import models.Enums.TestSuiteReplacementChoice.PROCEED
 import models.Enums._
-import models.{Enums, TestSuiteUploadItemResult}
+import models.{Enums, TestSuiteDeploymentAction, TestCaseDeploymentAction, TestSuiteUploadItemResult}
 import org.apache.commons.codec.binary.Base64
 import org.apache.commons.io.FileUtils
 import org.apache.commons.lang3.StringUtils
@@ -18,6 +19,7 @@ import persistence.db._
 import play.api.db.slick.DatabaseConfigProvider
 import utils.{ClamAVClient, CryptoUtil, MimeUtil, RepositoryUtils}
 
+import scala.collection.immutable.List
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -557,7 +559,7 @@ class ImportCompleteManager @Inject()(communityResourceManager: CommunityResourc
             new java.util.HashMap[String, (java.lang.Long, String)](), // existingTestCaseMap
             ctx.savedSpecificationActors(specificationId).asJava, // savedActorIds
             existingActorToSystemMap,
-            updateMetadata = true
+            testSuiteUpdateActions(specificationId, testCases)
           )
         } else {
           DBIO.successful((new java.util.ArrayList[Long](), List[TestSuiteUploadItemResult]()))
@@ -569,6 +571,12 @@ class ImportCompleteManager @Inject()(communityResourceManager: CommunityResourc
       _ <- testSuiteManager.stepUpdateTestSuiteTestCaseLinks(testSuiteId, processTestCasesStep._1)
     } yield testSuiteId
     action
+  }
+
+  private def testSuiteUpdateActions(specification: Long, testCases: List[TestCase]): TestSuiteDeploymentAction = {
+    new TestSuiteDeploymentAction(specification, PROCEED, updateTestSuite = true, updateActors = true, testCaseUpdates = Some(testCases.map { testCase =>
+      new TestCaseDeploymentAction(testCase.getIdentifier, updateDefinition = true, resetTestHistory = false)
+    }))
   }
 
   private def updateTestSuite(data: TestSuite, ctx: ImportContext, item: ImportItem): DBIO[_] = {
@@ -610,7 +618,7 @@ class ImportCompleteManager @Inject()(communityResourceManager: CommunityResourc
             existingTestCaseMap,
             ctx.savedSpecificationActors(specificationId).asJava, // savedActorIds
             existingActorToSystemMap,
-            updateMetadata = true
+            testSuiteUpdateActions(specificationId, testCases)
           )
         } else {
           DBIO.successful((new java.util.ArrayList[Long](), List[TestSuiteUploadItemResult]()))

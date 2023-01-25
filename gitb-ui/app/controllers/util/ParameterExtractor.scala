@@ -147,6 +147,14 @@ object ParameterExtractor {
     }
   }
 
+  def optionalArrayBodyParameter(paramMap: Option[Map[String, Seq[String]]], parameter: String): Option[Seq[String]] = {
+    if (paramMap.isDefined && paramMap.get.contains(parameter)) {
+      Some(paramMap.get(parameter).toList)
+    } else {
+      None
+    }
+  }
+
   def optionalLongBodyParameter(paramMap: Option[Map[String, Seq[String]]], parameter:String): Option[Long] = {
     try {
       val paramString = paramMap.get(parameter).headOption

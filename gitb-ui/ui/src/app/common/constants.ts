@@ -278,6 +278,12 @@ export class Constants {
 		}
 	}
 
+	public static TEST_CASE_UPLOAD_MATCH = {
+		IN_ARCHIVE_ONLY: 1,
+		IN_DB_ONLY: 2,
+		IN_ARCHIVE_AND_DB : 3
+	}
+
 	public static PASSWORD_REGEX = /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#&()_–\[{}\]:;'",?/\\*~$^+=<>]).{8,}$/
 	public static END_OF_TEST_STEP = "-1"
 	public static END_OF_TEST_STEP_EXTERNAL = "-2"
