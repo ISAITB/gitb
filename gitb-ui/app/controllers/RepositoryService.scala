@@ -229,7 +229,7 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
       }
     } catch {
       case e: Exception =>
-        if (result._2.archived) {
+        if (result != null && result._2.archived) {
           FileUtils.deleteQuietly(result._2.path.toFile)
         }
         throw e
