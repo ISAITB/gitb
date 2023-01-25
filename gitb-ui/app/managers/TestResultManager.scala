@@ -171,13 +171,13 @@ class TestResultManager @Inject() (repositoryUtils: RepositoryUtils, dbConfigPro
   }
 
   def updateForUpdatedTestCase(id: Long, name: String): DBIO[_] = {
-    val q1 = for {t <- PersistenceSchema.testResults if t.testCaseId === id} yield t.testCase
-    q1.update(Some(name))
+    // No update is made to the test case's name as the test session history is decoupled.
+    DBIO.successful(())
   }
 
   def updateForUpdatedTestSuite(id: Long, name: String): DBIO[_] = {
-    val q1 = for {t <- PersistenceSchema.testResults if t.testSuiteId === id} yield t.testSuite
-    q1.update(Some(name))
+    // No update is made to the test suite's name as the test session history is decoupled.
+    DBIO.successful(())
   }
 
   def updateForUpdatedDomain(id: Long, name: String): DBIO[_] = {
