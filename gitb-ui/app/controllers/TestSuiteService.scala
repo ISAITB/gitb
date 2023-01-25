@@ -39,7 +39,7 @@ class TestSuiteService @Inject() (implicit ec: ExecutionContext, authorizedActio
 		if (documentation.isDefined) {
 			documentation = Some(HtmlUtil.sanitizeEditorContent(documentation.get))
 		}
-		testSuiteManager.updateTestCaseMetadata(testCaseId, name, description, documentation)
+		testCaseManager.updateTestCaseMetadata(testCaseId, name, description, documentation)
 		ResponseConstructor.constructEmptyResponse
 	}
 

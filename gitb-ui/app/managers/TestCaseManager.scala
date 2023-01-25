@@ -75,6 +75,21 @@ class TestCaseManager @Inject() (testResultManager: TestResultManager, dbConfigP
 		}
 	}
 
+	def updateTestCaseMetadata(testCaseId: Long, name: String, description: Option[String], documentation: Option[String]): Unit = {
+		var hasDocumentationToSet = false
+		var documentationToSet: Option[String] = None
+		if (documentation.isDefined && !documentation.get.isBlank) {
+			hasDocumentationToSet = true
+			documentationToSet = documentation
+		}
+		val q1 = for {t <- PersistenceSchema.testCases if t.id === testCaseId} yield (t.shortname, t.fullname, t.description, t.documentation, t.hasDocumentation)
+		exec(
+			q1.update(name, name, description, documentationToSet, hasDocumentationToSet) andThen
+				testResultManager.updateForUpdatedTestCase(testCaseId, name)
+					.transactionally
+		)
+	}
+
 	def updateTestCaseWithoutMetadata(testCaseId: Long, path: String, testSuiteOrder: Short, targetActors: String): DBIO[_] = {
 		val q1 = for {t <- PersistenceSchema.testCases if t.id === testCaseId} yield (t.path, t.testSuiteOrder, t.targetActors)
 		q1.update(path, testSuiteOrder, Some(targetActors))
