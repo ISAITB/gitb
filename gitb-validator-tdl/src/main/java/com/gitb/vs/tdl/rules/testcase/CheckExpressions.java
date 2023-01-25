@@ -235,8 +235,19 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
                     // A new variable is defined.
                     Matcher mapMatcher = MAP_APPEND_EXPRESSION_PATTERN.matcher(toToken);
                     if (mapMatcher.matches()) {
-                        String mapName = mapMatcher.group(1);
-                        recordVariable(mapName, true);
+                        // Loop as we might have nested maps.
+                        boolean proceed;
+                        do {
+                            String mapName = mapMatcher.group(1);
+                            recordVariable(mapName, true);
+                            // Ensure we don't endlessly loop for a complete match.
+                            proceed = !mapMatcher.group().equals(mapName);
+                            if (proceed) {
+                                // Check the already matched map to see if itself was a nested map.
+                                mapMatcher = MAP_APPEND_EXPRESSION_PATTERN.matcher(mapName);
+                                proceed = mapMatcher.matches();
+                            }
+                        } while (proceed);
                     } else {
                         // Always add this as a container as this is more flexible (we can't know at validation time if it is simple or not.
                         recordVariable(toToken, true);
