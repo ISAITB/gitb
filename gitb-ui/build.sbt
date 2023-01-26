@@ -28,7 +28,7 @@ libraryDependencies ++= Seq(
   "com.gitb" % "gitb-reports" % "1.0-SNAPSHOT",
   "com.gitb" % "gitb-validator-tdl" % "1.0-SNAPSHOT",
   "com.gitb" % "gitb-xml-resources" % "1.0-SNAPSHOT",
-  "com.mysql" % "mysql-connector-j" % "8.0.31" exclude("com.google.protobuf", "protobuf-java"), // Exclude protobuf as we don't need the X DevAPI.
+  "com.mysql" % "mysql-connector-j" % "8.0.32" exclude("com.google.protobuf", "protobuf-java"), // Exclude protobuf as we don't need the X DevAPI.
   "com.typesafe.akka" %% "akka-actor" % akkaVersion,
   "com.typesafe.akka" %% "akka-actor-typed" % akkaVersion,
   "com.typesafe.akka" %% "akka-remote" % akkaVersion,
@@ -36,7 +36,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-slf4j" % akkaVersion,
   "com.typesafe.akka" %% "akka-serialization-jackson" % akkaVersion,
   "com.typesafe.play" %% "play-slick" % "5.1.0",
-  "com.typesafe.play" %% "play-json" % "2.9.3",
+  "com.typesafe.play" %% "play-json" % "2.9.4",
   "org.pac4j" %% "play-pac4j" % "11.1.0-PLAY2.8",
   "org.pac4j" % "pac4j-cas" % "5.7.0",
   "ch.qos.logback" % "logback-classic" % "1.4.5",
@@ -72,11 +72,11 @@ libraryDependencies ++= Seq(
   "org.bouncycastle" % "bcmail-jdk15on" % "1.70",
   "org.apache.pdfbox" % "pdfbox" % "2.0.27",
   "org.jasypt" % "jasypt" % "1.9.3",
-  "org.apache.httpcomponents" % "httpclient" % "4.5.13",
+  "org.apache.httpcomponents" % "httpclient" % "4.5.14",
   "org.flywaydb" %% "flyway-play" % "7.25.0",
-  "org.flywaydb" % "flyway-mysql" % "9.8.2",
+  "org.flywaydb" % "flyway-mysql" % "9.12.0",
   "com.googlecode.owasp-java-html-sanitizer" % "owasp-java-html-sanitizer" % "20220608.1",
-  "net.lingala.zip4j" % "zip4j" % "2.11.2",
+  "net.lingala.zip4j" % "zip4j" % "2.11.3",
   // Specific version overrides (to be removed if no longer needed)
   "org.apache.commons" % "commons-text" % commonsTextVersion // Set explicitly to resolve CVE-2022-42889
 )

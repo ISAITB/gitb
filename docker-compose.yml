@@ -6,7 +6,7 @@ volumes:
 
 services:
    gitb-redis:
-      image: redis:6.2.7
+      image: redis:6.2.10
       restart: unless-stopped
    gitb-mysql:
       build:
