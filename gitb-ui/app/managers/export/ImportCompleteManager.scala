@@ -1,16 +1,13 @@
 package managers.export
 
-import java.io.{ByteArrayInputStream, File}
-import java.nio.file.{Files, Paths}
 import com.gitb.xml.export.{SelfRegistrationRestriction => _, _}
 import config.Configurations
-
-import javax.inject.{Inject, Singleton}
 import managers._
+import managers.testsuite.TestSuitePaths
 import models.Enums.ImportItemType.ImportItemType
 import models.Enums.TestSuiteReplacementChoice.PROCEED
 import models.Enums._
-import models.{Enums, TestSuiteDeploymentAction, TestCaseDeploymentAction, TestSuiteUploadItemResult}
+import models.{Enums, TestCaseDeploymentAction, TestCases, TestSuiteDeploymentAction}
 import org.apache.commons.codec.binary.Base64
 import org.apache.commons.io.FileUtils
 import org.apache.commons.lang3.StringUtils
@@ -19,7 +16,9 @@ import persistence.db._
 import play.api.db.slick.DatabaseConfigProvider
 import utils.{ClamAVClient, CryptoUtil, MimeUtil, RepositoryUtils}
 
-import scala.collection.immutable.List
+import java.io.{ByteArrayInputStream, File}
+import java.nio.file.{Files, Paths}
+import javax.inject.{Inject, Singleton}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -43,6 +42,7 @@ class ImportCompleteManager @Inject()(communityResourceManager: CommunityResourc
       ImportTargets.fromImportItems(importItems),
       mutable.Map[ImportItemType, mutable.Map[String, String]](),
       mutable.Map[Long, mutable.Map[String, Long]](),
+      mutable.Map[Long, (Option[List[TestCases]], Map[String, (Long, Boolean)])](),
       mutable.ListBuffer[() => _](),
       mutable.ListBuffer[() => _]()
     )
@@ -222,13 +222,12 @@ class ImportCompleteManager @Inject()(communityResourceManager: CommunityResourc
     propertyType match {
       case PropertyType.BINARY => "BINARY"
       case PropertyType.SIMPLE => "SIMPLE"
-      case PropertyType.SECRET => {
+      case PropertyType.SECRET =>
         if (isDomainParameter) {
           "HIDDEN"
         } else {
           "SECRET"
         }
-      }
       case _ => throw new IllegalArgumentException("Unknown enum value ["+propertyType+"]")
     }
   }
@@ -305,13 +304,13 @@ class ImportCompleteManager @Inject()(communityResourceManager: CommunityResourc
     }
   }
 
-  private def toModelTestCases(exportedTestCases: List[com.gitb.xml.export.TestCase], specificationId: Long): List[models.TestCases] = {
+  private def toModelTestCases(exportedTestCases: List[com.gitb.xml.export.TestCase]): List[models.TestCases] = {
     val testCases = new ListBuffer[models.TestCases]()
     exportedTestCases.foreach { exportedTestCase =>
       testCases += models.TestCases(0L,
         exportedTestCase.getShortName, exportedTestCase.getFullName, exportedTestCase.getVersion, Option(exportedTestCase.getAuthors),
         Option(exportedTestCase.getOriginalDate), Option(exportedTestCase.getModificationDate), Option(exportedTestCase.getDescription),
-        Option(exportedTestCase.getKeywords), exportedTestCase.getTestCaseType, "", specificationId,
+        Option(exportedTestCase.getKeywords), exportedTestCase.getTestCaseType, "",
         Option(exportedTestCase.getTargetActors), None, exportedTestCase.getTestSuiteOrder, exportedTestCase.isHasDocumentation,
         Option(exportedTestCase.getDocumentation), exportedTestCase.getIdentifier
       )
@@ -319,19 +318,7 @@ class ImportCompleteManager @Inject()(communityResourceManager: CommunityResourc
     testCases.toList
   }
 
-  private def getResourcePaths(testSuiteFolderName: String, testCases: List[com.gitb.xml.export.TestCase]): Map[String, String] = {
-    val paths = mutable.Map[String, String]()
-    testCases.foreach { testCase =>
-      var pathToSet = testCase.getPath
-      if (pathToSet.startsWith("/")) {
-        pathToSet = testSuiteFolderName + pathToSet
-      }
-      paths += (testCase.getIdentifier -> pathToSet)
-    }
-    paths.iterator.toMap
-  }
-
-  private def saveTestSuiteFiles(data: TestSuite, item: ImportItem, domainId: Long, specificationId: Long, ctx: ImportContext): File = {
+  private def saveTestSuiteFiles(data: TestSuite, item: ImportItem, domainId: Long, ctx: ImportContext): TestSuitePaths = {
     // File system operations
     val testSuiteData = Base64.decodeBase64(data.getData)
     if (Configurations.ANTIVIRUS_SERVER_ENABLED) {
@@ -345,15 +332,15 @@ class ImportCompleteManager @Inject()(communityResourceManager: CommunityResourc
     FileUtils.writeByteArrayToFile(tempTestSuitePath.toFile, testSuiteData)
     // Extract test suite to target location.
     val testSuiteFileName = repositoryUtils.generateTestSuiteFileName()
-    val targetFolder = new File(repositoryUtils.getTestSuitesPath(domainId, specificationId), testSuiteFileName)
-    repositoryUtils.extractTestSuiteFilesFromZipToFolder(specificationId, targetFolder, tempTestSuitePath.toFile)
-    targetFolder
+    val targetFolder = repositoryUtils.getTestSuitePath(domainId, testSuiteFileName)
+    val resourcePaths = repositoryUtils.extractTestSuiteFilesFromZipToFolder(targetFolder, tempTestSuitePath.toFile)
+    TestSuitePaths(targetFolder, resourcePaths._1, resourcePaths._2)
   }
 
-  private def toModelTestSuite(data: com.gitb.xml.export.TestSuite, specificationId: Long, testSuiteFileName: String, hasTestCases: Boolean): models.TestSuites = {
+  private def toModelTestSuite(data: com.gitb.xml.export.TestSuite, domainId: Long, testSuiteFileName: String, hasTestCases: Boolean, testSuiteDefinitionPath: Option[String], shared: Boolean): models.TestSuites = {
     models.TestSuites(0L, data.getShortName, data.getFullName, data.getVersion, Option(data.getAuthors),
       Option(data.getOriginalDate), Option(data.getModificationDate), Option(data.getDescription), Option(data.getKeywords),
-      specificationId, testSuiteFileName, data.isHasDocumentation, Option(data.getDocumentation), data.getIdentifier, !hasTestCases)
+      testSuiteFileName, data.isHasDocumentation, Option(data.getDocumentation), data.getIdentifier, !hasTestCases, shared, domainId, testSuiteDefinitionPath)
   }
 
   private def toModelCustomLabel(data: com.gitb.xml.export.CustomLabel, communityId: Long): models.CommunityLabels = {
@@ -507,31 +494,45 @@ class ImportCompleteManager @Inject()(communityResourceManager: CommunityResourc
     dbId
   }
 
-  private def getSavedActorMap(exportedTestSuite: com.gitb.xml.export.TestSuite, specificationId: Long, ctx: ImportContext): java.util.Map[String, Long] = {
-    val savedActorMap = new java.util.HashMap[String, Long]()
-    if (exportedTestSuite.getTestCases != null) {
-      exportedTestSuite.getTestCases.getTestCase.asScala.foreach { exportedTestCase =>
-        if (exportedTestCase.getActors != null) {
-          exportedTestCase.getActors.getActor.asScala.foreach { actor =>
-            if (!savedActorMap.containsKey(actor.getActor.getActorId)) {
-              savedActorMap.put(actor.getActor.getActorId, ctx.savedSpecificationActors(specificationId)(actor.getActor.getActorId))
-            }
-          }
-        }
+  private def createSharedTestSuite(data: TestSuite, ctx: ImportContext, item: ImportItem): DBIO[Long] = {
+    val domainId = item.parentItem.get.targetKey.get.toLong
+    // File system operations
+    val testSuitePaths = saveTestSuiteFiles(data, item, domainId, ctx)
+    ctx.onFailureCalls += (() => {
+      // Cleanup operation in case an error occurred.
+      if (testSuitePaths.testSuiteFolder.exists()) {
+        FileUtils.deleteDirectory(testSuitePaths.testSuiteFolder)
       }
+    })
+    var testCases: List[TestCase] = null
+    if (data.getTestCases != null && data.getTestCases.getTestCase != null) {
+      testCases = data.getTestCases.getTestCase.asScala.toList
+    } else {
+      testCases = List.empty
     }
-    savedActorMap
+    val testCasesToUse = Some(toModelTestCases(testCases))
+    val updateActions = testSuiteUpdateActions(None, testCases)
+    val action = for {
+      // Save test suite and test cases.
+      stepSaveTestSuite <- testSuiteManager.stepSaveTestSuiteAndTestCases(toModelTestSuite(data, domainId, testSuitePaths.testSuiteFolder.getName, testCases.nonEmpty, testSuitePaths.testSuiteDefinitionPath, shared = true), None, testCasesToUse, testSuitePaths, updateActions)
+      _ <- {
+        // Needed to map specifications to shared test suites.
+        ctx.sharedTestSuiteInfo += (stepSaveTestSuite.testSuite.id -> (testCasesToUse, stepSaveTestSuite.updatedTestCases))
+        DBIO.successful(())
+      }
+    } yield stepSaveTestSuite.testSuite.id
+    action
   }
 
   private def createTestSuite(data: TestSuite, ctx: ImportContext, item: ImportItem): DBIO[Long] = {
     val domainId = item.parentItem.get.parentItem.get.targetKey.get.toLong
     val specificationId = item.parentItem.get.targetKey.get.toLong
     // File system operations
-    val testSuiteFile = saveTestSuiteFiles(data, item, domainId, specificationId, ctx)
+    val testSuitePaths = saveTestSuiteFiles(data, item, domainId, ctx)
     ctx.onFailureCalls += (() => {
       // Cleanup operation in case an error occurred.
-      if (testSuiteFile.exists()) {
-        FileUtils.deleteDirectory(testSuiteFile)
+      if (testSuitePaths.testSuiteFolder.exists()) {
+        FileUtils.deleteDirectory(testSuitePaths.testSuiteFolder)
       }
     })
     var testCases: List[TestCase] = null
@@ -541,50 +542,47 @@ class ImportCompleteManager @Inject()(communityResourceManager: CommunityResourc
       testCases = List.empty
     }
     // Process DB operations
+    val testCasesToUse = Some(toModelTestCases(testCases))
+    val updateActions = testSuiteUpdateActions(Some(specificationId), testCases)
     val action = for {
-      // Save test suite
-      testSuiteId <- PersistenceSchema.testSuites.returning(PersistenceSchema.testSuites.map(_.id)) += toModelTestSuite(data, specificationId, testSuiteFile.getName, testCases.nonEmpty)
-      // Lookup the map of systems to actors for the specification
-      systemActors <- testSuiteManager.getSystemActors(specificationId)
-      // Create a map of actors to systems.
-      existingActorToSystemMap <- testSuiteManager.getExistingActorToSystemMap(systemActors)
-      // Save test cases
-      processTestCasesStep <- {
+      // Save test suite and test cases.
+      stepSaveTestSuite <- testSuiteManager.stepSaveTestSuiteAndTestCases(toModelTestSuite(data, domainId, testSuitePaths.testSuiteFolder.getName, testCases.nonEmpty, testSuitePaths.testSuiteDefinitionPath, shared = false), None, testCasesToUse, testSuitePaths, updateActions)
+      _ <- {
         if (ctx.savedSpecificationActors.contains(specificationId)) {
-          testSuiteManager.stepProcessTestCases(
-            specificationId,
-            testSuiteId,
-            Some(toModelTestCases(testCases, specificationId)),
-            getResourcePaths(testSuiteFile.getName, testCases),
-            new java.util.HashMap[String, (java.lang.Long, String)](), // existingTestCaseMap
+          // Make all actor and specification updates.
+          testSuiteManager.stepUpdateTestSuiteSpecificationLinks(specificationId, stepSaveTestSuite.testSuite.id, testCasesToUse,
             ctx.savedSpecificationActors(specificationId).asJava, // savedActorIds
-            existingActorToSystemMap,
-            testSuiteUpdateActions(specificationId, testCases)
-          )
+            stepSaveTestSuite.updatedTestCases)
         } else {
-          DBIO.successful((new java.util.ArrayList[Long](), List[TestSuiteUploadItemResult]()))
+          DBIO.successful(())
         }
       }
-      // Update the actor links for the  test suite.
-      _ <- testSuiteManager.stepUpdateTestSuiteActorLinks(testSuiteId, getSavedActorMap(data, specificationId, ctx))
-      // Update the test case links for the test suite.
-      _ <- testSuiteManager.stepUpdateTestSuiteTestCaseLinks(testSuiteId, processTestCasesStep._1)
-    } yield testSuiteId
+    } yield stepSaveTestSuite.testSuite.id
     action
   }
 
-  private def testSuiteUpdateActions(specification: Long, testCases: List[TestCase]): TestSuiteDeploymentAction = {
-    new TestSuiteDeploymentAction(specification, PROCEED, updateTestSuite = true, updateActors = true, testCaseUpdates = Some(testCases.map { testCase =>
-      new TestCaseDeploymentAction(testCase.getIdentifier, updateDefinition = true, resetTestHistory = false)
-    }))
+  private def testSuiteUpdateActions(specification: Option[Long], testCases: List[TestCase]): TestSuiteDeploymentAction = {
+    val sharedTestSuite = specification.isEmpty
+    val updateActors = if (sharedTestSuite) {
+      None
+    } else {
+      Some(true)
+    }
+    val testCaseUpdates = if (sharedTestSuite) {
+      None
+    } else {
+      Some(testCases.map { testCase =>
+        new TestCaseDeploymentAction(testCase.getIdentifier, updateDefinition = true, resetTestHistory = false)
+      })
+    }
+    new TestSuiteDeploymentAction(specification, PROCEED, updateTestSuite = true, updateActors, sharedTestSuite, testCaseUpdates)
   }
 
-  private def updateTestSuite(data: TestSuite, ctx: ImportContext, item: ImportItem): DBIO[_] = {
-    val domainId = item.parentItem.get.parentItem.get.targetKey.get.toLong
-    val specificationId = item.parentItem.get.targetKey.get.toLong
+  private def updateSharedTestSuite(data: TestSuite, ctx: ImportContext, item: ImportItem): DBIO[_] = {
+    val domainId = item.parentItem.get.targetKey.get.toLong
     val testSuiteId = item.targetKey.get.toLong
     // File system operations
-    val testSuiteFile = saveTestSuiteFiles(data, item, domainId, specificationId, ctx)
+    val testSuitePaths = saveTestSuiteFiles(data, item, domainId, ctx)
     var testCases: List[TestCase] = null
     if (data.getTestCases != null && data.getTestCases.getTestCase != null) {
       testCases = data.getTestCases.getTestCase.asScala.toList
@@ -592,57 +590,78 @@ class ImportCompleteManager @Inject()(communityResourceManager: CommunityResourc
       testCases = List.empty
     }
     // Process DB operations
+    val updateActions = testSuiteUpdateActions(None, testCases)
+    val testCasesToUse = Some(toModelTestCases(testCases))
     val action = for {
       // Lookup existing test suite file (for later cleanup).
       existingTestSuiteFile <- PersistenceSchema.testSuites.filter(_.id === testSuiteId).map(x => x.filename).result.head
-      // Update existing test suite.
-      _ <- testSuiteManager.updateTestSuiteInDb(testSuiteId, toModelTestSuite(data, specificationId, testSuiteFile.getName, testCases.nonEmpty))
-      // Remove existing actor links (these will be updated later).
-      _ <- testSuiteManager.removeActorLinksForTestSuite(testSuiteId)
-      // Lookup the existing test cases for the test suite.
-      existingTestCasesForTestSuite <- testSuiteManager.getExistingTestCasesForTestSuite(testSuiteId)
-      // Place the existing test cases in a map for further processing.
-      existingTestCaseMap <- testSuiteManager.getExistingTestCaseMap(existingTestCasesForTestSuite)
-      // Lookup the map of systems to actors for the specification
-      systemActors <- testSuiteManager.getSystemActors(specificationId)
-      // Create a map of actors to systems.
-      existingActorToSystemMap <- testSuiteManager.getExistingActorToSystemMap(systemActors)
-      // Process the test cases.
-      processTestCasesStep <- {
-        if (ctx.savedSpecificationActors.contains(specificationId)) {
-          testSuiteManager.stepProcessTestCases(
-            specificationId,
-            testSuiteId,
-            Some(toModelTestCases(testCases, specificationId)),
-            getResourcePaths(testSuiteFile.getName, testCases),
-            existingTestCaseMap,
-            ctx.savedSpecificationActors(specificationId).asJava, // savedActorIds
-            existingActorToSystemMap,
-            testSuiteUpdateActions(specificationId, testCases)
-          )
-        } else {
-          DBIO.successful((new java.util.ArrayList[Long](), List[TestSuiteUploadItemResult]()))
-        }
+      // Update existing test suite and test cases.
+      stepSaveTestSuite <- testSuiteManager.stepSaveTestSuiteAndTestCases(toModelTestSuite(data, domainId, testSuitePaths.testSuiteFolder.getName, testCases.nonEmpty, testSuitePaths.testSuiteDefinitionPath, shared = true), Some(testSuiteId), testCasesToUse, testSuitePaths, updateActions)
+      _ <- {
+        // Needed to map specifications to shared test suites.
+        ctx.sharedTestSuiteInfo += (stepSaveTestSuite.testSuite.id -> (testCasesToUse, stepSaveTestSuite.updatedTestCases))
+        DBIO.successful(())
       }
-      // Remove the test cases that are no longer in the test suite.
-      _ <- testSuiteManager.stepRemoveTestCases(existingTestCaseMap, specificationId)
-      // Update the actor links for the  test suite.
-      _ <- testSuiteManager.stepUpdateTestSuiteActorLinks(testSuiteId, getSavedActorMap(data, specificationId, ctx))
-      // Update the test case links for the test suite.
-      _ <- testSuiteManager.stepUpdateTestSuiteTestCaseLinks(testSuiteId, processTestCasesStep._1)
     } yield existingTestSuiteFile
     action.flatMap(existingTestSuiteFile => {
       ctx.onSuccessCalls += (() => {
         // Finally, delete the backup folder
-        val existingTestSuiteFolder = new File(repositoryUtils.getTestSuitesPath(domainId, specificationId), existingTestSuiteFile)
+        val existingTestSuiteFolder = repositoryUtils.getTestSuitePath(domainId, existingTestSuiteFile)
         if (existingTestSuiteFolder != null && existingTestSuiteFolder.exists()) {
           FileUtils.deleteDirectory(existingTestSuiteFolder)
         }
       })
       ctx.onFailureCalls += (() => {
         // Cleanup operations in case an error occurred.
-        if (testSuiteFile.exists()) {
-          FileUtils.deleteDirectory(testSuiteFile)
+        if (testSuitePaths.testSuiteFolder.exists()) {
+          FileUtils.deleteDirectory(testSuitePaths.testSuiteFolder)
+        }
+      })
+      DBIO.successful(())
+    })
+  }
+
+  private def updateTestSuite(data: TestSuite, ctx: ImportContext, item: ImportItem): DBIO[_] = {
+    val domainId = item.parentItem.get.parentItem.get.targetKey.get.toLong
+    val specificationId = item.parentItem.get.targetKey.get.toLong
+    val testSuiteId = item.targetKey.get.toLong
+    // File system operations
+    val testSuitePaths = saveTestSuiteFiles(data, item, domainId, ctx)
+    var testCases: List[TestCase] = null
+    if (data.getTestCases != null && data.getTestCases.getTestCase != null) {
+      testCases = data.getTestCases.getTestCase.asScala.toList
+    } else {
+      testCases = List.empty
+    }
+    // Process DB operations
+    val updateActions = testSuiteUpdateActions(Some(specificationId), testCases)
+    val testCasesToUse = Some(toModelTestCases(testCases))
+    val action = for {
+      // Lookup existing test suite file (for later cleanup).
+      existingTestSuiteFile <- PersistenceSchema.testSuites.filter(_.id === testSuiteId).map(x => x.filename).result.head
+      // Update existing test suite and test cases.
+      stepSaveTestSuite <- testSuiteManager.stepSaveTestSuiteAndTestCases(toModelTestSuite(data, domainId, testSuitePaths.testSuiteFolder.getName, testCases.nonEmpty, testSuitePaths.testSuiteDefinitionPath, shared = false), Some(testSuiteId), testCasesToUse, testSuitePaths, updateActions)
+      // Specification-related updates.
+      _ <- if (ctx.savedSpecificationActors.contains(specificationId)) {
+          testSuiteManager.stepUpdateTestSuiteSpecificationLinks(specificationId, testSuiteId, testCasesToUse,
+            ctx.savedSpecificationActors(specificationId).asJava, // savedActorIds
+            stepSaveTestSuite.updatedTestCases)
+      } else {
+        DBIO.successful(())
+      }
+    } yield existingTestSuiteFile
+    action.flatMap(existingTestSuiteFile => {
+      ctx.onSuccessCalls += (() => {
+        // Finally, delete the backup folder
+        val existingTestSuiteFolder = repositoryUtils.getTestSuitePath(domainId, existingTestSuiteFile)
+        if (existingTestSuiteFolder != null && existingTestSuiteFolder.exists()) {
+          FileUtils.deleteDirectory(existingTestSuiteFolder)
+        }
+      })
+      ctx.onFailureCalls += (() => {
+        // Cleanup operations in case an error occurred.
+        if (testSuitePaths.testSuiteFolder.exists()) {
+          FileUtils.deleteDirectory(testSuitePaths.testSuiteFolder)
         }
       })
       DBIO.successful(())
@@ -670,6 +689,11 @@ class ImportCompleteManager @Inject()(communityResourceManager: CommunityResourc
     // Load values pertinent to domain to ensure we are modifying items within (for security purposes).
     if (targetDomainId.isDefined) {
       exec(PersistenceSchema.domains.filter(_.id === targetDomainId.get).map(x => x.id).result).map(x => ctx.existingIds.map(ImportItemType.Domain) += x.toString)
+      if (ctx.importTargets.hasTestSuites) {
+        exportManager.loadSharedTestSuites(targetDomainId.get).foreach { testSuite =>
+          ctx.existingIds.map(ImportItemType.TestSuite) += testSuite.id.toString
+        }
+      }
       if (ctx.importTargets.hasSpecifications) {
         exec(PersistenceSchema.specifications
           .filter(_.domain === targetDomainId.get)
@@ -783,6 +807,25 @@ class ImportCompleteManager @Inject()(communityResourceManager: CommunityResourc
         )
       }
       _ <- {
+        // Shared test suites
+        val dbActions = ListBuffer[DBIO[_]]()
+        if (exportedDomain.getSharedTestSuites != null) {
+          exportedDomain.getSharedTestSuites.getTestSuite.asScala.foreach { exportedTestSuite =>
+            dbActions += processFromArchive(ImportItemType.TestSuite, exportedTestSuite, exportedTestSuite.getId, ctx,
+              ImportCallbacks.set(
+                (data: com.gitb.xml.export.TestSuite, item: ImportItem) => {
+                  createSharedTestSuite(data, ctx, item)
+                },
+                (data: com.gitb.xml.export.TestSuite, targetKey: String, item: ImportItem) => {
+                  updateSharedTestSuite(data, ctx, item)
+                }
+              )
+            )
+          }
+        }
+        toDBIO(dbActions)
+      }
+      _ <- {
         // Specifications
         val dbActions = ListBuffer[DBIO[_]]()
         if (exportedDomain.getSpecifications != null) {
@@ -798,14 +841,7 @@ class ImportCompleteManager @Inject()(communityResourceManager: CommunityResourc
                   specificationManager.updateSpecificationInternal(targetKey.toLong, data.getShortName, data.getFullName, Option(data.getDescription), data.isHidden, Some(apiKey), checkApiKeyUniqueness = true)
                 },
                 (data: com.gitb.xml.export.Specification, targetKey: Any, item: ImportItem) => {
-                  // In case of a failure delete the created domain test suite folder (if one was created later on).
-                  ctx.onFailureCalls += (() => {
-                    val domainId = item.parentItem.get.targetKey.get.toLong
-                    val specificationFolder = repositoryUtils.getTestSuitesPath(domainId, targetKey.asInstanceOf[Long])
-                    if (specificationFolder.exists()) {
-                      FileUtils.deleteQuietly(specificationFolder)
-                    }
-                  })
+                  // No action.
                 }
               )
             )
@@ -973,6 +1009,37 @@ class ImportCompleteManager @Inject()(communityResourceManager: CommunityResourc
         val dbActions = ListBuffer[DBIO[_]]()
         if (exportedDomain.getSpecifications != null) {
           exportedDomain.getSpecifications.getSpecification.asScala.foreach { exportedSpecification =>
+            // Shared test suites.
+            if (exportedSpecification.getSharedTestSuites != null) {
+              exportedSpecification.getSharedTestSuites.asScala.foreach { exportedTestSuite =>
+                val id = exportedSpecification.getId+"|"+exportedTestSuite.getId
+                dbActions += processFromArchive(ImportItemType.TestSuite, exportedTestSuite, id, ctx,
+                  ImportCallbacks.set(
+                    (data: com.gitb.xml.export.TestSuite, item: ImportItem) => {
+                      val relatedSpecificationId = getProcessedDbId(exportedSpecification, ImportItemType.Specification, ctx)
+                      val relatedTestSuiteId = getProcessedDbId(exportedTestSuite, ImportItemType.TestSuite, ctx)
+                      if (relatedSpecificationId.isDefined && relatedTestSuiteId.isDefined) {
+                        val sharedTestSuiteInfo = ctx.sharedTestSuiteInfo.get(relatedTestSuiteId.get)
+                        if (sharedTestSuiteInfo.isDefined) {
+                          testSuiteManager.stepUpdateTestSuiteSpecificationLinks(relatedSpecificationId.get, relatedTestSuiteId.get, sharedTestSuiteInfo.get._1,
+                            ctx.savedSpecificationActors(relatedSpecificationId.get).asJava, // savedActorIds
+                            sharedTestSuiteInfo.get._2)
+                        } else {
+                          DBIO.successful(())
+                        }
+                      } else {
+                        DBIO.successful(())
+                      }
+                    },
+                    (data: com.gitb.xml.export.TestSuite, targetKey: String, item: ImportItem) => {
+                      // Update not needed. Test case links and updates to conformance statements will have happened in the test suite update.
+                      DBIO.successful(())
+                    }
+                  )
+                )
+              }
+            }
+            // Specification-specific test suites.
             if (exportedSpecification.getTestSuites != null) {
               exportedSpecification.getTestSuites.getTestSuite.asScala.foreach { exportedTestSuite =>
                 dbActions += processFromArchive(ImportItemType.TestSuite, exportedTestSuite, exportedTestSuite.getId, ctx,
@@ -994,7 +1061,17 @@ class ImportCompleteManager @Inject()(communityResourceManager: CommunityResourc
       _ <- {
         processRemaining(ImportItemType.TestSuite, ctx,
           (targetKey: String, item: ImportItem) => {
-            conformanceManager.undeployTestSuite(targetKey.toLong, ctx.onSuccessCalls)
+            val testSuiteId = targetKey.toLong
+            val isSharedTestSuiteLink = ctx.sharedTestSuiteInfo.contains(testSuiteId) && item.parentItem.isDefined && item.parentItem.get.itemType == ImportItemType.Specification
+            if (isSharedTestSuiteLink) {
+              // This is a shared test suite that was either created or updated during this import (i.e. it needs to remain present).
+              // This means that this removal is not for the test suite itself but for the link to a specification.
+              val specificationId = item.parentItem.get.targetKey.get.toLong
+              testSuiteManager.unlinkSharedTestSuiteInternal(testSuiteId, List(specificationId))
+            } else {
+              // This is either a specification-specific test suite or a shared test suite that needs deleting.
+              conformanceManager.undeployTestSuite(targetKey.toLong, ctx.onSuccessCalls)
+            }
           }
         )
       }
@@ -1040,6 +1117,7 @@ class ImportCompleteManager @Inject()(communityResourceManager: CommunityResourc
       ImportTargets.fromImportItems(importItems),
       mutable.Map[ImportItemType, mutable.Map[String, String]](),
       mutable.Map[Long, mutable.Map[String, Long]](),
+      mutable.Map[Long, (Option[List[TestCases]], Map[String, (Long, Boolean)])](),
       mutable.ListBuffer[() => _](),
       mutable.ListBuffer[() => _]()
     )

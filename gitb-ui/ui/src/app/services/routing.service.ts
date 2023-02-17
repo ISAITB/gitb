@@ -115,8 +115,8 @@ export class RoutingService {
     return this.router.navigate(['admin', 'domains', 'create'])
   }
 
-  toDomain(domainId: number) {
-    return this.router.navigate(['admin', 'domains', domainId])
+  toDomain(domainId: number, tab?: number) {
+    return this.router.navigate(['admin', 'domains', domainId], this.addTabExtras(tab))
   }
 
   toDomains() {
@@ -147,8 +147,16 @@ export class RoutingService {
     return this.router.navigate(['admin', 'domains', domainId, 'specifications', specificationId, 'actors', actorId])
   }
 
+  toSharedTestSuite(domainId: number, testSuiteId: number) {
+    return this.router.navigate(['admin', 'domains', domainId, 'testsuites', testSuiteId])
+  }
+
   toTestSuite(domainId: number, specificationId: number, testSuiteId: number) {
     return this.router.navigate(['admin', 'domains', domainId, 'specifications', specificationId, 'testsuites', testSuiteId])
+  }
+
+  toSharedTestCase(domainId: number, testSuiteId: number, testCaseId: number) {
+    return this.router.navigate(['admin', 'domains', domainId, 'testsuites', testSuiteId, 'testcases', testCaseId])
   }
 
   toTestCase(domainId: number, specificationId: number, testSuiteId: number, testCaseId: number) {

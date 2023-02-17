@@ -223,13 +223,12 @@ object PersistenceSchema {
     def keywords = column[Option[String]]("keywords")
     def testCaseType = column[Short]("type")
 	  def path = column[String]("path")
-	  def targetSpec = column[Long]("target_spec")
     def targetActors = column[Option[String]]("target_actors")
     def targetOptions = column[Option[String]]("target_options")
     def testSuiteOrder = column[Short]("testsuite_order")
     def hasDocumentation = column[Boolean]("has_documentation")
     def documentation = column[Option[String]]("documentation")
-	  def * = (id, shortname, fullname, version, authors, originalDate, modificationDate, description, keywords, testCaseType, path, targetSpec, targetActors, targetOptions, testSuiteOrder, hasDocumentation, documentation, identifier) <> (TestCases.tupled, TestCases.unapply)
+	  def * = (id, shortname, fullname, version, authors, originalDate, modificationDate, description, keywords, testCaseType, path, targetActors, targetOptions, testSuiteOrder, hasDocumentation, documentation, identifier) <> (TestCases.tupled, TestCases.unapply)
   }
   val testCases = TableQuery[TestCasesTable]
 
@@ -244,12 +243,14 @@ object PersistenceSchema {
 		def modificationDate = column[Option[String]]("modification_date")
 		def description = column[Option[String]]("description", O.SqlType("TEXT"))
 		def keywords = column[Option[String]]("keywords")
-    def specification = column[Long]("specification")
     def filename = column[String]("file_name")
     def hasDocumentation = column[Boolean]("has_documentation")
     def documentation = column[Option[String]]("documentation")
+    def definitionPath = column[Option[String]]("definition_path")
     def hidden = column[Boolean]("is_hidden")
-		def * = (id, shortname, fullname, version, authors, originalDate, modificationDate, description, keywords, specification, filename, hasDocumentation, documentation, identifier, hidden) <> (TestSuites.tupled, TestSuites.unapply)
+    def shared = column[Boolean]("is_shared")
+    def domain = column[Long]("domain")
+		def * = (id, shortname, fullname, version, authors, originalDate, modificationDate, description, keywords, filename, hasDocumentation, documentation, identifier, hidden, shared, domain,definitionPath) <> (TestSuites.tupled, TestSuites.unapply)
 	}
 	val testSuites = TableQuery[TestSuitesTable]
 
@@ -335,6 +336,14 @@ object PersistenceSchema {
     def pk = primaryKey("sha2_pk", (specId, actorId))
   }
   val specificationHasActors = TableQuery[SpecificationHasActorsTable]
+
+  class SpecificationHasTestSuitesTable(tag: Tag) extends Table[(Long, Long)](tag, "SpecificationHasTestSuites") {
+    def specId = column[Long]("spec")
+    def testSuiteId = column[Long]("testsuite")
+    def * = (specId, testSuiteId)
+    def pk = primaryKey("shts_pk", (specId, testSuiteId))
+  }
+  val specificationHasTestSuites = TableQuery[SpecificationHasTestSuitesTable]
 
   class EndpointSupportsTransactionsTable(tag: Tag) extends Table[(Long, String, String)](tag, "EndpointSupportsTransactions") {
     def actorId = column[Long]("actor")

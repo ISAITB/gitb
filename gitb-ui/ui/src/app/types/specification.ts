@@ -8,4 +8,6 @@ export interface Specification {
     domain: number
     apiKey?: string
 
+    checked?: boolean
+
 }

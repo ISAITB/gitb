@@ -965,10 +965,22 @@ export class DataService {
     })
   }
 
-  asIdSet(items: ObjectWithId[]): NumberSet {
+  asSet(items: number[]|undefined): NumberSet {
+    const numberSet: NumberSet = {}
+    if (items) {
+      for (let item of items) {
+        numberSet[item] = true
+      }
+    }
+    return numberSet
+  }
+
+  asIdSet(items: ObjectWithId[]|undefined): NumberSet {
     const idSet: NumberSet = {}
-    for (let item of items) {
-      idSet[item.id] = true
+    if (items) {
+      for (let item of items) {
+        idSet[item.id] = true
+      }
     }
     return idSet
   }

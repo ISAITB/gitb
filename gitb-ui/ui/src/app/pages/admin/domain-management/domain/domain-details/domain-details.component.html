@@ -1,89 +1,110 @@
 <div class="page domains detail">
-	<div class="panel panel-default">
-		<div class="panel-heading">
-			<h4 class="title">{{dataService.labelDomain()}} details</h4>
-		</div>
-		<form class="form-horizontal">
-			<div class="panel-body">
-				<div class="row">
-					<div class="col-md-10 col-md-offset-1">
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h4 class="title">{{dataService.labelDomain()}} details</h4>
+        </div>
+        <form class="form-horizontal">
+            <div class="panel-body">
+                <div class="row">
+                    <div class="col-md-10 col-md-offset-1">
                         <app-domain-form *ngIf="domain" [domain]="domain"></app-domain-form>
-					</div>
-				</div>
-			</div>
-			<div class="panel-footer">
-				<div class="btn-toolbar">
-					<button type="submit" (click)="saveDomainChanges()" class="btn btn-default" [disable]="deletePending || saveDisabled()" [pending]="savePending">Save changes</button>
-					<button type="button" *ngIf="dataService.isSystemAdmin" (click)="deleteDomain()" class="btn btn-default" [disable]="savePending" [pending]="deletePending">Delete</button>
-					<button type="button" *ngIf="dataService.isSystemAdmin || (dataService.isCommunityAdmin && !dataService.community!.domainId)" (click)="back()" class="btn btn-default">Back</button>
-				</div>
-			</div>
-		</form>
-	</div>
-	<div>
-		<tabset>
-			<tab heading="{{dataService.labelSpecifications()}}" (selectTab)="loadSpecifications()">
+                    </div>
+                </div>
+            </div>
+            <div class="panel-footer">
+                <div class="btn-toolbar">
+                    <button type="submit" (click)="saveDomainChanges()" class="btn btn-default" [disable]="deletePending || saveDisabled()" [pending]="savePending">Save changes</button>
+                    <button type="button" *ngIf="dataService.isSystemAdmin" (click)="deleteDomain()" class="btn btn-default" [disable]="savePending" [pending]="deletePending">Delete</button>
+                    <button type="button" *ngIf="dataService.isSystemAdmin || (dataService.isCommunityAdmin && !dataService.community!.domainId)" (click)="back()" class="btn btn-default">Back</button>
+                </div>
+            </div>
+        </form>
+    </div>
+    <div>
+        <tabset #tabs>
+            <tab heading="{{dataService.labelSpecifications()}}" (selectTab)="loadSpecifications()">
                 <div class="tabPanel">
                     <div class="tabControls">
-						<div class="btn-toolbar">
-							<button *ngIf="specifications.length > 0" type="button" class="btn btn-default" (click)="uploadTestSuite()">Upload test suite</button>
-							<button type="button" class="btn btn-default" (click)="createSpecification()">Create {{dataService.labelSpecificationLower()}}</button>
-						</div>
-					</div>
+                        <div class="btn-toolbar">
+                            <button *ngIf="specifications.length > 0" type="button" class="btn btn-default" (click)="uploadTestSuite()">Upload test suite</button>
+                            <button type="button" class="btn btn-default" (click)="createSpecification()">Create {{dataService.labelSpecificationLower()}}</button>
+                        </div>
+                    </div>
                     <div class="panel panel-default">
-						<div table-directive
-							[columns]="tableColumns"
-							[data]="specifications"
-							[noDataMessage]="'No '+dataService.labelSpecificationsLower()+' found'"
-							[loadingStatus]="specificationStatus"
-							[allowSelect]="true"
-							(onSelect)="onSpecificationSelect($event)">
-						</div>
-					</div>
-				</div>
-			</tab>
-			<tab heading="Parameters" (selectTab)="loadDomainParameters()">
+                        <div table-directive
+                            [columns]="tableColumns"
+                            [data]="specifications"
+                            [noDataMessage]="'No '+dataService.labelSpecificationsLower()+' found'"
+                            [loadingStatus]="specificationStatus"
+                            [allowSelect]="true"
+                            (onSelect)="onSpecificationSelect($event)">
+                        </div>
+                    </div>
+                </div>
+            </tab>
+
+            <tab heading="Shared test suites" (selectTab)="loadSharedTestSuites()">
                 <div class="tabPanel">
-					<div class="tabControls">
-						<button type="button" class="btn btn-default" (click)="createDomainParameter()">Create parameter</button>
-					</div>
+                    <div class="tabControls">
+                        <div class="btn-toolbar">
+                            <button type="button" class="btn btn-default" (click)="uploadSharedTestSuite()">Upload shared test suite</button>
+                        </div>
+                    </div>
+                    <div class="panel panel-default">
+                        <div table-directive
+                            [columns]="sharedTestSuiteTableColumns"
+                            [data]="sharedTestSuites"
+                            [noDataMessage]="'No shared test suited found'"
+                            [loadingStatus]="sharedTestSuiteStatus"
+                            [allowSelect]="true"
+                            (onSelect)="onSharedTestSuiteSelect($event)">
+                        </div>
+                    </div>
+                </div>
+            </tab>
+
+            <tab heading="Parameters" (selectTab)="loadDomainParameters()">
+                <div class="tabPanel">
+                    <div class="tabControls">
+                        <button type="button" class="btn btn-default" (click)="createDomainParameter()">Create parameter</button>
+                    </div>
                     <div class="panel panel-default table-container">
-						<table class="table table-directive">
-							<thead>
-								<tr>
-									<th>Name</th>
-									<th>Value</th>
-									<th>Description</th>
-									<th>In&nbsp;tests</th>
-								</tr>
-							</thead>
-							<tbody>
-								<ng-container [ngSwitch]="parameterStatus.status">
-									<ng-container *ngSwitchCase="Constants.STATUS.FINISHED" [ngSwitch]="domainParameters.length">
-										<tr *ngSwitchCase="0">
-											<td colspan="4" class="td-no-data"><span>No parameters found</span></td>
-										</tr>
-										<ng-container *ngSwitchDefault>
-											<tr class="selectable" (click)="onDomainParameterSelect(parameter)" *ngFor="let parameter of domainParameters">
-												<td>{{parameter.name}}</td>
-												<td *ngIf="parameter.kind == 'BINARY'"><a href (click)="downloadParameter(parameter);$event.preventDefault();$event.stopPropagation()">{{parameter.valueToShow}}</a></td>
-												<td *ngIf="parameter.kind != 'BINARY'">{{parameter.valueToShow}}</td>
-												<td>{{parameter.description}}</td>
-												<td><div><span><i class="fa" [ngClass]="{'fa-check': parameter.inTests, 'fa-times': !parameter.inTests}"></i></span></div></td>
-											</tr>
-										</ng-container>
-									</ng-container>
-									<ng-container *ngSwitchDefault>
-										<tr>
-											<td colspan="4" class="td-data-loading"><span><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span></td>
-										</tr>
-									</ng-container>
-								</ng-container>
-							</tbody>
-						</table>
-					</div>
-				</div>
-			</tab>
-		</tabset>
-	</div>
+                        <table class="table table-directive">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Value</th>
+                                    <th>Description</th>
+                                    <th>In&nbsp;tests</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <ng-container [ngSwitch]="parameterStatus.status">
+                                    <ng-container *ngSwitchCase="Constants.STATUS.FINISHED" [ngSwitch]="domainParameters.length">
+                                        <tr *ngSwitchCase="0">
+                                            <td colspan="4" class="td-no-data"><span>No parameters found</span></td>
+                                        </tr>
+                                        <ng-container *ngSwitchDefault>
+                                            <tr class="selectable" (click)="onDomainParameterSelect(parameter)" *ngFor="let parameter of domainParameters">
+                                                <td>{{parameter.name}}</td>
+                                                <td *ngIf="parameter.kind == 'BINARY'"><a href (click)="downloadParameter(parameter);$event.preventDefault();$event.stopPropagation()">{{parameter.valueToShow}}</a></td>
+                                                <td *ngIf="parameter.kind != 'BINARY'">{{parameter.valueToShow}}</td>
+                                                <td>{{parameter.description}}</td>
+                                                <td><div><span><i class="fa" [ngClass]="{'fa-check': parameter.inTests, 'fa-times': !parameter.inTests}"></i></span></div></td>
+                                            </tr>
+                                        </ng-container>
+                                    </ng-container>
+                                    <ng-container *ngSwitchDefault>
+                                        <tr>
+                                            <td colspan="4" class="td-data-loading"><span><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span></td>
+                                        </tr>
+                                    </ng-container>
+                                </ng-container>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </tab>
+        </tabset>
+    </div>
 </div>

@@ -219,20 +219,21 @@ object JsonUtil {
     "resources/" + resource.name
   }
 
-  def jsTestSuite(suite: TestSuites, withDocumentation: Boolean): JsObject = {
+  def jsTestSuite(suite: TestSuites, specificationIds: Option[List[Long]], withDocumentation: Boolean): JsObject = {
     val json = Json.obj(
       "id"                -> suite.id,
       "identifier"        -> suite.identifier,
       "sname"             -> suite.shortname,
       "fname"             -> suite.fullname,
       "version"           -> suite.version,
-      "specification"     -> suite.specification,
+      "specifications"    -> toJsArray(specificationIds),
       "authors"           -> (if(suite.authors.isDefined) suite.authors.get else JsNull),
       "description"       -> (if(suite.description.isDefined) suite.description.get else JsNull),
       "keywords"          -> (if(suite.keywords.isDefined) suite.keywords.get else JsNull),
       "modificationDate"  -> (if(suite.modificationDate.isDefined) suite.modificationDate.get else JsNull),
       "originalDate"      -> (if(suite.originalDate.isDefined) suite.originalDate.get else JsNull),
       "hasDocumentation"  -> suite.hasDocumentation,
+      "shared"            -> suite.shared,
       "documentation"     -> (if(withDocumentation && suite.documentation.isDefined) suite.documentation else JsNull),
     )
     json
@@ -285,13 +286,13 @@ object JsonUtil {
   def jsTestSuitesList(list: List[TestSuites]): JsArray = {
     var json = Json.arr()
     list.foreach { testSuite =>
-      json = json.append(jsTestSuite(testSuite, withDocumentation = false))
+      json = json.append(jsTestSuite(testSuite, None, withDocumentation = false))
     }
     json
   }
 
   def jsTestSuite(testSuite: TestSuite, withDocumentation: Boolean): JsObject = {
-    var jTestSuite: JsObject = jsTestSuite(testSuite.toCaseObject, withDocumentation)
+    var jTestSuite: JsObject = jsTestSuite(testSuite.toCaseObject, testSuite.specifications, withDocumentation)
     if (testSuite.testCases.isDefined) {
       jTestSuite = jTestSuite ++ Json.obj("testCases" -> jsTestCasesList(testSuite.testCases.get))
     } else {
@@ -300,7 +301,7 @@ object JsonUtil {
     jTestSuite
   }
 
-  def jsTestSuiteList(testSuites: Seq[TestSuite]): JsArray = {
+  def jsTestSuiteList(testSuites: Iterable[TestSuite]): JsArray = {
     var json = Json.arr()
     testSuites.foreach { testSuite =>
       json = json.append(jsTestSuite(testSuite, withDocumentation = false))
@@ -987,11 +988,11 @@ object JsonUtil {
       if ("proceed".equals(pendingActionStr)) {
         pendingAction = TestSuiteReplacementChoice.PROCEED
         val testCaseActions = new ListBuffer[TestCaseDeploymentAction]()
-        testCaseActions ++= (jsonConfig \ "testCaseUpdates").as[List[JsValue]].map { item =>
+        testCaseActions ++= (jsonConfig \ "testCaseUpdates").asOpt[List[JsValue]].getOrElse(List.empty).map { item =>
           new TestCaseDeploymentAction(
             (item \ "identifier").as[String],
-            (item \ "updateDefinition").as[Boolean],
-            (item \ "resetTestHistory").as[Boolean]
+            (item \ "updateDefinition").asOpt[Boolean].getOrElse(false),
+            (item \ "resetTestHistory").asOpt[Boolean].getOrElse(false)
           )
         }
         testCasesToReset = Some(testCaseActions.toList)
@@ -1000,10 +1001,11 @@ object JsonUtil {
         pendingAction = TestSuiteReplacementChoice.CANCEL
       }
       values += new TestSuiteDeploymentAction(
-        (jsonConfig \ "specification").as[Long],
+        (jsonConfig \ "specification").asOpt[Long],
         pendingAction,
-        (jsonConfig \ "updateTestSuite").as[Boolean],
-        (jsonConfig \ "updateActors").as[Boolean],
+        (jsonConfig \ "updateTestSuite").asOpt[Boolean].getOrElse(false),
+        (jsonConfig \ "updateActors").asOpt[Boolean],
+        (jsonConfig \ "sharedTestSuite").asOpt[Boolean].getOrElse(false),
         testCasesToReset
       )
     }
@@ -1295,7 +1297,6 @@ object JsonUtil {
       "description" -> (if(testCase.description.isDefined) testCase.description.get else JsNull),
       "keywords" -> (if(testCase.keywords.isDefined) testCase.keywords.get else JsNull),
       "type" -> testCase.testCaseType,
-      "targetSpec"  -> testCase.targetSpec,
       "path" -> testCase.path,
       "hasDocumentation" -> testCase.hasDocumentation,
       "documentation" -> (if (withDocumentation && testCase.documentation.isDefined) testCase.documentation.get else JsNull)
@@ -1322,7 +1323,6 @@ object JsonUtil {
       "keywords" -> (if(testCase.keywords.isDefined) testCase.keywords.get else JsNull),
       "type" -> testCase.testCaseType,
       "path" -> testCase.path,
-      "targetSpec"  -> testCase.targetSpec,
       "hasDocumentation"  -> testCase.hasDocumentation
     )
     json
@@ -1954,7 +1954,7 @@ object JsonUtil {
     json
   }
 
-  def jsTestSuiteUploadItemResult(item: TestSuiteUploadItemResult):JsObject = {
+  private def jsTestSuiteUploadItemResult(item: TestSuiteUploadItemResult):JsObject = {
     val json = Json.obj(
       "name" -> item.itemName,
       "type" -> item.itemType,
@@ -1964,9 +1964,9 @@ object JsonUtil {
     json
   }
 
-  def jsTestSuiteUploadItemResults(items: util.ArrayList[TestSuiteUploadItemResult]):JsArray = {
+  private def jsTestSuiteUploadItemResults(items: Iterable[TestSuiteUploadItemResult]):JsArray = {
     var json = Json.arr()
-    for (item <- items.asScala) {
+    for (item <- items) {
       json = json.append(jsTestSuiteUploadItemResult(item))
     }
     json
@@ -1987,13 +1987,28 @@ object JsonUtil {
       "success"    -> result.success,
       "errorInformation"  -> result.errorInformation,
       "pendingFolderId"  -> result.pendingTestSuiteFolderName,
-      "existsForSpecs" -> toJsArray(result.existsForSpecs),
+      "existsForSpecs" -> testSuiteExistsForSpec(result.existsForSpecs),
       "matchingDataExists" -> toJsArray(result.matchingDataExists),
-      "items" -> jsTestSuiteUploadItemResults(result.items),
+      "items" -> jsTestSuiteUploadItemResults(result.items.asScala),
       "validationReport" -> (if (result.validationReport != null) jsTAR(result.validationReport) else JsNull),
       "needsConfirmation" -> result.needsConfirmation,
-      "testCases" -> (if (result.testCases.isDefined) jsTestSuiteUploadSpecificationTestCases(result.testCases.get) else JsNull)
+      "testCases" -> (if (result.testCases.isDefined) jsTestSuiteUploadSpecificationTestCases(result.testCases.get) else JsNull),
+      "sharedTestSuiteId" -> (if (result.sharedTestSuiteId.isDefined) result.sharedTestSuiteId.get else JsNull),
+      "sharedTestCases" -> (if (result.sharedTestCases.isDefined) jsTestSuiteUploadTestCases(result.sharedTestCases.get) else JsNull)
     )
+    json
+  }
+
+  private def testSuiteExistsForSpec(info: Option[List[(Long, Boolean)]]): JsArray = {
+    var json = Json.arr()
+    if (info.isDefined) {
+      info.get.foreach { value =>
+        json = json.append(Json.obj(
+          "id" -> value._1,
+          "shared" -> value._2
+        ))
+      }
+    }
     json
   }
 

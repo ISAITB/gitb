@@ -1,6 +1,6 @@
 import { AfterViewInit, Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { mergeMap, Observable, share, map } from 'rxjs';
+import { mergeMap, Observable, share, map, of } from 'rxjs';
 import { ActorInfo } from 'src/app/components/diagram/actor-info';
 import { DiagramEvents } from 'src/app/components/diagram/diagram-events';
 import { StepData } from 'src/app/components/diagram/step-data';
@@ -23,7 +23,7 @@ export class TestCaseDetailsComponent extends BaseComponent implements OnInit, A
 
   testCase: Partial<TestCase> = {}
   domainId!: number
-  specificationId!:number
+  specificationId?:number
   testSuiteId!:number
   testCaseId!:number
   showDocumentation = false
@@ -50,7 +50,10 @@ export class TestCaseDetailsComponent extends BaseComponent implements OnInit, A
 
   ngOnInit(): void {
     this.domainId = Number(this.route.snapshot.paramMap.get('id'))
-    this.specificationId = Number(this.route.snapshot.paramMap.get('spec_id'))
+    const specificationIdParam = this.route.snapshot.paramMap.get('spec_id')
+    if (specificationIdParam) {
+      this.specificationId = Number(specificationIdParam)
+    }
     this.testSuiteId = Number(this.route.snapshot.paramMap.get('testsuite_id'))
     this.testCaseId = Number(this.route.snapshot.paramMap.get('testcase_id'))
 		this.testSuiteService.getTestCase(this.testCaseId)
@@ -81,7 +84,12 @@ export class TestCaseDetailsComponent extends BaseComponent implements OnInit, A
   }
 
 	back() {
-    this.routingService.toTestSuite(this.domainId, this.specificationId, this.testSuiteId)
+    if (this.specificationId != undefined) {
+      this.routingService.toTestSuite(this.domainId, this.specificationId, this.testSuiteId)
+    } else {
+      // Shared test suite.
+      this.routingService.toSharedTestSuite(this.domainId, this.testSuiteId)
+    }
   }
 
 	saveDisabled() {

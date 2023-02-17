@@ -92,6 +92,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
      */
     val targetSpecificationMap = mutable.Map[String, models.Specifications]()
     val targetSpecificationIdMap = mutable.Map[Long, models.Specifications]()
+    val targetDomainTestSuiteMap = mutable.Map[String, models.TestSuites]()
     val targetSpecificationTestSuiteMap = mutable.Map[Long, mutable.Map[String, models.TestSuites]]()
     val targetSpecificationActorMap = mutable.Map[Long, mutable.Map[String, models.Actors]]()
     val targetActorEndpointMap = mutable.Map[Long, mutable.Map[String, models.Endpoints]]()
@@ -144,10 +145,15 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
           }
         }
       }
+      exec(PersistenceSchema.testSuites
+        .filter(_.domain === targetDomain.get.id)
+        .filter(_.shared)
+        .result
+      ).foreach(x => targetDomainTestSuiteMap += (x.identifier -> x))
       exec(PersistenceSchema.domainParameters
         .filter(_.domain === targetDomain.get.id)
         .result
-      ).map(x => targetDomainParametersMap += (x.name -> x))
+      ).foreach(x => targetDomainParametersMap += (x.name -> x))
     }
     if (targetDomain.isDefined && importTargets.hasDomain) {
       importItemDomain = new ImportItem(Some(targetDomain.get.fullname), ImportItemType.Domain, ImportItemMatch.Both, Some(targetDomain.get.id.toString), Some(exportedDomain.getId))
@@ -167,6 +173,17 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
           new ImportItem(Some(targetParameter.get.name), ImportItemType.DomainParameter, ImportItemMatch.Both, Some(targetParameter.get.id.toString), Some(exportedDomainParameter.getId), importItemDomain)
         } else {
           new ImportItem(Some(exportedDomainParameter.getName), ImportItemType.DomainParameter, ImportItemMatch.ArchiveOnly, None, Some(exportedDomainParameter.getId), importItemDomain)
+        }
+      }
+    }
+    // Shared test suites.
+    if (importTargets.hasTestSuites) {
+      exportedDomain.getSharedTestSuites.getTestSuite.asScala.foreach { exportedTestSuite =>
+        val targetTestSuite: Option[models.TestSuites] = targetDomainTestSuiteMap.remove(exportedTestSuite.getIdentifier)
+        if (targetTestSuite.isDefined) {
+          new ImportItem(Some(targetTestSuite.get.fullname), ImportItemType.TestSuite, ImportItemMatch.Both, Some(targetTestSuite.get.id.toString), Some(exportedTestSuite.getId), importItemDomain)
+        } else {
+          new ImportItem(Some(exportedTestSuite.getShortName), ImportItemType.TestSuite, ImportItemMatch.ArchiveOnly, None, Some(exportedTestSuite.getId), importItemDomain)
         }
       }
     }
@@ -195,6 +212,22 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
               new ImportItem(Some(targetTestSuite.get.fullname), ImportItemType.TestSuite, ImportItemMatch.Both, Some(targetTestSuite.get.id.toString), Some(exportedTestSuite.getId), importItemSpecification)
             } else {
               new ImportItem(Some(exportedTestSuite.getShortName), ImportItemType.TestSuite, ImportItemMatch.ArchiveOnly, None, Some(exportedTestSuite.getId), importItemSpecification)
+            }
+          }
+        }
+        // Shared test suites.
+        if (exportedSpecification.getSharedTestSuites != null) {
+          exportedSpecification.getSharedTestSuites.asScala.foreach { exportedTestSuite =>
+            var targetTestSuite: Option[models.TestSuites] = None
+            if (targetSpecification.isDefined && targetSpecificationTestSuiteMap.contains(targetSpecification.get.id)) {
+              targetTestSuite = targetSpecificationTestSuiteMap(targetSpecification.get.id).remove(exportedTestSuite.getIdentifier)
+            }
+            val sourceId = importItemSpecification.sourceKey.get + "|" + exportedTestSuite.getId
+            if (targetTestSuite.isDefined) {
+              val targetId = importItemSpecification.targetKey.get + "|" + targetTestSuite.get.id
+              new ImportItem(Some(targetTestSuite.get.fullname), ImportItemType.TestSuite, ImportItemMatch.Both, Some(targetId), Some(sourceId), importItemSpecification)
+            } else {
+              new ImportItem(Some(exportedTestSuite.getShortName), ImportItemType.TestSuite, ImportItemMatch.ArchiveOnly, None, Some(sourceId), importItemSpecification)
             }
           }
         }
@@ -251,13 +284,17 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
     targetDomainParametersMap.values.foreach { parameter =>
       new ImportItem(Some(parameter.name), ImportItemType.DomainParameter, ImportItemMatch.DBOnly, Some(parameter.id.toString), None, importItemDomain)
     }
+    // Mark items not found for deletion.
+    targetDomainTestSuiteMap.values.foreach { testSuite =>
+      new ImportItem(Some(testSuite.fullname), ImportItemType.TestSuite, ImportItemMatch.DBOnly, Some(testSuite.id.toString), None, importItemDomain)
+    }
     targetSpecificationMap.values.foreach { specification =>
       val item = new ImportItem(Some(specification.fullname), ImportItemType.Specification, ImportItemMatch.DBOnly, Some(specification.id.toString), None, importItemDomain)
       importItemMapSpecification += (specification.id.toString -> item)
     }
-    targetSpecificationTestSuiteMap.values.foreach { x =>
-      x.values.foreach { testSuite =>
-        new ImportItem(Some(testSuite.fullname), ImportItemType.TestSuite, ImportItemMatch.DBOnly, Some(testSuite.id.toString), None, importItemMapSpecification(testSuite.specification.toString))
+    targetSpecificationTestSuiteMap.foreach { x =>
+      x._2.values.foreach { testSuite =>
+        new ImportItem(Some(testSuite.fullname), ImportItemType.TestSuite, ImportItemMatch.DBOnly, Some(testSuite.id.toString), None, importItemMapSpecification(x._1.toString))
       }
     }
     targetSpecificationActorMap.foreach { entry =>

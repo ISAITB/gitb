@@ -62,20 +62,28 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, communityResour
     exportData
   }
 
+  private[export] def loadSharedTestSuites(domainId: Long): Seq[models.TestSuites] = {
+    exec(PersistenceSchema.testSuites
+      .filter(_.domain === domainId)
+      .filter(_.shared)
+      .result
+    )
+  }
+
   private[export] def loadSpecificationTestSuiteMap(domainId: Long): scala.collection.mutable.Map[Long, ListBuffer[models.TestSuites]] = {
     val specificationTestSuiteMap = scala.collection.mutable.Map[Long, ListBuffer[models.TestSuites]]()
     exec(PersistenceSchema.testSuites
-      .join(PersistenceSchema.specifications).on(_.specification === _.id)
-      .filter(_._2.domain === domainId)
-      .map(x => x._1)
+      .join(PersistenceSchema.specificationHasTestSuites).on(_.id === _.testSuiteId)
+      .filter(_._1.domain === domainId)
+      .map(x => (x._2.specId, x._1)) // Spec ID, TestSuite
       .result
     ).foreach { x =>
-      var testSuites = specificationTestSuiteMap.get(x.specification)
+      var testSuites = specificationTestSuiteMap.get(x._1)
       if (testSuites.isEmpty) {
         testSuites = Some(new ListBuffer[models.TestSuites])
-        specificationTestSuiteMap += (x.specification -> testSuites.get)
+        specificationTestSuiteMap += (x._1 -> testSuites.get)
       }
-      testSuites.get += x
+      testSuites.get += x._2
     }
     specificationTestSuiteMap
   }
@@ -295,7 +303,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, communityResour
   }
 
   private def exportDomainInternal(domainId: Long, exportSettings: ExportSettings): DomainExportInfo = {
-    var idSequence: Int = 0
+    val sequence = new IdGenerator
     var specificationActorMap: scala.collection.mutable.Map[Long, ListBuffer[models.Actors]] = null
     var actorEndpointMap: scala.collection.mutable.Map[Long, ListBuffer[models.Endpoints]] = null
     var endpointParameterMap: scala.collection.mutable.Map[Long, ListBuffer[models.Parameters]] = null
@@ -322,22 +330,21 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, communityResour
         specificationTestSuiteMap = loadSpecificationTestSuiteMap(domainId)
         exec(PersistenceSchema.testSuites
             .join(PersistenceSchema.testSuiteHasActors).on(_.id === _.testsuite)
-            .join(PersistenceSchema.specifications).on(_._1.specification === _.id)
-            .filter(_._2.domain === domainId)
-            .map(x => x._1._2)
+            .filter(_._1.domain === domainId)
+            .map(x => x._2)
             .result
         ).foreach { x =>
-          var actors = testSuiteActorMap.get(x._1) // Test suite
+          var actors = testSuiteActorMap.get(x._1) // Test suite ID
           if (actors.isEmpty) {
             actors = Some(new ListBuffer[Long])
             testSuiteActorMap += (x._1 -> actors.get)
           }
-          actors.get += x._2
+          actors.get += x._2 // Actor ID
         }
         // Test cases.
         exec(PersistenceSchema.testCases
           .join(PersistenceSchema.testSuiteHasTestCases).on(_.id === _.testcase)
-          .join(PersistenceSchema.specifications).on(_._1.targetSpec === _.id)
+          .join(PersistenceSchema.testSuites).on(_._2.testsuite === _.id)
           .filter(_._2.domain === domainId)
           .map(x => (x._1._2.testsuite, x._1._1))
           .result
@@ -351,7 +358,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, communityResour
         }
         exec(PersistenceSchema.testCases
           .join(PersistenceSchema.testCaseHasActors).on(_.id === _.testcase)
-          .join(PersistenceSchema.specifications).on(_._1.targetSpec === _.id)
+          .join(PersistenceSchema.actors).on(_._2.actor === _.id)
           .filter(_._2.domain === domainId)
           .map(x => x._1._2)
           .result
@@ -368,14 +375,27 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, communityResour
     val exportedActorMap: scala.collection.mutable.Map[Long, com.gitb.xml.export.Actor] = scala.collection.mutable.Map()
     val exportedEndpointParameterMap: scala.collection.mutable.Map[Long, com.gitb.xml.export.EndpointParameter] = scala.collection.mutable.Map()
     val exportedDomainParameterMap: scala.collection.mutable.Map[Long, com.gitb.xml.export.DomainParameter] = scala.collection.mutable.Map()
+    val exportedSharedTestSuiteMap: scala.collection.mutable.Map[Long, com.gitb.xml.export.TestSuite] = scala.collection.mutable.Map()
     // Domain.
     val domain = conformanceManager.getById(domainId)
     val exportedDomain = new com.gitb.xml.export.Domain
-    idSequence += 1
-    exportedDomain.setId(toId(idSequence))
+    exportedDomain.setId(toId(sequence.next()))
     exportedDomain.setShortName(domain.shortname)
     exportedDomain.setFullName(domain.fullname)
     exportedDomain.setDescription(domain.description.orNull)
+    // Shared test suites.
+    if (exportSettings.testSuites) {
+      val testSuites = loadSharedTestSuites(domain.id)
+      if (testSuites.nonEmpty) {
+        val sharedTestSuites = new com.gitb.xml.export.TestSuites
+        testSuites.foreach { testSuite =>
+          val exportedTestSuite = toExportedTestSuite(sequence, testSuite, None, testSuiteTestCaseMap.getOrElse(testSuite.id, ListBuffer.empty).toList)
+          sharedTestSuites.getTestSuite.add(exportedTestSuite)
+          exportedSharedTestSuiteMap += (testSuite.id -> exportedTestSuite)
+        }
+        exportedDomain.setSharedTestSuites(sharedTestSuites)
+      }
+    }
     // Specifications.
     if (exportSettings.specifications) {
       val specifications = conformanceManager.getSpecifications(domain.id)
@@ -383,8 +403,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, communityResour
         exportedDomain.setSpecifications(new com.gitb.xml.export.Specifications)
         specifications.foreach { specification =>
           val exportedSpecification = new com.gitb.xml.export.Specification
-          idSequence += 1
-          exportedSpecification.setId(toId(idSequence))
+          exportedSpecification.setId(toId(sequence.next()))
           exportedSpecification.setShortName(specification.shortname)
           exportedSpecification.setFullName(specification.fullname)
           exportedSpecification.setDescription(specification.description.orNull)
@@ -395,8 +414,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, communityResour
             exportedSpecification.setActors(new com.gitb.xml.export.Actors)
             specificationActorMap(specification.id).foreach { actor =>
               val exportedActor = new com.gitb.xml.export.Actor
-              idSequence += 1
-              exportedActor.setId(toId(idSequence))
+              exportedActor.setId(toId(sequence.next()))
               exportedActor.setSpecification(exportedSpecification)
               exportedActor.setActorId(actor.actorId)
               exportedActor.setName(actor.name)
@@ -413,8 +431,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, communityResour
                 exportedActor.setEndpoints(new com.gitb.xml.export.Endpoints)
                 actorEndpointMap(actor.id).foreach { endpoint =>
                   val exportedEndpoint = new com.gitb.xml.export.Endpoint
-                  idSequence += 1
-                  exportedEndpoint.setId(toId(idSequence))
+                  exportedEndpoint.setId(toId(sequence.next()))
                   exportedEndpoint.setName(endpoint.name)
                   exportedEndpoint.setDescription(endpoint.desc.orNull)
                   // Endpoint parameters.
@@ -422,8 +439,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, communityResour
                     exportedEndpoint.setParameters(new com.gitb.xml.export.EndpointParameters)
                     endpointParameterMap(endpoint.id).foreach { parameter =>
                       val exportedParameter = new com.gitb.xml.export.EndpointParameter
-                      idSequence += 1
-                      exportedParameter.setId(toId(idSequence))
+                      exportedParameter.setId(toId(sequence.next()))
                       exportedParameter.setEndpoint(exportedEndpoint)
                       exportedParameter.setLabel(parameter.name)
                       exportedParameter.setName(parameter.testKey)
@@ -450,82 +466,23 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, communityResour
             }
           }
           if (exportSettings.testSuites && specificationTestSuiteMap.contains(specification.id)) {
-            exportedSpecification.setTestSuites(new com.gitb.xml.export.TestSuites)
-            specificationTestSuiteMap(specification.id).foreach { testSuite =>
-              val exportedTestSuite = new com.gitb.xml.export.TestSuite
-              idSequence += 1
-              exportedTestSuite.setId(toId(idSequence))
-              exportedTestSuite.setIdentifier(testSuite.identifier)
-              exportedTestSuite.setShortName(testSuite.shortname)
-              exportedTestSuite.setFullName(testSuite.fullname)
-              exportedTestSuite.setVersion(testSuite.version)
-              exportedTestSuite.setAuthors(testSuite.authors.orNull)
-              exportedTestSuite.setKeywords(testSuite.keywords.orNull)
-              exportedTestSuite.setDescription(testSuite.description.orNull)
-              exportedTestSuite.setDocumentation(testSuite.documentation.orNull)
-              exportedTestSuite.setHasDocumentation(testSuite.hasDocumentation)
-              exportedTestSuite.setModificationDate(testSuite.modificationDate.orNull)
-              exportedTestSuite.setOriginalDate(testSuite.originalDate.orNull)
-              exportedTestSuite.setSpecification(exportedSpecification)
-              if (testSuiteActorMap.contains(testSuite.id)) {
-                testSuiteActorMap(testSuite.id).foreach { actorId =>
-                  exportedTestSuite.getActors.add(exportedActorMap(actorId))
-                }
+            val testSuites = specificationTestSuiteMap(specification.id)
+            val sharedTestSuites = testSuites.filter(_.shared)
+            if (sharedTestSuites.nonEmpty) {
+              // Reference a test suite linked at domain level.
+              sharedTestSuites.foreach { testSuite =>
+                val exportedTestSuite = exportedSharedTestSuiteMap(testSuite.id)
+                exportedSpecification.getSharedTestSuites.add(exportedTestSuite)
               }
-              // Zip the test suite's resources to a temporary archive and convert it to a BASE64 string.
-              val testTestSuitePath = testSuiteManager.extractTestSuite(testSuite, specification, None)
-              try {
-                exportedTestSuite.setData(
-                  Base64.encodeBase64String(IOUtils.toByteArray(Files.newInputStream(testTestSuitePath)))
-                )
-              } finally {
-                FileUtils.deleteQuietly(testTestSuitePath.toFile)
+            }
+            val specificTestSuites = testSuites.filter(!_.shared)
+            if (specificTestSuites.nonEmpty) {
+              exportedSpecification.setTestSuites(new com.gitb.xml.export.TestSuites)
+              specificTestSuites.foreach { testSuite =>
+                // Test suite specific to the specification.
+                val exportedTestSuite = toExportedTestSuite(sequence, testSuite, Some(exportedSpecification), testSuiteTestCaseMap.getOrElse(testSuite.id, ListBuffer.empty).toList)
+                exportedSpecification.getTestSuites.getTestSuite.add(exportedTestSuite)
               }
-              // Test cases.
-              if (testSuiteTestCaseMap.contains(testSuite.id)) {
-                exportedTestSuite.setTestCases(new xml.export.TestCases)
-                testSuiteTestCaseMap(testSuite.id).foreach { testCase =>
-                  val exportedTestCase = new com.gitb.xml.export.TestCase
-                  idSequence += 1
-                  exportedTestCase.setId(toId(idSequence))
-                  exportedTestCase.setIdentifier(testCase.identifier)
-                  exportedTestCase.setShortName(testCase.shortname)
-                  exportedTestCase.setFullName(testCase.fullname)
-                  exportedTestCase.setVersion(testCase.version)
-                  exportedTestCase.setDescription(testCase.description.orNull)
-                  exportedTestCase.setAuthors(testCase.authors.orNull)
-                  exportedTestCase.setKeywords(testCase.keywords.orNull)
-                  exportedTestCase.setModificationDate(testCase.modificationDate.orNull)
-                  exportedTestCase.setOriginalDate(testCase.originalDate.orNull)
-                  exportedTestCase.setTestCaseType(testCase.testCaseType)
-                  exportedTestCase.setTestSuiteOrder(testCase.testSuiteOrder)
-                  exportedTestCase.setDocumentation(testCase.documentation.orNull)
-                  exportedTestCase.setHasDocumentation(testCase.hasDocumentation)
-                  exportedTestCase.setTargetActors(testCase.targetActors.orNull)
-                  exportedTestCase.setTestSuite(exportedTestSuite)
-                  exportedTestCase.setSpecification(exportedSpecification)
-                  // Test case path - remove first part which represents the test suite
-                  val firstPathSeparatorIndex = testCase.path.indexOf('/')
-                  if (firstPathSeparatorIndex != -1) {
-                    exportedTestCase.setPath(testCase.path.substring(firstPathSeparatorIndex))
-                  } else {
-                    exportedTestCase.setPath(testCase.path)
-                  }
-                  if (testCaseActorMap.contains(testCase.id)) {
-                    exportedTestCase.setActors(new TestCaseActors)
-                    testCaseActorMap(testCase.id).foreach { actorInfo =>
-                      val exportedTestCaseActor = new TestCaseActor
-                      idSequence += 1
-                      exportedTestCaseActor.setId(toId(idSequence))
-                      exportedTestCaseActor.setActor(exportedActorMap(actorInfo._1))
-                      exportedTestCaseActor.setSut(actorInfo._2)
-                      exportedTestCase.getActors.getActor.add(exportedTestCaseActor)
-                    }
-                  }
-                  exportedTestSuite.getTestCases.getTestCase.add(exportedTestCase)
-                }
-              }
-              exportedSpecification.getTestSuites.getTestSuite.add(exportedTestSuite)
             }
           }
           exportedDomain.getSpecifications.getSpecification.add(exportedSpecification)
@@ -539,8 +496,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, communityResour
         exportedDomain.setParameters(new com.gitb.xml.export.DomainParameters)
         domainParameters.foreach { parameter =>
           val exportedParameter = new com.gitb.xml.export.DomainParameter
-          idSequence += 1
-          exportedParameter.setId(toId(idSequence))
+          exportedParameter.setId(toId(sequence.next()))
           exportedParameter.setName(parameter.name)
           exportedParameter.setDescription(parameter.desc.orNull)
           exportedParameter.setType(propertyTypeForExport(parameter.kind))
@@ -557,7 +513,77 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, communityResour
         }
       }
     }
-    DomainExportInfo(idSequence, exportedActorMap, exportedEndpointParameterMap, exportedDomain, actorEndpointMap, endpointParameterMap, exportedDomainParameterMap)
+    DomainExportInfo(sequence.current(), exportedActorMap, exportedEndpointParameterMap, exportedDomain, actorEndpointMap, endpointParameterMap, exportedDomainParameterMap)
+  }
+
+  private def toExportedTestSuite(sequence:IdGenerator, testSuite: models.TestSuites, specificationToSet: Option[com.gitb.xml.export.Specification], testCases: List[models.TestCases]):com.gitb.xml.export.TestSuite  = {
+    val exportedTestSuite = new com.gitb.xml.export.TestSuite
+    exportedTestSuite.setId(toId(sequence.next()))
+    exportedTestSuite.setIdentifier(testSuite.identifier)
+    exportedTestSuite.setShortName(testSuite.shortname)
+    exportedTestSuite.setFullName(testSuite.fullname)
+    exportedTestSuite.setVersion(testSuite.version)
+    exportedTestSuite.setAuthors(testSuite.authors.orNull)
+    exportedTestSuite.setKeywords(testSuite.keywords.orNull)
+    exportedTestSuite.setDescription(testSuite.description.orNull)
+    exportedTestSuite.setDocumentation(testSuite.documentation.orNull)
+    exportedTestSuite.setHasDocumentation(testSuite.hasDocumentation)
+    exportedTestSuite.setModificationDate(testSuite.modificationDate.orNull)
+    exportedTestSuite.setOriginalDate(testSuite.originalDate.orNull)
+    exportedTestSuite.setSpecification(specificationToSet.orNull)
+    // Zip the test suite's resources to a temporary archive and convert it to a BASE64 string.
+    val testTestSuitePath = testSuiteManager.extractTestSuite(testSuite, None)
+    try {
+      exportedTestSuite.setData(
+        Base64.encodeBase64String(IOUtils.toByteArray(Files.newInputStream(testTestSuitePath)))
+      )
+    } finally {
+      FileUtils.deleteQuietly(testTestSuitePath.toFile)
+    }
+    // Test cases.
+    if (testCases.nonEmpty) {
+      exportedTestSuite.setTestCases(new xml.export.TestCases)
+      testCases.foreach { testCase =>
+        val exportedTestCase = new com.gitb.xml.export.TestCase
+        exportedTestCase.setId(toId(sequence.next()))
+        exportedTestCase.setIdentifier(testCase.identifier)
+        exportedTestCase.setShortName(testCase.shortname)
+        exportedTestCase.setFullName(testCase.fullname)
+        exportedTestCase.setVersion(testCase.version)
+        exportedTestCase.setDescription(testCase.description.orNull)
+        exportedTestCase.setAuthors(testCase.authors.orNull)
+        exportedTestCase.setKeywords(testCase.keywords.orNull)
+        exportedTestCase.setModificationDate(testCase.modificationDate.orNull)
+        exportedTestCase.setOriginalDate(testCase.originalDate.orNull)
+        exportedTestCase.setTestCaseType(testCase.testCaseType)
+        exportedTestCase.setTestSuiteOrder(testCase.testSuiteOrder)
+        exportedTestCase.setDocumentation(testCase.documentation.orNull)
+        exportedTestCase.setHasDocumentation(testCase.hasDocumentation)
+        exportedTestCase.setTargetActors(testCase.targetActors.orNull)
+        exportedTestCase.setTestSuite(exportedTestSuite)
+        exportedTestCase.setSpecification(specificationToSet.orNull)
+        // Test case path - remove first part which represents the test suite
+        val firstPathSeparatorIndex = testCase.path.indexOf('/')
+        if (firstPathSeparatorIndex != -1) {
+          exportedTestCase.setPath(testCase.path.substring(firstPathSeparatorIndex))
+        } else {
+          exportedTestCase.setPath(testCase.path)
+        }
+//        if (testCaseActorMap.contains(testCase.id)) {
+//          exportedTestCase.setActors(new TestCaseActors)
+//          testCaseActorMap(testCase.id).foreach { actorInfo =>
+//            val exportedTestCaseActor = new TestCaseActor
+//            idSequence += 1
+//            exportedTestCaseActor.setId(toId(idSequence))
+//            exportedTestCaseActor.setActor(exportedActorMap(actorInfo._1))
+//            exportedTestCaseActor.setSut(actorInfo._2)
+//            exportedTestCase.getActors.getActor.add(exportedTestCaseActor)
+//          }
+//        }
+        exportedTestSuite.getTestCases.getTestCase.add(exportedTestCase)
+      }
+    }
+    exportedTestSuite
   }
 
   def exportCommunity(communityId: Long, exportSettings: ExportSettings): com.gitb.xml.export.Export = {

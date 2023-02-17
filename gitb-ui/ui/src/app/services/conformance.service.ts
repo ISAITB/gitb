@@ -24,6 +24,7 @@ import { TestCase } from '../types/test-case';
 import { ConformanceStatus } from '../types/conformance-status';
 import { FileParam } from '../types/file-param.type';
 import { StatementParameterMinimal } from '../types/statement-parameter-minimal';
+import { TestSuiteUploadItemResult } from '../modals/test-suite-upload-modal/test-suite-upload-item-result';
 
 @Injectable({
   providedIn: 'root'
@@ -502,21 +503,24 @@ export class ConformanceService {
     })
   }
 
-  deployTestSuite(specificationIds: number[], file: File) {
+  deployTestSuite(domainId: number, specificationIds: number[], sharedTestSuite: boolean, file: File) {
     return this.restService.post<TestSuiteUploadResult>({
       path: ROUTES.controllers.ConformanceService.deployTestSuiteToSpecifications().url,
       data: {
-        specification_ids: specificationIds.join(',')
+        specification_ids: specificationIds.join(','),
+        domain_id: domainId,
+        shared: sharedTestSuite
       },
       files: [{param: 'file', data: file}],
       authenticate: true
     })
   }
 
-  resolvePendingTestSuite(pendingFolderId: string, overallAction: string, specificationIds: number[], specificationActions?: PendingTestSuiteUploadChoice[]) {
+  resolvePendingTestSuite(pendingFolderId: string, overallAction: string, domainId: number, specificationIds: number[], specificationActions?: PendingTestSuiteUploadChoice[]) {
     const data: any = {
         pending_id: pendingFolderId,
         pending_action: overallAction,
+        domain_id: domainId,
         specification_ids: specificationIds.join(',')
     }
     if (specificationActions != undefined) {
@@ -559,6 +563,13 @@ export class ConformanceService {
   getTestSuites(specificationId: number) {
     return this.restService.get<TestSuite[]>({
       path: ROUTES.controllers.ConformanceService.getSpecTestSuites(specificationId).url,
+      authenticate: true
+    })
+  }
+
+  getSharedTestSuites(domainId: number) {
+    return this.restService.get<TestSuite[]>({
+      path: ROUTES.controllers.ConformanceService.getSharedTestSuites(domainId).url,
       authenticate: true
     })
   }
@@ -750,6 +761,51 @@ export class ConformanceService {
     return this.restService.get<StatementParameterMinimal[]>({
       path: ROUTES.controllers.ConformanceService.getStatementParametersOfCommunity(communityId).url,
       authenticate: true
+    })
+  }
+
+  linkSharedTestSuite(testSuiteId: number, specificationIds: number[]) {
+    const data: any = {
+      test_suite_id: testSuiteId
+    }
+    if (specificationIds.length > 0) {
+      data["specification_ids"] = specificationIds.join(',')
+    }
+    return this.restService.post<TestSuiteUploadResult>({
+      path: ROUTES.controllers.ConformanceService.linkSharedTestSuite().url,
+      authenticate: true,
+      data: data
+    })
+  }  
+
+  confirmLinkSharedTestSuite(testSuiteId: number, specificationIds: number[], specificationActions?: PendingTestSuiteUploadChoice[]) {
+    const data: any = {
+      test_suite_id: testSuiteId
+    }
+    if (specificationIds.length > 0) {
+      data["specification_ids"] = specificationIds.join(',')
+    }
+    if (specificationActions != undefined) {
+      data.actions = JSON.stringify(specificationActions)
+    }
+    return this.restService.post<TestSuiteUploadResult>({
+      path: ROUTES.controllers.ConformanceService.confirmLinkSharedTestSuite().url,
+      authenticate: true,
+      data: data
+    })    
+  }
+
+  unlinkSharedTestSuite(testSuiteId: number, specificationIds: number[]) {
+    const data: any = {
+      test_suite_id: testSuiteId
+    }
+    if (specificationIds.length > 0) {
+      data["specification_ids"] = specificationIds.join(',')
+    }
+    return this.restService.post<void>({
+      path: ROUTES.controllers.ConformanceService.unlinkSharedTestSuite().url,
+      authenticate: true,
+      data: data
     })
   }
 

@@ -272,6 +272,11 @@ export class Constants {
 	}
 
 	public static TAB = {
+		DOMAIN: {
+			SPECIFICATIONS: 0,
+			TEST_SUITES: 1,
+			PARAMETERS: 2
+		},
 		SPECIFICATION: {
 			TEST_SUITES: 0,
 			ACTORS: 1

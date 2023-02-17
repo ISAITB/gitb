@@ -15,6 +15,10 @@ val commonsTextVersion = "1.10.0"
 
 useCoursier := false
 
+ThisBuild / libraryDependencySchemes ++= Seq(
+  "org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always
+)
+
 libraryDependencies ++= Seq(
   guice,
   ehcache,
@@ -53,7 +57,7 @@ libraryDependencies ++= Seq(
   "org.apache.cxf" % "cxf-rt-transports-http" % cxfVersion,
   "org.apache.cxf" % "cxf-rt-transports-http-jetty" % cxfVersion,
   // ---
-  "org.apache.tika" % "tika-core" % "2.6.0",
+  "org.apache.tika" % "tika-core" % "2.7.0",
   "org.webjars" %% "webjars-play" % "2.8.18",
   "org.webjars" % "jquery" % "3.6.3",
   "org.webjars" % "bootstrap" % "3.4.1" exclude("org.webjars", "jquery"),
@@ -73,10 +77,10 @@ libraryDependencies ++= Seq(
   "org.apache.pdfbox" % "pdfbox" % "2.0.27",
   "org.jasypt" % "jasypt" % "1.9.3",
   "org.apache.httpcomponents" % "httpclient" % "4.5.14",
-  "org.flywaydb" %% "flyway-play" % "7.25.0",
-  "org.flywaydb" % "flyway-mysql" % "9.12.0",
+  "org.flywaydb" %% "flyway-play" % "7.31.0",
+  "org.flywaydb" % "flyway-mysql" % "9.14.1",
   "com.googlecode.owasp-java-html-sanitizer" % "owasp-java-html-sanitizer" % "20220608.1",
-  "net.lingala.zip4j" % "zip4j" % "2.11.3",
+  "net.lingala.zip4j" % "zip4j" % "2.11.4",
   // Specific version overrides (to be removed if no longer needed)
   "org.apache.commons" % "commons-text" % commonsTextVersion // Set explicitly to resolve CVE-2022-42889
 )

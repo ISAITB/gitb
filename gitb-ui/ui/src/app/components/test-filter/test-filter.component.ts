@@ -70,7 +70,7 @@ export class TestFilterComponent implements OnInit {
     adaptivePosition: true,
     rangeInputFormat: 'DD-MM-YYYY',
     containerClass: 'theme-default'
-  } 
+  }
 
   startDateModel?: Date[]
   endDateModel?: Date[]
@@ -80,7 +80,7 @@ export class TestFilterComponent implements OnInit {
   loadingSystemProperties = false
   applicableCommunityId?: number
   names: {[key: string]: string} = {}
-  
+
   constructor(
     public dataService: DataService,
     private conformanceService: ConformanceService,
@@ -162,7 +162,7 @@ export class TestFilterComponent implements OnInit {
         } else {
           return this.testSuiteService.searchTestSuitesInDomain(this.dataService.community!.domainId, this.filterValue(Constants.FILTER_TYPE.SPECIFICATION), this.filterValue(Constants.FILTER_TYPE.ACTOR))
         }
-  
+
       }).bind(this)
     }
     if (this.filterDefined(Constants.FILTER_TYPE.TEST_CASE) && this.loadTestCasesFn == undefined) {
@@ -231,7 +231,15 @@ export class TestFilterComponent implements OnInit {
         this.actorsChanged(remaining, true)
       }
       if (this.filterDefined(Constants.FILTER_TYPE.TEST_SUITE)) {
-        const remaining = filter(<TestSuiteWithTestCases[]>this.filterValues[Constants.FILTER_TYPE.TEST_SUITE], (ts) => { return ids[ts.specification] })
+        const remaining = filter(<TestSuiteWithTestCases[]>this.filterValues[Constants.FILTER_TYPE.TEST_SUITE], (ts) => {
+          // One of the test suite's specifications must be in the set of selected IDs.
+          for (let tsSpecification of ts.specifications!) {
+            if (ids[tsSpecification]) {
+              return true
+            }
+          }
+          return false
+        })
         this.filterDropdownSettings[Constants.FILTER_TYPE.TEST_SUITE].replaceSelectedItems!.emit(remaining)
         this.actorsChanged(remaining, true)
       }
@@ -279,7 +287,7 @@ export class TestFilterComponent implements OnInit {
       const ids = this.dataService.asIdSet(selected)
       const remaining = filter(<Organisation[]>this.filterValues[Constants.FILTER_TYPE.ORGANISATION], (o) => { return ids[o.community] })
       this.filterDropdownSettings[Constants.FILTER_TYPE.ORGANISATION].replaceSelectedItems!.emit(remaining)
-      this.organisationsChanged(remaining, true)      
+      this.organisationsChanged(remaining, true)
     }
     // Custom properties
     this.organisationProperties = []
@@ -311,7 +319,7 @@ export class TestFilterComponent implements OnInit {
     this.filterValues[Constants.FILTER_TYPE.SYSTEM] = selected
     if (!skipApplyFilters) {
       this.applyFilters()
-    }    
+    }
   }
 
   resultsChanged(selected: MultiSelectItem[]) {
@@ -412,7 +420,7 @@ export class TestFilterComponent implements OnInit {
           filters.systemProperties.push({
             id: p.id,
             value: p.value
-          }) 
+          })
       }
     }
     return filters
@@ -626,8 +634,8 @@ export class TestFilterComponent implements OnInit {
     return {
       idField: idField,
       textField: labelField,
-      searchPlaceholderText: 'Search...', 
-      itemsShowLimit: 1, 
+      searchPlaceholderText: 'Search...',
+      itemsShowLimit: 1,
       allowSearchFilter: true,
       enableCheckAll: true,
       selectAllText: 'Select all',

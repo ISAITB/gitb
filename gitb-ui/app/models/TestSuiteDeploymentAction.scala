@@ -5,11 +5,12 @@ import models.Enums.TestSuiteReplacementChoice.TestSuiteReplacementChoice
 import scala.collection.mutable
 
 class TestSuiteDeploymentAction(
-  var specification: Long,
-  var action: TestSuiteReplacementChoice,
-  var updateTestSuite: Boolean,
-  var updateActors: Boolean,
-  var testCaseUpdates: Option[List[TestCaseDeploymentAction]]
+   var specification: Option[Long],
+   val action: TestSuiteReplacementChoice,
+   val updateTestSuite: Boolean,
+   val updateActors: Option[Boolean],
+   val sharedTestSuite: Boolean,
+   val testCaseUpdates: Option[List[TestCaseDeploymentAction]]
 ) {
 
   private var testCaseMap: Option[Map[String, (Boolean, Boolean)]] = None

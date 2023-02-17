@@ -2,10 +2,11 @@ import { PendingTestSuiteUploadChoiceTestCase } from "./pending-test-suite-uploa
 
 export interface PendingTestSuiteUploadChoice {
 
-    specification: number
+    specification?: number
     action: 'cancel'|'drop'|'proceed'
     updateTestSuite: boolean
     updateActors: boolean
+    sharedTestSuite: boolean
     testCaseUpdates: PendingTestSuiteUploadChoiceTestCase[]
 
 }
