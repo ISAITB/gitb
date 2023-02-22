@@ -68,7 +68,7 @@
         <version.helgerPeppol>8.7.4</version.helgerPeppol>
         <version.helgerUbl>6.7.0</version.helgerUbl>
         <version.dnsJava>3.5.0</version.dnsJava>
-        <version.commonsFileUpload>1.4</version.commonsFileUpload>
+        <version.commonsFileUpload>1.5</version.commonsFileUpload>
         <version.commonsCollections>4.4</version.commonsCollections>
         <version.servletApi>2.5</version.servletApi>
         <version.xmlUnit>2.9.0</version.xmlUnit>
