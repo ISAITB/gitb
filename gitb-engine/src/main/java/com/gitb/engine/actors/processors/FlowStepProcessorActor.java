@@ -10,7 +10,6 @@ import com.gitb.tdl.Sequence;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.gitb.core.StepStatus.*;
 
@@ -26,8 +25,7 @@ public class FlowStepProcessorActor extends AbstractTestStepActor<FlowStep> {
     public static final String THREAD_OPENING_TAG = "[";
     public static final String THREAD_CLOSING_TAG = "]";
 
-	private AtomicInteger finishedChildren;
-	private Map<Integer, ActorRef> stepIndexActorMap;
+	private Map<Integer, ActorRef> childMap;
 
 	private boolean childrenHasError;
 	private boolean childrenHasWarning;
@@ -38,18 +36,15 @@ public class FlowStepProcessorActor extends AbstractTestStepActor<FlowStep> {
 
 	@Override
 	protected void init() throws Exception {
-		stepIndexActorMap = new ConcurrentHashMap<>();
+		childMap = new ConcurrentHashMap<>();
 
-		int childCount = step.getThread().size();
-		if(childCount > 0) {
-			finishedChildren = new AtomicInteger(childCount);
+		if (!step.getThread().isEmpty()) {
 			for(int i=0; i<step.getThread().size(); i++) {
 				Sequence sequence = step.getThread().get(i);
 
 				//ActorRef child = SequenceProcessorActor.create(getContext(), sequence, scope, stepId + STEP_SEPARATOR + (i + 1));
                 ActorRef child = SequenceProcessorActor.create(getContext(), sequence, scope, stepId + THREAD_OPENING_TAG + (i + 1) + THREAD_CLOSING_TAG);
-
-				stepIndexActorMap.put(i, child);
+				childMap.put(child.path().uid(), child);
 			}
 		}
 
@@ -58,7 +53,7 @@ public class FlowStepProcessorActor extends AbstractTestStepActor<FlowStep> {
 
 	@Override
 	protected void start() throws Exception {
-		for(ActorRef child : stepIndexActorMap.values()) {
+		for(ActorRef child : childMap.values()) {
 				child.tell(new StartCommand(scope.getContext().getSessionId()), self());
 		}
 		processing();
@@ -73,8 +68,8 @@ public class FlowStepProcessorActor extends AbstractTestStepActor<FlowStep> {
 			childrenHasWarning = true;
 		}
         if (status == ERROR || status == WARNING || status == COMPLETED) {
-			int remainingChildren = finishedChildren.decrementAndGet();
-			if (remainingChildren == 0) {
+			childMap.remove(event.getSender().path().uid());
+			if (childMap.isEmpty()) {
 				if (childrenHasError) {
 					childrenHasError();
 				} else if (childrenHasWarning) {

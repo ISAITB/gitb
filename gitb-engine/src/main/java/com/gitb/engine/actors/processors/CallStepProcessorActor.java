@@ -62,7 +62,7 @@ public class CallStepProcessorActor extends AbstractTestStepActor<CallStep> {
     }
 
     private void report(StepStatus status) {
-        updateTestStepStatus(getContext(), new StatusEvent(status, childScope), null, false);
+        updateTestStepStatus(getContext(), new StatusEvent(status, childScope, self()), null, false);
     }
 
 	@Override
