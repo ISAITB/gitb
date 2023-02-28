@@ -9,7 +9,9 @@
          			<div class="col-xs-10 col-xs-offset-1">
 						<div class="form-group">
 							<label class="col-xs-3 control-label" for="identifier">ID:</label>
-							<div class="col-xs-7"><input id="identifier" name="identifier" [(ngModel)]="testCase.identifier" class="form-control" type="text" readonly="readonly"></div>
+							<div class="col-xs-7">
+								<app-api-key-text id="identifier" name="identifier" [key]="testCase.identifier!"></app-api-key-text>
+							</div>
 							<app-tooltip tbTooltip="The unique identifier of the test case within the test suite. This is not presented to users but is used internally to match uploaded test cases to existing ones."></app-tooltip>
 						</div>
 						<div class="form-group">
