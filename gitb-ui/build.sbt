@@ -8,12 +8,16 @@ lazy val root = (project in file(".")).enablePlugins(PlayScala, SbtWeb)
 
 scalaVersion := "2.13.10"
 val akkaVersion = "2.6.20" // Keep to the 2.6.* version for the Apache 2.0 Licence (also, this needs to match the version in Play).
-val jacksonVersion = "2.14.1"
+val jacksonVersion = "2.14.2"
 val cxfVersion = "3.5.5"
 val guiceVersion = "5.1.0"
 val commonsTextVersion = "1.10.0"
 
 useCoursier := false
+
+ThisBuild / libraryDependencySchemes ++= Seq(
+  "org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always
+)
 
 libraryDependencies ++= Seq(
   guice,
@@ -53,7 +57,7 @@ libraryDependencies ++= Seq(
   "org.apache.cxf" % "cxf-rt-transports-http" % cxfVersion,
   "org.apache.cxf" % "cxf-rt-transports-http-jetty" % cxfVersion,
   // ---
-  "org.apache.tika" % "tika-core" % "2.6.0",
+  "org.apache.tika" % "tika-core" % "2.7.0",
   "org.webjars" %% "webjars-play" % "2.8.18",
   "org.webjars" % "jquery" % "3.6.3",
   "org.webjars" % "bootstrap" % "3.4.1" exclude("org.webjars", "jquery"),
@@ -73,10 +77,10 @@ libraryDependencies ++= Seq(
   "org.apache.pdfbox" % "pdfbox" % "2.0.27",
   "org.jasypt" % "jasypt" % "1.9.3",
   "org.apache.httpcomponents" % "httpclient" % "4.5.14",
-  "org.flywaydb" %% "flyway-play" % "7.25.0",
-  "org.flywaydb" % "flyway-mysql" % "9.12.0",
+  "org.flywaydb" %% "flyway-play" % "7.37.0",
+  "org.flywaydb" % "flyway-mysql" % "9.15.0",
   "com.googlecode.owasp-java-html-sanitizer" % "owasp-java-html-sanitizer" % "20220608.1",
-  "net.lingala.zip4j" % "zip4j" % "2.11.3",
+  "net.lingala.zip4j" % "zip4j" % "2.11.5",
   // Specific version overrides (to be removed if no longer needed)
   "org.apache.commons" % "commons-text" % commonsTextVersion // Set explicitly to resolve CVE-2022-42889
 )

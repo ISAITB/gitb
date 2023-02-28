@@ -17,26 +17,26 @@ object TestCaseManager {
 	type TestCaseDbTuple = (
 		Rep[Long], Rep[String], Rep[String], Rep[String],
 			Rep[Option[String]], Rep[Option[String]], Rep[Option[String]], Rep[Option[String]],
-			Rep[Option[String]], Rep[Short], Rep[String], Rep[Long],
+			Rep[Option[String]], Rep[Short], Rep[String],
 			Rep[Option[String]], Rep[Option[String]], Rep[Short], Rep[Boolean], Rep[String]
 		)
 
 	type TestCaseValueTuple = (
 		Long, String, String, String,
 			Option[String], Option[String], Option[String], Option[String],
-			Option[String], Short, String, Long,
+			Option[String], Short, String,
 			Option[String], Option[String], Short, Boolean, String
 		)
 
 	def withoutDocumentation(dbTestCase: PersistenceSchema.TestCasesTable): TestCaseDbTuple = {
 		(dbTestCase.id, dbTestCase.shortname, dbTestCase.fullname, dbTestCase.version,
 			dbTestCase.authors, dbTestCase.originalDate, dbTestCase.modificationDate, dbTestCase.description,
-			dbTestCase.keywords, dbTestCase.testCaseType, dbTestCase.path, dbTestCase.targetSpec,
+			dbTestCase.keywords, dbTestCase.testCaseType, dbTestCase.path,
 			dbTestCase.targetActors, dbTestCase.targetOptions, dbTestCase.testSuiteOrder, dbTestCase.hasDocumentation, dbTestCase.identifier)
 	}
 
 	def tupleToTestCase(x: TestCaseValueTuple): TestCases = {
-		TestCases(x._1, x._2, x._3, x._4, x._5, x._6, x._7, x._8, x._9, x._10, x._11, x._12, x._13, x._14, x._15, x._16, None, x._17)
+		TestCases(x._1, x._2, x._3, x._4, x._5, x._6, x._7, x._8, x._9, x._10, x._11, x._12, x._13, x._14, x._15, None, x._16)
 	}
 }
 
@@ -45,20 +45,21 @@ class TestCaseManager @Inject() (testResultManager: TestResultManager, dbConfigP
 
 	import dbConfig.profile.api._
 
-	val TEST_CASES_PATH = "test-cases"
-
-	def getTestCaseForIdWrapper(testCaseId:String): Option[TestCase] = {
-		getTestCase(testCaseId)
+	def getDomainOfTestCase(testCaseId: Long): Long = {
+		exec(PersistenceSchema.testSuiteHasTestCases
+			.join(PersistenceSchema.testSuites).on(_.testsuite === _.id)
+			.filter(_._1.testcase === testCaseId)
+			.map(_._2.domain)
+			.result
+			.head)
 	}
 
-	def getTestCasesForIds(testCaseIds: List[Long]): List[TestCases] = {
-		exec(
-			PersistenceSchema.testCases.filter(_.id inSet testCaseIds)
-  			.map(x => TestCaseManager.withoutDocumentation(x))
-				.result
-				.map(_.toList)
-		)
-		.map(TestCaseManager.tupleToTestCase)
+	def getSpecificationsOfTestCases(testCaseIds: List[Long]): Set[Long] = {
+		exec(PersistenceSchema.testSuiteHasTestCases
+			.join(PersistenceSchema.specificationHasTestSuites).on(_.testsuite === _.testSuiteId)
+			.filter(_._1.testcase inSet testCaseIds)
+			.map(_._2.specId)
+			.result).toSet
 	}
 
 	def getTestCaseWithDocumentation(testCaseId: Long): TestCases = {
@@ -150,14 +151,15 @@ class TestCaseManager @Inject() (testResultManager: TestResultManager, dbConfigP
 				}
 				testCases <- {
 					PersistenceSchema.testCases
-						.join(PersistenceSchema.specifications).on(_.targetSpec === _.id)
-						.join(PersistenceSchema.testSuiteHasTestCases).on(_._1.id === _.testcase)
-						.filterOpt(domainIds)((q, ids) => q._1._2.domain inSet ids)
-						.filterOpt(specificationIds)((q, ids) => q._1._1.targetSpec inSet ids)
-						.filterOpt(testSuiteIds)((q, ids) => q._2.testsuite inSet ids)
-						.filterOpt(allowedTestCasesByActor)((q, ids) => q._1._1.id inSet ids)
-						.sortBy(_._1._1.shortname.asc)
-						.map(x => TestCaseManager.withoutDocumentation(x._1._1))
+						.join(PersistenceSchema.testSuiteHasTestCases).on(_.id === _.testcase)
+						.join(PersistenceSchema.specificationHasTestSuites).on(_._2.testsuite === _.testSuiteId)
+						.join(PersistenceSchema.testSuites).on(_._1._2.testsuite === _.id)
+						.filterOpt(domainIds)((q, ids) => q._2.domain inSet ids)
+						.filterOpt(specificationIds)((q, ids) => q._1._2.specId inSet ids)
+						.filterOpt(testSuiteIds)((q, ids) => q._2.id inSet ids)
+						.filterOpt(allowedTestCasesByActor)((q, ids) => q._1._1._1.id inSet ids)
+						.sortBy(_._1._1._1.shortname.asc)
+						.map(x => TestCaseManager.withoutDocumentation(x._1._1._1))
 						.result
 						.map(_.toList)
 						.map(x => x.map(TestCaseManager.tupleToTestCase))

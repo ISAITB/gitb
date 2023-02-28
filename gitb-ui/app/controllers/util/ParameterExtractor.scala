@@ -169,6 +169,20 @@ object ParameterExtractor {
     }
   }
 
+  def optionalLongCommaListBodyParameter(paramMap: Option[Map[String, Seq[String]]], parameter: String): Option[List[Long]] = {
+    try {
+      val paramString = paramMap.get.get(parameter)
+      if (paramString.isDefined) {
+        Some(paramString.get.head.split(',').filter(_ != "").map(_.toLong).toList)
+      } else {
+        None
+      }
+    } catch {
+      case _: NoSuchElementException =>
+        None
+    }
+  }
+
   def optionalBodyParameter(request:Request[AnyContent], parameter:String):Option[String] = {
     optionalBodyParameter(request.body.asFormUrlEncoded, parameter)
   }
@@ -720,7 +734,7 @@ object ParameterExtractor {
   def optionalLongListQueryParameter(request:Request[AnyContent],parameter:String): Option[List[Long]] = {
     val listStr = ParameterExtractor.optionalQueryParameter(request, parameter)
     val list = listStr match {
-      case Some(str) => Some(str.split(",").map(_.toLong).toList)
+      case Some(str) => Some(str.split(",").filter(_.nonEmpty).map(_.toLong).toList)
       case None => None
     }
     list
@@ -729,10 +743,15 @@ object ParameterExtractor {
   def optionalLongListBodyParameter(request:Request[AnyContent],parameter:String): Option[List[Long]] = {
     val listStr = ParameterExtractor.optionalBodyParameter(request, parameter)
     val list = listStr match {
-      case Some(str) => Some(str.split(",").map(_.toLong).toList)
+      case Some(str) => Some(str.split(",").filter(_.nonEmpty).map(_.toLong).toList)
       case None => None
     }
     list
+  }
+
+  def requiredLongListBodyParameter(request: Request[AnyContent], parameter: String): List[Long] = {
+    val listStr = ParameterExtractor.requiredBodyParameter(request, parameter)
+    listStr.split(",").map(_.toLong).toList
   }
 
 }

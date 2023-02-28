@@ -1,0 +1,36 @@
+@import '../../../styles/less/_common.less';
+
+.testcase-table {
+    margin-top: 15px;
+    &.form-table {
+        margin-bottom: 0px;
+    }
+}
+.testcase-table-title {
+    background: @gray-light-1;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    & > .testcase-table-title-label {
+        padding-right: 15px;
+        padding-left: 15px;
+        padding-top: 10px;
+        padding-bottom: 10px;
+        font-weight: bold;
+        display: inline-flex;
+        flex-grow: 1;
+    }
+    & > .testcase-table-title-controls {
+        display: inline-flex;
+        padding-right: 8px;
+    }
+    &.expandable {
+        cursor: pointer;
+        &:hover {
+            background-color: @gray-highlight;
+        }
+    }
+}
+.testcase-table-contents {
+    border-top: 1px solid @gray-dark-1;
+}

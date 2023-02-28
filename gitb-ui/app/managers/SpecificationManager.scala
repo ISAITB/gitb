@@ -86,9 +86,16 @@ class SpecificationManager @Inject() (actorManager: ActorManager, testResultMana
   }
 
   def getSpecificationOfActor(actorId: Long) = {
-    val query = PersistenceSchema.specifications
-        .join(PersistenceSchema.specificationHasActors).on(_.id === _.specId)
-    exec(query.filter(_._2.actorId === actorId).result.head)._1
+    exec(getSpecificationOfActorInternal(actorId))
+  }
+
+  def getSpecificationOfActorInternal(actorId: Long): DBIO[Specifications] = {
+    PersistenceSchema.specifications
+      .join(PersistenceSchema.specificationHasActors).on(_.id === _.specId)
+      .filter(_._2.actorId === actorId)
+      .map(_._1)
+      .result
+      .head
   }
 
 }

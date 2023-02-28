@@ -97,7 +97,9 @@ button.btn {
 
 tr.test-result-obsolete {
 	td {
-		opacity: 0.4;
+		div {
+			opacity: 0.4;
+		}
 	}
 }
 
@@ -298,6 +300,12 @@ li.menu-section-start {
 		}
 	}
 }
+.clickable-div {
+	&:hover {
+		cursor: pointer;
+		background-color: @gray-highlight;
+	}
+}
 
 th.sortableHeader {
 	white-space: nowrap;
@@ -464,51 +472,6 @@ div.import-item-root {
 			border-radius: 5px;
 		}
 	}
-}
-
-.ts-upload-result-container {
-	border: 1px solid @gray-dark-1;
-	background: @gray-light-1;
-	border-radius: 5px;
-	margin-top: 10px;
-	.ts-upload-result-spec {
-		padding-top: 10px;
-		padding-bottom: 10px;
-		font-weight: bold;
-		display: table;
-		border-bottom: 1px solid @gray-dark-1;
-		border-top: 1px solid @gray-dark-1;
-		.ts-upload-result-spec-name {
-			display: table-cell;
-			vertical-align: middle;
-		}
-		.ts-upload-result-spec-controls {
-			display: table-cell;
-		}
-	}
-	.ts-upload-result-actions {
-		background: white;
-		.form-group:first-child {
-			padding-top: 10px;
-		}
-	}
-	.ts-upload-result-first {
-		.ts-upload-result-spec {
-			border-top: 0px solid @gray-dark-1;
-		}
-	}
-	.ts-upload-result-last > .ts-upload-result-actions{
-		border-bottom-left-radius: 5px;
-		border-bottom-right-radius: 5px;
-	}
-}
-
-.ts-upload-validation-report {
-	margin-top: 10px;
-}
-.ts-upload-skipped {
-	text-decoration: line-through;
-	opacity: 0.4;
 }
 
 .no-left-padding {

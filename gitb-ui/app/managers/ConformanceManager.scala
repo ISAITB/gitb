@@ -204,11 +204,6 @@ class ConformanceManager @Inject() (systemManager: SystemManager, triggerManager
 		exec(dbActionFinalisation(Some(onSuccessCalls), None, action).transactionally)
 	}
 
-	private def getSpecificationById(specId: Long): Specifications = {
-		val spec = exec(PersistenceSchema.specifications.filter(_.id === specId).result.head)
-		spec
-	}
-
 	def delete(specId: Long, onSuccessCalls: mutable.ListBuffer[() => _]) = {
 		for {
 			ids <- PersistenceSchema.specifications.filter(_.id === specId).map(x => (x.id, x.domain)).result.head
@@ -217,17 +212,18 @@ class ConformanceManager @Inject() (systemManager: SystemManager, triggerManager
 			actorIds <- PersistenceSchema.specificationHasActors.filter(_.specId === specId).map(_.actorId).result
 			_ <- DBIO.seq(actorIds.map(id => actorManager.deleteActor(id, onSuccessCalls)): _*)
 			_ <- PersistenceSchema.specificationHasActors.filter(_.specId === specId).delete
-			testSuiteIds <- PersistenceSchema.testSuites.filter(_.specification === specId).map(_.id).result
+			testSuiteIds <- {
+				PersistenceSchema.specificationHasTestSuites
+					.join(PersistenceSchema.testSuites).on(_.testSuiteId === _.id)
+					.filter(_._1.specId === specId)
+					.filter(_._2.shared =!= true) // We must keep shared test suites.
+					.map(_._2.id)
+					.result
+			}
 			_ <- DBIO.seq(testSuiteIds.map(id => undeployTestSuite(id, onSuccessCalls)): _*)
+			_ <- PersistenceSchema.specificationHasTestSuites.filter(_.specId === specId).delete
 			_ <- PersistenceSchema.conformanceResults.filter(_.spec === specId).delete
 			_ <- PersistenceSchema.specifications.filter(_.id === specId).delete
-			_ <- {
-				onSuccessCalls += (() => {
-					val testSuiteFolder = repositoryUtils.getTestSuitesPath(ids._2, ids._1)
-					FileUtils.deleteDirectory(testSuiteFolder)
-				})
-				DBIO.successful(())
-			}
 		} yield ()
 	}
 
@@ -239,6 +235,7 @@ class ConformanceManager @Inject() (systemManager: SystemManager, triggerManager
 
 	def undeployTestSuite(testSuiteId: Long, onSuccessCalls: mutable.ListBuffer[() => _]) = {
 		testResultManager.updateForDeletedTestSuite(testSuiteId) andThen
+			PersistenceSchema.specificationHasTestSuites.filter(_.testSuiteId === testSuiteId).delete andThen
 			PersistenceSchema.testSuiteHasActors.filter(_.testsuite === testSuiteId).delete andThen
 			PersistenceSchema.conformanceResults.filter(_.testsuite === testSuiteId).delete andThen
 			(for {
@@ -255,7 +252,7 @@ class ConformanceManager @Inject() (systemManager: SystemManager, triggerManager
 				testSuite <- PersistenceSchema.testSuites.filter(_.id === testSuiteId).result.head
 				_ <- {
 					onSuccessCalls += (() => {
-						repositoryUtils.undeployTestSuite(getSpecificationById(testSuite.specification), testSuite.filename)
+						repositoryUtils.undeployTestSuite(testSuite.domain, testSuite.filename)
 					})
 					DBIO.successful(())
 				}
@@ -279,23 +276,27 @@ class ConformanceManager @Inject() (systemManager: SystemManager, triggerManager
 		action
 	}
 
-	def deleteTransactionByDomain(domainId: Long) = {
+	private def deleteTransactionByDomain(domainId: Long) = {
 		PersistenceSchema.transactions.filter(_.domain === domainId).delete
 	}
 
 	def deleteDomainInternal(domain: Long, onSuccessCalls: ListBuffer[() => _]): DBIO[_] = {
-		removeDomainFromCommunities(domain, onSuccessCalls) andThen
-			deleteSpecificationByDomain(domain, onSuccessCalls) andThen
-			deleteTransactionByDomain(domain) andThen
-			testResultManager.updateForDeletedDomain(domain) andThen
-			deleteDomainParameters(domain, onSuccessCalls) andThen
-			PersistenceSchema.domains.filter(_.id === domain).delete andThen
-			{
+		for {
+			_ <- removeDomainFromCommunities(domain, onSuccessCalls)
+			_ <- deleteSpecificationByDomain(domain, onSuccessCalls)
+			sharedTestSuiteIds <- PersistenceSchema.testSuites.filter(_.domain === domain).map(_.id).result
+			_ <- DBIO.seq(sharedTestSuiteIds.map(undeployTestSuite(_, onSuccessCalls)): _*)
+			_ <- deleteTransactionByDomain(domain)
+			_ <- testResultManager.updateForDeletedDomain(domain)
+			_ <- deleteDomainParameters(domain, onSuccessCalls)
+			_ <- PersistenceSchema.domains.filter(_.id === domain).delete
+			_ <- {
 				onSuccessCalls += (() => {
 					repositoryUtils.deleteDomainTestSuiteFolder(domain)
 				})
 				DBIO.successful(())
 			}
+		} yield ()
 	}
 
 	def deleteDomain(domain: Long): Unit = {
@@ -504,22 +505,48 @@ class ConformanceManager @Inject() (systemManager: SystemManager, triggerManager
 		exec(PersistenceSchema.domains.filter(_.id === id).result.head)
 	}
 
+	def getCompletedConformanceStatementsForTestSession(systemId: Long, sessionId: String): List[Long] = { // Actor IDs considered as completed.
+		exec(
+			for {
+				relatedActorIds <- PersistenceSchema.conformanceResults
+					.filter(_.testsession === sessionId)
+					.map(_.actor)
+					.result
+				conformanceResults <- PersistenceSchema.conformanceResults
+					.filter(_.sut === systemId)
+					.filter(_.actor inSet relatedActorIds)
+					.map(x => (x.actor, x.result))
+					.result
+				completedActors <- {
+					val map = mutable.LinkedHashMap[Long, Boolean]()
+					conformanceResults.foreach { actorInfo =>
+						val currentIsSuccess = "SUCCESS".equals(actorInfo._2)
+						val overallIsSuccess = map.getOrElseUpdate(actorInfo._1, currentIsSuccess)
+						if (overallIsSuccess && !currentIsSuccess) {
+							map.put(actorInfo._1, currentIsSuccess)
+						}
+					}
+					DBIO.successful(map.filter(_._2).keys.toList)
+				}
+			} yield completedActors
+		)
+	}
+
 	def getConformanceStatus(actorId: Long, sutId: Long, testSuiteId: Option[Long]): List[ConformanceStatusItem] = {
-		var query = PersistenceSchema.conformanceResults
-			.join(PersistenceSchema.testCases).on(_.testcase === _.id)
-			.join(PersistenceSchema.testSuites).on(_._1.testsuite === _.id)
-			.filter(_._1._1.actor === actorId)
-			.filter(_._1._1.sut === sutId)
-		if (testSuiteId.isDefined) {
-			query = query.filter(_._1._1.testsuite === testSuiteId.get)
-		}
-		val finalQuery = query
-			.sortBy(x => (x._2.shortname, x._1._2.testSuiteOrder))
-			.map(x => (x._2.id, x._2.shortname, x._2.description, x._2.hasDocumentation, x._1._2.id, x._1._2.shortname, x._1._2.description, x._1._2.hasDocumentation, x._1._1.result, x._1._1.outputMessage, x._1._1.testsession, x._1._1.updateTime))
-		val results = exec(finalQuery.result.map(_.toList)).map(r => {
+		exec(
+			PersistenceSchema.conformanceResults
+				.join(PersistenceSchema.testCases).on(_.testcase === _.id)
+				.join(PersistenceSchema.testSuites).on(_._1.testsuite === _.id)
+				.filter(_._1._1.actor === actorId)
+				.filter(_._1._1.sut === sutId)
+				.filterOpt(testSuiteId)((q, id) => q._1._1.testsuite === id)
+				.sortBy(x => (x._2.shortname, x._1._2.testSuiteOrder))
+				.map(x => (x._2.id, x._2.shortname, x._2.description, x._2.hasDocumentation, x._1._2.id, x._1._2.shortname, x._1._2.description, x._1._2.hasDocumentation, x._1._1.result, x._1._1.outputMessage, x._1._1.testsession, x._1._1.updateTime))
+				.result
+				.map(_.toList)
+		).map(r => {
 			ConformanceStatusItem(r._1, r._2, r._3, r._4, r._5, r._6, r._7, r._8, r._9, r._10, r._11, r._12)
 		})
-		results
 	}
 
 	def getSpecificationIdForTestCaseFromConformanceStatements(testCaseId: Long): Option[Long] = {

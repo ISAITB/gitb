@@ -150,6 +150,9 @@ import { TestTriggerModalComponent } from './pages/admin/user-management/trigger
 import { TestOptionButtonComponent } from './pages/test-execution/test-option-button/test-option-button.component';
 import { CreateEditCommunityResourceModalComponent } from './modals/create-edit-community-resource-modal/create-edit-community-resource-modal.component';
 import { CommunityResourceBulkUploadModalComponent } from './modals/community-resource-bulk-upload-modal/community-resource-bulk-upload-modal.component';
+import { LinkSharedTestSuiteModalComponent } from './modals/link-shared-test-suite-modal/link-shared-test-suite-modal.component';
+import { TestCaseUpdateListComponent } from './components/test-case-update-list/test-case-update-list.component';
+import { TestSuiteUploadSpecificationChoicesComponent } from './components/test-suite-upload-specification-choices/test-suite-upload-specification-choices.component';
 
 @NgModule({
   providers: [ 
@@ -289,7 +292,10 @@ import { CommunityResourceBulkUploadModalComponent } from './modals/community-re
     TestTriggerModalComponent,
     TestOptionButtonComponent,
     CreateEditCommunityResourceModalComponent,
-    CommunityResourceBulkUploadModalComponent],
+    CommunityResourceBulkUploadModalComponent,
+    LinkSharedTestSuiteModalComponent,
+    TestCaseUpdateListComponent,
+    TestSuiteUploadSpecificationChoicesComponent],
   imports: [
     BrowserModule,
     BrowserAnimationsModule,

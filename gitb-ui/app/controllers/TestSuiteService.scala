@@ -88,13 +88,20 @@ class TestSuiteService @Inject() (implicit ec: ExecutionContext, authorizedActio
 	def downloadTestSuite(testSuiteId: Long) = authorizedAction { request =>
 		authorizationManager.canDownloadTestSuite(request, testSuiteId)
 		val testSuite = testSuiteManager.getTestSuites(Some(List(testSuiteId))).head
-		val testSuiteOutputPath = testSuiteManager.extractTestSuite(testSuite, specificationManager.getSpecificationById(testSuite.specification), None)
+		val testSuiteOutputPath = testSuiteManager.extractTestSuite(testSuite, None)
 		Ok.sendFile(
 			content = testSuiteOutputPath.toFile,
 			inline = false,
 			fileName = _ => Some(testSuiteOutputPath.toFile.getName),
 			onClose = () => FileUtils.deleteQuietly(testSuiteOutputPath.toFile)
 		)
+	}
+
+	def getLinkedSpecifications(testSuiteId: Long) = authorizedAction { request =>
+		authorizationManager.canManageTestSuite(request, testSuiteId)
+		val specs = testSuiteManager.getLinkedSpecifications(testSuiteId)
+		val json = JsonUtil.jsSpecifications(specs).toString()
+		ResponseConstructor.constructJsonResponse(json)
 	}
 
 }

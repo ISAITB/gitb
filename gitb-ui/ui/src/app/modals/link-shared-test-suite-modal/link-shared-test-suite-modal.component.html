@@ -1,0 +1,39 @@
+<div class="modal-header">
+	<h4>Link shared test suite</h4>
+</div>
+<div class="modal-body">
+	<form class="form-horizontal" [ngSwitch]="step">
+		<div *ngSwitchCase="'select'">
+            <div class="form-group" *ngIf="availableSpecifications">
+                <label class="col-xs-3 control-label" for="specification">* Target {{dataService.labelSpecificationLower()}}:</label>
+                <div class="col-xs-8">
+                    <input *ngIf="availableSpecifications.length == 1" class="form-control" id="specification" name="specification" [(ngModel)]="specifications[0].fname" readonly="readonly"/>
+                    <select *ngIf="availableSpecifications.length > 1" multiple="multiple" class="form-control" id="specification" name="specification" [(ngModel)]="specifications">
+                        <option *ngFor="let specification of availableSpecifications" [ngValue]="specification">{{specification.fname}}</option>
+                    </select>
+                </div>
+                <app-tooltip [tbTooltip]="'The '+dataService.labelSpecificationLower()+' with which this shared test suite will be linked.'"></app-tooltip>
+            </div>
+        </div>
+		<div *ngSwitchCase="'confirm'">
+			<div class="container-fluid">
+				<div class="row">
+					<div class="bg-info div-rounded div-padded">
+						<span *ngIf="!hasMultipleChoices">A selected {{dataService.labelSpecificationLower()}} defines matching data. Select how the update should take place.</span>
+						<span *ngIf="hasMultipleChoices">A selected {{dataService.labelSpecificationsLower()}} define matching data. Select how the updates should take place.</span>
+					</div>
+				</div>
+			</div>
+			<div class="section-choice-actions">
+				<app-test-suite-upload-specification-choices *ngIf="specificationChoices"
+					[choices]="specificationChoices"
+					[sharedTestSuite]="true"
+				></app-test-suite-upload-specification-choices>
+			</div>
+        </div>
+    </form>
+</div>
+<div class="modal-footer">
+	<button *ngIf="step != 'results'" type="button" class="btn btn-default" (click)="proceed()" [disable]="proceedDisabled()" [pending]="actionPending">Proceed</button>
+	<button type="button" class="btn btn-default" (click)="close()" [disabled]="actionPending">{{step == 'results'?'Close':'Cancel'}}</button>
+</div>

@@ -4,7 +4,7 @@
 <div class="modal-body">
 	<form class="form-horizontal" [ngSwitch]="step">
 		<div *ngSwitchCase="'initial'">
-			<div class="form-group">
+			<div class="form-group" *ngIf="!sharedTestSuite">
 				<label class="col-xs-3 control-label" for="specification">* Target {{dataService.labelSpecificationLower()}}:</label>
 				<div class="col-xs-8">
 					<input *ngIf="availableSpecifications.length == 1" class="form-control" id="specification" name="specification" [(ngModel)]="specifications[0].fname" readonly="readonly"/>
@@ -68,172 +68,89 @@
 		<div *ngSwitchCase="'replace'">
 			<div class="container-fluid">
 				<div class="row">
-					<div class="bg-info div-rounded div-padded">
-						<span *ngIf="!hasMultipleChoices && hasMatchingTestSuite">The selected {{dataService.labelSpecificationLower()}} already contains this test suite and its data. Select how the update should take place.</span>
-						<span *ngIf="!hasMultipleChoices && !hasMatchingTestSuite">The selected {{dataService.labelSpecificationLower()}} defines matching data. Select how the update should take place.</span>
-						<span *ngIf="hasMultipleChoices && hasMatchingTestSuite">Selected {{dataService.labelSpecificationsLower()}} already contain this test suite and its data. Select how the update should take place.</span>
-						<span *ngIf="hasMultipleChoices && !hasMatchingTestSuite">Selected {{dataService.labelSpecificationsLower()}} define matching data. Select how the update should take place.</span>
+					<div class="bg-info div-rounded div-padded" [ngSwitch]="sharedTestSuite">
+						<ng-container *ngSwitchCase="true">
+							<ng-container [ngSwitch]="specificationChoices && specificationChoices.length > 0">
+								<span *ngSwitchCase="true">A matching test suite was found with already linked {{dataService.labelSpecificationsLower()}}. Select how the update should take place.</span>
+								<span *ngSwitchDefault>A matching test suite was found. Select how the update should take place.</span>
+							</ng-container>
+						</ng-container>
+						<ng-container *ngSwitchDefault>
+							<span *ngIf="!hasMultipleChoices && hasMatchingTestSuite">A selected {{dataService.labelSpecificationLower()}} already contains this test suite and its data. Select how the update should take place.</span>
+							<span *ngIf="!hasMultipleChoices && !hasMatchingTestSuite">A selected {{dataService.labelSpecificationLower()}} defines matching data. Select how the update should take place.</span>
+							<span *ngIf="hasMultipleChoices && hasMatchingTestSuite">Selected {{dataService.labelSpecificationsLower()}} already contain this test suite and its data. Select how the update should take place.</span>
+							<span *ngIf="hasMultipleChoices && !hasMatchingTestSuite">Selected {{dataService.labelSpecificationsLower()}} define matching data. Select how the update should take place.</span>
+						</ng-container>
 					</div>
 				</div>
 			</div>
-			<div class="container-fluid ts-upload-result-container">
-				<div *ngFor="let choice of specificationChoices; let first = first; let last = last" class="row" [ngClass]="{'ts-upload-result-first': first, 'ts-upload-result-last': last}">
-					<div class="col-xs-12 ts-upload-result-spec">
-						<div class="ts-upload-result-spec-name" [ngClass]="{'ts-upload-skipped': choice.skipUpdate}">{{specificationName(choice.specification)}}</div>
-						<div class="btn-toolbar pull-right ts-upload-result-spec-controls" *ngIf="hasMultipleChoices">
-							<button *ngIf="!choice.skipUpdate" class="btn btn-default btn-sm" type="button" (click)="applyChoiceToAll(choice.specification)">Apply to all</button>
-							<button *ngIf="!choice.skipUpdate" class="btn btn-default btn-sm" type="button" (click)="skipUpdate(choice.specification)">Skip</button>
-							<button *ngIf="choice.skipUpdate" class="btn btn-default btn-sm" type="button" (click)="processUpdate(choice.specification)">Process</button>
-						</div>
-					</div>
-					<div [collapse]="choice.skipUpdate" [isAnimated]="true" class="ts-upload-result-actions col-xs-12">
-						<div class="form-group">
-							<label class="col-xs-3 control-label" [attr.for]="'choice_metadata_skip_'+choice.specification">* {{dataService.labelSpecification()}} data:</label>
-							<div class="col-xs-9">
-								<label class="checkbox-inline">
-									<input type="checkbox" [name]="'choice_metadata_actors_'+choice.specification" [(ngModel)]="choice.updateActors">Update {{dataService.labelActorLower()}} definitions?
-									<app-tooltip [inline]="true" inlineType="checkLabel" [tbTooltip]="'Update any existing '+dataService.labelActorLower()+' definitions (including configuration parameters) to match the information contained in the provided archive. Only '+dataService.labelActorsLower()+' matching those contained in the archive will be updated.'"></app-tooltip>
-								</label>
-								<label class="checkbox-inline" *ngIf="choice.testSuiteExists">
-									<input type="checkbox" [name]="'choice_metadata_test_suite_'+choice.specification" [(ngModel)]="choice.updateTestSuite">Update test suite metadata?
-									<app-tooltip [inline]="true" inlineType="checkLabel" tbTooltip="Update the metadata of the existing test suite (its name, description and documentation) to match the information contained in the provided archive. Note that test cases are always processed regardless of this option."></app-tooltip>
-								</label>
-							</div>
-						</div>
-						<div *ngIf="choice.testCasesInArchiveAndDB.length > 0">
-							<div class="form-table table-container testcase-table">
-								<div class="testcase-table-title expandable" (click)="choice.showTestCasesToUpdate = !choice.showTestCasesToUpdate">
-									<div class="testcase-table-title-label">Existing test cases to update ({{choice.testCasesInArchiveAndDB.length}})<span class="inline-tooltip" boundariesElement="window" [tooltip]="'These are the test cases defined in the provided archive that match existing ones from the '+dataService.labelSpecificationLower()+'. The test steps of each of these will be updated, whereas the metadata (name, description, documentation) and test history will be updated according to your below choices.'"><i class="fa fa-question-circle"></i></span></div>
-									<div class="testcase-table-title-controls">
-										<div class="btn-toolbar" (click)="$event.stopPropagation()" *ngIf="choice.showTestCasesToUpdate">
-											<div class="btn-group" dropdown [isDisabled]="hasAllTestCaseDataChoice(choice, true) && hasAllTestCaseHistoryChoice(choice, true)">
-												<button type="button" class="btn btn-default btn-sm" (click)="toggleTestCaseChoices(choice, true)" [disabled]="hasAllTestCaseDataChoice(choice, true) && hasAllTestCaseHistoryChoice(choice, true)">Select all options</button>
-												<button [attr.id]="'button-all-'+choice.specification" dropdownToggle type="button" class="btn btn-default btn-sm dropdown-toggle" [attr.aria-controls]="'dropdown-all-'+choice.specification"><span class="caret"></span></button>
-												<ul [attr.id]="'dropdownType-all-'+choice.specification" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" [attr.aria-labelledby]="'button-all-'+choice.specification">
-													<li role="menuitem" [class.disabled]="hasAllTestCaseDataChoice(choice, true)"><a class="dropdown-item" href (click)="toggleTestCaseDataChoice(choice, true); $event.preventDefault()">Select all metadata update options</a></li>
-													<li role="menuitem" [class.disabled]="hasAllTestCaseHistoryChoice(choice, true)"><a class="dropdown-item" href (click)="toggleTestCaseHistoryChoice(choice, true); $event.preventDefault()">Select all history reset options</a></li>
-												</ul>
-											</div>
-											<div class="btn-group" dropdown [isDisabled]="hasAllTestCaseDataChoice(choice, false) && hasAllTestCaseHistoryChoice(choice, false)">
-												<button type="button" class="btn btn-default btn-sm" (click)="toggleTestCaseChoices(choice, false)" [disabled]="hasAllTestCaseDataChoice(choice, false) && hasAllTestCaseHistoryChoice(choice, false)">Clear all options</button>
-												<button [attr.id]="'button-none-'+choice.specification" dropdownToggle type="button" class="btn btn-default btn-sm dropdown-toggle" [attr.aria-controls]="'dropdown-all-'+choice.specification"><span class="caret"></span></button>
-												<ul [attr.id]="'dropdownType-all-'+choice.specification" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" [attr.aria-labelledby]="'button-none-'+choice.specification">
-													<li role="menuitem" [class.disabled]="hasAllTestCaseDataChoice(choice, false)"><a class="dropdown-item" href (click)="toggleTestCaseDataChoice(choice, false); $event.preventDefault()">Clear all metadata update options</a></li>
-													<li role="menuitem" [class.disabled]="hasAllTestCaseHistoryChoice(choice, false)"><a class="dropdown-item" href (click)="toggleTestCaseHistoryChoice(choice, false); $event.preventDefault()">Clear all history reset options</a></li>
-												</ul>
-											</div>
-										</div>
+			<ng-container [ngSwitch]="sharedTestSuite">
+				<ng-container *ngSwitchCase="true">
+					<div class="container-fluid">
+						<div class="row section-choice-container">
+							<div class="col-xs-12 section-choice-title">Test suite definition</div>
+							<div class="section-choice-actions col-xs-12">
+								<div class="form-group">
+									<label class="col-xs-3 control-label" for="choice_metadata_skip">* Test suite metadata:</label>
+									<div class="col-xs-9">
+										<label class="radio-inline">
+											<input type="radio" name="choice_metadata_skip" [(ngModel)]="updateTestSuiteMetadata" id="choice_metadata_skip" [value]="false">Keep existing values
+											<app-tooltip [inline]="true" inlineType="checkLabel" tbTooltip="Keep the metadata of the existing test suite unchanged."></app-tooltip>
+										</label>
+										<label class="radio-inline">
+											<input type="radio" name="choice_metadata_update" [(ngModel)]="updateTestSuiteMetadata" id="choice_metadata_update" [value]="true">Update to match the uploaded archive
+											<app-tooltip [inline]="true" inlineType="checkLabel" tbTooltip="Update the metadata of the existing test suite (its name, description and documentation) to match the information contained in the provided archive. Note that test cases are always processed regardless of this option."></app-tooltip>
+										</label>
 									</div>
 								</div>
-								<div [collapse]="!choice.showTestCasesToUpdate" [isAnimated]="true" class="testcase-table-contents">
-									<table class="table">
-										<thead>
-											<tr>
-												<th>ID</th>
-												<th>Name</th>
-												<th class="th-min-centered">Update metadata?<app-tooltip [inline]="true" boundariesElement="window" tbTooltip="The test cases for which metadata (names, descriptions and documentation) shall be updated based on the information within the provided archive."></app-tooltip></th>
-												<th class="th-min-centered">Reset test history?<app-tooltip [inline]="true" boundariesElement="window" tbTooltip="The test cases for which the conformance testing status shall be reset and existing results considered obsolete."></app-tooltip></th>
-											</tr>
-										</thead>
-										<tbody>
-											<tr *ngFor="let testCase of choice.testCasesInArchiveAndDB">
-												<td>{{testCase.identifier}}</td>
-												<td>{{testCase.name}}</td>
-												<td class="centered"><input type="checkbox" [(ngModel)]="testCase.updateDefinition" [name]="'choice_data_'+choice.specification+'_'+testCase.identifier"></td>
-												<td class="centered"><input type="checkbox" [(ngModel)]="testCase.resetTestHistory" [name]="'choice_history_'+choice.specification+'_'+testCase.identifier"></td>
-											</tr>
-										</tbody>
-									</table>
-								</div>
-							</div>
-						</div>
-						<div *ngIf="choice.testCasesInArchive.length > 0">
-							<div class="form-table table-container testcase-table">
-								<div class="testcase-table-title expandable" (click)="choice.showTestCasesToAdd = !choice.showTestCasesToAdd">
-									<div class="testcase-table-title-label">New test cases to add ({{choice.testCasesInArchive.length}})<span class="inline-tooltip" boundariesElement="window" [tooltip]="'These are the test cases defined in the provided archive for which no match was found in the '+dataService.labelSpecificationLower()+'. They will be included as new test cases in the test suite.'"><i class="fa fa-question-circle"></i></span></div>
-								</div>
-								<div [collapse]="!choice.showTestCasesToAdd" [isAnimated]="true" class="testcase-table-contents">
-									<table class="table">
-										<thead>
-											<tr>
-												<th>ID</th>
-												<th>Name</th>
-											</tr>
-										</thead>
-										<tbody>
-											<tr *ngFor="let testCase of choice.testCasesInArchive">
-												<td>{{testCase.identifier}}</td>
-												<td>{{testCase.name}}</td>
-											</tr>
-										</tbody>
-									</table>
-								</div>
-							</div>
-						</div>
-						<div *ngIf="choice.testCasesInDB.length > 0">
-							<div class="form-table table-container testcase-table">
-								<div class="testcase-table-title expandable" (click)="choice.showTestCasesToDelete = !choice.showTestCasesToDelete">
-									<div class="testcase-table-title-label">Missing test cases to delete ({{choice.testCasesInDB.length}})<span class="inline-tooltip" boundariesElement="window" [tooltip]="'These are the test cases that exist in the '+dataService.labelSpecificationLower()+' for which no match was found in the provided archive. They will be deleted from the test suite, with any relevant test sessions considered obsolete.'"><i class="fa fa-question-circle"></i></span></div>
-								</div>
-								<div [collapse]="!choice.showTestCasesToDelete" [isAnimated]="true" class="testcase-table-contents">
-									<table class="table">
-										<thead>
-											<tr>
-												<th>ID</th>
-												<th>Name</th>
-											</tr>
-										</thead>
-										<tbody>
-											<tr *ngFor="let testCase of choice.testCasesInDB">
-												<td>{{testCase.identifier}}</td>
-												<td>{{testCase.name}}</td>
-											</tr>
-										</tbody>
-									</table>
-								</div>
+								<!-- Test cases to update -->
+								<app-test-case-update-list *ngIf="testCasesInArchiveAndDB.length > 0"
+									[title]="'Existing test cases to update ('+testCasesInArchiveAndDB.length+')'"
+									[titleTooltip]="'These are the test cases defined in the provided archive that match existing ones from the '+dataService.labelSpecificationLower()+'. The test steps of each of these will be updated, whereas the metadata (name, description, documentation) and test history will be updated according to your below choices.'"
+									[testCases]="testCasesInArchiveAndDB"
+									[showUpdateDefinition]="true"
+									[showResetTestHistory]="true"
+								></app-test-case-update-list>						
+								<!-- Test cases to add -->
+								<app-test-case-update-list *ngIf="testCasesInArchive.length > 0"
+									[title]="'New test cases to add ('+testCasesInArchive.length+')'"
+									[titleTooltip]="'These are the test cases defined in the provided archive for which no match was found in the '+dataService.labelSpecificationLower()+'. They will be included as new test cases in the test suite.'"
+									[testCases]="testCasesInArchive"
+								></app-test-case-update-list>
+								<!-- Test cases to delete -->
+								<app-test-case-update-list *ngIf="testCasesInDB.length > 0"
+									[title]="'Missing test cases to delete ('+testCasesInDB.length+')'"
+									[titleTooltip]="'These are the test cases that exist in the '+dataService.labelSpecificationLower()+' for which no match was found in the provided archive. They will be deleted from the test suite, with any relevant test sessions considered obsolete.'"
+									[testCases]="testCasesInDB"
+								></app-test-case-update-list>
 							</div>
 						</div>
 					</div>
-				</div>
-			</div>
-		</div>
-		<div *ngSwitchCase="'results'">
-			<div class="container-fluid">
-				<div class="row">
-					<div class="bg-info div-rounded div-padded">
-						<span>The test suite has been successfully uploaded. You can review below the changes that were applied.</span>
-					</div>
-				</div>
-			</div>
-			<div class="container-fluid ts-upload-result-container">
-				<div *ngFor="let result of results; let first = first; let last = last" class="row" [ngClass]="{'ts-upload-result-first': first, 'ts-upload-result-last': last}">
-					<div class="col-xs-12 ts-upload-result-spec">
-						<div class="ts-upload-result-spec-name">{{specificationName(result.specification)}}</div
-					></div>
-					<div class="ts-upload-result-actions col-xs-12">
-						<div *ngIf="result.testSuites.length > 0">
-							<label class="col-xs-3 control-label">Test suite:</label>
-							<div class="col-xs-9"><p class="form-control-static">{{result.testSuiteSummary}}</p></div>
+					<div class="section-choice-container" *ngIf="specificationChoices && specificationChoices.length > 0">
+						<div class="section-choice-title expandable" (click)="specificationsCollapsed = !specificationsCollapsed">
+							Linked {{dataService.labelSpecificationsLower()}} ({{specificationChoices.length}})
 						</div>
-						<div *ngIf="result.testCases.length > 0">
-							<label class="col-xs-3 control-label">Test cases:</label>
-							<div class="col-xs-9"><p class="form-control-static">{{result.testCaseSummary}}</p></div>
-						</div>
-						<div *ngIf="result.actors.length > 0">
-							<label class="col-xs-3 control-label">{{dataService.labelActors()}}:</label>
-							<div class="col-xs-9"><p class="form-control-static">{{result.actorSummary}}</p></div>
-						</div>
-						<div *ngIf="result.endpoints.length > 0">
-							<label class="col-xs-3 control-label">{{dataService.labelEndpoints()}}:</label>
-							<div class="col-xs-9"><p class="form-control-static">{{result.endpointSummary}}</p></div>
-						</div>
-						<div *ngIf="result.parameters.length > 0">
-							<label class="col-xs-3 control-label">Parameters:</label>
-							<div class="col-xs-9"><p class="form-control-static">{{result.parameterSummary}}</p></div>
+						<div [collapse]="specificationsCollapsed" [isAnimated]="true">
+							<div class="section-choice-actions">
+								<app-test-suite-upload-specification-choices
+									[choices]="specificationChoices"
+									[sharedTestSuite]="sharedTestSuite"
+									(pendingChoices)="choiceUpdate($event)"
+								></app-test-suite-upload-specification-choices>
+							</div>
 						</div>
 					</div>
-				</div>
-			</div>
+				</ng-container>
+				<ng-container *ngSwitchDefault>
+					<div class="section-choice-actions-specs">
+						<app-test-suite-upload-specification-choices *ngIf="specificationChoices"
+							[choices]="specificationChoices"
+							[sharedTestSuite]="sharedTestSuite"
+							(pendingChoices)="choiceUpdate($event)"
+						></app-test-suite-upload-specification-choices>
+					</div>
+				</ng-container>
+			</ng-container>
 		</div>
 	</form>
 </div>

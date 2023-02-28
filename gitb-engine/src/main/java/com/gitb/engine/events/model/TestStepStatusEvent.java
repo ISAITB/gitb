@@ -12,15 +12,13 @@ public class TestStepStatusEvent extends StatusEvent {
 	private final String sessionId;
 	private final String stepId;
 	private final TestStepReportType report;
-	private final ActorRef actorRef;
 	private final Object step;
 
 	public TestStepStatusEvent(String sessionId, String stepId, StepStatus status, TestStepReportType report, ActorRef actorRef, Object step, TestCaseScope scope) {
-		super(status, scope);
+		super(status, scope, actorRef);
 		this.sessionId = sessionId;
 		this.stepId = stepId;
 		this.report = report;
-		this.actorRef = actorRef;
 		this.step = step;
 	}
 
@@ -38,10 +36,6 @@ public class TestStepStatusEvent extends StatusEvent {
 
 	public TestStepReportType getReport() {
 		return report;
-	}
-
-	public ActorRef getActorRef() {
-		return actorRef;
 	}
 
 	public Object getStep() {

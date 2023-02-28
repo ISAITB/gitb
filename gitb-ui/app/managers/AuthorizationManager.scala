@@ -368,7 +368,7 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     } else if (isCommunityAdmin(userInfo)) {
       val testSuite = testSuiteManager.getById(testSuiteId)
       if (testSuite.isDefined) {
-        ok = canManageSpecification(request, userInfo, testSuite.get.specification)
+        ok = canManageDomain(request, userInfo, testSuite.get.domain)
       }
     }
     setAuthResult(request, ok, "User cannot manage the requested test suite")
@@ -392,18 +392,9 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     if (isTestBedAdmin(userInfo)) {
       ok = true
     } else {
-      val testCases = testCaseManager.getTestCasesForIds(testCaseIds)
-      if (testCases.nonEmpty) {
-        ok = true
-      } else {
-        var specificationIds: Set[Long] = Set()
-        testCases.foreach { testCase =>
-          specificationIds += testCase.targetSpec
-        }
-        if (specificationIds.size == 1 && specificationIds.head == specId) {
-          // All test cases must relate to a single specification (the requested one)
-          ok = canViewSpecifications(request, userInfo, Some(specificationIds.toList)) && canViewSystemsById(request, userInfo, Some(List(systemId)))
-        }
+      val specIds = testCaseManager.getSpecificationsOfTestCases(testCaseIds)
+      if (specIds.nonEmpty && specIds.contains(specId)) {
+        ok = canViewSpecifications(request, userInfo, Some(specIds.toList)) && canViewSystemsById(request, userInfo, Some(List(systemId)))
       }
     }
     setAuthResult(request, ok, "Cannot view the requested test case(s)")
@@ -726,7 +717,7 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
         ok = true
       } else if (isCommunityAdmin(userInfo)) {
         val testSuite = testSuiteManager.getTestSuiteOfTestCase(testId.toLong)
-        ok = canViewSpecifications(request, userInfo, Some(List(testSuite.specification)))
+        ok = canManageDomain(request, userInfo, testSuite.domain)
       } else {
         val specId = conformanceManager.getSpecificationIdForTestCaseFromConformanceStatements(testId.toLong)
         if (specId.isDefined) {
@@ -1281,7 +1272,7 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
       ok = true
     } else if (isCommunityAdmin(userInfo)) {
       val testSuite = testSuiteManager.getTestSuiteOfTestCase(testCaseId)
-      ok = canViewSpecifications(request, userInfo, Some(List(testSuite.specification)))
+      ok = canManageDomain(request, userInfo, testSuite.domain)
     } else {
       // There must be a conformance statement for this.
       val specId = conformanceManager.getSpecificationIdForTestCaseFromConformanceStatements(testCaseId)
@@ -1300,7 +1291,7 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     } else if (isCommunityAdmin(userInfo)) {
       val testSuite = testSuiteManager.getById(testSuiteId)
       if (testSuite.isDefined) {
-        ok = canViewSpecifications(request, userInfo, Some(List(testSuite.get.specification)))
+        ok = canManageDomain(request, userInfo, testSuite.get.domain)
       }
     } else {
       // There must be a conformance statement for this.
@@ -1329,12 +1320,12 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
 
   def canEditTestSuite(request: RequestWithAttributes[AnyContent], testSuiteId: Long):Boolean = {
     val testSuite = testSuiteManager.getById(testSuiteId)
-    canManageSpecification(request, testSuite.get.specification)
+    canManageDomain(request, testSuite.get.domain)
   }
 
   def canEditTestCase(request: RequestWithAttributes[AnyContent], testCaseId: Long):Boolean = {
-    val testCase = testCaseManager.getTestCase(testCaseId.toString)
-    canManageSpecification(request, testCase.get.targetSpec)
+    val testSuite = testSuiteManager.getTestSuiteOfTestCase(testCaseId)
+    canManageDomain(request, testSuite.domain)
   }
 
   def canEditTestSuites(request: RequestWithAttributes[_], specification_id: Long):Boolean = {

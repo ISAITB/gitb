@@ -374,6 +374,7 @@
                     <xsd:element name="description" type="xsd:string" minOccurs="0"/>
                     <xsd:element name="specifications" type="Specifications" minOccurs="0"/>
                     <xsd:element name="parameters" type="DomainParameters" minOccurs="0"/>
+                    <xsd:element name="sharedTestSuites" type="TestSuites" minOccurs="0"/>
                 </xsd:sequence>
             </xsd:extension>
         </xsd:complexContent>
@@ -411,6 +412,7 @@
                     <xsd:element name="apiKey" type="xsd:string" minOccurs="0"/>
                     <xsd:element name="actors" type="Actors" minOccurs="0"/>
                     <xsd:element name="testSuites" type="TestSuites" minOccurs="0"/>
+                    <xsd:element name="sharedTestSuites" type="xsd:IDREFS" minOccurs="0"/>
                 </xsd:sequence>
                 <xsd:attribute name="hidden" type="xsd:boolean" default="false"/>
             </xsd:extension>
@@ -589,7 +591,7 @@
                     <xsd:element name="data" type="xsd:string"/>
                     <xsd:element name="testCases" type="TestCases" minOccurs="0"/>
                 </xsd:sequence>
-                <xsd:attribute name="specification" use="required" type="xsd:IDREF"/>
+                <xsd:attribute name="specification" type="xsd:IDREF"/>
                 <xsd:attribute name="actors" type="xsd:IDREFS"/>
             </xsd:extension>
         </xsd:complexContent>
@@ -621,7 +623,7 @@
                     <xsd:element name="actors" type="TestCaseActors" minOccurs="0"/>
                 </xsd:sequence>
                 <xsd:attribute name="testSuite" use="required" type="xsd:IDREF"/>
-                <xsd:attribute name="specification" use="required" type="xsd:IDREF"/>
+                <xsd:attribute name="specification" type="xsd:IDREF"/>
             </xsd:extension>
         </xsd:complexContent>
     </xsd:complexType>

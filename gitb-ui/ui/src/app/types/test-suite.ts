@@ -6,6 +6,7 @@ export interface TestSuite {
     version: string
     description?: string
     documentation?: string
-    specification: number
+    specifications?: number[]
+    shared: boolean
 
 }

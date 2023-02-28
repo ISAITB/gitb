@@ -40,8 +40,8 @@ public class TestStepStatusEventBus extends LookupEventBus<TestStepStatusEvent, 
 
 	@Override
 	public void publish(TestStepStatusEvent event, ActorRef subscriber) {
-		if(event.getActorRef() != null) {
-			subscriber.tell(event, event.getActorRef());
+		if(event.getSender() != null) {
+			subscriber.tell(event, event.getSender());
 		} else {
 			subscriber.tell(event, ActorRef.noSender());
 		}

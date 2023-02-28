@@ -13,13 +13,31 @@ case class TestSuites(
 	modificationDate: Option[String],
 	description: Option[String],
 	keywords: Option[String],
-	specification: Long,
 	filename: String,
 	hasDocumentation: Boolean,
 	documentation: Option[String],
 	identifier: String,
-	hidden: Boolean
-)
+	hidden: Boolean,
+	shared: Boolean,
+	domain: Long,
+	definitionPath: Option[String]
+) {
+
+	def withId(id: Long): TestSuites = {
+		TestSuites(id, this.shortname, this.fullname, this.version, this.authors, this.originalDate, this.modificationDate,
+			this.description, this.keywords, this.filename, this.hasDocumentation, this.documentation, this.identifier, this.hidden, this.shared, this.domain, this.definitionPath)
+	}
+
+	def withFileName(filename: String): TestSuites = {
+		TestSuites(this.id, this.shortname, this.fullname, this.version, this.authors, this.originalDate, this.modificationDate,
+			this.description, this.keywords, filename, this.hasDocumentation, this.documentation, this.identifier, this.hidden, this.shared, this.domain, this.definitionPath)
+	}
+
+	def withDefinitionPath(definitionPath: Option[String]): TestSuites = {
+		TestSuites(this.id, this.shortname, this.fullname, this.version, this.authors, this.originalDate, this.modificationDate,
+			this.description, this.keywords, this.filename, this.hasDocumentation, this.documentation, this.identifier, this.hidden, this.shared, this.domain, definitionPath)
+	}
+}
 
 class TestSuite(
 								 _id: Long,
@@ -33,12 +51,15 @@ class TestSuite(
 	               _keywords: Option[List[String]],
 	               _actors: Option[List[Actor]],
 	               _testCases: Option[List[TestCases]],
-								 _specification: Long,
 							   _filename: String,
 							   _hasDocumentation: Boolean,
 							   _documentation: Option[String],
 							 	 _identifier: String,
-  						   _hidden: Boolean
+  						   _hidden: Boolean,
+								 _shared: Boolean,
+							 	_domain: Long,
+							  _specifications: Option[List[Long]] = None,
+							  _definitionPath: Option[String]
 	               ) {
 	var id: Long = _id
 	var shortname: String = _shortname
@@ -51,19 +72,22 @@ class TestSuite(
 	var keywords: Option[List[String]] = _keywords
 	var actors: Option[List[Actor]] = _actors
 	var testCases: Option[List[TestCases]] = _testCases
-	var specification: Long = _specification
 	var filename: String = _filename
 	var hasDocumentation: Boolean = _hasDocumentation
 	var documentation: Option[String] = _documentation
 	var identifier: String = _identifier
 	var hidden: Boolean = _hidden
+	var shared: Boolean = _shared
+	var domain: Long = _domain
+	var specifications: Option[List[Long]] = _specifications
+	var definitionPath: Option[String] = _definitionPath
 
 	def this(testSuite: TestSuites, actors: Option[List[Actor]], testCases: Option[List[TestCases]]) = {
 		this(testSuite.id, testSuite.shortname, testSuite.fullname, testSuite.version,
 			if(testSuite.authors.isDefined) Some(testSuite.authors.get.split(",").toList) else None,
 			testSuite.originalDate,	testSuite.modificationDate, testSuite.description,
 			if(testSuite.keywords.isDefined) Some(testSuite.keywords.get.split(",").toList) else None,
-			actors, testCases, testSuite.specification, testSuite.filename, testSuite.hasDocumentation, testSuite.documentation, testSuite.identifier, testSuite.hidden)
+			actors, testCases, testSuite.filename, testSuite.hasDocumentation, testSuite.documentation, testSuite.identifier, testSuite.hidden, testSuite.shared, testSuite.domain, None, testSuite.definitionPath)
 	}
 
 	def this(testSuite: TestSuites, testCases: List[TestCases]) = {
@@ -80,7 +104,7 @@ class TestSuite(
 			if(this.authors.isDefined) Some(this.authors.get.mkString(",")) else None,
 			this.originalDate, this.modificationDate, this.description,
 			if(this.keywords.isDefined) Some(this.keywords.get.mkString(",")) else None,
-			this.specification, this.filename, this.hasDocumentation, this.documentation, this.identifier, this.hidden
+			this.filename, this.hasDocumentation, this.documentation, this.identifier, this.hidden, this.shared, this.domain, this.definitionPath
 		)
 	}
 }

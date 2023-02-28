@@ -83,6 +83,7 @@ export class ExportComponent extends BaseComponent implements OnInit {
     this.allDomainData = false
     this.allOrganisationData = false
     this.settings = {
+      encryptionKey: this.settings.encryptionKey,
       landingPages: false,
       errorTemplates: false,
       triggers: false,

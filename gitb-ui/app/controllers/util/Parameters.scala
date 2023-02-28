@@ -21,6 +21,7 @@ object Parameters {
   val END_TIME_END = "end_time_end"
   val UPDATE_TIME_BEGIN = "update_time_begin"
   val UPDATE_TIME_END = "update_time_end"
+  val TEST_SUITE_ID = "test_suite_id"
 
   //Dashboard sorting
   val SORT_COLUMN = "sort_column"
@@ -182,4 +183,5 @@ object Parameters {
   var PAYLOAD = "payload"
 
   var UPDATE = "update"
+  var SHARED = "shared"
 }

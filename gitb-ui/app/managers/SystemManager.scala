@@ -423,10 +423,10 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils, testResultManag
         }
       }
       // Load any existing test results for the system and actor.
+      // We lookup based on test case ID (and not actor) because we may have shared test suites.
       existingResults <- PersistenceSchema.testResults
         .filter(_.sutId === system)
-        .filter(_.actorId === actor)
-        .filter(_.testCaseId.isDefined)
+        .filter(_.testCaseId inSet conformanceInfo.map(_._1)) // In expected set of test case IDs
         .sortBy(_.endTime.desc)
         .result
       existingResultsMap <- {
@@ -708,6 +708,10 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils, testResultManag
   def getSystemById(id: Long): Option[Systems] = {
     val system = exec(PersistenceSchema.systems.filter(_.id === id).result.headOption)
     system
+  }
+
+  def getSystemByIdInternal(id: Long): DBIO[Option[Systems]] = {
+    PersistenceSchema.systems.filter(_.id === id).result.headOption
   }
 
   def getSystems(ids: Option[List[Long]]): List[Systems] = {

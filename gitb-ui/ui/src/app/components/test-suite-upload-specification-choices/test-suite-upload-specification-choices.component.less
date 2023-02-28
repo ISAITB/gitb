@@ -1,0 +1,57 @@
+@import '../../../styles/../styles/less/_common.less';
+
+.ts-upload-result-container {
+	border: 1px solid @gray-dark-1;
+	background: @gray-light-1;
+	border-radius: 5px;
+	.ts-upload-result-spec {
+		width: 100%;
+		display: flex;
+		align-items: center;		
+		border-bottom: 1px solid @gray-dark-1;
+		border-top: 1px solid @gray-dark-1;
+		> .ts-upload-result-spec-name {
+			padding-right: 15px;
+			padding-left: 15px;
+			padding-top: 10px;
+			padding-bottom: 10px;
+			vertical-align: middle;
+			font-weight: bold;
+			display: inline-flex;
+			flex-grow: 1;
+		}
+		> .ts-upload-result-spec-controls {
+			display: inline-flex;
+			padding-right: 8px;			
+		}
+	}
+	.ts-upload-result-actions {
+		background: white;
+		.form-group:first-child {
+			padding-top: 10px;
+		}
+	}
+	.ts-upload-result-first {
+		.ts-upload-result-spec {
+			border-top: 0px solid @gray-dark-1;
+		}
+	}
+	.ts-upload-result-last > .ts-upload-result-actions{
+		border-bottom-left-radius: 5px;
+		border-bottom-right-radius: 5px;
+	}
+}
+
+.internal-warning {
+    margin-top: 15px;
+    margin-bottom: 15px;
+}
+
+.test-case-container {
+    padding-bottom: 15px;
+}
+
+.ts-upload-skipped {
+	text-decoration: line-through;
+	opacity: 0.4;
+}

@@ -1,10 +1,9 @@
 import { AfterViewInit, Component, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { BsModalService } from 'ngx-bootstrap/modal';
 import { Constants } from 'src/app/common/constants';
 import { CreateEditDomainParameterModalComponent } from 'src/app/modals/create-edit-domain-parameter-modal/create-edit-domain-parameter-modal.component';
 import { TestSuiteUploadModalComponent } from 'src/app/modals/test-suite-upload-modal/test-suite-upload-modal.component';
-import { BaseComponent } from 'src/app/pages/base-component.component';
 import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
 import { ConformanceService } from 'src/app/services/conformance.service';
 import { DataService } from 'src/app/services/data.service';
@@ -15,6 +14,8 @@ import { DomainParameter } from 'src/app/types/domain-parameter';
 import { Specification } from 'src/app/types/specification';
 import { TableColumnDefinition } from 'src/app/types/table-column-definition.type';
 import { saveAs } from 'file-saver'
+import { TestSuite } from 'src/app/types/test-suite';
+import { BaseTabbedComponent } from 'src/app/pages/base-tabbed-component';
 
 @Component({
   selector: 'app-domain-details',
@@ -22,13 +23,15 @@ import { saveAs } from 'file-saver'
   styles: [
   ]
 })
-export class DomainDetailsComponent extends BaseComponent implements OnInit, AfterViewInit {
+export class DomainDetailsComponent extends BaseTabbedComponent implements OnInit, AfterViewInit {
 
   domain: Partial<Domain> = {}
   specifications: Specification[] = []
+  sharedTestSuites: TestSuite[] = []
   domainParameters: DomainParameter[] = []
   domainId!: number
   specificationStatus = {status: Constants.STATUS.NONE}
+  sharedTestSuiteStatus = {status: Constants.STATUS.NONE}
   parameterStatus = {status: Constants.STATUS.NONE}
   tableColumns: TableColumnDefinition[] = [
     { field: 'sname', title: 'Short name' },
@@ -36,6 +39,12 @@ export class DomainDetailsComponent extends BaseComponent implements OnInit, Aft
     { field: 'description', title: 'Description' },
     { field: 'hidden', title: 'Hidden' }
   ]
+  sharedTestSuiteTableColumns: TableColumnDefinition[] = [
+    { field: 'identifier', title: 'ID' },
+    { field: 'sname', title: 'Name' },
+    { field: 'description', title: 'Description' },
+    { field: 'version', title: 'Version' }
+  ]  
   savePending = false
   deletePending = false
 
@@ -46,11 +55,23 @@ export class DomainDetailsComponent extends BaseComponent implements OnInit, Aft
     private modalService: BsModalService,
     private popupService: PopupService,
     private routingService: RoutingService,
-    private route: ActivatedRoute
-  ) { super() }
+    private route: ActivatedRoute,
+    router: Router
+  ) { super(router) }
+
+  loadTab(tabIndex: number): void {
+    if (tabIndex == Constants.TAB.DOMAIN.PARAMETERS) {
+      this.loadDomainParameters()
+    } else if (tabIndex == Constants.TAB.DOMAIN.SPECIFICATIONS) {
+      this.loadSpecifications()
+    } else {
+      this.loadSharedTestSuites()
+    }
+  }
 
   ngAfterViewInit(): void {
 		this.dataService.focus('shortName')
+    this.showTab()
   }
 
   ngOnInit(): void {
@@ -65,6 +86,7 @@ export class DomainDetailsComponent extends BaseComponent implements OnInit, Aft
   loadSpecifications() {
     if (this.specificationStatus.status == Constants.STATUS.NONE) {
       this.specificationStatus.status = Constants.STATUS.PENDING
+      this.specifications = []
       this.conformanceService.getSpecifications(this.domainId)
       .subscribe((data) => {
         this.specifications = data
@@ -74,12 +96,25 @@ export class DomainDetailsComponent extends BaseComponent implements OnInit, Aft
     }
   }
 
+  loadSharedTestSuites(forceLoad?: boolean) {
+    if (this.sharedTestSuiteStatus.status == Constants.STATUS.NONE || forceLoad) {
+      this.sharedTestSuiteStatus.status = Constants.STATUS.PENDING
+      this.sharedTestSuites = []
+      this.conformanceService.getSharedTestSuites(this.domainId)
+      .subscribe((data) => {
+        this.sharedTestSuites = data
+      }).add(() => {
+        this.sharedTestSuiteStatus.status = Constants.STATUS.FINISHED
+      })
+    }
+  }
+
   loadDomainParameters(forceLoad?: boolean) {
     if (this.parameterStatus.status == Constants.STATUS.NONE || forceLoad) {
+      this.domainParameters = []
       this.parameterStatus.status = Constants.STATUS.PENDING
       this.conformanceService.getDomainParameters(this.domainId)
       .subscribe((data) => {
-        this.domainParameters = []
         for (let parameter of data) {
           if (parameter.kind == 'HIDDEN') {
             parameter.valueToShow = "*****"
@@ -142,6 +177,10 @@ export class DomainDetailsComponent extends BaseComponent implements OnInit, Aft
     this.routingService.toSpecification(this.domainId, specification.id)
   }
 
+  onSharedTestSuiteSelect(testSuite: TestSuite) {
+    this.routingService.toSharedTestSuite(this.domainId, testSuite.id)
+  }
+
 	openParameterModal(domainParameter: Partial<DomainParameter>) {
     const modalRef = this.modalService.show(CreateEditDomainParameterModalComponent, {
       class: 'modal-lg',
@@ -172,9 +211,29 @@ export class DomainDetailsComponent extends BaseComponent implements OnInit, Aft
       keyboard: false,
       initialState: {
         availableSpecifications: this.specifications,
-        testSuitesVisible: false
+        testSuitesVisible: false,
+        domainId: this.domainId
       }
     })
+  }
+
+  uploadSharedTestSuite() {
+    const modal = this.modalService.show(TestSuiteUploadModalComponent, {
+      class: 'modal-lg',
+      backdrop: 'static',
+      keyboard: false,
+      initialState: {
+        availableSpecifications: this.specifications,
+        sharedTestSuite: true,
+        domainId: this.domainId
+      }
+    })    
+    modal.content!.completed.subscribe((testSuitesUpdated: boolean) => {
+      if (testSuitesUpdated) {
+        this.loadSharedTestSuites(true)
+      }
+    })
+
   }
 
 	createSpecification() {

@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { ROUTES } from '../common/global';
+import { Specification } from '../types/specification';
 import { TestCase } from '../types/test-case';
 import { TestSuiteWithTestCases } from '../types/test-suite-with-test-cases';
 import { RestService } from './rest.service';
@@ -51,6 +52,13 @@ export class TestSuiteService {
 	getTestSuiteWithTestCases(testSuiteId: number) {
 		return this.restService.get<TestSuiteWithTestCases>({
 			path: ROUTES.controllers.TestSuiteService.getTestSuiteWithTestCases(testSuiteId).url,
+			authenticate: true
+	    })
+	}
+
+	getLinkedSpecifications(testSuiteId: number) {
+		return this.restService.get<Specification[]>({
+			path: ROUTES.controllers.TestSuiteService.getLinkedSpecifications(testSuiteId).url,
 			authenticate: true
 	    })
 	}

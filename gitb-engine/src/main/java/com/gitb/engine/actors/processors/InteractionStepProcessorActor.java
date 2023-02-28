@@ -76,7 +76,7 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
         promise.future().failed().foreach(new OnFailure() {
             @Override
             public void onFailure(Throwable failure) {
-                updateTestStepStatus(context, new ErrorStatusEvent(failure, scope), null, true);
+                updateTestStepStatus(context, new ErrorStatusEvent(failure, scope, self()), null, true);
             }
         }, getContext().dispatcher());
     }

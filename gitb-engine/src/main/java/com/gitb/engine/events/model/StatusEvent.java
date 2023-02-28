@@ -1,5 +1,6 @@
 package com.gitb.engine.events.model;
 
+import akka.actor.ActorRef;
 import com.gitb.core.StepStatus;
 import com.gitb.engine.testcase.TestCaseScope;
 
@@ -9,10 +10,12 @@ import com.gitb.engine.testcase.TestCaseScope;
 public class StatusEvent {
 	private final StepStatus status;
 	private final TestCaseScope scope;
+	private final ActorRef sender;
 
-	public StatusEvent(StepStatus status, TestCaseScope scope) {
+	public StatusEvent(StepStatus status, TestCaseScope scope, ActorRef sender) {
 		this.status = status;
 		this.scope = scope;
+		this.sender = sender;
 	}
 
 	public StepStatus getStatus() {
@@ -21,6 +24,10 @@ public class StatusEvent {
 
 	public TestCaseScope getScope() {
 		return scope;
+	}
+
+	public ActorRef getSender() {
+		return sender;
 	}
 
 	@Override

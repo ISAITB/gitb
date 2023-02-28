@@ -12,7 +12,6 @@ case class TestCases(
 	                    keywords: Option[String],
 	                    testCaseType: Short,
 	                    path: String,
-		                  targetSpec: Long,
 											targetActors: Option[String] = None,
 											targetOptions: Option[String] = None,
 											testSuiteOrder: Short,
@@ -21,19 +20,9 @@ case class TestCases(
 											identifier: String
 	                    ) {
 
-	def withSpecification(specification: Long): TestCases = {
-		TestCases(this.id, this.shortname, this.fullname, this.version, this.authors, this.originalDate,
-			this.modificationDate, this.description, this.keywords, this.testCaseType, path, specification, this.targetActors, this.targetOptions, this.testSuiteOrder, this.hasDocumentation, this.documentation, this.identifier)
-	}
-
 	def withPath(path: String): TestCases = {
 		TestCases(this.id, this.shortname, this.fullname, this.version, this.authors, this.originalDate,
-			this.modificationDate, this.description, this.keywords, this.testCaseType, path, this.targetSpec, this.targetActors, this.targetOptions, this.testSuiteOrder, this.hasDocumentation, this.documentation, this.identifier)
-	}
-
-	def withTargets(spec: Long, targetActors: Option[String] = None, targetOptions:Option[String] = None): TestCases = {
-		TestCases(this.id, this.shortname, this.fullname, this.version, this.authors, this.originalDate,
-			this.modificationDate, this.description, this.keywords, this.testCaseType, this.path, targetSpec, targetActors, targetOptions, this.testSuiteOrder, this.hasDocumentation, this.documentation, this.identifier)
+			this.modificationDate, this.description, this.keywords, this.testCaseType, path, this.targetActors, this.targetOptions, this.testSuiteOrder, this.hasDocumentation, this.documentation, this.identifier)
 	}
 
 }
@@ -51,7 +40,6 @@ class TestCase(
 	              _keywords: Option[List[String]],
 	              _testCaseType: Short,
 	              _path: String,
-	              _targetSpec: Long,
 	              _targetActors: Option[List[Actors]],
 	              _targetOptions: Option[List[models.Options]],
 	              _testSuiteOrder: Short,
@@ -70,7 +58,6 @@ class TestCase(
 	var keywords: Option[List[String]] = _keywords
 	var testCaseType: Short = _testCaseType
 	var path: String = _path
-	var targetSpec: Long = _targetSpec
 	var targetActors: Option[List[Actors]] = _targetActors
 	var targetOptions: Option[List[models.Options]] = _targetOptions
 	var testSuiteOrder: Short = _testSuiteOrder
@@ -84,7 +71,7 @@ class TestCase(
 			if (_case.authors.isDefined) Some(_case.authors.get.split(",").toList) else None,
 			_case.originalDate, _case.modificationDate, _case.description,
 			if (_case.keywords.isDefined) Some(_case.keywords.get.split(",").toList) else None,
-			_case.testCaseType, _case.path, _case.targetSpec, targetActors, targetOptions, _case.testSuiteOrder, _case.hasDocumentation, _case.documentation, _case.identifier)
+			_case.testCaseType, _case.path, targetActors, targetOptions, _case.testSuiteOrder, _case.hasDocumentation, _case.documentation, _case.identifier)
 	}
 
 	def this(_case: TestCases) = {

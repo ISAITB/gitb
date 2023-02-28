@@ -87,6 +87,8 @@ const routes: Routes = [
           { path: 'domains', component: DomainManagementComponent },
           { path: 'domains/create', component: CreateDomainComponent },
           { path: 'domains/:id', component: DomainDetailsComponent },
+          { path: 'domains/:id/testsuites/:testsuite_id', component: TestSuiteDetailsComponent },
+          { path: 'domains/:id/testsuites/:testsuite_id/testcases/:testcase_id', component: TestCaseDetailsComponent },
           { path: 'domains/:id/specifications/create', component: CreateSpecificationComponent },
           { path: 'domains/:id/specifications/:spec_id', component: SpecificationDetailsComponent },
           { path: 'domains/:id/specifications/:spec_id/actors/create', component: CreateActorComponent },
