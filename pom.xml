@@ -198,6 +198,11 @@
                 <version>${version.gitbTypes}</version>
             </dependency>
             <dependency>
+                <groupId>eu.europa.ec.itb</groupId>
+                <artifactId>gitb-types-specs</artifactId>
+                <version>${version.gitbTypes}</version>
+            </dependency>
+            <dependency>
                 <groupId>com.gitb</groupId>
                 <artifactId>gitb-core</artifactId>
                 <version>${project.version}</version>

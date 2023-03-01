@@ -17,6 +17,10 @@
             <artifactId>gitb-types</artifactId>
         </dependency>
         <dependency>
+            <groupId>eu.europa.ec.itb</groupId>
+            <artifactId>gitb-types-specs</artifactId>
+        </dependency>
+        <dependency>
             <groupId>commons-codec</groupId>
             <artifactId>commons-codec</artifactId>
         </dependency>
