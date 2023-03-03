@@ -906,8 +906,12 @@ object JsonUtil {
     TestSessionLaunchRequest(organisationKey, system, actor, testSuites, testCases, inputMappings, forceSequential)
   }
 
-  def parseJsTestSuiteDeployRequest(jsonConfig: JsValue): (TestSuiteDeployRequest, String) = {
-    val specification = (jsonConfig \ "specification").as[String]
+  def parseJsTestSuiteDeployRequest(jsonConfig: JsValue, sharedTestSuite: Boolean): (TestSuiteDeployRequest, String) = {
+    val specification = if (sharedTestSuite) {
+      None
+    } else {
+      Some((jsonConfig \ "specification").as[String])
+    }
     val testSuite = (jsonConfig \ "testSuite").as[String]
     val ignoreWarnings = (jsonConfig \ "ignoreWarnings").asOpt[Boolean].getOrElse(false)
     val replaceTestHistory = (jsonConfig \ "replaceTestHistory").asOpt[Boolean].getOrElse(false)
@@ -923,13 +927,53 @@ object JsonUtil {
     testCaseActions.foreach { action =>
       testCaseMap.put(action.identifier, action)
     }
-    (TestSuiteDeployRequest(specification, ignoreWarnings, replaceTestHistory, updateSpecification, testCaseMap.toMap), testSuite)
+    (TestSuiteDeployRequest(specification, ignoreWarnings, replaceTestHistory, updateSpecification, testCaseMap.toMap, sharedTestSuite), testSuite)
   }
 
-  def parseJsTestSuiteUndeployRequest(jsonConfig: JsValue): TestSuiteUndeployRequest = {
-    val specification = (jsonConfig \ "specification").as[String]
+  def parseJsTestSuiteUndeployRequest(jsonConfig: JsValue, sharedTestSuite: Boolean): TestSuiteUndeployRequest = {
+    val specification = if (sharedTestSuite) {
+      None
+    } else {
+      (jsonConfig \ "specification").asOpt[String]
+    }
     val testSuite = (jsonConfig \ "testSuite").as[String]
-    TestSuiteUndeployRequest(specification, testSuite)
+    TestSuiteUndeployRequest(specification, testSuite, sharedTestSuite)
+  }
+
+  def parseJsTestSuiteLinkRequest(json: JsValue): TestSuiteLinkRequest = {
+    val testSuite = (json \ "testSuite").as[String]
+    val specifications = parseJsTestSuiteLinkSpecificationInfo((json \ "specifications").asOpt[JsArray].getOrElse(JsArray.empty))
+    TestSuiteLinkRequest(testSuite, specifications)
+  }
+
+  def parseJsTestSuiteUnlinkRequest(json: JsValue): TestSuiteUnlinkRequest = {
+    val testSuite = (json \ "testSuite").as[String]
+    val specifications = parseStringArray((json \ "specifications").as[JsArray])
+    TestSuiteUnlinkRequest(testSuite, specifications)
+  }
+
+  private def parseJsTestSuiteLinkSpecificationInfo(jsArray: JsArray): List[TestSuiteLinkRequestSpecification] = {
+    jsArray.value.map { json =>
+      TestSuiteLinkRequestSpecification(
+        (json \ "specification").as[String],
+        (json \ "update").asOpt[Boolean].getOrElse(false)
+      )
+    }.toList
+  }
+
+  def jsTestSuiteLinkResponseSpecifications(results: List[TestSuiteLinkResponseSpecification]): JsArray = {
+    var items = Json.arr()
+    results.foreach { result =>
+      var item = Json.obj(
+        "specification" -> result.specification,
+        "linked" -> result.linked
+      )
+      if (result.message.isDefined) {
+        item = item + ("message", JsString(result.message.get))
+      }
+      items = items.append(item)
+    }
+    items
   }
 
   private def parseJsInputMapping(json: JsValue): InputMapping = {
@@ -2039,6 +2083,10 @@ object JsonUtil {
     var errors = Json.arr()
     var warnings = Json.arr()
     var messages = Json.arr()
+    if (result.existsForSpecs.nonEmpty) {
+      // Non-shared test suite that we tried to deploy to a specification with a matching (by identifier) shared test suite.
+      messages = messages.append(Json.obj("description" -> "The specification contains a shared test suite with the same identifier. Deployment was skipped."))
+    }
     if (result.validationReport != null && result.validationReport.getReports != null) {
       result.validationReport.getReports.getInfoOrWarningOrError.asScala.toList.foreach(item => {
         var itemJson = Json.obj("description" -> item.getValue.asInstanceOf[BAR].getDescription)

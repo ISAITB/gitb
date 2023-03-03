@@ -1,16 +1,16 @@
 package managers
 
-import javax.inject.{Inject, Singleton}
 import models.{Constants, Specifications}
 import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
 import utils.CryptoUtil
 
+import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
-class SpecificationManager @Inject() (actorManager: ActorManager, testResultManager: TestResultManager, testSuiteManager: TestSuiteManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class SpecificationManager @Inject() (testResultManager: TestResultManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
   def logger = LoggerFactory.getLogger("SpecificationManager")
 
   import dbConfig.profile.api._
@@ -18,7 +18,7 @@ class SpecificationManager @Inject() (actorManager: ActorManager, testResultMana
   /**
    * Checks if domain exists
    */
-  def checkSpecifiationExists(specId: Long): Boolean = {
+  def checkSpecificationExists(specId: Long): Boolean = {
     val firstOption = exec(PersistenceSchema.specifications.filter(_.id === specId).result.headOption)
     firstOption.isDefined
   }
@@ -32,7 +32,7 @@ class SpecificationManager @Inject() (actorManager: ActorManager, testResultMana
     exec(PersistenceSchema.specifications.filter(_.id inSet specIds).result.map(_.toList))
   }
 
-  def getSpecificationByApiKeys(apiKey: String, communityApiKey: String): Option[Specifications] = {
+  def getSpecificationInfoByApiKeys(specificationApiKey: Option[String], communityApiKey: String): Option[(Long, Option[Long])] = { // Domain ID and specification ID
     exec(for {
       communityIds <- {
         PersistenceSchema.communities.filter(_.apiKey === communityApiKey).map(x => (x.id, x.domain)).result.headOption
@@ -45,11 +45,30 @@ class SpecificationManager @Inject() (actorManager: ActorManager, testResultMana
           }
           DBIO.successful(domainId)
         } else {
-          throw new IllegalStateException("Community not found for provided API key")
+          DBIO.successful(None)
         }
       }
-      specification <- PersistenceSchema.specifications.filter(_.apiKey === apiKey).filterOpt(relevantDomainId)((q, id) => q.domain === id).result.headOption
-    } yield specification)
+      specificationIds <- {
+        if (specificationApiKey.isDefined) {
+          PersistenceSchema.specifications
+            .filter(_.apiKey === specificationApiKey.get)
+            .filterOpt(relevantDomainId)((q, id) => q.domain === id)
+            .map(x => (x.domain, x.id))
+            .result.headOption
+        } else {
+          DBIO.successful(None)
+        }
+      }
+      idsToReturn <- {
+        if (specificationIds.isDefined) {
+          DBIO.successful(Some(specificationIds.get._1, Some(specificationIds.get._2)))
+        } else if (relevantDomainId.isDefined) {
+          DBIO.successful(Some(relevantDomainId.get, None))
+        } else {
+          DBIO.successful(None)
+        }
+      }
+    } yield idsToReturn)
   }
 
   def updateSpecificationInternal(specId: Long, sname: String, fname: String, descr: Option[String], hidden:Boolean, apiKey: Option[String], checkApiKeyUniqueness: Boolean): DBIO[_] = {

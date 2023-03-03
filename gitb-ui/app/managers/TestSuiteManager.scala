@@ -5,7 +5,7 @@ import managers.testsuite.{TestSuitePaths, TestSuiteSaveResult}
 import models.Enums.TestSuiteReplacementChoice.{PROCEED, TestSuiteReplacementChoice}
 import models.Enums.{TestCaseUploadMatchType, TestResultStatus, TestSuiteReplacementChoice}
 import models._
-import models.automation.TestSuiteDeployRequest
+import models.automation.{TestSuiteDeployRequest, TestSuiteLinkRequest, TestSuiteLinkResponseSpecification, TestSuiteUnlinkRequest}
 import org.apache.commons.io.FileUtils
 import org.slf4j.{Logger, LoggerFactory}
 import persistence.db.PersistenceSchema
@@ -63,32 +63,50 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 		exec(PersistenceSchema.testSuites.filter(_.id === testSuiteId).map(TestSuiteManager.withoutDocumentation).result.headOption).map(TestSuiteManager.tupleToTestSuite)
 	}
 
-	def getTestSuiteIdByApiKeys(communityApiKey: String, specificationApiKey: String, testSuiteIdentifier: String): Option[Long] = {
+	def getTestSuiteInfoByApiKeys(communityApiKey: String, specificationApiKey: Option[String], testSuiteIdentifier: String): Option[(Long, Long, Boolean)] = { // Test suite ID, domain ID and shared flag
 		exec(for {
 			communityDomainId <- {
 				PersistenceSchema.communities.filter(_.apiKey === communityApiKey).map(_.domain).result.headOption
 			}
 			relevantDomainId <- {
 				if (communityDomainId.isDefined) {
-					DBIO.successful(communityDomainId.get)
+					DBIO.successful(Some(communityDomainId.get))
 				} else {
-					throw new IllegalStateException("Community not found for API provided key")
+					DBIO.successful(None)
 				}
 			}
-			specificationId <- PersistenceSchema.specifications.filter(_.apiKey === specificationApiKey).filterOpt(relevantDomainId)((q, id) => q.domain === id).map(_.id).result.headOption
-			testSuiteId <- {
+			specificationId <- {
+				if (relevantDomainId.isDefined && specificationApiKey.isDefined) {
+					PersistenceSchema.specifications
+						.filter(_.apiKey === specificationApiKey.get)
+						.filter(_.domain === relevantDomainId.get)
+						.map(_.id).result.headOption
+				} else {
+					DBIO.successful(None)
+				}
+			}
+			testSuiteInfo <- {
 				if (specificationId.isDefined) {
+					// Non-shared test suite.
 					PersistenceSchema.testSuites
 						.join(PersistenceSchema.specificationHasTestSuites).on(_.id === _.testSuiteId)
 						.filter(_._2.specId === specificationId.get)
 						.filter(_._1.identifier === testSuiteIdentifier)
-						.map(_._1.id)
+						.map(x => (x._1.id, x._1.domain, x._1.shared))
+						.result.headOption
+				} else if (specificationApiKey.isEmpty && relevantDomainId.isDefined) {
+					// This must be a shared test suite.
+					PersistenceSchema.testSuites
+						.filter(_.identifier === testSuiteIdentifier)
+						.filter(_.domain === relevantDomainId.get)
+						.filter(_.shared)
+						.map(x => (x.id, x.domain, x.shared))
 						.result.headOption
 				} else {
-					throw new IllegalArgumentException("Specification not found for provided API key")
+					DBIO.successful(None)
 				}
 			}
-		} yield testSuiteId)
+		} yield testSuiteInfo)
 	}
 
 	def getSharedTestSuitedWithDomainId(domain: Long): List[TestSuites] = {
@@ -346,32 +364,57 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 			.result
 	}
 
-	def deployTestSuiteFromApi(specification: Specifications, deployRequest: TestSuiteDeployRequest, tempTestSuiteArchive: File): TestSuiteUploadResult = {
+	def deployTestSuiteFromApi(domainId: Long, specificationId: Option[Long], deployRequest: TestSuiteDeployRequest, tempTestSuiteArchive: File): TestSuiteUploadResult = {
 		val result = new TestSuiteUploadResult()
-		result.validationReport = validateTestSuite(None, Some(List(specification.id)), tempTestSuiteArchive)
+		val specificationIds = if (specificationId.isDefined) {
+			Some(List(specificationId.get))
+		} else {
+			None
+		}
+		result.validationReport = validateTestSuite(Some(domainId), specificationIds, tempTestSuiteArchive)
 		val hasErrors = result.validationReport.getCounters.getNrOfErrors.longValue() > 0
 		val hasWarnings = result.validationReport.getCounters.getNrOfWarnings.longValue() > 0
 		if (!hasErrors && (!hasWarnings || deployRequest.ignoreWarnings)) {
 			// Go ahead
-			val testSuite = repositoryUtils.getTestSuiteFromZip(specification.domain, Some(specification.id), tempTestSuiteArchive, completeParse = true)
+			val testSuite = repositoryUtils.getTestSuiteFromZip(domainId, specificationId, tempTestSuiteArchive, completeParse = true)
 			if (testSuite.isDefined) {
-				val onSuccessCalls = mutable.ListBuffer[() => _]()
-				val onFailureCalls = mutable.ListBuffer[() => _]()
-				val testCaseChoices = if (testSuite.get.testCases.isDefined) {
-					Some(testSuite.get.testCases.get.map{ testCase =>
-						// If we have specific settings for the test case use them. Otherwise consider the test suite overall defaults.
-						deployRequest.testCaseUpdates.getOrElse(testCase.identifier, new TestCaseDeploymentAction(testCase.identifier, deployRequest.updateSpecification, deployRequest.replaceTestHistory))
-					})
-				} else {
-					None
+				testSuite.get.shared = deployRequest.sharedTestSuite
+				if (!deployRequest.sharedTestSuite) {
+					// Check to see if we have an update case that must be skipped.
+					val sharedTestSuiteExists = exec(
+						for {
+							exists <- PersistenceSchema.testSuites
+								.filter(_.identifier === testSuite.get.identifier)
+								.filter(_.domain === testSuite.get.domain)
+								.filter(_.shared)
+								.exists
+								.result
+						} yield exists
+					)
+					if (sharedTestSuiteExists) {
+						result.existsForSpecs = Some(List((specificationId.get, true)))
+						result.needsConfirmation = true
+					}
 				}
-				val updateActions = new TestSuiteDeploymentAction(Some(specification.id), TestSuiteReplacementChoice.PROCEED, updateTestSuite = deployRequest.updateSpecification, updateActors = Some(deployRequest.updateSpecification), sharedTestSuite = false, testCaseUpdates = testCaseChoices)
-				val action = processTestSuite(testSuite.get, testSuite.get.actors, testSuite.get.testCases, Some(tempTestSuiteArchive), List(updateActions), onSuccessCalls, onFailureCalls)
-				import scala.jdk.CollectionConverters._
-				result.items.addAll(exec(dbActionFinalisation(Some(onSuccessCalls), Some(onFailureCalls), action).transactionally).asJavaCollection)
-				result.success = true
+				if (!result.needsConfirmation) {
+					val onSuccessCalls = mutable.ListBuffer[() => _]()
+					val onFailureCalls = mutable.ListBuffer[() => _]()
+					val testCaseChoices = if (testSuite.get.testCases.isDefined) {
+						Some(testSuite.get.testCases.get.map { testCase =>
+							// If we have specific settings for the test case use them. Otherwise consider the test suite overall defaults.
+							deployRequest.testCaseUpdates.getOrElse(testCase.identifier, new TestCaseDeploymentAction(testCase.identifier, deployRequest.updateSpecification, deployRequest.replaceTestHistory))
+						})
+					} else {
+						None
+					}
+					val updateActions = List(new TestSuiteDeploymentAction(None, TestSuiteReplacementChoice.PROCEED, updateTestSuite = deployRequest.updateSpecification, updateActors = Some(deployRequest.updateSpecification), deployRequest.sharedTestSuite, testCaseUpdates = testCaseChoices))
+					val action = processTestSuite(testSuite.get, testSuite.get.actors, testSuite.get.testCases, Some(tempTestSuiteArchive), updateActions, onSuccessCalls, onFailureCalls)
+					import scala.jdk.CollectionConverters._
+					result.items.addAll(exec(dbActionFinalisation(Some(onSuccessCalls), Some(onFailureCalls), action).transactionally).asJavaCollection)
+					result.success = true
+				}
 			} else {
-				throw new IllegalArgumentException("Test suite could be read from archive")
+				throw new IllegalArgumentException("Test suite could not be read from archive")
 			}
 		} else {
 			result.needsConfirmation = true
@@ -445,11 +488,11 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 						if (specifications.isDefined) {
 							specifications.get.foreach { specification =>
 								val existingTestSuiteInfo = existingTestSuites.get(specification)
-								val checkTestCases = !sharedTestSuite && existingTestSuiteInfo.isDefined && !existingTestSuiteInfo.get._2
+								val checkTestCases = existingTestSuiteInfo.isDefined && !existingTestSuiteInfo.get._2
 								val testSuiteCheck = exec(for {
 									existingTestCases <- {
 										if (checkTestCases) {
-											// We match an existing test suite that is not a shared one.
+											// We match an existing test suite (that is not a shared one).
 											getExistingTestCasesForTestSuite(existingTestSuiteInfo.get._1)
 										} else {
 											// Don't query per specification the test cases for a shared test suite.
@@ -1426,6 +1469,110 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 				DBIO.successful(loadedTestSuite)
 			}
 		} yield loadedTestSuiteWithActors
+	}
+
+	private def getSpecificationIdsFromApiKeys(domainId: Long, apiKeys: List[String]): DBIO[Map[Long, String]] = {
+		PersistenceSchema.specifications
+			.filter(_.apiKey inSet apiKeys)
+			.filter(_.domain === domainId)
+			.map(x => (x.id, x.apiKey))
+			.result
+			.map(_.toMap)
+	}
+
+	def linkSharedTestSuiteFromApi(testSuiteId: Long, domainId: Long, input: TestSuiteLinkRequest): List[TestSuiteLinkResponseSpecification] = {
+		// Problem cases:
+		// 1. Specification linked to different test suite with same identifier
+		// 2. Specification already linked to test suite.
+		// 3. Specification not found.
+		val onSuccessCalls = mutable.ListBuffer[() => _]()
+		val onFailureCalls = mutable.ListBuffer[() => _]()
+		val dbAction = for {
+			// Find specifications IDs.
+			specificationMap <- getSpecificationIdsFromApiKeys(domainId, input.specifications.map(_.identifier))
+			// Specifications already linked to this test suite.
+			specsLinkedToSameTestSuite <- PersistenceSchema.specificationHasTestSuites
+				.filter(_.testSuiteId === testSuiteId)
+				.filter(_.specId inSet specificationMap.keys)
+				.map(_.specId)
+				.result
+			// Specifications already linked to a different test suite with the same identifier.
+			specsLinkedToMatchingOtherTestSuite <- PersistenceSchema.specificationHasTestSuites
+				.join(PersistenceSchema.testSuites).on(_.testSuiteId === _.id)
+				.filter(_._1.specId inSet specificationMap.keys)
+				.filter(_._1.testSuiteId =!= testSuiteId)
+				.filter(_._2.identifier === input.testSuite)
+				.map(_._1.specId)
+				.result
+			// Remaining specifications.
+			targetSpecs <- {
+				val targetSpecIds = specificationMap.keys.to(ListBuffer)
+				targetSpecIds --= specsLinkedToSameTestSuite
+				targetSpecIds --= specsLinkedToMatchingOtherTestSuite
+				DBIO.successful(targetSpecIds)
+			}
+			// Do the update.
+			_ <- {
+				val specActions = targetSpecs.map { specId =>
+					val apiKey = specificationMap(specId)
+					val inputSpec = input.specifications.find(x => x.identifier == apiKey)
+					val updateMetadata = if (inputSpec.isDefined) {
+						inputSpec.get.update
+					} else {
+						false
+					}
+					new TestSuiteDeploymentAction(Some(specId), TestSuiteReplacementChoice.PROCEED, updateTestSuite = false, Some(updateMetadata), sharedTestSuite = false, None)
+				}
+				linkSharedTestSuite(None, testSuiteId, specActions.toList, onSuccessCalls, onFailureCalls)
+			}
+			// Record the results.
+			result <- {
+				val specResults = new ListBuffer[TestSuiteLinkResponseSpecification]()
+				val pendingKeys = new mutable.HashSet[String]()
+				input.specifications.foreach { inputSpec =>
+					pendingKeys += inputSpec.identifier
+				}
+				// Specifications that were linked.
+				targetSpecs.foreach { id =>
+					val key = specificationMap(id)
+					specResults += TestSuiteLinkResponseSpecification(key, linked = true, None)
+					pendingKeys -= key
+				}
+				// Specifications that were skipped because they were already linked to the test suite.
+				specsLinkedToSameTestSuite.foreach { id =>
+					val key = specificationMap(id)
+					specResults += TestSuiteLinkResponseSpecification(specificationMap(id), linked = false, Some("Specification already linked to this test suite."))
+					pendingKeys -= key
+				}
+				// Specifications that were skipped because they were linked to another test suite.
+				specsLinkedToMatchingOtherTestSuite.foreach { id =>
+					val key = specificationMap(id)
+					specResults += TestSuiteLinkResponseSpecification(specificationMap(id), linked = false, Some("Specification linked to another suite with the same identifier."))
+					pendingKeys -= key
+				}
+				// Specifications that were skipped because they were not found.
+				pendingKeys.foreach { key =>
+					specResults += TestSuiteLinkResponseSpecification(key, linked = false, Some("Specification not found."))
+				}
+				DBIO.successful(specResults.toList)
+			}
+		} yield result
+		exec(dbActionFinalisation(Some(onSuccessCalls), Some(onFailureCalls), dbAction).transactionally)
+	}
+
+	def unlinkSharedTestSuiteFromApi(testSuiteId: Long, domainId: Long, input: TestSuiteUnlinkRequest): Unit = {
+		exec(for {
+			// Get the specification IDs corresponding to the specification API keys.
+			specificationMap <- getSpecificationIdsFromApiKeys(domainId, input.specifications)
+			// Get the specification IDs that are actually linked to the test suite.
+			targetSpecificationIds <- PersistenceSchema.specificationHasTestSuites
+				.filter(_.testSuiteId === testSuiteId)
+				.filter(_.specId inSet specificationMap.keys)
+				.map(_.specId)
+				.result
+			// Do the unlinking.
+			_ <- unlinkSharedTestSuiteInternal(testSuiteId, targetSpecificationIds.toList)
+		} yield ())
 	}
 
 	def linkSharedTestSuiteWrapper(testSuiteId: Long, specActions: List[TestSuiteDeploymentAction]): TestSuiteUploadResult = {

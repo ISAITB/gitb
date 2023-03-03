@@ -19,7 +19,7 @@ class SpecificationService @Inject() (authorizedAction: AuthorizedAction, cc: Co
 
   def updateSpecification(specId: Long) = authorizedAction { request =>
     authorizationManager.canUpdateSpecification(request, specId)
-    val specExists = specificationManager.checkSpecifiationExists(specId)
+    val specExists = specificationManager.checkSpecificationExists(specId)
     if(specExists) {
       val sname:String = ParameterExtractor.requiredBodyParameter(request, Parameters.SHORT_NAME)
       val fname:String = ParameterExtractor.requiredBodyParameter(request, Parameters.FULL_NAME)

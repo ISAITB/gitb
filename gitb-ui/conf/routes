@@ -312,6 +312,10 @@ POST    /api/rest/tests/status                                   @controllers.Te
 GET     /api/rest/tests/report/:sessionId                        @controllers.TestAutomationService.report(sessionId: String)
 POST    /api/rest/testsuite/deploy                               @controllers.TestSuiteAutomationService.deploy()
 POST    /api/rest/testsuite/undeploy                             @controllers.TestSuiteAutomationService.undeploy()
+POST    /api/rest/testsuite/deployShared                         @controllers.TestSuiteAutomationService.deployShared()
+POST    /api/rest/testsuite/undeployShared                       @controllers.TestSuiteAutomationService.undeployShared()
+POST    /api/rest/testsuite/linkShared                           @controllers.TestSuiteAutomationService.linkShared()
+POST    /api/rest/testsuite/unlinkShared                         @controllers.TestSuiteAutomationService.unlinkShared()
 
 GET     /resources/:resourceName                    @controllers.CommunityService.downloadCommunityResourceByName(resourceName: String)
 
