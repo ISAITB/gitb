@@ -181,18 +181,18 @@ class TestResultManager @Inject() (repositoryUtils: RepositoryUtils, dbConfigPro
   }
 
   def updateForUpdatedDomain(id: Long, name: String): DBIO[_] = {
-    val q1 = for {t <- PersistenceSchema.testResults if t.domainId === id} yield t.domain
-    q1.update(Some(name))
+    // No update is made as the test session history is decoupled.
+    DBIO.successful(())
   }
 
   def updateForUpdatedSpecification(id: Long, name: String): DBIO[_] = {
-    val q1 = for {t <- PersistenceSchema.testResults if t.specificationId === id} yield t.specification
-    q1.update(Some(name))
+    // No update is made as the test session history is decoupled.
+    DBIO.successful(())
   }
 
   def updateForUpdatedActor(id: Long, name: String): DBIO[_] = {
-    val q1 = for {t <- PersistenceSchema.testResults if t.actorId === id} yield t.actor
-    q1.update(Some(name))
+    // No update is made as the test session history is decoupled.
+    DBIO.successful(())
   }
 
   def updateForDeletedSystem(id: Long): DBIO[_] = {
