@@ -91,4 +91,11 @@
         <packageUrl regex="true">^pkg:maven/com\.google\.guava/guava@.*$</packageUrl>
         <vulnerabilityName>CVE-2020-8908</vulnerabilityName>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: cxf-rt-bindings-soap-3.5.5.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.cxf/cxf\-rt\-bindings\-soap@.*$</packageUrl>
+        <cve>CVE-2022-40705</cve>
+    </suppress>
 </suppressions>
