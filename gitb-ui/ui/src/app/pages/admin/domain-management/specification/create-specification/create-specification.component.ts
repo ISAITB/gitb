@@ -31,6 +31,10 @@ export class CreateSpecificationComponent extends BaseComponent implements OnIni
   }
 
   ngOnInit(): void {
+    const groupId = this.route.snapshot.queryParamMap.get('group')
+    if (groupId) {
+      this.specification.group = Number(groupId)
+    }
   }
 
 	saveDisabled() {

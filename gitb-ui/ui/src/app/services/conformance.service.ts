@@ -65,14 +65,19 @@ export class ConformanceService {
     })
   }
 
-  getSpecifications(domainId: number) {
+  getSpecifications(domainId: number, withGroups?: boolean) {
+    let params: any = {}
+    if (withGroups != undefined) {
+      params['groups'] = withGroups
+    }     
     return this.restService.get<Specification[]>({
       path: ROUTES.controllers.ConformanceService.getDomainSpecs(domainId).url,
-      authenticate: true
+      authenticate: true,
+      params: params
     })
   }
 
-  getSpecificationsWithIds(ids?: number[], domainIds?: number[], withApiKeys?: boolean) {
+  getSpecificationsWithIds(ids?: number[], domainIds?: number[], groupIds?: number[], withApiKeys?: boolean, withGroups?: boolean) {
     let params: any = {}
     if (ids != undefined && ids.length > 0) {
       params['ids'] = ids.join(',')
@@ -80,9 +85,15 @@ export class ConformanceService {
     if (domainIds != undefined && domainIds.length > 0) {
       params['domain_ids'] = domainIds.join(',')
     }
+    if (groupIds != undefined && groupIds.length > 0) {
+      params['group_ids'] = groupIds.join(',')
+    }
     if (withApiKeys != undefined && withApiKeys) {
       params['with_api_keys'] = withApiKeys
     }
+    if (withGroups != undefined) {
+      params['groups'] = withGroups
+    }    
     return this.restService.post<Specification[]>({
       path: ROUTES.controllers.ConformanceService.getSpecs().url,
       authenticate: true,
@@ -90,7 +101,7 @@ export class ConformanceService {
     })
   }
 
-  searchActors(domainIds: number[]|undefined, specificationIds: number[]|undefined) {
+  searchActors(domainIds: number[]|undefined, specificationIds: number[]|undefined, specificationGroupIds: number[]|undefined) {
     const data: any = {}
     if (domainIds && domainIds.length > 0) {
       data["domain_ids"] = domainIds.join(',')
@@ -98,6 +109,9 @@ export class ConformanceService {
     if (specificationIds && specificationIds.length > 0) {
       data["specification_ids"] = specificationIds.join(',')
     }
+    if (specificationGroupIds != undefined && specificationGroupIds.length > 0) {
+      data['group_ids'] = specificationGroupIds.join(',')
+    }    
     return this.restService.post<Actor[]>({
       path: ROUTES.controllers.ConformanceService.searchActors().url,
       authenticate: true,
@@ -105,12 +119,15 @@ export class ConformanceService {
     })
   }
 
-  searchActorsInDomain(domainId: number, specificationIds: number[]|undefined) {
+  searchActorsInDomain(domainId: number, specificationIds: number[]|undefined, specificationGroupIds: number[]|undefined) {
     const data: any = {
       domain_id: domainId
     }
     if (specificationIds && specificationIds.length > 0) {
       data["specification_ids"] = specificationIds.join(',')
+    }
+    if (specificationGroupIds != undefined && specificationGroupIds.length > 0) {
+      data['group_ids'] = specificationGroupIds.join(',')
     }
     return this.restService.post<Actor[]>({
       path: ROUTES.controllers.ConformanceService.searchActorsInDomain().url,
@@ -183,6 +200,9 @@ export class ConformanceService {
     }
     if (criteria.specIds != undefined && criteria.specIds.length > 0) {
       params.specification_ids = criteria.specIds.join(',')
+    }
+    if (criteria.specGroupIds !== undefined && criteria.specGroupIds.length > 0) {
+      params.group_ids = criteria.specGroupIds.join(',')
     }
     if (criteria.actorIds != undefined && criteria.actorIds.length > 0) {
       params.actor_ids = criteria.actorIds.join(',')

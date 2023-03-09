@@ -34,6 +34,8 @@ export class ConformanceCertificateModalComponent implements OnInit {
     if (this.settings.message != undefined) {
       // Replace the placeholders for the preview.
       this.settings.message = this.settings.message.split(Constants.PLACEHOLDER__DOMAIN).join(this.conformanceStatement.domainName)
+      this.settings.message = this.settings.message.split(Constants.PLACEHOLDER__SPECIFICATION_GROUP_OPTION).join(this.conformanceStatement.specGroupOptionName)
+      this.settings.message = this.settings.message.split(Constants.PLACEHOLDER__SPECIFICATION_GROUP).join(this.conformanceStatement.specGroupName?this.conformanceStatement.specGroupName:'')
       this.settings.message = this.settings.message.split(Constants.PLACEHOLDER__SPECIFICATION).join(this.conformanceStatement.specName)
       this.settings.message = this.settings.message.split(Constants.PLACEHOLDER__ACTOR).join(this.conformanceStatement.actorName)
       this.settings.message = this.settings.message.split(Constants.PLACEHOLDER__ORGANISATION).join(this.conformanceStatement.organizationName)

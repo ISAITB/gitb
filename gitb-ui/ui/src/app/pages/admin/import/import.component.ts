@@ -118,6 +118,7 @@ export class ImportComponent extends BaseComponent implements OnInit, OnDestroy 
     this.importItemTypeLabels[Constants.IMPORT_ITEM_TYPE.DOMAIN] = this.dataService.labelDomains()
     this.importItemTypeLabels[Constants.IMPORT_ITEM_TYPE.DOMAIN_PARAMETER] = this.dataService.labelDomain() + ' parameters'
     this.importItemTypeLabels[Constants.IMPORT_ITEM_TYPE.SPECIFICATION] = this.dataService.labelSpecifications()
+    this.importItemTypeLabels[Constants.IMPORT_ITEM_TYPE.SPECIFICATION_GROUP] = this.dataService.labelSpecificationGroups()
     this.importItemTypeLabels[Constants.IMPORT_ITEM_TYPE.ACTOR] = this.dataService.labelActors()
     this.importItemTypeLabels[Constants.IMPORT_ITEM_TYPE.ENDPOINT] = this.dataService.labelEndpoints()
     this.importItemTypeLabels[Constants.IMPORT_ITEM_TYPE.ENDPOINT_PARAMETER] = this.dataService.labelEndpoint() + ' parameters'

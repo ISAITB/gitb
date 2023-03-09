@@ -1,6 +1,7 @@
 import { ROUTES } from '../common/global';
 import { Injectable } from '@angular/core';
 import { RestService } from './rest.service';
+import { SpecificationGroup } from '../types/specification-group';
 
 @Injectable({
   providedIn: 'root'
@@ -18,11 +19,12 @@ export class SpecificationService {
     })
   }
 
-  updateSpecification(specId: number, shortName: string, fullName: string, description: string|undefined, hidden: boolean|undefined) {
+  updateSpecification(specId: number, shortName: string, fullName: string, description: string|undefined, hidden: boolean|undefined, groupId: number|undefined) {
     const params:any = {
       sname: shortName,
       fname: fullName,
-      hidden: false
+      hidden: false,
+      group_id: groupId
     }
     if (hidden != undefined) {
       params.hidden = hidden
@@ -36,5 +38,96 @@ export class SpecificationService {
       authenticate: true
     })
   }
+
+  getSpecificationGroupsOfDomains(domainIds: number[]|undefined) {
+    let params: any = {}
+    if (domainIds != undefined && domainIds.length > 0) {
+      params['domain_ids'] = domainIds.join(',')
+    }    
+    return this.restService.post<SpecificationGroup[]>({
+      path: ROUTES.controllers.SpecificationService.getSpecificationGroupsOfDomains().url,
+      data: params,
+      authenticate: true
+    })
+  }
+
+  getSpecificationGroups(domainId: number) {
+    return this.restService.get<SpecificationGroup[]>({
+      path: ROUTES.controllers.SpecificationService.getSpecificationGroups().url,
+      params: {
+        domain_id: domainId
+      },
+      authenticate: true
+    })
+  }
+
+  getSpecificationGroup(groupId: number) {
+    return this.restService.get<SpecificationGroup>({
+      path: ROUTES.controllers.SpecificationService.getSpecificationGroup(groupId).url,
+      authenticate: true
+    })
+  }
+
+  createSpecificationGroup(shortName: string, fullName: string, description: string|undefined, domainId: number) {
+    return this.restService.post<void>({
+      path: ROUTES.controllers.SpecificationService.createSpecificationGroup().url,
+      data: {
+        sname: shortName,
+        fname: fullName,
+        description: description,
+        domain_id: domainId
+      },
+      authenticate: true
+    })
+  }
+
+  updateSpecificationGroup(groupId: number, shortName: string, fullName: string, description: string|undefined) {
+    return this.restService.post<void>({
+      path: ROUTES.controllers.SpecificationService.updateSpecificationGroup(groupId).url,
+      data: {
+        sname: shortName,
+        fname: fullName,
+        description: description
+      },
+      authenticate: true
+    })
+  }
+
+  deleteSpecificationGroup(groupId: number, alsoSpecs: boolean) {
+    return this.restService.post<void>({
+      path: ROUTES.controllers.SpecificationService.deleteSpecificationGroup(groupId).url,
+      data: {
+        specs: alsoSpecs
+      },
+      authenticate: true
+    })
+  }
+
+  addSpecificationToGroup(groupId: number, specificationId: number) {
+    return this.restService.post<void>({
+      path: ROUTES.controllers.SpecificationService.addSpecificationToGroup(groupId).url,
+      data: {
+        spec: specificationId
+      },
+      authenticate: true
+    })
+  }  
+
+  copySpecificationToGroup(groupId: number, specificationId: number) {
+    return this.restService.post<{id: number}>({
+      path: ROUTES.controllers.SpecificationService.copySpecificationToGroup(groupId).url,
+      data: {
+        spec: specificationId
+      },
+      authenticate: true
+    })
+  }
+
+  removeSpecificationFromGroup(specificationId: number) {
+    return this.restService.post<void>({
+      path: ROUTES.controllers.SpecificationService.removeSpecificationFromGroup(specificationId).url,
+      authenticate: true
+    })
+  }  
 
 }

@@ -33,7 +33,9 @@ export class CommunityLabelsComponent extends BaseComponent implements OnInit {
   ngOnInit(): void {
     this.communityId = Number(this.route.snapshot.paramMap.get('community_id'))
     this.labelTypeDescription[Constants.LABEL_TYPE.DOMAIN] = "The set of related specifications and test suites the community will be using for testing."
-    this.labelTypeDescription[Constants.LABEL_TYPE.SPECIFICATION] = "The specific named or versioned requirements that community members will be selecting to test for."
+    this.labelTypeDescription[Constants.LABEL_TYPE.SPECIFICATION] = "The specific named or versioned requirements that community members will be selecting to test for. When using specification groups the label will refer to the combination of group and specification."
+    this.labelTypeDescription[Constants.LABEL_TYPE.SPECIFICATION_GROUP] = "A group of related specifications. The label in this case refers to when this concept is presented independently from its included specifications."
+    this.labelTypeDescription[Constants.LABEL_TYPE.SPECIFICATION_IN_GROUP] = "A specification contained within a group of specifications. The label in this case refers to when this concept is presented independently from its group."
     this.labelTypeDescription[Constants.LABEL_TYPE.ACTOR] = "The specification role that community members' systems will be assigned with during testing."
     this.labelTypeDescription[Constants.LABEL_TYPE.ENDPOINT] = "The set of actor-specific configuration parameters applicable when testing against a specification."
     this.labelTypeDescription[Constants.LABEL_TYPE.ORGANISATION] = "The entity corresponding to a member of the current community."
@@ -43,6 +45,8 @@ export class CommunityLabelsComponent extends BaseComponent implements OnInit {
       const labelMap = this.dataService.createLabels(data)
       this.labels.push(labelMap[Constants.LABEL_TYPE.DOMAIN])
       this.labels.push(labelMap[Constants.LABEL_TYPE.SPECIFICATION])
+      this.labels.push(labelMap[Constants.LABEL_TYPE.SPECIFICATION_GROUP])
+      this.labels.push(labelMap[Constants.LABEL_TYPE.SPECIFICATION_IN_GROUP])
       this.labels.push(labelMap[Constants.LABEL_TYPE.ACTOR])
       this.labels.push(labelMap[Constants.LABEL_TYPE.ENDPOINT])
       this.labels.push(labelMap[Constants.LABEL_TYPE.ORGANISATION])

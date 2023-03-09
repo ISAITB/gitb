@@ -41,7 +41,8 @@ export class Constants {
 		END_TIME: 'end_time',
 		SESSION: 'session',
 		ORGANISATION_PROPERTY: 'org_property',
-		SYSTEM_PROPERTY: 'sys_property'
+		SYSTEM_PROPERTY: 'sys_property',
+		SPECIFICATION_GROUP: 'specification_group',
 	}
 
 	public static ORDER = {
@@ -82,7 +83,9 @@ export class Constants {
 		ACTOR: 3,
 		ENDPOINT: 4,
 		ORGANISATION: 5,
-		SYSTEM: 6
+		SYSTEM: 6,
+		SPECIFICATION_IN_GROUP: 7,
+		SPECIFICATION_GROUP: 8
     }
 
 	public static LABEL_TYPE_LABEL: {[key: number]:string} = {
@@ -91,8 +94,10 @@ export class Constants {
 		3: "Actor",
 		4: "Endpoint",
 		5: "Organisation",
-        6: "System"
-    }
+		6: "System",
+		7: "Specification in group",
+		8: "Specification group"
+  }
 
 	public static LABEL_DEFAULT: {[key: number]: LabelConfig} = {
 		1: {singularForm: "Domain", pluralForm: "Domains", fixedCase: false},
@@ -101,6 +106,8 @@ export class Constants {
 		4: {singularForm: "Endpoint", pluralForm: "Endpoints", fixedCase: false},
 		5: {singularForm: "Organisation", pluralForm: "Organisations", fixedCase: false},
 		6: {singularForm: "System", pluralForm: "Systems", fixedCase: false},
+		7: {singularForm: "Option", pluralForm: "Options", fixedCase: false},
+		8: {singularForm: "Specification group", pluralForm: "Specification groups", fixedCase: false}
 	}
 
 	public static SELF_REGISTRATION_TYPE = {
@@ -130,6 +137,8 @@ export class Constants {
 	public static PLACEHOLDER__ORGANISATION = "$ORGANISATION"
 	public static PLACEHOLDER__SYSTEM = "$SYSTEM"
 	public static PLACEHOLDER__SPECIFICATION = "$SPECIFICATION"
+	public static PLACEHOLDER__SPECIFICATION_GROUP = "$SPECIFICATION_GROUP"
+	public static PLACEHOLDER__SPECIFICATION_GROUP_OPTION = "$SPECIFICATION_GROUP_OPTION"
 	public static PLACEHOLDER__ACTOR = "$ACTOR"
 	public static PLACEHOLDER__DOMAIN = "$DOMAIN"
 
@@ -243,7 +252,8 @@ export class Constants {
 		STATEMENT: 21,
 		STATEMENT_CONFIGURATION: 22,
 		TRIGGER: 23,
-		RESOURCE: 24
+		RESOURCE: 24,
+		SPECIFICATION_GROUP: 25
 	}
 
 	public static IMPORT_ITEM_MATCH = {

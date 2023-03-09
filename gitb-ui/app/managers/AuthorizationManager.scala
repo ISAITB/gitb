@@ -1376,6 +1376,11 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     canManageDomain(request, spec.domain)
   }
 
+  def canManageSpecificationGroup(request: RequestWithAttributes[_], groupId: Long): Boolean = {
+    val group = specificationManager.getSpecificationGroupById(groupId)
+    canManageDomain(request, group.domain)
+  }
+
   def canManageSpecifications(request: RequestWithAttributes[_], specIds: List[Long]): Boolean = {
     val userInfo = getUser(getRequestUserId(request))
     var ok = false
@@ -1477,7 +1482,7 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     canViewSpecifications(request, ids)
   }
 
-  private def specificationsMatchDomain(specs: List[Specifications], domainId: Long): Boolean = {
+  private def specificationsMatchDomain(specs: Iterable[Specifications], domainId: Long): Boolean = {
     for (elem <- specs) {
       if (elem.domain != domainId) {
         return false

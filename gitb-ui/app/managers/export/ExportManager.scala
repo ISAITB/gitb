@@ -14,10 +14,11 @@ import utils.{MimeUtil, RepositoryUtils}
 
 import java.nio.file.Files
 import javax.inject.{Inject, Singleton}
+import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 @Singleton
-class ExportManager @Inject() (repositoryUtils: RepositoryUtils, communityResourceManager: CommunityResourceManager, triggerManager: TriggerManager, communityManager: CommunityManager, conformanceManager: ConformanceManager, testSuiteManager: TestSuiteManager, landingPageManager: LandingPageManager, legalNoticeManager: LegalNoticeManager, errorTemplateManager: ErrorTemplateManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class ExportManager @Inject() (repositoryUtils: RepositoryUtils, communityResourceManager: CommunityResourceManager, triggerManager: TriggerManager, communityManager: CommunityManager, conformanceManager: ConformanceManager, testSuiteManager: TestSuiteManager, landingPageManager: LandingPageManager, legalNoticeManager: LegalNoticeManager, errorTemplateManager: ErrorTemplateManager, specificationManager: SpecificationManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   private final val logger: Logger = LoggerFactory.getLogger(classOf[ExportManager])
   private final val DEFAULT_CONTENT_TYPE = "application/octet-stream"
@@ -398,7 +399,23 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, communityResour
     }
     // Specifications.
     if (exportSettings.specifications) {
-      val specifications = conformanceManager.getSpecifications(domain.id)
+      // Groups.
+      val exportedGroupMap = new mutable.HashMap[Long, com.gitb.xml.export.SpecificationGroup]()
+      val groups = specificationManager.getSpecificationGroups(domain.id)
+      if (groups.nonEmpty) {
+        exportedDomain.setSpecificationGroups(new com.gitb.xml.export.SpecificationGroups)
+        groups.foreach { group =>
+          val exportedGroup = new com.gitb.xml.export.SpecificationGroup
+          exportedGroup.setId(toId(sequence.next()))
+          exportedGroup.setShortName(group.shortname)
+          exportedGroup.setFullName(group.fullname)
+          exportedGroup.setDescription(group.description.orNull)
+          exportedDomain.getSpecificationGroups.getGroup.add(exportedGroup)
+          exportedGroupMap += (group.id -> exportedGroup)
+        }
+      }
+      // Specs.
+      val specifications = conformanceManager.getSpecifications(domain.id, withGroups = false)
       if (specifications.nonEmpty) {
         exportedDomain.setSpecifications(new com.gitb.xml.export.Specifications)
         specifications.foreach { specification =>
@@ -409,6 +426,9 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, communityResour
           exportedSpecification.setDescription(specification.description.orNull)
           exportedSpecification.setApiKey(specification.apiKey)
           exportedSpecification.setHidden(specification.hidden)
+          if (specification.group.nonEmpty) {
+            exportedSpecification.setGroup(exportedGroupMap(specification.group.get))
+          }
           // Actors
           if (exportSettings.actors && specificationActorMap.contains(specification.id)) {
             exportedSpecification.setActors(new com.gitb.xml.export.Actors)
@@ -765,6 +785,8 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, communityResour
             case LabelType.Endpoint => exportedLabel.setLabelType(CustomLabelType.ENDPOINT)
             case LabelType.Organisation => exportedLabel.setLabelType(CustomLabelType.ORGANISATION)
             case LabelType.System => exportedLabel.setLabelType(CustomLabelType.SYSTEM)
+            case LabelType.SpecificationInGroup => exportedLabel.setLabelType(CustomLabelType.SPECIFICATION_IN_GROUP)
+            case LabelType.SpecificationGroup => exportedLabel.setLabelType(CustomLabelType.SPECIFICATION_GROUP)
           }
           idSequence += 1
           exportedLabel.setId(toId(idSequence))

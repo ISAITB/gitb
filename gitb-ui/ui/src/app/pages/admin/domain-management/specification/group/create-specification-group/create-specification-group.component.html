@@ -1,0 +1,20 @@
+<div class="page domains detail specifications create">
+	<div class="panel panel-default">
+		<div class="panel-heading">
+			<h4 class="title">Create {{dataService.labelSpecificationGroupLower()}}</h4>
+		</div>
+		<form class="form-horizontal">
+			<div class="panel-body">
+				<div class="col-md-10 col-md-offset-1">
+                    <app-specification-group-form [group]="group"></app-specification-group-form>
+                </div>
+			</div>
+			<div class="panel-footer">
+				<div class="btn-toolbar">
+					<button class="btn btn-default" type="submit" (click)="createSpecificationGroup()" [disable]="saveDisabled()" [pending]="pending">Save</button>
+					<button class="btn btn-default" type="button" (click)="cancel()">Cancel</button>
+				</div>
+			</div>
+		</form>
+	</div>
+</div>

@@ -4,7 +4,14 @@
 <div *ngIf="!column.iconFn">
     <ng-container [ngSwitch]="item.boolean">
         <div *ngSwitchCase="true">
-            <i class="fa" [ngClass]="{'fa-check': item.data, 'fa-times': !item.data}"></i>
+            <ng-container [ngSwitch]="item.isHiddenFlag">
+                <ng-container *ngSwitchCase="true">
+                    <app-hidden-icon *ngIf="item.data"></app-hidden-icon>
+                </ng-container>
+                <ng-container *ngSwitchDefault>
+                    <i class="fa" [ngClass]="{'fa-check': item.data, 'fa-times': !item.data}"></i>
+                </ng-container>
+            </ng-container>
         </div>
         <div *ngSwitchCase="false">
             {{item.data}}

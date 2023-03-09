@@ -104,9 +104,11 @@ object PersistenceSchema {
     def hidden = column[Boolean]("is_hidden")
     def apiKey = column[String]("api_key")
     def domain = column[Long]("domain")
-    def * = (id, shortname, fullname, description, hidden, apiKey, domain) <> (Specifications.tupled, Specifications.unapply)
+    def group = column[Option[Long]]("spec_group")
+    def * = (id, shortname, fullname, description, hidden, apiKey, domain, group) <> (Specifications.tupled, Specifications.unapply)
   }
   val specifications = TableQuery[SpecificationsTable]
+  val insertSpecification = specifications returning specifications.map(_.id)
 
   class ActorsTable(tag: Tag) extends Table[Actors](tag, "Actors") {
     def id      = column[Long]("id", O.PrimaryKey, O.AutoInc)
@@ -121,6 +123,7 @@ object PersistenceSchema {
     def * = (id, actorId, name, desc, default, hidden, displayOrder, apiKey, domain) <> (Actors.tupled, Actors.unapply)
   }
   val actors = TableQuery[ActorsTable]
+  val insertActor = actors returning actors.map(_.id)
 
   class EndpointsTable(tag: Tag) extends Table[Endpoints](tag, "Endpoints") {
 	  def id    = column[Long]("id", O.PrimaryKey, O.AutoInc)
@@ -130,6 +133,7 @@ object PersistenceSchema {
     def * = (id, name, desc, actor) <> (Endpoints.tupled, Endpoints.unapply)
   }
   val endpoints = TableQuery[EndpointsTable]
+  val insertEndpoint = endpoints returning endpoints.map(_.id)
 
 	class ParametersTable(tag: Tag) extends Table[models.Parameters] (tag, "Parameters") {
 		def id    = column[Long]("id", O.PrimaryKey, O.AutoInc)
@@ -151,6 +155,7 @@ object PersistenceSchema {
 		def * = (id, name, testKey, desc, use, kind, adminOnly, notForTests, hidden, allowedValues, displayOrder, dependsOn, dependsOnValue, defaultValue, endpoint) <> (models.Parameters.tupled, models.Parameters.unapply)
 	}
 	val parameters = TableQuery[ParametersTable]
+  val insertParameter = parameters returning parameters.map(_.id)
 
   class DomainParametersTable(tag: Tag) extends Table[models.DomainParameter] (tag, "DomainParameters") {
     def id    = column[Long]("id", O.PrimaryKey, O.AutoInc)
@@ -570,5 +575,17 @@ object PersistenceSchema {
   }
   val communityResources = TableQuery[CommunityResourcesTable]
   val insertCommunityResources = communityResources returning communityResources.map(_.id)
+
+  class SpecificationGroupsTable(tag: Tag) extends Table[SpecificationGroups](tag, "SpecificationGroups") {
+    def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
+    def shortname = column[String]("sname")
+    def fullname = column[String]("fname")
+    def description = column[Option[String]]("description", O.SqlType("TEXT"))
+    def domain = column[Long]("domain")
+    def * = (id, shortname, fullname, description, domain) <> (SpecificationGroups.tupled, SpecificationGroups.unapply)
+  }
+
+  val specificationGroups = TableQuery[SpecificationGroupsTable]
+  val insertSpecificationGroups = specificationGroups returning specificationGroups.map(_.id)
 
 }

@@ -153,6 +153,11 @@ import { CommunityResourceBulkUploadModalComponent } from './modals/community-re
 import { LinkSharedTestSuiteModalComponent } from './modals/link-shared-test-suite-modal/link-shared-test-suite-modal.component';
 import { TestCaseUpdateListComponent } from './components/test-case-update-list/test-case-update-list.component';
 import { TestSuiteUploadSpecificationChoicesComponent } from './components/test-suite-upload-specification-choices/test-suite-upload-specification-choices.component';
+import { CreateSpecificationGroupComponent } from './pages/admin/domain-management/specification/group/create-specification-group/create-specification-group.component';
+import { SpecificationGroupFormComponent } from './pages/admin/domain-management/specification/group/specification-group-form/specification-group-form.component';
+import { SpecificationGroupDetailsComponent } from './pages/admin/domain-management/specification/group/specification-group-details/specification-group-details.component';
+import { DomainSpecificationTableRowComponent } from './components/domain-specification-table-row/domain-specification-table-row.component';
+import { HiddenIconComponent } from './components/hidden-icon/hidden-icon.component';
 
 @NgModule({
   providers: [ 
@@ -295,7 +300,12 @@ import { TestSuiteUploadSpecificationChoicesComponent } from './components/test-
     CommunityResourceBulkUploadModalComponent,
     LinkSharedTestSuiteModalComponent,
     TestCaseUpdateListComponent,
-    TestSuiteUploadSpecificationChoicesComponent],
+    TestSuiteUploadSpecificationChoicesComponent,
+    CreateSpecificationGroupComponent,
+    SpecificationGroupFormComponent,
+    SpecificationGroupDetailsComponent,
+    DomainSpecificationTableRowComponent,
+    HiddenIconComponent],
   imports: [
     BrowserModule,
     BrowserAnimationsModule,

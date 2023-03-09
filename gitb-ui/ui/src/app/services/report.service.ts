@@ -19,13 +19,16 @@ export class ReportService {
     private restService: RestService
   ) { }
 
-  searchTestCasesInDomain(domainId: number, specificationIds: number[]|undefined, actorIds: number[]|undefined, testSuiteIds: number[]|undefined) {
+  searchTestCasesInDomain(domainId: number, specificationIds: number[]|undefined, specificationGroupIds: number[]|undefined, actorIds: number[]|undefined, testSuiteIds: number[]|undefined) {
 		const data: any = {
 			domain_id: domainId
 		}
 		if (specificationIds && specificationIds.length > 0) {
 		  data["specification_ids"] = specificationIds.join(',')
 		}
+		if (specificationGroupIds != undefined && specificationGroupIds.length > 0) {
+			data['group_ids'] = specificationGroupIds.join(',')
+		}    
 		if (actorIds && actorIds.length > 0) {
 			data["actor_ids"] = actorIds.join(',')
 		}
@@ -39,7 +42,7 @@ export class ReportService {
 		})
   }
 
-  searchTestCases(domainIds: number[]|undefined, specificationIds: number[]|undefined, actorIds: number[]|undefined, testSuiteIds: number[]|undefined) {
+  searchTestCases(domainIds: number[]|undefined, specificationIds: number[]|undefined, specificationGroupIds: number[]|undefined, actorIds: number[]|undefined, testSuiteIds: number[]|undefined) {
 		const data: any = {}
 		if (domainIds && domainIds.length > 0) {
 		  data["domain_ids"] = domainIds.join(',')
@@ -47,6 +50,9 @@ export class ReportService {
 		if (specificationIds && specificationIds.length > 0) {
 		  data["specification_ids"] = specificationIds.join(',')
 		}
+		if (specificationGroupIds != undefined && specificationGroupIds.length > 0) {
+			data['group_ids'] = specificationGroupIds.join(',')
+		}    
 		if (actorIds && actorIds.length > 0) {
 			data["actor_ids"] = actorIds.join(',')
 		}
@@ -71,6 +77,9 @@ export class ReportService {
     const params: any = {}
     if (criteria.specIds !== undefined && criteria.specIds.length > 0) {
       params.specification_ids = criteria.specIds.join(',')
+    }
+    if (criteria.specGroupIds !== undefined && criteria.specGroupIds.length > 0) {
+      params.group_ids = criteria.specGroupIds.join(',')
     }
     if (criteria.actorIds !== undefined && criteria.actorIds.length > 0) {
       params.actor_ids = criteria.actorIds.join(',')

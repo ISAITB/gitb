@@ -63,6 +63,8 @@ import { ConformanceStatementComponent } from './pages/organisation/conformance-
 import { ConformanceStatementNavigationResolver } from './resolvers/conformance-statement-navigation-resolver';
 import { TestExecutionComponent } from './pages/test-execution/test-execution.component';
 import { OrganisationResolver } from './resolvers/organisation-resolver';
+import { CreateSpecificationGroupComponent } from './pages/admin/domain-management/specification/group/create-specification-group/create-specification-group.component';
+import { SpecificationGroupDetailsComponent } from './pages/admin/domain-management/specification/group/specification-group-details/specification-group-details.component';
 
 const routes: Routes = [
   { path: '', redirectTo: '/home', pathMatch: 'full' },  
@@ -89,6 +91,8 @@ const routes: Routes = [
           { path: 'domains/:id', component: DomainDetailsComponent },
           { path: 'domains/:id/testsuites/:testsuite_id', component: TestSuiteDetailsComponent },
           { path: 'domains/:id/testsuites/:testsuite_id/testcases/:testcase_id', component: TestCaseDetailsComponent },
+          { path: 'domains/:id/specifications/groups/create', component: CreateSpecificationGroupComponent },
+          { path: 'domains/:id/specifications/groups/:group_id', component: SpecificationGroupDetailsComponent },
           { path: 'domains/:id/specifications/create', component: CreateSpecificationComponent },
           { path: 'domains/:id/specifications/:spec_id', component: SpecificationDetailsComponent },
           { path: 'domains/:id/specifications/:spec_id/actors/create', component: CreateActorComponent },

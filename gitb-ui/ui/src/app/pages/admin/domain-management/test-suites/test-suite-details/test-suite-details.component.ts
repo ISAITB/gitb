@@ -38,8 +38,7 @@ export class TestSuiteDetailsComponent extends BaseComponent implements OnInit, 
     { field: 'description', title: 'Description'}
   ]
   specificationTableColumns: TableColumnDefinition[] = [
-    { field: 'sname', title: 'Short name' },
-    { field: 'fname', title: 'Full name' },
+    { field: 'sname', title: 'Specification' },
     { field: 'description', title: 'Description' }
   ]  
   savePending = false

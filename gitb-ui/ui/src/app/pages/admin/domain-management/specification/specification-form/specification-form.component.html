@@ -1,3 +1,13 @@
+<div class="form-group" *ngIf="groups.length > 0">
+    <label class="col-sm-3 control-label" for="groupChoice">{{dataService.labelSpecificationGroup()}}:</label>
+    <div class="col-sm-7">
+        <select id="groupChoice" class="form-control" name="group" [(ngModel)]="specification.group">
+            <option [ngValue]="undefined">--Optional--</option>
+            <option *ngFor="let group of groups" [ngValue]="group.id">{{group.sname}}</option>
+        </select>
+    </div>
+    <app-tooltip [tbTooltip]="'If selected, this is the '+dataService.labelSpecificationGroupLower()+' that will contain this '+dataService.labelSpecificationLower()+'.'"></app-tooltip>
+</div>
 <div class="form-group">
     <label class="col-sm-3 control-label" for="shortName">* Short name:</label>
     <div class="col-sm-7"><input id="shortName" name="shortName" [(ngModel)]="specification.sname" class="form-control" type="text"></div>

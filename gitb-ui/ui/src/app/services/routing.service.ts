@@ -123,12 +123,26 @@ export class RoutingService {
     return this.router.navigate(['admin', 'domains'])
   }
 
-  toCreateSpecification(domainId: number) {
-    return this.router.navigate(['admin', 'domains', domainId, 'specifications', 'create'])
+  toCreateSpecification(domainId: number, groupId?:number) {
+    if (groupId) {
+      return this.router.navigate(['admin', 'domains', domainId, 'specifications', 'create'], { queryParams: {
+        group: groupId
+      }})
+    } else {
+      return this.router.navigate(['admin', 'domains', domainId, 'specifications', 'create'])
+    }
+  }
+
+  toCreateSpecificationGroup(domainId: number) {
+    return this.router.navigate(['admin', 'domains', domainId, 'specifications', 'groups', 'create'])
   }
 
   toSpecification(domainId: number, specificationId: number, tab?: number) {
     return this.router.navigate(['admin', 'domains', domainId, 'specifications', specificationId], this.addTabExtras(tab))
+  }
+
+  toSpecificationGroup(domainId: number, groupId: number) {
+    return this.router.navigate(['admin', 'domains', domainId, 'specifications', 'groups', groupId])
   }
 
   toCreateEndpoint(domainId: number, specificationId: number, actorId: number) {

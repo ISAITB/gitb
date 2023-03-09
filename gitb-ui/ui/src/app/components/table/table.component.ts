@@ -24,7 +24,9 @@ export class TableComponent extends BaseTableComponent implements OnInit {
       this.columnCount += 1
     }
     for (let column of this.columns!) {
-      column.headerClass = 'tb-'+column.title.toLowerCase().replace(' ', '-')
+      if (column.headerClass == undefined) {
+        column.headerClass = 'tb-'+column.title.toLowerCase().replace(' ', '-')
+      }
     }
     this.splitColumns()
     this.tableCaptionVisible = this.tableCaption !== undefined

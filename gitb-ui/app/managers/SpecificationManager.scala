@@ -1,19 +1,175 @@
 package managers
 
-import models.{Constants, Specifications}
-import org.slf4j.LoggerFactory
+import models.{Actors, Constants, Endpoints, SpecificationGroups, Specifications}
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
 import utils.CryptoUtil
 
 import javax.inject.{Inject, Singleton}
+import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
-class SpecificationManager @Inject() (testResultManager: TestResultManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
-  def logger = LoggerFactory.getLogger("SpecificationManager")
+class SpecificationManager @Inject() (testResultManager: TestResultManager, conformanceManager: ConformanceManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
+
+  def getSpecificationGroups(domainId: Long): List[SpecificationGroups] = {
+    getSpecificationGroupsByDomainIds(Some(List(domainId)))
+  }
+
+  def getSpecificationGroupsByDomainIds(domainIds: Option[List[Long]]): List[SpecificationGroups] = {
+    exec (
+      PersistenceSchema.specificationGroups
+        .filterOpt(domainIds)((q, ids) => q.domain inSet ids)
+        .sortBy(_.shortname.asc)
+        .result
+    ).toList
+  }
+
+  def getSpecificationGroupById(groupId: Long): SpecificationGroups = {
+    exec(PersistenceSchema.specificationGroups.filter(_.id === groupId).result.head)
+  }
+
+  def createSpecificationGroup(group: SpecificationGroups): Long = {
+    exec(createSpecificationGroupInternal(group).transactionally)
+  }
+
+  def createSpecificationGroupInternal(group: SpecificationGroups):DBIO[Long] = {
+    PersistenceSchema.specificationGroups.returning(PersistenceSchema.specificationGroups.map(_.id)) += group
+  }
+
+  def updateSpecificationGroup(groupId: Long, shortname: String, fullname: String, description: Option[String]): Unit = {
+    exec(updateSpecificationGroupInternal(groupId, shortname, fullname, description).transactionally)
+  }
+
+  def updateSpecificationGroupInternal(groupId: Long, shortname: String, fullname: String, description: Option[String]): DBIO[_] = {
+    for {
+      _ <- PersistenceSchema.specificationGroups
+        .filter(_.id === groupId)
+        .map(x => (x.shortname, x.fullname, x.description))
+        .update(shortname, fullname, description)
+    } yield ()
+  }
+
+  def removeSpecificationFromGroup(specificationId: Long): Unit = {
+    exec(PersistenceSchema.specifications.filter(_.id === specificationId).map(_.group).update(None).transactionally)
+  }
+
+  def addSpecificationToGroup(specificationId: Long, groupId: Long): Unit = {
+    exec(PersistenceSchema.specifications.filter(_.id === specificationId).map(_.group).update(Some(groupId)).transactionally)
+  }
+
+  def copySpecificationToGroup(specificationId: Long, groupId: Long): Long = {
+    exec((
+      for {
+        // Load existing specification.
+        spec <- PersistenceSchema.specifications.filter(_.id === specificationId).result.head
+        // Create copy.
+        newSpecId <- PersistenceSchema.insertSpecification += Specifications(
+          0L, spec.shortname, spec.fullname, spec.description,
+          spec.hidden, CryptoUtil.generateApiKey(), spec.domain, Some(groupId)
+        )
+        // Copy actors, endpoints and parameters.
+        actors <- PersistenceSchema.actors
+          .join(PersistenceSchema.specificationHasActors).on(_.id === _.actorId)
+          .filter(_._2.specId === specificationId)
+          .map(_._1)
+          .result
+        _ <- {
+          val actions = ListBuffer[DBIO[_]]()
+          actors.foreach { actor =>
+            actions += copyActor(actor, newSpecId)
+          }
+          toDBIO(actions)
+        }
+      } yield newSpecId
+    ).transactionally)
+  }
+
+  private def copyActor(actor: Actors, specificationId: Long): DBIO[_] = {
+    val oldActorId = actor.id
+    for {
+      // Actor.
+      newActorId <- PersistenceSchema.insertActor += Actors(
+        0L, actor.actorId, actor.name, actor.description,
+        actor.default, actor.hidden, actor.displayOrder, CryptoUtil.generateApiKey(), actor.domain
+      )
+      // Specification link.
+      _ <- PersistenceSchema.specificationHasActors += (specificationId, newActorId)
+      // Endpoints.
+      endpoints <- PersistenceSchema.endpoints.filter(_.actor === oldActorId).result
+      _ <- {
+        val actions = ListBuffer[DBIO[_]]()
+        endpoints.foreach { endpoint =>
+          actions += copyEndpoint(endpoint, newActorId)
+        }
+        toDBIO(actions)
+      }
+    } yield ()
+  }
+
+  private def copyEndpoint(endpoint: Endpoints, actorId: Long): DBIO[_] = {
+    val oldEndpointId = endpoint.id
+    for {
+      // Endpoint.
+      newEndpointId <- PersistenceSchema.insertEndpoint += Endpoints(
+        0L, endpoint.name, endpoint.desc, actorId
+      )
+      // Parameters.
+      parameters <- PersistenceSchema.parameters.filter(_.endpoint === oldEndpointId).result
+      _ <- {
+        val actions = ListBuffer[DBIO[_]]()
+        parameters.foreach { parameter =>
+          actions += (PersistenceSchema.insertParameter += parameter.withEndpoint(newEndpointId, None))
+        }
+        toDBIO(actions)
+      }
+    } yield ()
+  }
+
+  def deleteSpecificationGroup(groupId: Long, deleteSpecifications: Boolean):Unit = {
+    val onSuccessCalls = mutable.ListBuffer[() => _]()
+    val dbAction = deleteSpecificationGroupInternal(groupId, deleteSpecifications, onSuccessCalls)
+    exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
+  }
+
+  def deleteSpecificationGroupInternal(groupId: Long, deleteSpecifications: Boolean, onSuccessCalls: mutable.ListBuffer[() => _]):DBIO[_] = {
+    val dbAction = for {
+      // See if we need to delete specifications as well.
+      specificationsToDelete <- {
+        if (deleteSpecifications) {
+          PersistenceSchema.specifications.filter(_.group === groupId).map(_.id).result
+        } else {
+          DBIO.successful(List.empty)
+        }
+      }
+      // Delete the selected specifications.
+      _ <- {
+        if (specificationsToDelete.nonEmpty) {
+          val actions = ListBuffer[DBIO[_]]()
+          specificationsToDelete.foreach { specification =>
+            conformanceManager.deleteSpecificationInternal(specification, onSuccessCalls)
+          }
+          toDBIO(actions)
+        } else {
+          DBIO.successful(())
+        }
+      }
+      // Delete the group.
+      _ <- {
+        val actions = ListBuffer[DBIO[_]]()
+        if (!deleteSpecifications) {
+          // There may be linked specifications to the group.
+          actions += PersistenceSchema.specifications.filter(_.group === groupId).map(_.group).update(None)
+        }
+        actions += PersistenceSchema.specificationGroups.filter(_.id === groupId).delete
+        toDBIO(actions)
+      }
+    } yield ()
+    dbAction
+  }
 
   /**
    * Checks if domain exists
@@ -71,11 +227,11 @@ class SpecificationManager @Inject() (testResultManager: TestResultManager, dbCo
     } yield idsToReturn)
   }
 
-  def updateSpecificationInternal(specId: Long, sname: String, fname: String, descr: Option[String], hidden:Boolean, apiKey: Option[String], checkApiKeyUniqueness: Boolean): DBIO[_] = {
+  def updateSpecificationInternal(specId: Long, sname: String, fname: String, descr: Option[String], hidden:Boolean, apiKey: Option[String], checkApiKeyUniqueness: Boolean, groupId: Option[Long]): DBIO[_] = {
     for {
       _ <- {
-        val q = for {s <- PersistenceSchema.specifications if s.id === specId} yield (s.shortname, s.fullname, s.description, s.hidden)
-        q.update(sname, fname, descr, hidden) andThen
+        val q = for {s <- PersistenceSchema.specifications if s.id === specId} yield (s.shortname, s.fullname, s.description, s.hidden, s.group)
+        q.update(sname, fname, descr, hidden, groupId) andThen
           testResultManager.updateForUpdatedSpecification(specId, sname)
       }
       replaceApiKey <- {
@@ -96,8 +252,8 @@ class SpecificationManager @Inject() (testResultManager: TestResultManager, dbCo
     } yield ()
   }
 
-  def updateSpecification(specId: Long, sname: String, fname: String, descr: Option[String], hidden:Boolean) = {
-    exec(updateSpecificationInternal(specId, sname, fname, descr, hidden, None, checkApiKeyUniqueness = false).transactionally)
+  def updateSpecification(specId: Long, sname: String, fname: String, descr: Option[String], hidden:Boolean, groupId: Option[Long]) = {
+    exec(updateSpecificationInternal(specId, sname, fname, descr, hidden, None, checkApiKeyUniqueness = false, groupId).transactionally)
   }
 
   def getSpecificationIdOfActor(actorId: Long) = {

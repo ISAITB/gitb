@@ -53,8 +53,9 @@ class TestSuiteService @Inject() (implicit ec: ExecutionContext, authorizedActio
 		authorizationManager.canViewAllTestSuites(request)
 		val domainIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.DOMAIN_IDS)
 		val specificationIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.SPEC_IDS)
+		val groupIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.GROUP_IDS)
 		val actorIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.ACTOR_IDS)
-		val results = testSuiteManager.searchTestSuites(domainIds, specificationIds, actorIds)
+		val results = testSuiteManager.searchTestSuites(domainIds, specificationIds, groupIds, actorIds)
 		val json = JsonUtil.jsTestSuiteList(results).toString()
 		ResponseConstructor.constructJsonResponse(json)
 	}
@@ -63,8 +64,9 @@ class TestSuiteService @Inject() (implicit ec: ExecutionContext, authorizedActio
 		val domainId = ParameterExtractor.requiredBodyParameter(request, Parameters.DOMAIN_ID).toLong
 		authorizationManager.canViewDomains(request, Some(List(domainId)))
 		val specificationIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.SPEC_IDS)
+		val groupIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.GROUP_IDS)
 		val actorIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.ACTOR_IDS)
-		val results = testSuiteManager.searchTestSuites(Some(List(domainId)), specificationIds, actorIds)
+		val results = testSuiteManager.searchTestSuites(Some(List(domainId)), specificationIds, groupIds, actorIds)
 		val json = JsonUtil.jsTestSuiteList(results).toString()
 		ResponseConstructor.constructJsonResponse(json)
 	}

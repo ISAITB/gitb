@@ -7,6 +7,7 @@ export interface Specification {
     hidden: boolean
     domain: number
     apiKey?: string
+    group?: number
 
     checked?: boolean
 

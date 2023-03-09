@@ -75,6 +75,9 @@ export class EditorComponent implements OnInit, ControlValueAccessor {
         'paste code'
       ]
       config.toolbar = 'bold italic | charmap | bullist numlist | link'
+      config.force_br_newlines = true
+      config.force_p_newlines = false
+      config.forced_root_block = '' // Needed for 3.x
     } else if (this.type == 'line') {
       config.plugins = [
         'autolink link charmap anchor',

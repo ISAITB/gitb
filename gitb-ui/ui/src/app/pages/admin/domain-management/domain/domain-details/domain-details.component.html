@@ -27,18 +27,102 @@
                     <div class="tabControls">
                         <div class="btn-toolbar">
                             <button *ngIf="specifications.length > 0" type="button" class="btn btn-default" (click)="uploadTestSuite()">Upload test suite</button>
-                            <button type="button" class="btn btn-default" (click)="createSpecification()">Create {{dataService.labelSpecificationLower()}}</button>
+                            <div class="btn-group" dropdown>
+                                <button type="button" class="btn btn-default" (click)="createSpecification()">Create {{dataService.labelSpecificationLower()}}</button>
+                                <button id="button-create-spec" type="button" dropdownToggle class="btn btn-default dropdown-toggle dropdown-toggle-split">
+                                    <span class="caret"></span>
+                                    <span class="sr-only visually-hidden">Create {{dataService.labelSpecificationLower()}}</span>
+                                </button>
+                                <ul id="dropdown-create-spec" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-create-spec">
+                                    <li role="menuitem"><a class="dropdown-item" href (click)="createSpecificationGroup();$event.preventDefault();">Create {{dataService.labelSpecificationGroupLower()}}</a></li>
+                                </ul>
+                            </div>
+                            <div class="btn-group" dropdown *ngIf="specificationGroups.length > 0">
+                                <button id="button-option-visibility" (click)="$event.stopPropagation()" dropdownToggle type="button" class="btn btn-default dropdown-toggle" aria-controls="dropdown-option-visibility">View {{dataService.labelSpecificationInGroupsLower()}}<span class="caret"></span></button>
+                                <ul id="dropdown-option-visibility" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-option-visibility">
+                                    <li role="menuitem"><a class="dropdown-item" href (click)="toggleSpecificationGroupCollapse(false);$event.preventDefault();">Show {{dataService.labelSpecificationInGroupsLower()}}</a></li>
+                                    <li role="menuitem"><a class="dropdown-item" href (click)="toggleSpecificationGroupCollapse(true);$event.preventDefault();">Hide {{dataService.labelSpecificationInGroupsLower()}}</a></li>
+                                </ul>
+                            </div>
                         </div>
                     </div>
                     <div class="panel panel-default">
-                        <div table-directive
-                            [columns]="tableColumns"
-                            [data]="specifications"
-                            [noDataMessage]="'No '+dataService.labelSpecificationsLower()+' found'"
-                            [loadingStatus]="specificationStatus"
-                            [allowSelect]="true"
-                            (onSelect)="onSpecificationSelect($event)">
-                        </div>
+                        <table class="table table-directive">
+                            <thead>
+                                <tr>
+                                    <th *ngIf="specificationGroups.length > 0" class="th-min-centered"></th>
+                                    <th>{{dataService.labelSpecification()}}</th>
+                                    <th>Description</th>
+                                    <th class="th-min-centered"></th>
+                                    <th *ngIf="specificationGroups.length > 0" class="th-min"></th>
+                                </tr>
+                            </thead>
+                            <tbody [class.disable-events]="specificationStatus && specificationStatus.status != Constants.STATUS.FINISHED">
+                                <ng-container [ngSwitch]="specificationStatus && specificationStatus.status != Constants.STATUS.FINISHED">
+                                    <ng-container *ngSwitchCase="true">
+                                        <tr>
+                                            <td [attr.colspan]="(specificationGroups.length > 0)?5:3" class="td-data-loading"><app-pending-block></app-pending-block></td>
+                                        </tr>
+                                    </ng-container>
+                                    <ng-container *ngSwitchDefault [ngSwitch]="domainSpecifications.length == 0">
+                                        <ng-container *ngSwitchCase="true">
+                                            <tr>
+                                                <td [attr.colspan]="(specificationGroups.length > 0)?5:3" class="td-no-data"><span>No {{dataService.labelSpecificationsLower()}} found</span></td>
+                                            </tr>
+                                        </ng-container>
+                                        <ng-container *ngSwitchDefault>
+                                            <ng-container *ngFor="let spec of domainSpecifications">
+                                                <tr app-domain-specification-table-row
+                                                    [spec]="spec"
+                                                    [groups]="specificationGroups"
+                                                    (remove)="removeSpecificationFromGroup($event[0], $event[1])"
+                                                    (move)="moveSpecificationToGroup($event[0], $event[1], $event[2])"
+                                                    (copy)="copySpecificationToGroup($event[0], $event[1], $event[2])"
+                                                    class="group"
+                                                    (click)="onSpecificationGroupSelect(spec)"
+                                                    ></tr>
+                                                <tr class="group-options" *ngIf="spec.group && spec.options != undefined">
+                                                    <td colspan="5" class="spec-group-options-td">
+                                                        <div [collapse]="spec.collapsed" [isAnimated]="true">
+                                                            <div class="panel panel-default spec-group-options">
+                                                                <table class="table table-directive">
+                                                                    <thead>
+                                                                        <tr>
+                                                                            <th>{{dataService.labelSpecificationInGroup()}}</th>
+                                                                            <th>Description</th>
+                                                                            <th class="th-min-centered"></th>
+                                                                            <th class="th-min"></th>
+                                                                        </tr>
+                                                                    </thead>
+                                                                    <tbody [ngSwitch]="spec.options.length == 0">
+                                                                        <tr *ngSwitchCase="true">
+                                                                            <td colspan="4" class="td-no-data"><span>No {{dataService.labelSpecificationInGroupsLower()}} found.</span></td>
+                                                                        </tr>
+                                                                        <ng-container *ngSwitchDefault>
+                                                                            <ng-container *ngFor="let option of spec.options">
+                                                                                <tr app-domain-specification-table-row
+                                                                                    [spec]="option"
+                                                                                    [groups]="specificationGroups"
+                                                                                    (remove)="removeSpecificationFromGroup($event[0], $event[1])"
+                                                                                    (move)="moveSpecificationToGroup($event[0], $event[1], $event[2])"
+                                                                                    (copy)="copySpecificationToGroup($event[0], $event[1], $event[2])"
+                                                                                    class="selectable"
+                                                                                    (click)="onSpecificationSelect(option)"
+                                                                                ></tr>
+                                                                            </ng-container>
+                                                                        </ng-container>
+                                                                    </tbody>
+                                                                </table>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            </ng-container>
+                                        </ng-container>
+                                    </ng-container>
+                                </ng-container>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </tab>
@@ -54,7 +138,7 @@
                         <div table-directive
                             [columns]="sharedTestSuiteTableColumns"
                             [data]="sharedTestSuites"
-                            [noDataMessage]="'No shared test suited found'"
+                            [noDataMessage]="'No shared test suites found'"
                             [loadingStatus]="sharedTestSuiteStatus"
                             [allowSelect]="true"
                             (onSelect)="onSharedTestSuiteSelect($event)">

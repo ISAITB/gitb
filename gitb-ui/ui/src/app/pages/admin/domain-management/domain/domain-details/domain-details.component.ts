@@ -16,17 +16,25 @@ import { TableColumnDefinition } from 'src/app/types/table-column-definition.typ
 import { saveAs } from 'file-saver'
 import { TestSuite } from 'src/app/types/test-suite';
 import { BaseTabbedComponent } from 'src/app/pages/base-tabbed-component';
+import { SpecificationService } from 'src/app/services/specification.service';
+import { forkJoin } from 'rxjs';
+import { DomainSpecification } from 'src/app/types/domain-specification';
+import { SpecificationGroup } from 'src/app/types/specification-group';
+import { find, remove } from 'lodash';
 
 @Component({
   selector: 'app-domain-details',
   templateUrl: './domain-details.component.html',
-  styles: [
-  ]
+  styleUrls: [ './domain-details.component.less' ]
 })
 export class DomainDetailsComponent extends BaseTabbedComponent implements OnInit, AfterViewInit {
 
   domain: Partial<Domain> = {}
+
+  domainSpecifications: DomainSpecification[] = []
   specifications: Specification[] = []
+  hasGroups = false
+  specificationGroups: SpecificationGroup[] = []
   sharedTestSuites: TestSuite[] = []
   domainParameters: DomainParameter[] = []
   domainId!: number
@@ -44,12 +52,13 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
     { field: 'sname', title: 'Name' },
     { field: 'description', title: 'Description' },
     { field: 'version', title: 'Version' }
-  ]  
+  ]
   savePending = false
   deletePending = false
 
   constructor(
     public dataService: DataService,
+    private specificationService: SpecificationService,
     private conformanceService: ConformanceService,
     private confirmationDialogService: ConfirmationDialogService,
     private modalService: BsModalService,
@@ -83,13 +92,25 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
     this.loadSpecifications()
   }
 
-  loadSpecifications() {
-    if (this.specificationStatus.status == Constants.STATUS.NONE) {
+  toggleSpecificationGroupCollapse(collapse: boolean) {
+    for (let spec of this.domainSpecifications) {
+      if (spec.group) {
+        spec.collapsed = collapse
+      }
+    }
+  }
+
+  loadSpecifications(force?: boolean) {
+    if (this.specificationStatus.status == Constants.STATUS.NONE || force) {
       this.specificationStatus.status = Constants.STATUS.PENDING
-      this.specifications = []
-      this.conformanceService.getSpecifications(this.domainId)
-      .subscribe((data) => {
-        this.specifications = data
+      this.domainSpecifications = []
+      const specsObservable = this.conformanceService.getSpecifications(this.domainId, false)
+      const specGroupsObservable = this.specificationService.getSpecificationGroups(this.domainId)
+      forkJoin([specsObservable, specGroupsObservable]).subscribe((results) => {
+        this.specificationGroups = results[1]
+        this.hasGroups = this.specificationGroups.length > 0
+        this.domainSpecifications = this.dataService.toDomainSpecifications(this.specificationGroups, results[0])
+        this.specifications = this.dataService.toSpecifications(this.domainSpecifications)
       }).add(() => {
         this.specificationStatus.status = Constants.STATUS.FINISHED
       })
@@ -127,7 +148,7 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
           this.domainParameters.push(parameter)
         }
       }).add(() => {
-        this.parameterStatus.status = Constants.STATUS.FINISHED			
+        this.parameterStatus.status = Constants.STATUS.FINISHED
       })
     }
   }
@@ -173,8 +194,16 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
     this.routingService.toDomains()
   }
 
-	onSpecificationSelect(specification: Specification) {
+	onSpecificationSelect(specification: DomainSpecification) {
     this.routingService.toSpecification(this.domainId, specification.id)
+  }
+
+	onSpecificationGroupSelect(groupOrOption: DomainSpecification) {
+    if (groupOrOption.group) {
+      this.routingService.toSpecificationGroup(this.domainId, groupOrOption.id)
+    } else {
+      this.onSpecificationSelect(groupOrOption)
+    }
   }
 
   onSharedTestSuiteSelect(testSuite: TestSuite) {
@@ -227,7 +256,7 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
         sharedTestSuite: true,
         domainId: this.domainId
       }
-    })    
+    })
     modal.content!.completed.subscribe((testSuitesUpdated: boolean) => {
       if (testSuitesUpdated) {
         this.loadSharedTestSuites(true)
@@ -239,5 +268,94 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
 	createSpecification() {
     this.routingService.toCreateSpecification(this.domainId)
   }
-  
+
+  createSpecificationGroup() {
+    this.routingService.toCreateSpecificationGroup(this.domainId)
+  }
+
+  removeSpecificationFromGroup(specificationId: number, currentGroupId: number) {
+    this.specificationService.removeSpecificationFromGroup(specificationId)
+    .subscribe(() => {
+      const currentGroup = find(this.domainSpecifications, (ds) => ds.id == currentGroupId)
+      if (currentGroup && currentGroup.options) {
+        const specifications = remove(currentGroup.options, (ds) => ds.id == specificationId)
+        if (specifications && specifications.length > 0) {
+          specifications[0].groupId = undefined
+          specifications[0].option = false
+          specifications[0].removePending = false
+          this.domainSpecifications.push(specifications[0])
+        }
+        this.dataService.setSpecificationGroupVisibility(currentGroup)
+      }
+      this.domainSpecifications = this.dataService.sortDomainSpecifications(this.domainSpecifications)
+      this.specifications = this.dataService.toSpecifications(this.domainSpecifications)
+      this.popupService.success(this.dataService.labelSpecificationInGroup()+' removed.')
+    })
+  }
+
+  copySpecificationToGroup(specificationId: number, currentGroupId: number|undefined, newGroupId: number) {
+    this.specificationService.copySpecificationToGroup(newGroupId, specificationId)
+    .subscribe((result) => {
+      const newSpecificationId = result.id
+      let specification: DomainSpecification|undefined
+      if (currentGroupId) {
+        const currentGroup = find(this.domainSpecifications, (ds) => ds.id == currentGroupId)
+        if (currentGroup && currentGroup.options) {
+          specification = find(currentGroup.options, (ds) => ds.id == specificationId)
+        }
+      } else {
+        specification = find(this.domainSpecifications, (ds) => ds.id == specificationId)
+      }
+      const newGroup = find(this.domainSpecifications, (ds) => ds.id == newGroupId)
+      if (specification && newGroup && newGroup.options) {
+        const newSpecification: DomainSpecification = {
+          id: newSpecificationId,
+          sname: specification.sname,
+          fname: specification.fname,
+          description: specification.description,
+          domain: specification.domain,
+          hidden: specification.hidden,
+          groupId: newGroupId,
+          group: false,
+          option: true,
+          collapsed: false
+        }
+        specification.copyPending = false
+        newGroup.options.push(newSpecification)
+        newGroup.options = this.dataService.sortDomainSpecifications(newGroup.options)
+        this.dataService.setSpecificationGroupVisibility(newGroup)
+        this.popupService.success(this.dataService.labelSpecificationInGroup()+' copied.')
+      }
+    })
+  }
+
+  moveSpecificationToGroup(specificationId: number, currentGroupId: number|undefined, newGroupId: number) {
+    this.specificationService.addSpecificationToGroup(newGroupId, specificationId)
+    .subscribe(() => {
+      let specifications: DomainSpecification[]|undefined
+      if (currentGroupId) {
+        const currentGroup = find(this.domainSpecifications, (ds) => ds.id == currentGroupId)
+        if (currentGroup && currentGroup.options) {
+          specifications = remove(currentGroup.options, (ds) => ds.id == specificationId)
+          this.dataService.setSpecificationGroupVisibility(currentGroup)
+        }
+      } else {
+        specifications = remove(this.domainSpecifications, (ds) => ds.id == specificationId)
+      }
+      if (specifications && specifications.length > 0) {
+        specifications[0].movePending = false
+        specifications[0].groupId = newGroupId;
+        const group = find(this.domainSpecifications, (ds) => ds.id == newGroupId)
+        if (group && group.options) {
+          specifications[0].option = true
+          group.options.push(specifications[0])
+          this.dataService.setSpecificationGroupVisibility(group)
+          group.options = this.dataService.sortDomainSpecifications(group.options)
+        }
+      }
+      this.specifications = this.dataService.toSpecifications(this.domainSpecifications)
+      this.popupService.success(this.dataService.labelSpecificationInGroup()+' moved.')
+    })
+  }
+
 }
