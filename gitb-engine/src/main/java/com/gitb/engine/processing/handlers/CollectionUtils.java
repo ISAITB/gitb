@@ -12,9 +12,8 @@ import com.gitb.tr.TestResultType;
 import com.gitb.types.*;
 import org.apache.commons.lang3.StringUtils;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @ProcessingHandler(name="CollectionUtils")
 public class CollectionUtils extends AbstractProcessingHandler {
@@ -22,9 +21,13 @@ public class CollectionUtils extends AbstractProcessingHandler {
     private static final String OPERATION__SIZE = "size";
     private static final String OPERATION__CLEAR = "clear";
     private static final String OPERATION__CONTAINS = "contains";
+    private static final String OPERATION__RANDOM_KEY = "randomKey";
+    private static final String OPERATION__RANDOM_VALUE = "randomValue";
+    private static final String OPERATION__REMOVE = "remove";
     private static final String INPUT__LIST = "list";
     private static final String INPUT__MAP = "map";
     private static final String INPUT__VALUE = "value";
+    private static final String INPUT__ITEM = "item";
     private static final String OUTPUT__OUTPUT = "output";
 
     @Override
@@ -58,6 +61,32 @@ public class CollectionUtils extends AbstractProcessingHandler {
                         createParameter(INPUT__VALUE, "string", UsageEnumeration.O, ConfigurationType.SIMPLE, "The value to look for (as an item for a list or as a key for a map).")
                 ),
                 Collections.emptyList()
+        ));
+        module.getOperation().add(createProcessingOperation(OPERATION__RANDOM_KEY,
+                List.of(
+                        createParameter(INPUT__MAP, "map", UsageEnumeration.O, ConfigurationType.SIMPLE, "The map to consider.")
+                ),
+                List.of(
+                        createParameter(OUTPUT__OUTPUT, "string", UsageEnumeration.O, ConfigurationType.SIMPLE, "The selected entry.")
+                )
+        ));
+        module.getOperation().add(createProcessingOperation(OPERATION__RANDOM_VALUE,
+                List.of(
+                        createParameter(INPUT__LIST, "list", UsageEnumeration.O, ConfigurationType.SIMPLE, "The list to consider (if the collection is expected to be a list)."),
+                        createParameter(INPUT__MAP, "map", UsageEnumeration.O, ConfigurationType.SIMPLE, "The map to consider (if the collection is expected to be a map).")
+                ),
+                List.of(
+                        createParameter(OUTPUT__OUTPUT, "string", UsageEnumeration.O, ConfigurationType.SIMPLE, "The selected entry.")
+                )
+        ));
+        module.getOperation().add(createProcessingOperation(OPERATION__REMOVE,
+                List.of(
+                        createParameter(INPUT__LIST, "list", UsageEnumeration.O, ConfigurationType.SIMPLE, "The list to consider (if the collection is expected to be a list)."),
+                        createParameter(INPUT__MAP, "map", UsageEnumeration.O, ConfigurationType.SIMPLE, "The map to consider (if the collection is expected to be a map)."),
+                        createParameter(INPUT__ITEM, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The item to remove (index if list or key if map).")
+                ),
+                Collections.emptyList()
+
         ));
         return module;
     }
@@ -124,10 +153,45 @@ public class CollectionUtils extends AbstractProcessingHandler {
                 }
             }
             data.getData().put(OUTPUT__OUTPUT, new BooleanType(contains));
+        } else if (OPERATION__RANDOM_KEY.equalsIgnoreCase(operation) || OPERATION__RANDOM_VALUE.equalsIgnoreCase(operation)) {
+            List<DataType> valueList;
+            if (inputCollection instanceof MapType) {
+                if (OPERATION__RANDOM_KEY.equalsIgnoreCase(operation)) {
+                    valueList = ((MapType) inputCollection).getItems().keySet().stream().map(StringType::new).collect(Collectors.toList());
+                } else {
+                    valueList = new ArrayList<>(((MapType) inputCollection).getItems().values());
+                }
+            } else {
+                valueList = (List<DataType>) inputCollection.getValue();
+            }
+            if (!valueList.isEmpty()) {
+                data.getData().put(OUTPUT__OUTPUT, valueList.get(getRandomNumberInRange(0, valueList.size())));
+            }
+        } else if (OPERATION__REMOVE.equalsIgnoreCase(operation)) {
+            if (!input.getData().containsKey(INPUT__ITEM)) {
+                throw new IllegalArgumentException("The item to remove must be provided");
+            }
+            var item = input.getData().get(INPUT__ITEM);
+            if (inputCollection instanceof MapType) {
+                ((MapType) inputCollection).getItems().remove(item.convertTo(DataType.STRING_DATA_TYPE).getValue());
+            } else {
+                var items = (List<DataType>)inputCollection.getValue();
+                var itemToRemove = ((Double) item.convertTo(DataType.NUMBER_DATA_TYPE).getValue()).intValue();
+                if (itemToRemove >= items.size()) {
+                    itemToRemove = items.size() - 1;
+                } else if (itemToRemove < 0) {
+                    itemToRemove = 0;
+                }
+                items.remove(itemToRemove);
+            }
         } else {
             throw new IllegalArgumentException("Unknown operation [" + operation + "]");
         }
         return new ProcessingReport(createReport(TestResultType.SUCCESS), data);
     }
 
+    private int getRandomNumberInRange(int min, int max) {
+        var random = new Random();
+        return random.nextInt(max - min) + min;
+    }
 }
