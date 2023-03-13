@@ -105,26 +105,11 @@ class SystemService @Inject() (implicit ec: ExecutionContext, repositoryUtils: R
   /**
    * Defines conformance statement for the system
    */
-  def defineConformanceStatement(sut_id:Long) = authorizedAction { request =>
-    authorizationManager.canCreateConformanceStatement(request, sut_id)
-    val spec:Long  = ParameterExtractor.requiredBodyParameter(request, Parameters.SPEC).toLong
-    val actor = ParameterExtractor.requiredBodyParameter(request, Parameters.ACTOR).toLong
-	  val optionIds = ParameterExtractor.optionalBodyParameter(request, Parameters.OPTIONS) match {
-	    case Some(str) => Some(str.split(",").map(_.toLong).toList)
-	    case _ => None
-	  }
-
-    val matchingStatements = systemManager.getConformanceStatements(sut_id, Some(spec), Some(actor))
-    if (matchingStatements.isEmpty) {
-      if (systemManager.sutTestCasesExistForActor(actor)) {
-        systemManager.defineConformanceStatementWrapper(sut_id, spec, actor, optionIds)
-        ResponseConstructor.constructEmptyResponse
-      } else {
-        ResponseConstructor.constructErrorResponse(ErrorCodes.NO_SUT_TEST_CASES_FOR_ACTOR, "No test cases are defined for the selected "+communityLabelManager.getLabel(request, models.Enums.LabelType.Actor, true, true)+".")
-      }
-    } else {
-      ResponseConstructor.constructErrorResponse(ErrorCodes.CONFORMANCE_STATEMENT_EXISTS, "This conformance statement is already defined.")
-    }
+  def defineConformanceStatements(systemId:Long) = authorizedAction { request =>
+    authorizationManager.canCreateConformanceStatement(request, systemId)
+    val actorIds = ParameterExtractor.extractLongIdsBodyParameter(request)
+    systemManager.defineConformanceStatements(systemId, actorIds.getOrElse(List.empty))
+    ResponseConstructor.constructEmptyResponse
   }
 
 	def getConformanceStatements(sut_id: Long) = authorizedAction { request =>

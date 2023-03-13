@@ -121,4 +121,9 @@ object Enums {
     val IN_ARCHIVE_ONLY, IN_DB_ONLY, IN_ARCHIVE_AND_DB = Value
   }
 
+  object ConformanceStatementItemType extends Enumeration(1) {
+    type ConformanceStatementItemType = Value
+    val DOMAIN, SPECIFICATION_GROUP, SPECIFICATION, ACTOR = Value
+  }
+
 }

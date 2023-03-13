@@ -1,8 +1,7 @@
 package managers
 
-import models.Enums.TriggerDataType
+import models.Enums.{ConformanceStatementItemType, TriggerDataType}
 import models._
-import org.apache.commons.io.FileUtils
 import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
@@ -365,6 +364,106 @@ class ConformanceManager @Inject() (systemManager: SystemManager, triggerManager
 		}
 		specs
   }
+
+	def getAvailableConformanceStatements(domainId: Option[Long], systemId: Long): (Boolean, Seq[ConformanceStatementItem]) = {
+		exec(for {
+			// Load the actors for which the system already has statements (these will be later skipped).
+			actorIdsInExistingStatements <- PersistenceSchema.systemImplementsActors
+				.filter(_.systemId === systemId)
+				.map(_.actorId)
+				.result
+			// Load the relevant domains.
+			domains <- PersistenceSchema.domains
+				.filterOpt(domainId)((q, id) => q.id === id)
+				.map(x => (x.id, x.fullname, x.description))
+				.sortBy(_._2.asc)
+				.result
+			// Load the relevant specification groups.
+			groups <- PersistenceSchema.specificationGroups
+				.filterOpt(domainId)((q, id) => q.domain === id)
+				.map(x => (x.id, x.fullname, x.description, x.domain))
+				.sortBy(_._2.asc)
+				.result
+			// Load the relevant specifications.
+			specifications <- PersistenceSchema.specifications
+				.filterOpt(domainId)((q, id) => q.domain === id)
+				.filter(_.hidden === false)
+				.map(x => (x.id, x.fullname, x.description, x.group, x.domain))
+				.sortBy(_._2.asc)
+				.result
+			// Load the relevant actors (excluding ones with existing statements).
+			actors <- PersistenceSchema.actors
+				.join(PersistenceSchema.specificationHasActors).on(_.id === _.actorId)
+				.filter(_._1.hidden === false)
+				.filterNot(_._1.id inSet actorIdsInExistingStatements)
+				.filterOpt(domainId)((q, id) => q._1.domain === id)
+				.map(x => (x._1.id, x._1.name, x._1.desc, x._2.specId, x._1.default))
+				.sortBy(_._2.asc)
+				.result
+			// For the relevant actors check which of them have defined test cases as SUTs.
+			actorsWithTestCases <- PersistenceSchema.testCaseHasActors
+				.filter(_.actor inSet actors.map(_._1))
+				.filter(_.sut)
+				.map(_.actor)
+				.distinct
+				.result
+				.map(_.toSet)
+			results <- {
+				val actorMap = new mutable.HashMap[Long, ListBuffer[ConformanceStatementItem]]() // Specification ID to Actor data
+				val defaultActorMap = new mutable.HashMap[Long, ConformanceStatementItem]() // Specification ID to default Actor data
+				// Map actors using specification ID.
+				actors.foreach(x => {
+					if (actorsWithTestCases.contains(x._1)) {
+						// Only keep the actors that have test cases in which they are the SUT.
+						val item = ConformanceStatementItem(x._1, x._2, x._3, ConformanceStatementItemType.ACTOR, None)
+						actorMap.getOrElseUpdate(x._4, new ListBuffer[ConformanceStatementItem]).append(item)
+						if (x._5.getOrElse(false)) {
+							defaultActorMap.put(x._4, item)
+						}
+					}
+				})
+				// If we have defaults, force them.
+				defaultActorMap.foreach(x => actorMap.put(x._1, ListBuffer(x._2)))
+				val specificationInGroupMap = new mutable.HashMap[Long, ListBuffer[ConformanceStatementItem]]() // Specification group ID to Specification data
+				val specificationNotInGroupMap = new mutable.HashMap[Long, ListBuffer[ConformanceStatementItem]]() // Domain ID to Specification data
+				specifications.foreach(x => {
+					val childActors = actorMap.get(x._1).map(_.toList)
+					if (childActors.nonEmpty) {
+						// Only keep specifications with actors.
+						if (x._4.nonEmpty) {
+							// Map specifications using group ID.
+							specificationInGroupMap.getOrElseUpdate(x._4.get, new ListBuffer[ConformanceStatementItem]).append(ConformanceStatementItem(x._1, x._2, x._3, ConformanceStatementItemType.SPECIFICATION, childActors))
+						} else {
+							// Map specifications using domain ID.
+							specificationNotInGroupMap.getOrElseUpdate(x._5, new ListBuffer[ConformanceStatementItem]).append(ConformanceStatementItem(x._1, x._2, x._3, ConformanceStatementItemType.SPECIFICATION, childActors))
+						}
+					}
+				})
+				val specificationGroupMap = new mutable.HashMap[Long, ListBuffer[ConformanceStatementItem]]() // Domain ID to Specification group data
+				// Map groups using domain ID.
+				groups.foreach(x => {
+					val childSpecifications = specificationInGroupMap.get(x._1).map(_.toList)
+					if (childSpecifications.nonEmpty) {
+						// Only keep groups with (non-empty) specifications.
+						specificationGroupMap.getOrElseUpdate(x._4, new ListBuffer[ConformanceStatementItem]).append(ConformanceStatementItem(x._1, x._2, x._3, ConformanceStatementItemType.SPECIFICATION_GROUP, childSpecifications))
+					}
+				})
+				// Process domain(s).
+				val domainItems = new ListBuffer[ConformanceStatementItem]
+				domains.foreach(x => {
+					val children = specificationGroupMap.getOrElse(x._1, ListBuffer.empty) // Add groups to domain.
+						.appendAll(specificationNotInGroupMap.getOrElse(x._1, ListBuffer.empty)) // Add specs (not in groups) to domain.
+						.sortBy(_.name) // Sort everything by name
+						.toList
+					if (children.nonEmpty) {
+						// Only keep domains with (non-empty) specifications or groups.
+						domainItems.append(ConformanceStatementItem(x._1, x._2, x._3, ConformanceStatementItemType.DOMAIN, Some(children)))
+					}
+				})
+				DBIO.successful((actorIdsInExistingStatements.nonEmpty, domainItems.toList))
+			}
+		} yield results)
+	}
 
 	def createSpecificationsInternal(specification: Specifications): DBIO[Long] = {
 		createSpecificationsInternal(specification, checkApiKeyUniqueness = false)

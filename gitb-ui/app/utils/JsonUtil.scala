@@ -188,6 +188,36 @@ object JsonUtil {
     json
   }
 
+  def jsConformanceStatementItemInfo(info: (Boolean, Iterable[ConformanceStatementItem])): JsObject = {
+    Json.obj(
+      "existing" -> info._1,
+      "items" -> jsConformanceStatementItems(info._2)
+    )
+  }
+
+  def jsConformanceStatementItems(items: Iterable[ConformanceStatementItem]): JsArray = {
+    var json = Json.arr()
+    items.foreach { item =>
+      json = json.append(jsConformanceStatementItem(item))
+    }
+    json
+  }
+
+  def jsConformanceStatementItem(item: ConformanceStatementItem): JsObject = {
+    var json = Json.obj(
+      "id" -> item.id,
+      "itemType" -> item.itemType.id,
+      "name" -> item.name
+    )
+    if (item.description.nonEmpty && item.description.get.nonEmpty) {
+      json = json +("description" -> JsString(item.description.get))
+    }
+    if (item.items.nonEmpty) {
+      json = json +("items" -> jsConformanceStatementItems(item.items.get))
+    }
+    json
+  }
+
   def jsCommunityResourceSearchResult(list: Iterable[CommunityResources], resultCount: Int): JsObject = {
     val jsonResult = Json.obj(
       "data" -> jsCommunityResources(list),

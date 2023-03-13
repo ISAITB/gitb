@@ -184,12 +184,11 @@ export class SystemService {
     }
   }
 
-  defineConformanceStatement(system: number, spec: number, actor: number) {
-    return this.restService.post<ErrorDescription|undefined>({
-      path: ROUTES.controllers.SystemService.defineConformanceStatement(system).url,
+  defineConformanceStatements(system: number, actorIds: number[]) {
+    return this.restService.post<void>({
+      path: ROUTES.controllers.SystemService.defineConformanceStatements(system).url,
       data: {
-        spec: spec,
-        actor: actor
+        ids: actorIds.join(',')
       },
       authenticate: true
     })

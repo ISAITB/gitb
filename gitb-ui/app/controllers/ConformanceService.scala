@@ -111,6 +111,13 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
     ResponseConstructor.constructJsonResponse(json)
   }
 
+  def getAvailableConformanceStatements(systemId: Long) = authorizedAction { request =>
+    authorizationManager.canManageSystem(request, systemId)
+    val domainId = ParameterExtractor.optionalLongQueryParameter(request, Parameters.DOMAIN_ID)
+    val result = conformanceManager.getAvailableConformanceStatements(domainId, systemId)
+    ResponseConstructor.constructJsonResponse(JsonUtil.jsConformanceStatementItemInfo(result).toString)
+  }
+
   /**
    * Gets the specifications that are defined/tested in the platform
    */

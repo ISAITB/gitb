@@ -376,13 +376,28 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils, testResultManag
     systems
   }
 
-  def defineConformanceStatementWrapper(system: Long, spec: Long, actor: Long, options: Option[List[Long]]):Unit = {
-    val dbAction = for {
-      communityId <- getCommunityIdForSystemId(system)
-      _ <- defineConformanceStatement(system, spec, actor, options, setDefaultParameterValues = true)
-    } yield communityId
-    val communityId = exec(dbAction.transactionally)
-    triggerHelper.publishTriggerEvent(new ConformanceStatementCreatedEvent(communityId, system, actor))
+  def defineConformanceStatements(systemId: Long, actorIds: Seq[Long]):Unit = {
+    val result = exec((for {
+      communityId <- getCommunityIdForSystemId(systemId)
+      existingStatementActorIds <- PersistenceSchema.systemImplementsActors
+        .filter(_.systemId === systemId)
+        .map(_.actorId)
+        .result
+      actorsToProcess <- PersistenceSchema.specificationHasActors
+        .filter(_.actorId inSet actorIds)
+        .filterNot(_.actorId inSet existingStatementActorIds)
+        .result
+      _ <- {
+        val actions = new ListBuffer[DBIO[_]]
+        actorsToProcess.foreach { actor =>
+          actions += defineConformanceStatement(systemId, actor._1, actor._2, None, setDefaultParameterValues = true)
+        }
+        toDBIO(actions)
+      }
+    } yield (communityId, actorsToProcess.map(_._2))).transactionally)
+    result._2.foreach { actorId =>
+      triggerHelper.publishTriggerEvent(new ConformanceStatementCreatedEvent(result._1, systemId, actorId))
+    }
   }
 
   def sutTestCasesExistForActor(actor: Long): Boolean = {

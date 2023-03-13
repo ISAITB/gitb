@@ -24,7 +24,7 @@ import { TestCase } from '../types/test-case';
 import { ConformanceStatus } from '../types/conformance-status';
 import { FileParam } from '../types/file-param.type';
 import { StatementParameterMinimal } from '../types/statement-parameter-minimal';
-import { TestSuiteUploadItemResult } from '../modals/test-suite-upload-modal/test-suite-upload-item-result';
+import { ConformanceStatementItemInfo } from '../types/conformance-statement-item-info';
 
 @Injectable({
   providedIn: 'root'
@@ -826,6 +826,18 @@ export class ConformanceService {
       path: ROUTES.controllers.ConformanceService.unlinkSharedTestSuite().url,
       authenticate: true,
       data: data
+    })
+  }
+
+  getAvailableConformanceStatements(domainId: number|undefined, systemId: number) {
+    let params:any = {}
+    if (domainId) {
+      params.domain_id = domainId
+    }
+    return this.restService.get<ConformanceStatementItemInfo>({
+      path: ROUTES.controllers.ConformanceService.getAvailableConformanceStatements(systemId).url,
+      authenticate: true,
+      params: params
     })
   }
 

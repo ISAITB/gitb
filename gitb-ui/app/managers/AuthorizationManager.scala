@@ -617,6 +617,10 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     isOwnSystem(userInfo, systemManager.getSystemById(systemId))
   }
 
+  def canManageSystem(request: RequestWithAttributes[_], systemId: Long): Boolean = {
+    canManageSystem(request, getUser(getRequestUserId(request)), systemId)
+  }
+
   def canManageSystem(request: RequestWithAttributes[_], userInfo: User, sut_id: Long): Boolean = {
     var ok = false
     if (isTestBedAdmin(userInfo)) {

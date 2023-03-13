@@ -299,6 +299,13 @@ export class Constants {
 		IN_ARCHIVE_AND_DB : 3
 	}
 
+	public static CONFORMANCE_STATEMENT_ITEM_TYPE = {
+		DOMAIN: 1,
+		SPECIFICATION_GROUP: 2,
+		SPECIFICATION: 3,
+		ACTOR: 4
+	}
+
 	public static PASSWORD_REGEX = /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#&()_–\[{}\]:;'",?/\\*~$^+=<>]).{8,}$/
 	public static END_OF_TEST_STEP = "-1"
 	public static END_OF_TEST_STEP_EXTERNAL = "-2"

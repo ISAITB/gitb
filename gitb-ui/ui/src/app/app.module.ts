@@ -158,6 +158,8 @@ import { SpecificationGroupFormComponent } from './pages/admin/domain-management
 import { SpecificationGroupDetailsComponent } from './pages/admin/domain-management/specification/group/specification-group-details/specification-group-details.component';
 import { DomainSpecificationTableRowComponent } from './components/domain-specification-table-row/domain-specification-table-row.component';
 import { HiddenIconComponent } from './components/hidden-icon/hidden-icon.component';
+import { ConformanceStatementItemDisplayComponent } from './components/conformance-statement-item-display/conformance-statement-item-display.component';
+import { ConformanceStatementItemsDisplayComponent } from './components/conformance-statement-items-display/conformance-statement-items-display.component';
 
 @NgModule({
   providers: [ 
@@ -305,7 +307,9 @@ import { HiddenIconComponent } from './components/hidden-icon/hidden-icon.compon
     SpecificationGroupFormComponent,
     SpecificationGroupDetailsComponent,
     DomainSpecificationTableRowComponent,
-    HiddenIconComponent],
+    HiddenIconComponent,
+    ConformanceStatementItemDisplayComponent,
+    ConformanceStatementItemsDisplayComponent],
   imports: [
     BrowserModule,
     BrowserAnimationsModule,
