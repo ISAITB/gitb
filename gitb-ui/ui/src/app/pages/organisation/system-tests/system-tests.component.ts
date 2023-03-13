@@ -98,7 +98,7 @@ export class SystemTestsComponent implements OnInit {
       { field: 'testCase', title: 'Test case', sortable: true },
       { field: 'startTime', title: 'Start time', sortable: true },
       { field: 'endTime', title: 'End time', sortable: true, order: 'desc' },
-      { field: 'result', title: 'Result', sortable: true, iconFn: this.dataService.iconForTestResult }
+      { field: 'result', title: 'Result', sortable: true, iconFn: this.dataService.iconForTestResult, iconTooltipFn: this.dataService.tooltipForTestResult }
     ]
     this.goFirstPage()
   }

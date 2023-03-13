@@ -75,7 +75,7 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
     { field: 'description', title: 'Description' },
     { field: 'eventTypeLabel', title: 'Event type' },
     { field: 'active', title: 'Active' },
-    { field: 'statusText', title: 'Status', iconFn: this.dataService.iconForTestResult }
+    { field: 'statusText', title: 'Status', iconFn: this.dataService.iconForTestResult, iconTooltipFn: this.tooltipForTriggerResult }
   ]
   resourceColumns: TableColumnDefinition[] = [
     { field: 'name', title: 'Name' },
@@ -713,4 +713,15 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
     this.applyOrganisationFilter()
   }
 
+  tooltipForTriggerResult(result?: string): string {
+    let text: string
+    if (result == Constants.TEST_CASE_RESULT.SUCCESS) {
+      text = "Success"
+    } else if (result == Constants.TEST_CASE_RESULT.FAILURE) {
+      text = "Failure"
+    } else {
+      text = "Unknown"
+    }
+    return text
+  }  
 }

@@ -31,7 +31,7 @@
 						<td>{{statement.actorFull}}</td>
 						<td class="td-update">{{statement.updateTime}}</td>
 						<td class="td-min-centered"><app-test-status-icons [counters]="statement.counters!"></app-test-status-icons></td>
-						<td class="td-min-centered"><span><i [ngClass]="dataService.iconForTestResult(statement.status)"></i></span></td>
+						<td class="td-min-centered"><span><i containerClass="shortTooltip" [tooltip]="dataService.tooltipForTestResult(statement.status)" [ngClass]="dataService.iconForTestResult(statement.status)"></i></span></td>
 					</tr>
 				</tbody>
 			</table>

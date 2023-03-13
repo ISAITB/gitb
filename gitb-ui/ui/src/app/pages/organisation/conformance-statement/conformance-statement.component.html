@@ -30,7 +30,7 @@
 				</div>
 				<div class="row row-display-last oneLineDiv conformanceStatusDiv">
 					<div class="col-md-2"><strong>Status</strong></div>
-					<div class="col-md-10"><span><i [ngClass]="dataService.iconForTestResult(conformanceStatus)"></i></span></div>
+					<div class="col-md-10"><span containerClass="shortTooltip" [tooltip]="dataService.tooltipForTestResult(conformanceStatus)"><i [ngClass]="dataService.iconForTestResult(conformanceStatus)"></i></span></div>
 				</div>
 			</div>
 			<div class="panel-footer">
@@ -89,7 +89,7 @@
 											<button class="btn btn-primary" (click)="onTestSuiteSelect(testSuite); $event.stopPropagation();" containerClass="shortTooltip" tooltip="Run all" [delay]="Constants.TOOLTIP_DELAY"><i class="fa fa-play"></i></button>
 										</div>
 									</div>
-									<div class="testSuiteResult"><i [ngClass]="dataService.iconForTestResult(testSuite.result)"></i></div>
+									<div class="testSuiteResult"><i containerClass="shortTooltip" [tooltip]="dataService.tooltipForTestResult(conformanceStatus)" [ngClass]="dataService.iconForTestResult(testSuite.result)"></i></div>
 								</div>
 								<div class="collapsibleTestCaseDiv" [collapse]="!testSuite.expanded" [isAnimated]="true">
 									<div class="testCaseContainer">

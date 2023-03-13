@@ -103,7 +103,7 @@ export class SessionDashboardComponent implements OnInit {
       { field: 'endTime', title: 'End time', sortable: true, order: 'desc' },
       { field: 'organization', title: this.dataService.labelOrganisation(), sortable: true },
       { field: 'system', title: this.dataService.labelSystem(), sortable: true },
-      { field: 'result', title: 'Result', sortable: true, iconFn: this.dataService.iconForTestResult }
+      { field: 'result', title: 'Result', sortable: true, iconFn: this.dataService.iconForTestResult, iconTooltipFn: this.dataService.tooltipForTestResult }
     ]
     if (this.dataService.isSystemAdmin || (this.dataService.isCommunityAdmin && this.dataService.community!.domain == undefined)) {
       this.filterState.filters.push(Constants.FILTER_TYPE.DOMAIN)

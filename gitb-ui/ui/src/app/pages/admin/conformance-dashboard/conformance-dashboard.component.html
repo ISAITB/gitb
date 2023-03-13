@@ -42,7 +42,7 @@
                             <td>{{statement.actorName}}</td>
                             <td class="td-min">{{statement.updateTime}}</td>
                             <td class="td-min-centered"><app-test-status-icons [counters]="statement.counters!"></app-test-status-icons></td>
-                            <td class="td-min-centered"><span><i [ngClass]="dataService.iconForTestResult(statement.overallStatus)"></i></span></td>
+                            <td class="td-min-centered"><span><i containerClass="shortTooltip" [tooltip]="dataService.tooltipForTestResult(statement.overallStatus)" [ngClass]="dataService.iconForTestResult(statement.overallStatus)"></i></span></td>
                             <td class="td-min-centered">
                                 <button class="btn btn-default" (click)="onExportConformanceStatement(statement); $event.stopPropagation();" [pending]="statement.exportPending" [icon]="true"  containerClass="shortTooltip" tooltip="Export" [delay]="Constants.TOOLTIP_DELAY"><i class="fa fa-file-pdf-o"></i></button>
                             </td>

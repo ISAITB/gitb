@@ -581,6 +581,18 @@ export class DataService {
     return icon
   }
 
+  tooltipForTestResult(result?: string): string {
+    let text: string
+    if (result == Constants.TEST_CASE_RESULT.SUCCESS) {
+      text = "Success"
+    } else if (result == Constants.TEST_CASE_RESULT.FAILURE) {
+      text = "Failure"
+    } else {
+      text = "Incomplete"
+    }
+    return text
+  }
+
   asCsvString(text: any) {
     let textStr = ''
     if (text !== undefined) {

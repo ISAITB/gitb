@@ -1,5 +1,8 @@
 <div *ngIf="column.iconFn">
-    <i [ngClass]="column.iconFn!(item.data)"></i>
+    <ng-container [ngSwitch]="column.iconTooltipFn != undefined">
+        <i *ngSwitchCase="true" [ngClass]="column.iconFn!(item.data)" containerClass="shortTooltip" [tooltip]="column.iconTooltipFn!(item.data)"></i>
+        <i *ngSwitchDefault [ngClass]="column.iconFn!(item.data)"></i>
+    </ng-container>
 </div>
 <div *ngIf="!column.iconFn">
     <ng-container [ngSwitch]="item.boolean">

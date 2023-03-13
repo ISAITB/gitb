@@ -13,6 +13,7 @@ export class TestResultStatusDisplayComponent implements OnInit {
   @Input() message?: string
   @Input() result?: string
   iconToShow!: string
+  tooltipText!: string
   popoverClass!: string
   Constants = Constants
 
@@ -22,6 +23,7 @@ export class TestResultStatusDisplayComponent implements OnInit {
 
   ngOnInit(): void {
     this.iconToShow = this.dataService.iconForTestResult(this.result)
+    this.tooltipText = this.dataService.tooltipForTestResult(this.result)
     this.popoverClass = 'result-message-popover failure'
     if (this.result == Constants.TEST_CASE_RESULT.SUCCESS) {
       this.popoverClass = 'result-message-popover success'
