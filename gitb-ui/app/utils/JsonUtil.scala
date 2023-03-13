@@ -618,7 +618,7 @@ object JsonUtil {
       "sname" -> system.shortname,
       "fname" -> system.fullname,
       "description" -> (if(system.description.isDefined) system.description.get else JsNull),
-      "version" -> system.version,
+      "version" -> (if(system.version.isDefined) system.version.get else JsNull),
       "owner" -> system.owner
     )
     json

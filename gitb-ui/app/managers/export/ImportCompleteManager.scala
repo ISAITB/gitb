@@ -1838,10 +1838,10 @@ class ImportCompleteManager @Inject()(communityResourceManager: CommunityResourc
                 dbActions += processFromArchive(ImportItemType.System, exportedSystem, exportedSystem.getId, ctx,
                   ImportCallbacks.set(
                     (data: com.gitb.xml.export.System, item: ImportItem) => {
-                      systemManager.registerSystemInternal(models.Systems(0L, data.getShortName, data.getFullName, Option(data.getDescription), data.getVersion, Option(data.getApiKey), item.parentItem.get.targetKey.get.toLong), checkApiKeyUniqueness = true)
+                      systemManager.registerSystemInternal(models.Systems(0L, data.getShortName, data.getFullName, Option(data.getDescription), Option(data.getVersion), Option(data.getApiKey), item.parentItem.get.targetKey.get.toLong), checkApiKeyUniqueness = true)
                     },
                     (data: com.gitb.xml.export.System, targetKey: String, item: ImportItem) => {
-                      systemManager.updateSystemProfileInternal(None, targetCommunityId, item.targetKey.get.toLong, data.getShortName, data.getFullName, Option(data.getDescription), data.getVersion, Some(Option(data.getApiKey)),
+                      systemManager.updateSystemProfileInternal(None, targetCommunityId, item.targetKey.get.toLong, data.getShortName, data.getFullName, Option(data.getDescription), Option(data.getVersion), Some(Option(data.getApiKey)),
                         None, None, None, copySystemParameters = false, copyStatementParameters = false,
                         checkApiKeyUniqueness = true, ctx.onSuccessCalls
                       )

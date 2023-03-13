@@ -244,7 +244,7 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils, testResultManag
       DBIO.successful(())
   }
 
-  def updateSystemProfile(userId: Long, systemId: Long, sname: String, fname: String, description: Option[String], version: String, otherSystem: Option[Long], propertyValues: Option[List[SystemParameterValues]], propertyFiles: Option[Map[Long, FileInfo]], copySystemParameters: Boolean, copyStatementParameters: Boolean): Unit = {
+  def updateSystemProfile(userId: Long, systemId: Long, sname: String, fname: String, description: Option[String], version: Option[String], otherSystem: Option[Long], propertyValues: Option[List[SystemParameterValues]], propertyFiles: Option[Map[Long, FileInfo]], copySystemParameters: Boolean, copyStatementParameters: Boolean): Unit = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction = for {
       communityId <- getCommunityIdForSystemId(systemId)
@@ -255,7 +255,7 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils, testResultManag
     triggerHelper.triggersFor(result._1, systemId, Some(result._2))
   }
 
-  def updateSystemProfileInternal(userId: Option[Long], communityId: Option[Long], systemId: Long, sname: String, fname: String, description: Option[String], version: String, apiKey: Option[Option[String]], otherSystem: Option[Long], propertyValues: Option[List[SystemParameterValues]], propertyFiles: Option[Map[Long, FileInfo]], copySystemParameters: Boolean, copyStatementParameters: Boolean, checkApiKeyUniqueness: Boolean, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[List[Long]] = {
+  def updateSystemProfileInternal(userId: Option[Long], communityId: Option[Long], systemId: Long, sname: String, fname: String, description: Option[String], version: Option[String], apiKey: Option[Option[String]], otherSystem: Option[Long], propertyValues: Option[List[SystemParameterValues]], propertyFiles: Option[Map[Long, FileInfo]], copySystemParameters: Boolean, copyStatementParameters: Boolean, checkApiKeyUniqueness: Boolean, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[List[Long]] = {
     for {
       _ <- {
         val actions = new ListBuffer[DBIO[_]]()

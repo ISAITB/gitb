@@ -344,7 +344,7 @@
                     <xsd:element name="shortName" type="xsd:string"/>
                     <xsd:element name="fullName" type="xsd:string"/>
                     <xsd:element name="description" type="xsd:string" minOccurs="0"/>
-                    <xsd:element name="version" type="xsd:string"/>
+                    <xsd:element name="version" type="xsd:string" minOccurs="0"/>
                     <xsd:element name="apiKey" type="xsd:string" minOccurs="0"/>
                     <xsd:element name="propertyValues" type="SystemPropertyValues" minOccurs="0"/>
                     <xsd:element name="statements" type="ConformanceStatements" minOccurs="0"/>

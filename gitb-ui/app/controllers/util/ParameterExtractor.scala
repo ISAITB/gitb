@@ -415,19 +415,11 @@ object ParameterExtractor {
     }
   }
 
-  def extractSystemInfo(request:Request[AnyContent]):Systems = {
-    val sname:String = ParameterExtractor.requiredBodyParameter(request, Parameters.SYSTEM_SNAME)
-    val fname:String = ParameterExtractor.requiredBodyParameter(request, Parameters.SYSTEM_FNAME)
-    val descr:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.SYSTEM_DESC)
-    val version:String = ParameterExtractor.requiredBodyParameter(request, Parameters.SYSTEM_VERSION)
-    Systems(0L, sname, fname, descr, version, None, 0L)
-  }
-
   def extractSystemWithOrganizationInfo(paramMap:Option[Map[String, Seq[String]]]):Systems = {
-    val sname:String = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.SYSTEM_SNAME)
-    val fname:String = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.SYSTEM_FNAME)
-    val descr:Option[String] = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.SYSTEM_DESC)
-    val version:String = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.SYSTEM_VERSION)
+    val sname = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.SYSTEM_SNAME)
+    val fname = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.SYSTEM_FNAME)
+    val descr = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.SYSTEM_DESC)
+    val version = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.SYSTEM_VERSION)
     val owner:Long = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.ORGANIZATION_ID).toLong
     Systems(0L, sname, fname, descr, version, None, owner)
   }

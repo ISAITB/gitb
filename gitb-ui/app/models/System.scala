@@ -1,6 +1,6 @@
 package models
 
-case class Systems(id:Long, shortname:String, fullname:String, description:Option[String], version:String, apiKey: Option[String], owner:Long) {
+case class Systems(id:Long, shortname:String, fullname:String, description:Option[String], version:Option[String], apiKey: Option[String], owner:Long) {
 
   def withOrganizationId(id:Long): Systems = {
     Systems(this.id, this.shortname, this.fullname, this.description, this.version, this.apiKey, id)
@@ -12,14 +12,14 @@ case class Systems(id:Long, shortname:String, fullname:String, description:Optio
 
 }
 
-class System(_id: Long, _shortname: String, _fullname:String, _description:Option[String], _version:String, _apiKey: Option[String],
+class System(_id: Long, _shortname: String, _fullname:String, _description:Option[String], _version:Option[String], _apiKey: Option[String],
                _owner:Option[Organizations], _admins:Option[List[Users]])
 {
   var id:Long = _id
   var shortname:String = _shortname
   var fullname:String = _fullname
   var description:Option[String] = _description
-  var version:String = _version
+  var version:Option[String] = _version
   var apiKey: Option[String] = _apiKey
   var owner:Option[Organizations] = _owner
   var admins:Option[List[Users]] = _admins
