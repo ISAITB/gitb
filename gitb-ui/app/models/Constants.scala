@@ -40,6 +40,8 @@ object Constants {
   val PlaceholderOrganisation = "$ORGANISATION"
   val PlaceholderSystem = "$SYSTEM"
   val PlaceholderSpecification = "$SPECIFICATION"
+  val PlaceholderSpecificationGroup = "$SPECIFICATION_GROUP"
+  val PlaceholderSpecificationGroupOption = "$SPECIFICATION_GROUP_OPTION"
   val PlaceholderActor = "$ACTOR"
   val PlaceholderDomain = "$DOMAIN"
 

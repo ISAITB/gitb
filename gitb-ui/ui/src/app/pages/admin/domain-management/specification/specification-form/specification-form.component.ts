@@ -1,6 +1,9 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { DataService } from 'src/app/services/data.service';
+import { SpecificationService } from 'src/app/services/specification.service';
 import { Specification } from 'src/app/types/specification';
+import { SpecificationGroup } from 'src/app/types/specification-group';
 
 @Component({
   selector: 'app-specification-form',
@@ -8,10 +11,23 @@ import { Specification } from 'src/app/types/specification';
   styles: [
   ]
 })
-export class SpecificationFormComponent {
+export class SpecificationFormComponent implements OnInit {
 
   @Input() specification!: Partial<Specification>
+  groups: SpecificationGroup[] = []
 
-  constructor(public dataService: DataService) { }
+  constructor(
+    public dataService: DataService,
+    private route: ActivatedRoute,
+    private specificationService: SpecificationService
+  ) { }
+
+  ngOnInit(): void {
+    const domainId = Number(this.route.snapshot.paramMap.get('id'))
+    this.specificationService.getSpecificationGroups(domainId)
+    .subscribe((data) => {
+      this.groups = data
+    })
+  }
 
 }

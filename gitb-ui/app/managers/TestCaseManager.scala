@@ -139,7 +139,7 @@ class TestCaseManager @Inject() (testResultManager: TestResultManager, dbConfigP
 		}
 	}
 
-	def searchTestCases(domainIds: Option[List[Long]], specificationIds: Option[List[Long]], actorIds: Option[List[Long]], testSuiteIds: Option[List[Long]]): List[TestCases] = {
+	def searchTestCases(domainIds: Option[List[Long]], specificationIds: Option[List[Long]], specificationGroupIds: Option[List[Long]], actorIds: Option[List[Long]], testSuiteIds: Option[List[Long]]): List[TestCases] = {
 		val results = exec(
 			for {
 				allowedTestCasesByActor <- {
@@ -154,12 +154,14 @@ class TestCaseManager @Inject() (testResultManager: TestResultManager, dbConfigP
 						.join(PersistenceSchema.testSuiteHasTestCases).on(_.id === _.testcase)
 						.join(PersistenceSchema.specificationHasTestSuites).on(_._2.testsuite === _.testSuiteId)
 						.join(PersistenceSchema.testSuites).on(_._1._2.testsuite === _.id)
-						.filterOpt(domainIds)((q, ids) => q._2.domain inSet ids)
-						.filterOpt(specificationIds)((q, ids) => q._1._2.specId inSet ids)
-						.filterOpt(testSuiteIds)((q, ids) => q._2.id inSet ids)
-						.filterOpt(allowedTestCasesByActor)((q, ids) => q._1._1._1.id inSet ids)
-						.sortBy(_._1._1._1.shortname.asc)
-						.map(x => TestCaseManager.withoutDocumentation(x._1._1._1))
+						.join(PersistenceSchema.specifications).on(_._1._2.specId === _.id)
+						.filterOpt(domainIds)((q, ids) => q._1._2.domain inSet ids)
+						.filterOpt(specificationIds)((q, ids) => q._1._1._2.specId inSet ids)
+						.filterOpt(specificationGroupIds)((q, ids) => q._2.group inSet ids)
+						.filterOpt(testSuiteIds)((q, ids) => q._1._2.id inSet ids)
+						.filterOpt(allowedTestCasesByActor)((q, ids) => q._1._1._1._1.id inSet ids)
+						.sortBy(_._1._1._1._1.shortname.asc)
+						.map(x => TestCaseManager.withoutDocumentation(x._1._1._1._1))
 						.result
 						.map(_.toList)
 						.map(x => x.map(TestCaseManager.tupleToTestCase))

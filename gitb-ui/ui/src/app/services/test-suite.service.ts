@@ -14,13 +14,16 @@ export class TestSuiteService {
     private restService: RestService
   ) { }
 
-	searchTestSuites(domainIds: number[]|undefined, specificationIds: number[]|undefined, actorIds: number[]|undefined) {
+	searchTestSuites(domainIds: number[]|undefined, specificationIds: number[]|undefined, specificationGroupIds: number[]|undefined, actorIds: number[]|undefined) {
 		const data: any = {}
 		if (domainIds && domainIds.length > 0) {
 		  data["domain_ids"] = domainIds.join(',')
 		}
 		if (specificationIds && specificationIds.length > 0) {
 		  data["specification_ids"] = specificationIds.join(',')
+		}
+		if (specificationGroupIds != undefined && specificationGroupIds.length > 0) {
+			data['group_ids'] = specificationGroupIds.join(',')
 		}
 		if (actorIds && actorIds.length > 0) {
 			data["actor_ids"] = actorIds.join(',')
@@ -32,12 +35,15 @@ export class TestSuiteService {
 		})
 	}
 
-	searchTestSuitesInDomain(domainId: number, specificationIds: number[]|undefined, actorIds: number[]|undefined) {
+	searchTestSuitesInDomain(domainId: number, specificationIds: number[]|undefined, specificationGroupIds: number[]|undefined, actorIds: number[]|undefined) {
 		const data: any = {
 			domain_id: domainId
 		}
 		if (specificationIds && specificationIds.length > 0) {
 		  data["specification_ids"] = specificationIds.join(',')
+		}
+		if (specificationGroupIds != undefined && specificationGroupIds.length > 0) {
+			data['group_ids'] = specificationGroupIds.join(',')
 		}
 		if (actorIds && actorIds.length > 0) {
 			data["actor_ids"] = actorIds.join(',')

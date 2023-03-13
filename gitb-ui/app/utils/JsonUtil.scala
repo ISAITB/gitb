@@ -188,6 +188,36 @@ object JsonUtil {
     json
   }
 
+  def jsConformanceStatementItemInfo(info: (Boolean, Iterable[ConformanceStatementItem])): JsObject = {
+    Json.obj(
+      "existing" -> info._1,
+      "items" -> jsConformanceStatementItems(info._2)
+    )
+  }
+
+  def jsConformanceStatementItems(items: Iterable[ConformanceStatementItem]): JsArray = {
+    var json = Json.arr()
+    items.foreach { item =>
+      json = json.append(jsConformanceStatementItem(item))
+    }
+    json
+  }
+
+  def jsConformanceStatementItem(item: ConformanceStatementItem): JsObject = {
+    var json = Json.obj(
+      "id" -> item.id,
+      "itemType" -> item.itemType.id,
+      "name" -> item.name
+    )
+    if (item.description.nonEmpty && item.description.get.nonEmpty) {
+      json = json +("description" -> JsString(item.description.get))
+    }
+    if (item.items.nonEmpty) {
+      json = json +("items" -> jsConformanceStatementItems(item.items.get))
+    }
+    json
+  }
+
   def jsCommunityResourceSearchResult(list: Iterable[CommunityResources], resultCount: Int): JsObject = {
     val jsonResult = Json.obj(
       "data" -> jsCommunityResources(list),
@@ -741,7 +771,8 @@ object JsonUtil {
       "fname"   -> spec.fullname,
       "description" -> (if(spec.description.isDefined) spec.description.get else JsNull),
       "hidden" -> spec.hidden,
-      "domain"  -> spec.domain
+      "domain"  -> spec.domain,
+      "group" -> spec.group
     )
     if (withApiKeys && Configurations.AUTOMATION_API_ENABLED) {
       json = json.+("apiKey" -> JsString(spec.apiKey))
@@ -749,15 +780,33 @@ object JsonUtil {
     json
   }
 
+  def jsSpecificationGroup(group: SpecificationGroups): JsObject = {
+    Json.obj(
+      "id" -> group.id,
+      "sname" -> group.shortname,
+      "fname" -> group.fullname,
+      "description" -> (if (group.description.isDefined) group.description.get else JsNull),
+      "domain" -> group.domain
+    )
+  }
+
   /**
    * Converts a List of Specifications into Play!'s JSON notation
    * @param list List of Specifications to be converted
    * @return JsArray
    */
-  def jsSpecifications(list:List[Specifications], withApiKeys:Boolean = false):JsArray = {
+  def jsSpecifications(list:Iterable[Specifications], withApiKeys:Boolean = false):JsArray = {
     var json = Json.arr()
     list.foreach{ spec =>
       json = json.append(jsSpecification(spec, withApiKeys))
+    }
+    json
+  }
+
+  def jsSpecificationGroups(list: List[SpecificationGroups]): JsArray = {
+    var json = Json.arr()
+    list.foreach { group =>
+      json = json.append(jsSpecificationGroup(group))
     }
     json
   }
@@ -2260,6 +2309,8 @@ object JsonUtil {
       "domainName"    -> item.domainName,
       "specId"    -> item.specificationId,
       "specName"    -> item.specificationName,
+      "specGroupName"    -> (if(item.specificationGroupName.isDefined) item.specificationGroupName.get else JsNull),
+      "specGroupOptionName"    -> item.specificationGroupOptionName,
       "actorId"    -> item.actorId,
       "actorName"    -> item.actorName,
       "testSuiteName" -> item.testSuiteName,

@@ -5,6 +5,7 @@ export interface TestResultSearchCriteria {
     communityIds?: number[],
     domainIds?: number[],
     specIds?: number[],
+    specGroupIds?: number[],
     actorIds?: number[],
     testSuiteIds?: number[],
     testCaseIds?: number[],

@@ -11,6 +11,7 @@ object ExistingIds {
     map += (ImportItemType.Domain -> mutable.Set[String]())
     map += (ImportItemType.DomainParameter -> mutable.Set[String]())
     map += (ImportItemType.Specification -> mutable.Set[String]())
+    map += (ImportItemType.SpecificationGroup -> mutable.Set[String]())
     map += (ImportItemType.Actor -> mutable.Set[String]())
     map += (ImportItemType.TestSuite -> mutable.Set[String]())
     map += (ImportItemType.Endpoint -> mutable.Set[String]())

@@ -2,6 +2,7 @@ export interface TableColumnData {
 
     data: any,
     boolean: boolean,
-    class: string
+    class: string,
+    isHiddenFlag?: boolean
 
 }

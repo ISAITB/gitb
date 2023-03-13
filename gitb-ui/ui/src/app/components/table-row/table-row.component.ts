@@ -48,6 +48,7 @@ export class TableRowComponent implements OnInit {
       let columnDataItem: TableColumnData = {
         data: this.data[column.field],
         boolean: isBoolean(this.data[column.field]),
+        isHiddenFlag: column.isHiddenFlag,
         class: ''
       }
       if (this.classes) {

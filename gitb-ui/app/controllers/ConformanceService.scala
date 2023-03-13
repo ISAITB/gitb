@@ -65,9 +65,15 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
   def getSpecs = authorizedAction { request =>
     val ids = ParameterExtractor.extractLongIdsBodyParameter(request)
     val domainIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.DOMAIN_IDS)
+    val groupIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.GROUP_IDS)
     val withApiKeys = ParameterExtractor.optionalBooleanBodyParameter(request, Parameters.WITH_API_KEYS)
-    authorizationManager.canViewSpecifications(request, ids)
-    val result = conformanceManager.getSpecifications(ids, domainIds)
+    val withGroups = ParameterExtractor.optionalBooleanBodyParameter(request, Parameters.GROUPS).getOrElse(true)
+    if (domainIds.isDefined && domainIds.get.nonEmpty) {
+      authorizationManager.canViewDomains(request, domainIds)
+    } else {
+      authorizationManager.canViewSpecifications(request, ids)
+    }
+    val result = conformanceManager.getSpecifications(ids, domainIds, groupIds, withGroups)
     val json = JsonUtil.jsSpecifications(result, withApiKeys.getOrElse(false)).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
@@ -88,8 +94,9 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
   def searchActors() = authorizedAction { request =>
     authorizationManager.canViewActors(request, None)
     val domainIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.DOMAIN_IDS)
+    val groupIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.GROUP_IDS)
     val specificationIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.SPEC_IDS)
-    val result = conformanceManager.searchActors(domainIds, specificationIds)
+    val result = conformanceManager.searchActors(domainIds, specificationIds, groupIds)
     val json = JsonUtil.jsActorsNonCase(result).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
@@ -97,10 +104,18 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
   def searchActorsInDomain() = authorizedAction { request =>
     val domainId = ParameterExtractor.requiredBodyParameter(request, Parameters.DOMAIN_ID).toLong
     authorizationManager.canViewActorsByDomainId(request, domainId)
+    val groupIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.GROUP_IDS)
     val specificationIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.SPEC_IDS)
-    val result = conformanceManager.searchActors(Some(List(domainId)), specificationIds)
+    val result = conformanceManager.searchActors(Some(List(domainId)), specificationIds, groupIds)
     val json = JsonUtil.jsActorsNonCase(result).toString()
     ResponseConstructor.constructJsonResponse(json)
+  }
+
+  def getAvailableConformanceStatements(systemId: Long) = authorizedAction { request =>
+    authorizationManager.canManageSystem(request, systemId)
+    val domainId = ParameterExtractor.optionalLongQueryParameter(request, Parameters.DOMAIN_ID)
+    val result = conformanceManager.getAvailableConformanceStatements(domainId, systemId)
+    ResponseConstructor.constructJsonResponse(JsonUtil.jsConformanceStatementItemInfo(result).toString)
   }
 
   /**
@@ -108,7 +123,8 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
    */
   def getDomainSpecs(domain_id: Long) = authorizedAction { request =>
     authorizationManager.canViewSpecificationsByDomainId(request, domain_id)
-    val specs = conformanceManager.getSpecifications(domain_id)
+    val withGroups = ParameterExtractor.optionalBooleanQueryParameter(request, Parameters.GROUPS).getOrElse(true)
+    val specs = conformanceManager.getSpecifications(domain_id, withGroups)
     val json = JsonUtil.jsSpecifications(specs).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
@@ -465,6 +481,7 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
     val fullResults = ParameterExtractor.requiredBodyParameter(request, Parameters.FULL).toBoolean
     val domainIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.DOMAIN_IDS)
     val specIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.SPEC_IDS)
+    val specGroupIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.GROUP_IDS)
     val organizationIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.ORG_IDS)
     val systemIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.SYSTEM_IDS)
     val actorIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.ACTOR_IDS)
@@ -478,12 +495,12 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
     val sortOrder = ParameterExtractor.optionalBodyParameter(request, Parameters.SORT_ORDER)
     var results: List[ConformanceStatementFull] = null
     if (fullResults) {
-      results = conformanceManager.getConformanceStatementsFull(domainIds, specIds, actorIds,
+      results = conformanceManager.getConformanceStatementsFull(domainIds, specIds, specGroupIds, actorIds,
         communityIds, organizationIds, systemIds, orgParameters, sysParameters,
         status, updateTimeBegin, updateTimeEnd,
         sortColumn, sortOrder)
     } else {
-      results = conformanceManager.getConformanceStatements(domainIds, specIds, actorIds,
+      results = conformanceManager.getConformanceStatements(domainIds, specIds, specGroupIds, actorIds,
         communityIds, organizationIds, systemIds, orgParameters, sysParameters,
         status, updateTimeBegin, updateTimeEnd,
         sortColumn, sortOrder)

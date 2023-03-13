@@ -181,6 +181,8 @@
             <xsd:enumeration value="ENDPOINT"/>
             <xsd:enumeration value="ORGANISATION"/>
             <xsd:enumeration value="SYSTEM"/>
+            <xsd:enumeration value="SPECIFICATION_IN_GROUP"/>
+            <xsd:enumeration value="SPECIFICATION_GROUP"/>
         </xsd:restriction>
     </xsd:simpleType>
     <xsd:complexType name="Organisations">
@@ -375,6 +377,7 @@
                     <xsd:element name="specifications" type="Specifications" minOccurs="0"/>
                     <xsd:element name="parameters" type="DomainParameters" minOccurs="0"/>
                     <xsd:element name="sharedTestSuites" type="TestSuites" minOccurs="0"/>
+                    <xsd:element name="specificationGroups" type="SpecificationGroups" minOccurs="0"/>
                 </xsd:sequence>
             </xsd:extension>
         </xsd:complexContent>
@@ -415,6 +418,23 @@
                     <xsd:element name="sharedTestSuites" type="xsd:IDREFS" minOccurs="0"/>
                 </xsd:sequence>
                 <xsd:attribute name="hidden" type="xsd:boolean" default="false"/>
+                <xsd:attribute name="group" type="xsd:IDREF"/>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+    <xsd:complexType name="SpecificationGroups">
+        <xsd:sequence>
+            <xsd:element name="group" type="SpecificationGroup" maxOccurs="unbounded"/>
+        </xsd:sequence>
+    </xsd:complexType>
+    <xsd:complexType name="SpecificationGroup">
+        <xsd:complexContent>
+            <xsd:extension base="ExportType">
+                <xsd:sequence>
+                    <xsd:element name="shortName" type="xsd:string"/>
+                    <xsd:element name="fullName" type="xsd:string"/>
+                    <xsd:element name="description" type="xsd:string" minOccurs="0"/>
+                </xsd:sequence>
             </xsd:extension>
         </xsd:complexContent>
     </xsd:complexType>

@@ -50,7 +50,7 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
     { field: 'name', title: 'Name' },
     { field: 'description', title: 'Description' },
     { field: 'default', title: 'Default' },
-    { field: 'hidden', title: 'Hidden' }
+    { field: 'hidden', title: '', atEnd: true, isHiddenFlag: true, headerClass: 'th-min-centered' }
   ]
   savePending = false
   deletePending = false
@@ -86,9 +86,13 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
   ngOnInit(): void {
     this.domainId = Number(this.route.snapshot.paramMap.get('id'))
     this.specificationId = Number(this.route.snapshot.paramMap.get('spec_id'))
-		this.conformanceService.getSpecificationsWithIds([this.specificationId], undefined, true)
+		this.conformanceService.getSpecificationsWithIds([this.specificationId], undefined, undefined, true, false)
 		.subscribe((data) => {
       this.specification = data[0]
+      if (!this.specification.group) {
+        // Set to undefined to make sure the "undefined" option in the group select is pre-selected.
+        this.specification.group = undefined
+      }
     })
   }
 
@@ -247,7 +251,7 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
 
 	saveSpecificationChanges() {
     this.savePending = true
-		this.specificationService.updateSpecification(this.specificationId, this.specification.sname!, this.specification.fname!, this.specification.description, this.specification.hidden)
+		this.specificationService.updateSpecification(this.specificationId, this.specification.sname!, this.specification.fname!, this.specification.description, this.specification.hidden, this.specification.group)
 		.subscribe(() => {
 			this.popupService.success(this.dataService.labelSpecification()+' updated.')
     }).add(() => {

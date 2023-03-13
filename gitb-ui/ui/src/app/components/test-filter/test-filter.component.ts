@@ -28,6 +28,8 @@ import { ReportService } from 'src/app/services/report.service';
 import { CommunityService } from 'src/app/services/community.service';
 import { OrganisationService } from 'src/app/services/organisation.service';
 import { SystemService } from 'src/app/services/system.service';
+import { SpecificationGroup } from 'src/app/types/specification-group';
+import { SpecificationService } from 'src/app/services/specification.service';
 
 @Component({
   selector: 'app-test-filter',
@@ -41,6 +43,7 @@ export class TestFilterComponent implements OnInit {
 
   @Input() loadDomainsFn?: () => Observable<Domain[]>
   @Input() loadSpecificationsFn?: () => Observable<Specification[]>
+  @Input() loadSpecificationGroupsFn?: () => Observable<SpecificationGroup[]>
   @Input() loadActorsFn?: () => Observable<Actor[]>
   @Input() loadTestSuitesFn?: () => Observable<TestSuiteWithTestCases[]>
   @Input() loadTestCasesFn?: () => Observable<TestCase[]>
@@ -88,7 +91,8 @@ export class TestFilterComponent implements OnInit {
     private reportService: ReportService,
     private communityService: CommunityService,
     private organisationService: OrganisationService,
-    private systemService: SystemService
+    private systemService: SystemService,
+    private specificationService: SpecificationService
   ) { }
 
   ngOnInit(): void {
@@ -102,6 +106,7 @@ export class TestFilterComponent implements OnInit {
     this.names[Constants.FILTER_TYPE.RESULT] = 'Result'
     this.names[Constants.FILTER_TYPE.SESSION] = 'Session'
     this.names[Constants.FILTER_TYPE.SPECIFICATION] = this.dataService.labelSpecification()
+    this.names[Constants.FILTER_TYPE.SPECIFICATION_GROUP] = this.dataService.labelSpecificationGroup()
     this.names[Constants.FILTER_TYPE.START_TIME] = 'Start time'
     this.names[Constants.FILTER_TYPE.SYSTEM] = this.dataService.labelSystem()
     this.names[Constants.FILTER_TYPE.SYSTEM_PROPERTY] = this.dataService.labelSystem() + ' properties'
@@ -122,6 +127,7 @@ export class TestFilterComponent implements OnInit {
     this.setupDefaultLoadFunctions()
     this.initialiseIfDefined(Constants.FILTER_TYPE.DOMAIN, { textField: 'sname', loader: this.loadDomainsFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter() })
     this.initialiseIfDefined(Constants.FILTER_TYPE.SPECIFICATION, { textField: 'sname', loader: this.loadSpecificationsFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter() })
+    this.initialiseIfDefined(Constants.FILTER_TYPE.SPECIFICATION_GROUP, { textField: 'sname', loader: this.loadSpecificationGroupsFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter() })
     this.initialiseIfDefined(Constants.FILTER_TYPE.ACTOR, { textField: 'actorId', loader: this.loadActorsFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter() })
     this.initialiseIfDefined(Constants.FILTER_TYPE.TEST_SUITE, { textField: 'sname', loader: this.loadTestSuitesFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter() })
     this.initialiseIfDefined(Constants.FILTER_TYPE.TEST_CASE, { textField: 'sname', loader: this.loadTestCasesFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter() })
@@ -140,27 +146,36 @@ export class TestFilterComponent implements OnInit {
     if (this.filterDefined(Constants.FILTER_TYPE.SPECIFICATION) && this.loadSpecificationsFn == undefined) {
       this.loadSpecificationsFn = (() => {
         if (this.dataService.isSystemAdmin || this.dataService.community!.domainId == undefined) {
-          return this.conformanceService.getSpecificationsWithIds(undefined, this.filterValue(Constants.FILTER_TYPE.DOMAIN))
+          return this.conformanceService.getSpecificationsWithIds(undefined, this.filterValue(Constants.FILTER_TYPE.DOMAIN), this.filterValue(Constants.FILTER_TYPE.SPECIFICATION_GROUP))
         } else {
-          return this.conformanceService.getSpecifications(this.dataService.community!.domainId)
+          return this.conformanceService.getSpecificationsWithIds(undefined, [this.dataService.community!.domainId], this.filterValue(Constants.FILTER_TYPE.SPECIFICATION_GROUP))
         }
       }).bind(this)
     }
+    if (this.filterDefined(Constants.FILTER_TYPE.SPECIFICATION_GROUP) && this.loadSpecificationGroupsFn == undefined) {
+      this.loadSpecificationGroupsFn = (() => {
+        if (this.dataService.isSystemAdmin || this.dataService.community!.domainId == undefined) {
+          return this.specificationService.getSpecificationGroupsOfDomains(this.filterValue(Constants.FILTER_TYPE.DOMAIN))
+        } else {
+          return this.specificationService.getSpecificationGroups(this.dataService.community!.domainId)
+        }
+      }).bind(this)
+    }    
     if (this.filterDefined(Constants.FILTER_TYPE.ACTOR) && this.loadActorsFn == undefined) {
       this.loadActorsFn = (() => {
         if (this.dataService.isSystemAdmin || this.dataService.community!.domainId == undefined) {
-          return this.conformanceService.searchActors(this.filterValue(Constants.FILTER_TYPE.DOMAIN), this.filterValue(Constants.FILTER_TYPE.SPECIFICATION))
+          return this.conformanceService.searchActors(this.filterValue(Constants.FILTER_TYPE.DOMAIN), this.filterValue(Constants.FILTER_TYPE.SPECIFICATION), this.filterValue(Constants.FILTER_TYPE.SPECIFICATION_GROUP))
         } else {
-          return this.conformanceService.searchActorsInDomain(this.dataService.community!.domainId, this.filterValue(Constants.FILTER_TYPE.SPECIFICATION))
+          return this.conformanceService.searchActorsInDomain(this.dataService.community!.domainId, this.filterValue(Constants.FILTER_TYPE.SPECIFICATION), this.filterValue(Constants.FILTER_TYPE.SPECIFICATION_GROUP))
         }
       }).bind(this)
     }
     if (this.filterDefined(Constants.FILTER_TYPE.TEST_SUITE) && this.loadTestSuitesFn == undefined) {
       this.loadTestSuitesFn = (() => {
         if (this.dataService.isSystemAdmin || this.dataService.community!.domainId == undefined) {
-          return this.testSuiteService.searchTestSuites(this.filterValue(Constants.FILTER_TYPE.DOMAIN), this.filterValue(Constants.FILTER_TYPE.SPECIFICATION), this.filterValue(Constants.FILTER_TYPE.ACTOR))
+          return this.testSuiteService.searchTestSuites(this.filterValue(Constants.FILTER_TYPE.DOMAIN), this.filterValue(Constants.FILTER_TYPE.SPECIFICATION), this.filterValue(Constants.FILTER_TYPE.SPECIFICATION_GROUP), this.filterValue(Constants.FILTER_TYPE.ACTOR))
         } else {
-          return this.testSuiteService.searchTestSuitesInDomain(this.dataService.community!.domainId, this.filterValue(Constants.FILTER_TYPE.SPECIFICATION), this.filterValue(Constants.FILTER_TYPE.ACTOR))
+          return this.testSuiteService.searchTestSuitesInDomain(this.dataService.community!.domainId, this.filterValue(Constants.FILTER_TYPE.SPECIFICATION), this.filterValue(Constants.FILTER_TYPE.SPECIFICATION_GROUP), this.filterValue(Constants.FILTER_TYPE.ACTOR))
         }
 
       }).bind(this)
@@ -168,9 +183,9 @@ export class TestFilterComponent implements OnInit {
     if (this.filterDefined(Constants.FILTER_TYPE.TEST_CASE) && this.loadTestCasesFn == undefined) {
       this.loadTestCasesFn = (() => {
         if (this.dataService.isSystemAdmin || this.dataService.community!.domainId == undefined) {
-          return this.reportService.searchTestCases(this.filterValue(Constants.FILTER_TYPE.DOMAIN), this.filterValue(Constants.FILTER_TYPE.SPECIFICATION), this.filterValue(Constants.FILTER_TYPE.ACTOR), this.filterValue(Constants.FILTER_TYPE.TEST_SUITE))
+          return this.reportService.searchTestCases(this.filterValue(Constants.FILTER_TYPE.DOMAIN), this.filterValue(Constants.FILTER_TYPE.SPECIFICATION), this.filterValue(Constants.FILTER_TYPE.SPECIFICATION_GROUP), this.filterValue(Constants.FILTER_TYPE.ACTOR), this.filterValue(Constants.FILTER_TYPE.TEST_SUITE))
         } else {
-          return this.reportService.searchTestCasesInDomain(this.dataService.community!.domainId, this.filterValue(Constants.FILTER_TYPE.SPECIFICATION), this.filterValue(Constants.FILTER_TYPE.ACTOR), this.filterValue(Constants.FILTER_TYPE.TEST_SUITE))
+          return this.reportService.searchTestCasesInDomain(this.dataService.community!.domainId, this.filterValue(Constants.FILTER_TYPE.SPECIFICATION), this.filterValue(Constants.FILTER_TYPE.SPECIFICATION_GROUP), this.filterValue(Constants.FILTER_TYPE.ACTOR), this.filterValue(Constants.FILTER_TYPE.TEST_SUITE))
         }
       }).bind(this)
     }
@@ -211,9 +226,30 @@ export class TestFilterComponent implements OnInit {
 
   domainsChanged(selected: MultiSelectItem[], skipApplyFilters?: boolean) {
     this.filterValues[Constants.FILTER_TYPE.DOMAIN] = selected
-    if (selected.length > 0 && this.filterDefined(Constants.FILTER_TYPE.SPECIFICATION)) {
+    if (selected.length > 0 && (this.filterDefined(Constants.FILTER_TYPE.SPECIFICATION) || this.filterDefined(Constants.FILTER_TYPE.SPECIFICATION_GROUP))) {
       const ids = this.dataService.asIdSet(selected)
-      const remaining = filter(<Specification[]>this.filterValues[Constants.FILTER_TYPE.SPECIFICATION], (s) => { return ids[s.domain] })
+      if (this.filterDefined(Constants.FILTER_TYPE.SPECIFICATION_GROUP)) {
+        const remaining = filter(<SpecificationGroup[]>this.filterValues[Constants.FILTER_TYPE.SPECIFICATION_GROUP], (s) => { return ids[s.domain] })
+        this.filterDropdownSettings[Constants.FILTER_TYPE.SPECIFICATION_GROUP].replaceSelectedItems!.emit(remaining)
+        // Don't update specifications as this will done via the current function.
+        this.specificationGroupsChanged(remaining, true, true) 
+      }
+      if (this.filterDefined(Constants.FILTER_TYPE.SPECIFICATION)) {
+        const remaining = filter(<Specification[]>this.filterValues[Constants.FILTER_TYPE.SPECIFICATION], (s) => { return ids[s.domain] })
+        this.filterDropdownSettings[Constants.FILTER_TYPE.SPECIFICATION].replaceSelectedItems!.emit(remaining)
+        this.specificationsChanged(remaining, true)
+      }
+    }
+    if (!skipApplyFilters) {
+      this.applyFilters()
+    }
+  }
+
+  specificationGroupsChanged(selected: MultiSelectItem[], skipApplyFilters?: boolean, skipUpdateSpecifications?: boolean) {
+    this.filterValues[Constants.FILTER_TYPE.SPECIFICATION_GROUP] = selected
+    if (selected.length > 0 && this.filterDefined(Constants.FILTER_TYPE.SPECIFICATION) && !skipUpdateSpecifications) {
+      const ids = this.dataService.asIdSet(selected)
+      const remaining = filter(<Specification[]>this.filterValues[Constants.FILTER_TYPE.SPECIFICATION], (s) => { return s.group == undefined || ids[s.group] })
       this.filterDropdownSettings[Constants.FILTER_TYPE.SPECIFICATION].replaceSelectedItems!.emit(remaining)
       this.specificationsChanged(remaining, true)
     }
@@ -221,6 +257,7 @@ export class TestFilterComponent implements OnInit {
       this.applyFilters()
     }
   }
+
   specificationsChanged(selected: MultiSelectItem[], skipApplyFilters?: boolean) {
     this.filterValues[Constants.FILTER_TYPE.SPECIFICATION] = selected
     if (selected.length > 0 && (this.filterDefined(Constants.FILTER_TYPE.ACTOR) || this.filterDefined(Constants.FILTER_TYPE.TEST_SUITE))) {
@@ -369,6 +406,7 @@ export class TestFilterComponent implements OnInit {
     const filters: { [key: string]: any } = {}
     filters[Constants.FILTER_TYPE.DOMAIN] = this.filterValue(Constants.FILTER_TYPE.DOMAIN)
     filters[Constants.FILTER_TYPE.SPECIFICATION] = this.filterValue(Constants.FILTER_TYPE.SPECIFICATION)
+    filters[Constants.FILTER_TYPE.SPECIFICATION_GROUP] = this.filterValue(Constants.FILTER_TYPE.SPECIFICATION_GROUP)
     filters[Constants.FILTER_TYPE.ACTOR] = this.filterValue(Constants.FILTER_TYPE.ACTOR)
     filters[Constants.FILTER_TYPE.TEST_SUITE] = this.filterValue(Constants.FILTER_TYPE.TEST_SUITE)
     filters[Constants.FILTER_TYPE.TEST_CASE] = this.filterValue(Constants.FILTER_TYPE.TEST_CASE)
@@ -442,6 +480,7 @@ export class TestFilterComponent implements OnInit {
     this.showFiltering = false
     this.clearFilter(Constants.FILTER_TYPE.DOMAIN)
     this.clearFilter(Constants.FILTER_TYPE.SPECIFICATION)
+    this.clearFilter(Constants.FILTER_TYPE.SPECIFICATION_GROUP)
     this.clearFilter(Constants.FILTER_TYPE.ACTOR)
     this.clearFilter(Constants.FILTER_TYPE.TEST_SUITE)
     this.clearFilter(Constants.FILTER_TYPE.TEST_CASE)

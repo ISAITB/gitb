@@ -7,5 +7,6 @@ export interface TableColumnDefinition {
     sortable?: boolean,
     order?: 'asc'|'desc'|null
     atEnd?: boolean
+    isHiddenFlag?: boolean
 
 }

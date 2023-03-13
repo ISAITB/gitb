@@ -27,7 +27,7 @@ export class ConformanceDashboardComponent implements OnInit {
   exportPending = false
   dataStatus = {status: Constants.STATUS.PENDING}
   filterState: FilterState = {
-    filters: [ Constants.FILTER_TYPE.SPECIFICATION, Constants.FILTER_TYPE.ACTOR, Constants.FILTER_TYPE.ORGANISATION, Constants.FILTER_TYPE.SYSTEM, Constants.FILTER_TYPE.ORGANISATION_PROPERTY, Constants.FILTER_TYPE.SYSTEM_PROPERTY, Constants.FILTER_TYPE.RESULT, Constants.FILTER_TYPE.END_TIME ],
+    filters: [ Constants.FILTER_TYPE.SPECIFICATION, Constants.FILTER_TYPE.SPECIFICATION_GROUP, Constants.FILTER_TYPE.ACTOR, Constants.FILTER_TYPE.ORGANISATION, Constants.FILTER_TYPE.SYSTEM, Constants.FILTER_TYPE.ORGANISATION_PROPERTY, Constants.FILTER_TYPE.SYSTEM_PROPERTY, Constants.FILTER_TYPE.RESULT, Constants.FILTER_TYPE.END_TIME ],
     updatePending: false
   }
   communityId?: number
@@ -98,6 +98,7 @@ export class ConformanceDashboardComponent implements OnInit {
         searchCriteria.domainIds = filterData[Constants.FILTER_TYPE.DOMAIN]
       }
       searchCriteria.specIds = filterData[Constants.FILTER_TYPE.SPECIFICATION]
+      searchCriteria.specGroupIds = filterData[Constants.FILTER_TYPE.SPECIFICATION_GROUP]
       searchCriteria.actorIds = filterData[Constants.FILTER_TYPE.ACTOR]
       searchCriteria.organisationIds = filterData[Constants.FILTER_TYPE.ORGANISATION]
       searchCriteria.systemIds = filterData[Constants.FILTER_TYPE.SYSTEM]

@@ -95,6 +95,7 @@ object ImportTargets {
         case ImportItemType.Domain => targets.hasDomain = true
         case ImportItemType.DomainParameter => targets.hasDomainParameters = true
         case ImportItemType.Specification => targets.hasSpecifications = true
+        case ImportItemType.SpecificationGroup => targets.hasSpecifications = true
         case ImportItemType.TestSuite => targets.hasTestSuites = true
         case ImportItemType.Actor => targets.hasActors = true
         case ImportItemType.Endpoint => targets.hasEndpoints = true

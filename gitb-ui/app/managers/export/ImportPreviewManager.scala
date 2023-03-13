@@ -73,6 +73,14 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
     map
   }
 
+  private def specificationKey(specName: String, groupName: Option[String]): String = {
+    if (groupName.nonEmpty) {
+      groupName.get + "||" + specName
+    } else {
+      specName
+    }
+  }
+
   private def previewDomainImportInternal(exportedDomain: com.gitb.xml.export.Domain, targetDomainId: Option[Long]): (DomainImportInfo, ImportItem) = {
     var targetDomain: Option[models.Domain] = None
     if (targetDomainId.isDefined) {
@@ -91,6 +99,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
     information back to the community preview processing.
      */
     val targetSpecificationMap = mutable.Map[String, models.Specifications]()
+    val targetSpecificationGroupMap = mutable.Map[String, models.SpecificationGroups]()
     val targetSpecificationIdMap = mutable.Map[Long, models.Specifications]()
     val targetDomainTestSuiteMap = mutable.Map[String, models.TestSuites]()
     val targetSpecificationTestSuiteMap = mutable.Map[Long, mutable.Map[String, models.TestSuites]]()
@@ -112,12 +121,19 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
     var importItemDomain: ImportItem = null
     if (targetDomain.isDefined) {
       // Load data.
-      exec(PersistenceSchema.specifications
+      exec(PersistenceSchema.specificationGroups
         .filter(_.domain === targetDomain.get.id)
         .result
-      ).map(x => {
-        targetSpecificationMap += (x.shortname -> x)
-        targetSpecificationIdMap += (x.id -> x)
+      ).foreach(x => {
+        targetSpecificationGroupMap += (x.shortname -> x)
+      })
+      exec(PersistenceSchema.specifications
+        .joinLeft(PersistenceSchema.specificationGroups).on(_.group === _.id)
+        .filter(_._1.domain === targetDomain.get.id)
+        .result
+      ).foreach(x => {
+        targetSpecificationMap += (specificationKey(x._1.shortname, x._2.map(_.shortname)) -> x._1)
+        targetSpecificationIdMap += (x._1.id -> x._1)
       })
       if (targetSpecificationMap.nonEmpty) {
         exportManager.loadSpecificationTestSuiteMap(targetDomain.get.id).foreach { x =>
@@ -189,17 +205,38 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
     }
     // Specifications.
     if (importTargets.hasSpecifications) {
+      val groupImportItemMap = new mutable.HashMap[String, ImportItem]()
+      // Groups.
+      exportedDomain.getSpecificationGroups.getGroup.asScala.foreach { exportedGroup =>
+        var targetGroup: Option[models.SpecificationGroups] = None
+        var importItemGroup: ImportItem = null
+        if (targetDomain.isDefined) {
+          targetGroup = targetSpecificationGroupMap.remove(exportedGroup.getShortName)
+        }
+        if (targetGroup.isDefined) {
+          importItemGroup = new ImportItem(Some(targetGroup.get.fullname), ImportItemType.SpecificationGroup, ImportItemMatch.Both, Some(targetGroup.get.id.toString), Some(exportedGroup.getId), importItemDomain)
+        } else {
+          importItemGroup = new ImportItem(Some(exportedGroup.getFullName), ImportItemType.SpecificationGroup, ImportItemMatch.ArchiveOnly, None, Some(exportedGroup.getId), importItemDomain)
+        }
+        groupImportItemMap += (exportedGroup.getId -> importItemGroup)
+      }
+      // Specifications.
       exportedDomain.getSpecifications.getSpecification.asScala.foreach { exportedSpecification =>
         var targetSpecification: Option[models.Specifications] = None
         var importItemSpecification: ImportItem = null
         if (targetDomain.isDefined) {
-          targetSpecification = targetSpecificationMap.remove(exportedSpecification.getShortName)
+          val key = specificationKey(exportedSpecification.getShortName, Option(exportedSpecification.getGroup).map(_.getShortName))
+          targetSpecification = targetSpecificationMap.remove(key)
+        }
+        var parentItem = importItemDomain
+        if (exportedSpecification.getGroup != null) {
+          parentItem = groupImportItemMap(exportedSpecification.getGroup.getId)
         }
         if (targetSpecification.isDefined) {
-          importItemSpecification = new ImportItem(Some(targetSpecification.get.fullname), ImportItemType.Specification, ImportItemMatch.Both, Some(targetSpecification.get.id.toString), Some(exportedSpecification.getId), importItemDomain)
+          importItemSpecification = new ImportItem(Some(targetSpecification.get.fullname), ImportItemType.Specification, ImportItemMatch.Both, Some(targetSpecification.get.id.toString), Some(exportedSpecification.getId), parentItem)
           importItemMapSpecification += (targetSpecification.get.id.toString -> importItemSpecification)
         } else {
-          importItemSpecification = new ImportItem(Some(exportedSpecification.getFullName), ImportItemType.Specification, ImportItemMatch.ArchiveOnly, None, Some(exportedSpecification.getId), importItemDomain)
+          importItemSpecification = new ImportItem(Some(exportedSpecification.getFullName), ImportItemType.Specification, ImportItemMatch.ArchiveOnly, None, Some(exportedSpecification.getId), parentItem)
         }
         // Test suites.
         if (exportedSpecification.getTestSuites != null) {
@@ -284,9 +321,11 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
     targetDomainParametersMap.values.foreach { parameter =>
       new ImportItem(Some(parameter.name), ImportItemType.DomainParameter, ImportItemMatch.DBOnly, Some(parameter.id.toString), None, importItemDomain)
     }
-    // Mark items not found for deletion.
     targetDomainTestSuiteMap.values.foreach { testSuite =>
       new ImportItem(Some(testSuite.fullname), ImportItemType.TestSuite, ImportItemMatch.DBOnly, Some(testSuite.id.toString), None, importItemDomain)
+    }
+    targetSpecificationGroupMap.values.foreach { group =>
+      new ImportItem(Some(group.fullname), ImportItemType.SpecificationGroup, ImportItemMatch.DBOnly, Some(group.id.toString), None, importItemDomain)
     }
     targetSpecificationMap.values.foreach { specification =>
       val item = new ImportItem(Some(specification.fullname), ImportItemType.Specification, ImportItemMatch.DBOnly, Some(specification.id.toString), None, importItemDomain)

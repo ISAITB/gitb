@@ -31,7 +31,7 @@ class ErrorHandler @Inject() (systemConfigurationManager: SystemConfigurationMan
     val errorIdentifier = RandomStringUtils.randomAlphabetic(10).toUpperCase()
     logger.error("Error ["+errorIdentifier+"]", ex)
     if (errorAsJson) {
-      val result = ResponseConstructor.constructServerError("Unexpected error", ex.getMessage, Some(errorIdentifier))
+      val result = ResponseConstructor.constructServerError("Unexpected error", "An unexpected error occurred.", Some(errorIdentifier))
       Future.successful(result)
     } else {
       var legalNoticeContent = ""

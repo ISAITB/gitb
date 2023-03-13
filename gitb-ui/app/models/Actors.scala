@@ -2,10 +2,6 @@ package models
 
 case class Actors(id: Long, actorId:String, name: String, description:Option[String], default: Option[Boolean], hidden: Boolean, displayOrder: Option[Short], apiKey: String, domain:Long) {
 
-  def withDomainId(domain:Long): Actors = {
-    Actors(this.id, this.actorId, this.name, this.description, this.default, this.hidden, this.displayOrder, this.apiKey, domain)
-  }
-
 	def withApiKey(apiKey: String): Actors = {
 		Actors(this.id, this.actorId, this.name, this.description, this.default, this.hidden, this.displayOrder, apiKey, this.domain)
 	}

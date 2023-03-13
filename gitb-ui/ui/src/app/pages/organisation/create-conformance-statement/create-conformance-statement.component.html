@@ -1,61 +1,57 @@
 <div class="page conformance create">
     <div class="panel panel-default">
       <div class="panel-heading">
-        <h4>Create conformance statement</h4>
+        <h4>Create conformance statements</h4>
       </div>
       <div class="panel-body">
-        <app-alert-display [alerts]="alerts" [outerClass]="''"></app-alert-display>
-        <h5 class="conformanceWizardHeader">{{headerText}}</h5>
-        <div *ngIf="showDomains">
-          <div id="conformanceWizardTable"
-            table-directive [columns]="tableColumns"
-            [data]="domains"
-            [noDataMessage]="'There are no '+dataService.labelDomainsLower()+' available.'"
-            [loadingStatus]="domainsDataStatus"
-            [allowSelect]="true"
-            (onSelect)="onDomainSelect($event)"></div>
+        <div [ngSwitch]="dataStatus.status">
+          <div class="pending-container" *ngSwitchCase="Constants.STATUS.PENDING">
+            <div class="pending-icon"><app-pending-block [pending]="true"></app-pending-block></div>
+            <div class="pending-message">Loading available conformance statements...</div>
+          </div>
+          <ng-container *ngSwitchDefault>
+            <ng-container [ngSwitch]="items.length == 0">
+              <div *ngSwitchCase="true">
+                <div class="bg-info div-rounded div-padded" [ngSwitch]="hasOtherStatements">
+                  <span *ngSwitchCase="true">All available conformance statements are already created.</span>
+                  <span *ngSwitchDefault>There are currently no conformance statements available to create.</span>
+                </div>
+              </div>
+              <ng-container *ngSwitchDefault>
+                <div class="control-container btn-toolbar">
+                  <app-text-filter name="statementFilter" [width]="350" [placeholder]="'Search conformance statements...'" [(ngModel)]="statementFilter" (apply)="searchStatements()"></app-text-filter>
+                  <ng-container *ngIf="items.length > 0">
+                    <div class="btn-group" dropdown>
+                      <button id="button-item-select" [disabled]="visibleItemCount == 0" dropdownToggle type="button" class="btn btn-default dropdown-toggle" aria-controls="dropdown-item-select">Select statements<span class="caret"></span></button>
+                      <ul id="dropdown-item-select" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-item-select">
+                          <li role="menuitem"><a class="dropdown-item" href (click)="toggleCheck(true);$event.preventDefault();">Select all statements</a></li>
+                          <li role="menuitem"><a class="dropdown-item" href (click)="toggleCheck(false);$event.preventDefault();">Unselect all statements</a></li>
+                      </ul>
+                    </div>
+                    <div class="btn-group" dropdown>
+                      <button id="button-item-show" [disabled]="visibleItemCount == 0" dropdownToggle type="button" class="btn btn-default dropdown-toggle" aria-controls="dropdown-item-show">View statements<span class="caret"></span></button>
+                      <ul id="dropdown-item-show" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-item-show">
+                          <li role="menuitem"><a class="dropdown-item" href (click)="toggleCollapse(false);$event.preventDefault();">Expand all statements</a></li>
+                          <li role="menuitem"><a class="dropdown-item" href (click)="toggleCollapse(true);$event.preventDefault();">Collapse all statements</a></li>
+                      </ul>
+                    </div>
+                  </ng-container>
+                </div>
+                <div *ngIf="visibleItemCount == 0" class="no-statements-visible">
+                  No conformance statements were found matching your search text.
+                </div>
+                <div class="statement-container">
+                  <app-conformance-statement-items-display [items]="items" [animated]="animated" (selectionChanged)="selectionChanged($event)"></app-conformance-statement-items-display>
+                </div>
+              </ng-container>
+            </ng-container>
+          </ng-container>
         </div>
-        <div *ngIf="showSpecs">
-          <div id="conformanceWizardTable"
-            table-directive [columns]="tableColumns"
-            [data]="specs"
-            [noDataMessage]="'There are no '+dataService.labelSpecificationsLower()+' available.'"
-            [loadingStatus]="specsDataStatus"
-            [allowSelect]="true"
-            (onSelect)="onSpecificationSelect($event)"></div>
-        </div>
-        <diV *ngIf="showActors">
-          <div id="conformanceWizardTable"
-              table-directive [columns]="actorTableColumns"
-              [data]="actors"
-              [noDataMessage]="'There are no '+dataService.labelActorsLower()+' available.'"
-              [loadingStatus]="actorsDataStatus"
-              [allowSelect]="true"
-              (onSelect)="onActorSelect($event)"></div>
-        </diV>
-        <diV id="conformanceWizardTableSummary" *ngIf="showConfirmation">
-          <div class="row row-display-first">
-            <div class="col-md-2"><strong>{{dataService.labelDomain()}}</strong></div>
-            <div class="col-md-10">{{selectedDomain!.fname}}</div>
-            <div class="col-md-10 col-md-offset-2 row-display-inner" *ngIf="selectedDomain!.description">{{selectedDomain!.description}}</div>
-          </div>
-          <div class="row row-display">
-            <div class="col-md-2"><strong>{{dataService.labelSpecification()}}</strong></div>
-            <div class="col-md-10">{{selectedSpec!.fname}}</div>
-            <div class="col-md-10 col-md-offset-2 row-display-inner" *ngIf="selectedSpec!.description">{{selectedSpec!.description}}</div>
-          </div>
-          <div class="row row-display">
-            <div class="col-md-2"><strong>{{dataService.labelActor()}}</strong></div>
-            <div class="col-md-10">{{selectedActor!.name}}</div>
-            <div class="col-md-10 col-md-offset-2 row-display-inner" *ngIf="selectedActor!.description">{{selectedActor!.description}}</div>
-          </div>
-        </diV>
       </div>
-      <div class="panel-footer" *ngIf="showButtonPanel">
+      <div class="panel-footer">
           <div class="btn-toolbar">
-              <button type="button" class="btn btn-default" (click)="cancel()">Cancel</button>
-              <button type="button" class="btn btn-default" *ngIf="!showConfirmation" (click)="confirmAction!()" [disabled]="nextDisabled()">Next</button>
-              <button type="button" class="btn btn-default" *ngIf="showConfirmation" (click)="confirmAll()" [pending]="pending" [disable]="confirmDisabled">Confirm</button>
+              <button type="button" class="btn btn-default" (click)="create()" [disable]="createDisabled" [pending]="createPending">Confirm</button>
+              <button type="button" class="btn btn-default" (click)="cancel()" [disabled]="createPending">Cancel</button>
           </div>
       </div>
     </div>

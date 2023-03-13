@@ -4,7 +4,7 @@ import config.Configurations
 import exceptions.{ErrorCodes, InvalidRequestException}
 import models.Enums._
 import controllers.util.Parameters
-import models.{Actor, Communities, CommunityResources, Domain, Endpoints, ErrorTemplates, FileInfo, LandingPages, LegalNotices, Options, OrganisationParameterValues, Organizations, Specifications, SystemParameterValues, Systems, Trigger, TriggerData, Triggers, Users}
+import models.{Actor, Communities, CommunityResources, Domain, Endpoints, ErrorTemplates, FileInfo, LandingPages, LegalNotices, Options, OrganisationParameterValues, Organizations, SpecificationGroups, Specifications, SystemParameterValues, Systems, Trigger, TriggerData, Triggers, Users}
 import org.apache.commons.lang3.StringUtils
 import org.mindrot.jbcrypt.BCrypt
 import play.api.mvc._
@@ -452,15 +452,22 @@ object ParameterExtractor {
 		val fname:String = ParameterExtractor.requiredBodyParameter(request, Parameters.FULL_NAME)
 		val descr:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DESC)
     val hidden = ParameterExtractor.requiredBodyParameter(request, Parameters.HIDDEN).toBoolean
-		val domain = ParameterExtractor.optionalBodyParameter(request, Parameters.DOMAIN_ID) match {
-			case Some(str) => Some(str.toLong)
-			case _ => None
-		}
+		val domain = ParameterExtractor.optionalLongBodyParameter(request, Parameters.DOMAIN_ID)
+    val group = ParameterExtractor.optionalLongBodyParameter(request, Parameters.GROUP_ID)
 
-		Specifications(0L, sname, fname, descr, hidden, CryptoUtil.generateApiKey(), domain.getOrElse(0L))
+    Specifications(0L, sname, fname, descr, hidden, CryptoUtil.generateApiKey(), domain.getOrElse(0L), group)
 	}
 
-	def extractActor(request:Request[AnyContent]):Actor = {
+  def extractSpecificationGroup(request: Request[AnyContent]): SpecificationGroups = {
+    val sname: String = ParameterExtractor.requiredBodyParameter(request, Parameters.SHORT_NAME)
+    val fname: String = ParameterExtractor.requiredBodyParameter(request, Parameters.FULL_NAME)
+    val descr: Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DESC)
+    val domain = ParameterExtractor.requiredBodyParameter(request, Parameters.DOMAIN_ID).toLong
+
+    SpecificationGroups(0L, sname, fname, descr, domain)
+  }
+
+  def extractActor(request:Request[AnyContent]):Actor = {
     val id:Long = ParameterExtractor. optionalBodyParameter(request, Parameters.ID) match {
       case Some(i) => i.toLong
       case _ => 0L

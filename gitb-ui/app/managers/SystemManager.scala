@@ -376,13 +376,28 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils, testResultManag
     systems
   }
 
-  def defineConformanceStatementWrapper(system: Long, spec: Long, actor: Long, options: Option[List[Long]]):Unit = {
-    val dbAction = for {
-      communityId <- getCommunityIdForSystemId(system)
-      _ <- defineConformanceStatement(system, spec, actor, options, setDefaultParameterValues = true)
-    } yield communityId
-    val communityId = exec(dbAction.transactionally)
-    triggerHelper.publishTriggerEvent(new ConformanceStatementCreatedEvent(communityId, system, actor))
+  def defineConformanceStatements(systemId: Long, actorIds: Seq[Long]):Unit = {
+    val result = exec((for {
+      communityId <- getCommunityIdForSystemId(systemId)
+      existingStatementActorIds <- PersistenceSchema.systemImplementsActors
+        .filter(_.systemId === systemId)
+        .map(_.actorId)
+        .result
+      actorsToProcess <- PersistenceSchema.specificationHasActors
+        .filter(_.actorId inSet actorIds)
+        .filterNot(_.actorId inSet existingStatementActorIds)
+        .result
+      _ <- {
+        val actions = new ListBuffer[DBIO[_]]
+        actorsToProcess.foreach { actor =>
+          actions += defineConformanceStatement(systemId, actor._1, actor._2, None, setDefaultParameterValues = true)
+        }
+        toDBIO(actions)
+      }
+    } yield (communityId, actorsToProcess.map(_._2))).transactionally)
+    result._2.foreach { actorId =>
+      triggerHelper.publishTriggerEvent(new ConformanceStatementCreatedEvent(result._1, systemId, actorId))
+    }
   }
 
   def sutTestCasesExistForActor(actor: Long): Boolean = {
@@ -511,25 +526,37 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils, testResultManag
   def getConformanceStatements(systemId: Long, spec: Option[Long], actor: Option[Long]): List[ConformanceStatement] = {
     var query = PersistenceSchema.conformanceResults
         .join(PersistenceSchema.specifications).on(_.spec === _.id)
-        .join(PersistenceSchema.actors).on(_._1.actor === _.id)
+        .joinLeft(PersistenceSchema.specificationGroups).on(_._2.group === _.id)
+        .join(PersistenceSchema.actors).on(_._1._1.actor === _.id)
         .join(PersistenceSchema.domains).on(_._2.domain === _.id)
-    query = query.filter(_._1._1._1.sut === systemId)
+        .filter(_._1._1._1._1.sut === systemId)
     if (spec.isDefined && actor.isDefined) {
       query = query
-        .filter(_._1._1._1.spec === spec.get)
-        .filter(_._1._1._1.actor === actor.get)
+        .filter(_._1._1._1._1.spec === spec.get)
+        .filter(_._1._1._1._1.actor === actor.get)
     }
-    query = query.sortBy(x => (x._2.fullname, x._1._1._2.fullname, x._1._2.name))
+    query = query.sortBy(x => (
+      x._2.fullname.asc, // Domain
+      x._1._1._2.map(_.fullname).getOrElse("").asc, // Specification group
+      x._1._1._1._2.fullname.asc, // Specification
+      x._1._2.name.asc // Actor
+    ))
 
     val results = exec(query.result.map(_.toList))
     val resultBuilder = new ConformanceStatusBuilder[ConformanceStatement](recordDetails = false)
     results.foreach { result =>
+      var specName = result._1._1._1._2.shortname
+      var specNameFull = result._1._1._1._2.fullname
+      if (result._1._1._2.nonEmpty) {
+        specName = result._1._1._2.get.shortname + " - " + specName
+        specNameFull = result._1._1._2.get.fullname + " - " + specNameFull
+      }
       resultBuilder.addConformanceResult(
         new ConformanceStatement(
           result._2.id, result._2.shortname, result._2.fullname,
           result._1._2.id, result._1._2.actorId, result._1._2.name,
-          result._1._1._2.id, result._1._1._2.shortname, result._1._1._2.fullname,
-          result._1._1._1.sut, result._1._1._1.result, result._1._1._1.updateTime,
+          result._1._1._1._2.id, specName, specNameFull,
+          result._1._1._1._1.sut, result._1._1._1._1.result, result._1._1._1._1.updateTime,
           0L, 0L, 0L)
       )
     }

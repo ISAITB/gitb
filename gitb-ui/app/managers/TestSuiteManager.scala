@@ -1329,7 +1329,7 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 		outputPathToUse.get
 	}
 
-	def searchTestSuites(domainIds: Option[List[Long]], specificationIds: Option[List[Long]], actorIds: Option[List[Long]]): Iterable[TestSuite] = {
+	def searchTestSuites(domainIds: Option[List[Long]], specificationIds: Option[List[Long]], specificationGroupIds: Option[List[Long]], actorIds: Option[List[Long]]): Iterable[TestSuite] = {
 		val results = exec(
 			for {
 				// See if due to provided actor IDs we need to consider specific specification IDs
@@ -1353,11 +1353,13 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 				// Query to retrieve the test suites (without their documentation)
 				testSuitesTuples <- PersistenceSchema.testSuites
 					.join(PersistenceSchema.specificationHasTestSuites).on(_.id === _.testSuiteId)
-					.filter(_._1.hidden === false)
-					.filterOpt(domainIds)((q, ids) => q._1.domain inSet ids)
-					.filterOpt(specIdsToUse)((q, ids) => q._2.specId inSet ids)
-					.sortBy(_._1.shortname.asc)
-					.map(x => (TestSuiteManager.withoutDocumentation(x._1), x._2.specId))
+					.join(PersistenceSchema.specifications).on(_._2.specId === _.id)
+					.filter(_._1._1.hidden === false)
+					.filterOpt(domainIds)((q, ids) => q._1._1.domain inSet ids)
+					.filterOpt(specIdsToUse)((q, ids) => q._1._2.specId inSet ids)
+					.filterOpt(specificationGroupIds)((q, ids) => q._2.group inSet ids)
+					.sortBy(_._1._1.shortname.asc)
+					.map(x => (TestSuiteManager.withoutDocumentation(x._1._1), x._1._2.specId))
 					.result
 				// Map the specification IDs
 				testSuiteTuplesWithSpecs <- {
@@ -1648,14 +1650,11 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 		exec(unlinkSharedTestSuiteInternal(testSuiteId, specificationIds))
 	}
 
-	def getLinkedSpecifications(testSuiteId: Long): List[Specifications] = {
-		exec(PersistenceSchema.specifications
-			.join(PersistenceSchema.specificationHasTestSuites).on(_.id === _.specId)
-			.filter(_._2.testSuiteId === testSuiteId)
-			.map(_._1)
-			.sortBy(_.shortname.asc)
-			.result
-		).toList
+	def getLinkedSpecifications(testSuiteId: Long): Seq[Specifications] = {
+		val specificationIds = exec(
+			PersistenceSchema.specificationHasTestSuites.filter(_.testSuiteId === testSuiteId).map(_.specId).result
+		)
+		conformanceManager.getSpecifications(Some(specificationIds), None, withGroups = true)
 	}
 
 }

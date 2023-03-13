@@ -495,7 +495,7 @@ class ImportCompleteManager @Inject()(communityResourceManager: CommunityResourc
   }
 
   private def createSharedTestSuite(data: TestSuite, ctx: ImportContext, item: ImportItem): DBIO[Long] = {
-    val domainId = item.parentItem.get.targetKey.get.toLong
+    val domainId = getDomainIdFromParentItem(item)
     // File system operations
     val testSuitePaths = saveTestSuiteFiles(data, item, domainId, ctx)
     ctx.onFailureCalls += (() => {
@@ -524,8 +524,28 @@ class ImportCompleteManager @Inject()(communityResourceManager: CommunityResourc
     action
   }
 
+  private def getDomainIdFromParentItem(item: ImportItem): Long = {
+    val domainId = findDomainItem(item)
+    if (domainId.nonEmpty && domainId.get.targetKey.nonEmpty) {
+      domainId.get.targetKey.get.toLong
+    } else {
+      throw new IllegalStateException("Unable to determine domain ID for ["+item.itemType+"].")
+    }
+  }
+
+  @scala.annotation.tailrec
+  private def findDomainItem(item: ImportItem): Option[ImportItem] = {
+    if (item.itemType == ImportItemType.Domain) {
+      Some(item)
+    } else if (item.parentItem.nonEmpty) {
+      findDomainItem(item.parentItem.get)
+    } else {
+      None
+    }
+  }
+
   private def createTestSuite(data: TestSuite, ctx: ImportContext, item: ImportItem): DBIO[Long] = {
-    val domainId = item.parentItem.get.parentItem.get.targetKey.get.toLong
+    val domainId = getDomainIdFromParentItem(item)
     val specificationId = item.parentItem.get.targetKey.get.toLong
     // File system operations
     val testSuitePaths = saveTestSuiteFiles(data, item, domainId, ctx)
@@ -579,7 +599,7 @@ class ImportCompleteManager @Inject()(communityResourceManager: CommunityResourc
   }
 
   private def updateSharedTestSuite(data: TestSuite, ctx: ImportContext, item: ImportItem): DBIO[_] = {
-    val domainId = item.parentItem.get.targetKey.get.toLong
+    val domainId = getDomainIdFromParentItem(item)
     val testSuiteId = item.targetKey.get.toLong
     // File system operations
     val testSuitePaths = saveTestSuiteFiles(data, item, domainId, ctx)
@@ -622,7 +642,7 @@ class ImportCompleteManager @Inject()(communityResourceManager: CommunityResourc
   }
 
   private def updateTestSuite(data: TestSuite, ctx: ImportContext, item: ImportItem): DBIO[_] = {
-    val domainId = item.parentItem.get.parentItem.get.targetKey.get.toLong
+    val domainId = getDomainIdFromParentItem(item)
     val specificationId = item.parentItem.get.targetKey.get.toLong
     val testSuiteId = item.targetKey.get.toLong
     // File system operations
@@ -777,7 +797,7 @@ class ImportCompleteManager @Inject()(communityResourceManager: CommunityResourc
             dbActions += processFromArchive(ImportItemType.DomainParameter, parameter, parameter.getId, ctx,
               ImportCallbacks.set(
                 (data: com.gitb.xml.export.DomainParameter, item: ImportItem) => {
-                  val domainId = item.parentItem.get.targetKey.get.toLong
+                  val domainId = getDomainIdFromParentItem(item)
                   val fileData = parameterFileMetadata(ctx, data.getType, isDomainParameter = true, data.getValue)
                   conformanceManager.createDomainParameterInternal(
                     models.DomainParameter(0L, data.getName, Option(data.getDescription),
@@ -785,7 +805,7 @@ class ImportCompleteManager @Inject()(communityResourceManager: CommunityResourc
                       fileData._2, domainId), fileData._3, ctx.onSuccessCalls)
                 },
                 (data: com.gitb.xml.export.DomainParameter, targetKey: String, item: ImportItem) => {
-                  val domainId = item.parentItem.get.targetKey.get.toLong
+                  val domainId = getDomainIdFromParentItem(item)
                   val fileData = parameterFileMetadata(ctx, data.getType, isDomainParameter = true, data.getValue)
                   conformanceManager.updateDomainParameterInternal(domainId,
                     targetKey.toLong, data.getName, Option(data.getDescription), fileData._1,
@@ -801,7 +821,7 @@ class ImportCompleteManager @Inject()(communityResourceManager: CommunityResourc
       _ <- {
         processRemaining(ImportItemType.DomainParameter, ctx,
           (targetKey: String, item: ImportItem) => {
-            val domainId = item.parentItem.get.targetKey.get.toLong
+            val domainId = getDomainIdFromParentItem(item)
             conformanceManager.deleteDomainParameter(domainId, targetKey.toLong, ctx.onSuccessCalls)
           }
         )
@@ -826,6 +846,35 @@ class ImportCompleteManager @Inject()(communityResourceManager: CommunityResourc
         toDBIO(dbActions)
       }
       _ <- {
+        // Specification groups
+        val dbActions = ListBuffer[DBIO[_]]()
+        if (exportedDomain.getSpecificationGroups != null) {
+          exportedDomain.getSpecificationGroups.getGroup.asScala.foreach { exportedGroup =>
+            dbActions += processFromArchive(ImportItemType.SpecificationGroup, exportedGroup, exportedGroup.getId, ctx,
+              ImportCallbacks.set(
+                (data: com.gitb.xml.export.SpecificationGroup, item: ImportItem) => {
+                  specificationManager.createSpecificationGroupInternal(models.SpecificationGroups(0L, data.getShortName, data.getFullName, Option(data.getDescription), getDomainIdFromParentItem(item)))
+                },
+                (data: com.gitb.xml.export.SpecificationGroup, targetKey: String, item: ImportItem) => {
+                  specificationManager.updateSpecificationGroupInternal(targetKey.toLong, data.getShortName, data.getFullName, Option(data.getDescription))
+                },
+                (data: com.gitb.xml.export.SpecificationGroup, targetKey: Any, item: ImportItem) => {
+                  // No action.
+                }
+              )
+            )
+          }
+        }
+        toDBIO(dbActions)
+      }
+      _ <- {
+        processRemaining(ImportItemType.SpecificationGroup, ctx,
+          (targetKey: String, item: ImportItem) => {
+            specificationManager.deleteSpecificationGroupInternal(targetKey.toLong, deleteSpecifications = false, ctx.onSuccessCalls)
+          }
+        )
+      }
+      _ <- {
         // Specifications
         val dbActions = ListBuffer[DBIO[_]]()
         if (exportedDomain.getSpecifications != null) {
@@ -833,12 +882,22 @@ class ImportCompleteManager @Inject()(communityResourceManager: CommunityResourc
             dbActions += processFromArchive(ImportItemType.Specification, exportedSpecification, exportedSpecification.getId, ctx,
               ImportCallbacks.set(
                 (data: com.gitb.xml.export.Specification, item: ImportItem) => {
-                  val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
-                  conformanceManager.createSpecificationsInternal(models.Specifications(0L, data.getShortName, data.getFullName, Option(data.getDescription), data.isHidden, apiKey, item.parentItem.get.targetKey.get.toLong), checkApiKeyUniqueness = true)
+                  val relatedGroupId = getProcessedDbId(data.getGroup, ImportItemType.SpecificationGroup, ctx)
+                  if (data.getGroup == null || relatedGroupId.nonEmpty) {
+                    val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
+                    conformanceManager.createSpecificationsInternal(models.Specifications(0L, data.getShortName, data.getFullName, Option(data.getDescription), data.isHidden, apiKey, targetDomainId.get, relatedGroupId), checkApiKeyUniqueness = true)
+                  } else {
+                    DBIO.successful(())
+                  }
                 },
                 (data: com.gitb.xml.export.Specification, targetKey: String, item: ImportItem) => {
-                  val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
-                  specificationManager.updateSpecificationInternal(targetKey.toLong, data.getShortName, data.getFullName, Option(data.getDescription), data.isHidden, Some(apiKey), checkApiKeyUniqueness = true)
+                  val relatedGroupId = getProcessedDbId(data.getGroup, ImportItemType.SpecificationGroup, ctx)
+                  if (data.getGroup == null || relatedGroupId.nonEmpty) {
+                    val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
+                    specificationManager.updateSpecificationInternal(targetKey.toLong, data.getShortName, data.getFullName, Option(data.getDescription), data.isHidden, Some(apiKey), checkApiKeyUniqueness = true, relatedGroupId)
+                  } else {
+                    DBIO.successful(())
+                  }
                 },
                 (data: com.gitb.xml.export.Specification, targetKey: Any, item: ImportItem) => {
                   // No action.
@@ -852,7 +911,7 @@ class ImportCompleteManager @Inject()(communityResourceManager: CommunityResourc
       _ <- {
         processRemaining(ImportItemType.Specification, ctx,
           (targetKey: String, item: ImportItem) => {
-            conformanceManager.delete(targetKey.toLong, ctx.onSuccessCalls)
+            conformanceManager.deleteSpecificationInternal(targetKey.toLong, ctx.onSuccessCalls)
           }
         )
       }
@@ -871,7 +930,7 @@ class ImportCompleteManager @Inject()(communityResourceManager: CommunityResourc
                         order = Some(data.getOrder.shortValue())
                       }
                       val specificationId = item.parentItem.get.targetKey.get.toLong // Specification
-                      val domainId = item.parentItem.get.parentItem.get.targetKey.get.toLong // Specification and then Domain
+                      val domainId = targetDomainId.get
                       val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
                       conformanceManager.createActor(models.Actors(0L, data.getActorId, data.getName, Option(data.getDescription), Some(data.isDefault), data.isHidden, order, apiKey, domainId), specificationId, checkApiKeyUniqueness = true)
                     },

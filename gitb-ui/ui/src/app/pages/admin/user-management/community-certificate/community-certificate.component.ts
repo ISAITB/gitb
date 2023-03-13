@@ -26,6 +26,8 @@ export class CommunityCertificateComponent extends BaseComponent implements OnIn
   originalSettings: Partial<ConformanceCertificateSettings>|undefined
   placeholderDomain = Constants.PLACEHOLDER__DOMAIN
   placeholderSpecification = Constants.PLACEHOLDER__SPECIFICATION
+  placeholderSpecificationGroup = Constants.PLACEHOLDER__SPECIFICATION_GROUP
+  placeholderSpecificationGroupOption = Constants.PLACEHOLDER__SPECIFICATION_GROUP_OPTION
   placeholderActor = Constants.PLACEHOLDER__ACTOR
   placeholderOrganisation = Constants.PLACEHOLDER__ORGANISATION
   placeholderSystem = Constants.PLACEHOLDER__SYSTEM

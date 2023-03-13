@@ -55,7 +55,7 @@ object Enums {
 
   object LabelType extends Enumeration(1) {
     type LabelType = Value
-    val Domain, Specification, Actor, Endpoint, Organisation, System = Value
+    val Domain, Specification, Actor, Endpoint, Organisation, System, SpecificationInGroup, SpecificationGroup = Value
   }
 
   object ImportItemType extends Enumeration(1) {
@@ -63,7 +63,7 @@ object Enums {
     val Domain, DomainParameter, Specification, Actor, Endpoint, EndpointParameter, TestSuite,
     Community, Administrator, CustomLabel, OrganisationProperty, SystemProperty, LandingPage, LegalNotice, ErrorTemplate,
     Organisation, OrganisationUser, OrganisationPropertyValue, System, SystemPropertyValue,
-    Statement, StatementConfiguration, Trigger, CommunityResource = Value
+    Statement, StatementConfiguration, Trigger, CommunityResource, SpecificationGroup = Value
   }
 
   object ImportItemMatch extends Enumeration(1) {
@@ -119,6 +119,11 @@ object Enums {
   object TestCaseUploadMatchType extends Enumeration(1) {
     type TestCaseUploadMatchType = Value
     val IN_ARCHIVE_ONLY, IN_DB_ONLY, IN_ARCHIVE_AND_DB = Value
+  }
+
+  object ConformanceStatementItemType extends Enumeration(1) {
+    type ConformanceStatementItemType = Value
+    val DOMAIN, SPECIFICATION_GROUP, SPECIFICATION, ACTOR = Value
   }
 
 }

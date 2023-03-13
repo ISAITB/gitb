@@ -22,6 +22,7 @@ class ReportService @Inject() (authorizedAction: AuthorizedAction, cc: Controlle
 
     val domainIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.DOMAIN_IDS)
     val specIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.SPEC_IDS)
+    val specGroupIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.GROUP_IDS)
     val actorIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.ACTOR_IDS)
     val testSuiteIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.TEST_SUITE_IDS)
     val testCaseIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.TEST_CASE_IDS)
@@ -31,7 +32,7 @@ class ReportService @Inject() (authorizedAction: AuthorizedAction, cc: Controlle
     val sortColumn = ParameterExtractor.optionalBodyParameter(request, Parameters.SORT_COLUMN)
     val sortOrder = ParameterExtractor.optionalBodyParameter(request, Parameters.SORT_ORDER)
 
-    val testResultReports = reportManager.getSystemActiveTestResults(systemId, domainIds, specIds, actorIds, testSuiteIds, testCaseIds, startTimeBegin, startTimeEnd, sessionId, sortColumn, sortOrder)
+    val testResultReports = reportManager.getSystemActiveTestResults(systemId, domainIds, specIds, specGroupIds, actorIds, testSuiteIds, testCaseIds, startTimeBegin, startTimeEnd, sessionId, sortColumn, sortOrder)
     val json = JsonUtil.jsTestResultReports(testResultReports, None).toString()
     ResponseConstructor.constructJsonResponse(json)
 
@@ -46,6 +47,7 @@ class ReportService @Inject() (authorizedAction: AuthorizedAction, cc: Controlle
     val limit = getLimitOrDefault(ParameterExtractor.optionalBodyParameter(request, Parameters.LIMIT))
     val domainIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.DOMAIN_IDS)
     val specIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.SPEC_IDS)
+    val specGroupIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.GROUP_IDS)
     val actorIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.ACTOR_IDS)
     val testSuiteIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.TEST_SUITE_IDS)
     val testCaseIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.TEST_CASE_IDS)
@@ -58,7 +60,7 @@ class ReportService @Inject() (authorizedAction: AuthorizedAction, cc: Controlle
     val sortColumn = ParameterExtractor.optionalBodyParameter(request, Parameters.SORT_COLUMN)
     val sortOrder = ParameterExtractor.optionalBodyParameter(request, Parameters.SORT_ORDER)
 
-    val output = reportManager.getTestResults(page, limit, systemId, domainIds, specIds, actorIds, testSuiteIds, testCaseIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, sortColumn, sortOrder)
+    val output = reportManager.getTestResults(page, limit, systemId, domainIds, specIds, specGroupIds, actorIds, testSuiteIds, testCaseIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, sortColumn, sortOrder)
     val json = JsonUtil.jsTestResultReports(output._1, Some(output._2)).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
@@ -70,6 +72,7 @@ class ReportService @Inject() (authorizedAction: AuthorizedAction, cc: Controlle
 
     val domainIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.DOMAIN_IDS)
     val specIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.SPEC_IDS)
+    val specGroupIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.GROUP_IDS)
     val actorIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.ACTOR_IDS)
     val testSuiteIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.TEST_SUITE_IDS)
     val testCaseIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.TEST_CASE_IDS)
@@ -84,7 +87,7 @@ class ReportService @Inject() (authorizedAction: AuthorizedAction, cc: Controlle
     val orgParameters = JsonUtil.parseJsIdToValuesMap(ParameterExtractor.optionalBodyParameter(request, Parameters.ORGANISATION_PARAMETERS))
     val sysParameters = JsonUtil.parseJsIdToValuesMap(ParameterExtractor.optionalBodyParameter(request, Parameters.SYSTEM_PARAMETERS))
 
-    val testResultReports = reportManager.getActiveTestResults(communityIds, domainIds, specIds, actorIds, testSuiteIds, testCaseIds, organizationIds, systemIds, startTimeBegin, startTimeEnd, sessionId, orgParameters, sysParameters, sortColumn, sortOrder)
+    val testResultReports = reportManager.getActiveTestResults(communityIds, domainIds, specIds, specGroupIds, actorIds, testSuiteIds, testCaseIds, organizationIds, systemIds, startTimeBegin, startTimeEnd, sessionId, orgParameters, sysParameters, sortColumn, sortOrder)
 
     var orgParameterDefinitions: Option[List[OrganisationParameters]] = None
     var orgParameterValues: Option[scala.collection.mutable.Map[Long, scala.collection.mutable.Map[Long, String]]] = None
@@ -109,6 +112,7 @@ class ReportService @Inject() (authorizedAction: AuthorizedAction, cc: Controlle
     val limit = getLimitOrDefault(ParameterExtractor.optionalBodyParameter(request, Parameters.LIMIT))
     val domainIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.DOMAIN_IDS)
     val specIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.SPEC_IDS)
+    val specGroupIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.GROUP_IDS)
     val actorIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.ACTOR_IDS)
     val testSuiteIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.TEST_SUITE_IDS)
     val testCaseIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.TEST_CASE_IDS)
@@ -126,7 +130,7 @@ class ReportService @Inject() (authorizedAction: AuthorizedAction, cc: Controlle
     val orgParameters = JsonUtil.parseJsIdToValuesMap(ParameterExtractor.optionalBodyParameter(request, Parameters.ORGANISATION_PARAMETERS))
     val sysParameters = JsonUtil.parseJsIdToValuesMap(ParameterExtractor.optionalBodyParameter(request, Parameters.SYSTEM_PARAMETERS))
 
-    val output = reportManager.getFinishedTestResults(page, limit, communityIds, domainIds, specIds, actorIds, testSuiteIds, testCaseIds, organizationIds, systemIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, orgParameters, sysParameters, sortColumn, sortOrder)
+    val output = reportManager.getFinishedTestResults(page, limit, communityIds, domainIds, specIds, specGroupIds, actorIds, testSuiteIds, testCaseIds, organizationIds, systemIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, orgParameters, sysParameters, sortColumn, sortOrder)
 
     var orgParameterDefinitions: Option[List[OrganisationParameters]] = None
     var orgParameterValues: Option[scala.collection.mutable.Map[Long, scala.collection.mutable.Map[Long, String]]] = None
