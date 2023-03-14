@@ -1,5 +1,6 @@
 package com.gitb.tbs.config;
 
+import com.gitb.engine.TestEngineConfiguration;
 import com.gitb.tbs.impl.MessagingClientImpl;
 import com.gitb.tbs.impl.ProcessingClientImpl;
 import com.gitb.tbs.impl.TestbedServiceImpl;
@@ -31,7 +32,7 @@ public class WebServiceConfig {
     ProcessingClientImpl processingClientImpl;
 
     @Bean
-    public ServletRegistrationBean servletRegistrationBean(ApplicationContext context) {
+    public ServletRegistrationBean<CXFServlet> servletRegistrationBean(ApplicationContext context) {
         return new ServletRegistrationBean<>(new CXFServlet(), "/*");
     }
 
@@ -50,6 +51,7 @@ public class WebServiceConfig {
         endpoint.setServiceName(new QName("http://www.gitb.com/ms/v1/", "MessagingClientService"));
         endpoint.setEndpointName(new QName("http://www.gitb.com/ms/v1/", "MessagingClientPort"));
         endpoint.publish("/MessagingClient");
+        endpoint.setPublishedEndpointUrl(TestEngineConfiguration.MESSAGING_CALLBACK_URL);
         return endpoint;
     }
 
@@ -59,6 +61,7 @@ public class WebServiceConfig {
         endpoint.setServiceName(new QName("http://www.gitb.com/vs/v1/", "ValidationClientService"));
         endpoint.setEndpointName(new QName("http://www.gitb.com/vs/v1/", "ValidationClientPort"));
         endpoint.publish("/ValidationClient");
+        endpoint.setPublishedEndpointUrl(TestEngineConfiguration.VALIDATION_CALLBACK_URL);
         return endpoint;
     }
 
@@ -68,6 +71,7 @@ public class WebServiceConfig {
         endpoint.setServiceName(new QName("http://www.gitb.com/ps/v1/", "ProcessingClientService"));
         endpoint.setEndpointName(new QName("http://www.gitb.com/ps/v1/", "ProcessingClientPort"));
         endpoint.publish("/ProcessingClient");
+        endpoint.setPublishedEndpointUrl(TestEngineConfiguration.PROCESSING_CALLBACK_URL);
         return endpoint;
     }
 
