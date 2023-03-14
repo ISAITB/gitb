@@ -177,14 +177,11 @@ public class TestCaseUtils {
 
     private static String qualifiedStepIdForStatusMaps(String stepId, TestCaseScope scope) {
         Objects.requireNonNull(stepId);
-        var id = new StringBuilder(stepId);
-        while (scope != null) {
-            if (scope.getScopeId() != null) {
-                id.insert(0, '_').insert(0, scope.getScopeId());
-            }
-            scope = scope.getParent();
+        String id = stepId;
+        if (scope != null) {
+            id = scope.getQualifiedScopeId()+"_"+stepId;
         }
-        return id.toString();
+        return id;
     }
 
     public static void updateStepStatusMaps(MapType stepSuccessMap, MapType stepStatusMap, TestConstruct step, TestCaseScope scope, StepStatus status) {

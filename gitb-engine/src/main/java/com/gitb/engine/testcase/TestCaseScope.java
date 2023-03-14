@@ -39,6 +39,7 @@ public class TestCaseScope {
 	private Map<String, String> namespaceDefinitions;
 	private final String testSuiteContext;
 	private final String scopeId;
+	private String qualifiedScopeId;
 
 	public TestCaseScope(TestCaseContext context, Imports imports, Namespaces namespaces) {
 		this(null, context, imports, namespaces, null);
@@ -61,6 +62,24 @@ public class TestCaseScope {
 
 	public String getScopeId() {
 		return scopeId;
+	}
+
+	public String getQualifiedScopeId() {
+		if (qualifiedScopeId == null) {
+			var id = new StringBuilder();
+			var currentScope = this;
+			while (currentScope != null) {
+				if (currentScope.getScopeId() != null) {
+					id.insert(0, currentScope.getScopeId());
+				}
+				if (currentScope.getParent() != null && currentScope.getParent().getScopeId() != null) {
+					id.insert(0, '_');
+				}
+				currentScope = currentScope.getParent();
+			}
+			qualifiedScopeId = id.toString();
+		}
+		return qualifiedScopeId;
 	}
 
 	public String getTestSuiteContext() {
