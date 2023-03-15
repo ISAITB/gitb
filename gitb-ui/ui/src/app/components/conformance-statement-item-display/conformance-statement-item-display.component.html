@@ -6,7 +6,7 @@
         <ng-container *ngSwitchDefault>
             <div class="item-container" [class.shade]="shade">
                 <div class="item-header" (click)="clickHeader();$event.stopPropagation()">
-                    <div class="item-icon" *ngIf="hasChildren"><span><i class="fa" [ngClass]="{'fa-chevron-circle-right': item.collapsed, 'fa-chevron-circle-down': !item.collapsed }"></i></span></div>
+                    <div class="item-icon" *ngIf="hasChildren"><app-collapsing-icon [isCollapsed]="item.collapsed!"></app-collapsing-icon></div>
                     <div class="item-check" *ngIf="showCheck"><input type="checkbox" name="itemCheck" [(ngModel)]="item.checked" (ngModelChange)="updateChecked()"></div>
                     <div class="item-name">{{item.name}}</div>
                     <div class="item-description" *ngIf="item.description">{{item.description}}</div>

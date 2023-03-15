@@ -12,6 +12,7 @@
             <table class="table table-directive expandable-table">
                 <thead>
                     <tr>
+                        <th class="th-min-centered"></th>
                         <th class="sortableHeader" *ngIf="!dataService.isCommunityAdmin" (click)="sort(Constants.FILTER_TYPE.COMMUNITY)">Community <i *ngIf="sortColumn == Constants.FILTER_TYPE.COMMUNITY" [ngClass]="{'fa-caret-down': sortOrder == Constants.ORDER.DESC, 'fa-caret-up': sortOrder == Constants.ORDER.ASC}" class="fa"></i></th>
                         <th class="sortableHeader" (click)="sort(Constants.FILTER_TYPE.ORGANISATION)">{{dataService.labelOrganisation()}} <i *ngIf="sortColumn == Constants.FILTER_TYPE.ORGANISATION" [ngClass]="{'fa-caret-down': sortOrder == Constants.ORDER.DESC, 'fa-caret-up': sortOrder == Constants.ORDER.ASC}" class="fa"></i></th>
                         <th class="sortableHeader" (click)="sort(Constants.FILTER_TYPE.SYSTEM)">{{dataService.labelSystem()}} <i *ngIf="sortColumn == Constants.FILTER_TYPE.SYSTEM" [ngClass]="{'fa-caret-down': sortOrder == Constants.ORDER.DESC, 'fa-caret-up': sortOrder == Constants.ORDER.ASC}" class="fa"></i></th>
@@ -34,6 +35,7 @@
                     <ng-container *ngFor="let statement of conformanceStatementsPage">
                         <tr (click)="onExpand(statement)"
                             class="table-row-directive expandable-table-row-collapsed">
+                            <td class="td-min-centered"><app-collapsing-icon [padded]="false" [isCollapsed]="!isExpanded(statement)"></app-collapsing-icon></td>
                             <td *ngIf="!dataService.isCommunityAdmin">{{statement.communityName}}</td>
                             <td>{{statement.organizationName}}</td>
                             <td>{{statement.systemName}}</td>
@@ -48,7 +50,7 @@
                             </td>
                         </tr>
                         <tr class="expandable-table-row-expanded">
-                            <td colspan="10" class="expandable-table-expandable-cell">
+                            <td [attr.colspan]="columnCount" class="expandable-table-expandable-cell">
                                 <div [collapse]="!isExpanded(statement)" [isAnimated]="true">
                                     <div class="collapsing-div">
                                         <div *ngIf="statement.testCasesLoaded == undefined || !statement.testCasesLoaded" class="spinnerPadded">
@@ -66,7 +68,7 @@
                                         <div class="testSuitePanel" *ngFor="let testSuite of statement.testSuites">
                                             <div class="panel panel-default">
                                                 <div class="panel-heading" (click)="testSuite.expanded = !testSuite.expanded">
-                                                    <div class="testSuiteHeaderLabel">Test suite</div>
+                                                    <div class="testSuiteHeaderLabel"><app-collapsing-icon [isCollapsed]="!testSuite.expanded"></app-collapsing-icon>Test suite</div>
                                                     <div class="testSuiteHeaderValue">{{testSuite.testSuiteName}}</div>
                                                     <div class="testSuiteResult"><app-test-result-status-display [result]="testSuite.result"></app-test-result-status-display></div>
                                                 </div>

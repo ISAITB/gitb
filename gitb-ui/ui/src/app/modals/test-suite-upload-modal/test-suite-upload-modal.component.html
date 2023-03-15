@@ -44,7 +44,7 @@
 				<div class="step-report test-assertion-step-report">
 					<div class="col-xs-12 test-assertion-group-report" *ngIf="report?.reports != undefined">
 						<div class="report-details">
-							<div class="report-details-title" (click)="reportItemsCollapsed = !reportItemsCollapsed">Details</div>
+							<div class="report-details-title" (click)="reportItemsCollapsed = !reportItemsCollapsed"><app-collapsing-icon [isCollapsed]="reportItemsCollapsed"></app-collapsing-icon>Details</div>
 							<div class="report-details-items" [collapse]="reportItemsCollapsed" [isAnimated]="true">
 								<div class="report-details-items-inner">
 									<div *ngFor="let assertionReport of report!.reports!">
@@ -128,7 +128,7 @@
 					</div>
 					<div class="section-choice-container" *ngIf="specificationChoices && specificationChoices.length > 0">
 						<div class="section-choice-title expandable" (click)="specificationsCollapsed = !specificationsCollapsed">
-							Linked {{dataService.labelSpecificationsLower()}} ({{specificationChoices.length}})
+							<app-collapsing-icon [isCollapsed]="specificationsCollapsed"></app-collapsing-icon>Linked {{dataService.labelSpecificationsLower()}} ({{specificationChoices.length}})
 						</div>
 						<div [collapse]="specificationsCollapsed" [isAnimated]="true">
 							<div class="section-choice-actions">

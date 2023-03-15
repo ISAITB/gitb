@@ -30,6 +30,7 @@ export class TableRowComponent implements OnInit {
   @Input() actionTooltip = ''
   @Input() deleteTooltip = 'Delete'
   @Input() exportTooltip = 'Export'
+  @Input() expandableRowProperty?: string
 
   @Output() onAction: EventEmitter<any> = new EventEmitter()
   @Output() onExport: EventEmitter<any> = new EventEmitter()

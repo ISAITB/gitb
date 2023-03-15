@@ -2,8 +2,7 @@
   <div class="row" *ngIf="tbShowFormHeader">
     <div class="col-xs-12">
       <div [ngClass]="{'form-separator': !tbPopup, 'form-separator-popup': tbPopup}" [class.expandable]="tbExpandable" (click)="checkToExpand()">
-        <div><h4 class="title">Additional properties <span [tooltip]="'Properties specific to the community. Required properties will need to be completed before executing tests.'" [containerClass]="'tooltipContainerBig'"><i class="fa fa-question-circle"></i></span></h4></div>
-        <div *ngIf="tbExpandable"><h4><i class="fa fa-chevron-circle-right" aria-hidden="true" [ngClass]="{'fa-chevron-circle-right': tbCollapsed, 'fa-chevron-circle-down': !tbCollapsed }"></i></h4></div>
+        <div><h4 class="title"><app-collapsing-icon *ngIf="tbExpandable" [isCollapsed]="tbCollapsed!"></app-collapsing-icon>Additional properties <span [tooltip]="'Properties specific to the community. Required properties will need to be completed before executing tests.'" [containerClass]="'tooltipContainerBig'"><i class="fa fa-question-circle"></i></span></h4></div>
       </div>
     </div>
   </div>

@@ -39,8 +39,7 @@
 				<div class="row">
 					<div class="col-xs-12">
 						<div class="form-separator expandable" (click)="showDocumentation = !showDocumentation">
-							<div><h4 class="title">Documentation</h4></div>
-							<div><h4><i class="fa fa-chevron-circle-right" aria-hidden="true" [ngClass]="{'fa-chevron-circle-right': !showDocumentation, 'fa-chevron-circle-down': showDocumentation }"></i></h4></div>
+							<div><h4 class="title"><app-collapsing-icon [isCollapsed]="!showDocumentation"></app-collapsing-icon>Documentation</h4></div>
 						</div>						
 					</div>
 				</div>

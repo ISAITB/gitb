@@ -3,7 +3,8 @@
         <caption *ngIf="tableCaptionVisible">{{tableCaption}}</caption>
         <thead>
             <tr>
-                <th *ngIf="checkboxEnabled"></th>
+                <th class="th-min-centered" *ngIf="checkboxEnabled"></th>
+                <th class="th-min-centered"></th>
                 <th [ngClass]="column.headerClass!" *ngFor="let column of columnsLeft" (click)="!column.sortable || headerColumnClicked(column)">
                     {{column.title}} 
                     <i *ngIf="column.order == 'desc'" class="fa fa-caret-down"></i>
@@ -51,7 +52,8 @@
                     [exportPendingProperty]="exportPendingProperty"
                     [actionTooltip]="actionTooltip"
                     [deleteTooltip]="'Terminate'"
-                    [exportTooltip]="exportTooltip"></tr>
+                    [exportTooltip]="exportTooltip"
+                    [expandableRowProperty]="'expanded'"></tr>
                 <tr class="expandable-table-row-expanded">
                     <td [attr.colspan]="columnCount" class="expandable-table-expandable-cell-no-spacings">
                         <table width="100%" style="table-layout:fixed;">
@@ -71,7 +73,7 @@
                                             <div class="panel panel-default">
                                                 <div class="panel-heading session-table-title clickable" (click)="diagramCollapsed[row.session] = !diagramCollapsed[row.session]">
                                                     <div class="session-table-title-part">
-                                                        <div class="session-table-title-label">Test suite</div>
+                                                        <div class="session-table-title-label"><app-collapsing-icon [isCollapsed]="diagramCollapsed[row.session]"></app-collapsing-icon>Test suite</div>
                                                         <div class="session-table-title-value">{{row.testSuite}}</div>
                                                     </div>
                                                     <div class="session-table-title-part">

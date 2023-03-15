@@ -3,6 +3,7 @@
         <caption *ngIf="tableCaptionVisible">{{tableCaption}}</caption>
         <thead>
             <tr>
+                <th *ngIf="expandableRowProperty != undefined" class="th-min-centered"></th>
                 <th *ngIf="checkboxEnabled" class="th-min-centered">
                     <input type="checkbox" [(ngModel)]="allChecked" (change)="checkAll()">
                 </th>
@@ -51,7 +52,8 @@
                 [exportPendingProperty]="exportPendingProperty"
                 [actionTooltip]="actionTooltip"
                 [deleteTooltip]="deleteTooltip"
-                [exportTooltip]="exportTooltip"></tr>
+                [exportTooltip]="exportTooltip"
+                [expandableRowProperty]="expandableRowProperty"></tr>
         </tbody>
     </table>
     <div *ngIf="(!prevDisabled || !nextDisabled) && data && data.length > 0" class="text-center table-paging-controls">

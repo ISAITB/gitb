@@ -1,7 +1,7 @@
 <div class="any-content-view" [class.no-border]="noBorder" [class.hovering]="hoveringTitle && withItems" *ngIf="context != undefined">
   <div class="any-content-view-container" *ngIf="context.name != undefined || value != undefined">
     <div class="any-content-view-texts" (click)="containerClicked();$event.stopPropagation()">
-      <div *ngIf="context.name != undefined" class="content-name" [class.with-items]="withItems" (mouseover)="hoverUpdate(true)" (mouseout)="hoverUpdate(false)">{{context!.name}}</div>
+      <div *ngIf="context.name != undefined" class="content-name" [class.with-items]="withItems" (mouseover)="hoverUpdate(true)" (mouseout)="hoverUpdate(false)"><app-collapsing-icon [hidden]="!withItems" [isCollapsed]="collapsed"></app-collapsing-icon>{{context!.name}}</div>
       <div *ngIf="value != undefined && showValueInline" class="content-value" [class.with-name]="withName">{{value}}</div>
     </div>
     <div class="any-content-view-controls" *ngIf="value != undefined">

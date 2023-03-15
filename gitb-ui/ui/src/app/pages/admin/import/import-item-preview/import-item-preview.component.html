@@ -10,7 +10,7 @@
           </select>
           <input type="text" value="Skip" *ngIf="tbImportItem.disableProcessChoice || tbImportItem.process == Constants.IMPORT_ITEM_CHOICE.SKIP_DUE_TO_PARENT" class="control" (click)="$event.stopPropagation();" disabled="true"/>
         </div>
-        <div class="title-icon" *ngIf="tbImportItem.hasGroups"><i class="fa" [ngClass]="{'fa-chevron-down': tbImportItem.open, 'fa-chevron-right': !tbImportItem.open}"></i></div>
+        <div class="title-icon" *ngIf="tbImportItem.hasGroups"><i class="fa" [ngClass]="{'fa-chevron-circle-down': tbImportItem.open, 'fa-chevron-circle-right': !tbImportItem.open}"></i></div>
       </div>
       <div [collapse]="!tbImportItem.open" [isAnimated]="true" *ngIf="tbImportItem.groups != undefined && tbImportItem.groups.length > 0">
           <div class="import-item-group-container">

@@ -6,7 +6,7 @@
         <button type="button" *ngIf="showSkipAll" (click)="skipAll(); $event.stopPropagation();" class="btn btn-primary btn-sm">Skip all</button>
         <button type="button" *ngIf="showProceedAll" (click)="proceedAll(); $event.stopPropagation();" class="btn btn-primary btn-sm">Process all</button>
       </div>
-      <div class="title-icon"><i class="fa" [ngClass]="{'fa-chevron-down': group.open, 'fa-chevron-right': !group.open}"></i></div>
+      <div class="title-icon"><i class="fa" [ngClass]="{'fa-chevron-circle-down': group.open, 'fa-chevron-circle-right': !group.open}"></i></div>
     </div>
     <div [collapse]="!group.open" [isAnimated]="true">
         <div class="import-item-group-items">

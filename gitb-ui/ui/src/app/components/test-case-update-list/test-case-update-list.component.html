@@ -1,6 +1,6 @@
 <div class="form-table table-container testcase-table">
     <div class="testcase-table-title expandable" (click)="show = !show">
-        <div class="testcase-table-title-label">{{title}}<span *ngIf="titleTooltip" class="inline-tooltip" boundariesElement="window" [tooltip]="titleTooltip"><i class="fa fa-question-circle"></i></span></div>
+        <div class="testcase-table-title-label"><app-collapsing-icon [isCollapsed]="!show"></app-collapsing-icon>{{title}}<span *ngIf="titleTooltip" class="inline-tooltip" boundariesElement="window" [tooltip]="titleTooltip"><i class="fa fa-question-circle"></i></span></div>
         <div class="testcase-table-title-controls" *ngIf="showUpdateDefinition || showResetTestHistory">
             <div class="btn-toolbar" (click)="$event.stopPropagation()" *ngIf="show">
                 <ng-container [ngSwitch]="showUpdateDefinition && showResetTestHistory">

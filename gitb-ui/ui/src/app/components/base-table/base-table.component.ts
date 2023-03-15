@@ -34,6 +34,7 @@ export abstract class BaseTableComponent extends BaseComponent {
   @Input() deleteTooltip = 'Delete'
   @Input() exportTooltip = 'Export'
   @Input() contentRefreshing = false
+  @Input() expandableRowProperty?: string
   @Input() clearSelection?: EventEmitter<void>
 
   @Output() onSelect: EventEmitter<any> = new EventEmitter()

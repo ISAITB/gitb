@@ -17,6 +17,9 @@ export class TableComponent extends BaseTableComponent implements OnInit {
 
   ngOnInit(): void {
     this.columnCount = this.columns!.length
+    if (this.expandableRowProperty != undefined) {
+      this.columnCount += 1
+    }
     if (this.checkboxEnabled) {
       this.columnCount += 1
     }

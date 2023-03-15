@@ -47,7 +47,7 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
       }
     }
     this.splitColumns()
-    this.columnCount = this.columns.length
+    this.columnCount = this.columns.length + 1 // PLus one for expandable.
     if (this.checkboxEnabled) this.columnCount += 1
     if (this.actionVisible || this.operationsVisible || this.exportVisible) this.columnCount += 1
     if (this.operationsVisible) {

@@ -60,17 +60,17 @@ export class ConformanceDashboardComponent implements OnInit {
     this.filterState.names[Constants.FILTER_TYPE.RESULT] = 'Status'
     this.filterState.names[Constants.FILTER_TYPE.END_TIME] = 'Last update time'
 		if (this.dataService.isSystemAdmin) {
-			this.columnCount = 9
+			this.columnCount = 11
 			this.filterState.filters.push(Constants.FILTER_TYPE.DOMAIN)
 			this.filterState.filters.push(Constants.FILTER_TYPE.COMMUNITY)
     } else if (this.dataService.isCommunityAdmin) {
       this.sortColumn = Constants.FILTER_TYPE.ORGANISATION
 			this.communityId = this.dataService.community!.id
 			if (this.dataService.community!.domain == undefined) {
-				this.columnCount = 8
+				this.columnCount = 10
 				this.filterState.filters.push(Constants.FILTER_TYPE.DOMAIN)
       } else {
-				this.columnCount = 7
+				this.columnCount = 9
       }
     }
     this.getConformanceStatements()

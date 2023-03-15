@@ -160,6 +160,7 @@ import { DomainSpecificationTableRowComponent } from './components/domain-specif
 import { HiddenIconComponent } from './components/hidden-icon/hidden-icon.component';
 import { ConformanceStatementItemDisplayComponent } from './components/conformance-statement-item-display/conformance-statement-item-display.component';
 import { ConformanceStatementItemsDisplayComponent } from './components/conformance-statement-items-display/conformance-statement-items-display.component';
+import { CollapsingIconComponent } from './components/collapsing-icon/collapsing-icon.component';
 
 @NgModule({
   providers: [ 
@@ -309,7 +310,8 @@ import { ConformanceStatementItemsDisplayComponent } from './components/conforma
     DomainSpecificationTableRowComponent,
     HiddenIconComponent,
     ConformanceStatementItemDisplayComponent,
-    ConformanceStatementItemsDisplayComponent],
+    ConformanceStatementItemsDisplayComponent,
+    CollapsingIconComponent],
   imports: [
     BrowserModule,
     BrowserAnimationsModule,

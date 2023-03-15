@@ -6,7 +6,7 @@
       <div class="col-md-12 countersDiv" *ngIf="report.counters != null && (report.counters.nrOfErrors > 0 || report.counters.nrOfWarnings > 0 || report.counters.nrOfAssertions > 0)">
         <div class="itemsDiv">
           <div class="summary" (click)="collapsed = !collapsed">
-            <div class="summary-cell summary-cell-title">Details</div>
+            <div class="summary-cell summary-cell-title"><app-collapsing-icon [isCollapsed]="collapsed"></app-collapsing-icon>Details</div>
             <div class="summary-labels">
               <div class="summary-cell"><span class="summary-item-label">Errors:</span> {{report.counters.nrOfErrors}}</div>
               <div class="summary-cell"><span class="summary-item-label">Warnings:</span> {{report.counters.nrOfWarnings}}</div>
