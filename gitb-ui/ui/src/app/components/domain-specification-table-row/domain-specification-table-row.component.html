@@ -1,5 +1,5 @@
-<td *ngIf="groups.length > 0 && !spec.option">
-    <button *ngIf="spec.group" #collapseButton id="button-collapse" class="btn btn-default" (click)="spec.collapsed = !spec.collapsed; $event.stopPropagation(); collapseButton.blur()" containerClass="shortTooltip" [tooltip]="spec.collapsed?'Expand '+dataService.labelSpecificationGroupLower():'Collapse '+dataService.labelSpecificationGroupLower()" [delay]="Constants.TOOLTIP_DELAY"><span><i class="fa" [ngClass]="{'fa-chevron-circle-right': spec.collapsed, 'fa-chevron-circle-down': !spec.collapsed }"></i></span></button>
+<td *ngIf="groups.length > 0 && !spec.option" class="td-min-centered">
+    <app-collapsing-icon [hidden]="!spec.group" [padded]="false" [isCollapsed]="spec.collapsed"></app-collapsing-icon>
 </td>
 <td>{{spec.fname}}</td>
 <td>{{spec.description}}</td>
@@ -7,6 +7,7 @@
 <td class="td-min-right" *ngIf="groups.length > 0">
     <div class="btn-toolbar" [ngSwitch]="spec.group">
         <ng-container *ngSwitchCase="true">
+            <button id="button-edit" class="btn btn-default" (click)="editGroup();$event.stopPropagation();" containerClass="shortTooltip" [tooltip]="'Edit '+dataService.labelSpecificationGroupLower()" [delay]="Constants.TOOLTIP_DELAY"><span><i class="fa fa-pencil"></i></span></button>
             <button id="button-add-option" class="btn btn-default" (click)="createOption();$event.stopPropagation();" containerClass="shortTooltip" [tooltip]="'Add '+dataService.labelSpecificationInGroupLower()" [delay]="Constants.TOOLTIP_DELAY"><span><i class="fa fa-plus"></i></span></button>
         </ng-container>
         <ng-container *ngSwitchDefault>

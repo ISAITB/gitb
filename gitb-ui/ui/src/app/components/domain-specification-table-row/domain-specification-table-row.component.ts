@@ -56,6 +56,10 @@ export class DomainSpecificationTableRowComponent implements OnInit {
     this.routingService.toCreateSpecification(this.spec.domain, this.spec.id)
   }
 
+  editGroup() {
+    this.routingService.toSpecificationGroup(this.spec.domain, this.spec.id)
+  }
+
   isPending():boolean {
     return (this.spec.movePending != undefined && this.spec.movePending) 
       || (this.spec.removePending != undefined && this.spec.removePending) 

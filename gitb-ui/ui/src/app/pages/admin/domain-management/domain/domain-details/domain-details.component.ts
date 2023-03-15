@@ -200,7 +200,7 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
 
 	onSpecificationGroupSelect(groupOrOption: DomainSpecification) {
     if (groupOrOption.group) {
-      this.routingService.toSpecificationGroup(this.domainId, groupOrOption.id)
+      groupOrOption.collapsed = !groupOrOption.collapsed
     } else {
       this.onSpecificationSelect(groupOrOption)
     }
