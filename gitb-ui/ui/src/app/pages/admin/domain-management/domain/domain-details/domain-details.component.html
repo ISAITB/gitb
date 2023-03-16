@@ -75,9 +75,9 @@
                                                 <tr app-domain-specification-table-row
                                                     [spec]="spec"
                                                     [groups]="specificationGroups"
-                                                    (remove)="removeSpecificationFromGroup($event[0], $event[1])"
-                                                    (move)="moveSpecificationToGroup($event[0], $event[1], $event[2])"
-                                                    (copy)="copySpecificationToGroup($event[0], $event[1], $event[2])"
+                                                    (removeSpec)="removeSpecificationFromGroup($event[0], $event[1])"
+                                                    (moveSpec)="moveSpecificationToGroup($event[0], $event[1], $event[2])"
+                                                    (copySpec)="copySpecificationToGroup($event[0], $event[1], $event[2])"
                                                     class="group"
                                                     (click)="onSpecificationGroupSelect(spec)"
                                                     ></tr>
@@ -103,9 +103,9 @@
                                                                                 <tr app-domain-specification-table-row
                                                                                     [spec]="option"
                                                                                     [groups]="specificationGroups"
-                                                                                    (remove)="removeSpecificationFromGroup($event[0], $event[1])"
-                                                                                    (move)="moveSpecificationToGroup($event[0], $event[1], $event[2])"
-                                                                                    (copy)="copySpecificationToGroup($event[0], $event[1], $event[2])"
+                                                                                    (removeSpec)="removeSpecificationFromGroup($event[0], $event[1])"
+                                                                                    (moveSpec)="moveSpecificationToGroup($event[0], $event[1], $event[2])"
+                                                                                    (copySpec)="copySpecificationToGroup($event[0], $event[1], $event[2])"
                                                                                     class="selectable"
                                                                                     (click)="onSpecificationSelect(option)"
                                                                                 ></tr>

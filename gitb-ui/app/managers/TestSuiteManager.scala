@@ -298,6 +298,7 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 						val testSuite = repositoryUtils.getTestSuiteFromZip(domainId, None, pendingFiles.head)
 						// Sanity check
 						if (testSuite.isDefined && testSuite.get.testCases.isDefined) {
+							testSuite.get.shared = sharedTestSuite
 							val onSuccessCalls = mutable.ListBuffer[() => _]()
 							val onFailureCalls = mutable.ListBuffer[() => _]()
 							val dbAction = processTestSuite(testSuite.get, testSuite.get.actors, testSuite.get.testCases, Some(pendingFiles.head), actions, onSuccessCalls, onFailureCalls)

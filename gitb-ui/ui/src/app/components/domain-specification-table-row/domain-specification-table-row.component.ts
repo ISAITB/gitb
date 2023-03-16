@@ -14,9 +14,9 @@ export class DomainSpecificationTableRowComponent implements OnInit {
 
   @Input() spec!: DomainSpecification
   @Input() groups: SpecificationGroup[] = []
-  @Output() remove = new EventEmitter<[number, number]>()
-  @Output() move = new EventEmitter<[number, number|undefined, number]>()
-  @Output() copy = new EventEmitter<[number, number|undefined, number]>()
+  @Output() removeSpec = new EventEmitter<[number, number]>()
+  @Output() moveSpec = new EventEmitter<[number, number|undefined, number]>()
+  @Output() copySpec = new EventEmitter<[number, number|undefined, number]>()
   Constants = Constants
 
   removePending = false
@@ -34,21 +34,21 @@ export class DomainSpecificationTableRowComponent implements OnInit {
   removeFromGroup() {
     if (!this.spec.removePending) {
       this.spec.removePending = true
-      this.remove.emit([this.spec.id, this.spec.groupId!])
+      this.removeSpec.emit([this.spec.id, this.spec.groupId!])
     }
   }
 
   moveToGroup(groupId: number) {
     if (!this.spec.movePending) {
       this.spec.movePending = true
-      this.move.emit([this.spec.id, this.spec.groupId, groupId])
+      this.moveSpec.emit([this.spec.id, this.spec.groupId, groupId])
     }
   }
 
   copyToGroup(groupId: number) {
     if (!this.spec.copyPending) {
       this.spec.copyPending = true
-      this.copy.emit([this.spec.id, this.spec.groupId, groupId])
+      this.copySpec.emit([this.spec.id, this.spec.groupId, groupId])
     }
   }
 

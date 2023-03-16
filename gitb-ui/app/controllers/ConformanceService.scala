@@ -4,7 +4,7 @@ import config.Configurations
 import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, ResponseConstructor}
 import exceptions.{ErrorCodes, NotFoundException}
 import managers._
-import models.Enums.TestSuiteReplacementChoice.TestSuiteReplacementChoice
+import models.Enums.TestSuiteReplacementChoice.{PROCEED, TestSuiteReplacementChoice}
 import models.Enums.{Result => _, _}
 import models._
 import models.prerequisites.PrerequisiteUtil
@@ -281,13 +281,18 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
         if (!sharedTestSuite && !specsMatch(specificationIds.get.toSet, actions.filter(_.specification.isDefined))) {
           response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_PARAM, "Provided actions don't match selected specifications")
         }
-      } else if (specificationIds.isDefined) {
-        // We can have this case if we had no needed confirmation for deployment to specifications.
-        actions = specificationIds.get.map { specId =>
-          new TestSuiteDeploymentAction(Some(specId), TestSuiteReplacementChoice.PROCEED, updateTestSuite = false, updateActors = Some(false), sharedTestSuite = false, testCaseUpdates = None)
-        }
       } else {
-        response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_PARAM, "Either a shared test suite is expected or a set of specifications")
+        if (sharedTestSuite) {
+          // We would have this case if we had a new shared test suite with only validation warnings.
+          actions = List(new TestSuiteDeploymentAction(None, PROCEED, updateTestSuite = true, updateActors = None, sharedTestSuite = true, testCaseUpdates = None))
+        } else if (specificationIds.isDefined && specificationIds.get.nonEmpty) {
+          // We can have this case if we had no needed confirmation for deployment to specifications.
+          actions = specificationIds.get.map { specId =>
+            new TestSuiteDeploymentAction(Some(specId), TestSuiteReplacementChoice.PROCEED, updateTestSuite = false, updateActors = Some(false), sharedTestSuite = false, testCaseUpdates = None)
+          }
+        } else {
+          response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_PARAM, "Either a shared test suite is expected or a set of specifications")
+        }
       }
       if (response == null && actions != null) {
         result = testSuiteManager.completePendingTestSuiteActions(pendingFolderId, domainId, sharedTestSuite, actions)
