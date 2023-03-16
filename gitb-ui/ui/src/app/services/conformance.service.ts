@@ -553,7 +553,7 @@ export class ConformanceService {
     })
   }
 
-  createSpecification(shortName: string, fullName: string, description: string|undefined, hidden: boolean|undefined, domainId: number) {
+  createSpecification(shortName: string, fullName: string, description: string|undefined, hidden: boolean|undefined, domainId: number, groupId: number|undefined) {
     const params:any = {
       sname: shortName,
       fname: fullName,
@@ -565,6 +565,9 @@ export class ConformanceService {
     }
     if (description != undefined) {
       params.description = description
+    }
+    if (groupId != undefined) {
+      params.group_id = groupId
     }
     return this.restService.post<void>({
       path: ROUTES.controllers.ConformanceService.createSpecification().url,
