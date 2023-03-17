@@ -50,8 +50,8 @@ public class WebServiceConfig {
         EndpointImpl endpoint = new EndpointImpl(cxfBus, messagingClientImpl);
         endpoint.setServiceName(new QName("http://www.gitb.com/ms/v1/", "MessagingClientService"));
         endpoint.setEndpointName(new QName("http://www.gitb.com/ms/v1/", "MessagingClientPort"));
-        endpoint.publish("/MessagingClient");
         endpoint.setPublishedEndpointUrl(TestEngineConfiguration.MESSAGING_CALLBACK_URL);
+        endpoint.publish("/MessagingClient");
         return endpoint;
     }
 
@@ -60,8 +60,8 @@ public class WebServiceConfig {
         EndpointImpl endpoint = new EndpointImpl(cxfBus, validationClientImpl);
         endpoint.setServiceName(new QName("http://www.gitb.com/vs/v1/", "ValidationClientService"));
         endpoint.setEndpointName(new QName("http://www.gitb.com/vs/v1/", "ValidationClientPort"));
-        endpoint.publish("/ValidationClient");
         endpoint.setPublishedEndpointUrl(TestEngineConfiguration.VALIDATION_CALLBACK_URL);
+        endpoint.publish("/ValidationClient");
         return endpoint;
     }
 
@@ -70,8 +70,8 @@ public class WebServiceConfig {
         EndpointImpl endpoint = new EndpointImpl(cxfBus, processingClientImpl);
         endpoint.setServiceName(new QName("http://www.gitb.com/ps/v1/", "ProcessingClientService"));
         endpoint.setEndpointName(new QName("http://www.gitb.com/ps/v1/", "ProcessingClientPort"));
-        endpoint.publish("/ProcessingClient");
         endpoint.setPublishedEndpointUrl(TestEngineConfiguration.PROCESSING_CALLBACK_URL);
+        endpoint.publish("/ProcessingClient");
         return endpoint;
     }
 
