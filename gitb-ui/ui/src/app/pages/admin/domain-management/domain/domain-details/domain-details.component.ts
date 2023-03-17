@@ -1,10 +1,9 @@
 import { AfterViewInit, Component, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { BsModalService } from 'ngx-bootstrap/modal';
 import { Constants } from 'src/app/common/constants';
 import { CreateEditDomainParameterModalComponent } from 'src/app/modals/create-edit-domain-parameter-modal/create-edit-domain-parameter-modal.component';
 import { TestSuiteUploadModalComponent } from 'src/app/modals/test-suite-upload-modal/test-suite-upload-modal.component';
-import { BaseComponent } from 'src/app/pages/base-component.component';
 import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
 import { ConformanceService } from 'src/app/services/conformance.service';
 import { DataService } from 'src/app/services/data.service';
@@ -15,20 +14,32 @@ import { DomainParameter } from 'src/app/types/domain-parameter';
 import { Specification } from 'src/app/types/specification';
 import { TableColumnDefinition } from 'src/app/types/table-column-definition.type';
 import { saveAs } from 'file-saver'
+import { TestSuite } from 'src/app/types/test-suite';
+import { BaseTabbedComponent } from 'src/app/pages/base-tabbed-component';
+import { SpecificationService } from 'src/app/services/specification.service';
+import { forkJoin } from 'rxjs';
+import { DomainSpecification } from 'src/app/types/domain-specification';
+import { SpecificationGroup } from 'src/app/types/specification-group';
+import { find, remove } from 'lodash';
 
 @Component({
   selector: 'app-domain-details',
   templateUrl: './domain-details.component.html',
-  styles: [
-  ]
+  styleUrls: [ './domain-details.component.less' ]
 })
-export class DomainDetailsComponent extends BaseComponent implements OnInit, AfterViewInit {
+export class DomainDetailsComponent extends BaseTabbedComponent implements OnInit, AfterViewInit {
 
   domain: Partial<Domain> = {}
+
+  domainSpecifications: DomainSpecification[] = []
   specifications: Specification[] = []
+  hasGroups = false
+  specificationGroups: SpecificationGroup[] = []
+  sharedTestSuites: TestSuite[] = []
   domainParameters: DomainParameter[] = []
   domainId!: number
   specificationStatus = {status: Constants.STATUS.NONE}
+  sharedTestSuiteStatus = {status: Constants.STATUS.NONE}
   parameterStatus = {status: Constants.STATUS.NONE}
   tableColumns: TableColumnDefinition[] = [
     { field: 'sname', title: 'Short name' },
@@ -36,21 +47,40 @@ export class DomainDetailsComponent extends BaseComponent implements OnInit, Aft
     { field: 'description', title: 'Description' },
     { field: 'hidden', title: 'Hidden' }
   ]
+  sharedTestSuiteTableColumns: TableColumnDefinition[] = [
+    { field: 'identifier', title: 'ID' },
+    { field: 'sname', title: 'Name' },
+    { field: 'description', title: 'Description' },
+    { field: 'version', title: 'Version' }
+  ]
   savePending = false
   deletePending = false
 
   constructor(
     public dataService: DataService,
+    private specificationService: SpecificationService,
     private conformanceService: ConformanceService,
     private confirmationDialogService: ConfirmationDialogService,
     private modalService: BsModalService,
     private popupService: PopupService,
     private routingService: RoutingService,
-    private route: ActivatedRoute
-  ) { super() }
+    private route: ActivatedRoute,
+    router: Router
+  ) { super(router) }
+
+  loadTab(tabIndex: number): void {
+    if (tabIndex == Constants.TAB.DOMAIN.PARAMETERS) {
+      this.loadDomainParameters()
+    } else if (tabIndex == Constants.TAB.DOMAIN.SPECIFICATIONS) {
+      this.loadSpecifications()
+    } else {
+      this.loadSharedTestSuites()
+    }
+  }
 
   ngAfterViewInit(): void {
 		this.dataService.focus('shortName')
+    this.showTab()
   }
 
   ngOnInit(): void {
@@ -62,24 +92,50 @@ export class DomainDetailsComponent extends BaseComponent implements OnInit, Aft
     this.loadSpecifications()
   }
 
-  loadSpecifications() {
-    if (this.specificationStatus.status == Constants.STATUS.NONE) {
+  toggleSpecificationGroupCollapse(collapse: boolean) {
+    for (let spec of this.domainSpecifications) {
+      if (spec.group) {
+        spec.collapsed = collapse
+      }
+    }
+  }
+
+  loadSpecifications(force?: boolean) {
+    if (this.specificationStatus.status == Constants.STATUS.NONE || force) {
       this.specificationStatus.status = Constants.STATUS.PENDING
-      this.conformanceService.getSpecifications(this.domainId)
-      .subscribe((data) => {
-        this.specifications = data
+      this.domainSpecifications = []
+      const specsObservable = this.conformanceService.getSpecifications(this.domainId, false)
+      const specGroupsObservable = this.specificationService.getSpecificationGroups(this.domainId)
+      forkJoin([specsObservable, specGroupsObservable]).subscribe((results) => {
+        this.specificationGroups = results[1]
+        this.hasGroups = this.specificationGroups.length > 0
+        this.domainSpecifications = this.dataService.toDomainSpecifications(this.specificationGroups, results[0])
+        this.specifications = this.dataService.toSpecifications(this.domainSpecifications)
       }).add(() => {
         this.specificationStatus.status = Constants.STATUS.FINISHED
       })
     }
   }
 
+  loadSharedTestSuites(forceLoad?: boolean) {
+    if (this.sharedTestSuiteStatus.status == Constants.STATUS.NONE || forceLoad) {
+      this.sharedTestSuiteStatus.status = Constants.STATUS.PENDING
+      this.sharedTestSuites = []
+      this.conformanceService.getSharedTestSuites(this.domainId)
+      .subscribe((data) => {
+        this.sharedTestSuites = data
+      }).add(() => {
+        this.sharedTestSuiteStatus.status = Constants.STATUS.FINISHED
+      })
+    }
+  }
+
   loadDomainParameters(forceLoad?: boolean) {
     if (this.parameterStatus.status == Constants.STATUS.NONE || forceLoad) {
+      this.domainParameters = []
       this.parameterStatus.status = Constants.STATUS.PENDING
       this.conformanceService.getDomainParameters(this.domainId)
       .subscribe((data) => {
-        this.domainParameters = []
         for (let parameter of data) {
           if (parameter.kind == 'HIDDEN') {
             parameter.valueToShow = "*****"
@@ -92,7 +148,7 @@ export class DomainDetailsComponent extends BaseComponent implements OnInit, Aft
           this.domainParameters.push(parameter)
         }
       }).add(() => {
-        this.parameterStatus.status = Constants.STATUS.FINISHED			
+        this.parameterStatus.status = Constants.STATUS.FINISHED
       })
     }
   }
@@ -138,8 +194,20 @@ export class DomainDetailsComponent extends BaseComponent implements OnInit, Aft
     this.routingService.toDomains()
   }
 
-	onSpecificationSelect(specification: Specification) {
+	onSpecificationSelect(specification: DomainSpecification) {
     this.routingService.toSpecification(this.domainId, specification.id)
+  }
+
+	onSpecificationGroupSelect(groupOrOption: DomainSpecification) {
+    if (groupOrOption.group) {
+      groupOrOption.collapsed = !groupOrOption.collapsed
+    } else {
+      this.onSpecificationSelect(groupOrOption)
+    }
+  }
+
+  onSharedTestSuiteSelect(testSuite: TestSuite) {
+    this.routingService.toSharedTestSuite(this.domainId, testSuite.id)
   }
 
 	openParameterModal(domainParameter: Partial<DomainParameter>) {
@@ -172,13 +240,122 @@ export class DomainDetailsComponent extends BaseComponent implements OnInit, Aft
       keyboard: false,
       initialState: {
         availableSpecifications: this.specifications,
-        testSuitesVisible: false
+        testSuitesVisible: false,
+        domainId: this.domainId
       }
     })
+  }
+
+  uploadSharedTestSuite() {
+    const modal = this.modalService.show(TestSuiteUploadModalComponent, {
+      class: 'modal-lg',
+      backdrop: 'static',
+      keyboard: false,
+      initialState: {
+        availableSpecifications: this.specifications,
+        sharedTestSuite: true,
+        domainId: this.domainId
+      }
+    })
+    modal.content!.completed.subscribe((testSuitesUpdated: boolean) => {
+      if (testSuitesUpdated) {
+        this.loadSharedTestSuites(true)
+      }
+    })
+
   }
 
 	createSpecification() {
     this.routingService.toCreateSpecification(this.domainId)
   }
-  
+
+  createSpecificationGroup() {
+    this.routingService.toCreateSpecificationGroup(this.domainId)
+  }
+
+  removeSpecificationFromGroup(specificationId: number, currentGroupId: number) {
+    this.specificationService.removeSpecificationFromGroup(specificationId)
+    .subscribe(() => {
+      const currentGroup = find(this.domainSpecifications, (ds) => ds.id == currentGroupId)
+      if (currentGroup && currentGroup.options) {
+        const specifications = remove(currentGroup.options, (ds) => ds.id == specificationId)
+        if (specifications && specifications.length > 0) {
+          specifications[0].groupId = undefined
+          specifications[0].option = false
+          specifications[0].removePending = false
+          this.domainSpecifications.push(specifications[0])
+        }
+        this.dataService.setSpecificationGroupVisibility(currentGroup)
+      }
+      this.domainSpecifications = this.dataService.sortDomainSpecifications(this.domainSpecifications)
+      this.specifications = this.dataService.toSpecifications(this.domainSpecifications)
+      this.popupService.success(this.dataService.labelSpecificationInGroup()+' removed.')
+    })
+  }
+
+  copySpecificationToGroup(specificationId: number, currentGroupId: number|undefined, newGroupId: number) {
+    this.specificationService.copySpecificationToGroup(newGroupId, specificationId)
+    .subscribe((result) => {
+      const newSpecificationId = result.id
+      let specification: DomainSpecification|undefined
+      if (currentGroupId) {
+        const currentGroup = find(this.domainSpecifications, (ds) => ds.id == currentGroupId)
+        if (currentGroup && currentGroup.options) {
+          specification = find(currentGroup.options, (ds) => ds.id == specificationId)
+        }
+      } else {
+        specification = find(this.domainSpecifications, (ds) => ds.id == specificationId)
+      }
+      const newGroup = find(this.domainSpecifications, (ds) => ds.id == newGroupId)
+      if (specification && newGroup && newGroup.options) {
+        const newSpecification: DomainSpecification = {
+          id: newSpecificationId,
+          sname: specification.sname,
+          fname: specification.fname,
+          description: specification.description,
+          domain: specification.domain,
+          hidden: specification.hidden,
+          groupId: newGroupId,
+          group: false,
+          option: true,
+          collapsed: false
+        }
+        specification.copyPending = false
+        newGroup.options.push(newSpecification)
+        newGroup.options = this.dataService.sortDomainSpecifications(newGroup.options)
+        this.dataService.setSpecificationGroupVisibility(newGroup)
+        this.popupService.success(this.dataService.labelSpecificationInGroup()+' copied.')
+      }
+    })
+  }
+
+  moveSpecificationToGroup(specificationId: number, currentGroupId: number|undefined, newGroupId: number) {
+    this.specificationService.addSpecificationToGroup(newGroupId, specificationId)
+    .subscribe(() => {
+      let specifications: DomainSpecification[]|undefined
+      if (currentGroupId) {
+        const currentGroup = find(this.domainSpecifications, (ds) => ds.id == currentGroupId)
+        if (currentGroup && currentGroup.options) {
+          specifications = remove(currentGroup.options, (ds) => ds.id == specificationId)
+          this.dataService.setSpecificationGroupVisibility(currentGroup)
+        }
+      } else {
+        specifications = remove(this.domainSpecifications, (ds) => ds.id == specificationId)
+      }
+      if (specifications && specifications.length > 0) {
+        specifications[0].movePending = false
+        specifications[0].groupId = newGroupId;
+        const group = find(this.domainSpecifications, (ds) => ds.id == newGroupId)
+        if (group && group.options) {
+          specifications[0].option = true
+          group.options.push(specifications[0])
+          this.dataService.setSpecificationGroupVisibility(group)
+          group.options = this.dataService.sortDomainSpecifications(group.options)
+        }
+      }
+      this.specifications = this.dataService.toSpecifications(this.domainSpecifications)
+      this.popupService.success(this.dataService.labelSpecificationInGroup()+' moved.')
+    })
+  }
+
 }

@@ -16,6 +16,8 @@ export abstract class BaseTableComponent extends BaseComponent {
 	@Input() actionVisibleForRow?: (row: any) => boolean
 	@Input() actionPendingProperty = 'actionPending'
 	@Input() actionIcon = ''
+  @Input() deleteIcon = 'fa fa-trash'
+  @Input() exportIcon = 'fa fa-file-pdf-o'
 	@Input() operationsVisible = false
 	@Input() deleteVisibleForRow?: (row: any) => boolean
 	@Input() deletePendingProperty = 'deletePending'
@@ -32,6 +34,8 @@ export abstract class BaseTableComponent extends BaseComponent {
   @Input() deleteTooltip = 'Delete'
   @Input() exportTooltip = 'Export'
   @Input() contentRefreshing = false
+  @Input() expandableRowProperty?: string
+  @Input() clearSelection?: EventEmitter<void>
 
   @Output() onSelect: EventEmitter<any> = new EventEmitter()
   @Output() onDeselect: EventEmitter<any> = new EventEmitter()

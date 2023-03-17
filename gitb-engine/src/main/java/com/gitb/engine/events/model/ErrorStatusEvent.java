@@ -1,5 +1,6 @@
 package com.gitb.engine.events.model;
 
+import akka.actor.ActorRef;
 import com.gitb.core.StepStatus;
 import com.gitb.engine.testcase.TestCaseScope;
 
@@ -9,8 +10,8 @@ import com.gitb.engine.testcase.TestCaseScope;
 public class ErrorStatusEvent extends StatusEvent {
 	private final Throwable e;
 
-	public ErrorStatusEvent(Throwable e, TestCaseScope scope) {
-		super(StepStatus.ERROR, scope);
+	public ErrorStatusEvent(Throwable e, TestCaseScope scope, ActorRef sender) {
+		super(StepStatus.ERROR, scope, sender);
 		this.e = e;
 	}
 

@@ -3,7 +3,10 @@
         <caption *ngIf="tableCaptionVisible">{{tableCaption}}</caption>
         <thead>
             <tr>
-                <th *ngIf="checkboxEnabled"></th>
+                <th *ngIf="expandableRowProperty != undefined" class="th-min-centered"></th>
+                <th *ngIf="checkboxEnabled" class="th-min-centered">
+                    <input type="checkbox" [(ngModel)]="allChecked" (change)="checkAll()">
+                </th>
                 <th [ngClass]="classForColumn(column)" *ngFor="let column of columnsLeft" [class.sortable]="column.sortable" (click)="headerColumnClicked(column)">
                     {{column.title}} 
                     <i *ngIf="column.order != undefined" [ngClass]="{'fa-caret-down': column.order == 'desc', 'fa-caret-up': column.order == 'asc'}" class="fa"></i>
@@ -32,6 +35,8 @@
                 [classes]="classes"
                 [actionVisible]="actionVisible"
                 [actionIcon]="actionIcon"
+                [exportIcon]="exportIcon"
+                [deleteIcon]="deleteIcon"
                 [operationsVisible]="operationsVisible"
                 [exportVisible]="exportVisible"
                 [exportVisibleForRow]="exportVisibleForRow"
@@ -47,7 +52,8 @@
                 [exportPendingProperty]="exportPendingProperty"
                 [actionTooltip]="actionTooltip"
                 [deleteTooltip]="deleteTooltip"
-                [exportTooltip]="exportTooltip"></tr>
+                [exportTooltip]="exportTooltip"
+                [expandableRowProperty]="expandableRowProperty"></tr>
         </tbody>
     </table>
     <div *ngIf="(!prevDisabled || !nextDisabled) && data && data.length > 0" class="text-center table-paging-controls">

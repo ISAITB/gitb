@@ -3,16 +3,27 @@ package com.gitb.engine.actors.processors;
 import akka.actor.ActorRef;
 import com.gitb.core.ErrorCode;
 import com.gitb.core.StepStatus;
+import com.gitb.engine.actors.SessionActor;
+import com.gitb.engine.commands.interaction.PrepareForStopCommand;
 import com.gitb.engine.commands.interaction.StartCommand;
+import com.gitb.engine.events.TestStepStatusEventBus;
 import com.gitb.engine.events.model.StatusEvent;
+import com.gitb.engine.events.model.TestStepStatusEvent;
 import com.gitb.engine.testcase.TestCaseContext;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.engine.utils.TestCaseUtils;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.tdl.Process;
 import com.gitb.tdl.*;
+import com.gitb.tr.TestResultType;
 import com.gitb.utils.ErrorUtils;
+import org.apache.commons.lang3.tuple.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -23,11 +34,12 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class SequenceProcessorActor<T extends Sequence> extends AbstractTestStepActor<T> {
     public static final String NAME = "seq-p";
+    private static final Logger LOG = LoggerFactory.getLogger(SequenceProcessorActor.class);
 
     private Map<Integer, Integer> childActorUidIndexMap;
-    private Map<Integer, ActorRef> childStepIndexActorMap;
     private Map<Integer, StepStatus> childStepStatuses;
     private Map<Integer, Object> childSteps;
+    private List<Pair<Integer, Object>> childStepSpecs;
 
     public SequenceProcessorActor(T sequence, TestCaseScope scope, String stepId) {
         super(sequence, scope, stepId);
@@ -37,26 +49,18 @@ public class SequenceProcessorActor<T extends Sequence> extends AbstractTestStep
     protected void init() throws Exception {
 
         this.childActorUidIndexMap = new ConcurrentHashMap<>();
-        this.childStepIndexActorMap = new ConcurrentHashMap<>();
         this.childStepStatuses = new ConcurrentHashMap<>();
         this.childSteps = new ConcurrentHashMap<>();
+        this.childStepSpecs = Collections.synchronizedList(new ArrayList<>());
 
         if (step != null) {
-            int realIndex = 0;
             int reportedIndex = 1;
             for (Object childStep : step.getSteps()) {
-                ActorRef child;
                 if (TestCaseUtils.shouldBeReported(childStep.getClass())) {
-                    child = createChildActor(reportedIndex, childStep);
-                    reportedIndex++;
+                    childStepSpecs.add(Pair.of(reportedIndex, childStep));
+                    reportedIndex += 1;
                 } else {
-                    child = createChildActor(-1, childStep);
-                }
-                if (child != null) {
-                    childActorUidIndexMap.put(child.path().uid(), realIndex);
-                    childSteps.put(child.path().uid(), childStep);
-                    childStepIndexActorMap.put(realIndex, child);
-                    realIndex++;
+                    childStepSpecs.add(Pair.of(-1, childStep));
                 }
             }
         }
@@ -145,29 +149,55 @@ public class SequenceProcessorActor<T extends Sequence> extends AbstractTestStep
                 || status == StepStatus.SKIPPED) {
 
             ActorRef nextStep = null;
-            boolean childStopOnError = (childStep instanceof TestConstruct) && ((TestConstruct)childStep).isStopOnError() != null && ((TestConstruct)childStep).isStopOnError();
-            if (scope.getContext().getCurrentState() != TestCaseContext.TestCaseStateEnum.STOPPING && (status != StepStatus.ERROR || !childStopOnError)) {
-                nextStep = startTestStepAtIndex(completedStepIndex + 1);
+            if (scope.getContext().getCurrentState() != TestCaseContext.TestCaseStateEnum.STOPPING && scope.getContext().getCurrentState() != TestCaseContext.TestCaseStateEnum.STOPPED) {
+                boolean childStopOnError = (childStep instanceof TestConstruct) && ((TestConstruct)childStep).isStopOnError() != null && ((TestConstruct)childStep).isStopOnError();
+                if (childStopOnError && status == StepStatus.ERROR) {
+                    // Stop processing and signal stop.
+                    scope.getContext().setCurrentState(TestCaseContext.TestCaseStateEnum.STOPPING);
+                    try {
+                        getContext().system().actorSelection(SessionActor.getPath(scope.getContext().getSessionId())).tell(new PrepareForStopCommand(scope.getContext().getSessionId(), self()), self());
+                    } catch (Exception e) {
+                        LOG.error(addMarker(), "Error sending the signal to stop the test session from test step actor [" + stepId + "].");
+                    }
+                } else {
+                    // Proceed.
+                    nextStep = startTestStepAtIndex(completedStepIndex + 1);
+                }
             }
             if (nextStep == null) {
-                boolean childrenHasError = false;
-                boolean childrenHasWarning = false;
-                for (Map.Entry<Integer, StepStatus> childStepStatus : childStepStatuses.entrySet()) {
-                    if (childStepStatus.getValue() == StepStatus.ERROR) {
-                        childrenHasError = true;
-                        break;
-                    } else if (childStepStatus.getValue() == StepStatus.WARNING) {
-                        childrenHasWarning = true;
+                // If there are remaining steps these should be marked as skipped.
+                if ((completedStepIndex + 1) < childStepSpecs.size()) {
+                    for (int i = completedStepIndex + 1; i < childStepSpecs.size(); i++) {
+                        var pendingStep = childStepSpecs.get(i).getRight();
+                        if (pendingStep instanceof TestConstruct && ((TestConstruct)pendingStep).getId() != null) {
+                            TestCaseUtils.updateStepStatusMaps(getStepSuccessMap(), getStepStatusMap(), (TestConstruct) pendingStep, scope, StepStatus.SKIPPED);
+                            var pendingEvent = new TestStepStatusEvent(scope.getContext().getSessionId(), ((TestConstruct)pendingStep).getId(), StepStatus.SKIPPED, constructDefaultReport(TestResultType.UNDEFINED), self(), pendingStep, scope);
+                            TestStepStatusEventBus.getInstance().publish(pendingEvent);
+                        }
                     }
                 }
-                if (childrenHasError) {
-                    childrenHasError();
-                } else if (childrenHasWarning) {
-                    childrenHasWarning();
-                } else {
-                    completed();
-                }
+                completeStep();
             }
+        }
+    }
+
+    void completeStep() {
+        boolean childrenHasError = false;
+        boolean childrenHasWarning = false;
+        for (Map.Entry<Integer, StepStatus> childStepStatus : childStepStatuses.entrySet()) {
+            if (childStepStatus.getValue() == StepStatus.ERROR) {
+                childrenHasError = true;
+                break;
+            } else if (childStepStatus.getValue() == StepStatus.WARNING) {
+                childrenHasWarning = true;
+            }
+        }
+        if (childrenHasError) {
+            childrenHasError();
+        } else if (childrenHasWarning) {
+            childrenHasWarning();
+        } else {
+            completed();
         }
     }
 
@@ -177,11 +207,23 @@ public class SequenceProcessorActor<T extends Sequence> extends AbstractTestStep
     }
 
     private ActorRef startTestStepAtIndex(int index) {
-        ActorRef childStep = childStepIndexActorMap.get(index);
-        if (childStep != null) {
-            childStep.tell(new StartCommand(scope.getContext().getSessionId()), self());
+        ActorRef childActor = null;
+        if (index < childStepSpecs.size()) {
+            var childStepSpec = childStepSpecs.get(index);
+            try {
+                childActor = createChildActor(childStepSpec.getLeft(), childStepSpec.getRight());
+                if (childActor != null) {
+                    childActorUidIndexMap.put(childActor.path().uid(), index);
+                    childSteps.put(childActor.path().uid(), childStepSpec.getRight());
+                    childActor.tell(new StartCommand(scope.getContext().getSessionId()), self());
+                }
+            } catch (GITBEngineInternalError e) {
+                throw e;
+            } catch (Exception e) {
+                throw new GITBEngineInternalError(e);
+            }
         }
-        return childStep;
+        return childActor;
     }
 
     /**

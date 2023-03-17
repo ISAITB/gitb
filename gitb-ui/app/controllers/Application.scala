@@ -101,7 +101,20 @@ class Application @Inject() (implicit ec: ExecutionContext, cc: ControllerCompon
         }
       }
     }
-    Ok(JavaScriptReverseRouter("jsRoutes")(routeActions.toList:_*)).as("text/javascript")
+    // Replace absolute address in the javascript routes' file to match the public address
+    val host = if (Configurations.TESTBED_HOME_LINK != "/") {
+      val linkLength = Configurations.TESTBED_HOME_LINK.length
+      if (StringUtils.startsWithIgnoreCase(Configurations.TESTBED_HOME_LINK, "http://") && linkLength > 7) {
+        Configurations.TESTBED_HOME_LINK.substring(7)
+      } else if (StringUtils.startsWithIgnoreCase(Configurations.TESTBED_HOME_LINK, "https://") && linkLength > 8) {
+        Configurations.TESTBED_HOME_LINK.substring(8)
+      } else {
+        "/"
+      }
+    } else {
+      request.host
+    }
+    Ok(JavaScriptReverseRouter("jsRoutes", Some("jQuery.ajax"), host, routeActions.toList:_*)).as("text/javascript")
   }
 
 }

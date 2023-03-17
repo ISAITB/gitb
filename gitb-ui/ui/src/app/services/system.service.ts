@@ -98,11 +98,13 @@ export class SystemService {
 		})
   }
 
-  updateSystem(systemId: number, sname: string, fname: string, description: string|undefined, version: string, organisationId: number, otherSystem: number|undefined, processProperties: boolean, properties: SystemParameter[], copySystemParameters: boolean, copyStatementParameters: boolean) {
+  updateSystem(systemId: number, sname: string, fname: string, description: string|undefined, version: string|undefined, organisationId: number, otherSystem: number|undefined, processProperties: boolean, properties: SystemParameter[], copySystemParameters: boolean, copyStatementParameters: boolean) {
     const data: any = {
       system_sname: sname,
-      system_fname: fname,
-      system_version: version
+      system_fname: fname
+    }
+    if (version != undefined) {
+      data.system_version = version
     }
     if (description != undefined) {
       data.system_description = description
@@ -127,12 +129,14 @@ export class SystemService {
     })
   }
 
-  registerSystemWithOrganisation(sname: string, fname: string, description: string|undefined, version: string, orgId: number, otherSystem: number|undefined, processProperties: boolean, properties: SystemParameter[], copySystemParameters: boolean, copyStatementParameters: boolean) {
+  registerSystemWithOrganisation(sname: string, fname: string, description: string|undefined, version: string|undefined, orgId: number, otherSystem: number|undefined, processProperties: boolean, properties: SystemParameter[], copySystemParameters: boolean, copyStatementParameters: boolean) {
     const data: any = {
       system_sname: sname,
       system_fname: fname,
-      system_version: version,
       organization_id: orgId
+    }
+    if (version != undefined) {
+      data.system_version = version
     }
     if (otherSystem != undefined) {
       data.other_system = otherSystem
@@ -184,12 +188,11 @@ export class SystemService {
     }
   }
 
-  defineConformanceStatement(system: number, spec: number, actor: number) {
-    return this.restService.post<ErrorDescription|undefined>({
-      path: ROUTES.controllers.SystemService.defineConformanceStatement(system).url,
+  defineConformanceStatements(system: number, actorIds: number[]) {
+    return this.restService.post<void>({
+      path: ROUTES.controllers.SystemService.defineConformanceStatements(system).url,
       data: {
-        spec: spec,
-        actor: actor
+        ids: actorIds.join(',')
       },
       authenticate: true
     })

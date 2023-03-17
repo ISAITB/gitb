@@ -3,6 +3,7 @@ package com.gitb.engine.utils;
 import com.gitb.core.AnyContent;
 import com.gitb.core.Configuration;
 import com.gitb.core.ErrorCode;
+import com.gitb.core.StepStatus;
 import com.gitb.engine.ModuleManager;
 import com.gitb.engine.PropertyConstants;
 import com.gitb.engine.expr.StaticExpressionHandler;
@@ -174,35 +175,54 @@ public class TestCaseUtils {
         }
     }
 
-    public static void initialiseStepStatusMaps(MapType stepSuccessMap, MapType stepStatusMap, TestConstruct step) {
+    private static String qualifiedStepIdForStatusMaps(String stepId, TestCaseScope scope) {
+        Objects.requireNonNull(stepId);
+        String id = stepId;
+        if (scope != null) {
+            id = scope.getQualifiedScopeId()+"_"+stepId;
+        }
+        return id;
+    }
+
+    public static void updateStepStatusMaps(MapType stepSuccessMap, MapType stepStatusMap, TestConstruct step, TestCaseScope scope, StepStatus status) {
+        if (step != null && step.getId() != null) {
+            // We only record status for a step with an identifier.
+            var stepId = step.getId();
+            var qualifiedStepId = qualifiedStepIdForStatusMaps(stepId, scope);
+            var successValue = new BooleanType(status == StepStatus.COMPLETED || status == StepStatus.WARNING);
+            var statusValue = new StringType((status == null)?"":status.toString());
+            // Record the status using the qualified step ID.
+            stepSuccessMap.addItem(qualifiedStepId, successValue);
+            stepStatusMap.addItem(qualifiedStepId, statusValue);
+        }
+    }
+
+    public static void initialiseStepStatusMaps(MapType stepSuccessMap, MapType stepStatusMap, TestConstruct step, TestCaseScope scope) {
         if (step != null) {
             // Initialise for the step itself.
-            if (step.getId() != null) {
-                stepSuccessMap.addItem(step.getId(), new BooleanType(false));
-                stepStatusMap.addItem(step.getId(), new StringType(""));
-            }
+            updateStepStatusMaps(stepSuccessMap, stepStatusMap, step, scope, null);
             if (step instanceof Sequence) {
                 // Initialise for children.
                 for (Object childStep: ((Sequence)step).getSteps()) {
                     if (childStep instanceof TestConstruct) {
-                        initialiseStepStatusMaps(stepSuccessMap, stepStatusMap, (TestConstruct)childStep);
+                        initialiseStepStatusMaps(stepSuccessMap, stepStatusMap, (TestConstruct)childStep, scope);
                     }
                 }
             } else {
                 // Initialise for other steps with internal sequences.
                 if (step instanceof IfStep) {
-                    initialiseStepStatusMaps(stepSuccessMap, stepStatusMap, ((IfStep) step).getThen());
-                    initialiseStepStatusMaps(stepSuccessMap, stepStatusMap, ((IfStep) step).getElse());
+                    initialiseStepStatusMaps(stepSuccessMap, stepStatusMap, ((IfStep) step).getThen(), scope);
+                    initialiseStepStatusMaps(stepSuccessMap, stepStatusMap, ((IfStep) step).getElse(), scope);
                 } else if (step instanceof WhileStep) {
-                    initialiseStepStatusMaps(stepSuccessMap, stepStatusMap, ((WhileStep) step).getDo());
+                    initialiseStepStatusMaps(stepSuccessMap, stepStatusMap, ((WhileStep) step).getDo(), scope);
                 } else if (step instanceof ForEachStep) {
-                    initialiseStepStatusMaps(stepSuccessMap, stepStatusMap, ((ForEachStep) step).getDo());
+                    initialiseStepStatusMaps(stepSuccessMap, stepStatusMap, ((ForEachStep) step).getDo(), scope);
                 } else if (step instanceof RepeatUntilStep) {
-                    initialiseStepStatusMaps(stepSuccessMap, stepStatusMap, ((RepeatUntilStep) step).getDo());
+                    initialiseStepStatusMaps(stepSuccessMap, stepStatusMap, ((RepeatUntilStep) step).getDo(), scope);
                 } else if (step instanceof FlowStep) {
                     if (((FlowStep) step).getThread() != null) {
                         for (Sequence thread: ((FlowStep) step).getThread()) {
-                            initialiseStepStatusMaps(stepSuccessMap, stepStatusMap, thread);
+                            initialiseStepStatusMaps(stepSuccessMap, stepStatusMap, thread, scope);
                         }
                     }
                 }

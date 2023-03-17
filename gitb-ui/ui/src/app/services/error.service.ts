@@ -87,8 +87,9 @@ export class ErrorService {
             errorObj = { 
               error: {
                 error_code: errorInfoToUse.error_code,
-                error_description: errorInfoToUse.error_description
-              } 
+                error_description: errorInfoToUse.error_description,
+                error_id: errorInfoToUse.error_id
+              }
             }
             if (errorObj.error?.error_description == undefined) {
               errorObj.error!.error_description = this.fromHttpErrorResponse(error)
@@ -153,7 +154,7 @@ export class ErrorService {
     if (!error.template || error.template == '') {
       if (error.error && error.error.error_id) {
         error.template = 
-          '<p><b>Error message: </b>'+Constants.PLACEHOLDER__ERROR_DESCRIPTION+'</p>' +
+          '<p>'+Constants.PLACEHOLDER__ERROR_DESCRIPTION+'</p>' +
           '<p><b>Error reference: </b>'+Constants.PLACEHOLDER__ERROR_ID+'</p>'
       } else {
         error.template = '<p>'+Constants.PLACEHOLDER__ERROR_DESCRIPTION+'</p>'

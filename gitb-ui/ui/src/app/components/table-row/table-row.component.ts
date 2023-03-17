@@ -25,9 +25,12 @@ export class TableRowComponent implements OnInit {
   @Input() deleteVisibleForRow?: (row: any) => boolean
   @Input() deletePendingProperty = 'deletePending'
   @Input() actionIcon = ''
+  @Input() deleteIcon = 'fa fa-trash'
+  @Input() exportIcon = 'fa fa-file-pdf-o'
   @Input() actionTooltip = ''
   @Input() deleteTooltip = 'Delete'
   @Input() exportTooltip = 'Export'
+  @Input() expandableRowProperty?: string
 
   @Output() onAction: EventEmitter<any> = new EventEmitter()
   @Output() onExport: EventEmitter<any> = new EventEmitter()
@@ -46,6 +49,7 @@ export class TableRowComponent implements OnInit {
       let columnDataItem: TableColumnData = {
         data: this.data[column.field],
         boolean: isBoolean(this.data[column.field]),
+        isHiddenFlag: column.isHiddenFlag,
         class: ''
       }
       if (this.classes) {

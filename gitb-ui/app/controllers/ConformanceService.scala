@@ -4,7 +4,7 @@ import config.Configurations
 import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, ResponseConstructor}
 import exceptions.{ErrorCodes, NotFoundException}
 import managers._
-import models.Enums.TestSuiteReplacementChoice.TestSuiteReplacementChoice
+import models.Enums.TestSuiteReplacementChoice.{PROCEED, TestSuiteReplacementChoice}
 import models.Enums.{Result => _, _}
 import models._
 import models.prerequisites.PrerequisiteUtil
@@ -14,15 +14,15 @@ import org.apache.commons.lang3.RandomStringUtils
 import org.slf4j.{Logger, LoggerFactory}
 import play.api.mvc._
 import utils._
+import utils.signature.SigUtils
 
 import java.io.File
-import java.nio.file.{Files, Paths}
+import java.nio.file.{Files, Paths, StandardCopyOption}
 import java.security.cert.{Certificate, CertificateExpiredException, CertificateNotYetValidException, X509Certificate}
 import java.security.{KeyStore, NoSuchAlgorithmException}
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.util.Using
-import utils.signature.SigUtils
 
 class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAction: AuthorizedAction, cc: ControllerComponents, communityManager: CommunityManager, conformanceManager: ConformanceManager, accountManager: AccountManager, actorManager: ActorManager, testSuiteManager: TestSuiteManager, systemManager: SystemManager, testResultManager: TestResultManager, organizationManager: OrganizationManager, testCaseManager: TestCaseManager, endPointManager: EndPointManager, parameterManager: ParameterManager, authorizationManager: AuthorizationManager, communityLabelManager: CommunityLabelManager, repositoryUtils: RepositoryUtils) extends AbstractController(cc) {
   private final val logger: Logger = LoggerFactory.getLogger(classOf[ConformanceService])
@@ -65,9 +65,15 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
   def getSpecs = authorizedAction { request =>
     val ids = ParameterExtractor.extractLongIdsBodyParameter(request)
     val domainIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.DOMAIN_IDS)
+    val groupIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.GROUP_IDS)
     val withApiKeys = ParameterExtractor.optionalBooleanBodyParameter(request, Parameters.WITH_API_KEYS)
-    authorizationManager.canViewSpecifications(request, ids)
-    val result = conformanceManager.getSpecifications(ids, domainIds)
+    val withGroups = ParameterExtractor.optionalBooleanBodyParameter(request, Parameters.GROUPS).getOrElse(true)
+    if (domainIds.isDefined && domainIds.get.nonEmpty) {
+      authorizationManager.canViewDomains(request, domainIds)
+    } else {
+      authorizationManager.canViewSpecifications(request, ids)
+    }
+    val result = conformanceManager.getSpecifications(ids, domainIds, groupIds, withGroups)
     val json = JsonUtil.jsSpecifications(result, withApiKeys.getOrElse(false)).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
@@ -88,8 +94,9 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
   def searchActors() = authorizedAction { request =>
     authorizationManager.canViewActors(request, None)
     val domainIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.DOMAIN_IDS)
+    val groupIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.GROUP_IDS)
     val specificationIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.SPEC_IDS)
-    val result = conformanceManager.searchActors(domainIds, specificationIds)
+    val result = conformanceManager.searchActors(domainIds, specificationIds, groupIds)
     val json = JsonUtil.jsActorsNonCase(result).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
@@ -97,10 +104,18 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
   def searchActorsInDomain() = authorizedAction { request =>
     val domainId = ParameterExtractor.requiredBodyParameter(request, Parameters.DOMAIN_ID).toLong
     authorizationManager.canViewActorsByDomainId(request, domainId)
+    val groupIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.GROUP_IDS)
     val specificationIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.SPEC_IDS)
-    val result = conformanceManager.searchActors(Some(List(domainId)), specificationIds)
+    val result = conformanceManager.searchActors(Some(List(domainId)), specificationIds, groupIds)
     val json = JsonUtil.jsActorsNonCase(result).toString()
     ResponseConstructor.constructJsonResponse(json)
+  }
+
+  def getAvailableConformanceStatements(systemId: Long) = authorizedAction { request =>
+    authorizationManager.canManageSystem(request, systemId)
+    val domainId = ParameterExtractor.optionalLongQueryParameter(request, Parameters.DOMAIN_ID)
+    val result = conformanceManager.getAvailableConformanceStatements(domainId, systemId)
+    ResponseConstructor.constructJsonResponse(JsonUtil.jsConformanceStatementItemInfo(result).toString)
   }
 
   /**
@@ -108,7 +123,8 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
    */
   def getDomainSpecs(domain_id: Long) = authorizedAction { request =>
     authorizationManager.canViewSpecificationsByDomainId(request, domain_id)
-    val specs = conformanceManager.getSpecifications(domain_id)
+    val withGroups = ParameterExtractor.optionalBooleanQueryParameter(request, Parameters.GROUPS).getOrElse(true)
+    val specs = conformanceManager.getSpecifications(domain_id, withGroups)
     val json = JsonUtil.jsSpecifications(specs).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
@@ -131,6 +147,13 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
   def getSpecTestSuites(spec_id: Long) = authorizedAction { request =>
     authorizationManager.canViewTestSuitesBySpecificationId(request, spec_id)
     val testSuites = testSuiteManager.getTestSuitesWithSpecificationId(spec_id)
+    val json = JsonUtil.jsTestSuitesList(testSuites).toString()
+    ResponseConstructor.constructJsonResponse(json)
+  }
+
+  def getSharedTestSuites(domainId: Long) = authorizedAction { request =>
+    authorizationManager.canManageDomain(request, domainId)
+    val testSuites = testSuiteManager.getSharedTestSuitedWithDomainId(domainId)
     val json = JsonUtil.jsTestSuitesList(testSuites).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
@@ -222,9 +245,9 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
     ResponseConstructor.constructEmptyResponse
   }
 
-  private def specsMatch(allowedIds: Set[Long], actions: List[PendingTestSuiteAction]): Boolean = {
+  private def specsMatch(allowedIds: Set[Long], actions: List[TestSuiteDeploymentAction]): Boolean = {
     actions.foreach { action =>
-      if (allowedIds.contains(action.specification)) {
+      if (!allowedIds.contains(action.specification.get)) {
         return false
       }
     }
@@ -232,8 +255,14 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
   }
 
   def resolvePendingTestSuites(): Action[AnyContent] = authorizedAction { request =>
-    val specificationIds = ParameterExtractor.requiredBodyParameter(request, Parameters.SPEC_IDS).split(',').map(s => s.toLong).toList
-    authorizationManager.canManageSpecifications(request, specificationIds)
+    val domainId = ParameterExtractor.requiredBodyParameter(request, Parameters.DOMAIN_ID).toLong
+    val specificationIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.SPEC_IDS)
+    val sharedTestSuite = specificationIds.isEmpty || specificationIds.get.isEmpty
+    if (specificationIds.isDefined) {
+      authorizationManager.canManageSpecifications(request, specificationIds.get)
+    } else {
+      authorizationManager.canManageDomain(request, domainId)
+    }
     val pendingFolderId = ParameterExtractor.requiredBodyParameter(request, Parameters.PENDING_ID)
     val overallActionStr = ParameterExtractor.requiredBodyParameter(request, Parameters.PENDING_ACTION)
     var overallAction: TestSuiteReplacementChoice = TestSuiteReplacementChoice.CANCEL
@@ -241,25 +270,32 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
       overallAction = TestSuiteReplacementChoice.PROCEED
     }
     var response: Result = null
+    var actions: List[TestSuiteDeploymentAction] = null
     var result: TestSuiteUploadResult = null
     if (overallAction == TestSuiteReplacementChoice.CANCEL) {
-      result = testSuiteManager.cancelPendingTestSuiteActions(pendingFolderId)
+      result = testSuiteManager.cancelPendingTestSuiteActions(pendingFolderId, domainId, sharedTestSuite)
     } else {
       val actionsStr = ParameterExtractor.optionalBodyParameter(request, Parameters.ACTIONS)
-      var actions: List[PendingTestSuiteAction] = null
       if (actionsStr.isDefined) {
         actions = JsonUtil.parseJsPendingTestSuiteActions(actionsStr.get)
-        // Ensure that the specification IDs in the individual actions match the list of specification IDs
-        if (specsMatch(specificationIds.toSet, actions)) {
+        if (!sharedTestSuite && !specsMatch(specificationIds.get.toSet, actions.filter(_.specification.isDefined))) {
           response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_PARAM, "Provided actions don't match selected specifications")
         }
       } else {
-        actions = specificationIds.map { specId =>
-          new PendingTestSuiteAction(specId, TestSuiteReplacementChoice.PROCEED, Some(TestSuiteReplacementChoiceHistory.KEEP), Some(TestSuiteReplacementChoiceMetadata.SKIP))
+        if (sharedTestSuite) {
+          // We would have this case if we had a new shared test suite with only validation warnings.
+          actions = List(new TestSuiteDeploymentAction(None, PROCEED, updateTestSuite = true, updateActors = None, sharedTestSuite = true, testCaseUpdates = None))
+        } else if (specificationIds.isDefined && specificationIds.get.nonEmpty) {
+          // We can have this case if we had no needed confirmation for deployment to specifications.
+          actions = specificationIds.get.map { specId =>
+            new TestSuiteDeploymentAction(Some(specId), TestSuiteReplacementChoice.PROCEED, updateTestSuite = false, updateActors = Some(false), sharedTestSuite = false, testCaseUpdates = None)
+          }
+        } else {
+          response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_PARAM, "Either a shared test suite is expected or a set of specifications")
         }
       }
-      if (response == null) {
-        result = testSuiteManager.completePendingTestSuiteActions(pendingFolderId, actions)
+      if (response == null && actions != null) {
+        result = testSuiteManager.completePendingTestSuiteActions(pendingFolderId, domainId, sharedTestSuite, actions)
       }
     }
     if (response == null) {
@@ -269,17 +305,24 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
     response
   }
 
-  def deployTestSuiteToSpecifications() = authorizedAction(parse.multipartFormData) { request =>
+  def deployTestSuiteToSpecifications(): Action[AnyContent] = authorizedAction { request =>
     try {
-      val specIds: List[Long] = ParameterExtractor.requiredBodyParameterMulti(request, Parameters.SPEC_IDS).split(",").map(_.toLong).toList
-      authorizationManager.canManageSpecifications(request, specIds)
+      val paramMap = ParameterExtractor.paramMap(request)
+      val domainId = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.DOMAIN_ID).toLong
+      val specIds = ParameterExtractor.optionalLongCommaListBodyParameter(paramMap, Parameters.SPEC_IDS)
+      val sharedTestSuite = ParameterExtractor.optionalBooleanBodyParameter(paramMap, Parameters.SHARED).getOrElse(false)
+      if (specIds.isDefined) {
+        authorizationManager.canManageSpecifications(request, specIds.get)
+      } else {
+        authorizationManager.canManageDomain(request, domainId)
+      }
       var response:Result = null
       val testSuiteFileName = "ts_"+RandomStringUtils.random(10, false, true)+".zip"
-      request.body.file(Parameters.FILE) match {
+      ParameterExtractor.extractFiles(request).get(Parameters.FILE) match {
         case Some(testSuite) =>
           if (Configurations.ANTIVIRUS_SERVER_ENABLED) {
             val virusScanner = new ClamAVClient(Configurations.ANTIVIRUS_SERVER_HOST, Configurations.ANTIVIRUS_SERVER_PORT, Configurations.ANTIVIRUS_SERVER_TIMEOUT)
-            val scanResult = virusScanner.scan(testSuite.ref)
+            val scanResult = virusScanner.scan(testSuite.file)
             if (!ClamAVClient.isCleanReply(scanResult)) {
               response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "Test suite failed virus scan.")
             }
@@ -291,10 +334,10 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
               testSuiteFileName
             ).toFile
             file.getParentFile.mkdirs()
-            testSuite.ref.moveTo(file, replace = true)
+            Files.move(testSuite.file.toPath, file.toPath, StandardCopyOption.REPLACE_EXISTING)
             val contentType = testSuite.contentType
             logger.debug("Test suite file uploaded - filename: [" + testSuiteFileName + "] content type: [" + contentType + "]")
-            val result = testSuiteManager.deployTestSuiteFromZipFile(specIds, file)
+            val result = testSuiteManager.deployTestSuiteFromZipFile(domainId, specIds, sharedTestSuite, file)
             val json = JsonUtil.jsTestSuiteUploadResult(result).toString()
             response = ResponseConstructor.constructJsonResponse(json)
           }
@@ -303,7 +346,7 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
       }
       response
     } finally {
-      request.body.files.foreach { file => FileUtils.deleteQuietly(file.ref) }
+      if (request.body.asMultipartFormData.isDefined) request.body.asMultipartFormData.get.files.foreach { file => FileUtils.deleteQuietly(file.ref) }
     }
   }
 
@@ -443,6 +486,7 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
     val fullResults = ParameterExtractor.requiredBodyParameter(request, Parameters.FULL).toBoolean
     val domainIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.DOMAIN_IDS)
     val specIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.SPEC_IDS)
+    val specGroupIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.GROUP_IDS)
     val organizationIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.ORG_IDS)
     val systemIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.SYSTEM_IDS)
     val actorIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.ACTOR_IDS)
@@ -456,12 +500,12 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
     val sortOrder = ParameterExtractor.optionalBodyParameter(request, Parameters.SORT_ORDER)
     var results: List[ConformanceStatementFull] = null
     if (fullResults) {
-      results = conformanceManager.getConformanceStatementsFull(domainIds, specIds, actorIds,
+      results = conformanceManager.getConformanceStatementsFull(domainIds, specIds, specGroupIds, actorIds,
         communityIds, organizationIds, systemIds, orgParameters, sysParameters,
         status, updateTimeBegin, updateTimeEnd,
         sortColumn, sortOrder)
     } else {
-      results = conformanceManager.getConformanceStatements(domainIds, specIds, actorIds,
+      results = conformanceManager.getConformanceStatements(domainIds, specIds, specGroupIds, actorIds,
         communityIds, organizationIds, systemIds, orgParameters, sysParameters,
         status, updateTimeBegin, updateTimeEnd,
         sortColumn, sortOrder)
@@ -746,4 +790,36 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
     val json = JsonUtil.jsStatementParametersMinimal(result).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
+
+  def linkSharedTestSuite() = authorizedAction { request =>
+    val testSuiteId = ParameterExtractor.requiredBodyParameter(request, Parameters.TEST_SUITE_ID).toLong
+    val specificationIds = ParameterExtractor.requiredLongListBodyParameter(request, Parameters.SPEC_IDS)
+    authorizationManager.canManageSpecifications(request, specificationIds)
+    val result = testSuiteManager.prepareSharedTestSuiteLink(testSuiteId, specificationIds)
+    ResponseConstructor.constructJsonResponse(JsonUtil.jsTestSuiteUploadResult(result).toString())
+  }
+
+  def confirmLinkSharedTestSuite() = authorizedAction { request =>
+    val testSuiteId = ParameterExtractor.requiredBodyParameter(request, Parameters.TEST_SUITE_ID).toLong
+    val specificationIds = ParameterExtractor.requiredLongListBodyParameter(request, Parameters.SPEC_IDS)
+    authorizationManager.canManageSpecifications(request, specificationIds)
+    val actionsStr = ParameterExtractor.requiredBodyParameter(request, Parameters.ACTIONS)
+    val actions = JsonUtil.parseJsPendingTestSuiteActions(actionsStr)
+    val response = if (!specsMatch(specificationIds.toSet, actions.filter(_.specification.isDefined))) {
+      ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_PARAM, "Provided actions don't match selected specifications")
+    } else {
+      val result = testSuiteManager.linkSharedTestSuiteWrapper(testSuiteId, actions)
+      ResponseConstructor.constructJsonResponse(JsonUtil.jsTestSuiteUploadResult(result).toString())
+    }
+    response
+  }
+
+  def unlinkSharedTestSuite() = authorizedAction { request =>
+    val testSuiteId = ParameterExtractor.requiredBodyParameter(request, Parameters.TEST_SUITE_ID).toLong
+    val specificationIds = ParameterExtractor.requiredLongListBodyParameter(request, Parameters.SPEC_IDS)
+    authorizationManager.canManageSpecifications(request, specificationIds)
+    testSuiteManager.unlinkSharedTestSuite(testSuiteId, specificationIds)
+    ResponseConstructor.constructEmptyResponse
+  }
+
 }

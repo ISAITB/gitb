@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { Utils } from '../common/utils';
 import { HttpRequestConfig } from '../types/http-request-config.type'
 import { AuthProviderService } from './auth-provider.service';
+import { DataService } from './data.service';
 
 @Injectable({
   providedIn: 'root'
@@ -12,7 +13,8 @@ export class BaseRestService {
 
   constructor(
     private http: HttpClient,
-    private authProviderService: AuthProviderService
+    private authProviderService: AuthProviderService,
+    private dataService: DataService
   ) { }
 
   private call<T>(config: HttpRequestConfig, callFn: () => Observable<T>): Observable<T> {
@@ -26,7 +28,7 @@ export class BaseRestService {
   get<T>(config: HttpRequestConfig): Observable<T> {
     return this.call<T>(config, () => {
       return this.http.get<T>(
-        Utils.completePath(config.path), 
+        this.dataService.completePath(config.path), 
         this.prepareRequestOptions(config)
       )      
     })
@@ -35,7 +37,7 @@ export class BaseRestService {
   delete<T>(config: HttpRequestConfig): Observable<T> {
     return this.call<T>(config, () => {
       return this.http.delete<T>(
-        Utils.completePath(config.path), 
+        this.dataService.completePath(config.path), 
         this.prepareRequestOptions(config)
       )      
     })
@@ -65,7 +67,7 @@ export class BaseRestService {
         }
       }
       return this.http.post<T>(
-        Utils.completePath(config.path), 
+        this.dataService.completePath(config.path), 
         body,
         this.prepareRequestOptions(config)
       )

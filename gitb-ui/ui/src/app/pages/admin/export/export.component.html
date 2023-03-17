@@ -50,7 +50,7 @@
 						</div>
 					</div>
 					<div class="row">
-						<div class="col-xs-offset-1 col-xs-10 table-container">
+						<div class="col-xs-offset-1 col-xs-10">
 							<table id="exportSettingsTable" class="table">
 								<thead>
                                     <tr>
@@ -93,6 +93,9 @@
 														</label>
 														<label class="checkbox-inline">
 															<input type="checkbox" name="settingsTriggers" [(ngModel)]="settings.triggers" [disabled]="allCommunityData">Triggers
+														</label>
+														<label class="checkbox-inline">
+															<input type="checkbox" name="settingsResources" [(ngModel)]="settings.resources" [disabled]="allCommunityData">Resources
 														</label>
 													</td>
 												</tr>

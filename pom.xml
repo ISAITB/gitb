@@ -7,7 +7,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>2.7.5</version>
+        <version>2.7.9</version>
     </parent>
     <groupId>com.gitb</groupId>
     <artifactId>GITB</artifactId>
@@ -26,24 +26,24 @@
              mvn versions:display-dependency-updates -N -N
         -->
         <!-- Plugin versions -->
-        <version.plugin.dependency-check-maven>7.3.2</version.plugin.dependency-check-maven>
+        <version.plugin.dependency-check-maven>8.1.1</version.plugin.dependency-check-maven>
         <version.plugin.maven-deploy-plugin>3.0.0-M2</version.plugin.maven-deploy-plugin>
         <version.plugin.jasperreports-plugin>2.8</version.plugin.jasperreports-plugin>
         <version.plugin.maven-compiler-plugin>3.10.1</version.plugin.maven-compiler-plugin>
         <!-- Dependency versions -->
-        <version.springBoot>2.7.5</version.springBoot>
-        <version.gitbTypes>1.18.1</version.gitbTypes>
+        <version.springBoot>2.7.9</version.springBoot>
+        <version.gitbTypes>1.19.0</version.gitbTypes>
         <version.jasperReports>6.20.0</version.jasperReports>
         <version.bouncycastle>1.70</version.bouncycastle>
         <version.helgerSchematron>6.3.4</version.helgerSchematron>
         <version.metaInfServices>1.9</version.metaInfServices>
-        <version.cxf>3.5.3</version.cxf>
+        <version.cxf>3.5.5</version.cxf>
         <version.httpComponents>4.5.13</version.httpComponents>
         <version.commonsCodec>1.15</version.commonsCodec>
         <version.reflections>0.10.2</version.reflections>
         <version.commonsIo>2.11.0</version.commonsIo>
         <version.commonsLang3>3.12.0</version.commonsLang3>
-        <version.tika>2.6.0</version.tika>
+        <version.tika>2.7.0</version.tika>
         <version.xerces>2.12.2</version.xerces>
         <version.jaxbApi>2.3.1</version.jaxbApi>
         <version.jaxbRuntime>2.3.3</version.jaxbRuntime>
@@ -67,17 +67,18 @@
         <version.helgerCommons>10.1.6</version.helgerCommons>
         <version.helgerPeppol>8.7.4</version.helgerPeppol>
         <version.helgerUbl>6.7.0</version.helgerUbl>
-        <version.dnsJava>3.5.0</version.dnsJava>
-        <version.commonsFileUpload>1.4</version.commonsFileUpload>
+        <version.dnsJava>3.5.2</version.dnsJava>
+        <version.commonsFileUpload>1.5</version.commonsFileUpload>
         <version.commonsCollections>4.4</version.commonsCollections>
         <version.servletApi>2.5</version.servletApi>
-        <version.xmlUnit>2.9.0</version.xmlUnit>
+        <version.xmlUnit>2.9.1</version.xmlUnit>
         <version.jerseyClient>1.19.4</version.jerseyClient>
         <version.beanUtils>1.9.4</version.beanUtils>
         <version.freeMarker>2.3.31</version.freeMarker>
         <!-- Version overrides in Spring Boot - START -->
-        <version.snakeyaml>1.32</version.snakeyaml> <!-- Spring Boot override to resolve CVE-2022-25857 -->
+        <version.snakeyaml>1.33</version.snakeyaml> <!-- Spring Boot override to resolve CVE-2022-25857 -->
         <version.commonsText>1.10.0</version.commonsText> <!-- Apache Commons Configuration override to resolve CVE-2022-42889 -->
+        <version.woodstox>6.4.0</version.woodstox> <!-- Woodstox version to resolve CVE-2022-40152. This needs to match the version included in CXF core (currently at 3.5.5). -->
         <!-- Version overrides in Spring Boot - END -->
         <!-- Properties used for filtering replacements -->
         <timestamp>${maven.build.timestamp}</timestamp>
@@ -120,6 +121,9 @@
                     <configuration>
                         <failBuildOnCVSS>0</failBuildOnCVSS>
                         <suppressionFile>etc/owasp-suppressions.xml</suppressionFile>
+                        <excludes>
+                            <exclude>eu.europa.ec.itb.*:*</exclude>
+                        </excludes>
                     </configuration>
                     <executions>
                         <execution>
@@ -191,6 +195,11 @@
             <dependency>
                 <groupId>eu.europa.ec.itb</groupId>
                 <artifactId>gitb-types</artifactId>
+                <version>${version.gitbTypes}</version>
+            </dependency>
+            <dependency>
+                <groupId>eu.europa.ec.itb</groupId>
+                <artifactId>gitb-types-specs</artifactId>
                 <version>${version.gitbTypes}</version>
             </dependency>
             <dependency>
@@ -503,6 +512,12 @@
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-text</artifactId>
                 <version>${version.commonsText}</version>
+            </dependency>
+            <!-- Woodstox override -->
+            <dependency>
+                <groupId>com.fasterxml.woodstox</groupId>
+                <artifactId>woodstox-core</artifactId>
+                <version>${version.woodstox}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

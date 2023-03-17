@@ -13,6 +13,8 @@ export interface ConformanceResultFull {
     domainName: string
     specId: number
     specName: string
+    specGroupName?: string
+    specGroupOptionName: string
     actorId: number
     actorName: string
     testSuiteName: string

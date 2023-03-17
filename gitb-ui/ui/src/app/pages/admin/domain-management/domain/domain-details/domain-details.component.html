@@ -1,89 +1,194 @@
 <div class="page domains detail">
-	<div class="panel panel-default">
-		<div class="panel-heading">
-			<h4 class="title">{{dataService.labelDomain()}} details</h4>
-		</div>
-		<form class="form-horizontal">
-			<div class="panel-body">
-				<div class="row">
-					<div class="col-md-10 col-md-offset-1">
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h4 class="title">{{dataService.labelDomain()}} details</h4>
+        </div>
+        <form class="form-horizontal">
+            <div class="panel-body">
+                <div class="row">
+                    <div class="col-md-10 col-md-offset-1">
                         <app-domain-form *ngIf="domain" [domain]="domain"></app-domain-form>
-					</div>
-				</div>
-			</div>
-			<div class="panel-footer">
-				<div class="btn-toolbar">
-					<button type="submit" (click)="saveDomainChanges()" class="btn btn-default" [disable]="deletePending || saveDisabled()" [pending]="savePending">Save changes</button>
-					<button type="button" *ngIf="dataService.isSystemAdmin" (click)="deleteDomain()" class="btn btn-default" [disable]="savePending" [pending]="deletePending">Delete</button>
-					<button type="button" *ngIf="dataService.isSystemAdmin || (dataService.isCommunityAdmin && !dataService.community!.domainId)" (click)="back()" class="btn btn-default">Back</button>
-				</div>
-			</div>
-		</form>
-	</div>
-	<div>
-		<tabset>
-			<tab heading="{{dataService.labelSpecifications()}}" (selectTab)="loadSpecifications()">
+                    </div>
+                </div>
+            </div>
+            <div class="panel-footer">
+                <div class="btn-toolbar">
+                    <button type="submit" (click)="saveDomainChanges()" class="btn btn-default" [disable]="deletePending || saveDisabled()" [pending]="savePending">Save changes</button>
+                    <button type="button" *ngIf="dataService.isSystemAdmin" (click)="deleteDomain()" class="btn btn-default" [disable]="savePending" [pending]="deletePending">Delete</button>
+                    <button type="button" *ngIf="dataService.isSystemAdmin || (dataService.isCommunityAdmin && !dataService.community!.domainId)" (click)="back()" class="btn btn-default">Back</button>
+                </div>
+            </div>
+        </form>
+    </div>
+    <div>
+        <tabset #tabs>
+            <tab heading="{{dataService.labelSpecifications()}}" (selectTab)="loadSpecifications()">
                 <div class="tabPanel">
                     <div class="tabControls">
-						<div class="btn-toolbar">
-							<button *ngIf="specifications.length > 0" type="button" class="btn btn-default" (click)="uploadTestSuite()">Upload test suite</button>
-							<button type="button" class="btn btn-default" (click)="createSpecification()">Create {{dataService.labelSpecificationLower()}}</button>
-						</div>
-					</div>
+                        <div class="btn-toolbar">
+                            <button *ngIf="specifications.length > 0" type="button" class="btn btn-default" (click)="uploadTestSuite()">Upload test suite</button>
+                            <div class="btn-group" dropdown>
+                                <button type="button" class="btn btn-default" (click)="createSpecification()">Create {{dataService.labelSpecificationLower()}}</button>
+                                <button id="button-create-spec" type="button" dropdownToggle class="btn btn-default dropdown-toggle dropdown-toggle-split">
+                                    <span class="caret"></span>
+                                    <span class="sr-only visually-hidden">Create {{dataService.labelSpecificationLower()}}</span>
+                                </button>
+                                <ul id="dropdown-create-spec" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-create-spec">
+                                    <li role="menuitem"><a class="dropdown-item" href (click)="createSpecificationGroup();$event.preventDefault();">Create {{dataService.labelSpecificationGroupLower()}}</a></li>
+                                </ul>
+                            </div>
+                            <div class="btn-group" dropdown *ngIf="specificationGroups.length > 0">
+                                <button id="button-option-visibility" (click)="$event.stopPropagation()" dropdownToggle type="button" class="btn btn-default dropdown-toggle" aria-controls="dropdown-option-visibility">View {{dataService.labelSpecificationInGroupsLower()}}<span class="caret"></span></button>
+                                <ul id="dropdown-option-visibility" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-option-visibility">
+                                    <li role="menuitem"><a class="dropdown-item" href (click)="toggleSpecificationGroupCollapse(false);$event.preventDefault();">Show {{dataService.labelSpecificationInGroupsLower()}}</a></li>
+                                    <li role="menuitem"><a class="dropdown-item" href (click)="toggleSpecificationGroupCollapse(true);$event.preventDefault();">Hide {{dataService.labelSpecificationInGroupsLower()}}</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
                     <div class="panel panel-default">
-						<div table-directive
-							[columns]="tableColumns"
-							[data]="specifications"
-							[noDataMessage]="'No '+dataService.labelSpecificationsLower()+' found'"
-							[loadingStatus]="specificationStatus"
-							[allowSelect]="true"
-							(onSelect)="onSpecificationSelect($event)">
-						</div>
-					</div>
-				</div>
-			</tab>
-			<tab heading="Parameters" (selectTab)="loadDomainParameters()">
+                        <table class="table table-directive">
+                            <thead>
+                                <tr>
+                                    <th *ngIf="specificationGroups.length > 0" class="th-min-centered"></th>
+                                    <th>{{dataService.labelSpecification()}}</th>
+                                    <th>Description</th>
+                                    <th class="th-min-centered"></th>
+                                    <th *ngIf="specificationGroups.length > 0" class="th-min"></th>
+                                </tr>
+                            </thead>
+                            <tbody [class.disable-events]="specificationStatus && specificationStatus.status != Constants.STATUS.FINISHED">
+                                <ng-container [ngSwitch]="specificationStatus && specificationStatus.status != Constants.STATUS.FINISHED">
+                                    <ng-container *ngSwitchCase="true">
+                                        <tr>
+                                            <td [attr.colspan]="(specificationGroups.length > 0)?5:3" class="td-data-loading"><app-pending-block></app-pending-block></td>
+                                        </tr>
+                                    </ng-container>
+                                    <ng-container *ngSwitchDefault [ngSwitch]="domainSpecifications.length == 0">
+                                        <ng-container *ngSwitchCase="true">
+                                            <tr>
+                                                <td [attr.colspan]="(specificationGroups.length > 0)?5:3" class="td-no-data"><span>No {{dataService.labelSpecificationsLower()}} found</span></td>
+                                            </tr>
+                                        </ng-container>
+                                        <ng-container *ngSwitchDefault>
+                                            <ng-container *ngFor="let spec of domainSpecifications">
+                                                <tr app-domain-specification-table-row
+                                                    [spec]="spec"
+                                                    [groups]="specificationGroups"
+                                                    (removeSpec)="removeSpecificationFromGroup($event[0], $event[1])"
+                                                    (moveSpec)="moveSpecificationToGroup($event[0], $event[1], $event[2])"
+                                                    (copySpec)="copySpecificationToGroup($event[0], $event[1], $event[2])"
+                                                    class="group"
+                                                    (click)="onSpecificationGroupSelect(spec)"
+                                                    ></tr>
+                                                <tr class="group-options" *ngIf="spec.group && spec.options != undefined">
+                                                    <td colspan="5" class="spec-group-options-td">
+                                                        <div [collapse]="spec.collapsed" [isAnimated]="true">
+                                                            <div class="panel panel-default spec-group-options">
+                                                                <table class="table table-directive">
+                                                                    <thead>
+                                                                        <tr>
+                                                                            <th>{{dataService.labelSpecificationInGroup()}}</th>
+                                                                            <th>Description</th>
+                                                                            <th class="th-min-centered"></th>
+                                                                            <th class="th-min"></th>
+                                                                        </tr>
+                                                                    </thead>
+                                                                    <tbody [ngSwitch]="spec.options.length == 0">
+                                                                        <tr *ngSwitchCase="true">
+                                                                            <td colspan="4" class="td-no-data"><span>No {{dataService.labelSpecificationInGroupsLower()}} found.</span></td>
+                                                                        </tr>
+                                                                        <ng-container *ngSwitchDefault>
+                                                                            <ng-container *ngFor="let option of spec.options">
+                                                                                <tr app-domain-specification-table-row
+                                                                                    [spec]="option"
+                                                                                    [groups]="specificationGroups"
+                                                                                    (removeSpec)="removeSpecificationFromGroup($event[0], $event[1])"
+                                                                                    (moveSpec)="moveSpecificationToGroup($event[0], $event[1], $event[2])"
+                                                                                    (copySpec)="copySpecificationToGroup($event[0], $event[1], $event[2])"
+                                                                                    class="selectable"
+                                                                                    (click)="onSpecificationSelect(option)"
+                                                                                ></tr>
+                                                                            </ng-container>
+                                                                        </ng-container>
+                                                                    </tbody>
+                                                                </table>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            </ng-container>
+                                        </ng-container>
+                                    </ng-container>
+                                </ng-container>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </tab>
+
+            <tab heading="Shared test suites" (selectTab)="loadSharedTestSuites()">
                 <div class="tabPanel">
-					<div class="tabControls">
-						<button type="button" class="btn btn-default" (click)="createDomainParameter()">Create parameter</button>
-					</div>
+                    <div class="tabControls">
+                        <div class="btn-toolbar">
+                            <button type="button" class="btn btn-default" (click)="uploadSharedTestSuite()">Upload shared test suite</button>
+                        </div>
+                    </div>
+                    <div class="panel panel-default">
+                        <div table-directive
+                            [columns]="sharedTestSuiteTableColumns"
+                            [data]="sharedTestSuites"
+                            [noDataMessage]="'No shared test suites found'"
+                            [loadingStatus]="sharedTestSuiteStatus"
+                            [allowSelect]="true"
+                            (onSelect)="onSharedTestSuiteSelect($event)">
+                        </div>
+                    </div>
+                </div>
+            </tab>
+
+            <tab heading="Parameters" (selectTab)="loadDomainParameters()">
+                <div class="tabPanel">
+                    <div class="tabControls">
+                        <button type="button" class="btn btn-default" (click)="createDomainParameter()">Create parameter</button>
+                    </div>
                     <div class="panel panel-default table-container">
-						<table class="table table-directive">
-							<thead>
-								<tr>
-									<th>Name</th>
-									<th>Value</th>
-									<th>Description</th>
-									<th>In&nbsp;tests</th>
-								</tr>
-							</thead>
-							<tbody>
-								<ng-container [ngSwitch]="parameterStatus.status">
-									<ng-container *ngSwitchCase="Constants.STATUS.FINISHED" [ngSwitch]="domainParameters.length">
-										<tr *ngSwitchCase="0">
-											<td colspan="4" class="td-no-data"><span>No parameters found</span></td>
-										</tr>
-										<ng-container *ngSwitchDefault>
-											<tr class="selectable" (click)="onDomainParameterSelect(parameter)" *ngFor="let parameter of domainParameters">
-												<td>{{parameter.name}}</td>
-												<td *ngIf="parameter.kind == 'BINARY'"><a href (click)="downloadParameter(parameter);$event.preventDefault();$event.stopPropagation()">{{parameter.valueToShow}}</a></td>
-												<td *ngIf="parameter.kind != 'BINARY'">{{parameter.valueToShow}}</td>
-												<td>{{parameter.description}}</td>
-												<td><div><span><i class="fa" [ngClass]="{'fa-check': parameter.inTests, 'fa-times': !parameter.inTests}"></i></span></div></td>
-											</tr>
-										</ng-container>
-									</ng-container>
-									<ng-container *ngSwitchDefault>
-										<tr>
-											<td colspan="4" class="td-data-loading"><span><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span></td>
-										</tr>
-									</ng-container>
-								</ng-container>
-							</tbody>
-						</table>
-					</div>
-				</div>
-			</tab>
-		</tabset>
-	</div>
+                        <table class="table table-directive">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Value</th>
+                                    <th>Description</th>
+                                    <th>In&nbsp;tests</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <ng-container [ngSwitch]="parameterStatus.status">
+                                    <ng-container *ngSwitchCase="Constants.STATUS.FINISHED" [ngSwitch]="domainParameters.length">
+                                        <tr *ngSwitchCase="0">
+                                            <td colspan="4" class="td-no-data"><span>No parameters found</span></td>
+                                        </tr>
+                                        <ng-container *ngSwitchDefault>
+                                            <tr class="selectable" (click)="onDomainParameterSelect(parameter)" *ngFor="let parameter of domainParameters">
+                                                <td>{{parameter.name}}</td>
+                                                <td *ngIf="parameter.kind == 'BINARY'"><a href (click)="downloadParameter(parameter);$event.preventDefault();$event.stopPropagation()">{{parameter.valueToShow}}</a></td>
+                                                <td *ngIf="parameter.kind != 'BINARY'">{{parameter.valueToShow}}</td>
+                                                <td>{{parameter.description}}</td>
+                                                <td><div><span><i class="fa" [ngClass]="{'fa-check': parameter.inTests, 'fa-times': !parameter.inTests}"></i></span></div></td>
+                                            </tr>
+                                        </ng-container>
+                                    </ng-container>
+                                    <ng-container *ngSwitchDefault>
+                                        <tr>
+                                            <td colspan="4" class="td-data-loading"><span><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span></td>
+                                        </tr>
+                                    </ng-container>
+                                </ng-container>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </tab>
+        </tabset>
+    </div>
 </div>

@@ -138,7 +138,7 @@ class SessionLaunchActor @Inject() (reportManager: ReportManager, testbedBackend
     }
   }
 
-  def sessionConfigured(msg: TestSessionConfiguredEvent, initialState: SessionLaunchState): Unit = {
+  private def sessionConfigured(msg: TestSessionConfiguredEvent, initialState: SessionLaunchState): Unit = {
     var scheduleNextSessionLaunch = true
     val testSessionId = msg.event.getTcInstanceId
     try {

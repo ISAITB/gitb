@@ -1,4 +1,3 @@
-DROP TABLE IF EXISTS `domainparameters`;
 CREATE TABLE `domainparameters` (
   `id` BIGINT NOT NULL AUTO_INCREMENT,
   `name` varchar(254) NOT NULL,

@@ -15,7 +15,7 @@ import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
-class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, triggerHelper: TriggerHelper, testResultManager: TestResultManager, organizationManager: OrganizationManager, landingPageManager: LandingPageManager, legalNoticeManager: LegalNoticeManager, errorTemplateManager: ErrorTemplateManager, conformanceManager: ConformanceManager, accountManager: AccountManager, triggerManager: TriggerManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityResourceManager: CommunityResourceManager, triggerHelper: TriggerHelper, testResultManager: TestResultManager, organizationManager: OrganizationManager, landingPageManager: LandingPageManager, legalNoticeManager: LegalNoticeManager, errorTemplateManager: ErrorTemplateManager, conformanceManager: ConformanceManager, accountManager: AccountManager, triggerManager: TriggerManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
 
@@ -349,6 +349,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, triggerHelpe
       conformanceManager.deleteConformanceCertificateSettings(communityId) andThen
       deleteOrganisationParametersByCommunity(communityId) andThen
       deleteSystemParametersByCommunity(communityId) andThen
+      communityResourceManager.deleteResourcesOfCommunity(communityId, onSuccessCalls) andThen
       PersistenceSchema.communityLabels.filter(_.community === communityId).delete andThen
       PersistenceSchema.communities.filter(_.id === communityId).delete
     exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)

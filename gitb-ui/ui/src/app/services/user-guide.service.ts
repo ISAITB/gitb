@@ -58,6 +58,8 @@ export class UserGuideService {
     this.paths['/admin/domains'] = this.setPath('', '', 'domainDashboard/index.html')
     this.paths['/admin/domains/create'] = this.setPath('', '', '', 'domainDashboard/index.html#create-domain')
     this.paths['/admin/domains/:id'] = this.setPath('', '', 'domainDashboard/index.html#manage-domain-details')
+    this.paths['/admin/domains/:id/testsuites/:testsuite_id'] = this.setPath('', '', 'domainDashboard/index.html#manage-test-suite-details')
+    this.paths['/admin/domains/:id/testsuites/:testsuite_id/testcases/:testcase_id'] = this.setPath('', '', 'domainDashboard/index.html#manage-test-case-details')
     this.paths['/admin/domains/:id/specifications/create'] = this.setPath('', '', 'domainDashboard/index.html#create-specification')
     this.paths['/admin/domains/:id/specifications/:spec_id'] = this.setPath('', '', 'domainDashboard/index.html#manage-specification-details')
     this.paths['/admin/domains/:id/specifications/:spec_id/actors/create'] = this.setPath('', '', 'domainDashboard/index.html#create-actor')

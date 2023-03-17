@@ -2,7 +2,7 @@
     <app-test-filter [filterState]="filterState" [communityId]="communityId" (onApply)="applyFilters()"></app-test-filter>
     <div class="panel panel-default">
         <div class="panel-heading clickable" (click)="activeSessionsCollapsed = !activeSessionsCollapsed">
-            <h4 class="title">Active test sessions</h4>
+            <h4 class="title"><app-collapsing-icon [isCollapsed]="activeSessionsCollapsed"></app-collapsing-icon>Active test sessions</h4>
             <div class="btn-toolbar" [class.disable-events]="filterState.updatePending">
                 <button type="button" class="btn btn-default" (click)="stopAll();$event.stopPropagation()" [pending]="stopAllPending" [disable]="activeTests.length == 0 || exportActivePending">Terminate all</button>
                 <button type="button" class="btn btn-default" (click)="exportActiveSessionsToCsv();$event.stopPropagation()" [pending]="exportActivePending" [disable]="activeTests.length == 0 || stopAllPending">Export CSV</button>
@@ -31,7 +31,7 @@
     <!-- completed sessions -->
     <div class="panel panel-default">
         <div class="panel-heading clickable" (click)="completedSessionsCollapsed = !completedSessionsCollapsed">
-            <h4 class="title">Completed test sessions</h4>
+            <h4 class="title"><app-collapsing-icon [isCollapsed]="completedSessionsCollapsed"></app-collapsing-icon>Completed test sessions</h4>
             <div class="btn-toolbar" [class.disable-events]="filterState.updatePending">
                 <button type="button" class="btn btn-default" (click)="selectDeleteSessions();$event.stopPropagation()" *ngIf="!selectingForDelete" [disable]="completedTests.length == 0 || deletePending" [pending]="deleteSessionsPending">Delete sessions...</button>
                 <button type="button" class="btn btn-default" (click)="confirmDeleteSessions();$event.stopPropagation()" *ngIf="selectingForDelete" [disable]="!testsChecked()" [pending]="deleteSessionsPending">Confirm</button>
@@ -69,7 +69,7 @@
                 [nextDisabled]="isNextPageDisabled"
                 [prevDisabled]="isPreviousPageDisabled"
                 [rowStyle]="rowStyle"
-                [checkboxEnabled]="viewCheckbox"
+                [showCheckbox]="completedTestsCheckboxEmitter"
                 [contentRefreshing]="filterState.updatePending">
             </div>
         </div>

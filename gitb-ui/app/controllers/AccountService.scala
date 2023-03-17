@@ -159,7 +159,7 @@ class AccountService @Inject() (authorizedAction: AuthorizedAction, cc: Controll
       if (files.nonEmpty) {
         var totalAttachmentSize = 0L
         for (file <- files) {
-          attachments += new AttachmentType(file._2.file.getName, file._2.file)
+          attachments += new AttachmentType(file._2.name, file._2.file)
           totalAttachmentSize += Files.size(file._2.file.toPath)
         }
         // Validate attachments

@@ -79,7 +79,7 @@ object PersistenceSchema {
     def shortname = column[String]("sname")
     def fullname = column[String]("fname")
     def description = column[Option[String]]("description", O.SqlType("TEXT"))
-    def version = column[String]("version")
+    def version = column[Option[String]]("version")
     def apiKey = column[Option[String]]("api_key")
     def owner = column[Long]("owner")
     def * = (id, shortname, fullname, description, version, apiKey, owner) <> (Systems.tupled, Systems.unapply)
@@ -104,9 +104,11 @@ object PersistenceSchema {
     def hidden = column[Boolean]("is_hidden")
     def apiKey = column[String]("api_key")
     def domain = column[Long]("domain")
-    def * = (id, shortname, fullname, description, hidden, apiKey, domain) <> (Specifications.tupled, Specifications.unapply)
+    def group = column[Option[Long]]("spec_group")
+    def * = (id, shortname, fullname, description, hidden, apiKey, domain, group) <> (Specifications.tupled, Specifications.unapply)
   }
   val specifications = TableQuery[SpecificationsTable]
+  val insertSpecification = specifications returning specifications.map(_.id)
 
   class ActorsTable(tag: Tag) extends Table[Actors](tag, "Actors") {
     def id      = column[Long]("id", O.PrimaryKey, O.AutoInc)
@@ -121,6 +123,7 @@ object PersistenceSchema {
     def * = (id, actorId, name, desc, default, hidden, displayOrder, apiKey, domain) <> (Actors.tupled, Actors.unapply)
   }
   val actors = TableQuery[ActorsTable]
+  val insertActor = actors returning actors.map(_.id)
 
   class EndpointsTable(tag: Tag) extends Table[Endpoints](tag, "Endpoints") {
 	  def id    = column[Long]("id", O.PrimaryKey, O.AutoInc)
@@ -130,6 +133,7 @@ object PersistenceSchema {
     def * = (id, name, desc, actor) <> (Endpoints.tupled, Endpoints.unapply)
   }
   val endpoints = TableQuery[EndpointsTable]
+  val insertEndpoint = endpoints returning endpoints.map(_.id)
 
 	class ParametersTable(tag: Tag) extends Table[models.Parameters] (tag, "Parameters") {
 		def id    = column[Long]("id", O.PrimaryKey, O.AutoInc)
@@ -151,6 +155,7 @@ object PersistenceSchema {
 		def * = (id, name, testKey, desc, use, kind, adminOnly, notForTests, hidden, allowedValues, displayOrder, dependsOn, dependsOnValue, defaultValue, endpoint) <> (models.Parameters.tupled, models.Parameters.unapply)
 	}
 	val parameters = TableQuery[ParametersTable]
+  val insertParameter = parameters returning parameters.map(_.id)
 
   class DomainParametersTable(tag: Tag) extends Table[models.DomainParameter] (tag, "DomainParameters") {
     def id    = column[Long]("id", O.PrimaryKey, O.AutoInc)
@@ -223,13 +228,12 @@ object PersistenceSchema {
     def keywords = column[Option[String]]("keywords")
     def testCaseType = column[Short]("type")
 	  def path = column[String]("path")
-	  def targetSpec = column[Long]("target_spec")
     def targetActors = column[Option[String]]("target_actors")
     def targetOptions = column[Option[String]]("target_options")
     def testSuiteOrder = column[Short]("testsuite_order")
     def hasDocumentation = column[Boolean]("has_documentation")
     def documentation = column[Option[String]]("documentation")
-	  def * = (id, shortname, fullname, version, authors, originalDate, modificationDate, description, keywords, testCaseType, path, targetSpec, targetActors, targetOptions, testSuiteOrder, hasDocumentation, documentation, identifier) <> (TestCases.tupled, TestCases.unapply)
+	  def * = (id, shortname, fullname, version, authors, originalDate, modificationDate, description, keywords, testCaseType, path, targetActors, targetOptions, testSuiteOrder, hasDocumentation, documentation, identifier) <> (TestCases.tupled, TestCases.unapply)
   }
   val testCases = TableQuery[TestCasesTable]
 
@@ -244,12 +248,14 @@ object PersistenceSchema {
 		def modificationDate = column[Option[String]]("modification_date")
 		def description = column[Option[String]]("description", O.SqlType("TEXT"))
 		def keywords = column[Option[String]]("keywords")
-    def specification = column[Long]("specification")
     def filename = column[String]("file_name")
     def hasDocumentation = column[Boolean]("has_documentation")
     def documentation = column[Option[String]]("documentation")
+    def definitionPath = column[Option[String]]("definition_path")
     def hidden = column[Boolean]("is_hidden")
-		def * = (id, shortname, fullname, version, authors, originalDate, modificationDate, description, keywords, specification, filename, hasDocumentation, documentation, identifier, hidden) <> (TestSuites.tupled, TestSuites.unapply)
+    def shared = column[Boolean]("is_shared")
+    def domain = column[Long]("domain")
+		def * = (id, shortname, fullname, version, authors, originalDate, modificationDate, description, keywords, filename, hasDocumentation, documentation, identifier, hidden, shared, domain,definitionPath) <> (TestSuites.tupled, TestSuites.unapply)
 	}
 	val testSuites = TableQuery[TestSuitesTable]
 
@@ -335,6 +341,14 @@ object PersistenceSchema {
     def pk = primaryKey("sha2_pk", (specId, actorId))
   }
   val specificationHasActors = TableQuery[SpecificationHasActorsTable]
+
+  class SpecificationHasTestSuitesTable(tag: Tag) extends Table[(Long, Long)](tag, "SpecificationHasTestSuites") {
+    def specId = column[Long]("spec")
+    def testSuiteId = column[Long]("testsuite")
+    def * = (specId, testSuiteId)
+    def pk = primaryKey("shts_pk", (specId, testSuiteId))
+  }
+  val specificationHasTestSuites = TableQuery[SpecificationHasTestSuitesTable]
 
   class EndpointSupportsTransactionsTable(tag: Tag) extends Table[(Long, String, String)](tag, "EndpointSupportsTransactions") {
     def actorId = column[Long]("actor")
@@ -551,5 +565,27 @@ object PersistenceSchema {
     def pk = primaryKey("cl_pk", (dataType, dataId, trigger))
   }
   val triggerData = TableQuery[TriggerDataTable]
+
+  class CommunityResourcesTable(tag: Tag) extends Table[CommunityResources](tag, "CommunityResources") {
+    def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
+    def name = column[String]("name")
+    def description = column[Option[String]]("description", O.SqlType("TEXT"))
+    def community = column[Long]("community")
+    def * = (id, name, description, community) <> (CommunityResources.tupled, CommunityResources.unapply)
+  }
+  val communityResources = TableQuery[CommunityResourcesTable]
+  val insertCommunityResources = communityResources returning communityResources.map(_.id)
+
+  class SpecificationGroupsTable(tag: Tag) extends Table[SpecificationGroups](tag, "SpecificationGroups") {
+    def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
+    def shortname = column[String]("sname")
+    def fullname = column[String]("fname")
+    def description = column[Option[String]]("description", O.SqlType("TEXT"))
+    def domain = column[Long]("domain")
+    def * = (id, shortname, fullname, description, domain) <> (SpecificationGroups.tupled, SpecificationGroups.unapply)
+  }
+
+  val specificationGroups = TableQuery[SpecificationGroupsTable]
+  val insertSpecificationGroups = specificationGroups returning specificationGroups.map(_.id)
 
 }

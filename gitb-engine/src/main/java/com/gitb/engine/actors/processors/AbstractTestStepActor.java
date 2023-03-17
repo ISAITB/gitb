@@ -9,7 +9,6 @@ import com.gitb.core.StepStatus;
 import com.gitb.core.TestRole;
 import com.gitb.core.TestRoleEnumeration;
 import com.gitb.engine.actors.Actor;
-import com.gitb.engine.actors.SessionActor;
 import com.gitb.engine.commands.interaction.PrepareForStopCommand;
 import com.gitb.engine.commands.interaction.RestartCommand;
 import com.gitb.engine.commands.interaction.StartCommand;
@@ -26,9 +25,7 @@ import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.tdl.IfStep;
 import com.gitb.tdl.TestConstruct;
 import com.gitb.tr.*;
-import com.gitb.types.BooleanType;
 import com.gitb.types.MapType;
-import com.gitb.types.StringType;
 import com.gitb.utils.XMLDateTimeUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.reflect.ConstructorUtils;
@@ -201,11 +198,11 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 	}
 
 	protected void childrenHasWarning() {
-		updateTestStepStatus(new StatusEvent(StepStatus.WARNING, scope), null);
+		updateTestStepStatus(new StatusEvent(StepStatus.WARNING, scope, self()), null);
 	}
 
 	protected void childrenHasError() {
-		updateTestStepStatus(new StatusEvent(StepStatus.ERROR, scope), null);
+		updateTestStepStatus(new StatusEvent(StepStatus.ERROR, scope, self()), null);
 	}
 
 	protected void error(Throwable throwable) {
@@ -233,13 +230,13 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 	}
 
 	protected void updateTestStepStatus(Throwable throwable, TestStepReportType report) {
-		ErrorStatusEvent statusEvent = new ErrorStatusEvent(throwable, scope);
+		ErrorStatusEvent statusEvent = new ErrorStatusEvent(throwable, scope, self());
 
 		updateTestStepStatus(statusEvent, report);
 	}
 
 	protected void updateTestStepStatus(StepStatus status, TestStepReportType report) {
-		StatusEvent statusEvent = new StatusEvent(status, scope);
+		StatusEvent statusEvent = new StatusEvent(status, scope, self());
 		updateTestStepStatus(statusEvent, report);
 	}
 
@@ -248,7 +245,7 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 	}
 
 	protected void updateTestStepStatus(ActorContext context, StepStatus status, TestStepReportType report) {
-		StatusEvent statusEvent = new StatusEvent(status, scope);
+		StatusEvent statusEvent = new StatusEvent(status, scope, self());
 		updateTestStepStatus(context, statusEvent, report);
 	}
 
@@ -268,6 +265,12 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 		return ((MapType)(scope.getVariable(TestCaseContext.STEP_STATUS_MAP, true).getValue()));
 	}
 
+	protected void updateStepStatusMaps(StepStatus status) {
+		if (((TestConstruct)step).getId() != null) {
+			TestCaseUtils.updateStepStatusMaps(getStepSuccessMap(), getStepStatusMap(), (TestConstruct) step, scope, status);
+		}
+	}
+
 	protected void updateTestStepStatus(ActorContext context, StatusEvent statusEvent, TestStepReportType report, boolean reportTestStepStatus, boolean logError) {
 
 		if (logError && statusEvent instanceof ErrorStatusEvent) {
@@ -277,20 +280,8 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 		StepStatus status = statusEvent.getStatus();
 		boolean isEndStatus = status == StepStatus.COMPLETED || status == StepStatus.ERROR || status == StepStatus.SKIPPED || status == StepStatus.WARNING;
 
-		boolean stopTestSession = false;
 		if (step instanceof TestConstruct) {
-			if (((TestConstruct)step).getId() != null) {
-				getStepSuccessMap().addItem(((TestConstruct)step).getId(), new BooleanType(status == StepStatus.COMPLETED || status == StepStatus.WARNING));
-				getStepStatusMap().addItem(((TestConstruct)step).getId(), new StringType(status.toString()));
-			}
-			boolean stopOnError = ((TestConstruct)step).isStopOnError() != null && ((TestConstruct)step).isStopOnError();
-			if (status == StepStatus.ERROR && stopOnError) {
-				// We need to stop the complete test session. We only do this if not already signalled.
-				if (scope.getContext().getCurrentState() != TestCaseContext.TestCaseStateEnum.STOPPING && scope.getContext().getCurrentState() != TestCaseContext.TestCaseStateEnum.STOPPED) {
-					scope.getContext().setCurrentState(TestCaseContext.TestCaseStateEnum.STOPPING);
-					stopTestSession = true;
-				}
-			}
+			updateStepStatusMaps(status);
 		}
 
 		// Notify the parent step.
@@ -324,14 +315,6 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 		// If this is the final status for the step stop the actor.
 		if (isEndStatus) {
 			self().tell(PoisonPill.getInstance(), self());
-		}
-		// If we must kill the test session signal the global session stop command.
-		if (stopTestSession) {
-			try {
-				getContext().system().actorSelection(SessionActor.getPath(scope.getContext().getSessionId())).tell(new PrepareForStopCommand(scope.getContext().getSessionId(), self()), self());
-			} catch (Exception e) {
-				logger.error(addMarker(), "Error sending the signal to stop the test session from test step actor [" + stepId + "].");
-			}
 		}
 	}
 
@@ -418,10 +401,10 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 	protected void handleFutureFailure(Throwable failure) {
 		if (failure instanceof GITBEngineInternalError && ((GITBEngineInternalError)failure).getErrorInfo() != null && ((GITBEngineInternalError)failure).getErrorInfo().getErrorCode() == ErrorCode.CANCELLATION) {
 			// This is a cancelled step due to a session being stopped.
-			updateTestStepStatus(getContext(), new StatusEvent(StepStatus.SKIPPED, scope), null, true, false);
+			updateTestStepStatus(getContext(), new StatusEvent(StepStatus.SKIPPED, scope, self()), null, true, false);
 		} else {
 			// Unexpected error.
-			updateTestStepStatus(getContext(), new ErrorStatusEvent(failure, scope), null, true, true);
+			updateTestStepStatus(getContext(), new ErrorStatusEvent(failure, scope, self()), null, true, true);
 		}
 	}
 

@@ -1,8 +1,12 @@
+import { PendingTestSuiteUploadChoiceTestCase } from "./pending-test-suite-upload-choice-test-case"
+
 export interface PendingTestSuiteUploadChoice {
 
-    specification: number
+    specification?: number
     action: 'cancel'|'drop'|'proceed'
-    pending_action_history: 'keep'|'drop'
-    pending_action_metadata: 'skip'|'update'
+    updateTestSuite: boolean
+    updateActors: boolean
+    sharedTestSuite: boolean
+    testCaseUpdates: PendingTestSuiteUploadChoiceTestCase[]
 
 }

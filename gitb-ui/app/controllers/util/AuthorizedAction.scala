@@ -13,7 +13,7 @@ class AuthorizedAction @Inject() (val parser: BodyParsers.Default) (implicit val
     InputSanitizer.check(request)
     val enhancedRequest = new RequestWithAttributes(scala.collection.mutable.Map.empty[String, String], request)
     block(enhancedRequest).map(result =>
-      if (enhancedRequest.attributes.contains(AuthorizationManager.AUTHORIZATION_OK)) {
+      if (enhancedRequest.attributes.contains(AuthorizationManager.AUTHORIZATION_CHECKED)) {
         result
       } else {
         throw new IllegalStateException("Authorization check missing for path ["+enhancedRequest.path+"]")

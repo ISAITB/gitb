@@ -1,6 +1,7 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { BsModalRef } from 'ngx-bootstrap/modal';
 import { Observable } from 'rxjs';
+import { Constants } from 'src/app/common/constants';
 import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
 import { ConformanceService } from 'src/app/services/conformance.service';
 import { DataService } from 'src/app/services/data.service';
@@ -12,7 +13,11 @@ import { PendingTestSuiteUploadChoice } from './pending-test-suite-upload-choice
 import { SpecificationChoice } from './specification-choice';
 import { SpecificationResult } from './specification-result';
 import { TestSuiteUploadResult } from './test-suite-upload-result';
+import { TestSuiteUploadTestCase } from './test-suite-upload-test-case';
+import { TestSuiteUploadTestCaseChoice } from './test-suite-upload-test-case-choice';
 import { ValidationReport } from './validation-report';
+import { find } from 'lodash';
+import { PendingTestSuiteUploadChoiceTestCase } from './pending-test-suite-upload-choice-test-case';
 
 @Component({
   selector: 'app-test-suite-upload-modal',
@@ -22,7 +27,9 @@ import { ValidationReport } from './validation-report';
 export class TestSuiteUploadModalComponent implements OnInit {
 
   @Input() testSuitesVisible = false
-  @Input() availableSpecifications!: Specification[]
+  @Input() sharedTestSuite = false
+  @Input() domainId!: number
+  @Input() availableSpecifications: Specification[] = []
   @Output() completed = new EventEmitter<boolean>()
 
   specifications: Specification[] = []
@@ -32,11 +39,7 @@ export class TestSuiteUploadModalComponent implements OnInit {
   hasValidationErrors = false
   hasValidationMessages = false
   hasMatchingTestSuite = false
-  hasMultipleChoices = false
   step = 'initial'
-  hasChoicesToComplete = true
-  specificationNames: {[key: number]: string} = {}
-  skipCount = 0
   file?: FileData
   uploadResult?: TestSuiteUploadResult
   report?: ValidationReport
@@ -44,6 +47,15 @@ export class TestSuiteUploadModalComponent implements OnInit {
   specificationChoices?: SpecificationChoice[]
   specificationChoiceMap: {[key: number]: SpecificationChoice} = {}
   reportItemsCollapsed = false
+  specificationsCollapsed = true
+  hasChoicesToComplete = false
+  hasMultipleChoices = false
+
+  // Shared test suite test cases
+  updateTestSuiteMetadata = false
+  testCasesInArchiveAndDB: TestSuiteUploadTestCaseChoice[] = []
+  testCasesInArchive: TestSuiteUploadTestCaseChoice[] = []
+  testCasesInDB: TestSuiteUploadTestCaseChoice[] = []
 
   constructor(
     public dataService: DataService,
@@ -55,16 +67,15 @@ export class TestSuiteUploadModalComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
-    for (let specification of this.availableSpecifications) {
-      this.specificationNames[specification.id] = specification.fname
-    }
-    if (this.availableSpecifications.length == 1) {
-      this.specifications.push(this.availableSpecifications[0])
+    if (!this.sharedTestSuite) {
+      if (this.availableSpecifications.length == 1) {
+        this.specifications.push(this.availableSpecifications[0])
+      }
     }
   }
 
   proceedDisabled() {
-    return this.hasValidationErrors || this.actionPending || this.actionProceedPending || !(this.file != undefined && this.specifications.length > 0) || (this.step == 'replace' && !this.hasChoicesToComplete)
+    return this.hasValidationErrors || this.actionPending || this.actionProceedPending || !(this.file != undefined && (this.specifications.length > 0 || this.sharedTestSuite)) || (this.step == 'replace' && !this.hasChoicesToComplete)
   }
 
   parseValidationReport() {
@@ -96,129 +107,144 @@ export class TestSuiteUploadModalComponent implements OnInit {
     }
   }
 
-  specificationName(specificationId: number)  {
-    return this.specificationNames[specificationId]
-  }
-
   showUploadResults() {
-    this.popupService.success('Test suite uploaded.')    
-    this.step = 'results'
-    const specificationIdToIndexMap: {[key: number]: number} = {}
-    const specificationResults: SpecificationResult[] = []
-    let latestIndex = -1
-    for (let item of this.uploadResult!.items) {
-      let specIndex = specificationIdToIndexMap[item.specification]
-      if (specIndex == undefined) {
-        latestIndex += 1
-        specificationResults.push({
-          specification: item.specification,
-          testSuites: [],
-          testCases: [],
-          actors: [],
-          endpoints: [],
-          parameters: []
-        })
-        specIndex = latestIndex
-        specificationIdToIndexMap[item.specification] = specIndex
-      }
-      let itemEntry = item.name+' '+this.actionLabel(item.action)
-      if (item.type == 'testSuite') {
-        specificationResults[specIndex].testSuites.push(itemEntry)
-      } else if (item.type == 'testCase') {
-        specificationResults[specIndex].testCases.push(itemEntry)
-      } else if (item.type == 'actor') {
-        specificationResults[specIndex].actors.push(itemEntry)
-      } else if (item.type == 'endpoint') {
-        specificationResults[specIndex].endpoints.push(itemEntry)
-      } else {
-        specificationResults[specIndex].parameters.push(itemEntry)
-      }
-    }
-    for (let result of specificationResults) {
-      if (result.testSuites.length > 0) {
-        result.testSuiteSummary = result.testSuites.join(', ')
-      }
-      if (result.testCases.length > 0) {
-        result.testCaseSummary = result.testCases.join(', ')
-      }
-      if (result.actors.length > 0) {
-        result.actorSummary = result.actors.join(', ')
-      }
-      if (result.endpoints.length > 0) {
-        result.endpointSummary = result.endpoints.join(', ')
-      }
-      if (result.parameters.length > 0) {
-        result.parameterSummary = result.parameters.join(', ')
-      }
-    }
-    this.results = specificationResults
+    this.popupService.success('Test suite uploaded.')
+    this.close(true, this.refreshNeeded())
   }
 
   showSpecificationChoices() {
     this.step = 'replace'
-    this.hasMatchingTestSuite = false
-    const existsMap: {[key: number]: number} = {}
-    for (let existSpec of this.uploadResult!.existsForSpecs) {
-      existsMap[existSpec] = existSpec
-      this.hasMatchingTestSuite = true
-    }
-    const matchingDataMap: {[key: number]: number} = {}
-    for (let matchingSpec of this.uploadResult!.matchingDataExists) {
-      matchingDataMap[matchingSpec] = matchingSpec
-    }
+    this.hasMatchingTestSuite = this.sharedTestSuite && this.uploadResult?.sharedTestSuiteId != undefined
+    const existsMap: {[key: number]: {id: number, shared: boolean}} = {}
     this.specificationChoices = []
     this.specificationChoiceMap = {}
-    for (let spec of this.specifications) {
-      const existingData = matchingDataMap[spec.id] !=  undefined
-      const existingTestSuite = existsMap[spec.id] != undefined
-      if (existingData || existingTestSuite) {
-        const specData: SpecificationChoice = {
-          specification: spec.id,
-          history: 'keep',
-          metadata: 'skip',
-          skipUpdate: false,
-          dataExists: existingData,
-          testSuiteExists: existingTestSuite
+    if (this.uploadResult?.existsForSpecs) {
+      for (let existSpec of this.uploadResult.existsForSpecs) {
+        existsMap[existSpec.id] = existSpec
+        this.hasMatchingTestSuite = true
+      }    
+    }
+    // Shared test suite choices.
+    if (this.sharedTestSuite) {
+      if (this.uploadResult?.sharedTestCases) {
+        const testCasesInArchiveAndDB: TestSuiteUploadTestCaseChoice[] = []
+        const testCasesInArchive: TestSuiteUploadTestCaseChoice[] = []
+        const testCasesInDB: TestSuiteUploadTestCaseChoice[] = []
+        for (let testCase of this.uploadResult.sharedTestCases) {
+          const testCaseInfo = {
+            identifier: testCase.identifier,
+            name: testCase.name,
+            updateDefinition: false,
+            resetTestHistory: false
+          }
+          if (testCase.status == Constants.TEST_CASE_UPLOAD_MATCH.IN_ARCHIVE_AND_DB) {
+            testCasesInArchiveAndDB.push(testCaseInfo)
+          } else if (testCase.status == Constants.TEST_CASE_UPLOAD_MATCH.IN_ARCHIVE_ONLY) {
+            testCasesInArchive.push(testCaseInfo)
+          } else if (testCase.status == Constants.TEST_CASE_UPLOAD_MATCH.IN_DB_ONLY) {
+            testCasesInDB.push(testCaseInfo)
+          }
         }
-        this.specificationChoices.push(specData)
-        this.specificationChoiceMap[spec.id] = specData
+        this.testCasesInArchiveAndDB = testCasesInArchiveAndDB
+        this.testCasesInArchive = testCasesInArchive
+        this.testCasesInDB = testCasesInDB
+      }
+      for (let spec of this.availableSpecifications) {
+        const existingTestSuite = existsMap[spec.id] != undefined
+        if (existingTestSuite) {
+          const specData: SpecificationChoice = {
+            specification: spec.id,
+            name: spec.fname,
+            updateActors: false,
+            sharedTestSuite: true,
+            updateTestSuite: false,
+            skipUpdate: false,
+            dataExists: true,
+            testSuiteExists: existingTestSuite,
+            testCasesInArchiveAndDB: [],
+            testCasesInArchive: [],
+            testCasesInDB: []
+          }
+          this.specificationChoices.push(specData)
+          this.specificationChoiceMap[spec.id] = specData        
+        }
+      }
+    } else {
+      // Specification related choices
+      const matchingDataMap: {[key: number]: number} = {}
+      for (let matchingSpec of this.uploadResult!.matchingDataExists) {
+        matchingDataMap[matchingSpec] = matchingSpec
+      }
+      for (let spec of this.specifications) {
+        const existingData = matchingDataMap[spec.id] !=  undefined
+        const existingTestSuite = existsMap[spec.id] != undefined
+        const existingTestSuiteIsShared = existingTestSuite && existsMap[spec.id].shared
+        if (existingData || existingTestSuite) {
+          const testCasesInArchiveAndDB: TestSuiteUploadTestCaseChoice[] = []
+          const testCasesInArchive: TestSuiteUploadTestCaseChoice[] = []
+          const testCasesInDB: TestSuiteUploadTestCaseChoice[] = []
+          const matchingSpecification = find(this.uploadResult!.testCases, (resultingSpec) => {
+            return resultingSpec.specification == spec.id
+          })
+          if (matchingSpecification) {
+            for (let testCase of matchingSpecification.testCases) {
+              const testCaseInfo = {
+                identifier: testCase.identifier,
+                name: testCase.name,
+                updateDefinition: false,
+                resetTestHistory: false
+              }
+              if (testCase.status == Constants.TEST_CASE_UPLOAD_MATCH.IN_ARCHIVE_AND_DB) {
+                testCasesInArchiveAndDB.push(testCaseInfo)
+              } else if (testCase.status == Constants.TEST_CASE_UPLOAD_MATCH.IN_ARCHIVE_ONLY) {
+                testCasesInArchive.push(testCaseInfo)
+              } else if (testCase.status == Constants.TEST_CASE_UPLOAD_MATCH.IN_DB_ONLY) {
+                testCasesInDB.push(testCaseInfo)
+              }
+            }
+          }
+          const specData: SpecificationChoice = {
+            specification: spec.id,
+            name: spec.fname,
+            updateActors: false,
+            sharedTestSuite: existingTestSuiteIsShared,
+            updateTestSuite: false,
+            skipUpdate: false,
+            dataExists: existingData,
+            testSuiteExists: existingTestSuite,
+            testCasesInArchiveAndDB: testCasesInArchiveAndDB,
+            testCasesInArchive: testCasesInArchive,
+            testCasesInDB: testCasesInDB
+          }
+          this.specificationChoices.push(specData)
+          this.specificationChoiceMap[spec.id] = specData
+        }
       }
     }
     this.hasMultipleChoices = this.specificationChoices.length > 1
+  }
+
+  toTestCaseChoices(testCases: TestSuiteUploadTestCase[]): TestSuiteUploadTestCaseChoice[] {
+    const choices: TestSuiteUploadTestCaseChoice[] = []
+    for (let testCase of testCases) {
+      choices.push({
+        identifier: testCase.identifier,
+        name: testCase.name,
+        updateDefinition: false,
+        resetTestHistory: false
+      })
+    }
+    return choices
   }
 
   specificationIds() {
     return this.specifications.map((s) => s.id)
   }
 
-  applyChoiceToAll(specification: number) {
-    const reference = this.specificationChoiceMap[specification]
-    for (let choice of this.specificationChoices!) {
-      if (choice.specification != specification) {
-        choice.metadata = reference.metadata
-        if (choice.testSuiteExists) {
-          choice.history = reference.history
-        }
-      }
-    }
-  }
-
-  skipUpdate(specification: number) {
-    this.specificationChoiceMap[specification].skipUpdate = true
-    this.skipCount = this.skipCount + 1
-    this.hasChoicesToComplete = this.specifications.length > this.skipCount
-  }
-
-  processUpdate(specification: number) {
-    this.specificationChoiceMap[specification].skipUpdate = false
-    this.skipCount = this.skipCount - 1
-    this.hasChoicesToComplete = this.specifications.length > this.skipCount
-  }
-
   uploadTestSuite() {
     this.actionPending = true
     this.actionProceedPending = true
-    this.conformanceService.deployTestSuite(this.specificationIds(), this.file!.file!)
+    this.conformanceService.deployTestSuite(this.domainId, this.specificationIds(), this.sharedTestSuite, this.file!.file!)
     .subscribe((result) => {
       this.uploadResult = result
       if (this.uploadResult.validationReport) {
@@ -260,32 +286,79 @@ export class TestSuiteUploadModalComponent implements OnInit {
   applyPendingUpload() {
     const actions: PendingTestSuiteUploadChoice[] = []
     let hasDropHistory = false
-    for (let specification of this.specifications) {
-      const choice = this.specificationChoiceMap[specification.id]
-      let action: Partial<PendingTestSuiteUploadChoice> = {
-          specification: specification.id
-      }
-      if (choice != undefined) {
-        if (choice.skipUpdate) {
-          action.action = 'cancel'
-        } else {
-          if (choice.history == 'drop') {
-            hasDropHistory = true
-          }
-          action.action = 'proceed'
-          action.pending_action_history = choice.history
-          action.pending_action_metadata = choice.metadata
+    if (this.sharedTestSuite) {
+      // Overall choices for the test suite
+      const testCaseActions: PendingTestSuiteUploadChoiceTestCase[] = []
+      for (let testCase of this.testCasesInArchiveAndDB) {
+        if (testCase.resetTestHistory) {
+          hasDropHistory = true
         }
-      } else {
-        action.action = 'proceed'
-        action.pending_action_history = 'keep'
-        action.pending_action_metadata = 'update'
+        testCaseActions.push({
+          identifier: testCase.identifier,
+          resetTestHistory: testCase.resetTestHistory,
+          updateDefinition: testCase.updateDefinition
+        })
       }
-      actions.push(action as PendingTestSuiteUploadChoice)
+      actions.push({
+        action: 'proceed',
+        updateActors: false,
+        updateTestSuite: this.updateTestSuiteMetadata,
+        sharedTestSuite: true,
+        testCaseUpdates: testCaseActions
+      })
+      // Choices for already linked specifications
+      if (this.specificationChoices) {
+        for (let choice of this.specificationChoices) {
+          let action: PendingTestSuiteUploadChoice = {
+            specification: choice.specification,
+            action: 'proceed',
+            updateActors: choice.updateActors,
+            updateTestSuite: false,
+            sharedTestSuite: true,
+            testCaseUpdates: []          
+          }
+          actions.push(action as PendingTestSuiteUploadChoice)
+        }
+      }
+    } else {
+      // Specification-level choices
+      for (let specification of this.specifications) {
+        const choice = this.specificationChoiceMap[specification.id]
+        let action: Partial<PendingTestSuiteUploadChoice> = {
+            specification: specification.id
+        }
+        if (choice != undefined) {
+          if (choice.skipUpdate) {
+            action.action = 'cancel'
+          } else {
+            action.action = 'proceed'
+            action.updateActors = choice.updateActors
+            action.updateTestSuite = choice.updateTestSuite
+            action.sharedTestSuite = this.sharedTestSuite
+            const testCaseActions: PendingTestSuiteUploadChoiceTestCase[] = []
+            for (let testCase of choice.testCasesInArchiveAndDB) {
+              if (testCase.resetTestHistory) {
+                hasDropHistory = true
+              }
+              testCaseActions.push({
+                identifier: testCase.identifier,
+                resetTestHistory: testCase.resetTestHistory,
+                updateDefinition: testCase.updateDefinition
+              })
+            }
+            action.testCaseUpdates = testCaseActions
+          }
+        } else {
+          action.action = 'proceed'
+          action.updateActors = false
+          action.updateTestSuite = false
+        }
+        actions.push(action as PendingTestSuiteUploadChoice)
+      }
     }
     const resolve$ = new Observable<boolean>((subscriber) => {
       if (hasDropHistory) {
-        this.confirmationDialogService.confirm("Confirm test history deletion", "Dropping existing results will render this test suite's prior tests obsolete. Are you sure you want to proceed?", "Yes", "No")
+        this.confirmationDialogService.confirm("Confirm test history reset", "Resetting the testing history will render the selected test cases' existing tests obsolete. Are you sure you want to proceed?", "Yes", "No")
         .subscribe((choice: boolean) => {
           subscriber.next(choice)
           subscriber.complete()
@@ -313,7 +386,7 @@ export class TestSuiteUploadModalComponent implements OnInit {
   private proceedWithPendingUpload(actions?: PendingTestSuiteUploadChoice[]) {
     this.actionPending = true
     this.actionProceedPending = true
-    this.conformanceService.resolvePendingTestSuite(this.uploadResult!.pendingFolderId!, 'proceed', this.specificationIds(), actions)
+    this.conformanceService.resolvePendingTestSuite(this.uploadResult!.pendingFolderId!, 'proceed', this.domainId, this.specificationIds(), actions)
     .subscribe((result) => {
       this.uploadResult = result
       if (this.uploadResult.success) {
@@ -346,19 +419,23 @@ export class TestSuiteUploadModalComponent implements OnInit {
   }
 
   refreshNeeded() {
-    return this.step == 'results' && this.testSuitesVisible
+    return this.testSuitesVisible || this.sharedTestSuite
   }
 
-  close() {
-    if (this.resolutionNeeded()) {
-      this.conformanceService.resolvePendingTestSuite(this.uploadResult!.pendingFolderId!, 'cancel', this.specificationIds()).subscribe(() => {})
+  close(finalStep?: boolean, refreshNeeded?: boolean) {
+    if (!finalStep && this.resolutionNeeded()) {
+      this.conformanceService.resolvePendingTestSuite(this.uploadResult!.pendingFolderId!, 'cancel', this.domainId, this.specificationIds()).subscribe(() => {})
     }
-    this.completed.emit(this.refreshNeeded())
+    this.completed.emit(refreshNeeded)
     this.modalInstance.hide()
   }
 
   selectArchive(file: FileData) {
     this.file = file
+  }
+
+  choiceUpdate(hasPendingChoices: boolean) {
+    this.hasChoicesToComplete = hasPendingChoices
   }
 
 }

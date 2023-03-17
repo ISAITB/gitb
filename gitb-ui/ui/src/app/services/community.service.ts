@@ -18,6 +18,10 @@ import { ErrorDescription } from '../types/error-description';
 import { ActualUserInfo } from '../types/actual-user-info';
 import { CustomProperty } from '../types/custom-property.type';
 import { FileParam } from '../types/file-param.type';
+import { HttpResponse } from '@angular/common/http';
+import { CommunityResourceSearchResult } from '../types/community-resource-search-result';
+import { CommunityResourceUploadResult } from '../types/community-resource-upload-result';
+import { CommunityResource } from '../types/community-resource';
 
 @Injectable({
   providedIn: 'root'
@@ -414,4 +418,100 @@ export class CommunityService {
       authenticate: true
     })
   }
+
+  searchCommunityResources(communityId: number, filter: string|undefined, page: number|undefined, limit: number|undefined) {
+    return this.restService.get<CommunityResourceSearchResult>({
+      path: ROUTES.controllers.CommunityService.searchCommunityResources(communityId).url,
+      params: {
+        filter: filter, 
+        page: page,
+        limit: limit,
+      },
+      authenticate: true
+    })
+  }
+
+  downloadCommunityResources(communityId: number, filter: string|undefined) {
+    return this.restService.get<ArrayBuffer>({
+      path: ROUTES.controllers.CommunityService.downloadCommunityResources(communityId).url,
+      params: {
+        filter: filter
+      },
+      authenticate: true,
+      arrayBuffer: true
+    })
+  }
+
+  createCommunityResource(name: string, description: string|undefined, file: FileData, communityId: number) {
+    return this.restService.post<void>({
+      path: ROUTES.controllers.CommunityService.createCommunityResource(communityId).url,
+      authenticate: true,
+      data: {
+        name: name,
+        description: description
+      },
+      files: [{
+          param: "file",
+          data: file.file!
+      }]
+    })    
+  }
+
+  uploadCommunityResourcesInBulk(communityId: number, file: FileData, updateMatching?: boolean) {
+    return this.restService.post<CommunityResourceUploadResult>({
+      path: ROUTES.controllers.CommunityService.uploadCommunityResourcesInBulk(communityId).url,
+      authenticate: true,
+      data: {
+        // Update matching resources by default
+        update: (updateMatching == undefined || updateMatching)
+      },
+      files: [{
+          param: "file",
+          data: file.file!
+      }]
+    })    
+  }  
+
+  updateCommunityResource(resourceId: number, name: string, description: string|undefined, file?: FileData) {
+    const files: FileParam[] = []
+    if (file?.file) {
+      files.push({param: "file", data: file.file!})
+    }
+    return this.restService.post<void>({
+      path: ROUTES.controllers.CommunityService.updateCommunityResource(resourceId).url,
+      authenticate: true,
+      data: {
+        name: name,
+        description: description
+      },
+      files: files
+    })
+  }
+
+  deleteCommunityResource(resourceId: number) {
+    return this.restService.delete<void>({
+      path: ROUTES.controllers.CommunityService.deleteCommunityResource(resourceId).url,
+      authenticate: true
+    })
+  }
+
+  deleteCommunityResources(communityId: number, resourceIds: number[]) {
+    return this.restService.post<void>({
+      path: ROUTES.controllers.CommunityService.deleteCommunityResources(communityId).url,
+      data: {
+        ids: resourceIds.join(',')
+      },      
+      authenticate: true
+    })
+  }
+
+  downloadCommunityResourceById(resourceId: number) {
+		return this.restService.get<HttpResponse<ArrayBuffer>>({
+			path: ROUTES.controllers.CommunityService.downloadCommunityResourceById(resourceId).url,
+			authenticate: true,
+			arrayBuffer: true,
+      httpResponse: true
+		})
+  }
+
 }

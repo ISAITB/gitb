@@ -27,7 +27,7 @@ export class ConformanceDashboardComponent implements OnInit {
   exportPending = false
   dataStatus = {status: Constants.STATUS.PENDING}
   filterState: FilterState = {
-    filters: [ Constants.FILTER_TYPE.SPECIFICATION, Constants.FILTER_TYPE.ACTOR, Constants.FILTER_TYPE.ORGANISATION, Constants.FILTER_TYPE.SYSTEM, Constants.FILTER_TYPE.ORGANISATION_PROPERTY, Constants.FILTER_TYPE.SYSTEM_PROPERTY, Constants.FILTER_TYPE.RESULT, Constants.FILTER_TYPE.END_TIME ],
+    filters: [ Constants.FILTER_TYPE.SPECIFICATION, Constants.FILTER_TYPE.SPECIFICATION_GROUP, Constants.FILTER_TYPE.ACTOR, Constants.FILTER_TYPE.ORGANISATION, Constants.FILTER_TYPE.SYSTEM, Constants.FILTER_TYPE.ORGANISATION_PROPERTY, Constants.FILTER_TYPE.SYSTEM_PROPERTY, Constants.FILTER_TYPE.RESULT, Constants.FILTER_TYPE.END_TIME ],
     updatePending: false
   }
   communityId?: number
@@ -60,17 +60,17 @@ export class ConformanceDashboardComponent implements OnInit {
     this.filterState.names[Constants.FILTER_TYPE.RESULT] = 'Status'
     this.filterState.names[Constants.FILTER_TYPE.END_TIME] = 'Last update time'
 		if (this.dataService.isSystemAdmin) {
-			this.columnCount = 9
+			this.columnCount = 11
 			this.filterState.filters.push(Constants.FILTER_TYPE.DOMAIN)
 			this.filterState.filters.push(Constants.FILTER_TYPE.COMMUNITY)
     } else if (this.dataService.isCommunityAdmin) {
       this.sortColumn = Constants.FILTER_TYPE.ORGANISATION
 			this.communityId = this.dataService.community!.id
 			if (this.dataService.community!.domain == undefined) {
-				this.columnCount = 8
+				this.columnCount = 10
 				this.filterState.filters.push(Constants.FILTER_TYPE.DOMAIN)
       } else {
-				this.columnCount = 7
+				this.columnCount = 9
       }
     }
     this.getConformanceStatements()
@@ -98,6 +98,7 @@ export class ConformanceDashboardComponent implements OnInit {
         searchCriteria.domainIds = filterData[Constants.FILTER_TYPE.DOMAIN]
       }
       searchCriteria.specIds = filterData[Constants.FILTER_TYPE.SPECIFICATION]
+      searchCriteria.specGroupIds = filterData[Constants.FILTER_TYPE.SPECIFICATION_GROUP]
       searchCriteria.actorIds = filterData[Constants.FILTER_TYPE.ACTOR]
       searchCriteria.organisationIds = filterData[Constants.FILTER_TYPE.ORGANISATION]
       searchCriteria.systemIds = filterData[Constants.FILTER_TYPE.SYSTEM]

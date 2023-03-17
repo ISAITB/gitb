@@ -208,6 +208,8 @@ export class DiagramLoaderService {
             }
           }
         } else if (step.type == "loop") {
+          // By default set the steps of the loop as skipped. Normal status values for executed iterations will be looked up via the sequences.
+          this.addStatusToSteps(sessionId, step.steps, testResultFlat, Constants.TEST_STATUS.SKIPPED)
           this.traverseLoops(testResultFlat, step)
           if (step.sequences != undefined) {
             for (let sequence of step.sequences) {

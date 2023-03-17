@@ -108,7 +108,7 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
   currentSimulatedConfigs?: SUTConfiguration[]
   messagesToProcess?: WebSocketMessage[]
   testEvents: {[key: number]: DiagramEvents} = {}
-  columnCount = 3
+  columnCount = 4
 
   private ws?: WebSocketSubject<any>
   private heartbeat?: Subscription
@@ -144,9 +144,9 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
     this.testsToExecute = tests
     this.documentationExists = this.testCasesHaveDocumentation()
     if (this.documentationExists) {
-      this.columnCount = 4
+      this.columnCount = 5
     } else {
-      this.columnCount = 3
+      this.columnCount = 4
     }
     let counter = 1
     for (let test of tests) {

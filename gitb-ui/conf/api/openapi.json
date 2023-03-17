@@ -214,7 +214,7 @@
         "tags": [
           "Test suites"
         ],
-        "summary": "Deploy a test suite to a specification.",
+        "summary": "Deploy a (non-shared) test suite to a specification.",
         "security": [
           {
             "CommunityApiKeyAuth": []
@@ -265,12 +265,68 @@
         }
       }
     },
+    "/testsuite/deployShared": {
+      "post": {
+        "tags": [
+          "Test suites"
+        ],
+        "summary": "Deploy a shared test suite to a community's domain.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "The shared test suite archive to deploy and the deployment's parameters.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SharedTestSuiteDeployViaBase64Request"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/SharedTestSuiteDeployViaFileRequest"
+              },
+              "encoding": {
+                "testSuite": {
+                  "contentType": "application/zip"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Test suite deployed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TestSuiteDeployResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/testsuite/undeploy": {
       "post": {
         "tags": [
           "Test suites"
         ],
-        "summary": "Undeploy an existing test suite.",
+        "summary": "Undeploy an existing (non-shared) test suite from a specification.",
         "security": [
           {
             "CommunityApiKeyAuth": []
@@ -290,6 +346,132 @@
         "responses": {
           "200": {
             "description": "Test suite successfully undeployed.",
+            "content": {}
+          },
+          "400": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/testsuite/undeployShared": {
+      "post": {
+        "tags": [
+          "Test suites"
+        ],
+        "summary": "Undeploy an existing shared test suite from a community's domain.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "Information on the shared test suite to be undeployed.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SharedTestSuiteUndeployRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Test suite successfully undeployed.",
+            "content": {}
+          },
+          "400": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/testsuite/linkShared": {
+      "post": {
+        "tags": [
+          "Test suites"
+        ],
+        "summary": "Link a shared test suite to one or more specifications.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "Information on the shared test suite and specification(s) to be linked.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestSuiteLinkRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Test suite successfully linked.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TestSuiteLinkResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/testsuite/unlinkShared": {
+      "post": {
+        "tags": [
+          "Test suites"
+        ],
+        "summary": "Unlink a shared test suite from one or more specifications.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "Information on the shared test suite and specification(s) to be linked.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestSuiteUnlinkRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Test suite successfully unlinked.",
             "content": {}
           },
           "400": {
@@ -546,6 +728,83 @@
                 "description": "The test suite archive to deploy.",
                 "type": "string",
                 "format": "binary"
+              },
+              "testCaseWithSpecificationUpdate": {
+                "description": "Test case identifiers for which their definition will be updated.",
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "testCaseWithoutSpecificationUpdate": {
+                "description": "Test case identifiers for which their definition will be not updated.",
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "testCaseWithTestHistoryReplacement": {
+                "description": "Test case identifiers for which their testing history will be reset.",
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "testCaseWithoutTestHistoryReplacement": {
+                "description": "Test case identifiers for which their testing history will be not reset.",
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "required": [
+              "testSuite"
+            ]
+          }
+        ]
+      },
+      "SharedTestSuiteDeployViaFileRequest": {
+        "description": "Information on the shared test suite to deploy when the call is made as a multipart form submission.",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/BaseSharedTestSuiteDeployRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "testSuite": {
+                "description": "The shared test suite archive to deploy.",
+                "type": "string",
+                "format": "binary"
+              },
+              "testCaseWithSpecificationUpdate": {
+                "description": "Test case identifiers for which their definition will be updated.",
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "testCaseWithoutSpecificationUpdate": {
+                "description": "Test case identifiers for which their definition will be not updated.",
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "testCaseWithTestHistoryReplacement": {
+                "description": "Test case identifiers for which their testing history will be reset.",
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "testCaseWithoutTestHistoryReplacement": {
+                "description": "Test case identifiers for which their testing history will be not reset.",
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
               }
             },
             "required": [
@@ -567,6 +826,41 @@
                 "description": "The test suite archive to deploy provided as a Base64-encoded string.",
                 "type": "string",
                 "format": "base64"
+              },
+              "testCases": {
+                "description": "Update choices for specific test cases.",
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/TestCaseDeploymentAction"
+                }
+              }
+            },
+            "required": [
+              "testSuite"
+            ]
+          }
+        ]
+      },
+      "SharedTestSuiteDeployViaBase64Request": {
+        "description": "Information on the shared test suite to deploy when the call is made as JSON.",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/BaseSharedTestSuiteDeployRequest"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "testSuite": {
+                "description": "The shared test suite archive to deploy provided as a Base64-encoded string.",
+                "type": "string",
+                "format": "base64"
+              },
+              "testCases": {
+                "description": "Update choices for specific test cases.",
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/TestCaseDeploymentAction"
+                }
               }
             },
             "required": [
@@ -589,12 +883,12 @@
             "default": false
           },
           "replaceTestHistory": {
-            "description": "Whether the test history linked to the test suite should be reset.",
+            "description": "Whether the test history linked to the test suite's test cases should be reset. This is the default setting to consider if no test case specific options are defined.",
             "type": "boolean",
             "default": false
           },
           "updateSpecification": {
-            "description": "Whether the specification's metadata should be updated using the provided test suite's content.",
+            "description": "Whether the specification's metadata should be updated using the provided test suite's content. For test cases' metadata this setting will be considered as the default, if no test case specific options are defined.",
             "type": "boolean",
             "default": false
           }
@@ -604,8 +898,30 @@
         ],
         "additionalProperties": false
       },
+      "BaseSharedTestSuiteDeployRequest": {
+        "description": "Common information on the shared test suite to deploy.",
+        "type": "object",
+        "properties": {
+          "ignoreWarnings": {
+            "description": "Whether test suite validation warnings should be ignored.",
+            "type": "boolean",
+            "default": false
+          },
+          "replaceTestHistory": {
+            "description": "Whether the test history linked to the test suite's test cases should be reset. This is the default setting to consider if no test case specific options are defined.",
+            "type": "boolean",
+            "default": false
+          },
+          "updateSpecification": {
+            "description": "Whether the test suite's metadata should be updated using the provided test suite's content.",
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "additionalProperties": false
+      },
       "TestSuiteDeployResponse": {
-        "description": "Response for the test session deploy operation.",
+        "description": "Response for the (shared or specification-specific) test suite deploy operation.",
         "type": "object",
         "properties": {
           "completed": {
@@ -638,6 +954,26 @@
           "completed"
         ],
         "additionalProperties": false
+      },
+      "TestCaseDeploymentAction": {
+        "description": "Deployment choices for a given test case.",
+        "type": "object",
+        "properties": {
+          "identifier": {
+            "description": "The test case identifier.",
+            "type": "string"
+          },
+          "updateSpecification": {
+            "description": "Whether the metadata for this test case should be updated.",
+            "type": "boolean",
+            "default": false
+          },
+          "replaceTestHistory": {
+            "description": "Whether the testing history for this test case should be reset.",
+            "type": "boolean",
+            "default": false
+          }
+        }
       },
       "TestSuiteValidationReportItem": {
         "description": "A test suite validation report finding.",
@@ -673,6 +1009,112 @@
         "required": [
           "specification",
           "testSuite"
+        ],
+        "additionalProperties": false
+      },
+      "SharedTestSuiteUndeployRequest": {
+        "description": "Request to undeploy a given shared test suite.",
+        "type": "object",
+        "properties": {
+          "testSuite": {
+            "description": "The identifier of the test suite that will be undeployed.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "testSuite"
+        ],
+        "additionalProperties": false
+      },
+      "TestSuiteLinkRequest": {
+        "description": "Request to link a shared test suite with one or more specifications.",
+        "type": "object",
+        "properties": {
+          "testSuite": {
+            "description": "The identifier of the shared test suite.",
+            "type": "string"
+          },
+          "specifications": {
+            "description": "The list of specifications to link the test suite to.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TestSuiteLinkRequestSpecification"
+            }
+          }
+        },
+        "required": [
+          "testSuite",
+          "specifications"
+        ],
+        "additionalProperties": false
+      },
+      "TestSuiteLinkRequestSpecification": {
+        "description": "Information on how to link a shared test suite to a given specification.",
+        "type": "object",
+        "properties": {
+          "specification": {
+            "description": "The API key identifying the specification to link the test suite to.",
+            "type": "string"
+          },
+          "update": {
+            "description": "Whether or not to update the specification's actor metadata based on the test suite.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "specification"
+        ],
+        "additionalProperties": false
+      },
+      "TestSuiteLinkResponse": {
+        "description": "Response for the linking of a shared test suite with one or more specifications.",
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/TestSuiteLinkResponseSpecification"
+        }
+      },
+      "TestSuiteLinkResponseSpecification": {
+        "description": "The result from linking a shared test suite to a given specification.",
+        "type": "object",
+        "properties": {
+          "specification": {
+            "description": "The API key identifying the specification.",
+            "type": "string"
+          },
+          "linked": {
+            "description": "Whether or not the test suite was linked to the specification.",
+            "type": "boolean"
+          },
+          "message": {
+            "description": "A message detailing why the specification was not linked (if linking didn't take place).",
+            "type": "string"
+          }
+        },
+        "required": [
+          "specification",
+          "linked"
+        ],
+        "additionalProperties": false
+      },
+      "TestSuiteUnlinkRequest": {
+        "description": "Request to unlink a shared test suite from a givan specification.",
+        "type": "object",
+        "properties": {
+          "testSuite": {
+            "description": "The identifier of the shared test suite.",
+            "type": "string"
+          },
+          "specifications": {
+            "description": "The list of specifications to unlink from the test suite (identified via their API keys).",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "testSuite",
+          "specifications"
         ],
         "additionalProperties": false
       },

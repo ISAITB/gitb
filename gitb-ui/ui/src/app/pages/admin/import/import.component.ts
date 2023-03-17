@@ -118,6 +118,7 @@ export class ImportComponent extends BaseComponent implements OnInit, OnDestroy 
     this.importItemTypeLabels[Constants.IMPORT_ITEM_TYPE.DOMAIN] = this.dataService.labelDomains()
     this.importItemTypeLabels[Constants.IMPORT_ITEM_TYPE.DOMAIN_PARAMETER] = this.dataService.labelDomain() + ' parameters'
     this.importItemTypeLabels[Constants.IMPORT_ITEM_TYPE.SPECIFICATION] = this.dataService.labelSpecifications()
+    this.importItemTypeLabels[Constants.IMPORT_ITEM_TYPE.SPECIFICATION_GROUP] = this.dataService.labelSpecificationGroups()
     this.importItemTypeLabels[Constants.IMPORT_ITEM_TYPE.ACTOR] = this.dataService.labelActors()
     this.importItemTypeLabels[Constants.IMPORT_ITEM_TYPE.ENDPOINT] = this.dataService.labelEndpoints()
     this.importItemTypeLabels[Constants.IMPORT_ITEM_TYPE.ENDPOINT_PARAMETER] = this.dataService.labelEndpoint() + ' parameters'
@@ -131,6 +132,7 @@ export class ImportComponent extends BaseComponent implements OnInit, OnDestroy 
     this.importItemTypeLabels[Constants.IMPORT_ITEM_TYPE.LEGAL_NOTICE] = 'Legal notices'
     this.importItemTypeLabels[Constants.IMPORT_ITEM_TYPE.ERROR_TEMPLATE] = 'Error templates'
     this.importItemTypeLabels[Constants.IMPORT_ITEM_TYPE.TRIGGER] = 'Triggers'
+    this.importItemTypeLabels[Constants.IMPORT_ITEM_TYPE.RESOURCE] = 'Resources'
     this.importItemTypeLabels[Constants.IMPORT_ITEM_TYPE.ORGANISATION] = this.dataService.labelOrganisations()
     this.importItemTypeLabels[Constants.IMPORT_ITEM_TYPE.ORGANISATION_USER] = 'Users'
     this.importItemTypeLabels[Constants.IMPORT_ITEM_TYPE.ORGANISATION_PROPERTY_VALUE] = 'Custom ' + this.dataService.labelOrganisationLower() + ' property values'

@@ -1,7 +1,7 @@
 <div id="conformanceDetailPage" class="page conformance">
 	<div class="panel panel-default">
 		<div class="panel-heading clickable" (click)="collapsedDetails = !collapsedDetails">
-			<h4 class="title">Conformance statement details</h4>
+			<h4 class="title"><app-collapsing-icon [isCollapsed]="collapsedDetails"></app-collapsing-icon>Conformance statement details</h4>
 		</div>
 		<div [collapse]="collapsedDetails" [isAnimated]="true">
 			<div class="panel-body">
@@ -30,7 +30,7 @@
 				</div>
 				<div class="row row-display-last oneLineDiv conformanceStatusDiv">
 					<div class="col-md-2"><strong>Status</strong></div>
-					<div class="col-md-10"><span><i [ngClass]="dataService.iconForTestResult(conformanceStatus)"></i></span></div>
+					<div class="col-md-10"><span containerClass="shortTooltip" [tooltip]="dataService.tooltipForTestResult(conformanceStatus)"><i [ngClass]="dataService.iconForTestResult(conformanceStatus)"></i></span></div>
 				</div>
 			</div>
 			<div class="panel-footer">
@@ -81,6 +81,7 @@
 						<ng-container *ngSwitchDefault>
 							<div class="panel panel-default testSuitePanel" *ngFor="let testSuite of displayedTestSuites">
 								<div class="testSuiteDisplay" [class.expanded]="testSuite.expanded" (click)="onExpand(testSuite)">
+									<div><app-collapsing-icon [isCollapsed]="!testSuite.expanded"></app-collapsing-icon></div>
 									<div class="testSuiteName">{{testSuite.sname}}</div>
 									<div *ngIf="testSuite.description != undefined && testSuite.description.trim() != ''" class="testSuiteDescription">{{testSuite.description}}</div>
 									<div class="testSuiteControls">
@@ -89,7 +90,7 @@
 											<button class="btn btn-primary" (click)="onTestSuiteSelect(testSuite); $event.stopPropagation();" containerClass="shortTooltip" tooltip="Run all" [delay]="Constants.TOOLTIP_DELAY"><i class="fa fa-play"></i></button>
 										</div>
 									</div>
-									<div class="testSuiteResult"><i [ngClass]="dataService.iconForTestResult(testSuite.result)"></i></div>
+									<div class="testSuiteResult"><i containerClass="shortTooltip" [tooltip]="dataService.tooltipForTestResult(conformanceStatus)" [ngClass]="dataService.iconForTestResult(testSuite.result)"></i></div>
 								</div>
 								<div class="collapsibleTestCaseDiv" [collapse]="!testSuite.expanded" [isAnimated]="true">
 									<div class="testCaseContainer">

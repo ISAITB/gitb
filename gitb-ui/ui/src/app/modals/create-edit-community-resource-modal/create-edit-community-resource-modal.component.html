@@ -1,0 +1,33 @@
+<div class="modal-header">
+    <h4>{{title}}</h4>
+</div>
+<form class="form-horizontal">
+    <div class="modal-body">
+        <div class="form-group">
+            <label class="col-xs-3 control-label" for="name">* Resource:</label>
+            <div class="col-xs-7">
+                <app-file-select id="name" placeholder="Select file ..."
+                    [fileName]="resource.name"
+                    (onUpload)="selectFile($event)"
+                    [maxSize]="-1">
+                </app-file-select>
+            </div>
+            <app-tooltip tbTooltip="The file to make available as a community resource."></app-tooltip>
+        </div>
+        <div class="form-group">
+            <label class="col-xs-3 control-label" for="description">Description:</label>
+            <div class="col-xs-7">
+                <textarea id="description" name="description" [(ngModel)]="resource.description" class="form-control"></textarea>
+            </div>
+            <app-tooltip tbTooltip="A text describing the purpose of this resource."></app-tooltip>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button class="btn btn-default" type="submit" (click)="save()" [disable]="!saveAllowed() || deletePending || downloadPending" [pending]="savePending">Save</button>
+        <ng-container *ngIf="resource.id != undefined">
+            <button class="btn btn-default" type="button" (click)="delete()" [disable]="savePending || downloadPending" [pending]="deletePending">Delete</button>
+        </ng-container>
+        <button class="btn btn-default" type="button" (click)="download()" [disable]="savePending || deletePending || (file == undefined && resource.id == undefined)" [pending]="downloadPending">Download</button>
+        <button class="btn btn-default" type="button" (click)="cancel()" [disabled]="savePending || deletePending || downloadPending">Cancel</button>
+    </div>
+</form>

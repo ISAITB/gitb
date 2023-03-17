@@ -29,7 +29,6 @@ export class SessionDashboardComponent implements OnInit {
 
   exportActivePending = false
   exportCompletedPending = false
-  viewCheckbox = false
   selectingForDelete = false
   activeExpandedCounter = {count: 0}
   completedExpandedCounter = {count: 0}
@@ -40,6 +39,7 @@ export class SessionDashboardComponent implements OnInit {
   completedTestsColumns!: TableColumnDefinition[]
   activeTests: TestResultForDisplay[] = []
   completedTests: TestResultForDisplay[] = []
+  completedTestsCheckboxEmitter = new EventEmitter<boolean>()
   completedTestsTotalCount = 0
   activeSortOrder = "asc"
   activeSortColumn = "startTime"
@@ -56,7 +56,7 @@ export class SessionDashboardComponent implements OnInit {
   refreshActivePending = false
   refreshCompletedPending = false
   filterState: FilterState = {
-    filters: [ Constants.FILTER_TYPE.SPECIFICATION, Constants.FILTER_TYPE.ACTOR, Constants.FILTER_TYPE.TEST_SUITE, Constants.FILTER_TYPE.TEST_CASE, Constants.FILTER_TYPE.ORGANISATION, Constants.FILTER_TYPE.SYSTEM, Constants.FILTER_TYPE.RESULT, Constants.FILTER_TYPE.START_TIME, Constants.FILTER_TYPE.END_TIME, Constants.FILTER_TYPE.SESSION, Constants.FILTER_TYPE.ORGANISATION_PROPERTY, Constants.FILTER_TYPE.SYSTEM_PROPERTY ],
+    filters: [ Constants.FILTER_TYPE.SPECIFICATION, Constants.FILTER_TYPE.SPECIFICATION_GROUP, Constants.FILTER_TYPE.ACTOR, Constants.FILTER_TYPE.TEST_SUITE, Constants.FILTER_TYPE.TEST_CASE, Constants.FILTER_TYPE.ORGANISATION, Constants.FILTER_TYPE.SYSTEM, Constants.FILTER_TYPE.RESULT, Constants.FILTER_TYPE.START_TIME, Constants.FILTER_TYPE.END_TIME, Constants.FILTER_TYPE.SESSION, Constants.FILTER_TYPE.ORGANISATION_PROPERTY, Constants.FILTER_TYPE.SYSTEM_PROPERTY ],
     updatePending: false
   }
   deletePending = false
@@ -103,7 +103,7 @@ export class SessionDashboardComponent implements OnInit {
       { field: 'endTime', title: 'End time', sortable: true, order: 'desc' },
       { field: 'organization', title: this.dataService.labelOrganisation(), sortable: true },
       { field: 'system', title: this.dataService.labelSystem(), sortable: true },
-      { field: 'result', title: 'Result', sortable: true, iconFn: this.dataService.iconForTestResult }
+      { field: 'result', title: 'Result', sortable: true, iconFn: this.dataService.iconForTestResult, iconTooltipFn: this.dataService.tooltipForTestResult }
     ]
     if (this.dataService.isSystemAdmin || (this.dataService.isCommunityAdmin && this.dataService.community!.domain == undefined)) {
       this.filterState.filters.push(Constants.FILTER_TYPE.DOMAIN)
@@ -156,6 +156,7 @@ export class SessionDashboardComponent implements OnInit {
         searchCriteria.domainIds = filterData[Constants.FILTER_TYPE.DOMAIN]
       }
       searchCriteria.specIds = filterData[Constants.FILTER_TYPE.SPECIFICATION]
+      searchCriteria.specGroupIds = filterData[Constants.FILTER_TYPE.SPECIFICATION_GROUP]
       searchCriteria.actorIds = filterData[Constants.FILTER_TYPE.ACTOR]
       searchCriteria.testSuiteIds = filterData[Constants.FILTER_TYPE.TEST_SUITE]
       searchCriteria.testCaseIds = filterData[Constants.FILTER_TYPE.TEST_CASE]
@@ -198,7 +199,7 @@ export class SessionDashboardComponent implements OnInit {
   }
 
   getCompletedTests() {
-    this.viewCheckbox = false
+    this.completedTestsCheckboxEmitter.emit(false)
     this.completedExpandedCounter.count = 0
     this.selectingForDelete = false
     const params = this.getCurrentSearchCriteria()
@@ -529,7 +530,7 @@ export class SessionDashboardComponent implements OnInit {
   }
 
   selectDeleteSessions() {
-    this.viewCheckbox = true
+    this.completedTestsCheckboxEmitter.emit(true)
     this.selectingForDelete = true
   }
 
@@ -561,7 +562,7 @@ export class SessionDashboardComponent implements OnInit {
   }
 
   cancelDeleteSessions() {
-    this.viewCheckbox = false
+    this.completedTestsCheckboxEmitter.emit(false)
     this.selectingForDelete = false
     for (let test of this.completedTests) {
       test.checked = false

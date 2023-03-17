@@ -171,28 +171,28 @@ class TestResultManager @Inject() (repositoryUtils: RepositoryUtils, dbConfigPro
   }
 
   def updateForUpdatedTestCase(id: Long, name: String): DBIO[_] = {
-    val q1 = for {t <- PersistenceSchema.testResults if t.testCaseId === id} yield t.testCase
-    q1.update(Some(name))
+    // No update is made to the test case's name as the test session history is decoupled.
+    DBIO.successful(())
   }
 
   def updateForUpdatedTestSuite(id: Long, name: String): DBIO[_] = {
-    val q1 = for {t <- PersistenceSchema.testResults if t.testSuiteId === id} yield t.testSuite
-    q1.update(Some(name))
+    // No update is made to the test suite's name as the test session history is decoupled.
+    DBIO.successful(())
   }
 
   def updateForUpdatedDomain(id: Long, name: String): DBIO[_] = {
-    val q1 = for {t <- PersistenceSchema.testResults if t.domainId === id} yield t.domain
-    q1.update(Some(name))
+    // No update is made as the test session history is decoupled.
+    DBIO.successful(())
   }
 
   def updateForUpdatedSpecification(id: Long, name: String): DBIO[_] = {
-    val q1 = for {t <- PersistenceSchema.testResults if t.specificationId === id} yield t.specification
-    q1.update(Some(name))
+    // No update is made as the test session history is decoupled.
+    DBIO.successful(())
   }
 
   def updateForUpdatedActor(id: Long, name: String): DBIO[_] = {
-    val q1 = for {t <- PersistenceSchema.testResults if t.actorId === id} yield t.actor
-    q1.update(Some(name))
+    // No update is made as the test session history is decoupled.
+    DBIO.successful(())
   }
 
   def updateForDeletedSystem(id: Long): DBIO[_] = {
@@ -263,7 +263,7 @@ class TestResultManager @Inject() (repositoryUtils: RepositoryUtils, dbConfigPro
   }
 
   private def deleteTestSession(testSession: TestResult, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
-    val queryConformanceResult = PersistenceSchema.conformanceResults.filter(_.testsession === testSession.sessionId)
+    val queryConformanceResults = PersistenceSchema.conformanceResults.filter(_.testsession === testSession.sessionId)
     for {
       // Delete file system data (on success)
       _ <- {
@@ -273,25 +273,31 @@ class TestResultManager @Inject() (repositoryUtils: RepositoryUtils, dbConfigPro
         DBIO.successful(())
       }
       // Load conformance result
-      conformanceResult <- queryConformanceResult.result.headOption
+      conformanceResults <- queryConformanceResults.result
       // Calculate if needed new conformance result
       _ <- {
-        if (conformanceResult.isDefined) {
-          // Update the result entry to match the other sessions' results
+        if (conformanceResults.nonEmpty) {
+          // Update the result entries to match the other sessions' results
           for {
             // Get latest relevant test session (except the one being deleted)
-            latestTestSession <- PersistenceSchema.testResults
-              .filter(_.actorId === conformanceResult.get.actor)
-              .filter(_.sutId === conformanceResult.get.sut)
-              .filter(_.testCaseId === conformanceResult.get.testcase)
-              .filter(_.testSessionId =!= testSession.sessionId)
-              .filter(_.endTime.isDefined)
-              .sortBy(_.endTime.desc)
-              .result
-              .headOption
-            // Update the result.
+            latestTestSession <- {
+              if (testSession.systemId.isDefined && testSession.testCaseId.isDefined) {
+                // It only makes sense to update conformance statement results if the test session had its system and test case links intact.
+                PersistenceSchema.testResults
+                  .filter(_.sutId === testSession.systemId.get)
+                  .filter(_.testCaseId === testSession.testCaseId)
+                  .filter(_.testSessionId =!= testSession.sessionId)
+                  .filter(_.endTime.isDefined)
+                  .sortBy(_.endTime.desc)
+                  .result
+                  .headOption
+              } else {
+                DBIO.successful(None)
+              }
+            }
+            // Update the results.
             _ <- {
-              val updateQuery = for { c <- queryConformanceResult } yield (c.testsession, c.result, c.outputMessage, c.updateTime)
+              val updateQuery = for { c <- queryConformanceResults } yield (c.testsession, c.result, c.outputMessage, c.updateTime)
               if (latestTestSession.isDefined) {
                 // Replace status
                 var updateTimeToSet = latestTestSession.get.endTime
@@ -327,7 +333,7 @@ class TestResultManager @Inject() (repositoryUtils: RepositoryUtils, dbConfigPro
     exec(dbActionFinalisation(Some(onSuccessCalls), None, action).transactionally)
   }
 
-  def deleteTestSessionsInternal(sessions: Iterable[TestResult], onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
+  private def deleteTestSessionsInternal(sessions: Iterable[TestResult], onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
     val actions = ListBuffer[DBIO[_]]()
     sessions.foreach { session =>
       actions += deleteTestSession(session, onSuccessCalls)
@@ -338,12 +344,10 @@ class TestResultManager @Inject() (repositoryUtils: RepositoryUtils, dbConfigPro
   def deleteObsoleteTestResultsForSystem(systemId: Long, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
     for  {
       sessions <- PersistenceSchema.testResults
-                      .filter(x => x.sutId === systemId &&
-                          (x.testSuiteId.isEmpty || x.testCaseId.isEmpty ||
-                            x.communityId.isEmpty || x.organizationId.isEmpty ||
-                            x.domainId.isEmpty || x.actorId.isEmpty || x.specificationId.isEmpty))
-                      .result
-      _ <- deleteTestSessionsInternal(sessions, onSuccessCalls)
+        .filter(x => x.sutId === systemId &&
+          (x.testSuiteId.isEmpty || x.testCaseId.isEmpty || x.communityId.isEmpty || x.organizationId.isEmpty || x.domainId.isEmpty || x.actorId.isEmpty || x.specificationId.isEmpty)
+        ).result
+      _ <- deleteObsoleteTestSessions(sessions, onSuccessCalls)
     } yield ()
   }
 
@@ -351,24 +355,46 @@ class TestResultManager @Inject() (repositoryUtils: RepositoryUtils, dbConfigPro
     for {
       sessions <- PersistenceSchema.testResults
         .filter(x => x.communityId === communityId &&
-          (x.testSuiteId.isEmpty || x.testCaseId.isEmpty ||
-            x.sutId.isEmpty || x.organizationId.isEmpty ||
-            x.domainId.isEmpty || x.actorId.isEmpty || x.specificationId.isEmpty))
+          (x.testSuiteId.isEmpty || x.testCaseId.isEmpty || x.sutId.isEmpty || x.organizationId.isEmpty || x.domainId.isEmpty || x.actorId.isEmpty || x.specificationId.isEmpty)
+        )
         .result
-      _ <- deleteTestSessionsInternal(sessions, onSuccessCalls)
+      _ <- deleteObsoleteTestSessions(sessions, onSuccessCalls)
     } yield ()
+  }
+
+  private def deleteObsoleteTestSessions(sessions: Iterable[TestResult], onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
+    val actions = ListBuffer[DBIO[_]]()
+    sessions.foreach { session =>
+      actions += (
+        for {
+          // Make sure we don't delete obsolete sessions that may be actively linked to a shared test suite.
+          linkedToSharedTestSuite <- {
+            if (session.testSuiteId.isEmpty || session.testCaseId.isEmpty) {
+              DBIO.successful(false)
+            } else {
+              PersistenceSchema.testSuites.filter(_.id === session.testSuiteId.get).map(_.shared).result.head
+            }
+          }
+          _ <- if (linkedToSharedTestSuite) {
+            // Skip the delete.
+            DBIO.successful(())
+          } else {
+            // Proceed.
+            deleteTestSession(session, onSuccessCalls)
+          }
+        } yield ()
+      )
+    }
+    toDBIO(actions)
   }
 
   def deleteAllObsoleteTestResults(): Unit = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val action = for {
       sessions <- PersistenceSchema.testResults
-        .filter(x =>
-          x.testSuiteId.isEmpty || x.testCaseId.isEmpty ||
-            x.sutId.isEmpty || x.organizationId.isEmpty || x.communityId.isEmpty ||
-            x.domainId.isEmpty || x.actorId.isEmpty || x.specificationId.isEmpty)
+        .filter(x => x.testSuiteId.isEmpty || x.testCaseId.isEmpty || x.sutId.isEmpty || x.organizationId.isEmpty || x.communityId.isEmpty || x.domainId.isEmpty || x.actorId.isEmpty || x.specificationId.isEmpty)
         .result
-      _ <- deleteTestSessionsInternal(sessions, onSuccessCalls)
+      _ <- deleteObsoleteTestSessions(sessions, onSuccessCalls)
     } yield ()
     exec(dbActionFinalisation(Some(onSuccessCalls), None, action).transactionally)
   }

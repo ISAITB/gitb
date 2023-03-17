@@ -31,6 +31,10 @@ export class CreateSpecificationComponent extends BaseComponent implements OnIni
   }
 
   ngOnInit(): void {
+    const groupId = this.route.snapshot.queryParamMap.get('group')
+    if (groupId) {
+      this.specification.group = Number(groupId)
+    }
   }
 
 	saveDisabled() {
@@ -41,7 +45,7 @@ export class CreateSpecificationComponent extends BaseComponent implements OnIni
 		if (!this.saveDisabled()) {
 			let domainId = Number(this.route.snapshot.paramMap.get('id'))
       this.pending = true
-      this.conformanceService.createSpecification(this.specification.sname!, this.specification.fname!, this.specification.description, this.specification.hidden, domainId)
+      this.conformanceService.createSpecification(this.specification.sname!, this.specification.fname!, this.specification.description, this.specification.hidden, domainId, this.specification.group)
       .subscribe(() => {
         this.routingService.toDomain(domainId)
         this.popupService.success(this.dataService.labelSpecification()+' created.')

@@ -3,6 +3,7 @@ export interface ExportSettings {
     landingPages: boolean
     errorTemplates: boolean
     triggers: boolean
+    resources: boolean
     legalNotices: boolean
     certificateSettings: boolean
     customLabels: boolean

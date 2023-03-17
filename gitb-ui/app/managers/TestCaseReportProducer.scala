@@ -4,7 +4,7 @@ import com.gitb.core.Metadata
 import com.gitb.reports.ReportGenerator
 import com.gitb.reports.dto.TestCaseOverview
 import com.gitb.tbs.TestStepStatus
-import com.gitb.tpl.{DecisionStep, FlowStep, TestCase, TestStep}
+import com.gitb.tpl._
 import com.gitb.tr.{TestCaseOverviewReportType, TestCaseStepReportType, TestCaseStepsType, TestResultType}
 import com.gitb.utils.{XMLDateTimeUtils, XMLUtils}
 import models.{CommunityLabels, SessionFolderInfo}
@@ -200,17 +200,75 @@ class TestCaseReportProducer @Inject() (testResultManager: TestResultManager, te
       stepReport.setWrapped(report.getReport)
       collectedSteps += stepReport
       // Process child steps as well if applicable
+      testStep match {
+        case step: GroupStep =>
+          collectStepReportsForSequence(step, collectedSteps, folder)
+        case step: DecisionStep =>
+          collectStepReportsForSequence(step.getThen, collectedSteps, folder)
+          if (step.getElse != null) {
+            collectStepReportsForSequence(step.getElse, collectedSteps, folder)
+          }
+        case step: FlowStep =>
+          import scala.jdk.CollectionConverters._
+          for (thread <- step.getThread.asScala) {
+            collectStepReportsForSequence(thread, collectedSteps, folder)
+          }
+        case step: LoopStep =>
+          /*
+           The sequence contained in the loop are the set of steps from the test definition.
+           We need to check for specific iterations (1-indexed) against the recorded step reports to see what we include.
+           */
+          import scala.jdk.CollectionConverters._
+          var index = 1
+          while (Files.exists(Path.of(folder.toString, step.getId+"["+index+"].xml"))) {
+            // We have an iteration.
+            for (childStep <- step.getSteps.asScala) {
+              /*
+               Child steps in the loop definition are set with a fixed index of "1". We replace these with the iteration's
+               index and then check to see if we have reports to add.
+               */
+              val prefixToLookFor = step.getId+"[1]"
+              val prefixToUse = step.getId+"["+index+"]"
+              replaceIdPrefix(childStep, prefixToLookFor, prefixToUse)
+              collectStepReports(childStep, collectedSteps, folder)
+              // Reset the IDs for the next iteration.
+              replaceIdPrefix(childStep, prefixToUse, prefixToLookFor)
+            }
+            index += 1
+          }
+        case _ =>
+      }
     }
-    if (testStep.isInstanceOf[DecisionStep]) {
-      collectStepReportsForSequence(testStep.asInstanceOf[DecisionStep].getThen, collectedSteps, folder)
-      if (testStep.asInstanceOf[DecisionStep].getElse != null) {
-        collectStepReportsForSequence(testStep.asInstanceOf[DecisionStep].getElse, collectedSteps, folder)
-      }
-    } else if (testStep.isInstanceOf[FlowStep]) {
-      import scala.jdk.CollectionConverters._
-      for (thread <- testStep.asInstanceOf[FlowStep].getThread.asScala) {
-        collectStepReportsForSequence(thread, collectedSteps, folder)
-      }
+  }
+
+  private def replaceIdPrefix(step: TestStep, prefixToLookFor: String, prefixToUse: String): Unit = {
+    step.setId(prefixToUse+StringUtils.removeStart(step.getId, prefixToLookFor))
+    step match {
+      case step: GroupStep =>
+        replaceIdPrefixForSequence(step, prefixToLookFor, prefixToUse)
+      case step: DecisionStep =>
+        replaceIdPrefixForSequence(step.getThen, prefixToLookFor, prefixToUse)
+        if (step.getElse != null) {
+          replaceIdPrefixForSequence(step.getElse, prefixToLookFor, prefixToUse)
+        }
+      case step: FlowStep =>
+        import scala.jdk.CollectionConverters._
+        for (thread <- step.getThread.asScala) {
+          replaceIdPrefixForSequence(thread, prefixToLookFor, prefixToUse)
+        }
+      case step: LoopStep =>
+        import scala.jdk.CollectionConverters._
+        for (childStep <- step.getSteps.asScala) {
+          replaceIdPrefix(childStep, prefixToLookFor, prefixToUse)
+        }
+      case _ =>
+    }
+  }
+
+  private def replaceIdPrefixForSequence(stepSequence: com.gitb.tpl.Sequence, prefixToLookFor: String, prefixToUse: String): Unit = {
+    import scala.jdk.CollectionConverters._
+    for (step <- stepSequence.getSteps.asScala) {
+      replaceIdPrefix(step, prefixToLookFor, prefixToUse)
     }
   }
 

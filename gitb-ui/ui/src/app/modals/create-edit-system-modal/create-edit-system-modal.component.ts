@@ -81,7 +81,7 @@ export class CreateEditSystemModalComponent extends BaseComponent implements OnI
   }
 
   saveEnabled() {
-    return this.textProvided(this.system.sname) && this.textProvided(this.system.fname) && this.textProvided(this.system.version)
+    return this.textProvided(this.system.sname) && this.textProvided(this.system.fname)
   }
 
   copyChanged() {
@@ -95,7 +95,7 @@ export class CreateEditSystemModalComponent extends BaseComponent implements OnI
 
   private doUpdate() {
     this.savePending = true
-    this.systemService.updateSystem(this.system.id!, this.system.sname!, this.system.fname!, this.system.description, this.system.version!, this.organisationId, this.otherSystem, this.propertyData.edit, this.propertyData.properties, this.copySystemParameters, this.copyStatementParameters)
+    this.systemService.updateSystem(this.system.id!, this.system.sname!, this.system.fname!, this.system.description, this.system.version, this.organisationId, this.otherSystem, this.propertyData.edit, this.propertyData.properties, this.copySystemParameters, this.copyStatementParameters)
     .subscribe(() => {
       this.modalRef.hide()
       this.reload.emit(true)
@@ -119,7 +119,7 @@ export class CreateEditSystemModalComponent extends BaseComponent implements OnI
         }
       } else {
         // Create
-        this.systemService.registerSystemWithOrganisation(this.system.sname!, this.system.fname!, this.system.description, this.system.version!, this.organisationId, this.otherSystem, this.propertyData.edit, this.propertyData.properties, this.copySystemParameters, this.copyStatementParameters)
+        this.systemService.registerSystemWithOrganisation(this.system.sname!, this.system.fname!, this.system.description, this.system.version, this.organisationId, this.otherSystem, this.propertyData.edit, this.propertyData.properties, this.copySystemParameters, this.copyStatementParameters)
         .subscribe(() => {
           this.modalRef.hide()
           this.reload.emit(true)

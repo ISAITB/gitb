@@ -1,0 +1,29 @@
+<div class="page domains detail detail-spec">
+	<div class="panel panel-default">
+		<div class="panel-heading">
+			<h4 class="title">{{dataService.labelSpecificationGroup()}} details</h4>
+		</div>
+		<form class="form-horizontal">
+			<div class="panel-body">
+				<div class="row">
+					<div class="col-md-10 col-md-offset-1">
+                        <app-specification-group-form [group]="group"></app-specification-group-form>
+                    </div>
+				</div>
+			</div>
+			<div class="panel-footer">
+				<div class="btn-toolbar">
+					<button (click)="saveGroupChanges()" type="submit" class="btn btn-default" [disable]="deletePending || saveDisabled()" [pending]="savePending">Save changes</button>
+                    <div class="btn-group" dropdown>
+                        <button id="button-delete" [disable]="savePending" [pending]="deletePending" dropdownToggle type="button" class="btn btn-default dropdown-toggle" aria-controls="dropdown-delete">Delete<span class="caret"></span></button>
+                        <ul id="dropdown-delete" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-result">
+                            <li role="menuitem"><a class="dropdown-item" href (click)="deleteGroup(false);$event.preventDefault()">Delete this {{dataService.labelSpecificationGroupLower()}} but keep its {{dataService.labelSpecificationInGroupsLower()}}</a></li>
+                            <li role="menuitem"><a class="dropdown-item" href (click)="deleteGroup(true);$event.preventDefault()">Delete this {{dataService.labelSpecificationGroupLower()}} and all its {{dataService.labelSpecificationInGroupsLower()}}</a></li>
+                        </ul>
+                    </div>
+					<button (click)="back()" type="button" class="btn btn-default">Back</button>
+				</div>
+			</div>
+		</form>
+	</div>
+</div>

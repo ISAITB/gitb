@@ -21,6 +21,10 @@ import { UserAccount } from '../types/user-account';
 import { User } from '../types/user.type';
 import { saveAs } from 'file-saver'
 import { LogLevel } from '../types/log-level';
+import { SpecificationGroup } from '../types/specification-group';
+import { Specification } from '../types/specification';
+import { DomainSpecification } from '../types/domain-specification';
+import { filter, find, map, sortBy } from 'lodash';
 
 @Injectable({
   providedIn: 'root'
@@ -42,6 +46,7 @@ export class DataService {
   public isDomainUser = false
   public tests?: ConformanceTestCase[]
   public currentLandingPageContent?: string
+  private apiRoot?: string
 
   private renderer: Renderer2
   triggerEventToDataTypeMap?: {[key: number]: { [key: number]: boolean } }
@@ -204,6 +209,8 @@ export class DataService {
     this.setDefaultLabel(labels, Constants.LABEL_TYPE.ENDPOINT)
     this.setDefaultLabel(labels, Constants.LABEL_TYPE.ORGANISATION)
     this.setDefaultLabel(labels, Constants.LABEL_TYPE.SYSTEM)
+    this.setDefaultLabel(labels, Constants.LABEL_TYPE.SPECIFICATION_IN_GROUP)
+    this.setDefaultLabel(labels, Constants.LABEL_TYPE.SPECIFICATION_GROUP)
     return labels
   }
 
@@ -267,6 +274,54 @@ export class DataService {
       return this.labels![Constants.LABEL_TYPE.SPECIFICATION].pluralForm
     } else {
       return this.labels![Constants.LABEL_TYPE.SPECIFICATION].pluralForm.toLowerCase()
+    }
+  }
+
+  labelSpecificationGroup() {
+    return this.labels![Constants.LABEL_TYPE.SPECIFICATION_GROUP].singularForm
+  }
+
+  labelSpecificationGroupLower() {
+    if (this.labels![Constants.LABEL_TYPE.SPECIFICATION_GROUP].fixedCase) {
+      return this.labels![Constants.LABEL_TYPE.SPECIFICATION_GROUP].singularForm
+    } else {
+      return this.labels![Constants.LABEL_TYPE.SPECIFICATION_GROUP].singularForm.toLowerCase()
+    }
+  }
+
+  labelSpecificationGroups() {
+    return this.labels![Constants.LABEL_TYPE.SPECIFICATION_GROUP].pluralForm
+  }
+
+  labelSpecificationGroupsLower() {
+    if (this.labels![Constants.LABEL_TYPE.SPECIFICATION_GROUP].fixedCase) {
+      return this.labels![Constants.LABEL_TYPE.SPECIFICATION_GROUP].pluralForm
+    } else {
+      return this.labels![Constants.LABEL_TYPE.SPECIFICATION_GROUP].pluralForm.toLowerCase()
+    }
+  }
+
+  labelSpecificationInGroup() {
+    return this.labels![Constants.LABEL_TYPE.SPECIFICATION_IN_GROUP].singularForm
+  }
+
+  labelSpecificationInGroupLower() {
+    if (this.labels![Constants.LABEL_TYPE.SPECIFICATION_IN_GROUP].fixedCase) {
+      return this.labels![Constants.LABEL_TYPE.SPECIFICATION_IN_GROUP].singularForm
+    } else {
+      return this.labels![Constants.LABEL_TYPE.SPECIFICATION_IN_GROUP].singularForm.toLowerCase()
+    }
+  }
+
+  labelSpecificationInGroups() {
+    return this.labels![Constants.LABEL_TYPE.SPECIFICATION_IN_GROUP].pluralForm
+  }
+
+  labelSpecificationInGroupsLower() {
+    if (this.labels![Constants.LABEL_TYPE.SPECIFICATION_IN_GROUP].fixedCase) {
+      return this.labels![Constants.LABEL_TYPE.SPECIFICATION_IN_GROUP].pluralForm
+    } else {
+      return this.labels![Constants.LABEL_TYPE.SPECIFICATION_IN_GROUP].pluralForm.toLowerCase()
     }
   }
 
@@ -524,6 +579,18 @@ export class DataService {
       icon = "fa testsuite-progress-icon fa-ban test-case-undefined"
     }
     return icon
+  }
+
+  tooltipForTestResult(result?: string): string {
+    let text: string
+    if (result == Constants.TEST_CASE_RESULT.SUCCESS) {
+      text = "Success"
+    } else if (result == Constants.TEST_CASE_RESULT.FAILURE) {
+      text = "Failure"
+    } else {
+      text = "Incomplete"
+    }
+    return text
   }
 
   asCsvString(text: any) {
@@ -964,10 +1031,22 @@ export class DataService {
     })
   }
 
-  asIdSet(items: ObjectWithId[]): NumberSet {
+  asSet(items: number[]|undefined): NumberSet {
+    const numberSet: NumberSet = {}
+    if (items) {
+      for (let item of items) {
+        numberSet[item] = true
+      }
+    }
+    return numberSet
+  }
+
+  asIdSet(items: ObjectWithId[]|undefined): NumberSet {
     const idSet: NumberSet = {}
-    for (let item of items) {
-      idSet[item.id] = true
+    if (items) {
+      for (let item of items) {
+        idSet[item.id] = true
+      }
     }
     return idSet
   }
@@ -994,4 +1073,108 @@ export class DataService {
     return logLevel
   }
 
+  completePath(path: string): string {
+    if (this.apiRoot == undefined) {
+      const apiRootElement = document.getElementById('cp-div')
+      if (apiRootElement) {
+        this.apiRoot = apiRootElement.innerText
+      } else {
+        this.apiRoot = '/'
+      }
+    }
+    if (this.apiRoot != '/') {
+      return this.apiRoot + path
+    }
+    return path
+  }
+
+  private specToDomainSpecification(specification: Specification): DomainSpecification {
+    return {
+      id: specification.id,
+      sname: specification.sname,
+      fname: specification.fname,
+      description: specification.description,
+      hidden: specification.hidden,
+      groupId: specification.group,
+      option: specification.group != undefined,
+      collapsed: false,
+      group: false,
+      domain: specification.domain,
+    }
+  }
+
+  private specGroupToDomainSpecification(group: SpecificationGroup): DomainSpecification {
+    return {
+      id: group.id,
+      sname: group.sname,
+      fname: group.fname,
+      description: group.description,
+      hidden: false,
+      group: true,
+      option: false,
+      collapsed: true,
+      domain: group.domain,
+      options: []
+    }
+  }
+
+  toDomainSpecifications(groups: SpecificationGroup[], specs: Specification[]): DomainSpecification[] {
+    const groupMap: {[id: number]: DomainSpecification} = {}
+    for (let group of groups) {
+      groupMap[group.id] = this.specGroupToDomainSpecification(group)
+    }
+    const results: DomainSpecification[] = []
+    for (let spec of specs) {
+      if (spec.group == undefined) {
+        results.push(this.specToDomainSpecification(spec))
+      } else {
+        if (groupMap[spec.group]) {
+          groupMap[spec.group].options!.push(this.specToDomainSpecification(spec))
+        }
+      }
+    }
+    for (let key in groupMap) {
+      const group = groupMap[key]
+      this.setSpecificationGroupVisibility(group)
+      results.push(group)
+    }
+    return this.sortDomainSpecifications(results)
+  }
+
+  setSpecificationGroupVisibility(group: DomainSpecification) {
+    if (group.group) {
+      const hasVisible = find(group.options, (s) => !s.hidden)
+      group.hidden = !hasVisible
+    }
+  }
+
+  sortDomainSpecifications(specs: DomainSpecification[]) {
+    return sortBy(specs, (spec) => spec.sname)
+  }
+
+  toSpecifications(domainSpecifications: DomainSpecification[]) {
+    const specs: Specification[] = []
+    for (let domainSpec of domainSpecifications) {
+      if (domainSpec.group && domainSpec.options) {
+        for (let option of domainSpec.options) {
+          specs.push({
+            id: option.id,
+            sname: domainSpec.sname + ' - ' +option.sname,
+            fname: domainSpec.fname + ' - ' +option.fname,
+            domain: option.domain,
+            hidden: false
+          })
+        }
+      } else if (!domainSpec.group) {
+        specs.push({
+          id: domainSpec.id,
+          sname: domainSpec.sname,
+          fname: domainSpec.fname,
+          domain: domainSpec.domain,
+          hidden: false
+        })
+      }
+    }
+    return specs
+  }
 }

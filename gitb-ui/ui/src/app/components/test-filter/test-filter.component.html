@@ -1,6 +1,6 @@
 <div class="panel panel-default">
     <div class="panel-heading" (click)="clickedHeader()" [ngClass]="{'clickable': enableFiltering}">
-        <h4 class="title">Filters</h4>
+        <h4 class="title"><app-collapsing-icon [hidden]="!enableFiltering" [isCollapsed]="!showFiltering"></app-collapsing-icon>Filters</h4>
         <div class="btn-toolbar">
             <button type="button" class="btn btn-default" (click)="applyFilters(); $event.stopPropagation()" [pending]="filterState.updatePending">Refresh</button>
             <app-toggle id="sessions-toggle-filter" class="btn-group" name="filterToggle" (click)="$event.stopPropagation()" [(ngModel)]="enableFiltering" on="Enabled" off="Disabled" (toggle)="toggleFiltering()"></app-toggle>
@@ -13,6 +13,12 @@
             <div class="filterName"><span>{{names[Constants.FILTER_TYPE.DOMAIN]}}</span></div>
             <div class="filterValue">
               <app-multi-select-filter [config]="filterDropdownSettings[Constants.FILTER_TYPE.DOMAIN]" (apply)="domainsChanged($event)"></app-multi-select-filter>
+            </div>
+          </div>
+          <div class="filterCell" *ngIf="filterDefined(Constants.FILTER_TYPE.SPECIFICATION_GROUP)">
+            <div class="filterName"><span>{{names[Constants.FILTER_TYPE.SPECIFICATION_GROUP]}}</span></div>
+            <div class="filterValue">
+              <app-multi-select-filter [config]="filterDropdownSettings[Constants.FILTER_TYPE.SPECIFICATION_GROUP]" (apply)="specificationGroupsChanged($event)"></app-multi-select-filter>
             </div>
           </div>
           <div class="filterCell" *ngIf="filterDefined(Constants.FILTER_TYPE.SPECIFICATION)">
@@ -51,14 +57,14 @@
               <app-multi-select-filter [config]="filterDropdownSettings[Constants.FILTER_TYPE.ORGANISATION]" (apply)="organisationsChanged($event)"></app-multi-select-filter>
             </div>
           </div>
+        </div>
+        <div class="filterRow" *ngIf="filterDefined(Constants.FILTER_TYPE.RESULT) || filterDefined(Constants.FILTER_TYPE.START_TIME) || filterDefined(Constants.FILTER_TYPE.END_TIME) || filterDefined(Constants.FILTER_TYPE.SESSION)">
           <div class="filterCell" *ngIf="filterDefined(Constants.FILTER_TYPE.SYSTEM)">
             <div class="filterName"><span>{{names[Constants.FILTER_TYPE.SYSTEM]}}</span></div>
             <div class="filterValue">
               <app-multi-select-filter [config]="filterDropdownSettings[Constants.FILTER_TYPE.SYSTEM]" (apply)="systemsChanged($event)"></app-multi-select-filter>
             </div>
           </div>
-        </div>
-        <div class="filterRow" *ngIf="filterDefined(Constants.FILTER_TYPE.RESULT) || filterDefined(Constants.FILTER_TYPE.START_TIME) || filterDefined(Constants.FILTER_TYPE.END_TIME) || filterDefined(Constants.FILTER_TYPE.SESSION)">
           <div class="filterCell" *ngIf="filterDefined(Constants.FILTER_TYPE.RESULT)">
             <div class="filterName"><span>{{names[Constants.FILTER_TYPE.RESULT]}}</span></div>
             <div class="filterValue">
@@ -103,7 +109,7 @@
                   <app-custom-property-filter
                     [propertyFilter]="propFilter"
                     [properties]="availableOrganisationProperties"
-                    (onApply)="applyOrganisationProperty()" 
+                    (onApply)="applyOrganisationProperty()"
                     (onClear)="clearOrganisationProperty($event)"
                     (onCancel)="cancelOrganisationProperty()">
                   </app-custom-property-filter>
@@ -124,7 +130,7 @@
                   <app-custom-property-filter
                     [propertyFilter]="propFilter"
                     [properties]="availableSystemProperties"
-                    (onApply)="applySystemProperty()" 
+                    (onApply)="applySystemProperty()"
                     (onClear)="clearSystemProperty($event)"
                     (onCancel)="cancelSystemProperty()">
                   </app-custom-property-filter>

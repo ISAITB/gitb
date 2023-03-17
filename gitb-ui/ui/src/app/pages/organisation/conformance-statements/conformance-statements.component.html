@@ -3,14 +3,14 @@
 		<div class="panel-heading">
 			<h4 class="title">Conformance statements</h4>
 			<div class="btn-toolbar" *ngIf="showCreate">
-				<button (click)="routingService.toCreateConformanceStatement(organisationId, systemId)" class="btn btn-default">Create conformance statement</button>
+				<button (click)="routingService.toCreateConformanceStatement(organisationId, systemId)" class="btn btn-default">Create conformance statements</button>
 			</div>
 		</div>
 		<div class="table-container">
 			<table class="table table-directive">
 				<thead>
 					<tr>
-						<th>{{dataService.labelDomain()}}</th>
+						<th *ngIf="showDomain">{{dataService.labelDomain()}}</th>
 						<th>{{dataService.labelSpecification()}}</th>
 						<th>{{dataService.labelActor()}}</th>
 						<th class="th-update">Last update</th>
@@ -20,18 +20,18 @@
 				</thead>
 				<tbody>
 					<tr *ngIf="dataStatus && dataStatus.status != Constants.STATUS.FINISHED">
-						<td colspan="6" class="td-data-loading"><app-pending-block></app-pending-block></td>
+						<td [attr.colspan]="columnCount" class="td-data-loading"><app-pending-block></app-pending-block></td>
 					</tr>
 					<tr *ngIf="dataStatus && dataStatus.status == Constants.STATUS.FINISHED && (!conformanceStatementRepresentations || conformanceStatementRepresentations.length == 0)">
-						<td [attr.colspan]="6" class="td-no-data"><span>No statements found</span></td>
+						<td [attr.colspan]="columnCount" class="td-no-data"><span>No statements found</span></td>
 					</tr>
 					<tr *ngFor="let statement of conformanceStatementRepresentations" class="selectable" (click)="onConformanceStatementSelect(statement)">
-						<td>{{statement.domainFull}}</td>
+						<td *ngIf="showDomain">{{statement.domainFull}}</td>
 						<td>{{statement.specificationFull}}</td>
 						<td>{{statement.actorFull}}</td>
 						<td class="td-update">{{statement.updateTime}}</td>
 						<td class="td-min-centered"><app-test-status-icons [counters]="statement.counters!"></app-test-status-icons></td>
-						<td class="td-min-centered"><span><i [ngClass]="dataService.iconForTestResult(statement.status)"></i></span></td>
+						<td class="td-min-centered"><span><i containerClass="shortTooltip" [tooltip]="dataService.tooltipForTestResult(statement.status)" [ngClass]="dataService.iconForTestResult(statement.status)"></i></span></td>
 					</tr>
 				</tbody>
 			</table>

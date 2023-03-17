@@ -38,6 +38,16 @@
             <jxb:baseType name="com.gitb.xml.export.Specification"/>
         </jxb:property>
     </jxb:bindings>
+    <jxb:bindings node="//xsd:complexType[@name='Specification']/xsd:complexContent/xsd:extension/xsd:sequence/xsd:element[@name='sharedTestSuites']">
+        <jxb:property name="sharedTestSuites">
+            <jxb:baseType name="com.gitb.xml.export.TestSuite"/>
+        </jxb:property>
+    </jxb:bindings>
+    <jxb:bindings node="//xsd:complexType[@name='Specification']/xsd:complexContent/xsd:extension/xsd:attribute[@name='group']">
+        <jxb:property name="group">
+            <jxb:baseType name="com.gitb.xml.export.SpecificationGroup"/>
+        </jxb:property>
+    </jxb:bindings>
     <jxb:bindings node="//xsd:complexType[@name='TestSuite']/xsd:complexContent/xsd:extension/xsd:attribute[@name='specification']">
         <jxb:property name="specification">
             <jxb:baseType name="com.gitb.xml.export.Specification"/>

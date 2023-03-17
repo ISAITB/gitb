@@ -146,7 +146,7 @@ export class LoginComponent extends BaseComponent implements OnInit, AfterViewIn
 
   private makeAuthenticationPost(path: string, postData: any): Observable<HttpResponse<any>> {
     return this.httpClient.post(
-      Utils.completePath(path), 
+      this.dataService.completePath(path), 
       Utils.objectToFormRequest(postData).toString(),
       {
         observe: 'response',

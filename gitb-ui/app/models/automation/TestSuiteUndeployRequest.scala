@@ -1,6 +1,7 @@
 package models.automation
 
 case class TestSuiteUndeployRequest(
-  specification: String,
-  testSuite: String
+  specification: Option[String],
+  testSuite: String,
+  sharedTestSuite: Boolean
 )

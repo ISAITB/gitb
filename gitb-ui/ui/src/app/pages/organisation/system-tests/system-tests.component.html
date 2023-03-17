@@ -2,7 +2,7 @@
     <app-test-filter [filterState]="filterState" (onApply)="goFirstPage()"></app-test-filter>
     <div class="panel panel-default">
         <div class="panel-heading clickable" (click)="activeSessionsCollapsed = !activeSessionsCollapsed">
-            <h4 class="title">Active test sessions</h4>
+            <h4 class="title"><app-collapsing-icon [isCollapsed]="activeSessionsCollapsed"></app-collapsing-icon>Active test sessions</h4>
             <div class="btn-toolbar" [class.disable-events]="filterState.updatePending">
                 <button type="button" class="btn btn-default" *ngIf="showTerminateAll" (click)="stopAll();$event.stopPropagation()" [pending]="stopAllPending" [disable]="activeTests.length == 0 || exportActivePending">Terminate all</button>
                 <button type="button" class="btn btn-default" (click)="exportActiveSessionsToCsv();$event.stopPropagation()" [pending]="exportActivePending" [disable]="activeTests.length == 0 || stopAllPending">Export CSV</button>
@@ -30,7 +30,7 @@
     </div>
     <div class="panel panel-default">
         <div class="panel-heading clickable" (click)="completedSessionsCollapsed = !completedSessionsCollapsed">
-            <h4 class="title">Completed test sessions</h4>
+            <h4 class="title"><app-collapsing-icon [isCollapsed]="completedSessionsCollapsed"></app-collapsing-icon>Completed test sessions</h4>
             <div class="btn-toolbar" [class.disable-events]="filterState.updatePending">
                 <button type="button" class="btn btn-default" *ngIf="canDelete()" [pending]="deletePending" [disable]="completedTests.length == 0" (click)="deleteObsolete();$event.stopPropagation()">Delete obsolete sessions</button>
                 <button type="button" class="btn btn-default" (click)="exportCompletedSessionsToCsv();$event.stopPropagation()" [disable]="completedTests.length == 0" [pending]="exportCompletedPending">Export CSV</button>

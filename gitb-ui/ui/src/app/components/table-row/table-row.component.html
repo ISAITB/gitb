@@ -1,5 +1,8 @@
-<td *ngIf="checkboxEnabled" (click)="$event.stopPropagation();">
+<td class="td-min-centered" *ngIf="checkboxEnabled" (click)="$event.stopPropagation();">
     <input type="checkbox" [(ngModel)]="data.checked" (change)="check()">
+</td>
+<td *ngIf="expandableRowProperty != undefined" class="td-min-centered">
+    <app-collapsing-icon [padded]="false" [isCollapsed]="data[expandableRowProperty] == undefined || !data[expandableRowProperty]"></app-collapsing-icon>
 </td>
 <td class="{{item.class}}" *ngFor="let item of columnDataItemsAtLeft; let i = index">
     <app-table-column-content [item]="item" [column]="columns[i]"></app-table-column-content>
@@ -10,10 +13,10 @@
             <i [ngClass]="actionIcon"></i>
         </button>
         <button type="button" *ngIf="operationsVisible && (!deleteVisibleForRow || deleteVisibleForRow(data))" [ngClass]="{'pending': data[deletePendingProperty]}" [pending]="data[deletePendingProperty]" [icon]="true" class="btn btn-default" (click)="delete(); $event.stopPropagation();" containerClass="shortTooltip" [tooltip]="deleteTooltip" [delay]="Constants.TOOLTIP_DELAY">
-            <i class="fa fa-trash"></i>
+            <i [ngClass]="deleteIcon"></i>
         </button>
         <button type="button" *ngIf="exportVisible && (!exportVisibleForRow || exportVisibleForRow(data))" [ngClass]="{'pending': data[exportPendingProperty]}" [pending]="data[exportPendingProperty]" [icon]="true" class="btn btn-default" (click)="export(); $event.stopPropagation();" containerClass="shortTooltip" [tooltip]="exportTooltip" [delay]="Constants.TOOLTIP_DELAY">
-            <i class="fa fa-file-pdf-o"></i>
+            <i [ngClass]="exportIcon"></i>
         </button>
     </div>
 </td>

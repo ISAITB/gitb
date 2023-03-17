@@ -36,7 +36,7 @@ import scala.util.Using
   * Created by senan on 03.12.2014.
   */
 @Singleton
-class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: ActorManager, testCaseReportProducer: TestCaseReportProducer, systemManager: SystemManager, organizationManager: OrganizationManager, communityManager: CommunityManager, testCaseManager: TestCaseManager, testSuiteManager: TestSuiteManager, specificationManager: SpecificationManager, conformanceManager: ConformanceManager, dbConfigProvider: DatabaseConfigProvider, communityLabelManager: CommunityLabelManager, repositoryUtils: RepositoryUtils, testResultManager: TestResultManager) extends BaseManager(dbConfigProvider) {
+class ReportManager @Inject() (triggerHelper: TriggerHelper, testCaseReportProducer: TestCaseReportProducer, testSuiteManager: TestSuiteManager, specificationManager: SpecificationManager, conformanceManager: ConformanceManager, dbConfigProvider: DatabaseConfigProvider, communityLabelManager: CommunityLabelManager, repositoryUtils: RepositoryUtils, testResultManager: TestResultManager) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
 
@@ -45,6 +45,7 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
   def getSystemActiveTestResults(systemId: Long,
                                  domainIds: Option[List[Long]],
                                  specIds: Option[List[Long]],
+                                 specGroupIds: Option[List[Long]],
                                  actorIds: Option[List[Long]],
                                  testSuiteIds: Option[List[Long]],
                                  testCaseIds: Option[List[Long]],
@@ -54,7 +55,7 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
                                  sortColumn: Option[String],
                                  sortOrder: Option[String]): List[TestResult] = {
     exec(
-      getTestResultsQuery(None, domainIds, specIds, actorIds, testSuiteIds, testCaseIds, None, Some(List(systemId)), None, startTimeBegin, startTimeEnd, None, None, sessionId, Some(false), sortColumn, sortOrder)
+      getTestResultsQuery(None, domainIds, getSpecIdsCriterionToUse(specIds, specGroupIds), actorIds, testSuiteIds, testCaseIds, None, Some(List(systemId)), None, startTimeBegin, startTimeEnd, None, None, sessionId, Some(false), sortColumn, sortOrder)
         .result.map(_.toList)
     )
   }
@@ -64,6 +65,7 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
                      systemId: Long,
                      domainIds: Option[List[Long]],
                      specIds: Option[List[Long]],
+                     specGroupIds: Option[List[Long]],
                      actorIds: Option[List[Long]],
                      testSuiteIds: Option[List[Long]],
                      testCaseIds: Option[List[Long]],
@@ -76,7 +78,7 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
                      sortColumn: Option[String],
                      sortOrder: Option[String]): (Iterable[TestResult], Int) = {
 
-    val query = getTestResultsQuery(None, domainIds, specIds, actorIds, testSuiteIds, testCaseIds, None, Some(List(systemId)), results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, Some(true), sortColumn, sortOrder)
+    val query = getTestResultsQuery(None, domainIds, getSpecIdsCriterionToUse(specIds, specGroupIds), actorIds, testSuiteIds, testCaseIds, None, Some(List(systemId)), results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, Some(true), sortColumn, sortOrder)
     val output = exec(
       for {
         results <- query.drop((page - 1) * limit).take(limit).result
@@ -89,6 +91,7 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
   def getActiveTestResults(communityIds: Option[List[Long]],
                            domainIds: Option[List[Long]],
                            specIds: Option[List[Long]],
+                           specGroupIds: Option[List[Long]],
                            actorIds: Option[List[Long]],
                            testSuiteIds: Option[List[Long]],
                            testCaseIds: Option[List[Long]],
@@ -102,7 +105,7 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
                            sortColumn: Option[String],
                            sortOrder: Option[String]): List[TestResult] = {
     exec(
-      getTestResultsQuery(communityIds, domainIds, specIds, actorIds, testSuiteIds, testCaseIds, conformanceManager.organisationIdsToUse(organisationIds, orgParameters), conformanceManager.systemIdsToUse(systemIds, sysParameters), None, startTimeBegin, startTimeEnd, None, None, sessionId, Some(false), sortColumn, sortOrder)
+      getTestResultsQuery(communityIds, domainIds, getSpecIdsCriterionToUse(specIds, specGroupIds), actorIds, testSuiteIds, testCaseIds, conformanceManager.organisationIdsToUse(organisationIds, orgParameters), conformanceManager.systemIdsToUse(systemIds, sysParameters), None, startTimeBegin, startTimeEnd, None, None, sessionId, Some(false), sortColumn, sortOrder)
         .result.map(_.toList)
     )
   }
@@ -112,6 +115,7 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
                              communityIds: Option[List[Long]],
                              domainIds: Option[List[Long]],
                              specIds: Option[List[Long]],
+                             specGroupIds: Option[List[Long]],
                              actorIds: Option[List[Long]],
                              testSuiteIds: Option[List[Long]],
                              testCaseIds: Option[List[Long]],
@@ -128,7 +132,7 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
                              sortColumn: Option[String],
                              sortOrder: Option[String]): (Iterable[TestResult], Int) = {
 
-    val query = getTestResultsQuery(communityIds, domainIds, specIds, actorIds, testSuiteIds, testCaseIds, conformanceManager.organisationIdsToUse(organisationIds, orgParameters), conformanceManager.systemIdsToUse(systemIds, sysParameters), results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, Some(true), sortColumn, sortOrder)
+    val query = getTestResultsQuery(communityIds, domainIds, getSpecIdsCriterionToUse(specIds, specGroupIds), actorIds, testSuiteIds, testCaseIds, conformanceManager.organisationIdsToUse(organisationIds, orgParameters), conformanceManager.systemIdsToUse(systemIds, sysParameters), results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, Some(true), sortColumn, sortOrder)
     val output = exec(
       for {
         results <- query.drop((page - 1) * limit).take(limit).result
@@ -141,6 +145,17 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
   def getTestResult(sessionId: String): Option[TestResult] = {
     val query = getTestResultsQuery(None, None, None, None, None, None, None, None, None, None, None, None, None, Some(sessionId), None, None, None)
     exec(query.result.headOption)
+  }
+
+  private def getSpecIdsCriterionToUse(specIds: Option[List[Long]], specGroupIds: Option[List[Long]]): Option[List[Long]] = {
+    // We use the groups to get the applicable spec IDs. This is because specs can move around in groups and we shouldn't link
+    // test results directly to the groups.
+    val specIdsToUse = if (specGroupIds.isDefined && specGroupIds.get.nonEmpty) {
+      exec(PersistenceSchema.specifications.filter(_.group inSet specGroupIds.get).map(_.id).result.map(x => Some(x.toList)))
+    } else {
+      specIds
+    }
+    specIdsToUse
   }
 
   private def getTestResultsQuery(communityIds: Option[List[Long]],
@@ -170,11 +185,11 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
       .filterOpt(systemIds)((table, ids) => table.sutId inSet ids)
       .filterOpt(results)((table, results) => table.result inSet results)
       .filterOpt(testSuiteIds)((table, ids) => table.testSuiteId inSet ids)
-      .filterOpt(startTimeBegin)((table, timeStr) => table.startTime >=  TimeUtil.parseTimestamp(timeStr))
-      .filterOpt(startTimeEnd)((table, timeStr) => table.startTime <=  TimeUtil.parseTimestamp(timeStr))
-      .filterOpt(endTimeBegin)((table, timeStr) => table.endTime >=  TimeUtil.parseTimestamp(timeStr))
-      .filterOpt(endTimeEnd)((table, timeStr) => table.endTime <=  TimeUtil.parseTimestamp(timeStr))
-      .filterOpt(sessionId)((table, id) => table.testSessionId ===  id)
+      .filterOpt(startTimeBegin)((table, timeStr) => table.startTime >= TimeUtil.parseTimestamp(timeStr))
+      .filterOpt(startTimeEnd)((table, timeStr) => table.startTime <= TimeUtil.parseTimestamp(timeStr))
+      .filterOpt(endTimeBegin)((table, timeStr) => table.endTime >= TimeUtil.parseTimestamp(timeStr))
+      .filterOpt(endTimeEnd)((table, timeStr) => table.endTime <= TimeUtil.parseTimestamp(timeStr))
+      .filterOpt(sessionId)((table, id) => table.testSessionId === id)
       .filterOpt(completedStatus)((table, completed) => if (completed) table.endTime.isDefined else table.endTime.isEmpty)
     // Apply sorting
     if (sortColumn.isDefined && sortOrder.isDefined) {
@@ -229,48 +244,66 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
   def createTestReport(sessionId: String, systemId: Long, testId: String, actorId: Long, testCasePresentation: com.gitb.tpl.TestCase) = {
     val initialStatus = TestResultType.UNDEFINED.value()
     val startTime = TimeUtil.getCurrentTimestamp()
-    val system = systemManager.getSystemById(systemId).get
-    val organisation = organizationManager.getById(system.owner).get
-    val community = communityManager.getById(organisation.community).get
-    val testCase = testCaseManager.getTestCase(testId).get
-    val testSuite = testSuiteManager.getTestSuiteOfTestCase(testCase.id)
-    val actor = actorManager.getById(actorId).get
-    val specification = specificationManager.getSpecificationOfActor(actor.id)
-    val domain = conformanceManager.getById(specification.domain)
-
+    val testCaseId = testId.toLong
     // Remove the step documentation because it can greatly increase the size without any use (documentation links are not displayed for non-active test sessions)
     removeStepDocumentation(testCasePresentation)
     val presentation = XMLUtils.marshalToString(new com.gitb.tpl.ObjectFactory().createTestcase(testCasePresentation))
-
-    val q = for {c <- PersistenceSchema.conformanceResults if c.sut === systemId && c.testcase === testCase.id} yield (c.testsession, c.result, c.outputMessage, c.updateTime)
-
     exec(
-      (
+      (for {
+        // Load required data.
+        system <- PersistenceSchema.systems.filter(_.id === systemId).map(x => (x.shortname, x.owner)).result.head
+        organisation <- PersistenceSchema.organizations.filter(_.id === system._2).map(x => (x.shortname, x.community)).result.head
+        communityName <- PersistenceSchema.communities.filter(_.id === organisation._2).map(_.shortname).result.head
+        testCaseName <- PersistenceSchema.testCases.filter(_.id === testCaseId).map(_.shortname).result.head
+        testSuite <- testSuiteManager.getTestSuiteOfTestCaseInternal(testCaseId)
+        actorName <- PersistenceSchema.actors.filter(_.id === actorId).map(_.name).result.head
+        specification <- specificationManager.getSpecificationOfActorInternal(actorId)
+        specificationGroupName <- {
+          if (specification.group.isDefined) {
+            PersistenceSchema.specificationGroups.filter(_.id === specification.group.get).map(_.shortname).result.headOption
+          } else {
+            DBIO.successful(None)
+          }
+        }
+        domainName <- PersistenceSchema.domains.filter(_.id === specification.domain).map(_.shortname).result.head
         // Insert test result.
-        (PersistenceSchema.testResults += TestResult(
-          sessionId, Some(systemId), Some(system.shortname), Some(organisation.id), Some(organisation.shortname),
-          Some(community.id), Some(community.shortname), Some(testCase.id), Some(testCase.shortname), Some(testSuite.id), Some(testSuite.shortname),
-          Some(actor.id), Some(actor.name), Some(specification.id), Some(specification.shortname), Some(domain.id), Some(domain.shortname),
-          initialStatus, startTime, None, None)) andThen
+        _ <- {
+          var specificationName = specification.shortname
+          if (specificationGroupName.nonEmpty) {
+            specificationName = specificationGroupName.get + " - " + specificationName
+          }
+          PersistenceSchema.testResults += TestResult(
+            sessionId, Some(systemId), Some(system._1), Some(system._2), Some(organisation._1),
+            Some(organisation._2), Some(communityName), Some(testCaseId), Some(testCaseName), Some(testSuite.id), Some(testSuite.shortname),
+            Some(actorId), Some(actorName), Some(specification.id), Some(specificationName), Some(specification.domain), Some(domainName),
+            initialStatus, startTime, None, None)
+        }
         // Insert TPL definition.
-        (PersistenceSchema.testResultDefinitions += TestResultDefinition(sessionId, presentation)) andThen
+        _ <- PersistenceSchema.testResultDefinitions += TestResultDefinition(sessionId, presentation)
         // Update also the conformance results for the system
-        q.update(Some(sessionId), initialStatus, None, Some(startTime))
-      ).transactionally
+        _ <- PersistenceSchema.conformanceResults
+          .filter(_.sut === systemId)
+          .filter(_.testcase === testCaseId)
+          .map(c => (c.testsession, c.result, c.outputMessage, c.updateTime))
+          .update(Some(sessionId), initialStatus, None, Some(startTime))
+      } yield ()).transactionally
     )
   }
 
   def finishTestReport(sessionId: String, status: TestResultType, outputMessage: Option[String]) = {
-    val q = for {
-      t <- PersistenceSchema.testResults if t.testSessionId === sessionId
-    } yield (t.result, t.endTime, t.outputMessage)
     val now = Some(TimeUtil.getCurrentTimestamp())
-    val q1 = for {c <- PersistenceSchema.conformanceResults if c.testsession === sessionId} yield (c.result, c.outputMessage, c.updateTime)
     exec(
-      (
-        q.update(status.value(), now, outputMessage) andThen
-        // Update also the conformance results for the system
-        q1.update(status.value(), outputMessage, now)
+      (for {
+          _ <- PersistenceSchema.testResults
+            .filter(_.testSessionId === sessionId)
+            .map(x => (x.result, x.endTime, x.outputMessage))
+            .update(status.value(), now, outputMessage)
+          // Update also the conformance results for the system
+          _ <- PersistenceSchema.conformanceResults
+            .filter(_.testsession === sessionId)
+            .map(x => (x.result, x.outputMessage, x.updateTime))
+            .update(status.value(), outputMessage, now)
+        } yield ()
       ).transactionally
     )
     // Triggers linked to test sessions: (communityID, systemID, actorID)
@@ -292,15 +325,8 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
         triggerHelper.publishTriggerEvent(new TestSessionFailedEvent(communityId, sessionId))
       }
       // See if the conformance statement is now successfully completed and fire an additional trigger if so.
-      val statementStatus = conformanceManager.getConformanceStatus(actorId, systemId, None)
-      var successCount = 0
-      statementStatus.foreach { status =>
-        if ("SUCCESS".equals(status.result)) {
-          successCount += 1
-        }
-      }
-      if (successCount == statementStatus.size) {
-        // All the statement's test cases are successful
+      val completedActors = conformanceManager.getCompletedConformanceStatementsForTestSession(systemId, sessionId)
+      completedActors.foreach { actorId =>
         triggerHelper.publishTriggerEvent(new ConformanceStatementSucceededEvent(communityId, systemId, actorId))
       }
     }
@@ -482,6 +508,8 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
       0L, "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Domain), "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Domain),
       0L, "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Actor), "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Actor),
       0L, "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Specification), "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Specification),
+      Some("Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.SpecificationGroup)), Some("Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.SpecificationGroup)),
+      "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.SpecificationInGroup), "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.SpecificationInGroup),
       Some("Sample Test Suite "+index), Some("Sample Test Case "+index), Some("Description for Sample Test Case "+index), "SUCCESS", Some("An output message for the test session"),
       None, None, 0L, 0L, 0L)
   }
@@ -499,7 +527,7 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
   }
 
   def generateConformanceCertificate(reportPath: Path, settings: ConformanceCertificates, actorId: Long, systemId: Long): Path = {
-    val conformanceInfo = conformanceManager.getConformanceStatementsFull(None, None, Some(List(actorId)), None, None, Some(List(systemId)), None, None, None, None, None, None, None)
+    val conformanceInfo = conformanceManager.getConformanceStatementsFull(None, None, None, Some(List(actorId)), None, None, Some(List(systemId)), None, None, None, None, None, None, None)
     generateConformanceCertificate(reportPath, settings, conformanceInfo)
   }
 
@@ -550,7 +578,7 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
   }
 
   private def generateCoreConformanceReport(reportPath: Path, addTestCases: Boolean, title: String, addDetails: Boolean, addTestCaseResults: Boolean, addTestStatus: Boolean, addMessage: Boolean, message: Option[String], actorId: Long, systemId: Long, labels: Map[Short, CommunityLabels]): Path = {
-    val conformanceInfo = conformanceManager.getConformanceStatementsFull(None, None, Some(List(actorId)), None, None, Some(List(systemId)), None, None, None, None, None, None, None)
+    val conformanceInfo = conformanceManager.getConformanceStatementsFull(None, None, None, Some(List(actorId)), None, None, Some(List(systemId)), None, None, None, None, None, None, None)
     generateCoreConformanceReport(reportPath, addTestCases, title, addDetails, addTestCaseResults, addTestStatus, addMessage, message, conformanceInfo, labels)
   }
 
@@ -565,13 +593,14 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
     overview.setLabelOrganisation(communityLabelManager.getLabel(labels, models.Enums.LabelType.Organisation))
     overview.setLabelSystem(communityLabelManager.getLabel(labels, models.Enums.LabelType.System))
 
+    val conformanceData = conformanceInfo.head
     overview.setIncludeTestCases(addTestCases)
     overview.setTitle(title)
-    overview.setTestDomain(conformanceInfo.head.domainNameFull)
-    overview.setTestSpecification(conformanceInfo.head.specificationNameFull)
-    overview.setTestActor(conformanceInfo.head.actorFull)
-    overview.setOrganisation(conformanceInfo.head.organizationName)
-    overview.setSystem(conformanceInfo.head.systemName)
+    overview.setTestDomain(conformanceData.domainNameFull)
+    overview.setTestSpecification(conformanceData.specificationNameFull)
+    overview.setTestActor(conformanceData.actorFull)
+    overview.setOrganisation(conformanceData.organizationName)
+    overview.setSystem(conformanceData.systemName)
     overview.setIncludeDetails(addDetails)
     overview.setIncludeMessage(addMessage)
 
@@ -582,6 +611,8 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
       messageToUse = message.get.replace(Constants.PlaceholderActor, overview.getTestActor)
       messageToUse = messageToUse.replace(Constants.PlaceholderDomain, overview.getTestDomain)
       messageToUse = messageToUse.replace(Constants.PlaceholderOrganisation, overview.getOrganisation)
+      messageToUse = messageToUse.replace(Constants.PlaceholderSpecificationGroupOption, conformanceData.specificationGroupOptionNameFull)
+      messageToUse = messageToUse.replace(Constants.PlaceholderSpecificationGroup, conformanceData.specificationGroupNameFull.getOrElse(""))
       messageToUse = messageToUse.replace(Constants.PlaceholderSpecification, overview.getTestSpecification)
       messageToUse = messageToUse.replace(Constants.PlaceholderSystem, overview.getSystem)
       // Replace HTML elements

@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { ROUTES } from '../common/global';
+import { Specification } from '../types/specification';
 import { TestCase } from '../types/test-case';
 import { TestSuiteWithTestCases } from '../types/test-suite-with-test-cases';
 import { RestService } from './rest.service';
@@ -13,13 +14,16 @@ export class TestSuiteService {
     private restService: RestService
   ) { }
 
-	searchTestSuites(domainIds: number[]|undefined, specificationIds: number[]|undefined, actorIds: number[]|undefined) {
+	searchTestSuites(domainIds: number[]|undefined, specificationIds: number[]|undefined, specificationGroupIds: number[]|undefined, actorIds: number[]|undefined) {
 		const data: any = {}
 		if (domainIds && domainIds.length > 0) {
 		  data["domain_ids"] = domainIds.join(',')
 		}
 		if (specificationIds && specificationIds.length > 0) {
 		  data["specification_ids"] = specificationIds.join(',')
+		}
+		if (specificationGroupIds != undefined && specificationGroupIds.length > 0) {
+			data['group_ids'] = specificationGroupIds.join(',')
 		}
 		if (actorIds && actorIds.length > 0) {
 			data["actor_ids"] = actorIds.join(',')
@@ -31,12 +35,15 @@ export class TestSuiteService {
 		})
 	}
 
-	searchTestSuitesInDomain(domainId: number, specificationIds: number[]|undefined, actorIds: number[]|undefined) {
+	searchTestSuitesInDomain(domainId: number, specificationIds: number[]|undefined, specificationGroupIds: number[]|undefined, actorIds: number[]|undefined) {
 		const data: any = {
 			domain_id: domainId
 		}
 		if (specificationIds && specificationIds.length > 0) {
 		  data["specification_ids"] = specificationIds.join(',')
+		}
+		if (specificationGroupIds != undefined && specificationGroupIds.length > 0) {
+			data['group_ids'] = specificationGroupIds.join(',')
 		}
 		if (actorIds && actorIds.length > 0) {
 			data["actor_ids"] = actorIds.join(',')
@@ -51,6 +58,13 @@ export class TestSuiteService {
 	getTestSuiteWithTestCases(testSuiteId: number) {
 		return this.restService.get<TestSuiteWithTestCases>({
 			path: ROUTES.controllers.TestSuiteService.getTestSuiteWithTestCases(testSuiteId).url,
+			authenticate: true
+	    })
+	}
+
+	getLinkedSpecifications(testSuiteId: number) {
+		return this.restService.get<Specification[]>({
+			path: ROUTES.controllers.TestSuiteService.getLinkedSpecifications(testSuiteId).url,
 			authenticate: true
 	    })
 	}

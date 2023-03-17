@@ -1,0 +1,1 @@
+ALTER TABLE `systems` MODIFY COLUMN `version` varchar(254);

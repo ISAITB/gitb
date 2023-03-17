@@ -14,7 +14,7 @@ export abstract class BaseTabbedComponent extends BaseComponent {
         const tabParam = router.getCurrentNavigation()?.extras?.state?.tab
         if (tabParam != undefined) {
             this.tabIndexToShow = tabParam as number
-        }        
+        }
     }
 
     abstract loadTab(tabIndex: number): void

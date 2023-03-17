@@ -20,6 +20,8 @@ export class ConformanceStatementsComponent implements OnInit {
   conformanceStatementRepresentations: ConformanceStatementRepresentation[] = []
   dataStatus = {status: Constants.STATUS.FINISHED}
   showCreate = false
+  showDomain = false
+  columnCount = -1
   Constants = Constants
 
   constructor(
@@ -33,6 +35,8 @@ export class ConformanceStatementsComponent implements OnInit {
     this.systemId = Number(this.route.snapshot.paramMap.get('id'))
     this.organisationId = Number(this.route.snapshot.paramMap.get('org_id'))
     this.showCreate = this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin || (this.dataService.isVendorAdmin && this.dataService.community!.allowStatementManagement)
+    this.showDomain = this.dataService.isSystemAdmin || this.dataService.community?.domainId == undefined
+    this.columnCount = this.showDomain?6:5
     this.getConformanceStatements()
   }
 

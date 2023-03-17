@@ -1,6 +1,5 @@
 import { HttpHeaders } from "@angular/common/http"
 import { HttpRequestConfig } from "../types/http-request-config.type"
-import { API_ROOT } from "./global"
 
 export class Utils {
 
@@ -32,11 +31,15 @@ export class Utils {
         return headersToUse
     }
 
-    public static completePath(path: string): string {
-        if (API_ROOT != '/') {
-            return API_ROOT + path
-          }
-          return path
+    public static webSocketURL(url: string) { 
+        const isSecure = window.location.href.toLowerCase().startsWith('https://')
+        if (isSecure && url.startsWith('ws://')) {
+            return 'wss'+url.substring(2)
+        } else if (!isSecure && url.startsWith('wss://')) {
+            return 'ws'+url.substring(3)
+        } else {
+            return url
+        }
     }
 
 }

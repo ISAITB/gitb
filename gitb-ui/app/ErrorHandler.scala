@@ -5,7 +5,7 @@ import models.{Constants, ErrorPageData}
 import org.apache.commons.lang3.{RandomStringUtils, StringUtils}
 import org.slf4j.LoggerFactory
 import play.api.http.HttpErrorHandler
-import play.api.mvc.Results.BadRequest
+import play.api.mvc.Results.{BadRequest, NotFound}
 import play.api.mvc.{RequestHeader, Result}
 
 import javax.inject.{Inject, Singleton}
@@ -17,8 +17,11 @@ class ErrorHandler @Inject() (systemConfigurationManager: SystemConfigurationMan
   private def logger = LoggerFactory.getLogger(this.getClass)
 
   override def onClientError(request: RequestHeader, statusCode: Int, message: String): Future[Result] = {
-    val result = ResponseConstructor.constructServerError("Unexpected error", message, Some(""))
-    Future.successful(result)
+    if (statusCode == 404) {
+      Future.successful(NotFound)
+    } else {
+      Future.successful(ResponseConstructor.constructServerError("Unexpected error", message, Some("")))
+    }
   }
 
   override def onServerError(request: RequestHeader, ex: Throwable): Future[Result] = {
@@ -28,7 +31,7 @@ class ErrorHandler @Inject() (systemConfigurationManager: SystemConfigurationMan
     val errorIdentifier = RandomStringUtils.randomAlphabetic(10).toUpperCase()
     logger.error("Error ["+errorIdentifier+"]", ex)
     if (errorAsJson) {
-      val result = ResponseConstructor.constructServerError("Unexpected error", ex.getMessage, Some(errorIdentifier))
+      val result = ResponseConstructor.constructServerError("Unexpected error", "An unexpected error occurred.", Some(errorIdentifier))
       Future.successful(result)
     } else {
       var legalNoticeContent = ""

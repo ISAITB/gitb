@@ -69,7 +69,9 @@ export class SequenceDiagramMessageComponent implements OnInit, OnDestroy {
         this.showLoopIteration(this.message.sequences.length - 1)
       } else {
         // Show first
-        this.showLoopIteration(0)
+        if (this.message.sequences[0]) {
+          this.showLoopIteration(0)
+        }
       }
     } else {
       this.currentIterationIndex = -1

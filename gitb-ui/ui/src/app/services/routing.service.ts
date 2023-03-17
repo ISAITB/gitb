@@ -115,20 +115,34 @@ export class RoutingService {
     return this.router.navigate(['admin', 'domains', 'create'])
   }
 
-  toDomain(domainId: number) {
-    return this.router.navigate(['admin', 'domains', domainId])
+  toDomain(domainId: number, tab?: number) {
+    return this.router.navigate(['admin', 'domains', domainId], this.addTabExtras(tab))
   }
 
   toDomains() {
     return this.router.navigate(['admin', 'domains'])
   }
 
-  toCreateSpecification(domainId: number) {
-    return this.router.navigate(['admin', 'domains', domainId, 'specifications', 'create'])
+  toCreateSpecification(domainId: number, groupId?:number) {
+    if (groupId) {
+      return this.router.navigate(['admin', 'domains', domainId, 'specifications', 'create'], { queryParams: {
+        group: groupId
+      }})
+    } else {
+      return this.router.navigate(['admin', 'domains', domainId, 'specifications', 'create'])
+    }
+  }
+
+  toCreateSpecificationGroup(domainId: number) {
+    return this.router.navigate(['admin', 'domains', domainId, 'specifications', 'groups', 'create'])
   }
 
   toSpecification(domainId: number, specificationId: number, tab?: number) {
     return this.router.navigate(['admin', 'domains', domainId, 'specifications', specificationId], this.addTabExtras(tab))
+  }
+
+  toSpecificationGroup(domainId: number, groupId: number) {
+    return this.router.navigate(['admin', 'domains', domainId, 'specifications', 'groups', groupId])
   }
 
   toCreateEndpoint(domainId: number, specificationId: number, actorId: number) {
@@ -147,8 +161,16 @@ export class RoutingService {
     return this.router.navigate(['admin', 'domains', domainId, 'specifications', specificationId, 'actors', actorId])
   }
 
+  toSharedTestSuite(domainId: number, testSuiteId: number) {
+    return this.router.navigate(['admin', 'domains', domainId, 'testsuites', testSuiteId])
+  }
+
   toTestSuite(domainId: number, specificationId: number, testSuiteId: number) {
     return this.router.navigate(['admin', 'domains', domainId, 'specifications', specificationId, 'testsuites', testSuiteId])
+  }
+
+  toSharedTestCase(domainId: number, testSuiteId: number, testCaseId: number) {
+    return this.router.navigate(['admin', 'domains', domainId, 'testsuites', testSuiteId, 'testcases', testCaseId])
   }
 
   toTestCase(domainId: number, specificationId: number, testSuiteId: number, testCaseId: number) {

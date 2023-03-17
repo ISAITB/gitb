@@ -16,7 +16,7 @@ import { TestResultReport } from 'src/app/types/test-result-report';
 import { TestResultSearchCriteria } from 'src/app/types/test-result-search-criteria';
 import { TestResultForDisplay } from '../../../types/test-result-for-display';
 import { saveAs } from 'file-saver'
-import { mergeMap, share, map as rxMap, of } from 'rxjs';
+import { mergeMap, share, of } from 'rxjs';
 
 @Component({
   selector: 'app-system-tests',
@@ -42,7 +42,7 @@ export class SystemTestsComponent implements OnInit {
   refreshActivePending = false
   refreshCompletedPending = false
   filterState: FilterState = {
-    filters: [ Constants.FILTER_TYPE.SPECIFICATION, Constants.FILTER_TYPE.ACTOR, Constants.FILTER_TYPE.TEST_SUITE, Constants.FILTER_TYPE.TEST_CASE, Constants.FILTER_TYPE.RESULT, Constants.FILTER_TYPE.START_TIME, Constants.FILTER_TYPE.END_TIME, Constants.FILTER_TYPE.SESSION ],
+    filters: [ Constants.FILTER_TYPE.SPECIFICATION, Constants.FILTER_TYPE.SPECIFICATION_GROUP, Constants.FILTER_TYPE.ACTOR, Constants.FILTER_TYPE.TEST_SUITE, Constants.FILTER_TYPE.TEST_CASE, Constants.FILTER_TYPE.RESULT, Constants.FILTER_TYPE.START_TIME, Constants.FILTER_TYPE.END_TIME, Constants.FILTER_TYPE.SESSION ],
     updatePending: false
   }
   currentPage = 1
@@ -98,7 +98,7 @@ export class SystemTestsComponent implements OnInit {
       { field: 'testCase', title: 'Test case', sortable: true },
       { field: 'startTime', title: 'Start time', sortable: true },
       { field: 'endTime', title: 'End time', sortable: true, order: 'desc' },
-      { field: 'result', title: 'Result', sortable: true, iconFn: this.dataService.iconForTestResult }
+      { field: 'result', title: 'Result', sortable: true, iconFn: this.dataService.iconForTestResult, iconTooltipFn: this.dataService.tooltipForTestResult }
     ]
     this.goFirstPage()
   }
@@ -205,6 +205,7 @@ export class SystemTestsComponent implements OnInit {
     }
     if (filterData) {
       searchCriteria.specIds = filterData[Constants.FILTER_TYPE.SPECIFICATION]
+      searchCriteria.specGroupIds = filterData[Constants.FILTER_TYPE.SPECIFICATION_GROUP]
       searchCriteria.actorIds = filterData[Constants.FILTER_TYPE.ACTOR]
       searchCriteria.testSuiteIds = filterData[Constants.FILTER_TYPE.TEST_SUITE]
       searchCriteria.testCaseIds = filterData[Constants.FILTER_TYPE.TEST_CASE]

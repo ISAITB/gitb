@@ -21,6 +21,7 @@ object Parameters {
   val END_TIME_END = "end_time_end"
   val UPDATE_TIME_BEGIN = "update_time_begin"
   val UPDATE_TIME_END = "update_time_end"
+  val TEST_SUITE_ID = "test_suite_id"
 
   //Dashboard sorting
   val SORT_COLUMN = "sort_column"
@@ -94,6 +95,7 @@ object Parameters {
   val ACTORS  = "actors"
   val ACTOR   = "actor"
   val SPEC    = "spec"
+  val SPECS   = "specs"
   val OPTION  = "option"
   val OPTIONS = "options"
 	val SHORT_NAME = "sname"
@@ -103,6 +105,9 @@ object Parameters {
 	val DIAGRAM = "diagram"
 	val SPEC_TYPE = "spec_type"
 	val DOMAIN_ID = "domain_id"
+  val GROUP_ID = "group_id"
+  val GROUP_IDS = "group_ids"
+  val GROUPS = "groups"
 	val SPECIFICATION_ID = "spec_id"
   val ACTIONS = "actions"
   val PENDING_ID = "pending_id"
@@ -180,4 +185,7 @@ object Parameters {
   val SEQUENTIAL = "sequential"
   var WITH_API_KEYS = "with_api_keys"
   var PAYLOAD = "payload"
+
+  var UPDATE = "update"
+  var SHARED = "shared"
 }

@@ -1,6 +1,7 @@
 package com.gitb.engine.expr.resolvers;
 
 import com.gitb.core.ErrorCode;
+import com.gitb.engine.testcase.StepStatusMapType;
 import com.gitb.engine.testcase.TestCaseContext;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.exceptions.GITBEngineInternalError;
@@ -288,17 +289,20 @@ public class VariableResolver implements XPathVariableResolver{
         if(!(container instanceof ContainerType)){
             throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Invalid variable reference, you can use index or key only on container types"));
         }
-        if(container instanceof ListType){
+        if (container instanceof ListType) {
             try {
                 int index = Double.valueOf(keyOrIndex).intValue();
                 return ((ListType) container).getItem(index);
             } catch (NumberFormatException e) {
-                throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Value ["+StringUtils.defaultString(keyOrIndex)+"] must be numeric for it to be used as an index of its containing list."), e);
+                throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Value [" + StringUtils.defaultString(keyOrIndex) + "] must be numeric for it to be used as an index of its containing list."), e);
             }
-        }
-        //MapType
-        else {
-            DataType returnValue = ((MapType)container).getItem(keyOrIndex);
+        } else { //MapType
+            DataType returnValue;
+            if (container instanceof StepStatusMapType) {
+                returnValue = ((StepStatusMapType)container).getScopedItem(keyOrIndex, scope);
+            } else {
+                returnValue = ((MapType)container).getItem(keyOrIndex);
+            }
             if (returnValue == null) {
                 // Check to see in case of numeric index.
                 try {

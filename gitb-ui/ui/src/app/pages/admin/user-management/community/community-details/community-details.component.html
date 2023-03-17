@@ -39,7 +39,7 @@
                                     <li role="menuitem"><a class="dropdown-item" href (click)="applyCreationOrderSort(sortByCreationOrderAsc, sortByCreationOrderLabelAsc); $event.preventDefault()">{{sortByCreationOrderLabelAsc}}</a></li>
                                     <li role="menuitem"><a class="dropdown-item" href (click)="applyCreationOrderSort(sortByCreationOrderDesc, sortByCreationOrderLabelDesc); $event.preventDefault()">{{sortByCreationOrderLabelDesc}}</a></li>
                                 </ul>
-                            </div>                                
+                            </div>
                         </div>
                         <div class="otherControls">
                             <button type="button" class="btn btn-default" (click)="createOrganisation()">Create {{dataService.labelOrganisationLower()}}</button>
@@ -50,7 +50,7 @@
                             [columns]="organizationColumns"
                             [data]="organizations"
                             [noDataMessage]="'No '+dataService.labelOrganisationsLower()+' found'"
-                            [loadingStatus]="organisationStatus" 
+                            [loadingStatus]="organisationStatus"
                             [contentRefreshing]="organisationsRefreshing"
                             [allowSelect]="true"
                             [nextDisabled]="isNextPageOrganisationsDisabled"
@@ -72,11 +72,11 @@
                         <button type="button" class="btn btn-default" (click)="createAdmin()">Create community administrator</button>
                     </div>
                     <div class="panel panel-default">
-                        <div table-directive 
+                        <div table-directive
                             [columns]="adminColumns"
                             [data]="admins"
                             noDataMessage="No administrators found"
-                            [loadingStatus]="adminStatus" 
+                            [loadingStatus]="adminStatus"
                             [allowSelect]="true"
                             (onSelect)="adminSelect($event)">
                         </div>
@@ -97,7 +97,7 @@
                             [columns]="landingPagesColumns"
                             [data]="landingPages"
                             noDataMessage="No landing pages found"
-                            [loadingStatus]="landingPageStatus" 
+                            [loadingStatus]="landingPageStatus"
                             [allowSelect]="true"
                             (onSelect)="landingPageSelect($event)">
                         </div>
@@ -118,7 +118,7 @@
                             [columns]="legalNoticesColumns"
                             [data]="legalNotices"
                             noDataMessage="No legal notices found"
-                            [loadingStatus]="legalNoticeStatus" 
+                            [loadingStatus]="legalNoticeStatus"
                             [allowSelect]="true"
                             (onSelect)="legalNoticeSelect($event)">
                         </div>
@@ -139,7 +139,7 @@
                             [columns]="errorTemplatesColumns"
                             [data]="errorTemplates"
                             noDataMessage="No error templates found"
-                            [loadingStatus]="errorTemplateStatus" 
+                            [loadingStatus]="errorTemplateStatus"
                             [allowSelect]="true"
                             (onSelect)="errorTemplateSelect($event)">
                         </div>
@@ -157,13 +157,71 @@
                             [columns]="triggerColumns"
                             [data]="triggers"
                             noDataMessage="No triggers found"
-                            [loadingStatus]="triggerStatus" 
+                            [loadingStatus]="triggerStatus"
                             [allowSelect]="true"
                             (onSelect)="triggerSelect($event)">
                         </div>
                     </div>
                 </div>
             </tab>
+            <tab heading="Resources" *ngIf="true" (selectTab)="showResources()">
+                <!-- Community resources -->
+                <div class="tabPanel">
+                    <div class="tabControls form-inline">
+                        <div class="searchControls">
+                            <app-text-filter name="resourceFilter" [width]="300" [placeholder]="'Search resources...'" [(ngModel)]="resourceFilter" (apply)="applyResourceFilter()"></app-text-filter>
+                        </div>
+                        <div class="otherControls btn-toolbar">
+                            <button type="button" class="btn btn-default" (click)="selectDeleteResources()" *ngIf="!selectingForDeleteResources" [disabled]="resources.length == 0 || downloadAllResourcesPending">Delete resources...</button>
+                            <button type="button" class="btn btn-default" (click)="confirmDeleteResources()" *ngIf="selectingForDeleteResources" [disable]="!resourcesChecked()" [pending]="deleteResourcesPending">Confirm</button>
+                            <button type="button" class="btn btn-default" (click)="cancelDeleteResources()" *ngIf="selectingForDeleteResources" [disabled]="deleteResourcesPending">Cancel</button>
+                            <div class="btn-group" dropdown>
+                                <button type="button" class="btn btn-default" (click)="uploadResource()" [disabled]="downloadAllResourcesPending || selectingForDeleteResources">Upload resource</button>
+                                <button id="button-upload-resource" dropdownToggle type="button" class="btn btn-default dropdown-toggle dropdown-toggle-split" aria-controls="dropdown-upload-resource" [disabled]="downloadAllResourcesPending || selectingForDeleteResources">
+                                    <span class="caret no-spacing"></span>
+                                    <span class="sr-only visually-hidden"></span>
+                                </button>
+                                <ul id="dropdown-upload-resource" *dropdownMenu class="dropdown-menu">
+                                    <li role="menuitem"><a class="dropdown-item" href (click)="uploadResource(); $event.preventDefault()">Upload resource</a></li>
+                                    <li role="menuitem"><a class="dropdown-item" href (click)="uploadResourceBulk(); $event.preventDefault()">Bulk upload</a></li>
+                                </ul>
+                            </div>
+                            <button type="button" class="btn btn-default" (click)="downloadAllResources()" [disable]="resources.length == 0 || selectingForDeleteResources" [pending]="downloadAllResourcesPending">Download all</button>
+                        </div>
+                    </div>
+                    <div class="panel panel-default">
+                        <div table-directive
+                            [columns]="resourceColumns"
+                            [data]="resources"
+                            noDataMessage="No community resources found"
+                            [loadingStatus]="resourcesStatus"
+                            [contentRefreshing]="resourcesRefreshing"
+                            [allowSelect]="true"
+                            [actionVisible]="true"
+                            [operationsVisible]="true"
+                            [exportVisible]="true"
+                            [actionIcon]="'fa fa-clipboard'"
+                            [exportIcon]="'fa fa-download'"
+                            [actionTooltip]="'Copy resource reference'"
+                            [exportTooltip]="'Download'"
+                            [clearSelection]="clearResourceSelections"
+                            [deletePendingProperty]="'deletePending'"
+                            [exportPendingProperty]="'downloadPending'"
+                            [nextDisabled]="isNextPageResourcesDisabled"
+                            [prevDisabled]="isPreviousPageResourcesDisabled"
+                            [checkboxEnabled]="selectingForDeleteResources"
+                            (onSelect)="selectResource($event)"
+                            (onAction)="copyResourceReference($event)"
+                            (onExport)="downloadResource($event)"
+                            (onDelete)="deleteResource($event)"
+                            (nextPage)="goNextPageResources()"
+                            (lastPage)="goLastPageResources()"
+                            (firstPage)="goFirstPageResources()"
+                            (prevPage)="goPreviousPageResources()">
+                        </div>
+                    </div>
+                </div>
+            </tab>
         </tabset>
-    </div>    
+    </div>
 </div>

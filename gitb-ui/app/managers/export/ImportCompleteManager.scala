@@ -1,15 +1,13 @@
 package managers.export
 
-import java.io.{ByteArrayInputStream, File}
-import java.nio.file.{Files, Paths}
 import com.gitb.xml.export.{SelfRegistrationRestriction => _, _}
 import config.Configurations
-
-import javax.inject.{Inject, Singleton}
 import managers._
+import managers.testsuite.TestSuitePaths
 import models.Enums.ImportItemType.ImportItemType
+import models.Enums.TestSuiteReplacementChoice.PROCEED
 import models.Enums._
-import models.{Enums, TestSuiteUploadItemResult}
+import models.{Enums, TestCaseDeploymentAction, TestCases, TestSuiteDeploymentAction}
 import org.apache.commons.codec.binary.Base64
 import org.apache.commons.io.FileUtils
 import org.apache.commons.lang3.StringUtils
@@ -18,13 +16,16 @@ import persistence.db._
 import play.api.db.slick.DatabaseConfigProvider
 import utils.{ClamAVClient, CryptoUtil, MimeUtil, RepositoryUtils}
 
+import java.io.{ByteArrayInputStream, File}
+import java.nio.file.{Files, Paths}
+import javax.inject.{Inject, Singleton}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.Using
 
 @Singleton
-class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportManager: ExportManager, communityManager: CommunityManager, conformanceManager: ConformanceManager, specificationManager: SpecificationManager, actorManager: ActorManager, endpointManager: EndPointManager, parameterManager: ParameterManager, testSuiteManager: TestSuiteManager, landingPageManager: LandingPageManager, legalNoticeManager: LegalNoticeManager, errorTemplateManager: ErrorTemplateManager, organisationManager: OrganizationManager, systemManager: SystemManager, importPreviewManager: ImportPreviewManager, repositoryUtils: RepositoryUtils, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class ImportCompleteManager @Inject()(communityResourceManager: CommunityResourceManager, triggerManager: TriggerManager, exportManager: ExportManager, communityManager: CommunityManager, conformanceManager: ConformanceManager, specificationManager: SpecificationManager, actorManager: ActorManager, endpointManager: EndPointManager, parameterManager: ParameterManager, testSuiteManager: TestSuiteManager, landingPageManager: LandingPageManager, legalNoticeManager: LegalNoticeManager, errorTemplateManager: ErrorTemplateManager, organisationManager: OrganizationManager, systemManager: SystemManager, importPreviewManager: ImportPreviewManager, repositoryUtils: RepositoryUtils, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   private def logger = LoggerFactory.getLogger("ImportCompleteManager")
 
@@ -41,6 +42,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
       ImportTargets.fromImportItems(importItems),
       mutable.Map[ImportItemType, mutable.Map[String, String]](),
       mutable.Map[Long, mutable.Map[String, Long]](),
+      mutable.Map[Long, (Option[List[TestCases]], Map[String, (Long, Boolean)])](),
       mutable.ListBuffer[() => _](),
       mutable.ListBuffer[() => _]()
     )
@@ -220,13 +222,12 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
     propertyType match {
       case PropertyType.BINARY => "BINARY"
       case PropertyType.SIMPLE => "SIMPLE"
-      case PropertyType.SECRET => {
+      case PropertyType.SECRET =>
         if (isDomainParameter) {
           "HIDDEN"
         } else {
           "SECRET"
         }
-      }
       case _ => throw new IllegalArgumentException("Unknown enum value ["+propertyType+"]")
     }
   }
@@ -303,13 +304,13 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
     }
   }
 
-  private def toModelTestCases(exportedTestCases: List[com.gitb.xml.export.TestCase], specificationId: Long): List[models.TestCases] = {
+  private def toModelTestCases(exportedTestCases: List[com.gitb.xml.export.TestCase]): List[models.TestCases] = {
     val testCases = new ListBuffer[models.TestCases]()
     exportedTestCases.foreach { exportedTestCase =>
       testCases += models.TestCases(0L,
         exportedTestCase.getShortName, exportedTestCase.getFullName, exportedTestCase.getVersion, Option(exportedTestCase.getAuthors),
         Option(exportedTestCase.getOriginalDate), Option(exportedTestCase.getModificationDate), Option(exportedTestCase.getDescription),
-        Option(exportedTestCase.getKeywords), exportedTestCase.getTestCaseType, "", specificationId,
+        Option(exportedTestCase.getKeywords), exportedTestCase.getTestCaseType, "",
         Option(exportedTestCase.getTargetActors), None, exportedTestCase.getTestSuiteOrder, exportedTestCase.isHasDocumentation,
         Option(exportedTestCase.getDocumentation), exportedTestCase.getIdentifier
       )
@@ -317,19 +318,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
     testCases.toList
   }
 
-  private def getResourcePaths(testSuiteFolderName: String, testCases: List[com.gitb.xml.export.TestCase]): Map[String, String] = {
-    val paths = mutable.Map[String, String]()
-    testCases.foreach { testCase =>
-      var pathToSet = testCase.getPath
-      if (pathToSet.startsWith("/")) {
-        pathToSet = testSuiteFolderName + pathToSet
-      }
-      paths += (testCase.getIdentifier -> pathToSet)
-    }
-    paths.iterator.toMap
-  }
-
-  private def saveTestSuiteFiles(data: TestSuite, item: ImportItem, domainId: Long, specificationId: Long, ctx: ImportContext): File = {
+  private def saveTestSuiteFiles(data: TestSuite, item: ImportItem, domainId: Long, ctx: ImportContext): TestSuitePaths = {
     // File system operations
     val testSuiteData = Base64.decodeBase64(data.getData)
     if (Configurations.ANTIVIRUS_SERVER_ENABLED) {
@@ -343,15 +332,15 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
     FileUtils.writeByteArrayToFile(tempTestSuitePath.toFile, testSuiteData)
     // Extract test suite to target location.
     val testSuiteFileName = repositoryUtils.generateTestSuiteFileName()
-    val targetFolder = new File(repositoryUtils.getTestSuitesPath(domainId, specificationId), testSuiteFileName)
-    repositoryUtils.extractTestSuiteFilesFromZipToFolder(specificationId, targetFolder, tempTestSuitePath.toFile)
-    targetFolder
+    val targetFolder = repositoryUtils.getTestSuitePath(domainId, testSuiteFileName)
+    val resourcePaths = repositoryUtils.extractTestSuiteFilesFromZipToFolder(targetFolder, tempTestSuitePath.toFile)
+    TestSuitePaths(targetFolder, resourcePaths._1, resourcePaths._2)
   }
 
-  private def toModelTestSuite(data: com.gitb.xml.export.TestSuite, specificationId: Long, testSuiteFileName: String, hasTestCases: Boolean): models.TestSuites = {
+  private def toModelTestSuite(data: com.gitb.xml.export.TestSuite, domainId: Long, testSuiteFileName: String, hasTestCases: Boolean, testSuiteDefinitionPath: Option[String], shared: Boolean): models.TestSuites = {
     models.TestSuites(0L, data.getShortName, data.getFullName, data.getVersion, Option(data.getAuthors),
       Option(data.getOriginalDate), Option(data.getModificationDate), Option(data.getDescription), Option(data.getKeywords),
-      specificationId, testSuiteFileName, data.isHasDocumentation, Option(data.getDocumentation), data.getIdentifier, !hasTestCases)
+      testSuiteFileName, data.isHasDocumentation, Option(data.getDocumentation), data.getIdentifier, !hasTestCases, shared, domainId, testSuiteDefinitionPath)
   }
 
   private def toModelCustomLabel(data: com.gitb.xml.export.CustomLabel, communityId: Long): models.CommunityLabels = {
@@ -468,6 +457,10 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
     new models.Trigger(modelTrigger, modelDataItems)
   }
 
+  private def toModelCommunityResource(data: com.gitb.xml.export.CommunityResource, communityId: Long): models.CommunityResources = {
+    models.CommunityResources(0L, data.getName, Option(data.getDescription), communityId)
+  }
+
   private def toModelAdministrator(data: com.gitb.xml.export.CommunityAdministrator, userId: Option[Long], organisationId: Long, importSettings: ImportSettings): models.Users = {
     toModelUser(data, userId, Enums.UserRole.CommunityAdmin.id.toShort, organisationId, importSettings)
   }
@@ -501,31 +494,65 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
     dbId
   }
 
-  private def getSavedActorMap(exportedTestSuite: com.gitb.xml.export.TestSuite, specificationId: Long, ctx: ImportContext): java.util.Map[String, Long] = {
-    val savedActorMap = new java.util.HashMap[String, Long]()
-    if (exportedTestSuite.getTestCases != null) {
-      exportedTestSuite.getTestCases.getTestCase.asScala.foreach { exportedTestCase =>
-        if (exportedTestCase.getActors != null) {
-          exportedTestCase.getActors.getActor.asScala.foreach { actor =>
-            if (!savedActorMap.containsKey(actor.getActor.getActorId)) {
-              savedActorMap.put(actor.getActor.getActorId, ctx.savedSpecificationActors(specificationId)(actor.getActor.getActorId))
-            }
-          }
-        }
+  private def createSharedTestSuite(data: TestSuite, ctx: ImportContext, item: ImportItem): DBIO[Long] = {
+    val domainId = getDomainIdFromParentItem(item)
+    // File system operations
+    val testSuitePaths = saveTestSuiteFiles(data, item, domainId, ctx)
+    ctx.onFailureCalls += (() => {
+      // Cleanup operation in case an error occurred.
+      if (testSuitePaths.testSuiteFolder.exists()) {
+        FileUtils.deleteDirectory(testSuitePaths.testSuiteFolder)
       }
+    })
+    var testCases: List[TestCase] = null
+    if (data.getTestCases != null && data.getTestCases.getTestCase != null) {
+      testCases = data.getTestCases.getTestCase.asScala.toList
+    } else {
+      testCases = List.empty
     }
-    savedActorMap
+    val testCasesToUse = Some(toModelTestCases(testCases))
+    val updateActions = testSuiteUpdateActions(None, testCases)
+    val action = for {
+      // Save test suite and test cases.
+      stepSaveTestSuite <- testSuiteManager.stepSaveTestSuiteAndTestCases(toModelTestSuite(data, domainId, testSuitePaths.testSuiteFolder.getName, testCases.nonEmpty, testSuitePaths.testSuiteDefinitionPath, shared = true), None, testCasesToUse, testSuitePaths, updateActions)
+      _ <- {
+        // Needed to map specifications to shared test suites.
+        ctx.sharedTestSuiteInfo += (stepSaveTestSuite.testSuite.id -> (testCasesToUse, stepSaveTestSuite.updatedTestCases))
+        DBIO.successful(())
+      }
+    } yield stepSaveTestSuite.testSuite.id
+    action
+  }
+
+  private def getDomainIdFromParentItem(item: ImportItem): Long = {
+    val domainId = findDomainItem(item)
+    if (domainId.nonEmpty && domainId.get.targetKey.nonEmpty) {
+      domainId.get.targetKey.get.toLong
+    } else {
+      throw new IllegalStateException("Unable to determine domain ID for ["+item.itemType+"].")
+    }
+  }
+
+  @scala.annotation.tailrec
+  private def findDomainItem(item: ImportItem): Option[ImportItem] = {
+    if (item.itemType == ImportItemType.Domain) {
+      Some(item)
+    } else if (item.parentItem.nonEmpty) {
+      findDomainItem(item.parentItem.get)
+    } else {
+      None
+    }
   }
 
   private def createTestSuite(data: TestSuite, ctx: ImportContext, item: ImportItem): DBIO[Long] = {
-    val domainId = item.parentItem.get.parentItem.get.targetKey.get.toLong
+    val domainId = getDomainIdFromParentItem(item)
     val specificationId = item.parentItem.get.targetKey.get.toLong
     // File system operations
-    val testSuiteFile = saveTestSuiteFiles(data, item, domainId, specificationId, ctx)
+    val testSuitePaths = saveTestSuiteFiles(data, item, domainId, ctx)
     ctx.onFailureCalls += (() => {
       // Cleanup operation in case an error occurred.
-      if (testSuiteFile.exists()) {
-        FileUtils.deleteDirectory(testSuiteFile)
+      if (testSuitePaths.testSuiteFolder.exists()) {
+        FileUtils.deleteDirectory(testSuitePaths.testSuiteFolder)
       }
     })
     var testCases: List[TestCase] = null
@@ -535,44 +562,47 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
       testCases = List.empty
     }
     // Process DB operations
+    val testCasesToUse = Some(toModelTestCases(testCases))
+    val updateActions = testSuiteUpdateActions(Some(specificationId), testCases)
     val action = for {
-      // Save test suite
-      testSuiteId <- PersistenceSchema.testSuites.returning(PersistenceSchema.testSuites.map(_.id)) += toModelTestSuite(data, specificationId, testSuiteFile.getName, testCases.nonEmpty)
-      // Lookup the map of systems to actors for the specification
-      systemActors <- testSuiteManager.getSystemActors(specificationId)
-      // Create a map of actors to systems.
-      existingActorToSystemMap <- testSuiteManager.getExistingActorToSystemMap(systemActors)
-      // Save test cases
-      processTestCasesStep <- {
+      // Save test suite and test cases.
+      stepSaveTestSuite <- testSuiteManager.stepSaveTestSuiteAndTestCases(toModelTestSuite(data, domainId, testSuitePaths.testSuiteFolder.getName, testCases.nonEmpty, testSuitePaths.testSuiteDefinitionPath, shared = false), None, testCasesToUse, testSuitePaths, updateActions)
+      _ <- {
         if (ctx.savedSpecificationActors.contains(specificationId)) {
-          testSuiteManager.stepProcessTestCases(
-            specificationId,
-            testSuiteId,
-            Some(toModelTestCases(testCases, specificationId)),
-            getResourcePaths(testSuiteFile.getName, testCases),
-            new java.util.HashMap[String, (java.lang.Long, String)](), // existingTestCaseMap
+          // Make all actor and specification updates.
+          testSuiteManager.stepUpdateTestSuiteSpecificationLinks(specificationId, stepSaveTestSuite.testSuite.id, testCasesToUse,
             ctx.savedSpecificationActors(specificationId).asJava, // savedActorIds
-            existingActorToSystemMap,
-            updateMetadata = true
-          )
+            stepSaveTestSuite.updatedTestCases)
         } else {
-          DBIO.successful((new java.util.ArrayList[Long](), List[TestSuiteUploadItemResult]()))
+          DBIO.successful(())
         }
       }
-      // Update the actor links for the  test suite.
-      _ <- testSuiteManager.stepUpdateTestSuiteActorLinks(testSuiteId, getSavedActorMap(data, specificationId, ctx))
-      // Update the test case links for the test suite.
-      _ <- testSuiteManager.stepUpdateTestSuiteTestCaseLinks(testSuiteId, processTestCasesStep._1)
-    } yield testSuiteId
+    } yield stepSaveTestSuite.testSuite.id
     action
   }
 
-  private def updateTestSuite(data: TestSuite, ctx: ImportContext, item: ImportItem): DBIO[_] = {
-    val domainId = item.parentItem.get.parentItem.get.targetKey.get.toLong
-    val specificationId = item.parentItem.get.targetKey.get.toLong
+  private def testSuiteUpdateActions(specification: Option[Long], testCases: List[TestCase]): TestSuiteDeploymentAction = {
+    val sharedTestSuite = specification.isEmpty
+    val updateActors = if (sharedTestSuite) {
+      None
+    } else {
+      Some(true)
+    }
+    val testCaseUpdates = if (sharedTestSuite) {
+      None
+    } else {
+      Some(testCases.map { testCase =>
+        new TestCaseDeploymentAction(testCase.getIdentifier, updateDefinition = true, resetTestHistory = false)
+      })
+    }
+    new TestSuiteDeploymentAction(specification, PROCEED, updateTestSuite = true, updateActors, sharedTestSuite, testCaseUpdates)
+  }
+
+  private def updateSharedTestSuite(data: TestSuite, ctx: ImportContext, item: ImportItem): DBIO[_] = {
+    val domainId = getDomainIdFromParentItem(item)
     val testSuiteId = item.targetKey.get.toLong
     // File system operations
-    val testSuiteFile = saveTestSuiteFiles(data, item, domainId, specificationId, ctx)
+    val testSuitePaths = saveTestSuiteFiles(data, item, domainId, ctx)
     var testCases: List[TestCase] = null
     if (data.getTestCases != null && data.getTestCases.getTestCase != null) {
       testCases = data.getTestCases.getTestCase.asScala.toList
@@ -580,57 +610,78 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
       testCases = List.empty
     }
     // Process DB operations
+    val updateActions = testSuiteUpdateActions(None, testCases)
+    val testCasesToUse = Some(toModelTestCases(testCases))
     val action = for {
       // Lookup existing test suite file (for later cleanup).
       existingTestSuiteFile <- PersistenceSchema.testSuites.filter(_.id === testSuiteId).map(x => x.filename).result.head
-      // Update existing test suite.
-      _ <- testSuiteManager.updateTestSuiteInDb(testSuiteId, toModelTestSuite(data, specificationId, testSuiteFile.getName, testCases.nonEmpty))
-      // Remove existing actor links (these will be updated later).
-      _ <- testSuiteManager.removeActorLinksForTestSuite(testSuiteId)
-      // Lookup the existing test cases for the test suite.
-      existingTestCasesForTestSuite <- testSuiteManager.getExistingTestCasesForTestSuite(testSuiteId)
-      // Place the existing test cases in a map for further processing.
-      existingTestCaseMap <- testSuiteManager.getExistingTestCaseMap(existingTestCasesForTestSuite)
-      // Lookup the map of systems to actors for the specification
-      systemActors <- testSuiteManager.getSystemActors(specificationId)
-      // Create a map of actors to systems.
-      existingActorToSystemMap <- testSuiteManager.getExistingActorToSystemMap(systemActors)
-      // Process the test cases.
-      processTestCasesStep <- {
-        if (ctx.savedSpecificationActors.contains(specificationId)) {
-          testSuiteManager.stepProcessTestCases(
-            specificationId,
-            testSuiteId,
-            Some(toModelTestCases(testCases, specificationId)),
-            getResourcePaths(testSuiteFile.getName, testCases),
-            existingTestCaseMap,
-            ctx.savedSpecificationActors(specificationId).asJava, // savedActorIds
-            existingActorToSystemMap,
-            updateMetadata = true
-          )
-        } else {
-          DBIO.successful((new java.util.ArrayList[Long](), List[TestSuiteUploadItemResult]()))
-        }
+      // Update existing test suite and test cases.
+      stepSaveTestSuite <- testSuiteManager.stepSaveTestSuiteAndTestCases(toModelTestSuite(data, domainId, testSuitePaths.testSuiteFolder.getName, testCases.nonEmpty, testSuitePaths.testSuiteDefinitionPath, shared = true), Some(testSuiteId), testCasesToUse, testSuitePaths, updateActions)
+      _ <- {
+        // Needed to map specifications to shared test suites.
+        ctx.sharedTestSuiteInfo += (stepSaveTestSuite.testSuite.id -> (testCasesToUse, stepSaveTestSuite.updatedTestCases))
+        DBIO.successful(())
       }
-      // Remove the test cases that are no longer in the test suite.
-      _ <- testSuiteManager.stepRemoveTestCases(existingTestCaseMap, specificationId)
-      // Update the actor links for the  test suite.
-      _ <- testSuiteManager.stepUpdateTestSuiteActorLinks(testSuiteId, getSavedActorMap(data, specificationId, ctx))
-      // Update the test case links for the test suite.
-      _ <- testSuiteManager.stepUpdateTestSuiteTestCaseLinks(testSuiteId, processTestCasesStep._1)
     } yield existingTestSuiteFile
     action.flatMap(existingTestSuiteFile => {
       ctx.onSuccessCalls += (() => {
         // Finally, delete the backup folder
-        val existingTestSuiteFolder = new File(repositoryUtils.getTestSuitesPath(domainId, specificationId), existingTestSuiteFile)
+        val existingTestSuiteFolder = repositoryUtils.getTestSuitePath(domainId, existingTestSuiteFile)
         if (existingTestSuiteFolder != null && existingTestSuiteFolder.exists()) {
           FileUtils.deleteDirectory(existingTestSuiteFolder)
         }
       })
       ctx.onFailureCalls += (() => {
         // Cleanup operations in case an error occurred.
-        if (testSuiteFile.exists()) {
-          FileUtils.deleteDirectory(testSuiteFile)
+        if (testSuitePaths.testSuiteFolder.exists()) {
+          FileUtils.deleteDirectory(testSuitePaths.testSuiteFolder)
+        }
+      })
+      DBIO.successful(())
+    })
+  }
+
+  private def updateTestSuite(data: TestSuite, ctx: ImportContext, item: ImportItem): DBIO[_] = {
+    val domainId = getDomainIdFromParentItem(item)
+    val specificationId = item.parentItem.get.targetKey.get.toLong
+    val testSuiteId = item.targetKey.get.toLong
+    // File system operations
+    val testSuitePaths = saveTestSuiteFiles(data, item, domainId, ctx)
+    var testCases: List[TestCase] = null
+    if (data.getTestCases != null && data.getTestCases.getTestCase != null) {
+      testCases = data.getTestCases.getTestCase.asScala.toList
+    } else {
+      testCases = List.empty
+    }
+    // Process DB operations
+    val updateActions = testSuiteUpdateActions(Some(specificationId), testCases)
+    val testCasesToUse = Some(toModelTestCases(testCases))
+    val action = for {
+      // Lookup existing test suite file (for later cleanup).
+      existingTestSuiteFile <- PersistenceSchema.testSuites.filter(_.id === testSuiteId).map(x => x.filename).result.head
+      // Update existing test suite and test cases.
+      stepSaveTestSuite <- testSuiteManager.stepSaveTestSuiteAndTestCases(toModelTestSuite(data, domainId, testSuitePaths.testSuiteFolder.getName, testCases.nonEmpty, testSuitePaths.testSuiteDefinitionPath, shared = false), Some(testSuiteId), testCasesToUse, testSuitePaths, updateActions)
+      // Specification-related updates.
+      _ <- if (ctx.savedSpecificationActors.contains(specificationId)) {
+          testSuiteManager.stepUpdateTestSuiteSpecificationLinks(specificationId, testSuiteId, testCasesToUse,
+            ctx.savedSpecificationActors(specificationId).asJava, // savedActorIds
+            stepSaveTestSuite.updatedTestCases)
+      } else {
+        DBIO.successful(())
+      }
+    } yield existingTestSuiteFile
+    action.flatMap(existingTestSuiteFile => {
+      ctx.onSuccessCalls += (() => {
+        // Finally, delete the backup folder
+        val existingTestSuiteFolder = repositoryUtils.getTestSuitePath(domainId, existingTestSuiteFile)
+        if (existingTestSuiteFolder != null && existingTestSuiteFolder.exists()) {
+          FileUtils.deleteDirectory(existingTestSuiteFolder)
+        }
+      })
+      ctx.onFailureCalls += (() => {
+        // Cleanup operations in case an error occurred.
+        if (testSuitePaths.testSuiteFolder.exists()) {
+          FileUtils.deleteDirectory(testSuitePaths.testSuiteFolder)
         }
       })
       DBIO.successful(())
@@ -658,6 +709,11 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
     // Load values pertinent to domain to ensure we are modifying items within (for security purposes).
     if (targetDomainId.isDefined) {
       exec(PersistenceSchema.domains.filter(_.id === targetDomainId.get).map(x => x.id).result).map(x => ctx.existingIds.map(ImportItemType.Domain) += x.toString)
+      if (ctx.importTargets.hasTestSuites) {
+        exportManager.loadSharedTestSuites(targetDomainId.get).foreach { testSuite =>
+          ctx.existingIds.map(ImportItemType.TestSuite) += testSuite.id.toString
+        }
+      }
       if (ctx.importTargets.hasSpecifications) {
         exec(PersistenceSchema.specifications
           .filter(_.domain === targetDomainId.get)
@@ -741,7 +797,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
             dbActions += processFromArchive(ImportItemType.DomainParameter, parameter, parameter.getId, ctx,
               ImportCallbacks.set(
                 (data: com.gitb.xml.export.DomainParameter, item: ImportItem) => {
-                  val domainId = item.parentItem.get.targetKey.get.toLong
+                  val domainId = getDomainIdFromParentItem(item)
                   val fileData = parameterFileMetadata(ctx, data.getType, isDomainParameter = true, data.getValue)
                   conformanceManager.createDomainParameterInternal(
                     models.DomainParameter(0L, data.getName, Option(data.getDescription),
@@ -749,7 +805,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
                       fileData._2, domainId), fileData._3, ctx.onSuccessCalls)
                 },
                 (data: com.gitb.xml.export.DomainParameter, targetKey: String, item: ImportItem) => {
-                  val domainId = item.parentItem.get.targetKey.get.toLong
+                  val domainId = getDomainIdFromParentItem(item)
                   val fileData = parameterFileMetadata(ctx, data.getType, isDomainParameter = true, data.getValue)
                   conformanceManager.updateDomainParameterInternal(domainId,
                     targetKey.toLong, data.getName, Option(data.getDescription), fileData._1,
@@ -765,8 +821,56 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
       _ <- {
         processRemaining(ImportItemType.DomainParameter, ctx,
           (targetKey: String, item: ImportItem) => {
-            val domainId = item.parentItem.get.targetKey.get.toLong
+            val domainId = getDomainIdFromParentItem(item)
             conformanceManager.deleteDomainParameter(domainId, targetKey.toLong, ctx.onSuccessCalls)
+          }
+        )
+      }
+      _ <- {
+        // Shared test suites
+        val dbActions = ListBuffer[DBIO[_]]()
+        if (exportedDomain.getSharedTestSuites != null) {
+          exportedDomain.getSharedTestSuites.getTestSuite.asScala.foreach { exportedTestSuite =>
+            dbActions += processFromArchive(ImportItemType.TestSuite, exportedTestSuite, exportedTestSuite.getId, ctx,
+              ImportCallbacks.set(
+                (data: com.gitb.xml.export.TestSuite, item: ImportItem) => {
+                  createSharedTestSuite(data, ctx, item)
+                },
+                (data: com.gitb.xml.export.TestSuite, targetKey: String, item: ImportItem) => {
+                  updateSharedTestSuite(data, ctx, item)
+                }
+              )
+            )
+          }
+        }
+        toDBIO(dbActions)
+      }
+      _ <- {
+        // Specification groups
+        val dbActions = ListBuffer[DBIO[_]]()
+        if (exportedDomain.getSpecificationGroups != null) {
+          exportedDomain.getSpecificationGroups.getGroup.asScala.foreach { exportedGroup =>
+            dbActions += processFromArchive(ImportItemType.SpecificationGroup, exportedGroup, exportedGroup.getId, ctx,
+              ImportCallbacks.set(
+                (data: com.gitb.xml.export.SpecificationGroup, item: ImportItem) => {
+                  specificationManager.createSpecificationGroupInternal(models.SpecificationGroups(0L, data.getShortName, data.getFullName, Option(data.getDescription), getDomainIdFromParentItem(item)))
+                },
+                (data: com.gitb.xml.export.SpecificationGroup, targetKey: String, item: ImportItem) => {
+                  specificationManager.updateSpecificationGroupInternal(targetKey.toLong, data.getShortName, data.getFullName, Option(data.getDescription))
+                },
+                (data: com.gitb.xml.export.SpecificationGroup, targetKey: Any, item: ImportItem) => {
+                  // No action.
+                }
+              )
+            )
+          }
+        }
+        toDBIO(dbActions)
+      }
+      _ <- {
+        processRemaining(ImportItemType.SpecificationGroup, ctx,
+          (targetKey: String, item: ImportItem) => {
+            specificationManager.deleteSpecificationGroupInternal(targetKey.toLong, deleteSpecifications = false, ctx.onSuccessCalls)
           }
         )
       }
@@ -778,22 +882,25 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
             dbActions += processFromArchive(ImportItemType.Specification, exportedSpecification, exportedSpecification.getId, ctx,
               ImportCallbacks.set(
                 (data: com.gitb.xml.export.Specification, item: ImportItem) => {
-                  val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
-                  conformanceManager.createSpecificationsInternal(models.Specifications(0L, data.getShortName, data.getFullName, Option(data.getDescription), data.isHidden, apiKey, item.parentItem.get.targetKey.get.toLong), checkApiKeyUniqueness = true)
+                  val relatedGroupId = getProcessedDbId(data.getGroup, ImportItemType.SpecificationGroup, ctx)
+                  if (data.getGroup == null || relatedGroupId.nonEmpty) {
+                    val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
+                    conformanceManager.createSpecificationsInternal(models.Specifications(0L, data.getShortName, data.getFullName, Option(data.getDescription), data.isHidden, apiKey, targetDomainId.get, relatedGroupId), checkApiKeyUniqueness = true)
+                  } else {
+                    DBIO.successful(())
+                  }
                 },
                 (data: com.gitb.xml.export.Specification, targetKey: String, item: ImportItem) => {
-                  val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
-                  specificationManager.updateSpecificationInternal(targetKey.toLong, data.getShortName, data.getFullName, Option(data.getDescription), data.isHidden, Some(apiKey), checkApiKeyUniqueness = true)
+                  val relatedGroupId = getProcessedDbId(data.getGroup, ImportItemType.SpecificationGroup, ctx)
+                  if (data.getGroup == null || relatedGroupId.nonEmpty) {
+                    val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
+                    specificationManager.updateSpecificationInternal(targetKey.toLong, data.getShortName, data.getFullName, Option(data.getDescription), data.isHidden, Some(apiKey), checkApiKeyUniqueness = true, relatedGroupId)
+                  } else {
+                    DBIO.successful(())
+                  }
                 },
                 (data: com.gitb.xml.export.Specification, targetKey: Any, item: ImportItem) => {
-                  // In case of a failure delete the created domain test suite folder (if one was created later on).
-                  ctx.onFailureCalls += (() => {
-                    val domainId = item.parentItem.get.targetKey.get.toLong
-                    val specificationFolder = repositoryUtils.getTestSuitesPath(domainId, targetKey.asInstanceOf[Long])
-                    if (specificationFolder.exists()) {
-                      FileUtils.deleteQuietly(specificationFolder)
-                    }
-                  })
+                  // No action.
                 }
               )
             )
@@ -804,7 +911,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
       _ <- {
         processRemaining(ImportItemType.Specification, ctx,
           (targetKey: String, item: ImportItem) => {
-            conformanceManager.delete(targetKey.toLong, ctx.onSuccessCalls)
+            conformanceManager.deleteSpecificationInternal(targetKey.toLong, ctx.onSuccessCalls)
           }
         )
       }
@@ -823,7 +930,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
                         order = Some(data.getOrder.shortValue())
                       }
                       val specificationId = item.parentItem.get.targetKey.get.toLong // Specification
-                      val domainId = item.parentItem.get.parentItem.get.targetKey.get.toLong // Specification and then Domain
+                      val domainId = targetDomainId.get
                       val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
                       conformanceManager.createActor(models.Actors(0L, data.getActorId, data.getName, Option(data.getDescription), Some(data.isDefault), data.isHidden, order, apiKey, domainId), specificationId, checkApiKeyUniqueness = true)
                     },
@@ -961,6 +1068,37 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
         val dbActions = ListBuffer[DBIO[_]]()
         if (exportedDomain.getSpecifications != null) {
           exportedDomain.getSpecifications.getSpecification.asScala.foreach { exportedSpecification =>
+            // Shared test suites.
+            if (exportedSpecification.getSharedTestSuites != null) {
+              exportedSpecification.getSharedTestSuites.asScala.foreach { exportedTestSuite =>
+                val id = exportedSpecification.getId+"|"+exportedTestSuite.getId
+                dbActions += processFromArchive(ImportItemType.TestSuite, exportedTestSuite, id, ctx,
+                  ImportCallbacks.set(
+                    (data: com.gitb.xml.export.TestSuite, item: ImportItem) => {
+                      val relatedSpecificationId = getProcessedDbId(exportedSpecification, ImportItemType.Specification, ctx)
+                      val relatedTestSuiteId = getProcessedDbId(exportedTestSuite, ImportItemType.TestSuite, ctx)
+                      if (relatedSpecificationId.isDefined && relatedTestSuiteId.isDefined) {
+                        val sharedTestSuiteInfo = ctx.sharedTestSuiteInfo.get(relatedTestSuiteId.get)
+                        if (sharedTestSuiteInfo.isDefined) {
+                          testSuiteManager.stepUpdateTestSuiteSpecificationLinks(relatedSpecificationId.get, relatedTestSuiteId.get, sharedTestSuiteInfo.get._1,
+                            ctx.savedSpecificationActors(relatedSpecificationId.get).asJava, // savedActorIds
+                            sharedTestSuiteInfo.get._2)
+                        } else {
+                          DBIO.successful(())
+                        }
+                      } else {
+                        DBIO.successful(())
+                      }
+                    },
+                    (data: com.gitb.xml.export.TestSuite, targetKey: String, item: ImportItem) => {
+                      // Update not needed. Test case links and updates to conformance statements will have happened in the test suite update.
+                      DBIO.successful(())
+                    }
+                  )
+                )
+              }
+            }
+            // Specification-specific test suites.
             if (exportedSpecification.getTestSuites != null) {
               exportedSpecification.getTestSuites.getTestSuite.asScala.foreach { exportedTestSuite =>
                 dbActions += processFromArchive(ImportItemType.TestSuite, exportedTestSuite, exportedTestSuite.getId, ctx,
@@ -982,7 +1120,17 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
       _ <- {
         processRemaining(ImportItemType.TestSuite, ctx,
           (targetKey: String, item: ImportItem) => {
-            conformanceManager.undeployTestSuite(targetKey.toLong, ctx.onSuccessCalls)
+            val testSuiteId = targetKey.toLong
+            val isSharedTestSuiteLink = ctx.sharedTestSuiteInfo.contains(testSuiteId) && item.parentItem.isDefined && item.parentItem.get.itemType == ImportItemType.Specification
+            if (isSharedTestSuiteLink) {
+              // This is a shared test suite that was either created or updated during this import (i.e. it needs to remain present).
+              // This means that this removal is not for the test suite itself but for the link to a specification.
+              val specificationId = item.parentItem.get.targetKey.get.toLong
+              testSuiteManager.unlinkSharedTestSuiteInternal(testSuiteId, List(specificationId))
+            } else {
+              // This is either a specification-specific test suite or a shared test suite that needs deleting.
+              conformanceManager.undeployTestSuite(targetKey.toLong, ctx.onSuccessCalls)
+            }
           }
         )
       }
@@ -1028,6 +1176,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
       ImportTargets.fromImportItems(importItems),
       mutable.Map[ImportItemType, mutable.Map[String, String]](),
       mutable.Map[Long, mutable.Map[String, Long]](),
+      mutable.Map[Long, (Option[List[TestCases]], Map[String, (Long, Boolean)])](),
       mutable.ListBuffer[() => _](),
       mutable.ListBuffer[() => _]()
     )
@@ -1073,6 +1222,10 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
       // Triggers
       if (ctx.importTargets.hasTriggers) {
         exec(PersistenceSchema.triggers.filter(_.community === targetCommunityId.get).map(x => x.id).result).foreach(x => ctx.existingIds.map(ImportItemType.Trigger) += x.toString)
+      }
+      // Resources.
+      if (ctx.importTargets.hasResources) {
+        exec(PersistenceSchema.communityResources.filter(_.community === targetCommunityId.get).map(x => x.id).result).foreach(x => ctx.existingIds.map(ImportItemType.CommunityResource) += x.toString)
       }
       // Administrators
       if (!Configurations.AUTHENTICATION_SSO_ENABLED && ctx.importTargets.hasAdministrators) {
@@ -1432,6 +1585,36 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
           }
         )
       }
+      // Resources
+      _ <- {
+        val dbActions = ListBuffer[DBIO[_]]()
+        if (exportedCommunity.getResources != null) {
+          exportedCommunity.getResources.getResource.asScala.foreach { exportedContent =>
+            dbActions += processFromArchive(ImportItemType.CommunityResource, exportedContent, exportedContent.getId, ctx,
+              ImportCallbacks.set(
+                (data: com.gitb.xml.export.CommunityResource, item: ImportItem) => {
+                  val fileToStore = dataUrlToTempFile(data.getContent)
+                  ctx.onFailureCalls += (() => if (fileToStore.exists()) { FileUtils.deleteQuietly(fileToStore) })
+                  communityResourceManager.createCommunityResourceInternal(toModelCommunityResource(data, item.parentItem.get.targetKey.get.toLong), fileToStore, ctx.onSuccessCalls)
+                },
+                (data: com.gitb.xml.export.CommunityResource, targetKey: String, item: ImportItem) => {
+                  val fileToStore = dataUrlToTempFile(data.getContent)
+                  ctx.onFailureCalls += (() => if (fileToStore.exists()) { FileUtils.deleteQuietly(fileToStore) })
+                  communityResourceManager.updateCommunityResourceInternal(Some(item.parentItem.get.targetKey.get.toLong), targetKey.toLong, Some(data.getName), Some(Option(data.getDescription)), Some(fileToStore), ctx.onSuccessCalls)
+                }
+              )
+            )
+          }
+        }
+        toDBIO(dbActions)
+      }
+      _ <- {
+        processRemaining(ImportItemType.Trigger, ctx,
+          (targetKey: String, item: ImportItem) => {
+            communityResourceManager.deleteCommunityResourceInternal(Some(item.parentItem.get.targetKey.get.toLong), targetKey.toLong, ctx.onSuccessCalls)
+          }
+        )
+      }
       // Administrators
       _ <- {
         val dbActions = ListBuffer[DBIO[_]]()
@@ -1655,10 +1838,10 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
                 dbActions += processFromArchive(ImportItemType.System, exportedSystem, exportedSystem.getId, ctx,
                   ImportCallbacks.set(
                     (data: com.gitb.xml.export.System, item: ImportItem) => {
-                      systemManager.registerSystemInternal(models.Systems(0L, data.getShortName, data.getFullName, Option(data.getDescription), data.getVersion, Option(data.getApiKey), item.parentItem.get.targetKey.get.toLong), checkApiKeyUniqueness = true)
+                      systemManager.registerSystemInternal(models.Systems(0L, data.getShortName, data.getFullName, Option(data.getDescription), Option(data.getVersion), Option(data.getApiKey), item.parentItem.get.targetKey.get.toLong), checkApiKeyUniqueness = true)
                     },
                     (data: com.gitb.xml.export.System, targetKey: String, item: ImportItem) => {
-                      systemManager.updateSystemProfileInternal(None, targetCommunityId, item.targetKey.get.toLong, data.getShortName, data.getFullName, Option(data.getDescription), data.getVersion, Some(Option(data.getApiKey)),
+                      systemManager.updateSystemProfileInternal(None, targetCommunityId, item.targetKey.get.toLong, data.getShortName, data.getFullName, Option(data.getDescription), Option(data.getVersion), Some(Option(data.getApiKey)),
                         None, None, None, copySystemParameters = false, copyStatementParameters = false,
                         checkApiKeyUniqueness = true, ctx.onSuccessCalls
                       )

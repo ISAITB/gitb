@@ -1,5 +1,10 @@
 @import "../../../styles/less/_common.less";
 
+.shared-choice {
+    margin-top: -10px;
+    margin-bottom: 20px;
+}
+
 .report-details-title {
     font-weight: bold;
     background-color: @gray-light-1;
@@ -8,19 +13,83 @@
     padding-left: 15px;
     cursor: pointer;
 
-    &:hover { 
-        background-color: fade(@gray-light, 50%); 
+    &:hover {
+        background-color: fade(@gray-light, 50%);
     }
 }
 
 .report-details {
-    border: 1px solid @gray-light; 
-    border-radius: 5px; 
+    border: 1px solid @gray-light;
+    border-radius: 5px;
 }
 
 .report-details-items-inner {
-    padding-top: 10px; 
-    padding-left:10px; 
-    padding-right:10px; 
-    border-top: 1px solid @gray-light; 
+    padding-top: 10px;
+    padding-left:10px;
+    padding-right:10px;
+    border-top: 1px solid @gray-light;
+}
+.testcase-table {
+    margin-top: 15px;
+    margin-bottom: 15px;
+}
+.testcase-table-title {
+    background: @gray-light-1;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    & > .testcase-table-title-label {
+        padding-right: 15px;
+        padding-left: 15px;
+        padding-top: 10px;
+        padding-bottom: 10px;
+        font-weight: bold;
+        display: inline-flex;
+        flex-grow: 1;
+    }
+    & > .testcase-table-title-controls {
+        display: inline-flex;
+        padding-right: 8px;
+    }
+    &.expandable {
+        cursor: pointer;
+        &:hover {
+            background-color: @gray-highlight;
+        }
+    }
+}
+.testcase-table-contents {
+    border-top: 1px solid @gray-dark-1;
+}
+.section-choice-container {
+    margin-top: 15px;
+	border: 1px solid @gray-dark-1;
+	border-radius: 5px;
+    .section-choice-title {
+        background: @gray-light-1;
+        border-top-left-radius: 5px;
+        border-top-right-radius: 5px;
+        font-weight: bold;
+        vertical-align: middle;
+        padding: 10px;
+        &.expandable {
+            cursor: pointer;
+            &:hover {
+                background-color: @gray-highlight;
+            }
+        }    
+    }
+    .section-choice-actions {
+        border-top: 1px solid @gray-dark-1;
+        padding: 15px;
+    }
+}
+.section-choice-actions {
+    padding: 15px 0px;
+}
+.section-choice-actions-specs {
+    padding-top: 15px;
+}
+.ts-upload-validation-report {
+	margin-top: 10px;
 }

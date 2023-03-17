@@ -1,0 +1,45 @@
+@import '../../../styles/less/_common.less';
+
+.item-container {
+    border-radius: 4px;
+    border: 1px solid @gray-dark-1;
+    margin-top: 10px;
+    background-color: @gray-light-1;
+    &.shade {
+        background-color: @white;
+        & > .item-header {
+            &:hover {
+                background-color: @white-hover;
+                +.item-content {
+                    background-color: @white-hover;
+                }
+            }
+        }
+    }
+    .item-header {
+        display: flex;
+        padding: 10px 15px 10px 15px;
+        &:hover {
+            cursor: pointer;
+            background-color: @gray-highlight;
+            +.item-content {
+                background-color: @gray-highlight;
+            }
+        }
+        .item-check {
+            margin-right: 10px;
+        }
+        .item-name {
+            font-weight: bold;
+        }
+        .item-description {
+            border-left: 1px solid @gray-dark-1;
+            padding-left: 10px;
+            margin-left: 10px;
+        }
+    }
+    .item-content {
+        margin-top: -10px;
+        padding: 0px 10px 10px 10px;
+    }
+}

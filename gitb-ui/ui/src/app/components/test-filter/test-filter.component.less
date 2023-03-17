@@ -15,11 +15,14 @@
             padding-left: 8px;
             padding-right: 8px;
             min-height: 40px;
-            white-space: nowrap;
             display: flex;
             align-items: center;
             border-bottom: 2px solid @gray-dark-1;
-            overflow-x: hidden;
+            span {
+                white-space: nowrap;
+                overflow-x: hidden;
+                text-overflow: ellipsis;
+            }
         }
         .filterValue {
             padding: 8px;
@@ -28,7 +31,7 @@
             min-width: 200px;
         }
         &.sessionFilter {
-            min-width: 200px;
+            min-width: 350px;
         }
         &.filler {
             flex-grow: 1;

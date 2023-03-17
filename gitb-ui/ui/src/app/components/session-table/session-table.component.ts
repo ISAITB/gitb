@@ -21,6 +21,7 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
   @Input() expandedCounter?: { count: number }
   @Input() supportRefresh = false
   @Input() refreshComplete?: EventEmitter<void>
+  @Input() showCheckbox?: EventEmitter<boolean>
   @Output() onRefresh = new EventEmitter<TestResultForDisplay>()
 
   Constants = Constants
@@ -46,7 +47,7 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
       }
     }
     this.splitColumns()
-    this.columnCount = this.columns.length
+    this.columnCount = this.columns.length + 1 // PLus one for expandable.
     if (this.checkboxEnabled) this.columnCount += 1
     if (this.actionVisible || this.operationsVisible || this.exportVisible) this.columnCount += 1
     if (this.operationsVisible) {
@@ -59,6 +60,21 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
     if (this.refreshComplete) {
       this.refreshComplete.subscribe(() => {
         this.sessionBeingRefreshed = undefined
+      })
+    }
+    if (this.showCheckbox) {
+      this.showCheckbox.subscribe((show) => {
+        if (show) {
+          if (!this.checkboxEnabled) {
+            this.checkboxEnabled = true
+            this.columnCount += 1
+          }
+        } else {
+          if (this.checkboxEnabled) {
+            this.checkboxEnabled = false
+            this.columnCount -= 1
+          }
+        }
       })
     }
   }

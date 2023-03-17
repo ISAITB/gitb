@@ -48,15 +48,14 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
     } else {
       testIdentifier = Some(locationKeyToUse)
     }
-    val testCase = testCaseManager.getTestCaseForIdWrapper(testIdentifier.get).get
-    val specificationOfTestCase = specificationManager.getSpecificationById(testCase.targetSpec)
+    val testCaseId = testIdentifier.get.toLong
     var testSuite: Option[TestSuites] = None
     if (testSuiteIdentifier.isEmpty) {
       // Consider test suite of test case.
-      testSuite = Some(testSuiteManager.getTestSuiteOfTestCaseWrapper(testCase.id))
+      testSuite = Some(testSuiteManager.getTestSuiteOfTestCase(testCaseId))
     } else {
       // Find test suite in specification or domain.
-      testSuite = repositoryUtils.findTestSuiteByIdentifier(testSuiteIdentifier.get, Some(specificationOfTestCase.domain), specificationOfTestCase.id)
+      testSuite = repositoryUtils.findTestSuiteByIdentifier(testSuiteIdentifier.get, testSuite.get.domain, None)
     }
     if (testSuite.isEmpty) {
       NotFound
@@ -74,8 +73,8 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
         filePathToLookup = StringUtils.replaceOnce(filePathToLookup, testSuite.get.identifier, testSuite.get.filename)
       }
       // Ensure that the requested resource is within the test suite folder (to avoid path traversal)
-      val testSuiteFolder = repositoryUtils.getTestSuitesResource(testSuite.get.specification, specificationOfTestCase.domain, testSuite.get.filename, None)
-      val file = repositoryUtils.getTestSuitesResource(testSuite.get.specification, specificationOfTestCase.domain, filePathToLookup, filePathToAlsoCheck)
+      val testSuiteFolder = repositoryUtils.getTestSuitesResource(testSuite.get.domain, testSuite.get.filename, None)
+      val file = repositoryUtils.getTestSuitesResource(testSuite.get.domain, filePathToLookup, filePathToAlsoCheck)
       logger.debug("Reading test resource ["+codec.decode(filePath)+"] definition from the file ["+file+"]")
       if (file.exists() && file.toPath.normalize().startsWith(testSuiteFolder.toPath.normalize())) {
         Ok.sendFile(file, inline = true)
@@ -229,7 +228,7 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
       }
     } catch {
       case e: Exception =>
-        if (result._2.archived) {
+        if (result != null && result._2.archived) {
           FileUtils.deleteQuietly(result._2.path.toFile)
         }
         throw e
@@ -402,7 +401,9 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
     authorizationManager.canViewTestCase(request, testId)
     val tc = testCaseManager.getTestCase(testId)
     if (tc.isDefined) {
-      val file = repositoryUtils.getTestSuitesResource(specificationManager.getSpecificationById(tc.get.targetSpec), tc.get.path, None)
+      val testCaseId = testId.toLong
+      val domainId = testCaseManager.getDomainOfTestCase(testCaseId)
+      val file = repositoryUtils.getTestSuitesResource(domainId, tc.get.path, None)
       logger.debug("Reading test case ["+testId+"] definition from the file ["+file+"]")
       if(file.exists()) {
         Ok.sendFile(file, inline = true)
@@ -418,9 +419,10 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
     authorizationManager.canViewAllTestCases(request)
     val domainIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.DOMAIN_IDS)
     val specificationIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.SPEC_IDS)
+    val groupIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.GROUP_IDS)
     val actorIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.ACTOR_IDS)
     val testSuiteIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.TEST_SUITE_IDS)
-    val testCases = testCaseManager.searchTestCases(domainIds, specificationIds, actorIds, testSuiteIds)
+    val testCases = testCaseManager.searchTestCases(domainIds, specificationIds, groupIds, actorIds, testSuiteIds)
     val json = JsonUtil.jsTestCasesList(testCases).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
@@ -429,9 +431,10 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
     val domainId = ParameterExtractor.requiredBodyParameter(request, Parameters.DOMAIN_ID).toLong
     authorizationManager.canViewDomains(request, Some(List(domainId)))
     val specificationIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.SPEC_IDS)
+    val groupIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.GROUP_IDS)
     val actorIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.ACTOR_IDS)
     val testSuiteIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.TEST_SUITE_IDS)
-    val testCases = testCaseManager.searchTestCases(Some(List(domainId)), specificationIds, actorIds, testSuiteIds)
+    val testCases = testCaseManager.searchTestCases(Some(List(domainId)), specificationIds, groupIds, actorIds, testSuiteIds)
     val json = JsonUtil.jsTestCasesList(testCases).toString()
     ResponseConstructor.constructJsonResponse(json)
   }

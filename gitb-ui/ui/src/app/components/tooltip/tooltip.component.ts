@@ -11,6 +11,7 @@ export class TooltipComponent implements OnInit {
   @Input() tbTooltip = ''
   @Input() inline = false
   @Input() inlineType = 'check'
+  @Input() boundariesElement: 'viewport' | 'scrollParent' | 'window' = 'scrollParent'
 
   constructor() { }
 

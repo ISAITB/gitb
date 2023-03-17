@@ -1,0 +1,34 @@
+<div class="modal-header">
+    <h4>Community resource bulk upload</h4>
+</div>
+<form class="form-horizontal">
+    <div class="modal-body">
+        <div class="form-group">
+            <label class="col-xs-3 control-label" for="name">* Resource:</label>
+            <div class="col-xs-7">
+                <app-file-select id="name" placeholder="Select ZIP archive ..."
+                    [fileName]="file?.name"
+                    [accepts]="['application/zip']"
+                    (onUpload)="selectFile($event)"
+                    [maxSize]="-1">
+                </app-file-select>
+            </div>
+            <app-tooltip tbTooltip="The ZIP archive containing the resources to make available. The archive should directly contain the resources to upload, without containing or contained directories."></app-tooltip>
+        </div>
+        <div class="form-group">
+            <label class="col-xs-3 control-label" for="updateMatching">Update approach:</label>
+            <div class="col-xs-8">
+                <label class="radio-inline"><input type="radio" name="updateMatching" [(ngModel)]="updateMatching" id="updateMatching_1" [value]="true">Replace matching resources
+                    <app-tooltip [inline]="true" inlineType="checkLabel" tbTooltip="Uploaded files matching existing resources will update the existing ones."></app-tooltip>
+                </label>
+                <label class="radio-inline"><input type="radio" name="updateMatching" [(ngModel)]="updateMatching" id="updateMatching_2" [value]="false">Keep matching resources
+                    <app-tooltip [inline]="true" inlineType="checkLabel" tbTooltip="Uploaded files matching existing resources will be added as new resources, without updating the existing ones."></app-tooltip>
+                </label>
+            </div>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button class="btn btn-default" type="submit" (click)="upload()" [disable]="!uploadEnabled()" [pending]="uploadPending">Upload</button>
+        <button class="btn btn-default" type="button" (click)="cancel()" [disabled]="uploadPending">Cancel</button>
+    </div>
+</form>

@@ -5,10 +5,7 @@ import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.types.BinaryType;
 import com.gitb.types.DataType;
 import com.gitb.types.DataTypeFactory;
-import org.apache.commons.io.IOUtils;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -44,13 +41,13 @@ public class TemplateUtils {
 		while(matcher.find()) {
 			String variableExpression = matcher.group(1);
 			DataType value = variableResolver.resolveVariable("$"+variableExpression);
-
+			String replacement;
 			if (value == null) {
-				throw new IllegalStateException("The expression ["+variableExpression+"] did not resolve an existing variable");
+				replacement = "";
+			} else {
+				var asStringType = value.convertTo(DataType.STRING_DATA_TYPE);
+				replacement = (String) asStringType.getValue();
 			}
-			byte[] serializedVariable = value.serialize(encoding);
-			String replacement = new String(serializedVariable);
-
 			matcher.appendReplacement(stringBuffer, replacement);
 		}
 		matcher.appendTail(stringBuffer);

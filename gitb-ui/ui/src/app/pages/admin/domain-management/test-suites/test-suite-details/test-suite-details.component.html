@@ -5,11 +5,16 @@
 		</div>
 		<form class="form-horizontal">
 			<div class="panel-body">
+                <div class="bg-info div-rounded div-padded bottom-margin" *ngIf="testSuite.shared">
+                    <span>This test suite is designed to be shared across multiple {{dataService.labelSpecificationsLower()}}. Any changes made will apply to all its linked {{dataService.labelSpecificationsLower()}}.</span>
+                </div>
 				<div class="row">
                     <div class="col-xs-10 col-xs-offset-1">
 						<div class="form-group">
 							<label class="col-xs-3 control-label" for="identifier">ID:</label>
-							<div class="col-xs-7"><input id="identifier" name="identifier" [(ngModel)]="testSuite.identifier" class="form-control" type="text" readonly="readonly"></div>
+							<div class="col-xs-7">
+								<app-api-key-text id="identifier" name="identifier" [key]="testSuite.identifier!"></app-api-key-text>
+							</div>
 							<app-tooltip [tbTooltip]="'The unique identifier of the test suite within the '+dataService.labelSpecificationLower()+'. This is not presented to users but is used internally to match uploaded test suites to existing ones.'"></app-tooltip>
 						</div>
 						<div class="form-group">
@@ -34,8 +39,7 @@
 				<div class="row">
 					<div class="col-xs-12">
 						<div class="form-separator expandable" (click)="showDocumentation = !showDocumentation">
-							<div><h4 class="title">Documentation</h4></div>
-							<div><h4><i class="fa fa-chevron-circle-right" aria-hidden="true" [ngClass]="{'fa-chevron-circle-right': !showDocumentation, 'fa-chevron-circle-down': showDocumentation }"></i></h4></div>
+							<div><h4 class="title"><app-collapsing-icon [isCollapsed]="!showDocumentation"></app-collapsing-icon>Documentation</h4></div>
 						</div>						
 					</div>
 				</div>
@@ -48,7 +52,7 @@
 					</div>
 					<div class="row form-group">
 						<div class="col-xs-offset-1 col-xs-10">
-							<button (click)="previewDocumentation()" type="button" class="btn btn-default">Preview documentation</button>
+							<button (click)="previewDocumentation()" type="button" class="btn btn-default" [disabled]="this.testSuite.documentation == undefined || this.testSuite.documentation.length == 0">Preview documentation</button>
 						</div>
 					</div>
 				</div>
@@ -64,8 +68,8 @@
 		</form>
 	</div>
 	<div>
-		<tabset>
-			<tab heading="Test cases">
+		<tabset #tabs>
+			<tab heading="Test cases" (selectTab)="loadTestCases()">
 				<div class="tabPanel">
 					<div class="panel panel-default">
 						<div table-directive
@@ -79,6 +83,30 @@
 					</div>
 				</div>
 			</tab>
+			<tab heading="Linked specifications" *ngIf="testSuite.shared" (selectTab)="loadLinkedSpecifications()">
+				<div class="tabPanel">
+                    <div class="tabControls">
+						<div class="btn-toolbar">
+							<button type="button" class="btn btn-default" (click)="linkSpecifications()" [disable]="unlinkedSpecifications.length == 0 || selectingForUnlink" [pending]="linkPending">Link to specifications</button>
+							<button type="button" class="btn btn-default" (click)="selectUnlinkSpecifications()" *ngIf="!selectingForUnlink" [disable]="linkedSpecifications.length == 0" [pending]="unlinkPending">Unlink from specifications...</button>
+							<button type="button" class="btn btn-default" (click)="confirmUnlinkSpecifications()" *ngIf="selectingForUnlink" [disable]="!specificationsChecked()" [pending]="unlinkPending">Confirm</button>
+							<button type="button" class="btn btn-default" (click)="cancelUnlinkSpecifications()" *ngIf="selectingForUnlink" [disabled]="unlinkPending">Cancel</button>
+						</div>
+					</div>
+					<div class="panel panel-default">
+						<div table-directive
+							[columns]="specificationTableColumns"
+							[data]="linkedSpecifications"
+							[noDataMessage]="'No '+dataService.labelSpecificationsLower()+' found being linked to this test suite'"
+							[loadingStatus]="specificationStatus" 
+							[allowSelect]="!selectingForUnlink"
+							(onSelect)="onSpecificationSelect($event)"
+							[checkboxEnabled]="selectingForUnlink"
+							[clearSelection]="clearLinkedSpecificationsSelection">
+						</div>
+					</div>
+				</div>
+			</tab>			
 		</tabset>
 	</div>
 </div>

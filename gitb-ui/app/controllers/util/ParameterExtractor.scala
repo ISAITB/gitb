@@ -4,7 +4,7 @@ import config.Configurations
 import exceptions.{ErrorCodes, InvalidRequestException}
 import models.Enums._
 import controllers.util.Parameters
-import models.{Actor, Communities, Domain, Endpoints, ErrorTemplates, FileInfo, LandingPages, LegalNotices, Options, OrganisationParameterValues, Organizations, Specifications, SystemParameterValues, Systems, Trigger, TriggerData, Triggers, Users}
+import models.{Actor, Communities, CommunityResources, Domain, Endpoints, ErrorTemplates, FileInfo, LandingPages, LegalNotices, Options, OrganisationParameterValues, Organizations, SpecificationGroups, Specifications, SystemParameterValues, Systems, Trigger, TriggerData, Triggers, Users}
 import org.apache.commons.lang3.StringUtils
 import org.mindrot.jbcrypt.BCrypt
 import play.api.mvc._
@@ -29,7 +29,7 @@ object ParameterExtractor {
     val fileMap = scala.collection.mutable.Map[String, FileInfo]()
     if (request.body.asMultipartFormData.isDefined) {
       request.body.asMultipartFormData.get.files.foreach { file =>
-        fileMap += (file.key -> new FileInfo(file.key, file.contentType, file.ref))
+        fileMap += (file.key -> new FileInfo(file.key, file.filename, file.contentType, file.ref))
       }
     }
     fileMap.iterator.toMap
@@ -147,6 +147,14 @@ object ParameterExtractor {
     }
   }
 
+  def optionalArrayBodyParameter(paramMap: Option[Map[String, Seq[String]]], parameter: String): Option[Seq[String]] = {
+    if (paramMap.isDefined && paramMap.get.contains(parameter)) {
+      Some(paramMap.get(parameter).toList)
+    } else {
+      None
+    }
+  }
+
   def optionalLongBodyParameter(paramMap: Option[Map[String, Seq[String]]], parameter:String): Option[Long] = {
     try {
       val paramString = paramMap.get(parameter).headOption
@@ -157,6 +165,20 @@ object ParameterExtractor {
       }
     } catch {
       case _:NoSuchElementException =>
+        None
+    }
+  }
+
+  def optionalLongCommaListBodyParameter(paramMap: Option[Map[String, Seq[String]]], parameter: String): Option[List[Long]] = {
+    try {
+      val paramString = paramMap.get.get(parameter)
+      if (paramString.isDefined) {
+        Some(paramString.get.head.split(',').filter(_ != "").map(_.toLong).toList)
+      } else {
+        None
+      }
+    } catch {
+      case _: NoSuchElementException =>
         None
     }
   }
@@ -183,6 +205,20 @@ object ParameterExtractor {
       }
     } catch {
       case _:NoSuchElementException =>
+        None
+    }
+  }
+
+  def optionalBooleanBodyParameter(paramMap: Option[Map[String, Seq[String]]], parameter: String): Option[Boolean] = {
+    try {
+      val paramString = paramMap.get(parameter).headOption
+      if (paramString.isDefined) {
+        Some(paramString.get.toBoolean)
+      } else {
+        None
+      }
+    } catch {
+      case _: NoSuchElementException =>
         None
     }
   }
@@ -379,19 +415,11 @@ object ParameterExtractor {
     }
   }
 
-  def extractSystemInfo(request:Request[AnyContent]):Systems = {
-    val sname:String = ParameterExtractor.requiredBodyParameter(request, Parameters.SYSTEM_SNAME)
-    val fname:String = ParameterExtractor.requiredBodyParameter(request, Parameters.SYSTEM_FNAME)
-    val descr:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.SYSTEM_DESC)
-    val version:String = ParameterExtractor.requiredBodyParameter(request, Parameters.SYSTEM_VERSION)
-    Systems(0L, sname, fname, descr, version, None, 0L)
-  }
-
   def extractSystemWithOrganizationInfo(paramMap:Option[Map[String, Seq[String]]]):Systems = {
-    val sname:String = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.SYSTEM_SNAME)
-    val fname:String = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.SYSTEM_FNAME)
-    val descr:Option[String] = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.SYSTEM_DESC)
-    val version:String = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.SYSTEM_VERSION)
+    val sname = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.SYSTEM_SNAME)
+    val fname = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.SYSTEM_FNAME)
+    val descr = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.SYSTEM_DESC)
+    val version = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.SYSTEM_VERSION)
     val owner:Long = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.ORGANIZATION_ID).toLong
     Systems(0L, sname, fname, descr, version, None, owner)
   }
@@ -416,15 +444,22 @@ object ParameterExtractor {
 		val fname:String = ParameterExtractor.requiredBodyParameter(request, Parameters.FULL_NAME)
 		val descr:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DESC)
     val hidden = ParameterExtractor.requiredBodyParameter(request, Parameters.HIDDEN).toBoolean
-		val domain = ParameterExtractor.optionalBodyParameter(request, Parameters.DOMAIN_ID) match {
-			case Some(str) => Some(str.toLong)
-			case _ => None
-		}
+		val domain = ParameterExtractor.optionalLongBodyParameter(request, Parameters.DOMAIN_ID)
+    val group = ParameterExtractor.optionalLongBodyParameter(request, Parameters.GROUP_ID)
 
-		Specifications(0L, sname, fname, descr, hidden, CryptoUtil.generateApiKey(), domain.getOrElse(0L))
+    Specifications(0L, sname, fname, descr, hidden, CryptoUtil.generateApiKey(), domain.getOrElse(0L), group)
 	}
 
-	def extractActor(request:Request[AnyContent]):Actor = {
+  def extractSpecificationGroup(request: Request[AnyContent]): SpecificationGroups = {
+    val sname: String = ParameterExtractor.requiredBodyParameter(request, Parameters.SHORT_NAME)
+    val fname: String = ParameterExtractor.requiredBodyParameter(request, Parameters.FULL_NAME)
+    val descr: Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DESC)
+    val domain = ParameterExtractor.requiredBodyParameter(request, Parameters.DOMAIN_ID).toLong
+
+    SpecificationGroups(0L, sname, fname, descr, domain)
+  }
+
+  def extractActor(request:Request[AnyContent]):Actor = {
     val id:Long = ParameterExtractor. optionalBodyParameter(request, Parameters.ID) match {
       case Some(i) => i.toLong
       case _ => 0L
@@ -595,6 +630,12 @@ object ParameterExtractor {
     triggerData
   }
 
+  def extractCommunityResource(paramMap:Option[Map[String, Seq[String]]], communityId: Long): CommunityResources = {
+    val name = requiredBodyParameter(paramMap, Parameters.NAME)
+    val description = optionalBodyParameter(paramMap, Parameters.DESCRIPTION)
+    CommunityResources(0L, name, description, communityId)
+  }
+
   def extractTriggerInfo(request:Request[AnyContent], triggerId: Option[Long]): Trigger = {
     // Trigger.
     val name = requiredBodyParameter(request, Parameters.NAME)
@@ -640,7 +681,16 @@ object ParameterExtractor {
 		ids
 	}
 
-	def extractLongIdsQueryParameter(request:Request[AnyContent]): Option[List[Long]] = {
+  def extractIdsBodyParameter(request: Request[AnyContent]): Set[Long] = {
+    val idsStr = ParameterExtractor.optionalBodyParameter(request, Parameters.IDS)
+    val ids = idsStr match {
+      case Some(str) => str.split(",").map(x => x.toLong).toSet
+      case None => Set.empty[Long]
+    }
+    ids
+  }
+
+  def extractLongIdsQueryParameter(request:Request[AnyContent]): Option[List[Long]] = {
 		val idsStr = ParameterExtractor.optionalQueryParameter(request, Parameters.IDS)
 		val ids = idsStr match {
 			case Some(str) => Some(str.split(",").map(_.toLong).toList)
@@ -683,7 +733,7 @@ object ParameterExtractor {
   def optionalLongListQueryParameter(request:Request[AnyContent],parameter:String): Option[List[Long]] = {
     val listStr = ParameterExtractor.optionalQueryParameter(request, parameter)
     val list = listStr match {
-      case Some(str) => Some(str.split(",").map(_.toLong).toList)
+      case Some(str) => Some(str.split(",").filter(_.nonEmpty).map(_.toLong).toList)
       case None => None
     }
     list
@@ -692,10 +742,15 @@ object ParameterExtractor {
   def optionalLongListBodyParameter(request:Request[AnyContent],parameter:String): Option[List[Long]] = {
     val listStr = ParameterExtractor.optionalBodyParameter(request, parameter)
     val list = listStr match {
-      case Some(str) => Some(str.split(",").map(_.toLong).toList)
+      case Some(str) => Some(str.split(",").filter(_.nonEmpty).map(_.toLong).toList)
       case None => None
     }
     list
+  }
+
+  def requiredLongListBodyParameter(request: Request[AnyContent], parameter: String): List[Long] = {
+    val listStr = ParameterExtractor.requiredBodyParameter(request, parameter)
+    listStr.split(",").map(_.toLong).toList
   }
 
 }

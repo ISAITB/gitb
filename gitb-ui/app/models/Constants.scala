@@ -40,6 +40,8 @@ object Constants {
   val PlaceholderOrganisation = "$ORGANISATION"
   val PlaceholderSystem = "$SYSTEM"
   val PlaceholderSpecification = "$SPECIFICATION"
+  val PlaceholderSpecificationGroup = "$SPECIFICATION_GROUP"
+  val PlaceholderSpecificationGroupOption = "$SPECIFICATION_GROUP_OPTION"
   val PlaceholderActor = "$ACTOR"
   val PlaceholderDomain = "$DOMAIN"
 
@@ -51,5 +53,5 @@ object Constants {
   val AutomationHeader = "ITB_API_KEY"
 
   // When ending in "-snapshot", this is considered a non-published release.
-  val VersionNumber = "1.18.1"
+  val VersionNumber = "1.19.0"
 }

@@ -1,6 +1,6 @@
 import { Component, forwardRef, Input, OnInit } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
-import { Utils } from 'src/app/common/utils';
+import { DataService } from 'src/app/services/data.service';
 
 @Component({
   selector: 'app-editor',
@@ -22,7 +22,7 @@ export class EditorComponent implements OnInit, ControlValueAccessor {
   onChange = (_: any) => {}
   onTouched = () => {}
 
-  constructor() {}
+  constructor(private dataService: DataService) {}
 
   set editorValue(value: string) {
     this._editorValue = value
@@ -48,7 +48,7 @@ export class EditorComponent implements OnInit, ControlValueAccessor {
       height: heightToUse,
       menubar: false,
       branding: false,
-      base_url: Utils.completePath('/assets/build/tinymce'),
+      base_url: this.dataService.completePath('/assets/build/tinymce'),
       content_css: 'assets/build/styles.css',
       content_style: 'h1, h2, h3, h4, h5, h6 { color: #428bca; }',
       body_class: 'editor-body',
@@ -75,6 +75,9 @@ export class EditorComponent implements OnInit, ControlValueAccessor {
         'paste code'
       ]
       config.toolbar = 'bold italic | charmap | bullist numlist | link'
+      config.force_br_newlines = true
+      config.force_p_newlines = false
+      config.forced_root_block = '' // Needed for 3.x
     } else if (this.type == 'line') {
       config.plugins = [
         'autolink link charmap anchor',

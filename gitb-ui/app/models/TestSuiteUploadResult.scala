@@ -1,8 +1,8 @@
 package models
 
-import java.util
-
 import com.gitb.tr.TAR
+
+import java.util
 
 class TestSuiteUploadResult {
 
@@ -12,7 +12,10 @@ class TestSuiteUploadResult {
   var errorInformation: String = null
   var needsConfirmation: Boolean = false
   var matchingDataExists: Option[List[Long]] = None
-  var existsForSpecs: Option[List[Long]] = None
+  var existsForSpecs: Option[List[(Long, Boolean)]] = None
   val items = new util.ArrayList[TestSuiteUploadItemResult]()
+  var testCases: Option[Map[Long, List[TestSuiteUploadTestCase]]] = None
+  var sharedTestSuiteId: Option[Long] = None
+  var sharedTestCases: Option[List[TestSuiteUploadTestCase]] = None
 
 }

@@ -213,11 +213,11 @@ public class TestCaseContext {
 	}
 
 	private void addStepStatus() {
-		MapType successMap = (MapType) DataTypeFactory.getInstance().create(DataType.MAP_DATA_TYPE);
-		MapType statusMap = (MapType) DataTypeFactory.getInstance().create(DataType.MAP_DATA_TYPE);
+		var successMap = new StepStatusMapType();
+		var statusMap = new StepStatusMapType();
 		scope.createVariable(STEP_SUCCESS_MAP).setValue(successMap);
 		scope.createVariable(STEP_STATUS_MAP).setValue(statusMap);
-		TestCaseUtils.initialiseStepStatusMaps(successMap, statusMap, testCase.getSteps());
+		TestCaseUtils.initialiseStepStatusMaps(successMap, statusMap, testCase.getSteps(), scope);
 	}
 
 	private void processVariables() {

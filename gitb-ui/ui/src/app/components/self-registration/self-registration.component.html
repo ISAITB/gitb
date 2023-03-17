@@ -34,14 +34,14 @@
               </div>
               <app-tooltip tbTooltip="A community-specific token needs to be provided to allow registration. You need to request this from the community's administrator."></app-tooltip>
           </div>
-          <div class="form-group" *ngIf="model.selfRegOption?.selfRegTokenHelpText" style="margin-bottom: -20px;">
+          <div class="form-group" *ngIf="model.selfRegOption?.selfRegTokenHelpText" style="margin-bottom: -15px;">
               <div class="col-xs-offset-3 col-xs-8">
                   <div class="form-control-static inline-form-text"><div [innerHtml]="model.selfRegOption?.selfRegTokenHelpText! | sanitizeHtml"></div></div>
               </div>
           </div>
         </div>
         <div [ngClass]="{'form-separator-popup': sso, 'form-separator': !sso}" class="form-separator-top-padding">
-            <h4 class="title">{{dataService.labelOrganisation()}} details <span tbTooltip="This information defines the member of the selected community through which will you be testing for conformance"><i class="fa fa-question-circle"></i></span></h4>
+            <h4 class="title">{{dataService.labelOrganisation()}} details <span [tooltip]="'This information defines the member of the selected community through which will you be testing for conformance'" [containerClass]="'tooltipContainerBig'"><i class="fa fa-question-circle"></i></span></h4>
         </div>
         <div class="form-group">
             <label class="col-xs-3 control-label" for="orgShortName">* Short name:</label>

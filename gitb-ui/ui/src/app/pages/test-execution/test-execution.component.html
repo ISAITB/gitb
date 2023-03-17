@@ -48,6 +48,7 @@
                         <table *ngSwitchCase="true" class="table table-directive expandable-table test-case-table">
                             <thead>
                                 <tr>
+                                    <th class="th-min-centered"></th>
                                     <th>Test case</th>
                                     <th>Description</th>
                                     <th class="td-doc" *ngIf="documentationExists" width="1%"></th>
@@ -59,6 +60,12 @@
                                     <tr (click)="viewTestCase(testCase)" 
                                         [class.expandable-table-row-collapsed]="isTestCaseClickable(testCase)"
                                         [class.no-display]="!testCaseVisible[testCase.id]">
+                                        <td class="td-min-centered" [ngSwitch]="isTestCaseClickable(testCase)">
+                                            <div *ngSwitchCase="false" class="expandable-hidden">
+                                                <app-collapsing-icon [padded]="false" [isCollapsed]="!testCaseExpanded[testCase.id]"></app-collapsing-icon>
+                                            </div>
+                                            <app-collapsing-icon *ngSwitchDefault [padded]="false" [isCollapsed]="!testCaseExpanded[testCase.id]"></app-collapsing-icon>
+                                        </td>
                                         <td><div class="testCaseName" [class.padded]="documentationExists">{{testCase.sname}}</div></td>
                                         <td>{{testCase.description}}</td>
                                         <td class="td-doc" *ngIf="documentationExists"><button *ngIf="testCase.hasDocumentation" type="button" class="btn btn-default" (click)="showTestCaseDocumentation(testCase.id); $event.stopPropagation()" containerClass="shortTooltip" tooltip="Documentation" [delay]="Constants.TOOLTIP_DELAY"><i class="fa fa-info-circle"></i></button></td>

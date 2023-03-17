@@ -1,0 +1,22 @@
+<ng-container *ngIf="item.filtered">
+    <ng-container [ngSwitch]="hideSelf">
+        <ng-container *ngSwitchCase="true">
+            <app-conformance-statement-items-display *ngIf="item.items" [items]="item.items" [shade]="!shade" [animated]="animated" (selectionChanged)="childSelectionChanged($event)"></app-conformance-statement-items-display>        
+        </ng-container>
+        <ng-container *ngSwitchDefault>
+            <div class="item-container" [class.shade]="shade">
+                <div class="item-header" (click)="clickHeader();$event.stopPropagation()">
+                    <div class="item-icon" *ngIf="hasChildren"><app-collapsing-icon [isCollapsed]="item.collapsed!"></app-collapsing-icon></div>
+                    <div class="item-check" *ngIf="showCheck"><input type="checkbox" name="itemCheck" [(ngModel)]="item.checked" (ngModelChange)="updateChecked()"></div>
+                    <div class="item-name">{{item.name}}</div>
+                    <div class="item-description" *ngIf="item.description">{{item.description}}</div>
+                </div>
+                <ng-container *ngIf="item.items && item.items.length > 0">
+                    <div class="item-content" [collapse]="item.collapsed!" [isAnimated]="animated" (expanded)="expanded()" (collapsed)="collapsed()">    
+                        <app-conformance-statement-items-display [items]="item.items" [shade]="!shade" [animated]="animated" (selectionChanged)="childSelectionChanged($event)"></app-conformance-statement-items-display>        
+                    </div>
+                </ng-container>
+            </div>
+        </ng-container>
+    </ng-container>
+</ng-container>

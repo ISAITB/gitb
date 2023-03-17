@@ -1,4 +1,3 @@
-DROP TABLE IF EXISTS `organisationparameters`;
 CREATE TABLE `organisationparameters` (
   `id` BIGINT NOT NULL AUTO_INCREMENT,
   `name` varchar(254) NOT NULL,
@@ -14,7 +13,6 @@ CREATE TABLE `organisationparameters` (
 ALTER TABLE `organisationparameters` ADD CONSTRAINT `op_fk_com` FOREIGN KEY (`community`) REFERENCES `communities`(`id`);
 CREATE INDEX `op_idx_com` on `organisationparameters`(`community`);
 
-DROP TABLE IF EXISTS `systemparameters`;
 CREATE TABLE `systemparameters` (
   `id` BIGINT NOT NULL AUTO_INCREMENT,
   `name` varchar(254) NOT NULL,
@@ -30,7 +28,6 @@ CREATE TABLE `systemparameters` (
 ALTER TABLE `systemparameters` ADD CONSTRAINT `sy_fk_com` FOREIGN KEY (`community`) REFERENCES `communities`(`id`);
 CREATE INDEX `sy_idx_com` on `systemparameters`(`community`);
 
-DROP TABLE IF EXISTS `organisationparametervalues`;
 CREATE TABLE `organisationparametervalues` (
   `organisation` BIGINT NOT NULL,
   `parameter` BIGINT NOT NULL,
@@ -42,7 +39,6 @@ ALTER TABLE `organisationparametervalues` ADD CONSTRAINT `opv_fk_par` FOREIGN KE
 CREATE INDEX `opv_idx_org` on `organisationparametervalues`(`organisation`);
 CREATE INDEX `opv_idx_par` on `organisationparametervalues`(`parameter`);
 
-DROP TABLE IF EXISTS `systemparametervalues`;
 CREATE TABLE `systemparametervalues` (
   `system` BIGINT NOT NULL,
   `parameter` BIGINT NOT NULL,
