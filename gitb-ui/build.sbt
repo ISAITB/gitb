@@ -26,7 +26,7 @@ libraryDependencies ++= Seq(
   ws,
   "com.google.inject" % "guice" % guiceVersion,
   "com.google.inject.extensions" % "guice-assistedinject" % guiceVersion,
-  "eu.europa.ec.itb" % "gitb-types" % "1.19.0-SNAPSHOT",
+  "eu.europa.ec.itb" % "gitb-types" % "1.19.0",
   "com.gitb" % "gitb-core" % "1.0-SNAPSHOT",
   "com.gitb" % "gitb-lib" % "1.0-SNAPSHOT",
   "com.gitb" % "gitb-reports" % "1.0-SNAPSHOT",
@@ -78,7 +78,7 @@ libraryDependencies ++= Seq(
   "org.jasypt" % "jasypt" % "1.9.3",
   "org.apache.httpcomponents" % "httpclient" % "4.5.14",
   "org.flywaydb" %% "flyway-play" % "7.37.0",
-  "org.flywaydb" % "flyway-mysql" % "9.15.0",
+  "org.flywaydb" % "flyway-mysql" % "9.15.2",
   "com.googlecode.owasp-java-html-sanitizer" % "owasp-java-html-sanitizer" % "20220608.1",
   "net.lingala.zip4j" % "zip4j" % "2.11.5",
   // Specific version overrides (to be removed if no longer needed)
