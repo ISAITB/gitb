@@ -178,22 +178,29 @@ public class TestCaseUtils {
     private static String qualifiedStepIdForStatusMaps(String stepId, TestCaseScope scope) {
         Objects.requireNonNull(stepId);
         String id = stepId;
-        if (scope != null) {
+        if (scope != null && StringUtils.isNotBlank(scope.getQualifiedScopeId())) {
             id = scope.getQualifiedScopeId()+"_"+stepId;
         }
         return id;
     }
 
     public static void updateStepStatusMaps(MapType stepSuccessMap, MapType stepStatusMap, TestConstruct step, TestCaseScope scope, StepStatus status) {
-        if (step != null && step.getId() != null) {
+        if (step != null && StringUtils.isNotBlank(step.getId())) {
             // We only record status for a step with an identifier.
             var stepId = step.getId();
             var qualifiedStepId = qualifiedStepIdForStatusMaps(stepId, scope);
             var successValue = new BooleanType(status == StepStatus.COMPLETED || status == StepStatus.WARNING);
             var statusValue = new StringType((status == null)?"":status.toString());
-            // Record the status using the qualified step ID.
-            stepSuccessMap.addItem(qualifiedStepId, successValue);
-            stepStatusMap.addItem(qualifiedStepId, statusValue);
+            if (StringUtils.isNotBlank(qualifiedStepId)) {
+                // Record the status using the qualified step ID.
+                stepSuccessMap.addItem(qualifiedStepId, successValue);
+                stepStatusMap.addItem(qualifiedStepId, statusValue);
+            }
+            if (!Objects.equals(step.getId(), qualifiedStepId)) {
+                // Also record using the basic ID (if already existing one value - the latest - is maintained).
+                stepSuccessMap.addItem(stepId, successValue);
+                stepStatusMap.addItem(stepId, statusValue);
+            }
         }
     }
 
