@@ -193,7 +193,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
       }
     }
     // Shared test suites.
-    if (importTargets.hasTestSuites) {
+    if (importTargets.hasTestSuites && exportedDomain.getSharedTestSuites != null) {
       exportedDomain.getSharedTestSuites.getTestSuite.asScala.foreach { exportedTestSuite =>
         val targetTestSuite: Option[models.TestSuites] = targetDomainTestSuiteMap.remove(exportedTestSuite.getIdentifier)
         if (targetTestSuite.isDefined) {
@@ -207,107 +207,111 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
     if (importTargets.hasSpecifications) {
       val groupImportItemMap = new mutable.HashMap[String, ImportItem]()
       // Groups.
-      exportedDomain.getSpecificationGroups.getGroup.asScala.foreach { exportedGroup =>
-        var targetGroup: Option[models.SpecificationGroups] = None
-        var importItemGroup: ImportItem = null
-        if (targetDomain.isDefined) {
-          targetGroup = targetSpecificationGroupMap.remove(exportedGroup.getShortName)
+      if (exportedDomain.getSpecificationGroups != null) {
+        exportedDomain.getSpecificationGroups.getGroup.asScala.foreach { exportedGroup =>
+          var targetGroup: Option[models.SpecificationGroups] = None
+          var importItemGroup: ImportItem = null
+          if (targetDomain.isDefined) {
+            targetGroup = targetSpecificationGroupMap.remove(exportedGroup.getShortName)
+          }
+          if (targetGroup.isDefined) {
+            importItemGroup = new ImportItem(Some(targetGroup.get.fullname), ImportItemType.SpecificationGroup, ImportItemMatch.Both, Some(targetGroup.get.id.toString), Some(exportedGroup.getId), importItemDomain)
+          } else {
+            importItemGroup = new ImportItem(Some(exportedGroup.getFullName), ImportItemType.SpecificationGroup, ImportItemMatch.ArchiveOnly, None, Some(exportedGroup.getId), importItemDomain)
+          }
+          groupImportItemMap += (exportedGroup.getId -> importItemGroup)
         }
-        if (targetGroup.isDefined) {
-          importItemGroup = new ImportItem(Some(targetGroup.get.fullname), ImportItemType.SpecificationGroup, ImportItemMatch.Both, Some(targetGroup.get.id.toString), Some(exportedGroup.getId), importItemDomain)
-        } else {
-          importItemGroup = new ImportItem(Some(exportedGroup.getFullName), ImportItemType.SpecificationGroup, ImportItemMatch.ArchiveOnly, None, Some(exportedGroup.getId), importItemDomain)
-        }
-        groupImportItemMap += (exportedGroup.getId -> importItemGroup)
       }
       // Specifications.
-      exportedDomain.getSpecifications.getSpecification.asScala.foreach { exportedSpecification =>
-        var targetSpecification: Option[models.Specifications] = None
-        var importItemSpecification: ImportItem = null
-        if (targetDomain.isDefined) {
-          val key = specificationKey(exportedSpecification.getShortName, Option(exportedSpecification.getGroup).map(_.getShortName))
-          targetSpecification = targetSpecificationMap.remove(key)
-        }
-        var parentItem = importItemDomain
-        if (exportedSpecification.getGroup != null) {
-          parentItem = groupImportItemMap(exportedSpecification.getGroup.getId)
-        }
-        if (targetSpecification.isDefined) {
-          importItemSpecification = new ImportItem(Some(targetSpecification.get.fullname), ImportItemType.Specification, ImportItemMatch.Both, Some(targetSpecification.get.id.toString), Some(exportedSpecification.getId), parentItem)
-          importItemMapSpecification += (targetSpecification.get.id.toString -> importItemSpecification)
-        } else {
-          importItemSpecification = new ImportItem(Some(exportedSpecification.getFullName), ImportItemType.Specification, ImportItemMatch.ArchiveOnly, None, Some(exportedSpecification.getId), parentItem)
-        }
-        // Test suites.
-        if (exportedSpecification.getTestSuites != null) {
-          exportedSpecification.getTestSuites.getTestSuite.asScala.foreach { exportedTestSuite =>
-            var targetTestSuite: Option[models.TestSuites] = None
-            if (targetSpecification.isDefined && targetSpecificationTestSuiteMap.contains(targetSpecification.get.id)) {
-              targetTestSuite = targetSpecificationTestSuiteMap(targetSpecification.get.id).remove(exportedTestSuite.getIdentifier)
-            }
-            if (targetTestSuite.isDefined) {
-              new ImportItem(Some(targetTestSuite.get.fullname), ImportItemType.TestSuite, ImportItemMatch.Both, Some(targetTestSuite.get.id.toString), Some(exportedTestSuite.getId), importItemSpecification)
-            } else {
-              new ImportItem(Some(exportedTestSuite.getShortName), ImportItemType.TestSuite, ImportItemMatch.ArchiveOnly, None, Some(exportedTestSuite.getId), importItemSpecification)
+      if (exportedDomain.getSpecifications != null) {
+        exportedDomain.getSpecifications.getSpecification.asScala.foreach { exportedSpecification =>
+          var targetSpecification: Option[models.Specifications] = None
+          var importItemSpecification: ImportItem = null
+          if (targetDomain.isDefined) {
+            val key = specificationKey(exportedSpecification.getShortName, Option(exportedSpecification.getGroup).map(_.getShortName))
+            targetSpecification = targetSpecificationMap.remove(key)
+          }
+          var parentItem = importItemDomain
+          if (exportedSpecification.getGroup != null) {
+            parentItem = groupImportItemMap(exportedSpecification.getGroup.getId)
+          }
+          if (targetSpecification.isDefined) {
+            importItemSpecification = new ImportItem(Some(targetSpecification.get.fullname), ImportItemType.Specification, ImportItemMatch.Both, Some(targetSpecification.get.id.toString), Some(exportedSpecification.getId), parentItem)
+            importItemMapSpecification += (targetSpecification.get.id.toString -> importItemSpecification)
+          } else {
+            importItemSpecification = new ImportItem(Some(exportedSpecification.getFullName), ImportItemType.Specification, ImportItemMatch.ArchiveOnly, None, Some(exportedSpecification.getId), parentItem)
+          }
+          // Test suites.
+          if (exportedSpecification.getTestSuites != null) {
+            exportedSpecification.getTestSuites.getTestSuite.asScala.foreach { exportedTestSuite =>
+              var targetTestSuite: Option[models.TestSuites] = None
+              if (targetSpecification.isDefined && targetSpecificationTestSuiteMap.contains(targetSpecification.get.id)) {
+                targetTestSuite = targetSpecificationTestSuiteMap(targetSpecification.get.id).remove(exportedTestSuite.getIdentifier)
+              }
+              if (targetTestSuite.isDefined) {
+                new ImportItem(Some(targetTestSuite.get.fullname), ImportItemType.TestSuite, ImportItemMatch.Both, Some(targetTestSuite.get.id.toString), Some(exportedTestSuite.getId), importItemSpecification)
+              } else {
+                new ImportItem(Some(exportedTestSuite.getShortName), ImportItemType.TestSuite, ImportItemMatch.ArchiveOnly, None, Some(exportedTestSuite.getId), importItemSpecification)
+              }
             }
           }
-        }
-        // Shared test suites.
-        if (exportedSpecification.getSharedTestSuites != null) {
-          exportedSpecification.getSharedTestSuites.asScala.foreach { exportedTestSuite =>
-            var targetTestSuite: Option[models.TestSuites] = None
-            if (targetSpecification.isDefined && targetSpecificationTestSuiteMap.contains(targetSpecification.get.id)) {
-              targetTestSuite = targetSpecificationTestSuiteMap(targetSpecification.get.id).remove(exportedTestSuite.getIdentifier)
-            }
-            val sourceId = importItemSpecification.sourceKey.get + "|" + exportedTestSuite.getId
-            if (targetTestSuite.isDefined) {
-              val targetId = importItemSpecification.targetKey.get + "|" + targetTestSuite.get.id
-              new ImportItem(Some(targetTestSuite.get.fullname), ImportItemType.TestSuite, ImportItemMatch.Both, Some(targetId), Some(sourceId), importItemSpecification)
-            } else {
-              new ImportItem(Some(exportedTestSuite.getShortName), ImportItemType.TestSuite, ImportItemMatch.ArchiveOnly, None, Some(sourceId), importItemSpecification)
+          // Shared test suites.
+          if (exportedSpecification.getSharedTestSuites != null) {
+            exportedSpecification.getSharedTestSuites.asScala.foreach { exportedTestSuite =>
+              var targetTestSuite: Option[models.TestSuites] = None
+              if (targetSpecification.isDefined && targetSpecificationTestSuiteMap.contains(targetSpecification.get.id)) {
+                targetTestSuite = targetSpecificationTestSuiteMap(targetSpecification.get.id).remove(exportedTestSuite.getIdentifier)
+              }
+              val sourceId = importItemSpecification.sourceKey.get + "|" + exportedTestSuite.getId
+              if (targetTestSuite.isDefined) {
+                val targetId = importItemSpecification.targetKey.get + "|" + targetTestSuite.get.id
+                new ImportItem(Some(targetTestSuite.get.fullname), ImportItemType.TestSuite, ImportItemMatch.Both, Some(targetId), Some(sourceId), importItemSpecification)
+              } else {
+                new ImportItem(Some(exportedTestSuite.getShortName), ImportItemType.TestSuite, ImportItemMatch.ArchiveOnly, None, Some(sourceId), importItemSpecification)
+              }
             }
           }
-        }
-        // Actors
-        if (exportedSpecification.getActors != null) {
-          exportedSpecification.getActors.getActor.asScala.foreach { exportedActor =>
-            var targetActor: Option[models.Actors] = None
-            var importItemActor: ImportItem = null
-            if (targetSpecification.isDefined && targetSpecificationActorMap.contains(targetSpecification.get.id)) {
-              targetActor = targetSpecificationActorMap(targetSpecification.get.id).remove(exportedActor.getActorId)
-            }
-            if (targetActor.isDefined) {
-              importItemActor = new ImportItem(Some(targetActor.get.name), ImportItemType.Actor, ImportItemMatch.Both, Some(targetActor.get.id.toString), Some(exportedActor.getId), importItemSpecification)
-              importItemMapActor += (targetActor.get.id.toString -> importItemActor)
-            } else {
-              importItemActor = new ImportItem(Some(exportedActor.getName), ImportItemType.Actor, ImportItemMatch.ArchiveOnly, None, Some(exportedActor.getId), importItemSpecification)
-            }
-            actorXmlIdToImportItemMap += (exportedActor.getId -> importItemActor)
-            // Endpoints
-            if (exportedActor.getEndpoints != null) {
-              exportedActor.getEndpoints.getEndpoint.asScala.foreach { exportedEndpoint =>
-                var targetEndpoint: Option[models.Endpoints] = None
-                var importItemEndpoint: ImportItem = null
-                if (targetActor.isDefined && targetActorEndpointMap.contains(targetActor.get.id)) {
-                  targetEndpoint = targetActorEndpointMap(targetActor.get.id).remove(exportedEndpoint.getName)
-                }
-                if (targetEndpoint.isDefined) {
-                  importItemEndpoint = new ImportItem(Some(targetEndpoint.get.name), ImportItemType.Endpoint, ImportItemMatch.Both, Some(targetEndpoint.get.id.toString), Some(exportedEndpoint.getId), importItemActor)
-                  importItemMapEndpoint += (targetEndpoint.get.id.toString -> importItemEndpoint)
-                } else {
-                  importItemEndpoint = new ImportItem(Some(exportedEndpoint.getName), ImportItemType.Endpoint, ImportItemMatch.ArchiveOnly, None, Some(exportedEndpoint.getId), importItemActor)
-                }
-                // Endpoint parameters
-                if (exportedEndpoint.getParameters != null) {
-                  exportedEndpoint.getParameters.getParameter.asScala.foreach { exportedEndpointParameter =>
-                    var targetEndpointParameter: Option[models.Parameters] = None
-                    if (targetEndpoint.isDefined && targetEndpointParameterMap.contains(targetEndpoint.get.id)) {
-                      targetEndpointParameter = targetEndpointParameterMap(targetEndpoint.get.id).remove(exportedEndpointParameter.getName)
-                    }
-                    if (targetEndpointParameter.isDefined) {
-                      new ImportItem(Some(targetEndpointParameter.get.name), ImportItemType.EndpointParameter, ImportItemMatch.Both, Some(targetEndpointParameter.get.id.toString), Some(exportedEndpointParameter.getId), importItemEndpoint)
-                    } else {
-                      new ImportItem(Some(exportedEndpointParameter.getName), ImportItemType.EndpointParameter, ImportItemMatch.ArchiveOnly, None, Some(exportedEndpointParameter.getId), importItemEndpoint)
+          // Actors
+          if (exportedSpecification.getActors != null) {
+            exportedSpecification.getActors.getActor.asScala.foreach { exportedActor =>
+              var targetActor: Option[models.Actors] = None
+              var importItemActor: ImportItem = null
+              if (targetSpecification.isDefined && targetSpecificationActorMap.contains(targetSpecification.get.id)) {
+                targetActor = targetSpecificationActorMap(targetSpecification.get.id).remove(exportedActor.getActorId)
+              }
+              if (targetActor.isDefined) {
+                importItemActor = new ImportItem(Some(targetActor.get.name), ImportItemType.Actor, ImportItemMatch.Both, Some(targetActor.get.id.toString), Some(exportedActor.getId), importItemSpecification)
+                importItemMapActor += (targetActor.get.id.toString -> importItemActor)
+              } else {
+                importItemActor = new ImportItem(Some(exportedActor.getName), ImportItemType.Actor, ImportItemMatch.ArchiveOnly, None, Some(exportedActor.getId), importItemSpecification)
+              }
+              actorXmlIdToImportItemMap += (exportedActor.getId -> importItemActor)
+              // Endpoints
+              if (exportedActor.getEndpoints != null) {
+                exportedActor.getEndpoints.getEndpoint.asScala.foreach { exportedEndpoint =>
+                  var targetEndpoint: Option[models.Endpoints] = None
+                  var importItemEndpoint: ImportItem = null
+                  if (targetActor.isDefined && targetActorEndpointMap.contains(targetActor.get.id)) {
+                    targetEndpoint = targetActorEndpointMap(targetActor.get.id).remove(exportedEndpoint.getName)
+                  }
+                  if (targetEndpoint.isDefined) {
+                    importItemEndpoint = new ImportItem(Some(targetEndpoint.get.name), ImportItemType.Endpoint, ImportItemMatch.Both, Some(targetEndpoint.get.id.toString), Some(exportedEndpoint.getId), importItemActor)
+                    importItemMapEndpoint += (targetEndpoint.get.id.toString -> importItemEndpoint)
+                  } else {
+                    importItemEndpoint = new ImportItem(Some(exportedEndpoint.getName), ImportItemType.Endpoint, ImportItemMatch.ArchiveOnly, None, Some(exportedEndpoint.getId), importItemActor)
+                  }
+                  // Endpoint parameters
+                  if (exportedEndpoint.getParameters != null) {
+                    exportedEndpoint.getParameters.getParameter.asScala.foreach { exportedEndpointParameter =>
+                      var targetEndpointParameter: Option[models.Parameters] = None
+                      if (targetEndpoint.isDefined && targetEndpointParameterMap.contains(targetEndpoint.get.id)) {
+                        targetEndpointParameter = targetEndpointParameterMap(targetEndpoint.get.id).remove(exportedEndpointParameter.getName)
+                      }
+                      if (targetEndpointParameter.isDefined) {
+                        new ImportItem(Some(targetEndpointParameter.get.name), ImportItemType.EndpointParameter, ImportItemMatch.Both, Some(targetEndpointParameter.get.id.toString), Some(exportedEndpointParameter.getId), importItemEndpoint)
+                      } else {
+                        new ImportItem(Some(exportedEndpointParameter.getName), ImportItemType.EndpointParameter, ImportItemMatch.ArchiveOnly, None, Some(exportedEndpointParameter.getId), importItemEndpoint)
+                      }
                     }
                   }
                 }

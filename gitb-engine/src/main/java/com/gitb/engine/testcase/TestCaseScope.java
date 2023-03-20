@@ -10,6 +10,7 @@ import com.gitb.tdl.Namespaces;
 import com.gitb.tdl.TestArtifact;
 import com.gitb.types.*;
 import com.gitb.utils.ErrorUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -69,10 +70,10 @@ public class TestCaseScope {
 			var id = new StringBuilder();
 			var currentScope = this;
 			while (currentScope != null) {
-				if (currentScope.getScopeId() != null) {
+				if (StringUtils.isNotBlank(currentScope.getScopeId())) {
 					id.insert(0, currentScope.getScopeId());
 				}
-				if (currentScope.getParent() != null && currentScope.getParent().getScopeId() != null) {
+				if (currentScope.getParent() != null && StringUtils.isNotBlank(currentScope.getParent().getScopeId())) {
 					id.insert(0, '_');
 				}
 				currentScope = currentScope.getParent();
