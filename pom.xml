@@ -76,10 +76,13 @@
         <version.beanUtils>1.9.4</version.beanUtils>
         <version.freeMarker>2.3.31</version.freeMarker>
         <!-- Version overrides in Spring Boot - START -->
-        <version.snakeyaml>1.33</version.snakeyaml> <!-- Spring Boot override to resolve CVE-2022-25857 -->
+        <snakeyaml.version>1.33</snakeyaml.version> <!-- Spring Boot override to resolve CVE-2022-25857 -->
+        <spring-framework.version>5.3.26</spring-framework.version>
+        <!-- Version overrides in Spring Boot - END -->
+        <!-- Other version overrides - START -->
         <version.commonsText>1.10.0</version.commonsText> <!-- Apache Commons Configuration override to resolve CVE-2022-42889 -->
         <version.woodstox>6.4.0</version.woodstox> <!-- Woodstox version to resolve CVE-2022-40152. This needs to match the version included in CXF core (currently at 3.5.5). -->
-        <!-- Version overrides in Spring Boot - END -->
+        <!-- Other version overrides - END -->
         <!-- Properties used for filtering replacements -->
         <timestamp>${maven.build.timestamp}</timestamp>
         <engineVersion>${version.gitbTypes}</engineVersion>
@@ -501,11 +504,6 @@
                 <groupId>org.freemarker</groupId>
                 <artifactId>freemarker</artifactId>
                 <version>${version.freeMarker}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.yaml</groupId>
-                <artifactId>snakeyaml</artifactId>
-                <version>${version.snakeyaml}</version>
             </dependency>
             <!-- Apache Commons Configuration override -->
             <dependency>
