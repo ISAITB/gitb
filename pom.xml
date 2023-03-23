@@ -7,7 +7,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>2.7.9</version>
+        <version>2.7.10</version>
     </parent>
     <groupId>com.gitb</groupId>
     <artifactId>GITB</artifactId>
@@ -26,12 +26,12 @@
              mvn versions:display-dependency-updates -N -N
         -->
         <!-- Plugin versions -->
-        <version.plugin.dependency-check-maven>8.2.0</version.plugin.dependency-check-maven>
+        <version.plugin.dependency-check-maven>8.2.1</version.plugin.dependency-check-maven>
         <version.plugin.maven-deploy-plugin>3.0.0-M2</version.plugin.maven-deploy-plugin>
         <version.plugin.jasperreports-plugin>2.8</version.plugin.jasperreports-plugin>
         <version.plugin.maven-compiler-plugin>3.10.1</version.plugin.maven-compiler-plugin>
         <!-- Dependency versions -->
-        <version.springBoot>2.7.9</version.springBoot>
+        <version.springBoot>2.7.10</version.springBoot>
         <version.gitbTypes>1.19.0</version.gitbTypes>
         <version.jasperReports>6.20.0</version.jasperReports>
         <version.bouncycastle>1.70</version.bouncycastle>
@@ -77,7 +77,6 @@
         <version.freeMarker>2.3.31</version.freeMarker>
         <!-- Version overrides in Spring Boot - START -->
         <snakeyaml.version>1.33</snakeyaml.version> <!-- Spring Boot override to resolve CVE-2022-25857 -->
-        <spring-framework.version>5.3.26</spring-framework.version>
         <!-- Version overrides in Spring Boot - END -->
         <!-- Other version overrides - START -->
         <version.commonsText>1.10.0</version.commonsText> <!-- Apache Commons Configuration override to resolve CVE-2022-42889 -->
