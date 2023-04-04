@@ -44,7 +44,7 @@ public class CheckTestCaseReferences extends AbstractCheck {
                 }
             }
             for (String testCaseId: duplicateTestCases) {
-                report.addItem(ErrorCode.DUPLICATE_TEST_CASE_REFERENCE, getTestCaseLocation(testCaseId, context), testCaseId);
+                report.addItem(ErrorCode.DUPLICATE_TEST_CASE_REFERENCE, getTestSuiteLocation(context), testCaseId);
             }
             for (String testCaseId: unreferencedTestCases) {
                 report.addItem(ErrorCode.TEST_CASE_NOT_REFERENCED, getTestCaseLocation(testCaseId, context), testCaseId);
