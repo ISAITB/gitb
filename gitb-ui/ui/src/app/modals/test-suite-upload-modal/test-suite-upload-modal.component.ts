@@ -423,8 +423,8 @@ export class TestSuiteUploadModalComponent implements OnInit {
   }
 
   close(finalStep?: boolean, refreshNeeded?: boolean) {
-    if (!finalStep && this.resolutionNeeded()) {
-      this.conformanceService.resolvePendingTestSuite(this.uploadResult!.pendingFolderId!, 'cancel', this.domainId, this.specificationIds()).subscribe(() => {})
+    if (!finalStep && this.resolutionNeeded() && this.uploadResult?.pendingFolderId != undefined) {
+      this.conformanceService.resolvePendingTestSuite(this.uploadResult.pendingFolderId, 'cancel', this.domainId, this.specificationIds()).subscribe(() => {})
     }
     this.completed.emit(refreshNeeded)
     this.modalInstance.hide()
