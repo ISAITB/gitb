@@ -16,6 +16,8 @@ public class CheckTestCaseReferences extends AbstractCheck {
     public void doCheck(Context context, ValidationReport report) {
         TestSuite testSuite = context.getTestSuite();
         if (testSuite != null) {
+            Set<String> referencedTestCases = new HashSet<>();
+            Set<String> duplicateTestCases = new HashSet<>();
             Set<String> unreferencedTestCases = new HashSet<>(context.getTestCasePaths().keySet());
             List<TestCaseEntry> testCaseEntries = testSuite.getTestcase();
             if (testCaseEntries != null) {
@@ -23,6 +25,12 @@ public class CheckTestCaseReferences extends AbstractCheck {
                     // Check the test case ID.
                     if (!context.getTestCasePaths().containsKey(entry.getId())) {
                         report.addItem(ErrorCode.INVALID_TEST_CASE_REFERENCE, getTestSuiteLocation(context), entry.getId());
+                    }
+                    // Make sure we haven't already referred to this test case.
+                    if (referencedTestCases.contains(entry.getId())) {
+                        duplicateTestCases.add(entry.getId());
+                    } else {
+                        referencedTestCases.add(entry.getId());
                     }
                     // Check the prerequisites defined for each test case.
                     if (entry.getPrequisite() != null) {
@@ -34,6 +42,9 @@ public class CheckTestCaseReferences extends AbstractCheck {
                     }
                     unreferencedTestCases.remove(entry.getId());
                 }
+            }
+            for (String testCaseId: duplicateTestCases) {
+                report.addItem(ErrorCode.DUPLICATE_TEST_CASE_REFERENCE, getTestCaseLocation(testCaseId, context), testCaseId);
             }
             for (String testCaseId: unreferencedTestCases) {
                 report.addItem(ErrorCode.TEST_CASE_NOT_REFERENCED, getTestCaseLocation(testCaseId, context), testCaseId);

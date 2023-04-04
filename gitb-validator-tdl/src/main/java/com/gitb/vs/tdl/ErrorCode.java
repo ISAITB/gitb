@@ -137,6 +137,8 @@ public enum ErrorCode {
     STEP_WITH_BOTH_TX_AND_HANDLER(                      "TDL-116", "%s [%s] defines step (%s) with both a transaction ID reference and a handler. The provided handler will be ignored.", WARNING, true),
     POTENTIALLY_INVALID_SCRIPTLET_CONTEXT_VARIABLE(     "TDL-117", "Scriptlet [%s] refers to variables [%s] that are not defined in its own scope. When the scriptlet is called these will need to be present in the parent scope (that of the calling test case or scriptlet).", INFO, false),
     MISSING_PROCESSING_OPERATION(                       "TDL-118", "%s [%s] in step %s does not specify which operation to perform. Handler %s defines multiple operations (%s), so the step may fail or at least may not be deterministic.", WARNING, true),
+    DUPLICATE_TEST_CASE_REFERENCE(                      "TDL-119", "The test suite references the same test case multiple times [%s].", ERROR),
+
     ;
 
     private final String code;
