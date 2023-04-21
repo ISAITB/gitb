@@ -32,7 +32,7 @@ libraryDependencies ++= Seq(
   "com.gitb" % "gitb-reports" % "1.0-SNAPSHOT",
   "com.gitb" % "gitb-validator-tdl" % "1.0-SNAPSHOT",
   "com.gitb" % "gitb-xml-resources" % "1.0-SNAPSHOT",
-  "com.mysql" % "mysql-connector-j" % "8.0.32" exclude("com.google.protobuf", "protobuf-java"), // Exclude protobuf as we don't need the X DevAPI.
+  "com.mysql" % "mysql-connector-j" % "8.0.33" exclude("com.google.protobuf", "protobuf-java"), // Exclude protobuf as we don't need the X DevAPI.
   "com.typesafe.akka" %% "akka-actor" % akkaVersion,
   "com.typesafe.akka" %% "akka-actor-typed" % akkaVersion,
   "com.typesafe.akka" %% "akka-remote" % akkaVersion,
@@ -43,7 +43,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.play" %% "play-json" % "2.9.4",
   "org.pac4j" %% "play-pac4j" % "11.1.0-PLAY2.8",
   "org.pac4j" % "pac4j-cas" % "5.7.0",
-  "ch.qos.logback" % "logback-classic" % "1.4.5",
+  "ch.qos.logback" % "logback-classic" % "1.4.6",
   "org.apache.commons" % "commons-lang3" % "3.12.0",
   "com.fasterxml.jackson.module" %% "jackson-module-scala" % jacksonVersion,
   "com.fasterxml.jackson.core" % "jackson-databind" % jacksonVersion,
@@ -59,7 +59,7 @@ libraryDependencies ++= Seq(
   // ---
   "org.apache.tika" % "tika-core" % "2.7.0",
   "org.webjars" %% "webjars-play" % "2.8.18",
-  "org.webjars" % "jquery" % "3.6.3",
+  "org.webjars" % "jquery" % "3.6.4",
   "org.webjars" % "bootstrap" % "3.4.1" exclude("org.webjars", "jquery"),
   "javax.mail" % "mail" % "1.4.7",
   "javax.activation" % "activation" % "1.1.1",
