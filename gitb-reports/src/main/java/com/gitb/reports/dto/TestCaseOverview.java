@@ -1,6 +1,7 @@
 package com.gitb.reports.dto;
 
 import com.gitb.reports.dto.tar.Report;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,14 +20,14 @@ public class TestCaseOverview {
     private String outputMessage;
     private String startTime;
     private String endTime;
-    private String testSuiteName;
-    private String subReportRoot;
     private String id;
     private String labelDomain;
     private String labelSpecification;
     private String labelActor;
     private String labelOrganisation;
     private String labelSystem;
+    private String documentation;
+    private List<LogMessage> logMessages;
 
     private List<Report> steps = new ArrayList<>();
 
@@ -44,14 +45,6 @@ public class TestCaseOverview {
 
     public void setId(String id) {
         this.id = id;
-    }
-
-    public String getSubReportRoot() {
-        return subReportRoot;
-    }
-
-    public void setSubReportRoot(String subReportRoot) {
-        this.subReportRoot = subReportRoot;
     }
 
     public String getOrganisation() {
@@ -107,7 +100,7 @@ public class TestCaseOverview {
     }
 
     public void setTestDescription(String testDescription) {
-        this.testDescription = testDescription;
+        this.testDescription = StringUtils.normalizeSpace(testDescription);
     }
 
     public String getReportResult() {
@@ -150,14 +143,6 @@ public class TestCaseOverview {
         this.endTime = endTime;
     }
 
-    public String getTestSuiteName() {
-        return testSuiteName;
-    }
-
-    public void setTestSuiteName(String testSuiteName) {
-        this.testSuiteName = testSuiteName;
-    }
-
     public String getLabelDomain() {
         return labelDomain;
     }
@@ -196,5 +181,76 @@ public class TestCaseOverview {
 
     public void setLabelSystem(String labelSystem) {
         this.labelSystem = labelSystem;
+    }
+
+    public String getDocumentation() {
+        return documentation;
+    }
+
+    public void setDocumentation(String documentation) {
+        this.documentation = documentation;
+    }
+
+    public List<LogMessage> getLogMessages() {
+        return logMessages;
+    }
+
+    public void setLogMessages(List<String> logLines) {
+        logMessages = null;
+        var tempMessages = new ArrayList<LogMessage>();
+        var previousLevel = LogMessage.DEBUG;
+        for (var line: logLines) {
+            var messageParts = StringUtils.split(StringUtils.replaceChars(line, '\r', '\n'), '\n');
+            if (messageParts != null) {
+                for (var part: messageParts) {
+                    if (part.length() > 0) {
+                        short partLevel = previousLevel;
+                        if (part.length() > 22) { // The timestamp part is of length 22 "[yyyy-mm-dd HH:MM:SS] "
+                            var withoutTimestamp = part.substring(22);
+                            if (withoutTimestamp.startsWith("DEBUG ")) {
+                                partLevel = LogMessage.DEBUG;
+                            } else if (withoutTimestamp.startsWith("INFO ")) {
+                                partLevel = LogMessage.INFO;
+                            } else if (withoutTimestamp.startsWith("WARN ")) {
+                                partLevel = LogMessage.WARNING;
+                            } else if (withoutTimestamp.startsWith("ERROR ")) {
+                                partLevel = LogMessage.ERROR;
+                            }
+                        }
+                        if (partLevel != LogMessage.DEBUG) {
+                            tempMessages.add(new LogMessage(partLevel, part));
+                        }
+                        previousLevel = partLevel;
+                    }
+                }
+            }
+        }
+        if (!tempMessages.isEmpty()) {
+            logMessages = tempMessages;
+        }
+    }
+
+    public static class LogMessage {
+
+        static final short DEBUG = 0;
+        static final short INFO = 1;
+        static final short WARNING = 2;
+        static final short ERROR = 3;
+
+        private final short level;
+        private final String text;
+
+        public LogMessage(short level, String text) {
+            this.level = level;
+            this.text = text;
+        }
+
+        public short getLevel() {
+            return level;
+        }
+
+        public String getText() {
+            return text;
+        }
     }
 }

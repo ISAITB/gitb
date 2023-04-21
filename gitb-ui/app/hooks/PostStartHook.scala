@@ -173,7 +173,7 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext, appLifecycle: Appl
       for (file <- rootFolder.listFiles()) {
         if (file.lastModified() + gracePeriodMillis < System.currentTimeMillis) {
           try {
-            FileUtils.deleteDirectory(file)
+            FileUtils.deleteQuietly(file)
           } catch {
             case e:Exception =>
               logger.warn("Unable to delete temp folder [" + file.getAbsolutePath + "]", e)

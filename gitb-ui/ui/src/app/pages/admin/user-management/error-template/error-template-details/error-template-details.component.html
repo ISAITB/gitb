@@ -42,13 +42,11 @@
         </form>
     </div>
     <div>
-        <div class="pull-left">
-            <app-editor name="content" [(ngModel)]="template.content"></app-editor>
+        <div class="div-padded-bottom">
+            <app-placeholder-selector [placeholders]="placeholders"></app-placeholder-selector>
         </div>
-        <div style="padding-left: 20px; padding-right:20px; display: table;">
-            <h4>Placeholders:</h4>
-            <p><b>{{Constants.PLACEHOLDER__ERROR_DESCRIPTION}}</b>: The error message text (a text value - may be empty).</p>
-            <p><b>{{Constants.PLACEHOLDER__ERROR_ID}}</b>: The error identifier (used to trace error in logs).</p>
+        <div>
+            <app-editor name="content" [(ngModel)]="template.content"></app-editor>
         </div>
     </div>
 </div>

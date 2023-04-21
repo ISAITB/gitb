@@ -18,6 +18,8 @@ import { TestSuiteUploadTestCaseChoice } from './test-suite-upload-test-case-cho
 import { ValidationReport } from './validation-report';
 import { find } from 'lodash';
 import { PendingTestSuiteUploadChoiceTestCase } from './pending-test-suite-upload-choice-test-case';
+import { ValidationReportItem } from './validation-report-item';
+import { AssertionReport } from 'src/app/components/diagram/assertion-report';
 
 @Component({
   selector: 'app-test-suite-upload-modal',
@@ -438,4 +440,13 @@ export class TestSuiteUploadModalComponent implements OnInit {
     this.hasChoicesToComplete = hasPendingChoices
   }
 
+  toAssertionReport(item: ValidationReportItem): AssertionReport {
+    return {
+      type: item.level,
+      value: {
+        description: item.description,
+        location: item.location
+      }
+    }
+  }
 }

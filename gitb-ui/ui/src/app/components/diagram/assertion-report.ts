@@ -1,6 +1,6 @@
 export interface AssertionReport {
 
-    type: string
+    type: "info"|"warning"|"error"
     value: {
         assertionID?: string,
         value?: string,

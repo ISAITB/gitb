@@ -9,11 +9,15 @@ import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
 import utils.RepositoryUtils
 
+import java.io.File
+import java.nio.file.{Files, Paths, StandardOpenOption}
+import java.sql.Timestamp
 import javax.inject.{Inject, Singleton}
 import scala.collection.concurrent.TrieMap
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.jdk.CollectionConverters.CollectionHasAsScala
 
 @Singleton
 class TestResultManager @Inject() (repositoryUtils: RepositoryUtils, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
@@ -41,7 +45,7 @@ class TestResultManager @Inject() (repositoryUtils: RepositoryUtils, dbConfigPro
     sessionLogMessages += logMessage.trim
   }
 
-  def consumeSessionLogs(sessionId: String) = {
+  private def consumeSessionLogs(sessionId: String) = {
     val sessionData = getOrCreateSession(sessionId)
     sessionData._2.dequeueAll(_ => true).toList
   }
@@ -439,6 +443,45 @@ class TestResultManager @Inject() (repositoryUtils: RepositoryUtils, dbConfigPro
         .result
         .headOption
     ).isDefined
+  }
+
+  def getTestSessionLog(sessionId: String, startTime: Option[Timestamp], isExpected: Boolean): Option[List[String]] = {
+    getTestSessionLog(sessionId, repositoryUtils.getPathForTestSessionObj(sessionId, startTime, isExpected))
+  }
+
+  def getTestSessionLog(sessionId: String, isExpected: Boolean): Option[List[String]] = {
+    getTestSessionLog(sessionId, repositoryUtils.getPathForTestSessionWrapper(sessionId, isExpected))
+  }
+
+  private def getTestSessionLog(sessionId: String, sessionFolderInfo: SessionFolderInfo): Option[List[String]] = {
+    if (!sessionFolderInfo.archived) {
+      flushSessionLogs(sessionId, Some(sessionFolderInfo.path.toFile))
+    }
+    try {
+      val file = new File(sessionFolderInfo.path.toFile, "log.txt")
+      if (file.exists()) {
+        Some(Files.readAllLines(Paths.get(file.getAbsolutePath)).asScala.toList)
+      } else {
+        None
+      }
+    } finally {
+      if (sessionFolderInfo.archived) {
+        FileUtils.deleteQuietly(sessionFolderInfo.path.toFile)
+      }
+    }
+  }
+
+  def flushSessionLogs(sessionId: String, sessionFolder: Option[File]): Unit = {
+    val messages = consumeSessionLogs(sessionId)
+    if (messages.nonEmpty) {
+      val logFilePath = new File(sessionFolder.getOrElse(repositoryUtils.getPathForTestSession(sessionId, isExpected = false).path.toFile), "log.txt")
+      if (!logFilePath.exists()) {
+        logFilePath.getParentFile.mkdirs()
+        logFilePath.createNewFile()
+      }
+      import scala.jdk.CollectionConverters._
+      Files.write(logFilePath.toPath, messages.asJava, StandardOpenOption.APPEND)
+    }
   }
 
 }

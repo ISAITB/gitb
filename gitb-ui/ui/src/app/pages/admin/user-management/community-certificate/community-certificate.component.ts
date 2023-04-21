@@ -12,6 +12,7 @@ import { RoutingService } from 'src/app/services/routing.service';
 import { ConformanceCertificateSettings } from 'src/app/types/conformance-certificate-settings';
 import { FileData } from 'src/app/types/file-data.type';
 import { saveAs } from 'file-saver'
+import { KeyValue } from 'src/app/types/key-value';
 
 @Component({
   selector: 'app-community-certificate',
@@ -24,13 +25,7 @@ export class CommunityCertificateComponent extends BaseComponent implements OnIn
   communityId!: number
   settings: Partial<ConformanceCertificateSettings> = {}
   originalSettings: Partial<ConformanceCertificateSettings>|undefined
-  placeholderDomain = Constants.PLACEHOLDER__DOMAIN
-  placeholderSpecification = Constants.PLACEHOLDER__SPECIFICATION
-  placeholderSpecificationGroup = Constants.PLACEHOLDER__SPECIFICATION_GROUP
-  placeholderSpecificationGroupOption = Constants.PLACEHOLDER__SPECIFICATION_GROUP_OPTION
-  placeholderActor = Constants.PLACEHOLDER__ACTOR
-  placeholderOrganisation = Constants.PLACEHOLDER__ORGANISATION
-  placeholderSystem = Constants.PLACEHOLDER__SYSTEM
+  placeholders: KeyValue[] = []
   updatePasswords = false
   removeKeystore = false
   updatePending = false
@@ -54,6 +49,15 @@ export class CommunityCertificateComponent extends BaseComponent implements OnIn
 
   ngOnInit(): void {
     this.communityId = Number(this.route.snapshot.paramMap.get('community_id'))
+    this.placeholders = [
+      { key: Constants.PLACEHOLDER__DOMAIN, value: 'The full name of the ' + this.dataService.labelDomainLower() + '.' },
+      { key: Constants.PLACEHOLDER__SPECIFICATION, value: 'The full name of the ' + this.dataService.labelSpecificationLower() + '.' },
+      { key: Constants.PLACEHOLDER__SPECIFICATION_GROUP, value: 'The full name of the ' + this.dataService.labelSpecificationGroupLower() + '.' },
+      { key: Constants.PLACEHOLDER__SPECIFICATION_GROUP_OPTION, value: 'The full name of the ' + this.dataService.labelSpecificationInGroupLower() + '.' },
+      { key: Constants.PLACEHOLDER__ACTOR, value: 'The full name of the ' + this.dataService.labelActorLower() + ' linked to the conformance statement.' },
+      { key: Constants.PLACEHOLDER__ORGANISATION, value: 'The full name of the ' + this.dataService.labelOrganisationLower() + ' to be granted the certificate.' },
+      { key: Constants.PLACEHOLDER__SYSTEM, value: 'The full name of the ' + this.dataService.labelSystemLower() + ' that was used in the tests.' }
+    ]
     this.loading = true
     this.conformanceService.getConformanceCertificateSettings(this.communityId, true)
     .subscribe((data) => {

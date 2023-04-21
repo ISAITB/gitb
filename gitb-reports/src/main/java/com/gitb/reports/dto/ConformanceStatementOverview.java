@@ -10,7 +10,9 @@ public class ConformanceStatementOverview {
     private String testDomain;
     private String organisation;
     private String system;
-    private String testStatus;
+    private int completedTests = 0;
+    private int failedTests = 0;
+    private int undefinedTests = 0;
     private String overallStatus;
     private String reportDate;
     private Boolean includeTestCases;
@@ -23,7 +25,31 @@ public class ConformanceStatementOverview {
     private String labelActor;
     private String labelOrganisation;
     private String labelSystem;
-    private List<TestCaseOverview> testCases;
+    private List<TestSuiteOverview> testSuites;
+
+    public int getCompletedTests() {
+        return completedTests;
+    }
+
+    public void setCompletedTests(int completedTests) {
+        this.completedTests = completedTests;
+    }
+
+    public int getFailedTests() {
+        return failedTests;
+    }
+
+    public void setFailedTests(int failedTests) {
+        this.failedTests = failedTests;
+    }
+
+    public int getUndefinedTests() {
+        return undefinedTests;
+    }
+
+    public void setUndefinedTests(int undefinedTests) {
+        this.undefinedTests = undefinedTests;
+    }
 
     public String getOverallStatus() {
         return overallStatus;
@@ -82,11 +108,23 @@ public class ConformanceStatementOverview {
     }
 
     public String getTestStatus() {
-        return testStatus;
-    }
-
-    public void setTestStatus(String testStatus) {
-        this.testStatus = testStatus;
+        var resultText = new StringBuilder();
+        var totalTests = completedTests + failedTests + undefinedTests;
+        resultText.append(completedTests).append(" of ").append(totalTests).append(" passed");
+        if (totalTests > completedTests) {
+            resultText.append(" (");
+            if (failedTests > 0) {
+                resultText.append(failedTests).append(" failed");
+                if (undefinedTests > 0) {
+                    resultText.append(", ");
+                }
+            }
+            if (undefinedTests > 0) {
+                resultText.append(undefinedTests).append(" undefined");
+            }
+            resultText.append(")");
+        }
+        return resultText.toString();
     }
 
     public String getReportDate() {
@@ -105,12 +143,12 @@ public class ConformanceStatementOverview {
         this.includeTestCases = includeTestCases;
     }
 
-    public List<TestCaseOverview> getTestCases() {
-        return testCases;
+    public List<TestSuiteOverview> getTestSuites() {
+        return testSuites;
     }
 
-    public void setTestCases(List<TestCaseOverview> testCases) {
-        this.testCases = testCases;
+    public void setTestSuites(List<TestSuiteOverview> testSuites) {
+        this.testSuites = testSuites;
     }
 
     public Boolean getIncludeDetails() {
