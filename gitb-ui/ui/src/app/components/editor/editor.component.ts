@@ -46,6 +46,7 @@ export class EditorComponent implements OnInit, ControlValueAccessor {
     }
     let config:any = {
       height: heightToUse,
+      min_height: 100,
       menubar: false,
       branding: false,
       base_url: this.dataService.completePath('/assets/build/tinymce'),
@@ -69,15 +70,13 @@ export class EditorComponent implements OnInit, ControlValueAccessor {
       ]
       config.toolbar = 'bold italic | charmap | bullist numlist outdent indent | link'
     } else if (this.type == 'pdf') {
+      // Same as normal
       config.plugins = [
-        'autolink lists link charmap anchor',
-        'visualblocks code fullscreen',
-        'paste code'
+        'advlist autolink lists link image charmap print preview anchor',
+        'searchreplace visualblocks code fullscreen',
+        'insertdatetime media table paste code'
       ]
-      config.toolbar = 'bold italic | charmap | bullist numlist | link'
-      config.force_br_newlines = true
-      config.force_p_newlines = false
-      config.forced_root_block = '' // Needed for 3.x
+      config.toolbar = 'undo redo | insert | styleselect | bold italic | charmap | forecolor backcolor | fontsizeselect | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image | table tabledelete | tableprops tablerowprops tablecellprops | tableinsertrowbefore tableinsertrowafter tabledeleterow | tableinsertcolbefore tableinsertcolafter tabledeletecol'
     } else if (this.type == 'line') {
       config.plugins = [
         'autolink link charmap anchor',

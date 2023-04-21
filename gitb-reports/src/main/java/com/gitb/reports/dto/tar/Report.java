@@ -8,16 +8,16 @@ public class Report {
     private String title;
     private String reportDate;
     private String reportResult;
-    private String errorCount;
-    private String warningCount;
-    private String messageCount;
+    private int errorCount;
+    private int warningCount;
+    private int messageCount;
     private List<ReportItem> reportItems = new ArrayList<>();
     private List<ContextItem> contextItems = new ArrayList<>();
 
     public Report() {
     }
 
-    public Report(String title, String reportDate, String reportResult, String errorCount, String warningCount, String messageCount) {
+    public Report(String title, String reportDate, String reportResult, int errorCount, int warningCount, int messageCount) {
         this.title = title;
         this.reportDate = reportDate;
         this.reportResult = reportResult;
@@ -50,27 +50,27 @@ public class Report {
         this.reportResult = reportResult;
     }
 
-    public String getErrorCount() {
+    public int getErrorCount() {
         return errorCount;
     }
 
-    public void setErrorCount(String errorCount) {
+    public void setErrorCount(int errorCount) {
         this.errorCount = errorCount;
     }
 
-    public String getWarningCount() {
+    public int getWarningCount() {
         return warningCount;
     }
 
-    public void setWarningCount(String warningCount) {
+    public void setWarningCount(int warningCount) {
         this.warningCount = warningCount;
     }
 
-    public String getMessageCount() {
+    public int getMessageCount() {
         return messageCount;
     }
 
-    public void setMessageCount(String messageCount) {
+    public void setMessageCount(int messageCount) {
         this.messageCount = messageCount;
     }
 

@@ -1,3 +1,5 @@
+import { ValidationReportItem } from "./validation-report-item"
+
 export interface ValidationReport {
 
     counters: {
@@ -6,11 +8,6 @@ export interface ValidationReport {
         warnings: number
     }
     result: string
-    reports: {
-        level: string
-        assertionId?: string
-        description?: string
-        location?: string
-    }[]
+    reports: ValidationReportItem[]
 
 }

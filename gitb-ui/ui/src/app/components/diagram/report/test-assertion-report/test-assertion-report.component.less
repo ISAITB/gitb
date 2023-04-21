@@ -1,0 +1,75 @@
+@import '../../../../../styles/less/_common.less';
+
+.report-container {
+    border-radius: 4px;
+    margin-bottom: 10px;
+    &.clickable {
+        &:hover {
+            cursor: pointer;
+            &.error {
+                .report-content {
+                    background: @red-light-hover;
+                }                
+            }
+            &.warning {
+                .report-content {
+                    background: @orange-light-hover;
+                }                
+            }
+            &.info {
+                .report-content {
+                    background: @gray-dark-1;
+                }                
+            }
+        }
+    }
+    &.error {
+        background: @error-red;
+        border: 1px solid @error-red;
+        .report-content {
+            background: @red-light;
+        }
+        .report-icon {
+            color: @error-red;
+        }
+    }
+    &.warning {
+        background: @warning-yellow;
+        border: 1px solid @warning-yellow;
+        .report-content {
+            background: @orange-light;
+        }
+        .report-icon {
+            color: @warning-yellow;
+        }
+    }
+    &.info {
+        background: @info-blue;
+        border: 1px solid @info-blue;
+        .report-content {
+            background: @gray-highlight;
+        }
+        .report-icon {
+            color: @info-blue;
+        }
+    }
+}
+.report-content {
+    margin-left: 4px;
+    padding: 5px;
+    border-radius: 0px 4px 4px 0px;
+}
+.report-icon {
+    margin-right: 5px;
+}
+.report-metadata {
+    margin-top: 10px;
+    .report-metadata-key {
+        display: inline-block;
+        margin-right: 10px;
+        font-weight: bold;
+    }
+    .report-metadata-value {
+        display: inline-block;
+    }
+}
