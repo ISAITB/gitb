@@ -1,0 +1,13 @@
+<div class="root">
+    <div class="button">
+        <div class="btn-group" dropdown>
+            <button id="button-placeholder" dropdownToggle type="button" class="btn btn-default dropdown-toggle" aria-controls="dropdown-placeholder">Copy placeholder text<span class="caret"></span></button>
+            <ul id="dropdown-placeholder" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-placeholder">
+                <li *ngFor="let placeholder of placeholders" role="menuitem"><a class="dropdown-item" href (click)="selected(placeholder); $event.preventDefault()"><b>{{placeholder.key}}:</b> {{placeholder.value}}</a></li>
+            </ul>
+        </div>
+    </div>
+    <div class="help">
+        <app-tooltip tbTooltip="Placeholders are predefined types of values that will be automatically replaced in the resulting content." [inline]="true"></app-tooltip>
+    </div>
+</div>

@@ -10,6 +10,8 @@ import { RoutingService } from 'src/app/services/routing.service';
 import { ErrorData } from 'src/app/types/error-data.type';
 import { ErrorTemplate } from 'src/app/types/error-template';
 import { CommunityTab } from '../../community/community-details/community-tab.enum';
+import { KeyValue } from 'src/app/types/key-value';
+import { Constants } from 'src/app/common/constants';
 
 @Component({
   selector: 'app-create-error-template',
@@ -23,6 +25,7 @@ export class CreateErrorTemplateComponent extends BaseComponent implements OnIni
   template: Partial<ErrorTemplate> = {
     default: false
   }
+  placeholders: KeyValue[] = []
   savePending = false
 
   constructor(
@@ -41,6 +44,10 @@ export class CreateErrorTemplateComponent extends BaseComponent implements OnIni
 
   ngOnInit(): void {
     this.communityId = Number(this.route.snapshot.paramMap.get('community_id'))
+    this.placeholders = [
+      { key: Constants.PLACEHOLDER__ERROR_DESCRIPTION, value: "The error message text (a text value that may be empty)." },
+      { key: Constants.PLACEHOLDER__ERROR_ID, value: "The error identifier (used to trace the error in the logs)." }
+    ]
     const base = this.route.snapshot.data['base'] as ErrorTemplate|undefined
     if (base != undefined) {
       this.template.name = base.name
