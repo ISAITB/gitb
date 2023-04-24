@@ -57,12 +57,15 @@
                                             <span><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>
                                         </div>
                                         <div class="statementControls">
-                                            <div class="btn-toolbar">
+                                            <div class="statementButtons btn-toolbar">
                                                 <button type="button" class="btn btn-default" (click)="toOrganisation(statement)">View {{dataService.labelOrganisationLower()}}</button>
                                                 <button type="button" class="btn btn-default" (click)="toSystem(statement)">View {{dataService.labelSystemLower()}}</button>
                                                 <button type="button" class="btn btn-default" (click)="toStatement(statement)">View conformance statement</button>
                                                 <button type="button" class="btn btn-default" (click)="toSpecification(statement)">View {{dataService.labelSpecificationLower()}}</button>
                                                 <button type="button" class="btn btn-default" (click)="toActor(statement)">View {{dataService.labelActorLower()}}</button>
+                                            </div>
+                                            <div class="statementRatios">
+                                                <app-test-result-ratio [counters]="statement.counters!"></app-test-result-ratio>
                                             </div>
                                         </div>
                                         <div class="testSuitePanel" *ngFor="let testSuite of statement.testSuites">

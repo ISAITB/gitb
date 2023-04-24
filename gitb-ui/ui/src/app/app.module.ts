@@ -162,6 +162,7 @@ import { ConformanceStatementItemDisplayComponent } from './components/conforman
 import { ConformanceStatementItemsDisplayComponent } from './components/conformance-statement-items-display/conformance-statement-items-display.component';
 import { CollapsingIconComponent } from './components/collapsing-icon/collapsing-icon.component';
 import { PlaceholderSelectorComponent } from './components/placeholder-selector/placeholder-selector.component';
+import { TestResultRatioComponent } from './components/test-result-ratio/test-result-ratio.component';
 
 @NgModule({
   providers: [ 
@@ -313,7 +314,8 @@ import { PlaceholderSelectorComponent } from './components/placeholder-selector/
     ConformanceStatementItemDisplayComponent,
     ConformanceStatementItemsDisplayComponent,
     CollapsingIconComponent,
-    PlaceholderSelectorComponent],
+    PlaceholderSelectorComponent,
+    TestResultRatioComponent],
   imports: [
     BrowserModule,
     BrowserAnimationsModule,

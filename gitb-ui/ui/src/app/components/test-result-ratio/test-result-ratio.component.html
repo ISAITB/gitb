@@ -1,0 +1,5 @@
+<div class="ratio-container" *ngIf="counters.completed > 0 || counters.failed > 0 || counters.other > 0">
+    <div *ngIf="counters.completed > 0" [tooltip]="completedPercentage+'% of all tests are passed'" containerClass="ratioTooltip" class="ratio completed" [class.start]="true" [class.end]="counters.failed == 0 && counters.other == 0" [ngStyle]="{'width': completedPercentage+'%'}">{{completedPercentage}}%</div>
+    <div *ngIf="counters.failed > 0" [tooltip]="failedPercentage+'% of all tests are failed'" containerClass="ratioTooltip" class="ratio failed" [class.start]="counters.completed == 0" [class.end]="counters.other == 0" [ngStyle]="{'width': failedPercentage+'%'}">{{failedPercentage}}%</div>
+    <div *ngIf="counters.other > 0" [tooltip]="otherPercentage+'% of all tests are incomplete'" containerClass="ratioTooltip" class="ratio other" [class.start]="counters.completed == 0 && counters.failed == 0" [class.end]="true" [ngStyle]="{'width': otherPercentage+'%'}">{{otherPercentage}}%</div>
+</div>
