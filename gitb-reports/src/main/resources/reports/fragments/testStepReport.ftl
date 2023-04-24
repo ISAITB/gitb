@@ -65,7 +65,7 @@
                     </tr>
                     <tr>
                         <td class="cell-label">Result:</td>
-                        <td class="cell-value"><div class="value-inline result background-${report.reportResult}">${report.reportResult}</div></td>
+                        <td class="cell-value"><div class="value-inline result background-${report.reportResult}">${printResult(report.reportResult)}</div></td>
                     </tr>
                     <#if (report.errorCount?? && report.errorCount > 0) || (report.warningCount?? && report.warningCount > 0) || (report.messageCount?? && report.messageCount > 0)>
                         <tr>

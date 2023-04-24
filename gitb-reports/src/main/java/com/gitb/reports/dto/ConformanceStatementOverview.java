@@ -120,7 +120,7 @@ public class ConformanceStatementOverview {
                 }
             }
             if (undefinedTests > 0) {
-                resultText.append(undefinedTests).append(" undefined");
+                resultText.append(undefinedTests).append(" incomplete");
             }
             resultText.append(")");
         }

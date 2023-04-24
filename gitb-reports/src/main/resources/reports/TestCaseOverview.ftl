@@ -106,7 +106,7 @@
                             <table>
                                 <tr>
                                     <td class="cell-label">Result:</td>
-                                    <td class="cell-value"><div class="value-inline result background-${reportResult}">${reportResult}</div></td>
+                                    <td class="cell-value"><div class="value-inline result background-${reportResult}">${printResult(reportResult)}</div></td>
                                 </tr>
                             </table>
                         </div>

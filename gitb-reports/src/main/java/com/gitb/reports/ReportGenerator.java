@@ -8,6 +8,7 @@ import com.gitb.reports.dto.tar.ContextItem;
 import com.gitb.reports.dto.tar.Report;
 import com.gitb.reports.dto.tar.ReportItem;
 import com.gitb.reports.extensions.EscapeHtml;
+import com.gitb.reports.extensions.PrintResult;
 import com.gitb.reports.extensions.TestCoverageBlock;
 import com.gitb.tbs.TestStepStatus;
 import com.gitb.tr.*;
@@ -69,7 +70,8 @@ public class ReportGenerator {
         }
         extensionFunctions = Map.of(
             "escape", new EscapeHtml(),
-            "coverageBlock", new TestCoverageBlock()
+            "coverageBlock", new TestCoverageBlock(),
+            "printResult", new PrintResult()
         );
     }
 

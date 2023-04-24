@@ -143,7 +143,7 @@
                                 <#if includeTestStatus?? && includeTestStatus>
                                     <tr>
                                         <td class="cell-label">Status:</td>
-                                        <td class="cell-value"><div class="value-inline result background-${overallStatus}">${overallStatus}</div></td>
+                                        <td class="cell-value"><div class="value-inline result background-${overallStatus}">${printResult(overallStatus)}</div></td>
                                     </tr>
                                 </#if>
                             </table>
