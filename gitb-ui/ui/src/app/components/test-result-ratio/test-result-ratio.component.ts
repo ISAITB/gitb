@@ -20,9 +20,9 @@ export class TestResultRatioComponent implements OnInit {
     if (this.counters) {
       const total = this.counters.completed + this.counters.failed + this.counters.other;
       if (total > 0) {
-        this.completedPercentage = ((this.counters.completed / total) * 100).toFixed(2);
-        this.failedPercentage = ((this.counters.failed / total) * 100).toFixed(2);
-        this.otherPercentage = ((this.counters.other / total) * 100).toFixed(2);
+        this.completedPercentage = ((this.counters.completed / total) * 100).toFixed(1);
+        this.failedPercentage = ((this.counters.failed / total) * 100).toFixed(1);
+        this.otherPercentage = ((this.counters.other / total) * 100).toFixed(1);
       }
     }
   }
