@@ -1,6 +1,7 @@
-export interface TestCase {
+import { EntityWithId } from "./entity-with-id"
 
-    id: number,
+export interface TestCase extends EntityWithId {
+
     identifier: string
     sname: string,
     description?: string

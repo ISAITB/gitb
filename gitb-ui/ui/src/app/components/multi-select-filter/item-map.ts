@@ -1,5 +1,5 @@
-import { MultiSelectItem } from "./multi-select-item";
+import { EntityWithId } from "../../types/entity-with-id";
 
-export interface ItemMap {
-    [key: number]: { selected: boolean, item: MultiSelectItem }
+export interface ItemMap<T extends EntityWithId> {
+    [key: number]: { selected: boolean, item: T }
 }

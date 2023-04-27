@@ -1,6 +1,7 @@
-export interface IdLabel {
+import { EntityWithId } from "./entity-with-id"
 
-    id: number
+export interface IdLabel extends EntityWithId {
+
     label: string
     
 }

@@ -1,13 +1,13 @@
 import { Community } from "./community";
+import { EntityWithId } from "./entity-with-id";
 import { ErrorTemplate } from "./error-template";
 import { LandingPage } from "./landing-page";
 import { LegalNotice } from "./legal-notice";
 import { System } from "./system";
 import { User } from "./user.type";
 
-export interface Organisation {
+export interface Organisation extends EntityWithId {
 
-    id: number
     sname: string
     fname: string
     type: number

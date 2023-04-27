@@ -1,6 +1,7 @@
-export interface Specification {
+import { EntityWithId } from "./entity-with-id"
 
-    id: number
+export interface Specification extends EntityWithId {
+
     sname: string
     fname: string
     description?: string

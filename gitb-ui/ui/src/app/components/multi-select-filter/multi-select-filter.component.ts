@@ -2,26 +2,28 @@ import { Component, ElementRef, EventEmitter, HostListener, Input, OnDestroy, On
 import { DataService } from 'src/app/services/data.service';
 import { ItemMap } from './item-map';
 import { MultiSelectConfig } from './multi-select-config';
-import { MultiSelectItem } from './multi-select-item';
-import { filter } from 'lodash';
+import { EntityWithId } from '../../types/entity-with-id';
+import { filter, find } from 'lodash';
+import { FilterValues } from '../test-filter/filter-values';
+import { FilterUpdate } from '../test-filter/filter-update';
 
 @Component({
   selector: 'app-multi-select-filter',
   templateUrl: './multi-select-filter.component.html',
   styleUrls: [ './multi-select-filter.component.less' ]
 })
-export class MultiSelectFilterComponent implements OnInit, OnDestroy {
+export class MultiSelectFilterComponent<T extends EntityWithId> implements OnInit, OnDestroy {
 
-  @Input() config!: MultiSelectConfig
+  @Input() config!: MultiSelectConfig<T>
   @Input() typeahead = true
-  @Output() apply = new EventEmitter<MultiSelectItem[]>()
+  @Output() apply = new EventEmitter<FilterUpdate<any>>()
   @ViewChild('filterText') filterTextElement?: ElementRef
 
-  selectedItems: MultiSelectItem[] = []
-  availableItems: MultiSelectItem[] = []
-  visibleAvailableItems: MultiSelectItem[] = []
-  selectedAvailableItems: ItemMap = {}
-  selectedSelectedItems: ItemMap = {}
+  selectedItems: T[] = []
+  availableItems: T[] = []
+  visibleAvailableItems: T[] = []
+  selectedAvailableItems: ItemMap<T> = {}
+  selectedSelectedItems: ItemMap<T> = {}
   formVisible = false
   hasCheckedSelectedItem = false
   filterLabel = 'All'
@@ -29,6 +31,14 @@ export class MultiSelectFilterComponent implements OnInit, OnDestroy {
   loadPending = true
   textValue = ''
   focusInterval?: any
+
+  /*
+   * ID of the displayed item to array of the hidden items.
+   * The 'applicable' flag is used to cover the case of items with the same name that  
+   * are hidden and should not be returned as part of the filter's values.
+   * This is needed when we change the values of upstream selections (e.g. a specification of a test suite).
+   */
+  itemsWithSameValue: { [key: number]: {applicable: boolean, item: T}[] } = {}
 
   constructor(
     private eRef: ElementRef,
@@ -49,13 +59,42 @@ export class MultiSelectFilterComponent implements OnInit, OnDestroy {
         const allowedIdSet = this.dataService.asIdSet(newItems)
         const previousIdSet = this.selectedSelectedItems
         for (let id in previousIdSet) {
-          if (!allowedIdSet[id]) {
+          if (this.itemsWithSameValue[id]) {
+            // We have other items with the same text value - mark as applicable only the ones we are supposed to keep.
+            // The other values are maintained to allow switching upstream values (e.g. the specification of a test suite).
+            for (let similarItem of this.itemsWithSameValue[id]) {
+              similarItem.applicable = allowedIdSet[similarItem.item.id] != undefined
+            }
+          }
+          if (!allowedIdSet[id] && this.selectedSelectedItems[id]) {
+            // The currently selected item no longer applies.
+            const previouslySelectedItem = this.selectedSelectedItems[id].item
+            if (this.itemsWithSameValue[id]) {
+              // Other similarly valued items exist.
+              let otherApplicableItemWithSameTextValue = find(this.itemsWithSameValue[id], (entry) => { return entry.applicable })
+              if (otherApplicableItemWithSameTextValue != undefined) {
+                const newSelectedItemId = otherApplicableItemWithSameTextValue.item.id
+                // A previously hidden similarly valued item still applies - replace the visible one with it.
+                const otherHiddenItems = filter(this.itemsWithSameValue[id], (entry) => { return entry.item.id != newSelectedItemId })
+                // Add the previously selected item as a hidden, non-applicable one and the remaining ones.
+                this.itemsWithSameValue[newSelectedItemId] = [{applicable: false, item: previouslySelectedItem}].concat(otherHiddenItems)
+                this.selectedSelectedItems[newSelectedItemId] = { selected: true, item: otherApplicableItemWithSameTextValue.item }
+              }
+              delete this.itemsWithSameValue[id]
+            }
             delete this.selectedSelectedItems[id]
           }
         }
-        this.selectedItems = this.sortItems(newItems)
+        const newItemsToSet: T[] = []
+        for (let key in this.selectedSelectedItems) {
+          if (this.selectedSelectedItems[key].selected) {
+            newItemsToSet.push(this.selectedSelectedItems[key].item)
+          }
+        }
+        this.selectedItems = this.sortItems(newItemsToSet)
         this.updateCheckFlag()
         this.updateLabel()
+        this.applyItems(true)
       })
     }
   }
@@ -90,7 +129,7 @@ export class MultiSelectFilterComponent implements OnInit, OnDestroy {
     }
   } 
 
-  private hasCheckedItems(itemMap: ItemMap) {
+  private hasCheckedItems(itemMap: ItemMap<T>) {
     for (let itemId in itemMap) {
       if (itemMap[itemId].selected) {
         return true
@@ -143,19 +182,58 @@ export class MultiSelectFilterComponent implements OnInit, OnDestroy {
     return result
   }
 
+  private isSelected(id: number): boolean {
+    if (this.selectedSelectedItems[id]) {
+      return true
+    } else if (this.itemsWithSameValue[id]) {
+      return find(this.itemsWithSameValue[id], (entry) => { 
+        return entry.applicable && entry.item.id == id
+      }) != undefined
+    }
+    return false
+  }
+
+  private findItemWithSameTextValue(items: T[], item: T) {
+    let itemWithSameTextValue: T|undefined
+    if (items != undefined) {
+      itemWithSameTextValue = find(items, (existingItem) => {
+        return existingItem[this.config.textField] == item[this.config.textField]
+      })
+    }
+    return itemWithSameTextValue
+  }
+
+  private recordItemWithSameTextValue(visibleItem: T, itemToHide: T) {
+    if (this.itemsWithSameValue[visibleItem.id] == undefined) {
+      this.itemsWithSameValue[visibleItem.id] = []
+    }
+    this.itemsWithSameValue[visibleItem.id].push({ applicable: true, item: itemToHide })
+  }
+
   private loadData() {
     this.selectedAvailableItems = {}
     this.availableItems = []
     this.visibleAvailableItems = []
     this.loadPending = true
+    this.itemsWithSameValue = {}
     if (this.config.loader) {
       this.config.loader().subscribe((items) => {
-        const newSelectedAvailableItems: ItemMap = {}
-        const newAvailableItems = []
+        const newSelectedAvailableItems: ItemMap<T> = {}
+        const newAvailableItems: T[] = []
         for (let item of items) {
-          if (!this.selectedSelectedItems[item.id]) {
-            newAvailableItems.push(item)
-            newSelectedAvailableItems[item.id] = { selected: false, item: item }
+          if (!this.isSelected(item.id)) {
+            let matchingItem = this.findItemWithSameTextValue(newAvailableItems, item)
+            if (matchingItem) {
+              this.recordItemWithSameTextValue(matchingItem, item)
+            } else {
+              matchingItem = this.findItemWithSameTextValue(this.selectedItems, item)
+              if (matchingItem) {
+                this.recordItemWithSameTextValue(matchingItem, item)
+              } else {
+                newAvailableItems.push(item)
+                newSelectedAvailableItems[item.id] = { selected: false, item: item }
+              }
+            }
           }
         }
         this.selectedAvailableItems = newSelectedAvailableItems
@@ -176,15 +254,15 @@ export class MultiSelectFilterComponent implements OnInit, OnDestroy {
     }
   }
 
-  availableItemClicked(item: MultiSelectItem) {
+  availableItemClicked(item: T) {
     this.itemClicked(this.selectedAvailableItems, item)
   }
 
-  selectedItemClicked(item: MultiSelectItem) {
+  selectedItemClicked(item: T) {
     this.itemClicked(this.selectedSelectedItems, item)
   }
 
-  private itemClicked(itemMap: ItemMap, item: MultiSelectItem) {
+  private itemClicked(itemMap: ItemMap<T>, item: T) {
     itemMap[item.id].selected = !itemMap[item.id].selected
     if (itemMap[item.id].selected) {
       this.updateCheckFlag(true)
@@ -193,11 +271,26 @@ export class MultiSelectFilterComponent implements OnInit, OnDestroy {
     }
   }
 
-  private sortItems(items: MultiSelectItem[]) {
+  private sortItems(items: T[]) {
     return items.sort((a, b) => { return (<string>a[this.config.textField]).localeCompare(<string>b[this.config.textField])})
   }
 
-  applyItems() {
+  private getItemsToSignalForItem(item: T): T[] {
+    return [item].concat(this.getHiddenItemsForItem(item, true))
+  }
+
+  private getHiddenItemsForItem(item: T, applicable: boolean): T[] {
+    let items: T[] = []
+    if (this.itemsWithSameValue[item.id]) {
+      items = filter(this.itemsWithSameValue[item.id], (otherItem) => { return otherItem.applicable == applicable }).map((otherItem) => otherItem.item)
+    }
+    if (items == undefined) {
+      items = []
+    }
+    return items
+  }
+
+  applyItems(skipRefresh?: boolean) {
     this.formVisible = false
     // Remove previously selected items that were unchecked.
     for (let itemId in this.selectedSelectedItems) {
@@ -205,10 +298,12 @@ export class MultiSelectFilterComponent implements OnInit, OnDestroy {
         delete this.selectedSelectedItems[itemId]
       }
     }
-    const newSelectedItems = []
+    let newSelectedItems: T[] = []
+    let selectedItemsToReport: FilterValues<T> = { active: [], other: [] }
     for (let item of this.selectedItems) {
       if (this.selectedSelectedItems[item.id] != undefined) {
-        newSelectedItems.push(this.selectedSelectedItems[item.id].item)
+        newSelectedItems.push(item)
+        selectedItemsToReport.active = selectedItemsToReport.active.concat(this.getItemsToSignalForItem(item))
       }
     }
     // Add available items that have been checked.
@@ -216,13 +311,18 @@ export class MultiSelectFilterComponent implements OnInit, OnDestroy {
       if (this.selectedAvailableItems[itemId].selected) {
         const item = this.selectedAvailableItems[itemId].item
         newSelectedItems.push(item)
+        selectedItemsToReport.active = selectedItemsToReport.active.concat(this.getItemsToSignalForItem(item))
         this.selectedSelectedItems[itemId] = { selected: true, item: item }
+        delete this.selectedAvailableItems[itemId]
       }
+    }
+    for (let item of newSelectedItems) {
+      selectedItemsToReport.other = selectedItemsToReport.other.concat(this.getHiddenItemsForItem(item, false))
     }
     this.selectedItems = this.sortItems(newSelectedItems)
     this.updateCheckFlag()
     this.updateLabel()
-    this.apply.emit(this.selectedItems)
+    this.apply.emit({ values: selectedItemsToReport, applyFilters: skipRefresh == undefined || !skipRefresh })
   }
 
   clearSelectedItems() {
@@ -230,7 +330,7 @@ export class MultiSelectFilterComponent implements OnInit, OnDestroy {
     this.clearSelectedItemMap(this.selectedAvailableItems)
   }
 
-  private clearSelectedItemMap(itemMap: ItemMap) {
+  private clearSelectedItemMap(itemMap: ItemMap<T>) {
     for (let itemId in itemMap) {
       itemMap[itemId].selected = false
     }

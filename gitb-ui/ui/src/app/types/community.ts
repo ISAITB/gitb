@@ -1,9 +1,9 @@
 import { Domain } from "./domain";
+import { EntityWithId } from "./entity-with-id";
 import { TypedLabelConfig } from "./typed-label-config.type";
 
-export interface Community {
+export interface Community extends EntityWithId {
 
-    id: number
     sname: string
     fname: string
     description?: string
