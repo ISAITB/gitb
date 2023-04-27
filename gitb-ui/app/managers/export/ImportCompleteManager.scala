@@ -885,7 +885,7 @@ class ImportCompleteManager @Inject()(communityResourceManager: CommunityResourc
                   val relatedGroupId = getProcessedDbId(data.getGroup, ImportItemType.SpecificationGroup, ctx)
                   if (data.getGroup == null || relatedGroupId.nonEmpty) {
                     val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
-                    conformanceManager.createSpecificationsInternal(models.Specifications(0L, data.getShortName, data.getFullName, Option(data.getDescription), data.isHidden, apiKey, targetDomainId.get, relatedGroupId), checkApiKeyUniqueness = true)
+                    conformanceManager.createSpecificationsInternal(models.Specifications(0L, data.getShortName, data.getFullName, Option(data.getDescription), data.isHidden, apiKey, getDomainIdFromParentItem(item), relatedGroupId), checkApiKeyUniqueness = true)
                   } else {
                     DBIO.successful(())
                   }
@@ -930,7 +930,7 @@ class ImportCompleteManager @Inject()(communityResourceManager: CommunityResourc
                         order = Some(data.getOrder.shortValue())
                       }
                       val specificationId = item.parentItem.get.targetKey.get.toLong // Specification
-                      val domainId = targetDomainId.get
+                      val domainId = getDomainIdFromParentItem(item)
                       val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
                       conformanceManager.createActor(models.Actors(0L, data.getActorId, data.getName, Option(data.getDescription), Some(data.isDefault), data.isHidden, order, apiKey, domainId), specificationId, checkApiKeyUniqueness = true)
                     },
