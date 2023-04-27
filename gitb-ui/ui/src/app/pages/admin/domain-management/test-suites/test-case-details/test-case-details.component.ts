@@ -9,10 +9,12 @@ import { ConformanceService } from 'src/app/services/conformance.service';
 import { DataService } from 'src/app/services/data.service';
 import { HtmlService } from 'src/app/services/html.service';
 import { PopupService } from 'src/app/services/popup.service';
+import { ReportService } from 'src/app/services/report.service';
 import { RoutingService } from 'src/app/services/routing.service';
 import { TestSuiteService } from 'src/app/services/test-suite.service';
 import { TestService } from 'src/app/services/test.service';
 import { TestCase } from 'src/app/types/test-case';
+import { saveAs } from 'file-saver'
 
 @Component({
   selector: 'app-test-case-details',
@@ -32,6 +34,7 @@ export class TestCaseDetailsComponent extends BaseComponent implements OnInit, A
   steps: {[key: string]: StepData[]} = {}
   actorInfo: {[key: string]: ActorInfo[]} = {}
   testEvents: {[key: number]: DiagramEvents} = {}
+  previewPending = false
 
   constructor(
     private dataService: DataService,
@@ -41,7 +44,8 @@ export class TestCaseDetailsComponent extends BaseComponent implements OnInit, A
     private popupService: PopupService,
     private htmlService: HtmlService,
     private conformanceService: ConformanceService,
-    private testService: TestService
+    private testService: TestService,
+    private reportService: ReportService
   ) { super() }
 
   ngAfterViewInit(): void {
@@ -66,10 +70,24 @@ export class TestCaseDetailsComponent extends BaseComponent implements OnInit, A
     })
   }
 
-	previewDocumentation() {
+	previewDocumentationPopup() {
+    this.previewPending = true
 		this.conformanceService.getDocumentationForPreview(this.testCase.documentation!)
     .subscribe((html) => {
       this.htmlService.showHtml('Test case documentation', html)
+    }).add(() => {
+      this.previewPending = false
+    })
+  }
+
+	previewDocumentationPdf() {
+    this.previewPending = true
+		this.reportService.exportTestCaseDocumentationPreviewReport(this.testCase.documentation!)
+    .subscribe((data) => {
+      const blobData = new Blob([data], {type: 'application/pdf'});
+      saveAs(blobData, "report_preview.pdf");
+    }).add(() => {
+      this.previewPending = false
     })
   }
 

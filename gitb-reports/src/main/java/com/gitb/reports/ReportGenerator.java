@@ -416,6 +416,16 @@ public class ReportGenerator {
         }
     }
 
+    public void writeTestCaseDocumentationPreviewReport(String documentation, OutputStream outputStream, ReportSpecs specs) {
+        try {
+            Map<String, Object> parameters = new HashMap<>();
+            parameters.put("documentation", documentation);
+            writeClasspathReport("reports/TestCaseDocumentationPreview.ftl", parameters, outputStream, specs);
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
     public void writeTestCaseOverviewReport(TestCaseOverview testCaseOverview, OutputStream outputStream, ReportSpecs specs) {
         try {
             Map<String, Object> parameters = new HashMap<>();

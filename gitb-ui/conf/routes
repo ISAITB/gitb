@@ -109,6 +109,7 @@ GET	    /api/testcases/:testCaseId              @controllers.ConformanceService.
 GET	    /api/testcases/:id/documentation        @controllers.ConformanceService.getTestCaseDocumentation(id : Long)
 GET	    /api/testsuites/:id/documentation       @controllers.ConformanceService.getTestSuiteDocumentation(id : Long)
 POST    /api/testdocumentation/                 @controllers.ConformanceService.getDocumentationForPreview()
+POST    /api/testdocumentation/previewreport    @controllers.TestSuiteService.previewTestCaseDocumentationInReports()
 GET     /api/actors/:actor_id/endpoints         @controllers.ConformanceService.getEndpointsForActor(actor_id : Long)
 POST    /api/endpoints                          @controllers.ConformanceService.createEndpoint()
 DELETE  /api/endpoints/:endpoint_id             @controllers.EndPointService.deleteEndPoint(endpoint_id : Long)

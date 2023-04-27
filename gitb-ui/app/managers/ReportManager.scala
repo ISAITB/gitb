@@ -527,6 +527,21 @@ class ReportManager @Inject() (reportHelper: ReportHelper, triggerHelper: Trigge
     reportPath
   }
 
+  def generateTestCaseDocumentationPreviewReport(reportPath: Path, communityId: Long, documentation: String): Path = {
+    Files.createDirectories(reportPath.getParent)
+    val fos = Files.newOutputStream(reportPath)
+    try {
+      ReportGenerator.getInstance().writeTestCaseDocumentationPreviewReport(documentation, fos, reportHelper.createReportSpecs(Some(communityId)))
+      fos.flush()
+    } catch {
+      case e: Exception =>
+        throw new IllegalStateException("Unable to generate PDF report", e)
+    } finally {
+      if (fos != null) fos.close()
+    }
+    reportPath
+  }
+
   def generateConformanceStatementReport(reportPath: Path, addTestCases: Boolean, actorId: Long, systemId: Long, labels: Map[Short, CommunityLabels], communityId: Long): Path = {
     generateCoreConformanceReport(reportPath, addTestCases, None, actorId, systemId, labels, communityId)
   }

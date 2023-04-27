@@ -5,16 +5,17 @@ import managers._
 import org.apache.commons.io.FileUtils
 import org.slf4j.{Logger, LoggerFactory}
 import play.api.mvc.{AbstractController, ControllerComponents}
-import utils.JsonUtil
+import utils.{HtmlUtil, JsonUtil, RepositoryUtils}
 
+import java.nio.file.Paths
+import java.util.UUID
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
-import utils.HtmlUtil
 
 /**
  * Created by serbay.Tes
  */
-class TestSuiteService @Inject() (implicit ec: ExecutionContext, authorizedAction: AuthorizedAction, cc: ControllerComponents, testSuiteManager: TestSuiteManager, testCaseManager: TestCaseManager, specificationManager: SpecificationManager, conformanceManager: ConformanceManager, authorizationManager: AuthorizationManager) extends AbstractController(cc) {
+class TestSuiteService @Inject() (implicit ec: ExecutionContext, authorizedAction: AuthorizedAction, cc: ControllerComponents, repositoryUtils: RepositoryUtils, reportManager: ReportManager, communityManager: CommunityManager, testSuiteManager: TestSuiteManager, testCaseManager: TestCaseManager, conformanceManager: ConformanceManager, authorizationManager: AuthorizationManager) extends AbstractController(cc) {
 
 	private final val logger: Logger = LoggerFactory.getLogger(classOf[TestSuiteService])
 
@@ -41,6 +42,32 @@ class TestSuiteService @Inject() (implicit ec: ExecutionContext, authorizedActio
 		}
 		testCaseManager.updateTestCaseMetadata(testCaseId, name, description, documentation)
 		ResponseConstructor.constructEmptyResponse
+	}
+
+	def previewTestCaseDocumentationInReports() = authorizedAction { request =>
+		authorizationManager.canPreviewDocumentation(request)
+		val userId = ParameterExtractor.extractUserId(request)
+		val documentation = HtmlUtil.sanitizeEditorContent(ParameterExtractor.requiredBodyParameter(request, Parameters.DOCUMENTATION))
+		val communityId = communityManager.getUserCommunityId(userId)
+		val reportPath = Paths.get(
+			repositoryUtils.getTempReportFolder().getAbsolutePath,
+			"reports",
+			"preview_"+UUID.randomUUID().toString+".pdf"
+		)
+		try {
+			reportManager.generateTestCaseDocumentationPreviewReport(reportPath, communityId, documentation)
+			Ok.sendFile(
+				content = reportPath.toFile,
+				fileName = _ => Some("report_preview.pdf"),
+				onClose = () => {
+					FileUtils.deleteQuietly(reportPath.toFile)
+				}
+			)
+		} catch {
+			case e: Exception =>
+				FileUtils.deleteQuietly(reportPath.toFile)
+				throw e
+		}
 	}
 
 	def undeployTestSuite(testSuiteId: Long) = authorizedAction { request =>
