@@ -73,6 +73,12 @@ export class TestCaseDetailsComponent extends BaseComponent implements OnInit, A
     })
   }
 
+  copyDocumentation() {
+    this.dataService.copyToClipboard(this.testCase.documentation!).subscribe(() => {
+      this.popupService.success('HTML source copied to clipboard.')
+    })    
+  }
+
 	saveChanges() {
     this.pending = true
 		this.testSuiteService.updateTestCaseMetadata(this.testCase.id!, this.testCase.sname!, this.testCase.description, this.testCase.documentation)

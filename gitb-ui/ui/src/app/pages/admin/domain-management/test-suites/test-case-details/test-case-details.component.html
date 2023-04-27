@@ -44,7 +44,10 @@
 					</div>
 					<div class="row form-group">
 						<div class="col-xs-offset-1 col-xs-10">
-							<button (click)="previewDocumentation()" type="button" class="btn btn-default" [disabled]="this.testCase.documentation == undefined || this.testCase.documentation.length == 0">Preview documentation</button>
+							<div class="btn-toolbar">
+								<button (click)="previewDocumentation()" type="button" class="btn btn-default" [disabled]="this.testCase.documentation == undefined || this.testCase.documentation.length == 0">Preview documentation</button>
+								<button (click)="copyDocumentation()" type="button" class="btn btn-default" [disabled]="this.testCase.documentation == undefined || this.testCase.documentation.length == 0">Copy to clipboard</button>
+							</div>
 						</div>
 					</div>
 				</div>
