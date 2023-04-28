@@ -379,13 +379,17 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils, testResultManag
   def defineConformanceStatements(systemId: Long, actorIds: Seq[Long]):Unit = {
     val result = exec((for {
       communityId <- getCommunityIdForSystemId(systemId)
+      domainId <- PersistenceSchema.communities.filter(_.id === communityId).map(_.domain).result.headOption
       existingStatementActorIds <- PersistenceSchema.systemImplementsActors
         .filter(_.systemId === systemId)
         .map(_.actorId)
         .result
       actorsToProcess <- PersistenceSchema.specificationHasActors
-        .filter(_.actorId inSet actorIds)
-        .filterNot(_.actorId inSet existingStatementActorIds)
+        .join(PersistenceSchema.actors).on(_.actorId === _.id)
+        .filterOpt(domainId)((q, id) => q._2.domain === id) // Ensure these are valid actors within the domain.
+        .filter(_._1.actorId inSet actorIds)
+        .filterNot(_._1.actorId inSet existingStatementActorIds)
+        .map(_._1)
         .result
       _ <- {
         val actions = new ListBuffer[DBIO[_]]

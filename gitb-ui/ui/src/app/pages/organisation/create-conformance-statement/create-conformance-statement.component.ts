@@ -294,8 +294,8 @@ export class CreateConformanceStatementComponent implements OnInit {
 
   toggleCheck(check: boolean) {
     this.visit(this.items, (item) => {
-      if (item.filtered) {
-        // Only toggle items that are visible.
+      if (item.filtered && (item.items == undefined || item.items.length == 0)) {
+        // Only toggle items that are visible and have a checkbox.
         item.checked = check
         this.selectionChanged(item)
       }
