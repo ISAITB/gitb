@@ -535,14 +535,85 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils, testResultManag
         .filter(_._1._1._1._1.spec === spec.get)
         .filter(_._1._1._1._1.actor === actor.get)
     }
+    /*
+    DB sorting is skipped as we have custom sorting that follows.
+
     query = query.sortBy(x => (
       x._2.fullname.asc, // Domain
-      x._1._1._2.map(_.fullname).getOrElse("").asc, // Specification group
-      x._1._1._1._2.fullname.asc, // Specification
+      x._1._1._2.map(_.displayOrder).getOrElse(0.toShort).asc, // Specification group order
+      x._1._1._2.map(_.fullname).getOrElse("").asc, // Specification group name
+      x._1._1._1._2.displayOrder.asc, // Specification order
+      x._1._1._1._2.fullname.asc, // Specification name
       x._1._2.name.asc // Actor
     ))
+    */
+    // Apply custom sorting.
+    val results = exec(query.result.map(_.toList)).sortWith((a, b) => {
+      val domainNameA = a._2.fullname
+      val groupOrderA = a._1._1._2.map(_.displayOrder)
+      val groupNameA = a._1._1._2.map(_.fullname)
+      val specOrderA = a._1._1._1._2.displayOrder
+      val specNameA = a._1._1._1._2.fullname
+      val actorNameA = a._1._2.name
+      val domainNameB = b._2.fullname
+      val groupOrderB = b._1._1._2.map(_.displayOrder)
+      val groupNameB = b._1._1._2.map(_.fullname)
+      val specOrderB = b._1._1._1._2.displayOrder
+      val specNameB = b._1._1._1._2.fullname
+      val actorNameB = b._1._2.name
 
-    val results = exec(query.result.map(_.toList))
+      var result = true // A before B
+      // Check domains
+      val domains = domainNameB.compareTo(domainNameA)
+      if (domains > 0) {
+        result = false
+      } else if (domains < 0) {
+        result = true
+      } else {
+        // Specification group order
+        val groupOrderToCheckForA = if (groupOrderA.isDefined) groupOrderA.get else specOrderA
+        val groupOrderToCheckForB = if (groupOrderB.isDefined) groupOrderB.get else specOrderB
+        val orders = groupOrderToCheckForA.compareTo(groupOrderToCheckForB)
+        if (orders > 0) {
+          result = false
+        } else if (orders < 0) {
+          result = true
+        } else {
+          // Specification order
+          val specOrders = specOrderA.compareTo(specOrderB)
+          if (specOrders > 0) {
+            result = false
+          } else if (specOrders < 0) {
+            result = true
+          } else {
+            // Specification with group vs without group
+            if (groupNameA.isEmpty && groupNameB.isDefined) {
+              result = false
+            } else if (groupNameA.isDefined && groupNameB.isEmpty) {
+              result = true
+            } else { // Botḣ without group or with groups with same name
+              val nameToCheckForA = (if (groupNameA.isDefined) groupNameA.get + " - " else "") + specNameA
+              val nameToCheckForB = (if (groupNameB.isDefined) groupNameB.get + " - " else "") + specNameB
+              val names = nameToCheckForA.compareTo(nameToCheckForB)
+              if (names > 0) {
+                result = false
+              } else if (names < 0) {
+                result = true
+              } else {
+                val actors = actorNameA.compareTo(actorNameB)
+                if (actors > 0) {
+                  result = false
+                } else {
+                  result = true
+                }
+              }
+            }
+          }
+        }
+      }
+      result
+    })
+
     val resultBuilder = new ConformanceStatusBuilder[ConformanceStatement](recordDetails = false)
     results.foreach { result =>
       var specName = result._1._1._1._2.shortname

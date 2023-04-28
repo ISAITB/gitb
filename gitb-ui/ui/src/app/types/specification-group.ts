@@ -6,5 +6,6 @@ export interface SpecificationGroup extends EntityWithId {
     fname: string
     description?: string
     domain: number
+    order: number
 
 }

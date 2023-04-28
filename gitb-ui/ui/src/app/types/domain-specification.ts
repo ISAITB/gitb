@@ -13,6 +13,7 @@ export interface DomainSpecification {
     options?: DomainSpecification[]
     collapsed: boolean
     domain: number
+    order: number
 
     movePending?: boolean
     copyPending?: boolean

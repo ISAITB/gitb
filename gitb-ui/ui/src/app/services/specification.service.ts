@@ -130,4 +130,33 @@ export class SpecificationService {
     })
   }  
 
+  saveSpecificationOrder(domainId: number, groupIds: number[], groupOrders: number[], specIds: number[], specOrders: number[]) {
+    const data: any = {
+      domain_id: domainId
+    }
+    if (groupIds.length > 0) {
+      data.group_ids = groupIds.join(',')
+      data.group_orders = groupOrders.join(',')
+    }
+    if (specIds.length > 0) {
+      data.specification_ids = specIds.join(',')
+      data.specification_orders = specOrders.join(',')
+    }
+    return this.restService.post<void>({
+      path: ROUTES.controllers.SpecificationService.saveSpecificationOrder().url,
+      data: data,
+      authenticate: true
+    })
+  }  
+
+  resetSpecificationOrder(domainId: number) {
+    return this.restService.post<void>({
+      path: ROUTES.controllers.SpecificationService.resetSpecificationOrder().url,
+      data: {
+        domain_id: domainId
+      },
+      authenticate: true
+    })
+  }  
+  
 }

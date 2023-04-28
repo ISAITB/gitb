@@ -24,7 +24,7 @@ import { LogLevel } from '../types/log-level';
 import { SpecificationGroup } from '../types/specification-group';
 import { Specification } from '../types/specification';
 import { DomainSpecification } from '../types/domain-specification';
-import { filter, find, map, sortBy } from 'lodash';
+import { find, sortBy } from 'lodash';
 
 @Injectable({
   providedIn: 'root'
@@ -1099,6 +1099,7 @@ export class DataService {
       option: specification.group != undefined,
       collapsed: false,
       group: false,
+      order: specification.order,
       domain: specification.domain,
     }
   }
@@ -1114,16 +1115,19 @@ export class DataService {
       option: false,
       collapsed: true,
       domain: group.domain,
+      order: group.order,
       options: []
     }
   }
 
   toDomainSpecifications(groups: SpecificationGroup[], specs: Specification[]): DomainSpecification[] {
     const groupMap: {[id: number]: DomainSpecification} = {}
+    let results: DomainSpecification[] = []
     for (let group of groups) {
-      groupMap[group.id] = this.specGroupToDomainSpecification(group)
+      const groupAsDomainSpecification = this.specGroupToDomainSpecification(group)
+      results.push(groupAsDomainSpecification)
+      groupMap[group.id] = groupAsDomainSpecification
     }
-    const results: DomainSpecification[] = []
     for (let spec of specs) {
       if (spec.group == undefined) {
         results.push(this.specToDomainSpecification(spec))
@@ -1134,9 +1138,7 @@ export class DataService {
       }
     }
     for (let key in groupMap) {
-      const group = groupMap[key]
-      this.setSpecificationGroupVisibility(group)
-      results.push(group)
+      this.setSpecificationGroupVisibility(groupMap[key])
     }
     return this.sortDomainSpecifications(results)
   }
@@ -1149,7 +1151,15 @@ export class DataService {
   }
 
   sortDomainSpecifications(specs: DomainSpecification[]) {
-    return sortBy(specs, (spec) => spec.sname)
+    // Apply sorting.
+    specs.sort((a, b) => a.order - b.order || a.fname.localeCompare(b.fname))
+    // Sort also options.
+    specs.forEach(spec => {
+      if (spec.options) {
+        spec.options.sort((a, b) => a.order - b.order || a.fname.localeCompare(b.fname))
+      }
+    })
+    return specs
   }
 
   toSpecifications(domainSpecifications: DomainSpecification[]) {
@@ -1162,6 +1172,7 @@ export class DataService {
             sname: domainSpec.sname + ' - ' +option.sname,
             fname: domainSpec.fname + ' - ' +option.fname,
             domain: option.domain,
+            order: option.order,
             hidden: false
           })
         }
@@ -1171,6 +1182,7 @@ export class DataService {
           sname: domainSpec.sname,
           fname: domainSpec.fname,
           domain: domainSpec.domain,
+          order: domainSpec.order,
           hidden: false
         })
       }

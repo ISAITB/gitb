@@ -22,15 +22,15 @@ class SpecificationService @Inject() (authorizedAction: AuthorizedAction, cc: Co
   def updateSpecification(specId: Long) = authorizedAction { request =>
     authorizationManager.canUpdateSpecification(request, specId)
     val specExists = specificationManager.checkSpecificationExists(specId)
-    if(specExists) {
-      val sname:String = ParameterExtractor.requiredBodyParameter(request, Parameters.SHORT_NAME)
-      val fname:String = ParameterExtractor.requiredBodyParameter(request, Parameters.FULL_NAME)
-      val descr:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DESC)
+    if (specExists) {
+      val sname: String = ParameterExtractor.requiredBodyParameter(request, Parameters.SHORT_NAME)
+      val fname: String = ParameterExtractor.requiredBodyParameter(request, Parameters.FULL_NAME)
+      val descr: Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DESC)
       val hidden = ParameterExtractor.requiredBodyParameter(request, Parameters.HIDDEN).toBoolean
       val groupId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.GROUP_ID)
       specificationManager.updateSpecification(specId, sname, fname, descr, hidden, groupId)
       ResponseConstructor.constructEmptyResponse
-    } else{
+    } else {
       throw NotFoundException(ErrorCodes.SYSTEM_NOT_FOUND, communityLabelManager.getLabel(request, LabelType.Specification) + " with ID '" + specId + "' not found.")
     }
   }
@@ -100,4 +100,22 @@ class SpecificationService @Inject() (authorizedAction: AuthorizedAction, cc: Co
     ResponseConstructor.constructJsonResponse(JsonUtil.jsSpecificationGroup(group).toString())
   }
 
+  def saveSpecificationOrder() = authorizedAction { request =>
+    val domainId = ParameterExtractor.requiredBodyParameter(request, Parameters.DOMAIN_ID).toLong
+    authorizationManager.canManageDomain(request, domainId)
+    val groupIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.GROUP_IDS).getOrElse(List.empty)
+    val groupOrders = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.GROUP_ORDERS).getOrElse(List.empty)
+    val specIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.SPEC_IDS).getOrElse(List.empty)
+    val specOrders = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.SPEC_ORDERS).getOrElse(List.empty)
+    specificationManager.saveSpecificationOrder(groupIds, groupOrders, specIds, specOrders)
+    ResponseConstructor.constructEmptyResponse
+  }
+
+  def resetSpecificationOrder() = authorizedAction { request =>
+    val domainId = ParameterExtractor.requiredBodyParameter(request, Parameters.DOMAIN_ID).toLong
+    authorizationManager.canManageDomain(request, domainId)
+    specificationManager.resetSpecificationOrder(domainId)
+    ResponseConstructor.constructEmptyResponse
+
+  }
 }

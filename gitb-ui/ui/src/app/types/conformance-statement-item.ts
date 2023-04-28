@@ -4,6 +4,7 @@ export interface ConformanceStatementItem {
     name: string,
     description?: string,
     itemType: number,
+    order: number
     items?: ConformanceStatementItem[]
 
     hidden?: boolean

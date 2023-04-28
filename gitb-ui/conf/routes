@@ -97,6 +97,8 @@ POST    /api/specgroups/:group_id/delete        @controllers.SpecificationServic
 POST    /api/specgroups/:group_id/add           @controllers.SpecificationService.addSpecificationToGroup(group_id: Long)
 POST    /api/specgroups/:group_id/copy          @controllers.SpecificationService.copySpecificationToGroup(group_id: Long)
 POST    /api/specgroups/:spec_id/remove         @controllers.SpecificationService.removeSpecificationFromGroup(spec_id: Long)
+POST    /api/specorder                          @controllers.SpecificationService.saveSpecificationOrder()
+POST    /api/specorderreset                     @controllers.SpecificationService.resetSpecificationOrder()
 POST    /api/search/actors                      @controllers.ConformanceService.searchActors()
 POST    /api/search/actorsInDomain              @controllers.ConformanceService.searchActorsInDomain()
 POST    /api/search/actorsForIds                @controllers.ConformanceService.getActors()

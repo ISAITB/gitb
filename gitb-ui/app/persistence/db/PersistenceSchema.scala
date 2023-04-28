@@ -104,8 +104,9 @@ object PersistenceSchema {
     def hidden = column[Boolean]("is_hidden")
     def apiKey = column[String]("api_key")
     def domain = column[Long]("domain")
+    def displayOrder = column[Short]("display_order")
     def group = column[Option[Long]]("spec_group")
-    def * = (id, shortname, fullname, description, hidden, apiKey, domain, group) <> (Specifications.tupled, Specifications.unapply)
+    def * = (id, shortname, fullname, description, hidden, apiKey, domain, displayOrder, group) <> (Specifications.tupled, Specifications.unapply)
   }
   val specifications = TableQuery[SpecificationsTable]
   val insertSpecification = specifications returning specifications.map(_.id)
@@ -581,8 +582,9 @@ object PersistenceSchema {
     def shortname = column[String]("sname")
     def fullname = column[String]("fname")
     def description = column[Option[String]]("description", O.SqlType("TEXT"))
+    def displayOrder = column[Short]("display_order")
     def domain = column[Long]("domain")
-    def * = (id, shortname, fullname, description, domain) <> (SpecificationGroups.tupled, SpecificationGroups.unapply)
+    def * = (id, shortname, fullname, description, displayOrder, domain) <> (SpecificationGroups.tupled, SpecificationGroups.unapply)
   }
 
   val specificationGroups = TableQuery[SpecificationGroupsTable]

@@ -44,6 +44,16 @@
                                     <li role="menuitem"><a class="dropdown-item" href (click)="toggleSpecificationGroupCollapse(true);$event.preventDefault();">Hide {{dataService.labelSpecificationInGroupsLower()}}</a></li>
                                 </ul>
                             </div>
+                            <div class="btn-group" dropdown *ngIf="specifications.length > 1">
+                                <button [pending]="saveOrderPending" type="button" class="btn btn-default" (click)="saveOrdering()">Save {{dataService.labelSpecificationLower()}} order</button>
+                                <button id="button-order" type="button" dropdownToggle class="btn btn-default dropdown-toggle dropdown-toggle-split">
+                                    <span class="caret"></span>
+                                    <span class="sr-only visually-hidden">Reset {{dataService.labelSpecificationLower()}} order</span>
+                                </button>
+                                <ul id="dropdown-order" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-order">
+                                    <li role="menuitem"><a class="dropdown-item" href (click)="resetOrdering();$event.preventDefault();">Reset {{dataService.labelSpecificationLower()}} order</a></li>
+                                </ul>
+                            </div>
                         </div>
                     </div>
                     <div class="panel panel-default">
@@ -54,14 +64,14 @@
                                     <th>{{dataService.labelSpecification()}}</th>
                                     <th>Description</th>
                                     <th class="th-min-centered"></th>
-                                    <th *ngIf="specificationGroups.length > 0" class="th-min"></th>
+                                    <th class="th-min"></th>
                                 </tr>
                             </thead>
                             <tbody [class.disable-events]="specificationStatus && specificationStatus.status != Constants.STATUS.FINISHED">
                                 <ng-container [ngSwitch]="specificationStatus && specificationStatus.status != Constants.STATUS.FINISHED">
                                     <ng-container *ngSwitchCase="true">
                                         <tr>
-                                            <td [attr.colspan]="(specificationGroups.length > 0)?5:3" class="td-data-loading"><app-pending-block></app-pending-block></td>
+                                            <td [attr.colspan]="(specificationGroups.length > 0)?5:4" class="td-data-loading"><app-pending-block></app-pending-block></td>
                                         </tr>
                                     </ng-container>
                                     <ng-container *ngSwitchDefault [ngSwitch]="domainSpecifications.length == 0">
@@ -71,16 +81,20 @@
                                             </tr>
                                         </ng-container>
                                         <ng-container *ngSwitchDefault>
-                                            <ng-container *ngFor="let spec of domainSpecifications">
+                                            <ng-container *ngFor="let spec of domainSpecifications; let firstGroup = first; let lastGroup = last">
                                                 <tr app-domain-specification-table-row
+                                                    class="group"
                                                     [spec]="spec"
+                                                    [first]="firstGroup"
+                                                    [last]="lastGroup"
                                                     [groups]="specificationGroups"
                                                     (removeSpec)="removeSpecificationFromGroup($event[0], $event[1])"
                                                     (moveSpec)="moveSpecificationToGroup($event[0], $event[1], $event[2])"
                                                     (copySpec)="copySpecificationToGroup($event[0], $event[1], $event[2])"
-                                                    class="group"
+                                                    (moveUp)="moveSpecificationUp($event)"
+                                                    (moveDown)="moveSpecificationDown($event)"
                                                     (click)="onSpecificationGroupSelect(spec)"
-                                                    ></tr>
+                                                ></tr>
                                                 <tr class="group-options" *ngIf="spec.group && spec.options != undefined">
                                                     <td colspan="5" class="spec-group-options-td">
                                                         <div [collapse]="spec.collapsed" [isAnimated]="true">
@@ -99,14 +113,18 @@
                                                                             <td colspan="4" class="td-no-data"><span>No {{dataService.labelSpecificationInGroupsLower()}} found.</span></td>
                                                                         </tr>
                                                                         <ng-container *ngSwitchDefault>
-                                                                            <ng-container *ngFor="let option of spec.options">
+                                                                            <ng-container *ngFor="let option of spec.options; let firstOption = first; let lastOption = last">
                                                                                 <tr app-domain-specification-table-row
+                                                                                    class="selectable"
                                                                                     [spec]="option"
+                                                                                    [first]="firstOption"
+                                                                                    [last]="lastOption"
                                                                                     [groups]="specificationGroups"
                                                                                     (removeSpec)="removeSpecificationFromGroup($event[0], $event[1])"
                                                                                     (moveSpec)="moveSpecificationToGroup($event[0], $event[1], $event[2])"
                                                                                     (copySpec)="copySpecificationToGroup($event[0], $event[1], $event[2])"
-                                                                                    class="selectable"
+                                                                                    (moveUp)="moveSpecificationUp($event)"
+                                                                                    (moveDown)="moveSpecificationDown($event)"
                                                                                     (click)="onSpecificationSelect(option)"
                                                                                 ></tr>
                                                                             </ng-container>

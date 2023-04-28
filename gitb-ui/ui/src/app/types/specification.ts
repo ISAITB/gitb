@@ -9,6 +9,7 @@ export interface Specification extends EntityWithId {
     domain: number
     apiKey?: string
     group?: number
+    order: number
 
     checked?: boolean
 

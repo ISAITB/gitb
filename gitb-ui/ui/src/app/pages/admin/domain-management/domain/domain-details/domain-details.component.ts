@@ -20,7 +20,7 @@ import { SpecificationService } from 'src/app/services/specification.service';
 import { forkJoin } from 'rxjs';
 import { DomainSpecification } from 'src/app/types/domain-specification';
 import { SpecificationGroup } from 'src/app/types/specification-group';
-import { find, remove } from 'lodash';
+import { find, remove, findIndex } from 'lodash';
 
 @Component({
   selector: 'app-domain-details',
@@ -55,6 +55,7 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
   ]
   savePending = false
   deletePending = false
+  saveOrderPending = false
 
   constructor(
     public dataService: DataService,
@@ -287,7 +288,7 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
         }
         this.dataService.setSpecificationGroupVisibility(currentGroup)
       }
-      this.domainSpecifications = this.dataService.sortDomainSpecifications(this.domainSpecifications)
+      this.dataService.sortDomainSpecifications(this.domainSpecifications)
       this.specifications = this.dataService.toSpecifications(this.domainSpecifications)
       this.popupService.success(this.dataService.labelSpecificationInGroup()+' removed.')
     })
@@ -318,11 +319,12 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
           groupId: newGroupId,
           group: false,
           option: true,
-          collapsed: false
+          collapsed: false,
+          order: specification.order
         }
         specification.copyPending = false
         newGroup.options.push(newSpecification)
-        newGroup.options = this.dataService.sortDomainSpecifications(newGroup.options)
+        this.dataService.sortDomainSpecifications(newGroup.options)
         this.dataService.setSpecificationGroupVisibility(newGroup)
         this.popupService.success(this.dataService.labelSpecificationInGroup()+' copied.')
       }
@@ -350,12 +352,88 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
           specifications[0].option = true
           group.options.push(specifications[0])
           this.dataService.setSpecificationGroupVisibility(group)
-          group.options = this.dataService.sortDomainSpecifications(group.options)
+          this.dataService.sortDomainSpecifications(group.options)
         }
       }
       this.specifications = this.dataService.toSpecifications(this.domainSpecifications)
       this.popupService.success(this.dataService.labelSpecificationInGroup()+' moved.')
     })
+  }
+
+  moveSpecificationUp(spec: DomainSpecification) {
+    const arrayToModify = this.findContainingArray(spec)
+    const index = findIndex(arrayToModify, (ds) => ds.id == spec.id)
+    const removed = arrayToModify.splice(index, 1)[0]
+    arrayToModify.splice(index-1, 0, removed)
+  }
+
+  moveSpecificationDown(spec: DomainSpecification) {
+    const arrayToModify = this.findContainingArray(spec)
+    const index = findIndex(arrayToModify, (ds) => ds.id == spec.id)
+    const removed = arrayToModify.splice(index, 1)[0]
+    arrayToModify.splice(index+1, 0, removed)    
+  }
+
+  private findContainingArray(spec: DomainSpecification) {
+    let arrayToModify = this.domainSpecifications
+    if (spec.groupId != undefined) {
+      // Nested
+      const group = find(this.domainSpecifications, (group) => { return group.id == spec.groupId })
+      if (group && group.options) {
+        arrayToModify = group?.options!
+      }
+    }
+    return arrayToModify
+  }
+
+  saveOrdering() {
+    const groupIds: number[] = []
+    const groupOrders: number[] = []
+    const specIds: number[] = []
+    const specOrders: number[] = []
+    let i = 0
+    for (let spec of this.domainSpecifications) {
+      if (spec.group) {
+        groupIds.push(spec.id)
+        groupOrders.push(i)
+      } else {
+        specIds.push(spec.id)
+        specOrders.push(i)
+      }
+      if (spec.options) {
+        let j = 0
+        for (let option of spec.options) {
+          specIds.push(option.id)
+          specOrders.push(j)
+          j += 1
+        }
+      }
+      i += 1
+    }
+    this.saveOrderPending = true
+    this.specificationService.saveSpecificationOrder(this.domainId, groupIds, groupOrders, specIds, specOrders)
+    .subscribe(() => {
+      this.popupService.success("Ordering saved successfully.")
+    }).add(() => {
+      this.saveOrderPending = false
+    })
+  }
+
+  resetOrdering() {
+    this.saveOrderPending = true
+    this.specificationService.resetSpecificationOrder(this.domainId)
+    .subscribe(() => {
+      this.domainSpecifications.forEach((item) => {
+        item.order = 0
+        if (item.options) {
+          item.options.forEach((option) => option.order = 0)
+        }
+      })
+      this.dataService.sortDomainSpecifications(this.domainSpecifications)
+      this.popupService.success("Ordering reset successfully.")
+    }).add(() => {
+      this.saveOrderPending = false
+    })    
   }
 
 }
