@@ -379,7 +379,14 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils, testResultManag
   def defineConformanceStatements(systemId: Long, actorIds: Seq[Long]):Unit = {
     val result = exec((for {
       communityId <- getCommunityIdForSystemId(systemId)
-      domainId <- PersistenceSchema.communities.filter(_.id === communityId).map(_.domain).result.headOption
+      domainId <- {
+        if (communityId == Constants.DefaultCommunityId) {
+          // This is to allow the test bed admin to create any statement.
+          DBIO.successful(None)
+        } else {
+          PersistenceSchema.communities.filter(_.id === communityId).map(_.domain).result.head
+        }
+      }
       existingStatementActorIds <- PersistenceSchema.systemImplementsActors
         .filter(_.systemId === systemId)
         .map(_.actorId)
