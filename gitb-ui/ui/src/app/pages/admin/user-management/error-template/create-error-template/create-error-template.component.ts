@@ -27,6 +27,7 @@ export class CreateErrorTemplateComponent extends BaseComponent implements OnIni
   }
   placeholders: KeyValue[] = []
   savePending = false
+  showContent = true
 
   constructor(
     private routingService: RoutingService,

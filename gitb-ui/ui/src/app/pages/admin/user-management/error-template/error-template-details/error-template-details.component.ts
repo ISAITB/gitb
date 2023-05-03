@@ -29,6 +29,7 @@ export class ErrorTemplateDetailsComponent extends BaseComponent implements OnIn
   copyPending = false
   deletePending = false
   placeholders: KeyValue[] = []
+  showContent = true
 
   constructor(
     public dataService: DataService,

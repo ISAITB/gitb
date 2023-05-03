@@ -29,6 +29,20 @@
                         </div>
                     </div>
                 </div>
+				<div class="row">
+					<div class="col-sm-12">
+						<div class="form-separator expandable" (click)="showContent = !showContent">
+							<div><h4 class="title"><app-collapsing-icon [isCollapsed]="!showContent"></app-collapsing-icon>Content</h4></div>
+						</div>
+					</div>
+				</div>
+				<div [collapse]="!showContent" [isAnimated]="true">
+					<div class="row">
+						<div class="col-sm-12">
+                            <app-editor id="content" name="content" [(ngModel)]="page.content"></app-editor>
+						</div>
+                    </div>                    
+                </div>                
             </div>
             <div class="panel-footer">
                 <div class="btn-toolbar">
@@ -39,8 +53,5 @@
                 </div>
             </div>
         </form>
-    </div>
-    <div class="panel panel-default">
-        <app-editor name="content" [(ngModel)]="page.content"></app-editor>
     </div>
 </div>
