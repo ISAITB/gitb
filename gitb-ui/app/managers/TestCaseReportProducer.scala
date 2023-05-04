@@ -203,10 +203,11 @@ class TestCaseReportProducer @Inject() (reportHelper: ReportHelper, testResultMa
     val reportFile = new File(folder, testStep.getId + ".xml")
     if (reportFile.exists()) {
       val stepReport = new TitledTestStepReportType()
+      val sequenceNumber = collectedSteps.size + 1
       if (StringUtils.isBlank(testStep.getDesc)) {
-        stepReport.setTitle("Step " + testStep.getId)
+        stepReport.setTitle("Step " + sequenceNumber)
       } else {
-        stepReport.setTitle("Step " + testStep.getId + ": " + testStep.getDesc)
+        stepReport.setTitle("Step " + sequenceNumber + ": " + testStep.getDesc)
       }
       val bytes = Files.readAllBytes(Paths.get(reportFile.getAbsolutePath))
       val string = new String(bytes)
