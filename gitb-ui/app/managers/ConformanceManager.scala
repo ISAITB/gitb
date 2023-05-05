@@ -381,14 +381,14 @@ class ConformanceManager @Inject() (systemManager: SystemManager, triggerManager
 			// Load the relevant specification groups.
 			groups <- PersistenceSchema.specificationGroups
 				.filterOpt(domainId)((q, id) => q.domain === id)
-				.map(x => (x.id, x.fullname, x.description, x.domain))
+				.map(x => (x.id, x.fullname, x.description, x.domain, x.displayOrder))
 				.sortBy(_._2.asc)
 				.result
 			// Load the relevant specifications.
 			specifications <- PersistenceSchema.specifications
 				.filterOpt(domainId)((q, id) => q.domain === id)
 				.filter(_.hidden === false)
-				.map(x => (x.id, x.fullname, x.description, x.group, x.domain))
+				.map(x => (x.id, x.fullname, x.description, x.group, x.domain, x.displayOrder))
 				.sortBy(_._2.asc)
 				.result
 			// Load the relevant actors (excluding ones with existing statements).
@@ -415,7 +415,7 @@ class ConformanceManager @Inject() (systemManager: SystemManager, triggerManager
 				actors.foreach(x => {
 					if (actorsWithTestCases.contains(x._1)) {
 						// Only keep the actors that have test cases in which they are the SUT.
-						val item = ConformanceStatementItem(x._1, x._2, x._3, ConformanceStatementItemType.ACTOR, None)
+						val item = ConformanceStatementItem(x._1, x._2, x._3, ConformanceStatementItemType.ACTOR, None, 0)
 						actorMap.getOrElseUpdate(x._4, new ListBuffer[ConformanceStatementItem]).append(item)
 						if (x._5.getOrElse(false)) {
 							defaultActorMap.put(x._4, item)
@@ -432,10 +432,10 @@ class ConformanceManager @Inject() (systemManager: SystemManager, triggerManager
 						// Only keep specifications with actors.
 						if (x._4.nonEmpty) {
 							// Map specifications using group ID.
-							specificationInGroupMap.getOrElseUpdate(x._4.get, new ListBuffer[ConformanceStatementItem]).append(ConformanceStatementItem(x._1, x._2, x._3, ConformanceStatementItemType.SPECIFICATION, childActors))
+							specificationInGroupMap.getOrElseUpdate(x._4.get, new ListBuffer[ConformanceStatementItem]).append(ConformanceStatementItem(x._1, x._2, x._3, ConformanceStatementItemType.SPECIFICATION, childActors, x._6))
 						} else {
 							// Map specifications using domain ID.
-							specificationNotInGroupMap.getOrElseUpdate(x._5, new ListBuffer[ConformanceStatementItem]).append(ConformanceStatementItem(x._1, x._2, x._3, ConformanceStatementItemType.SPECIFICATION, childActors))
+							specificationNotInGroupMap.getOrElseUpdate(x._5, new ListBuffer[ConformanceStatementItem]).append(ConformanceStatementItem(x._1, x._2, x._3, ConformanceStatementItemType.SPECIFICATION, childActors, x._6))
 						}
 					}
 				})
@@ -445,7 +445,7 @@ class ConformanceManager @Inject() (systemManager: SystemManager, triggerManager
 					val childSpecifications = specificationInGroupMap.get(x._1).map(_.toList)
 					if (childSpecifications.nonEmpty) {
 						// Only keep groups with (non-empty) specifications.
-						specificationGroupMap.getOrElseUpdate(x._4, new ListBuffer[ConformanceStatementItem]).append(ConformanceStatementItem(x._1, x._2, x._3, ConformanceStatementItemType.SPECIFICATION_GROUP, childSpecifications))
+						specificationGroupMap.getOrElseUpdate(x._4, new ListBuffer[ConformanceStatementItem]).append(ConformanceStatementItem(x._1, x._2, x._3, ConformanceStatementItemType.SPECIFICATION_GROUP, childSpecifications, x._5))
 					}
 				})
 				// Process domain(s).
@@ -457,7 +457,7 @@ class ConformanceManager @Inject() (systemManager: SystemManager, triggerManager
 						.toList
 					if (children.nonEmpty) {
 						// Only keep domains with (non-empty) specifications or groups.
-						domainItems.append(ConformanceStatementItem(x._1, x._2, x._3, ConformanceStatementItemType.DOMAIN, Some(children)))
+						domainItems.append(ConformanceStatementItem(x._1, x._2, x._3, ConformanceStatementItemType.DOMAIN, Some(children), 0))
 					}
 				})
 				DBIO.successful((actorIdsInExistingStatements.nonEmpty, domainItems.toList))
@@ -736,7 +736,7 @@ class ConformanceManager @Inject() (systemManager: SystemManager, triggerManager
 		results.foreach { result =>
 			val resultCommunities = result._1._1._2
 			val resultConfResult = result._1._1._1._1._1._1._1._1._1
-			val resultTestSuite= result._1._2
+			val resultTestSuite = result._1._2
 			val resultTestCase = result._2
 			val resultOrganisation = result._1._1._1._2
 			val resultSystem = result._1._1._1._1._2
@@ -756,7 +756,7 @@ class ConformanceManager @Inject() (systemManager: SystemManager, triggerManager
 					resultDomain.id, resultDomain.shortname, resultDomain.fullname,
 					resultActor.id, resultActor.actorId, resultActor.name,
 					resultSpec.id, specName, specNameFull, resultSpecGroup.map(_.shortname), resultSpecGroup.map(_.fullname), resultSpec.shortname, resultSpec.fullname,
-					Some(resultTestSuite.shortname), Some(resultTestCase.shortname), resultTestCase.description,
+					Some(resultTestSuite.id), Some(resultTestSuite.shortname), resultTestSuite.description, Some(resultTestCase.shortname), resultTestCase.description,
 					resultConfResult.result, resultConfResult.outputMessage, resultConfResult.testsession, resultConfResult.updateTime, 0L, 0L, 0L)
 			resultBuilder.addConformanceResult(conformanceStatement)
 		}
@@ -831,7 +831,7 @@ class ConformanceManager @Inject() (systemManager: SystemManager, triggerManager
 				result._7, result._8, result._9,
 				result._10, result._11, result._12,
 				result._13, specName, specNameFull, result._19, result._20, result._14, result._15,
-				None, None, None, result._16, None, result._17, result._18,
+				None, None, None, None, None, result._16, None, result._17, result._18,
 				0L, 0L, 0L)
 			resultBuilder.addConformanceResult(statement)
 		}

@@ -418,6 +418,7 @@
                     <xsd:element name="sharedTestSuites" type="xsd:IDREFS" minOccurs="0"/>
                 </xsd:sequence>
                 <xsd:attribute name="hidden" type="xsd:boolean" default="false"/>
+                <xsd:attribute name="displayOrder" type="xsd:short" default="0"/>
                 <xsd:attribute name="group" type="xsd:IDREF"/>
             </xsd:extension>
         </xsd:complexContent>
@@ -435,6 +436,7 @@
                     <xsd:element name="fullName" type="xsd:string"/>
                     <xsd:element name="description" type="xsd:string" minOccurs="0"/>
                 </xsd:sequence>
+                <xsd:attribute name="displayOrder" type="xsd:short" default="0"/>
             </xsd:extension>
         </xsd:complexContent>
     </xsd:complexType>

@@ -20,7 +20,6 @@ import { SystemParameter } from 'src/app/types/system-parameter';
 import { CustomProperty } from '../custom-property-filter/custom-property';
 import { MultiSelectConfig } from '../multi-select-filter/multi-select-config';
 import { IdLabel } from 'src/app/types/id-label';
-import { MultiSelectItem } from '../multi-select-filter/multi-select-item';
 import { NumberSet } from 'src/app/types/number-set';
 import { ConformanceService } from 'src/app/services/conformance.service';
 import { TestSuiteService } from 'src/app/services/test-suite.service';
@@ -30,6 +29,9 @@ import { OrganisationService } from 'src/app/services/organisation.service';
 import { SystemService } from 'src/app/services/system.service';
 import { SpecificationGroup } from 'src/app/types/specification-group';
 import { SpecificationService } from 'src/app/services/specification.service';
+import { FilterValues } from './filter-values';
+import { FilterUpdate } from './filter-update';
+import { EntityWithId } from 'src/app/types/entity-with-id';
 
 @Component({
   selector: 'app-test-filter',
@@ -56,7 +58,7 @@ export class TestFilterComponent implements OnInit {
   @Output() onApply = new EventEmitter<any>()
 
   Constants = Constants
-  filterValues: { [key: string]: MultiSelectItem[] } = {}
+  filterValues: { [key: string]: FilterValues<EntityWithId> } = {}
   organisationProperties: Array<CustomProperty> = []
   systemProperties: Array<{id?: number, value?: string, uuid?: number}> = []
   definedFilters: { [key: string]: boolean } = {}
@@ -68,7 +70,7 @@ export class TestFilterComponent implements OnInit {
   cachedSystemProperties: { [key: string]: SystemParameter[] } = {}
   availableOrganisationProperties: OrganisationParameter[] = []
   availableSystemProperties: SystemParameter[] = []
-  filterDropdownSettings: {[key: string]: MultiSelectConfig} = {}
+  filterDropdownSettings: {[key: string]: MultiSelectConfig<EntityWithId>} = {}
   datePickerSettings: Partial<BsDatepickerConfig> = {
     adaptivePosition: true,
     rangeInputFormat: 'DD-MM-YYYY',
@@ -125,16 +127,16 @@ export class TestFilterComponent implements OnInit {
       this.definedFilters[filterType] = true
     }
     this.setupDefaultLoadFunctions()
-    this.initialiseIfDefined(Constants.FILTER_TYPE.DOMAIN, { textField: 'sname', loader: this.loadDomainsFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter() })
-    this.initialiseIfDefined(Constants.FILTER_TYPE.SPECIFICATION, { textField: 'sname', loader: this.loadSpecificationsFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter() })
-    this.initialiseIfDefined(Constants.FILTER_TYPE.SPECIFICATION_GROUP, { textField: 'sname', loader: this.loadSpecificationGroupsFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter() })
-    this.initialiseIfDefined(Constants.FILTER_TYPE.ACTOR, { textField: 'actorId', loader: this.loadActorsFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter() })
-    this.initialiseIfDefined(Constants.FILTER_TYPE.TEST_SUITE, { textField: 'sname', loader: this.loadTestSuitesFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter() })
-    this.initialiseIfDefined(Constants.FILTER_TYPE.TEST_CASE, { textField: 'sname', loader: this.loadTestCasesFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter() })
-    this.initialiseIfDefined(Constants.FILTER_TYPE.COMMUNITY, { textField: 'sname', loader: this.loadCommunitiesFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter() })
-    this.initialiseIfDefined(Constants.FILTER_TYPE.ORGANISATION, { textField: 'sname', loader: this.loadOrganisationsFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter() })
-    this.initialiseIfDefined(Constants.FILTER_TYPE.SYSTEM, { textField: 'sname', loader: this.loadSystemsFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter() })
-    this.initialiseIfDefined(Constants.FILTER_TYPE.RESULT, { textField: 'label', loader: this.loadTestResults.bind(this), clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter() } )
+    this.initialiseIfDefined(Constants.FILTER_TYPE.DOMAIN, { name: Constants.FILTER_TYPE.DOMAIN, textField: 'sname', loader: this.loadDomainsFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter() })
+    this.initialiseIfDefined(Constants.FILTER_TYPE.SPECIFICATION, { name: Constants.FILTER_TYPE.SPECIFICATION, textField: 'sname', loader: this.loadSpecificationsFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter() })
+    this.initialiseIfDefined(Constants.FILTER_TYPE.SPECIFICATION_GROUP, { name: Constants.FILTER_TYPE.SPECIFICATION_GROUP, textField: 'sname', loader: this.loadSpecificationGroupsFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter() })
+    this.initialiseIfDefined(Constants.FILTER_TYPE.ACTOR, { name: Constants.FILTER_TYPE.ACTOR, textField: 'actorId', loader: this.loadActorsFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter() })
+    this.initialiseIfDefined(Constants.FILTER_TYPE.TEST_SUITE, { name: Constants.FILTER_TYPE.TEST_SUITE, textField: 'sname', loader: this.loadTestSuitesFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter() })
+    this.initialiseIfDefined(Constants.FILTER_TYPE.TEST_CASE, { name: Constants.FILTER_TYPE.TEST_CASE, textField: 'sname', loader: this.loadTestCasesFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter() })
+    this.initialiseIfDefined(Constants.FILTER_TYPE.COMMUNITY, { name: Constants.FILTER_TYPE.COMMUNITY, textField: 'sname', loader: this.loadCommunitiesFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter() })
+    this.initialiseIfDefined(Constants.FILTER_TYPE.ORGANISATION, { name: Constants.FILTER_TYPE.ORGANISATION, textField: 'sname', loader: this.loadOrganisationsFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter() })
+    this.initialiseIfDefined(Constants.FILTER_TYPE.SYSTEM, { name: Constants.FILTER_TYPE.SYSTEM, textField: 'sname', loader: this.loadSystemsFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter() })
+    this.initialiseIfDefined(Constants.FILTER_TYPE.RESULT, { name: Constants.FILTER_TYPE.RESULT, textField: 'label', loader: this.loadTestResults.bind(this), clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter() } )
   }
 
   private setupDefaultLoadFunctions() {
@@ -224,143 +226,175 @@ export class TestFilterComponent implements OnInit {
     }
   }
 
-  domainsChanged(selected: MultiSelectItem[], skipApplyFilters?: boolean) {
-    this.filterValues[Constants.FILTER_TYPE.DOMAIN] = selected
-    if (selected.length > 0 && (this.filterDefined(Constants.FILTER_TYPE.SPECIFICATION) || this.filterDefined(Constants.FILTER_TYPE.SPECIFICATION_GROUP))) {
-      const ids = this.dataService.asIdSet(selected)
+  private getRemainingFilterValues<T extends EntityWithId>(currentValues: FilterValues<T>, filterFunctionActive: (item: T) => boolean, filterFunctionOther: (item: T) => boolean): FilterValues<T> {
+    if (currentValues) {
+      // Active downstream items that match parent active items
+      const active = filter(currentValues.active, (itemToCheck) => { return filterFunctionActive(itemToCheck) })
+      // Inactive downstream items that match parent active items
+      const newlyActive = filter(currentValues.other, (itemToCheck) => { return filterFunctionActive(itemToCheck) })
+      // Inactive downstream items that match parent inactive items
+      const inactive = filter(currentValues.other, (itemToCheck) => { return filterFunctionOther(itemToCheck) })
+      // Active downstream items that match parent inactive items
+      const newlyInactive = filter(currentValues.active, (itemToCheck) => { return filterFunctionOther(itemToCheck) })
+      return { active: active.concat(newlyActive), other: inactive.concat(newlyInactive) }
+    } else {
+      return { active: [], other: [] }
+    }
+  }
+
+  private squashFilterValues<T extends EntityWithId>(values: FilterValues<T>) {
+    return values.active.concat(values.other)
+  }
+
+  domainsChanged(update: FilterUpdate<Domain>) {
+    this.filterValues[Constants.FILTER_TYPE.DOMAIN] = update.values
+    if (update.values.active.length > 0 && (this.filterDefined(Constants.FILTER_TYPE.SPECIFICATION) || this.filterDefined(Constants.FILTER_TYPE.SPECIFICATION_GROUP))) {
+      const ids = this.dataService.asIdSet(update.values.active)
+      const otherIds = this.dataService.asIdSet(update.values.other)
       if (this.filterDefined(Constants.FILTER_TYPE.SPECIFICATION_GROUP)) {
-        const remaining = filter(<SpecificationGroup[]>this.filterValues[Constants.FILTER_TYPE.SPECIFICATION_GROUP], (s) => { return ids[s.domain] })
-        this.filterDropdownSettings[Constants.FILTER_TYPE.SPECIFICATION_GROUP].replaceSelectedItems!.emit(remaining)
-        // Don't update specifications as this will done via the current function.
-        this.specificationGroupsChanged(remaining, true, true) 
+        const remaining = this.getRemainingFilterValues(this.filterValues[Constants.FILTER_TYPE.SPECIFICATION_GROUP] as FilterValues<SpecificationGroup>, (s) => { return ids[s.domain] }, (s) => { return otherIds[s.domain] })
+        this.filterDropdownSettings[Constants.FILTER_TYPE.SPECIFICATION_GROUP].replaceSelectedItems!.emit(this.squashFilterValues(remaining))
       }
       if (this.filterDefined(Constants.FILTER_TYPE.SPECIFICATION)) {
-        const remaining = filter(<Specification[]>this.filterValues[Constants.FILTER_TYPE.SPECIFICATION], (s) => { return ids[s.domain] })
-        this.filterDropdownSettings[Constants.FILTER_TYPE.SPECIFICATION].replaceSelectedItems!.emit(remaining)
-        this.specificationsChanged(remaining, true)
+        const remaining = this.getRemainingFilterValues(this.filterValues[Constants.FILTER_TYPE.SPECIFICATION] as FilterValues<Specification>, (s) => { return ids[s.domain] }, (s) => { return otherIds[s.domain] })
+        this.filterDropdownSettings[Constants.FILTER_TYPE.SPECIFICATION].replaceSelectedItems!.emit(this.squashFilterValues(remaining))
       }
     }
-    if (!skipApplyFilters) {
+    if (update.applyFilters) {
       this.applyFilters()
     }
   }
 
-  specificationGroupsChanged(selected: MultiSelectItem[], skipApplyFilters?: boolean, skipUpdateSpecifications?: boolean) {
-    this.filterValues[Constants.FILTER_TYPE.SPECIFICATION_GROUP] = selected
-    if (selected.length > 0 && this.filterDefined(Constants.FILTER_TYPE.SPECIFICATION) && !skipUpdateSpecifications) {
-      const ids = this.dataService.asIdSet(selected)
-      const remaining = filter(<Specification[]>this.filterValues[Constants.FILTER_TYPE.SPECIFICATION], (s) => { return s.group == undefined || ids[s.group] })
-      this.filterDropdownSettings[Constants.FILTER_TYPE.SPECIFICATION].replaceSelectedItems!.emit(remaining)
-      this.specificationsChanged(remaining, true)
+  specificationGroupsChanged(update: FilterUpdate<SpecificationGroup>) {
+    this.filterValues[Constants.FILTER_TYPE.SPECIFICATION_GROUP] = update.values
+    if ((update.values.active.length > 0 || update.values.other.length > 0) && this.filterDefined(Constants.FILTER_TYPE.SPECIFICATION) && update.applyFilters) {
+      const ids = this.dataService.asIdSet(update.values.active)
+      const otherIds = this.dataService.asIdSet(update.values.other)
+      const remaining = this.getRemainingFilterValues(this.filterValues[Constants.FILTER_TYPE.SPECIFICATION] as FilterValues<Specification>, (s) => { return s.group == undefined || ids[s.group] }, (s) => { return s.group == undefined || otherIds[s.group] })
+      this.filterDropdownSettings[Constants.FILTER_TYPE.SPECIFICATION].replaceSelectedItems!.emit(this.squashFilterValues(remaining))
     }
-    if (!skipApplyFilters) {
+    if (update.applyFilters) {
       this.applyFilters()
     }
   }
 
-  specificationsChanged(selected: MultiSelectItem[], skipApplyFilters?: boolean) {
-    this.filterValues[Constants.FILTER_TYPE.SPECIFICATION] = selected
-    if (selected.length > 0 && (this.filterDefined(Constants.FILTER_TYPE.ACTOR) || this.filterDefined(Constants.FILTER_TYPE.TEST_SUITE))) {
-      const ids = this.dataService.asIdSet(selected)
+  specificationsChanged(update: FilterUpdate<Specification>) {
+    this.filterValues[Constants.FILTER_TYPE.SPECIFICATION] = update.values
+    if ((update.values.active.length > 0 || update.values.other.length > 0) && (this.filterDefined(Constants.FILTER_TYPE.ACTOR) || this.filterDefined(Constants.FILTER_TYPE.TEST_SUITE))) {
+      const ids = this.dataService.asIdSet(update.values.active)
+      const otherIds = this.dataService.asIdSet(update.values.other)      
       if (this.filterDefined(Constants.FILTER_TYPE.ACTOR)) {
-        const remaining = filter(<Actor[]>this.filterValues[Constants.FILTER_TYPE.ACTOR], (a) => { return ids[a.specification] })
-        this.filterDropdownSettings[Constants.FILTER_TYPE.ACTOR].replaceSelectedItems!.emit(remaining)
-        this.actorsChanged(remaining, true)
+        const remaining = this.getRemainingFilterValues(this.filterValues[Constants.FILTER_TYPE.ACTOR] as FilterValues<Actor>, (a) => { return ids[a.specification] }, (a) => { return otherIds[a.specification] })
+        this.filterDropdownSettings[Constants.FILTER_TYPE.ACTOR].replaceSelectedItems!.emit(this.squashFilterValues(remaining))
       }
       if (this.filterDefined(Constants.FILTER_TYPE.TEST_SUITE)) {
-        const remaining = filter(<TestSuiteWithTestCases[]>this.filterValues[Constants.FILTER_TYPE.TEST_SUITE], (ts) => {
+        const remaining = this.getRemainingFilterValues(this.filterValues[Constants.FILTER_TYPE.TEST_SUITE] as FilterValues<TestSuiteWithTestCases>, 
           // One of the test suite's specifications must be in the set of selected IDs.
-          for (let tsSpecification of ts.specifications!) {
-            if (ids[tsSpecification]) {
-              return true
+          (ts) => { 
+            for (let tsSpecification of ts.specifications!) {
+              if (ids[tsSpecification]) {
+                return true
+              }
             }
+            return false
+          }, 
+          (ts) => { 
+            for (let tsSpecification of ts.specifications!) {
+              if (otherIds[tsSpecification]) {
+                return true
+              }
+            }
+            return false
           }
-          return false
-        })
-        this.filterDropdownSettings[Constants.FILTER_TYPE.TEST_SUITE].replaceSelectedItems!.emit(remaining)
-        this.actorsChanged(remaining, true)
+        )
+        this.filterDropdownSettings[Constants.FILTER_TYPE.TEST_SUITE].replaceSelectedItems!.emit(this.squashFilterValues(remaining))
       }
     }
-    if (!skipApplyFilters) {
+    if (update.applyFilters) {
       this.applyFilters()
     }
   }
 
-  actorsChanged(selected: MultiSelectItem[], skipApplyFilters?: boolean) {
-    this.filterValues[Constants.FILTER_TYPE.ACTOR] = selected
-    if (!skipApplyFilters) {
+  actorsChanged(update: FilterUpdate<Actor>) {
+    this.filterValues[Constants.FILTER_TYPE.ACTOR] = update.values
+    if (update.applyFilters) {
       this.applyFilters()
     }
   }
 
-  testSuitesChanged(selected: MultiSelectItem[], skipApplyFilters?: boolean) {
-    this.filterValues[Constants.FILTER_TYPE.TEST_SUITE] = selected
-    if (selected.length > 0 && this.filterDefined(Constants.FILTER_TYPE.TEST_CASE)) {
+  testSuitesChanged(update: FilterUpdate<TestSuiteWithTestCases>) {
+    this.filterValues[Constants.FILTER_TYPE.TEST_SUITE] = update.values
+    if ((update.values.active.length > 0 || update.values.other.length > 0) && this.filterDefined(Constants.FILTER_TYPE.TEST_CASE)) {
       const validTestCaseIds: NumberSet = {}
-      for (let testSuite of <TestSuiteWithTestCases[]>selected) {
+      for (let testSuite of update.values.active) {
         for (let testCase of testSuite.testCases) {
           validTestCaseIds[testCase.id] = true
         }
       }
-      const remaining = filter(<TestCase[]>this.filterValues[Constants.FILTER_TYPE.TEST_CASE], (tc) => { return validTestCaseIds[tc.id] })
-      this.filterDropdownSettings[Constants.FILTER_TYPE.TEST_CASE].replaceSelectedItems!.emit(remaining)
-      this.testCasesChanged(remaining, true)
+      const validOtherTestCaseIds: NumberSet = {}
+      for (let testSuite of update.values.other) {
+        for (let testCase of testSuite.testCases) {
+          validOtherTestCaseIds[testCase.id] = true
+        }
+      }
+      const remaining = this.getRemainingFilterValues(this.filterValues[Constants.FILTER_TYPE.TEST_CASE] as FilterValues<TestCase>, (tc) => { return validTestCaseIds[tc.id] }, (tc) => { return validOtherTestCaseIds[tc.id] })
+      this.filterDropdownSettings[Constants.FILTER_TYPE.TEST_CASE].replaceSelectedItems!.emit(this.squashFilterValues(remaining))
     }
-    if (!skipApplyFilters) {
+    if (update.applyFilters) {
       this.applyFilters()
     }
   }
 
-  testCasesChanged(selected: MultiSelectItem[], skipApplyFilters?: boolean) {
-    this.filterValues[Constants.FILTER_TYPE.TEST_CASE] = selected
-    if (!skipApplyFilters) {
+  testCasesChanged(update: FilterUpdate<TestCase>) {
+    this.filterValues[Constants.FILTER_TYPE.TEST_CASE] = update.values
+    if (update.applyFilters) {
       this.applyFilters()
     }
   }
 
-  communitiesChanged(selected: MultiSelectItem[], skipApplyFilters?: boolean) {
-    this.filterValues[Constants.FILTER_TYPE.COMMUNITY] = selected
-    if (selected.length > 0 && this.filterDefined(Constants.FILTER_TYPE.ORGANISATION)) {
-      const ids = this.dataService.asIdSet(selected)
-      const remaining = filter(<Organisation[]>this.filterValues[Constants.FILTER_TYPE.ORGANISATION], (o) => { return ids[o.community] })
-      this.filterDropdownSettings[Constants.FILTER_TYPE.ORGANISATION].replaceSelectedItems!.emit(remaining)
-      this.organisationsChanged(remaining, true)
+  communitiesChanged(update: FilterUpdate<Community>) {
+    this.filterValues[Constants.FILTER_TYPE.COMMUNITY] = update.values
+    if ((update.values.active.length > 0 || update.values.other.length > 0) && this.filterDefined(Constants.FILTER_TYPE.ORGANISATION)) {
+      const ids = this.dataService.asIdSet(update.values.active)
+      const otherIds = this.dataService.asIdSet(update.values.other)
+      const remaining = this.getRemainingFilterValues(this.filterValues[Constants.FILTER_TYPE.ORGANISATION] as FilterValues<Organisation>, (o) => { return ids[o.community] }, (o) => { return otherIds[o.community] })
+      this.filterDropdownSettings[Constants.FILTER_TYPE.ORGANISATION].replaceSelectedItems!.emit(this.squashFilterValues(remaining))
     }
     // Custom properties
     this.organisationProperties = []
     this.systemProperties = []
-    if (selected.length == 1) {
-      this.applicableCommunityId = selected[0].id
+    if (update.values.active.length == 1) {
+      this.applicableCommunityId = update.values.active[0].id
     } else {
       this.applicableCommunityId = undefined
     }
-    if (!skipApplyFilters) {
+    if (update.applyFilters) {
       this.applyFilters()
     }
   }
 
-  organisationsChanged(selected: MultiSelectItem[], skipApplyFilters?: boolean) {
-    this.filterValues[Constants.FILTER_TYPE.ORGANISATION] = selected
-    if (selected.length > 0 && this.filterDefined(Constants.FILTER_TYPE.SYSTEM)) {
-      const ids = this.dataService.asIdSet(selected)
-      const remaining = filter(<System[]>this.filterValues[Constants.FILTER_TYPE.SYSTEM], (s) => { return ids[s.owner] })
-      this.filterDropdownSettings[Constants.FILTER_TYPE.SYSTEM].replaceSelectedItems!.emit(remaining)
-      this.systemsChanged(remaining, true)
+  organisationsChanged(update: FilterUpdate<Organisation>) {
+    this.filterValues[Constants.FILTER_TYPE.ORGANISATION] = update.values
+    if ((update.values.active.length > 0 || update.values.other.length > 0) && this.filterDefined(Constants.FILTER_TYPE.SYSTEM)) {
+      const ids = this.dataService.asIdSet(update.values.active)
+      const otherIds = this.dataService.asIdSet(update.values.other)
+      const remaining = this.getRemainingFilterValues(this.filterValues[Constants.FILTER_TYPE.SYSTEM] as FilterValues<System>, (s) => { return ids[s.owner] }, (s) => { return otherIds[s.owner] })
+      this.filterDropdownSettings[Constants.FILTER_TYPE.SYSTEM].replaceSelectedItems!.emit(this.squashFilterValues(remaining))
     }
-    if (!skipApplyFilters) {
+    if (update.applyFilters) {
       this.applyFilters()
     }
   }
 
-  systemsChanged(selected: MultiSelectItem[], skipApplyFilters?: boolean) {
-    this.filterValues[Constants.FILTER_TYPE.SYSTEM] = selected
-    if (!skipApplyFilters) {
+  systemsChanged(update: FilterUpdate<System>) {
+    this.filterValues[Constants.FILTER_TYPE.SYSTEM] = update.values
+    if (update.applyFilters) {
       this.applyFilters()
     }
   }
 
-  resultsChanged(selected: MultiSelectItem[]) {
-    this.filterValues[Constants.FILTER_TYPE.RESULT] = selected
+  resultsChanged(update: FilterUpdate<IdLabel>) {
+    this.filterValues[Constants.FILTER_TYPE.RESULT] = update.values
     this.applyFilters()
   }
 
@@ -372,7 +406,7 @@ export class TestFilterComponent implements OnInit {
     }
   }
 
-  private initialiseIfDefined(filterType: string, config: MultiSelectConfig) {
+  private initialiseIfDefined(filterType: string, config: MultiSelectConfig<EntityWithId>) {
     if (this.filterDefined(filterType)) {
       this.filterDropdownSettings[filterType] = config
     }
@@ -384,8 +418,8 @@ export class TestFilterComponent implements OnInit {
 
   filterValue(filterType: string) {
     let values: number[]|undefined
-    if (this.filterDefined(filterType)) {
-      values = map(this.filterValues[filterType], (item) => {return item.id})
+    if (this.filterDefined(filterType) && this.filterValues[filterType] && this.filterValues[filterType].active) {
+      values = map(this.filterValues[filterType].active, (item) => {return item.id})
     }
     return values
   }
@@ -470,7 +504,10 @@ export class TestFilterComponent implements OnInit {
 
   clearFilter(filterType: string) {
     if (this.filterDefined(filterType)) {
-      this.filterValues[filterType] = []
+      if (this.filterValues[filterType]) {
+        this.filterValues[filterType].active = []
+        this.filterValues[filterType].other = []
+      }
       this.filterDropdownSettings[filterType].clearItems!.emit()
     }
   }

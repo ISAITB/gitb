@@ -207,7 +207,8 @@ object JsonUtil {
     var json = Json.obj(
       "id" -> item.id,
       "itemType" -> item.itemType.id,
-      "name" -> item.name
+      "name" -> item.name,
+      "order" -> item.displayOrder
     )
     if (item.description.nonEmpty && item.description.get.nonEmpty) {
       json = json +("description" -> JsString(item.description.get))
@@ -772,7 +773,8 @@ object JsonUtil {
       "description" -> (if(spec.description.isDefined) spec.description.get else JsNull),
       "hidden" -> spec.hidden,
       "domain"  -> spec.domain,
-      "group" -> spec.group
+      "group" -> spec.group,
+      "order" -> spec.displayOrder
     )
     if (withApiKeys && Configurations.AUTOMATION_API_ENABLED) {
       json = json.+("apiKey" -> JsString(spec.apiKey))
@@ -786,7 +788,8 @@ object JsonUtil {
       "sname" -> group.shortname,
       "fname" -> group.fullname,
       "description" -> (if (group.description.isDefined) group.description.get else JsNull),
-      "domain" -> group.domain
+      "domain" -> group.domain,
+      "order" -> group.displayOrder
     )
   }
 

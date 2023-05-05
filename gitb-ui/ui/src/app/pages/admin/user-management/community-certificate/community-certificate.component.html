@@ -48,27 +48,12 @@
                         </div>
                     </div>
                     <div class="row">
-                        <div class="col-xs-11">
-                            <div class="col-xs-10 col-xs-offset-1">
-                                <div class="form-group">
-                                    <label class="col-xs-3 control-label" for="mce-message" >Message content:</label>
-                                    <div class="col-xs-8">
-                                        <app-editor name="message" [(ngModel)]="settings.message" [type]="'pdf'"></app-editor>
-                                    </div>
-                                </div>
-                                <div class="form-group">
-                                    <span class="col-xs-3 control-label"></span>
-                                    <div class="col-xs-8">
-                                        <h4>Placeholders:</h4>
-                                        <p><b>{{placeholderDomain}}</b>: The full name of the {{dataService.labelDomainLower()}}.</p>
-                                        <p><b>{{placeholderSpecification}}</b>: The full name of the {{dataService.labelSpecificationLower()}}.</p>
-                                        <p><b>{{placeholderSpecificationGroup}}</b>: The full name of the {{dataService.labelSpecificationGroupLower()}}.</p>
-                                        <p><b>{{placeholderSpecificationGroupOption}}</b>: The full name of the {{dataService.labelSpecificationInGroupLower()}}.</p>
-                                        <p><b>{{placeholderActor}}</b>: The full name of the {{dataService.labelActorLower()}} linked to the conformance statement.</p>
-                                        <p><b>{{placeholderOrganisation}}</b>: The full name of the {{dataService.labelOrganisationLower()}} to be granted the certificate.</p>
-                                        <p><b>{{placeholderSystem}}</b>: The full name of the {{dataService.labelSystemLower()}} that was used in the tests.</p>
-                                    </div>
-                                </div>
+                        <div class="col-xs-12">
+                            <div class="div-padded-bottom">
+                                <app-placeholder-selector [placeholders]="placeholders"></app-placeholder-selector>
+                            </div>
+                            <div>
+                                <app-editor name="message" [(ngModel)]="settings.message" [type]="'pdf'"></app-editor>
                             </div>
                         </div>
                     </div>

@@ -853,10 +853,10 @@ class ImportCompleteManager @Inject()(communityResourceManager: CommunityResourc
             dbActions += processFromArchive(ImportItemType.SpecificationGroup, exportedGroup, exportedGroup.getId, ctx,
               ImportCallbacks.set(
                 (data: com.gitb.xml.export.SpecificationGroup, item: ImportItem) => {
-                  specificationManager.createSpecificationGroupInternal(models.SpecificationGroups(0L, data.getShortName, data.getFullName, Option(data.getDescription), getDomainIdFromParentItem(item)))
+                  specificationManager.createSpecificationGroupInternal(models.SpecificationGroups(0L, data.getShortName, data.getFullName, Option(data.getDescription), data.getDisplayOrder, getDomainIdFromParentItem(item)))
                 },
                 (data: com.gitb.xml.export.SpecificationGroup, targetKey: String, item: ImportItem) => {
-                  specificationManager.updateSpecificationGroupInternal(targetKey.toLong, data.getShortName, data.getFullName, Option(data.getDescription))
+                  specificationManager.updateSpecificationGroupInternal(targetKey.toLong, data.getShortName, data.getFullName, Option(data.getDescription), Some(data.getDisplayOrder))
                 },
                 (data: com.gitb.xml.export.SpecificationGroup, targetKey: Any, item: ImportItem) => {
                   // No action.
@@ -885,7 +885,7 @@ class ImportCompleteManager @Inject()(communityResourceManager: CommunityResourc
                   val relatedGroupId = getProcessedDbId(data.getGroup, ImportItemType.SpecificationGroup, ctx)
                   if (data.getGroup == null || relatedGroupId.nonEmpty) {
                     val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
-                    conformanceManager.createSpecificationsInternal(models.Specifications(0L, data.getShortName, data.getFullName, Option(data.getDescription), data.isHidden, apiKey, targetDomainId.get, relatedGroupId), checkApiKeyUniqueness = true)
+                    conformanceManager.createSpecificationsInternal(models.Specifications(0L, data.getShortName, data.getFullName, Option(data.getDescription), data.isHidden, apiKey, getDomainIdFromParentItem(item), data.getDisplayOrder, relatedGroupId), checkApiKeyUniqueness = true)
                   } else {
                     DBIO.successful(())
                   }
@@ -894,7 +894,7 @@ class ImportCompleteManager @Inject()(communityResourceManager: CommunityResourc
                   val relatedGroupId = getProcessedDbId(data.getGroup, ImportItemType.SpecificationGroup, ctx)
                   if (data.getGroup == null || relatedGroupId.nonEmpty) {
                     val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
-                    specificationManager.updateSpecificationInternal(targetKey.toLong, data.getShortName, data.getFullName, Option(data.getDescription), data.isHidden, Some(apiKey), checkApiKeyUniqueness = true, relatedGroupId)
+                    specificationManager.updateSpecificationInternal(targetKey.toLong, data.getShortName, data.getFullName, Option(data.getDescription), data.isHidden, Some(apiKey), checkApiKeyUniqueness = true, relatedGroupId, Some(data.getDisplayOrder))
                   } else {
                     DBIO.successful(())
                   }
@@ -930,7 +930,7 @@ class ImportCompleteManager @Inject()(communityResourceManager: CommunityResourc
                         order = Some(data.getOrder.shortValue())
                       }
                       val specificationId = item.parentItem.get.targetKey.get.toLong // Specification
-                      val domainId = targetDomainId.get
+                      val domainId = getDomainIdFromParentItem(item)
                       val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
                       conformanceManager.createActor(models.Actors(0L, data.getActorId, data.getName, Option(data.getDescription), Some(data.isDefault), data.isHidden, order, apiKey, domainId), specificationId, checkApiKeyUniqueness = true)
                     },

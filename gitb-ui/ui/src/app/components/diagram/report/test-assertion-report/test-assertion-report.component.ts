@@ -3,11 +3,13 @@ import { AssertionReport } from '../../assertion-report';
 
 @Component({
   selector: 'app-test-assertion-report',
-  templateUrl: './test-assertion-report.component.html'
+  templateUrl: './test-assertion-report.component.html',
+  styleUrls: [ './test-assertion-report.component.less' ]
 })
 export class TestAssertionReportComponent implements OnInit {
 
   @Input() assertionReport!: AssertionReport
+  clickable = false
 
   description?: string
   types = {
@@ -22,6 +24,7 @@ export class TestAssertionReportComponent implements OnInit {
     this.description = this.assertionReport?.value?.description
     if (this.assertionReport.value?.location) {
       this.assertionReport.extractedLocation = this.extractLocationInfo(this.assertionReport.value.location)
+      this.clickable = this.assertionReport.extractedLocation != undefined
     }
   }
 

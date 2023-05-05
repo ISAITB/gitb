@@ -410,6 +410,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, communityResour
           exportedGroup.setShortName(group.shortname)
           exportedGroup.setFullName(group.fullname)
           exportedGroup.setDescription(group.description.orNull)
+          exportedGroup.setDisplayOrder(group.displayOrder)
           exportedDomain.getSpecificationGroups.getGroup.add(exportedGroup)
           exportedGroupMap += (group.id -> exportedGroup)
         }
@@ -426,6 +427,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, communityResour
           exportedSpecification.setDescription(specification.description.orNull)
           exportedSpecification.setApiKey(specification.apiKey)
           exportedSpecification.setHidden(specification.hidden)
+          exportedSpecification.setDisplayOrder(specification.displayOrder)
           if (specification.group.nonEmpty) {
             exportedSpecification.setGroup(exportedGroupMap(specification.group.get))
           }

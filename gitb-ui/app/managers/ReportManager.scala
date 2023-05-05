@@ -3,7 +3,7 @@ package managers
 import actors.events.{ConformanceStatementSucceededEvent, TestSessionFailedEvent, TestSessionSucceededEvent}
 import com.gitb.core.{AnyContent, StepStatus, ValueEmbeddingEnumeration}
 import com.gitb.reports.ReportGenerator
-import com.gitb.reports.dto.{ConformanceStatementOverview, TestCaseOverview}
+import com.gitb.reports.dto.{ConformanceStatementOverview, TestCaseOverview, TestSuiteOverview}
 import com.gitb.tbs.{ObjectFactory, TestStepStatus}
 import com.gitb.tpl.TestCase
 import com.gitb.tr._
@@ -20,27 +20,25 @@ import utils.signature.{CreateSignature, SigUtils}
 import utils.{JacksonUtil, MimeUtil, RepositoryUtils, TimeUtil}
 
 import java.io.{File, FileOutputStream, StringReader}
-import java.nio.file.{Files, Path, Paths, StandardOpenOption}
-import java.sql.Timestamp
+import java.nio.file.{Files, Path}
 import java.text.SimpleDateFormat
 import java.util
 import java.util.{Date, UUID}
 import javax.inject.{Inject, Singleton}
 import javax.xml.transform.stream.StreamSource
+import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.jdk.CollectionConverters.CollectionHasAsScala
+import scala.jdk.CollectionConverters.IterableHasAsJava
 import scala.util.Using
 
 /**
   * Created by senan on 03.12.2014.
   */
 @Singleton
-class ReportManager @Inject() (triggerHelper: TriggerHelper, testCaseReportProducer: TestCaseReportProducer, testSuiteManager: TestSuiteManager, specificationManager: SpecificationManager, conformanceManager: ConformanceManager, dbConfigProvider: DatabaseConfigProvider, communityLabelManager: CommunityLabelManager, repositoryUtils: RepositoryUtils, testResultManager: TestResultManager) extends BaseManager(dbConfigProvider) {
+class ReportManager @Inject() (reportHelper: ReportHelper, triggerHelper: TriggerHelper, testCaseReportProducer: TestCaseReportProducer, testSuiteManager: TestSuiteManager, specificationManager: SpecificationManager, conformanceManager: ConformanceManager, dbConfigProvider: DatabaseConfigProvider, communityLabelManager: CommunityLabelManager, repositoryUtils: RepositoryUtils, testResultManager: TestResultManager) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
-
-  private val generator = new ReportGenerator()
 
   def getSystemActiveTestResults(systemId: Long,
                                  domainIds: Option[List[Long]],
@@ -241,7 +239,7 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, testCaseReportProdu
     }
   }
 
-  def createTestReport(sessionId: String, systemId: Long, testId: String, actorId: Long, testCasePresentation: com.gitb.tpl.TestCase) = {
+  def createTestReport(sessionId: String, systemId: Long, testId: String, actorId: Long, testCasePresentation: com.gitb.tpl.TestCase): Unit = {
     val initialStatus = TestResultType.UNDEFINED.value()
     val startTime = TimeUtil.getCurrentTimestamp()
     val testCaseId = testId.toLong
@@ -290,7 +288,7 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, testCaseReportProdu
     )
   }
 
-  def finishTestReport(sessionId: String, status: TestResultType, outputMessage: Option[String]) = {
+  def finishTestReport(sessionId: String, status: TestResultType, outputMessage: Option[String]): Unit = {
     val now = Some(TimeUtil.getCurrentTimestamp())
     exec(
       (for {
@@ -317,7 +315,6 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, testCaseReportProdu
     if (sessionIds.isDefined && sessionIds.get._1.isDefined && sessionIds.get._2.isDefined && sessionIds.get._3.isDefined) {
       val communityId = sessionIds.get._1.get
       val systemId = sessionIds.get._2.get
-      val actorId = sessionIds.get._3.get
       // We have all the data we need to fire the triggers.
       if (status == TestResultType.SUCCESS) {
         triggerHelper.publishTriggerEvent(new TestSessionSucceededEvent(communityId, sessionId))
@@ -331,10 +328,10 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, testCaseReportProdu
       }
     }
     // Flush remaining log messages
-    flushSessionLogs(sessionId, None)
+    testResultManager.flushSessionLogs(sessionId, None)
   }
 
-  def setEndTimeNow(sessionId: String) = {
+  def setEndTimeNow(sessionId: String): Unit = {
     val now = Some(TimeUtil.getCurrentTimestamp())
     exec (
       (for {
@@ -352,37 +349,7 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, testCaseReportProdu
     )
   }
 
-  def getPathForTestSessionWrapper(sessionId: String, isExpected: Boolean): SessionFolderInfo = {
-    repositoryUtils.getPathForTestSession(sessionId, isExpected)
-  }
-
-  private def getTestSessionLog(sessionId: String, sessionFolderInfo: SessionFolderInfo): Option[List[String]] = {
-    if (!sessionFolderInfo.archived) {
-      flushSessionLogs(sessionId, Some(sessionFolderInfo.path.toFile))
-    }
-    try {
-      val file = new File(sessionFolderInfo.path.toFile, "log.txt")
-      if (file.exists()) {
-        Some(Files.readAllLines(Paths.get(file.getAbsolutePath)).asScala.toList)
-      } else {
-        None
-      }
-    } finally {
-      if (sessionFolderInfo.archived) {
-        FileUtils.deleteQuietly(sessionFolderInfo.path.toFile)
-      }
-    }
-  }
-
-  def getTestSessionLog(sessionId: String, startTime: Option[Timestamp], isExpected: Boolean): Option[List[String]] = {
-    getTestSessionLog(sessionId, repositoryUtils.getPathForTestSessionObj(sessionId, startTime, isExpected))
-  }
-
-  def getTestSessionLog(sessionId: String, isExpected: Boolean): Option[List[String]] = {
-    getTestSessionLog(sessionId, getPathForTestSessionWrapper(sessionId, isExpected))
-  }
-
-  private def writeValueToFile(item: AnyContent, sessionFolder: Path, writeFn: Path => Unit) = {
+  private def writeValueToFile(item: AnyContent, sessionFolder: Path, writeFn: Path => Unit): Unit = {
     val dataFolder = repositoryUtils.getPathForTestSessionData(sessionFolder)
     Files.createDirectories(dataFolder)
     val fileUuid = UUID.randomUUID().toString
@@ -445,23 +412,10 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, testCaseReportProdu
         val result = TestStepResult(sessionId, step.getStepId, step.getStatus.ordinal().toShort, testStepReportPath)
         exec((PersistenceSchema.testStepReports += result).transactionally)
         // Flush the current log messages
-        flushSessionLogs(sessionId, Some(sessionFolder.toFile))
+        testResultManager.flushSessionLogs(sessionId, Some(sessionFolder.toFile))
       }
     }
     savedPath
-  }
-
-  def flushSessionLogs(sessionId: String, sessionFolder: Option[File]): Unit = {
-    val messages = testResultManager.consumeSessionLogs(sessionId)
-    if (messages.nonEmpty) {
-      val logFilePath = new File(sessionFolder.getOrElse(repositoryUtils.getPathForTestSession(sessionId, isExpected = false).path.toFile), "log.txt")
-      if (!logFilePath.exists()) {
-        logFilePath.getParentFile.mkdirs()
-        logFilePath.createNewFile()
-      }
-      import scala.jdk.CollectionConverters._
-      Files.write(logFilePath.toPath, messages.asJava, StandardOpenOption.APPEND)
-    }
   }
 
   def getTestStepResults(sessionId: String): List[TestStepResult] = {
@@ -472,7 +426,7 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, testCaseReportProdu
     val fis = Files.newInputStream(xmlFile)
     val fos = Files.newOutputStream(xmlReport)
     try {
-      generator.writeTestStepStatusXmlReport(fis, fos, false)
+      ReportGenerator.getInstance().writeTestStepStatusXmlReport(fis, fos, false)
       fos.flush()
     } catch {
       case e: Exception =>
@@ -488,7 +442,7 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, testCaseReportProdu
     val fis = Files.newInputStream(xmlFile)
     val fos = Files.newOutputStream(pdfReport)
     try {
-      generator.writeTestStepStatusReport(fis, "Test step report", fos, false)
+      ReportGenerator.getInstance().writeTestStepStatusReport(fis, "Test step report", fos, reportHelper.createReportSpecs())
       fos.flush()
     } catch {
       case e: Exception =>
@@ -510,7 +464,7 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, testCaseReportProdu
       0L, "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Specification), "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Specification),
       Some("Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.SpecificationGroup)), Some("Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.SpecificationGroup)),
       "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.SpecificationInGroup), "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.SpecificationInGroup),
-      Some("Sample Test Suite "+index), Some("Sample Test Case "+index), Some("Description for Sample Test Case "+index), "SUCCESS", Some("An output message for the test session"),
+      Some(index), Some("Sample Test Suite "+index), Some("Description for Sample Test Suite "+index), Some("Sample Test Case "+index), Some("Description for Sample Test Case "+index), "SUCCESS", Some("An output message for the test session"),
       None, None, 0L, 0L, 0L)
   }
 
@@ -523,15 +477,15 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, testCaseReportProdu
     conformanceInfo += getSampleConformanceStatement(3, labels)
     conformanceInfo += getSampleConformanceStatement(4, labels)
     conformanceInfo += getSampleConformanceStatement(5, labels)
-    generateConformanceCertificate(reportPath, settings, conformanceInfo.toList)
+    generateConformanceCertificate(reportPath, settings, conformanceInfo.toList, communityId)
   }
 
-  def generateConformanceCertificate(reportPath: Path, settings: ConformanceCertificates, actorId: Long, systemId: Long): Path = {
+  def generateConformanceCertificate(reportPath: Path, settings: ConformanceCertificates, actorId: Long, systemId: Long, communityId: Long): Path = {
     val conformanceInfo = conformanceManager.getConformanceStatementsFull(None, None, None, Some(List(actorId)), None, None, Some(List(systemId)), None, None, None, None, None, None, None)
-    generateConformanceCertificate(reportPath, settings, conformanceInfo)
+    generateConformanceCertificate(reportPath, settings, conformanceInfo, communityId)
   }
 
-  private def generateConformanceCertificate(reportPath: Path, settings: ConformanceCertificates, conformanceInfo: List[ConformanceStatementFull]): Path = {
+  private def generateConformanceCertificate(reportPath: Path, settings: ConformanceCertificates, conformanceInfo: List[ConformanceStatementFull], communityId: Long): Path = {
     var pathToUseForPdf = reportPath
     if (settings.includeSignature) {
       pathToUseForPdf = reportPath.resolveSibling(reportPath.getFileName.toString + ".signed.pdf")
@@ -541,7 +495,7 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, testCaseReportProdu
       title = settings.title.get.trim
     }
     val labels = communityLabelManager.getLabels(settings.community)
-    generateCoreConformanceReport(pathToUseForPdf, addTestCases = false, title, addDetails = settings.includeDetails, addTestCaseResults = settings.includeTestCases, addTestStatus = settings.includeTestStatus, addMessage = settings.includeMessage, settings.message, conformanceInfo, labels)
+    generateCoreConformanceReport(pathToUseForPdf, addTestCases = false, title, addDetails = settings.includeDetails, addTestCaseResults = settings.includeTestCases, addTestStatus = settings.includeTestStatus, addMessage = settings.includeMessage, settings.message, conformanceInfo, labels, communityId)
     // Add signature is needed.
     if (settings.includeSignature) {
       val keystore = SigUtils.loadKeystore(
@@ -573,19 +527,34 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, testCaseReportProdu
     reportPath
   }
 
-  def generateConformanceStatementReport(reportPath: Path, addTestCases: Boolean, actorId: Long, systemId: Long, labels: Map[Short, CommunityLabels]): Path = {
-    generateCoreConformanceReport(reportPath, addTestCases, "Conformance Statement Report", true, true, true, false, None, actorId, systemId, labels)
+  def generateTestCaseDocumentationPreviewReport(reportPath: Path, communityId: Long, documentation: String): Path = {
+    Files.createDirectories(reportPath.getParent)
+    val fos = Files.newOutputStream(reportPath)
+    try {
+      ReportGenerator.getInstance().writeTestCaseDocumentationPreviewReport(documentation, fos, reportHelper.createReportSpecs(Some(communityId)))
+      fos.flush()
+    } catch {
+      case e: Exception =>
+        throw new IllegalStateException("Unable to generate PDF report", e)
+    } finally {
+      if (fos != null) fos.close()
+    }
+    reportPath
   }
 
-  private def generateCoreConformanceReport(reportPath: Path, addTestCases: Boolean, title: String, addDetails: Boolean, addTestCaseResults: Boolean, addTestStatus: Boolean, addMessage: Boolean, message: Option[String], actorId: Long, systemId: Long, labels: Map[Short, CommunityLabels]): Path = {
+  def generateConformanceStatementReport(reportPath: Path, addTestCases: Boolean, actorId: Long, systemId: Long, labels: Map[Short, CommunityLabels], communityId: Long): Path = {
+    generateCoreConformanceReport(reportPath, addTestCases, None, actorId, systemId, labels, communityId)
+  }
+
+  private def generateCoreConformanceReport(reportPath: Path, addTestCases: Boolean, message: Option[String], actorId: Long, systemId: Long, labels: Map[Short, CommunityLabels], communityId: Long): Path = {
     val conformanceInfo = conformanceManager.getConformanceStatementsFull(None, None, None, Some(List(actorId)), None, None, Some(List(systemId)), None, None, None, None, None, None, None)
-    generateCoreConformanceReport(reportPath, addTestCases, title, addDetails, addTestCaseResults, addTestStatus, addMessage, message, conformanceInfo, labels)
+    generateCoreConformanceReport(reportPath, addTestCases, "Conformance Statement Report", addDetails = true, addTestCaseResults = true, addTestStatus = true, addMessage = false, message, conformanceInfo, labels, communityId)
   }
 
-  private def generateCoreConformanceReport(reportPath: Path, addTestCases: Boolean, title: String, addDetails: Boolean, addTestCaseResults: Boolean, addTestStatus: Boolean, addMessage: Boolean, message: Option[String], conformanceInfo: List[ConformanceStatementFull], labels: Map[Short, CommunityLabels]): Path = {
+  private def generateCoreConformanceReport(reportPath: Path, addTestCases: Boolean, title: String, addDetails: Boolean, addTestCaseResults: Boolean, addTestStatus: Boolean, addMessage: Boolean, message: Option[String], conformanceInfo: List[ConformanceStatementFull], labels: Map[Short, CommunityLabels], communityId: Long): Path = {
     val sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss")
     val overview = new ConformanceStatementOverview()
-
+    val specs = reportHelper.createReportSpecs(Some(communityId))
     // Labels
     overview.setLabelDomain(communityLabelManager.getLabel(labels, models.Enums.LabelType.Domain))
     overview.setLabelSpecification(communityLabelManager.getLabel(labels, models.Enums.LabelType.Specification))
@@ -615,22 +584,18 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, testCaseReportProdu
       messageToUse = messageToUse.replace(Constants.PlaceholderSpecificationGroup, conformanceData.specificationGroupNameFull.getOrElse(""))
       messageToUse = messageToUse.replace(Constants.PlaceholderSpecification, overview.getTestSpecification)
       messageToUse = messageToUse.replace(Constants.PlaceholderSystem, overview.getSystem)
-      // Replace HTML elements
-      messageToUse = messageToUse.replaceAll("<strong(([\\s]+[^>]*)|())>", "<b>")
-      messageToUse = messageToUse.replaceAll("</strong>", "</b>")
-      messageToUse = messageToUse.replaceAll("<em(([\\s]+[^>]*)|())>", "<i>")
-      messageToUse = messageToUse.replaceAll("</em>", "</i>")
       overview.setMessage(messageToUse)
     }
 
     if (addTestCaseResults) {
-      overview.setTestCases(new util.ArrayList[TestCaseOverview]())
+      overview.setTestSuites(new util.ArrayList[TestSuiteOverview]())
     }
-    var failedTests = 0L
-    var completedTests = 0L
-    var undefinedTests = 0L
-    var totalTests = 0L
+    var failedTests = 0
+    var completedTests = 0
+    var undefinedTests = 0
+    var totalTests = 0
     var index = 1
+    val testMap = new mutable.TreeMap[Long, TestSuiteOverview]
     conformanceInfo.foreach { info =>
       totalTests += 1
       val result = TestResultStatus.withName(info.result)
@@ -651,7 +616,6 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, testCaseReportProdu
       if (addTestCaseResults) {
         val testCaseOverview = new TestCaseOverview()
         testCaseOverview.setId(index.toString)
-        testCaseOverview.setTestSuiteName(info.testSuiteName.get)
         testCaseOverview.setTestName(info.testCaseName.get)
         if (info.testCaseDescription.isDefined) {
           testCaseOverview.setTestDescription(info.testCaseDescription.get)
@@ -678,7 +642,7 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, testCaseReportProdu
             try {
               val list = testCaseReportProducer.getListOfTestSteps(testcasePresentation, sessionFolderInfo.path.toFile)
               for (stepReport <- list) {
-                testCaseOverview.getSteps.add(generator.fromTestStepReportType(stepReport.getWrapped, stepReport.getTitle, false))
+                testCaseOverview.getSteps.add(ReportGenerator.getInstance().fromTestStepReportType(stepReport.getWrapped, stepReport.getTitle, specs))
               }
               if (testCaseOverview.getSteps.isEmpty) {
                 testCaseOverview.setSteps(null)
@@ -694,35 +658,39 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, testCaseReportProdu
             testCaseOverview.setSteps(null)
           }
         }
-        overview.getTestCases.add(testCaseOverview)
+        val testSuiteOverview = testMap.getOrElseUpdate(info.testSuiteId.get, {
+          val testSuite = new TestSuiteOverview
+          testSuite.setTestSuiteName(info.testSuiteName.get)
+          testSuite.setTestSuiteDescription(info.testSuiteDescription.orNull)
+          testSuite.setOverallStatus("SUCCESS");
+          testSuite.setTestCases(new util.ArrayList[TestCaseOverview]())
+          testSuite
+        })
+        // Update the test suite's status.
+        if ("SUCCESS".equals(testSuiteOverview.getOverallStatus)) {
+          if (!testCaseOverview.getReportResult.equals(testSuiteOverview.getOverallStatus)) {
+            testSuiteOverview.setOverallStatus(testCaseOverview.getReportResult)
+          }
+        } else if ("UNDEFINED".equals(testSuiteOverview.getOverallStatus)) {
+          if ("FAILURE".equals(testCaseOverview.getReportResult)) {
+            testSuiteOverview.setOverallStatus("FAILURE")
+          }
+        }
+        testSuiteOverview.getTestCases.add(testCaseOverview)
         index += 1
       }
     }
-
-    overview.setIncludeTestStatus(addTestStatus)
-    if (addTestStatus) {
-      val resultText = new StringBuilder()
-      resultText.append(completedTests).append(" of ").append(totalTests).append(" passed")
-      if (totalTests > completedTests) {
-        resultText.append(" (")
-        if (failedTests > 0) {
-          resultText.append(failedTests).append(" failed")
-          if (undefinedTests > 0) {
-            resultText.append(", ")
-          }
-        }
-        if (undefinedTests > 0) {
-          resultText.append(undefinedTests).append(" undefined")
-        }
-        resultText.append(")")
-      }
-      overview.setTestStatus(resultText.toString())
+    overview.setCompletedTests(completedTests)
+    overview.setFailedTests(failedTests)
+    overview.setUndefinedTests(undefinedTests)
+    if (testMap.nonEmpty) {
+      overview.setTestSuites(new util.ArrayList[TestSuiteOverview](testMap.values.toList.asJavaCollection))
     }
-
+    overview.setIncludeTestStatus(addTestStatus)
     Files.createDirectories(reportPath.getParent)
     val fos = Files.newOutputStream(reportPath)
     try {
-      generator.writeConformanceStatementOverviewReport(overview, fos)
+      ReportGenerator.getInstance().writeConformanceStatementOverviewReport(overview, fos, specs)
       fos.flush()
     } catch {
       case e: Exception =>

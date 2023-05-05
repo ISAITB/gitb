@@ -7,24 +7,58 @@ import com.gitb.reports.dto.TestCaseOverview;
 import com.gitb.reports.dto.tar.ContextItem;
 import com.gitb.reports.dto.tar.Report;
 import com.gitb.reports.dto.tar.ReportItem;
+import com.gitb.reports.extensions.EscapeHtml;
+import com.gitb.reports.extensions.PrintResult;
+import com.gitb.reports.extensions.TestCoverageBlock;
 import com.gitb.tbs.TestStepStatus;
 import com.gitb.tr.*;
-import net.sf.jasperreports.engine.*;
+import com.openhtmltopdf.extend.FSCacheEx;
+import com.openhtmltopdf.extend.FSCacheValue;
+import com.openhtmltopdf.extend.impl.FSDefaultCacheStore;
+import com.openhtmltopdf.outputdevice.helper.BaseRendererBuilder;
+import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
+import com.openhtmltopdf.slf4j.Slf4jLogger;
+import com.openhtmltopdf.swing.NaiveUserAgent;
+import com.openhtmltopdf.util.XRLog;
+import freemarker.cache.ClassTemplateLoader;
+import freemarker.template.Configuration;
+import freemarker.template.Template;
+import freemarker.template.TemplateException;
+import freemarker.template.TemplateMethodModelEx;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.jsoup.Jsoup;
+import org.jsoup.helper.W3CDom;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.xml.bind.*;
 import javax.xml.transform.stream.StreamSource;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 public class ReportGenerator {
 
-    private JAXBContext jaxbContext;
+    static {
+        // Use SLF4J logging.
+        XRLog.setLoggerImpl(new Slf4jLogger());
+    }
 
-    public ReportGenerator() {
+    private static final Logger LOG = LoggerFactory.getLogger(ReportGenerator.class);
+    private static final ReportGenerator INSTANCE = new ReportGenerator();
+    private final JAXBContext jaxbContext;
+    private final Map<String, Template> templateCache;
+    private final Map<String, TemplateMethodModelEx> extensionFunctions;
+    private final FSCacheEx<String, FSCacheValue> fontCache = new FSDefaultCacheStore();
+
+    private ReportGenerator() {
+        templateCache = new ConcurrentHashMap<>();
         try {
             jaxbContext = JAXBContext.newInstance(
                     TAR.class,
@@ -32,33 +66,113 @@ public class ReportGenerator {
                     TestCaseReportType.class,
                     TestStepStatus.class);
         } catch (JAXBException e) {
-            throw new IllegalStateException(e);
+            throw new IllegalStateException("Error initialising report generator", e);
         }
+        extensionFunctions = Map.of(
+            "escape", new EscapeHtml(),
+            "coverageBlock", new TestCoverageBlock(),
+            "printResult", new PrintResult()
+        );
     }
 
-    public void writeReport(InputStream reportStream, Map<String, Object> parameters, OutputStream outputStream) throws JRException {
-        JasperPrint jasperPrint = JasperFillManager.fillReport(reportStream, parameters, new JREmptyDataSource());
+    public static ReportGenerator getInstance() {
+        return INSTANCE;
+    }
+
+    private Template getTemplate(String reportPath) {
+        return templateCache.computeIfAbsent(reportPath, path -> {
+            var configuration = new Configuration(Configuration.VERSION_2_3_31);
+            configuration.setTemplateLoader(new ClassTemplateLoader(ReportGenerator.class, "/"));
+            Template template;
+            try {
+                template = configuration.getTemplate(path);
+            } catch (IOException e) {
+                throw new IllegalStateException("Unable to load report template ["+path+"]", e);
+            }
+            return template;
+        });
+    }
+
+    private void loadFonts(PdfRendererBuilder builder) {
+        builder.useFont(() -> Thread.currentThread().getContextClassLoader().getResourceAsStream("fonts/FreeSans/FreeSans.ttf"), "FreeSans", 400, BaseRendererBuilder.FontStyle.NORMAL, true);
+        builder.useFont(() -> Thread.currentThread().getContextClassLoader().getResourceAsStream("fonts/FreeSans/FreeSansBold.ttf"), "FreeSans", 700, BaseRendererBuilder.FontStyle.NORMAL, true);
+        builder.useFont(() -> Thread.currentThread().getContextClassLoader().getResourceAsStream("fonts/FreeSans/FreeSansOblique.ttf"), "FreeSans", 400, BaseRendererBuilder.FontStyle.ITALIC, true);
+        builder.useFont(() -> Thread.currentThread().getContextClassLoader().getResourceAsStream("fonts/FreeSans/FreeSansOblique.ttf"), "FreeSans", 400, BaseRendererBuilder.FontStyle.OBLIQUE, true);
+        builder.useFont(() -> Thread.currentThread().getContextClassLoader().getResourceAsStream("fonts/FreeSans/FreeSansBoldOblique.ttf"), "FreeSans", 700, BaseRendererBuilder.FontStyle.ITALIC, true);
+        builder.useFont(() -> Thread.currentThread().getContextClassLoader().getResourceAsStream("fonts/FreeSans/FreeSansBoldOblique.ttf"), "FreeSans", 700, BaseRendererBuilder.FontStyle.OBLIQUE, true);
+        builder.useFont(() -> Thread.currentThread().getContextClassLoader().getResourceAsStream("fonts/FreeMono/FreeMono.ttf"), "FreeMono", 400, BaseRendererBuilder.FontStyle.NORMAL, true);
+        builder.useFont(() -> Thread.currentThread().getContextClassLoader().getResourceAsStream("fonts/FreeMono/FreeMonoBold.ttf"), "FreeMono", 700, BaseRendererBuilder.FontStyle.NORMAL, true);
+        builder.useFont(() -> Thread.currentThread().getContextClassLoader().getResourceAsStream("fonts/FreeMono/FreeMonoOblique.ttf"), "FreeMono", 400, BaseRendererBuilder.FontStyle.ITALIC, true);
+        builder.useFont(() -> Thread.currentThread().getContextClassLoader().getResourceAsStream("fonts/FreeMono/FreeMonoOblique.ttf"), "FreeMono", 400, BaseRendererBuilder.FontStyle.OBLIQUE, true);
+        builder.useFont(() -> Thread.currentThread().getContextClassLoader().getResourceAsStream("fonts/FreeMono/FreeMonoBoldOblique.ttf"), "FreeMono", 700, BaseRendererBuilder.FontStyle.ITALIC, true);
+        builder.useFont(() -> Thread.currentThread().getContextClassLoader().getResourceAsStream("fonts/FreeMono/FreeMonoBoldOblique.ttf"), "FreeMono", 700, BaseRendererBuilder.FontStyle.OBLIQUE, true);
+    }
+
+    public void writeClasspathReport(String reportPath, Map<String, Object> parameters, OutputStream outputStream, ReportSpecs specs) {
+        ReportSpecs specsToUse = Objects.requireNonNullElseGet(specs, ReportSpecs::build);
+        // Add custom extension functions.
+        parameters = Objects.requireNonNullElse(parameters, Collections.emptyMap());
+        parameters.putAll(extensionFunctions);
+        // Generate HTML report.
+        File tempHtmlFile = null;
+        String tempHtmlString = null;
         try {
-            JasperExportManager.exportReportToPdfStream(jasperPrint, outputStream);
-        } finally {
-            if (outputStream != null) {
-                try {
-                    outputStream.flush();
-                } catch (IOException e) {
+            if (specsToUse.getTempFolderPath() == null) {
+                var writer = new StringWriter();
+                getTemplate(reportPath).process(parameters, writer);
+                writer.flush();
+                tempHtmlString = writer.toString();
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("### Report HTML - START ###\n\n{}\n\n### Report HTML - END ###", tempHtmlString);
                 }
+            } else {
+                Files.createDirectories(specsToUse.getTempFolderPath());
+                tempHtmlFile = Path.of(specsToUse.getTempFolderPath().toString(), UUID.randomUUID().toString()).toFile();
+                try (var writer = new FileWriter(tempHtmlFile, StandardCharsets.UTF_8)) {
+                    getTemplate(reportPath).process(parameters, writer);
+                    writer.flush();
+                }
+            }
+            // Convert to PDF.
+            var builder = new PdfRendererBuilder();
+            builder.useCacheStore(PdfRendererBuilder.CacheStore.PDF_FONT_METRICS, fontCache);
+            loadFonts(builder);
+            builder.useUriResolver(new NaiveUserAgent.DefaultUriResolver() {
+                @Override
+                public String resolveURI(String baseUri, String uri) {
+                    if (uri.startsWith("classpath:")) {
+                        // A predefined image.
+                        return Objects.requireNonNull(Thread.currentThread().getContextClassLoader().getResource(StringUtils.removeStart(uri, "classpath:"))).toString();
+                    } else if (specsToUse.getResourceResolver() != null && uri.startsWith("resources/")) {
+                        // This is a community-specific resource.
+                        return specsToUse.getResourceResolver().apply(StringUtils.removeStart(uri, "resources/"));
+                    }
+                    return super.resolveURI(baseUri, uri);
+                }
+            });
+
+            if (tempHtmlFile != null) {
+                builder.withW3cDocument(new W3CDom().fromJsoup(Jsoup.parse(tempHtmlFile, StandardCharsets.UTF_8.name())), "reports");
+            } else {
+                builder.withW3cDocument(new W3CDom().fromJsoup(Jsoup.parse(tempHtmlString)), "reports");
+            }
+
+            builder.toStream(outputStream);
+            builder.run();
+        } catch (IOException | TemplateException e) {
+            throw new IllegalStateException("Error while generating report for template ["+reportPath+"]", e);
+        } finally {
+            if (tempHtmlFile != null) {
+                FileUtils.deleteQuietly(tempHtmlFile);
             }
         }
     }
 
-    public void writeClasspathReport(String reportPath, Map<String, Object> parameters, OutputStream outputStream) throws JRException {
-        writeReport(Thread.currentThread().getContextClassLoader().getResourceAsStream(reportPath), parameters, outputStream);
-    }
-
-    public void writeTestStepStatusReport(InputStream inputStream, String title, OutputStream outputStream, boolean addContext) {
+    public void writeTestStepStatusReport(InputStream inputStream, String title, OutputStream outputStream, ReportSpecs specs) {
         try {
             Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
             JAXBElement<TestStepStatus> stepStatus = unmarshaller.unmarshal(new StreamSource(inputStream), TestStepStatus.class);
-            writeTestStepStatusReport(stepStatus.getValue(), title, outputStream, addContext);
+            writeTestStepStatusReport(stepStatus.getValue(), title, outputStream, specs);
         } catch(Exception e) {
             throw new IllegalStateException(e);
         }
@@ -79,41 +193,29 @@ public class ReportGenerator {
         }
     }
 
-    public void writeTestStepStatusReport(TestStepStatus statusReport, String title, OutputStream outputStream, boolean addContext) {
+    public void writeTestStepStatusReport(TestStepStatus statusReport, String title, OutputStream outputStream, ReportSpecs specs) {
         if (statusReport.getReport() instanceof TAR) {
-            writeTARReport((TAR)statusReport.getReport(), title, outputStream, addContext);
+            writeTARReport((TAR)statusReport.getReport(), title, outputStream, specs);
         }
     }
 
-    public void writeTARReport(InputStream inputStream, String title, OutputStream outputStream) {
-        writeTARReport(inputStream, title, outputStream, true);
+    public void writeTARReport(TAR reportType, String title, OutputStream outputStream, ReportSpecs specs) {
+        writeTestStepReport(reportType, title, outputStream, specs);
     }
 
-    public void writeTARReport(TAR reportType, String title, OutputStream outputStream) {
-        writeTARReport(reportType, title, outputStream, true);
-    }
-
-    public void writeTARReport(TAR reportType, String title, OutputStream outputStream, boolean addContext) {
-        writeTestStepReport(reportType, title, outputStream, addContext);
-    }
-
-    public void writeTARReport(InputStream inputStream, String title, OutputStream outputStream, boolean addContext) {
+    public void writeTARReport(InputStream inputStream, String title, OutputStream outputStream, ReportSpecs specs) {
         try {
             Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
             JAXBElement<TAR> tar = unmarshaller.unmarshal(new StreamSource(inputStream), TAR.class);
-            writeTARReport(tar.getValue(), title, outputStream, addContext);
+            writeTARReport(tar.getValue(), title, outputStream, specs);
         } catch(Exception e) {
             throw new IllegalStateException(e);
         }
     }
 
-    public void writeTestStepReport(TestStepReportType reportType, String title, OutputStream outputStream) {
-        writeTestStepReport(reportType, title, outputStream, true);
-    }
-
-    public void writeTestStepReport(TestStepReportType reportType, String title, OutputStream outputStream, boolean addContext) {
+    public void writeTestStepReport(TestStepReportType reportType, String title, OutputStream outputStream, ReportSpecs specs) {
         try {
-            Report report = fromTestStepReportType(reportType, title, addContext);
+            Report report = fromTestStepReportType(reportType, title, specs);
             Map<String, Object> parameters = new HashMap<>();
             parameters.put("title", report.getTitle());
             parameters.put("reportDate", report.getReportDate());
@@ -127,70 +229,97 @@ public class ReportGenerator {
             if (report.getContextItems() != null && !report.getContextItems().isEmpty()) {
                 parameters.put("contextItems", report.getContextItems());
             }
-            writeClasspathReport("reports/TAR.jasper", parameters, outputStream);
+            writeClasspathReport("reports/TAR.ftl", parameters, outputStream, specs);
         } catch (Exception e) {
-            throw new IllegalStateException(e);
+            throw new IllegalStateException("Error while creating test step report", e);
         }
     }
 
-    public <T extends TestStepReportType> Report fromTestStepStatus(InputStream inStream, String title, boolean addContext) {
+    public <T extends TestStepReportType> Report fromTestStepStatus(InputStream inStream, String title, ReportSpecs specs) {
         try {
             Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
             JAXBElement<TestStepStatus> testStepStatus = unmarshaller.unmarshal(new StreamSource(inStream), TestStepStatus.class);
-            return fromTestStepReportType(testStepStatus.getValue().getReport(), title, addContext);
+            return fromTestStepReportType(testStepStatus.getValue().getReport(), title, specs);
         } catch(Exception e) {
             throw new IllegalStateException(e);
         }
     }
 
-    private void addContextItem(AnyContent context, List<ContextItem> items, String keyPath) {
-        if ("map".equals(context.getType()) || "list".equals(context.getType())) {
-            if (context.getItem() != null) {
-                if (!"".equals(keyPath)) {
-                    keyPath += ".";
+    private String contextValueAsString(String value) {
+        if (StringUtils.startsWith(value, "___[[") && StringUtils.endsWith(value, "]]___")) {
+            // This is a pointer to a large file.
+            value = "[File content]";
+        }
+        return value;
+    }
+
+    private ContextItem toContextItem(AnyContent content, ReportSpecs specs) {
+        ContextItem item = null;
+        if (content != null && content.isForDisplay()) {
+            if (content.getItem().isEmpty()) {
+                if (StringUtils.isNotBlank(content.getValue())) {
+                    String value;
+                    if (content.getEmbeddingMethod() == ValueEmbeddingEnumeration.URI) {
+                        value = "["+content.getValue()+"]";
+                    } else if (content.getEmbeddingMethod() == ValueEmbeddingEnumeration.BASE_64) {
+                        if (content.getMimeType() != null && specs.getMimeTypesToConvertToStrings().contains(content.getMimeType())) {
+                            value = contextValueAsString(new String(Base64.getDecoder().decode(content.getValue())));
+                        } else {
+                            value = "[File content]";
+                        }
+                    } else {
+                        value = contextValueAsString(content.getValue());
+                    }
+                    item = new ContextItem(StringUtils.defaultString(content.getName()), truncateIfNeeded(value, specs));
                 }
-                for (AnyContent internalContext: context.getItem()) {
-                    addContextItem(internalContext, items, keyPath + context.getName());
+            } else {
+                var children = content.getItem().stream()
+                        .filter(AnyContent::isForDisplay)
+                        .map((childItem) -> toContextItem(childItem, specs))
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toList());
+                if (!children.isEmpty()) {
+                    item = new ContextItem(StringUtils.defaultString(content.getName()), children);
                 }
+
             }
+        }
+        return item;
+    }
+
+    private String truncateIfNeeded(String value, ReportSpecs specs) {
+        if (specs.getContextItemTruncateLimit() > 0) {
+            var truncatedValue = StringUtils.truncate(value, specs.getContextItemTruncateLimit());
+            if (value.length() > truncatedValue.length()) {
+                truncatedValue += " [...]";
+            }
+            return truncatedValue;
         } else {
-            if (context.getValue() != null) {
-                if (!"".equals(keyPath)) {
-                    keyPath += ".";
-                }
-                ContextItem item = new ContextItem();
-                item.setKey(keyPath+context.getName());
-                if (context.getEmbeddingMethod() == ValueEmbeddingEnumeration.STRING) {
-                    item.setValue(context.getValue());
-                } else if (context.getEmbeddingMethod() == ValueEmbeddingEnumeration.URI) {
-                    item.setValue("[URI: "+context.getValue()+"]");
-                } else if (context.getEmbeddingMethod() == ValueEmbeddingEnumeration.BASE_64) {
-                    item.setValue("[BASE64 content]");
-                }
-                items.add(item);
-            }
+            return value;
         }
     }
 
-    public <T extends TestStepReportType> Report fromTestStepReportType(T reportType, String title, boolean addContext) {
+    private void addContextItems(TAR report, List<ContextItem> items, ReportSpecs specs) {
+        var contextItem = toContextItem(report.getContext(), specs);
+        if (contextItem != null && contextItem.getItems() != null) {
+            items.addAll(contextItem.getItems());
+        }
+    }
+
+    public <T extends TestStepReportType> Report fromTestStepReportType(T reportType, String title, ReportSpecs specs) {
+        specs = Objects.requireNonNullElseGet(specs, ReportSpecs::build);
         Report report = new Report();
         if (reportType.getDate() != null) {
-            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss 'Z'");
+            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
             sdf.setTimeZone(TimeZone.getDefault());
             report.setReportDate(sdf.format(reportType.getDate().toGregorianCalendar().getTime()));
         }
         report.setReportResult(reportType.getResult().value());
-        if (title == null) {
-            report.setTitle("Report");
-        } else {
-            report.setTitle(title);
-        }
+        report.setTitle(Objects.requireNonNullElse(title, "Report"));
         if (reportType instanceof TAR) {
             TAR tarReport = (TAR)reportType;
-            if (addContext && tarReport.getContext() != null) {
-                for (AnyContent context : tarReport.getContext().getItem()) {
-                    addContextItem(context, report.getContextItems(), "");
-                }
+            if (specs.isIncludeContextItems()) {
+                addContextItems(tarReport, report.getContextItems(), specs);
             }
             if (tarReport.getReports() != null && tarReport.getReports().getInfoOrWarningOrError() != null) {
                 int errors = 0;
@@ -214,9 +343,9 @@ public class ReportGenerator {
                         report.getReportItems().add(reportItem);
                     }
                 }
-                report.setErrorCount(String.valueOf(errors));
-                report.setWarningCount(String.valueOf(warnings));
-                report.setMessageCount(String.valueOf(messages));
+                report.setErrorCount(errors);
+                report.setWarningCount(warnings);
+                report.setMessageCount(messages);
             }
         }
         if (report.getReportItems().isEmpty()) {
@@ -228,17 +357,10 @@ public class ReportGenerator {
         return report;
     }
 
-    public void writeConformanceStatementOverviewReport(ConformanceStatementOverview overview, OutputStream outputStream) {
+    public void writeConformanceStatementOverviewReport(ConformanceStatementOverview overview, OutputStream outputStream, ReportSpecs specs) {
         if (overview.getReportDate() == null) {
             SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
             overview.setReportDate(sdf.format(new Date()));
-        }
-        if (overview.getTestCases() != null) {
-            for (TestCaseOverview tc: overview.getTestCases()) {
-                if (tc.getSubReportRoot() == null) {
-                    tc.setSubReportRoot("reports/");
-                }
-            }
         }
         try {
             Map<String, Object> parameters = new HashMap<>();
@@ -248,10 +370,17 @@ public class ReportGenerator {
             parameters.put("testDomain", overview.getTestDomain());
             parameters.put("testSpecification", overview.getTestSpecification());
             parameters.put("testActor", overview.getTestActor());
-            parameters.put("testStatus", overview.getTestStatus());
+            parameters.put("completedTests", overview.getCompletedTests());
+            parameters.put("failedTests", overview.getFailedTests());
+            parameters.put("undefinedTests", overview.getUndefinedTests());
+            if (overview.getIncludeTestStatus()) {
+                parameters.put("testStatus", overview.getTestStatus());
+            }
             parameters.put("overallStatus", overview.getOverallStatus());
             parameters.put("reportDate", overview.getReportDate());
-            parameters.put("testCases", overview.getTestCases());
+            if (overview.getTestSuites() != null && !overview.getTestSuites().isEmpty()) {
+                parameters.put("testSuites", overview.getTestSuites());
+            }
             parameters.put("includeTestCases", overview.getIncludeTestCases());
             parameters.put("includeMessage", overview.getIncludeMessage());
             if (overview.getIncludeMessage()) {
@@ -264,7 +393,7 @@ public class ReportGenerator {
             parameters.put("labelActor", overview.getLabelActor());
             parameters.put("labelOrganisation", overview.getLabelOrganisation());
             parameters.put("labelSystem", overview.getLabelSystem());
-            writeClasspathReport("reports/ConformanceStatementOverview.jasper", parameters, outputStream);
+            writeClasspathReport("reports/ConformanceStatementOverview.ftl", parameters, outputStream, specs);
         } catch (Exception e) {
             throw new IllegalStateException(e);
         }
@@ -287,10 +416,17 @@ public class ReportGenerator {
         }
     }
 
-    public void writeTestCaseOverviewReport(TestCaseOverview testCaseOverview, OutputStream outputStream) {
-        if (testCaseOverview.getSubReportRoot() == null) {
-            testCaseOverview.setSubReportRoot("reports/");
+    public void writeTestCaseDocumentationPreviewReport(String documentation, OutputStream outputStream, ReportSpecs specs) {
+        try {
+            Map<String, Object> parameters = new HashMap<>();
+            parameters.put("documentation", documentation);
+            writeClasspathReport("reports/TestCaseDocumentationPreview.ftl", parameters, outputStream, specs);
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
         }
+    }
+
+    public void writeTestCaseOverviewReport(TestCaseOverview testCaseOverview, OutputStream outputStream, ReportSpecs specs) {
         try {
             Map<String, Object> parameters = new HashMap<>();
             parameters.put("title", testCaseOverview.getTitle());
@@ -305,13 +441,21 @@ public class ReportGenerator {
             parameters.put("endTime", testCaseOverview.getEndTime());
             parameters.put("testName", testCaseOverview.getTestName());
             parameters.put("testDescription", testCaseOverview.getTestDescription());
-            parameters.put("steps", testCaseOverview.getSteps());
+            if (specs.isIncludeTestSteps()) {
+                parameters.put("steps", testCaseOverview.getSteps());
+            }
             parameters.put("labelDomain", testCaseOverview.getLabelDomain());
             parameters.put("labelSpecification", testCaseOverview.getLabelSpecification());
             parameters.put("labelActor", testCaseOverview.getLabelActor());
             parameters.put("labelOrganisation", testCaseOverview.getLabelOrganisation());
             parameters.put("labelSystem", testCaseOverview.getLabelSystem());
-            writeClasspathReport("reports/TestCaseOverview.jasper", parameters, outputStream);
+            if (specs.isIncludeDocumentation()) {
+                parameters.put("documentation", testCaseOverview.getDocumentation());
+            }
+            if (specs.isIncludeLogs()) {
+                parameters.put("logMessages", testCaseOverview.getLogMessages());
+            }
+            writeClasspathReport("reports/TestCaseOverview.ftl", parameters, outputStream, specs);
         } catch (Exception e) {
             throw new IllegalStateException(e);
         }

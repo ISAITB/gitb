@@ -29,26 +29,35 @@
                         </div>
                     </div>
                 </div>
+				<div class="row">
+					<div class="col-sm-12">
+						<div class="form-separator expandable" (click)="showContent = !showContent">
+							<div><h4 class="title"><app-collapsing-icon [isCollapsed]="!showContent"></app-collapsing-icon>Content</h4></div>
+						</div>
+					</div>
+				</div>
+				<div [collapse]="!showContent" [isAnimated]="true">
+					<div class="row">
+                        <div class="col-sm-12">
+                            <div class="div-padded-bottom">
+                                <app-placeholder-selector [placeholders]="placeholders"></app-placeholder-selector>
+                            </div>
+                            <div>
+                                <app-editor id="content" name="content" [(ngModel)]="template.content"></app-editor>
+                            </div>
+						</div>
+                    </div>
+                </div>
             </div>
             <div class="panel-footer">
                 <div class="btn-toolbar">
-                    <button class="btn btn-default" type="button" (click)="preview()" [disabled]="!textProvided(template.content)">Preview</button>
                     <button class="btn btn-default" type="submit" (click)="updateErrorTemplate(false)" [disable]="saveDisabled() || copyPending" [pending]="savePending">Update</button>
+                    <button class="btn btn-default" type="button" (click)="preview()" [disabled]="!textProvided(template.content)">Preview</button>
                     <button class="btn btn-default" type="button" (click)="updateErrorTemplate(true)" [disable]="saveDisabled() || savePending" [pending]="copyPending">Copy</button>
                     <button class="btn btn-default" type="button" (click)="deleteErrorTemplate()" [pending]="deletePending">Delete</button>
                     <button class="btn btn-default" type="button" (click)="cancelDetailErrorTemplate()">Back</button>
                 </div>
             </div>
         </form>
-    </div>
-    <div>
-        <div class="pull-left">
-            <app-editor name="content" [(ngModel)]="template.content"></app-editor>
-        </div>
-        <div style="padding-left: 20px; padding-right:20px; display: table;">
-            <h4>Placeholders:</h4>
-            <p><b>{{Constants.PLACEHOLDER__ERROR_DESCRIPTION}}</b>: The error message text (a text value - may be empty).</p>
-            <p><b>{{Constants.PLACEHOLDER__ERROR_ID}}</b>: The error identifier (used to trace error in logs).</p>
-        </div>
     </div>
 </div>

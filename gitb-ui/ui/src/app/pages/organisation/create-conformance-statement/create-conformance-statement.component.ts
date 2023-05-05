@@ -9,7 +9,7 @@ import { Organisation } from 'src/app/types/organisation.type';
 import { ConformanceStatementItem } from 'src/app/types/conformance-statement-item';
 import { mergeMap, Observable, of } from 'rxjs';
 import { SystemService } from 'src/app/services/system.service';
-import { filter, find, remove } from 'lodash';
+import { filter, find, remove, sortBy } from 'lodash';
 
 @Component({
   selector: 'app-create-conformance-statement',
@@ -112,11 +112,21 @@ export class CreateConformanceStatementComponent implements OnInit {
         }
         item.filtered = true
       })
+      this.sortItems(itemInfo.items)
       this.items = itemInfo.items
       this.countVisibleItems()
       this.toggleAnimated(true)
     }).add(() => {
       this.dataStatus.status = Constants.STATUS.FINISHED
+    })
+  }
+
+  private sortItems(items: ConformanceStatementItem[]) {
+    items.sort((a, b) => a.order - b.order || a.name.localeCompare(b.name))
+    items.forEach((item) => {
+      if (item.items) {
+        this.sortItems(item.items)
+      }
     })
   }
 
@@ -202,8 +212,8 @@ export class CreateConformanceStatementComponent implements OnInit {
       }
     }
     return {
-      groups: groups, 
-      specs: specs, 
+      groups: groups,
+      specs: specs,
       actors: actors
     }
   }
@@ -282,10 +292,10 @@ export class CreateConformanceStatementComponent implements OnInit {
     }
   }
 
-  toggleCheck(check: boolean) { 
+  toggleCheck(check: boolean) {
     this.visit(this.items, (item) => {
-      if (item.filtered) {
-        // Only toggle items that are visible.
+      if (item.filtered && (item.items == undefined || item.items.length == 0)) {
+        // Only toggle items that are visible and have a checkbox.
         item.checked = check
         this.selectionChanged(item)
       }
@@ -325,7 +335,7 @@ export class CreateConformanceStatementComponent implements OnInit {
       this.createPending = true
       this.systemService.defineConformanceStatements(this.systemId, this.selectedActorIds)
       .subscribe(() => {
-        this.routingService.toConformanceStatements(this.organisationId, this.systemId)        
+        this.routingService.toConformanceStatements(this.organisationId, this.systemId)
         if (this.selectedActorIds.length > 1) {
           this.popupService.success("Conformance statements created.")
         } else {

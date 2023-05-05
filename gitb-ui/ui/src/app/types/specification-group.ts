@@ -1,9 +1,11 @@
-export interface SpecificationGroup {
+import { EntityWithId } from "./entity-with-id"
 
-    id: number
+export interface SpecificationGroup extends EntityWithId {
+
     sname: string
     fname: string
     description?: string
     domain: number
+    order: number
 
 }

@@ -1,8 +1,8 @@
 package managers
 
 import com.gitb.core.Metadata
-import com.gitb.reports.ReportGenerator
 import com.gitb.reports.dto.TestCaseOverview
+import com.gitb.reports.{ReportGenerator, ReportSpecs}
 import com.gitb.tbs.TestStepStatus
 import com.gitb.tpl._
 import com.gitb.tr.{TestCaseOverviewReportType, TestCaseStepReportType, TestCaseStepsType, TestResultType}
@@ -23,25 +23,28 @@ import java.util.Date
 import javax.inject.{Inject, Singleton}
 import javax.xml.transform.stream.StreamSource
 import scala.collection.mutable.ListBuffer
+import scala.jdk.CollectionConverters.SeqHasAsJava
 import scala.util.Using
 
 @Singleton
-class TestCaseReportProducer @Inject() (testResultManager: TestResultManager, testCaseManager: TestCaseManager, communityLabelManager: CommunityLabelManager, repositoryUtils: RepositoryUtils, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class TestCaseReportProducer @Inject() (reportHelper: ReportHelper, testResultManager: TestResultManager, testCaseManager: TestCaseManager, communityLabelManager: CommunityLabelManager, repositoryUtils: RepositoryUtils, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   val logger: Logger = LoggerFactory.getLogger("TestCaseReportProducer")
   private val codec = new URLCodec()
   import dbConfig.profile.api._
-  private val generator = new ReportGenerator()
 
-  def generateDetailedTestCaseReport(sessionId: String, contentType: Option[String], labelSupplier: Option[() => Map[Short, CommunityLabels]]): (Option[Path], SessionFolderInfo) = {
+  def generateDetailedTestCaseReport(sessionId: String, contentType: Option[String], labelSupplier: Option[() => Map[Short, CommunityLabels]], reportSpecSupplier: Option[() => ReportSpecs] = None): (Option[Path], SessionFolderInfo) = {
     var report: Option[Path] = None
     val sessionFolderInfo = repositoryUtils.getPathForTestSession(codec.decode(sessionId), isExpected = true)
-    logger.debug("Reading test case report [" + codec.decode(sessionId) + "] from the file [" + sessionFolderInfo + "]")
+    if (logger.isDebugEnabled) {
+      logger.debug("Reading test case report [{}] from the file [{}]", codec.decode(sessionId), sessionFolderInfo)
+    }
     val testResult = testResultManager.getTestResultForSessionWrapper(sessionId)
     if (testResult.isDefined) {
       val reportData = contentType match {
-        case Some("application/pdf") => (".pdf", (list: ListBuffer[TitledTestStepReportType], exportedReportPath: File, testCase: Option[models.TestCase], session: String) => {
-          generateDetailedTestCaseReportPdf(list, exportedReportPath.getAbsolutePath, testCase, session, addContext = false, labelSupplier.getOrElse(() => Map.empty[Short, CommunityLabels]).apply())
+        // The "vX" postfix is used to make sure we generate (but also subsequently cache) new versions of the step report
+        case Some("application/pdf") => (".v2.pdf", (list: ListBuffer[TitledTestStepReportType], exportedReportPath: File, testCase: Option[models.TestCase], session: String) => {
+          generateDetailedTestCaseReportPdf(list, exportedReportPath.getAbsolutePath, testCase, session, labelSupplier.getOrElse(() => Map.empty[Short, CommunityLabels]).apply(), reportSpecSupplier.getOrElse(() => reportHelper.createReportSpecs()).apply())
         })
         case _ => (".report.xml", (list: ListBuffer[TitledTestStepReportType], exportedReportPath: File, testCase: Option[models.TestCase], session: String) => {
           generateDetailedTestCaseReportXml(list, exportedReportPath.getAbsolutePath, testCase, session)
@@ -96,13 +99,13 @@ class TestCaseReportProducer @Inject() (testResultManager: TestResultManager, te
     }
     Files.createDirectories(reportPath.getParent)
     Using(Files.newOutputStream(reportPath)) { fos =>
-      generator.writeTestCaseOverviewXmlReport(overview, fos)
+      ReportGenerator.getInstance().writeTestCaseOverviewXmlReport(overview, fos)
       fos.flush()
     }
     reportPath
   }
 
-  private def generateDetailedTestCaseReportPdf(list: ListBuffer[TitledTestStepReportType], path: String, testCase: Option[models.TestCase], sessionId: String, addContext: Boolean, labels: Map[Short, CommunityLabels]): Path = {
+  private def generateDetailedTestCaseReportPdf(list: ListBuffer[TitledTestStepReportType], path: String, testCase: Option[models.TestCase], sessionId: String, labels: Map[Short, CommunityLabels], specs: ReportSpecs): Path = {
     val reportPath = Paths.get(path)
     val sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss")
     val overview = new TestCaseOverview()
@@ -119,7 +122,7 @@ class TestCaseReportProducer @Inject() (testResultManager: TestResultManager, te
     overview.setOutputMessage(testResult.outputMessage.orNull)
     // Start time
     val start = testResult.startTime
-    overview.setStartTime(sdf.format(new Date(start.getTime)));
+    overview.setStartTime(sdf.format(new Date(start.getTime)))
     // End time
     if (testResult.endTime.isDefined) {
       val end = testResult.endTime.get
@@ -159,12 +162,24 @@ class TestCaseReportProducer @Inject() (testResultManager: TestResultManager, te
       if (testCase.get.description.isDefined) {
         overview.setTestDescription(testCase.get.description.get)
       }
+      if (specs.isIncludeDocumentation) {
+        val documentation = testCaseManager.getTestCaseDocumentation(testCase.get.id)
+        if (documentation.isDefined) {
+          overview.setDocumentation(documentation.get)
+        }
+      }
+      if (specs.isIncludeLogs) {
+        val logContents = testResultManager.getTestSessionLog(sessionId, isExpected = true)
+        if (logContents.isDefined && logContents.get.nonEmpty) {
+          overview.setLogMessages(logContents.get.asJava)
+        }
+      }
     } else {
       // This is a deleted test case - get data as possible from TestResult
       overview.setTestDescription("-")
     }
     for (stepReport <- list) {
-      overview.getSteps.add(generator.fromTestStepReportType(stepReport.getWrapped, stepReport.getTitle, addContext))
+      overview.getSteps.add(ReportGenerator.getInstance().fromTestStepReportType(stepReport.getWrapped, stepReport.getTitle, specs))
     }
     if (overview.getSteps.isEmpty) {
       overview.setSteps(null)
@@ -173,7 +188,7 @@ class TestCaseReportProducer @Inject() (testResultManager: TestResultManager, te
     Files.createDirectories(reportPath.getParent)
     val fos = Files.newOutputStream(reportPath)
     try {
-      generator.writeTestCaseOverviewReport(overview, fos)
+      ReportGenerator.getInstance().writeTestCaseOverviewReport(overview, fos, specs)
       fos.flush()
     } catch {
       case e: Exception =>
@@ -188,12 +203,13 @@ class TestCaseReportProducer @Inject() (testResultManager: TestResultManager, te
     val reportFile = new File(folder, testStep.getId + ".xml")
     if (reportFile.exists()) {
       val stepReport = new TitledTestStepReportType()
+      val sequenceNumber = collectedSteps.size + 1
       if (StringUtils.isBlank(testStep.getDesc)) {
-        stepReport.setTitle("Step " + testStep.getId)
+        stepReport.setTitle("Step " + sequenceNumber)
       } else {
-        stepReport.setTitle("Step " + testStep.getId + ": " + testStep.getDesc)
+        stepReport.setTitle("Step " + sequenceNumber + ": " + testStep.getDesc)
       }
-      val bytes = Files.readAllBytes(Paths.get(reportFile.getAbsolutePath));
+      val bytes = Files.readAllBytes(Paths.get(reportFile.getAbsolutePath))
       val string = new String(bytes)
       //convert string in xml format into its object representation
       val report = XMLUtils.unmarshal(classOf[TestStepStatus], new StreamSource(new StringReader(string)))

@@ -26,7 +26,16 @@
 				</div>
 				<div class="row row-display oneLineDiv">
 					<div class="col-md-2"><strong>Test results</strong></div>
-					<div class="col-md-10"><app-test-status-icons *ngIf="statusCounters" [counters]="statusCounters" [centerAligned]="false"></app-test-status-icons></div>
+					<div class="col-md-10">
+						<div class="status-container" *ngIf="statusCounters">
+							<div class="status-counts">
+								<app-test-status-icons [counters]="statusCounters" [centerAligned]="false"></app-test-status-icons>
+							</div>
+							<div class="status-ratios">
+								<app-test-result-ratio [counters]="statusCounters"></app-test-result-ratio>
+							</div>
+						</div>
+					</div>
 				</div>
 				<div class="row row-display-last oneLineDiv conformanceStatusDiv">
 					<div class="col-md-2"><strong>Status</strong></div>

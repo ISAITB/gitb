@@ -157,6 +157,15 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityRes
     community
   }
 
+  def getUserCommunityId(userId: Long): Long = {
+    exec(PersistenceSchema.users
+      .join(PersistenceSchema.organizations).on(_.organization === _.id)
+      .filter(_._1.id === userId)
+      .map(_._2.community)
+      .result
+      .head)
+  }
+
   /**
     * Creates new community
     */

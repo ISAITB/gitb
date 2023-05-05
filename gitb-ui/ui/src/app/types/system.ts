@@ -1,6 +1,7 @@
-export interface System {
+import { EntityWithId } from "./entity-with-id";
 
-    id: number,
+export interface System extends EntityWithId {
+
     sname: string,
     fname: string,
     version?: string,

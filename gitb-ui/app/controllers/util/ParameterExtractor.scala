@@ -447,7 +447,7 @@ object ParameterExtractor {
 		val domain = ParameterExtractor.optionalLongBodyParameter(request, Parameters.DOMAIN_ID)
     val group = ParameterExtractor.optionalLongBodyParameter(request, Parameters.GROUP_ID)
 
-    Specifications(0L, sname, fname, descr, hidden, CryptoUtil.generateApiKey(), domain.getOrElse(0L), group)
+    Specifications(0L, sname, fname, descr, hidden, CryptoUtil.generateApiKey(), domain.getOrElse(0L), 0, group)
 	}
 
   def extractSpecificationGroup(request: Request[AnyContent]): SpecificationGroups = {
@@ -456,7 +456,7 @@ object ParameterExtractor {
     val descr: Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DESC)
     val domain = ParameterExtractor.requiredBodyParameter(request, Parameters.DOMAIN_ID).toLong
 
-    SpecificationGroups(0L, sname, fname, descr, domain)
+    SpecificationGroups(0L, sname, fname, descr, 0, domain)
   }
 
   def extractActor(request:Request[AnyContent]):Actor = {

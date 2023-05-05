@@ -10,6 +10,8 @@ import { RoutingService } from 'src/app/services/routing.service';
 import { ErrorData } from 'src/app/types/error-data.type';
 import { ErrorTemplate } from 'src/app/types/error-template';
 import { CommunityTab } from '../../community/community-details/community-tab.enum';
+import { Constants } from 'src/app/common/constants';
+import { KeyValue } from 'src/app/types/key-value';
 
 @Component({
   selector: 'app-error-template-details',
@@ -26,6 +28,8 @@ export class ErrorTemplateDetailsComponent extends BaseComponent implements OnIn
   savePending = false
   copyPending = false
   deletePending = false
+  placeholders: KeyValue[] = []
+  showContent = true
 
   constructor(
     public dataService: DataService,
@@ -44,6 +48,10 @@ export class ErrorTemplateDetailsComponent extends BaseComponent implements OnIn
   ngOnInit(): void {
     this.communityId = Number(this.route.snapshot.paramMap.get('community_id'))
     this.templateId = Number(this.route.snapshot.paramMap.get('template_id'))
+    this.placeholders = [
+      { key: Constants.PLACEHOLDER__ERROR_DESCRIPTION, value: "The error message text (a text value that may be empty)." },
+      { key: Constants.PLACEHOLDER__ERROR_ID, value: "The error identifier (used to trace the error in the logs)." }
+    ]
     this.errorTemplateService.getErrorTemplateById(this.templateId)
     .subscribe((data) => {
       this.template = data

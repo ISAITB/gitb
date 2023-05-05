@@ -24,6 +24,7 @@ export class LegalNoticeDetailsComponent extends BaseComponent implements OnInit
   savePending = false
   copyPending = false
   deletePending = false
+  showContent = true
 
   constructor(
     public dataService: DataService,

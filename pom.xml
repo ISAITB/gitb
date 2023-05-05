@@ -7,7 +7,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>2.7.9</version>
+        <version>2.7.11</version>
     </parent>
     <groupId>com.gitb</groupId>
     <artifactId>GITB</artifactId>
@@ -26,14 +26,12 @@
              mvn versions:display-dependency-updates -N -N
         -->
         <!-- Plugin versions -->
-        <version.plugin.dependency-check-maven>8.1.1</version.plugin.dependency-check-maven>
+        <version.plugin.dependency-check-maven>8.2.1</version.plugin.dependency-check-maven>
         <version.plugin.maven-deploy-plugin>3.0.0-M2</version.plugin.maven-deploy-plugin>
-        <version.plugin.jasperreports-plugin>2.8</version.plugin.jasperreports-plugin>
         <version.plugin.maven-compiler-plugin>3.10.1</version.plugin.maven-compiler-plugin>
         <!-- Dependency versions -->
-        <version.springBoot>2.7.9</version.springBoot>
-        <version.gitbTypes>1.19.0</version.gitbTypes>
-        <version.jasperReports>6.20.0</version.jasperReports>
+        <version.springBoot>2.7.11</version.springBoot>
+        <version.gitbTypes>1.20.0</version.gitbTypes>
         <version.bouncycastle>1.70</version.bouncycastle>
         <version.helgerSchematron>6.3.4</version.helgerSchematron>
         <version.metaInfServices>1.9</version.metaInfServices>
@@ -75,11 +73,16 @@
         <version.jerseyClient>1.19.4</version.jerseyClient>
         <version.beanUtils>1.9.4</version.beanUtils>
         <version.freeMarker>2.3.31</version.freeMarker>
+        <version.com.openhtmltopdf>1.0.10</version.com.openhtmltopdf>
+        <version.org.jsoup>1.15.4</version.org.jsoup>
         <!-- Version overrides in Spring Boot - START -->
-        <version.snakeyaml>1.33</version.snakeyaml> <!-- Spring Boot override to resolve CVE-2022-25857 -->
+        <snakeyaml.version>1.33</snakeyaml.version> <!-- Spring Boot override to resolve CVE-2022-25857 -->
+        <!-- Version overrides in Spring Boot - END -->
+        <!-- Other version overrides - START -->
         <version.commonsText>1.10.0</version.commonsText> <!-- Apache Commons Configuration override to resolve CVE-2022-42889 -->
         <version.woodstox>6.4.0</version.woodstox> <!-- Woodstox version to resolve CVE-2022-40152. This needs to match the version included in CXF core (currently at 3.5.5). -->
-        <!-- Version overrides in Spring Boot - END -->
+        <version.pdfbox>2.0.27</version.pdfbox>
+        <!-- Other version overrides - END -->
         <!-- Properties used for filtering replacements -->
         <timestamp>${maven.build.timestamp}</timestamp>
         <engineVersion>${version.gitbTypes}</engineVersion>
@@ -89,10 +92,6 @@
         <repository>
             <id>central</id>
             <url>https://repo1.maven.org/maven2/</url>
-        </repository>
-        <repository>
-            <id>jaspersoft-third-party</id>
-            <url>https://jaspersoft.jfrog.io/jaspersoft/third-party-ce-artifacts/</url>
         </repository>
         <repository>
             <id>itbRepoRead</id>
@@ -136,35 +135,6 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-deploy-plugin</artifactId>
                     <version>${version.plugin.maven-deploy-plugin}</version>
-                </plugin>
-                <plugin>
-                    <groupId>com.alexnederlof</groupId>
-                    <artifactId>jasperreports-plugin</artifactId>
-                    <version>${version.plugin.jasperreports-plugin}</version>
-                    <dependencies>
-                        <dependency>
-                            <groupId>net.sf.jasperreports</groupId>
-                            <artifactId>jasperreports-fonts</artifactId>
-                            <version>${version.jasperReports}</version>
-                            <exclusions>
-                                <exclusion>
-                                    <groupId>com.lowagie</groupId>
-                                    <artifactId>itext</artifactId>
-                                </exclusion>
-                            </exclusions>
-                        </dependency>
-                        <dependency>
-                            <groupId>net.sf.jasperreports</groupId>
-                            <artifactId>jasperreports</artifactId>
-                            <version>${version.jasperReports}</version>
-                            <exclusions>
-                                <exclusion>
-                                    <groupId>com.lowagie</groupId>
-                                    <artifactId>itext</artifactId>
-                                </exclusion>
-                            </exclusions>
-                        </dependency>
-                    </dependencies>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -236,6 +206,12 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-starter-validation</artifactId>
                 <version>${version.springBoot}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-test</artifactId>
+                <version>${version.springBoot}</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
@@ -439,16 +415,6 @@
                 <artifactId>bcpkix-jdk15on</artifactId>
                 <version>${version.bouncycastle}</version>
             </dependency>
-            <dependency>
-                <groupId>net.sf.jasperreports</groupId>
-                <artifactId>jasperreports</artifactId>
-                <version>${version.jasperReports}</version>
-            </dependency>
-            <dependency>
-                <groupId>net.sf.jasperreports</groupId>
-                <artifactId>jasperreports-fonts</artifactId>
-                <version>${version.jasperReports}</version>
-            </dependency>
             <!-- TODO check if needed -->
             <dependency>
                 <groupId>javax.servlet</groupId>
@@ -491,6 +457,32 @@
                 <artifactId>commons-beanutils</artifactId>
                 <version>${version.beanUtils}</version>
             </dependency>
+            <dependency>
+                <groupId>com.openhtmltopdf</groupId>
+                <artifactId>openhtmltopdf-core</artifactId>
+                <version>${version.com.openhtmltopdf}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.openhtmltopdf</groupId>
+                <artifactId>openhtmltopdf-pdfbox</artifactId>
+                <version>${version.com.openhtmltopdf}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.openhtmltopdf</groupId>
+                <artifactId>openhtmltopdf-slf4j</artifactId>
+                <version>${version.com.openhtmltopdf}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jsoup</groupId>
+                <artifactId>jsoup</artifactId>
+                <version>${version.org.jsoup}</version>
+            </dependency>
+            <dependency>
+                <!-- Used to override the pdfbox version of openhtmltopdf-pdfbox. -->
+                <groupId>org.apache.pdfbox</groupId>
+                <artifactId>pdfbox</artifactId>
+                <version>${version.pdfbox}</version>
+            </dependency>
             <!-- TODO check if needed -->
             <dependency>
                 <groupId>com.sun.jersey</groupId>
@@ -501,11 +493,6 @@
                 <groupId>org.freemarker</groupId>
                 <artifactId>freemarker</artifactId>
                 <version>${version.freeMarker}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.yaml</groupId>
-                <artifactId>snakeyaml</artifactId>
-                <version>${version.snakeyaml}</version>
             </dependency>
             <!-- Apache Commons Configuration override -->
             <dependency>

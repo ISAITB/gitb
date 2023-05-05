@@ -117,6 +117,12 @@ export class TestSuiteDetailsComponent extends BaseComponent implements OnInit, 
     })
   }
 
+  copyDocumentation() {
+    this.dataService.copyToClipboard(this.testSuite.documentation!).subscribe(() => {
+      this.popupService.success('HTML source copied to clipboard.')
+    })    
+  }
+
 	download() {
     this.downloadPending = true
 		this.testSuiteService.downloadTestSuite(this.testSuite.id!)

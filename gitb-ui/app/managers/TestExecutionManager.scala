@@ -26,7 +26,7 @@ import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
-class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClient, testCaseReportProducer: TestCaseReportProducer, reportManager: ReportManager, conformanceManager: ConformanceManager, repositoryUtils: RepositoryUtils, actorManager: ActorManager, actorSystem: ActorSystem, organisationManager: OrganizationManager, systemManager: SystemManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClient, testCaseReportProducer: TestCaseReportProducer, reportManager: ReportManager, conformanceManager: ConformanceManager, repositoryUtils: RepositoryUtils, actorManager: ActorManager, actorSystem: ActorSystem, organisationManager: OrganizationManager, systemManager: SystemManager, testResultManager: TestResultManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
   private val logger = LoggerFactory.getLogger(classOf[TestExecutionManager])
@@ -496,7 +496,7 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
       } yield sessionData
     ).map { result =>
       val logs = if (withLogs) {
-        reportManager.getTestSessionLog(result._1, Some(result._2), isExpected = true)
+        testResultManager.getTestSessionLog(result._1, Some(result._2), isExpected = true)
       } else {
         None
       }

@@ -1,4 +1,4 @@
-export interface MultiSelectItem {
+export interface EntityWithId {
 
     id: number,
     [key: string]: any

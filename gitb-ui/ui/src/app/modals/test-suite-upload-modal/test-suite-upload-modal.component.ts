@@ -18,6 +18,8 @@ import { TestSuiteUploadTestCaseChoice } from './test-suite-upload-test-case-cho
 import { ValidationReport } from './validation-report';
 import { find } from 'lodash';
 import { PendingTestSuiteUploadChoiceTestCase } from './pending-test-suite-upload-choice-test-case';
+import { ValidationReportItem } from './validation-report-item';
+import { AssertionReport } from 'src/app/components/diagram/assertion-report';
 
 @Component({
   selector: 'app-test-suite-upload-modal',
@@ -423,8 +425,8 @@ export class TestSuiteUploadModalComponent implements OnInit {
   }
 
   close(finalStep?: boolean, refreshNeeded?: boolean) {
-    if (!finalStep && this.resolutionNeeded()) {
-      this.conformanceService.resolvePendingTestSuite(this.uploadResult!.pendingFolderId!, 'cancel', this.domainId, this.specificationIds()).subscribe(() => {})
+    if (!finalStep && this.resolutionNeeded() && this.uploadResult?.pendingFolderId != undefined) {
+      this.conformanceService.resolvePendingTestSuite(this.uploadResult.pendingFolderId, 'cancel', this.domainId, this.specificationIds()).subscribe(() => {})
     }
     this.completed.emit(refreshNeeded)
     this.modalInstance.hide()
@@ -438,4 +440,13 @@ export class TestSuiteUploadModalComponent implements OnInit {
     this.hasChoicesToComplete = hasPendingChoices
   }
 
+  toAssertionReport(item: ValidationReportItem): AssertionReport {
+    return {
+      type: item.level,
+      value: {
+        description: item.description,
+        location: item.location
+      }
+    }
+  }
 }

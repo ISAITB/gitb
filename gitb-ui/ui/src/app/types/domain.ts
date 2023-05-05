@@ -1,6 +1,7 @@
-export interface Domain {
+import { EntityWithId } from "./entity-with-id"
 
-    id: number
+export interface Domain extends EntityWithId {
+
     sname: string
     fname: string
     description?: string

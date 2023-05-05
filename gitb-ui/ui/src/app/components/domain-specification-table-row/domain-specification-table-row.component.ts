@@ -14,9 +14,13 @@ export class DomainSpecificationTableRowComponent implements OnInit {
 
   @Input() spec!: DomainSpecification
   @Input() groups: SpecificationGroup[] = []
+  @Input() first = false
+  @Input() last = false
   @Output() removeSpec = new EventEmitter<[number, number]>()
   @Output() moveSpec = new EventEmitter<[number, number|undefined, number]>()
   @Output() copySpec = new EventEmitter<[number, number|undefined, number]>()
+  @Output() moveUp = new EventEmitter<DomainSpecification>()
+  @Output() moveDown = new EventEmitter<DomainSpecification>()
   Constants = Constants
 
   removePending = false
@@ -64,5 +68,13 @@ export class DomainSpecificationTableRowComponent implements OnInit {
     return (this.spec.movePending != undefined && this.spec.movePending) 
       || (this.spec.removePending != undefined && this.spec.removePending) 
       || (this.spec.copyPending != undefined && this.spec.copyPending)
+  }
+
+  doMoveUp() {
+    this.moveUp.emit(this.spec)
+  }
+
+  doMoveDown() {
+    this.moveDown.emit(this.spec)
   }
 }

@@ -29,7 +29,7 @@ import scala.jdk.CollectionConverters.CollectionHasAsScala
 /**
  * Created by serbay on 10/16/14.
  */
-class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedAction: AuthorizedAction, cc: ControllerComponents, testCaseReportProducer: TestCaseReportProducer, systemManager: SystemManager, testCaseManager: TestCaseManager, testSuiteManager: TestSuiteManager, reportManager: ReportManager, testResultManager: TestResultManager, conformanceManager: ConformanceManager, specificationManager: SpecificationManager, authorizationManager: AuthorizationManager, communityLabelManager: CommunityLabelManager, exportManager: ExportManager, importPreviewManager: ImportPreviewManager, importCompleteManager: ImportCompleteManager, repositoryUtils: RepositoryUtils) extends AbstractController(cc) {
+class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedAction: AuthorizedAction, cc: ControllerComponents, testCaseReportProducer: TestCaseReportProducer, systemManager: SystemManager, testCaseManager: TestCaseManager, testSuiteManager: TestSuiteManager, reportManager: ReportManager, testResultManager: TestResultManager, conformanceManager: ConformanceManager, authorizationManager: AuthorizationManager, communityLabelManager: CommunityLabelManager, exportManager: ExportManager, importPreviewManager: ImportPreviewManager, importCompleteManager: ImportCompleteManager, repositoryUtils: RepositoryUtils, reportHelper: ReportHelper) extends AbstractController(cc) {
 
 	private val logger = LoggerFactory.getLogger(classOf[RepositoryService])
 	private val codec = new URLCodec()
@@ -86,7 +86,7 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
 
   def getTestSessionLog(sessionId: String): Action[AnyContent] = authorizedAction { request =>
     authorizationManager.canViewTestResultForSession(request, sessionId)
-    val logContents = reportManager.getTestSessionLog(sessionId, isExpected = true)
+    val logContents = testResultManager.getTestSessionLog(sessionId, isExpected = true)
     if (logContents.isDefined) {
       ResponseConstructor.constructStringResponse(JsonUtil.jsStringArray(logContents.get).toString())
     } else {
@@ -123,7 +123,7 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
 //    34888315-6781-4d74-a677-8f9001a02cb8/4.xml
     authorizationManager.canViewTestResultForSession(request, sessionId)
 
-		val sessionFolderInfo = reportManager.getPathForTestSessionWrapper(sessionId, isExpected = true)
+		val sessionFolderInfo = repositoryUtils.getPathForTestSessionWrapper(sessionId, isExpected = true)
     try {
       var path: String = null
       path = reportPath
@@ -172,10 +172,11 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
       path = reportPath
     }
     path = codec.decode(path)
-    val sessionFolderInfo = reportManager.getPathForTestSessionWrapper(sessionId, isExpected = true)
+    val sessionFolderInfo = repositoryUtils.getPathForTestSessionWrapper(sessionId, isExpected = true)
     try {
       val reportData = request.headers.get("Accept") match {
-        case Some("application/pdf") => (".pdf", "step.pdf", (stepDataFile: File, report: File) => reportManager.generateTestStepReport(stepDataFile.toPath, report.toPath))
+        // The "vX" postfix is used to make sure we generate (but also subsequently cache) new versions of the step report
+        case Some("application/pdf") => (".v2.pdf", "step.pdf", (stepDataFile: File, report: File) => reportManager.generateTestStepReport(stepDataFile.toPath, report.toPath))
         case _ => (".report.xml", "step.xml", (stepDataFile: File, report: File) => reportManager.generateTestStepXmlReport(stepDataFile.toPath, report.toPath))
       }
       var report = new File(sessionFolderInfo.path.toFile, path.toLowerCase().replace(".xml", reportData._1))
@@ -212,7 +213,24 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
     authorizationManager.canViewTestResultForSession(request, session)
     var result: (Option[Path], SessionFolderInfo) = null
     try {
-      result = testCaseReportProducer.generateDetailedTestCaseReport(session, request.headers.get("Accept"), Some(() => communityLabelManager.getLabels(request)))
+      val communityId = testResultManager.getCommunityIdForTestSession(session)
+
+      result = testCaseReportProducer.generateDetailedTestCaseReport(session, request.headers.get("Accept"),
+        // Label provider
+        if (communityId.nonEmpty && communityId.get._2.nonEmpty) {
+          Some(() => communityLabelManager.getLabels(communityId.get._2.get))
+        } else {
+          Some(() => communityLabelManager.getLabels(request))
+        },
+        // ReportSpec provider
+        if (communityId.nonEmpty) {
+          Some(() => {
+            reportHelper.createReportSpecs(communityId.get._2)
+          })
+        } else {
+          None
+        }
+      )
       if (result._1.isDefined) {
         Ok.sendFile(
           content = result._1.get.toFile,
@@ -250,7 +268,8 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
     FileUtils.deleteQuietly(reportPath.toFile.getParentFile)
     try {
       val labels = communityLabelManager.getLabels(request)
-      reportManager.generateConformanceStatementReport(reportPath, includeTests, actorId.toLong, systemId.toLong, labels)
+      val communityId = systemManager.getCommunityIdOfSystem(systemId.toLong)
+      reportManager.generateConformanceStatementReport(reportPath, includeTests, actorId.toLong, systemId.toLong, labels, communityId)
       Ok.sendFile(
         content = reportPath.toFile,
         fileName = _ => Some(reportPath.toFile.getName),
@@ -274,7 +293,7 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
     )
     FileUtils.deleteQuietly(reportPath.toFile.getParentFile)
     try {
-      reportManager.generateConformanceCertificate(reportPath, settings, actorId, systemId)
+      reportManager.generateConformanceCertificate(reportPath, settings, actorId, systemId, communityId)
       Ok.sendFile(
         content = reportPath.toFile,
         fileName = _ => Some(reportPath.toFile.getName),

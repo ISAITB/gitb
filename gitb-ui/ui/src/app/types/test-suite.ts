@@ -1,6 +1,7 @@
-export interface TestSuite {
+import { EntityWithId } from "./entity-with-id"
 
-    id: number
+export interface TestSuite extends EntityWithId {
+
     identifier: string
     sname: string
     version: string

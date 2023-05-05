@@ -201,6 +201,17 @@ export class ReportService {
     })
   }
 
+  exportTestCaseDocumentationPreviewReport(documentation: string) {
+    return this.restService.post<ArrayBuffer>(({
+      path: ROUTES.controllers.TestSuiteService.previewTestCaseDocumentationInReports().url,
+      data: {
+        documentation: documentation
+      },
+      authenticate: true,
+      arrayBuffer: true
+    }))
+  }
+
   exportConformanceStatementReport(actorId: number, systemId: number, includeTests: boolean) {
     return this.restService.get<ArrayBuffer>({
       path: ROUTES.controllers.RepositoryService.exportConformanceStatementReport().url,

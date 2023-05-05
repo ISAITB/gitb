@@ -60,6 +60,8 @@ class CommunityLabelManager @Inject() (dbConfigProvider: DatabaseConfigProvider)
     checkToAddDefault(labelMap, Enums.LabelType.Endpoint.id.toShort, "Endpoint", "Endpoints", false)
     checkToAddDefault(labelMap, Enums.LabelType.Organisation.id.toShort, "Organisation", "Organisations", false)
     checkToAddDefault(labelMap, Enums.LabelType.System.id.toShort, "System", "Systems", false)
+    checkToAddDefault(labelMap, Enums.LabelType.SpecificationInGroup.id.toShort, "Option", "Options", false)
+    checkToAddDefault(labelMap, Enums.LabelType.SpecificationGroup.id.toShort, "Specification group", "Specification groups", false)
     labelMap.toMap
   }
 

@@ -22,6 +22,7 @@ export class CreateLegalNoticeComponent extends BaseComponent implements OnInit,
     default: false
   }
   savePending = false
+  showContent = true
 
   constructor(
     private routingService: RoutingService,

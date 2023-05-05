@@ -1,6 +1,7 @@
-export interface Actor {
+import { EntityWithId } from "./entity-with-id"
 
-    id: number
+export interface Actor extends EntityWithId {
+
     actorId: string
     name: string
     description?:string

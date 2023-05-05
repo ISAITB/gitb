@@ -8,7 +8,7 @@
                 <label class="col-xs-3 control-label" for="specification">* Target {{dataService.labelSpecificationLower()}}:</label>
                 <div class="col-xs-8">
                     <input *ngIf="availableSpecifications.length == 1" class="form-control" id="specification" name="specification" [(ngModel)]="specifications[0].fname" readonly="readonly"/>
-                    <select *ngIf="availableSpecifications.length > 1" multiple="multiple" class="form-control" id="specification" name="specification" [(ngModel)]="specifications">
+                    <select *ngIf="availableSpecifications.length > 1" [attr.size]="(availableSpecifications.length > 30)?30:availableSpecifications.length" multiple="multiple" class="form-control" id="specification" name="specification" [(ngModel)]="specifications">
                         <option *ngFor="let specification of availableSpecifications" [ngValue]="specification">{{specification.fname}}</option>
                     </select>
                 </div>

@@ -8,7 +8,7 @@
 				<label class="col-xs-3 control-label" for="specification">* Target {{dataService.labelSpecificationLower()}}:</label>
 				<div class="col-xs-8">
 					<input *ngIf="availableSpecifications.length == 1" class="form-control" id="specification" name="specification" [(ngModel)]="specifications[0].fname" readonly="readonly"/>
-					<select *ngIf="availableSpecifications.length > 1" multiple="multiple" class="form-control" id="specification" name="specification" [(ngModel)]="specifications">
+					<select *ngIf="availableSpecifications.length > 1" [attr.size]="(availableSpecifications.length > 30)?30:availableSpecifications.length" multiple="multiple" class="form-control" id="specification" name="specification" [(ngModel)]="specifications">
                         <option *ngFor="let specification of availableSpecifications" [ngValue]="specification">{{specification.fname}}</option>
                     </select>
 				</div>
@@ -47,16 +47,8 @@
 							<div class="report-details-title" (click)="reportItemsCollapsed = !reportItemsCollapsed"><app-collapsing-icon [isCollapsed]="reportItemsCollapsed"></app-collapsing-icon>Details</div>
 							<div class="report-details-items" [collapse]="reportItemsCollapsed" [isAnimated]="true">
 								<div class="report-details-items-inner">
-									<div *ngFor="let assertionReport of report!.reports!">
-										<span class="assertion-report-nolink" [ngClass]="{'error-assertion-report': assertionReport.level == 'error', 'warning-assertion-report': assertionReport.level == 'warning', 'info-assertion-report': assertionReport.level == 'info'}">
-											<span class="report-item-element assertion-report-item">
-												<i class="fa fa-info-circle report-item-icon info-icon" *ngIf="assertionReport.level == 'info'"></i>
-												<i class="fa fa-warning report-item-icon warning-icon" *ngIf="assertionReport.level == 'warning'"></i>
-												<i class="fa fa-times-circle report-item-icon error-icon" *ngIf="assertionReport.level == 'error'"></i>
-												<span class="description">{{assertionReport.description}}</span>
-											</span>
-											<span class="report-item assertion-report-item" *ngIf="assertionReport.location != undefined"><strong>Location:</strong> {{assertionReport.location}}</span>
-										</span>
+									<div *ngFor="let reportItem of report!.reports!">
+										<app-test-assertion-report [assertionReport]="toAssertionReport(reportItem)"></app-test-assertion-report>
 									</div>
 								</div>
 							</div>

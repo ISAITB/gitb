@@ -4,18 +4,16 @@ import models.{CommunityResources, Constants}
 import org.apache.commons.io.{FileUtils, FilenameUtils}
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
-import utils.RepositoryUtils
+import utils.{RepositoryUtils, ZipArchiver}
 
 import java.io.File
 import java.nio.file.{Files, Path}
-import java.util.{Locale, UUID}
 import java.util.regex.Pattern
+import java.util.{Locale, UUID}
 import javax.inject.{Inject, Singleton}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
-import utils.ZipArchiver
-
 import scala.jdk.CollectionConverters.MapHasAsScala
 
 @Singleton
@@ -40,6 +38,15 @@ class CommunityResourceManager @Inject()(repositoryUtils: RepositoryUtils, dbCon
         DBIO.successful(repositoryUtils.getCommunityResource(resourceInfo._2, resourceId))
       }
     } yield (resourceInfo._1, file))
+  }
+
+  def getCommunityResourceFileByNameAndCommunity(communityId: Long, resourceName: String): Option[File] = {
+    val resourceId = exec(PersistenceSchema.communityResources.filter(_.name === resourceName).filter(_.community === communityId).map(_.id).result.headOption)
+    if (resourceId.nonEmpty) {
+      Some(repositoryUtils.getCommunityResource(communityId, resourceId.get))
+    } else {
+      None
+    }
   }
 
   def getCommunityResourceFileByName(userId: Long, name: String): Option[File] = {
