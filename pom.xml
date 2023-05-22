@@ -7,7 +7,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>2.7.11</version>
+        <version>2.7.12</version>
     </parent>
     <groupId>com.gitb</groupId>
     <artifactId>GITB</artifactId>
@@ -30,7 +30,7 @@
         <version.plugin.maven-deploy-plugin>3.0.0-M2</version.plugin.maven-deploy-plugin>
         <version.plugin.maven-compiler-plugin>3.10.1</version.plugin.maven-compiler-plugin>
         <!-- Dependency versions -->
-        <version.springBoot>2.7.11</version.springBoot>
+        <version.springBoot>2.7.12</version.springBoot>
         <version.gitbTypes>1.20.1</version.gitbTypes>
         <version.bouncycastle>1.70</version.bouncycastle>
         <version.helgerSchematron>6.3.4</version.helgerSchematron>
