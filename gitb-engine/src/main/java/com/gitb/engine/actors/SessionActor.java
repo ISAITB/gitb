@@ -153,12 +153,12 @@ public class SessionActor extends AbstractActor {
                         ctx.getMessage().getSystemConfiguration()
                 );
                 setInputsToSessionContext(context, ctx.getMessage().getInputs());
-                sendConfigurationResult(sutConfigurations);
                 if (context.getTestCase().getPreliminary() != null) {
                     context.setCurrentState(TestCaseContext.TestCaseStateEnum.CONFIGURATION);
                 } else {
                     context.setCurrentState(TestCaseContext.TestCaseStateEnum.READY);
                 }
+                sendConfigurationResult(sutConfigurations);
             } catch (Exception e) {
                 logger.warn("Error while preparing configuration for test session ["+getSessionId()+"]", e);
                 logger.error(MarkerFactory.getDetachedMarker(getSessionId()), "Error while preparing test session configuration", e);
