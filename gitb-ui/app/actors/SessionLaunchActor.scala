@@ -43,6 +43,8 @@ class SessionLaunchActor @Inject() (reportManager: ReportManager, testbedBackend
     case msg: TestSessionConfiguredEvent =>
       if (state.startedTestSessions.contains(msg.event.getTcInstanceId)) {
         sessionConfigured(msg, state)
+      } else {
+        LOGGER.warn("Session launch actor ["+self.path+"] received a configuration complete notification for an unknown test session ["+msg.event.getTcInstanceId+"]")
       }
     case msg: TestSessionCompletedEvent =>
       if (state.startedTestSessions.contains(msg.testSession)) {
@@ -142,16 +144,22 @@ class SessionLaunchActor @Inject() (reportManager: ReportManager, testbedBackend
     var scheduleNextSessionLaunch = true
     val testSessionId = msg.event.getTcInstanceId
     try {
-      val testCaseId = initialState.startedTestSessions(testSessionId)
-      val testCaseDefinitionData = loadTestCaseDefinition(testCaseId, initialState)
-      val testCaseDefinition = testCaseDefinitionData._1
-      val state = testCaseDefinitionData._2
-      // No need to signal any simulated configurations (the result of the configure step) as there is no one to present these to.
-      // Preliminary step is skipped as this is a headless session. If input was expected during this step the test session may fail.
-      reportManager.createTestReport(testSessionId, state.data.get.systemId, testCaseId.toString, state.data.get.actorId, testCaseDefinition)
-      triggerHelper.publishTriggerEvent(new TestSessionStartedEvent(state.data.get.communityId, testSessionId))
-      testbedBackendClient.start(testSessionId)
-      LOGGER.debug("Session launch actor ["+self.path+"] started test session ["+testSessionId+"] for test case ["+testCaseId+"]")
+      if (msg.event.getErrorCode == null) {
+        // No error - configuration was successful.
+        val testCaseId = initialState.startedTestSessions(testSessionId)
+        val testCaseDefinitionData = loadTestCaseDefinition(testCaseId, initialState)
+        val testCaseDefinition = testCaseDefinitionData._1
+        val state = testCaseDefinitionData._2
+        // No need to signal any simulated configurations (the result of the configure step) as there is no one to present these to.
+        // Preliminary step is skipped as this is a headless session. If input was expected during this step the test session may fail.
+        reportManager.createTestReport(testSessionId, state.data.get.systemId, testCaseId.toString, state.data.get.actorId, testCaseDefinition)
+        triggerHelper.publishTriggerEvent(new TestSessionStartedEvent(state.data.get.communityId, testSessionId))
+        testbedBackendClient.start(testSessionId)
+        LOGGER.debug("Session launch actor ["+self.path+"] started test session ["+testSessionId+"] for test case ["+testCaseId+"]")
+      } else {
+        context.become(active(initialState.newWithCompletedTestSession(testSessionId)), discardOld = true)
+        LOGGER.info("Session launch actor ["+self.path+"] notified for configuration failure of test session ["+testSessionId+"]")
+      }
     } catch {
       case e: Exception =>
         LOGGER.error("A headless session raised an uncaught error while being started", e)
