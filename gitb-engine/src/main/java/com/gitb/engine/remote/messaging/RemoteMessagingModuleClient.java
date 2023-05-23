@@ -16,6 +16,8 @@ import com.gitb.ms.Void;
 import com.gitb.ms.*;
 import com.gitb.types.DataType;
 import com.gitb.utils.DataTypeUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.xml.ws.soap.AddressingFeature;
 import java.net.URL;
@@ -28,6 +30,7 @@ import java.util.Properties;
  */
 public class RemoteMessagingModuleClient extends RemoteServiceClient implements IMessagingHandler {
 
+	private static final Logger LOG = LoggerFactory.getLogger(RemoteMessagingModuleClient.class);
 	private MessagingModule serviceModule;
 
 	public RemoteMessagingModuleClient(URL serviceURL, Properties callProperties, String sessionId) {
@@ -64,7 +67,13 @@ public class RemoteMessagingModuleClient extends RemoteServiceClient implements 
 	public InitiateResponse initiate(List<ActorConfiguration> actorConfigurations) {
         InitiateRequest request = new InitiateRequest();
         request.getActorConfiguration().addAll(actorConfigurations);
-		InitiateResponse wsResponse = call(() -> getServiceClient().initiate(request));
+		InitiateResponse wsResponse = call(() -> {
+			try {
+				return getServiceClient().initiate(request);
+			} catch (Exception e) {
+				throw new IllegalStateException("Error raised by remote messaging service while processing the initiate call.", e);
+			}
+		});
 		if (wsResponse.getSessionId() == null) {
 			// Set the test session ID as the default.
 			wsResponse.setSessionId(testSessionId);
