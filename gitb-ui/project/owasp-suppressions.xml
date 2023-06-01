@@ -208,4 +208,11 @@
         <packageUrl regex="true">^pkg:javascript/bootstrap@.*$</packageUrl>
         <vulnerabilityName>Bootstrap before 4.0.0 is end-of-life and no longer maintained.</vulnerabilityName>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: guava-31.1-jre.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.google\.guava/guava@.*$</packageUrl>
+        <vulnerabilityName>CVE-2023-2976</vulnerabilityName>
+    </suppress>
 </suppressions>
