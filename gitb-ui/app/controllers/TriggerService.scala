@@ -2,15 +2,14 @@ package controllers
 
 import controllers.util._
 import exceptions.ErrorCodes
+import javax.inject.Inject
 import managers.{AuthorizationManager, TriggerManager}
 import models.Enums.TriggerServiceType
 import play.api.libs.json.{JsBoolean, JsString, Json}
 import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents}
 import utils.JsonUtil
 
-import javax.inject.Inject
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.util.Success
 
 class TriggerService @Inject()(authorizedAction: AuthorizedAction, cc: ControllerComponents, triggerManager: TriggerManager, authorizationManager: AuthorizationManager) extends AbstractController(cc) {
 

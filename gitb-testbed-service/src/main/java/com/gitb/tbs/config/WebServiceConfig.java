@@ -15,7 +15,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import javax.xml.namespace.QName;
-import javax.xml.ws.Endpoint;
 
 @Configuration
 public class WebServiceConfig {
@@ -37,7 +36,7 @@ public class WebServiceConfig {
     }
 
     @Bean
-    public Endpoint testbedService() {
+    public EndpointImpl testbedService() {
         EndpointImpl endpoint = new EndpointImpl(cxfBus, testBedServiceImpl);
         endpoint.setServiceName(new QName("http://www.gitb.com/tbs/v1/", "TestbedService"));
         endpoint.setEndpointName(new QName("http://www.gitb.com/tbs/v1/", "TestbedServicePort"));
@@ -46,7 +45,7 @@ public class WebServiceConfig {
     }
 
     @Bean
-    public Endpoint messagingClientService() {
+    public EndpointImpl messagingClientService() {
         EndpointImpl endpoint = new EndpointImpl(cxfBus, messagingClientImpl);
         endpoint.setServiceName(new QName("http://www.gitb.com/ms/v1/", "MessagingClientService"));
         endpoint.setEndpointName(new QName("http://www.gitb.com/ms/v1/", "MessagingClientPort"));
@@ -56,7 +55,7 @@ public class WebServiceConfig {
     }
 
     @Bean
-    public Endpoint validationClientService() {
+    public EndpointImpl validationClientService() {
         EndpointImpl endpoint = new EndpointImpl(cxfBus, validationClientImpl);
         endpoint.setServiceName(new QName("http://www.gitb.com/vs/v1/", "ValidationClientService"));
         endpoint.setEndpointName(new QName("http://www.gitb.com/vs/v1/", "ValidationClientPort"));
@@ -66,7 +65,7 @@ public class WebServiceConfig {
     }
 
     @Bean
-    public Endpoint processingClientService() {
+    public EndpointImpl processingClientService() {
         EndpointImpl endpoint = new EndpointImpl(cxfBus, processingClientImpl);
         endpoint.setServiceName(new QName("http://www.gitb.com/ps/v1/", "ProcessingClientService"));
         endpoint.setEndpointName(new QName("http://www.gitb.com/ps/v1/", "ProcessingClientPort"));

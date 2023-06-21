@@ -16,7 +16,7 @@ import play.api.libs.json.{JsObject, _}
 
 import java.sql.Timestamp
 import java.util
-import javax.xml.bind.JAXBElement
+import jakarta.xml.bind.JAXBElement
 import scala.collection.mutable.ListBuffer
 import scala.collection.{immutable, mutable}
 import scala.jdk.CollectionConverters.{CollectionHasAsScala, IterableHasAsJava}

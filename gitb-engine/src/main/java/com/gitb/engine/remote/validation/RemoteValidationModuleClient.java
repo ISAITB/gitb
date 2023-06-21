@@ -13,7 +13,7 @@ import com.gitb.vs.ValidationResponse;
 import com.gitb.vs.ValidationService;
 import com.gitb.vs.Void;
 
-import javax.xml.ws.soap.AddressingFeature;
+import jakarta.xml.ws.soap.AddressingFeature;
 import java.net.URL;
 import java.util.List;
 import java.util.Map;

@@ -29,7 +29,7 @@ of scaffolding and build using Angular CLI.
 # Prerequisites
 
 To build and run the Test Bed's components you need to have the following tools:
-- JDK 11+, used as the base platform for both ``gitb-srv`` and ``gitb-ui``.
+- JDK 17+, used as the base platform for both ``gitb-srv`` and ``gitb-ui``.
 - Maven 3+, used to build ``gitb-srv``.
 - SBT 1.3.13+, used to build ``gitb-ui``.
 - Scala 2.13+, used to build the backend app of ``gitb-ui``.

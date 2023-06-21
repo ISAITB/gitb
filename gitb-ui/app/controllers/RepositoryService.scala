@@ -20,7 +20,7 @@ import utils._
 import java.io._
 import java.nio.file.{Files, Path, Paths}
 import javax.inject.Inject
-import javax.xml.bind.JAXBElement
+import jakarta.xml.bind.JAXBElement
 import javax.xml.namespace.QName
 import javax.xml.transform.stream.StreamSource
 import scala.concurrent.ExecutionContext

@@ -1,7 +1,6 @@
 package managers
 
 import javax.inject.{Inject, Singleton}
-import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
 
@@ -9,7 +8,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
 class OptionManager @Inject() (dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
-  def logger = LoggerFactory.getLogger("OptionManager")
 
   import dbConfig.profile.api._
 
@@ -20,11 +18,6 @@ class OptionManager @Inject() (dbConfigProvider: DatabaseConfigProvider) extends
     } yield ()).transactionally
     action
   }
-
-  def deleteOption(optionId: Long) = {
-    exec(delete(optionId).transactionally)
-  }
-
   def delete(optionId: Long) = {
     PersistenceSchema.systemImplementsOptions.filter(_.optionId === optionId).delete andThen
     PersistenceSchema.testCaseCoversOptions.filter(_.option === optionId).delete andThen

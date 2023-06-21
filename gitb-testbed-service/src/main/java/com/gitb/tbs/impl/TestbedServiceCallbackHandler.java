@@ -10,7 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Element;
 
-import javax.xml.ws.WebServiceContext;
+import jakarta.xml.ws.WebServiceContext;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
@@ -27,7 +27,7 @@ public class TestbedServiceCallbackHandler implements ITestbedServiceCallbackHan
     private static final Logger LOG = LoggerFactory.getLogger(TestbedServiceCallbackHandler.class);
 
     private static TestbedServiceCallbackHandler instance = null;
-    private Map<String, WSAddresingProperties> sessionCallbackMap;
+    private final Map<String, WSAddresingProperties> sessionCallbackMap;
 
     public synchronized static TestbedServiceCallbackHandler getInstance() {
         if(instance == null) {
@@ -90,8 +90,8 @@ public class TestbedServiceCallbackHandler implements ITestbedServiceCallbackHan
         throw new IllegalStateException("Headers could not be retrieved from web service call");
     }
 
-    private class WSAddresingProperties {
-        private TestbedClient testbedClient;
+    private static class WSAddresingProperties {
+        private final TestbedClient testbedClient;
 
         private WSAddresingProperties(String testbedClientURL) {
             TestbedClient_Service testbedClientService;

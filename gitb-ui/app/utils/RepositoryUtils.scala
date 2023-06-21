@@ -715,7 +715,7 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 				if (Files.exists(archivePath)) {
 					// Unzip session folder from ZIP archive into temp folder.
 					val pathFromArchive:Option[Path] = None
-					val zipFs = FileSystems.newFileSystem(archivePath, null)
+					val zipFs = FileSystems.newFileSystem(archivePath)
 					val pathInArchive = zipFs.getPath("/", String.valueOf(startTime.getDayOfMonth), sessionId)
 					val targetPath = Path.of(getTempArchivedSessionWorkspaceFolder().getAbsolutePath, sessionId+"_"+System.currentTimeMillis().toString)
 					if (Files.exists(pathInArchive)) {

@@ -1,7 +1,6 @@
 package com.gitb.engine.messaging.handlers.layer.application.dns;
 
 import com.gitb.core.Configuration;
-import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.messaging.Message;
 import com.gitb.engine.messaging.handlers.layer.transport.udp.UDPSender;
 import com.gitb.engine.messaging.handlers.model.SessionContext;
@@ -12,6 +11,7 @@ import com.gitb.types.StringType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xbill.DNS.*;
+import org.xbill.DNS.Record;
 
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -42,7 +42,7 @@ public class DNSSender extends UDPSender {
 
 		transaction.setParameter(DNSRecord.class, dnsRecord);
 
-		org.xbill.DNS.Message response = generateResponse(metadata.getQuery(), configurations);
+		org.xbill.DNS.Message response = generateResponse(metadata.getQuery());
 
 		StringType domain = (StringType) DataTypeFactory.getInstance().create(DataType.STRING_DATA_TYPE);
 		domain.setValue(dnsRecord.getDomain());
@@ -71,21 +71,13 @@ public class DNSSender extends UDPSender {
 			}
 		}
 
-		if(response != null) {
-			byte[] rawOutput = response.toWire();
-
-			DatagramPacket output = new DatagramPacket(rawOutput, rawOutput.length, incomingPacket.getAddress(), incomingPacket.getPort());
-
-			socket.send(output);
-
-		} else {
-			throw new GITBEngineInternalError("Could not generate the DNS query response for packet: ["+incomingPacket+"].");
-		}
-
-        return message;
+		byte[] rawOutput = response.toWire();
+		DatagramPacket output = new DatagramPacket(rawOutput, rawOutput.length, incomingPacket.getAddress(), incomingPacket.getPort());
+		socket.send(output);
+		return message;
 	}
 
-	private org.xbill.DNS.Message generateResponse(org.xbill.DNS.Message query, List<Configuration> configurations) throws TextParseException, UnknownHostException {
+	private org.xbill.DNS.Message generateResponse(org.xbill.DNS.Message query) throws TextParseException, UnknownHostException {
 		if(query.getHeader().getOpcode() != Opcode.QUERY) {
 			return ErrorMessages.makeErrorMessage(query, Rcode.NOTIMP);
 		}
@@ -93,7 +85,6 @@ public class DNSSender extends UDPSender {
 		Record queryRecord = query.getQuestion();
 		Name name = queryRecord.getName();
 		int type = queryRecord.getType();
-		int dclass = queryRecord.getDClass();
 
 		logger.debug(addMarker(), "Generating response for the domain name: ["+name+"]");
 

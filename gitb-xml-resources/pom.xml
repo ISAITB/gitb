@@ -10,40 +10,21 @@
     <modelVersion>4.0.0</modelVersion>
     <artifactId>gitb-xml-resources</artifactId>
 
-    <properties>
-        <maven-compiler-plugin.version>3.8.0</maven-compiler-plugin.version>
-        <jaxb2-maven-plugin.version>2.5.0</jaxb2-maven-plugin.version>
-        <java.release>8</java.release>
-    </properties>
-
     <dependencies>
         <dependency>
-            <groupId>javax.xml.bind</groupId>
-            <artifactId>jaxb-api</artifactId>
+            <groupId>jakarta.xml.bind</groupId>
+            <artifactId>jakarta.xml.bind-api</artifactId>
         </dependency>
     </dependencies>
 
     <build>
-        <pluginManagement>
-            <plugins>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-compiler-plugin</artifactId>
-                    <version>${maven-compiler-plugin.version}</version>
-                    <configuration>
-                        <release>${java.release}</release>
-                    </configuration>
-                </plugin>
-            </plugins>
-        </pluginManagement>
         <plugins>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>jaxb2-maven-plugin</artifactId>
-                <version>${jaxb2-maven-plugin.version}</version>
                 <executions>
                     <execution>
-                        <id>xjc</id>
+                        <id>generate-gitb-xml-classes</id>
                         <goals>
                             <goal>xjc</goal>
                         </goals>

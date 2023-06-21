@@ -2,8 +2,8 @@ package com.gitb.engine.remote.messaging;
 
 import com.gitb.ms.MessagingServiceService;
 
-import javax.jws.HandlerChain;
-import javax.xml.ws.WebServiceClient;
+import jakarta.jws.HandlerChain;
+import jakarta.xml.ws.WebServiceClient;
 import java.net.URL;
 
 /**

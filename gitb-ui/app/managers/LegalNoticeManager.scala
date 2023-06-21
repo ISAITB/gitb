@@ -2,7 +2,6 @@ package managers
 
 import javax.inject.{Inject, Singleton}
 import models._
-import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
 
@@ -14,7 +13,6 @@ class LegalNoticeManager @Inject() (dbConfigProvider: DatabaseConfigProvider) ex
 
   import dbConfig.profile.api._
 
-  def logger = LoggerFactory.getLogger("LegalNoticeManager")
   private var globalDefaultLegalNotice: Option[LegalNotice] = _
 
   /**

@@ -1,9 +1,7 @@
 package managers
 
-import models.Enums.TriggerDataType
-
 import javax.inject.{Inject, Singleton}
-import org.slf4j.LoggerFactory
+import models.Enums.TriggerDataType
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
 import utils.RepositoryUtils
@@ -14,7 +12,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
 class ParameterManager @Inject() (repositoryUtils: RepositoryUtils, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
-  def logger = LoggerFactory.getLogger("ParameterManager")
 
   import dbConfig.profile.api._
 

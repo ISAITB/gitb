@@ -14,7 +14,7 @@
     <dependencies>
         <dependency>
             <groupId>eu.europa.ec.itb</groupId>
-            <artifactId>gitb-types</artifactId>
+            <artifactId>gitb-types-jakarta</artifactId>
         </dependency>
         <dependency>
             <groupId>eu.europa.ec.itb</groupId>
@@ -47,14 +47,6 @@
         <dependency>
             <groupId>net.sf.saxon</groupId>
             <artifactId>Saxon-HE</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>javax.xml.bind</groupId>
-            <artifactId>jaxb-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.sun.org.apache</groupId>
-            <artifactId>jaxp-ri</artifactId>
         </dependency>
     </dependencies>
 

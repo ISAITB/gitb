@@ -2,7 +2,6 @@ package managers
 
 import javax.inject.{Inject, Singleton}
 import models._
-import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
 
@@ -16,8 +15,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 class LandingPageManager @Inject() (dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
-
-  def logger = LoggerFactory.getLogger("landingPageManager")
 
   /**
    * Gets all landing pages for the specified community

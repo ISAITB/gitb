@@ -2,14 +2,11 @@ package com.gitb.tbs.context;
 
 import com.gitb.engine.TestEngine;
 import com.gitb.tbs.impl.TestbedServiceCallbackHandler;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
-import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletContextListener;
 
 /**
  * Created by senan on 9/16/14.
@@ -17,7 +14,7 @@ import javax.servlet.ServletContextListener;
 @Component
 public class TestbedServiceContextListener {
 
-    private static Logger logger = LoggerFactory.getLogger(TestbedServiceContextListener.class);
+    private static final Logger logger = LoggerFactory.getLogger(TestbedServiceContextListener.class);
 
     /**
      * Called when war is deployed and context is initialized.

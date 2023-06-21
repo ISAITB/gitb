@@ -2,7 +2,6 @@ package managers
 
 import javax.inject.{Inject, Singleton}
 import models.Endpoints
-import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
 
@@ -11,7 +10,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
 class EndPointManager @Inject() (parameterManager: ParameterManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
-  def logger = LoggerFactory.getLogger("EndPointManager")
 
   import dbConfig.profile.api._
 

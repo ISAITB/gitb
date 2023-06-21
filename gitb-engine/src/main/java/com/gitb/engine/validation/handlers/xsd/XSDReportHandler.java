@@ -10,7 +10,7 @@ import com.gitb.types.SchemaType;
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXParseException;
 
-import javax.xml.bind.JAXBElement;
+import jakarta.xml.bind.JAXBElement;
 
 /**
  * Created by senan on 10/10/14.

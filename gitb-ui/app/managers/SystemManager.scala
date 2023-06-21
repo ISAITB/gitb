@@ -1,28 +1,24 @@
 package managers
 
 import actors.events.{ConformanceStatementCreatedEvent, ConformanceStatementUpdatedEvent, SystemUpdatedEvent}
+import javax.inject.{Inject, Singleton}
 import models.Enums.{TestResultStatus, UserRole}
 import models._
-import org.slf4j.LoggerFactory
 import persistence.db._
 import play.api.db.slick.DatabaseConfigProvider
-import utils.{CryptoUtil, RepositoryUtils}
+import utils.{CryptoUtil, MimeUtil, RepositoryUtils}
 
 import java.io.File
 import java.sql.Timestamp
 import java.util
-import javax.inject.{Inject, Singleton}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
-import utils.MimeUtil
 
 @Singleton
 class SystemManager @Inject() (repositoryUtils: RepositoryUtils, testResultManager: TestResultManager, triggerHelper: TriggerHelper, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
-
-  def logger = LoggerFactory.getLogger("SystemManager")
 
   def checkSystemExists(sysId: Long): Boolean = {
     val firstOption = exec(PersistenceSchema.systems.filter(_.id === sysId).result.headOption)

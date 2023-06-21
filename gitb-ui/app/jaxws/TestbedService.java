@@ -6,16 +6,16 @@ import akka.actor.ActorSystem;
 import com.gitb.tbs.*;
 import com.gitb.tbs.Void;
 
-import javax.jws.WebParam;
-import javax.jws.WebService;
-import javax.jws.soap.SOAPBinding;
-import javax.xml.ws.Endpoint;
-import javax.xml.ws.soap.Addressing;
+import jakarta.jws.WebParam;
+import jakarta.jws.WebService;
+import jakarta.jws.soap.SOAPBinding;
+import jakarta.xml.ws.Endpoint;
+import jakarta.xml.ws.soap.Addressing;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.concurrent.ExecutionException;
 
-@Addressing(enabled = true, required = true)
+@Addressing(required = true)
 @SOAPBinding(parameterStyle= SOAPBinding.ParameterStyle.BARE)
 @WebService(name = "TestbedClient", serviceName = "TestbedClient", targetNamespace = "http://www.gitb.com/tbs/v1/")
 public class TestbedService implements TestbedClient {

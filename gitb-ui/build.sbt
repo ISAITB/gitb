@@ -8,9 +8,9 @@ lazy val root = (project in file(".")).enablePlugins(PlayScala, SbtWeb)
 
 scalaVersion := "2.13.10"
 val akkaVersion = "2.6.20" // Keep to the 2.6.* version for the Apache 2.0 Licence (also, this needs to match the version in Play).
-val jacksonVersion = "2.14.2"
-val cxfVersion = "3.5.5"
-val guiceVersion = "5.1.0"
+val jacksonVersion = "2.15.2"
+val cxfVersion = "4.0.2"
+val guiceVersion = "5.1.0" // Keep the 5.1.0 version as for Play 2.8.19 we need to base injection on javax.injection annotations and not jakarta.injection annotations.
 val commonsTextVersion = "1.10.0"
 
 useCoursier := false
@@ -26,7 +26,7 @@ libraryDependencies ++= Seq(
   ws,
   "com.google.inject" % "guice" % guiceVersion,
   "com.google.inject.extensions" % "guice-assistedinject" % guiceVersion,
-  "eu.europa.ec.itb" % "gitb-types" % "1.20.1",
+  "eu.europa.ec.itb" % "gitb-types-jakarta" % "1.20.1",
   "com.gitb" % "gitb-core" % "1.0-SNAPSHOT",
   "com.gitb" % "gitb-lib" % "1.0-SNAPSHOT",
   "com.gitb" % "gitb-reports" % "1.0-SNAPSHOT",
@@ -43,13 +43,13 @@ libraryDependencies ++= Seq(
   "com.typesafe.play" %% "play-json" % "2.9.4",
   "org.pac4j" %% "play-pac4j" % "11.1.0-PLAY2.8",
   "org.pac4j" % "pac4j-cas" % "5.7.0",
-  "ch.qos.logback" % "logback-classic" % "1.4.6",
+  "ch.qos.logback" % "logback-classic" % "1.4.7",
   "org.apache.commons" % "commons-lang3" % "3.12.0",
   "com.fasterxml.jackson.module" %% "jackson-module-scala" % jacksonVersion,
   "com.fasterxml.jackson.core" % "jackson-databind" % jacksonVersion,
   "com.fasterxml.jackson.core" % "jackson-core" % jacksonVersion,
   "com.fasterxml.jackson.core" % "jackson-annotations" % jacksonVersion,
-  "com.fasterxml.jackson.module" % "jackson-module-jaxb-annotations" % jacksonVersion,
+  "com.fasterxml.jackson.module" % "jackson-module-jakarta-xmlbind-annotations" % jacksonVersion,
   "org.mindrot"  % "jbcrypt" % "0.4",  // For password encryption
   "net.debasishg" %% "redisclient" % "3.42",
   // For calling and exporting JAX-WS services.
@@ -57,28 +57,28 @@ libraryDependencies ++= Seq(
   "org.apache.cxf" % "cxf-rt-transports-http" % cxfVersion,
   "org.apache.cxf" % "cxf-rt-transports-http-jetty" % cxfVersion,
   // ---
-  "org.apache.tika" % "tika-core" % "2.7.0",
+  "org.apache.tika" % "tika-core" % "2.8.0",
   "org.webjars" %% "webjars-play" % "2.8.18",
   "org.webjars" % "jquery" % "3.6.4",
   "org.webjars" % "bootstrap" % "3.4.1" exclude("org.webjars", "jquery"),
-  "javax.mail" % "mail" % "1.4.7",
-  "javax.activation" % "activation" % "1.1.1",
-  "javax.xml.ws" % "jaxws-api" % "2.3.1",
-  "javax.jws" % "javax.jws-api" % "1.1",
-  "javax.xml.bind" % "jaxb-api" % "2.3.1",
-  "org.glassfish.jaxb" % "jaxb-runtime" % "2.3.3", // Must match the 2.3.* API
-  "javax.xml.soap" % "javax.xml.soap-api" % "1.4.0",
-  "com.sun.xml.messaging.saaj" % "saaj-impl" % "1.5.2", // Do not update version
+  "com.sun.mail" % "jakarta.mail" % "2.0.1",
+  "jakarta.activation" % "jakarta.activation-api" % "2.1.2",
+  "jakarta.xml.ws" % "jakarta.xml.ws-api" % "4.0.0",
+  "jakarta.jws" % "jakarta.jws-api" % "3.0.0",
+  "jakarta.xml.bind" % "jakarta.xml.bind-api" % "4.0.0",
+  "com.sun.xml.bind" % "jaxb-impl" % "4.0.2",
+  "jakarta.xml.soap" % "jakarta.xml.soap-api" % "3.0.0",
+  "com.sun.xml.messaging.saaj" % "saaj-impl" % "3.0.2",
   "com.sun.org.apache.xml.internal" % "resolver" % "20050927",
-  "com.sun.xml.stream.buffer" % "streambuffer" % "1.5.9", // Do not update version
-  "com.sun.xml.ws" % "policy" % "2.7.10",
+  "com.sun.xml.stream.buffer" % "streambuffer" % "2.1.0",
+  "com.sun.xml.ws" % "policy" % "4.0.1",
   "org.glassfish.gmbal" % "gmbal-api-only" % "4.0.3",
   "org.bouncycastle" % "bcmail-jdk15on" % "1.70",
-  "org.apache.pdfbox" % "pdfbox" % "2.0.27",
+  "org.apache.pdfbox" % "pdfbox" % "2.0.28",
   "org.jasypt" % "jasypt" % "1.9.3",
   "org.apache.httpcomponents" % "httpclient" % "4.5.14",
-  "org.flywaydb" %% "flyway-play" % "7.37.0",
-  "org.flywaydb" % "flyway-mysql" % "9.15.2",
+  "org.flywaydb" %% "flyway-play" % "7.41.0",
+  "org.flywaydb" % "flyway-mysql" % "9.16.0",
   "com.googlecode.owasp-java-html-sanitizer" % "owasp-java-html-sanitizer" % "20220608.1",
   "net.lingala.zip4j" % "zip4j" % "2.11.5",
   // Specific version overrides (to be removed if no longer needed)
