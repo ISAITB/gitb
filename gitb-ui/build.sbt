@@ -43,7 +43,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.play" %% "play-slick" % "5.1.0",
   "com.typesafe.play" %% "play-json" % "2.9.4",
   "org.pac4j" %% "play-pac4j" % "11.1.0-PLAY2.8",
-  "org.pac4j" % "pac4j-cas" % "5.7.0",
+  "org.pac4j" % "pac4j-cas-clientv4" % "5.7.1",
   "ch.qos.logback" % "logback-classic" % "1.4.7",
   "org.apache.commons" % "commons-lang3" % "3.12.0",
   "com.fasterxml.jackson.module" %% "jackson-module-scala" % jacksonVersion,

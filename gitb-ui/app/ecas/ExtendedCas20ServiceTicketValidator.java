@@ -1,8 +1,8 @@
 package ecas;
 
 import config.Configurations;
-import org.jasig.cas.client.util.XmlUtils;
-import org.jasig.cas.client.validation.Cas20ServiceTicketValidator;
+import org.apereo.cas.client.util.XmlUtils;
+import org.apereo.cas.client.validation.Cas20ServiceTicketValidator;
 
 import java.util.Collections;
 import java.util.HashMap;
