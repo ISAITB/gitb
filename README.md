@@ -47,7 +47,7 @@ you will also require at least:
 Both these instances are set up separately (e.g. via Docker) environment. These can be set-up from Docker 
 as follows:
 - MySQL: ``docker run --name gitb-mysql -p 3306:3306 -d isaitb/gitb-mysql``
-- REDIS: ``docker run --name gitb-redis -p 6379:6379 -d redis:6.2.7``
+- REDIS: ``docker run --name gitb-redis -p 6379:6379 -d redis:6.2.12``
 
 > **Note**  
 > All images and containers are defined in ``docker-compose.yml`` and explained in detail the [developer installation guide](https://www.itb.ec.europa.eu/docs/guides/latest/installingTheTestBed/index.html). You may build and launch the complete service as described [here](#build-for-deployment).

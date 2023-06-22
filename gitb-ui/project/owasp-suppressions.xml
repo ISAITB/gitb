@@ -215,4 +215,25 @@
         <packageUrl regex="true">^pkg:maven/com\.google\.guava/guava@.*$</packageUrl>
         <vulnerabilityName>CVE-2023-2976</vulnerabilityName>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: bcprov-jdk15on-1.70.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.bouncycastle/bcprov\-jdk15on@.*$</packageUrl>
+        <vulnerabilityName>CVE-2023-33201</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: angus-mail-1.0.0.jar (shaded: org.eclipse.angus:angus-core:1.0.0)
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.eclipse\.angus/angus\-core@.*$</packageUrl>
+        <vulnerabilityName>CVE-2021-44549</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: angus-mail-1.0.0.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.eclipse\.angus/angus\-mail@.*$</packageUrl>
+        <vulnerabilityName>CVE-2021-44549</vulnerabilityName>
+    </suppress>
 </suppressions>

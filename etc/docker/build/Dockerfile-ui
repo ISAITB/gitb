@@ -1,12 +1,19 @@
 # Stage 1: Build app
-FROM sbtscala/scala-sbt:11.0.15_1.6.2_3.1.3 AS builder
+FROM sbtscala/scala-sbt:eclipse-temurin-17.0.3_1.6.2_3.1.3 AS builder
 
 # Install nodejs and npm (to build frontend app)
+ENV NVM_DIR /usr/local/nvm
+ENV NODE_VERSION 16.17.0
 SHELL ["/bin/bash", "--login", "-c"]
-RUN curl https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash 
-RUN nvm install 16.17.0
+RUN mkdir $NVM_DIR
+RUN touch ~/.bashrc && chmod +x ~/.bashrc
+RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh | bash
+RUN . $NVM_DIR/nvm.sh && source ~/.bashrc && nvm install $NODE_VERSION
+ENV NODE_PATH $NVM_DIR/v$NODE_VERSION/lib/node_modules
+ENV PATH $NVM_DIR/versions/node/v$NODE_VERSION/bin:$PATH
+
 # Install Maven to build shared snapshot dependencies
-ARG MAVEN_VERSION=3.8.6
+ARG MAVEN_VERSION=3.9.2
 ARG BASE_URL=https://apache.osuosl.org/maven/maven-3/${MAVEN_VERSION}/binaries
 ARG USER_HOME_DIR="/root"
 RUN mkdir -p /usr/share/maven /usr/share/maven/ref \
@@ -14,24 +21,27 @@ RUN mkdir -p /usr/share/maven /usr/share/maven/ref \
     && tar -xzf /tmp/apache-maven.tar.gz -C /usr/share/maven --strip-components=1 \
     && rm -f /tmp/apache-maven.tar.gz \
     && ln -s /usr/share/maven/bin/mvn /usr/bin/mvn
-ENV JAVA_HOME /usr/local/openjdk-11
+ENV JAVA_HOME /opt/java/openjdk
 ENV MAVEN_HOME /usr/share/maven
 ENV MAVEN_CONFIG "$USER_HOME_DIR/.m2"
 ENV PATH $MAVEN_HOME/bin:$JAVA_HOME/bin:$PATH
+
 # Build snapshot dependencies
 COPY . /app
 WORKDIR /app
 RUN mvn clean install -DskipTests=true -Denv=docker
+
 # Build and prepare gitb-ui app
 WORKDIR /app/gitb-ui
-RUN /usr/local/openjdk-11/bin/java -Dfile.encoding=UTF-8 -Xss2M -Dsbt.log.noformat=true -Dsbt.script=/usr/local/bin/sbt -Dscala.ext.dirs= -jar /usr/share/sbt/bin/sbt-launch.jar clean dist
+RUN java -Dfile.encoding=UTF-8 -Xss2M -Dsbt.log.noformat=true -Dsbt.script=/usr/local/bin/sbt -Dscala.ext.dirs= -jar /usr/share/sbt/bin/sbt-launch.jar clean dist
 WORKDIR /app
-RUN mkdir -p /app/tmp \ 
+RUN mkdir -p /app/tmp \
+    && apt-get update && apt-get install -y unzip \
     && unzip /app/gitb-ui/target/universal/gitb-1.0-SNAPSHOT.zip -d /app/tmp/gitb-ui \
     && mv /app/tmp/gitb-ui/gitb-1.0-SNAPSHOT /app/tmp/gitb-ui/gitb-ui
 
 # Stage 2: Run application
-FROM openjdk:11.0.14-jre
+FROM eclipse-temurin:17-jre-alpine
 
 ENV PATH /usr/local/gitb-ui/bin:$PATH
 ENV TESTBED_SERVICE_URL http://gitb-srv:8080/itbsrv/TestbedService

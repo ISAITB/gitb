@@ -1,4 +1,4 @@
-FROM openjdk:11.0.14-jre
+FROM eclipse-temurin:17-jre-alpine
 
 RUN mkdir /itbsrv
 COPY itbsrv.war /itbsrv

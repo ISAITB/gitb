@@ -1,12 +1,12 @@
 # Stage 1: Build app
-FROM maven:3.8.6-jdk-11 AS builder
+FROM maven:3.9.2-amazoncorretto-17 AS builder
 
 WORKDIR /app
 COPY . /app
 RUN mvn clean install -DskipTests=true -Denv=docker
 
 # Stage 2: Run application
-FROM openjdk:11.0.14-jre
+FROM eclipse-temurin:17-jre-alpine
 
 RUN mkdir /itbsrv
 COPY --from=builder /app/gitb-testbed-service/target/itbsrv.war /itbsrv
