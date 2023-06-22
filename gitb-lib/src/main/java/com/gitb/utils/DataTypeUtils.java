@@ -6,10 +6,13 @@ import com.gitb.types.DataType;
 import com.gitb.types.DataTypeFactory;
 import com.gitb.types.ListType;
 import com.gitb.types.MapType;
-import com.sun.jersey.api.client.Client;
-import org.apache.commons.codec.binary.Base64;
 
-import javax.ws.rs.core.MediaType;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.util.Base64;
 import java.util.Map;
 
 /**
@@ -17,7 +20,7 @@ import java.util.Map;
  */
 public class DataTypeUtils {
 
-	private static DataTypePostProcessor noActionPostProcessor = dataType -> {
+	private static final DataTypePostProcessor noActionPostProcessor = dataType -> {
 		// Do nothing.
 	};
 
@@ -60,8 +63,7 @@ public class DataTypeUtils {
 				if (fragment.getValue() == null) {
 					attachment.setValue(null);
 				} else {
-					byte[] value = Base64.encodeBase64(fragment.serializeByDefaultEncoding());
-					attachment.setValue(new String(value));
+					attachment.setValue(Base64.getEncoder().encodeToString(fragment.serializeByDefaultEncoding()));
 				}
 				break;
 			}
@@ -113,66 +115,63 @@ public class DataTypeUtils {
 
 	public static void setDataTypeValueWithAnyContent(DataType data, AnyContent anyContent, DataTypePostProcessor postProcessor) {
 		switch (anyContent.getType()) {
-			case DataType.LIST_DATA_TYPE: {
+			case DataType.LIST_DATA_TYPE -> {
 				ListType list = (ListType) data;
 
-				for(AnyContent childItem : anyContent.getItem()) {
+				for (AnyContent childItem : anyContent.getItem()) {
 					DataType childData = convertAnyContentToDataType(childItem);
 					postProcessor.process(childData);
 
-					if(list.getContainedType() == null) {
+					if (list.getContainedType() == null) {
 						list.setContainedType(childData.getType());
 					}
 
 					list.append(childData);
 				}
-				break;
 			}
-			case DataType.MAP_DATA_TYPE: {
+			case DataType.MAP_DATA_TYPE -> {
 				MapType map = (MapType) data;
 
-				for(AnyContent childItem : anyContent.getItem()) {
+				for (AnyContent childItem : anyContent.getItem()) {
 					DataType childData = convertAnyContentToDataType(childItem);
 					postProcessor.process(childData);
 
 					map.addItem(childItem.getName(), childData);
 				}
 
-				break;
 			}
-			default: {
+			default -> {
 				switch (anyContent.getEmbeddingMethod()) {
-					case STRING: {
+					case STRING -> {
 						if (anyContent.getValue() == null) {
 							data.setValue(null);
 						} else {
 							data.deserialize(anyContent.getValue().getBytes());
 						}
 						postProcessor.process(data);
-						break;
 					}
-					case BASE_64: {
-						data.deserialize(Base64.decodeBase64(
-								EncodingUtils.extractBase64FromDataURL(anyContent.getValue())));
+					case BASE_64 -> {
+						data.deserialize(Base64.getDecoder().decode(EncodingUtils.extractBase64FromDataURL(anyContent.getValue())));
 						postProcessor.process(data);
-						break;
 					}
-					case URI: {
-
-						Client client = Client.create();
-						String content =
-								client
-										.resource(anyContent.getValue())
-										.accept(MediaType.WILDCARD_TYPE)
-										.get(String.class);
-
-						data.deserialize(content.getBytes());
-						postProcessor.process(data);
-						break;
+					case URI -> {
+						try {
+							var request = HttpRequest
+									.newBuilder()
+									.uri(new URI(anyContent.getValue()))
+									.header("Accept", "*/*")
+									.GET()
+									.build();
+							var content = HttpClient.newHttpClient().send(request, HttpResponse.BodyHandlers.ofString()).body();
+							data.deserialize(content.getBytes());
+							postProcessor.process(data);
+						} catch (URISyntaxException e) {
+							throw new IllegalStateException("URI had invalid syntax ["+anyContent.getValue()+"]", e);
+						} catch (Exception e) {
+							throw new IllegalStateException("Error while calling URI ["+anyContent.getValue()+"]", e);
+						}
 					}
 				}
-
-				break;
 			}
 		}
 	}

@@ -1,11 +1,6 @@
 package com.gitb.engine.remote;
 
 import com.gitb.engine.PropertyConstants;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.lang3.StringUtils;
-
-import javax.ws.rs.core.HttpHeaders;
-import javax.xml.namespace.QName;
 import jakarta.xml.soap.SOAPElement;
 import jakarta.xml.soap.SOAPEnvelope;
 import jakarta.xml.soap.SOAPException;
@@ -13,6 +8,11 @@ import jakarta.xml.soap.SOAPHeader;
 import jakarta.xml.ws.handler.MessageContext;
 import jakarta.xml.ws.handler.soap.SOAPHandler;
 import jakarta.xml.ws.handler.soap.SOAPMessageContext;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.http.HttpHeaders;
+
+import javax.xml.namespace.QName;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.ZoneOffset;

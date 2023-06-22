@@ -417,12 +417,6 @@
                 <artifactId>pdfbox</artifactId>
                 <version>${version.pdfbox}</version>
             </dependency>
-            <!-- TODO check if needed -->
-            <dependency>
-                <groupId>com.sun.jersey</groupId>
-                <artifactId>jersey-client</artifactId>
-                <version>${version.jerseyClient}</version>
-            </dependency>
             <dependency>
                 <groupId>org.freemarker</groupId>
                 <artifactId>freemarker</artifactId>

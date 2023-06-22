@@ -12,6 +12,7 @@ val jacksonVersion = "2.15.2"
 val cxfVersion = "4.0.2"
 val guiceVersion = "5.1.0" // Keep the 5.1.0 version as for Play 2.8.19 we need to base injection on javax.injection annotations and not jakarta.injection annotations.
 val commonsTextVersion = "1.10.0"
+val jjwtVersion = "0.11.5"
 
 useCoursier := false
 
@@ -82,8 +83,20 @@ libraryDependencies ++= Seq(
   "com.googlecode.owasp-java-html-sanitizer" % "owasp-java-html-sanitizer" % "20220608.1",
   "net.lingala.zip4j" % "zip4j" % "2.11.5",
   // Specific version overrides (to be removed if no longer needed)
-  "org.apache.commons" % "commons-text" % commonsTextVersion // Set explicitly to resolve CVE-2022-42889
+  "org.apache.commons" % "commons-text" % commonsTextVersion, // Set explicitly to resolve CVE-2022-42889
+  // Override JJWT that is built-in to Play framework. This is needed for Play 2.8.19 (it contains a hard dependency to old the JAXB API) but when upgrading to Play 2.9 this should be removed as the JJWT dependency is at the right version. START:
+  "io.jsonwebtoken" % "jjwt-api" % jjwtVersion,
+  "io.jsonwebtoken" % "jjwt-impl" % jjwtVersion,
+  "io.jsonwebtoken" % "jjwt-jackson" % jjwtVersion
+  // :END
 )
+
+// This exclusion is to be removed when we upgrade to Play 2.9 which will bring JJWT to the correct version.
+libraryDependencies ~= { _ map {
+  case m if m.organization == "com.typesafe.play" =>
+    m.exclude("io.jsonwebtoken", "jjwt")
+  case m => m
+}}
 
 // Deactivate repeatable builds to speed up via parallelization
 ThisBuild / assemblyRepeatableBuild := false

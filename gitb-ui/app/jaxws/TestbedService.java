@@ -56,7 +56,7 @@ public class TestbedService implements TestbedClient {
         return new Void();    }
 
     @Override
-    public com.gitb.tbs.Void updateStatus(@WebParam(name = "UpdateStatusRequest", targetNamespace = "http://www.gitb.com/tbs/v1/", partName = "parameters") TestStepStatus testStepStatus) {
+    public Void updateStatus(@WebParam(name = "UpdateStatusRequest", targetNamespace = "http://www.gitb.com/tbs/v1/", partName = "parameters") TestStepStatus testStepStatus) {
         sendMessage(testStepStatus);
         return new Void();
     }
