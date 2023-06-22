@@ -6,13 +6,13 @@ import com.gitb.types.DataType;
 import com.gitb.types.DataTypeFactory;
 import com.gitb.types.ListType;
 import com.gitb.types.MapType;
+import org.apache.commons.codec.binary.Base64;
 
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.Base64;
 import java.util.Map;
 
 /**
@@ -63,7 +63,8 @@ public class DataTypeUtils {
 				if (fragment.getValue() == null) {
 					attachment.setValue(null);
 				} else {
-					attachment.setValue(Base64.getEncoder().encodeToString(fragment.serializeByDefaultEncoding()));
+					byte[] value = Base64.encodeBase64(fragment.serializeByDefaultEncoding());
+					attachment.setValue(new String(value));
 				}
 				break;
 			}
@@ -151,7 +152,8 @@ public class DataTypeUtils {
 						postProcessor.process(data);
 					}
 					case BASE_64 -> {
-						data.deserialize(Base64.getDecoder().decode(EncodingUtils.extractBase64FromDataURL(anyContent.getValue())));
+						data.deserialize(Base64.decodeBase64(
+								EncodingUtils.extractBase64FromDataURL(anyContent.getValue())));
 						postProcessor.process(data);
 					}
 					case URI -> {
