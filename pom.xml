@@ -31,7 +31,7 @@
         <version.plugin.maven-compiler-plugin>3.10.1</version.plugin.maven-compiler-plugin>
         <!-- Dependency versions -->
         <version.springBoot>2.7.11</version.springBoot>
-        <version.gitbTypes>1.20.0</version.gitbTypes>
+        <version.gitbTypes>1.20.1</version.gitbTypes>
         <version.bouncycastle>1.70</version.bouncycastle>
         <version.helgerSchematron>6.3.4</version.helgerSchematron>
         <version.metaInfServices>1.9</version.metaInfServices>
