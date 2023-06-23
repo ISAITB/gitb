@@ -573,56 +573,54 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils, testResultManag
       val specNameB = b._1._1._1._2.fullname
       val actorNameB = b._1._2.name
 
-      var result = true // A before B
       // Check domains
-      val domains = domainNameB.compareTo(domainNameA)
+      val domains = domainNameA.compareTo(domainNameB)
       if (domains > 0) {
-        result = false
+        false
       } else if (domains < 0) {
-        result = true
+        true
       } else {
         // Specification group order
         val groupOrderToCheckForA = if (groupOrderA.isDefined) groupOrderA.get else specOrderA
         val groupOrderToCheckForB = if (groupOrderB.isDefined) groupOrderB.get else specOrderB
         val orders = groupOrderToCheckForA.compareTo(groupOrderToCheckForB)
         if (orders > 0) {
-          result = false
+          false
         } else if (orders < 0) {
-          result = true
+          true
         } else {
           // Specification order
           val specOrders = specOrderA.compareTo(specOrderB)
           if (specOrders > 0) {
-            result = false
+            false
           } else if (specOrders < 0) {
-            result = true
+            true
           } else {
             // Specification with group vs without group
             if (groupNameA.isEmpty && groupNameB.isDefined) {
-              result = false
+              false
             } else if (groupNameA.isDefined && groupNameB.isEmpty) {
-              result = true
+              true
             } else { // Botḣ without group or with groups with same name
               val nameToCheckForA = (if (groupNameA.isDefined) groupNameA.get + " - " else "") + specNameA
               val nameToCheckForB = (if (groupNameB.isDefined) groupNameB.get + " - " else "") + specNameB
               val names = nameToCheckForA.compareTo(nameToCheckForB)
               if (names > 0) {
-                result = false
+                false
               } else if (names < 0) {
-                result = true
+                true
               } else {
                 val actors = actorNameA.compareTo(actorNameB)
-                if (actors > 0) {
-                  result = false
+                if (actors >= 0) {
+                  false
                 } else {
-                  result = true
+                  true
                 }
               }
             }
           }
         }
       }
-      result
     })
 
     val resultBuilder = new ConformanceStatusBuilder[ConformanceStatement](recordDetails = false)
