@@ -81,7 +81,7 @@ public class ReportGenerator {
 
     private Template getTemplate(String reportPath) {
         return templateCache.computeIfAbsent(reportPath, path -> {
-            var configuration = new Configuration(Configuration.VERSION_2_3_31);
+            var configuration = new Configuration(Configuration.VERSION_2_3_32);
             configuration.setTemplateLoader(new ClassTemplateLoader(ReportGenerator.class, "/"));
             Template template;
             try {
