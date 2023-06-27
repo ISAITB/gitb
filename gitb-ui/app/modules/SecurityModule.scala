@@ -11,6 +11,7 @@ import org.pac4j.core.client.Clients
 import org.pac4j.core.client.direct.AnonymousClient
 import org.pac4j.core.config.Config
 import org.pac4j.core.context.session.SessionStore
+import org.pac4j.core.engine.DefaultCallbackLogic
 import org.pac4j.core.http.ajax.DefaultAjaxRequestResolver
 import org.pac4j.core.http.callback.QueryParameterCallbackUrlResolver
 import org.pac4j.core.matching.matcher.PathMatcher
@@ -45,7 +46,9 @@ class SecurityModule extends AbstractModule {
 
     // callback
     val callbackController = new CallbackController()
-    callbackController.setDefaultUrl("/app")
+    val callbackLogic = new DefaultCallbackLogic
+    callbackLogic.setSavedRequestHandler(new CustomSavedRequestHandler)
+    callbackController.setCallbackLogic(callbackLogic)
     bind(classOf[CallbackController]).toInstance(callbackController)
 
     // logout
