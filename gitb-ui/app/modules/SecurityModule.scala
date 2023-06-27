@@ -4,6 +4,7 @@ import com.google.inject.{AbstractModule, Provides}
 import config.Configurations
 import config.Configurations.API_ROOT
 import ecas.ExtendedCasConfiguration
+import org.apache.commons.lang3.StringUtils
 import org.pac4j.cas.client.{CasClient, CasProxyReceptor}
 import org.pac4j.cas.config.CasProtocol
 import org.pac4j.core.authorization.authorizer.IsAuthenticatedAuthorizer
@@ -45,15 +46,20 @@ class SecurityModule extends AbstractModule {
 
     // callback
     val callbackController = new CallbackController()
-    callbackController.setDefaultUrl("/app")
+    callbackController.setDefaultUrl(buildDefaultCallbackUrl())
+    callbackController.setCallbackLogic(new CustomCallbackLogic)
     bind(classOf[CallbackController]).toInstance(callbackController)
 
     // logout
     val logoutController = new LogoutController()
-    logoutController.setDefaultUrl("/")
+    logoutController.setDefaultUrl(StringUtils.appendIfMissing(Configurations.TESTBED_HOME_LINK, "/"))
     bind(classOf[LogoutController]).toInstance(logoutController)
   }
 
+  private def buildDefaultCallbackUrl(): String = {
+    val homeWithSlash = StringUtils.appendIfMissing(Configurations.TESTBED_HOME_LINK, "/")
+    StringUtils.appendIfMissing(homeWithSlash, "app")
+  }
 
   @Provides
   def provideCasProxyReceptor() = {
