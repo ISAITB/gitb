@@ -408,7 +408,7 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 					} else {
 						None
 					}
-					val updateActions = List(new TestSuiteDeploymentAction(None, TestSuiteReplacementChoice.PROCEED, updateTestSuite = deployRequest.updateSpecification, updateActors = Some(deployRequest.updateSpecification), deployRequest.sharedTestSuite, testCaseUpdates = testCaseChoices))
+					val updateActions = List(new TestSuiteDeploymentAction(specificationId, TestSuiteReplacementChoice.PROCEED, updateTestSuite = deployRequest.updateSpecification, updateActors = Some(deployRequest.updateSpecification), deployRequest.sharedTestSuite, testCaseUpdates = testCaseChoices))
 					val action = processTestSuite(testSuite.get, testSuite.get.actors, testSuite.get.testCases, Some(tempTestSuiteArchive), updateActions, onSuccessCalls, onFailureCalls)
 					import scala.jdk.CollectionConverters._
 					result.items.addAll(exec(dbActionFinalisation(Some(onSuccessCalls), Some(onFailureCalls), action).transactionally).asJavaCollection)
