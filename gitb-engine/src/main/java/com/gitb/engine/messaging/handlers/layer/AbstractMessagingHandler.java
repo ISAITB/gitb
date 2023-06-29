@@ -120,13 +120,13 @@ public abstract class AbstractMessagingHandler implements IMessagingHandler {
             ITransactionSender transactionSender = transactionContext.getParameter(ITransactionSender.class);
 	        IDatagramSender datagramSender = transactionContext.getParameter(IDatagramSender.class);
 
-            Message sentMessage = null;
+            Message sentMessage;
 	        if(transactionSender != null) {
 		        sentMessage = transactionSender.send(configurations, message);
 	        } else if(datagramSender != null) {
 		        sentMessage = datagramSender.send(configurations, message);
 	        } else {
-		        throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INTERNAL_ERROR, "No senders are defined for ["+getModuleDefinition().getId()+"]"));
+		        throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INTERNAL_ERROR, "No senders defined"));
 	        }
 
             Collection<Exception> nonCriticalErrors = transactionContext.getNonCriticalErrors();
@@ -198,7 +198,7 @@ public abstract class AbstractMessagingHandler implements IMessagingHandler {
         } else if(datagramListener != null) {
             listener = datagramListener;
         } else {
-            throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INTERNAL_ERROR, "No listener is defined for the messaging handler ["+getModuleDefinition().getId()+"]"));
+            throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INTERNAL_ERROR, "No listener is defined for the messaging handler"));
         }
 
         try {
@@ -317,36 +317,37 @@ public abstract class AbstractMessagingHandler implements IMessagingHandler {
 
 	protected void validateActorConfigurations(List<ActorConfiguration> actorConfigurations) {
 		MessagingModule module = getModuleDefinition();
-
-		for(ActorConfiguration actorConfiguration : actorConfigurations) {
-            checkRequiredParameters(module.getActorConfigs().getParam(), actorConfiguration.getConfig());
-		}
+        if (module != null) {
+            for (ActorConfiguration actorConfiguration : actorConfigurations) {
+                checkRequiredParameters(module.getActorConfigs().getParam(), actorConfiguration.getConfig());
+            }
+        }
 	}
 
 	protected void validateInputs(Message message) {
 		MessagingModule module = getModuleDefinition();
-
-		checkRequiredTypedParameters(module.getInputs().getParam(), message);
+        if (module != null && module.getInputs() != null) {
+            checkRequiredTypedParameters(module.getInputs().getParam(), message);
+        }
 	}
 
 	protected void validateOutputs(Message message) {
         MessagingModule module = getModuleDefinition();
-
-        checkRequiredTypedParameters(module.getOutputs().getParam(), message);
+        if (module != null && module.getOutputs() != null) {
+            checkRequiredTypedParameters(module.getOutputs().getParam(), message);
+        }
 	}
 
 	protected void validateReceiveConfigurations(List<Configuration> configurations) {
         MessagingModule module = getModuleDefinition();
-
-        if(module.getReceiveConfigs() != null) {
+        if (module != null && module.getReceiveConfigs() != null) {
             checkRequiredParameters(module.getReceiveConfigs().getParam(), configurations);
         }
 	}
 
 	protected void validateSendConfigurations(List<Configuration> configurations) {
         MessagingModule module = getModuleDefinition();
-
-        if(module.getSendConfigs() != null){
+        if (module != null && module.getSendConfigs() != null){
             checkRequiredParameters(module.getSendConfigs().getParam(), configurations);
         }
 	}
@@ -410,7 +411,7 @@ public abstract class AbstractMessagingHandler implements IMessagingHandler {
                 } else if(datagramReceiver != null) {
                     message = datagramReceiver.receive(configurations, inputs);
                 } else {
-                    throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INTERNAL_ERROR, "No receivers are defined for ["+handler.getModuleDefinition().getId()+"]"));
+                    throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INTERNAL_ERROR, "No receivers defined"));
                 }
 
                 handler.validateOutputs(message);
