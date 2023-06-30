@@ -35,7 +35,6 @@ public abstract class BaseAddressingHandler implements SOAPHandler<SOAPMessageCo
                     Element addressElement = (Element)nodeList.item(0);
                     addressElement.setTextContent(callbackURL());
                 }
-                context.getMessage().saveChanges();
             } catch (SOAPException e) {
                 throw new IllegalStateException(e);
             }
