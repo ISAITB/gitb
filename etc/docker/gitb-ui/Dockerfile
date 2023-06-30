@@ -1,5 +1,7 @@
 FROM eclipse-temurin:17-jre-alpine
 
+RUN apk add --no-cache bash
+
 ENV PATH /usr/local/gitb-ui/bin:$PATH
 ENV TESTBED_SERVICE_URL http://gitb-srv:8080/itbsrv/TestbedService
 ENV TESTBED_CLIENT_URL http://gitb-ui:9090/TestbedClient
