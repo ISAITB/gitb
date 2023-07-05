@@ -236,4 +236,11 @@
         <packageUrl regex="true">^pkg:maven/org\.eclipse\.angus/angus\-mail@.*$</packageUrl>
         <vulnerabilityName>CVE-2021-44549</vulnerabilityName>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: jackson-databind-2.15.2.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.fasterxml\.jackson\.core/jackson\-databind@.*$</packageUrl>
+        <cve>CVE-2023-35116</cve>
+    </suppress>
 </suppressions>
