@@ -7,14 +7,14 @@ import com.gitb.vs.tdl.Context;
 import com.gitb.vs.tdl.ErrorCode;
 import com.gitb.vs.tdl.ValidationReport;
 import com.gitb.vs.tdl.util.Utils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.xml.sax.SAXParseException;
-
 import jakarta.xml.bind.JAXBException;
 import jakarta.xml.bind.UnmarshalException;
 import jakarta.xml.bind.ValidationEvent;
 import jakarta.xml.bind.ValidationEventHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.xml.sax.SAXParseException;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -48,9 +48,11 @@ public class CheckFileSyntax extends AbstractCheck {
                 if (resourceType == ResourceType.TEST_SUITE) {
                     Utils.unmarshal(is, TestSuite.class, context.getJAXBContext(), context.getTDLSchema(), handler).getValue();
                 } else if (resourceType == ResourceType.TEST_CASE) {
-                    Utils.unmarshal(is, TestCase.class, context.getJAXBContext(), context.getTDLSchema(), handler).getValue();
+                    var testCase = Utils.unmarshal(is, TestCase.class, context.getJAXBContext(), context.getTDLSchema(), handler).getValue();
+                    context.addValidTestCaseId(testCase.getId());
                 } else { // Scriptlets
-                    Utils.unmarshal(is, Scriptlet.class, context.getJAXBContext(), context.getTDLSchema(), handler).getValue();
+                    var scriptlet = Utils.unmarshal(is, Scriptlet.class, context.getJAXBContext(), context.getTDLSchema(), handler).getValue();
+                    context.addValidScriptletId(scriptlet.getId());
                 }
             } catch (JAXBException e) {
                 handleParseException(e);
@@ -89,10 +91,10 @@ public class CheckFileSyntax extends AbstractCheck {
         void setCurrentPath(Path currentPath, ResourceType resourceType) {
             this.currentPath = currentPath;
             switch (resourceType) {
-                case TEST_SUITE: errorCodeToUse = ErrorCode.INVALID_TEST_SUITE_SYNTAX; break;
-                case TEST_CASE: errorCodeToUse = ErrorCode.INVALID_TEST_CASE_SYNTAX; break;
-                case SCRIPTLET: errorCodeToUse = ErrorCode.INVALID_SCRIPTLET_SYNTAX; break;
-                default: throw new IllegalStateException("Unknown resource type ["+resourceType+"]");
+                case TEST_SUITE -> errorCodeToUse = ErrorCode.INVALID_TEST_SUITE_SYNTAX;
+                case TEST_CASE -> errorCodeToUse = ErrorCode.INVALID_TEST_CASE_SYNTAX;
+                case SCRIPTLET -> errorCodeToUse = ErrorCode.INVALID_SCRIPTLET_SYNTAX;
+                default -> throw new IllegalStateException("Unknown resource type [" + resourceType + "]");
             }
         }
 

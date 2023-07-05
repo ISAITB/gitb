@@ -62,6 +62,24 @@ public class Context {
     private final Set<String> customOrganisationPropertiesUsed = new TreeSet<>();
     private final Set<String> customSystemPropertiesUsed = new TreeSet<>();
     private final Set<String> customDomainParametersUsed = new TreeSet<>();
+    private final Set<String> validTestCaseIds = new HashSet<>();
+    private final Set<String> validScriptletIds = new HashSet<>();
+
+    public void addValidTestCaseId(String identifier) {
+        validTestCaseIds.add(identifier);
+    }
+
+    public void addValidScriptletId(String identifier) {
+        validScriptletIds.add(identifier);
+    }
+
+    public boolean isValidTestCaseId(String identifier) {
+        return validTestCaseIds.contains(identifier);
+    }
+
+    public boolean isValidScriptletId(String identifier) {
+        return validScriptletIds.contains(identifier);
+    }
 
     public Set<Path> getReferencedResourcePaths() {
         if (referencedResourcePaths == null) {
