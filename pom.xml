@@ -119,6 +119,7 @@
                     <version>${version.plugin.dependency-check-maven}</version>
                     <configuration>
                         <failBuildOnCVSS>0</failBuildOnCVSS>
+                        <ossIndexWarnOnlyOnRemoteErrors>true</ossIndexWarnOnlyOnRemoteErrors>
                         <suppressionFile>etc/owasp-suppressions.xml</suppressionFile>
                         <excludes>
                             <exclude>eu.europa.ec.itb.*:*</exclude>
