@@ -3,6 +3,7 @@ version := "1.0-SNAPSHOT"
 maintainer := "DIGIT-ITB@ec.europa.eu"
 
 lazy val root = (project in file(".")).enablePlugins(PlayScala, SbtWeb)
+  .settings(dependencyCheckOSSIndexWarnOnlyOnRemoteErrors := Some(true))
   .settings(dependencyCheckFailBuildOnCVSS := 0)
   .settings(dependencyCheckSuppressionFile := Some(file("project/owasp-suppressions.xml")))
 
