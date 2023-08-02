@@ -54,7 +54,7 @@
         <version.gmbalApi>4.0.3</version.gmbalApi>
         <version.commonsConfiguration>2.9.0</version.commonsConfiguration>
         <version.commonsText>1.10.0</version.commonsText>
-        <version.akka>2.6.20</version.akka>
+        <version.akka>2.6.21</version.akka>
         <version.rgxgen>1.4</version.rgxgen>
         <version.saajImpl>3.0.2</version.saajImpl>
         <version.helgerCommons>11.0.5</version.helgerCommons>

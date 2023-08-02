@@ -8,7 +8,7 @@ lazy val root = (project in file(".")).enablePlugins(PlayScala, SbtWeb)
   .settings(dependencyCheckSuppressionFile := Some(file("project/owasp-suppressions.xml")))
 
 scalaVersion := "2.13.10"
-val akkaVersion = "2.6.20" // Keep to the 2.6.* version for the Apache 2.0 Licence (also, this needs to match the version in Play).
+val akkaVersion = "2.6.21" // Keep to the 2.6.* version for the Apache 2.0 Licence (also, this needs to match the version in Play).
 val jacksonVersion = "2.15.2"
 val cxfVersion = "4.0.2"
 val guiceVersion = "5.1.0" // Keep the 5.1.0 version as for Play 2.8.19 we need to base injection on javax.injection annotations and not jakarta.injection annotations.
