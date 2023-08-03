@@ -584,6 +584,8 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, communityResour
         exportedTestCase.setTargetActors(testCase.targetActors.orNull)
         exportedTestCase.setTestSuite(exportedTestSuite)
         exportedTestCase.setSpecification(specificationToSet.orNull)
+        exportedTestCase.setOptional(testCase.isOptional)
+        exportedTestCase.setDisabled(testCase.isDisabled)
         // Test case path - remove first part which represents the test suite
         val firstPathSeparatorIndex = testCase.path.indexOf('/')
         if (firstPathSeparatorIndex != -1) {

@@ -1398,7 +1398,9 @@ object JsonUtil {
       "type" -> testCase.testCaseType,
       "path" -> testCase.path,
       "hasDocumentation" -> testCase.hasDocumentation,
-      "documentation" -> (if (withDocumentation && testCase.documentation.isDefined) testCase.documentation.get else JsNull)
+      "documentation" -> (if (withDocumentation && testCase.documentation.isDefined) testCase.documentation.get else JsNull),
+      "optional" -> testCase.isOptional,
+      "disabled" -> testCase.isDisabled
     )
     json
   }
@@ -1422,7 +1424,9 @@ object JsonUtil {
       "keywords" -> (if(testCase.keywords.isDefined) testCase.keywords.get else JsNull),
       "type" -> testCase.testCaseType,
       "path" -> testCase.path,
-      "hasDocumentation"  -> testCase.hasDocumentation
+      "hasDocumentation"  -> testCase.hasDocumentation,
+      "optional"  -> testCase.isOptional,
+      "disabled"  -> testCase.isDisabled
     )
     json
   }
@@ -2270,6 +2274,8 @@ object JsonUtil {
       "testCaseName"    -> listItem.testCaseName,
       "testCaseDescription"    -> listItem.testCaseDescription,
       "testCaseHasDocumentation"    -> listItem.testCaseHasDocumentation,
+      "testCaseOptional" -> listItem.testCaseOptional,
+      "testCaseDisabled" -> listItem.testCaseDisabled,
       "result"    -> listItem.result,
       "outputMessage" -> listItem.outputMessage,
       "sessionId"    -> listItem.sessionId,

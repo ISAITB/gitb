@@ -57,15 +57,12 @@
 				<div class="tabControls">
 					<div class="testFilters">
 						<app-text-filter name="testCaseFilter" [width]="250" [placeholder]="'Search test cases...'" [(ngModel)]="testCaseFilter" (apply)="applySearchFilters()"></app-text-filter>
-						<div class="btn-group resultFilterDiv" dropdown>
-							<button id="button-result" dropdownToggle type="button" class="btn btn-default dropdown-toggle" aria-controls="dropdown-result"><i *ngIf="resultFilter != resultFilterAll" class="resultIcon" [ngClass]="dataService.iconForTestResult(resultFilter)"></i>{{resultFilterButton}}<span class="caret"></span></button>
-							<ul id="dropdown-result" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-result">
-								<li role="menuitem"><a class="dropdown-item" href (click)="resultFilterSelected(resultFilterAll, resultFilterLabelAll); $event.preventDefault()">{{resultFilterLabelAll}}</a></li>
-								<li class="divider dropdown-divider"></li>
-								<li role="menuitem"><a class="dropdown-item" href (click)="resultFilterSelected(Constants.TEST_CASE_RESULT.SUCCESS, resultFilterLabelSucceeded); $event.preventDefault()"><i class="resultIcon" [ngClass]="dataService.iconForTestResult(Constants.TEST_CASE_RESULT.SUCCESS)"></i> {{resultFilterLabelSucceeded}}</a></li>
-								<li role="menuitem"><a class="dropdown-item" href (click)="resultFilterSelected(Constants.TEST_CASE_RESULT.FAILURE, resultFilterLabelFailed); $event.preventDefault()"><i class="resultIcon" [ngClass]="dataService.iconForTestResult(Constants.TEST_CASE_RESULT.FAILURE)"></i> {{resultFilterLabelFailed}}</a></li>
-								<li role="menuitem"><a class="dropdown-item" href (click)="resultFilterSelected(Constants.TEST_CASE_RESULT.UNDEFINED, resultFilterLabelUndefined); $event.preventDefault()"><i class="resultIcon" [ngClass]="dataService.iconForTestResult(Constants.TEST_CASE_RESULT.UNDEFINED)"></i> {{resultFilterLabelUndefined}}</a></li>
-							</ul>
+						<div class="resultFilterDiv">
+							<app-checkbox-option-panel 
+								label="Show tests..." 
+								[options]="testDisplayOptions" 
+								[refresh]="refreshDisplayOptions"
+								(updated)="resultFilterUpdated($event)"></app-checkbox-option-panel>
 						</div>
 					</div>
 					<div class="testSettings">
@@ -107,6 +104,7 @@
 											<table id="conformance-statement-details" class="table table-directive expandable-table">
 												<thead>
 													<tr>
+														<th class="th-min" *ngIf="testSuite.hasOptionalTestCases || testSuite.hasDisabledTestCases"></th>
 														<th class="th-nowrap">Test case</th>
 														<th>Description</th>
 														<th class="th-min">Last run</th>
@@ -116,6 +114,9 @@
 												</thead>
 												<tbody>
 													<tr *ngFor="let testCase of testSuite.testCases">
+														<td *ngIf="testSuite.hasOptionalTestCases || testSuite.hasDisabledTestCases">
+															<app-prescription-level [optional]="testCase.optional" [disabled]="testCase.disabled"></app-prescription-level>
+														</td>
 														<td>{{testCase.sname}}</td>
 														<td>{{testCase.description}}</td>
 														<td class="td-min">{{testCase.updateTime}}</td>
@@ -123,7 +124,7 @@
 															<div class="btn-toolbar">
 																<button *ngIf="testCase.sessionId != undefined" class="btn btn-default" (click)="toTestSession(testCase.sessionId)" containerClass="shortTooltip" tooltip="View session" [delay]="Constants.TOOLTIP_DELAY"><i class="fa fa-search"></i></button>
 																<button type="button" class="btn btn-default" *ngIf="testCase.hasDocumentation" (click)="showTestCaseDocumentation(testCase.id)" containerClass="shortTooltip" tooltip="Documentation" [delay]="Constants.TOOLTIP_DELAY"><i class="fa fa-info-circle"></i></button>
-																<button class="btn btn-primary" (click)="onTestSelect(testCase)" containerClass="shortTooltip" tooltip="Run" [delay]="Constants.TOOLTIP_DELAY"><i class="fa fa-play"></i></button>
+																<button class="btn btn-primary" (click)="onTestSelect(testCase)" containerClass="shortTooltip" tooltip="Run" [disabled]="testCase.disabled" [delay]="Constants.TOOLTIP_DELAY"><i class="fa fa-play"></i></button>
 															</div>
 														</td>
 														<td class="testcase-result">

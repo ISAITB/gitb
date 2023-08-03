@@ -7,5 +7,7 @@ export interface TestCase extends EntityWithId {
     description?: string
     documentation?:string
     hasDocumentation?: boolean
+    optional?: boolean
+    disabled?: boolean
 
 }

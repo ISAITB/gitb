@@ -45,6 +45,8 @@ object Parameters {
   val ACTIVE = "active"
   val EVENT = "event"
   val VERSION = "version"
+  val OPTIONAL = "optional"
+  val DISABLED = "disabled"
 
   // Landing page Service
   val DEFAULT = "default_flag"

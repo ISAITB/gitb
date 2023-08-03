@@ -99,7 +99,7 @@ export class TestCaseDetailsComponent extends BaseComponent implements OnInit, A
 
 	saveChanges() {
     this.pending = true
-		this.testSuiteService.updateTestCaseMetadata(this.testCase.id!, this.testCase.sname!, this.testCase.description, this.testCase.documentation)
+		this.testSuiteService.updateTestCaseMetadata(this.testCase.id!, this.testCase.sname!, this.testCase.description, this.testCase.documentation, this.testCase.optional, this.testCase.disabled)
     .subscribe(() => {
       this.popupService.success('Test case updated.')
     }).add(() => {

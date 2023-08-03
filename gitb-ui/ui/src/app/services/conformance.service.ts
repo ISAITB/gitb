@@ -248,9 +248,9 @@ export class ConformanceService {
     })
   }
 
-  getConformanceStatusForTestSuite(actorId: number, sutId: number, testSuiteId: number) {
+  getConformanceStatusForTestSuiteExecution(actorId: number, sutId: number, testSuiteId: number) {
     return this.restService.get<ConformanceStatus>({
-      path: ROUTES.controllers.ConformanceService.getConformanceStatusForTestSuite(actorId, sutId, testSuiteId).url,
+      path: ROUTES.controllers.ConformanceService.getConformanceStatusForTestSuiteExecution(actorId, sutId, testSuiteId).url,
       authenticate: true
     })
   }
@@ -773,9 +773,9 @@ export class ConformanceService {
     })
   }
 
-  getTestSuiteTestCase(testCaseId: number) {
+  getTestSuiteTestCaseForExecution(testCaseId: number) {
     return this.restService.get<TestCase>({
-      path: ROUTES.controllers.ConformanceService.getTestSuiteTestCase(testCaseId).url,
+      path: ROUTES.controllers.ConformanceService.getTestSuiteTestCaseForExecution(testCaseId).url,
       authenticate: true
     })
   }

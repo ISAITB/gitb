@@ -16,5 +16,7 @@ export interface ConformanceStatusItem {
     outputMessage?: string
     sessionId?: string
     sessionTime?: string
+    testCaseOptional: boolean
+    testCaseDisabled: boolean
 
 }

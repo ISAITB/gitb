@@ -9,10 +9,7 @@
                     </div>
                     <ng-container *ngIf="testsToExecute.length > 0">
                         <div *ngIf="testsToExecute.length > 1" class="optionsDiv btn-toolbar">
-                            <app-test-option-button 
-                                [showCompletedValue]="showCompleted" (showCompleted)="showCompleted = $event; updateTestCaseVisibility()"
-                                [showPendingValue]="showPending" (showPending)="showPending = $event; updateTestCaseVisibility()"
-                                [startAutomaticallyValue]="startAutomatically" (startAutomatically)="startAutomatically = $event"></app-test-option-button>
+                            <app-checkbox-option-panel label="Options" [options]="testOptions" (updated)="testOptionsUpdated($event)"></app-checkbox-option-panel>
                         </div>
                         <div class="btn-toolbar actionButtonDiv">
                             <ng-container *ngIf="testsToExecute.length > 1">

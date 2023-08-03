@@ -37,10 +37,13 @@ class TestSuiteService @Inject() (implicit ec: ExecutionContext, authorizedActio
 		val name:String = ParameterExtractor.requiredBodyParameter(request, Parameters.NAME)
 		val description:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DESCRIPTION)
 		var documentation:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DOCUMENTATION)
+		val isOptional = ParameterExtractor.optionalBooleanBodyParameter(request, Parameters.OPTIONAL).getOrElse(false)
+		val isDisabled = ParameterExtractor.optionalBooleanBodyParameter(request, Parameters.DISABLED).getOrElse(false)
+
 		if (documentation.isDefined) {
 			documentation = Some(HtmlUtil.sanitizeEditorContent(documentation.get))
 		}
-		testCaseManager.updateTestCaseMetadata(testCaseId, name, description, documentation)
+		testCaseManager.updateTestCaseMetadata(testCaseId, name, description, documentation, isOptional, isDisabled)
 		ResponseConstructor.constructEmptyResponse
 	}
 

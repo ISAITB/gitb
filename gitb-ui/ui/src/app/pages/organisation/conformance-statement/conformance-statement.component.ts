@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, OnInit, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, EventEmitter, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { BsModalService } from 'ngx-bootstrap/modal';
 import { Constants } from 'src/app/common/constants';
@@ -33,6 +33,8 @@ import { LoadingStatus } from 'src/app/types/loading-status.type';
 import { MissingConfigurationAction } from 'src/app/components/missing-configuration-display/missing-configuration-action';
 import { Counters } from 'src/app/components/test-status-icons/counters';
 import { saveAs } from 'file-saver'
+import { CheckboxOption } from 'src/app/components/checkbox-option-panel/checkbox-option';
+import { CheckboxOptionState } from 'src/app/components/checkbox-option-panel/checkbox-option-state';
 
 @Component({
   selector: 'app-conformance-statement',
@@ -71,13 +73,12 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
   @ViewChild('tabs', { static: false }) tabs?: TabsetComponent;
   collapsedDetails = false
   
-  resultFilterAll = "any"
-  resultFilterLabelAll = "Show all tests"
-  resultFilterLabelSucceeded = "Show succeeded tests"
-  resultFilterLabelFailed = "Show failed tests"
-  resultFilterLabelUndefined = "Show incomplete tests"
-  resultFilter = this.resultFilterAll
-  resultFilterButton = this.resultFilterLabelAll
+  hasDisabledTests = false
+  hasOptionalTests = false
+
+  showResults = new Set<string>([Constants.TEST_CASE_RESULT.SUCCESS, Constants.TEST_CASE_RESULT.FAILURE, Constants.TEST_CASE_RESULT.UNDEFINED]);
+  showOptional = true
+  showDisabled = false
 
   executionModeSequential = "backgroundSequential"
   executionModeParallel = "backgroundParallel"
@@ -88,7 +89,14 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
   
   executionMode = this.executionModeInteractive
   executionModeButton = this.executionModeLabelInteractive
-  testCaseFilter?: string  
+  testCaseFilter?: string
+  private static SHOW_SUCCEEDED = '0'
+  private static SHOW_FAILED = '1'
+  private static SHOW_INCOMPLETE = '2'
+  private static SHOW_OPTIONAL = '3'
+  private static SHOW_DISABLED = '4'
+  testDisplayOptions!: CheckboxOption[][]
+  refreshDisplayOptions = new EventEmitter<CheckboxOption[][]>()
 
   constructor(
     public dataService: DataService,
@@ -127,11 +135,27 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
     }
   }
 
+  private prepareTestFilter(): void {
+    this.testDisplayOptions = [[
+        {key: ConformanceStatementComponent.SHOW_SUCCEEDED, label: 'Succeeded tests', default: true, iconClass: this.dataService.iconForTestResult(Constants.TEST_CASE_RESULT.SUCCESS)},
+        {key: ConformanceStatementComponent.SHOW_FAILED, label: 'Failed tests', default: true, iconClass: this.dataService.iconForTestResult(Constants.TEST_CASE_RESULT.FAILURE)},
+        {key: ConformanceStatementComponent.SHOW_INCOMPLETE, label: 'Incomplete tests', default: true, iconClass: this.dataService.iconForTestResult(Constants.TEST_CASE_RESULT.UNDEFINED)}
+    ]]
+    if (this.hasOptionalTests) {
+      this.testDisplayOptions.push([{key: ConformanceStatementComponent.SHOW_OPTIONAL, label: 'Optional tests', default: true}])
+    }
+    if (this.hasDisabledTests) {
+      this.testDisplayOptions.push([{key: ConformanceStatementComponent.SHOW_DISABLED, label: 'Disabled tests', default: false}])
+    }
+    this.refreshDisplayOptions.emit(this.testDisplayOptions)
+  }
+
   ngOnInit(): void {
     this.systemId = Number(this.route.snapshot.paramMap.get('id'))
     this.actorId = Number(this.route.snapshot.paramMap.get('actor_id'))
     this.specId = Number(this.route.snapshot.paramMap.get('spec_id'))
     this.organisationId = Number(this.route.snapshot.paramMap.get('org_id'))
+    this.prepareTestFilter()
     // Load conformance results.
     this.conformanceService.getConformanceStatus(this.actorId, this.systemId)
     .subscribe((data) => {
@@ -139,6 +163,12 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
       let testSuiteIds: number[] = []
       let testSuiteData: {[key: number]: ConformanceTestSuite} = {}
       for (let result of data.items) {
+        if (result.testCaseOptional && !this.hasOptionalTests) {
+          this.hasOptionalTests = true
+        }
+        if (result.testCaseDisabled && !this.hasDisabledTests) {
+          this.hasDisabledTests = true
+        }
         let testCase: ConformanceTestCase = {
           id: result.testCaseId,
           sname: result.testCaseName,
@@ -147,7 +177,9 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
           hasDocumentation: result.testCaseHasDocumentation,
           sessionId: result.sessionId,
           result: result.result,
-          updateTime: result.sessionTime
+          updateTime: result.sessionTime,
+          optional: result.testCaseOptional,
+          disabled: result.testCaseDisabled
         }
         if (testSuiteData[result.testSuiteId] == undefined) {
           let currentTestSuite: ConformanceTestSuite = {
@@ -157,6 +189,8 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
             result: result.result,
             hasDocumentation: result.testSuiteHasDocumentation,
             expanded: false,
+            hasOptionalTestCases: false,
+            hasDisabledTestCases: false,
             testCases: []
           }
           testSuiteIds.push(result.testSuiteId)
@@ -170,6 +204,12 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
             if (testCase.result == Constants.TEST_CASE_RESULT.FAILURE) {
               testSuiteData[result.testSuiteId].result = Constants.TEST_CASE_RESULT.FAILURE
             }
+          }
+          if (result.testCaseOptional && !testSuiteData[result.testSuiteId].hasOptionalTestCases) {
+            testSuiteData[result.testSuiteId].hasOptionalTestCases = true
+          }
+          if (result.testCaseDisabled && !testSuiteData[result.testSuiteId].hasDisabledTestCases) {
+            testSuiteData[result.testSuiteId].hasDisabledTestCases = true
           }
         }
         testSuiteData[result.testSuiteId].testCases.push(testCase)
@@ -187,6 +227,8 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
       this.lastUpdate = data.summary.updateTime
       this.conformanceStatus = data.summary.result
       this.allTestsSuccessful = data.summary.failed == 0 && data.summary.undefined == 0
+      this.prepareTestFilter()
+      this.applySearchFilters()
     }).add(() => {
       this.loadingTests = false
     })
@@ -338,9 +380,24 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
     return organisation!
   }
 
-  resultFilterSelected(itemValue: string, itemLabel: string) {
-    this.resultFilter = itemValue
-    this.resultFilterButton = itemLabel
+  resultFilterUpdated(choices: CheckboxOptionState) {
+    this.showOptional = choices[ConformanceStatementComponent.SHOW_OPTIONAL]
+    this.showDisabled = choices[ConformanceStatementComponent.SHOW_DISABLED]
+    if (choices[ConformanceStatementComponent.SHOW_SUCCEEDED]) {
+      this.showResults.add(Constants.TEST_CASE_RESULT.SUCCESS)
+    } else {
+      this.showResults.delete(Constants.TEST_CASE_RESULT.SUCCESS)
+    }
+    if (choices[ConformanceStatementComponent.SHOW_FAILED]) {
+      this.showResults.add(Constants.TEST_CASE_RESULT.FAILURE)
+    } else {
+      this.showResults.delete(Constants.TEST_CASE_RESULT.FAILURE)
+    }
+    if (choices[ConformanceStatementComponent.SHOW_INCOMPLETE]) {
+      this.showResults.add(Constants.TEST_CASE_RESULT.UNDEFINED)
+    } else {
+      this.showResults.delete(Constants.TEST_CASE_RESULT.UNDEFINED)
+    }
     this.applySearchFilters()
   }
 
@@ -354,13 +411,14 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
         testCaseFilter = testCaseFilter.toLocaleLowerCase()
       }
     }
-    let resultFilter = this.resultFilter
     let filteredTestSuites: ConformanceTestSuite[] = []
     for (let testSuite of this.testSuites) {
       let testCases: ConformanceTestCase[] = []
       for (let testCase of testSuite.testCases) {
-        if ((resultFilter == this.resultFilterAll || testCase.result == resultFilter) &&
-            (testCaseFilter == undefined || 
+        if (this.showResults.has(testCase.result) 
+          && (!testCase.optional || this.showOptional)
+          && (!testCase.disabled || this.showDisabled)
+          && (testCaseFilter == undefined || 
               (testCase.sname.toLocaleLowerCase().indexOf(testCaseFilter) >= 0) || 
               (testCase.description != undefined && testCase.description.toLocaleLowerCase().indexOf(testCaseFilter) >= 0))) {
           testCases.push(testCase)
@@ -374,6 +432,8 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
           hasDocumentation: testSuite.hasDocumentation,
           expanded: true,
           description: testSuite.description,
+          hasOptionalTestCases: testSuite.hasOptionalTestCases && this.showOptional,
+          hasDisabledTestCases: testSuite.hasDisabledTestCases && this.showDisabled,
           testCases: testCases
         })
       }
@@ -461,7 +521,9 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
   onTestSuiteSelect(testSuite: ConformanceTestSuite) {
     const testsToExecute: ConformanceTestCase[] = []
     for (let testCase of testSuite.testCases) {
-      testsToExecute.push(testCase)
+      if (!testCase.disabled) {
+        testsToExecute.push(testCase)
+      }
     }
     if (this.executionMode == this.executionModeInteractive) {
       this.dataService.setTestsToExecute(testsToExecute)

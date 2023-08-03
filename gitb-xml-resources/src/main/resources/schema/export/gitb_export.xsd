@@ -643,6 +643,8 @@
                     <xsd:element name="targetActors" type="xsd:string" minOccurs="0"/>
                     <xsd:element name="path" type="xsd:string"/>
                     <xsd:element name="actors" type="TestCaseActors" minOccurs="0"/>
+                    <xsd:element name="optional" type="xsd:boolean" minOccurs="0"/>
+                    <xsd:element name="disabled" type="xsd:boolean" minOccurs="0"/>
                 </xsd:sequence>
                 <xsd:attribute name="testSuite" use="required" type="xsd:IDREF"/>
                 <xsd:attribute name="specification" type="xsd:IDREF"/>

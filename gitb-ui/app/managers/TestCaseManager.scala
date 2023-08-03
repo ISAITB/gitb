@@ -18,25 +18,27 @@ object TestCaseManager {
 		Rep[Long], Rep[String], Rep[String], Rep[String],
 			Rep[Option[String]], Rep[Option[String]], Rep[Option[String]], Rep[Option[String]],
 			Rep[Option[String]], Rep[Short], Rep[String],
-			Rep[Option[String]], Rep[Option[String]], Rep[Short], Rep[Boolean], Rep[String]
+			Rep[Option[String]], Rep[Option[String]], Rep[Short], Rep[Boolean], Rep[String], Rep[Boolean], Rep[Boolean]
 		)
 
 	type TestCaseValueTuple = (
 		Long, String, String, String,
 			Option[String], Option[String], Option[String], Option[String],
 			Option[String], Short, String,
-			Option[String], Option[String], Short, Boolean, String
+			Option[String], Option[String], Short, Boolean, String, Boolean, Boolean
 		)
 
 	def withoutDocumentation(dbTestCase: PersistenceSchema.TestCasesTable): TestCaseDbTuple = {
 		(dbTestCase.id, dbTestCase.shortname, dbTestCase.fullname, dbTestCase.version,
 			dbTestCase.authors, dbTestCase.originalDate, dbTestCase.modificationDate, dbTestCase.description,
 			dbTestCase.keywords, dbTestCase.testCaseType, dbTestCase.path,
-			dbTestCase.targetActors, dbTestCase.targetOptions, dbTestCase.testSuiteOrder, dbTestCase.hasDocumentation, dbTestCase.identifier)
+			dbTestCase.targetActors, dbTestCase.targetOptions, dbTestCase.testSuiteOrder, dbTestCase.hasDocumentation, dbTestCase.identifier,
+			dbTestCase.isOptional, dbTestCase.isDisabled
+		)
 	}
 
 	def tupleToTestCase(x: TestCaseValueTuple): TestCases = {
-		TestCases(x._1, x._2, x._3, x._4, x._5, x._6, x._7, x._8, x._9, x._10, x._11, x._12, x._13, x._14, x._15, None, x._16)
+		TestCases(x._1, x._2, x._3, x._4, x._5, x._6, x._7, x._8, x._9, x._10, x._11, x._12, x._13, x._14, x._15, None, x._16, x._17, x._18)
 	}
 }
 
@@ -76,16 +78,16 @@ class TestCaseManager @Inject() (testResultManager: TestResultManager, dbConfigP
 		}
 	}
 
-	def updateTestCaseMetadata(testCaseId: Long, name: String, description: Option[String], documentation: Option[String]): Unit = {
+	def updateTestCaseMetadata(testCaseId: Long, name: String, description: Option[String], documentation: Option[String], isOptional: Boolean, isDisabled: Boolean): Unit = {
 		var hasDocumentationToSet = false
 		var documentationToSet: Option[String] = None
 		if (documentation.isDefined && !documentation.get.isBlank) {
 			hasDocumentationToSet = true
 			documentationToSet = documentation
 		}
-		val q1 = for {t <- PersistenceSchema.testCases if t.id === testCaseId} yield (t.shortname, t.fullname, t.description, t.documentation, t.hasDocumentation)
+		val q1 = for {t <- PersistenceSchema.testCases if t.id === testCaseId} yield (t.shortname, t.fullname, t.description, t.documentation, t.hasDocumentation, t.isOptional, t.isDisabled)
 		exec(
-			q1.update(name, name, description, documentationToSet, hasDocumentationToSet) andThen
+			q1.update(name, name, description, documentationToSet, hasDocumentationToSet, isOptional, isDisabled) andThen
 				testResultManager.updateForUpdatedTestCase(testCaseId, name)
 					.transactionally
 		)
@@ -96,9 +98,9 @@ class TestCaseManager @Inject() (testResultManager: TestResultManager, dbConfigP
 		q1.update(path, testSuiteOrder, Some(targetActors))
 	}
 
-	def updateTestCase(testCaseId: Long, identifier: String, shortName: String, fullName: String, version: String, authors: Option[String], description: Option[String], keywords: Option[String], testCaseType: Short, path: String, testSuiteOrder: Short, targetActors: String, hasDocumentation: Boolean, documentation: Option[String]): DBIO[_] = {
-		val q1 = for {t <- PersistenceSchema.testCases if t.id === testCaseId} yield (t.identifier, t.shortname, t.fullname, t.version, t.authors, t.description, t.keywords, t.testCaseType, t.path, t.testSuiteOrder, t.targetActors, t.hasDocumentation, t.documentation)
-		q1.update(identifier, shortName, fullName, version, authors, description, keywords, testCaseType, path, testSuiteOrder, Some(targetActors), hasDocumentation, documentation) andThen
+	def updateTestCase(testCaseId: Long, identifier: String, shortName: String, fullName: String, version: String, authors: Option[String], description: Option[String], keywords: Option[String], testCaseType: Short, path: String, testSuiteOrder: Short, targetActors: String, hasDocumentation: Boolean, documentation: Option[String], isOptional: Boolean, isDisabled: Boolean): DBIO[_] = {
+		val q1 = for {t <- PersistenceSchema.testCases if t.id === testCaseId} yield (t.identifier, t.shortname, t.fullname, t.version, t.authors, t.description, t.keywords, t.testCaseType, t.path, t.testSuiteOrder, t.targetActors, t.hasDocumentation, t.documentation, t.isOptional, t.isDisabled)
+		q1.update(identifier, shortName, fullName, version, authors, description, keywords, testCaseType, path, testSuiteOrder, Some(targetActors), hasDocumentation, documentation, isOptional, isDisabled) andThen
 		testResultManager.updateForUpdatedTestCase(testCaseId, shortName)
 	}
 

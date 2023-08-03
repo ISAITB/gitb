@@ -11,5 +11,7 @@ export interface ConformanceTestCase {
     preliminary?: UserInteraction[]
     sessionId?: string
     updateTime?: string
+    optional?: boolean
+    disabled?: boolean
 
 }

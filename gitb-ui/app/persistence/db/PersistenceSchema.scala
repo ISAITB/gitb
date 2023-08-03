@@ -234,7 +234,9 @@ object PersistenceSchema {
     def testSuiteOrder = column[Short]("testsuite_order")
     def hasDocumentation = column[Boolean]("has_documentation")
     def documentation = column[Option[String]]("documentation")
-	  def * = (id, shortname, fullname, version, authors, originalDate, modificationDate, description, keywords, testCaseType, path, targetActors, targetOptions, testSuiteOrder, hasDocumentation, documentation, identifier) <> (TestCases.tupled, TestCases.unapply)
+    def isOptional = column[Boolean]("is_optional")
+    def isDisabled = column[Boolean]("is_disabled")
+	  def * = (id, shortname, fullname, version, authors, originalDate, modificationDate, description, keywords, testCaseType, path, targetActors, targetOptions, testSuiteOrder, hasDocumentation, documentation, identifier, isOptional, isDisabled) <> (TestCases.tupled, TestCases.unapply)
   }
   val testCases = TableQuery[TestCasesTable]
 

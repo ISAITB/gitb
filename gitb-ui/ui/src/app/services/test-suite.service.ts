@@ -84,13 +84,15 @@ export class TestSuiteService {
 		})
 	}
 
-	updateTestCaseMetadata(testCaseId: number, name: string, description?: string, documentation?: string) {
+	updateTestCaseMetadata(testCaseId: number, name: string, description?: string, documentation?: string, optional?:boolean, disabled?:boolean) {
 		return this.restService.post<void>({
 			path: ROUTES.controllers.TestSuiteService.updateTestCaseMetadata(testCaseId).url,
 			data: {
 				name: name,
 				description: description,
-				documentation: documentation
+				documentation: documentation,
+				optional: optional,
+				disabled: disabled
 			},
 			authenticate: true
 		})

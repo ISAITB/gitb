@@ -160,6 +160,8 @@ export class ConformanceDashboardComponent implements OnInit {
             testSuiteName: item.testSuiteName!,
             expanded: true,
             result: item.result!,
+            hasOptionalTestCases: false,
+            hasDisabledTestCases: false,
             testCases: []
           }
         }
@@ -169,6 +171,12 @@ export class ConformanceDashboardComponent implements OnInit {
           } else if (item.result == Constants.TEST_CASE_RESULT.UNDEFINED && testSuite.result == Constants.TEST_CASE_RESULT.SUCCESS) {
             testSuite.result = Constants.TEST_CASE_RESULT.UNDEFINED
           }
+        }
+        if (item.testCaseOptional && !testSuite.hasOptionalTestCases) {
+          testSuite.hasOptionalTestCases = true
+        }
+        if (item.testCaseDisabled && !testSuite.hasDisabledTestCases) {
+          testSuite.hasDisabledTestCases = true
         }
         testSuite.testCases.push(item as ConformanceStatusItem)
       }
@@ -204,7 +212,9 @@ export class ConformanceDashboardComponent implements OnInit {
               testCaseName: result.testCaseName,
               result: result.result,
               outputMessage: result.outputMessage,
-              sessionTime: result.sessionTime
+              sessionTime: result.sessionTime,
+              testCaseOptional: result.testCaseOptional,
+              testCaseDisabled: result.testCaseDisabled
             })
           }
           statement.testCases = testCases

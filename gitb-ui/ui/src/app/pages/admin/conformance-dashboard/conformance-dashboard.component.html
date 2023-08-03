@@ -81,6 +81,7 @@
                                                             <table class="table table-directive">
                                                                 <thead>
                                                                     <tr>
+                                                                        <th class="th-min" *ngIf="testSuite.hasOptionalTestCases || testSuite.hasDisabledTestCases"></th>
                                                                         <th width="90%">Test case</th>
                                                                         <th class="sessionTime">Last run</th>
                                                                         <th class="th-min-centered"></th>
@@ -89,6 +90,9 @@
                                                                 </thead>
                                                                 <tbody>
                                                                     <tr *ngFor="let testCase of testSuite.testCases">
+                                                                        <td *ngIf="testSuite.hasOptionalTestCases || testSuite.hasDisabledTestCases">
+                                                                            <app-prescription-level [optional]="testCase.testCaseOptional" [disabled]="testCase.testCaseDisabled"></app-prescription-level>
+                                                                        </td>
                                                                         <td>{{testCase.testCaseName}}</td>
                                                                         <td class="sessionTime">{{testCase.sessionTime}}</td>
                                                                         <td class="td-min-centered test-case-controls">

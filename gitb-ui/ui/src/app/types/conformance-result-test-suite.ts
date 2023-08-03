@@ -1,4 +1,3 @@
-import { ConformanceResultFull } from "./conformance-result-full";
 import { ConformanceStatusItem } from "./conformance-status-item";
 
 export interface ConformanceResultTestSuite {
@@ -8,5 +7,7 @@ export interface ConformanceResultTestSuite {
     testCases: ConformanceStatusItem[]
     result: string
     expanded: boolean
+    hasOptionalTestCases?: boolean
+    hasDisabledTestCases?: boolean
 
 }

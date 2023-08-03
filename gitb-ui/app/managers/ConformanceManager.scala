@@ -660,20 +660,21 @@ class ConformanceManager @Inject() (systemManager: SystemManager, triggerManager
 		)
 	}
 
-	def getConformanceStatus(actorId: Long, sutId: Long, testSuiteId: Option[Long]): List[ConformanceStatusItem] = {
+	def getConformanceStatus(actorId: Long, sutId: Long, testSuiteId: Option[Long], includeDisabled: Boolean = true): List[ConformanceStatusItem] = {
 		exec(
 			PersistenceSchema.conformanceResults
 				.join(PersistenceSchema.testCases).on(_.testcase === _.id)
 				.join(PersistenceSchema.testSuites).on(_._1.testsuite === _.id)
 				.filter(_._1._1.actor === actorId)
 				.filter(_._1._1.sut === sutId)
+				.filterIf(!includeDisabled)(_._1._2.isDisabled === false)
 				.filterOpt(testSuiteId)((q, id) => q._1._1.testsuite === id)
 				.sortBy(x => (x._2.shortname, x._1._2.testSuiteOrder))
-				.map(x => (x._2.id, x._2.shortname, x._2.description, x._2.hasDocumentation, x._1._2.id, x._1._2.shortname, x._1._2.description, x._1._2.hasDocumentation, x._1._1.result, x._1._1.outputMessage, x._1._1.testsession, x._1._1.updateTime))
+				.map(x => (x._2.id, x._2.shortname, x._2.description, x._2.hasDocumentation, x._1._2.id, x._1._2.shortname, x._1._2.description, x._1._2.hasDocumentation, x._1._1.result, x._1._1.outputMessage, x._1._1.testsession, x._1._1.updateTime, x._1._2.isOptional, x._1._2.isDisabled))
 				.result
 				.map(_.toList)
 		).map(r => {
-			ConformanceStatusItem(r._1, r._2, r._3, r._4, r._5, r._6, r._7, r._8, r._9, r._10, r._11, r._12)
+			ConformanceStatusItem(r._1, r._2, r._3, r._4, r._5, r._6, r._7, r._8, r._9, r._10, r._11, r._12, r._13, r._14)
 		})
 	}
 

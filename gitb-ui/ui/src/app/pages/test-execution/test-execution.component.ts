@@ -38,6 +38,8 @@ import { LoadingStatus } from 'src/app/types/loading-status.type';
 import { SimulatedConfigurationDisplayModalComponent } from 'src/app/components/simulated-configuration-display-modal/simulated-configuration-display-modal.component';
 import { SessionLogModalComponent } from 'src/app/components/session-log-modal/session-log-modal.component';
 import { LogLevel } from 'src/app/types/log-level';
+import { CheckboxOption } from 'src/app/components/checkbox-option-panel/checkbox-option';
+import { CheckboxOptionState } from 'src/app/components/checkbox-option-panel/checkbox-option-state';
 
 @Component({
   selector: 'app-test-execution',
@@ -55,17 +57,8 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
   documentationExists = false
 
   showCompleted = false
-  showCompletedLabelOn = "Show completed tests"
-  showCompletedLabelOff = "Hide completed tests"
-  showCompletedLabel = this.showCompletedLabelOff
   showPending = true
-  showPendingLabelOn = "Show pending tests"
-  showPendingLabelOff = "Hide pending tests"
-  showPendingLabel = this.showPendingLabelOn
   startAutomatically = true
-  startAutomaticallyLabelOn = "Continue automatically"
-  startAutomaticallyLabelOff = "Continue manually"
-  startAutomaticallyLabel = this.startAutomaticallyLabelOn
 
   started = false
   nextWaitingToStart = false
@@ -115,6 +108,19 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
   private messageProcessing?: Subscription
   Constants = Constants
 
+  private static SHOW_COMPLETED = '0'
+  private static SHOW_PENDING = '1'
+  private static CONTINUE_AUTOMATICALLY = '2'
+  testOptions: CheckboxOption[][] = [
+    [
+      {key: TestExecutionComponent.SHOW_COMPLETED, label: 'Show completed tests', default: false },
+      {key: TestExecutionComponent.SHOW_PENDING, label: 'Show pending tests', default: true }
+    ],
+    [
+      {key: TestExecutionComponent.CONTINUE_AUTOMATICALLY, label: 'Continue automatically', default: true }
+    ]
+  ]
+
   constructor(
     private route: ActivatedRoute,
     private modalService: BsModalService,
@@ -141,7 +147,7 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
   }
 
   private setupTests(tests: ConformanceTestCase[]) {
-    this.testsToExecute = tests
+    this.testsToExecute = filter(tests, (tc) => !tc.disabled) // Sanity check
     this.documentationExists = this.testCasesHaveDocumentation()
     if (this.documentationExists) {
       this.columnCount = 5
@@ -264,7 +270,7 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
       // We lost our state following a refresh - recreate state.
       const testSuiteId = this.queryParamToNumber('ts')
       if (testSuiteId != undefined) {
-        return this.conformanceService.getConformanceStatusForTestSuite(this.actorId, this.systemId, testSuiteId)
+        return this.conformanceService.getConformanceStatusForTestSuiteExecution(this.actorId, this.systemId, testSuiteId)
         .pipe(
           map((data) => {
             // There will always be one test suite returned.
@@ -275,7 +281,9 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
                 sname: result.testCaseName,
                 description: result.testCaseDescription,
                 hasDocumentation: result.testCaseHasDocumentation,
-                result: Constants.TEST_CASE_RESULT.UNDEFINED
+                result: Constants.TEST_CASE_RESULT.UNDEFINED,
+                optional: result.testCaseOptional,
+                disabled: result.testCaseDisabled
               })
             }
             return tests
@@ -283,7 +291,7 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
         )
       } else {
         const testCaseId = this.queryParamToNumber('tc')
-        return this.conformanceService.getTestSuiteTestCase(testCaseId!)
+        return this.conformanceService.getTestSuiteTestCaseForExecution(testCaseId!)
         .pipe(
           map((data) => {
             // There will always be one test case returned.
@@ -292,7 +300,9 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
               sname: data.sname,
               description: data.description,
               hasDocumentation: data.hasDocumentation!,
-              result: Constants.TEST_CASE_RESULT.UNDEFINED
+              result: Constants.TEST_CASE_RESULT.UNDEFINED,
+              optional: data.optional,
+              disabled: data.disabled
             }]
           })
         )
@@ -1104,6 +1114,17 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
       (this.testCaseStatus[testCase.id] == Constants.TEST_CASE_STATUS.PROCESSING) ||
       (this.testCaseStatus[testCase.id] == Constants.TEST_CASE_STATUS.PENDING && this.showPending) ||
       (this.testCaseStatus[testCase.id] != Constants.TEST_CASE_STATUS.PENDING && this.showCompleted)
+  }
+
+  testOptionsUpdated(choices: CheckboxOptionState) {
+    const oldShowCompleted = this.showCompleted
+    const oldShowPending = this.showPending
+    this.showCompleted = choices[TestExecutionComponent.SHOW_COMPLETED]
+    this.showPending = choices[TestExecutionComponent.SHOW_PENDING]
+    this.startAutomatically = choices[TestExecutionComponent.CONTINUE_AUTOMATICALLY]
+    if (oldShowCompleted != this.showCompleted || oldShowPending != this.showPending) {
+      this.updateTestCaseVisibility()
+    }
   }
 
   updateTestCaseVisibility() {

@@ -35,7 +35,9 @@ export class TestSuiteDetailsComponent extends BaseComponent implements OnInit, 
   testCaseTableColumns: TableColumnDefinition[] = [
     { field: 'identifier', title: 'ID' },
     { field: 'sname', title: 'Name' },
-    { field: 'description', title: 'Description'}
+    { field: 'description', title: 'Description'},
+    { field: 'optional', title: 'Optional'},
+    { field: 'disabled', title: 'Disabled'}
   ]
   specificationTableColumns: TableColumnDefinition[] = [
     { field: 'sname', title: 'Specification' },

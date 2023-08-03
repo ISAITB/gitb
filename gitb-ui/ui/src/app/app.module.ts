@@ -147,7 +147,6 @@ import { MultiSelectFilterComponent } from './components/multi-select-filter/mul
 import { TestStatusIconsComponent } from './components/test-status-icons/test-status-icons.component';
 import { TableColumnContentComponent } from './components/table-row/table-column-content/table-column-content.component';
 import { TestTriggerModalComponent } from './pages/admin/user-management/trigger/test-trigger-modal/test-trigger-modal.component';
-import { TestOptionButtonComponent } from './pages/test-execution/test-option-button/test-option-button.component';
 import { CreateEditCommunityResourceModalComponent } from './modals/create-edit-community-resource-modal/create-edit-community-resource-modal.component';
 import { CommunityResourceBulkUploadModalComponent } from './modals/community-resource-bulk-upload-modal/community-resource-bulk-upload-modal.component';
 import { LinkSharedTestSuiteModalComponent } from './modals/link-shared-test-suite-modal/link-shared-test-suite-modal.component';
@@ -163,6 +162,8 @@ import { ConformanceStatementItemsDisplayComponent } from './components/conforma
 import { CollapsingIconComponent } from './components/collapsing-icon/collapsing-icon.component';
 import { PlaceholderSelectorComponent } from './components/placeholder-selector/placeholder-selector.component';
 import { TestResultRatioComponent } from './components/test-result-ratio/test-result-ratio.component';
+import { PrescriptionLevelComponent } from './components/prescription-level/prescription-level.component';
+import { CheckboxOptionPanelComponent } from './components/checkbox-option-panel/checkbox-option-panel.component';
 
 @NgModule({
   providers: [ 
@@ -300,7 +301,6 @@ import { TestResultRatioComponent } from './components/test-result-ratio/test-re
     TestStatusIconsComponent,
     TableColumnContentComponent,
     TestTriggerModalComponent,
-    TestOptionButtonComponent,
     CreateEditCommunityResourceModalComponent,
     CommunityResourceBulkUploadModalComponent,
     LinkSharedTestSuiteModalComponent,
@@ -315,7 +315,9 @@ import { TestResultRatioComponent } from './components/test-result-ratio/test-re
     ConformanceStatementItemsDisplayComponent,
     CollapsingIconComponent,
     PlaceholderSelectorComponent,
-    TestResultRatioComponent],
+    TestResultRatioComponent,
+    PrescriptionLevelComponent,
+    CheckboxOptionPanelComponent],
   imports: [
     BrowserModule,
     BrowserAnimationsModule,

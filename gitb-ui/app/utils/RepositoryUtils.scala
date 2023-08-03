@@ -539,7 +539,7 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 										Option(tdlTestCase.getMetadata.getAuthors), Option(tdlTestCase.getMetadata.getPublished),
 										Option(tdlTestCase.getMetadata.getLastModified), Option(tdlTestCase.getMetadata.getDescription),
 										None, testCaseType.ordinal().toShort, null, Some(actorString.toString()), None,
-										testCaseCounter.toShort, documentation.isDefined, documentation, tdlTestCase.getId
+										testCaseCounter.toShort, documentation.isDefined, documentation, tdlTestCase.getId, tdlTestCase.isOptional, tdlTestCase.isDisabled
 									)
 							}.toList)
 							testCaseUpdateApproach = Some(testCaseUpdateApproachTemp.toMap)

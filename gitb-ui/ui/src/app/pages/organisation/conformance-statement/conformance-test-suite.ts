@@ -9,5 +9,7 @@ export interface ConformanceTestSuite {
     hasDocumentation: boolean
     testCases: ConformanceTestCase[]
     expanded: boolean
+    hasOptionalTestCases?: boolean
+    hasDisabledTestCases?: boolean
 
 }
