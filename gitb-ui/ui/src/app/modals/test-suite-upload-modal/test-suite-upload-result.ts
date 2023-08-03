@@ -17,4 +17,6 @@ export interface TestSuiteUploadResult {
     testCases?: TestSuiteUploadSpecTestCases[]
     sharedTestSuiteId?: number
     sharedTestCases?: TestSuiteUploadTestCase[]
+    updateMetadata: boolean
+    updateSpecification: boolean
 }

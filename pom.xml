@@ -30,7 +30,7 @@
         <version.jaxb2-maven-plugin>3.1.0</version.jaxb2-maven-plugin>
         <!-- Dependency versions -->
         <version.springBoot>3.1.2</version.springBoot>
-        <version.gitbTypes>1.20.1</version.gitbTypes>
+        <version.gitbTypes>1.21.0-SNAPSHOT</version.gitbTypes>
         <version.bouncycastle>1.70</version.bouncycastle>
         <version.helgerSchematron>7.1.0</version.helgerSchematron>
         <version.metaInfServices>1.9</version.metaInfServices>

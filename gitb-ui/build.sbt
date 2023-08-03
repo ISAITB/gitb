@@ -14,6 +14,7 @@ val cxfVersion = "4.0.2"
 val guiceVersion = "5.1.0" // Keep the 5.1.0 version as for Play 2.8.19 we need to base injection on javax.injection annotations and not jakarta.injection annotations.
 val commonsTextVersion = "1.10.0"
 val jjwtVersion = "0.11.5"
+val gitbTypesVersion = "1.21.0-SNAPSHOT"
 
 useCoursier := false
 
@@ -28,7 +29,7 @@ libraryDependencies ++= Seq(
   ws,
   "com.google.inject" % "guice" % guiceVersion,
   "com.google.inject.extensions" % "guice-assistedinject" % guiceVersion,
-  "eu.europa.ec.itb" % "gitb-types-jakarta" % "1.20.1",
+  "eu.europa.ec.itb" % "gitb-types-jakarta" % gitbTypesVersion,
   "com.gitb" % "gitb-core" % "1.0-SNAPSHOT",
   "com.gitb" % "gitb-lib" % "1.0-SNAPSHOT",
   "com.gitb" % "gitb-reports" % "1.0-SNAPSHOT",

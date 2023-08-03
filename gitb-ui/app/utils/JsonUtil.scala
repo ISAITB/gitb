@@ -966,14 +966,17 @@ object JsonUtil {
     }
     val testSuite = (jsonConfig \ "testSuite").as[String]
     val ignoreWarnings = (jsonConfig \ "ignoreWarnings").asOpt[Boolean].getOrElse(false)
-    val replaceTestHistory = (jsonConfig \ "replaceTestHistory").asOpt[Boolean].getOrElse(false)
-    val updateSpecification = (jsonConfig \ "updateSpecification").asOpt[Boolean].getOrElse(false)
+    val replaceTestHistory = (jsonConfig \ "replaceTestHistory").asOpt[Boolean]
+    val updateSpecification = (jsonConfig \ "updateSpecification").asOpt[Boolean]
     val testCaseActions = (jsonConfig \ "testCases").asOpt[List[JsValue]].getOrElse(List.empty).map { item =>
-      new TestCaseDeploymentAction(
+      val testCase = new TestCaseDeploymentAction(
         (item \ "identifier").as[String],
-        (item \ "updateSpecification").asOpt[Boolean].getOrElse(updateSpecification),
-        (item \ "replaceTestHistory").asOpt[Boolean].getOrElse(replaceTestHistory)
+        (item \ "updateSpecification").asOpt[Boolean],
+        (item \ "replaceTestHistory").asOpt[Boolean]
       )
+      if (testCase.updateDefinition.isEmpty) testCase.updateDefinition = updateSpecification
+      if (testCase.resetTestHistory.isEmpty) testCase.resetTestHistory = replaceTestHistory
+      testCase
     }
     val testCaseMap = new mutable.HashMap[String, TestCaseDeploymentAction]()
     testCaseActions.foreach { action =>
@@ -1087,8 +1090,8 @@ object JsonUtil {
         testCaseActions ++= (jsonConfig \ "testCaseUpdates").asOpt[List[JsValue]].getOrElse(List.empty).map { item =>
           new TestCaseDeploymentAction(
             (item \ "identifier").as[String],
-            (item \ "updateDefinition").asOpt[Boolean].getOrElse(false),
-            (item \ "resetTestHistory").asOpt[Boolean].getOrElse(false)
+            (item \ "updateDefinition").asOpt[Boolean],
+            (item \ "resetTestHistory").asOpt[Boolean]
           )
         }
         testCasesToReset = Some(testCaseActions.toList)
@@ -2090,7 +2093,9 @@ object JsonUtil {
       "needsConfirmation" -> result.needsConfirmation,
       "testCases" -> (if (result.testCases.isDefined) jsTestSuiteUploadSpecificationTestCases(result.testCases.get) else JsNull),
       "sharedTestSuiteId" -> (if (result.sharedTestSuiteId.isDefined) result.sharedTestSuiteId.get else JsNull),
-      "sharedTestCases" -> (if (result.sharedTestCases.isDefined) jsTestSuiteUploadTestCases(result.sharedTestCases.get) else JsNull)
+      "sharedTestCases" -> (if (result.sharedTestCases.isDefined) jsTestSuiteUploadTestCases(result.sharedTestCases.get) else JsNull),
+      "updateMetadata" -> result.updateMetadata,
+      "updateSpecification" -> result.updateSpecification
     )
     json
   }
@@ -2125,7 +2130,9 @@ object JsonUtil {
       testCaseArray = testCaseArray.append(Json.obj(
         "identifier" -> testCase.identifier,
         "name" -> testCase.name,
-        "status" -> testCase.matchType.id
+        "status" -> testCase.matchType.id,
+        "updateMetadata" -> testCase.updateMetadata,
+        "resetTestHistory" -> testCase.resetTestHistory
       ))
     }
     testCaseArray

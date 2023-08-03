@@ -17,5 +17,7 @@ class TestSuiteUploadResult {
   var testCases: Option[Map[Long, List[TestSuiteUploadTestCase]]] = None
   var sharedTestSuiteId: Option[Long] = None
   var sharedTestCases: Option[List[TestSuiteUploadTestCase]] = None
+  var updateMetadata: Boolean = false
+  var updateSpecification: Boolean = false
 
 }

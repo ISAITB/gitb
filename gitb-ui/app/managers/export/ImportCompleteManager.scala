@@ -592,7 +592,7 @@ class ImportCompleteManager @Inject()(communityResourceManager: CommunityResourc
       None
     } else {
       Some(testCases.map { testCase =>
-        new TestCaseDeploymentAction(testCase.getIdentifier, updateDefinition = true, resetTestHistory = false)
+        new TestCaseDeploymentAction(testCase.getIdentifier, updateDefinition = Some(true), resetTestHistory = Some(false))
       })
     }
     new TestSuiteDeploymentAction(specification, PROCEED, updateTestSuite = true, updateActors, sharedTestSuite, testCaseUpdates)

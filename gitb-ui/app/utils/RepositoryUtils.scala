@@ -1,7 +1,7 @@
 package utils
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.gitb.core.{Documentation, EndpointParameter, TestCaseType, TestRoleEnumeration}
+import com.gitb.core.{Documentation, EndpointParameter, TestCaseType, TestRoleEnumeration, Update}
 import com.gitb.utils.XMLUtils
 import config.Configurations
 import managers.{BaseManager, TestSuiteManager}
@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
 
-import java.io.{File, FileOutputStream, StringWriter}
+import java.io.{File, StringWriter}
 import java.nio.charset.Charset
 import java.nio.file._
 import java.nio.file.attribute.BasicFileAttributes
@@ -21,6 +21,7 @@ import java.time.LocalDateTime
 import java.util.zip.{ZipEntry, ZipFile}
 import javax.inject.{Inject, Singleton}
 import javax.xml.transform.stream.StreamSource
+import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.util.Using
 import scala.xml.XML
@@ -504,8 +505,10 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 						)
 
 						var testCases: Option[List[TestCases]] = None
+						var testCaseUpdateApproach: Option[Map[String, Update]] = None
 						if (completeParse) {
 							var testCaseCounter = 0
+							val testCaseUpdateApproachTemp = new mutable.HashMap[String, Update]()
 							testCases = Some(tdlTestCaseEntries.map {
 								entry =>
 									testCaseCounter += 1
@@ -528,6 +531,9 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 									if (tdlTestCase.getMetadata.getDocumentation != null) {
 										documentation = getDocumentation(tdlTestSuite.getId, tdlTestCase.getMetadata.getDocumentation, zip, specificationId, domainId)
 									}
+									if (tdlTestCase.getMetadata.getUpdate != null) {
+										testCaseUpdateApproachTemp += (tdlTestCase.getId -> tdlTestCase.getMetadata.getUpdate)
+									}
 									TestCases(
 										0L, tdlTestCase.getMetadata.getName, tdlTestCase.getMetadata.getName, tdlTestCase.getMetadata.getVersion,
 										Option(tdlTestCase.getMetadata.getAuthors), Option(tdlTestCase.getMetadata.getPublished),
@@ -536,8 +542,12 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 										testCaseCounter.toShort, documentation.isDefined, documentation, tdlTestCase.getId
 									)
 							}.toList)
+							testCaseUpdateApproach = Some(testCaseUpdateApproachTemp.toMap)
 						}
-						new TestSuite(caseObject, Some(testSuiteActorInfo(tdlTestSuite)), testCases)
+						val testSuite = new TestSuite(caseObject, Some(testSuiteActorInfo(tdlTestSuite)), testCases)
+						testSuite.updateApproach = Option(tdlTestSuite.getMetadata.getUpdate)
+						testSuite.testCaseUpdateApproach = testCaseUpdateApproach
+						testSuite
 					}
 					result = Some(testSuite)
 				}
