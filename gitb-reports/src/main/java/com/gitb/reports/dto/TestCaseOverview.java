@@ -28,6 +28,8 @@ public class TestCaseOverview {
     private String labelSystem;
     private String documentation;
     private List<LogMessage> logMessages;
+    private boolean optional;
+    private boolean disabled;
 
     private List<Report> steps = new ArrayList<>();
 
@@ -189,6 +191,22 @@ public class TestCaseOverview {
 
     public void setDocumentation(String documentation) {
         this.documentation = documentation;
+    }
+
+    public boolean isOptional() {
+        return optional;
+    }
+
+    public void setOptional(boolean optional) {
+        this.optional = optional;
+    }
+
+    public boolean isDisabled() {
+        return disabled;
+    }
+
+    public void setDisabled(boolean disabled) {
+        this.disabled = disabled;
     }
 
     public List<LogMessage> getLogMessages() {

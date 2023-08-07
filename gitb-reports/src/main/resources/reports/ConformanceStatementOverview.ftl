@@ -59,6 +59,9 @@
             .test-case-name.no-link {
                 font-weight: normal;
             }
+            .test-case-name.ignored {
+                font-style: italic;
+            }
             .test-case-description {
                 display: inline-block;
                 border-left: 1px solid #7c7c7c;
@@ -86,6 +89,10 @@
             }
             .test-suites td {
                 vertical-align: top;
+            }
+            .section-title-note {
+                padding-left: 10px;
+                padding-right: 10px;
             }
 	    </style>
     </head>
@@ -171,6 +178,20 @@
                 <div class="section-title">
                     <div>Test cases</div>
                 </div>
+                <#if hasOptionalTests || hasDisabledTests>
+                    <div class="section-title-note">
+                        <#if hasOptionalTests && hasDisabledTests>
+                            <b>Note:</b> The list below includes test cases that are optional (*) and disabled (**), displayed also in italics, that do not count towards the
+                            overall conformance status.
+                        <#elseif hasOptionalTests>
+                            <b>Note:</b> The list below includes test cases that are optional (*), displayed also in italics, that do not count towards the
+                            overall conformance status.
+                        <#else>
+                            <b>Note:</b> The list below includes test cases that are disabled (**), displayed also in italics, that do not count towards the
+                            overall conformance status.
+                        </#if>
+                    </div>
+                </#if>
                 <div class="section-content">
                     <#assign overallIndex = 0>
                     <#list testSuites as testSuite>
@@ -199,7 +220,7 @@
                                         <div class="test-case-texts">
                                             <table>
                                                 <tr>
-                                                    <td><div class="test-case-name"><div><#if includeTestCases?? && includeTestCases><a class="page-link" href="#test-${tsIndex}-${index}">#${overallIndex}</a>: </#if>${escape(testCase.testName)}</div></div></td>
+                                                    <td><div class="test-case-name <#if testCase.optional || testCase.disabled>ignored</#if>"><div><#if includeTestCases?? && includeTestCases><a class="page-link" href="#test-${tsIndex}-${index}">#${overallIndex}</a>: </#if>${escape(testCase.testName)}<#if testCase.optional> *</#if><#if testCase.disabled> **</#if></div></div></td>
                                                     <#if testCase.testDescription??>
                                                         <td><div class="test-case-description"><div>${escape(testCase.testDescription)}</div></div></td>
                                                     </#if>

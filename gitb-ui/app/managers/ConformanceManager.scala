@@ -636,25 +636,39 @@ class ConformanceManager @Inject() (systemManager: SystemManager, triggerManager
 	def getCompletedConformanceStatementsForTestSession(systemId: Long, sessionId: String): List[Long] = { // Actor IDs considered as completed.
 		exec(
 			for {
+				// Make sure we only do subsequent lookups if we have a non-optional, non-disabled test case
 				relatedActorIds <- PersistenceSchema.conformanceResults
-					.filter(_.testsession === sessionId)
-					.map(_.actor)
+					.join(PersistenceSchema.testCases).on(_.testcase === _.id)
+					.filter(_._1.testsession === sessionId)
+					.filter(_._2.isOptional === false)
+					.filter(_._2.isDisabled === false)
+					.map(_._1.actor)
 					.result
-				conformanceResults <- PersistenceSchema.conformanceResults
-					.filter(_.sut === systemId)
-					.filter(_.actor inSet relatedActorIds)
-					.map(x => (x.actor, x.result))
-					.result
-				completedActors <- {
-					val map = mutable.LinkedHashMap[Long, Boolean]()
-					conformanceResults.foreach { actorInfo =>
-						val currentIsSuccess = "SUCCESS".equals(actorInfo._2)
-						val overallIsSuccess = map.getOrElseUpdate(actorInfo._1, currentIsSuccess)
-						if (overallIsSuccess && !currentIsSuccess) {
-							map.put(actorInfo._1, currentIsSuccess)
-						}
+				conformanceResults <- {
+					if (relatedActorIds.nonEmpty) {
+						PersistenceSchema.conformanceResults
+							.filter(_.sut === systemId)
+							.filter(_.actor inSet relatedActorIds)
+							.map(x => (x.actor, x.result))
+							.result
+					} else {
+						DBIO.successful(Seq.empty)
 					}
-					DBIO.successful(map.filter(_._2).keys.toList)
+				}
+				completedActors <- {
+					if (conformanceResults.nonEmpty) {
+						val map = mutable.LinkedHashMap[Long, Boolean]()
+						conformanceResults.foreach { actorInfo =>
+							val currentIsSuccess = "SUCCESS".equals(actorInfo._2)
+							val overallIsSuccess = map.getOrElseUpdate(actorInfo._1, currentIsSuccess)
+							if (overallIsSuccess && !currentIsSuccess) {
+								map.put(actorInfo._1, currentIsSuccess)
+							}
+						}
+						DBIO.successful(map.filter(_._2).keys.toList)
+					} else {
+						DBIO.successful(List.empty)
+					}
 				}
 			} yield completedActors
 		)
@@ -757,9 +771,10 @@ class ConformanceManager @Inject() (systemManager: SystemManager, triggerManager
 					resultDomain.id, resultDomain.shortname, resultDomain.fullname,
 					resultActor.id, resultActor.actorId, resultActor.name,
 					resultSpec.id, specName, specNameFull, resultSpecGroup.map(_.shortname), resultSpecGroup.map(_.fullname), resultSpec.shortname, resultSpec.fullname,
-					Some(resultTestSuite.id), Some(resultTestSuite.shortname), resultTestSuite.description, Some(resultTestCase.shortname), resultTestCase.description,
-					resultConfResult.result, resultConfResult.outputMessage, resultConfResult.testsession, resultConfResult.updateTime, 0L, 0L, 0L)
-			resultBuilder.addConformanceResult(conformanceStatement)
+					Some(resultTestSuite.id), Some(resultTestSuite.shortname), resultTestSuite.description,
+					Some(resultTestCase.shortname), resultTestCase.description, Some(resultTestCase.isOptional), Some(resultTestCase.isDisabled),
+					resultConfResult.result, resultConfResult.outputMessage, resultConfResult.testsession, resultConfResult.updateTime, 0L, 0L, 0L, 0L, 0L, 0L)
+			resultBuilder.addConformanceResult(conformanceStatement, resultTestCase.isOptional, resultTestCase.isDisabled)
 		}
 		resultBuilder.getDetails(Some(new ConformanceStatusBuilder.FilterCriteria(
 			dateFromString(updateTimeStart),
@@ -776,23 +791,25 @@ class ConformanceManager @Inject() (systemManager: SystemManager, triggerManager
 			.join(PersistenceSchema.systems).on(_._1._1._1.sut === _.id)
   		.join(PersistenceSchema.organizations).on(_._2.owner === _.id)
   		.join(PersistenceSchema.communities).on(_._2.community === _.id)
-			.joinLeft(PersistenceSchema.specificationGroups).on(_._1._1._1._1._1._2.group === _.id)
-			.filterOpt(domainIds)((q, ids) => q._1._1._1._1._2.id inSet ids)
-			.filterOpt(specIds)((q, ids) => q._1._1._1._1._1._1._1.spec inSet ids)
-			.filterOpt(specGroupIds)((q, ids) => q._1._1._1._1._1._1._2.group inSet ids)
-			.filterOpt(actorIds)((q, ids) => q._1._1._1._1._1._1._1.actor inSet ids)
-			.filterOpt(communityIds)((q, ids) => q._1._2.id inSet ids)
-			.filterOpt(organisationIdsToUse(organizationIds, orgParameters))((q, ids) => q._1._1._2.id inSet ids)
-			.filterOpt(systemIdsToUse(systemIds, sysParameters))((q, ids) => q._1._1._1._1._1._1._1.sut inSet ids)
+			.join(PersistenceSchema.testCases).on(_._1._1._1._1._1._1.testcase === _.id)
+			.joinLeft(PersistenceSchema.specificationGroups).on(_._1._1._1._1._1._1._2.group === _.id)
+			.filterOpt(domainIds)((q, ids) => q._1._1._1._1._1._2.id inSet ids)
+			.filterOpt(specIds)((q, ids) => q._1._1._1._1._1._1._1._1.spec inSet ids)
+			.filterOpt(specGroupIds)((q, ids) => q._1._1._1._1._1._1._1._2.group inSet ids)
+			.filterOpt(actorIds)((q, ids) => q._1._1._1._1._1._1._1._1.actor inSet ids)
+			.filterOpt(communityIds)((q, ids) => q._1._1._2.id inSet ids)
+			.filterOpt(organisationIdsToUse(organizationIds, orgParameters))((q, ids) => q._1._1._1._2.id inSet ids)
+			.filterOpt(systemIdsToUse(systemIds, sysParameters))((q, ids) => q._1._1._1._1._1._1._1._1.sut inSet ids)
 			.map(x => (
-				x._1._2.id, x._1._2.shortname, // 1: Community ID, 2: Community shortname
-				x._1._1._2.id, x._1._1._2.shortname, // 3: Organisation ID, 4: Organisation shortname
-				x._1._1._1._2.id, x._1._1._1._2.shortname, // 5: System ID, 6: System shortname
-				x._1._1._1._1._2.id, x._1._1._1._1._2.shortname, x._1._1._1._1._2.fullname, // 7: Domain ID, 8: Domain shortname, 9: Domain fullname
-				x._1._1._1._1._1._2.id, x._1._1._1._1._1._2.actorId, x._1._1._1._1._1._2.name, // 10: Actor ID, 11: Actor identifier, 12: Actor name
-				x._1._1._1._1._1._1._2.id, x._1._1._1._1._1._1._2.shortname, x._1._1._1._1._1._1._2.fullname, // 13: Specification ID, 14: Specification shortname, 15: Specification fullname
-				x._1._1._1._1._1._1._1.result, x._1._1._1._1._1._1._1.testsession, x._1._1._1._1._1._1._1.updateTime, // 16: Result, 17: Session ID, 18: Update time
-				x._2.map(_.shortname), x._2.map(_.fullname) // 19: Specification group shortname, 20: Specification group fullname
+				x._1._1._2.id, x._1._1._2.shortname, // 1: Community ID, 2: Community shortname
+				x._1._1._1._2.id, x._1._1._1._2.shortname, // 3: Organisation ID, 4: Organisation shortname
+				x._1._1._1._1._2.id, x._1._1._1._1._2.shortname, // 5: System ID, 6: System shortname
+				x._1._1._1._1._1._2.id, x._1._1._1._1._1._2.shortname, x._1._1._1._1._1._2.fullname, // 7: Domain ID, 8: Domain shortname, 9: Domain fullname
+				x._1._1._1._1._1._1._2.id, x._1._1._1._1._1._1._2.actorId, x._1._1._1._1._1._1._2.name, // 10: Actor ID, 11: Actor identifier, 12: Actor name
+				x._1._1._1._1._1._1._1._2.id, x._1._1._1._1._1._1._1._2.shortname, x._1._1._1._1._1._1._1._2.fullname, // 13: Specification ID, 14: Specification shortname, 15: Specification fullname
+				x._1._1._1._1._1._1._1._1.result, x._1._1._1._1._1._1._1._1.testsession, x._1._1._1._1._1._1._1._1.updateTime, // 16: Result, 17: Session ID, 18: Update time
+				x._2.map(_.shortname), x._2.map(_.fullname), // 19: Specification group shortname, 20: Specification group fullname,
+				x._1._2.isOptional, x._1._2.isDisabled // 21: Test case optional, 22: Test case disabled
 			))
 		// Apply sorting
 		val sortColumnToApply = sortColumn.getOrElse("community")
@@ -832,9 +849,9 @@ class ConformanceManager @Inject() (systemManager: SystemManager, triggerManager
 				result._7, result._8, result._9,
 				result._10, result._11, result._12,
 				result._13, specName, specNameFull, result._19, result._20, result._14, result._15,
-				None, None, None, None, None, result._16, None, result._17, result._18,
-				0L, 0L, 0L)
-			resultBuilder.addConformanceResult(statement)
+				None, None, None, None, None, None, None, result._16, None, result._17, result._18,
+				0L, 0L, 0L, 0L, 0L, 0L)
+			resultBuilder.addConformanceResult(statement, result._21, result._22)
 		}
 		resultBuilder.getOverview(Some(new ConformanceStatusBuilder.FilterCriteria(
 			dateFromString(updateTimeStart),

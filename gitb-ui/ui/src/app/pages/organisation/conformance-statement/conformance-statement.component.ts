@@ -182,27 +182,33 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
           disabled: result.testCaseDisabled
         }
         if (testSuiteData[result.testSuiteId] == undefined) {
+          let testSuiteResult = result.result
+          if (result.testCaseOptional || result.testCaseDisabled) {
+            testSuiteResult = Constants.TEST_CASE_RESULT.UNDEFINED
+          }
           let currentTestSuite: ConformanceTestSuite = {
             id: result.testSuiteId,
             sname: result.testSuiteName,
             description: result.testSuiteDescription,
-            result: result.result,
+            result: testSuiteResult,
             hasDocumentation: result.testSuiteHasDocumentation,
             expanded: false,
-            hasOptionalTestCases: false,
-            hasDisabledTestCases: false,
+            hasOptionalTestCases: result.testCaseOptional,
+            hasDisabledTestCases: result.testCaseDisabled,
             testCases: []
           }
           testSuiteIds.push(result.testSuiteId)
           testSuiteData[result.testSuiteId] = currentTestSuite
         } else {
-          if (testSuiteData[result.testSuiteId].result == Constants.TEST_CASE_RESULT.SUCCESS) {
-            if (testCase.result == Constants.TEST_CASE_RESULT.FAILURE || testCase.result == Constants.TEST_CASE_RESULT.UNDEFINED) {
-              testSuiteData[result.testSuiteId].result = testCase.result
-            }
-          } else if (testSuiteData[result.testSuiteId].result == Constants.TEST_CASE_RESULT.UNDEFINED) {
-            if (testCase.result == Constants.TEST_CASE_RESULT.FAILURE) {
-              testSuiteData[result.testSuiteId].result = Constants.TEST_CASE_RESULT.FAILURE
+          if (!result.testCaseOptional && !result.testCaseDisabled) {
+            if (testSuiteData[result.testSuiteId].result == Constants.TEST_CASE_RESULT.SUCCESS) {
+              if (testCase.result == Constants.TEST_CASE_RESULT.FAILURE || testCase.result == Constants.TEST_CASE_RESULT.UNDEFINED) {
+                testSuiteData[result.testSuiteId].result = testCase.result
+              }
+            } else if (testSuiteData[result.testSuiteId].result == Constants.TEST_CASE_RESULT.UNDEFINED) {
+              if (testCase.result == Constants.TEST_CASE_RESULT.FAILURE) {
+                testSuiteData[result.testSuiteId].result = testCase.result
+              }
             }
           }
           if (result.testCaseOptional && !testSuiteData[result.testSuiteId].hasOptionalTestCases) {
@@ -223,10 +229,13 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
       }
       this.testSuites = testSuiteResults
       this.displayedTestSuites = this.testSuites
-      this.statusCounters = { completed: data.summary.completed, failed: data.summary.failed, other: data.summary.undefined}
+      this.statusCounters = { 
+        completed: data.summary.completed, failed: data.summary.failed, other: data.summary.undefined,
+        completedOptional: data.summary.completedOptional, failedOptional: data.summary.failedOptional, otherOptional: data.summary.undefinedOptional
+      }
       this.lastUpdate = data.summary.updateTime
       this.conformanceStatus = data.summary.result
-      this.allTestsSuccessful = data.summary.failed == 0 && data.summary.undefined == 0
+      this.allTestsSuccessful = this.conformanceStatus == Constants.TEST_CASE_RESULT.SUCCESS
       this.prepareTestFilter()
       this.applySearchFilters()
     }).add(() => {

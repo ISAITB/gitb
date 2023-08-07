@@ -8,12 +8,12 @@ import com.gitb.reports.dto.ConformanceStatementOverview;
 import com.gitb.reports.dto.TestCaseOverview;
 import com.gitb.reports.dto.TestSuiteOverview;
 import com.gitb.tr.*;
+import jakarta.xml.bind.JAXBElement;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.slf4j.LoggerFactory;
 
-import jakarta.xml.bind.JAXBElement;
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 import java.io.IOException;
@@ -34,10 +34,11 @@ public class ReportGeneratorTest {
      */
     @TempDir()
     Path tempDirectory;
-    //    Path tempDirectory = Path.of("/tmp/gitb_pdf_tests/");
+//        Path tempDirectory = Path.of("/tmp/gitb_pdf_tests/");
 
     @BeforeEach
     void setup() throws IOException {
+//        ((Logger)LoggerFactory.getLogger(ReportGenerator.class)).setLevel(Level.DEBUG);
         Files.createDirectories(tempDirectory);
         ((Logger)LoggerFactory.getLogger("org.apache.fontbox")).setLevel(Level.WARN);
         ((Logger)LoggerFactory.getLogger("org.apache.pdfbox")).setLevel(Level.WARN);
@@ -51,15 +52,19 @@ public class ReportGeneratorTest {
         data.setTestSuiteDescription(description);
         data.setTestCases(List.of(
                 getTestCaseOverview("Test Case Report #1", specs),
-                getTestCaseOverview("Test Case Report #2", specs),
-                getTestCaseOverview("Test Case Report #3", specs),
+                getTestCaseOverview("Test Case Report #2", specs, true, false),
+                getTestCaseOverview("Test Case Report #3", specs, false, true),
                 getTestCaseOverview("Test Case Report #4", specs),
-                getTestCaseOverview("Test Case Report #5", specs)
+                getTestCaseOverview("Test Case Report #5", specs, false, false)
         ));
         return data;
     }
 
     private TestCaseOverview getTestCaseOverview(String title, ReportSpecs specs) throws DatatypeConfigurationException {
+        return getTestCaseOverview(title, specs, false, false);
+    }
+
+    private TestCaseOverview getTestCaseOverview(String title, ReportSpecs specs, boolean optional, boolean disabled) throws DatatypeConfigurationException {
         TestCaseOverview data = new TestCaseOverview();
         // Labels
         data.setTitle(title);
@@ -83,6 +88,8 @@ public class ReportGeneratorTest {
         data.setStartTime("06/04/2023 10:21:43");
         data.setEndTime("06/04/2023 10:21:44");
         data.setOutputMessage("This is the output message for your test session. Check the different report steps for details.");
+        data.setOptional(optional);
+        data.setDisabled(disabled);
         // Test steps
         data.setSteps(List.of(
                 generator.fromTestStepReportType(getTAR(), "Step 1.1: Define access identifiers", specs),

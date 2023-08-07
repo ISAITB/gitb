@@ -13,7 +13,10 @@ export interface ConformanceStatement {
     results: {
         undefined: number,
         failed: number,
-        completed: number
+        completed: number,
+        undefinedOptional: number,
+        failedOptional: number,
+        completedOptional: number
     }
 
 }

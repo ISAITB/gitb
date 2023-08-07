@@ -1,8 +1,17 @@
-<ng-template #popTemplate><div class="status-icon-tooltip" [innerHtml]="tooltipText"></div></ng-template>
+<ng-template #popTemplate>
+    <div class="status-icon-tooltip">
+        <div class="tooltip-label">Required tests ({{counters.completed + counters.failed + counters.other}} in total)</div>
+        <div>{{counters.completed}} passed, {{counters.failed}} failed, {{counters.other}} incomplete</div>
+        <ng-container *ngIf="hasOptional">
+            <div class="tooltip-label with-margin">Optional tests ({{counters.completedOptional + counters.failedOptional + counters.otherOptional}} in total)</div>
+            <div>{{counters.completedOptional}} passed, {{counters.failedOptional}} failed, {{counters.otherOptional}} incomplete</div>
+        </ng-container>
+    </div>
+</ng-template>
 <div class="overallContainer" [class.centerAligned]="centerAligned">
-    <div class="statusRootContainer" [tooltip]="popTemplate">
-        <div class="statusContainer"><div class="statusCount">{{ counters.completed }}</div><div class="statusIcon"><span><i [class]="successIcon"></i></span></div></div>
-        <div class="statusContainer"><div class="statusCount">{{ counters.failed }}</div><div class="statusIcon"><span><i [class]="failedIcon"></i></span></div></div>
-        <div class="statusContainer"><div class="statusCount">{{ counters.other }}</div><div class="statusIcon"><span><i [class]="otherIcon"></i></span></div></div>
+    <div class="statusRootContainer" [tooltip]="popTemplate" boundariesElement="window">
+        <div class="statusContainer"><div class="statusCount">{{ counters.completed }}<span *ngIf="counters.completedOptional > 0">({{counters.completedOptional}})</span></div><div class="statusIcon"><span><i [class]="successIcon"></i></span></div></div>
+        <div class="statusContainer"><div class="statusCount">{{ counters.failed }}<span *ngIf="counters.failedOptional > 0">({{counters.failedOptional}})</span></div><div class="statusIcon"><span><i [class]="failedIcon"></i></span></div></div>
+        <div class="statusContainer"><div class="statusCount">{{ counters.other }}<span *ngIf="counters.otherOptional > 0">({{counters.otherOptional}})</span></div><div class="statusIcon"><span><i [class]="otherIcon"></i></span></div></div>
     </div>
 </div>

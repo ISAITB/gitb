@@ -1,8 +1,54 @@
 @import '../../../styles/less/_common.less';
 
+.root-container {
+    position: relative;
+}
+.popup-panel {
+    border: 1px solid @gray-light;
+    border-radius: 4px;
+    padding: 8px;
+    box-shadow: 0 1px 5px #959595;
+    position: absolute;
+    top: -4px;
+    background: @white;
+    z-index: 1;
+    &.align-right {
+        right: 0px;
+    }
+    .close-container {
+        width: 30px;
+        position: absolute;
+        right: 0px;
+        top: 4px;
+        display: flex;
+        justify-content: center;
+        cursor: pointer;
+    }
+    .ratio-title {
+        padding: 0px 0px 5px 0px;
+        &.optional {
+            padding-top: 5px;
+        }
+        font-weight: bold;
+    }
+}
 .ratio-container {
-    width: 300px;
+    width: 420px;
+    height: 26px;
+    display: inline-flex;
+}
+.expand-icon {
     display: flex;
+    justify-content: center;    
+    position: absolute;
+    color: @white;
+    right: 5px;
+    top: 2px;
+    padding: 0px 4px;    
+    cursor: pointer;
+}
+.optional-container {
+    margin-left: 35px;
 }
 .ratio {
     white-space: nowrap;
@@ -10,8 +56,11 @@
     color: @white;
     font-weight: bold;
     font-size: 90%;
-    min-width: 50px;
-    text-align: center;
+    min-width: 90px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 26px;    
     &.completed {
         background: @success-green;
     }

@@ -96,7 +96,7 @@
 											<button class="btn btn-primary" (click)="onTestSuiteSelect(testSuite); $event.stopPropagation();" containerClass="shortTooltip" tooltip="Run all" [delay]="Constants.TOOLTIP_DELAY"><i class="fa fa-play"></i></button>
 										</div>
 									</div>
-									<div class="testSuiteResult"><i containerClass="shortTooltip" [tooltip]="dataService.tooltipForTestResult(conformanceStatus)" [ngClass]="dataService.iconForTestResult(testSuite.result)"></i></div>
+									<div class="testSuiteResult"><i containerClass="shortTooltip" [tooltip]="dataService.tooltipForTestResult(testSuite.result)" [ngClass]="dataService.iconForTestResult(testSuite.result)"></i></div>
 								</div>
 								<div class="collapsibleTestCaseDiv" [collapse]="!testSuite.expanded" [isAnimated]="true">
 									<div class="testCaseContainer">

@@ -15,7 +15,11 @@ class ConformanceStatement(
     val systemId: Long,
     var result: String,
     var updateTime: Option[Timestamp],
+
     var completedTests: Long,
     var failedTests: Long,
-    var undefinedTests: Long
+    var undefinedTests: Long,
+    var completedOptionalTests: Long,
+    var failedOptionalTests: Long,
+    var undefinedOptionalTests: Long
 ) {}

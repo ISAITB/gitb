@@ -120,7 +120,13 @@ export class ConformanceDashboardComponent implements OnInit {
           const completedCount = Number(conformanceStatement.completed)
           const failedCount = Number(conformanceStatement.failed)
           const undefinedCount = Number(conformanceStatement.undefined)
-          conformanceStatement.counters = { completed: completedCount, failed: failedCount, other: undefinedCount}
+          const completedOptionalCount = Number(conformanceStatement.completedOptional)
+          const failedOptionalCount = Number(conformanceStatement.failedOptional)
+          const undefinedOptionalCount = Number(conformanceStatement.undefinedOptional)
+          conformanceStatement.counters = {
+            completed: completedCount, failed: failedCount, other: undefinedCount, 
+            completedOptional: completedOptionalCount, failedOptional: failedOptionalCount, otherOptional: undefinedOptionalCount
+          }
           conformanceStatement.overallStatus = this.dataService.conformanceStatusForTests(completedCount, failedCount, undefinedCount)
         }
         subscriber.next(data)
@@ -155,17 +161,21 @@ export class ConformanceDashboardComponent implements OnInit {
           if (testSuite != undefined) {
             testSuites.push(testSuite)
           }
+          let testSuiteResult = item.result!
+          if (item.testCaseOptional || item.testCaseDisabled) {
+            testSuiteResult = Constants.TEST_CASE_RESULT.UNDEFINED
+          }
           testSuite = {
             testSuiteId: item.testSuiteId!,
             testSuiteName: item.testSuiteName!,
             expanded: true,
-            result: item.result!,
+            result: testSuiteResult,
             hasOptionalTestCases: false,
             hasDisabledTestCases: false,
             testCases: []
           }
         }
-        if (item.result != testSuite.result) {
+        if (!item.testCaseOptional && !item.testCaseDisabled && item.result != testSuite.result) {
           if (item.result == Constants.TEST_CASE_RESULT.FAILURE) {
             testSuite.result = Constants.TEST_CASE_RESULT.FAILURE
           } else if (item.result == Constants.TEST_CASE_RESULT.UNDEFINED && testSuite.result == Constants.TEST_CASE_RESULT.SUCCESS) {

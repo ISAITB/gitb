@@ -654,11 +654,12 @@ export class DataService {
   }
 
   conformanceStatusForTests(completedCount: number, failedCount: number, undefinedCount: number) {
-    let totalCount = completedCount + failedCount + undefinedCount
-    if (completedCount == totalCount) {
-      return Constants.TEST_CASE_RESULT.SUCCESS
-    } else if (failedCount > 0) {
+    if (failedCount > 0) {
       return Constants.TEST_CASE_RESULT.FAILURE
+    } else if (undefinedCount > 0) {
+      return Constants.TEST_CASE_RESULT.UNDEFINED
+    } else if (completedCount > 0) {
+      return Constants.TEST_CASE_RESULT.SUCCESS
     } else {
       return Constants.TEST_CASE_RESULT.UNDEFINED
     }

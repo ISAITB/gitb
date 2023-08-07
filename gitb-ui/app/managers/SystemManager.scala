@@ -536,11 +536,12 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils, testResultManag
         .joinLeft(PersistenceSchema.specificationGroups).on(_._2.group === _.id)
         .join(PersistenceSchema.actors).on(_._1._1.actor === _.id)
         .join(PersistenceSchema.domains).on(_._2.domain === _.id)
-        .filter(_._1._1._1._1.sut === systemId)
+        .join(PersistenceSchema.testCases).on(_._1._1._1._1.testcase === _.id)
+        .filter(_._1._1._1._1._1.sut === systemId)
     if (spec.isDefined && actor.isDefined) {
       query = query
-        .filter(_._1._1._1._1.spec === spec.get)
-        .filter(_._1._1._1._1.actor === actor.get)
+        .filter(_._1._1._1._1._1.spec === spec.get)
+        .filter(_._1._1._1._1._1.actor === actor.get)
     }
     /*
     DB sorting is skipped as we have custom sorting that follows.
@@ -556,18 +557,18 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils, testResultManag
     */
     // Apply custom sorting.
     val results = exec(query.result.map(_.toList)).sortWith((a, b) => {
-      val domainNameA = a._2.fullname
-      val groupOrderA = a._1._1._2.map(_.displayOrder)
-      val groupNameA = a._1._1._2.map(_.fullname)
-      val specOrderA = a._1._1._1._2.displayOrder
-      val specNameA = a._1._1._1._2.fullname
-      val actorNameA = a._1._2.name
-      val domainNameB = b._2.fullname
-      val groupOrderB = b._1._1._2.map(_.displayOrder)
-      val groupNameB = b._1._1._2.map(_.fullname)
-      val specOrderB = b._1._1._1._2.displayOrder
-      val specNameB = b._1._1._1._2.fullname
-      val actorNameB = b._1._2.name
+      val domainNameA = a._1._2.fullname
+      val groupOrderA = a._1._1._1._2.map(_.displayOrder)
+      val groupNameA = a._1._1._1._2.map(_.fullname)
+      val specOrderA = a._1._1._1._1._2.displayOrder
+      val specNameA = a._1._1._1._1._2.fullname
+      val actorNameA = a._1._1._2.name
+      val domainNameB = b._1._2.fullname
+      val groupOrderB = b._1._1._1._2.map(_.displayOrder)
+      val groupNameB = b._1._1._1._2.map(_.fullname)
+      val specOrderB = b._1._1._1._1._2.displayOrder
+      val specNameB = b._1._1._1._1._2.fullname
+      val actorNameB = b._1._1._2.name
 
       // Check domains
       val domains = domainNameA.compareTo(domainNameB)
@@ -621,19 +622,21 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils, testResultManag
 
     val resultBuilder = new ConformanceStatusBuilder[ConformanceStatement](recordDetails = false)
     results.foreach { result =>
-      var specName = result._1._1._1._2.shortname
-      var specNameFull = result._1._1._1._2.fullname
-      if (result._1._1._2.nonEmpty) {
-        specName = result._1._1._2.get.shortname + " - " + specName
-        specNameFull = result._1._1._2.get.fullname + " - " + specNameFull
+      var specName = result._1._1._1._1._2.shortname
+      var specNameFull = result._1._1._1._1._2.fullname
+      if (result._1._1._1._2.nonEmpty) {
+        specName = result._1._1._1._2.get.shortname + " - " + specName
+        specNameFull = result._1._1._1._2.get.fullname + " - " + specNameFull
       }
       resultBuilder.addConformanceResult(
         new ConformanceStatement(
-          result._2.id, result._2.shortname, result._2.fullname,
-          result._1._2.id, result._1._2.actorId, result._1._2.name,
-          result._1._1._1._2.id, specName, specNameFull,
-          result._1._1._1._1.sut, result._1._1._1._1.result, result._1._1._1._1.updateTime,
-          0L, 0L, 0L)
+          result._1._2.id, result._1._2.shortname, result._1._2.fullname,
+          result._1._1._2.id, result._1._1._2.actorId, result._1._1._2.name,
+          result._1._1._1._1._2.id, specName, specNameFull,
+          result._1._1._1._1._1.sut, result._1._1._1._1._1.result, result._1._1._1._1._1.updateTime,
+          0L, 0L, 0L,
+          0L, 0L, 0L
+        ), result._2.isOptional, result._2.isDisabled
       )
     }
     resultBuilder.getOverview(None)

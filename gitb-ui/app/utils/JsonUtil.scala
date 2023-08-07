@@ -874,8 +874,11 @@ object JsonUtil {
 			"results" -> Json.obj(
 				"undefined" -> conformanceStatement.undefinedTests,
         "failed" -> conformanceStatement.failedTests,
-				"completed" -> conformanceStatement.completedTests
-			)
+				"completed" -> conformanceStatement.completedTests,
+        "undefinedOptional" -> conformanceStatement.undefinedOptionalTests,
+        "failedOptional" -> conformanceStatement.failedOptionalTests,
+        "completedOptional" -> conformanceStatement.completedOptionalTests
+      )
 		)
 		json
 	}
@@ -2231,31 +2234,51 @@ object JsonUtil {
     var undefinedTests = 0L
     var completedTests = 0L
     var failedTests = 0L
+    var undefinedOptionalTests = 0L
+    var completedOptionalTests = 0L
+    var failedOptionalTests = 0L
     var itemArray = Json.arr()
     list.foreach{ info =>
-      if (info.sessionTime.isDefined && (updateTime.isEmpty || updateTime.get.before(info.sessionTime.get))) {
-        updateTime = info.sessionTime
-      }
-      if (TestResultStatus.withName(info.result) == TestResultStatus.SUCCESS) {
-        completedTests += 1
-      } else if (TestResultStatus.withName(info.result) == TestResultStatus.FAILURE) {
-        failedTests += 1
-      } else {
-        undefinedTests += 1
+      if (!info.testCaseDisabled) {
+        if (info.sessionTime.isDefined && (updateTime.isEmpty || updateTime.get.before(info.sessionTime.get))) {
+          updateTime = info.sessionTime
+        }
+        if (info.testCaseOptional) {
+          if (TestResultStatus.withName(info.result) == TestResultStatus.SUCCESS) {
+            completedOptionalTests += 1
+          } else if (TestResultStatus.withName(info.result) == TestResultStatus.FAILURE) {
+            failedOptionalTests += 1
+          } else {
+            undefinedOptionalTests += 1
+          }
+        } else {
+          if (TestResultStatus.withName(info.result) == TestResultStatus.SUCCESS) {
+            completedTests += 1
+          } else if (TestResultStatus.withName(info.result) == TestResultStatus.FAILURE) {
+            failedTests += 1
+          } else {
+            undefinedTests += 1
+          }
+        }
       }
       itemArray = itemArray.append(jsConformanceResult(info))
     }
-    var result = TestResultStatus.SUCCESS.toString
+    var result = TestResultStatus.UNDEFINED.toString
     if (failedTests > 0) {
       result = TestResultStatus.FAILURE.toString
     } else if (undefinedTests > 0) {
       result = TestResultStatus.UNDEFINED.toString
+    } else if (completedTests > 0) {
+      result = TestResultStatus.SUCCESS.toString
     }
     val json = Json.obj(
       "summary" -> Json.obj(
         "failed"    -> failedTests,
         "completed"    -> completedTests,
         "undefined"    -> undefinedTests,
+        "failedOptional" -> failedOptionalTests,
+        "completedOptional" -> completedOptionalTests,
+        "undefinedOptional" -> undefinedOptionalTests,
         "result" -> result,
         "updateTime" -> (if (updateTime.isDefined) TimeUtil.serializeTimestamp(updateTime.get) else JsNull)
       ),
@@ -2335,6 +2358,9 @@ object JsonUtil {
       "failed"    -> item.failedTests,
       "completed"    -> item.completedTests,
       "undefined"    -> item.undefinedTests,
+      "failedOptional" -> item.failedOptionalTests,
+      "completedOptional" -> item.completedOptionalTests,
+      "undefinedOptional" -> item.undefinedOptionalTests,
       "result" -> item.result,
       "updateTime" -> (if(item.updateTime.isDefined) TimeUtil.serializeTimestamp(item.updateTime.get) else JsNull),
       "outputMessage" -> item.outputMessage

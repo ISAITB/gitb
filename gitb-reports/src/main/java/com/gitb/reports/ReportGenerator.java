@@ -373,6 +373,11 @@ public class ReportGenerator {
             parameters.put("completedTests", overview.getCompletedTests());
             parameters.put("failedTests", overview.getFailedTests());
             parameters.put("undefinedTests", overview.getUndefinedTests());
+            // Flags for presence of optional and disabled test cases.
+            boolean hasOptionalTests = overview.getTestSuites().stream().anyMatch(testSuite -> testSuite.getTestCases().stream().anyMatch(TestCaseOverview::isOptional));
+            boolean hasDisabledTests = overview.getTestSuites().stream().anyMatch(testSuite -> testSuite.getTestCases().stream().anyMatch(TestCaseOverview::isDisabled));
+            parameters.put("hasOptionalTests", hasOptionalTests);
+            parameters.put("hasDisabledTests", hasDisabledTests);
             if (overview.getIncludeTestStatus()) {
                 parameters.put("testStatus", overview.getTestStatus());
             }

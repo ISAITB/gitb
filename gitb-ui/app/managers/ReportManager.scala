@@ -464,8 +464,8 @@ class ReportManager @Inject() (reportHelper: ReportHelper, triggerHelper: Trigge
       0L, "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Specification), "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Specification),
       Some("Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.SpecificationGroup)), Some("Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.SpecificationGroup)),
       "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.SpecificationInGroup), "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.SpecificationInGroup),
-      Some(index), Some("Sample Test Suite "+index), Some("Description for Sample Test Suite "+index), Some("Sample Test Case "+index), Some("Description for Sample Test Case "+index), "SUCCESS", Some("An output message for the test session"),
-      None, None, 0L, 0L, 0L)
+      Some(index), Some("Sample Test Suite "+index), Some("Description for Sample Test Suite "+index), Some("Sample Test Case "+index), Some("Description for Sample Test Case "+index), Some(false), Some(false), "SUCCESS", Some("An output message for the test session"),
+      None, None, 0L, 0L, 0L, 0L, 0L, 0L)
   }
 
   def generateDemoConformanceCertificate(reportPath: Path, settings: ConformanceCertificates, communityId: Long): Path = {
@@ -595,23 +595,18 @@ class ReportManager @Inject() (reportHelper: ReportHelper, triggerHelper: Trigge
     var undefinedTests = 0
     var totalTests = 0
     var index = 1
-    val testMap = new mutable.TreeMap[Long, TestSuiteOverview]
+    val testMap = new mutable.TreeMap[Long, (TestSuiteOverview, Counters)]
     conformanceInfo.foreach { info =>
-      totalTests += 1
       val result = TestResultStatus.withName(info.result)
-      if (result == TestResultStatus.SUCCESS) {
-        completedTests += 1
-      } else if (result == TestResultStatus.FAILURE) {
-        failedTests += 1
-      } else {
-        undefinedTests += 1
-      }
-      if (completedTests == totalTests) {
-        overview.setOverallStatus("SUCCESS")
-      } else if (failedTests > 0) {
-        overview.setOverallStatus("FAILURE")
-      } else {
-        overview.setOverallStatus("UNDEFINED")
+      if (!info.testCaseDisabled.get && !info.testCaseOptional.get) {
+        totalTests += 1
+        if (result == TestResultStatus.SUCCESS) {
+          completedTests += 1
+        } else if (result == TestResultStatus.FAILURE) {
+          failedTests += 1
+        } else {
+          undefinedTests += 1
+        }
       }
       if (addTestCaseResults) {
         val testCaseOverview = new TestCaseOverview()
@@ -624,6 +619,8 @@ class ReportManager @Inject() (reportHelper: ReportHelper, triggerHelper: Trigge
         }
         testCaseOverview.setReportResult(info.result)
         testCaseOverview.setOutputMessage(info.outputMessage.orNull)
+        testCaseOverview.setOptional(info.testCaseOptional.get)
+        testCaseOverview.setDisabled(info.testCaseDisabled.get)
         if (addTestCases) {
           testCaseOverview.setTitle("Test Case Report #" + index)
           testCaseOverview.setOrganisation(info.organizationName)
@@ -662,29 +659,50 @@ class ReportManager @Inject() (reportHelper: ReportHelper, triggerHelper: Trigge
           val testSuite = new TestSuiteOverview
           testSuite.setTestSuiteName(info.testSuiteName.get)
           testSuite.setTestSuiteDescription(info.testSuiteDescription.orNull)
-          testSuite.setOverallStatus("SUCCESS");
+          testSuite.setOverallStatus("UNDEFINED")
           testSuite.setTestCases(new util.ArrayList[TestCaseOverview]())
-          testSuite
+          (testSuite, new Counters(0, 0, 0))
         })
-        // Update the test suite's status.
-        if ("SUCCESS".equals(testSuiteOverview.getOverallStatus)) {
-          if (!testCaseOverview.getReportResult.equals(testSuiteOverview.getOverallStatus)) {
-            testSuiteOverview.setOverallStatus(testCaseOverview.getReportResult)
-          }
-        } else if ("UNDEFINED".equals(testSuiteOverview.getOverallStatus)) {
-          if ("FAILURE".equals(testCaseOverview.getReportResult)) {
-            testSuiteOverview.setOverallStatus("FAILURE")
+        // Update the test suite's results.
+        if (!info.testCaseDisabled.get && !info.testCaseOptional.get) {
+          if (result == TestResultStatus.SUCCESS) {
+            testSuiteOverview._2.successes += 1
+          } else if (result == TestResultStatus.FAILURE) {
+            testSuiteOverview._2.failures += 1
+          } else {
+            testSuiteOverview._2.other += 1
           }
         }
-        testSuiteOverview.getTestCases.add(testCaseOverview)
+        testSuiteOverview._1.getTestCases.add(testCaseOverview)
         index += 1
       }
+    }
+    overview.setOverallStatus("UNDEFINED")
+    if (failedTests > 0) {
+      overview.setOverallStatus("FAILURE")
+    } else if (undefinedTests > 0) {
+      overview.setOverallStatus("UNDEFINED")
+    } else if (completedTests > 0) {
+      overview.setOverallStatus("SUCCESS")
     }
     overview.setCompletedTests(completedTests)
     overview.setFailedTests(failedTests)
     overview.setUndefinedTests(undefinedTests)
     if (testMap.nonEmpty) {
-      overview.setTestSuites(new util.ArrayList[TestSuiteOverview](testMap.values.toList.asJavaCollection))
+      // Set the status of the collected test suites
+      testMap.values.foreach { testSuiteInfo =>
+        if (testSuiteInfo._2.failures > 0) {
+          testSuiteInfo._1.setOverallStatus("FAILURE")
+        } else if (testSuiteInfo._2.other > 0) {
+          testSuiteInfo._1.setOverallStatus("UNDEFINED")
+        } else if (testSuiteInfo._2.successes > 0) {
+          testSuiteInfo._1.setOverallStatus("SUCCESS")
+        } else {
+          testSuiteInfo._1.setOverallStatus("UNDEFINED")
+        }
+      }
+      // Add to overall output
+      overview.setTestSuites(new util.ArrayList[TestSuiteOverview](testMap.values.map(_._1).toList.asJavaCollection))
     }
     overview.setIncludeTestStatus(addTestStatus)
     Files.createDirectories(reportPath.getParent)
@@ -702,3 +720,5 @@ class ReportManager @Inject() (reportHelper: ReportHelper, triggerHelper: Trigge
   }
 
 }
+
+private class Counters(var successes: Int, var failures: Int, var other: Int)

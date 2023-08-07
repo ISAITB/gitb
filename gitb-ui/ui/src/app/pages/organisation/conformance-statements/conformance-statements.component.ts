@@ -53,7 +53,10 @@ export class ConformanceStatementsComponent implements OnInit {
         domain: conformanceStatement.domain,
         domainFull: conformanceStatement.domainFull,
         updateTime: conformanceStatement.updateTime,
-        counters: { completed: Number(conformanceStatement.results.completed), failed: Number(conformanceStatement.results.failed), other: Number(conformanceStatement.results.undefined)},
+        counters: { 
+          completed: Number(conformanceStatement.results.completed), failed: Number(conformanceStatement.results.failed), other: Number(conformanceStatement.results.undefined),
+          completedOptional: Number(conformanceStatement.results.completedOptional), failedOptional: Number(conformanceStatement.results.failedOptional), otherOptional: Number(conformanceStatement.results.undefinedOptional)
+        },
         status: this.dataService.conformanceStatusForTests(Number(conformanceStatement.results.completed), Number(conformanceStatement.results.failed), Number(conformanceStatement.results.undefined))
       }
     })

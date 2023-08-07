@@ -16,7 +16,7 @@ export class TestStatusIconsComponent implements OnInit {
   successIcon!: string
   failedIcon!: string
   otherIcon!: string
-  tooltipText!: string
+  hasOptional!: boolean
 
   constructor(private dataService: DataService) { }
 
@@ -24,9 +24,7 @@ export class TestStatusIconsComponent implements OnInit {
     this.successIcon = this.dataService.iconForTestResult(Constants.TEST_CASE_RESULT.SUCCESS)
     this.failedIcon = this.dataService.iconForTestResult(Constants.TEST_CASE_RESULT.FAILURE)
     this.otherIcon = this.dataService.iconForTestResult(Constants.TEST_CASE_RESULT.UNDEFINED)
-    this.tooltipText = this.counters.completed + " passed, " + 
-      this.counters.failed + " failed, " + 
-      this.counters.other + " incomplete<br/>("+(this.counters.completed + this.counters.failed + this.counters.other)+" in total)"
+    this.hasOptional = this.counters.completedOptional > 0 || this.counters.failedOptional > 0 || this.counters.otherOptional > 0
   }
 
 }

@@ -27,15 +27,20 @@ class ConformanceStatementFull(
     val testSuiteDescription: Option[String],
     val testCaseName: Option[String],
     val testCaseDescription: Option[String],
+    val testCaseOptional: Option[Boolean],
+    val testCaseDisabled: Option[Boolean],
     result: String,
     val outputMessage: Option[String],
     val sessionId: Option[String],
     updateTime: Option[Timestamp],
     completedTests: Long,
     failedTests: Long,
-    undefinedTests: Long
+    undefinedTests: Long,
+    completedOptionalTests: Long,
+    failedOptionalTests: Long,
+    undefinedOptionalTests: Long
 ) extends ConformanceStatement(
   domainId, domainName, domainNameFull,
   actorId, actorName, actorFull,
   specificationId, specificationName, specificationNameFull, systemId,
-  result, updateTime, completedTests, failedTests, undefinedTests) {}
+  result, updateTime, completedTests, failedTests, undefinedTests, completedOptionalTests, failedOptionalTests, undefinedOptionalTests) {}
