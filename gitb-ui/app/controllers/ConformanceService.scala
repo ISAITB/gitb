@@ -486,7 +486,19 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
     }
   }
 
+  private def getPageOrDefault(_page: Option[String] = None):Int = _page match {
+    case Some(p) => p.toInt
+    case None => Constants.defaultPage.toInt
+  }
+
+  private def getLimitOrDefault(_limit: Option[String] = None):Int  = _limit match {
+    case Some(l) => l.toInt
+    case None => Constants.defaultLimit.toInt
+  }
+
   def getConformanceOverview() = authorizedAction { request =>
+    val page = getPageOrDefault(ParameterExtractor.optionalBodyParameter(request, Parameters.PAGE))
+    val limit = getLimitOrDefault(ParameterExtractor.optionalBodyParameter(request, Parameters.LIMIT))
     val communityIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.COMMUNITY_IDS)
     authorizationManager.canViewConformanceOverview(request, communityIds)
     val fullResults = ParameterExtractor.requiredBodyParameter(request, Parameters.FULL).toBoolean
@@ -526,7 +538,10 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
       sysParameterDefinitions = Some(communityManager.getSystemParametersForExport(communityIds.get.head))
       sysParameterValues = Some(communityManager.getSystemParametersValuesForExport(communityIds.get.head, organizationIds, systemIds))
     }
-    val json = JsonUtil.jsConformanceResultFullList(results, orgParameterDefinitions, orgParameterValues, sysParameterDefinitions, sysParameterValues).toString()
+    // Return only the requested page
+    val count = results.size
+    results = results.slice((page - 1) * limit, (page - 1) * limit + limit)
+    val json = JsonUtil.jsConformanceResultFullList(results, orgParameterDefinitions, orgParameterValues, sysParameterDefinitions, sysParameterValues, count).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
 

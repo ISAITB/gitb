@@ -192,9 +192,11 @@ export class ConformanceService {
     })
   }
 
-  getConformanceOverview(criteria: TestResultSearchCriteria, fullResults: boolean, forExport: boolean, sortColumn: string, sortOrder: string) {
+  getConformanceOverview(criteria: TestResultSearchCriteria, fullResults: boolean, forExport: boolean, sortColumn: string, sortOrder: string, page: number, limit: number) {
     let params: any = {}
     params.full = fullResults
+    params.page = page
+    params.limit = limit
     if (criteria.domainIds != undefined && criteria.domainIds.length > 0) {
       params.domain_ids = criteria.domainIds.join(',')
     }

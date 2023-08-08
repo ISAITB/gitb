@@ -32,7 +32,7 @@
                     <tr><td [attr.colspan]="columnCount" class="td-no-data"><span>No conformance data found</span></td></tr>
                 </tbody>
                 <tbody *ngIf="conformanceStatements.length > 0" [class.disable-events]="filterState.updatePending">
-                    <ng-container *ngFor="let statement of conformanceStatementsPage">
+                    <ng-container *ngFor="let statement of conformanceStatements">
                         <tr (click)="onExpand(statement)"
                             class="table-row-directive expandable-table-row-collapsed">
                             <td class="td-min-centered"><app-collapsing-icon [padded]="false" [isCollapsed]="!isExpanded(statement)"></app-collapsing-icon></td>
@@ -123,10 +123,10 @@
         </div>
         <div *ngIf="(!prevDisabled || !nextDisabled) && conformanceStatements && conformanceStatements.length > 0" class="text-center table-paging-controls-expandable">
             <ul class="pagination pagination-sm" [class.disable-events]="filterState.updatePending">
-                <li [ngClass]="prevDisabled ? 'disabled' : ''"><a href (click)="doFirstPage(); $event.preventDefault()">First</a></li>
-                <li [ngClass]="prevDisabled ? 'disabled' : ''"><a href (click)="doPrevPage(); $event.preventDefault()">Previous</a></li>
-                <li [ngClass]="nextDisabled ? 'disabled' : ''"><a href (click)="doNextPage(); $event.preventDefault()">Next</a></li>
-                <li [ngClass]="nextDisabled ? 'disabled' : ''"><a href (click)="doLastPage(); $event.preventDefault()">Last</a></li>
+                <li [class.disabled]="prevDisabled"><a href (click)="doFirstPage(); $event.preventDefault()">First</a></li>
+                <li [class.disabled]="prevDisabled"><a href (click)="doPrevPage(); $event.preventDefault()">Previous</a></li>
+                <li [class.disabled]="nextDisabled"><a href (click)="doNextPage(); $event.preventDefault()">Next</a></li>
+                <li [class.disabled]="nextDisabled"><a href (click)="doLastPage(); $event.preventDefault()">Last</a></li>
             </ul>
         </div>
 	</div>

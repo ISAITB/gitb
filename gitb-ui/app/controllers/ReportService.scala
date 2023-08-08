@@ -1,9 +1,10 @@
 package controllers
 
 import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, ResponseConstructor}
+
 import javax.inject.Inject
 import managers.{AuthorizationManager, CommunityManager, ReportManager}
-import models.{OrganisationParameters, SystemParameters}
+import models.{Constants, OrganisationParameters, SystemParameters}
 import play.api.mvc._
 import utils.JsonUtil
 
@@ -11,9 +12,6 @@ import utils.JsonUtil
  * Created by senan on 04.12.2014.
  */
 class ReportService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerComponents, reportManager: ReportManager, testService: TestService, authorizationManager: AuthorizationManager, communityManager: CommunityManager) extends AbstractController(cc) {
-
-  val defaultPage = 1L
-  val defaultLimit = 10L
 
   def getSystemActiveTestResults = authorizedAction { request =>
     val systemId = ParameterExtractor.requiredBodyParameter(request, Parameters.SYSTEM_ID).toLong
@@ -159,12 +157,12 @@ class ReportService @Inject() (authorizedAction: AuthorizedAction, cc: Controlle
 
   private def getPageOrDefault(_page: Option[String] = None) = _page match {
     case Some(p) => p.toLong
-    case None => defaultPage
+    case None => Constants.defaultPage
   }
 
   private def getLimitOrDefault(_limit: Option[String] = None) = _limit match {
     case Some(l) => l.toLong
-    case None => defaultLimit
+    case None => Constants.defaultLimit
   }
 
   def getTestResultOfSession(sessionId: String) = authorizedAction { request =>

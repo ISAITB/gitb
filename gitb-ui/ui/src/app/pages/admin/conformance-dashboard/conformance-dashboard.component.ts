@@ -36,7 +36,6 @@ export class ConformanceDashboardComponent implements OnInit {
     count: 0
   }
   conformanceStatements: ConformanceResultFullWithTestSuites[] = []
-  conformanceStatementsPage: ConformanceResultFullWithTestSuites[] = []
   settings?: Partial<ConformanceCertificateSettings>
   Constants = Constants
 
@@ -114,7 +113,13 @@ export class ConformanceDashboardComponent implements OnInit {
 	getConformanceStatementsInternal(fullResults: boolean, forExport: boolean) {
     const result = new Observable<ConformanceResultFullList>((subscriber) => {
       let params = this.getCurrentSearchCriteria()
-      this.conformanceService.getConformanceOverview(params, fullResults, forExport, this.sortColumn, this.sortOrder)
+      let pageToUse = this.currentPage
+      let limitToUse = 10
+      if (forExport) {
+        pageToUse = 1
+        limitToUse = 1000000
+      }
+      this.conformanceService.getConformanceOverview(params, fullResults, forExport, this.sortColumn, this.sortOrder, pageToUse, limitToUse)
       .subscribe((data: ConformanceResultFullList) => {
         for (let conformanceStatement of data.data) {
           const completedCount = Number(conformanceStatement.completed)
@@ -124,7 +129,7 @@ export class ConformanceDashboardComponent implements OnInit {
           const failedOptionalCount = Number(conformanceStatement.failedOptional)
           const undefinedOptionalCount = Number(conformanceStatement.undefinedOptional)
           conformanceStatement.counters = {
-            completed: completedCount, failed: failedCount, other: undefinedCount, 
+            completed: completedCount, failed: failedCount, other: undefinedCount,
             completedOptional: completedOptionalCount, failedOptional: failedOptionalCount, otherOptional: undefinedOptionalCount
           }
           conformanceStatement.overallStatus = this.dataService.conformanceStatusForTests(completedCount, failedCount, undefinedCount)
@@ -139,17 +144,8 @@ export class ConformanceDashboardComponent implements OnInit {
   }
 
 	getConformanceStatements() {
-    this.filterState.updatePending = true
-    this.getConformanceStatementsInternal(false, false)
-    .subscribe((data) => {
-			this.conformanceStatements = data.data
-      this.conformanceStatementsTotalCount = this.conformanceStatements.length
-      this.currentPage = 1
-      this.selectPage()
-			this.onCollapseAll()
-    }).add(() => {
-			this.filterState.updatePending = false
-    })
+    this.currentPage = 1
+    this.selectPage()
   }
 
   organiseTestSuites(statement: ConformanceResultFullWithTestSuites) {
@@ -307,7 +303,7 @@ export class ConformanceDashboardComponent implements OnInit {
       testCase.actionPending = false
     })
   }
-  
+
 	onExportTestCasePdf(testCase: Partial<ConformanceStatusItem>) {
     testCase.exportPending = true
     this.onExportTestCase(testCase, 'application/pdf', 'test_case_report.pdf')
@@ -421,10 +417,16 @@ export class ConformanceDashboardComponent implements OnInit {
   }
 
   selectPage() {
-    const startIndex = (this.currentPage - 1) * Constants.TABLE_PAGE_SIZE
-    const endIndex = startIndex + Constants.TABLE_PAGE_SIZE
-    this.conformanceStatementsPage = this.conformanceStatements.slice(startIndex, endIndex)
-    this.updatePagination()
+    this.filterState.updatePending = true
+    this.getConformanceStatementsInternal(false, false)
+    .subscribe((data) => {
+			this.conformanceStatements = data.data
+      this.conformanceStatementsTotalCount = data.count
+      this.updatePagination()
+			this.onCollapseAll()
+    }).add(() => {
+			this.filterState.updatePending = false
+    })
   }
 
   updatePagination() {
