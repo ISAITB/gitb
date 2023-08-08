@@ -135,9 +135,15 @@ public abstract class AbstractProcessingStepProcessorActor<T extends Process> ex
     private TypedParameters getInputs(IProcessingHandler handler, String operation) {
         var definition = handler.getModuleDefinition();
         if (definition != null) {
-            for (var processingOperation : definition.getOperation()) {
-                if (processingOperation.getName().equals(operation)) {
-                    return processingOperation.getInputs();
+            if (operation == null) {
+                if (definition.getOperation().size() == 1) {
+                    return definition.getOperation().get(0).getInputs();
+                }
+            } else {
+                for (var processingOperation : definition.getOperation()) {
+                    if (processingOperation.getName().equals(operation)) {
+                        return processingOperation.getInputs();
+                    }
                 }
             }
         }
