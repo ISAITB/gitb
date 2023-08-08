@@ -6,6 +6,7 @@ import com.gitb.processing.ProcessingData;
 import com.gitb.processing.ProcessingReport;
 import com.gitb.ps.ProcessingModule;
 import com.gitb.tr.TestResultType;
+import com.gitb.types.BooleanType;
 import com.gitb.types.NumberType;
 import com.gitb.types.StringType;
 import com.github.curiousoddman.rgxgen.RgxGen;
@@ -18,6 +19,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.temporal.ChronoField;
 import java.util.List;
+import java.util.Random;
 import java.util.UUID;
 
 @ProcessingHandler(name="TokenGenerator")
@@ -27,6 +29,7 @@ public class TokenGenerator extends AbstractProcessingHandler {
     private static final String OPERATION__TIMESTAMP = "timestamp";
     private static final String OPERATION__UUID = "uuid";
     private static final String OPERATION__STRING = "string";
+    private static final String OPERATION__RANDOM = "random";
     private static final String INPUT__FORMAT = "format";
     private static final String INPUT__TIME = "time";
     private static final String INPUT__DATE = "date";
@@ -35,6 +38,9 @@ public class TokenGenerator extends AbstractProcessingHandler {
     private static final String INPUT__ZONE = "zone";
     private static final String INPUT__PREFIX = "prefix";
     private static final String INPUT__POSTFIX = "postfix";
+    private static final String INPUT__MINIMUM = "minimum";
+    private static final String INPUT__MAXIMUM = "maximum";
+    private static final String INPUT__INTEGER = "integer";
     private static final String OUTPUT__VALUE = "value";
 
     @Override
@@ -56,10 +62,14 @@ public class TokenGenerator extends AbstractProcessingHandler {
         TypedParameter diff = createParameter(INPUT__DIFF, "number", UsageEnumeration.O, ConfigurationType.SIMPLE, "The number of milliseconds to apply as a diff to the base time.");
         TypedParameter zone = createParameter(INPUT__ZONE, "string", UsageEnumeration.O, ConfigurationType.SIMPLE, "The timezone to consider (default is UTC).");
         TypedParameter regexpFormat = createParameter(INPUT__FORMAT, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "A regular expression defining the syntax and static parts of the returned string.");
+        TypedParameter minimum = createParameter(INPUT__MINIMUM, "number", UsageEnumeration.O, ConfigurationType.SIMPLE, "The minimum bound (inclusive) for the generated random value.");
+        TypedParameter maximum = createParameter(INPUT__MAXIMUM, "number", UsageEnumeration.O, ConfigurationType.SIMPLE, "The maximum bound (exclusive) for the generated random value.");
+        TypedParameter integer = createParameter(INPUT__INTEGER, "boolean", UsageEnumeration.O, ConfigurationType.SIMPLE, "Whether the random number to be generated shall be an integer (by default it is a double).");
 
         module.getOperation().add(createProcessingOperation(OPERATION__UUID, List.of(uuidPrefix, uuidPostfix), List.of(outputText)));
         module.getOperation().add(createProcessingOperation(OPERATION__TIMESTAMP, List.of(timestampFormat, milliseconds, inputDate, inputDateFormat, diff, zone), List.of(outputText)));
         module.getOperation().add(createProcessingOperation(OPERATION__STRING, List.of(regexpFormat), List.of(outputText)));
+        module.getOperation().add(createProcessingOperation(OPERATION__RANDOM, List.of(minimum, maximum, integer), List.of(outputText)));
         return module;
     }
 
@@ -72,9 +82,45 @@ public class TokenGenerator extends AbstractProcessingHandler {
         if (OPERATION__UUID.equalsIgnoreCase(operation)) {
             var prefix = getInputForName(input, INPUT__PREFIX, StringType.class);
             var postfix = getInputForName(input, INPUT__POSTFIX, StringType.class);
-            var prefixString = (prefix == null)?"":(String)prefix.getValue();
-            var postfixString = (postfix == null)?"":(String)postfix.getValue();
+            var prefixString = (prefix == null) ? "" : (String) prefix.getValue();
+            var postfixString = (postfix == null) ? "" : (String) postfix.getValue();
             value = String.format("%s%s%s", prefixString, UUID.randomUUID(), postfixString);
+        } else if (OPERATION__RANDOM.equalsIgnoreCase(operation)) {
+            var minimumBound = getInputForName(input, INPUT__MINIMUM, NumberType.class);
+            var maximumBound = getInputForName(input, INPUT__MAXIMUM, NumberType.class);
+            var integer = getInputForName(input, INPUT__INTEGER, BooleanType.class);
+            var random = new Random();
+            Number result;
+            if (integer != null && (Boolean) integer.getValue()) {
+                // Generate as an integer
+                int minimumToUse = 0;
+                if (minimumBound != null) {
+                    minimumToUse = minimumBound.intValue();
+                }
+                int maximumToUse = Integer.MAX_VALUE;
+                if (maximumBound != null) {
+                    maximumToUse = maximumBound.intValue();
+                }
+                if (minimumToUse >= maximumToUse) {
+                    throw new IllegalArgumentException("The minimum bound must be less than the maximum bound.");
+                }
+                result = random.nextInt(maximumToUse - minimumToUse) + minimumToUse;
+            } else {
+                // Generate as a double.
+                double minimumToUse = 0.0;
+                if (minimumBound != null) {
+                    minimumToUse = minimumBound.doubleValue();
+                }
+                if (maximumBound != null) {
+                    if (minimumToUse >= maximumBound.doubleValue()) {
+                        throw new IllegalArgumentException("The minimum bound must be less than the maximum bound.");
+                    }
+                    result = random.nextDouble(maximumBound.doubleValue() - minimumToUse) + minimumToUse;
+                } else {
+                    result = random.nextDouble() + minimumToUse;
+                }
+            }
+            value = String.valueOf(result);
         } else if (OPERATION__TIMESTAMP.equalsIgnoreCase(operation)) {
             StringType format = getInputForName(input, INPUT__FORMAT, StringType.class);
             NumberType time = getInputForName(input, INPUT__TIME, NumberType.class);
