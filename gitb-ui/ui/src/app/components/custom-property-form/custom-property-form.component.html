@@ -2,7 +2,7 @@
   <div class="row" *ngIf="tbShowFormHeader">
     <div class="col-xs-12">
       <div [ngClass]="{'form-separator': !tbPopup, 'form-separator-popup': tbPopup}" [class.expandable]="tbExpandable" (click)="checkToExpand()">
-        <div><h4 class="title"><app-collapsing-icon *ngIf="tbExpandable" [isCollapsed]="tbCollapsed!"></app-collapsing-icon>Additional properties <span [tooltip]="'Properties specific to the community. Required properties will need to be completed before executing tests.'" [containerClass]="'tooltipContainerBig'"><i class="fa fa-question-circle"></i></span></h4></div>
+        <div><h4 class="title"><app-collapsing-icon *ngIf="tbExpandable" [isCollapsed]="tbCollapsed!"></app-collapsing-icon>Additional properties <span [tooltip]="'Properties specific to the community. Required properties will need to be completed before executing tests.'" [containerClass]="'tooltipContainerBig'"><i class="fa-solid fa-question-circle"></i></span></h4></div>
       </div>
     </div>
   </div>
@@ -15,20 +15,20 @@
               <label [ngClass]="'col-xs-'+tbColLabel" class="control-label" [attr.for]="'prop-'+property.id"><span *ngIf="property.use == 'R' && tbShowRequiredAsterisks">* </span>{{property.name}}:</label>
               <div [ngClass]="'col-xs-'+(11-tbColLabel-tbColInputLess)" *ngIf="property.kind == 'SIMPLE'">
                 <div *ngIf="property.hasPresetValues">
-                  <p *ngIf="isReadonly" class="form-control-static">{{presetValueLabel(property)}}<span *ngIf="property.desc" [ngStyle]="{'margin-left':(property.value?'20px':'0px')}" [tooltip]="property.desc" [containerClass]="'tooltipContainer'"><i class="fa fa-question-circle"></i></span></p>
+                  <p *ngIf="isReadonly" class="form-control-static">{{presetValueLabel(property)}}<span *ngIf="property.desc" [ngStyle]="{'margin-left':(property.value?'20px':'0px')}" [tooltip]="property.desc" [containerClass]="'tooltipContainer'"><i class="fa-solid fa-question-circle"></i></span></p>
                   <select *ngIf="!isReadonly" (change)="checkPrerequisites(property, true)" [attr.id]="'prop-'+property.id" name="{{'prop-'+property.id}}" [(ngModel)]="property.value" [disabled]="property.adminOnly! && !isAdmin" class="form-control">
                     <option value=""></option>
                     <option *ngFor="let v of property.presetValues" [ngValue]="v.value">{{v.label}}</option>
                   </select>
                 </div>
                 <div *ngIf="!property.hasPresetValues">
-                  <p *ngIf="isReadonly" class="form-control-static">{{property.value}}<span *ngIf="property.desc" [ngStyle]="{'margin-left':(property.value?'20px':'0px')}" [tooltip]="property.desc" [containerClass]="'tooltipContainer'"><i class="fa fa-question-circle"></i></span></p>
+                  <p *ngIf="isReadonly" class="form-control-static">{{property.value}}<span *ngIf="property.desc" [ngStyle]="{'margin-left':(property.value?'20px':'0px')}" [tooltip]="property.desc" [containerClass]="'tooltipContainer'"><i class="fa-solid fa-question-circle"></i></span></p>
                   <input *ngIf="!isReadonly" (change)="checkPrerequisites(property, true)" [attr.id]="'prop-'+property.id" name="{{'prop-'+property.id}}" [(ngModel)]="property.value" [readonly]="property.adminOnly && !isAdmin" class="form-control" type="text"/>
                 </div>
               </div>
               <div *ngIf="property.kind == 'SECRET'">
                 <div [ngClass]="'col-xs-'+(9-tbColLabel-tbColInputLess)">
-                  <p *ngIf="isReadonly" class="form-control-static">{{property.value}}<span *ngIf="property.desc" [ngStyle]="{'margin-left':(property.value?'20px':'0px')}" [tooltip]="property.desc" [containerClass]="'tooltipContainer'"><i class="fa fa-question-circle"></i></span></p>
+                  <p *ngIf="isReadonly" class="form-control-static">{{property.value}}<span *ngIf="property.desc" [ngStyle]="{'margin-left':(property.value?'20px':'0px')}" [tooltip]="property.desc" [containerClass]="'tooltipContainer'"><i class="fa-solid fa-question-circle"></i></span></p>
                   <input *ngIf="!isReadonly" (change)="checkPrerequisites(property)" (focus)="checkPrerequisites(property)" (focusout)="checkPrerequisites(property)" [attr.id]="'prop-'+property.id" name="{{'prop-'+property.id}}" [(ngModel)]="property.value" [readonly]="!property.changeValue" class="form-control" [attr.type]="property.showValue?'text':'password'"/>
                   <div class="checkbox" *ngIf="property.changeValue">
                     <label>
@@ -45,7 +45,7 @@
               </div>
               <div [ngClass]="'col-xs-'+(11-tbColLabel-tbColInputLess)" *ngIf="property.kind == 'BINARY'">
                 <div *ngIf="isReadonly">
-                  <p class="form-control-static"><a *ngIf="property.value != undefined" href (click)="downloadProperty(property);$event.preventDefault()" style="padding-right:10px;">{{fileName(property)}}</a><span *ngIf="isReadonly && property.desc" [ngStyle]="{'margin-left':(property.value?'20px':'0px')}" [tooltip]="property.desc" [containerClass]="'tooltipContainer'"><i class="fa fa-question-circle"></i></span></p>
+                  <p class="form-control-static"><a *ngIf="property.value != undefined" href (click)="downloadProperty(property);$event.preventDefault()" style="padding-right:10px;">{{fileName(property)}}</a><span *ngIf="isReadonly && property.desc" [ngStyle]="{'margin-left':(property.value?'20px':'0px')}" [tooltip]="property.desc" [containerClass]="'tooltipContainer'"><i class="fa-solid fa-question-circle"></i></span></p>
                 </div>
                 <div *ngIf="!isReadonly">
                   <span *ngIf="property.value == undefined && property.adminOnly && !isAdmin" class="form-control-static">&nbsp;</span>
@@ -55,7 +55,7 @@
                   <button type="button" class="btn btn-default" *ngIf="property.value != undefined && (!property.adminOnly || isAdmin)" style="margin-left:5px" (click)="removeFile(property)">Remove</button>
                 </div>
               </div>
-              <div class="form-control-static" *ngIf="!isReadonly && property.desc"><span [tooltip]="property.desc" [containerClass]="'tooltipContainer'"><i class="fa fa-question-circle"></i></span></div>
+              <div class="form-control-static" *ngIf="!isReadonly && property.desc"><span [tooltip]="property.desc" [containerClass]="'tooltipContainer'"><i class="fa-solid fa-question-circle"></i></span></div>
             </div>
           </div>
         </form>

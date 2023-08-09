@@ -351,13 +351,13 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
 
   updateTestCaseStatus(testId: number, status: number) {
     this.testCaseStatus[testId] = status
-    if (status == Constants.TEST_CASE_STATUS.PROCESSING) this.progressIcons[testId] = "fa-gear fa-spin test-case-running"
+    if (status == Constants.TEST_CASE_STATUS.PROCESSING) this.progressIcons[testId] = "fa-gear fa-spin-override test-case-running"
     else if (status == Constants.TEST_CASE_STATUS.READY) this.progressIcons[testId] = "fa-gear test-case-ready"
     else if (status == Constants.TEST_CASE_STATUS.PENDING) this.progressIcons[testId] = "fa-clock-o test-case-pending"
     else if (status == Constants.TEST_CASE_STATUS.ERROR) this.progressIcons[testId] = "fa-times-circle test-case-error"
     else if (status == Constants.TEST_CASE_STATUS.COMPLETED) this.progressIcons[testId] = "fa-check-circle test-case-success"
     else if (status == Constants.TEST_CASE_STATUS.STOPPED) this.progressIcons[testId] = "fa-ban test-case-stopped"
-    else if (status == Constants.TEST_CASE_STATUS.CONFIGURING) this.progressIcons[testId] = "fa-spinner fa-spin fa-lg fa-fw"
+    else if (status == Constants.TEST_CASE_STATUS.CONFIGURING) this.progressIcons[testId] = "fa-spinner fa-spin-override fa-lg"
     else this.progressIcons[testId] = "fa-gear test-case-pending"
   }
 

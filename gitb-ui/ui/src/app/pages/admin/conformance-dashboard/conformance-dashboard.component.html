@@ -26,7 +26,7 @@
                     </tr>
                 </thead>
                 <tbody *ngIf="dataStatus.status != Constants.STATUS.FINISHED">
-                    <tr><td [attr.colspan]="columnCount" class="td-data-loading"><span><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span></td></tr>
+                    <tr><td [attr.colspan]="columnCount" class="td-data-loading"><span><i class="fa-solid fa-spinner fa-spin-override fa-lg"></i></span></td></tr>
                 </tbody>
                 <tbody *ngIf="dataStatus.status == Constants.STATUS.FINISHED && conformanceStatements.length == 0">
                     <tr><td [attr.colspan]="columnCount" class="td-no-data"><span>No conformance data found</span></td></tr>
@@ -46,7 +46,7 @@
                             <td class="td-min-centered"><app-test-status-icons [counters]="statement.counters!"></app-test-status-icons></td>
                             <td class="td-min-centered"><span><i containerClass="shortTooltip" [tooltip]="dataService.tooltipForTestResult(statement.overallStatus)" [ngClass]="dataService.iconForTestResult(statement.overallStatus)"></i></span></td>
                             <td class="td-min-centered">
-                                <button class="btn btn-default" (click)="onExportConformanceStatement(statement); $event.stopPropagation();" [pending]="statement.exportPending" [icon]="true"  containerClass="shortTooltip" tooltip="Export" [delay]="Constants.TOOLTIP_DELAY"><i class="fa fa-file-pdf-o"></i></button>
+                                <button class="btn btn-default" (click)="onExportConformanceStatement(statement); $event.stopPropagation();" [pending]="statement.exportPending" [icon]="true"  containerClass="shortTooltip" tooltip="Export" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-regular fa-file-pdf"></i></button>
                             </td>
                         </tr>
                         <tr class="expandable-table-row-expanded">
@@ -54,7 +54,7 @@
                                 <div [collapse]="!isExpanded(statement)" [isAnimated]="true">
                                     <div class="collapsing-div">
                                         <div *ngIf="statement.testCasesLoaded == undefined || !statement.testCasesLoaded" class="spinnerPadded">
-                                            <span><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>
+                                            <span><i class="fa-solid fa-spinner fa-spin-override fa-lg"></i></span>
                                         </div>
                                         <div class="statementControls">
                                             <div class="statementButtons btn-toolbar">
@@ -97,9 +97,9 @@
                                                                         <td class="sessionTime">{{testCase.sessionTime}}</td>
                                                                         <td class="td-min-centered test-case-controls">
                                                                             <div class="btn-toolbar testcase-toolbar">
-                                                                                <button *ngIf="testCase.sessionId != undefined" class="btn btn-default" (click)="toTestSession(testCase.sessionId)" containerClass="shortTooltip" tooltip="View session" [delay]="Constants.TOOLTIP_DELAY"><i class="fa fa-search"></i></button>
-                                                                                <button *ngIf="showExportTestCase(testCase)" [pending]="testCase.actionPending" [icon]="true" class="btn btn-default" (click)="onExportTestCaseXml(testCase)" containerClass="shortTooltip" tooltip="Export (XML)" [delay]="Constants.TOOLTIP_DELAY"><i class="fa fa-file-text-o"></i></button>
-                                                                                <button *ngIf="showExportTestCase(testCase)" [pending]="testCase.exportPending" [icon]="true" class="btn btn-default" (click)="onExportTestCasePdf(testCase)" containerClass="shortTooltip" tooltip="Export (PDF)" [delay]="Constants.TOOLTIP_DELAY"><i class="fa fa-file-pdf-o"></i></button>
+                                                                                <button *ngIf="testCase.sessionId != undefined" class="btn btn-default" (click)="toTestSession(testCase.sessionId)" containerClass="shortTooltip" tooltip="View session" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-search"></i></button>
+                                                                                <button *ngIf="showExportTestCase(testCase)" [pending]="testCase.actionPending" [icon]="true" class="btn btn-default" (click)="onExportTestCaseXml(testCase)" containerClass="shortTooltip" tooltip="Export (XML)" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-regular fa-file-lines"></i></button>
+                                                                                <button *ngIf="showExportTestCase(testCase)" [pending]="testCase.exportPending" [icon]="true" class="btn btn-default" (click)="onExportTestCasePdf(testCase)" containerClass="shortTooltip" tooltip="Export (PDF)" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-regular fa-file-pdf"></i></button>
                                                                             </div>
                                                                         </td>
                                                                         <td class="td-min-centered test-case-result">

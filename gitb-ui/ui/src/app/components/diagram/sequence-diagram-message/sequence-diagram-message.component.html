@@ -21,26 +21,26 @@
     </div>
     <div class="message-info">
       <div class="step-icon" *ngIf="message.type == 'verify'">
-        <i class="fa fa-gear" [ngClass]="{'fa-spin': message.status == TEST_STATUS.PROCESSING}"></i>
+        <i class="fa-solid fa-gear" [ngClass]="{'fa-spin-override': message.status == TEST_STATUS.PROCESSING}"></i>
       </div>
       <div class="step-icon" *ngIf="message.type == 'process'">
-        <i class="fa fa-gear" [ngClass]="{'fa-spin': message.status == TEST_STATUS.PROCESSING}"></i>
+        <i class="fa-solid fa-gear" [ngClass]="{'fa-spin-override': message.status == TEST_STATUS.PROCESSING}"></i>
       </div>
       <div class="step-icon" *ngIf="message.type == 'exit'">
-        <i class="fa fa-dot-circle-o"></i>
+        <i class="fa-regular fa-circle-dot"></i>
       </div>
-      <div class="title-container"><div class="title" *ngIf="message.desc || message.documentation || message.type == 'verify' || message.type == 'process' || message.type == 'exit'" [ngClass]="{'skipped': message.status == TEST_STATUS.SKIPPED}">{{message.desc}}<span *ngIf="message.documentation" (click)="showStepDocumentation(message.documentation)"><i [ngStyle]="{ 'margin-left': message.desc?'5px':'0px'}" class="fa fa-question-circle icon-documentation"></i></span></div></div>
+      <div class="title-container"><div class="title" *ngIf="message.desc || message.documentation || message.type == 'verify' || message.type == 'process' || message.type == 'exit'" [ngClass]="{'skipped': message.status == TEST_STATUS.SKIPPED}">{{message.desc}}<span *ngIf="message.documentation" (click)="showStepDocumentation(message.documentation)"><i [ngStyle]="{ 'margin-left': message.desc?'5px':'0px'}" class="fa-solid fa-question-circle icon-documentation"></i></span></div></div>
     </div>
     <div class="message-body" [collapse]="!expanded" [isAnimated]="false">
       <div class="message-report" *ngIf="message.report != null">
         <a href class="report-link" (click)="showReport();$event.preventDefault()">
           <span class="fa-stack">
-            <i class="fa fa-file-text-o report-icon"></i>
-            <i class="fa fa-circle status-background-icon"></i>
-            <i class="fa fa-gear processing-icon"></i>
-            <i class="fa fa-check completed-icon"></i>
-            <i class="fa fa-times error-icon"></i>
-            <i class="fa fa-exclamation warning-icon"></i>
+            <i class="fa-regular fa-file-lines report-icon"></i>
+            <i class="fa-solid fa-circle status-background-icon"></i>
+            <i class="fa-solid fa-gear processing-icon"></i>
+            <i class="fa-solid fa-check completed-icon"></i>
+            <i class="fa-solid fa-times error-icon"></i>
+            <i class="fa-solid fa-exclamation warning-icon"></i>
           </span>
         </a>
       </div>

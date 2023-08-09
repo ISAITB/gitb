@@ -30,7 +30,7 @@ export class PendingButtonDirective implements AfterViewInit {
     if (!this.icon) {
       this.renderer.addClass(this.pendingSpan, 'mini-tab')
     }
-    this.pendingSpan.innerHTML = '<i class="fa fa-spinner fa-spin fa-lg fa-fw"></i>'
+    this.pendingSpan.innerHTML = '<i class="fa-solid fa-spinner fa-spin-override fa-lg"></i>'
     // Add pending span followed by original content wrapper
     this.renderer.appendChild(this.elementRef.nativeElement, this.pendingSpan)
     this.renderer.appendChild(this.elementRef.nativeElement, this.originalContent)

@@ -7,20 +7,20 @@
                 <th class="th-min-centered"></th>
                 <th [ngClass]="column.headerClass!" *ngFor="let column of columnsLeft" (click)="!column.sortable || headerColumnClicked(column)">
                     {{column.title}} 
-                    <i *ngIf="column.order == 'desc'" class="fa fa-caret-down"></i>
-                    <i *ngIf="column.order == 'asc'" class="fa fa-caret-up"></i>
+                    <i *ngIf="column.order == 'desc'" class="fa-solid fa-caret-down"></i>
+                    <i *ngIf="column.order == 'asc'" class="fa-solid fa-caret-up"></i>
                 </th>
                 <th *ngIf="actionVisible || exportVisible || operationsVisible" class="th-min-centered"></th>
                 <th [ngClass]="column.headerClass!" *ngFor="let column of columnsRight" (click)="!column.sortable || headerColumnClicked(column)">
                     {{column.title}} 
-                    <i *ngIf="column.order == 'desc'" class="fa fa-caret-down"></i>
-                    <i *ngIf="column.order == 'asc'" class="fa fa-caret-up"></i>
+                    <i *ngIf="column.order == 'desc'" class="fa-solid fa-caret-down"></i>
+                    <i *ngIf="column.order == 'asc'" class="fa-solid fa-caret-up"></i>
                 </th>
             </tr>
         </thead>
         <tbody [class.disable-events]="contentRefreshing">
             <tr *ngIf="loadingStatus && loadingStatus.status != Constants.STATUS.FINISHED">
-                <td [attr.colspan]="columnCount" class="td-data-loading"><span><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span></td>
+                <td [attr.colspan]="columnCount" class="td-data-loading"><span><i class="fa-solid fa-spinner fa-spin-override fa-lg"></i></span></td>
             </tr>
             <tr *ngIf="loadingStatus && loadingStatus.status == Constants.STATUS.FINISHED && (!data || data.length == 0)">
                 <td [attr.colspan]="columnCount" class="td-no-data"><span>{{noDataMessage}}</span></td>
@@ -87,7 +87,7 @@
                                                 </div>
                                                 <div [collapse]="diagramCollapsed[row.session]" [isAnimated]="true">
                                                     <div class="panel-body" [class.disable-events]="sessionBeingRefreshed?.session == row.session" style="overflow-x: auto; overflow-y: hidden;">
-                                                        <div *ngIf="!row.hideLoadingIcon"><span><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span></div>
+                                                        <div *ngIf="!row.hideLoadingIcon"><span><i class="fa-solid fa-spinner fa-spin-override fa-lg"></i></span></div>
                                                         <div [collapse]="!row.diagramExpanded" [isAnimated]="true">
                                                             <div class="no-margin">
                                                                 <div *ngIf="row.expanded || row.diagramLoaded">

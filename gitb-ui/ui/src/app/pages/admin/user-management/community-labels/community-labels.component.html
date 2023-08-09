@@ -11,18 +11,18 @@
                 <table id="labelTable" class="table">
                     <thead>
                         <tr>
-                            <th><span>Concept</span><span class="spaced-left" [tooltip]="'The Test Bed concept to describe with a custom label.'" [containerClass]="'tooltipContainer'"><i class="fa fa-question-circle"></i></span></th>
-                            <th><span>Override?</span><span class="spaced-left" [tooltip]="'Whether or not to override the default label.'" [containerClass]="'tooltipContainer'"><i class="fa fa-question-circle"></i></span></th>
-                            <th><span>Singular form</span><span class="spaced-left" [tooltip]="'The label when referring to a single element.'" [containerClass]="'tooltipContainer'"><i class="fa fa-question-circle"></i></span></th>
-                            <th><span>Plural form</span><span class="spaced-left" [tooltip]="'The label when referring to a multiple elements.'" [containerClass]="'tooltipContainer'"><i class="fa fa-question-circle"></i></span></th>
-                            <th><span>Fixed casing?</span><span class="spaced-left" [tooltip]="'Whether or not the label\'s casing should never be adapted.'" [containerClass]="'tooltipContainer'"><i class="fa fa-question-circle"></i></span></th>
+                            <th><span>Concept</span><span class="spaced-left" [tooltip]="'The Test Bed concept to describe with a custom label.'" [containerClass]="'tooltipContainer'"><i class="fa-solid fa-question-circle"></i></span></th>
+                            <th><span>Override?</span><span class="spaced-left" [tooltip]="'Whether or not to override the default label.'" [containerClass]="'tooltipContainer'"><i class="fa-solid fa-question-circle"></i></span></th>
+                            <th><span>Singular form</span><span class="spaced-left" [tooltip]="'The label when referring to a single element.'" [containerClass]="'tooltipContainer'"><i class="fa-solid fa-question-circle"></i></span></th>
+                            <th><span>Plural form</span><span class="spaced-left" [tooltip]="'The label when referring to a multiple elements.'" [containerClass]="'tooltipContainer'"><i class="fa-solid fa-question-circle"></i></span></th>
+                            <th><span>Fixed casing?</span><span class="spaced-left" [tooltip]="'Whether or not the label\'s casing should never be adapted.'" [containerClass]="'tooltipContainer'"><i class="fa-solid fa-question-circle"></i></span></th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr *ngFor="let label of labels; let index = index">
                             <td style="padding-top:14px">
                                 <span>{{labelTypeLabel(label.labelType)}}</span>
-                                <span class="spaced-left" [tooltip]="labelTypeDescription[label.labelType]"><i class="fa fa-question-circle"></i></span>
+                                <span class="spaced-left" [tooltip]="labelTypeDescription[label.labelType]"><i class="fa-solid fa-question-circle"></i></span>
                             </td>
                             <td><input type="checkbox" [name]="'custom'+index" [(ngModel)]="label.custom" class="form-check" (change)="customChecked($event, label)"/></td>
                             <td>

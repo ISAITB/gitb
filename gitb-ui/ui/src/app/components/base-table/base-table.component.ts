@@ -16,8 +16,8 @@ export abstract class BaseTableComponent extends BaseComponent {
 	@Input() actionVisibleForRow?: (row: any) => boolean
 	@Input() actionPendingProperty = 'actionPending'
 	@Input() actionIcon = ''
-  @Input() deleteIcon = 'fa fa-trash'
-  @Input() exportIcon = 'fa fa-file-pdf-o'
+  @Input() deleteIcon = 'fa-solid fa-trash'
+  @Input() exportIcon = 'fa-regular fa-file-pdf'
 	@Input() operationsVisible = false
 	@Input() deleteVisibleForRow?: (row: any) => boolean
 	@Input() deletePendingProperty = 'deletePending'

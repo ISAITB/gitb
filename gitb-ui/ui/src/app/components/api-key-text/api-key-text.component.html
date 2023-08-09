@@ -2,13 +2,13 @@
     <input [name]="name" [attr.id]="id" [(ngModel)]="key" class="form-control" readonly="true">
     <div class="input-group-btn">
         <button *ngIf="supportUpdate" class="btn btn-default" type="button" (click)="doUpdate()" [disabled]="updatePending || deletePending" containerClass="shortTooltip" tooltip="Reset" [delay]="Constants.TOOLTIP_DELAY">
-            <i class="fa fa-refresh" aria-hidden="true"></i>
+            <i class="fa-solid fa-refresh" aria-hidden="true"></i>
         </button>
         <button *ngIf="supportDelete" class="btn btn-default" type="button" (click)="doDelete()" [disabled]="updatePending || deletePending" containerClass="shortTooltip" tooltip="Delete" [delay]="Constants.TOOLTIP_DELAY">
-            <i class="fa fa-trash" aria-hidden="true"></i>
+            <i class="fa-solid fa-trash" aria-hidden="true"></i>
         </button>
         <button class="btn btn-default" type="button" (click)="copy()" [disabled]="updatePending || deletePending" containerClass="shortTooltip" tooltip="Copy" [delay]="Constants.TOOLTIP_DELAY">
-            <i class="fa fa-clipboard" aria-hidden="true"></i>
+            <i class="fa-solid fa-clipboard" aria-hidden="true"></i>
         </button>
     </div>
 </div>

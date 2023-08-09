@@ -17,7 +17,7 @@
               <!-- User menu item, show when authenticated -->
               <li class="dropdown mega-menu-item mega-menu-signin signin logged" id="headerAccount" *ngIf="userLoaded()">
                 <a class="dropdown-toggle">
-                  <i class="fa fa-user"></i><span class="header-user-name"> {{dataService.user?.name}} <i class="fa fa-angle-down"></i></span>
+                  <i class="fa-solid fa-user"></i><span class="header-user-name"> {{dataService.user?.name}} <i class="fa-solid fa-angle-down"></i></span>
                 </a>
                 <ul class="dropdown-menu">
                   <li>
@@ -61,7 +61,7 @@
           </div>
           <div class="col-xs-10 version-div">
             <div class="pull-right">
-              <div class="footer-devmode" *ngIf="dataService.isDevelopmentMode()"><i class="fa fa-exclamation-circle" aria-hidden="true"></i> Development mode</div>
+              <div class="footer-devmode" *ngIf="dataService.isDevelopmentMode()"><i class="fa-solid fa-exclamation-circle" aria-hidden="true"></i> Development mode</div>
               <div class="footer-links">
                 <a href *ngIf="showUserGuide()" (click)="userGuideLink();$event.preventDefault()">User guide</a>
                 <span *ngIf="showUserGuide()" class="version-text"> | </span><a *ngIf="showProvideFeedback()" [href]="provideFeedbackLink()" target="blank">Provide feedback</a>

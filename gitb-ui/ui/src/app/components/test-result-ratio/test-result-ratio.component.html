@@ -1,5 +1,5 @@
 <div class="root-container">
-    <div *ngIf="hasOptional" class="expand-icon" (click)="expanded = true" tooltip="Expand" containerClass="shortTooltip"><span><i class="fa fa-plus-circle"></i></span></div>
+    <div *ngIf="hasOptional" class="expand-icon" (click)="expanded = true" tooltip="Expand" containerClass="shortTooltip"><span><i class="fa-solid fa-plus-circle"></i></span></div>
     <div class="ratio-container" [ngSwitch]="hasRequired">
         <ng-container *ngSwitchCase="true">
             <div *ngIf="counters.completed > 0" [tooltip]="completedPercentage+'% of all required tests are passed'" containerClass="ratioTooltip" class="ratio completed" [class.start]="true" [class.end]="counters.failed == 0 && counters.other == 0" [ngStyle]="{'width': completedPercentage+'%'}">{{completedPercentage}}%</div>
@@ -9,7 +9,7 @@
         <div *ngSwitchDefault tooltip="No required tests defined" containerClass="ratioTooltip" class="ratio other" [class.start]="true" [class.end]="true" [ngStyle]="{'width': '100%'}">100%</div>
     </div>
     <div *ngIf="expanded" class="popup-panel" [class.align-right]="alignRight">
-        <div class="close-container" (click)="expanded = false" tooltip="Close" containerClass="shortTooltip"><span><i class="fa fa-times"></i></span></div>
+        <div class="close-container" (click)="expanded = false" tooltip="Close" containerClass="shortTooltip"><span><i class="fa-solid fa-times"></i></span></div>
         <div class="ratio-title">Required tests</div>
         <div class="ratio-container" [ngSwitch]="hasRequired">
             <ng-container *ngSwitchCase="true">
