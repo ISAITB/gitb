@@ -43,8 +43,6 @@ public class DelayProcessor extends AbstractProcessingHandler {
         if (duration == null) {
             throw new IllegalArgumentException("The duration to delay for is required");
         }
-        var report = createReport(TestResultType.SUCCESS);
-        report.getContext().getItem().add(DataTypeUtils.convertDataTypeToAnyContent("duration", duration));
-        return new DeferredProcessingReport(report, new ProcessingData(), duration.longValue());
+        return new DeferredProcessingReport(createReport(TestResultType.SUCCESS), new ProcessingData(), duration.longValue());
     }
 }
