@@ -18,6 +18,7 @@ export class HomeComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
+    this.dataService.setBanner('Home')
     if (this.dataService.currentLandingPageContent == undefined) {
       this.accountService.getVendorProfile().subscribe((vendor) => {
         if (vendor.landingPages) {

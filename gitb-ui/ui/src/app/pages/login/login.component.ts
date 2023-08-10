@@ -90,6 +90,7 @@ export class LoginComponent extends BaseComponent implements OnInit, AfterViewIn
         }
       }
     }
+    this.dataService.setBanner(this.directLogin?'Home':'Welcome to the Interoperability Test Bed')
   }
 
   ngAfterViewInit(): void {

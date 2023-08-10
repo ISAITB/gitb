@@ -521,12 +521,11 @@ aside {
 aside ul.nav-list > li > a {
 	color: #666;
 	font-size: 0.9em;
-	cursor: pointer;	
+	cursor: pointer;
 }
 
 /* Footer */
 footer {
-	margin-top: 50px;
 	height: 60px;
 	position: relative;
 	clear: both;

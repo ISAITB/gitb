@@ -18,6 +18,7 @@ export class AdminComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
+    this.dataService.setBanner('Administration')
     this.communityId = this.dataService.community?.id
   }
 

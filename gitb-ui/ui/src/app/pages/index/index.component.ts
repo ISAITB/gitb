@@ -14,13 +14,16 @@ import { RoutingService } from 'src/app/services/routing.service';
 
 @Component({
   selector: 'app-index',
-  templateUrl: './index.component.html'
+  templateUrl: './index.component.html',
+  styleUrls: ['./index.component.less']
 })
 export class IndexComponent implements OnInit {
 
   logo?: string
   footer?: string
   version?: string
+  pageTitle = 'Home'
+  menuExpanded = false
 
   constructor(
     public dataService: DataService,
@@ -35,6 +38,11 @@ export class IndexComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.dataService.onBannerChange$.subscribe((newBanner) => {
+      setTimeout(() => {
+        this.pageTitle = newBanner
+      }, 1)
+    })
     this.version = this.dataService.configuration.versionNumber
     this.systemConfigurationService.getLogo().subscribe((data) => {
       this.logo = data
@@ -135,6 +143,10 @@ export class IndexComponent implements OnInit {
 	onTestsClick() {
     localStorage.setItem(Constants.LOCAL_DATA.ORGANISATION, JSON.stringify(this.dataService.vendor))
     this.routingService.toSystems(this.dataService.vendor!.id)
+  }
+
+  toggleMenu() {
+    this.menuExpanded = !this.menuExpanded
   }
 
 }

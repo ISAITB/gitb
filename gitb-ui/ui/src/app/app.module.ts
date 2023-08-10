@@ -164,6 +164,8 @@ import { PlaceholderSelectorComponent } from './components/placeholder-selector/
 import { TestResultRatioComponent } from './components/test-result-ratio/test-result-ratio.component';
 import { PrescriptionLevelComponent } from './components/prescription-level/prescription-level.component';
 import { CheckboxOptionPanelComponent } from './components/checkbox-option-panel/checkbox-option-panel.component';
+import { MenuItemComponent } from './pages/index/menu-item/menu-item.component';
+import { MenuGroupComponent } from './pages/index/menu-group/menu-group.component';
 
 @NgModule({
   providers: [ 
@@ -317,7 +319,9 @@ import { CheckboxOptionPanelComponent } from './components/checkbox-option-panel
     PlaceholderSelectorComponent,
     TestResultRatioComponent,
     PrescriptionLevelComponent,
-    CheckboxOptionPanelComponent],
+    CheckboxOptionPanelComponent,
+    MenuItemComponent,
+    MenuGroupComponent],
   imports: [
     BrowserModule,
     BrowserAnimationsModule,

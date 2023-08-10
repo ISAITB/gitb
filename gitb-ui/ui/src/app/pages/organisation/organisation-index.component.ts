@@ -33,10 +33,12 @@ export class OrganisationIndexComponent implements OnInit, OnDestroy {
 
   initialise() {
     this.organisation = JSON.parse(localStorage.getItem(Constants.LOCAL_DATA.ORGANISATION)!)
+    this.dataService.setBanner('Tests'+((this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin)?' - '+this.organisation.sname:''))
   }
 
   ngOnInit(): void {
     // Initialisation takes place in the initialise method because we want to reload for parameter changes (observed via event).
+    this.initialise()
   }
 
 }

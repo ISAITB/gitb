@@ -1,0 +1,24 @@
+@import '../../../../styles/less/_common.less';
+
+.menu-root {
+    position: relative;
+    .menu-separator {
+        margin-top: 30px;
+        padding-top: 30px;
+        border-top: 1px solid @gray-light;
+    }
+    .menu-group-label {
+        display: flex;
+        align-content: center;
+        flex-wrap: wrap;
+        font-size: small;
+        font-weight: bold;
+        white-space: nowrap;
+        position: absolute;
+        top: -12px;
+        background: @gray-light-1;
+        left: 35px;
+        padding: 0px 10px;
+        user-select: none;
+    }
+}
