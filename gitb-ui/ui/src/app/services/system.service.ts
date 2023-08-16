@@ -2,14 +2,13 @@ import { Injectable } from '@angular/core';
 import { ROUTES } from '../common/global';
 import { ConformanceConfiguration } from '../pages/organisation/conformance-statement/conformance-configuration';
 import { BinaryMetadata } from '../types/binary-metadata';
-import { ConformanceStatement } from '../types/conformance-statement';
-import { ErrorDescription } from '../types/error-description';
 import { FileParam } from '../types/file-param.type';
 import { System } from '../types/system';
 import { SystemParameter } from '../types/system-parameter';
 import { SystemParameterWithValue } from '../types/system-parameter-with-value';
 import { DataService } from './data.service';
 import { RestService } from './rest.service';
+import { ConformanceStatementItem } from '../types/conformance-statement-item';
 
 @Injectable({
   providedIn: 'root'
@@ -32,6 +31,13 @@ export class SystemService {
       path: ROUTES.controllers.SystemService.getSystemsByOrganization().url,
       authenticate: true,
       params: params
+    })
+  }
+
+  getSystemById(systemId: number) {
+    return this.restService.get<System>({
+      path: ROUTES.controllers.SystemService.getSystemById(systemId).url,
+      authenticate: true
     })
   }
 
@@ -170,22 +176,11 @@ export class SystemService {
     })
   }
 
-  getConformanceStatements(system: number, specId?: number, actorId?: number) {
-    if (actorId != undefined && specId != undefined) {
-      return this.restService.get<ConformanceStatement[]>({
-        path: ROUTES.controllers.SystemService.getConformanceStatements(system).url,
-        authenticate: true,
-        params: {
-          spec: specId,
-          actor: actorId
-        }
-      })
-    } else {
-      return this.restService.get<ConformanceStatement[]>({
-        path: ROUTES.controllers.SystemService.getConformanceStatements(system).url,
-        authenticate: true
-      })
-    }
+  getConformanceStatements(system: number) {
+    return this.restService.get<ConformanceStatementItem[]>({
+      path: ROUTES.controllers.SystemService.getConformanceStatements(system).url,
+      authenticate: true
+    })
   }
 
   defineConformanceStatements(system: number, actorIds: number[]) {

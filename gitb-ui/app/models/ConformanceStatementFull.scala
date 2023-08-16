@@ -18,7 +18,7 @@ class ConformanceStatementFull(
     specificationId: Long,
     specificationName: String,
     specificationNameFull: String,
-    val specificationGroupName: Option[String],
+    specificationGroupName: Option[String],
     val specificationGroupNameFull: Option[String],
     val specificationGroupOptionName: String,
     val specificationGroupOptionNameFull: String,
@@ -43,4 +43,4 @@ class ConformanceStatementFull(
   domainId, domainName, domainNameFull,
   actorId, actorName, actorFull,
   specificationId, specificationName, specificationNameFull, systemId,
-  result, updateTime, completedTests, failedTests, undefinedTests, completedOptionalTests, failedOptionalTests, undefinedOptionalTests) {}
+  result, updateTime, completedTests, failedTests, undefinedTests, completedOptionalTests, failedOptionalTests, undefinedOptionalTests, None, specificationGroupName) {}

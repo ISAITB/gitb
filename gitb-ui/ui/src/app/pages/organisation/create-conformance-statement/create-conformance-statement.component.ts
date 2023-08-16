@@ -5,11 +5,10 @@ import { DataService } from 'src/app/services/data.service';
 import { PopupService } from 'src/app/services/popup.service';
 import { Constants } from 'src/app/common/constants';
 import { RoutingService } from 'src/app/services/routing.service';
-import { Organisation } from 'src/app/types/organisation.type';
 import { ConformanceStatementItem } from 'src/app/types/conformance-statement-item';
 import { mergeMap, Observable, of } from 'rxjs';
 import { SystemService } from 'src/app/services/system.service';
-import { filter, find, remove, sortBy } from 'lodash';
+import { filter, find, remove } from 'lodash';
 
 @Component({
   selector: 'app-create-conformance-statement',
@@ -20,6 +19,7 @@ export class CreateConformanceStatementComponent implements OnInit {
 
   systemId!: number
   organisationId!: number
+  communityId?: number
   domainId?: number
   dataStatus = {status: Constants.STATUS.PENDING}
   items: ConformanceStatementItem[] = []
@@ -44,23 +44,24 @@ export class CreateConformanceStatementComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
-    this.systemId = Number(this.route.snapshot.paramMap.get('id'))
+    this.systemId = Number(this.route.snapshot.paramMap.get('sys_id'))
     this.organisationId = Number(this.route.snapshot.paramMap.get('org_id'))
+    if (this.route.snapshot.paramMap.has('community_id')) {
+      this.communityId = Number(this.route.snapshot.paramMap.get('community_id'))
+    }
     let domainIdObservable: Observable<number|undefined>
-    if (this.dataService.vendor?.id == this.organisationId || this.dataService.isCommunityAdmin) {
+
+    if (this.communityId == undefined) {
       // Use own community domain.
       domainIdObservable = of(this.dataService.community?.domainId)
-    } else if (this.dataService.isSystemAdmin) {
-      // Lookup from organisation.
-      const organisation: Organisation = JSON.parse(localStorage.getItem(Constants.LOCAL_DATA.ORGANISATION)!)
-      domainIdObservable = this.conformanceService.getCommunityDomain(organisation.community)
+    } else {
+      // Lookup from navigation community.
+      domainIdObservable = this.conformanceService.getCommunityDomain(this.communityId)
       .pipe(
         mergeMap((data) => {
           return of(data?.id)
         })
       )
-    } else {
-      domainIdObservable = of(undefined)
     }
     const statementObservable = domainIdObservable.pipe(
       mergeMap((domainId) => {
@@ -70,55 +71,59 @@ export class CreateConformanceStatementComponent implements OnInit {
     )
     statementObservable.subscribe((itemInfo) => {
       this.hasOtherStatements = itemInfo.exists
-      if (itemInfo.items.length == 1) {
-        if (this.domainId != undefined) {
-          // We only have one domain.
-          itemInfo.items[0].hidden = true
-        }
-        // Display single option as expanded.
-        itemInfo.items[0].collapsed = false
-        // If there is only one possible option, pre-select it.
-        const uniqueActor = this.findUniqueActor(itemInfo.items[0])
-        if (uniqueActor) {
-          uniqueActor.checked = true
-          this.selectionChanged(uniqueActor)
-        }
-      }
-      let specs: ConformanceStatementItem[] = []
-      for (let domain of itemInfo.items) {
-        const specsInDomain = filter(domain.items, (item) => item.itemType == Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.SPECIFICATION)
-        specsInDomain.forEach((item) => specs.push(item))
-        const groupsInDomain = filter(domain.items, (item) => item.itemType == Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.SPECIFICATION_GROUP)
-        for (let group of groupsInDomain) {
-          const specsInGroup = filter(group.items, (item) => item.itemType == Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.SPECIFICATION)
-          specsInGroup.forEach((item) => specs.push(item))
-        }
-      }
-      this.checkToHideActors(specs)
-      this.itemsByType = this.getItemsByType(itemInfo.items)
-      // Initialise item state.
-      this.visit(itemInfo.items, (item) => {
-        if (item.collapsed == undefined) {
-          item.collapsed = true
-        }
-        if (item.items && item.items.length == 1) {
-          item.items[0].collapsed = false
-        }
-        if (item.checked == undefined) {
-          item.checked = false
-        }
-        if (item.hidden == undefined) {
-          item.hidden = false
-        }
-        item.filtered = true
-      })
-      this.sortItems(itemInfo.items)
-      this.items = itemInfo.items
+      this.items = this.processItems(itemInfo.items)
       this.countVisibleItems()
       this.toggleAnimated(true)
     }).add(() => {
       this.dataStatus.status = Constants.STATUS.FINISHED
     })
+  }
+
+  private processItems(items: ConformanceStatementItem[]) {
+    if (items.length == 1) {
+      if (this.domainId != undefined) {
+        // We only have one domain.
+        items[0].hidden = true
+      }
+      // Display single option as expanded.
+      items[0].collapsed = false
+      // If there is only one possible option, pre-select it.
+      const uniqueActor = this.findUniqueActor(items[0])
+      if (uniqueActor) {
+        uniqueActor.checked = true
+        this.selectionChanged(uniqueActor)
+      }
+    }
+    let specs: ConformanceStatementItem[] = []
+    for (let domain of items) {
+      const specsInDomain = filter(domain.items, (item) => item.itemType == Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.SPECIFICATION)
+      specsInDomain.forEach((item) => specs.push(item))
+      const groupsInDomain = filter(domain.items, (item) => item.itemType == Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.SPECIFICATION_GROUP)
+      for (let group of groupsInDomain) {
+        const specsInGroup = filter(group.items, (item) => item.itemType == Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.SPECIFICATION)
+        specsInGroup.forEach((item) => specs.push(item))
+      }
+    }
+    this.checkToHideActors(specs)
+    this.itemsByType = this.getItemsByType(items)
+    // Initialise item state.
+    this.visit(items, (item) => {
+      if (item.collapsed == undefined) {
+        item.collapsed = true
+      }
+      if (item.items && item.items.length == 1) {
+        item.items[0].collapsed = false
+      }
+      if (item.checked == undefined) {
+        item.checked = false
+      }
+      if (item.hidden == undefined) {
+        item.hidden = false
+      }
+      item.filtered = true
+    })
+    this.sortItems(items)
+    return items
   }
 
   private sortItems(items: ConformanceStatementItem[]) {
@@ -335,7 +340,7 @@ export class CreateConformanceStatementComponent implements OnInit {
       this.createPending = true
       this.systemService.defineConformanceStatements(this.systemId, this.selectedActorIds)
       .subscribe(() => {
-        this.routingService.toConformanceStatements(this.organisationId, this.systemId)
+        this.cancel()
         if (this.selectedActorIds.length > 1) {
           this.popupService.success("Conformance statements created.")
         } else {
@@ -348,7 +353,11 @@ export class CreateConformanceStatementComponent implements OnInit {
   }
 
   cancel() {
-    this.routingService.toConformanceStatements(this.organisationId, this.systemId)
+    if (this.communityId == undefined) {
+      this.routingService.toOwnConformanceStatements(this.organisationId, this.systemId)
+    } else {
+      this.routingService.toConformanceStatements(this.communityId, this.organisationId, this.systemId)
+    }
   }
 
 }

@@ -12,23 +12,44 @@
                     [organisation]="organisation"
                     [communityId]="communityId"
                     [propertyData]="propertyData"
+                    [showAdminInfo]="showAdminInfo"
+                    [readonly]="readonly"
                 ></app-organisation-form>
             </div>
-            <div class="panel-footer">
+            <div class="panel-footer" *ngIf="!readonly">
                 <div class="btn-toolbar">
                     <button class="btn btn-default" type="submit" (click)="updateOrganisation()" [disable]="deletePending || saveDisabled()" [pending]="savePending">Update</button>
-                    <button class="btn btn-default" type="button" (click)="deleteOrganisation()" [disable]="savePending" [pending]="deletePending">Delete</button>
-                    <button class="btn btn-default" type="button" (click)="manageOrganisationTests()">Manage tests</button>
-                    <button class="btn btn-default" type="button" (click)="cancelDetailOrganisation()">Back</button>
+                    <ng-container *ngIf="showAdminInfo">
+                        <button class="btn btn-default" type="button" (click)="deleteOrganisation()" [disable]="savePending" [pending]="deletePending">Delete</button>
+                        <button class="btn btn-default" type="button" (click)="manageOrganisationTests()">Manage tests</button>
+                        <button class="btn btn-default" type="button" (click)="cancelDetailOrganisation()">Back</button>
+                    </ng-container>
                 </div>
             </div>
         </form>
     </div>
     <div>
-        <tabset>
-            <tab heading="Users">
+        <tabset #tabs>
+            <tab heading="{{dataService.labelSystems()}}" (selectTab)="showSystems()">
                 <div class="tabPanel">
-                    <div class="tabControls">
+                    <div class="tabControls" *ngIf="!readonly">
+                        <button type="button" class="btn btn-default" (click)="createSystem()">Create {{dataService.labelSystemLower()}}</button>
+                    </div>
+                    <div class="panel panel-default">
+                        <div table-directive 
+                            [columns]="systemColumns" 
+                            [data]="systems"
+                            [noDataMessage]="'No '+dataService.labelSystemsLower()+' found'"
+                            [loadingStatus]="systemsStatus" 
+                            [allowSelect]="!readonly"
+                            (onSelect)="systemSelect($event)">
+                        </div>
+                    </div>
+                </div>
+            </tab>
+            <tab heading="Users" (selectTab)="showUsers()">
+                <div class="tabPanel">
+                    <div class="tabControls" *ngIf="!readonly && showCreateUser">
                         <button type="button" class="btn btn-default" (click)="createUser()">Create user</button>
                     </div>
                     <div class="panel panel-default">
@@ -36,14 +57,14 @@
                             [columns]="userColumns" 
                             [data]="users"
                             [noDataMessage]="'No users found'"
-                            [loadingStatus]="dataStatus" 
-                            [allowSelect]="true"
+                            [loadingStatus]="usersStatus" 
+                            [allowSelect]="!readonly"
                             (onSelect)="userSelect($event)">
                         </div>
                     </div>
                 </div>
             </tab>
-            <tab heading="REST API keys" (selectTab)="apiInfoSelected()" *ngIf="dataService.configuration.automationApiEnabled">
+            <tab heading="REST API keys" (selectTab)="showApiInfo()" *ngIf="apiInfoVisible">
                 <div class="tabPanel">
                     <app-api-key-info 
                         [organisationId]="orgId" 

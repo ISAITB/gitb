@@ -94,13 +94,14 @@ export class AccountService {
     })
   }
 
-  registerUser(userName: string, userEmail: string, userPassword: string) {
+  registerUser(userName: string, userEmail: string, userPassword: string, roleId: number) {
     return this.restService.post<void>({
       path: ROUTES.controllers.AccountService.registerUser().url,
       data: {
         user_name  : userName,
         user_email : userEmail,
-        password   : userPassword
+        password   : userPassword,
+        role_id: roleId
       },
       authenticate: true
     })

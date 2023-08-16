@@ -22,7 +22,6 @@ import { EndpointRepresentation } from './endpoint-representation';
 import { cloneDeep, find, map, remove } from 'lodash'
 import { ParameterPresetValue } from 'src/app/types/parameter-preset-value';
 import { SystemConfigurationParameter } from 'src/app/types/system-configuration-parameter';
-import { Organisation } from 'src/app/types/organisation.type';
 import { forkJoin } from 'rxjs'
 import { MissingConfigurationModalComponent } from 'src/app/modals/missing-configuration-modal/missing-configuration-modal.component';
 import { EditEndpointConfigurationModalComponent } from 'src/app/modals/edit-endpoint-configuration-modal/edit-endpoint-configuration-modal.component';
@@ -35,6 +34,7 @@ import { Counters } from 'src/app/components/test-status-icons/counters';
 import { saveAs } from 'file-saver'
 import { CheckboxOption } from 'src/app/components/checkbox-option-panel/checkbox-option';
 import { CheckboxOptionState } from 'src/app/components/checkbox-option-panel/checkbox-option-state';
+import { SpecificationService } from 'src/app/services/specification.service';
 
 @Component({
   selector: 'app-conformance-statement',
@@ -47,6 +47,7 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
   actorId!: number
   specId!: number
   organisationId!: number
+  communityId?: number
   loadingTests = true
   loadingConfiguration: LoadingStatus = {status: Constants.STATUS.NONE}
   Constants = Constants
@@ -111,6 +112,7 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
     private popupService: PopupService,
     private htmlService: HtmlService,
     private organisationService: OrganisationService,
+    private specificationService: SpecificationService,
     private routingService: RoutingService
   ) { 
     // Access the tab to show via router state to have it cleared upon refresh.
@@ -151,10 +153,12 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
   }
 
   ngOnInit(): void {
-    this.systemId = Number(this.route.snapshot.paramMap.get('id'))
+    this.systemId = Number(this.route.snapshot.paramMap.get('sys_id'))
     this.actorId = Number(this.route.snapshot.paramMap.get('actor_id'))
-    this.specId = Number(this.route.snapshot.paramMap.get('spec_id'))
     this.organisationId = Number(this.route.snapshot.paramMap.get('org_id'))
+    if (this.route.snapshot.paramMap.has('community_id')) {
+      this.communityId = Number(this.route.snapshot.paramMap.get('community_id'))
+    }
     this.prepareTestFilter()
     // Load conformance results.
     this.conformanceService.getConformanceStatus(this.actorId, this.systemId)
@@ -247,14 +251,15 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
       this.actor = data[0]
     })
     // Load domain.
-    this.conformanceService.getDomainForSpecification(this.specId)
+    this.conformanceService.getDomainOfActor(this.actorId)
     .subscribe((data) => {
       this.domain = data
     })
     // Load specification.
-    this.conformanceService.getSpecificationsWithIds([this.specId])
+    this.specificationService.getSpecificationOfActor(this.actorId)
     .subscribe((data) => {
-      this.specification = data[0]
+      this.specification = data
+      this.specId = this.specification.id
     })
   }
 
@@ -381,14 +386,6 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
     this.runTestClicked = false
   }
 
-  getOrganisation(): Organisation {
-    let organisation = this.dataService.vendor
-    if (this.dataService.isCommunityAdmin || this.dataService.isSystemAdmin) {
-      organisation = JSON.parse(localStorage.getItem(Constants.LOCAL_DATA.ORGANISATION)!)
-    }
-    return organisation!
-  }
-
   resultFilterUpdated(choices: CheckboxOptionState) {
     this.showOptional = choices[ConformanceStatementComponent.SHOW_OPTIONAL]
     this.showDisabled = choices[ConformanceStatementComponent.SHOW_DISABLED]
@@ -452,7 +449,7 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
 
   private executeHeadless(testCases: ConformanceTestCase[]) {
     // Check configurations
-    const organisationParameterCheck = this.organisationService.checkOrganisationParameterValues(this.getOrganisation().id)
+    const organisationParameterCheck = this.organisationService.checkOrganisationParameterValues(this.organisationId)
     const systemParameterCheck = this.systemService.checkSystemParameterValues(this.systemId)
     const statementParameterCheck = this.conformanceService.checkConfigurations(this.actorId, this.systemId)
     // Check status once everything is loaded.
@@ -483,23 +480,26 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
             this.showConfigurationTab()
           } else if (actionType == MissingConfigurationAction.viewOrganisation) {
             if (this.dataService.isVendorUser || this.dataService.isVendorAdmin) {
-              this.routingService.toOwnOrganisationDetails(true)
+              this.routingService.toOwnOrganisationDetails(undefined, true)
             } else {
-              const organisation = this.getOrganisation()
-              if (this.dataService.vendor!.id == organisation.id) {
-                this.routingService.toOwnOrganisationDetails(true)
+              if (this.dataService.vendor!.id == this.organisationId) {
+                this.routingService.toOwnOrganisationDetails(undefined, true)
               } else {
                 this.organisationService.getOrganisationBySystemId(this.systemId)
                 .subscribe((data) => {
-                  this.routingService.toOrganisationDetails(data.community, data.id, true)
+                  this.routingService.toOrganisationDetails(data.community, data.id, undefined, true)
                 })
               }
             }
           } else if (actionType == MissingConfigurationAction.viewSystem) {
-            if (this.dataService.isVendorUser) {
-              this.routingService.toSystemInfo(this.organisationId, this.systemId, true)
+            if (this.dataService.isVendorUser || this.dataService.isVendorAdmin) {
+              this.routingService.toOwnSystemDetails(this.systemId, true)
             } else {
-              this.routingService.toSystems(this.organisationId, this.systemId, true)
+              if (this.dataService.vendor!.id == this.organisationId) {
+                this.routingService.toOwnSystemDetails(this.systemId, true)
+              } else {
+                this.routingService.toSystemDetails(this.communityId!, this.organisationId, this.systemId, true)
+              }
             }
           }
         })
@@ -521,7 +521,11 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
   onTestSelect(test: ConformanceTestCase) {
     if (this.executionMode == this.executionModeInteractive) {
       this.dataService.setTestsToExecute([test])
-      this.routingService.toTestCaseExecution(this.organisationId, this.systemId, this.actorId, this.specId, test.id)
+      if (this.communityId == undefined) {
+        this.routingService.toOwnTestCaseExecution(this.organisationId, this.systemId, this.actorId, test.id)
+      } else {
+        this.routingService.toTestCaseExecution(this.communityId, this.organisationId, this.systemId, this.actorId, test.id)
+      }
     } else {
       this.executeHeadless([test])
     }
@@ -536,7 +540,11 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
     }
     if (this.executionMode == this.executionModeInteractive) {
       this.dataService.setTestsToExecute(testsToExecute)
-      this.routingService.toTestSuiteExecution(this.organisationId, this.systemId, this.actorId, this.specId, testSuite.id)
+      if (this.communityId == undefined) {
+        this.routingService.toOwnTestSuiteExecution(this.organisationId, this.systemId, this.actorId, testSuite.id)
+      } else {
+        this.routingService.toTestSuiteExecution(this.communityId, this.organisationId, this.systemId, this.actorId, testSuite.id)
+      }
     } else {
       this.executeHeadless(testsToExecute)
     }
@@ -611,7 +619,7 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
       this.deletePending = true
       this.systemService.deleteConformanceStatement(this.systemId, [this.actorId])
       .subscribe(() => {
-        this.routingService.toConformanceStatements(this.organisationId, this.systemId)
+        this.back()
         this.popupService.success('Conformance statement deleted.')
       }).add(() => {
         this.deletePending = false
@@ -667,6 +675,18 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
   }
 
   toTestSession(sessionId: string) {
-    this.routingService.toTestHistory(this.organisationId, this.systemId, sessionId)
+    if (this.organisationId == this.dataService.vendor?.id) {
+      this.routingService.toTestHistory(this.organisationId, sessionId)
+    } else {
+      this.routingService.toSessionDashboard(sessionId)
+    }
+  }
+
+  back() {
+    if (this.communityId == undefined) {
+      this.routingService.toOwnConformanceStatements(this.organisationId, this.systemId)
+    } else {
+      this.routingService.toConformanceStatements(this.communityId, this.organisationId, this.systemId)
+    }
   }
 }

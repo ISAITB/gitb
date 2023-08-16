@@ -1,9 +1,9 @@
 package managers
 
 import actors.events.{ConformanceStatementCreatedEvent, ConformanceStatementUpdatedEvent, SystemUpdatedEvent}
-import javax.inject.{Inject, Singleton}
-import models.Enums.{TestResultStatus, UserRole}
+import models.Enums.{ConformanceStatementItemType, TestResultStatus, UserRole}
 import models._
+import models.statement.ConformanceStatementResults
 import persistence.db._
 import play.api.db.slick.DatabaseConfigProvider
 import utils.{CryptoUtil, MimeUtil, RepositoryUtils}
@@ -11,6 +11,7 @@ import utils.{CryptoUtil, MimeUtil, RepositoryUtils}
 import java.io.File
 import java.sql.Timestamp
 import java.util
+import javax.inject.{Inject, Singleton}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -530,118 +531,123 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils, testResultManag
     PersistenceSchema.conformanceResults.filter(_.sut === systemId).result.map(_.toList)
   }
 
-  def getConformanceStatements(systemId: Long, spec: Option[Long], actor: Option[Long]): List[ConformanceStatement] = {
-    var query = PersistenceSchema.conformanceResults
+  def getConformanceStatements(systemId: Long): Iterable[ConformanceStatementItem] = {
+    val results = exec(for {
+      statements <- PersistenceSchema.conformanceResults
         .join(PersistenceSchema.specifications).on(_.spec === _.id)
-        .joinLeft(PersistenceSchema.specificationGroups).on(_._2.group === _.id)
-        .join(PersistenceSchema.actors).on(_._1._1.actor === _.id)
-        .join(PersistenceSchema.domains).on(_._2.domain === _.id)
-        .join(PersistenceSchema.testCases).on(_._1._1._1._1.testcase === _.id)
+        .join(PersistenceSchema.actors).on(_._1.actor === _.id)
+        .join(PersistenceSchema.domains).on(_._1._2.domain === _.id)
+        .join(PersistenceSchema.testCases).on(_._1._1._1.testcase === _.id)
+        .joinLeft(PersistenceSchema.specificationGroups).on(_._1._1._1._2.group === _.id)
         .filter(_._1._1._1._1._1.sut === systemId)
-    if (spec.isDefined && actor.isDefined) {
-      query = query
-        .filter(_._1._1._1._1._1.spec === spec.get)
-        .filter(_._1._1._1._1._1.actor === actor.get)
-    }
-    /*
-    DB sorting is skipped as we have custom sorting that follows.
-
-    query = query.sortBy(x => (
-      x._2.fullname.asc, // Domain
-      x._1._1._2.map(_.displayOrder).getOrElse(0.toShort).asc, // Specification group order
-      x._1._1._2.map(_.fullname).getOrElse("").asc, // Specification group name
-      x._1._1._1._2.displayOrder.asc, // Specification order
-      x._1._1._1._2.fullname.asc, // Specification name
-      x._1._2.name.asc // Actor
-    ))
-    */
-    // Apply custom sorting.
-    val results = exec(query.result.map(_.toList)).sortWith((a, b) => {
-      val domainNameA = a._1._2.fullname
-      val groupOrderA = a._1._1._1._2.map(_.displayOrder)
-      val groupNameA = a._1._1._1._2.map(_.fullname)
-      val specOrderA = a._1._1._1._1._2.displayOrder
-      val specNameA = a._1._1._1._1._2.fullname
-      val actorNameA = a._1._1._2.name
-      val domainNameB = b._1._2.fullname
-      val groupOrderB = b._1._1._1._2.map(_.displayOrder)
-      val groupNameB = b._1._1._1._2.map(_.fullname)
-      val specOrderB = b._1._1._1._1._2.displayOrder
-      val specNameB = b._1._1._1._1._2.fullname
-      val actorNameB = b._1._1._2.name
-
-      // Check domains
-      val domains = domainNameA.compareTo(domainNameB)
-      if (domains > 0) {
-        false
-      } else if (domains < 0) {
-        true
-      } else {
-        // Specification group order
-        val groupOrderToCheckForA = if (groupOrderA.isDefined) groupOrderA.get else specOrderA
-        val groupOrderToCheckForB = if (groupOrderB.isDefined) groupOrderB.get else specOrderB
-        val orders = groupOrderToCheckForA.compareTo(groupOrderToCheckForB)
-        if (orders > 0) {
-          false
-        } else if (orders < 0) {
-          true
-        } else {
-          // Specification order
-          val specOrders = specOrderA.compareTo(specOrderB)
-          if (specOrders > 0) {
-            false
-          } else if (specOrders < 0) {
-            true
-          } else {
-            // Specification with group vs without group
-            if (groupNameA.isEmpty && groupNameB.isDefined) {
-              false
-            } else if (groupNameA.isDefined && groupNameB.isEmpty) {
-              true
-            } else { // Botḣ without group or with groups with same name
-              val nameToCheckForA = (if (groupNameA.isDefined) groupNameA.get + " - " else "") + specNameA
-              val nameToCheckForB = (if (groupNameB.isDefined) groupNameB.get + " - " else "") + specNameB
-              val names = nameToCheckForA.compareTo(nameToCheckForB)
-              if (names > 0) {
-                false
-              } else if (names < 0) {
-                true
-              } else {
-                val actors = actorNameA.compareTo(actorNameB)
-                if (actors >= 0) {
-                  false
-                } else {
-                  true
-                }
-              }
-            }
+        .map(x => (
+          x._1._1._2.id, x._1._1._2.fullname, // 1: Domain ID, 2: Domain name
+          x._1._1._1._1._2.id, x._1._1._1._1._2.fullname, x._1._1._1._1._2.group, x._2.map(_.fullname), // 3: Specification ID, 4: Specification name, 5: Specification group ID, 6: Specification group name
+          x._1._1._1._2.id, x._1._1._1._2.actorId, x._1._1._1._2.name, // 7: Actor ID, 8: Actor identifier, 9: Actor name
+          x._1._1._1._1._1.result, x._1._1._1._1._1.updateTime, // 10: Result, 11: Update time
+          x._1._2.isOptional, x._1._2.isDisabled, // 12: Optional test case, 13: Disabled test case
+          x._1._1._1._1._2.displayOrder, x._2.map(_.displayOrder), // 14: Specification display order, 15: Specification group display order
+        ))
+        .result
+        .map(rawResults => {
+          val resultBuilder = new ConformanceStatusBuilder[ConformanceStatement](recordDetails = false)
+          rawResults.foreach { result =>
+            resultBuilder.addConformanceResult(
+              new ConformanceStatement(
+                result._1, result._2, result._2,
+                result._7, result._8, result._9,
+                result._3, result._4, result._4,
+                systemId, result._10, result._11,
+                0L, 0L, 0L,
+                0L, 0L, 0L,
+                result._5, result._6, result._14, result._15
+              ), result._12, result._13
+            )
           }
-        }
+          resultBuilder.getOverview(None)
+        })
+      actorIdsToDisplay <- {
+        PersistenceSchema.testCaseHasActors
+          .filter(_.specification inSet statements.map(_.specificationId))
+          .filter(_.sut === true)
+          .map(x => (x.specification, x.actor))
+          .distinct
+          .result
+          .map { actorResults =>
+            // This map gives us the SUT actors IDs per specification.
+            val specMap = new mutable.HashMap[Long, mutable.HashSet[Long]]() // Spec ID to set of actor IDs
+            actorResults.foreach { actorResult =>
+              if (!specMap.contains(actorResult._1)) {
+                specMap += (actorResult._1 -> new mutable.HashSet[Long]())
+              }
+              specMap(actorResult._1).add(actorResult._2)
+            }
+            // Check to see if the actor IDs we loaded previously have also other SUT actors.
+            // If yes these are actors we will want to display.
+            val actorIdsToDisplay = statements.filter { statement =>
+              specMap(statement.specificationId).size > 1 // We have more than one actor as a SUT
+            }.map(_.actorId)
+            actorIdsToDisplay.toSet
+          }
       }
-    })
-
-    val resultBuilder = new ConformanceStatusBuilder[ConformanceStatement](recordDetails = false)
-    results.foreach { result =>
-      var specName = result._1._1._1._1._2.shortname
-      var specNameFull = result._1._1._1._1._2.fullname
-      if (result._1._1._1._2.nonEmpty) {
-        specName = result._1._1._1._2.get.shortname + " - " + specName
-        specNameFull = result._1._1._1._2.get.fullname + " - " + specNameFull
-      }
-      resultBuilder.addConformanceResult(
-        new ConformanceStatement(
-          result._1._2.id, result._1._2.shortname, result._1._2.fullname,
-          result._1._1._2.id, result._1._1._2.actorId, result._1._1._2.name,
-          result._1._1._1._1._2.id, specName, specNameFull,
-          result._1._1._1._1._1.sut, result._1._1._1._1._1.result, result._1._1._1._1._1.updateTime,
-          0L, 0L, 0L,
-          0L, 0L, 0L
-        ), result._2.isOptional, result._2.isDisabled
+    } yield (statements, actorIdsToDisplay))
+    // Convert to hierarchical item structure.
+    val domainMap = new mutable.HashMap[Long, (ConformanceStatementItem,
+      mutable.HashMap[Long, (ConformanceStatementItem, mutable.HashMap[Long, (ConformanceStatementItem, ListBuffer[ConformanceStatementItem])])], // Specification groups pointing to specifications
+      mutable.HashMap[Long, (ConformanceStatementItem, ListBuffer[ConformanceStatementItem])], // Specifications not in groups
+    )]()
+    results._1.foreach { statement =>
+      val actorItem = ConformanceStatementItem(statement.actorId, statement.actorName, None, ConformanceStatementItemType.ACTOR, None, 0,
+        Some(ConformanceStatementResults(statement.updateTime, statement.completedTests, statement.failedTests, statement.undefinedTests, statement.completedOptionalTests, statement.failedOptionalTests, statement.undefinedOptionalTests)),
+        results._2.contains(statement.actorId)
       )
+      if (!domainMap.contains(statement.domainId)) {
+        domainMap += (statement.domainId -> (ConformanceStatementItem(statement.domainId, statement.domainName, None, ConformanceStatementItemType.DOMAIN, None, 0), new mutable.HashMap(), new mutable.HashMap()))
+      }
+      val domainEntry = domainMap(statement.domainId)
+      if (statement.specificationGroupId.isDefined) {
+        // Specification group
+        if (!domainEntry._2.contains(statement.specificationGroupId.get)) {
+          // Record the specification group
+          domainEntry._2 += (statement.specificationGroupId.get -> (
+              ConformanceStatementItem(statement.specificationGroupId.get, statement.specificationGroupName.get, None, ConformanceStatementItemType.SPECIFICATION_GROUP, None, statement.specificationGroupDisplayOrder.getOrElse(0)),
+              new mutable.HashMap()
+            )
+          )
+        }
+        val specificationGroupEntry = domainEntry._2(statement.specificationGroupId.get)
+        if (!specificationGroupEntry._2.contains(statement.specificationId)) {
+          // Record the specification
+          specificationGroupEntry._2 += (statement.specificationId -> (ConformanceStatementItem(statement.specificationId, statement.specificationName, None, ConformanceStatementItemType.SPECIFICATION, None, statement.specificationDisplayOrder), new ListBuffer))
+        }
+        // Record the actor
+        val specificationEntry = specificationGroupEntry._2(statement.specificationId)
+        specificationEntry._2 += actorItem
+      } else {
+        // Specification not in group
+        if (!domainEntry._3.contains(statement.specificationId)) {
+          domainEntry._3 += (statement.specificationId -> (ConformanceStatementItem(statement.specificationId, statement.specificationName, None, ConformanceStatementItemType.SPECIFICATION, None, statement.specificationDisplayOrder), new ListBuffer))
+        }
+        // Record the actor
+        val specificationEntry = domainEntry._3(statement.specificationId)
+        specificationEntry._2 += actorItem
+      }
     }
-    resultBuilder.getOverview(None)
+    // Now convert the collected children to their final form.
+    val domains = domainMap.values.map { domainEntry =>
+      val specificationGroups = domainEntry._2.values.map { specificationGroupEntry =>
+        val specifications = specificationGroupEntry._2.values.map { specificationEntry =>
+          specificationEntry._1.withChildren(specificationEntry._2.toList)
+        }
+        specificationGroupEntry._1.withChildren(specifications.toSeq)
+      }
+      val specifications = domainEntry._3.values.map { specificationEntry =>
+        specificationEntry._1.withChildren(specificationEntry._2.toList)
+      }
+      domainEntry._1.withChildren(specificationGroups.toSeq ++ specifications.toSeq)
+    }
+    domains
   }
-
 
   def deleteAllConformanceStatements(systemId: Long, onSuccess: mutable.ListBuffer[() => _]) = {
     for {
@@ -877,6 +883,7 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils, testResultManag
         .filterOpt(organisationIds)((q, ids) => q._1.owner inSet ids)
         .filterOpt(communityIds)((q, ids) => q._2.community inSet ids)
         .map(_._1)
+        .sortBy(_.shortname.asc)
         .result
         .map(_.toList)
     )

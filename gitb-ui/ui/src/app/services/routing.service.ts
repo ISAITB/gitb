@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { NavigationExtras, Params, Router } from '@angular/router';
 import { CommunityTab } from '../pages/admin/user-management/community/community-details/community-tab.enum';
 import { ConformanceStatementTab } from '../pages/organisation/conformance-statement/conformance-statement-tab';
+import { OrganisationTab } from '../pages/admin/user-management/organisation/organisation-details/OrganisationTab';
 
 @Injectable({
   providedIn: 'root'
@@ -28,50 +29,53 @@ export class RoutingService {
     return this.router.navigate(['admin', 'users', 'admin', adminId])
   }
 
-  toSystems(organisationId: number, systemToView?: number, viewProperties?: boolean) {
-    const params: Params = {}
-    if (systemToView != undefined) {
-      params['id'] = systemToView
-    }
-    if (viewProperties == true) {
-      params['viewProperties'] = true
-    }
-    return this.router.navigate(['organisation', organisationId, 'systems'], { queryParams: params })
-  }
-
-  toSystemInfo(organisationId: number, systemId: number, viewProperties?: boolean) {
-    if (viewProperties == true) {
-      return this.router.navigate(['organisation', organisationId, 'systems', systemId, 'info'], { queryParams: { 'viewProperties': true } })
-    } else {
-      return this.router.navigate(['organisation', organisationId, 'systems', systemId, 'info'])
-    }
-  }
-
-  toTestHistory(organisationId: number, systemId: number, sessionIdToShow?: string) {
+  toTestHistory(organisationId: number, sessionIdToShow?: string) {
     if (sessionIdToShow != undefined) {
-      return this.router.navigate(['organisation', organisationId, 'systems', systemId, 'tests'], { queryParams: { sessionId: sessionIdToShow }})
+      return this.router.navigate(['organisation', organisationId, 'tests'], { queryParams: { sessionId: sessionIdToShow }})
     } else {
-      return this.router.navigate(['organisation', organisationId, 'systems', systemId, 'tests'])
+      return this.router.navigate(['organisation', organisationId, 'tests'])
     }
   }
 
-  toCreateConformanceStatement(organisationId: number, systemId: number) {
-    return this.router.navigate(['organisation', organisationId, 'systems', systemId, 'conformance', 'create'])
+  toCreateConformanceStatement(organisationId: number, systemId: number, communityId?: number) {
+    if (communityId == undefined) {
+      return this.router.navigate(['organisation', organisationId, 'conformance', 'system', systemId, 'create'])
+    } else {
+      return this.router.navigate(['admin', 'users', 'community', communityId, 'organisation', organisationId, 'conformance', 'system', systemId, 'create'])
+    }
   }
 
-  toConformanceStatement(organisationId: number, systemId: number, actorId: number, specificationId: number, tab?: ConformanceStatementTab) {
+  toOwnConformanceStatement(organisationId: number, systemId: number, actorId: number, tab?: ConformanceStatementTab) {
+    const pathParts = ['organisation', organisationId, 'conformance', 'system', systemId, 'actor', actorId]
     if (tab != undefined) {
-      return this.router.navigate(['organisation', organisationId, 'systems', systemId, 'conformance', 'detail', actorId, specificationId], { state: { tab: ConformanceStatementTab[tab] } })
+      return this.router.navigate(pathParts, { state: { tab: ConformanceStatementTab[tab] } })
     } else {
-      return this.router.navigate(['organisation', organisationId, 'systems', systemId, 'conformance', 'detail', actorId, specificationId])
+      return this.router.navigate(pathParts)
     }
   }
 
-  toConformanceStatements(organisationId: number, systemId: number, systemCount?: number) {
-    if (systemCount != undefined) {
-      return this.router.navigate(['organisation', organisationId, 'systems', systemId, 'conformance'], { state: { systemCount: systemCount } })
+  toConformanceStatement(organisationId: number, systemId: number, actorId: number, communityId: number, tab?: ConformanceStatementTab) {
+    let pathParts = ['admin', 'users', 'community', communityId, 'organisation', organisationId, 'conformance', 'system', systemId, 'actor', actorId]
+    if (tab != undefined) {
+      return this.router.navigate(pathParts, { state: { tab: ConformanceStatementTab[tab] } })
     } else {
-      return this.router.navigate(['organisation', organisationId, 'systems', systemId, 'conformance'])
+      return this.router.navigate(pathParts)
+    }
+  }
+
+  toConformanceStatements(communityId: number, organisationId: number, systemId?: number) {
+    if (systemId != undefined) {
+      return this.router.navigate(['admin', 'users', 'community', communityId, 'organisation', organisationId, 'conformance'], { queryParams: { 'system': systemId } })      
+    } else {
+      return this.router.navigate(['admin', 'users', 'community', communityId, 'organisation', organisationId, 'conformance'])      
+    }
+  }
+
+  toOwnConformanceStatements(organisationId: number, systemId?: number) {
+    if (systemId != undefined) {
+      return this.router.navigate(['organisation', organisationId, 'conformance'], { queryParams: { 'system': systemId } })
+    } else {
+      return this.router.navigate(['organisation', organisationId, 'conformance'])
     }
   }
 
@@ -79,19 +83,61 @@ export class RoutingService {
     return this.router.navigate(['admin', 'users', 'community', communityId, 'organisation', 'create'])
   }
 
-  toOrganisationDetails(communityId: number, organisationId: number, viewProperties?: boolean) {
+  toOwnOrganisationDetails(tab?: OrganisationTab, viewProperties?: boolean) {
+    const navigationPaths = ['settings', 'organisation']
     if (viewProperties == true) {
-      return this.router.navigate(['admin', 'users', 'community', communityId, 'organisation', organisationId], { queryParams: { 'viewProperties': true } })
+      if (tab != undefined) {
+        return this.router.navigate(navigationPaths, { state: { tab: OrganisationTab[tab] }, queryParams: { 'viewProperties': true } })
+      } else {
+        return this.router.navigate(navigationPaths, { queryParams: { 'viewProperties': true } })
+      }
     } else {
-      return this.router.navigate(['admin', 'users', 'community', communityId, 'organisation', organisationId])
+      if (tab != undefined) {
+        return this.router.navigate(navigationPaths, { state: { tab: OrganisationTab[tab] } })
+      } else {
+        return this.router.navigate(navigationPaths)
+      }
     }
   }
 
-  toOwnOrganisationDetails(viewProperties?: boolean) {
+  toOrganisationDetails(communityId: number, organisationId: number, tab?: OrganisationTab, viewProperties?: boolean) {
+    let navigationPaths = ['admin', 'users', 'community', communityId, 'organisation', organisationId]
     if (viewProperties == true) {
-      return this.router.navigate(['settings', 'organisation'], { queryParams: { 'viewProperties': true } })
+      if (tab != undefined) {
+        return this.router.navigate(navigationPaths, { state: { tab: OrganisationTab[tab] }, queryParams: { 'viewProperties': true } })
+      } else {
+        return this.router.navigate(navigationPaths, { queryParams: { 'viewProperties': true } })
+      }
     } else {
-      return this.router.navigate(['settings', 'organisation'])
+      if (tab != undefined) {
+        return this.router.navigate(navigationPaths, { state: { tab: OrganisationTab[tab] } })
+      } else {
+        return this.router.navigate(navigationPaths)
+      }
+    }
+  }
+
+  toCreateOwnSystem() {
+    return this.router.navigate(['settings', 'organisation', 'system', 'create'])
+  }
+
+  toCreateSystem(communityId: number, organisationId: number) {
+    return this.router.navigate(['admin', 'users', 'community', communityId, 'organisation', organisationId, 'system', 'create'])
+  }
+
+  toOwnSystemDetails(systemId: number, viewProperties?: boolean) {
+    if (viewProperties == true) {
+      return this.router.navigate(['settings', 'organisation', 'system', systemId], { queryParams: { 'viewProperties': true } })
+    } else {
+      return this.router.navigate(['settings', 'organisation', 'system', systemId])
+    }
+  }
+
+  toSystemDetails(communityId: number, organisationId: number, systemId: number, viewProperties?: boolean) {
+    if (viewProperties == true) {
+      return this.router.navigate(['admin', 'users', 'community', communityId, 'organisation', organisationId, 'system', systemId], { queryParams: { 'viewProperties': true } })
+    } else {
+      return this.router.navigate(['admin', 'users', 'community', communityId, 'organisation', organisationId, 'system', systemId])
     }
   }
 
@@ -103,12 +149,20 @@ export class RoutingService {
     return this.router.navigate(['settings', 'password'])
   }
 
-  toTestCaseExecution(organisationId: number, systemId: number, actorId: number, specificationId: number, testCaseId: number) {
-    return this.router.navigate(['organisation', organisationId, 'test', systemId, actorId, specificationId, 'execute'], { queryParams: { tc: testCaseId }})
+  toTestCaseExecution(communityId: number, organisationId: number, systemId: number, actorId: number, testCaseId: number) {
+    return this.router.navigate(['admin', 'users', 'community', communityId, 'organisation', organisationId, 'test', systemId, actorId, 'execute'], { queryParams: { tc: testCaseId }})
   }
 
-  toTestSuiteExecution(organisationId: number, systemId: number, actorId: number, specificationId: number, testSuiteId: number) {
-    return this.router.navigate(['organisation', organisationId, 'test', systemId, actorId, specificationId, 'execute'], { queryParams: { ts: testSuiteId }})
+  toOwnTestCaseExecution(organisationId: number, systemId: number, actorId: number, testCaseId: number) {
+    return this.router.navigate(['organisation', organisationId, 'test', systemId, actorId, 'execute'], { queryParams: { tc: testCaseId }})
+  }
+
+  toTestSuiteExecution(communityId: number, organisationId: number, systemId: number, actorId: number, testSuiteId: number) {
+    return this.router.navigate(['admin', 'users', 'community', communityId, 'organisation', organisationId, 'test', systemId, actorId, 'execute'], { queryParams: { ts: testSuiteId }})
+  }
+
+  toOwnTestSuiteExecution(organisationId: number, systemId: number, actorId: number, testSuiteId: number) {
+    return this.router.navigate(['organisation', organisationId, 'test', systemId, actorId, 'execute'], { queryParams: { ts: testSuiteId }})
   }
 
   toCreateDomain() {
@@ -245,8 +299,16 @@ export class RoutingService {
     return this.router.navigate(['admin', 'users', 'community', communityId, 'pages', pageId])
   }
 
+  toCreateOwnOrganisationUser() {
+    return this.router.navigate(['settings', 'organisation', 'user', 'create'])
+  }
+
   toCreateOrganisationUser(communityId: number, organisationId: number) {
     return this.router.navigate(['admin', 'users', 'community', communityId, 'organisation', organisationId, 'user', 'create'])
+  }
+
+  toOwnOrganisationUser(userId: number) {
+    return this.router.navigate(['settings', 'organisation', 'user', userId])
   }
 
   toOrganisationUser(communityId: number, organisationId: number, userId: number) {

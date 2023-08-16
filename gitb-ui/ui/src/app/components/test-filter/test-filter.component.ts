@@ -42,6 +42,7 @@ export class TestFilterComponent implements OnInit {
 
   @Input() filterState!: FilterState
   @Input() communityId?: number
+  @Input() organisationId?: number
 
   @Input() loadDomainsFn?: () => Observable<Domain[]>
   @Input() loadSpecificationsFn?: () => Observable<Specification[]>
@@ -207,10 +208,14 @@ export class TestFilterComponent implements OnInit {
     }
     if (this.filterDefined(Constants.FILTER_TYPE.SYSTEM) && this.loadSystemsFn == undefined) {
       this.loadSystemsFn = (() => {
-        if (this.dataService.isSystemAdmin) {
-          return this.systemService.searchSystems(this.filterValue(Constants.FILTER_TYPE.COMMUNITY), this.filterValue(Constants.FILTER_TYPE.ORGANISATION))
+        if (this.organisationId != undefined) {
+          return this.systemService.getSystemsByOrganisation(this.organisationId)
         } else {
-          return this.systemService.searchSystemsInCommunity(this.dataService.community!.id, this.filterValue(Constants.FILTER_TYPE.ORGANISATION))
+          if (this.dataService.isSystemAdmin) {
+            return this.systemService.searchSystems(this.filterValue(Constants.FILTER_TYPE.COMMUNITY), this.filterValue(Constants.FILTER_TYPE.ORGANISATION))
+          } else {
+            return this.systemService.searchSystemsInCommunity(this.dataService.community!.id, this.filterValue(Constants.FILTER_TYPE.ORGANISATION))
+          }
         }
       }).bind(this)
     }

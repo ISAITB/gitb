@@ -5,15 +5,6 @@
           <img [src]="logo" class="logo"/>
           <nav class="nav-main mega-menu">
             <ul class="nav nav-pills nav-main" id="mainMenu">
-              <li *ngIf="isAuthenticated() && !dataService.user?.onetime">
-                <a class="pointer" (click)="routingService.toHome()">Home</a>
-              </li>
-              <li *ngIf="isAuthenticated() && !dataService.user?.onetime">
-                <a class="pointer" (click)="onTestsClick()">Tests</a>
-              </li>
-              <li *ngIf="isAuthenticated() && (dataService.isSystemAdmin || dataService.isCommunityAdmin) && !dataService.user?.onetime">
-                <a class="pointer" (click)="routingService.toSessionDashboard()">Admin</a>
-              </li>
               <!-- User menu item, show when authenticated -->
               <li class="dropdown mega-menu-item mega-menu-signin signin logged" id="headerAccount" *ngIf="userLoaded()">
                 <a class="dropdown-toggle">
@@ -71,14 +62,14 @@
               <app-menu-group label="Administration" [expanded]="menuExpanded"></app-menu-group>
               <app-menu-item (click)="routingService.toConformanceDashboard()" label="Conformance dashboard" icon="fa-solid fa-gauge-simple-high" [expanded]="menuExpanded"></app-menu-item>
               <app-menu-item (click)="routingService.toSessionDashboard()" label="Session dashboard" icon="fa-solid fa-gears" [expanded]="menuExpanded"></app-menu-item>
-              <app-menu-item (click)="dataService.isSystemAdmin?routingService.toDomains():routingService.toDomain(dataService.community!.domainId!)" *ngIf="dataService.isSystemAdmin || dataService.community!.domainId != undefined" [label]="dataService.labelDomain() +' management'" icon="fa-solid fa-list-check" [expanded]="menuExpanded"></app-menu-item>
-              <app-menu-item (click)="dataService.isSystemAdmin?routingService.toUserManagement():routingService.toCommunity(dataService.community!.id)" label="Community management" icon="fa-solid fa-user-group" [expanded]="menuExpanded"></app-menu-item>
-              <app-menu-item (click)="routingService.toDataExport()" label="Data export" icon="fa-solid fa-upload" [expanded]="menuExpanded"></app-menu-item>
-              <app-menu-item (click)="routingService.toDataImport()" label="Data import" icon="fa-solid fa-download" [expanded]="menuExpanded"></app-menu-item>
+              <app-menu-item (click)="dataService.isSystemAdmin?routingService.toDomains():routingService.toDomain(dataService.community!.domainId!)" *ngIf="dataService.isSystemAdmin || dataService.community!.domainId != undefined" [label]="dataService.labelDomain() +' management'" icon="fa-solid fa-sitemap" [expanded]="menuExpanded"></app-menu-item>
+              <app-menu-item (click)="dataService.isSystemAdmin?routingService.toUserManagement():routingService.toCommunity(dataService.community!.id)" label="Community management" icon="fa-solid fa-people-group" [expanded]="menuExpanded"></app-menu-item>
+              <app-menu-item (click)="routingService.toDataExport()" label="Data export" icon="fa-solid fa-right-from-bracket" [expanded]="menuExpanded"></app-menu-item>
+              <app-menu-item (click)="routingService.toDataImport()" label="Data import" icon="fa-solid fa-right-to-bracket" [expanded]="menuExpanded"></app-menu-item>
             </ng-container>
             <app-menu-group label="My tests" [expanded]="menuExpanded"></app-menu-group>
-            <app-menu-item label="Conformance statements" icon="fa-solid fa-certificate" [expanded]="menuExpanded"></app-menu-item>
-            <app-menu-item label="Test sessions" icon="fa-solid fa-gear" [expanded]="menuExpanded"></app-menu-item>
+            <app-menu-item (click)="routingService.toOwnConformanceStatements(dataService.vendor!.id)" label="Conformance statements" icon="fa-solid fa-award" [expanded]="menuExpanded"></app-menu-item>
+            <app-menu-item (click)="routingService.toTestHistory(dataService.vendor!.id)" label="Test sessions" icon="fa-solid fa-list" [expanded]="menuExpanded"></app-menu-item>
             <app-menu-item (click)="routingService.toOwnOrganisationDetails()" [label]="dataService.labelOrganisation()" icon="fa-solid fa-building" [expanded]="menuExpanded"></app-menu-item>
             <app-menu-group [expanded]="menuExpanded"></app-menu-group>
             <app-menu-item [label]="menuExpanded?'Collapse menu':'Expand menu'" [icon]="'fa-solid '+(menuExpanded?'fa-angles-left':'fa-angles-right')" (click)="toggleMenu()" [expanded]="menuExpanded"></app-menu-item>

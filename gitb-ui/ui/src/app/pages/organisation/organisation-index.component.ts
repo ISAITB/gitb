@@ -11,34 +11,33 @@ import { Organisation } from 'src/app/types/organisation.type';
   styles: [
   ]
 })
-export class OrganisationIndexComponent implements OnInit, OnDestroy {
+export class OrganisationIndexComponent implements OnInit {
 
-  organisation!: Organisation
   sub?: Subscription
   
   constructor(
     public dataService: DataService,
     route: ActivatedRoute
   ) {
-    this.sub = route.params.subscribe(() => {
-      this.initialise()
-    })
+    // this.sub = route.params.subscribe(() => {
+    //   this.initialise()
+    // })
   }
 
-  ngOnDestroy(): void {
-    if (this.sub) {
-      this.sub.unsubscribe()
-    }
-  }
+  // ngOnDestroy(): void {
+  //   if (this.sub) {
+  //     this.sub.unsubscribe()
+  //   }
+  // }
 
   initialise() {
-    this.organisation = JSON.parse(localStorage.getItem(Constants.LOCAL_DATA.ORGANISATION)!)
-    this.dataService.setBanner('Tests'+((this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin)?' - '+this.organisation.sname:''))
+    // this.dataService.setBanner('Tests'+((this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin)?' - '+this.organisation.sname:''))
   }
 
   ngOnInit(): void {
     // Initialisation takes place in the initialise method because we want to reload for parameter changes (observed via event).
-    this.initialise()
+    // this.initialise()
+    this.dataService.setBanner('Tests')
   }
 
 }

@@ -13,7 +13,16 @@
                 </div>
                 <div class="row">
                     <div class="col-md-11">
-                        <app-user-form [user]="user" [new]="false" [admin]="false" [roles]="roleChoices" [sso]="dataService.configuration.ssoEnabled" (passwordChanged)="changePassword = $event"></app-user-form>
+                        <app-user-form 
+                            [user]="user" 
+                            [new]="false" 
+                            [admin]="false" 
+                            [roles]="roleChoices" 
+                            [sso]="dataService.configuration.ssoEnabled"
+                            [showOrganisation]="fromCommunityManagement"
+                            [roleReadonly]="isSelf"
+                            [showChangePassword]="!isSelf"
+                            (passwordChanged)="changePassword = $event"></app-user-form>
                     </div>
                 </div>
                 <div class="row" *ngIf="!dataService.configuration.ssoEnabled">
@@ -27,7 +36,7 @@
             <div class="panel-footer">
                 <div class="btn-toolbar">
                     <button class="btn btn-default" type="submit" (click)="updateUser()" [disable]="deletePending || saveDisabled()" [pending]="savePending">Update</button>
-                    <button class="btn btn-default" type="button" (click)="deleteUser()" [disable]="savePending" [pending]="deletePending">Delete</button>
+                    <button *ngIf="!isSelf" class="btn btn-default" type="button" (click)="deleteUser()" [disable]="savePending" [pending]="deletePending">Delete</button>
                     <button class="btn btn-default" type="button" (click)="cancelDetailUser()">Back</button>
                 </div>
             </div>

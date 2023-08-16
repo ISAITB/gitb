@@ -18,17 +18,18 @@ export class ConformanceStatementNavigationResolver implements Resolve<any> {
     ) {}
 
     resolve(route: ActivatedRouteSnapshot, state: RouterStateSnapshot) {
-        const organisationId = Number(route.paramMap.get('org_id'))
-        const systemId = Number(route.paramMap.get('id'))
-        return this.systemService.getConformanceStatements(systemId).pipe(
-            mergeMap((data) => {
-                if (this.dataService.isVendorUser && data.length == 1) {
-                    // Skip statement list page.
-                    return this.routingService.toConformanceStatement(organisationId, systemId, data[0].actorId, data[0].specificationId)
-                } else {
-                    return of(data)
-                }
-            })
-        )
+        // const organisationId = Number(route.paramMap.get('org_id'))
+        // const systemId = Number(route.paramMap.get('id'))
+        // return this.systemService.getConformanceStatements(systemId).pipe(
+        //     mergeMap((data) => {
+        //         if (this.dataService.isVendorUser && data.length == 1) {
+        //             // Skip statement list page.
+        //             return this.routingService.toConformanceStatement(organisationId, systemId, data[0].actorId, data[0].specificationId)
+        //         } else {
+        //             return of(data)
+        //         }
+        //     })
+        // )
+        return of(1)
     }
 }

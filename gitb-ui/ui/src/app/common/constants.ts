@@ -17,10 +17,6 @@ export class Constants {
 	public static TEST_ENGINE_ACTOR_NAME = 'Test Engine'
 	public static TESTER_ACTOR_NAME = 'Operator'
 
-	public static LOCAL_DATA = {
-		ORGANISATION: 'organisation'
-	}
-
 	public static EMBEDDING_METHOD = {
 		BASE64: 'BASE64',
 		STRING: 'STRING',

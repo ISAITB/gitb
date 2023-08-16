@@ -6,8 +6,7 @@ import { LandingPageService } from 'src/app/services/landing-page.service';
 @Component({
   selector: 'app-home',
   templateUrl: './home.component.html',
-  styles: [
-  ]
+  styleUrls: [ './home.component.less' ]
 })
 export class HomeComponent implements OnInit {
 

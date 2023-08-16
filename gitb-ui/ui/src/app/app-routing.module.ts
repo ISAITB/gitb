@@ -52,19 +52,15 @@ import { UserDetailsComponent } from './pages/admin/user-management/user/user-de
 import { ExportComponent } from './pages/admin/export/export.component';
 import { ImportComponent } from './pages/admin/import/import.component';
 import { OrganisationIndexComponent } from './pages/organisation/organisation-index.component';
-import { SystemListComponent } from './pages/organisation/system-list/system-list.component';
 import { ConformanceStatementsComponent } from './pages/organisation/conformance-statements/conformance-statements.component';
-import { SystemDetailsComponent } from './pages/organisation/system-details/system-details.component';
-import { SystemInfoComponent } from './pages/organisation/system-info/system-info.component';
-import { SystemTestsComponent } from './pages/organisation/system-tests/system-tests.component';
-import { SystemNavigationResolver } from './resolvers/system-navigation-resolver';
 import { CreateConformanceStatementComponent } from './pages/organisation/create-conformance-statement/create-conformance-statement.component';
 import { ConformanceStatementComponent } from './pages/organisation/conformance-statement/conformance-statement.component';
-import { ConformanceStatementNavigationResolver } from './resolvers/conformance-statement-navigation-resolver';
 import { TestExecutionComponent } from './pages/test-execution/test-execution.component';
-import { OrganisationResolver } from './resolvers/organisation-resolver';
 import { CreateSpecificationGroupComponent } from './pages/admin/domain-management/specification/group/create-specification-group/create-specification-group.component';
 import { SpecificationGroupDetailsComponent } from './pages/admin/domain-management/specification/group/specification-group-details/specification-group-details.component';
+import { CreateSystemComponent } from './pages/admin/user-management/system/create-system/create-system.component';
+import { SystemDetailsComponent } from './pages/admin/user-management/system/system-details/system-details.component';
+import { OrganisationTestsComponent } from './pages/organisation/organisation-tests/organisation-tests.component';
 
 const routes: Routes = [
   { path: '', redirectTo: '/home', pathMatch: 'full' },  
@@ -81,6 +77,10 @@ const routes: Routes = [
       { path: 'settings', component: SettingsComponent, children: [
           { path: 'profile', component: ProfileComponent },
           { path: 'organisation', component: OrganisationComponent, resolve: { canEditOwnOrganisation: EditOwnOrganisationResolver } },
+          { path: 'organisation/user/create', component: CreateUserComponent },
+          { path: 'organisation/user/:user_id', component: UserDetailsComponent },
+          { path: 'organisation/system/create', component: CreateSystemComponent },
+          { path: 'organisation/system/:sys_id', component: SystemDetailsComponent },
           { path: 'password', component: PasswordComponent },
       ] },
       { path: 'admin', component: AdminComponent, children: [
@@ -121,21 +121,23 @@ const routes: Routes = [
           { path: 'users/community/:community_id/labels', component: CommunityLabelsComponent },
           { path: 'users/community/:community_id/organisation/create', component: CreateOrganisationComponent },
           { path: 'users/community/:community_id/organisation/:org_id', component: OrganisationDetailsComponent },
+          { path: 'users/community/:community_id/organisation/:org_id/conformance', component: ConformanceStatementsComponent },
+          { path: 'users/community/:community_id/organisation/:org_id/conformance/system/:sys_id/create', component: CreateConformanceStatementComponent },
+          { path: 'users/community/:community_id/organisation/:org_id/conformance/system/:sys_id/actor/:actor_id', component: ConformanceStatementComponent },
           { path: 'users/community/:community_id/organisation/:org_id/user/create', component: CreateUserComponent },
           { path: 'users/community/:community_id/organisation/:org_id/user/:user_id', component: UserDetailsComponent },
+          { path: 'users/community/:community_id/organisation/:org_id/system/create', component: CreateSystemComponent },
+          { path: 'users/community/:community_id/organisation/:org_id/system/:sys_id', component: SystemDetailsComponent },
+          { path: 'users/community/:community_id/organisation/:org_id/test/:sys_id/:actor_id/execute', component: TestExecutionComponent },
           { path: 'export', component: ExportComponent },
           { path: 'import', component: ImportComponent }
       ] },
-      { path: 'organisation/:org_id', component: OrganisationIndexComponent, resolve: { organisation: OrganisationResolver }, children: [
-        { path: 'systems', component: SystemListComponent, resolve: { systems: SystemNavigationResolver }},
-        { path: 'systems/:id', component: SystemDetailsComponent, children: [
-          { path: 'info', component: SystemInfoComponent },
-          { path: 'conformance', component: ConformanceStatementsComponent, resolve: { statements: ConformanceStatementNavigationResolver} },
-          { path: 'conformance/create', component: CreateConformanceStatementComponent }, 
-          { path: 'conformance/detail/:actor_id/:spec_id', component: ConformanceStatementComponent }, 
-          { path: 'tests', component: SystemTestsComponent }
-        ] },
-        { path: 'test/:system_id/:actor_id/:spec_id/execute', component: TestExecutionComponent }
+      { path: 'organisation/:org_id', component: OrganisationIndexComponent, children: [
+        { path: 'conformance', component: ConformanceStatementsComponent },
+        { path: 'conformance/system/:sys_id/create', component: CreateConformanceStatementComponent },
+        { path: 'conformance/system/:sys_id/actor/:actor_id', component: ConformanceStatementComponent },
+        { path: 'tests', component: OrganisationTestsComponent },
+        { path: 'test/:system_id/:actor_id/execute', component: TestExecutionComponent }
       ] },
     ]
   }

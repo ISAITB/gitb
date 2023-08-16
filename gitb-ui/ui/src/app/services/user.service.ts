@@ -39,6 +39,13 @@ export class UserService {
     })
   }
 
+  getOwnOrganisationUserById(userId: number) {
+    return this.restService.get<User>({
+      path: ROUTES.controllers.UserService.getOwnOrganisationUserById(userId).url,
+      authenticate: true
+    })
+  }
+
   getUserById(userId: number) {
     return this.restService.get<User>({
       path: ROUTES.controllers.UserService.getUserById(userId).url,

@@ -24,7 +24,7 @@ import { LogLevel } from '../types/log-level';
 import { SpecificationGroup } from '../types/specification-group';
 import { Specification } from '../types/specification';
 import { DomainSpecification } from '../types/domain-specification';
-import { find, sortBy } from 'lodash';
+import { find } from 'lodash';
 
 @Injectable({
   providedIn: 'root'
@@ -44,7 +44,7 @@ export class DataService {
   public isVendorAdmin = false
   public isCommunityAdmin = false
   public isDomainUser = false
-  public tests?: ConformanceTestCase[]
+  private tests?: ConformanceTestCase[]
   public currentLandingPageContent?: string
   private apiRoot?: string
   private onBannerChangeSource = new Subject<string>()
@@ -898,8 +898,32 @@ export class DataService {
 		return true
   }
 
+  getTestsToExecute(): ConformanceTestCase[]|undefined {
+    if (localStorage) {
+      const cachedTests = localStorage.getItem('tests')
+      if (cachedTests) {
+        return JSON.parse(cachedTests)
+      } else {
+        return undefined
+      }
+    } else {
+      return this.tests
+    }
+  }
+
 	setTestsToExecute(tests: ConformanceTestCase[]) {
-		this.tests = tests
+    if (localStorage) {
+      localStorage.setItem('tests', JSON.stringify(tests))
+    } else {
+      this.tests = tests
+    }
+  }
+
+  clearTestsToExecute() {
+    if (localStorage) {
+      localStorage.removeItem('tests')
+    }
+    this.tests = undefined
   }
 
   isDataURL(configuration: string) {

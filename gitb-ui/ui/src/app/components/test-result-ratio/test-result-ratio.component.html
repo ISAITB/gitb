@@ -1,4 +1,4 @@
-<div class="root-container">
+<div class="root-container" (click)="$event.stopPropagation()">
     <div *ngIf="hasOptional" class="expand-icon" (click)="expanded = true" tooltip="Expand" containerClass="shortTooltip"><span><i class="fa-solid fa-plus-circle"></i></span></div>
     <div class="ratio-container" [ngSwitch]="hasRequired">
         <ng-container *ngSwitchCase="true">

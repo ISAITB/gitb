@@ -340,6 +340,10 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     canUpdateOrganisationUser(request, userId)
   }
 
+  def canViewOwnOrganisationUser(request: RequestWithAttributes[_], userId: Long): Boolean = {
+    checkIsAuthenticated(request)
+  }
+
   def canViewOrganisationUsers(request: RequestWithAttributes[_], orgId: Long):Boolean = {
     canManageOrganisationFull(request, getUser(getRequestUserId(request)), orgId)
   }
@@ -827,8 +831,8 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     canViewCommunities(request, communityIds)
   }
 
-  def canViewTestResultsForSystem(request: RequestWithAttributes[_], systemId: Long):Boolean = {
-    canViewSystem(request, systemId)
+  def canViewTestResultsForOrganisation(request: RequestWithAttributes[_], organisationId: Long):Boolean = {
+    canViewOrganisation(request, organisationId)
   }
 
   def canUpdateParameter(request: RequestWithAttributes[_], parameterId: Long):Boolean = {
@@ -1236,8 +1240,8 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     canManageCommunity(request, communityId)
   }
 
-  def canDeleteObsoleteTestResultsForSystem(request: RequestWithAttributes[_], systemId: Long):Boolean = {
-    canManageSystem(request, getUser(getRequestUserId(request)), systemId)
+  def canDeleteObsoleteTestResultsForOrganisation(request: RequestWithAttributes[_], organisationId: Long):Boolean = {
+    canManageOrganisationBasic(request, organisationId)
   }
 
   def canDeleteTestResults(request: RequestWithAttributes[_], communityId: Option[Long]):Boolean = {

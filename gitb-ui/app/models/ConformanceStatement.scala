@@ -21,5 +21,10 @@ class ConformanceStatement(
     var undefinedTests: Long,
     var completedOptionalTests: Long,
     var failedOptionalTests: Long,
-    var undefinedOptionalTests: Long
+    var undefinedOptionalTests: Long,
+
+    var specificationGroupId: Option[Long] = None,
+    var specificationGroupName: Option[String] = None,
+    var specificationDisplayOrder: Short = 0,
+    var specificationGroupDisplayOrder: Option[Short] = None
 ) {}

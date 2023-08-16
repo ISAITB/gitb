@@ -11,6 +11,7 @@ import { RoutingService } from 'src/app/services/routing.service';
 import { UserService } from 'src/app/services/user.service';
 import { IdLabel } from 'src/app/types/id-label';
 import { User } from 'src/app/types/user.type';
+import { OrganisationTab } from '../../organisation/organisation-details/OrganisationTab';
 
 @Component({
   selector: 'app-user-details',
@@ -29,6 +30,8 @@ export class UserDetailsComponent extends BaseComponent implements OnInit, After
   deletePending = false
   originalRoleId!: number
   changePassword = false
+  fromCommunityManagement!: boolean
+  isSelf = false
 
   @ViewChild("role") roleField?: ElementRef;
 
@@ -51,12 +54,21 @@ export class UserDetailsComponent extends BaseComponent implements OnInit, After
   }
 
   ngOnInit(): void {
-    this.communityId = Number(this.route.snapshot.paramMap.get('community_id'))
-    this.orgId = Number(this.route.snapshot.paramMap.get('org_id'))
+    this.fromCommunityManagement = this.route.snapshot.paramMap.has('community_id')
+    if (this.fromCommunityManagement) {
+      this.communityId = Number(this.route.snapshot.paramMap.get('community_id'))
+      this.orgId = Number(this.route.snapshot.paramMap.get('org_id'))
+    }
     this.userId = Number(this.route.snapshot.paramMap.get('user_id'))
+    this.isSelf = this.dataService.user!.id == this.userId
     this.roleChoices = this.Constants.VENDOR_USER_ROLES
-    this.userService.getUserById(this.userId)
-    .subscribe((data) => {
+    let result: Observable<User>
+    if (this.fromCommunityManagement) {
+      result = this.userService.getUserById(this.userId)
+    } else {
+      result = this.userService.getOwnOrganisationUserById(this.userId)
+    }
+    result.subscribe((data) => {
       this.user = data
       this.user.ssoStatusText = this.dataService.userStatus(this.user.ssoStatus)
       this.user.roleText = this.Constants.USER_ROLE_LABEL[this.user.role!]
@@ -146,7 +158,11 @@ export class UserDetailsComponent extends BaseComponent implements OnInit, After
   }
 
   cancelDetailUser() {
-    this.routingService.toOrganisationDetails(this.communityId, this.orgId)
+    if (this.fromCommunityManagement) {
+      this.routingService.toOrganisationDetails(this.communityId, this.orgId, OrganisationTab.users)
+    } else {
+      this.routingService.toOwnOrganisationDetails(OrganisationTab.users)
+    }
   }
 
 }

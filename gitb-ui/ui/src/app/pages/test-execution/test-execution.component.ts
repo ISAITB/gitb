@@ -20,7 +20,6 @@ import { SystemService } from 'src/app/services/system.service';
 import { TestService } from 'src/app/services/test.service';
 import { WebSocketService } from 'src/app/services/web-socket.service';
 import { OrganisationParameterWithValue } from 'src/app/types/organisation-parameter-with-value';
-import { Organisation } from 'src/app/types/organisation.type';
 import { SUTConfiguration } from 'src/app/types/sutconfiguration';
 import { SystemConfigurationEndpoint } from 'src/app/types/system-configuration-endpoint';
 import { SystemConfigurationParameter } from 'src/app/types/system-configuration-parameter';
@@ -40,6 +39,7 @@ import { SessionLogModalComponent } from 'src/app/components/session-log-modal/s
 import { LogLevel } from 'src/app/types/log-level';
 import { CheckboxOption } from 'src/app/components/checkbox-option-panel/checkbox-option';
 import { CheckboxOptionState } from 'src/app/components/checkbox-option-panel/checkbox-option-state';
+import { SpecificationService } from 'src/app/services/specification.service';
 
 @Component({
   selector: 'app-test-execution',
@@ -51,7 +51,8 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
   testsToExecute: ConformanceTestCase[] = []
   actorId!: number
   systemId!: number
-  specificationId!: number
+  communityId?: number
+  specificationId?: number
   organisationId!: number
   isAdmin = false
   documentationExists = false
@@ -134,7 +135,8 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
     private htmlService: HtmlService,
     private webSocketService: WebSocketService,
     private errorService: ErrorService,
-    private routingService: RoutingService
+    private routingService: RoutingService,
+    private specificationService: SpecificationService
   ) { }
 
   private queryParamToNumber(paramName: string): number|undefined {
@@ -173,10 +175,16 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
     this.organisationId = Number(this.route.snapshot.paramMap.get('org_id'))
     this.actorId = Number(this.route.snapshot.paramMap.get('actor_id'))
     this.systemId = Number(this.route.snapshot.paramMap.get('system_id'))
-    this.specificationId = Number(this.route.snapshot.paramMap.get('spec_id'))
+    if (this.route.snapshot.paramMap.has('community_id')) {
+      this.communityId = Number(this.route.snapshot.paramMap.get('community_id'))
+    }
     this.isAdmin = this.dataService.isCommunityAdmin || this.dataService.isSystemAdmin
-    this.initialiseState()
-    this.checkConfigurations()
+    this.specificationService.getSpecificationIdOfActor(this.actorId)
+    .subscribe((data) => {
+      this.specificationId = data.id
+      this.initialiseState()
+      this.checkConfigurations()
+    })
   }
 
   private initialiseTestMaps() {
@@ -221,17 +229,9 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
     this.testPreparationStatus.status = Constants.STATUS.NONE
   }
 
-  getOrganisation(): Organisation {
-    let organisation = this.dataService.vendor
-    if (this.isAdmin) {
-      organisation = JSON.parse(localStorage[Constants.LOCAL_DATA.ORGANISATION])
-    }
-    return organisation!
-  }
-
   checkConfigurations() {
     this.configCheckStatus.status = Constants.STATUS.PENDING
-    const organisationParameterCheck = this.organisationService.checkOrganisationParameterValues(this.getOrganisation().id)
+    const organisationParameterCheck = this.organisationService.checkOrganisationParameterValues(this.organisationId)
     const systemParameterCheck = this.systemService.checkSystemParameterValues(this.systemId)
     const statementParameterCheck = this.conformanceService.checkConfigurations(this.actorId, this.systemId)
     forkJoin([organisationParameterCheck, systemParameterCheck, statementParameterCheck])
@@ -264,8 +264,9 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
   }
 
   private loadTestCases(): Observable<ConformanceTestCase[]> {
-    if (this.dataService.tests != undefined) {
-      return of(this.dataService.tests)
+    const testsToExecute = this.dataService.getTestsToExecute()
+    if (testsToExecute != undefined) {
+      return of(testsToExecute)
     } else {
       // We lost our state following a refresh - recreate state.
       const testSuiteId = this.queryParamToNumber('ts')
@@ -417,7 +418,7 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
         complete: () => this.onClose()
       })
       // Send the configuration request. We will be notified via WS when ready.
-      this.testService.configure(this.specificationId, this.session, this.systemId, this.actorId).subscribe(() => {})
+      this.testService.configure(this.specificationId!, this.session, this.systemId, this.actorId).subscribe(() => {})
     })
   }
 
@@ -982,7 +983,11 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
   }
 
   back() {
-    this.routingService.toConformanceStatement(this.organisationId, this.systemId, this.actorId, this.specificationId)
+    if (this.communityId == undefined) {
+      this.routingService.toOwnConformanceStatement(this.organisationId, this.systemId, this.actorId)
+    } else {
+      this.routingService.toConformanceStatement(this.organisationId, this.systemId, this.actorId, this.communityId)
+    }
   }
 
   reinitialise() {
@@ -1026,26 +1031,33 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
   handleMissingConfigurationAction(action: MissingConfigurationAction) {
     if (action == MissingConfigurationAction.viewOrganisation) {
       if (this.dataService.isVendorUser || this.dataService.isVendorAdmin) {
-        this.routingService.toOwnOrganisationDetails(true)
+        this.routingService.toOwnOrganisationDetails(undefined, true)
       } else {
-        const organisation = this.getOrganisation()
-        if (this.dataService.vendor!.id == organisation.id) {
-          this.routingService.toOwnOrganisationDetails(true)
+        if (this.dataService.vendor!.id == this.organisationId) {
+          this.routingService.toOwnOrganisationDetails(undefined, true)
         } else {
           this.organisationService.getOrganisationBySystemId(this.systemId)
           .subscribe((data) => {
-            this.routingService.toOrganisationDetails(data.community, data.id, true)
+            this.routingService.toOrganisationDetails(data.community, data.id, undefined, true)
           })
         }
       }
     } else if (action == MissingConfigurationAction.viewSystem) {
-      if (this.dataService.isVendorUser) {
-        this.routingService.toSystemInfo(this.organisationId, this.systemId, true)
+      if (this.dataService.isVendorUser || this.dataService.isVendorAdmin) {
+        this.routingService.toOwnSystemDetails(this.systemId, true)
       } else {
-        this.routingService.toSystems(this.organisationId, this.systemId, true)
+        if (this.dataService.vendor!.id == this.organisationId) {
+          this.routingService.toOwnSystemDetails(this.systemId, true)
+        } else {
+          this.routingService.toSystemDetails(this.communityId!, this.organisationId, this.systemId, true)
+        }
       }
     } else { // viewStatement
-      this.routingService.toConformanceStatement(this.organisationId, this.systemId, this.actorId, this.specificationId, ConformanceStatementTab.configuration)
+      if (this.communityId == undefined) {
+        this.routingService.toOwnConformanceStatement(this.organisationId, this.systemId, this.actorId, ConformanceStatementTab.configuration)
+      } else {
+        this.routingService.toConformanceStatement(this.organisationId, this.systemId, this.actorId, this.communityId, ConformanceStatementTab.configuration)
+      }
     }
   }
 
@@ -1073,6 +1085,7 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
 
   leavingTestExecutionPage() {
     this.popupService.closeAll()
+    this.dataService.clearTestsToExecute()
     if (this.firstTestStarted && !this.allStopped) {
       this.closeWebSocket()
       const pendingTests = filter(this.testsToExecute, (test) => {
@@ -1080,7 +1093,7 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
       })
       const pendingTestIds = lmap(pendingTests, (test) => { return test.id } )
       if (pendingTestIds.length > 0) {
-        this.testService.startHeadlessTestSessions(pendingTestIds, this.specificationId, this.systemId, this.actorId, false).subscribe(() => {})
+        this.testService.startHeadlessTestSessions(pendingTestIds, this.specificationId!, this.systemId, this.actorId, false).subscribe(() => {})
         this.popupService.success('Continuing execution in background. Check <b>Test Sessions</b> for progress.')
       } else {
         if (this.testCaseStatus[this.currentTest!.id] == Constants.TEST_CASE_STATUS.PROCESSING) {

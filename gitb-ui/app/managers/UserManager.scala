@@ -71,6 +71,24 @@ class UserManager @Inject() (accountManager: AccountManager, organizationManager
   }
 
   /**
+   * Gets user with specified id in the same organisation as the given user
+   */
+  def getUserByIdInSameOrganisationAsUser(userId: Long, referenceUserId: Long): Option[User] = {
+    exec(for {
+      referenceOrganisationId <- PersistenceSchema.users.filter(_.id === referenceUserId).map(_.organization).result.headOption
+      user <- if (referenceOrganisationId.isDefined) {
+        PersistenceSchema.users
+          .filter(_.organization === referenceOrganisationId.get)
+          .filter(_.id === userId)
+          .result
+          .headOption
+      } else {
+        DBIO.successful(None)
+      }
+    } yield user).map(x => new User(x))
+  }
+
+  /**
    * Updates system admin profile of given user
    */
   def updateSystemAdminProfile(userId: Long, name: String, password: Option[String]) = {

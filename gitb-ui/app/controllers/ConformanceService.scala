@@ -44,6 +44,12 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
     ResponseConstructor.constructJsonResponse(json)
   }
 
+  def getDomainOfActor(actorId: Long) = authorizedAction { request =>
+    authorizationManager.canViewActor(request, actorId)
+    val json = JsonUtil.jsDomain(conformanceManager.getDomainOfActor(actorId)).toString()
+    ResponseConstructor.constructJsonResponse(json)
+  }
+
   /**
    * Gets the domain of the given community
    */
@@ -559,10 +565,10 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
     ResponseConstructor.constructEmptyResponse
   }
 
-  def deleteObsoleteTestResultsForSystem() = authorizedAction { request =>
-    val systemId = ParameterExtractor.requiredQueryParameter(request, Parameters.SYSTEM_ID).toLong
-    authorizationManager.canDeleteObsoleteTestResultsForSystem(request, systemId)
-    testResultManager.deleteObsoleteTestResultsForSystemWrapper(systemId)
+  def deleteObsoleteTestResultsForOrganisation() = authorizedAction { request =>
+    val organisationId = ParameterExtractor.requiredQueryParameter(request, Parameters.ORGANIZATION_ID).toLong
+    authorizationManager.canDeleteObsoleteTestResultsForOrganisation(request, organisationId)
+    testResultManager.deleteObsoleteTestResultsForOrganisationWrapper(organisationId)
     ResponseConstructor.constructEmptyResponse
   }
 

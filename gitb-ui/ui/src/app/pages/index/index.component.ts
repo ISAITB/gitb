@@ -140,11 +140,6 @@ export class IndexComponent implements OnInit {
     return this.authProviderService.isAuthenticated()
   }
 
-	onTestsClick() {
-    localStorage.setItem(Constants.LOCAL_DATA.ORGANISATION, JSON.stringify(this.dataService.vendor))
-    this.routingService.toSystems(this.dataService.vendor!.id)
-  }
-
   toggleMenu() {
     this.menuExpanded = !this.menuExpanded
   }

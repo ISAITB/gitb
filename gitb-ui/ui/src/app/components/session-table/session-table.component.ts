@@ -129,15 +129,21 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
   }
 
   goToSystem(row: TestResultForDisplay) {
-    if (this.dataService.isVendorUser) {
-      this.routingService.toSystemInfo(row.organizationId!, row.systemId!)
+    const targetOrganisationId = row.organizationId!
+    if (targetOrganisationId == this.dataService.vendor!.id) {
+      // This is the user's own organisation
+      this.routingService.toOwnSystemDetails(row.systemId!)
     } else {
-      this.routingService.toSystems(row.organizationId!, row.systemId!)
+      this.routingService.toSystemDetails(row.communityId!, row.organizationId!, row.systemId!)
     }
   }
 
   goToStatement(row: TestResultForDisplay) {
-    this.routingService.toConformanceStatement(row.organizationId!, row.systemId!, row.actorId!, row.specificationId!)
+    if (row.organizationId! == this.dataService.vendor?.id) {
+      this.routingService.toOwnConformanceStatement(row.organizationId!, row.systemId!, row.actorId!)
+    } else {
+      this.routingService.toConformanceStatement(row.organizationId!, row.systemId!, row.actorId!, row.communityId!)
+    }
   }
 
   goToOrganisation(row: TestResultForDisplay) {

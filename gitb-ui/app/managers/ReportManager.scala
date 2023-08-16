@@ -40,27 +40,29 @@ class ReportManager @Inject() (reportHelper: ReportHelper, triggerHelper: Trigge
 
   import dbConfig.profile.api._
 
-  def getSystemActiveTestResults(systemId: Long,
-                                 domainIds: Option[List[Long]],
-                                 specIds: Option[List[Long]],
-                                 specGroupIds: Option[List[Long]],
-                                 actorIds: Option[List[Long]],
-                                 testSuiteIds: Option[List[Long]],
-                                 testCaseIds: Option[List[Long]],
-                                 startTimeBegin: Option[String],
-                                 startTimeEnd: Option[String],
-                                 sessionId: Option[String],
-                                 sortColumn: Option[String],
-                                 sortOrder: Option[String]): List[TestResult] = {
+  def getOrganisationActiveTestResults(organisationId: Long,
+                                       systemIds: Option[List[Long]],
+                                       domainIds: Option[List[Long]],
+                                       specIds: Option[List[Long]],
+                                       specGroupIds: Option[List[Long]],
+                                       actorIds: Option[List[Long]],
+                                       testSuiteIds: Option[List[Long]],
+                                       testCaseIds: Option[List[Long]],
+                                       startTimeBegin: Option[String],
+                                       startTimeEnd: Option[String],
+                                       sessionId: Option[String],
+                                       sortColumn: Option[String],
+                                       sortOrder: Option[String]): List[TestResult] = {
     exec(
-      getTestResultsQuery(None, domainIds, getSpecIdsCriterionToUse(specIds, specGroupIds), actorIds, testSuiteIds, testCaseIds, None, Some(List(systemId)), None, startTimeBegin, startTimeEnd, None, None, sessionId, Some(false), sortColumn, sortOrder)
+      getTestResultsQuery(None, domainIds, getSpecIdsCriterionToUse(specIds, specGroupIds), actorIds, testSuiteIds, testCaseIds, Some(List(organisationId)), systemIds, None, startTimeBegin, startTimeEnd, None, None, sessionId, Some(false), sortColumn, sortOrder)
         .result.map(_.toList)
     )
   }
 
   def getTestResults(page: Long,
                      limit: Long,
-                     systemId: Long,
+                     organisationId: Long,
+                     systemIds: Option[List[Long]],
                      domainIds: Option[List[Long]],
                      specIds: Option[List[Long]],
                      specGroupIds: Option[List[Long]],
@@ -76,7 +78,7 @@ class ReportManager @Inject() (reportHelper: ReportHelper, triggerHelper: Trigge
                      sortColumn: Option[String],
                      sortOrder: Option[String]): (Iterable[TestResult], Int) = {
 
-    val query = getTestResultsQuery(None, domainIds, getSpecIdsCriterionToUse(specIds, specGroupIds), actorIds, testSuiteIds, testCaseIds, None, Some(List(systemId)), results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, Some(true), sortColumn, sortOrder)
+    val query = getTestResultsQuery(None, domainIds, getSpecIdsCriterionToUse(specIds, specGroupIds), actorIds, testSuiteIds, testCaseIds, Some(List(organisationId)), systemIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, Some(true), sortColumn, sortOrder)
     val output = exec(
       for {
         results <- query.drop((page - 1) * limit).take(limit).result

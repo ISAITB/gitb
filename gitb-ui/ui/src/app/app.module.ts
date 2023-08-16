@@ -36,7 +36,6 @@ import { ChangePasswordFormComponent } from './components/change-password-form/c
 import { LinkAccountComponent } from './modals/link-account/link-account.component';
 import { DisconnectRoleComponent } from './modals/disconnect-role/disconnect-role.component';
 import { OptionalCustomPropertyFormComponent } from './components/optional-custom-property-form/optional-custom-property-form.component';
-import { AddMemberComponent } from './modals/add-member/add-member.component';
 import { AlertDisplayComponent } from './components/alert-display/alert-display.component';
 import { PendingBlockComponent } from './components/pending-block/pending-block.component';
 import { NoAutoCompleteDirective } from './directives/no-auto-complete.directive';
@@ -117,13 +116,9 @@ import { ExportComponent } from './pages/admin/export/export.component';
 import { ImportComponent } from './pages/admin/import/import.component';
 import { ImportItemPreviewComponent } from './pages/admin/import/import-item-preview/import-item-preview.component';
 import { ImportItemGroupPreviewComponent } from './pages/admin/import/import-item-group-preview/import-item-group-preview.component';
-import { SystemListComponent } from './pages/organisation/system-list/system-list.component';
-import { SystemDetailsComponent } from './pages/organisation/system-details/system-details.component';
-import { SystemTestsComponent } from './pages/organisation/system-tests/system-tests.component';
+import { OrganisationTestsComponent } from './pages/organisation/organisation-tests/organisation-tests.component';
 import { OrganisationIndexComponent } from './pages/organisation/organisation-index.component';
-import { CreateEditSystemModalComponent } from './modals/create-edit-system-modal/create-edit-system-modal.component';
 import { ConformanceStatementsComponent } from './pages/organisation/conformance-statements/conformance-statements.component';
-import { SystemInfoComponent } from './pages/organisation/system-info/system-info.component';
 import { CreateConformanceStatementComponent } from './pages/organisation/create-conformance-statement/create-conformance-statement.component';
 import { ConformanceStatementComponent } from './pages/organisation/conformance-statement/conformance-statement.component';
 import { MissingConfigurationModalComponent } from './modals/missing-configuration-modal/missing-configuration-modal.component';
@@ -166,6 +161,9 @@ import { PrescriptionLevelComponent } from './components/prescription-level/pres
 import { CheckboxOptionPanelComponent } from './components/checkbox-option-panel/checkbox-option-panel.component';
 import { MenuItemComponent } from './pages/index/menu-item/menu-item.component';
 import { MenuGroupComponent } from './pages/index/menu-group/menu-group.component';
+import { CreateSystemComponent } from './pages/admin/user-management/system/create-system/create-system.component';
+import { SystemDetailsComponent } from './pages/admin/user-management/system/system-details/system-details.component';
+import { SystemFormComponent } from './pages/admin/user-management/system/system-form/system-form.component';
 
 @NgModule({
   providers: [ 
@@ -196,7 +194,6 @@ import { MenuGroupComponent } from './pages/index/menu-group/menu-group.componen
     LinkAccountComponent,
     DisconnectRoleComponent,
     OptionalCustomPropertyFormComponent,
-    AddMemberComponent,
     AlertDisplayComponent,
     PendingBlockComponent,
     NoAutoCompleteDirective,
@@ -274,13 +271,9 @@ import { MenuGroupComponent } from './pages/index/menu-group/menu-group.componen
     ImportComponent,
     ImportItemPreviewComponent,
     ImportItemGroupPreviewComponent,
-    SystemListComponent,
-    SystemDetailsComponent,
-    SystemTestsComponent,
+    OrganisationTestsComponent,
     OrganisationIndexComponent,
-    CreateEditSystemModalComponent,
     ConformanceStatementsComponent,
-    SystemInfoComponent,
     CreateConformanceStatementComponent,
     ConformanceStatementComponent,
     MissingConfigurationModalComponent,
@@ -321,7 +314,10 @@ import { MenuGroupComponent } from './pages/index/menu-group/menu-group.componen
     PrescriptionLevelComponent,
     CheckboxOptionPanelComponent,
     MenuItemComponent,
-    MenuGroupComponent],
+    MenuGroupComponent,
+    CreateSystemComponent,
+    SystemFormComponent,
+    SystemDetailsComponent],
   imports: [
     BrowserModule,
     BrowserAnimationsModule,

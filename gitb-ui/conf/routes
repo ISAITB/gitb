@@ -49,12 +49,14 @@ POST    /api/user/feedback                      @controllers.AccountService.subm
 POST    /api/user/selfreg                       @controllers.CommunityService.selfRegister()
 GET     /api/user/selfreg                       @controllers.CommunityService.getSelfRegistrationOptions()
 GET     /api/vendor/organisation/hasTests       @controllers.OrganizationService.ownOrganisationHasTests()
+GET     /api/vendor/user/:id                    @controllers.UserService.getOwnOrganisationUserById(id : Long)
 
 # System mangement API
 GET     /api/suts/sysparam/:id                  @controllers.SystemService.getSystemParameterValues(id: Long)
 GET     /api/suts/sysparam/:sut_id/parameters/:parameterId/download @controllers.SystemService.downloadSystemParameterFile(sut_id : Long, parameterId : Long)
 GET     /api/suts/sysparam/check/:id            @controllers.SystemService.checkSystemParameterValues(id: Long)
 POST	/api/suts/:sut_id/profile               @controllers.SystemService.updateSystemProfile(sut_id : Long)
+GET	    /api/sut/byid/:sut_id                   @controllers.SystemService.getSystemById(sut_id : Long)
 GET	    /api/suts/:sut_id                       @controllers.SystemService.getSystemProfile(sut_id : Long)
 DELETE  /api/suts/:sut_id                       @controllers.SystemService.deleteSystem(sut_id : Long)
 POST    /api/suts/:sut_id/conformance           @controllers.SystemService.defineConformanceStatements(sut_id : Long)
@@ -67,6 +69,7 @@ POST    /api/suts/:sut_id/apiKey                @controllers.SystemService.updat
 DELETE  /api/suts/:sut_id/apiKey                @controllers.SystemService.deleteSystemApiKey(sut_id: Long)
 
 # Test Case management API
+GET	    /api/actorDomain/:actor_id              @controllers.ConformanceService.getDomainOfActor(actor_id: Long)
 GET	    /api/specDomain                         @controllers.ConformanceService.getDomainOfSpecification(spec_id: Long)
 GET	    /api/domains                            @controllers.ConformanceService.getDomains()
 GET	    /api/domains/community                  @controllers.ConformanceService.getCommunityDomain()
@@ -88,6 +91,8 @@ POST    /api/specs/deploy                       @controllers.ConformanceService.
 POST    /api/specs/deploy/resolve               @controllers.ConformanceService.resolvePendingTestSuites()
 DELETE  /api/specs/:spec_id                     @controllers.SpecificationService.deleteSpecification(spec_id: Long)
 POST    /api/specs/:spec_id                     @controllers.SpecificationService.updateSpecification(spec_id: Long)
+GET     /api/specs/ofactor/:actor_id            @controllers.SpecificationService.getSpecificationOfActor(actor_id: Long)
+GET     /api/specid/ofactor/:actor_id           @controllers.SpecificationService.getSpecificationIdOfActor(actor_id: Long)
 GET     /api/specgroups                         @controllers.SpecificationService.getSpecificationGroups()
 POST    /api/specgroups/search                  @controllers.SpecificationService.getSpecificationGroupsOfDomains()
 GET     /api/specgroups/get/:group_id           @controllers.SpecificationService.getSpecificationGroup(group_id: Long)
@@ -134,7 +139,7 @@ POST    /api/fulltestcases/:test_case_id                            @controllers
 GET     /api/communities/:community_id/statementParameters          @controllers.ConformanceService.getStatementParametersOfCommunity(community_id : Long)
 
 DELETE  /api/testresults/obsolete/all           @controllers.ConformanceService.deleteAllObsoleteTestResults()
-DELETE  /api/testresults/obsolete/system        @controllers.ConformanceService.deleteObsoleteTestResultsForSystem()
+DELETE  /api/testresults/obsolete/organisation  @controllers.ConformanceService.deleteObsoleteTestResultsForOrganisation()
 DELETE  /api/testresults/obsolete/community     @controllers.ConformanceService.deleteObsoleteTestResultsForCommunity()
 POST    /api/testresults                        @controllers.ConformanceService.deleteTestResults()
 

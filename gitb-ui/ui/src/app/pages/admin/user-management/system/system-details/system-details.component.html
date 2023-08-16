@@ -1,0 +1,29 @@
+<div class="page users detail">
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h4 class="title">{{dataService.labelSystem()}} details</h4>
+        </div>
+        <form class="form-horizontal">
+            <div class="panel-body">
+                <div class="row">
+                    <app-alert-display [alerts]="alerts" innerClass="col-md-10 col-md-offset-1"></app-alert-display>
+                </div>
+                <app-system-form
+                    [system]="system"
+                    [communityId]="communityId"
+                    [organisationId]="organisationId"
+                    [propertyData]="propertyData"
+                    [showAdminInfo]="fromCommunityManagement"
+                ></app-system-form>
+            </div>
+            <div class="panel-footer">
+                <div class="btn-toolbar">
+                    <button class="btn btn-default" type="submit" (click)="update()" [disable]="deletePending || !saveEnabled()" [pending]="savePending">Update</button>
+                    <button class="btn btn-default" type="button" (click)="delete()" [disable]="savePending" [pending]="deletePending">Delete</button>
+                    <button class="btn btn-default" type="button" (click)="manageSystemTests()">Manage tests</button>
+                    <button class="btn btn-default" type="button" (click)="cancel()">Back</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

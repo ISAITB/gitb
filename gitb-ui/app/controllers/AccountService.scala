@@ -4,6 +4,7 @@ import config.Configurations
 import controllers.util._
 import exceptions.ErrorCodes
 import managers._
+import models.Enums.UserRole
 import org.apache.commons.io.FileUtils
 import org.apache.tika.Tika
 import org.slf4j.{Logger, LoggerFactory}
@@ -75,8 +76,12 @@ class AccountService @Inject() (authorizedAction: AuthorizedAction, cc: Controll
   def registerUser = authorizedAction { request =>
     authorizationManager.canCreateUserInOwnOrganisation(request)
     val adminId = ParameterExtractor.extractUserId(request)
-    val user = ParameterExtractor.extractUserInfo(request)
-
+    val roleId = ParameterExtractor.requiredBodyParameter(request, Parameters.ROLE_ID).toShort
+    val user = UserRole(roleId) match {
+      case UserRole.VendorUser => ParameterExtractor.extractUserInfo(request)
+      case UserRole.VendorAdmin => ParameterExtractor.extractAdminInfo(request)
+      case _ => throw new IllegalArgumentException("Cannot create user with role " + roleId)
+    }
     accountManager.registerUser(adminId, user)
     ResponseConstructor.constructEmptyResponse
   }

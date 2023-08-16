@@ -323,4 +323,8 @@ export class LoginComponent extends BaseComponent implements OnInit, AfterViewIn
     }
   }
 
+  isAuthenticated(): boolean {
+    return this.authProvider.isAuthenticated()
+  }
+
 }
