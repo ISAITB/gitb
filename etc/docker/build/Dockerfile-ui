@@ -41,7 +41,7 @@ RUN mkdir -p /app/tmp \
     && mv /app/tmp/gitb-ui/gitb-1.0-SNAPSHOT /app/tmp/gitb-ui/gitb-ui
 
 # Stage 2: Run application
-FROM eclipse-temurin:17-jre-alpine
+FROM eclipse-temurin:17-jre-jammy
 
 RUN apk add --no-cache bash
 

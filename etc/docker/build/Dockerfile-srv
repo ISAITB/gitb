@@ -6,7 +6,7 @@ COPY . /app
 RUN mvn clean install -DskipTests=true -Denv=docker
 
 # Stage 2: Run application
-FROM eclipse-temurin:17-jre-alpine
+FROM eclipse-temurin:17-jre-jammy
 
 RUN mkdir /itbsrv
 COPY --from=builder /app/gitb-testbed-service/target/itbsrv.war /itbsrv
