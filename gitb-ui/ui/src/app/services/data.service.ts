@@ -25,6 +25,7 @@ import { SpecificationGroup } from '../types/specification-group';
 import { Specification } from '../types/specification';
 import { DomainSpecification } from '../types/domain-specification';
 import { find } from 'lodash';
+import { PageChange } from '../types/page-change';
 
 @Injectable({
   providedIn: 'root'
@@ -47,8 +48,11 @@ export class DataService {
   private tests?: ConformanceTestCase[]
   public currentLandingPageContent?: string
   private apiRoot?: string
+
   private onBannerChangeSource = new Subject<string>()
   public onBannerChange$ = this.onBannerChangeSource.asObservable()
+  private onPageChangeSource = new Subject<PageChange>()
+  public onPageChange$ = this.onPageChangeSource.asObservable()
 
   private renderer: Renderer2
   triggerEventToDataTypeMap?: {[key: number]: { [key: number]: boolean } }
@@ -1189,8 +1193,12 @@ export class DataService {
     return specs
   }
 
-  public setBanner(newBanner: string) {
-    this.onBannerChangeSource.next(newBanner)
+  public changePage(changeInfo: PageChange) {
+    this.onPageChangeSource.next(changeInfo)
+  }
+
+  public changeBanner(banner: string) {
+    this.onBannerChangeSource.next(banner)
   }
 
 }

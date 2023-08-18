@@ -153,11 +153,11 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
   }
 
   ngOnInit(): void {
-    this.systemId = Number(this.route.snapshot.paramMap.get('sys_id'))
-    this.actorId = Number(this.route.snapshot.paramMap.get('actor_id'))
-    this.organisationId = Number(this.route.snapshot.paramMap.get('org_id'))
-    if (this.route.snapshot.paramMap.has('community_id')) {
-      this.communityId = Number(this.route.snapshot.paramMap.get('community_id'))
+    this.systemId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.SYSTEM_ID))
+    this.actorId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.ACTOR_ID))
+    this.organisationId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.ORGANISATION_ID))
+    if (this.route.snapshot.paramMap.has(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID)) {
+      this.communityId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID))
     }
     this.prepareTestFilter()
     // Load conformance results.

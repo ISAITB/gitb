@@ -8,6 +8,7 @@ import { PopupService } from 'src/app/services/popup.service';
 import { RoutingService } from 'src/app/services/routing.service';
 import { LandingPage } from 'src/app/types/landing-page';
 import { CommunityTab } from '../../community/community-details/community-tab.enum';
+import { Constants } from 'src/app/common/constants';
 
 @Component({
   selector: 'app-landing-page-details',
@@ -40,8 +41,8 @@ export class LandingPageDetailsComponent extends BaseComponent implements OnInit
   }
 
   ngOnInit(): void {
-    this.communityId = Number(this.route.snapshot.paramMap.get('community_id'))
-    this.pageId = Number(this.route.snapshot.paramMap.get('page_id'))
+    this.communityId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID))
+    this.pageId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.LANDING_PAGE_ID))
     this.landingPageService.getLandingPageById(this.pageId)
     .subscribe((data) => {
       this.page = data

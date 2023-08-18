@@ -8,6 +8,7 @@ import { PopupService } from 'src/app/services/popup.service';
 import { RoutingService } from 'src/app/services/routing.service';
 import { CommunityTab } from '../../community/community-details/community-tab.enum';
 import { OrganisationFormData } from '../organisation-form/organisation-form-data';
+import { Constants } from 'src/app/common/constants';
 
 @Component({
   selector: 'app-create-organisation',
@@ -35,7 +36,7 @@ export class CreateOrganisationComponent extends BaseComponent implements OnInit
   ) { super() }
 
   ngOnInit(): void {
-    this.communityId = Number(this.route.snapshot.paramMap.get('community_id'))
+    this.communityId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID))
   }
 
   saveDisabled() {

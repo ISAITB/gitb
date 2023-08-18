@@ -1,5 +1,6 @@
 import { AfterViewInit, Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
+import { Constants } from 'src/app/common/constants';
 import { BaseComponent } from 'src/app/pages/base-component.component';
 import { ConformanceService } from 'src/app/services/conformance.service';
 import { DataService } from 'src/app/services/data.service';
@@ -31,7 +32,7 @@ export class CreateSpecificationComponent extends BaseComponent implements OnIni
   }
 
   ngOnInit(): void {
-    const groupId = this.route.snapshot.queryParamMap.get('group')
+    const groupId = this.route.snapshot.queryParamMap.get(Constants.NAVIGATION_QUERY_PARAM.SPECIFICATION_GROUP_ID)
     if (groupId) {
       this.specification.group = Number(groupId)
     }
@@ -43,7 +44,7 @@ export class CreateSpecificationComponent extends BaseComponent implements OnIni
 
 	createSpecification() {
 		if (!this.saveDisabled()) {
-			let domainId = Number(this.route.snapshot.paramMap.get('id'))
+			let domainId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID))
       this.pending = true
       this.conformanceService.createSpecification(this.specification.sname!, this.specification.fname!, this.specification.description, this.specification.hidden, domainId, this.specification.group)
       .subscribe(() => {
@@ -56,7 +57,7 @@ export class CreateSpecificationComponent extends BaseComponent implements OnIni
   }
 
 	cancel() {
-    let domainId = Number(this.route.snapshot.paramMap.get('id'))
+    let domainId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID))
     this.routingService.toDomain(domainId)
   }
 

@@ -80,7 +80,7 @@ export class SessionDashboardComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
-    const sessionIdValue = this.route.snapshot.queryParamMap.get('sessionId')
+    const sessionIdValue = this.route.snapshot.queryParamMap.get(Constants.NAVIGATION_QUERY_PARAM.TEST_SESSION_ID)
     if (sessionIdValue != undefined) {
       this.sessionIdToShow = sessionIdValue
     }

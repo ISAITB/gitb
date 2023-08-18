@@ -51,9 +51,9 @@ export class ActorDetailsComponent extends BaseComponent implements OnInit, Afte
   }
 
   ngOnInit(): void {
-    this.domainId = Number(this.route.snapshot.paramMap.get('id'))
-    this.specificationId = Number(this.route.snapshot.paramMap.get('spec_id'))
-    this.actorId = Number(this.route.snapshot.paramMap.get('actor_id'))
+    this.domainId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID))
+    this.specificationId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.SPECIFICATION_ID))
+    this.actorId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.ACTOR_ID))
     this.conformanceService.getActorsWithIds([this.actorId])
     .subscribe((data) => {
       this.actor = data[0]

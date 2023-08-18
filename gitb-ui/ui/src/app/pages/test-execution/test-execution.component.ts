@@ -172,11 +172,11 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.organisationId = Number(this.route.snapshot.paramMap.get('org_id'))
-    this.actorId = Number(this.route.snapshot.paramMap.get('actor_id'))
-    this.systemId = Number(this.route.snapshot.paramMap.get('system_id'))
-    if (this.route.snapshot.paramMap.has('community_id')) {
-      this.communityId = Number(this.route.snapshot.paramMap.get('community_id'))
+    this.organisationId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.ORGANISATION_ID))
+    this.actorId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.ACTOR_ID))
+    this.systemId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.SYSTEM_ID))
+    if (this.route.snapshot.paramMap.has(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID)) {
+      this.communityId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID))
     }
     this.isAdmin = this.dataService.isCommunityAdmin || this.dataService.isSystemAdmin
     this.specificationService.getSpecificationIdOfActor(this.actorId)

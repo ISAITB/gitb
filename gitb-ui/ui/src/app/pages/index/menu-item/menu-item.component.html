@@ -1,4 +1,4 @@
-<div class="menu-item-root" [ngSwitch]="expanded">
+<div class="menu-item-root" [ngSwitch]="expanded" [class.active]="active">
     <ng-container *ngSwitchCase="true">
         <div class="menu-item">
             <span><i [ngClass]="icon" class="fa-xl"></i></span>

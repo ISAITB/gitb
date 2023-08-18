@@ -4,11 +4,17 @@
     display: flex;
     margin-top: 5px;
     margin-bottom: 5px;            
+    border-radius: 4px;
     background-color: @gray-light-1;
     &:hover {
-        border-radius: 4px;
         background: @gray-light;
         cursor: pointer;
+    }
+    &.active {
+        background-color: @gray-light;
+        &:hover {
+            cursor: pointer;
+        }
     }
 }
 .menu-item-text {

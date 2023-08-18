@@ -12,6 +12,7 @@ import { UserService } from 'src/app/services/user.service';
 import { IdLabel } from 'src/app/types/id-label';
 import { User } from 'src/app/types/user.type';
 import { OrganisationTab } from '../../organisation/organisation-details/OrganisationTab';
+import { Constants } from 'src/app/common/constants';
 
 @Component({
   selector: 'app-user-details',
@@ -54,12 +55,12 @@ export class UserDetailsComponent extends BaseComponent implements OnInit, After
   }
 
   ngOnInit(): void {
-    this.fromCommunityManagement = this.route.snapshot.paramMap.has('community_id')
+    this.fromCommunityManagement = this.route.snapshot.paramMap.has(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID)
     if (this.fromCommunityManagement) {
-      this.communityId = Number(this.route.snapshot.paramMap.get('community_id'))
-      this.orgId = Number(this.route.snapshot.paramMap.get('org_id'))
+      this.communityId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID))
+      this.orgId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.ORGANISATION_ID))
     }
-    this.userId = Number(this.route.snapshot.paramMap.get('user_id'))
+    this.userId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.USER_ID))
     this.isSelf = this.dataService.user!.id == this.userId
     this.roleChoices = this.Constants.VENDOR_USER_ROLES
     let result: Observable<User>

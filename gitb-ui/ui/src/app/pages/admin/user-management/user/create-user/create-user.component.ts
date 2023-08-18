@@ -48,10 +48,10 @@ export class CreateUserComponent extends BaseComponent implements OnInit, AfterV
   }
 
   ngOnInit(): void {
-    this.fromCommunityManagement = this.route.snapshot.paramMap.has('community_id')
+    this.fromCommunityManagement = this.route.snapshot.paramMap.has(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID)
     if (this.fromCommunityManagement) {
-      this.orgId = Number(this.route.snapshot.paramMap.get('org_id'))
-      this.communityId = Number(this.route.snapshot.paramMap.get('community_id'))
+      this.orgId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.ORGANISATION_ID))
+      this.communityId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID))
     }
     this.roleCreateChoices = Constants.VENDOR_USER_ROLES
   }

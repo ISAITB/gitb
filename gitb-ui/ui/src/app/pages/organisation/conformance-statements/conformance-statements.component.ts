@@ -57,19 +57,18 @@ export class ConformanceStatementsComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
-    // this.systemId = Number(this.route.snapshot.paramMap.get('id'))
-    if (this.route.snapshot.paramMap.has('community_id')) {
-      this.communityId = Number(this.route.snapshot.paramMap.get('community_id'))
+    if (this.route.snapshot.paramMap.has(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID)) {
+      this.communityId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID))
       this.showBack = true
     }
-    this.organisationId = Number(this.route.snapshot.paramMap.get('org_id'))
+    this.organisationId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.ORGANISATION_ID))
     this.systemService.getSystemsByOrganisation(this.organisationId)
     .subscribe((data) => {
       this.systems = data
       if (this.systems.length == 1) {
         this.system = this.systems[0]
-      } else if (this.route.snapshot.queryParamMap.has('system')) {
-        const systemId = Number(this.route.snapshot.queryParamMap.get('system'))
+      } else if (this.route.snapshot.queryParamMap.has(Constants.NAVIGATION_QUERY_PARAM.SYSTEM_ID)) {
+        const systemId = Number(this.route.snapshot.queryParamMap.get(Constants.NAVIGATION_QUERY_PARAM.SYSTEM_ID))
         this.system = find(this.systems, (sys) => {
           return sys.id == systemId
         })

@@ -85,7 +85,7 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
   }
 
   ngOnInit(): void {
-    this.domainId = Number(this.route.snapshot.paramMap.get('id'))
+    this.domainId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID))
     this.conformanceService.getDomains([this.domainId])
     .subscribe((data) => {
       this.domain = data[0]

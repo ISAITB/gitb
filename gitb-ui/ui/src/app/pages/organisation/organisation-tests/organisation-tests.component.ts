@@ -72,9 +72,9 @@ export class OrganisationTestsComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
-    this.organisationId = Number(this.route.snapshot.paramMap.get('org_id'))
+    this.organisationId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.ORGANISATION_ID))
     this.showTerminateAll = this.dataService.isCommunityAdmin || this.dataService.isVendorAdmin || this.dataService.isSystemAdmin
-    const sessionIdValue = this.route.snapshot.queryParamMap.get('sessionId')
+    const sessionIdValue = this.route.snapshot.queryParamMap.get(Constants.NAVIGATION_QUERY_PARAM.TEST_SESSION_ID)
     if (sessionIdValue != undefined) {
       this.sessionIdToShow = sessionIdValue
     }

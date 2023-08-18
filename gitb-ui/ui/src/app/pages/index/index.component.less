@@ -13,6 +13,9 @@
         position: sticky;
         top: 75px;
         z-index: 1;
+        &.hidden {
+            display: none;
+        }
     }
     .page-content {
         padding: 0px 0px 0px 0px;
@@ -22,4 +25,20 @@
 .logout-padding {
     margin-top: 35px;
     margin-bottom: 35px;
+}
+.header-container {
+    display: flex;
+    .header-logo-container {
+        display: flex;
+        align-items: end;
+        margin-bottom: 3px;
+        .logo {
+            height: 48px;
+        }
+    }
+    .header-menu-container {
+        display: flex;
+        margin-left: auto;
+        align-self: center;        
+    }
 }

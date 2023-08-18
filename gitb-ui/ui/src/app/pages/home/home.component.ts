@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { Constants } from 'src/app/common/constants';
 import { AccountService } from 'src/app/services/account.service';
 import { DataService } from 'src/app/services/data.service';
 import { LandingPageService } from 'src/app/services/landing-page.service';
@@ -17,7 +18,6 @@ export class HomeComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
-    this.dataService.setBanner('Home')
     if (this.dataService.currentLandingPageContent == undefined) {
       this.accountService.getVendorProfile().subscribe((vendor) => {
         if (vendor.landingPages) {

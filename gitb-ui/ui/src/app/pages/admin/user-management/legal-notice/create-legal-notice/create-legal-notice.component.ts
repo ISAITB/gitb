@@ -8,6 +8,7 @@ import { PopupService } from 'src/app/services/popup.service';
 import { RoutingService } from 'src/app/services/routing.service';
 import { LegalNotice } from 'src/app/types/legal-notice';
 import { CommunityTab } from '../../community/community-details/community-tab.enum';
+import { Constants } from 'src/app/common/constants';
 
 @Component({
   selector: 'app-create-legal-notice',
@@ -38,7 +39,7 @@ export class CreateLegalNoticeComponent extends BaseComponent implements OnInit,
   }
 
   ngOnInit(): void {
-    this.communityId = Number(this.route.snapshot.paramMap.get('community_id'))
+    this.communityId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID))
     const base = this.route.snapshot.data['base'] as LegalNotice|undefined
     if (base != undefined) {
       this.notice.name = base.name

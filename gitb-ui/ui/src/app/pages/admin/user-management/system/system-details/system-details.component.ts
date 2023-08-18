@@ -9,6 +9,7 @@ import { RoutingService } from 'src/app/services/routing.service';
 import { BaseComponent } from 'src/app/pages/base-component.component';
 import { SystemService } from 'src/app/services/system.service';
 import { OrganisationTab } from '../../organisation/organisation-details/OrganisationTab';
+import { Constants } from 'src/app/common/constants';
 
 @Component({
   selector: 'app-system-details',
@@ -41,17 +42,17 @@ export class SystemDetailsComponent extends BaseComponent implements OnInit {
   ) { super() }
 
   ngOnInit(): void {
-    this.fromCommunityManagement = this.route.snapshot.paramMap.has('community_id')
+    this.fromCommunityManagement = this.route.snapshot.paramMap.has(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID)
     if (this.fromCommunityManagement) {
-      this.communityId = Number(this.route.snapshot.paramMap.get('community_id'))
-      this.organisationId = Number(this.route.snapshot.paramMap.get('org_id'))
+      this.communityId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID))
+      this.organisationId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.ORGANISATION_ID))
     } else {
       this.communityId = this.dataService.community!.id
       this.organisationId = this.dataService.vendor!.id
     }
-    this.systemId = Number(this.route.snapshot.paramMap.get('sys_id'))
+    this.systemId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.SYSTEM_ID))
     this.system.id = this.systemId
-    const viewPropertiesParam = this.route.snapshot.queryParamMap.get('viewProperties')
+    const viewPropertiesParam = this.route.snapshot.queryParamMap.get(Constants.NAVIGATION_QUERY_PARAM.VIEW_PROPERTIES)
     if (viewPropertiesParam != undefined) {
       this.propertyData.edit = Boolean(viewPropertiesParam)
     }

@@ -58,10 +58,10 @@ export class EndpointDetailsComponent extends BaseComponent implements OnInit, A
   }
 
   ngOnInit(): void {
-		this.endpointId = Number(this.route.snapshot.paramMap.get('endpoint_id'))
-		this.actorId  = Number(this.route.snapshot.paramMap.get('actor_id'))
-		this.domainId = Number(this.route.snapshot.paramMap.get('id'))
-		this.specificationId = Number(this.route.snapshot.paramMap.get('spec_id'))
+		this.endpointId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.ENDPOINT_ID))
+		this.actorId  = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.ACTOR_ID))
+		this.domainId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID))
+		this.specificationId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.SPECIFICATION_ID))
     this.loadEndpointData()
   }
 

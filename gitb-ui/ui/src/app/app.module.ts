@@ -19,7 +19,6 @@ import { FormsModule } from '@angular/forms';
 import { TooltipComponent } from './components/tooltip/tooltip.component';
 import { ErrorComponent } from './modals/error/error.component';
 import { HomeComponent } from './pages/home/home.component';
-import { SettingsComponent } from './pages/settings/settings.component';
 import { ProfileComponent } from './pages/settings/profile/profile.component';
 import { OrganisationComponent } from './pages/settings/organisation/organisation.component';
 import { PasswordComponent } from './pages/settings/password/password.component';
@@ -39,7 +38,6 @@ import { OptionalCustomPropertyFormComponent } from './components/optional-custo
 import { AlertDisplayComponent } from './components/alert-display/alert-display.component';
 import { PendingBlockComponent } from './components/pending-block/pending-block.component';
 import { NoAutoCompleteDirective } from './directives/no-auto-complete.directive';
-import { AdminComponent } from './pages/admin/admin.component';
 import { SessionDashboardComponent } from './pages/admin/session-dashboard/session-dashboard.component';
 import { SessionTableComponent } from './components/session-table/session-table.component';
 import { TestFilterComponent } from './components/test-filter/test-filter.component';
@@ -117,7 +115,6 @@ import { ImportComponent } from './pages/admin/import/import.component';
 import { ImportItemPreviewComponent } from './pages/admin/import/import-item-preview/import-item-preview.component';
 import { ImportItemGroupPreviewComponent } from './pages/admin/import/import-item-group-preview/import-item-group-preview.component';
 import { OrganisationTestsComponent } from './pages/organisation/organisation-tests/organisation-tests.component';
-import { OrganisationIndexComponent } from './pages/organisation/organisation-index.component';
 import { ConformanceStatementsComponent } from './pages/organisation/conformance-statements/conformance-statements.component';
 import { CreateConformanceStatementComponent } from './pages/organisation/create-conformance-statement/create-conformance-statement.component';
 import { ConformanceStatementComponent } from './pages/organisation/conformance-statement/conformance-statement.component';
@@ -164,6 +161,7 @@ import { MenuGroupComponent } from './pages/index/menu-group/menu-group.componen
 import { CreateSystemComponent } from './pages/admin/user-management/system/create-system/create-system.component';
 import { SystemDetailsComponent } from './pages/admin/user-management/system/system-details/system-details.component';
 import { SystemFormComponent } from './pages/admin/user-management/system/system-form/system-form.component';
+import { HeaderMenuComponent } from './pages/index/header-menu/header-menu.component';
 
 @NgModule({
   providers: [ 
@@ -179,7 +177,6 @@ import { SystemFormComponent } from './pages/admin/user-management/system/system
     TooltipComponent,
     ErrorComponent,
     HomeComponent,
-    SettingsComponent,
     ProfileComponent,
     OrganisationComponent,
     PasswordComponent,
@@ -197,7 +194,6 @@ import { SystemFormComponent } from './pages/admin/user-management/system/system
     AlertDisplayComponent,
     PendingBlockComponent,
     NoAutoCompleteDirective,
-    AdminComponent,
     SessionDashboardComponent,
     SessionTableComponent,
     TestFilterComponent,
@@ -272,7 +268,6 @@ import { SystemFormComponent } from './pages/admin/user-management/system/system
     ImportItemPreviewComponent,
     ImportItemGroupPreviewComponent,
     OrganisationTestsComponent,
-    OrganisationIndexComponent,
     ConformanceStatementsComponent,
     CreateConformanceStatementComponent,
     ConformanceStatementComponent,
@@ -317,7 +312,8 @@ import { SystemFormComponent } from './pages/admin/user-management/system/system
     MenuGroupComponent,
     CreateSystemComponent,
     SystemFormComponent,
-    SystemDetailsComponent],
+    SystemDetailsComponent,
+    HeaderMenuComponent],
   imports: [
     BrowserModule,
     BrowserAnimationsModule,

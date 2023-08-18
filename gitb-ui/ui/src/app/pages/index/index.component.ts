@@ -11,6 +11,7 @@ import { CookieService } from 'ngx-cookie-service';
 import { BsModalService } from 'ngx-bootstrap/modal';
 import { ContactSupportComponent } from 'src/app/modals/contact-support/contact-support.component';
 import { RoutingService } from 'src/app/services/routing.service';
+import { MenuItem } from 'src/app/types/menu-item.enum';
 
 @Component({
   selector: 'app-index',
@@ -22,9 +23,10 @@ export class IndexComponent implements OnInit {
   logo?: string
   footer?: string
   version?: string
-  pageTitle = 'Home'
+  pageTitle = ''
   menuExpanded = false
   logoutInProgress = false
+  MenuItem = MenuItem
 
   constructor(
     public dataService: DataService,

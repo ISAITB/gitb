@@ -1,107 +1,74 @@
 <div class="page index">
-    <div class="header">
-      <div class="navbar">
-        <div class="container">
+  <div class="header-bar">
+    <div class="container">
+      <div class="header-container">
+        <div class="header-logo-container">
           <img [src]="logo" class="logo"/>
-          <nav class="nav-main mega-menu">
-            <ul class="nav nav-pills nav-main" id="mainMenu">
-              <!-- User menu item, show when authenticated -->
-              <li class="dropdown mega-menu-item mega-menu-signin signin logged" id="headerAccount" *ngIf="userLoaded()">
-                <a class="dropdown-toggle">
-                  <i class="fa-solid fa-user"></i><span class="header-user-name"> {{dataService.user?.name}} <i class="fa-solid fa-angle-down"></i></span>
-                </a>
-                <ul class="dropdown-menu">
-                  <li>
-                    <div class="mega-menu-content header-profile-popup">
-                      <div class="header-profile-popup-user">
-                        <div class="user-avatar">
-                          <p><strong>{{dataService.user?.name}}</strong></p>
-                          <p class="role-description" *ngIf="userFullyLoaded()">{{dataService.getRoleDescription(false)}}</p>
-                        </div>
-                      </div>
-                      <div class="header-profile-popup-options" *ngIf="!logoutInProgress">
-                        <ul class="list-account-options">
-                          <li *ngIf="!dataService.isDemoAccount() && (dataService.configuration.ssoEnabled || !dataService.user?.onetime) && isAuthenticated()">
-                            <a class="pointer" (click)="routingService.toProfile()">My profile</a>
-                          </li>
-                          <li *ngIf="dataService.configuration.ssoEnabled && isAuthenticated()">
-                              <a class="pointer" (click)="switchAccount()">Switch role</a>
-                          </li>
-                          <li *ngIf="!dataService.configuration.ssoEnabled">
-                            <a class="pointer" (click)="routingService.toChangePassword()">Change password</a>
-                          </li>
-                          <li>
-                            <a class="pointer" (click)="logout()">Logout</a>
-                          </li>
-                        </ul>
-                      </div>
-                    </div>
-                  </li>
-                </ul>
-              </li>
-            </ul>
-          </nav>
+        </div>
+        <div class="header-menu-container">
+          <app-header-menu [logoutInProgress]="logoutInProgress"></app-header-menu>
         </div>
       </div>
     </div>
-    <div class="child">
-      <div class="page">
-        <section class="page-top">
-            <div class="container">
-                <div class="row">
-                    <div class="col-md-12">
-                        <h2>{{pageTitle}}</h2>
-                    </div>
-                </div>
-            </div>
-        </section>
-        <div class="page-root">
-          <div class="page-menu" *ngIf="isAuthenticated() && !logoutInProgress">
-            <app-menu-item (click)="routingService.toHome()" label="Home" icon="fa-solid fa-house" [expanded]="menuExpanded"></app-menu-item>
-            <ng-container *ngIf="dataService.isSystemAdmin || dataService.isCommunityAdmin">
-              <app-menu-group label="Administration" [expanded]="menuExpanded"></app-menu-group>
-              <app-menu-item (click)="routingService.toConformanceDashboard()" label="Conformance dashboard" icon="fa-solid fa-gauge-simple-high" [expanded]="menuExpanded"></app-menu-item>
-              <app-menu-item (click)="routingService.toSessionDashboard()" label="Session dashboard" icon="fa-solid fa-gears" [expanded]="menuExpanded"></app-menu-item>
-              <app-menu-item (click)="dataService.isSystemAdmin?routingService.toDomains():routingService.toDomain(dataService.community!.domainId!)" *ngIf="dataService.isSystemAdmin || dataService.community!.domainId != undefined" [label]="dataService.labelDomain() +' management'" icon="fa-solid fa-sitemap" [expanded]="menuExpanded"></app-menu-item>
-              <app-menu-item (click)="dataService.isSystemAdmin?routingService.toUserManagement():routingService.toCommunity(dataService.community!.id)" label="Community management" icon="fa-solid fa-people-group" [expanded]="menuExpanded"></app-menu-item>
-              <app-menu-item (click)="routingService.toDataExport()" label="Data export" icon="fa-solid fa-right-from-bracket" [expanded]="menuExpanded"></app-menu-item>
-              <app-menu-item (click)="routingService.toDataImport()" label="Data import" icon="fa-solid fa-right-to-bracket" [expanded]="menuExpanded"></app-menu-item>
-            </ng-container>
-            <app-menu-group label="My tests" [expanded]="menuExpanded"></app-menu-group>
-            <app-menu-item (click)="routingService.toOwnConformanceStatements(dataService.vendor!.id)" label="Conformance statements" icon="fa-solid fa-award" [expanded]="menuExpanded"></app-menu-item>
-            <app-menu-item (click)="routingService.toTestHistory(dataService.vendor!.id)" label="Test sessions" icon="fa-solid fa-list" [expanded]="menuExpanded"></app-menu-item>
-            <app-menu-item (click)="routingService.toOwnOrganisationDetails()" [label]="dataService.labelOrganisation()" icon="fa-solid fa-building" [expanded]="menuExpanded"></app-menu-item>
-            <app-menu-group [expanded]="menuExpanded"></app-menu-group>
-            <app-menu-item [label]="menuExpanded?'Collapse menu':'Expand menu'" [icon]="'fa-solid '+(menuExpanded?'fa-angles-left':'fa-angles-right')" (click)="toggleMenu()" [expanded]="menuExpanded"></app-menu-item>
-          </div>
-          <div class="page-content" [ngSwitch]="logoutInProgress">
-            <router-outlet *ngSwitchCase="false"></router-outlet>
-            <div class="container logout-padding" *ngSwitchDefault><span class="tab" style="font-size: xx-large;"><i class="fa-solid fa-spinner fa-spin-override fa-lg"></i></span></div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <footer>
-      <div class="container">
-        <div class="row">
-          <div class="col-xs-2">
-            <img [src]="footer" class="pull-left"/>
-          </div>
-          <div class="col-xs-10 version-div">
-            <div class="pull-right">
-              <div class="footer-devmode" *ngIf="dataService.isDevelopmentMode()"><i class="fa-solid fa-exclamation-circle" aria-hidden="true"></i> Development mode</div>
-              <div class="footer-links">
-                <a href *ngIf="showUserGuide()" (click)="userGuideLink();$event.preventDefault()">User guide</a>
-                <span *ngIf="showUserGuide()" class="version-text"> | </span><a *ngIf="showProvideFeedback()" [href]="provideFeedbackLink()" target="blank">Provide feedback</a>
-                <span *ngIf="showProvideFeedback()" class="version-text"> | </span><a href="#" *ngIf="showContactUs()" (click)="contactUs();$event.preventDefault()">Contact support</a>
-                <span *ngIf="showContactUs()" class="version-text"> | </span><a href (click)="onLegalNotice();$event.preventDefault()">Legal notice</a>
-                <span *ngIf="showMoreInfo()" class="version-text"> | </span><a *ngIf="showMoreInfo()" [href]="moreInfoLink()" target="blank">Find out more</a><span class="version-text"> | </span>
-                <a *ngIf="showReleaseInfo()" [href]="releaseInfoLink()" target="blank">{{version}}</a>
-                <span *ngIf="!showReleaseInfo()" class="version-text">{{version}}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </footer>
   </div>
+  <div class="child">
+    <div class="page">
+      <section class="page-top">
+          <div class="container">
+              <div class="row">
+                  <div class="col-md-12">
+                      <h2>{{pageTitle}}</h2>
+                  </div>
+              </div>
+          </div>
+      </section>
+      <div class="page-root">
+        <div class="page-menu" [class.hidden]="!isAuthenticated() || logoutInProgress">
+          <app-menu-item (click)="routingService.toHome()" [type]="MenuItem.home" label="Home" icon="fa-solid fa-house" [expanded]="menuExpanded"></app-menu-item>
+          <ng-container *ngIf="dataService.isSystemAdmin || dataService.isCommunityAdmin">
+            <app-menu-group label="Administration" [expanded]="menuExpanded"></app-menu-group>
+            <app-menu-item (click)="routingService.toConformanceDashboard()" [type]="MenuItem.conformanceDashboard" label="Conformance dashboard" icon="fa-solid fa-gauge-simple-high" [expanded]="menuExpanded"></app-menu-item>
+            <app-menu-item (click)="routingService.toSessionDashboard()" [type]="MenuItem.sessionDashboard" label="Session dashboard" icon="fa-solid fa-gears" [expanded]="menuExpanded"></app-menu-item>
+            <app-menu-item (click)="dataService.isSystemAdmin?routingService.toDomains():routingService.toDomain(dataService.community!.domainId!)" *ngIf="dataService.isSystemAdmin || dataService.community!.domainId != undefined" [type]="MenuItem.domainManagement" [label]="dataService.labelDomain() +' management'" icon="fa-solid fa-sitemap" [expanded]="menuExpanded"></app-menu-item>
+            <app-menu-item (click)="dataService.isSystemAdmin?routingService.toUserManagement():routingService.toCommunity(dataService.community!.id)" [type]="MenuItem.communityManagement" label="Community management" icon="fa-solid fa-people-group" [expanded]="menuExpanded"></app-menu-item>
+            <app-menu-item (click)="routingService.toDataExport()" [type]="MenuItem.dataExport" label="Data export" icon="fa-solid fa-right-from-bracket" [expanded]="menuExpanded"></app-menu-item>
+            <app-menu-item (click)="routingService.toDataImport()" [type]="MenuItem.dataImport" label="Data import" icon="fa-solid fa-right-to-bracket" [expanded]="menuExpanded"></app-menu-item>
+          </ng-container>
+          <app-menu-group label="My tests" [expanded]="menuExpanded"></app-menu-group>
+          <app-menu-item (click)="routingService.toOwnConformanceStatements(dataService.vendor!.id)" [type]="MenuItem.myConformanceStatements" label="My conformance statements" icon="fa-solid fa-award" [expanded]="menuExpanded"></app-menu-item>
+          <app-menu-item (click)="routingService.toTestHistory(dataService.vendor!.id)" [type]="MenuItem.myTestSessions" label="My test sessions" icon="fa-solid fa-list" [expanded]="menuExpanded"></app-menu-item>
+          <app-menu-item (click)="routingService.toOwnOrganisationDetails()" [type]="MenuItem.myOrganisation" [label]="'My '+dataService.labelOrganisationLower()" icon="fa-solid fa-building" [expanded]="menuExpanded"></app-menu-item>
+          <app-menu-group [expanded]="menuExpanded"></app-menu-group>
+          <app-menu-item [label]="menuExpanded?'Collapse menu':'Expand menu'" [icon]="'fa-solid '+(menuExpanded?'fa-angles-left':'fa-angles-right')" (click)="toggleMenu()" [expanded]="menuExpanded"></app-menu-item>
+        </div>
+        <div class="page-content" [ngSwitch]="logoutInProgress">
+          <router-outlet *ngSwitchCase="false"></router-outlet>
+          <div class="container logout-padding" *ngSwitchDefault><span class="tab" style="font-size: xx-large;"><i class="fa-solid fa-spinner fa-spin-override fa-lg"></i></span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <footer>
+    <div class="container">
+      <div class="row">
+        <div class="col-xs-2">
+          <img [src]="footer" class="pull-left"/>
+        </div>
+        <div class="col-xs-10 version-div">
+          <div class="pull-right">
+            <div class="footer-devmode" *ngIf="dataService.isDevelopmentMode()"><i class="fa-solid fa-exclamation-circle" aria-hidden="true"></i> Development mode</div>
+            <div class="footer-links">
+              <a href *ngIf="showUserGuide()" (click)="userGuideLink();$event.preventDefault()">User guide</a>
+              <span *ngIf="showUserGuide()" class="version-text"> | </span><a *ngIf="showProvideFeedback()" [href]="provideFeedbackLink()" target="blank">Provide feedback</a>
+              <span *ngIf="showProvideFeedback()" class="version-text"> | </span><a href="#" *ngIf="showContactUs()" (click)="contactUs();$event.preventDefault()">Contact support</a>
+              <span *ngIf="showContactUs()" class="version-text"> | </span><a href (click)="onLegalNotice();$event.preventDefault()">Legal notice</a>
+              <span *ngIf="showMoreInfo()" class="version-text"> | </span><a *ngIf="showMoreInfo()" [href]="moreInfoLink()" target="blank">Find out more</a><span class="version-text"> | </span>
+              <a *ngIf="showReleaseInfo()" [href]="releaseInfoLink()" target="blank">{{version}}</a>
+              <span *ngIf="!showReleaseInfo()" class="version-text">{{version}}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+</div>
