@@ -19,7 +19,7 @@
                           <p class="role-description" *ngIf="userFullyLoaded()">{{dataService.getRoleDescription(false)}}</p>
                         </div>
                       </div>
-                      <div class="header-profile-popup-options">
+                      <div class="header-profile-popup-options" *ngIf="!logoutInProgress">
                         <ul class="list-account-options">
                           <li *ngIf="!dataService.isDemoAccount() && (dataService.configuration.ssoEnabled || !dataService.user?.onetime) && isAuthenticated()">
                             <a class="pointer" (click)="routingService.toProfile()">My profile</a>
@@ -56,7 +56,7 @@
             </div>
         </section>
         <div class="page-root">
-          <div class="page-menu" *ngIf="isAuthenticated()">
+          <div class="page-menu" *ngIf="isAuthenticated() && !logoutInProgress">
             <app-menu-item (click)="routingService.toHome()" label="Home" icon="fa-solid fa-house" [expanded]="menuExpanded"></app-menu-item>
             <ng-container *ngIf="dataService.isSystemAdmin || dataService.isCommunityAdmin">
               <app-menu-group label="Administration" [expanded]="menuExpanded"></app-menu-group>
@@ -74,8 +74,9 @@
             <app-menu-group [expanded]="menuExpanded"></app-menu-group>
             <app-menu-item [label]="menuExpanded?'Collapse menu':'Expand menu'" [icon]="'fa-solid '+(menuExpanded?'fa-angles-left':'fa-angles-right')" (click)="toggleMenu()" [expanded]="menuExpanded"></app-menu-item>
           </div>
-          <div class="page-content">
-            <router-outlet></router-outlet>
+          <div class="page-content" [ngSwitch]="logoutInProgress">
+            <router-outlet *ngSwitchCase="false"></router-outlet>
+            <div class="container logout-padding" *ngSwitchDefault><span class="tab" style="font-size: xx-large;"><i class="fa-solid fa-spinner fa-spin-override fa-lg"></i></span></div>
           </div>
         </div>
       </div>

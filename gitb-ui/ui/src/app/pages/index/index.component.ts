@@ -24,6 +24,7 @@ export class IndexComponent implements OnInit {
   version?: string
   pageTitle = 'Home'
   menuExpanded = false
+  logoutInProgress = false
 
   constructor(
     public dataService: DataService,
@@ -38,6 +39,7 @@ export class IndexComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.logoutInProgress = false
     this.dataService.onBannerChange$.subscribe((newBanner) => {
       setTimeout(() => {
         this.pageTitle = newBanner
@@ -49,6 +51,9 @@ export class IndexComponent implements OnInit {
     })
     this.systemConfigurationService.getFooterLogo().subscribe((data) => {
       this.footer = data
+    })
+    this.authProviderService.onLogout$.subscribe(() => {
+      this.logoutInProgress = true
     })
   }
 
