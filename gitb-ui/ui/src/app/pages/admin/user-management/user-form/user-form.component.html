@@ -14,7 +14,7 @@
     <app-tooltip *ngIf="sso" tbTooltip="The email address linked to the user's EU Login account."></app-tooltip>
     <app-tooltip *ngIf="!sso" tbTooltip="The username for this user that is used for logging in."></app-tooltip>
 </div>
-<ng-container [ngSwitch]="admin || roleReadonly">
+<ng-container *ngIf="!admin || !new" [ngSwitch]="admin || roleReadonly">
     <div class="form-group" *ngSwitchCase="true">
         <label [ngClass]="{'col-xs-3': sso, 'col-xs-4': !sso}" class="control-label" for="role"><span *ngIf="new">* </span>Role:</label>
         <div class="col-xs-6"><input id="role" name="role" [(ngModel)]="user.roleText" class="form-control" type="text" readonly="!new"></div>
