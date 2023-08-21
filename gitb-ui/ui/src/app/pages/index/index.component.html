@@ -43,7 +43,9 @@
         </div>
         <div class="page-content" [ngSwitch]="logoutInProgress">
           <router-outlet *ngSwitchCase="false"></router-outlet>
-          <div class="container logout-padding" *ngSwitchDefault><span class="tab" style="font-size: xx-large;"><i class="fa-solid fa-spinner fa-spin-override fa-lg"></i></span></div>
+          <div class="page-with-margins" *ngSwitchDefault>
+            <div class="container"><span class="tab" style="font-size: xx-large;"><i class="fa-solid fa-spinner fa-spin-override fa-lg"></i></span></div>
+          </div>
         </div>
       </div>
     </div>

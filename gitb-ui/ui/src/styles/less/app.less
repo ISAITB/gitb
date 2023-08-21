@@ -8,6 +8,16 @@ h1, h2, h3, h4, h5, h6 {
 	position: relative;
 }
 
+.page-root {
+	.page-with-margins {
+		margin: @page-content-margin-under-root
+	}
+}
+
+.page-with-margins {
+    margin: @page-content-margin;
+}
+
 .version-div {
 	padding-top:15px;
 	a {
@@ -586,4 +596,16 @@ div.non-padded-alert div.alert {
 }
 .tooltipContainerBig {
 	left: 2px !important;
+}
+
+.header-container {
+    display: flex;
+    .header-logo-container {
+        display: flex;
+        align-items: flex-end;
+        margin-bottom: 3px;
+        .logo {
+            height: 48px;
+        }
+    }
 }
