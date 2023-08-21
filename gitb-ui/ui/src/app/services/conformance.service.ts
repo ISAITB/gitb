@@ -55,6 +55,13 @@ export class ConformanceService {
     })
   }
 
+  getDomainOfActor(actorId: number) {
+    return this.restService.get<Domain>({
+      path: ROUTES.controllers.ConformanceService.getDomainOfActor(actorId).url,
+      authenticate: true
+    })
+  }
+
   getCommunityDomain(communityId: number) {
     return this.restService.get<Domain|undefined>({
       path: ROUTES.controllers.ConformanceService.getCommunityDomain().url,
@@ -182,12 +189,12 @@ export class ConformanceService {
     })
   }
 
-  deleteObsoleteTestResultsForSystem(systemId: number) {
+  deleteObsoleteTestResultsForOrganisation(organisationId: number) {
     return this.restService.delete<void>({
-      path: ROUTES.controllers.ConformanceService.deleteObsoleteTestResultsForSystem().url,
+      path: ROUTES.controllers.ConformanceService.deleteObsoleteTestResultsForOrganisation().url,
       authenticate: true,
       params: {
-        system_id: systemId
+        organization_id: organisationId
       }
     })
   }

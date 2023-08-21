@@ -64,7 +64,7 @@ export class CommunityPropertiesComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
-    this.communityId = Number(this.route.snapshot.paramMap.get('community_id'))
+    this.communityId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID))
     this.loadOrganisationParameters()
     this.loadSystemParameters()
   }

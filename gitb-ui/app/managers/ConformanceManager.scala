@@ -29,6 +29,17 @@ class ConformanceManager @Inject() (systemManager: SystemManager, triggerManager
 		exec(PersistenceSchema.domains.filter(_.id === domainId).result.headOption).isDefined
 	}
 
+	def getDomainOfActor(actorId: Long): Domain = {
+		exec(
+			PersistenceSchema.actors
+				.join(PersistenceSchema.domains).on(_.domain === _.id)
+				.filter(_._1.id === actorId)
+				.map(x => x._2)
+				.result
+				.head
+		)
+	}
+
   def getDomainOfSpecification(specificationId: Long ): Domain = {
 		exec(
 			PersistenceSchema.domains

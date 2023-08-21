@@ -58,6 +58,21 @@ class UserService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerC
   }
 
   /**
+   * Gets the user with specified id
+   */
+  def getOwnOrganisationUserById(userId: Long) = authorizedAction { request =>
+    authorizationManager.canViewOwnOrganisationUser(request, userId)
+    val callingUserId = ParameterExtractor.extractUserId(request)
+    val user = userManager.getUserByIdInSameOrganisationAsUser(userId, callingUserId)
+    if (user.isDefined) {
+      val json: String = JsonUtil.serializeUser(user.get)
+      ResponseConstructor.constructJsonResponse(json)
+    } else {
+      ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_REQUEST, "User not found")
+    }
+  }
+
+  /**
    * Creates new system administrator
    */
   def createSystemAdmin = authorizedAction { request =>

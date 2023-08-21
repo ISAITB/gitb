@@ -48,7 +48,7 @@ export class CommunityCertificateComponent extends BaseComponent implements OnIn
   }
 
   ngOnInit(): void {
-    this.communityId = Number(this.route.snapshot.paramMap.get('community_id'))
+    this.communityId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID))
     this.placeholders = [
       { key: Constants.PLACEHOLDER__DOMAIN, value: 'The full name of the ' + this.dataService.labelDomainLower() + '.' },
       { key: Constants.PLACEHOLDER__SPECIFICATION, value: 'The full name of the ' + this.dataService.labelSpecificationLower() + '.' },

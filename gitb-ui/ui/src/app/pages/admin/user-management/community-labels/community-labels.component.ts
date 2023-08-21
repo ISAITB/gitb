@@ -31,7 +31,7 @@ export class CommunityLabelsComponent extends BaseComponent implements OnInit {
   ) { super() }
 
   ngOnInit(): void {
-    this.communityId = Number(this.route.snapshot.paramMap.get('community_id'))
+    this.communityId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID))
     this.labelTypeDescription[Constants.LABEL_TYPE.DOMAIN] = "The set of related specifications and test suites the community will be using for testing."
     this.labelTypeDescription[Constants.LABEL_TYPE.SPECIFICATION] = "The specific named or versioned requirements that community members will be selecting to test for. When using specification groups the label will refer to the combination of group and specification."
     this.labelTypeDescription[Constants.LABEL_TYPE.SPECIFICATION_GROUP] = "A group of related specifications. The label in this case refers to when this concept is presented independently from its included specifications."

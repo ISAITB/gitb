@@ -2,6 +2,7 @@ import { ROUTES } from '../common/global';
 import { Injectable } from '@angular/core';
 import { RestService } from './rest.service';
 import { SpecificationGroup } from '../types/specification-group';
+import { Specification } from '../types/specification';
 
 @Injectable({
   providedIn: 'root'
@@ -37,6 +38,20 @@ export class SpecificationService {
       data: params,
       authenticate: true
     })
+  }
+
+  getSpecificationIdOfActor(actorId: number) {
+    return this.restService.get<{id: number}>({
+      path: ROUTES.controllers.SpecificationService.getSpecificationOfActor(actorId).url,
+      authenticate: true
+    }) 
+  }
+
+  getSpecificationOfActor(actorId: number) {
+    return this.restService.get<Specification>({
+      path: ROUTES.controllers.SpecificationService.getSpecificationOfActor(actorId).url,
+      authenticate: true
+    }) 
   }
 
   getSpecificationGroupsOfDomains(domainIds: number[]|undefined) {

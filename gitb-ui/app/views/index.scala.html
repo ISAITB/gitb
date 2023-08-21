@@ -24,10 +24,12 @@
 	<body>
 		<div id="cp-div" style="display:none">@config.cookiePath</div>
 		<div class="page index">
-			<div class="header">
-				<div class="navbar-collapse nav-main-collapse collapse">
-					<div class="container">
-						<img src='@config.logoPath' class="logo"/>
+			<div class="header-bar">
+				<div class="container">
+					<div class="header-container">
+						<div class="header-logo-container">
+							<img src='@config.logoPath' class="logo"/>
+						</div>
 					</div>
 				</div>
 			</div>
@@ -41,44 +43,45 @@
 						</div>
 					</div>
 				</section>
-				<div class="container">
-					<div class="row">
-						<div class="col-xs-12">
-							<h4 class="welcome-text">The Interoperability Test Bed is a platform for self-service conformance testing against semantic and technical specifications.</h4>
-							<div style="padding-top:20px">
-								<div style="display:flex; align-items:center;">
-									<div>
-										<button id="loginOption" type="button" class="btn btn-primary" style="padding:20px">Click to log in</button>
-									</div>
-									<div style="margin-left:20px;">
-										@if(config.ssoEnabled) {
-										<p><b style="margin-right:10px;">Assigned a new role by an administrator?</b><a id="linkOption" href="#">Confirm your new role</a>.</p>
-										}
-										@if(config.demosEnabled && config.registrationEnabled) {
-										<span><b style="margin-right:10px;">New to the Test Bed?</b><a id="registerOption" href="#">Register in a public community</a> or <a id="demoOption" href="#">try out our demos</a></span>.
-										} else {@if(config.demosEnabled && !config.registrationEnabled) {
-										<span><b style="margin-right:10px;">New to the Test Bed?</b><a id="demoOption" href="#">Try out our demos</a>.</span>
-										} else {@if(!config.demosEnabled && config.registrationEnabled) {
-										<span><b style="margin-right:10px;">New to the Test Bed?</b><a id="registerOption" href="#">Register in a public community</a>.</span>
-										}}}
+				<div class="page-with-margins">
+					<div class="container">
+						<div class="row">
+							<div class="col-xs-12">
+								<h4 class="welcome-text">The Interoperability Test Bed is a platform for self-service conformance testing against semantic and technical specifications.</h4>
+								<div style="padding-top:20px">
+									<div style="display:flex; align-items:center;">
+										<div>
+											<button id="loginOption" type="button" class="btn btn-primary" style="padding:20px">Click to log in</button>
+										</div>
+										<div style="margin-left:20px;">
+											@if(config.ssoEnabled) {
+											<p><b style="margin-right:10px;">Assigned a new role by an administrator?</b><a id="linkOption" href="#">Confirm your new role</a>.</p>
+											}
+											@if(config.demosEnabled && config.registrationEnabled) {
+											<span><b style="margin-right:10px;">New to the Test Bed?</b><a id="registerOption" href="#">Register in a public community</a> or <a id="demoOption" href="#">try out our demos</a></span>.
+											} else {@if(config.demosEnabled && !config.registrationEnabled) {
+											<span><b style="margin-right:10px;">New to the Test Bed?</b><a id="demoOption" href="#">Try out our demos</a>.</span>
+											} else {@if(!config.demosEnabled && config.registrationEnabled) {
+											<span><b style="margin-right:10px;">New to the Test Bed?</b><a id="registerOption" href="#">Register in a public community</a>.</span>
+											}}}
+										</div>
 									</div>
 								</div>
-							</div>
-							<div class="bg-info div-rounded div-spaced div-padded">
-								@if(config.ssoEnabled) {
+								<div class="bg-info div-rounded div-spaced div-padded">
+									@if(config.ssoEnabled) {
 									<p>To connect to the Test Bed you need to first authenticate using your EU Login account. If you are new to EU Login follow <a href="@config.euLoginUseGuideLink" target="blank">this tutorial</a> to get started.</p>
-								}
-								<p style="margin-bottom: 0px"><b>Privacy note:</b> By connecting you consent to the use of cookies to manage your session.
-									@if(config.hasDefaultLegalNotice) {
-										<span>Please refer to our <a href="#" data-toggle="modal" data-target="#legalModal">legal notice</a> for more information.</span>
 									}
-								</p>
-								@if(config.ssoEnabled && config.inMigrationPeriod) {
+									<p style="margin-bottom: 0px"><b>Privacy note:</b> By connecting you consent to the use of cookies to manage your session.
+										@if(config.hasDefaultLegalNotice) {
+										<span>Please refer to our <a href="#" data-toggle="modal" data-target="#legalModal">legal notice</a> for more information.</span>
+										}
+									</p>
+									@if(config.ssoEnabled && config.inMigrationPeriod) {
 									<p style="margin-top: 10px; margin-bottom: 0px"><b>Migration note:</b> If you have been using a functional account to log in click <a id="migrateOption" href="#">here</a> to migrate it to EU Login. Step-by-step instructions are available in <a href="@config.euLoginMigrationGuideLink" target="blank">this guide</a>.</p>
-								}
+									}
+								</div>
 							</div>
 						</div>
-
 					</div>
 				</div>
 			</div>

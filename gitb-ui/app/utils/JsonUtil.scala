@@ -6,6 +6,7 @@ import com.gitb.tbs.UserInput
 import com.gitb.tr._
 import config.Configurations
 import exceptions.JsonValidationException
+import jakarta.xml.bind.JAXBElement
 import managers.export.{ExportSettings, ImportItem, ImportSettings}
 import models.Enums.TestSuiteReplacementChoice.TestSuiteReplacementChoice
 import models.Enums._
@@ -16,7 +17,6 @@ import play.api.libs.json.{JsObject, _}
 
 import java.sql.Timestamp
 import java.util
-import jakarta.xml.bind.JAXBElement
 import scala.collection.mutable.ListBuffer
 import scala.collection.{immutable, mutable}
 import scala.jdk.CollectionConverters.{CollectionHasAsScala, IterableHasAsJava}
@@ -213,8 +213,23 @@ object JsonUtil {
     if (item.description.nonEmpty && item.description.get.nonEmpty) {
       json = json +("description" -> JsString(item.description.get))
     }
+    if (item.itemType == ConformanceStatementItemType.ACTOR && !item.actorToShow) {
+      json = json + ("hidden" -> JsBoolean(true))
+    }
     if (item.items.nonEmpty) {
       json = json +("items" -> jsConformanceStatementItems(item.items.get))
+    }
+    if (item.results.isDefined) {
+      json = json +("results" -> Json.obj(
+          "updateTime" -> (if (item.results.get.updateTime.isDefined) TimeUtil.serializeTimestamp(item.results.get.updateTime.get) else JsNull),
+          "undefined" -> item.results.get.undefinedTests,
+          "failed" -> item.results.get.failedTests,
+          "completed" -> item.results.get.completedTests,
+          "undefinedOptional" -> item.results.get.undefinedOptionalTests,
+          "failedOptional" -> item.results.get.failedOptionalTests,
+          "completedOptional" -> item.results.get.completedOptionalTests
+        )
+      )
     }
     json
   }

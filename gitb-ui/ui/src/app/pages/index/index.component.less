@@ -1,0 +1,30 @@
+@import '../../../styles/less/_common.less';
+
+.page-root {
+    display: flex;
+    margin: 20px 10px 20px 10px;
+    .page-menu {
+        border: 1px solid @gray-dark-1;
+        border-radius: 4px;
+        padding: 10px;
+        margin-right: 20px;
+        background: @gray-light-1;
+        align-self: flex-start;
+        position: sticky;
+        top: 75px;
+        z-index: 1;
+        &.hidden {
+            display: none;
+        }
+    }
+    .page-content {
+        padding: 0px 0px 0px 0px;
+        width: 100%;
+    }
+}
+
+.header-menu-container {
+    display: flex;
+    margin-left: auto;
+    align-self: center;        
+}

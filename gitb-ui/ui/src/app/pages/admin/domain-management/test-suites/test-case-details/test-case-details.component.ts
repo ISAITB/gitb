@@ -15,6 +15,7 @@ import { TestSuiteService } from 'src/app/services/test-suite.service';
 import { TestService } from 'src/app/services/test.service';
 import { TestCase } from 'src/app/types/test-case';
 import { saveAs } from 'file-saver'
+import { Constants } from 'src/app/common/constants';
 
 @Component({
   selector: 'app-test-case-details',
@@ -53,13 +54,13 @@ export class TestCaseDetailsComponent extends BaseComponent implements OnInit, A
   }
 
   ngOnInit(): void {
-    this.domainId = Number(this.route.snapshot.paramMap.get('id'))
-    const specificationIdParam = this.route.snapshot.paramMap.get('spec_id')
+    this.domainId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID))
+    const specificationIdParam = this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.SPECIFICATION_ID)
     if (specificationIdParam) {
       this.specificationId = Number(specificationIdParam)
     }
-    this.testSuiteId = Number(this.route.snapshot.paramMap.get('testsuite_id'))
-    this.testCaseId = Number(this.route.snapshot.paramMap.get('testcase_id'))
+    this.testSuiteId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.TEST_SUITE_ID))
+    this.testCaseId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.TEST_CASE_ID))
 		this.testSuiteService.getTestCase(this.testCaseId)
     .subscribe((data) => {
 			this.testCase = data

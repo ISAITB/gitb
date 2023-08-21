@@ -369,11 +369,15 @@ export class ConformanceDashboardComponent implements OnInit {
   }
 
   toSystem(statement: ConformanceResultFull) {
-    this.routingService.toSystems(statement.organizationId, statement.systemId)
+    this.routingService.toSystemDetails(statement.communityId, statement.organizationId, statement.systemId)
   }
 
   toStatement(statement: ConformanceResultFull) {
-    this.routingService.toConformanceStatement(statement.organizationId, statement.systemId, statement.actorId, statement.specId)
+    if (statement.organizationId == this.dataService.vendor?.id) {
+      this.routingService.toOwnConformanceStatement(statement.organizationId, statement.systemId, statement.actorId)
+    } else {
+      this.routingService.toConformanceStatement(statement.organizationId, statement.systemId, statement.actorId, statement.communityId)
+    }
   }
 
   toSpecification(statement: ConformanceResultFull) {

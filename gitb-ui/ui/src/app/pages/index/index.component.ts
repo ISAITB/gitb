@@ -11,16 +11,22 @@ import { CookieService } from 'ngx-cookie-service';
 import { BsModalService } from 'ngx-bootstrap/modal';
 import { ContactSupportComponent } from 'src/app/modals/contact-support/contact-support.component';
 import { RoutingService } from 'src/app/services/routing.service';
+import { MenuItem } from 'src/app/types/menu-item.enum';
 
 @Component({
   selector: 'app-index',
-  templateUrl: './index.component.html'
+  templateUrl: './index.component.html',
+  styleUrls: ['./index.component.less']
 })
 export class IndexComponent implements OnInit {
 
   logo?: string
   footer?: string
   version?: string
+  pageTitle = ''
+  menuExpanded = false
+  logoutInProgress = false
+  MenuItem = MenuItem
 
   constructor(
     public dataService: DataService,
@@ -35,12 +41,21 @@ export class IndexComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.logoutInProgress = false
+    this.dataService.onBannerChange$.subscribe((newBanner) => {
+      setTimeout(() => {
+        this.pageTitle = newBanner
+      }, 1)
+    })
     this.version = this.dataService.configuration.versionNumber
     this.systemConfigurationService.getLogo().subscribe((data) => {
       this.logo = data
     })
     this.systemConfigurationService.getFooterLogo().subscribe((data) => {
       this.footer = data
+    })
+    this.authProviderService.onLogout$.subscribe(() => {
+      this.logoutInProgress = true
     })
   }
 
@@ -132,9 +147,8 @@ export class IndexComponent implements OnInit {
     return this.authProviderService.isAuthenticated()
   }
 
-	onTestsClick() {
-    localStorage.setItem(Constants.LOCAL_DATA.ORGANISATION, JSON.stringify(this.dataService.vendor))
-    this.routingService.toSystems(this.dataService.vendor!.id)
+  toggleMenu() {
+    this.menuExpanded = !this.menuExpanded
   }
 
 }

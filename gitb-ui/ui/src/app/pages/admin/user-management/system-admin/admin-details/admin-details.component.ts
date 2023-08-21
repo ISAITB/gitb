@@ -1,5 +1,6 @@
 import { AfterViewInit, Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
+import { Constants } from 'src/app/common/constants';
 import { BaseComponent } from 'src/app/pages/base-component.component';
 import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
 import { DataService } from 'src/app/services/data.service';
@@ -39,7 +40,7 @@ export class AdminDetailsComponent extends BaseComponent implements OnInit, Afte
   }
 
   ngOnInit(): void {
-    this.userId = Number(this.route.snapshot.paramMap.get('id'))
+    this.userId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.USER_ID))
     this.disableDeleteButton = Number(this.dataService.user!.id) == Number(this.userId)
     this.userService.getUserById(this.userId)
     .subscribe((data) => {

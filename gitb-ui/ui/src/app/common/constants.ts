@@ -17,10 +17,6 @@ export class Constants {
 	public static TEST_ENGINE_ACTOR_NAME = 'Test Engine'
 	public static TESTER_ACTOR_NAME = 'Operator'
 
-	public static LOCAL_DATA = {
-		ORGANISATION: 'organisation'
-	}
-
 	public static EMBEDDING_METHOD = {
 		BASE64: 'BASE64',
 		STRING: 'STRING',
@@ -304,6 +300,35 @@ export class Constants {
 		SPECIFICATION_GROUP: 2,
 		SPECIFICATION: 3,
 		ACTOR: 4
+	}
+
+	public static NAVIGATION_QUERY_PARAM = {
+		TEST_SESSION_ID: 'session',
+		SPECIFICATION_GROUP_ID: 'group',
+		VIEW_PROPERTIES: 'viewProperties',
+		SYSTEM_ID: 'system',
+		TEST_CASE_ID: 'tc',
+		TEST_SUITE_ID: 'ts',
+		COPY: 'copy',
+		COPY_DEFAULT: 'copyDefault',
+	}
+
+	public static NAVIGATION_PATH_PARAM = {
+		DOMAIN_ID: 'domain_id',
+		SPECIFICATION_GROUP_ID: 'group_id',
+		SPECIFICATION_ID: 'spec_id',
+		ACTOR_ID: 'actor_id',
+		ENDPOINT_ID: 'endpoint_id',
+		TEST_SUITE_ID: 'testsuite_id',
+		TEST_CASE_ID: 'testcase_id',
+		COMMUNITY_ID: 'community_id',
+		ORGANISATION_ID: 'org_id',
+		SYSTEM_ID: 'sys_id',
+		USER_ID: 'user_id',
+		LANDING_PAGE_ID: 'page_id',
+		LEGAL_NOTICE_ID: 'notice_id',
+		ERROR_TEMPLATE_ID: 'template_id',
+		TRIGGER_ID: 'trigger_id',
 	}
 
 	public static PASSWORD_REGEX = /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#&()_–\[{}\]:;'",?/\\*~$^+=<>]).{8,}$/

@@ -1,5 +1,6 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
+import { Constants } from 'src/app/common/constants';
 import { DataService } from 'src/app/services/data.service';
 import { SpecificationService } from 'src/app/services/specification.service';
 import { Specification } from 'src/app/types/specification';
@@ -23,7 +24,7 @@ export class SpecificationFormComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
-    const domainId = Number(this.route.snapshot.paramMap.get('id'))
+    const domainId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID))
     this.specificationService.getSpecificationGroups(domainId)
     .subscribe((data) => {
       this.groups = data

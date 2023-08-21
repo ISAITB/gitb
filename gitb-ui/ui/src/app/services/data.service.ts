@@ -1,5 +1,5 @@
 import { Injectable, Renderer2, RendererFactory2 } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
 import { Constants } from '../common/constants'
 import { ObjectWithId } from '../components/test-filter/object-with-id';
 import { ConformanceTestCase } from '../pages/organisation/conformance-statement/conformance-test-case';
@@ -24,7 +24,8 @@ import { LogLevel } from '../types/log-level';
 import { SpecificationGroup } from '../types/specification-group';
 import { Specification } from '../types/specification';
 import { DomainSpecification } from '../types/domain-specification';
-import { find, sortBy } from 'lodash';
+import { find } from 'lodash';
+import { PageChange } from '../types/page-change';
 
 @Injectable({
   providedIn: 'root'
@@ -44,9 +45,14 @@ export class DataService {
   public isVendorAdmin = false
   public isCommunityAdmin = false
   public isDomainUser = false
-  public tests?: ConformanceTestCase[]
+  private tests?: ConformanceTestCase[]
   public currentLandingPageContent?: string
   private apiRoot?: string
+
+  private onBannerChangeSource = new Subject<string>()
+  public onBannerChange$ = this.onBannerChangeSource.asObservable()
+  private onPageChangeSource = new Subject<PageChange>()
+  public onPageChange$ = this.onPageChangeSource.asObservable()
 
   private renderer: Renderer2
   triggerEventToDataTypeMap?: {[key: number]: { [key: number]: boolean } }
@@ -229,196 +235,168 @@ export class DataService {
       }
   }
 
+  private getLabelSingular(type: number) {
+    if (this.labels == undefined) {
+      this.setupLabels()
+    }
+    return this.labels![type].singularForm
+  }
+
+  private getLabelLowerSingular(type: number) {
+    if (this.labels == undefined) {
+      this.setupLabels()
+    }
+    if (this.labels![type].fixedCase) {
+      return this.labels![type].singularForm
+    } else {
+      return this.labels![type].singularForm.toLowerCase()
+    }
+  }
+
+  private getLabelPlural(type: number) {
+    if (this.labels == undefined) {
+      this.setupLabels()
+    }
+    return this.labels![type].pluralForm
+  }
+
+  private getLabelLowerPlural(type: number) {
+    if (this.labels == undefined) {
+      this.setupLabels()
+    }
+    if (this.labels![type].fixedCase) {
+      return this.labels![type].pluralForm
+    } else {
+      return this.labels![type].pluralForm.toLowerCase()
+    }
+  }
+
   labelDomain() {
-    return this.labels![Constants.LABEL_TYPE.DOMAIN].singularForm
+    return this.getLabelSingular(Constants.LABEL_TYPE.DOMAIN)
   }
 
   labelDomainLower() {
-    if (this.labels![Constants.LABEL_TYPE.DOMAIN].fixedCase) {
-      return this.labels![Constants.LABEL_TYPE.DOMAIN].singularForm
-    } else {
-      return this.labels![Constants.LABEL_TYPE.DOMAIN].singularForm.toLowerCase()
-    }
+    return this.getLabelLowerSingular(Constants.LABEL_TYPE.DOMAIN)
   }
 
   labelDomains() {
-    return this.labels![Constants.LABEL_TYPE.DOMAIN].pluralForm
+    return this.getLabelPlural(Constants.LABEL_TYPE.DOMAIN)
   }
 
   labelDomainsLower() {
-    if (this.labels![Constants.LABEL_TYPE.DOMAIN].fixedCase) {
-      return this.labels![Constants.LABEL_TYPE.DOMAIN].pluralForm
-    } else {
-      return this.labels![Constants.LABEL_TYPE.DOMAIN].pluralForm.toLowerCase()
-    }
+    return this.getLabelLowerPlural(Constants.LABEL_TYPE.DOMAIN)
   }
 
   labelSpecification() {
-    return this.labels![Constants.LABEL_TYPE.SPECIFICATION].singularForm
+    return this.getLabelSingular(Constants.LABEL_TYPE.SPECIFICATION)
   }
 
   labelSpecificationLower() {
-    if (this.labels![Constants.LABEL_TYPE.SPECIFICATION].fixedCase) {
-      return this.labels![Constants.LABEL_TYPE.SPECIFICATION].singularForm
-    } else {
-      return this.labels![Constants.LABEL_TYPE.SPECIFICATION].singularForm.toLowerCase()
-    }
+    return this.getLabelLowerSingular(Constants.LABEL_TYPE.SPECIFICATION)
   }
 
   labelSpecifications() {
-    return this.labels![Constants.LABEL_TYPE.SPECIFICATION].pluralForm
+    return this.getLabelPlural(Constants.LABEL_TYPE.SPECIFICATION)
   }
 
   labelSpecificationsLower() {
-    if (this.labels![Constants.LABEL_TYPE.SPECIFICATION].fixedCase) {
-      return this.labels![Constants.LABEL_TYPE.SPECIFICATION].pluralForm
-    } else {
-      return this.labels![Constants.LABEL_TYPE.SPECIFICATION].pluralForm.toLowerCase()
-    }
+    return this.getLabelLowerPlural(Constants.LABEL_TYPE.SPECIFICATION)
   }
 
   labelSpecificationGroup() {
-    return this.labels![Constants.LABEL_TYPE.SPECIFICATION_GROUP].singularForm
+    return this.getLabelSingular(Constants.LABEL_TYPE.SPECIFICATION_GROUP)
   }
 
   labelSpecificationGroupLower() {
-    if (this.labels![Constants.LABEL_TYPE.SPECIFICATION_GROUP].fixedCase) {
-      return this.labels![Constants.LABEL_TYPE.SPECIFICATION_GROUP].singularForm
-    } else {
-      return this.labels![Constants.LABEL_TYPE.SPECIFICATION_GROUP].singularForm.toLowerCase()
-    }
+    return this.getLabelLowerSingular(Constants.LABEL_TYPE.SPECIFICATION_GROUP)
   }
 
   labelSpecificationGroups() {
-    return this.labels![Constants.LABEL_TYPE.SPECIFICATION_GROUP].pluralForm
+    return this.getLabelPlural(Constants.LABEL_TYPE.SPECIFICATION_GROUP)
   }
 
   labelSpecificationGroupsLower() {
-    if (this.labels![Constants.LABEL_TYPE.SPECIFICATION_GROUP].fixedCase) {
-      return this.labels![Constants.LABEL_TYPE.SPECIFICATION_GROUP].pluralForm
-    } else {
-      return this.labels![Constants.LABEL_TYPE.SPECIFICATION_GROUP].pluralForm.toLowerCase()
-    }
+    return this.getLabelLowerPlural(Constants.LABEL_TYPE.SPECIFICATION_GROUP)
   }
 
   labelSpecificationInGroup() {
-    return this.labels![Constants.LABEL_TYPE.SPECIFICATION_IN_GROUP].singularForm
+    return this.getLabelSingular(Constants.LABEL_TYPE.SPECIFICATION_IN_GROUP)
   }
 
   labelSpecificationInGroupLower() {
-    if (this.labels![Constants.LABEL_TYPE.SPECIFICATION_IN_GROUP].fixedCase) {
-      return this.labels![Constants.LABEL_TYPE.SPECIFICATION_IN_GROUP].singularForm
-    } else {
-      return this.labels![Constants.LABEL_TYPE.SPECIFICATION_IN_GROUP].singularForm.toLowerCase()
-    }
+    return this.getLabelLowerSingular(Constants.LABEL_TYPE.SPECIFICATION_IN_GROUP)
   }
 
   labelSpecificationInGroups() {
-    return this.labels![Constants.LABEL_TYPE.SPECIFICATION_IN_GROUP].pluralForm
+    return this.getLabelPlural(Constants.LABEL_TYPE.SPECIFICATION_IN_GROUP)
   }
 
   labelSpecificationInGroupsLower() {
-    if (this.labels![Constants.LABEL_TYPE.SPECIFICATION_IN_GROUP].fixedCase) {
-      return this.labels![Constants.LABEL_TYPE.SPECIFICATION_IN_GROUP].pluralForm
-    } else {
-      return this.labels![Constants.LABEL_TYPE.SPECIFICATION_IN_GROUP].pluralForm.toLowerCase()
-    }
+    return this.getLabelLowerPlural(Constants.LABEL_TYPE.SPECIFICATION_IN_GROUP)
   }
 
   labelActor() {
-    return this.labels![Constants.LABEL_TYPE.ACTOR].singularForm
+    return this.getLabelSingular(Constants.LABEL_TYPE.ACTOR)
   }
 
   labelActorLower() {
-    if (this.labels![Constants.LABEL_TYPE.ACTOR].fixedCase) {
-      return this.labels![Constants.LABEL_TYPE.ACTOR].singularForm
-    } else {
-      return this.labels![Constants.LABEL_TYPE.ACTOR].singularForm.toLowerCase()
-    }
+    return this.getLabelLowerSingular(Constants.LABEL_TYPE.ACTOR)
   }
 
   labelActors() {
-    return this.labels![Constants.LABEL_TYPE.ACTOR].pluralForm
+    return this.getLabelPlural(Constants.LABEL_TYPE.ACTOR)
   }
 
   labelActorsLower() {
-    if (this.labels![Constants.LABEL_TYPE.ACTOR].fixedCase) {
-      return this.labels![Constants.LABEL_TYPE.ACTOR].pluralForm
-    } else {
-      return this.labels![Constants.LABEL_TYPE.ACTOR].pluralForm.toLowerCase()
-    }
+    return this.getLabelLowerPlural(Constants.LABEL_TYPE.ACTOR)
   }
 
   labelEndpoint() {
-    return this.labels![Constants.LABEL_TYPE.ENDPOINT].singularForm
+    return this.getLabelSingular(Constants.LABEL_TYPE.ENDPOINT)
   }
 
   labelEndpointLower() {
-    if (this.labels![Constants.LABEL_TYPE.ENDPOINT].fixedCase) {
-      return this.labels![Constants.LABEL_TYPE.ENDPOINT].singularForm
-    } else {
-      return this.labels![Constants.LABEL_TYPE.ENDPOINT].singularForm.toLowerCase()
-    }
+    return this.getLabelLowerSingular(Constants.LABEL_TYPE.ENDPOINT)
   }
 
   labelEndpoints() {
-    return this.labels![Constants.LABEL_TYPE.ENDPOINT].pluralForm
+    return this.getLabelPlural(Constants.LABEL_TYPE.ENDPOINT)
   }
 
   labelEndpointsLower() {
-    if (this.labels![Constants.LABEL_TYPE.ENDPOINT].fixedCase) {
-      return this.labels![Constants.LABEL_TYPE.ENDPOINT].pluralForm
-    } else {
-      return this.labels![Constants.LABEL_TYPE.ENDPOINT].pluralForm.toLowerCase()
-    }
+    return this.getLabelLowerPlural(Constants.LABEL_TYPE.ENDPOINT)
   }
 
   labelOrganisation() {
-    return this.labels![Constants.LABEL_TYPE.ORGANISATION].singularForm
+    return this.getLabelSingular(Constants.LABEL_TYPE.ORGANISATION)
   }
 
   labelOrganisationLower() {
-    if (this.labels![Constants.LABEL_TYPE.ORGANISATION].fixedCase) {
-      return this.labels![Constants.LABEL_TYPE.ORGANISATION].singularForm
-    } else {
-      return this.labels![Constants.LABEL_TYPE.ORGANISATION].singularForm.toLowerCase()
-    }
+    return this.getLabelLowerSingular(Constants.LABEL_TYPE.ORGANISATION)
   }
 
   labelOrganisations() {
-    return this.labels![Constants.LABEL_TYPE.ORGANISATION].pluralForm
+    return this.getLabelPlural(Constants.LABEL_TYPE.ORGANISATION)
   }
 
   labelOrganisationsLower() {
-    if (this.labels![Constants.LABEL_TYPE.ORGANISATION].fixedCase) {
-      return this.labels![Constants.LABEL_TYPE.ORGANISATION].pluralForm
-    } else {
-      return this.labels![Constants.LABEL_TYPE.ORGANISATION].pluralForm.toLowerCase()
-    }
+    return this.getLabelLowerPlural(Constants.LABEL_TYPE.ORGANISATION)
   }
 
   labelSystem() {
-    return this.labels![Constants.LABEL_TYPE.SYSTEM].singularForm
+    return this.getLabelSingular(Constants.LABEL_TYPE.SYSTEM)
   }
 
   labelSystemLower() {
-    if (this.labels![Constants.LABEL_TYPE.SYSTEM].fixedCase) {
-      return this.labels![Constants.LABEL_TYPE.SYSTEM].singularForm
-    } else {
-      return this.labels![Constants.LABEL_TYPE.SYSTEM].singularForm.toLowerCase()
-    }
+    return this.getLabelLowerSingular(Constants.LABEL_TYPE.SYSTEM)
   }
 
   labelSystems() {
-    return this.labels![Constants.LABEL_TYPE.SYSTEM].pluralForm
+    return this.getLabelPlural(Constants.LABEL_TYPE.SYSTEM)
   }
 
   labelSystemsLower() {
-    if (this.labels![Constants.LABEL_TYPE.SYSTEM].fixedCase) {
-      return this.labels![Constants.LABEL_TYPE.SYSTEM].pluralForm
-    } else {
-      return this.labels![Constants.LABEL_TYPE.SYSTEM].pluralForm.toLowerCase()
-    }
+    return this.getLabelLowerPlural(Constants.LABEL_TYPE.SYSTEM)
   }
 
   focus(inputId: string|undefined, delay?: number) {
@@ -924,8 +902,32 @@ export class DataService {
 		return true
   }
 
+  getTestsToExecute(): ConformanceTestCase[]|undefined {
+    if (localStorage) {
+      const cachedTests = localStorage.getItem('tests')
+      if (cachedTests) {
+        return JSON.parse(cachedTests)
+      } else {
+        return undefined
+      }
+    } else {
+      return this.tests
+    }
+  }
+
 	setTestsToExecute(tests: ConformanceTestCase[]) {
-		this.tests = tests
+    if (localStorage) {
+      localStorage.setItem('tests', JSON.stringify(tests))
+    } else {
+      this.tests = tests
+    }
+  }
+
+  clearTestsToExecute() {
+    if (localStorage) {
+      localStorage.removeItem('tests')
+    }
+    this.tests = undefined
   }
 
   isDataURL(configuration: string) {
@@ -1190,4 +1192,13 @@ export class DataService {
     }
     return specs
   }
+
+  public changePage(changeInfo: PageChange) {
+    this.onPageChangeSource.next(changeInfo)
+  }
+
+  public changeBanner(banner: string) {
+    this.onBannerChangeSource.next(banner)
+  }
+
 }

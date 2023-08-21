@@ -16,6 +16,9 @@ export class UserFormComponent implements OnInit {
   @Input() admin = false
   @Input() roles: IdLabel[] = []
   @Input() sso = false
+  @Input() showOrganisation = true
+  @Input() showChangePassword = true
+  @Input() roleReadonly = false
   @Output() passwordChanged = new EventEmitter<boolean>()
   changePassword = false
 

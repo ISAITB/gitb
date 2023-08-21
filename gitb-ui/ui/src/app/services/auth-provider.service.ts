@@ -78,6 +78,9 @@ export class AuthProviderService {
           console.debug('Successfully signalled logout')
         }).add(() => {
           this.dataService.destroy()
+          if (localStorage) {
+            localStorage.clear()
+          }
           this.cookieService.delete(this.atKey)
 					if (this.cookiePath) {
             this.cookieService.delete(this.atKey, this.cookiePath)

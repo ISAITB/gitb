@@ -18,6 +18,8 @@ import { ErrorDescription } from '../types/error-description';
 })
 export class ErrorService {
 
+  private errorCurrentlyDisplayed = false
+
   constructor(
     private confirmationDialogService: ConfirmationDialogService,
     private modalService: BsModalService,
@@ -151,36 +153,40 @@ export class ErrorService {
 
   private openModal(error: ErrorData, withRetry: boolean, observer: Subscriber<boolean>) {
     console.error('Error caught: ' + JSON.stringify(error))
-    if (!error.template || error.template == '') {
-      if (error.error && error.error.error_id) {
-        error.template = 
-          '<p>'+Constants.PLACEHOLDER__ERROR_DESCRIPTION+'</p>' +
-          '<p><b>Error reference: </b>'+Constants.PLACEHOLDER__ERROR_ID+'</p>'
-      } else {
-        error.template = '<p>'+Constants.PLACEHOLDER__ERROR_DESCRIPTION+'</p>'
-      }
-    }
-    const modal = this.modalService.show(ErrorComponent, {
-      initialState: {
-        error: error,
-        withRetry: withRetry
-      }
-    })
-    modal.content!.result.subscribe((closed: boolean) => {
-      if (closed) {
-        // Closed
-        observer.next(true)
-        observer.complete()
-      } else {
-        // Dismissed
-        if (withRetry) {
-          // Do not retry
-          observer.next(false)
+    if (!this.errorCurrentlyDisplayed) {
+      this.errorCurrentlyDisplayed = true
+      if (!error.template || error.template == '') {
+        if (error.error && error.error.error_id) {
+          error.template = 
+            '<p>'+Constants.PLACEHOLDER__ERROR_DESCRIPTION+'</p>' +
+            '<p><b>Error reference: </b>'+Constants.PLACEHOLDER__ERROR_ID+'</p>'
         } else {
-          observer.next(true)
+          error.template = '<p>'+Constants.PLACEHOLDER__ERROR_DESCRIPTION+'</p>'
         }
-        observer.complete()
       }
-    })
+      const modal = this.modalService.show(ErrorComponent, {
+        initialState: {
+          error: error,
+          withRetry: withRetry
+        }
+      })
+      modal.content!.result.subscribe((closed: boolean) => {
+        if (closed) {
+          // Closed
+          observer.next(true)
+          observer.complete()
+        } else {
+          // Dismissed
+          if (withRetry) {
+            // Do not retry
+            observer.next(false)
+          } else {
+            observer.next(true)
+          }
+          observer.complete()
+        }
+        this.errorCurrentlyDisplayed = false
+      })
+    }
   }
 }

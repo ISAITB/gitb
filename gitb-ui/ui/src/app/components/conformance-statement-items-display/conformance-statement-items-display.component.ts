@@ -13,6 +13,8 @@ export class ConformanceStatementItemsDisplayComponent implements OnInit {
   @Input() items: ConformanceStatementItem[] = []
   @Input() shade = false
   @Input() animated = false
+  @Input() withCheck = true
+  @Input() withResults = false
   @Output() selectionChanged = new EventEmitter<ConformanceStatementItem>()
   hidden = false
 

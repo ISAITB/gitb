@@ -90,8 +90,8 @@ export class TriggerComponent extends BaseComponent implements OnInit, AfterView
   }
 
   ngOnInit(): void {
-    this.communityId = Number(this.route.snapshot.paramMap.get('community_id'))
-    let triggerIdParam = this.route.snapshot.paramMap.get('trigger_id')
+    this.communityId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID))
+    let triggerIdParam = this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.TRIGGER_ID)
     if (triggerIdParam != undefined) {
       this.triggerId = Number(triggerIdParam)
       this.update = true

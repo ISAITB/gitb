@@ -10,7 +10,6 @@ import { PopupService } from 'src/app/services/popup.service';
 import { ReportService } from 'src/app/services/report.service';
 import { TestService } from 'src/app/services/test.service';
 import { FilterState } from 'src/app/types/filter-state';
-import { Organisation } from 'src/app/types/organisation.type';
 import { TableColumnDefinition } from 'src/app/types/table-column-definition.type';
 import { TestResultReport } from 'src/app/types/test-result-report';
 import { TestResultSearchCriteria } from 'src/app/types/test-result-search-criteria';
@@ -19,21 +18,21 @@ import { saveAs } from 'file-saver'
 import { mergeMap, share, of } from 'rxjs';
 
 @Component({
-  selector: 'app-system-tests',
-  templateUrl: './system-tests.component.html',
+  selector: 'app-organisation-tests',
+  templateUrl: './organisation-tests.component.html',
   styles: [
   ]
 })
-export class SystemTestsComponent implements OnInit {
+export class OrganisationTestsComponent implements OnInit {
 
-  systemId!: number
   exportActivePending = false
   exportCompletedPending = false
   activeExpandedCounter = {count: 0}
   completedExpandedCounter = {count: 0}
   activeStatus = {status: Constants.STATUS.PENDING} 
   completedStatus = {status: Constants.STATUS.PENDING}
-  organisation!: Organisation
+  // organisation!: Organisation
+  organisationId!: number
   domainId?: number
   activeTestsColumns!: TableColumnDefinition[]
   completedTestsColumns!: TableColumnDefinition[]
@@ -42,7 +41,7 @@ export class SystemTestsComponent implements OnInit {
   refreshActivePending = false
   refreshCompletedPending = false
   filterState: FilterState = {
-    filters: [ Constants.FILTER_TYPE.SPECIFICATION, Constants.FILTER_TYPE.SPECIFICATION_GROUP, Constants.FILTER_TYPE.ACTOR, Constants.FILTER_TYPE.TEST_SUITE, Constants.FILTER_TYPE.TEST_CASE, Constants.FILTER_TYPE.RESULT, Constants.FILTER_TYPE.START_TIME, Constants.FILTER_TYPE.END_TIME, Constants.FILTER_TYPE.SESSION ],
+    filters: [ Constants.FILTER_TYPE.SYSTEM, Constants.FILTER_TYPE.SPECIFICATION, Constants.FILTER_TYPE.SPECIFICATION_GROUP, Constants.FILTER_TYPE.ACTOR, Constants.FILTER_TYPE.TEST_SUITE, Constants.FILTER_TYPE.TEST_CASE, Constants.FILTER_TYPE.RESULT, Constants.FILTER_TYPE.START_TIME, Constants.FILTER_TYPE.END_TIME, Constants.FILTER_TYPE.SESSION ],
     updatePending: false
   }
   currentPage = 1
@@ -73,10 +72,9 @@ export class SystemTestsComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
-    this.systemId = Number(this.route.snapshot.paramMap.get('id'))
-    this.organisation = JSON.parse(localStorage.getItem(Constants.LOCAL_DATA.ORGANISATION)!)
+    this.organisationId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.ORGANISATION_ID))
     this.showTerminateAll = this.dataService.isCommunityAdmin || this.dataService.isVendorAdmin || this.dataService.isSystemAdmin
-    const sessionIdValue = this.route.snapshot.queryParamMap.get('sessionId')
+    const sessionIdValue = this.route.snapshot.queryParamMap.get(Constants.NAVIGATION_QUERY_PARAM.TEST_SESSION_ID)
     if (sessionIdValue != undefined) {
       this.sessionIdToShow = sessionIdValue
     }
@@ -90,7 +88,8 @@ export class SystemTestsComponent implements OnInit {
       { field: 'specification', title: this.dataService.labelSpecification(), sortable: true },
       { field: 'actor', title: this.dataService.labelActor(), sortable: true },
       { field: 'testCase', title: 'Test case', sortable: true },
-      { field: 'startTime', title: 'Start time', sortable: true, order: 'asc' }
+      { field: 'startTime', title: 'Start time', sortable: true, order: 'asc' },
+      { field: 'system', title: this.dataService.labelSystem(), sortable: true }
     ]
     this.completedTestsColumns = [
       { field: 'specification', title: this.dataService.labelSpecification(), sortable: true },
@@ -98,6 +97,7 @@ export class SystemTestsComponent implements OnInit {
       { field: 'testCase', title: 'Test case', sortable: true },
       { field: 'startTime', title: 'Start time', sortable: true },
       { field: 'endTime', title: 'End time', sortable: true, order: 'desc' },
+      { field: 'system', title: this.dataService.labelSystem(), sortable: true },
       { field: 'result', title: 'Result', sortable: true, iconFn: this.dataService.iconForTestResult, iconTooltipFn: this.dataService.tooltipForTestResult }
     ]
     this.goFirstPage()
@@ -204,6 +204,7 @@ export class SystemTestsComponent implements OnInit {
       filterData = this.filterState.filterData()
     }
     if (filterData) {
+      searchCriteria.systemIds = filterData[Constants.FILTER_TYPE.SYSTEM]
       searchCriteria.specIds = filterData[Constants.FILTER_TYPE.SPECIFICATION]
       searchCriteria.specGroupIds = filterData[Constants.FILTER_TYPE.SPECIFICATION_GROUP]
       searchCriteria.actorIds = filterData[Constants.FILTER_TYPE.ACTOR]
@@ -254,6 +255,7 @@ export class SystemTestsComponent implements OnInit {
       specificationId: testResult.specification?.id,
       actorId: testResult.actor?.id,
       systemId: testResult.system?.id,
+      system: testResult.system?.sname,
       organizationId: testResult.organization?.id,
       communityId: testResult.organization?.community
     }
@@ -279,7 +281,7 @@ export class SystemTestsComponent implements OnInit {
     this.refreshActivePending = true
     this.activeExpandedCounter.count = 0
     this.setFilterRefreshState()
-    this.reportService.getSystemActiveTestResults(this.systemId, params)
+    this.reportService.getSystemActiveTestResults(this.organisationId, params)
     .subscribe((data) => {
       this.activeTests = map(data.data, (testResult) => {
         return this.newTestResultForDisplay(testResult, false)
@@ -296,7 +298,7 @@ export class SystemTestsComponent implements OnInit {
     const params = this.getCurrentSearchCriteria()
     this.refreshCompletedPending = true
     this.setFilterRefreshState()
-    this.reportService.getTestResults(this.systemId, params.currentPage!, Constants.TABLE_PAGE_SIZE, params)
+    this.reportService.getTestResults(this.organisationId, params.currentPage!, Constants.TABLE_PAGE_SIZE, params)
     .subscribe((data) => {
       this.completedTestsTotalCount = data.count!
       this.completedTests = map(data.data, (testResult) => {
@@ -313,7 +315,7 @@ export class SystemTestsComponent implements OnInit {
   exportCompletedSessionsToCsv() {
     this.exportCompletedPending = true
     const params = this.getCurrentSearchCriteria()
-    this.reportService.getTestResults(this.systemId, 1, 1000000, params)
+    this.reportService.getTestResults(this.organisationId, 1, 1000000, params)
     .subscribe((data) => {
       const tests = map(data.data, (testResult) => {
         return this.newTestResult(testResult, true)
@@ -328,7 +330,7 @@ export class SystemTestsComponent implements OnInit {
   exportActiveSessionsToCsv() {
     this.exportActivePending = true
     const params = this.getCurrentSearchCriteria()
-    this.reportService.getSystemActiveTestResults(this.systemId, params)
+    this.reportService.getSystemActiveTestResults(this.organisationId, params)
     .subscribe((data) => {
       const tests = map(data.data, (testResult) => {
         return this.newTestResult(testResult, false)
@@ -373,7 +375,7 @@ export class SystemTestsComponent implements OnInit {
   stopAll() {
     this.confirmationDialogService.confirmed('Confirm delete', 'Are you certain you want to terminate all active sessions?', 'Yes', 'No')
     .subscribe(() => {
-      let result = this.testService.stopAllOrganisationSessions(this.organisation.id)
+      let result = this.testService.stopAllOrganisationSessions(this.organisationId)
       this.stopAllPending = true
       result.subscribe(() => {
         this.queryDatabase()
@@ -402,7 +404,7 @@ export class SystemTestsComponent implements OnInit {
     this.confirmationDialogService.confirmed('Confirm delete', 'Are you sure you want to delete all obsolete test results?', 'Yes', 'No')
     .subscribe(() => {
       this.deletePending = true
-      this.conformanceService.deleteObsoleteTestResultsForSystem(this.systemId)
+      this.conformanceService.deleteObsoleteTestResultsForOrganisation(this.organisationId)
       .subscribe(() => {
         this.getCompletedTests()
         this.popupService.success('Obsolete test results deleted.')

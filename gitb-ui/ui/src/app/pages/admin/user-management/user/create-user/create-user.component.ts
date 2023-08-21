@@ -4,6 +4,7 @@ import { EMPTY, Observable } from 'rxjs';
 import { map, mergeMap, share } from 'rxjs/operators';
 import { Constants } from 'src/app/common/constants';
 import { BaseComponent } from 'src/app/pages/base-component.component';
+import { AccountService } from 'src/app/services/account.service';
 import { AuthService } from 'src/app/services/auth.service';
 import { DataService } from 'src/app/services/data.service';
 import { PopupService } from 'src/app/services/popup.service';
@@ -11,6 +12,7 @@ import { RoutingService } from 'src/app/services/routing.service';
 import { UserService } from 'src/app/services/user.service';
 import { IdLabel } from 'src/app/types/id-label';
 import { User } from 'src/app/types/user.type';
+import { OrganisationTab } from '../../organisation/organisation-details/OrganisationTab';
 
 @Component({
   selector: 'app-create-user',
@@ -20,11 +22,12 @@ import { User } from 'src/app/types/user.type';
 })
 export class CreateUserComponent extends BaseComponent implements OnInit, AfterViewInit {
 
-  orgId!: number
-  communityId!: number
+  orgId?: number
+  communityId?: number
   user: Partial<User> = {}
   roleCreateChoices!: IdLabel[]
   savePending = false
+  fromCommunityManagement?: boolean
 
   constructor(
     private routingService: RoutingService,
@@ -32,7 +35,8 @@ export class CreateUserComponent extends BaseComponent implements OnInit, AfterV
     private userService: UserService,
     private authService: AuthService,
     private popupService: PopupService,
-    public dataService: DataService
+    public dataService: DataService,
+    private accountService: AccountService
   ) { super() }
 
   ngAfterViewInit(): void {
@@ -44,8 +48,11 @@ export class CreateUserComponent extends BaseComponent implements OnInit, AfterV
   }
 
   ngOnInit(): void {
-    this.orgId = Number(this.route.snapshot.paramMap.get('org_id'))
-    this.communityId = Number(this.route.snapshot.paramMap.get('community_id'))
+    this.fromCommunityManagement = this.route.snapshot.paramMap.has(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID)
+    if (this.fromCommunityManagement) {
+      this.orgId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.ORGANISATION_ID))
+      this.communityId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID))
+    }
     this.roleCreateChoices = Constants.VENDOR_USER_ROLES
   }
 
@@ -60,21 +67,30 @@ export class CreateUserComponent extends BaseComponent implements OnInit, AfterV
   createUser() {
     this.clearAlerts()
     const isSSO = this.dataService.configuration.ssoEnabled
-    let ok = false
-    let emailCheckFunction: (email: string, orgId: number, roleId: number) => Observable<{available: boolean}>
-    if (isSSO) {
-      ok = true
-      emailCheckFunction = this.authService.checkEmailOfOrganisationUser.bind(this.authService)
+    let ok = true
+    let emailCheckResult: Observable<{available: boolean}>
+    if (this.fromCommunityManagement) {
+      if (isSSO) {
+        emailCheckResult = this.authService.checkEmailOfOrganisationUser(this.user.email!, this.orgId!, this.user.role!)
+      } else {
+        ok = this.requireSame(this.user.password, this.user.passwordConfirmation, "Please enter equal passwords.")
+        emailCheckResult = this.authService.checkEmail(this.user.email!)
+      }
     } else {
-      ok = this.requireSame(this.user.password, this.user.passwordConfirmation, "Please enter equal passwords.")
-      emailCheckFunction = this.authService.checkEmail.bind(this.authService)
+      emailCheckResult = this.authService.checkEmailOfOrganisationMember(this.user.email!)
     }
     if (ok) {
       this.savePending = true
-      emailCheckFunction(this.user.email!, this.orgId, this.user.role!).pipe(
+      emailCheckResult.pipe(
         mergeMap((data) => {
           if (data.available) {
-            return this.userService.createVendorUser(this.user.name!, this.user.email!, this.user.password!, this.orgId, this.user.role!).pipe(
+            let result: Observable<void>
+            if (this.fromCommunityManagement) {
+              result = this.userService.createVendorUser(this.user.name!, this.user.email!, this.user.password!, this.orgId!, this.user.role!)
+            } else {
+              result = this.accountService.registerUser(this.user.name!, this.user.email!, this.user.password!, this.user.role!)
+            }
+            return result.pipe(
               map(() => {
                 this.cancelCreateUser()
                 this.popupService.success('User created.')
@@ -97,7 +113,11 @@ export class CreateUserComponent extends BaseComponent implements OnInit, AfterV
   }
 
   cancelCreateUser() {
-    this.routingService.toOrganisationDetails(this.communityId, this.orgId)
+    if (this.fromCommunityManagement) {
+      this.routingService.toOrganisationDetails(this.communityId!, this.orgId!, OrganisationTab.users)
+    } else {
+      this.routingService.toOwnOrganisationDetails(OrganisationTab.users)
+    }
   }
 
 }

@@ -70,12 +70,12 @@ export class TestSuiteDetailsComponent extends BaseComponent implements OnInit, 
   }
 
   ngOnInit(): void {
-    this.domainId = Number(this.route.snapshot.paramMap.get('id'))
-    const specIdParameter = this.route.snapshot.paramMap.get('spec_id')
+    this.domainId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID))
+    const specIdParameter = this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.SPECIFICATION_ID)
     if (specIdParameter) {
       this.specificationId = Number(specIdParameter)
     }
-    this.testSuiteId = Number(this.route.snapshot.paramMap.get('testsuite_id'))
+    this.testSuiteId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.TEST_SUITE_ID))
     this.loadTestCases()
   }
 

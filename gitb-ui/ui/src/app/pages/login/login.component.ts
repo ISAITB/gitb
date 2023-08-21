@@ -90,6 +90,7 @@ export class LoginComponent extends BaseComponent implements OnInit, AfterViewIn
         }
       }
     }
+    this.dataService.changeBanner(this.directLogin?'Home':'Welcome to the Interoperability Test Bed')
   }
 
   ngAfterViewInit(): void {
@@ -320,6 +321,10 @@ export class LoginComponent extends BaseComponent implements OnInit, AfterViewIn
         })
       }
     }
+  }
+
+  isAuthenticated(): boolean {
+    return this.authProvider.isAuthenticated()
   }
 
 }

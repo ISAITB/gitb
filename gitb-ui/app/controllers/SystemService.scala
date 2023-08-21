@@ -87,6 +87,17 @@ class SystemService @Inject() (implicit ec: ExecutionContext, repositoryUtils: R
       if (request.body.asMultipartFormData.isDefined) request.body.asMultipartFormData.get.files.foreach { file => FileUtils.deleteQuietly(file.ref) }
     }
   }
+
+  def getSystemById(systemId: Long) = authorizedAction { request =>
+    authorizationManager.canViewSystem(request, systemId)
+    val system = systemManager.getSystemById(systemId)
+    if (system.isDefined) {
+      ResponseConstructor.constructJsonResponse(JsonUtil.jsSystem(system.get).toString())
+    } else {
+      throw NotFoundException(ErrorCodes.SYSTEM_NOT_FOUND, communityLabelManager.getLabel(request, models.Enums.LabelType.System)+ " with ID '" + systemId + "' not found.")
+    }
+  }
+
   /**
    * Gets the system profile for the specific system
    */
@@ -98,7 +109,7 @@ class SystemService @Inject() (implicit ec: ExecutionContext, repositoryUtils: R
       val json:String = JsonUtil.serializeSystem(system)
       ResponseConstructor.constructJsonResponse(json)
     } else{
-      throw new NotFoundException(ErrorCodes.SYSTEM_NOT_FOUND, communityLabelManager.getLabel(request, models.Enums.LabelType.System)+ " with ID '" + sut_id + "' not found.")
+      throw NotFoundException(ErrorCodes.SYSTEM_NOT_FOUND, communityLabelManager.getLabel(request, models.Enums.LabelType.System)+ " with ID '" + sut_id + "' not found.")
     }
   }
 
@@ -112,15 +123,12 @@ class SystemService @Inject() (implicit ec: ExecutionContext, repositoryUtils: R
     ResponseConstructor.constructEmptyResponse
   }
 
-	def getConformanceStatements(sut_id: Long) = authorizedAction { request =>
-    authorizationManager.canViewConformanceStatements(request, sut_id)
-    val specification = ParameterExtractor.optionalLongQueryParameter(request, Parameters.SPEC)
-    val actor = ParameterExtractor.optionalLongQueryParameter(request, Parameters.ACTOR)
-
-		val conformanceStatements = systemManager.getConformanceStatements(sut_id, specification, actor)
-    val json:String = JsonUtil.jsConformanceStatements(conformanceStatements).toString()
+  def getConformanceStatements(systemId: Long) = authorizedAction { request =>
+    authorizationManager.canViewConformanceStatements(request, systemId)
+    val conformanceStatements = systemManager.getConformanceStatements(systemId)
+    val json: String = JsonUtil.jsConformanceStatementItems(conformanceStatements).toString()
     ResponseConstructor.constructJsonResponse(json)
-	}
+  }
 
 	def deleteConformanceStatement(sut_id: Long) = authorizedAction { request =>
     val actorIds = ParameterExtractor.extractLongIdsQueryParameter(request)

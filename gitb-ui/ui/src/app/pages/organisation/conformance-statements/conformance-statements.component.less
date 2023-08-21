@@ -1,8 +1,36 @@
-table {
-	td.td-update, th.th-update {
-		white-space: nowrap;
+@import '../../../../styles/less/_common.less';
+
+.caret {
+    margin-left: 10px;
+}
+.pending-container {
+    display: flex;
+	padding: 0px 0px 20px 0px;
+    .pending-message {
+        opacity: 0.5;
+    }
+}
+.filters {
+	display: flex;
+	align-items: center;
+	margin-bottom: 30px;
+	.system-filter {
+		display: flex;
+		align-items: center;
+		.system-filter-label {
+			font-weight: bold;
+			margin-right: 10px;
+		}
+		.system-filter-value {
+			min-width: 350px;
+		}
 	}
-	td {
-		height: 51px;
+	.text-filter {
+		margin-left: 50px;
+		padding-left: 50px;
+		border-left: 1px solid @gray-light;
+	}
+	.status-filter {
+		margin-left: 5px;
 	}
 }

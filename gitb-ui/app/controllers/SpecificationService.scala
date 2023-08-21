@@ -80,6 +80,18 @@ class SpecificationService @Inject() (authorizedAction: AuthorizedAction, cc: Co
     ResponseConstructor.constructJsonResponse(JsonUtil.jsId(newSpecificationId).toString())
   }
 
+  def getSpecificationOfActor(actorId: Long) = authorizedAction { request =>
+    authorizationManager.canViewActor(request, actorId)
+    val specification = specificationManager.getSpecificationOfActor(actorId)
+    ResponseConstructor.constructJsonResponse(JsonUtil.jsSpecification(specification).toString())
+  }
+
+  def getSpecificationIdOfActor(actorId: Long) = authorizedAction { request =>
+    authorizationManager.canViewActor(request, actorId)
+    val specificationId = specificationManager.getSpecificationIdOfActor(actorId)
+    ResponseConstructor.constructJsonResponse(JsonUtil.jsId(specificationId).toString())
+  }
+
   def getSpecificationGroups() = authorizedAction { request =>
     val domainId = ParameterExtractor.requiredQueryParameter(request, Parameters.DOMAIN_ID).toLong
     authorizationManager.canManageDomain(request, domainId)

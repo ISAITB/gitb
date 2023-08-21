@@ -47,6 +47,7 @@
 					<button *ngIf="canExportConformanceCertificate()" type="button" class="btn btn-default" (click)="onExportConformanceCertificate()" [pending]="exportCertificatePending" [disable]="exportCertificatePending">Download conformance certificate</button>
 					<button type="button" class="btn btn-default" (click)="onExportConformanceStatement()" [pending]="exportPending">Download report</button>
 					<button type="button" class="btn btn-default" *ngIf="canDelete()" (click)="deleteConformanceStatement()" [pending]="deletePending">Delete statement</button>
+					<button type="button" class="btn btn-default" (click)="back()">Back</button>
 				</div>
 			</div>
 		</div>

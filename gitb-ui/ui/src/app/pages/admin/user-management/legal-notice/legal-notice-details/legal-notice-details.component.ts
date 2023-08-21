@@ -8,6 +8,7 @@ import { PopupService } from 'src/app/services/popup.service';
 import { RoutingService } from 'src/app/services/routing.service';
 import { LegalNotice } from 'src/app/types/legal-notice';
 import { CommunityTab } from '../../community/community-details/community-tab.enum';
+import { Constants } from 'src/app/common/constants';
 
 @Component({
   selector: 'app-legal-notice-details',
@@ -40,8 +41,8 @@ export class LegalNoticeDetailsComponent extends BaseComponent implements OnInit
   }
 
   ngOnInit(): void {
-    this.communityId = Number(this.route.snapshot.paramMap.get('community_id'))
-    this.noticeId = Number(this.route.snapshot.paramMap.get('notice_id'))
+    this.communityId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID))
+    this.noticeId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.LEGAL_NOTICE_ID))
     this.legalNoticeService.getLegalNoticeById(this.noticeId)
     .subscribe((data) => {
       this.notice = data
