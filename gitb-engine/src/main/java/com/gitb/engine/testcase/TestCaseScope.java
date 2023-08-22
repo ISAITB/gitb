@@ -19,6 +19,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import static com.gitb.engine.PropertyConstants.isBuiltInProperty;
+
 /**
  * Created by serbay on 9/3/14.
  *
@@ -147,7 +149,8 @@ public class TestCaseScope {
 
 	public ScopedVariable getVariable(String name) {
 		// When we have a scope from another test suite (i.e. a scriptlet) we should not propagate variable searches to parent scopes.
-		boolean searchAncestors = testSuiteContext == null;
+		// The only exception are the built-in maps defined in the parent context.
+		boolean searchAncestors = testSuiteContext == null || isBuiltInProperty(name);
 		return getVariable(name, searchAncestors);
 	}
 
