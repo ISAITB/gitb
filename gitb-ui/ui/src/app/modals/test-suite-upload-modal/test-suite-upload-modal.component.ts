@@ -13,7 +13,6 @@ import { PendingTestSuiteUploadChoice } from './pending-test-suite-upload-choice
 import { SpecificationChoice } from './specification-choice';
 import { SpecificationResult } from './specification-result';
 import { TestSuiteUploadResult } from './test-suite-upload-result';
-import { TestSuiteUploadTestCase } from './test-suite-upload-test-case';
 import { TestSuiteUploadTestCaseChoice } from './test-suite-upload-test-case-choice';
 import { ValidationReport } from './validation-report';
 import { find } from 'lodash';
@@ -77,7 +76,7 @@ export class TestSuiteUploadModalComponent implements OnInit {
   }
 
   proceedDisabled() {
-    return this.hasValidationErrors || this.actionPending || this.actionProceedPending || !(this.file != undefined && (this.specifications.length > 0 || this.sharedTestSuite)) || (this.step == 'replace' && !this.hasChoicesToComplete)
+    return this.hasValidationErrors || this.actionPending || this.actionProceedPending || !(this.file != undefined && (this.specifications.length > 0 || this.sharedTestSuite)) || (this.step == 'replace' && (this.specificationChoices != undefined && this.specificationChoices.length > 0 && !this.hasChoicesToComplete))
   }
 
   parseValidationReport() {
