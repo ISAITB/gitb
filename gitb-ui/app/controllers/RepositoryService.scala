@@ -7,6 +7,7 @@ import config.Configurations
 import controllers.util.ParameterExtractor.requiredBodyParameter
 import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, ResponseConstructor}
 import exceptions.ErrorCodes
+import jakarta.xml.bind.JAXBElement
 import managers._
 import managers.export._
 import models._
@@ -20,7 +21,6 @@ import utils._
 import java.io._
 import java.nio.file.{Files, Path, Paths}
 import javax.inject.Inject
-import jakarta.xml.bind.JAXBElement
 import javax.xml.namespace.QName
 import javax.xml.transform.stream.StreamSource
 import scala.concurrent.ExecutionContext
@@ -55,7 +55,9 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
       testSuite = Some(testSuiteManager.getTestSuiteOfTestCase(testCaseId))
     } else {
       // Find test suite in specification or domain.
-      testSuite = repositoryUtils.findTestSuiteByIdentifier(testSuiteIdentifier.get, testSuite.get.domain, None)
+      val specificationsOfTestCase = testCaseManager.getSpecificationsOfTestCases(List(testCaseId))
+      val domainId = testCaseManager.getDomainOfTestCase(testCaseId)
+      testSuite = repositoryUtils.findTestSuiteByIdentifier(testSuiteIdentifier.get, domainId, specificationsOfTestCase.headOption)
     }
     if (testSuite.isEmpty) {
       NotFound

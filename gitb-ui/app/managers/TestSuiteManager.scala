@@ -109,7 +109,7 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 		} yield testSuiteInfo)
 	}
 
-	def getSharedTestSuitedWithDomainId(domain: Long): List[TestSuites] = {
+	def getSharedTestSuitesWithDomainId(domain: Long, testSuiteIdentifier: Option[String] = None): List[TestSuites] = {
 		exec(PersistenceSchema.testSuites
 			.filter(_.domain === domain)
 			.filter(_.shared === true)

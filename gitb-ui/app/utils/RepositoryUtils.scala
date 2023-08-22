@@ -25,6 +25,7 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.util.Using
 import scala.xml.XML
+import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
 class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
@@ -652,24 +653,43 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 	}
 
 	def findTestSuiteByIdentifier(identifier: String, domain: Long, specificationToPrioritise: Option[Long]): Option[TestSuites] = {
-		var result: Option[TestSuites] = None
-		val testSuites = exec(PersistenceSchema.testSuites
-			.join(PersistenceSchema.specificationHasTestSuites).on(_.id === _.testSuiteId)
-			.filter(_._1.identifier === identifier)
-			.filter(_._1.domain === domain)
-			.map(x => (x._2.specId, x._1))
-			.result
+		val result: Option[TestSuites] = exec(
+			for {
+				testSuites <- PersistenceSchema.testSuites
+					.filter(_.identifier === identifier)
+					.filter(_.domain === domain)
+					.result
+				priorityTestSuiteId <- {
+					if (testSuites.size > 1 && specificationToPrioritise.nonEmpty) {
+						PersistenceSchema.specificationHasTestSuites
+							.filter(_.testSuiteId inSet testSuites.map(_.id))
+							.filter(_.specId === specificationToPrioritise.get)
+							.map(x => x.testSuiteId)
+							.result
+							.headOption
+					} else {
+						DBIO.successful(None)
+					}
+				}
+				testSuite <- {
+					if (testSuites.nonEmpty) {
+						var priorityTestSuite: Option[TestSuites] = None
+						if (priorityTestSuiteId.isDefined) {
+							priorityTestSuite = testSuites.find { ts =>
+								ts.id == priorityTestSuiteId.get
+							}
+						}
+						if (priorityTestSuite.isDefined) {
+							DBIO.successful(priorityTestSuite)
+						} else {
+							DBIO.successful(Some(testSuites.head))
+						}
+					} else {
+						DBIO.successful(None)
+					}
+				}
+			} yield testSuite
 		)
-		if (testSuites.nonEmpty) {
-			val found = testSuites.find { t =>
-				specificationToPrioritise.isDefined && t._1 == specificationToPrioritise.get
-			}
-			result = if (found.isDefined) {
-				Some(found.get._2)
-			} else {
-				Some(testSuites.head._2)
-			}
-		}
 		result
 	}
 

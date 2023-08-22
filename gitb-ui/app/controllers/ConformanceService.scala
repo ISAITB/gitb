@@ -159,7 +159,7 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
 
   def getSharedTestSuites(domainId: Long) = authorizedAction { request =>
     authorizationManager.canManageDomain(request, domainId)
-    val testSuites = testSuiteManager.getSharedTestSuitedWithDomainId(domainId)
+    val testSuites = testSuiteManager.getSharedTestSuitesWithDomainId(domainId)
     val json = JsonUtil.jsTestSuitesList(testSuites).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
