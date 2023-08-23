@@ -104,18 +104,22 @@ public class XmlMatchValidator extends AbstractValidator {
         } catch (IOException|SAXException e) {
             throw new IllegalStateException(e);
         }
-        Map<String, String> nsMap;
-        NamespaceContext nsContext;
+        var documentContext = new DocumentNamespaceContext(document, false);
+        var documentNamespaces = documentContext.getPrefixToUriMap();
+        Map<String, String> namespacesToUse;
+        NamespaceContext contextToUse;
         if (namespaces != null) {
-            nsMap = new HashMap<>();
+            namespacesToUse = new HashMap<>();
             for (var entry: ((Map<String, DataType>)namespaces.getValue()).entrySet()) {
-                nsMap.put(entry.getKey(), (String) entry.getValue().getValue());
+                namespacesToUse.put(entry.getKey(), (String) entry.getValue().getValue());
             }
-            nsContext = new com.gitb.utils.NamespaceContext(nsMap);
+            for (var documentPrefix: documentNamespaces.entrySet()) {
+                namespacesToUse.putIfAbsent(documentPrefix.getKey(), documentPrefix.getValue());
+            }
+            contextToUse = new com.gitb.utils.NamespaceContext(namespacesToUse);
         } else {
-            var customContext = new DocumentNamespaceContext(document, false);
-            nsContext = customContext;
-            nsMap = customContext.getPrefixToUriMap();
+            contextToUse = documentContext;
+            namespacesToUse = documentNamespaces;
         }
         DifferenceEvaluator chain = DifferenceEvaluators.chain(
                 DifferenceEvaluators.Default,
@@ -128,11 +132,11 @@ public class XmlMatchValidator extends AbstractValidator {
                 .ignoreWhitespace()
                 .normalizeWhitespace()
                 .checkForSimilar()
-                .withNamespaceContext(nsMap)
+                .withNamespaceContext(namespacesToUse)
                 .withDifferenceEvaluator(chain)
                 .build();
 
-        return diffToTAR(diff, nsContext, document, template);
+        return diffToTAR(diff, contextToUse, document, template);
     }
 
     private CustomDifferenceEvaluator getDifferenceEvaluator(List<String> xpathsToIgnore) {
