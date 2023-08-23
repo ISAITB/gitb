@@ -191,24 +191,25 @@ public class CallStepProcessorActor extends AbstractTestStepActor<CallStep> {
 				if (isNameBinding) {
 					setInputWithNameBinding(childScope);
 					step.getInput().forEach(input -> parameters.remove(input.getName()));
-					if (!parameters.isEmpty()) {
-						// Consider also default values for parameters.
-						scriptlet.getParams().getVar().forEach(variable -> {
-							if (parameters.contains(variable.getName()) && !variable.getValue().isEmpty()) {
-								setContextVariable(childScope, DataTypeFactory.getInstance().create(variable), null, variable);
-								parameters.remove(variable.getName());
-							}
-						});
-					}
 				} else {
 					if (step.getInput().size() != scriptlet.getParams().getVar().size()) {
 						throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Wrong number of parameters for scriptlet ["+scriptlet.getId()+"]. Expected ["+scriptlet.getParams().getVar().size()+"] but encountered ["+step.getInput().size()+"]."));
 					}
 					setInputWithIndexBinding(childScope);
+					parameters.clear();
 				}
 			}
 			if (!parameters.isEmpty()) {
-				throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, String.format("All scriptlet parameters must either be provided explicitly via call inputs or have default values. No values could be determined for parameters [%s].", StringUtils.join(parameters, ", "))));
+				// Consider also default values for parameters.
+				scriptlet.getParams().getVar().forEach(variable -> {
+					if (parameters.contains(variable.getName()) && !variable.getValue().isEmpty()) {
+						setContextVariable(childScope, DataTypeFactory.getInstance().create(variable), null, variable);
+						parameters.remove(variable.getName());
+					}
+				});
+				if (!parameters.isEmpty()) {
+					throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, String.format("All scriptlet parameters must either be provided explicitly via call inputs or have default values. No values could be determined for parameters [%s].", StringUtils.join(parameters, ", "))));
+				}
 			}
 		}
 		// Variables.
