@@ -190,8 +190,7 @@ public class JacksonUtil {
 
             json.writeArrayFieldStart("interactions");
             for(Object ior : value.getInteraction().getInstructionOrRequest()){
-                if(ior instanceof InputRequest) {
-                    InputRequest inputRequest = (InputRequest) ior;
+                if(ior instanceof InputRequest inputRequest) {
                     json.writeStartObject();
                     json.writeStringField("type", "request");
                     if(inputRequest.getId() != null) {
@@ -231,8 +230,7 @@ public class JacksonUtil {
                         json.writeStringField("mimeType", inputRequest.getMimeType());
                     }
                     json.writeEndObject();
-                } else if (ior instanceof com.gitb.tbs.Instruction) {
-                    com.gitb.tbs.Instruction instruction = (com.gitb.tbs.Instruction) ior;
+                } else if (ior instanceof com.gitb.tbs.Instruction instruction) {
                     json.writeStartObject();
                     json.writeStringField("type", "instruction");
                     if(instruction.getId() != null) {
@@ -261,6 +259,9 @@ public class JacksonUtil {
                     }
                     if (instruction.getMimeType() != null) {
                         json.writeStringField("mimeType", instruction.getMimeType());
+                    }
+                    if (instruction.isForceDisplay()) {
+                        json.writeBooleanField("forceDisplay", instruction.isForceDisplay());
                     }
                     json.writeEndObject();
                 }

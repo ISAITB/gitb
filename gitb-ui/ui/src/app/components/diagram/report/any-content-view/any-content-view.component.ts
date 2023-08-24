@@ -24,6 +24,7 @@ export class AnyContentViewComponent extends ReportSupport implements OnInit {
   @Input() sessionId?: string
   @Input() noBorder = false
   @Input() root = false
+  @Input() forceDisplay = false
 
   Constants = Constants
 
@@ -48,7 +49,7 @@ export class AnyContentViewComponent extends ReportSupport implements OnInit {
   ngOnInit(): void {
     this.value = this.context.valueToUse
     if (this.value != undefined) {
-      this.showValueInline = this.value.length <= 100 && this.context.embeddingMethod != 'BASE64' && !this.isFileReference(this.context)
+      this.showValueInline = this.context.embeddingMethod != 'BASE64' && !this.isFileReference(this.context) && (this.value.length <= 100 || this.forceDisplay)
     }
     this.withItems = this.context?.item != undefined
     this.withName = this.context?.name != undefined
@@ -90,7 +91,7 @@ export class AnyContentViewComponent extends ReportSupport implements OnInit {
       this.context.name,
       valueToShow,
       this.report?.reports?.assertionReports,
-      lineNumber, 
+      lineNumber,
       this.context.mimeType)
   }
 

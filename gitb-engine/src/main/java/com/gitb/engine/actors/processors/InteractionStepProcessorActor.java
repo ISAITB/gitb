@@ -142,8 +142,7 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
                         }
                     } else {
                         instructionOrRequest.setContentType(ValueEmbeddingEnumeration.STRING);
-                        if (instructionOrRequest instanceof UserRequest) {
-                            var request = (UserRequest)instructionOrRequest;
+                        if (instructionOrRequest instanceof UserRequest request) {
                             if (request.getInputType() == null || request.getInputType() == InputRequestInputType.UPLOAD) {
                                 if (request.getOptions() != null) {
                                     request.setInputType(InputRequestInputType.SELECT_SINGLE);
@@ -154,14 +153,16 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
                         }
                     }
                     //If it is an instruction
-                    if (instructionOrRequest instanceof com.gitb.tdl.Instruction) {
+                    if (instructionOrRequest instanceof com.gitb.tdl.Instruction instruction) {
                         // If no expression is specified consider it an empty expression.
-                        if (StringUtils.isBlank(instructionOrRequest.getValue())) {
+                        if (StringUtils.isBlank(instruction.getValue())) {
                             instructionOrRequest.setValue("''");
                         }
-                        userInteractionRequest.getInstructionOrRequest().add(processInstruction(instructionOrRequest, "" + childStepId, withValue, variableResolver));
-                    } else { // If it is a request
-                        userInteractionRequest.getInstructionOrRequest().add(processRequest((UserRequest) instructionOrRequest, "" + childStepId, withValue, variableResolver));
+                        userInteractionRequest.getInstructionOrRequest().add(processInstruction(instruction, "" + childStepId, withValue, variableResolver));
+                    } else if (instructionOrRequest instanceof UserRequest request) { // If it is a request
+                        userInteractionRequest.getInstructionOrRequest().add(processRequest(request, "" + childStepId, withValue, variableResolver));
+                    } else {
+                        throw new IllegalStateException("Unsupported interaction type ["+instructionOrRequest+"]");
                     }
                     childStepId++;
                 }
@@ -197,7 +198,7 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
      * @param stepId step id
      * @return instruction
      */
-    private Instruction processInstruction(InstructionOrRequest instructionCommand, String stepId, String withValue, VariableResolver variableResolver) {
+    private Instruction processInstruction(com.gitb.tdl.Instruction instructionCommand, String stepId, String withValue, VariableResolver variableResolver) {
         Instruction instruction = new Instruction();
         instruction.setWith(withValue);
         instruction.setDesc(fixedValueOrVariable(instructionCommand.getDesc(), variableResolver, null));
@@ -205,6 +206,7 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
         instruction.setName(instructionCommand.getName());
         instruction.setEncoding(instructionCommand.getEncoding());
         instruction.setMimeType(instructionCommand.getMimeType());
+        instruction.setForceDisplay(instructionCommand.isForceDisplay());
 
         ExpressionHandler exprHandler = new ExpressionHandler(this.scope);
         DataType computedValue = exprHandler.processExpression(instructionCommand, instructionCommand.getType());
@@ -337,9 +339,8 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
             for (UserInput userInput : userInputs) {
                 int stepIndex = Integer.parseInt(userInput.getId());
                 InstructionOrRequest targetRequest = step.getInstructOrRequest().get(stepIndex - 1);
-                if (targetRequest instanceof UserRequest && userInput.getValue() != null && !userInput.getValue().isEmpty()) {
+                if (targetRequest instanceof UserRequest requestInfo && userInput.getValue() != null && !userInput.getValue().isEmpty()) {
                     // Construct the value to return for the step's report.
-                    var requestInfo = (UserRequest) targetRequest;
                     var reportItem = new AnyContent();
                     if (requestInfo.getInputType() == InputRequestInputType.SECRET) {
                         reportItem.setValue("**********");
