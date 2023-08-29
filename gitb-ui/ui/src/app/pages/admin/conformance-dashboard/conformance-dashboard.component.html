@@ -53,7 +53,7 @@
                             <td [attr.colspan]="columnCount" class="expandable-table-expandable-cell">
                                 <div [collapse]="!isExpanded(statement)" [isAnimated]="true">
                                     <div class="collapsing-div">
-                                        <div *ngIf="statement.testCasesLoaded == undefined || !statement.testCasesLoaded" class="spinnerPadded">
+                                        <div *ngIf="statement.testSuitesLoaded == undefined || !statement.testSuitesLoaded" class="spinnerPadded">
                                             <span><i class="fa-solid fa-spinner fa-spin-override fa-lg"></i></span>
                                         </div>
                                         <div class="statementControls">
@@ -68,51 +68,12 @@
                                                 <app-test-result-ratio [counters]="statement.counters!"></app-test-result-ratio>
                                             </div>
                                         </div>
-                                        <div class="testSuitePanel" *ngFor="let testSuite of statement.testSuites">
-                                            <div class="panel panel-default">
-                                                <div class="panel-heading" (click)="testSuite.expanded = !testSuite.expanded">
-                                                    <div class="testSuiteHeaderLabel"><app-collapsing-icon [isCollapsed]="!testSuite.expanded"></app-collapsing-icon>Test suite</div>
-                                                    <div class="testSuiteHeaderValue">{{testSuite.testSuiteName}}</div>
-                                                    <div class="testSuiteResult"><app-test-result-status-display [result]="testSuite.result"></app-test-result-status-display></div>
-                                                </div>
-                                                <div class="collapsibleTestCaseDiv" [collapse]="!testSuite.expanded" [isAnimated]="true">
-                                                    <div class="panel-body">
-                                                        <div class="testCaseContainer table-container">
-                                                            <table class="table table-directive">
-                                                                <thead>
-                                                                    <tr>
-                                                                        <th class="th-min" *ngIf="testSuite.hasOptionalTestCases || testSuite.hasDisabledTestCases"></th>
-                                                                        <th width="90%">Test case</th>
-                                                                        <th class="sessionTime">Last run</th>
-                                                                        <th class="th-min-centered"></th>
-                                                                        <th class="th-min-centered"></th>
-                                                                    </tr>
-                                                                </thead>
-                                                                <tbody>
-                                                                    <tr *ngFor="let testCase of testSuite.testCases">
-                                                                        <td *ngIf="testSuite.hasOptionalTestCases || testSuite.hasDisabledTestCases">
-                                                                            <app-prescription-level [optional]="testCase.testCaseOptional" [disabled]="testCase.testCaseDisabled"></app-prescription-level>
-                                                                        </td>
-                                                                        <td>{{testCase.testCaseName}}</td>
-                                                                        <td class="sessionTime">{{testCase.sessionTime}}</td>
-                                                                        <td class="td-min-centered test-case-controls">
-                                                                            <div class="btn-toolbar testcase-toolbar">
-                                                                                <button *ngIf="testCase.sessionId != undefined" class="btn btn-default" (click)="toTestSession(testCase.sessionId)" containerClass="shortTooltip" tooltip="View session" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-search"></i></button>
-                                                                                <button *ngIf="showExportTestCase(testCase)" [pending]="testCase.actionPending" [icon]="true" class="btn btn-default" (click)="onExportTestCaseXml(testCase)" containerClass="shortTooltip" tooltip="Export (XML)" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-regular fa-file-lines"></i></button>
-                                                                                <button *ngIf="showExportTestCase(testCase)" [pending]="testCase.exportPending" [icon]="true" class="btn btn-default" (click)="onExportTestCasePdf(testCase)" containerClass="shortTooltip" tooltip="Export (PDF)" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-regular fa-file-pdf"></i></button>
-                                                                            </div>
-                                                                        </td>
-                                                                        <td class="td-min-centered test-case-result">
-                                                                            <app-test-result-status-display [message]="testCase.outputMessage" [result]="testCase.result"></app-test-result-status-display>
-                                                                        </td>
-                                                                    </tr>
-                                                                </tbody>
-                                                            </table>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
+                                        <app-test-suite-display
+                                            [testSuites]="statement.testSuites"
+                                            [showExecute]="false"
+                                            [showExport]="true"
+                                            (viewTestSession)="toTestSession($event)"
+                                        ></app-test-suite-display>
                                     </div>
                                 </div>
                             </td>

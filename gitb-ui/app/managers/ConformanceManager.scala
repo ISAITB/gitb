@@ -1,5 +1,6 @@
 package managers
 
+import com.gitb.tr.TestResultType
 import models.Enums.{ConformanceStatementItemType, TriggerDataType}
 import models._
 import org.slf4j.LoggerFactory
@@ -685,8 +686,8 @@ class ConformanceManager @Inject() (systemManager: SystemManager, triggerManager
 		)
 	}
 
-	def getConformanceStatus(actorId: Long, sutId: Long, testSuiteId: Option[Long], includeDisabled: Boolean = true): List[ConformanceStatusItem] = {
-		exec(
+	def getConformanceStatus(actorId: Long, sutId: Long, testSuiteId: Option[Long], includeDisabled: Boolean = true): ConformanceStatus = {
+		val statusItems = exec(
 			PersistenceSchema.conformanceResults
 				.join(PersistenceSchema.testCases).on(_.testcase === _.id)
 				.join(PersistenceSchema.testSuites).on(_._1.testsuite === _.id)
@@ -701,6 +702,65 @@ class ConformanceManager @Inject() (systemManager: SystemManager, triggerManager
 		).map(r => {
 			ConformanceStatusItem(r._1, r._2, r._3, r._4, r._5, r._6, r._7, r._8, r._9, r._10, r._11, r._12, r._13, r._14)
 		})
+
+		val status = new ConformanceStatus(0, 0, 0, 0, 0, 0, TestResultType.UNDEFINED, None, new ListBuffer[ConformanceTestSuite])
+		statusItems.foreach { item =>
+			val testSuite = if (status.testSuites.isEmpty || status.testSuites.last.id != item.testSuiteId) {
+				// New test suite.
+				val newTestSuite = new ConformanceTestSuite(item.testSuiteId, item.testSuiteName, item.testSuiteDescription, item.testSuiteHasDocumentation, TestResultType.UNDEFINED, 0, 0, 0, 0, 0, 0, new ListBuffer[ConformanceTestCase])
+				status.testSuites.asInstanceOf[ListBuffer[ConformanceTestSuite]].append(newTestSuite)
+				newTestSuite
+			} else {
+				status.testSuites.last
+			}
+			val testCase = new ConformanceTestCase(item.testCaseId, item.testCaseName, item.testCaseDescription, item.sessionId, item.sessionTime, item.outputMessage, item.testCaseHasDocumentation, item.testCaseOptional, item.testCaseDisabled, TestResultType.fromValue(item.result))
+			status.testSuites.last.testCases.asInstanceOf[ListBuffer[ConformanceTestCase]].append(testCase)
+			if (!testCase.disabled) {
+				// Update time.
+				if (testCase.updateTime.isDefined && (status.updateTime.isEmpty || status.updateTime.get.before(testCase.updateTime.get))) {
+					status.updateTime = testCase.updateTime
+				}
+				// Counters and overall status.
+				if (testCase.optional) {
+					if (testCase.result == TestResultType.SUCCESS) {
+						status.completedOptional += 1
+						testSuite.completedOptional += 1
+					} else if (testCase.result == TestResultType.FAILURE) {
+						status.failedOptional += 1
+						testSuite.failedOptional += 1
+					} else {
+						status.undefinedOptional += 1
+						testSuite.undefinedOptional += 1
+					}
+				} else {
+					if (testCase.result == TestResultType.SUCCESS) {
+						if (testSuite.failed == 0 && testSuite.undefined == 0) {
+							testSuite.result = TestResultType.SUCCESS
+						}
+						status.completed += 1
+						testSuite.completed += 1
+					} else if (testCase.result == TestResultType.FAILURE) {
+						testSuite.result = TestResultType.FAILURE
+						status.failed += 1
+						testSuite.failed += 1
+					} else {
+						if (testSuite.result == TestResultType.SUCCESS) testSuite.result = TestResultType.UNDEFINED
+						status.undefined += 1
+						testSuite.undefined += 1
+					}
+				}
+			}
+		}
+		status.result = if (status.failed > 0) {
+			TestResultType.FAILURE
+		} else if (status.undefined > 0) {
+			TestResultType.UNDEFINED
+		} else if (status.completed > 0) {
+			TestResultType.SUCCESS
+		} else {
+			TestResultType.UNDEFINED
+		}
+		status
 	}
 
 	def getSpecificationIdForTestCaseFromConformanceStatements(testCaseId: Long): Option[Long] = {

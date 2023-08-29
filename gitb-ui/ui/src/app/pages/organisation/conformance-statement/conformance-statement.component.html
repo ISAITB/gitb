@@ -86,58 +86,14 @@
 							<span *ngSwitchDefault>No test cases were found matching your search criteria.</span>
 						</div>
 						<ng-container *ngSwitchDefault>
-							<div class="panel panel-default testSuitePanel" *ngFor="let testSuite of displayedTestSuites">
-								<div class="testSuiteDisplay" [class.expanded]="testSuite.expanded" (click)="onExpand(testSuite)">
-									<div><app-collapsing-icon [isCollapsed]="!testSuite.expanded"></app-collapsing-icon></div>
-									<div class="testSuiteName">{{testSuite.sname}}</div>
-									<div *ngIf="testSuite.description != undefined && testSuite.description.trim() != ''" class="testSuiteDescription">{{testSuite.description}}</div>
-									<div class="testSuiteControls">
-										<div class="btn-toolbar">
-											<button type="button" class="btn btn-default" *ngIf="testSuite.hasDocumentation" (click)="showTestSuiteDocumentation(testSuite.id); $event.stopPropagation();" containerClass="shortTooltip" tooltip="Documentation" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-info-circle"></i></button>
-											<button class="btn btn-primary" (click)="onTestSuiteSelect(testSuite); $event.stopPropagation();" containerClass="shortTooltip" tooltip="Run all" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-play"></i></button>
-										</div>
-									</div>
-									<div class="testSuiteResult"><i containerClass="shortTooltip" [tooltip]="dataService.tooltipForTestResult(testSuite.result)" [ngClass]="dataService.iconForTestResult(testSuite.result)"></i></div>
-								</div>
-								<div class="collapsibleTestCaseDiv" [collapse]="!testSuite.expanded" [isAnimated]="true">
-									<div class="testCaseContainer">
-										<div class="testCaseDisplay table-container">
-											<table id="conformance-statement-details" class="table table-directive expandable-table">
-												<thead>
-													<tr>
-														<th class="th-min" *ngIf="testSuite.hasOptionalTestCases || testSuite.hasDisabledTestCases"></th>
-														<th class="th-nowrap">Test case</th>
-														<th>Description</th>
-														<th class="th-min">Last run</th>
-														<th class="testcase-controls"></th>
-														<th class="testcase-result"></th>
-													</tr>								
-												</thead>
-												<tbody>
-													<tr *ngFor="let testCase of testSuite.testCases">
-														<td *ngIf="testSuite.hasOptionalTestCases || testSuite.hasDisabledTestCases">
-															<app-prescription-level [optional]="testCase.optional" [disabled]="testCase.disabled"></app-prescription-level>
-														</td>
-														<td>{{testCase.sname}}</td>
-														<td>{{testCase.description}}</td>
-														<td class="td-min">{{testCase.updateTime}}</td>
-														<td class="testcase-controls">
-															<div class="btn-toolbar">
-																<button *ngIf="testCase.sessionId != undefined" class="btn btn-default" (click)="toTestSession(testCase.sessionId)" containerClass="shortTooltip" tooltip="View session" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-search"></i></button>
-																<button type="button" class="btn btn-default" *ngIf="testCase.hasDocumentation" (click)="showTestCaseDocumentation(testCase.id)" containerClass="shortTooltip" tooltip="Documentation" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-info-circle"></i></button>
-																<button class="btn btn-primary" (click)="onTestSelect(testCase)" containerClass="shortTooltip" tooltip="Run" [disabled]="testCase.disabled" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-play"></i></button>
-															</div>
-														</td>
-														<td class="testcase-result">
-															<app-test-result-status-display [message]="testCase.outputMessage" [result]="testCase.result"></app-test-result-status-display>
-														</td>
-													</tr>
-												</tbody>
-											</table>
-										</div>
-									</div>
-								</div>
-							</div>
+							<app-test-suite-display
+								[testSuites]="displayedTestSuites"
+								(viewTestSession)="toTestSession($event)"
+								(viewTestCaseDocumentation)="showTestCaseDocumentation($event)"
+								(executeTestCase)="onTestSelect($event)"
+								(viewTestSuiteDocumentation)="showTestSuiteDocumentation($event)"
+								(executeTestSuite)="onTestSuiteSelect($event)"
+							></app-test-suite-display>
 						</ng-container>
 					</ng-container>
 				</ng-container>

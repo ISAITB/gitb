@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { BsModalService } from 'ngx-bootstrap/modal';
-import { mergeMap, Observable, of, share } from 'rxjs';
+import { Observable } from 'rxjs';
 import { Constants } from 'src/app/common/constants';
 import { ConformanceCertificateModalComponent } from 'src/app/modals/conformance-certificate-modal/conformance-certificate-modal.component';
 import { ConformanceService } from 'src/app/services/conformance.service';
@@ -11,11 +11,11 @@ import { ConformanceCertificateSettings } from 'src/app/types/conformance-certif
 import { ConformanceResultFull } from 'src/app/types/conformance-result-full';
 import { ConformanceResultFullList } from 'src/app/types/conformance-result-full-list';
 import { ConformanceResultFullWithTestSuites } from 'src/app/types/conformance-result-full-with-test-suites';
-import { ConformanceResultTestSuite } from 'src/app/types/conformance-result-test-suite';
 import { ConformanceStatusItem } from 'src/app/types/conformance-status-item';
 import { FilterState } from 'src/app/types/filter-state';
 import { TestResultSearchCriteria } from 'src/app/types/test-result-search-criteria';
-import { saveAs } from 'file-saver'
+import { ConformanceTestSuite } from '../../organisation/conformance-statement/conformance-test-suite';
+import { find } from 'lodash';
 
 @Component({
   selector: 'app-conformance-dashboard',
@@ -149,52 +149,12 @@ export class ConformanceDashboardComponent implements OnInit {
   }
 
   organiseTestSuites(statement: ConformanceResultFullWithTestSuites) {
-    if (statement.testCases != undefined) {
-      const testSuites: ConformanceResultTestSuite[] = []
-      let testSuite: ConformanceResultTestSuite|undefined
-      for (let item of statement.testCases) {
-        if (testSuite == undefined || testSuite.testSuiteId != item.testSuiteId) {
-          if (testSuite != undefined) {
-            testSuites.push(testSuite)
-          }
-          let testSuiteResult = item.result!
-          if (item.testCaseOptional || item.testCaseDisabled) {
-            testSuiteResult = Constants.TEST_CASE_RESULT.UNDEFINED
-          }
-          testSuite = {
-            testSuiteId: item.testSuiteId!,
-            testSuiteName: item.testSuiteName!,
-            expanded: true,
-            result: testSuiteResult,
-            hasOptionalTestCases: false,
-            hasDisabledTestCases: false,
-            testCases: []
-          }
-        }
-        if (!item.testCaseOptional && !item.testCaseDisabled && item.result != testSuite.result) {
-          if (item.result == Constants.TEST_CASE_RESULT.FAILURE) {
-            testSuite.result = Constants.TEST_CASE_RESULT.FAILURE
-          } else if (item.result == Constants.TEST_CASE_RESULT.UNDEFINED && testSuite.result == Constants.TEST_CASE_RESULT.SUCCESS) {
-            testSuite.result = Constants.TEST_CASE_RESULT.UNDEFINED
-          }
-        }
-        if (item.testCaseOptional && !testSuite.hasOptionalTestCases) {
-          testSuite.hasOptionalTestCases = true
-        }
-        if (item.testCaseDisabled && !testSuite.hasDisabledTestCases) {
-          testSuite.hasDisabledTestCases = true
-        }
-        testSuite.testCases.push(item as ConformanceStatusItem)
+    if (statement.testSuites != undefined) {
+      for (let testSuite of statement.testSuites) {
+        testSuite.hasDisabledTestCases = find(testSuite.testCases, (testCase) => testCase.disabled) != undefined
+        testSuite.hasOptionalTestCases = find(testSuite.testCases, (testCase) => testCase.optional) != undefined
+        testSuite.expanded = true
       }
-      if (testSuite != undefined) {
-        testSuites.push(testSuite)
-      }
-      if (testSuites.length > 1) {
-        for (let testSuite of testSuites) {
-          testSuite.expanded = false
-        }
-      }
-      statement.testSuites = testSuites
     }
   }
 
@@ -203,30 +163,14 @@ export class ConformanceDashboardComponent implements OnInit {
 			this.collapse(statement)
     } else {
       this.expand(statement)
-      if (statement.testCases == undefined) {
-        statement.testCasesLoaded = false
+      if (statement.testSuites == undefined) {
+        statement.testSuitesLoaded = false
         this.conformanceService.getConformanceStatus(statement.actorId, statement.systemId)
         .subscribe((data) => {
-          const testCases: Partial<ConformanceStatusItem>[] = []
-          for (let result of data.items) {
-            testCases.push({
-              id: result.testCaseId,
-              sessionId: result.sessionId,
-              testSuiteId: result.testSuiteId,
-              testSuiteName: result.testSuiteName,
-              testCaseId: result.testCaseId,
-              testCaseName: result.testCaseName,
-              result: result.result,
-              outputMessage: result.outputMessage,
-              sessionTime: result.sessionTime,
-              testCaseOptional: result.testCaseOptional,
-              testCaseDisabled: result.testCaseDisabled
-            })
-          }
-          statement.testCases = testCases
+          statement.testSuites = data.testSuites
           this.organiseTestSuites(statement)
         }).add(() => {
-          statement.testCasesLoaded = true
+          statement.testSuitesLoaded = true
         })
       }
     }
@@ -294,34 +238,6 @@ export class ConformanceDashboardComponent implements OnInit {
     }).add(() => {
       this.exportPending = false
     })
-  }
-
-	onExportTestCaseXml(testCase: Partial<ConformanceStatusItem>) {
-    testCase.actionPending = true
-    this.onExportTestCase(testCase, 'application/xml', 'test_case_report.xml')
-    .subscribe(() => {
-      testCase.actionPending = false
-    })
-  }
-
-	onExportTestCasePdf(testCase: Partial<ConformanceStatusItem>) {
-    testCase.exportPending = true
-    this.onExportTestCase(testCase, 'application/pdf', 'test_case_report.pdf')
-    .subscribe(() => {
-      testCase.exportPending = false
-    })
-  }
-
-	onExportTestCase(testCase: Partial<ConformanceStatusItem>, contentType: string, fileName: string) {
-    return this.reportService.exportTestCaseReport(testCase.sessionId!, testCase.id!, contentType)
-    .pipe(
-      mergeMap((data) => {
-        const blobData = new Blob([data], {type: contentType});
-        saveAs(blobData, fileName);
-        return of(data)
-      }),
-      share()
-    )
   }
 
 	onExportConformanceStatement(statement?: ConformanceResultFull) {

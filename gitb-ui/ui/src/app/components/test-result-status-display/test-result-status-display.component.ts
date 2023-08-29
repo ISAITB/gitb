@@ -5,8 +5,7 @@ import { DataService } from 'src/app/services/data.service';
 @Component({
   selector: 'app-test-result-status-display',
   templateUrl: './test-result-status-display.component.html',
-  styles: [
-  ]
+  styleUrls: [ './test-result-status-display.component.less' ]
 })
 export class TestResultStatusDisplayComponent implements OnInit {
 

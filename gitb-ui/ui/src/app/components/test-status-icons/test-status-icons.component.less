@@ -1,39 +1,76 @@
 @import '../../../styles/less/_common.less';
 
-.overallContainer {
+.rootContainer {
+    position: relative;
+    cursor: default;
+}
+.statusRootContainer {
     display: flex;
-    align-items: flex-start;
-    &.centerAligned {
-        justify-content: center;
-    }
-    .statusRootContainer {
+    flex-wrap: nowrap;
+    border-radius: 5px;
+    background: @white;
+    padding: 4px 8px;
+    border: 1px solid @gray-light;
+    justify-content: center;
+    .statusContainerGroup {
         display: flex;
-        flex-wrap: nowrap;
-        border-radius: 5px;
-        background: @white;
-        padding: 4px 8px;
-        border: 1px solid @gray-light;
-        justify-content: center;
-        .statusContainer {
+    }
+    .statusContainer {
+        display: flex;
+        align-items: center;
+        .statusCount {
+            margin-left: 10px;
+            margin-right: 3px;            
             display: flex;
-            align-items: center;
-            .statusCount {
-                margin-left: 10px;
-                margin-right: 3px;            
-                display: flex;
-            }
-            .statusIcon {
-                display: flex;
-                i {
-                    font-size: 14px;                
-                }
+        }
+        .statusIcon {
+            display: flex;
+            i {
+                font-size: 14px;                
             }
         }
-        :first-child.statusContainer{
-            .statusCount {
-                margin-left: 0px;
-            }    
+    }
+    :first-child.statusContainer{
+        .statusCount {
+            margin-left: 0px;
+        }    
+    }
+    .expand-icon {
+        margin-left: 20px;
+        cursor: pointer;
+    }
+}
+.popup-panel {
+    border: 1px solid @gray-light;
+    border-radius: 4px;
+    padding: 8px;
+    box-shadow: 0 1px 5px #959595;
+    position: absolute;
+    top: -1px;
+    background: @white;
+    z-index: 1;
+    min-width: 200px;
+    &.align-right {
+        right: 0px;
+    }
+    .status-title {
+        display: flex;
+    }
+    .close-container {
+        width: 30px;
+        position: absolute;
+        right: 0px;
+        top: 4px;
+        display: flex;
+        justify-content: center;
+        cursor: pointer;
+    }
+    .status-title {
+        padding: 5px 0px 5px 0px;
+        &.optional {
+            padding-top: 5px;
         }
+        font-weight: bold;
     }
 }
 ::ng-deep {

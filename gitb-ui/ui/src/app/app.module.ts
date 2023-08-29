@@ -162,6 +162,9 @@ import { CreateSystemComponent } from './pages/admin/user-management/system/crea
 import { SystemDetailsComponent } from './pages/admin/user-management/system/system-details/system-details.component';
 import { SystemFormComponent } from './pages/admin/user-management/system/system-form/system-form.component';
 import { HeaderMenuComponent } from './pages/index/header-menu/header-menu.component';
+import { TagComponent } from './components/tag/tag.component';
+import { TestCaseDisplayComponent } from './components/test-case-display/test-case-display.component';
+import { TestSuiteDisplayComponent } from './components/test-suite-display/test-suite-display.component';
 
 @NgModule({
   providers: [ 
@@ -313,7 +316,10 @@ import { HeaderMenuComponent } from './pages/index/header-menu/header-menu.compo
     CreateSystemComponent,
     SystemFormComponent,
     SystemDetailsComponent,
-    HeaderMenuComponent],
+    HeaderMenuComponent,
+    TagComponent,
+    TestCaseDisplayComponent,
+    TestSuiteDisplayComponent],
   imports: [
     BrowserModule,
     BrowserAnimationsModule,

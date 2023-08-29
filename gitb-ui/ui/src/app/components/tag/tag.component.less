@@ -1,0 +1,16 @@
+@import '../../../styles/less/_common.less';
+
+.tag-container {
+    display: flex;
+    border-radius: 5px;
+    padding: 4px 8px;
+    border: 1px solid @gray-light;
+    background: @white;
+    .tag-label {
+        font-weight: bold;
+        margin-right: 10px;
+    }
+    &> div {
+        white-space: nowrap;
+    }
+}

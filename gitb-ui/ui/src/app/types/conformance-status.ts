@@ -1,4 +1,4 @@
-import { ConformanceStatusItem } from "./conformance-status-item";
+import { ConformanceTestSuite } from "../pages/organisation/conformance-statement/conformance-test-suite";
 
 export interface ConformanceStatus {
 
@@ -12,6 +12,6 @@ export interface ConformanceStatus {
         result: string
         updateTime?: string
     }
-    items: ConformanceStatusItem[]
+    testSuites: ConformanceTestSuite[]
 
 }

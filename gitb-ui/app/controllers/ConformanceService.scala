@@ -359,20 +359,20 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
   def getConformanceStatus(actorId: Long, sutId: Long) = authorizedAction { request =>
     authorizationManager.canViewConformanceStatus(request, actorId, sutId)
     val results = conformanceManager.getConformanceStatus(actorId, sutId, None)
-    val json: String = JsonUtil.jsConformanceResultList(results).toString
+    val json: String = JsonUtil.jsConformanceStatus(results).toString
     ResponseConstructor.constructJsonResponse(json)
   }
 
   def getConformanceStatusForTestSuiteExecution(actorId: Long, sutId: Long, testSuite: Long) = authorizedAction { request =>
     authorizationManager.canViewConformanceStatus(request, actorId, sutId)
     val results = conformanceManager.getConformanceStatus(actorId, sutId, Some(testSuite), includeDisabled = false)
-    val json: String = JsonUtil.jsConformanceResultList(results).toString
+    val json: String = JsonUtil.jsConformanceStatus(results).toString
     ResponseConstructor.constructJsonResponse(json)
   }
 
   def getTestSuiteTestCaseForExecution(testCaseId: Long) = authorizedAction { request =>
     authorizationManager.canViewTestSuiteByTestCaseId(request, testCaseId)
-    val testCase = testCaseManager.getTestCase(testCaseId.toString())
+    val testCase = testCaseManager.getTestCase(testCaseId.toString)
     if (testCase.isEmpty) {
       ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_REQUEST, "The requested test case could not be found.")
     } else if (testCase.get.isDisabled) {

@@ -11,10 +11,7 @@
                     <div class="item-name">{{item.name}}</div>
                     <div class="item-description" *ngIf="item.description">{{item.description}}</div>
                     <div class="item-results" *ngIf="showResults">
-                        <div class="item-update" *ngIf="updateTime">
-                            <div class="item-update-label">Last update</div>
-                            <div>{{updateTime}}</div>
-                        </div>
+                        <app-tag *ngIf="updateTime" label="Last update" [value]="updateTime"></app-tag>
                         <ng-container *ngIf="counters">
                             <div class="item-counters">
                                 <app-test-status-icons [counters]="counters"></app-test-status-icons>

@@ -13,9 +13,8 @@ import models.Enums._
 import models._
 import models.automation._
 import org.apache.commons.codec.binary.Base64
-import play.api.libs.json.{JsObject, _}
+import play.api.libs.json.{JsObject, Json, _}
 
-import java.sql.Timestamp
 import java.util
 import scala.collection.mutable.ListBuffer
 import scala.collection.{immutable, mutable}
@@ -2244,80 +2243,53 @@ object JsonUtil {
     json
   }
 
-  def jsConformanceResultList(list: List[ConformanceStatusItem]): JsObject = {
-    var updateTime: Option[Timestamp] = None
-    var undefinedTests = 0L
-    var completedTests = 0L
-    var failedTests = 0L
-    var undefinedOptionalTests = 0L
-    var completedOptionalTests = 0L
-    var failedOptionalTests = 0L
-    var itemArray = Json.arr()
-    list.foreach{ info =>
-      if (!info.testCaseDisabled) {
-        if (info.sessionTime.isDefined && (updateTime.isEmpty || updateTime.get.before(info.sessionTime.get))) {
-          updateTime = info.sessionTime
-        }
-        if (info.testCaseOptional) {
-          if (TestResultStatus.withName(info.result) == TestResultStatus.SUCCESS) {
-            completedOptionalTests += 1
-          } else if (TestResultStatus.withName(info.result) == TestResultStatus.FAILURE) {
-            failedOptionalTests += 1
-          } else {
-            undefinedOptionalTests += 1
-          }
-        } else {
-          if (TestResultStatus.withName(info.result) == TestResultStatus.SUCCESS) {
-            completedTests += 1
-          } else if (TestResultStatus.withName(info.result) == TestResultStatus.FAILURE) {
-            failedTests += 1
-          } else {
-            undefinedTests += 1
-          }
-        }
-      }
-      itemArray = itemArray.append(jsConformanceResult(info))
+  def jsConformanceTestCases(testCases: Iterable[ConformanceTestCase]): JsArray = {
+    var json = Json.arr()
+    testCases.foreach { testCase =>
+      json = json.append(Json.obj(
+        "id" -> testCase.id,
+        "sname" -> testCase.name,
+        "description" -> (if (testCase.description.isDefined) testCase.description.get else JsNull),
+        "outputMessage" -> (if (testCase.outputMessage.isDefined) testCase.outputMessage.get else JsNull),
+        "sessionId" -> (if (testCase.sessionId.isDefined) testCase.sessionId.get else JsNull),
+        "updateTime" -> (if (testCase.updateTime.isDefined) TimeUtil.serializeTimestamp(testCase.updateTime.get) else JsNull),
+        "hasDocumentation" -> testCase.hasDocumentation,
+        "optional" -> testCase.optional,
+        "disabled" -> testCase.disabled,
+        "result" -> testCase.result.value()
+      ))
     }
-    var result = TestResultStatus.UNDEFINED.toString
-    if (failedTests > 0) {
-      result = TestResultStatus.FAILURE.toString
-    } else if (undefinedTests > 0) {
-      result = TestResultStatus.UNDEFINED.toString
-    } else if (completedTests > 0) {
-      result = TestResultStatus.SUCCESS.toString
-    }
-    val json = Json.obj(
-      "summary" -> Json.obj(
-        "failed"    -> failedTests,
-        "completed"    -> completedTests,
-        "undefined"    -> undefinedTests,
-        "failedOptional" -> failedOptionalTests,
-        "completedOptional" -> completedOptionalTests,
-        "undefinedOptional" -> undefinedOptionalTests,
-        "result" -> result,
-        "updateTime" -> (if (updateTime.isDefined) TimeUtil.serializeTimestamp(updateTime.get) else JsNull)
-      ),
-      "items" -> itemArray
-    )
     json
   }
 
-  def jsConformanceResult(listItem: ConformanceStatusItem): JsObject = {
+  def jsConformanceTestSuites(testSuites: Iterable[ConformanceTestSuite]): JsArray = {
+    var json = Json.arr()
+    testSuites.foreach { testSuite =>
+      json = json.append(Json.obj(
+        "id" -> testSuite.id,
+        "sname" -> testSuite.name,
+        "description" -> (if (testSuite.description.isDefined) testSuite.description.get else JsNull),
+        "hasDocumentation" -> testSuite.hasDocumentation,
+        "result" -> testSuite.result.value(),
+        "testCases" -> jsConformanceTestCases(testSuite.testCases)
+      ))
+    }
+    json
+  }
+
+  def jsConformanceStatus(status: ConformanceStatus): JsObject = {
     val json = Json.obj(
-      "testSuiteId"    -> listItem.testSuiteId,
-      "testSuiteName"    -> listItem.testSuiteName,
-      "testSuiteDescription"    -> listItem.testSuiteDescription,
-      "testSuiteHasDocumentation"    -> listItem.testSuiteHasDocumentation,
-      "testCaseId"    -> listItem.testCaseId,
-      "testCaseName"    -> listItem.testCaseName,
-      "testCaseDescription"    -> listItem.testCaseDescription,
-      "testCaseHasDocumentation"    -> listItem.testCaseHasDocumentation,
-      "testCaseOptional" -> listItem.testCaseOptional,
-      "testCaseDisabled" -> listItem.testCaseDisabled,
-      "result"    -> listItem.result,
-      "outputMessage" -> listItem.outputMessage,
-      "sessionId"    -> listItem.sessionId,
-      "sessionTime"    -> (if (listItem.sessionTime.isDefined) TimeUtil.serializeTimestamp(listItem.sessionTime.get) else JsNull)
+      "summary" -> Json.obj(
+        "failed"    -> status.failed,
+        "completed"    -> status.completed,
+        "undefined"    -> status.undefined,
+        "failedOptional" -> status.failedOptional,
+        "completedOptional" -> status.completedOptional,
+        "undefinedOptional" -> status.undefinedOptional,
+        "result" -> status.result.value(),
+        "updateTime" -> (if (status.updateTime.isDefined) TimeUtil.serializeTimestamp(status.updateTime.get) else JsNull)
+      ),
+      "testSuites" -> jsConformanceTestSuites(status.testSuites)
     )
     json
   }

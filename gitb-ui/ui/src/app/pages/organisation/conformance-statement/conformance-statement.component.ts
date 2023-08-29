@@ -163,75 +163,17 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
     // Load conformance results.
     this.conformanceService.getConformanceStatus(this.actorId, this.systemId)
     .subscribe((data) => {
-      let testSuiteResults: ConformanceTestSuite[] = []
-      let testSuiteIds: number[] = []
-      let testSuiteData: {[key: number]: ConformanceTestSuite} = {}
-      for (let result of data.items) {
-        if (result.testCaseOptional && !this.hasOptionalTests) {
-          this.hasOptionalTests = true
-        }
-        if (result.testCaseDisabled && !this.hasDisabledTests) {
+      for (let testSuite of data.testSuites) {
+        testSuite.hasDisabledTestCases = find(testSuite.testCases, (testCase) => testCase.disabled) != undefined
+        testSuite.hasOptionalTestCases = find(testSuite.testCases, (testCase) => testCase.optional) != undefined
+        if (!this.hasDisabledTests && testSuite.hasDisabledTestCases) {
           this.hasDisabledTests = true
         }
-        let testCase: ConformanceTestCase = {
-          id: result.testCaseId,
-          sname: result.testCaseName,
-          description: result.testCaseDescription,
-          outputMessage: result.outputMessage,
-          hasDocumentation: result.testCaseHasDocumentation,
-          sessionId: result.sessionId,
-          result: result.result,
-          updateTime: result.sessionTime,
-          optional: result.testCaseOptional,
-          disabled: result.testCaseDisabled
+        if (!this.hasOptionalTests && testSuite.hasOptionalTestCases) {
+          this.hasOptionalTests = true
         }
-        if (testSuiteData[result.testSuiteId] == undefined) {
-          let testSuiteResult = result.result
-          if (result.testCaseOptional || result.testCaseDisabled) {
-            testSuiteResult = Constants.TEST_CASE_RESULT.UNDEFINED
-          }
-          let currentTestSuite: ConformanceTestSuite = {
-            id: result.testSuiteId,
-            sname: result.testSuiteName,
-            description: result.testSuiteDescription,
-            result: testSuiteResult,
-            hasDocumentation: result.testSuiteHasDocumentation,
-            expanded: false,
-            hasOptionalTestCases: result.testCaseOptional,
-            hasDisabledTestCases: result.testCaseDisabled,
-            testCases: []
-          }
-          testSuiteIds.push(result.testSuiteId)
-          testSuiteData[result.testSuiteId] = currentTestSuite
-        } else {
-          if (!result.testCaseOptional && !result.testCaseDisabled) {
-            if (testSuiteData[result.testSuiteId].result == Constants.TEST_CASE_RESULT.SUCCESS) {
-              if (testCase.result == Constants.TEST_CASE_RESULT.FAILURE || testCase.result == Constants.TEST_CASE_RESULT.UNDEFINED) {
-                testSuiteData[result.testSuiteId].result = testCase.result
-              }
-            } else if (testSuiteData[result.testSuiteId].result == Constants.TEST_CASE_RESULT.UNDEFINED) {
-              if (testCase.result == Constants.TEST_CASE_RESULT.FAILURE) {
-                testSuiteData[result.testSuiteId].result = testCase.result
-              }
-            }
-          }
-          if (result.testCaseOptional && !testSuiteData[result.testSuiteId].hasOptionalTestCases) {
-            testSuiteData[result.testSuiteId].hasOptionalTestCases = true
-          }
-          if (result.testCaseDisabled && !testSuiteData[result.testSuiteId].hasDisabledTestCases) {
-            testSuiteData[result.testSuiteId].hasDisabledTestCases = true
-          }
-        }
-        testSuiteData[result.testSuiteId].testCases.push(testCase)
       }
-      this.hasTests = data.summary.failed > 0 || data.summary.completed > 0
-      for (let testSuiteId of testSuiteIds) {
-        testSuiteResults.push(testSuiteData[testSuiteId])
-      }
-      if (testSuiteResults.length == 1) {
-        testSuiteResults[0].expanded = true
-      }
-      this.testSuites = testSuiteResults
+      this.testSuites = data.testSuites
       this.displayedTestSuites = this.testSuites
       this.statusCounters = { 
         completed: data.summary.completed, failed: data.summary.failed, other: data.summary.undefined,

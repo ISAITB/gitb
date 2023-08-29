@@ -8,7 +8,8 @@ export interface ConformanceTestSuite {
     result: string
     hasDocumentation: boolean
     testCases: ConformanceTestCase[]
-    expanded: boolean
+
+    expanded?: boolean
     hasOptionalTestCases?: boolean
     hasDisabledTestCases?: boolean
 

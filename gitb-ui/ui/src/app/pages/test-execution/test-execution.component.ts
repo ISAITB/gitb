@@ -275,19 +275,11 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
         .pipe(
           map((data) => {
             // There will always be one test suite returned.
-            const tests: ConformanceTestCase[] = []
-            for (let result of data.items) {
-              tests.push({
-                id: result.testCaseId!,
-                sname: result.testCaseName,
-                description: result.testCaseDescription,
-                hasDocumentation: result.testCaseHasDocumentation,
-                result: Constants.TEST_CASE_RESULT.UNDEFINED,
-                optional: result.testCaseOptional,
-                disabled: result.testCaseDisabled
-              })
+            if (data.testSuites.length > 0) {
+              return data.testSuites[0].testCases
+            } else {
+              return []
             }
-            return tests
           })
         )
       } else {
