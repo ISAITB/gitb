@@ -311,7 +311,6 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, communityResour
     var specificationTestSuiteMap: scala.collection.mutable.Map[Long, ListBuffer[models.TestSuites]] = null
     var testSuiteTestCaseMap: scala.collection.mutable.Map[Long, ListBuffer[models.TestCases]] = null
     var testSuiteActorMap: scala.collection.mutable.Map[Long, ListBuffer[Long]] = null
-    var testCaseActorMap: scala.collection.mutable.Map[Long, ListBuffer[(Long, Boolean)]] = null
     if (exportSettings.specifications) {
       if (exportSettings.actors) {
         // Actors.
@@ -327,7 +326,6 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, communityResour
       if (exportSettings.testSuites) {
         testSuiteActorMap = scala.collection.mutable.Map[Long, ListBuffer[Long]]()
         testSuiteTestCaseMap = scala.collection.mutable.Map[Long, ListBuffer[models.TestCases]]()
-        testCaseActorMap = scala.collection.mutable.Map[Long, ListBuffer[(Long, Boolean)]]()
         specificationTestSuiteMap = loadSpecificationTestSuiteMap(domainId)
         exec(PersistenceSchema.testSuites
             .join(PersistenceSchema.testSuiteHasActors).on(_.id === _.testsuite)
@@ -356,20 +354,6 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, communityResour
             testSuiteTestCaseMap += (x._1 -> testCases.get)
           }
           testCases.get += x._2
-        }
-        exec(PersistenceSchema.testCases
-          .join(PersistenceSchema.testCaseHasActors).on(_.id === _.testcase)
-          .join(PersistenceSchema.actors).on(_._2.actor === _.id)
-          .filter(_._2.domain === domainId)
-          .map(x => x._1._2)
-          .result
-        ).foreach { x =>
-          var actors = testCaseActorMap.get(x._1) // Test case
-          if (actors.isEmpty) {
-            actors = Some(new ListBuffer[(Long, Boolean)])
-            testCaseActorMap += (x._1 -> actors.get)
-          }
-          actors.get += ((x._3, x._4)) // (actor, isSut)
         }
       }
     }
@@ -586,6 +570,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, communityResour
         exportedTestCase.setSpecification(specificationToSet.orNull)
         exportedTestCase.setOptional(testCase.isOptional)
         exportedTestCase.setDisabled(testCase.isDisabled)
+        exportedTestCase.setTags(testCase.tags.orNull)
         // Test case path - remove first part which represents the test suite
         val firstPathSeparatorIndex = testCase.path.indexOf('/')
         if (firstPathSeparatorIndex != -1) {
@@ -593,17 +578,6 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, communityResour
         } else {
           exportedTestCase.setPath(testCase.path)
         }
-//        if (testCaseActorMap.contains(testCase.id)) {
-//          exportedTestCase.setActors(new TestCaseActors)
-//          testCaseActorMap(testCase.id).foreach { actorInfo =>
-//            val exportedTestCaseActor = new TestCaseActor
-//            idSequence += 1
-//            exportedTestCaseActor.setId(toId(idSequence))
-//            exportedTestCaseActor.setActor(exportedActorMap(actorInfo._1))
-//            exportedTestCaseActor.setSut(actorInfo._2)
-//            exportedTestCase.getActors.getActor.add(exportedTestCaseActor)
-//          }
-//        }
         exportedTestSuite.getTestCases.getTestCase.add(exportedTestCase)
       }
     }

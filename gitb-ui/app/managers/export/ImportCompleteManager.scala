@@ -313,7 +313,8 @@ class ImportCompleteManager @Inject()(communityResourceManager: CommunityResourc
         Option(exportedTestCase.getKeywords), exportedTestCase.getTestCaseType, "",
         Option(exportedTestCase.getTargetActors), None, exportedTestCase.getTestSuiteOrder, exportedTestCase.isHasDocumentation,
         Option(exportedTestCase.getDocumentation), exportedTestCase.getIdentifier,
-        Option(exportedTestCase.isOptional).exists(_.booleanValue()), Option(exportedTestCase.isDisabled).exists(_.booleanValue())
+        Option(exportedTestCase.isOptional).exists(_.booleanValue()), Option(exportedTestCase.isDisabled).exists(_.booleanValue()),
+        Option(exportedTestCase.getTags)
       )
     }
     testCases.toList
