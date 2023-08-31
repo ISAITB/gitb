@@ -217,7 +217,6 @@ class ConformanceManager @Inject() (systemManager: SystemManager, triggerManager
 
 	def deleteSpecificationInternal(specId: Long, onSuccessCalls: mutable.ListBuffer[() => _]) = {
 		for {
-			ids <- PersistenceSchema.specifications.filter(_.id === specId).map(x => (x.id, x.domain)).result.head
 			_ <- testResultManager.updateForDeletedSpecification(specId)
 			// Delete also actors from the domain (they are now linked only to specifications
 			actorIds <- PersistenceSchema.specificationHasActors.filter(_.specId === specId).map(_.actorId).result

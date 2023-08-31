@@ -157,7 +157,7 @@ class SpecificationManager @Inject() (testResultManager: TestResultManager, conf
         if (specificationsToDelete.nonEmpty) {
           val actions = ListBuffer[DBIO[_]]()
           specificationsToDelete.foreach { specification =>
-            conformanceManager.deleteSpecificationInternal(specification, onSuccessCalls)
+            actions += conformanceManager.deleteSpecificationInternal(specification, onSuccessCalls)
           }
           toDBIO(actions)
         } else {
