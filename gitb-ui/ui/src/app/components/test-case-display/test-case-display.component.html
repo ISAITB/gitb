@@ -6,7 +6,12 @@
         <div class="testCaseName">{{testCase.sname}}</div>
         <div class="testCaseDescription" *ngIf="testCase.description != undefined && testCase.description != ''">{{testCase.description}}</div>
         <div class="testCaseExecution">
-            <app-tag *ngIf="testCase.updateTime" label="Last run" [value]="testCase.updateTime"></app-tag>
+            <div class="testCaseTagsContainer" *ngIf="testCase.parsedTags">
+                <app-tags-display [tags]="testCase.parsedTags"></app-tags-display>
+            </div>
+            <div class="testCaseUpdateTimeContainer" *ngIf="testCase.updateTime">
+                <app-tag label="fa-solid fa-clock" [icon]="true" tooltipText="Last execution time" [value]="testCase.updateTime"></app-tag>
+            </div>
             <div class="btn-toolbar">
                 <button *ngIf="testCase.sessionId != undefined" class="btn btn-default" (click)="viewTestCase(testCase)" containerClass="shortTooltip" tooltip="View session" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-search"></i></button>
                 <button type="button" class="btn btn-default" *ngIf="testCase.hasDocumentation" (click)="showTestCaseDocumentation(testCase)" containerClass="shortTooltip" tooltip="Documentation" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-info-circle"></i></button>

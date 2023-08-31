@@ -19,12 +19,13 @@ case class TestCases(
 											documentation: Option[String],
 											identifier: String,
 											isOptional: Boolean,
-											isDisabled: Boolean
+											isDisabled: Boolean,
+											tags: Option[String] = None
 	                    ) {
 
 	def withPath(path: String): TestCases = {
 		TestCases(this.id, this.shortname, this.fullname, this.version, this.authors, this.originalDate,
-			this.modificationDate, this.description, this.keywords, this.testCaseType, path, this.targetActors, this.targetOptions, this.testSuiteOrder, this.hasDocumentation, this.documentation, this.identifier, this.isOptional, this.isDisabled)
+			this.modificationDate, this.description, this.keywords, this.testCaseType, path, this.targetActors, this.targetOptions, this.testSuiteOrder, this.hasDocumentation, this.documentation, this.identifier, this.isOptional, this.isDisabled, this.tags)
 	}
 
 }

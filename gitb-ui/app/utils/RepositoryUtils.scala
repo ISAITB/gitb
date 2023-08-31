@@ -23,9 +23,9 @@ import javax.inject.{Inject, Singleton}
 import javax.xml.transform.stream.StreamSource
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.Using
 import scala.xml.XML
-import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
 class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
@@ -540,7 +540,7 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 										Option(tdlTestCase.getMetadata.getAuthors), Option(tdlTestCase.getMetadata.getPublished),
 										Option(tdlTestCase.getMetadata.getLastModified), Option(tdlTestCase.getMetadata.getDescription),
 										None, testCaseType.ordinal().toShort, null, Some(actorString.toString()), None,
-										testCaseCounter.toShort, documentation.isDefined, documentation, tdlTestCase.getId, tdlTestCase.isOptional, tdlTestCase.isDisabled
+										testCaseCounter.toShort, documentation.isDefined, documentation, tdlTestCase.getId, tdlTestCase.isOptional, tdlTestCase.isDisabled, getTagsStr(tdlTestCase)
 									)
 							}.toList)
 							testCaseUpdateApproach = Some(testCaseUpdateApproachTemp.toMap)
@@ -558,6 +558,18 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 				}
 			}
 
+		}
+		result
+	}
+
+	private def getTagsStr(testCase: com.gitb.tdl.TestCase): Option[String] = {
+		var result: Option[String] = None
+		if (testCase != null && testCase.getMetadata != null && testCase.getMetadata.getTags != null && !testCase.getMetadata.getTags.getTag.isEmpty) {
+			val tags = ListBuffer[TestCaseTag]()
+			testCase.getMetadata.getTags.getTag.forEach { tdlTag =>
+				tags += TestCaseTag(tdlTag.getName, Option(tdlTag.getValue), Option(tdlTag.getForeground), Option(tdlTag.getBackground))
+			}
+			result = Some(JsonUtil.jsTags(tags).toString)
 		}
 		result
 	}

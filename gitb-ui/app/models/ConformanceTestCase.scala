@@ -14,5 +14,6 @@ class ConformanceTestCase(
   var hasDocumentation: Boolean,
   var optional: Boolean,
   var disabled: Boolean,
-  var result: TestResultType
+  var result: TestResultType,
+  var tags: Option[String]
 ) {}

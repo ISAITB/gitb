@@ -696,11 +696,11 @@ class ConformanceManager @Inject() (systemManager: SystemManager, triggerManager
 				.filterIf(!includeDisabled)(_._1._2.isDisabled === false)
 				.filterOpt(testSuiteId)((q, id) => q._1._1.testsuite === id)
 				.sortBy(x => (x._2.shortname, x._1._2.testSuiteOrder))
-				.map(x => (x._2.id, x._2.shortname, x._2.description, x._2.hasDocumentation, x._1._2.id, x._1._2.shortname, x._1._2.description, x._1._2.hasDocumentation, x._1._1.result, x._1._1.outputMessage, x._1._1.testsession, x._1._1.updateTime, x._1._2.isOptional, x._1._2.isDisabled))
+				.map(x => (x._2.id, x._2.shortname, x._2.description, x._2.hasDocumentation, x._1._2.id, x._1._2.shortname, x._1._2.description, x._1._2.hasDocumentation, x._1._1.result, x._1._1.outputMessage, x._1._1.testsession, x._1._1.updateTime, x._1._2.isOptional, x._1._2.isDisabled, x._1._2.tags))
 				.result
 				.map(_.toList)
 		).map(r => {
-			ConformanceStatusItem(r._1, r._2, r._3, r._4, r._5, r._6, r._7, r._8, r._9, r._10, r._11, r._12, r._13, r._14)
+			ConformanceStatusItem(r._1, r._2, r._3, r._4, r._5, r._6, r._7, r._8, r._9, r._10, r._11, r._12, r._13, r._14, r._15)
 		})
 
 		val status = new ConformanceStatus(0, 0, 0, 0, 0, 0, TestResultType.UNDEFINED, None, new ListBuffer[ConformanceTestSuite])
@@ -713,7 +713,7 @@ class ConformanceManager @Inject() (systemManager: SystemManager, triggerManager
 			} else {
 				status.testSuites.last
 			}
-			val testCase = new ConformanceTestCase(item.testCaseId, item.testCaseName, item.testCaseDescription, item.sessionId, item.sessionTime, item.outputMessage, item.testCaseHasDocumentation, item.testCaseOptional, item.testCaseDisabled, TestResultType.fromValue(item.result))
+			val testCase = new ConformanceTestCase(item.testCaseId, item.testCaseName, item.testCaseDescription, item.sessionId, item.sessionTime, item.outputMessage, item.testCaseHasDocumentation, item.testCaseOptional, item.testCaseDisabled, TestResultType.fromValue(item.result), item.testCaseTags)
 			status.testSuites.last.testCases.asInstanceOf[ListBuffer[ConformanceTestCase]].append(testCase)
 			if (!testCase.disabled) {
 				// Update time.

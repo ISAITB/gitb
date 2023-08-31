@@ -3,7 +3,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { NgModule } from '@angular/core';
 import { HttpClientModule } from '@angular/common/http';
 import { CookieService } from 'ngx-cookie-service';
-
+import { ColorPickerModule } from 'ngx-color-picker';
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { LoginComponent } from './pages/login/login.component';
@@ -165,6 +165,8 @@ import { HeaderMenuComponent } from './pages/index/header-menu/header-menu.compo
 import { TagComponent } from './components/tag/tag.component';
 import { TestCaseDisplayComponent } from './components/test-case-display/test-case-display.component';
 import { TestSuiteDisplayComponent } from './components/test-suite-display/test-suite-display.component';
+import { TagsDisplayComponent } from './components/tags-display/tags-display.component';
+import { CreateEditTagComponent } from './modals/create-edit-tag/create-edit-tag.component';
 
 @NgModule({
   providers: [ 
@@ -319,8 +321,11 @@ import { TestSuiteDisplayComponent } from './components/test-suite-display/test-
     HeaderMenuComponent,
     TagComponent,
     TestCaseDisplayComponent,
-    TestSuiteDisplayComponent],
+    TestSuiteDisplayComponent,
+    TagsDisplayComponent,
+    CreateEditTagComponent],
   imports: [
+    ColorPickerModule,
     BrowserModule,
     BrowserAnimationsModule,
     EditorModule,

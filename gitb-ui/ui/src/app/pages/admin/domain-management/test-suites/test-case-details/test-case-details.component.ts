@@ -1,6 +1,7 @@
 import { AfterViewInit, Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { mergeMap, Observable, share, map, of } from 'rxjs';
+import { mergeMap, Observable, share, map } from 'rxjs';
+import { find, remove, sortBy } from 'lodash';
 import { ActorInfo } from 'src/app/components/diagram/actor-info';
 import { DiagramEvents } from 'src/app/components/diagram/diagram-events';
 import { StepData } from 'src/app/components/diagram/step-data';
@@ -16,6 +17,9 @@ import { TestService } from 'src/app/services/test.service';
 import { TestCase } from 'src/app/types/test-case';
 import { saveAs } from 'file-saver'
 import { Constants } from 'src/app/common/constants';
+import { BsModalService } from 'ngx-bootstrap/modal';
+import { CreateEditTagComponent } from 'src/app/modals/create-edit-tag/create-edit-tag.component';
+import { TestCaseTag } from 'src/app/types/test-case-tag';
 
 @Component({
   selector: 'app-test-case-details',
@@ -36,6 +40,7 @@ export class TestCaseDetailsComponent extends BaseComponent implements OnInit, A
   actorInfo: {[key: string]: ActorInfo[]} = {}
   testEvents: {[key: number]: DiagramEvents} = {}
   previewPending = false
+  private tagCounter = 0
 
   constructor(
     private dataService: DataService,
@@ -46,7 +51,8 @@ export class TestCaseDetailsComponent extends BaseComponent implements OnInit, A
     private htmlService: HtmlService,
     private conformanceService: ConformanceService,
     private testService: TestService,
-    private reportService: ReportService
+    private reportService: ReportService,
+    private modalService: BsModalService
   ) { super() }
 
   ngAfterViewInit(): void {
@@ -64,6 +70,12 @@ export class TestCaseDetailsComponent extends BaseComponent implements OnInit, A
 		this.testSuiteService.getTestCase(this.testCaseId)
     .subscribe((data) => {
 			this.testCase = data
+      if (data.tags) {
+        this.testCase.parsedTags = sortBy(JSON.parse(data.tags), ['name'])
+        for (let tag of this.testCase.parsedTags!) {
+          tag.id = this.tagCounter++
+        }
+      }
     })
     this.testEvents[this.testCaseId] = new DiagramEvents()    
     this.getTestCaseDefinition(this.testCaseId).subscribe(() => {}).add(() => {
@@ -98,9 +110,17 @@ export class TestCaseDetailsComponent extends BaseComponent implements OnInit, A
     })    
   }
 
+  private serialiseTags() {
+    if (this.testCase.parsedTags && this.testCase.parsedTags.length > 0) {
+      return JSON.stringify(this.testCase.parsedTags)
+    } else {
+      return undefined
+    }
+  }
+
 	saveChanges() {
     this.pending = true
-		this.testSuiteService.updateTestCaseMetadata(this.testCase.id!, this.testCase.sname!, this.testCase.description, this.testCase.documentation, this.testCase.optional, this.testCase.disabled)
+		this.testSuiteService.updateTestCaseMetadata(this.testCase.id!, this.testCase.sname!, this.testCase.description, this.testCase.documentation, this.testCase.optional, this.testCase.disabled, this.serialiseTags())
     .subscribe(() => {
       this.popupService.success('Test case updated.')
     }).add(() => {
@@ -135,4 +155,46 @@ export class TestCaseDetailsComponent extends BaseComponent implements OnInit, A
     )
   }
 
+  private openTagModal(tag?: TestCaseTag) {
+    const modal = this.modalService.show(CreateEditTagComponent, {
+      class: 'modal-lg',
+      initialState: {
+        tag: tag
+      }
+    })
+    modal.content!.createdTag.subscribe((createdTag) => {
+      if (this.testCase.parsedTags == undefined) {
+        this.testCase.parsedTags = []
+      }
+      createdTag.id = this.tagCounter++
+      this.testCase.parsedTags.push(createdTag)
+      this.testCase.parsedTags = sortBy(this.testCase.parsedTags, ['name'])
+    })
+    modal.content!.updatedTag.subscribe((updatedTag) => {
+      if (this.testCase.parsedTags) {
+        remove(this.testCase.parsedTags, (tag) => tag.id == updatedTag.id)
+        this.testCase.parsedTags.push(updatedTag)
+        this.testCase.parsedTags = sortBy(this.testCase.parsedTags, ['name'])
+      }
+    })
+  }
+
+  tagEdited(tagId: number) {
+    if (this.testCase.parsedTags) {
+      const selectedTag = find(this.testCase.parsedTags, (tag) => tag.id == tagId)
+      if (selectedTag) {
+        this.openTagModal(selectedTag)
+      }
+    }
+  }
+
+  tagDeleted(tagId: number) {
+    if (this.testCase.parsedTags) {
+      remove(this.testCase.parsedTags, (tag) => tag.id == tagId)
+    }
+  }
+
+  createTag() {
+    this.openTagModal()
+  }
 }

@@ -1,0 +1,1 @@
+ALTER TABLE `testcases` ADD COLUMN `tags` TEXT;

@@ -4,6 +4,8 @@ import { Constants } from 'src/app/common/constants';
 import { ConformanceTestCase } from 'src/app/pages/organisation/conformance-statement/conformance-test-case';
 import { ReportService } from 'src/app/services/report.service';
 import { saveAs } from 'file-saver'
+import { TestCaseTag } from 'src/app/types/test-case-tag';
+import { sortBy } from 'lodash';
 
 @Component({
   selector: 'app-test-case-display',
@@ -26,11 +28,18 @@ export class TestCaseDisplayComponent implements OnInit {
   exportXmlPending: {[key:number]: boolean } = {}
   exportPdfPending: {[key:number]: boolean } = {}
 
+  tagsToDisplay!: TestCaseTag[]
+
   constructor(
     private reportService: ReportService
   ) { }
 
   ngOnInit(): void {
+    for (let testCase of this.testCases) {
+      if (testCase.tags != undefined && testCase.parsedTags == undefined) {
+        testCase.parsedTags = sortBy(JSON.parse(testCase.tags), ['name'])
+      }
+    }
   }
 
   viewTestCase(testCase: ConformanceTestCase) {

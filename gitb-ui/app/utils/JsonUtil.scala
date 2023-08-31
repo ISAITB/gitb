@@ -1048,6 +1048,19 @@ object JsonUtil {
     items
   }
 
+  def parseJsTags(json: String): List[TestCaseTag] = {
+    val tags = new ListBuffer[TestCaseTag]
+    Json.parse(json).as[JsArray].value.foreach { value =>
+      tags += TestCaseTag(
+        (value \ "name").as[String],
+        (value \ "description").asOpt[String],
+        (value \ "foreground").asOpt[String],
+        (value \ "background").asOpt[String]
+      )
+    }
+    tags.toList
+  }
+
   private def parseJsInputMapping(json: JsValue): InputMapping = {
     val testSuites: List[String] = (json \ "testSuite").asOpt[JsArray].getOrElse(JsArray.empty).value.map { jsValue =>
       jsValue.as[JsString].value
@@ -1400,8 +1413,8 @@ object JsonUtil {
    * @param testCase TestCase object to be converted
    * @return JsObject
    */
-  def jsTestCases(testCase:TestCases, withDocumentation: Boolean) : JsObject = {
-    val json = Json.obj(
+  def jsTestCases(testCase:TestCases, withDocumentation: Boolean, withTags: Boolean) : JsObject = {
+    var json = Json.obj(
       "id"      -> testCase.id,
       "identifier"    -> testCase.identifier,
       "sname"   -> testCase.shortname,
@@ -1415,10 +1428,11 @@ object JsonUtil {
       "type" -> testCase.testCaseType,
       "path" -> testCase.path,
       "hasDocumentation" -> testCase.hasDocumentation,
-      "documentation" -> (if (withDocumentation && testCase.documentation.isDefined) testCase.documentation.get else JsNull),
       "optional" -> testCase.isOptional,
       "disabled" -> testCase.isDisabled
     )
+    if (withDocumentation && testCase.documentation.isDefined) json = json + ("documentation" -> JsString(testCase.documentation.get))
+    if (withTags && testCase.tags.isDefined) json = json + ("tags" -> JsString(testCase.tags.get))
     json
   }
 
@@ -1456,7 +1470,7 @@ object JsonUtil {
   def jsTestCasesList(list:List[TestCases]):JsArray = {
     var json = Json.arr()
     list.foreach{ testCase =>
-      json = json.append(jsTestCases(testCase, withDocumentation = false))
+      json = json.append(jsTestCases(testCase, withDocumentation = false, withTags = false))
     }
     json
   }
@@ -2256,7 +2270,8 @@ object JsonUtil {
         "hasDocumentation" -> testCase.hasDocumentation,
         "optional" -> testCase.optional,
         "disabled" -> testCase.disabled,
-        "result" -> testCase.result.value()
+        "result" -> testCase.result.value(),
+        "tags" -> (if (testCase.tags.isDefined) testCase.tags.get else JsNull)
       ))
     }
     json
@@ -2273,6 +2288,18 @@ object JsonUtil {
         "result" -> testSuite.result.value(),
         "testCases" -> jsConformanceTestCases(testSuite.testCases)
       ))
+    }
+    json
+  }
+
+  def jsTags(tags: Iterable[TestCaseTag]): JsArray = {
+    var json = Json.arr()
+    tags.foreach { tag =>
+      var tagJson = Json.obj("name" -> tag.name)
+      if (tag.description.isDefined) tagJson = tagJson + ("description" -> JsString(tag.description.get))
+      if (tag.foreground.isDefined) tagJson = tagJson + ("foreground" -> JsString(tag.foreground.get))
+      if (tag.background.isDefined) tagJson = tagJson + ("background" -> JsString(tag.background.get))
+      json = json.append(tagJson)
     }
     json
   }

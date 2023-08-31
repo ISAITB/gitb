@@ -956,7 +956,7 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 									testCaseToStore.version, testCaseToStore.authors, testCaseToStore.description,
 									testCaseToStore.keywords, testCaseToStore.testCaseType, testCaseToStore.path, testCaseToStore.testSuiteOrder,
 									testCaseToStore.targetActors.get, testCaseToStore.documentation.isDefined, testCaseToStore.documentation,
-									testCaseToStore.isOptional, testCaseToStore.isDisabled
+									testCaseToStore.isOptional, testCaseToStore.isDisabled, testCaseToStore.tags
 								) andThen DBIO.successful(savedTestCaseIds += (testCaseToStore.identifier -> (existingTestCaseId, false)))
 							}
 						} else {

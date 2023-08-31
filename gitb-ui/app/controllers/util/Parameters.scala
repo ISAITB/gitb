@@ -47,6 +47,7 @@ object Parameters {
   val VERSION = "version"
   val OPTIONAL = "optional"
   val DISABLED = "disabled"
+  val TAGS = "tags"
 
   // Landing page Service
   val DEFAULT = "default_flag"

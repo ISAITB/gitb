@@ -4,6 +4,7 @@ import { Specification } from '../types/specification';
 import { TestCase } from '../types/test-case';
 import { TestSuiteWithTestCases } from '../types/test-suite-with-test-cases';
 import { RestService } from './rest.service';
+import { TestCaseTag } from '../types/test-case-tag';
 
 @Injectable({
   providedIn: 'root'
@@ -84,7 +85,7 @@ export class TestSuiteService {
 		})
 	}
 
-	updateTestCaseMetadata(testCaseId: number, name: string, description?: string, documentation?: string, optional?:boolean, disabled?:boolean) {
+	updateTestCaseMetadata(testCaseId: number, name: string, description?: string, documentation?: string, optional?:boolean, disabled?:boolean, tags?: string) {
 		return this.restService.post<void>({
 			path: ROUTES.controllers.TestSuiteService.updateTestCaseMetadata(testCaseId).url,
 			data: {
@@ -92,7 +93,8 @@ export class TestSuiteService {
 				description: description,
 				documentation: documentation,
 				optional: optional,
-				disabled: disabled
+				disabled: disabled,
+				tags: tags
 			},
 			authenticate: true
 		})

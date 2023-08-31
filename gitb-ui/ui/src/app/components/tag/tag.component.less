@@ -1,16 +1,40 @@
 @import '../../../styles/less/_common.less';
 
-.tag-container {
+.root-container {
     display: flex;
-    border-radius: 5px;
-    padding: 4px 8px;
-    border: 1px solid @gray-light;
-    background: @white;
-    .tag-label {
-        font-weight: bold;
-        margin-right: 10px;
+    margin-top: 1px;
+    margin-bottom: 1px;    
+    .tag-container {
+        display: flex;
+        border-radius: 5px;
+        &.pill {
+            border-radius: 20px;
+            .tag-label, .tag-value {
+                font-size: smaller;
+            }
+        }
+        &.editable {
+            border-top-right-radius: 0px;
+            border-bottom-right-radius: 0px;
+        }
+        padding: 4px 8px;
+        border: 1px solid @gray-light;
+        background: @white;
+        color: @gray;
+        .tag-label {
+            font-weight: bold;
+        }
+        .tag-value {
+            margin-left: 10px;
+        }
+        &> div {
+            white-space: nowrap;
+        }
     }
-    &> div {
-        white-space: nowrap;
+    .tag-controls {
+        .btn-group > .btn:first-child {
+            border-top-left-radius: 0px;
+            border-bottom-left-radius: 0px;
+        }
     }
 }

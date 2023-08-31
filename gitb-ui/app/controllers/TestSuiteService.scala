@@ -39,12 +39,25 @@ class TestSuiteService @Inject() (implicit ec: ExecutionContext, authorizedActio
 		var documentation:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DOCUMENTATION)
 		val isOptional = ParameterExtractor.optionalBooleanBodyParameter(request, Parameters.OPTIONAL).getOrElse(false)
 		val isDisabled = ParameterExtractor.optionalBooleanBodyParameter(request, Parameters.DISABLED).getOrElse(false)
-
+		val tags = sanitizeTags(ParameterExtractor.optionalBodyParameter(request, Parameters.TAGS))
 		if (documentation.isDefined) {
 			documentation = Some(HtmlUtil.sanitizeEditorContent(documentation.get))
 		}
-		testCaseManager.updateTestCaseMetadata(testCaseId, name, description, documentation, isOptional, isDisabled)
+		testCaseManager.updateTestCaseMetadata(testCaseId, name, description, documentation, isOptional, isDisabled, tags)
 		ResponseConstructor.constructEmptyResponse
+	}
+
+	private def sanitizeTags(tagDefinition: Option[String]): Option[String] = {
+		if (tagDefinition.isDefined) {
+			val parsedTags = JsonUtil.parseJsTags(tagDefinition.get)
+			if (parsedTags.nonEmpty) {
+				Some(JsonUtil.jsTags(parsedTags).toString)
+			} else {
+				None
+			}
+		} else {
+			None
+		}
 	}
 
 	def previewTestCaseDocumentationInReports() = authorizedAction { request =>
@@ -113,7 +126,7 @@ class TestSuiteService @Inject() (implicit ec: ExecutionContext, authorizedActio
 		authorizationManager.canViewTestCase(request, testCaseId.toString)
 
 		val testCase = testCaseManager.getTestCaseWithDocumentation(testCaseId)
-		val json = JsonUtil.jsTestCases(testCase, withDocumentation = true).toString()
+		val json = JsonUtil.jsTestCases(testCase, withDocumentation = true, withTags = true).toString()
 		ResponseConstructor.constructJsonResponse(json)
 	}
 

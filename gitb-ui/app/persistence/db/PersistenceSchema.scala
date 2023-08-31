@@ -236,7 +236,8 @@ object PersistenceSchema {
     def documentation = column[Option[String]]("documentation")
     def isOptional = column[Boolean]("is_optional")
     def isDisabled = column[Boolean]("is_disabled")
-	  def * = (id, shortname, fullname, version, authors, originalDate, modificationDate, description, keywords, testCaseType, path, targetActors, targetOptions, testSuiteOrder, hasDocumentation, documentation, identifier, isOptional, isDisabled) <> (TestCases.tupled, TestCases.unapply)
+    def tags = column[Option[String]]("tags", O.SqlType("TEXT"))
+	  def * = (id, shortname, fullname, version, authors, originalDate, modificationDate, description, keywords, testCaseType, path, targetActors, targetOptions, testSuiteOrder, hasDocumentation, documentation, identifier, isOptional, isDisabled, tags) <> (TestCases.tupled, TestCases.unapply)
   }
   val testCases = TableQuery[TestCasesTable]
 
