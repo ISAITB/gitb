@@ -6,16 +6,17 @@ import { DomainSpecification } from 'src/app/types/domain-specification';
 import { SpecificationGroup } from 'src/app/types/specification-group';
 
 @Component({
-  selector: '[app-domain-specification-table-row]',
-  templateUrl: './domain-specification-table-row.component.html',
-  styleUrls: [ './domain-specification-table-row.component.less' ]
+  selector: 'app-domain-specification-display',
+  templateUrl: './domain-specification-display.component.html',
+  styleUrls: [ './domain-specification-display.component.less' ]
 })
-export class DomainSpecificationTableRowComponent implements OnInit {
+export class DomainSpecificationDisplayComponent implements OnInit {
 
   @Input() spec!: DomainSpecification
   @Input() groups: SpecificationGroup[] = []
   @Input() first = false
   @Input() last = false
+  @Output() selectSpec = new EventEmitter<DomainSpecification>()
   @Output() removeSpec = new EventEmitter<[number, number]>()
   @Output() moveSpec = new EventEmitter<[number, number|undefined, number]>()
   @Output() copySpec = new EventEmitter<[number, number|undefined, number]>()
@@ -71,10 +72,39 @@ export class DomainSpecificationTableRowComponent implements OnInit {
   }
 
   doMoveUp() {
-    this.moveUp.emit(this.spec)
+    this.propagateUp(this.spec)
   }
 
   doMoveDown() {
-    this.moveDown.emit(this.spec)
+    this.propagateDown(this.spec)
   }
+
+  doSelect() {
+    this.propagateSelect(this.spec)
+  }
+
+  propagateRemove(event: [number, number]) {
+    this.removeSpec.emit(event)
+  }
+
+  propagateMove(event: [number, number|undefined, number]) {
+    this.moveSpec.emit(event)
+  }
+
+  propagateCopy(event: [number, number|undefined, number]) {
+    this.copySpec.emit(event)
+  }
+
+  propagateUp(event: DomainSpecification) {
+    this.moveUp.emit(event)
+  }
+
+  propagateDown(event: DomainSpecification) {
+    this.moveDown.emit(event)
+  }
+
+  propagateSelect(event: DomainSpecification) {
+    this.selectSpec.emit(event)
+  }
+
 }

@@ -147,7 +147,6 @@ import { TestSuiteUploadSpecificationChoicesComponent } from './components/test-
 import { CreateSpecificationGroupComponent } from './pages/admin/domain-management/specification/group/create-specification-group/create-specification-group.component';
 import { SpecificationGroupFormComponent } from './pages/admin/domain-management/specification/group/specification-group-form/specification-group-form.component';
 import { SpecificationGroupDetailsComponent } from './pages/admin/domain-management/specification/group/specification-group-details/specification-group-details.component';
-import { DomainSpecificationTableRowComponent } from './components/domain-specification-table-row/domain-specification-table-row.component';
 import { HiddenIconComponent } from './components/hidden-icon/hidden-icon.component';
 import { ConformanceStatementItemDisplayComponent } from './components/conformance-statement-item-display/conformance-statement-item-display.component';
 import { ConformanceStatementItemsDisplayComponent } from './components/conformance-statement-items-display/conformance-statement-items-display.component';
@@ -167,6 +166,7 @@ import { TestCaseDisplayComponent } from './components/test-case-display/test-ca
 import { TestSuiteDisplayComponent } from './components/test-suite-display/test-suite-display.component';
 import { TagsDisplayComponent } from './components/tags-display/tags-display.component';
 import { CreateEditTagComponent } from './modals/create-edit-tag/create-edit-tag.component';
+import { DomainSpecificationDisplayComponent } from './components/domain-specification-display/domain-specification-display.component';
 
 @NgModule({
   providers: [ 
@@ -304,7 +304,6 @@ import { CreateEditTagComponent } from './modals/create-edit-tag/create-edit-tag
     CreateSpecificationGroupComponent,
     SpecificationGroupFormComponent,
     SpecificationGroupDetailsComponent,
-    DomainSpecificationTableRowComponent,
     HiddenIconComponent,
     ConformanceStatementItemDisplayComponent,
     ConformanceStatementItemsDisplayComponent,
@@ -323,7 +322,8 @@ import { CreateEditTagComponent } from './modals/create-edit-tag/create-edit-tag
     TestCaseDisplayComponent,
     TestSuiteDisplayComponent,
     TagsDisplayComponent,
-    CreateEditTagComponent],
+    CreateEditTagComponent,
+    DomainSpecificationDisplayComponent],
   imports: [
     ColorPickerModule,
     BrowserModule,

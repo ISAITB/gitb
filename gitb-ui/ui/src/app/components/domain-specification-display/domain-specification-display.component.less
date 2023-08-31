@@ -1,0 +1,81 @@
+@import '../../../styles/less/_common.less';
+
+.root-container {
+    padding: 10px;
+    border: 1px solid @gray-dark-1;
+    border-radius: 5px;
+    display: flex;
+    background-color: @gray-light-1;
+    flex-wrap: wrap;
+    width: 100%;
+    min-height: 56px;
+    &.not-first {
+        margin-top: 5px;
+    }
+    &.top-level {
+        background-color: @white;
+    }
+    &:hover {
+        cursor: pointer;
+        background-color: @gray-highlight;
+    }    
+    &.top-level {
+        background-color: @white;
+        &:hover {
+            cursor: pointer;
+            background-color: @white-shaded;
+        }
+    }
+    .spec-container {
+        display: flex;
+        align-items: center;    
+        width: 100%;
+        .spec-name {
+            font-weight: bold;
+        }
+        .spec-description {
+            margin-left: 10px;
+            padding-left: 10px;
+            padding-top: 5px;
+            padding-bottom: 5px;
+            border-left: 1px solid @gray-dark-1
+        }
+    }
+    .right-container {
+        display: flex;
+        margin-left: auto;
+        padding-left: 10px;
+        align-items: center;
+        .btn-toolbar {
+            display: flex;
+            &.btn-stacked {
+                display: flex;
+                flex-flow: column;
+                align-self: center;
+                margin-left: 0px;
+            }
+        }
+        .spec-hidden {
+            margin-right: 10px;
+        }
+    }
+    .option-container {
+        margin-top: 10px;
+    }
+    .option-container-collapsible {
+        display: flex;
+        width: 100%;
+    }
+    span.caret {
+        margin-left: 10px;
+    }
+    .left-margin {
+        margin-left: 10px;        
+    }
+    .no-options {
+        padding: 10px;
+        border: 1px solid @gray-dark-1;
+        border-radius: 5px;
+        background-color: @gray-light-1;
+    }
+}
