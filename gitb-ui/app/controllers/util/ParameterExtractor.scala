@@ -352,24 +352,24 @@ object ParameterExtractor {
 
   def extractSystemAdminInfo(request:Request[AnyContent]):Users = {
     if (Configurations.AUTHENTICATION_SSO_ENABLED) {
-      val ssoEmail = requiredBodyParameter(request, Parameters.USER_EMAIL)
+      val ssoEmail = requiredBodyParameter(request, Parameters.USER_EMAIL).trim
       getUserInfoForSSO(ssoEmail, UserRole.SystemAdmin.id.toShort)
     } else {
       val name = requiredBodyParameter(request, Parameters.USER_NAME)
-      val email = requiredBodyParameter(request, Parameters.USER_EMAIL)
-      val password = requiredBodyParameter(request, Parameters.PASSWORD)
+      val email = requiredBodyParameter(request, Parameters.USER_EMAIL).trim
+      val password = requiredBodyParameter(request, Parameters.PASSWORD).trim
       Users(0L, name, email, BCrypt.hashpw(password, BCrypt.gensalt()), onetimePassword = true, UserRole.SystemAdmin.id.toShort, 0L, None, None, UserSSOStatus.NotMigrated.id.toShort)
     }
   }
 
   def extractCommunityAdminInfo(request:Request[AnyContent]):Users = {
     if (Configurations.AUTHENTICATION_SSO_ENABLED) {
-      val ssoEmail = requiredBodyParameter(request, Parameters.USER_EMAIL)
+      val ssoEmail = requiredBodyParameter(request, Parameters.USER_EMAIL).trim
       getUserInfoForSSO(ssoEmail, UserRole.CommunityAdmin.id.toShort)
     } else {
       val name = requiredBodyParameter(request, Parameters.USER_NAME)
-      val email = requiredBodyParameter(request, Parameters.USER_EMAIL)
-      val password = requiredBodyParameter(request, Parameters.PASSWORD)
+      val email = requiredBodyParameter(request, Parameters.USER_EMAIL).trim
+      val password = requiredBodyParameter(request, Parameters.PASSWORD).trim
       Users(0L, name, email, BCrypt.hashpw(password, BCrypt.gensalt()), onetimePassword = true, UserRole.CommunityAdmin.id.toShort, 0L, None, None, UserSSOStatus.NotMigrated.id.toShort)
     }
   }
@@ -378,15 +378,15 @@ object ParameterExtractor {
     if (Configurations.AUTHENTICATION_SSO_ENABLED) {
       var ssoEmail: String = null
       if (ssoEmailToForce.isDefined) {
-        ssoEmail = ssoEmailToForce.get
+        ssoEmail = ssoEmailToForce.get.trim
       } else {
-        ssoEmail = requiredBodyParameter(paramMap, Parameters.USER_EMAIL)
+        ssoEmail = requiredBodyParameter(paramMap, Parameters.USER_EMAIL).trim
       }
       getUserInfoForSSO(ssoEmail, UserRole.VendorAdmin.id.toShort)
     } else {
       val name = requiredBodyParameter(paramMap, Parameters.USER_NAME)
-      val email = requiredBodyParameter(paramMap, Parameters.USER_EMAIL)
-      val password = requiredBodyParameter(paramMap, Parameters.PASSWORD)
+      val email = requiredBodyParameter(paramMap, Parameters.USER_EMAIL).trim
+      val password = requiredBodyParameter(paramMap, Parameters.PASSWORD).trim
       Users(0L, name, email, BCrypt.hashpw(password, BCrypt.gensalt()), passwordIsOneTime.getOrElse(true), UserRole.VendorAdmin.id.toShort, 0L, None, None, UserSSOStatus.NotMigrated.id.toShort)
     }
   }
@@ -405,12 +405,12 @@ object ParameterExtractor {
 
   def extractUserInfo(request:Request[AnyContent]):Users = {
     if (Configurations.AUTHENTICATION_SSO_ENABLED) {
-      val ssoEmail = requiredBodyParameter(request, Parameters.USER_EMAIL)
+      val ssoEmail = requiredBodyParameter(request, Parameters.USER_EMAIL).trim
       getUserInfoForSSO(ssoEmail, UserRole.VendorUser.id.toShort)
     } else {
       val name = requiredBodyParameter(request, Parameters.USER_NAME)
-      val email = requiredBodyParameter(request, Parameters.USER_EMAIL)
-      val password = requiredBodyParameter(request, Parameters.PASSWORD)
+      val email = requiredBodyParameter(request, Parameters.USER_EMAIL).trim
+      val password = requiredBodyParameter(request, Parameters.PASSWORD).trim
       Users(0L, name, email, BCrypt.hashpw(password, BCrypt.gensalt()), onetimePassword = true, UserRole.VendorUser.id.toShort, 0L, None, None, UserSSOStatus.NotMigrated.id.toShort)
     }
   }
@@ -429,14 +429,6 @@ object ParameterExtractor {
 		val fname:String = ParameterExtractor.requiredBodyParameter(request, Parameters.FULL_NAME)
 		val descr:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DESC)
 		Domain(0L, sname, fname, descr)
-	}
-
-	def extractOption(request:Request[AnyContent]):Options = {
-		val sname = ParameterExtractor.requiredBodyParameter(request, Parameters.SHORT_NAME)
-		val fname = ParameterExtractor.requiredBodyParameter(request, Parameters.FULL_NAME)
-		val actor = ParameterExtractor.requiredBodyParameter(request, Parameters.ACTOR).toLong
-		val descr = ParameterExtractor.optionalBodyParameter(request, Parameters.DESC)
-		Options(0L, sname, fname, descr, actor)
 	}
 
 	def extractSpecification(request:Request[AnyContent]): Specifications = {

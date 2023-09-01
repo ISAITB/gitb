@@ -97,7 +97,7 @@ class UserManager @Inject() (accountManager: AccountManager, organizationManager
       var action: DBIO[_] = null
       if (password.isDefined) {
         val q = for {u <- PersistenceSchema.users if u.id === userId} yield (u.name, u.password, u.onetimePassword)
-        action = q.update(name, BCrypt.hashpw(password.get, BCrypt.gensalt()), true)
+        action = q.update(name, BCrypt.hashpw(password.get.trim, BCrypt.gensalt()), true)
       } else {
         val q = for {u <- PersistenceSchema.users if u.id === userId} yield (u.name)
         action = q.update(name)
@@ -115,7 +115,7 @@ class UserManager @Inject() (accountManager: AccountManager, organizationManager
       var action: DBIO[_] = null
       if (password.isDefined) {
         val q = for {u <- PersistenceSchema.users if u.id === userId} yield (u.name, u.password, u.onetimePassword)
-        action = q.update(name, BCrypt.hashpw(password.get, BCrypt.gensalt()), true)
+        action = q.update(name, BCrypt.hashpw(password.get.trim, BCrypt.gensalt()), true)
       } else {
         val q = for {u <- PersistenceSchema.users if u.id === userId} yield (u.name)
         action = q.update(name)
@@ -138,7 +138,7 @@ class UserManager @Inject() (accountManager: AccountManager, organizationManager
       } else {
         if (password.isDefined) {
           val q = for {u <- PersistenceSchema.users if u.id === userId} yield (u.name, u.role, u.password, u.onetimePassword)
-          action = q.update(name.get, roleId, BCrypt.hashpw(password.get, BCrypt.gensalt()), true)
+          action = q.update(name.get, roleId, BCrypt.hashpw(password.get.trim, BCrypt.gensalt()), true)
         } else {
           val q = for {u <- PersistenceSchema.users if u.id === userId} yield (u.name, u.role)
           action = q.update(name.get, roleId)

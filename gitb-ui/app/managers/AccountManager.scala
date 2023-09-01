@@ -151,13 +151,13 @@ class AccountManager @Inject()(dbConfigProvider: DatabaseConfigProvider) extends
       actions += q.update(name.get)
     }
     //2) Update password of the user (passwords must be different
-    if (password.isDefined && oldpassword.isDefined && (password.get != oldpassword.get)) {
+    if (password.isDefined && oldpassword.isDefined && (password.get.trim != oldpassword.get.trim)) {
       //2.1) but first, check his old password if it is correct
       val user = exec(PersistenceSchema.users.filter(_.id === userId).result.headOption)
-      if (user.isDefined && BCrypt.checkpw(oldpassword.get, user.get.password)) {
+      if (user.isDefined && BCrypt.checkpw(oldpassword.get.trim, user.get.password.trim)) {
         //2.1.1) password correct, replace it with the new one
         val q = for {u <- PersistenceSchema.users if u.id === userId} yield (u.password, u.onetimePassword)
-        actions += q.update(BCrypt.hashpw(password.get, BCrypt.gensalt()), false)
+        actions += q.update(BCrypt.hashpw(password.get.trim, BCrypt.gensalt()), false)
       } else {
         //2.1.2) incorrect password => send Invalid Credentials error
         throw InvalidRequestException(ErrorCodes.INVALID_CREDENTIALS, "Invalid credentials")

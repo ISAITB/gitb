@@ -43,8 +43,8 @@ class AuthenticationService @Inject() (authorizedAction: AuthorizedAction, cc: C
 
   def migrateFunctionalAccount = authorizedAction { request =>
     authorizationManager.canMigrateAccount(request)
-    val email = ParameterExtractor.requiredBodyParameter(request, Parameters.EMAIL)
-    val password = ParameterExtractor.requiredBodyParameter(request, Parameters.PASSWORD)
+    val email = ParameterExtractor.requiredBodyParameter(request, Parameters.EMAIL).trim
+    val password = ParameterExtractor.requiredBodyParameter(request, Parameters.PASSWORD).trim
     val result = authManager.checkUserByEmail(email, password)
     if (result.isDefined) {
       if (result.get.ssoUid.isDefined || result.get.ssoEmail.isDefined) {
