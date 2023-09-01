@@ -96,7 +96,7 @@ export class OrganisationService {
     if (errorTemplate != undefined) {
       data.error_template_id = errorTemplate
     }
-    if (otherOrganisation != undefined) {
+    if (otherOrganisation) {
       data.other_organisation = otherOrganisation
       data.org_params = copyOrganisationParameters
       data.sys_params = copySystemParameters
@@ -144,7 +144,7 @@ export class OrganisationService {
     if (errorTemplate != undefined) {
       data.error_template_id = errorTemplate
     }
-    if (otherOrganisation != undefined) {
+    if (otherOrganisation) {
       data.other_organisation = otherOrganisation
       data.org_params = copyOrganisationParameters
       data.sys_params = copySystemParameters

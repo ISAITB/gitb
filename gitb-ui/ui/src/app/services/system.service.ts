@@ -115,7 +115,7 @@ export class SystemService {
     if (description != undefined) {
       data.system_description = description
     }
-    if (otherSystem != undefined) {
+    if (otherSystem) {
       data.other_system = otherSystem
       data.sys_params = copySystemParameters
       data.stm_params = copyStatementParameters
@@ -144,7 +144,7 @@ export class SystemService {
     if (version != undefined) {
       data.system_version = version
     }
-    if (otherSystem != undefined) {
+    if (otherSystem) {
       data.other_system = otherSystem
       data.sys_params = copySystemParameters
       data.stm_params = copyStatementParameters
