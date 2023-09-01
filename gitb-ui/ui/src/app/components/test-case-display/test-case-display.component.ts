@@ -28,6 +28,10 @@ export class TestCaseDisplayComponent implements OnInit {
   exportXmlPending: {[key:number]: boolean } = {}
   exportPdfPending: {[key:number]: boolean } = {}
 
+  hasDescriptions = false
+  hasDescription: {[key:number]: boolean } = {}
+  descriptionVisible: {[key:number]: boolean } = {}
+
   tagsToDisplay!: TestCaseTag[]
 
   constructor(
@@ -39,6 +43,11 @@ export class TestCaseDisplayComponent implements OnInit {
       if (testCase.tags != undefined && testCase.parsedTags == undefined) {
         testCase.parsedTags = sortBy(JSON.parse(testCase.tags), ['name'])
       }
+      this.hasDescription[testCase.id] = testCase.description != undefined && testCase.description != ''
+      if (this.hasDescription[testCase.id] && !this.hasDescriptions) {
+        this.hasDescriptions = true
+      }
+      this.descriptionVisible[testCase.id] = false
     }
   }
 
