@@ -1,0 +1,89 @@
+<div class="page">
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h4 class="title">System administration</h4>
+        </div>
+    </div>
+    <div>
+        <tabset #tabs>
+            <tab heading="System administrators" (selectTab)="showAdministrators()">
+                <!-- Administrators -->
+                <div class="tabPanel">
+                    <div class="tabControls">
+                        <button type="button" class="btn btn-default" (click)="createAdmin()">Create system administrator</button>
+                    </div>
+                    <div class="panel panel-default">
+                        <div table-directive
+                            [columns]="adminColumns"
+                            [data]="admins"
+                            noDataMessage="No administrators found"
+                            [loadingStatus]="adminStatus"
+                            [allowSelect]="true"
+                            (onSelect)="adminSelect($event)">
+                        </div>
+                    </div>
+                </div>
+            </tab>
+            <tab heading="Default landing pages" (selectTab)="showLandingPages()">
+                <!-- Landing pages -->
+                <div class="tabPanel">
+                    <div class="tabControls">
+                        <div class="btn-toolbar">
+                            <button type="button" class="btn btn-default" (click)="createLandingPage()">Create landing page</button>
+                        </div>
+                    </div>
+                    <div class="panel panel-default">
+                        <div table-directive
+                            [columns]="landingPagesColumns"
+                            [data]="landingPages"
+                            noDataMessage="No landing pages found"
+                            [loadingStatus]="landingPageStatus"
+                            [allowSelect]="true"
+                            (onSelect)="landingPageSelect($event)">
+                        </div>
+                    </div>
+                </div>
+            </tab>
+            <tab heading="Default legal notices" (selectTab)="showLegalNotices()">
+                <!-- Legal notices -->
+                <div class="tabPanel">
+                    <div class="tabControls">
+                        <div class="btn-toolbar">
+                            <button type="button" class="btn btn-default" (click)="createLegalNotice()">Create legal notice</button>
+                        </div>
+                    </div>
+                    <div class="panel panel-default">
+                        <div table-directive
+                            [columns]="legalNoticesColumns"
+                            [data]="legalNotices"
+                            noDataMessage="No legal notices found"
+                            [loadingStatus]="legalNoticeStatus"
+                            [allowSelect]="true"
+                            (onSelect)="legalNoticeSelect($event)">
+                        </div>
+                    </div>
+                </div>
+            </tab>
+            <tab heading="Default error templates" (selectTab)="showErrorTemplates()">
+                <!-- error templates -->
+                <div class="tabPanel">
+                    <div class="tabControls">
+                        <div class="btn-toolbar">
+                            <button type="button" class="btn btn-default" (click)="createErrorTemplate()">Create error template</button>
+                        </div>
+                    </div>
+                    <div class="panel panel-default">
+                        <div table-directive
+                            [columns]="errorTemplatesColumns"
+                            [data]="errorTemplates"
+                            noDataMessage="No error templates found"
+                            [loadingStatus]="errorTemplateStatus"
+                            [allowSelect]="true"
+                            (onSelect)="errorTemplateSelect($event)">
+                        </div>
+                    </div>
+                </div>
+            </tab>
+        </tabset>
+    </div>
+</div>

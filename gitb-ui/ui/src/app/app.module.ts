@@ -167,6 +167,7 @@ import { TestSuiteDisplayComponent } from './components/test-suite-display/test-
 import { TagsDisplayComponent } from './components/tags-display/tags-display.component';
 import { CreateEditTagComponent } from './modals/create-edit-tag/create-edit-tag.component';
 import { DomainSpecificationDisplayComponent } from './components/domain-specification-display/domain-specification-display.component';
+import { SystemAdministrationComponent } from './pages/admin/system-administration/system-administration.component';
 
 @NgModule({
   providers: [ 
@@ -323,7 +324,8 @@ import { DomainSpecificationDisplayComponent } from './components/domain-specifi
     TestSuiteDisplayComponent,
     TagsDisplayComponent,
     CreateEditTagComponent,
-    DomainSpecificationDisplayComponent],
+    DomainSpecificationDisplayComponent,
+    SystemAdministrationComponent],
   imports: [
     ColorPickerModule,
     BrowserModule,

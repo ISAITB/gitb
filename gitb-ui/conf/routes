@@ -208,6 +208,7 @@ DELETE  /api/organizations/:id/apiKey           @controllers.OrganizationService
 GET     /api/organizations/:id/apiKey           @controllers.OrganizationService.getAutomationKeysForOrganisation(id: Long)
 
 GET     /api/communities/all                    @controllers.CommunityService.getCommunities()
+GET     /api/communities/user                   @controllers.CommunityService.getUserCommunities()
 POST    /api/communities/create                 @controllers.CommunityService.createCommunity()
 GET     /api/communities/:id                    @controllers.CommunityService.getCommunityById(id : Long)
 POST    /api/communities/:id                    @controllers.CommunityService.updateCommunity(id : Long)

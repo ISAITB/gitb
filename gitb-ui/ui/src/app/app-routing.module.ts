@@ -59,6 +59,7 @@ import { CreateSystemComponent } from './pages/admin/user-management/system/crea
 import { SystemDetailsComponent } from './pages/admin/user-management/system/system-details/system-details.component';
 import { OrganisationTestsComponent } from './pages/organisation/organisation-tests/organisation-tests.component';
 import { Constants } from './common/constants';
+import { SystemAdministrationComponent } from './pages/admin/system-administration/system-administration.component';
 
 const routes: Routes = [
   { path: '', redirectTo: '/home', pathMatch: 'full' },  
@@ -99,8 +100,6 @@ const routes: Routes = [
       { path: 'admin/domains/:'+Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID+'/specifications/:'+Constants.NAVIGATION_PATH_PARAM.SPECIFICATION_ID+'/actors/:'+Constants.NAVIGATION_PATH_PARAM.ACTOR_ID+'/endpoints/create', component: CreateEndpointComponent },
       { path: 'admin/domains/:'+Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID+'/specifications/:'+Constants.NAVIGATION_PATH_PARAM.SPECIFICATION_ID+'/actors/:'+Constants.NAVIGATION_PATH_PARAM.ACTOR_ID+'/endpoints/:'+Constants.NAVIGATION_PATH_PARAM.ENDPOINT_ID, component: EndpointDetailsComponent },
       { path: 'admin/users' , component: UserManagementComponent },
-      { path: 'admin/users/admin/create' , component: CreateAdminComponent },
-      { path: 'admin/users/admin/:'+Constants.NAVIGATION_PATH_PARAM.USER_ID , component: AdminDetailsComponent },
       { path: 'admin/users/community/create' , component: CreateCommunityComponent },
       { path: 'admin/users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID, component: CommunityDetailsComponent, resolve: { community: CommunityResolver} },
       { path: 'admin/users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/admin/create', component: CreateCommunityAdminComponent },
@@ -128,6 +127,17 @@ const routes: Routes = [
       { path: 'admin/users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/organisation/:'+Constants.NAVIGATION_PATH_PARAM.ORGANISATION_ID+'/test/:'+Constants.NAVIGATION_PATH_PARAM.SYSTEM_ID+'/:actor_id/execute', component: TestExecutionComponent },
       { path: 'admin/export', component: ExportComponent },
       { path: 'admin/import', component: ImportComponent },
+      // System administration
+      { path: 'admin/system', component: SystemAdministrationComponent },
+      { path: 'admin/system/admin/create' , component: CreateAdminComponent },
+      { path: 'admin/system/admin/:'+Constants.NAVIGATION_PATH_PARAM.USER_ID , component: AdminDetailsComponent },
+      { path: 'admin/system/pages/create', component: CreateLandingPageComponent, resolve: { base: LandingPageResolver } },
+      { path: 'admin/system/pages/:'+Constants.NAVIGATION_PATH_PARAM.LANDING_PAGE_ID, component: LandingPageDetailsComponent },
+      { path: 'admin/system/notices/create', component: CreateLegalNoticeComponent, resolve: { base: LegalNoticeResolver } },
+      { path: 'admin/system/notices/:'+Constants.NAVIGATION_PATH_PARAM.LEGAL_NOTICE_ID, component: LegalNoticeDetailsComponent },
+      { path: 'admin/system/errortemplates/create', component: CreateErrorTemplateComponent, resolve: { base: ErrorTemplateResolver } },
+      { path: 'admin/system/errortemplates/:'+Constants.NAVIGATION_PATH_PARAM.ERROR_TEMPLATE_ID, component: ErrorTemplateDetailsComponent },
+
       // My organisation
       { path: 'organisation/:'+Constants.NAVIGATION_PATH_PARAM.ORGANISATION_ID+'/conformance', component: ConformanceStatementsComponent },
       { path: 'organisation/:'+Constants.NAVIGATION_PATH_PARAM.ORGANISATION_ID+'/conformance/system/:'+Constants.NAVIGATION_PATH_PARAM.SYSTEM_ID+'/create', component: CreateConformanceStatementComponent },

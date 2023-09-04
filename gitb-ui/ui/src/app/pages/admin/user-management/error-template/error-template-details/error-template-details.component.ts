@@ -12,6 +12,7 @@ import { ErrorTemplate } from 'src/app/types/error-template';
 import { CommunityTab } from '../../community/community-details/community-tab.enum';
 import { Constants } from 'src/app/common/constants';
 import { KeyValue } from 'src/app/types/key-value';
+import { SystemAdministrationTab } from '../../../system-administration/system-administration-tab.enum';
 
 @Component({
   selector: 'app-error-template-details',
@@ -30,6 +31,7 @@ export class ErrorTemplateDetailsComponent extends BaseComponent implements OnIn
   deletePending = false
   placeholders: KeyValue[] = []
   showContent = true
+  tooltipForDefaultCheck!: string
 
   constructor(
     public dataService: DataService,
@@ -46,7 +48,13 @@ export class ErrorTemplateDetailsComponent extends BaseComponent implements OnIn
   }
 
   ngOnInit(): void {
-    this.communityId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID))
+    if (this.route.snapshot.paramMap.has(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID)) {
+      this.communityId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID))
+      this.tooltipForDefaultCheck = 'Check this to make this error template the default one assumed for the community\'s '+this.dataService.labelOrganisationsLower()+'.'
+    } else {
+      this.communityId = Constants.DEFAULT_COMMUNITY_ID
+      this.tooltipForDefaultCheck = 'Check this to make this error template the default one assumed for all communities.'
+    }
     this.templateId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.ERROR_TEMPLATE_ID))
     this.placeholders = [
       { key: Constants.PLACEHOLDER__ERROR_DESCRIPTION, value: "The error message text (a text value that may be empty)." },
@@ -94,7 +102,11 @@ export class ErrorTemplateDetailsComponent extends BaseComponent implements OnIn
 
   copyErrorTemplate() {
     this.copyPending = true
-    this.routingService.toCreateErrorTemplate(this.communityId, false, this.templateId)
+    if (this.communityId == Constants.DEFAULT_COMMUNITY_ID) {
+      this.routingService.toCreateErrorTemplate(undefined, undefined, this.templateId)
+    } else {
+      this.routingService.toCreateErrorTemplate(this.communityId, false, this.templateId)
+    }
   }
 
   deleteErrorTemplate() {
@@ -112,7 +124,11 @@ export class ErrorTemplateDetailsComponent extends BaseComponent implements OnIn
   }
 
   cancelDetailErrorTemplate() {
-    this.routingService.toCommunity(this.communityId, CommunityTab.errorTemplates)
+    if (this.communityId == Constants.DEFAULT_COMMUNITY_ID) {
+      this.routingService.toSystemAdministration(SystemAdministrationTab.errorTemplates)
+    } else {
+      this.routingService.toCommunity(this.communityId, CommunityTab.errorTemplates)
+    }
   }
 
   preview() {

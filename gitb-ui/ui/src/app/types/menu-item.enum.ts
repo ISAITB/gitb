@@ -12,6 +12,7 @@ export enum MenuItem {
     dataImport,
     myConformanceStatements,
     myTestSessions,
-    myOrganisation
+    myOrganisation,
+    systemAdministration
 
 }

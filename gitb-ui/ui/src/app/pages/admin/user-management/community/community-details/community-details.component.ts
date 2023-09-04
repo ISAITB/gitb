@@ -162,6 +162,9 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
   ngOnInit(): void {
     this.community = this.route.snapshot.data['community']
     this.communityId = this.community.id
+    if (Number(this.communityId) == Constants.DEFAULT_COMMUNITY_ID) {
+      this.routingService.toSystemAdministration()
+    }    
     this.community.domainId = this.community.domain?.id
     this.originalDomainId = this.community.domain?.id
     this.adminColumns.push({ field: 'name', title: 'Name' })
@@ -187,15 +190,10 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
   private setupTabs() {
     const temp: Partial<Record<CommunityTab, {index: number, loader: () => any}>> = {}
     temp[CommunityTab.organisations] = {index: 0, loader: () => {this.showOrganisations()}}
-    let tabIndexOffset = 1
-    if (this.communityId != Constants.DEFAULT_COMMUNITY_ID) {
-      tabIndexOffset = 0
-      temp[CommunityTab.administrators] = {index: 1, loader: () => {this.showAdministrators()}}
-    }
-    temp[CommunityTab.landingPages] = {index: 2-tabIndexOffset, loader: () => {this.showLandingPages()}}
-    temp[CommunityTab.legalNotices] = {index: 3-tabIndexOffset, loader: () => {this.showLegalNotices()}}
-    temp[CommunityTab.errorTemplates] = {index: 4-tabIndexOffset, loader: () => {this.showErrorTemplates()}}
-    temp[CommunityTab.triggers] = {index: 5-tabIndexOffset, loader: () => {this.showTriggers()}}
+    temp[CommunityTab.landingPages] = {index: 1, loader: () => {this.showLandingPages()}}
+    temp[CommunityTab.legalNotices] = {index: 2, loader: () => {this.showLegalNotices()}}
+    temp[CommunityTab.errorTemplates] = {index: 3, loader: () => {this.showErrorTemplates()}}
+    temp[CommunityTab.triggers] = {index: 4, loader: () => {this.showTriggers()}}
     this.tabTriggers = temp as Record<CommunityTab, {index: number, loader: () => any}>
   }
 
@@ -548,10 +546,6 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
 
   organisationSelect(organization: Organisation) {
     this.routingService.toOrganisationDetails(this.communityId, organization.id)
-  }
-
-  isDefaultCommunity() {
-    return this.communityId == Number(Constants.DEFAULT_COMMUNITY_ID)
   }
 
   createLandingPage(copyTestBedDefault: boolean) {

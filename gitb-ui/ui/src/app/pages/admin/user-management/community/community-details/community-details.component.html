@@ -17,7 +17,7 @@
                     <button class="btn btn-default" type="button" (click)="updateConformanceCertificateSettings()" [disabled]="savePending || deletePending">Edit conformance certificate settings</button>
                     <button class="btn btn-default" type="button" (click)="updateParameters()" [disabled]="savePending || deletePending">Edit custom member properties</button>
                     <button class="btn btn-default" type="button" (click)="editLabels()" [disabled]="savePending || deletePending">Edit labels</button>
-                    <button class="btn btn-default" type="button" *ngIf="dataService.isSystemAdmin && !isDefaultCommunity()" (click)="deleteCommunity()" [disable]="savePending" [pending]="deletePending">Delete</button>
+                    <button class="btn btn-default" type="button" *ngIf="dataService.isSystemAdmin" (click)="deleteCommunity()" [disable]="savePending" [pending]="deletePending">Delete</button>
                     <button class="btn btn-default" type="button" *ngIf="dataService.isSystemAdmin" (click)="cancelCommunityDetail()">Back</button>
                 </div>
             </div>

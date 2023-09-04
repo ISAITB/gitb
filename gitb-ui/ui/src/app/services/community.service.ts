@@ -45,6 +45,13 @@ export class CommunityService {
     })
   }
 
+  getUserCommunities() {
+    return this.restService.get<Community[]>({
+      path: ROUTES.controllers.CommunityService.getUserCommunities().url,
+      authenticate: true
+    })
+  }
+
   getUserCommunity() {
     return this.restService.get<Community>({
       path: ROUTES.controllers.CommunityService.getUserCommunity().url,

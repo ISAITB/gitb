@@ -25,7 +25,7 @@
                         <label class="col-sm-3 control-label" for="default">Default:</label>
                         <div class="col-sm-8">
                             <input id="default" name="default" [(ngModel)]="page.default" [disabled]="isDefault" type="checkbox" class="form-check">
-                            <app-tooltip [inline]="true" [tbTooltip]="'Check this to make this landing page the default one assumed for the community\'s '+dataService.labelOrganisationsLower()+'.'"></app-tooltip>
+                            <app-tooltip [inline]="true" [tbTooltip]="tooltipForDefaultCheck"></app-tooltip>
                         </div>
                     </div>
                 </div>

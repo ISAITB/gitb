@@ -8,6 +8,7 @@ import { User } from 'src/app/types/user.type';
 import { mergeMap, map, share } from 'rxjs/operators'
 import { EMPTY } from 'rxjs';
 import { RoutingService } from 'src/app/services/routing.service';
+import { SystemAdministrationTab } from '../../../system-administration/system-administration-tab.enum';
 
 @Component({
   selector: 'app-create-admin',
@@ -96,7 +97,7 @@ export class CreateAdminComponent extends BaseComponent implements OnInit, After
   }
 
   cancelCreateAdmin() {
-    this.routingService.toUserManagement()
+    this.routingService.toSystemAdministration(SystemAdministrationTab.administrators)
   }
 
 }

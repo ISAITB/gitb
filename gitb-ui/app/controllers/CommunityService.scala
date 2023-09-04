@@ -34,6 +34,14 @@ class CommunityService @Inject() (implicit ec: ExecutionContext, authorizedActio
     ResponseConstructor.constructJsonResponse(json)
   }
 
+  def getUserCommunities() = authorizedAction { request =>
+    val communityIds = ParameterExtractor.extractLongIdsQueryParameter(request)
+    authorizationManager.canViewCommunities(request, communityIds)
+    val communities = communityManager.getCommunities(communityIds, skipDefault = true)
+    val json = JsonUtil.jsCommunities(communities).toString()
+    ResponseConstructor.constructJsonResponse(json)
+  }
+
   /**
     * Creates new community
     */

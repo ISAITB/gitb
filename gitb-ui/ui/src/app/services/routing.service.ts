@@ -6,6 +6,7 @@ import { OrganisationTab } from '../pages/admin/user-management/organisation/org
 import { Constants } from '../common/constants';
 import { DataService } from './data.service';
 import { MenuItem } from '../types/menu-item.enum';
+import { SystemAdministrationTab } from '../pages/admin/system-administration/system-administration-tab.enum';
 
 @Injectable({
   providedIn: 'root'
@@ -54,6 +55,8 @@ export class RoutingService {
             this.dataService.changePage({ menuItem: MenuItem.dataExport })
           } else if (event.url.startsWith('/admin/import')) {
             this.dataService.changePage({ menuItem: MenuItem.dataImport })
+          } else if (event.url.startsWith('/admin/system')) {
+            this.dataService.changePage({ menuItem: MenuItem.systemAdministration })
           } else if (event.url.startsWith('/organisation/conformance')) {
             this.dataService.changePage({ menuItem: MenuItem.myConformanceStatements })
           } else if (event.url.startsWith('/organisation/tests')) {
@@ -77,11 +80,11 @@ export class RoutingService {
   }
 
   toCreateTestBedAdmin() {
-    return this.navigate(MenuItem.communityManagement, ['admin', 'users', 'admin', 'create'])
+    return this.navigate(MenuItem.systemAdministration, ['admin', 'system', 'admin', 'create'])
   }
 
   toTestBedAdmin(adminId: number) {
-    return this.navigate(MenuItem.communityManagement, ['admin', 'users', 'admin', adminId])
+    return this.navigate(MenuItem.systemAdministration, ['admin', 'system', 'admin', adminId])
   }
 
   toTestHistory(organisationId: number, sessionIdToShow?: string) {
@@ -328,28 +331,52 @@ export class RoutingService {
     return this.navigate(MenuItem.communityManagement, ['admin', 'users'])
   }
 
-  toCreateErrorTemplate(communityId: number, addCopyTestBedDefault: boolean, copySource?: number) {
-    this.navigate(MenuItem.communityManagement, ['admin', 'users', 'community', communityId, 'errortemplates', 'create'], this.addCommunityContentExtras(addCopyTestBedDefault, copySource))
+  toCreateErrorTemplate(communityId?: number, addCopyTestBedDefault?: boolean, copySource?: number) {
+    if (communityId == undefined) {
+      return this.navigate(MenuItem.systemAdministration, ['admin', 'system', 'errortemplates', 'create'], this.addCommunityContentExtras(undefined, copySource))
+    } else {
+      return this.navigate(MenuItem.communityManagement, ['admin', 'users', 'community', communityId, 'errortemplates', 'create'], this.addCommunityContentExtras(addCopyTestBedDefault, copySource))
+    }
   }
 
-  toErrorTemplate(communityId: number, templateId: number) {
-    return this.navigate(MenuItem.communityManagement, ['admin', 'users', 'community', communityId, 'errortemplates', templateId])
+  toErrorTemplate(communityId: number|undefined, templateId: number) {
+    if (communityId == undefined) {
+      return this.navigate(MenuItem.systemAdministration, ['admin', 'system', 'errortemplates', templateId])
+    } else {
+      return this.navigate(MenuItem.communityManagement, ['admin', 'users', 'community', communityId, 'errortemplates', templateId])
+    }
   }
 
-  toCreateLegalNotice(communityId: number, addCopyTestBedDefault: boolean, copySource?: number) {
-    return this.navigate(MenuItem.communityManagement, ['admin', 'users', 'community', communityId, 'notices', 'create'], this.addCommunityContentExtras(addCopyTestBedDefault, copySource))
+  toCreateLegalNotice(communityId?: number, addCopyTestBedDefault?: boolean, copySource?: number) {
+    if (communityId == undefined) {
+      return this.navigate(MenuItem.systemAdministration, ['admin', 'system', 'notices', 'create'], this.addCommunityContentExtras(undefined, copySource))
+    } else {
+      return this.navigate(MenuItem.communityManagement, ['admin', 'users', 'community', communityId, 'notices', 'create'], this.addCommunityContentExtras(addCopyTestBedDefault, copySource))
+    }
   }
 
-  toLegalNotice(communityId: number, noticeId: number) {
-    return this.navigate(MenuItem.communityManagement, ['admin', 'users', 'community', communityId, 'notices', noticeId])
+  toLegalNotice(communityId: number|undefined, noticeId: number) {
+    if (communityId == undefined) {
+      return this.navigate(MenuItem.systemAdministration, ['admin', 'system', 'notices', noticeId])
+    } else {
+      return this.navigate(MenuItem.communityManagement, ['admin', 'users', 'community', communityId, 'notices', noticeId])
+    }
   }
 
-  toCreateLandingPage(communityId: number, addCopyTestBedDefault: boolean, copySource?: number) {
-    return this.navigate(MenuItem.communityManagement, ['admin', 'users', 'community', communityId, 'pages', 'create'], this.addCommunityContentExtras(addCopyTestBedDefault, copySource))
+  toCreateLandingPage(communityId?: number, addCopyTestBedDefault?: boolean, copySource?: number) {
+    if (communityId == undefined) {
+      return this.navigate(MenuItem.systemAdministration, ['admin', 'system', 'pages', 'create'], this.addCommunityContentExtras(undefined, copySource))
+    } else {
+      return this.navigate(MenuItem.communityManagement, ['admin', 'users', 'community', communityId, 'pages', 'create'], this.addCommunityContentExtras(addCopyTestBedDefault, copySource))
+    }    
   }
 
-  toLandingPage(communityId: number, pageId: number) {
-    return this.navigate(MenuItem.communityManagement, ['admin', 'users', 'community', communityId, 'pages', pageId])
+  toLandingPage(communityId: number|undefined, pageId: number) {
+    if (communityId == undefined) {
+      return this.navigate(MenuItem.systemAdministration, ['admin', 'system', 'pages', pageId])
+    } else {
+      return this.navigate(MenuItem.communityManagement, ['admin', 'users', 'community', communityId, 'pages', pageId])
+    }
   }
 
   toCreateOwnOrganisationUser() {
@@ -388,6 +415,14 @@ export class RoutingService {
     return this.navigate(MenuItem.dataExport, ['admin', 'export'])
   }
 
+  toSystemAdministration(tab?: SystemAdministrationTab) {
+    if (tab != undefined) {
+      return this.navigate(MenuItem.systemAdministration, [ 'admin', 'system' ], { state: { tab: SystemAdministrationTab[tab] } })
+    } else {
+      return this.navigate(MenuItem.systemAdministration, [ 'admin', 'system' ])
+    }
+  }
+
   private addTabExtras(tabIndex?: number) {
     let extras: NavigationExtras|undefined = undefined
     if (tabIndex != undefined) {
@@ -396,9 +431,9 @@ export class RoutingService {
     return extras
   }
 
-  private addCommunityContentExtras(copyTestBedDefault: boolean, copySourceId?: number) {
+  private addCommunityContentExtras(copyTestBedDefault: boolean|undefined, copySourceId?: number) {
     let extras: NavigationExtras|undefined = undefined
-    if (copyTestBedDefault || copySourceId != undefined) {
+    if ((copyTestBedDefault != undefined && copyTestBedDefault) || copySourceId != undefined) {
       extras = {}
       extras.queryParams = {}
       if (copyTestBedDefault) {

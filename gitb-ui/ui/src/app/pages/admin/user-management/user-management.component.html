@@ -1,21 +1,4 @@
 <div class="page users">
-    <!-- Administrators -->
-    <div class="panel panel-default">
-        <div class="panel-heading">
-            <h4 class="title">Administrators</h4>
-            <div class="btn-toolbar">
-                <button type="button" class="btn btn-default" (click)="createAdmin()">Create administrator</button>
-            </div>
-        </div>
-        <div table-directive
-            [columns]="adminColumns"
-            [data]="admins"
-			noDataMessage="No administrators found"
-			[loadingStatus]="adminStatus" 
-            [allowSelect]="true"
-            (onSelect)="adminSelect($event)">
-        </div>
-    </div>
     <!-- communities -->
     <div class="panel panel-default">
         <div class="panel-heading">
