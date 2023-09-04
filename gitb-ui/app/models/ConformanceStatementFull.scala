@@ -29,6 +29,7 @@ class ConformanceStatementFull(
     val testCaseDescription: Option[String],
     val testCaseOptional: Option[Boolean],
     val testCaseDisabled: Option[Boolean],
+    val testCaseTags: Option[String],
     result: String,
     val outputMessage: Option[String],
     val sessionId: Option[String],

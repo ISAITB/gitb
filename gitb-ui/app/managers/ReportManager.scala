@@ -17,7 +17,7 @@ import org.apache.commons.lang3.StringUtils
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
 import utils.signature.{CreateSignature, SigUtils}
-import utils.{JacksonUtil, MimeUtil, RepositoryUtils, TimeUtil}
+import utils.{JacksonUtil, JsonUtil, MimeUtil, RepositoryUtils, TimeUtil}
 
 import java.io.{File, FileOutputStream, StringReader}
 import java.nio.file.{Files, Path}
@@ -466,7 +466,7 @@ class ReportManager @Inject() (reportHelper: ReportHelper, triggerHelper: Trigge
       0L, "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Specification), "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Specification),
       Some("Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.SpecificationGroup)), Some("Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.SpecificationGroup)),
       "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.SpecificationInGroup), "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.SpecificationInGroup),
-      Some(index), Some("Sample Test Suite "+index), Some("Description for Sample Test Suite "+index), Some("Sample Test Case "+index), Some("Description for Sample Test Case "+index), Some(false), Some(false), "SUCCESS", Some("An output message for the test session"),
+      Some(index), Some("Sample Test Suite "+index), Some("Description for Sample Test Suite "+index), Some("Sample Test Case "+index), Some("Description for Sample Test Case "+index), Some(false), Some(false), None,  "SUCCESS", Some("An output message for the test session"),
       None, None, 0L, 0L, 0L, 0L, 0L, 0L)
   }
 
@@ -623,6 +623,10 @@ class ReportManager @Inject() (reportHelper: ReportHelper, triggerHelper: Trigge
         testCaseOverview.setOutputMessage(info.outputMessage.orNull)
         testCaseOverview.setOptional(info.testCaseOptional.get)
         testCaseOverview.setDisabled(info.testCaseDisabled.get)
+        if (info.testCaseTags.isDefined) {
+          val parsedTags = JsonUtil.parseJsTags(info.testCaseTags.get).map(x => new TestCaseOverview.Tag(x.name, x.foreground.getOrElse("#777777"), x.background.getOrElse("#FFFFFF")))
+          testCaseOverview.setTags(new util.ArrayList(parsedTags.asJavaCollection))
+        }
         if (addTestCases) {
           testCaseOverview.setTitle("Test Case Report #" + index)
           testCaseOverview.setOrganisation(info.organizationName)

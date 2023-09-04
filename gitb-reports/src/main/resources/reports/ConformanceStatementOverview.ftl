@@ -25,6 +25,15 @@
             .test-suite-header {
                 display: block;
             }
+            .test-case-container.disabled .test-case-first-line .test-case-name > a {
+                color: #847ef0;
+            }
+            .test-case-container.disabled .test-case-description {
+                color: #B4B4B4;
+            }
+            .test-case-prescription-level {
+                padding-right: 20px;
+            }
             .test-suite-name {
                 display: inline-block;
                 font-weight: bold;
@@ -48,7 +57,7 @@
                 border: 1px solid #000000;
                 margin-top: 5px;
                 border-radius: 5px;
-                padding: 5px 10px;;
+                padding: 5px 10px;
                 background: #efefef;
                 page-break-inside: avoid;
             }
@@ -56,43 +65,51 @@
                 display: inline-block;
                 font-weight: bold;
             }
-            .test-case-name.no-link {
-                font-weight: normal;
-            }
-            .test-case-name.ignored {
-                font-style: italic;
-            }
             .test-case-description {
                 display: inline-block;
-                border-left: 1px solid #7c7c7c;
-                padding-left: 10px;
-                margin-left: 10px;
-                margin-right: 20px;
+                margin-top: 5px;
+                margin-bottom: 5px;
+                width: 99%;
+            }
+            .test-case-first-line-start {
+                display: inline-block;
             }
             .test-case-status {
                 display: inline;
                 float: right;
             }
+            .test-case-table {
+                width: 950px;
+            }
+            .test-case-prescription-td {
+                width: 20px;
+            }
+            .test-case-name-td {
+            }
+            .test-case-tags-td {
+                text-align: right;
+                vertical-align: top;
+            }
+            .test-case-tags {
+                padding-right: 10px;
+                padding-left: 10px;
+            }
+            .test-case-tag {
+                display: inline;
+                border-radius: 15px;
+                padding-left: 5px;
+                padding-right: 5px;
+                margin-right: 3px;
+                font-weight: bold;
+                font-size: smaller;
+                white-space: nowrap;
+            }
             .test-suite-header-texts {
                 display: inline-block;
                 width: 95%;
             }
-            .test-case-texts {
-                display: inline-block;
-                width: 95%;
-            }
-            .test-suite-name {
-                min-width: 180px;
-            }
-            .test-suite-description, .test-case-name, test-case-description {
-                min-width: 170px;
-            }
             .test-suites td {
                 vertical-align: top;
-            }
-            .section-title-note {
-                padding-left: 10px;
-                padding-right: 10px;
             }
 	    </style>
     </head>
@@ -178,20 +195,6 @@
                 <div class="section-title">
                     <div>Test cases</div>
                 </div>
-                <#if hasOptionalTests || hasDisabledTests>
-                    <div class="section-title-note">
-                        <#if hasOptionalTests && hasDisabledTests>
-                            <b>Note:</b> The list below includes test cases that are optional (*) and disabled (**), displayed also in italics, that do not count towards the
-                            overall conformance status.
-                        <#elseif hasOptionalTests>
-                            <b>Note:</b> The list below includes test cases that are optional (*), displayed also in italics, that do not count towards the
-                            overall conformance status.
-                        <#else>
-                            <b>Note:</b> The list below includes test cases that are disabled (**), displayed also in italics, that do not count towards the
-                            overall conformance status.
-                        </#if>
-                    </div>
-                </#if>
                 <div class="section-content">
                     <#assign overallIndex = 0>
                     <#list testSuites as testSuite>
@@ -216,18 +219,26 @@
                                 <#list testSuite.testCases as testCase>
                                     <#assign index = testCase?counter>
                                     <#assign overallIndex = overallIndex + 1>
-                                    <div class="test-case-container">
-                                        <div class="test-case-texts">
-                                            <table>
-                                                <tr>
-                                                    <td><div class="test-case-name <#if testCase.optional || testCase.disabled>ignored</#if>"><div><#if includeTestCases?? && includeTestCases><a class="page-link" href="#test-${tsIndex}-${index}">#${overallIndex}</a>: </#if>${escape(testCase.testName)}<#if testCase.optional> *</#if><#if testCase.disabled> **</#if></div></div></td>
-                                                    <#if testCase.testDescription??>
-                                                        <td><div class="test-case-description"><div>${escape(testCase.testDescription)}</div></div></td>
-                                                    </#if>
-                                                </tr>
-                                            </table>
+                                    <div class="test-case-container<#if testCase.disabled> disabled</#if>">
+                                        <div class="test-case-first-line">
+                                            <div class="test-case-first-line-start">
+                                                <table class="test-case-table">
+                                                    <tr>
+                                                        <#if hasOptionalTests || hasDisabledTests>
+                                                            <td class="test-case-prescription-td"><div class="test-case-prescription-level icon"><img src="classpath:reports/images/icon-<#if testCase.disabled>disabled<#elseif testCase.optional>optional<#else>required</#if>.png"/></div></td>
+                                                        </#if>
+                                                        <td class="test-case-name-td"><div class="test-case-name"><#if includeTestCases?? && includeTestCases><a class="page-link" href="#test-${tsIndex}-${index}"></#if>${escape(testCase.testName)}<#if includeTestCases?? && includeTestCases></a></#if></div></td>
+                                                        <#if testCase.tags??>
+                                                            <td class="test-case-tags-td"><div class="test-case-tags"><#list testCase.tags as tag><div class="test-case-tag" style="background-color: ${tag.background()}; color: ${tag.foreground()}">${tag.name()}</div></#list></div></td>
+                                                        </#if>
+                                                    </tr>
+                                                </table>
+                                            </div>
+                                            <div class="test-case-status icon value-inline"><img src="classpath:reports/images/icon-${testCase.reportResult}.png"/></div>
                                         </div>
-                                        <div class="test-case-status icon value-inline"><img src="classpath:reports/images/icon-${testCase.reportResult}.png"/></div>
+                                        <#if testCase.testDescription?? && testCase.testDescription != "">
+                                            <div class="test-case-description"><div>${escape(testCase.testDescription)}</div></div>
+                                        </#if>
                                     </div>
                                 </#list>
                             </div>

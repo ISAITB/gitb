@@ -842,7 +842,7 @@ class ConformanceManager @Inject() (systemManager: SystemManager, triggerManager
 					resultActor.id, resultActor.actorId, resultActor.name,
 					resultSpec.id, specName, specNameFull, resultSpecGroup.map(_.shortname), resultSpecGroup.map(_.fullname), resultSpec.shortname, resultSpec.fullname,
 					Some(resultTestSuite.id), Some(resultTestSuite.shortname), resultTestSuite.description,
-					Some(resultTestCase.shortname), resultTestCase.description, Some(resultTestCase.isOptional), Some(resultTestCase.isDisabled),
+					Some(resultTestCase.shortname), resultTestCase.description, Some(resultTestCase.isOptional), Some(resultTestCase.isDisabled), resultTestCase.tags,
 					resultConfResult.result, resultConfResult.outputMessage, resultConfResult.testsession, resultConfResult.updateTime, 0L, 0L, 0L, 0L, 0L, 0L)
 			resultBuilder.addConformanceResult(conformanceStatement, resultTestCase.isOptional, resultTestCase.isDisabled)
 		}
@@ -919,7 +919,7 @@ class ConformanceManager @Inject() (systemManager: SystemManager, triggerManager
 				result._7, result._8, result._9,
 				result._10, result._11, result._12,
 				result._13, specName, specNameFull, result._19, result._20, result._14, result._15,
-				None, None, None, None, None, None, None, result._16, None, result._17, result._18,
+				None, None, None, None, None, None, None, None, result._16, None, result._17, result._18,
 				0L, 0L, 0L, 0L, 0L, 0L)
 			resultBuilder.addConformanceResult(statement, result._21, result._22)
 		}

@@ -30,6 +30,7 @@ public class TestCaseOverview {
     private List<LogMessage> logMessages;
     private boolean optional;
     private boolean disabled;
+    private List<Tag> tags;
 
     private List<Report> steps = new ArrayList<>();
 
@@ -213,6 +214,14 @@ public class TestCaseOverview {
         return logMessages;
     }
 
+    public List<Tag> getTags() {
+        return tags;
+    }
+
+    public void setTags(List<Tag> tags) {
+        this.tags = tags;
+    }
+
     public void setLogMessages(List<String> logLines) {
         logMessages = null;
         var tempMessages = new ArrayList<LogMessage>();
@@ -271,4 +280,6 @@ public class TestCaseOverview {
             return text;
         }
     }
+
+    public record Tag(String name, String foreground, String background) {}
 }
