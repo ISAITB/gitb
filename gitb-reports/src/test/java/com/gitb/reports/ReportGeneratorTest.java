@@ -52,22 +52,23 @@ public class ReportGeneratorTest {
         data.setTestSuiteDescription(description);
         data.setTestCases(List.of(
                 getTestCaseOverview("Test Case Report #1", specs),
-                getTestCaseOverview("Test Case Report #2", specs, true, false),
-                getTestCaseOverview("Test Case Report #3", specs, false, true),
+                getTestCaseOverview("Test Case Report #2", specs, true, false, List.of(new TestCaseOverview.Tag("security", "Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. ", "#FFFFFF", "#ff3c33"), new TestCaseOverview.Tag("performance", "Test case relevant to performance issues.", "#FFFFFF", "#000000"))),
+                getTestCaseOverview("Test Case Report #3", specs, false, true, null),
                 getTestCaseOverview("Test Case Report #4", specs),
-                getTestCaseOverview("Test Case Report #5", specs, false, false)
+                getTestCaseOverview("Test Case Report #5", specs, false, false, List.of(new TestCaseOverview.Tag("security", "Test case relevant to security issues.", "#FFFF00", "#ff3c33"), new TestCaseOverview.Tag("first issue", "First issue to deal with.", "#FFFFFF", "#ff3c33")))
         ));
         return data;
     }
 
     private TestCaseOverview getTestCaseOverview(String title, ReportSpecs specs) throws DatatypeConfigurationException {
-        return getTestCaseOverview(title, specs, false, false);
+        return getTestCaseOverview(title, specs, false, false, null);
     }
 
-    private TestCaseOverview getTestCaseOverview(String title, ReportSpecs specs, boolean optional, boolean disabled) throws DatatypeConfigurationException {
+    private TestCaseOverview getTestCaseOverview(String title, ReportSpecs specs, boolean optional, boolean disabled, List<TestCaseOverview.Tag> tags) throws DatatypeConfigurationException {
         TestCaseOverview data = new TestCaseOverview();
         // Labels
         data.setTitle(title);
+        data.setTags(tags);
         data.setLabelOrganisation("Organisation");
         data.setLabelSystem("System");
         data.setLabelDomain("Domain");
@@ -82,8 +83,10 @@ public class ReportGeneratorTest {
 //        data.setTestSpecification("My specificationMy specificationMy specificationMy specificationMy specificationMy specificationMy specificationMy specificationMy specificationMy specificationMy specificationMy specificationMy specificationMy specificationMy specificationMy specificationMy specification");
         data.setTestActor("My actor");
         data.setTestName("Test case 1");
-//        data.setTestDescription("Description for test case 1");
-        data.setTestDescription("Description for test case 1Description for test case 1Description for test case 1Description for test case 1Description for test case 1Description for test case 1Description for test case 1Description for test case 1Description for test case 1Description for test case 1Description for test case 1Description for test case 1Description for test case 1Description for test case 1Description for test case 1Description for test case 1Description for test case 1");
+//        data.setTestName("Test case 1 Test case 1 Test case 1 Test case 1 Test case 1 Test case 1 Test case 1 Test case 1 Test case 1 Test case 1 Test case 1 Test case 1 Test case 1 Test case 1 Test case 1 Test case 1 Test case 1 Test case 1 Test case 1 Test case 1 Test case 1 ");
+        data.setTestDescription("Description for test case 1");
+//        data.setTestDescription("");
+//        data.setTestDescription("Description for test case 1. Description for test case 1. Description for test case 1. Description for test case 1. Description for test case 1. Description for test case 1. Description for test case 1. Description for test case 1. Description for test case 1. ");
         data.setReportResult(TestResultType.SUCCESS.value());
         data.setStartTime("06/04/2023 10:21:43");
         data.setEndTime("06/04/2023 10:21:44");
@@ -226,7 +229,7 @@ public class ReportGeneratorTest {
         data.setIncludeDetails(true);
         data.setIncludeMessage(true);
         data.setIncludeTestStatus(true);
-        data.setIncludeTestCases(true);
+        data.setIncludeTestCases(false);
         data.setMessage("<strong>This is the result.</strong>");
 
         data.setOverallStatus("SUCCESS");

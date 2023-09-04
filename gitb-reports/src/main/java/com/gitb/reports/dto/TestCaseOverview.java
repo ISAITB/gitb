@@ -281,5 +281,5 @@ public class TestCaseOverview {
         }
     }
 
-    public record Tag(String name, String foreground, String background) {}
+    public record Tag(String name, String description, String foreground, String background) {}
 }

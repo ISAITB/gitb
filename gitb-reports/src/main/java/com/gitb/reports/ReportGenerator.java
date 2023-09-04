@@ -4,6 +4,7 @@ import com.gitb.core.AnyContent;
 import com.gitb.core.ValueEmbeddingEnumeration;
 import com.gitb.reports.dto.ConformanceStatementOverview;
 import com.gitb.reports.dto.TestCaseOverview;
+import com.gitb.reports.dto.TestSuiteOverview;
 import com.gitb.reports.dto.tar.ContextItem;
 import com.gitb.reports.dto.tar.Report;
 import com.gitb.reports.dto.tar.ReportItem;
@@ -357,6 +358,24 @@ public class ReportGenerator {
         return report;
     }
 
+    private List<TestCaseOverview.Tag> extractDistinctTags(List<TestSuiteOverview> testSuites) {
+        // Collect all distinct tags (by name and colours) that have a description.
+        Map<String, TestCaseOverview.Tag> uniqueTags = new HashMap<>();
+        testSuites.stream().map(TestSuiteOverview::getTestCases)
+                .flatMap(List::stream)
+                .filter((tc) -> tc.getTags() != null && !tc.getTags().isEmpty())
+                .map(TestCaseOverview::getTags)
+                .flatMap(List::stream)
+                .filter(tag -> StringUtils.isNotBlank(tag.description()))
+                .forEach(tag -> uniqueTags.putIfAbsent(tag.name()+"|"+tag.background()+"|"+tag.foreground(), tag));
+        // Sort by name.
+        if (uniqueTags.isEmpty()) {
+            return Collections.emptyList();
+        } else {
+            return uniqueTags.values().stream().sorted(Comparator.comparing(TestCaseOverview.Tag::name)).toList();
+        }
+    }
+
     public void writeConformanceStatementOverviewReport(ConformanceStatementOverview overview, OutputStream outputStream, ReportSpecs specs) {
         if (overview.getReportDate() == null) {
             SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
@@ -376,8 +395,14 @@ public class ReportGenerator {
             // Flags for presence of optional and disabled test cases.
             boolean hasOptionalTests = overview.getTestSuites().stream().anyMatch(testSuite -> testSuite.getTestCases().stream().anyMatch(TestCaseOverview::isOptional));
             boolean hasDisabledTests = overview.getTestSuites().stream().anyMatch(testSuite -> testSuite.getTestCases().stream().anyMatch(TestCaseOverview::isDisabled));
+            boolean hasRequiredTests = overview.getTestSuites().stream().anyMatch(testSuite -> testSuite.getTestCases().stream().anyMatch((tc) -> !tc.isDisabled() && !tc.isOptional()));
             parameters.put("hasOptionalTests", hasOptionalTests);
             parameters.put("hasDisabledTests", hasDisabledTests);
+            parameters.put("hasRequiredTests", hasRequiredTests);
+            var distinctTags = extractDistinctTags(overview.getTestSuites());
+            if (!distinctTags.isEmpty()) {
+                parameters.put("distinctTags", distinctTags);
+            }
             if (overview.getIncludeTestStatus()) {
                 parameters.put("testStatus", overview.getTestStatus());
             }

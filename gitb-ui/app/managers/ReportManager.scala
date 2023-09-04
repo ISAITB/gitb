@@ -624,7 +624,7 @@ class ReportManager @Inject() (reportHelper: ReportHelper, triggerHelper: Trigge
         testCaseOverview.setOptional(info.testCaseOptional.get)
         testCaseOverview.setDisabled(info.testCaseDisabled.get)
         if (info.testCaseTags.isDefined) {
-          val parsedTags = JsonUtil.parseJsTags(info.testCaseTags.get).map(x => new TestCaseOverview.Tag(x.name, x.foreground.getOrElse("#777777"), x.background.getOrElse("#FFFFFF")))
+          val parsedTags = JsonUtil.parseJsTags(info.testCaseTags.get).map(x => new TestCaseOverview.Tag(x.name, x.description.orNull, x.foreground.getOrElse("#777777"), x.background.getOrElse("#FFFFFF")))
           testCaseOverview.setTags(new util.ArrayList(parsedTags.asJavaCollection))
         }
         if (addTestCases) {

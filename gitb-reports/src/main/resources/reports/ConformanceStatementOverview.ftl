@@ -28,6 +28,9 @@
             .test-case-container.disabled .test-case-first-line .test-case-name > a {
                 color: #847ef0;
             }
+            .test-case-container.disabled .test-case-first-line .test-case-name {
+                color: #B4B4B4;
+            }
             .test-case-container.disabled .test-case-description {
                 color: #B4B4B4;
             }
@@ -110,6 +113,48 @@
             }
             .test-suites td {
                 vertical-align: top;
+            }
+            .test-case-legend {
+                border: 1px solid #404040;
+                margin-top: 10px;
+                border-radius: 5px;
+                background: #404040;
+                page-break-inside: avoid;
+                position: relative;
+            }
+            .legend-prescription-text {
+                padding-left: 5px;
+                padding-right: 30px;
+                font-style: italic;
+            }
+            .legend-tags-div.with-padding {
+                padding-top: 10px;
+            }
+            .legend-tag-description {
+                padding-left: 10px;
+                padding-top: 3px;
+                padding-bottom: 3px;
+                font-style: italic;
+            }
+            .legend-highlight {
+                position: absolute;
+                top: 8px;
+                left: 6px;
+            }
+            .legend-highlight > img {
+                width: 24px;
+                margin-top: -4px;
+            }
+            .legend-content {
+                margin-left: 36px;
+                background: #efefef;
+                padding: 10px;
+                border-top-right-radius: 5px;
+                border-bottom-right-radius: 5px;
+            }
+            .legend-tag-pill .test-case-tag {
+                margin-top: 3px;
+                margin-bottom: 3px;
             }
 	    </style>
     </head>
@@ -229,7 +274,7 @@
                                                         </#if>
                                                         <td class="test-case-name-td"><div class="test-case-name"><#if includeTestCases?? && includeTestCases><a class="page-link" href="#test-${tsIndex}-${index}"></#if>${escape(testCase.testName)}<#if includeTestCases?? && includeTestCases></a></#if></div></td>
                                                         <#if testCase.tags??>
-                                                            <td class="test-case-tags-td"><div class="test-case-tags"><#list testCase.tags as tag><div class="test-case-tag" style="background-color: ${tag.background()}; color: ${tag.foreground()}">${tag.name()}</div></#list></div></td>
+                                                            <td class="test-case-tags-td"><div class="test-case-tags"><#list testCase.tags as tag><div class="test-case-tag" style="background-color: ${tag.background()}; color: ${tag.foreground()}">${escape(tag.name())}</div></#list></div></td>
                                                         </#if>
                                                     </tr>
                                                 </table>
@@ -244,6 +289,46 @@
                             </div>
                         </div>
                     </#list>
+                    <#if hasOptionalTests || hasDisabledTests || distinctTags??>
+                        <div class="test-case-legend">
+                            <div class="legend-highlight"><img src="classpath:reports/images/icon-legend.png"/></div>
+                            <div class="legend-content">
+                                <#if hasOptionalTests || hasDisabledTests>
+                                    <div class="legend-prescription-div">
+                                        <table class="legend-prescription-table">
+                                            <tr>
+                                                <#if hasRequiredTests>
+                                                    <td class="legend-prescription-icon icon"><img src="classpath:reports/images/icon-required.png"/></td>
+                                                    <td class="legend-prescription-text">Required test case.</td>
+                                                </#if>
+                                                <#if hasOptionalTests>
+                                                    <td class="legend-prescription-icon icon"><img src="classpath:reports/images/icon-optional.png"/></td>
+                                                    <td class="legend-prescription-text">Optional test case.</td>
+                                                </#if>
+                                                <#if hasDisabledTests>
+                                                    <td class="legend-prescription-icon icon"><img src="classpath:reports/images/icon-disabled.png"/></td>
+                                                    <td class="legend-prescription-text">Disabled test case.</td>
+                                                </#if>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                </#if>
+                                <#if distinctTags??>
+                                    <div class="legend-tags-div <#if hasOptionalTests || hasDisabledTests>with-padding</#if>">
+                                        <table class="legend-tag-table">
+                                            <#list distinctTags as tag>
+                                                <tr>
+                                                    <td class="legend-tag-pill"><div class="test-case-tag" style="background-color: ${tag.background()}; color: ${tag.foreground()}"
+                                                    >${escape(tag.name())}</div></td>
+                                                    <td class="legend-tag-description">${escape(tag.description())}</td>
+                                                </tr>
+                                            </#list>
+                                        </table>
+                                    </div>
+                                </#if>
+                            </div>
+                        </div>
+                    </#if>
                 </div>
             </div>
             <#if includeTestCases?? && includeTestCases>
