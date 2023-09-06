@@ -53,6 +53,10 @@ class SystemConfigurationManager @Inject() (dbConfigProvider: DatabaseConfigProv
         } else {
           persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.DemoAccount, None, None), defaultSetting = true, environmentSetting = sys.env.contains("DEMOS_ENABLED") || sys.env.contains("DEMOS_ACCOUNT"))
         }
+      } else if (demoAccountConfig.get.config.parameter.nonEmpty && demoAccountConfig.get.config.parameter.get.toLong != Configurations.DEMOS_ACCOUNT) {
+        // Invalid ID configured in the DB.
+        persistedConfigs = persistedConfigs.filterNot(config => config.config.name == Constants.DemoAccount)
+        persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.DemoAccount, None, None), defaultSetting = true, environmentSetting = sys.env.contains("DEMOS_ENABLED") || sys.env.contains("DEMOS_ACCOUNT"))
       }
       if (welcomeMessageConfig.isEmpty) {
         persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.WelcomeMessage, Some(Configurations.WELCOME_MESSAGE), None), defaultSetting = true, environmentSetting = false)

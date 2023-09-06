@@ -16,7 +16,7 @@
                     <div class="configContainer" >
                         <app-configuration-entry
                             configTitle="Test session timeout"
-                            configDescription="Maximum duration after which test sessions will be automatically terminated."
+                            configDescription="Terminate test sessions exceeding a maximum duration."
                             [(status)]="ttlStatus"
                         >
                             <form class="form-inline">
@@ -61,7 +61,7 @@
                     <div class="configContainer">
                         <app-configuration-entry
                             configTitle="Demo account"
-                            configDescription="Account presented on the welcome page as usable for access to demos."
+                            configDescription="Enable access to demos using a configured demo account."
                             [(status)]="demoAccountStatus"
                         >
                             <form class="form-inline">
@@ -74,21 +74,30 @@
                                 </div>
                                 <div class="form-group" [ngSwitch]="loadCommunitiesPending">
                                     <app-pending-block *ngSwitchCase="true"></app-pending-block>
-                                    <select *ngSwitchDefault name="selectedCommunity" [disabled]="!demoAccountEnabled || loadCommunitiesPending || communities.length == 0" [(ngModel)]="selectedCommunity" [compareWith]="sameId" (change)="selectCommunity()" class="form-control">
-                                        <option *ngFor="let community of communities" [ngValue]="community">{{community.fname}}</option>
-                                    </select>
+                                    <ng-container *ngSwitchDefault [ngSwitch]="communities.length == 0">
+                                        <div *ngSwitchCase="true" class="no-data-container">No communities available</div>
+                                        <select *ngSwitchDefault name="selectedCommunity" [disabled]="!demoAccountEnabled || loadCommunitiesPending || communities.length == 0" [(ngModel)]="selectedCommunity" [compareWith]="sameId" (change)="selectCommunity()" class="form-control demoSelect">
+                                            <option *ngFor="let community of communities" [ngValue]="community">{{community.fname}}</option>
+                                        </select>
+                                    </ng-container>
                                 </div>
-                                <div class="form-group" *ngIf="!loadCommunitiesPending" [ngSwitch]="loadOrganisationsPending">
+                                <div class="form-group" *ngIf="selectedCommunity && !loadCommunitiesPending" [ngSwitch]="loadOrganisationsPending">
                                     <app-pending-block *ngSwitchCase="true"></app-pending-block>
-                                    <select *ngSwitchDefault name="selectedOrganisation" [disabled]="!demoAccountEnabled || loadOrganisationsPending || organisations.length == 0" [(ngModel)]="selectedOrganisation" [compareWith]="sameId" (change)="selectCommunityOrganisation()" class="form-control">
-                                        <option *ngFor="let organisation of organisations" [ngValue]="organisation">{{organisation.fname}}</option>
-                                    </select>
+                                    <ng-container *ngSwitchDefault [ngSwitch]="organisations.length == 0">
+                                        <div *ngSwitchCase="true" class="no-data-container">No organisations available</div>
+                                        <select *ngSwitchDefault name="selectedOrganisation" [disabled]="!demoAccountEnabled || loadOrganisationsPending || organisations.length == 0" [(ngModel)]="selectedOrganisation" [compareWith]="sameId" (change)="selectCommunityOrganisation()" class="form-control demoSelect">
+                                            <option *ngFor="let organisation of organisations" [ngValue]="organisation">{{organisation.fname}}</option>
+                                        </select>
+                                    </ng-container>
                                 </div>
-                                <div class="form-group" *ngIf="!loadCommunitiesPending && !loadOrganisationsPending" [ngSwitch]="loadUsersPending">
+                                <div class="form-group" *ngIf="selectedOrganisation && !loadCommunitiesPending && !loadOrganisationsPending" [ngSwitch]="loadUsersPending">
                                     <app-pending-block *ngSwitchCase="true"></app-pending-block>
-                                    <select *ngSwitchDefault name="demoAccount" [disabled]="!demoAccountEnabled || loadUsersPending || users.length == 0" [(ngModel)]="demoAccount" [compareWith]="sameId" class="form-control">
-                                        <option *ngFor="let user of users" [ngValue]="user">{{user.name}}</option>
-                                    </select>
+                                    <ng-container *ngSwitchDefault [ngSwitch]="users.length == 0">
+                                        <div *ngSwitchCase="true" class="no-data-container">No non-administrator users available</div>
+                                        <select *ngSwitchDefault name="demoAccount" [disabled]="!demoAccountEnabled || loadUsersPending || users.length == 0" [(ngModel)]="demoAccount" [compareWith]="sameId" class="form-control demoSelect">
+                                            <option *ngFor="let user of users" [ngValue]="user">{{user.name}}</option>
+                                        </select>
+                                    </ng-container>
                                 </div>
                                 <button type="submit" class="btn btn-default" [disable]="demoAccountEnabled && demoAccount == undefined" [pending]="demoAccountStatus.pending" (click)="saveDemoAccount()">Save</button>
                             </form>
@@ -117,14 +126,14 @@
                     <div class="configContainer">
                         <app-configuration-entry
                             configTitle="Custom welcome page message"
-                            configDescription="A custom message displayed on the Test Bed's welcome page."
+                            configDescription="Display a custom message on the Test Bed's welcome page."
                             [(status)]="welcomePageStatus"
                         >
                             <form class="form-inline">
                                 <app-editor id="welcomePageMessage" name="welcomePageMessage" [(ngModel)]="welcomePageMessage" type="normal" [height]="200"></app-editor>
                                 <div class="btn-toolbar topMargin">
                                     <button type="submit" class="btn btn-default" [disable]="welcomePageResetPending || !textProvided(welcomePageMessage)" [pending]="welcomePageStatus.pending" (click)="saveWelcomePage()">Save</button>
-                                    <button type="button" class="btn btn-default" [disable]="welcomePageStatus.pending" [pending]="welcomePageResetPending" (click)="resetWelcomePage()">Reset to default</button>
+                                    <button type="button" class="btn btn-default" [disable]="welcomePageStatus.fromDefault || welcomePageStatus.fromEnv || welcomePageStatus.pending" [pending]="welcomePageResetPending" (click)="resetWelcomePage()">Reset to default</button>
                                 </div>
                             </form>
                         </app-configuration-entry>

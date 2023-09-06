@@ -21,12 +21,14 @@ import java.time.LocalDate
 import java.util.Properties
 import javax.inject.{Inject, Singleton}
 import jakarta.xml.ws.Endpoint
+import models.Enums.UserRole
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.DurationInt
 import scala.util.Using
 
 @Singleton
-class PostStartHook @Inject() (implicit ec: ExecutionContext, actorSystem: ActorSystem, systemConfigurationManager: SystemConfigurationManager, testResultManager: TestResultManager, testExecutionManager: TestExecutionManager, importCompleteManager: ImportCompleteManager, repositoryUtils: RepositoryUtils, environment: Environment) {
+class PostStartHook @Inject() (implicit ec: ExecutionContext, actorSystem: ActorSystem, systemConfigurationManager: SystemConfigurationManager, testResultManager: TestResultManager, testExecutionManager: TestExecutionManager, importCompleteManager: ImportCompleteManager, repositoryUtils: RepositoryUtils, environment: Environment, userManager: UserManager) {
 
   private def logger = LoggerFactory.getLogger(this.getClass)
 
@@ -64,12 +66,18 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext, actorSystem: Actor
     }
     // Demo account.
     val demoAccountConfig = persistedConfigs.find(config => config.config.name == Constants.DemoAccount).map(_.config)
-    if (demoAccountConfig.nonEmpty) {
-      // Persisted setting in place.
-      Configurations.DEMOS_ENABLED = demoAccountConfig.get.parameter.nonEmpty
-      if (Configurations.DEMOS_ENABLED) {
-        Configurations.DEMOS_ACCOUNT = demoAccountConfig.get.parameter.get.toLong
-      } else {
+    Configurations.DEMOS_ENABLED = demoAccountConfig.get.parameter.nonEmpty
+    if (Configurations.DEMOS_ENABLED) {
+      Configurations.DEMOS_ACCOUNT = demoAccountConfig.get.parameter.get.toLong
+    } else {
+      Configurations.DEMOS_ACCOUNT = -1
+    }
+    // Make sure that the configured demo account is an existing basic user.
+    if (Configurations.DEMOS_ACCOUNT != -1) {
+      val demoUser = userManager.getUserById(Configurations.DEMOS_ACCOUNT)
+      if (demoUser.isEmpty || demoUser.get.role != UserRole.VendorUser.id.toShort) {
+        logger.warn("Configured demo account ID [{}] does not match a non-administrator user and will be ignored.", Configurations.DEMOS_ACCOUNT)
+        Configurations.DEMOS_ENABLED = false
         Configurations.DEMOS_ACCOUNT = -1
       }
     }

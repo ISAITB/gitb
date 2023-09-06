@@ -139,8 +139,6 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
     .pipe(
       map((data) => {
         this.communities = data
-        this.applyDemoCommunity()
-        this.loadCommunitiesPending = false
       }),
       share()
     )
@@ -193,7 +191,6 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
                 if (user) {
                   this.demoAccount = user
                   this.selectedOrganisation = user.organization
-                  this.applyDemoCommunity()
                 } else {
                   this.demoAccountEnabled = false
                   this.demoAccountStatus.enabled = this.demoAccountEnabled
@@ -203,12 +200,15 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
             )
           }
         }
-        return of()
+        return of(1)
       }),
       share()
     )
     // Wait for everything to complete.
     forkJoin([communityObs, configObs]).subscribe(() => {
+      if (this.demoAccount != undefined) {
+        this.applyDemoCommunity()
+      }
     }).add(() => {
       this.loadCommunitiesPending = false
       this.configValuesPending = false
@@ -218,7 +218,7 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
   }
 
   applyDemoCommunity() {
-    if (this.selectedOrganisation && this.communities) {
+    if (this.selectedOrganisation && this.communities && this.communities.length > 0) {
       this.selectedCommunity = find(this.communities, (community) => community.id == this.selectedOrganisation?.community)
       this.loadCommunityOrganisations()
     }
@@ -237,13 +237,18 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
     this.loadOrganisationUsers()
   }
 
-  loadCommunityOrganisations() {
+  private loadCommunityOrganisations() {
     if (this.selectedCommunity) {
       this.loadOrganisationsPending = true
       this.loadUsersPending = true
       this.organisationService.getOrganisationsByCommunity(this.selectedCommunity.id)
       .subscribe((data) => {
         this.organisations = data
+        if (this.selectedOrganisation == undefined) {
+          if (this.organisations.length == 1) {
+            this.selectedOrganisation = this.organisations[0]
+          }
+        }
         if (this.selectedOrganisation) {
           this.loadOrganisationUsers()
         }
@@ -253,19 +258,24 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
     }
   }
 
-  loadOrganisationUsers() {
+  private loadOrganisationUsers() {
     if (this.selectedOrganisation) {
       this.loadUsersPending = true
       this.userService.getBasicUsersByOrganization(this.selectedOrganisation.id)
       .subscribe((data) => {
         this.users = data
+        if (this.demoAccount == undefined) {
+          if (this.users.length == 1) {
+            this.demoAccount = this.users[0]
+          }
+        }
       }).add(() => {
         this.loadUsersPending = false
       })
     }
   }
 
-  triggerTab(tab: SystemAdministrationTab) {
+  private triggerTab(tab: SystemAdministrationTab) {
     this.tabTriggers[tab].loader()
     if (this.tabs) {
       this.tabs.tabs[this.tabTriggers[tab].index].active = true
@@ -447,6 +457,8 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
       this.systemConfigurationService.updateConfigurationValue(Constants.SYSTEM_CONFIG.DEMO_ACCOUNT, this.demoAccount.id!.toString())
       .subscribe(() => {
         this.demoAccountStatus.enabled = true
+        this.demoAccountStatus.fromDefault = false
+        this.demoAccountStatus.fromEnv = false
         this.demoAccountStatus.collapsed = true
         this.popupService.success('Enabled demo account.')
       }).add(() => {
@@ -460,6 +472,8 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
         this.selectedOrganisation = undefined
         this.demoAccount = undefined
         this.demoAccountStatus.enabled = false
+        this.demoAccountStatus.fromDefault = false
+        this.demoAccountStatus.fromEnv = false
         this.demoAccountStatus.collapsed = true
         this.popupService.success('Disabled demo account.')
       }).add(() => {
