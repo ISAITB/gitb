@@ -262,6 +262,8 @@ class ImportCompleteManager @Inject()(communityResourceManager: CommunityResourc
     labelType match {
       case CustomLabelType.DOMAIN => Enums.LabelType.Domain.id.toShort
       case CustomLabelType.SPECIFICATION => Enums.LabelType.Specification.id.toShort
+      case CustomLabelType.SPECIFICATION_GROUP => Enums.LabelType.SpecificationGroup.id.toShort
+      case CustomLabelType.SPECIFICATION_IN_GROUP => Enums.LabelType.SpecificationInGroup.id.toShort
       case CustomLabelType.ACTOR => Enums.LabelType.Actor.id.toShort
       case CustomLabelType.ENDPOINT => Enums.LabelType.Endpoint.id.toShort
       case CustomLabelType.ORGANISATION => Enums.LabelType.Organisation.id.toShort
