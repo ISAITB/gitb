@@ -15,12 +15,22 @@ import { ErrorTemplate } from 'src/app/types/error-template';
 import { LandingPageService } from 'src/app/services/landing-page.service';
 import { LegalNoticeService } from 'src/app/services/legal-notice.service';
 import { ErrorTemplateService } from 'src/app/services/error-template.service';
+import { PopupService } from 'src/app/services/popup.service';
+import { SystemConfigurationService } from 'src/app/services/system-configuration.service';
+import { find } from 'lodash';
+import { Community } from 'src/app/types/community';
+import { CommunityService } from 'src/app/services/community.service';
+import { OrganisationService } from 'src/app/services/organisation.service';
+import { Organisation } from 'src/app/types/organisation.type';
+import { EntityWithId } from 'src/app/types/entity-with-id';
+import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
+import { ConfigStatus } from './config-status';
+import { forkJoin, map, mergeMap, of, share } from 'rxjs';
 
 @Component({
   selector: 'app-system-administration',
   templateUrl: './system-administration.component.html',
-  styles: [
-  ]
+  styleUrls: [ './system-administration.component.less' ]
 })
 export class SystemAdministrationComponent extends BaseComponent implements OnInit, AfterViewInit {
 
@@ -55,6 +65,40 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
   legalNotices: LegalNotice[] = []
   errorTemplates: ErrorTemplate[] = []
 
+  configValuesPending = true
+  configsCollapsed = false
+
+  // TTL
+  ttlStatus: ConfigStatus = { pending: false, collapsed: true, enabled: false, fromDefault: false, fromEnv: false}
+  ttlEnabled = false
+  ttlValue?: number
+
+  // Self-registration
+  selfRegistrationStatus: ConfigStatus = { pending: false, collapsed: true, enabled: false, fromDefault: false, fromEnv: false}
+  selfRegistrationEnabled = false
+
+  // REST API
+  restApiStatus: ConfigStatus = { pending: false, collapsed: true, enabled: false, fromDefault: false, fromEnv: false}
+  restApiEnabled = false
+
+  // Demo account
+  demoAccountStatus: ConfigStatus = { pending: false, collapsed: true, enabled: false, fromDefault: false, fromEnv: false}
+  demoAccountEnabled = false
+  communities: Community[] = []
+  selectedCommunity?: Community
+  organisations: Organisation[] = []
+  selectedOrganisation?: Organisation
+  users: User[] = []
+  loadCommunitiesPending = false
+  loadOrganisationsPending = false
+  loadUsersPending = false
+  demoAccount?: User
+
+  // Welcome page
+  welcomePageStatus: ConfigStatus = { pending: false, collapsed: true, enabled: false, fromDefault: false, fromEnv: false}
+  welcomePageResetPending = false  
+  welcomePageMessage?: string
+
   constructor(
     router: Router,
     private userService: UserService,
@@ -62,7 +106,12 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
     private routingService: RoutingService,
     private landingPageService: LandingPageService,
     private legalNoticeService: LegalNoticeService,
-    private errorTemplateService: ErrorTemplateService
+    private errorTemplateService: ErrorTemplateService,
+    private popupService: PopupService,
+    private systemConfigurationService: SystemConfigurationService,
+    private communityService: CommunityService,
+    private organisationService: OrganisationService,
+    private confirmationDialogService: ConfirmationDialogService
   ) {
     super()
     // Access the tab to show via router state to have it cleared upon refresh.
@@ -85,8 +134,135 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
       this.adminColumns.push({ field: 'email', title: 'Username' })
     }
     this.adminColumns.push({ field: 'ssoStatusText', title: 'Status' })
+    this.loadCommunitiesPending = true
+    const communityObs = this.communityService.getUserCommunities()
+    .pipe(
+      map((data) => {
+        this.communities = data
+        this.applyDemoCommunity()
+        this.loadCommunitiesPending = false
+      }),
+      share()
+    )
+    // Load system configuration values.
+    const configObs = this.systemConfigurationService.getConfigurationValues()
+    .pipe(
+      mergeMap((data) => {
+        // TTL.
+        const ttlConfig = find(data, (configItem) => configItem.name == Constants.SYSTEM_CONFIG.SESSION_ALIVE_TIME)
+        if (ttlConfig && ttlConfig.parameter != undefined) {
+          this.ttlEnabled = true
+          this.ttlValue = Number(ttlConfig.parameter)
+        } else {
+          this.ttlEnabled = false
+          this.ttlValue = undefined
+        }
+        this.ttlStatus.enabled = this.ttlEnabled
+        this.ttlStatus.fromEnv = ttlConfig != undefined && ttlConfig.environment
+        this.ttlStatus.fromDefault = ttlConfig != undefined && ttlConfig.default
+        // REST API.
+        const restApiConfig = find(data, (configItem) => configItem.name == Constants.SYSTEM_CONFIG.REST_API_ENABLED)
+        this.restApiEnabled = restApiConfig != undefined && restApiConfig.parameter != undefined && restApiConfig.parameter.toLowerCase() == 'true'
+        this.restApiStatus.enabled = this.restApiEnabled
+        this.restApiStatus.fromEnv = restApiConfig != undefined && restApiConfig.environment
+        this.restApiStatus.fromDefault = restApiConfig != undefined && restApiConfig.default
+        // Self registration.
+        const selfRegistrationConfig = find(data, (configItem) => configItem.name == Constants.SYSTEM_CONFIG.SELF_REGISTRATION_ENABLED)
+        this.selfRegistrationEnabled = selfRegistrationConfig != undefined && selfRegistrationConfig.parameter != undefined && selfRegistrationConfig.parameter.toLowerCase() == 'true'
+        this.selfRegistrationStatus.enabled = this.selfRegistrationEnabled
+        this.selfRegistrationStatus.fromEnv = selfRegistrationConfig != undefined && selfRegistrationConfig.environment
+        this.selfRegistrationStatus.fromDefault = selfRegistrationConfig != undefined && selfRegistrationConfig.default
+        // Welcome page message.
+        const welcomeMessageConfig = find(data, (configItem) => configItem.name == Constants.SYSTEM_CONFIG.WELCOME_MESSAGE)
+        if (welcomeMessageConfig && welcomeMessageConfig.parameter) {
+          this.welcomePageMessage = welcomeMessageConfig.parameter
+        }
+        this.welcomePageStatus.fromEnv = welcomeMessageConfig != undefined && welcomeMessageConfig.environment
+        this.welcomePageStatus.fromDefault = welcomeMessageConfig != undefined && welcomeMessageConfig.default
+        // Demo account.
+        const demoAccountConfig = find(data, (configItem) => configItem.name == Constants.SYSTEM_CONFIG.DEMO_ACCOUNT)
+        if (demoAccountConfig) {
+          this.demoAccountEnabled = demoAccountConfig.parameter != undefined
+          this.demoAccountStatus.enabled = this.demoAccountEnabled
+          this.demoAccountStatus.fromEnv = demoAccountConfig.environment
+          this.demoAccountStatus.fromDefault = demoAccountConfig.default
+          if (this.demoAccountStatus.enabled) {
+            return this.userService.getUserById(Number(demoAccountConfig.parameter))
+            .pipe(
+              map((user) => {
+                if (user) {
+                  this.demoAccount = user
+                  this.selectedOrganisation = user.organization
+                  this.applyDemoCommunity()
+                } else {
+                  this.demoAccountEnabled = false
+                  this.demoAccountStatus.enabled = this.demoAccountEnabled
+                }
+              }),
+              share()
+            )
+          }
+        }
+        return of()
+      }),
+      share()
+    )
+    // Wait for everything to complete.
+    forkJoin([communityObs, configObs]).subscribe(() => {
+    }).add(() => {
+      this.loadCommunitiesPending = false
+      this.configValuesPending = false
+    })
     // Setup tab triggers
     this.setupTabs()
+  }
+
+  applyDemoCommunity() {
+    if (this.selectedOrganisation && this.communities) {
+      this.selectedCommunity = find(this.communities, (community) => community.id == this.selectedOrganisation?.community)
+      this.loadCommunityOrganisations()
+    }
+  }
+
+  selectCommunity() {
+    this.selectedOrganisation = undefined
+    this.demoAccount = undefined
+    this.organisations = []
+    this.loadCommunityOrganisations()
+  }
+
+  selectCommunityOrganisation() {
+    this.demoAccount = undefined
+    this.users = []
+    this.loadOrganisationUsers()
+  }
+
+  loadCommunityOrganisations() {
+    if (this.selectedCommunity) {
+      this.loadOrganisationsPending = true
+      this.loadUsersPending = true
+      this.organisationService.getOrganisationsByCommunity(this.selectedCommunity.id)
+      .subscribe((data) => {
+        this.organisations = data
+        if (this.selectedOrganisation) {
+          this.loadOrganisationUsers()
+        }
+      }).add(() => {
+        this.loadOrganisationsPending = false
+      })
+    }
+  }
+
+  loadOrganisationUsers() {
+    if (this.selectedOrganisation) {
+      this.loadUsersPending = true
+      this.userService.getBasicUsersByOrganization(this.selectedOrganisation.id)
+      .subscribe((data) => {
+        this.users = data
+      }).add(() => {
+        this.loadUsersPending = false
+      })
+    }
   }
 
   triggerTab(tab: SystemAdministrationTab) {
@@ -188,4 +364,147 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
     this.routingService.toErrorTemplate(undefined, errorTemplate.id)
   }
 
+  ttlCheckChanged() {
+    if (!this.ttlEnabled) {
+      this.ttlValue = undefined
+    }
+  }
+
+  saveTTL() {
+    this.ttlStatus.pending = true
+    if (this.ttlEnabled && this.ttlValue != undefined) {
+      this.systemConfigurationService.updateConfigurationValue(Constants.SYSTEM_CONFIG.SESSION_ALIVE_TIME, this.ttlValue.toString())
+      .subscribe(() => {
+        this.ttlStatus.collapsed = true
+        this.ttlStatus.enabled = true
+        this.popupService.success('Updated maximum session time.')
+      }).add(() => {
+        this.ttlStatus.pending = false
+      })
+    } else {
+      this.systemConfigurationService.updateConfigurationValue(Constants.SYSTEM_CONFIG.SESSION_ALIVE_TIME)
+      .subscribe(() => {
+        this.ttlStatus.collapsed = true
+        this.ttlStatus.enabled = false
+        this.popupService.success('Disabled automatic session termination.')
+      }).add(() => {
+        this.ttlStatus.pending = false
+      })
+    }
+  }
+
+  saveSelfRegistration() {
+    this.selfRegistrationStatus.pending = true
+    if (this.selfRegistrationEnabled) {
+      this.systemConfigurationService.updateConfigurationValue(Constants.SYSTEM_CONFIG.SELF_REGISTRATION_ENABLED, "true")
+      .subscribe(() => {
+        this.selfRegistrationStatus.collapsed = true
+        this.selfRegistrationStatus.enabled = true
+        this.popupService.success('Enabled self-registration.')
+      }).add(() => {
+        this.selfRegistrationStatus.pending = false
+      })
+    } else {
+      this.systemConfigurationService.updateConfigurationValue(Constants.SYSTEM_CONFIG.SELF_REGISTRATION_ENABLED, "false")
+      .subscribe(() => {
+        this.selfRegistrationStatus.collapsed = true
+        this.selfRegistrationStatus.enabled = false
+        this.popupService.success('Disabled self-registration.')
+      }).add(() => {
+        this.selfRegistrationStatus.pending = false
+      })
+    }
+  }
+
+  saveRestApi() {
+    this.restApiStatus.pending = true
+    if (this.restApiEnabled) {
+      this.systemConfigurationService.updateConfigurationValue(Constants.SYSTEM_CONFIG.REST_API_ENABLED, "true")
+      .subscribe(() => {
+        this.restApiStatus.collapsed = true
+        this.restApiStatus.enabled = true
+        this.popupService.success('Enabled REST API.')
+      }).add(() => {
+        this.restApiStatus.pending = false
+      })
+    } else {
+      this.systemConfigurationService.updateConfigurationValue(Constants.SYSTEM_CONFIG.REST_API_ENABLED, "false")
+      .subscribe(() => {
+        this.restApiStatus.collapsed = true
+        this.restApiStatus.enabled = false
+        this.popupService.success('Disabled REST API.')
+      }).add(() => {
+        this.restApiStatus.pending = false
+      })
+    }
+  }
+
+  saveDemoAccount() {
+    this.demoAccountStatus.pending = true
+    let disable = true
+    if (this.demoAccountEnabled && this.demoAccount) {
+      disable = false
+      this.systemConfigurationService.updateConfigurationValue(Constants.SYSTEM_CONFIG.DEMO_ACCOUNT, this.demoAccount.id!.toString())
+      .subscribe(() => {
+        this.demoAccountStatus.enabled = true
+        this.demoAccountStatus.collapsed = true
+        this.popupService.success('Enabled demo account.')
+      }).add(() => {
+        this.demoAccountStatus.pending = false
+      })
+    }
+    if (disable) {
+      this.systemConfigurationService.updateConfigurationValue(Constants.SYSTEM_CONFIG.DEMO_ACCOUNT)
+      .subscribe(() => {
+        this.selectedCommunity = undefined
+        this.selectedOrganisation = undefined
+        this.demoAccount = undefined
+        this.demoAccountStatus.enabled = false
+        this.demoAccountStatus.collapsed = true
+        this.popupService.success('Disabled demo account.')
+      }).add(() => {
+        this.demoAccountStatus.pending = false
+      })
+    }
+  }
+
+  saveWelcomePage() {
+    if (this.welcomePageMessage) {
+      this.welcomePageStatus.pending = true
+      this.systemConfigurationService.updateConfigurationValue(Constants.SYSTEM_CONFIG.WELCOME_MESSAGE, this.welcomePageMessage)
+      .subscribe(() => {
+        this.welcomePageStatus.collapsed = true
+        this.welcomePageStatus.enabled = true
+        this.welcomePageStatus.fromDefault = false
+        this.welcomePageStatus.fromEnv = false
+        this.popupService.success('Welcome page message set.')
+      }).add(() => {
+        this.welcomePageStatus.pending = false
+      })
+    }
+  }
+
+  resetWelcomePage() {
+    this.confirmationDialogService.confirmed("Confirm reset", "Are you sure you want to reset the welcome page message to its default?", "Yes", "No")
+    .subscribe(() => {
+      this.welcomePageResetPending = true
+      this.systemConfigurationService.updateConfigurationValue(Constants.SYSTEM_CONFIG.WELCOME_MESSAGE)
+      .subscribe((appliedValue) => {
+        if (appliedValue) {
+          this.welcomePageMessage = appliedValue
+        }
+        this.welcomePageStatus.collapsed = true
+        this.welcomePageStatus.enabled = false
+        this.welcomePageStatus.fromDefault = true
+        this.welcomePageStatus.fromEnv = false
+        this.popupService.success('Welcome page message reset to default.')
+      }).add(() => {
+        this.welcomePageResetPending = false
+      })
+    })
+  }
+
+  sameId(a: EntityWithId, b: EntityWithId) {
+    return a == undefined && b == undefined || a != undefined && b != undefined && a.id == b.id
+  }
 }

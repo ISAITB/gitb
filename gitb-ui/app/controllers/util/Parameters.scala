@@ -4,6 +4,7 @@ object Parameters {
 
   val USER_ID = "GITB-USER-ID"
   val ID      = "id"
+  val ADMIN      = "admin"
 
   //Dashboard filter parameters
   val COMMUNITY_IDS = "community_ids"

@@ -48,13 +48,27 @@ class UserService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerC
   }
 
   /**
+   * Gets users by organization
+   */
+  def getBasicUsersByOrganization(orgId: Long) = authorizedAction { request =>
+    authorizationManager.canViewOrganisationUsers(request, orgId)
+    val list = userManager.getUsersByOrganization(orgId, Some(UserRole.VendorUser))
+    val json: String = JsonUtil.jsUsers(list).toString
+    ResponseConstructor.constructJsonResponse(json)
+  }
+
+  /**
    * Gets the user with specified id
    */
   def getUserById(userId: Long) = authorizedAction { request =>
     authorizationManager.canViewUser(request, userId)
     val user = userManager.getUserById(userId)
-    val json: String = JsonUtil.serializeUser(user)
-    ResponseConstructor.constructJsonResponse(json)
+    if (user.isDefined) {
+      val json: String = JsonUtil.serializeUser(user.get)
+      ResponseConstructor.constructJsonResponse(json)
+    } else {
+      ResponseConstructor.constructEmptyResponse
+    }
   }
 
   /**

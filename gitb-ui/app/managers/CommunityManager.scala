@@ -1,5 +1,6 @@
 package managers
 
+import config.Configurations
 import models.Enums._
 import models._
 import org.apache.commons.lang3.StringUtils
@@ -265,51 +266,79 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityRes
                                                 allowCertificateDownload: Boolean, allowStatementManagement: Boolean, allowSystemManagement: Boolean,
                                                 allowPostTestOrganisationUpdates: Boolean, allowPostTestSystemUpdates: Boolean, allowPostTestStatementUpdates: Boolean, allowAutomationApi: Option[Boolean],
                                                 apiKey: Option[String], domainId: Option[Long], checkApiKeyUniqueness: Boolean, onSuccess: mutable.ListBuffer[() => _]) = {
-    val actions = new ListBuffer[DBIO[_]]()
-    if (shortName.nonEmpty && community.shortname != shortName) {
-      val q = for {c <- PersistenceSchema.communities if c.id === community.id} yield c.shortname
-      actions += q.update(shortName)
-      actions += testResultManager.updateForUpdatedCommunity(community.id, shortName)
-    }
-    // Handle domain update (if any)
-    actions += updateCommunityDomainDependencies(community, domainId, onSuccess)
-    if (fullName.nonEmpty && community.fullname != fullName) {
-      val q = for {c <- PersistenceSchema.communities if c.id === community.id} yield c.fullname
-      actions += q.update(fullName)
-    }
-    actions += PersistenceSchema.communities
-      .filter(_.id === community.id)
-      .map(c => (
-        c.supportEmail, c.domain, c.selfRegType, c.selfRegToken, c.selfRegTokenHelpText, c.selfregNotification,
-        c.description, c.selfRegRestriction, c.selfRegForceTemplateSelection, c.selfRegForceRequiredProperties,
-        c.allowCertificateDownload, c.allowStatementManagement, c.allowSystemManagement,
-        c.allowPostTestOrganisationUpdates, c.allowPostTestSystemUpdates, c.allowPostTestStatementUpdates, c.allowAutomationApi
-      ))
-      .update(supportEmail, domainId, selfRegType, selfRegToken, selfRegTokenHelpText, selfRegNotification,
-        description, selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties,
-        allowCertificateDownload, allowStatementManagement, allowSystemManagement,
-        allowPostTestOrganisationUpdates, allowPostTestSystemUpdates, allowPostTestStatementUpdates, allowAutomationApi.getOrElse(community.allowAutomationApi)
-      )
-    if (apiKey.isDefined) {
-      actions += (for {
-        replaceApiKey <- {
-          if (apiKey.isDefined && checkApiKeyUniqueness) {
-            PersistenceSchema.communities.filter(_.apiKey === apiKey.get).filter(_.id =!= community.id).exists.result
-          } else {
-            DBIO.successful(false)
-          }
+    for {
+      // Update short name.
+      _ <- {
+        if (shortName.nonEmpty && community.shortname != shortName) {
+          PersistenceSchema.communities.filter(_.id === community.id).map(_.shortname).update(shortName) andThen
+            testResultManager.updateForUpdatedCommunity(community.id, shortName)
+        } else {
+          DBIO.successful()
         }
-        _ <- {
-          if (apiKey.isDefined) {
-            val apiKeyToUse = if (replaceApiKey) CryptoUtil.generateApiKey() else apiKey.get
-            PersistenceSchema.communities.filter(_.id === community.id).map(_.apiKey).update(apiKeyToUse)
-          } else {
-            DBIO.successful(())
-          }
+      }
+      // Update full name.
+      _ <- {
+        if (fullName.nonEmpty && community.fullname != fullName) {
+          PersistenceSchema.communities.filter(_.id === community.id).map(_.fullname).update(fullName)
+        } else {
+          DBIO.successful()
         }
-      } yield ())
-    }
-    toDBIO(actions)
+      }
+      // Handle domain update.
+      _ <- updateCommunityDomainDependencies(community, domainId, onSuccess)
+      // Update core properties.
+      _ <- PersistenceSchema.communities
+        .filter(_.id === community.id)
+        .map(c => (
+          c.supportEmail, c.domain, c.description, c.allowCertificateDownload, c.allowStatementManagement, c.allowSystemManagement,
+          c.allowPostTestOrganisationUpdates, c.allowPostTestSystemUpdates, c.allowPostTestStatementUpdates
+        ))
+        .update(supportEmail, domainId, description, allowCertificateDownload, allowStatementManagement, allowSystemManagement,
+          allowPostTestOrganisationUpdates, allowPostTestSystemUpdates, allowPostTestStatementUpdates
+        )
+      // Update self-registration properties.
+      _ <- {
+        if (Configurations.REGISTRATION_ENABLED) {
+          PersistenceSchema.communities
+            .filter(_.id === community.id)
+            .map(c => (
+              c.selfRegType, c.selfRegToken, c.selfRegTokenHelpText, c.selfregNotification,
+              c.selfRegRestriction, c.selfRegForceTemplateSelection, c.selfRegForceRequiredProperties
+            ))
+            .update(selfRegType, selfRegToken, selfRegTokenHelpText, selfRegNotification,
+              selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties
+            )
+        } else {
+          DBIO.successful()
+        }
+      }
+      // Update REST-API properties.
+      _ <- {
+        if (Configurations.AUTOMATION_API_ENABLED) {
+          PersistenceSchema.communities.filter(_.id === community.id)
+            .map(c => c.allowAutomationApi)
+            .update(allowAutomationApi.getOrElse(community.allowAutomationApi))
+        } else {
+          DBIO.successful()
+        }
+      }
+      // API key update.
+      replaceApiKey <- {
+        if (apiKey.isDefined && checkApiKeyUniqueness) {
+          PersistenceSchema.communities.filter(_.apiKey === apiKey.get).filter(_.id =!= community.id).exists.result
+        } else {
+          DBIO.successful(false)
+        }
+      }
+      _ <- {
+        if (apiKey.isDefined) {
+          val apiKeyToUse = if (replaceApiKey) CryptoUtil.generateApiKey() else apiKey.get
+          PersistenceSchema.communities.filter(_.id === community.id).map(_.apiKey).update(apiKeyToUse)
+        } else {
+          DBIO.successful()
+        }
+      }
+    } yield ()
   }
 
   /**

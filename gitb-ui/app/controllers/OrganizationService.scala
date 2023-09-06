@@ -54,7 +54,8 @@ class OrganizationService @Inject() (implicit ec: ExecutionContext, repositoryUt
    */
   def getOrganizationsByCommunity(communityId: Long) = authorizedAction { request =>
     authorizationManager.canViewOrganisationsByCommunity(request, communityId)
-    val list = organizationManager.getOrganizationsByCommunity(communityId)
+    val includeAdmin = ParameterExtractor.optionalQueryParameter(request, Parameters.ADMIN).exists(_.toBoolean)
+    val list = organizationManager.getOrganizationsByCommunity(communityId, includeAdmin)
     val json: String = JsonUtil.jsOrganizations(list).toString
     ResponseConstructor.constructJsonResponse(json)
   }

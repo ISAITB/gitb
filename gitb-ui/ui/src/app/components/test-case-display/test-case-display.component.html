@@ -6,7 +6,6 @@
                 <app-prescription-level [optional]="testCase.optional" [disabled]="testCase.disabled"></app-prescription-level>
             </div>
             <div class="testCaseName">{{testCase.sname}}</div>
-            <!-- <div class="testCaseDescription" *ngIf="testCase.description != undefined && testCase.description != ''">{{testCase.description}}</div> -->
             <div class="testCaseExecution">
                 <div class="testCaseTagsContainer" *ngIf="testCase.parsedTags">
                     <app-tags-display [tags]="testCase.parsedTags"></app-tags-display>

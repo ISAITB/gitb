@@ -47,7 +47,7 @@ export class CommunityAdminDetailsComponent extends BaseComponent implements OnI
     this.disableDeleteButton = Number(this.dataService.user!.id) == Number(this.userId)
     this.userService.getUserById(this.userId)
     .subscribe((data) => {
-      this.user = data
+      this.user = data!
       this.user.ssoStatusText = this.dataService.userStatus(this.user.ssoStatus)
       this.user.roleText = this.Constants.USER_ROLE_LABEL[this.user.role!]
     })

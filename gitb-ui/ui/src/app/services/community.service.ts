@@ -122,10 +122,10 @@ export class CommunityService {
     })
   }
 
-  createCommunity(shortName: string, fullName: string, email: string|undefined, 
-    selfRegType: number, selfRegRestriction: number, selfRegToken: string|undefined, selfRegTokenHelpText: string|undefined, selfRegNotification: boolean|undefined, 
-    description: string|undefined, selfRegForceTemplate: boolean|undefined, selfRegForceProperties: boolean|undefined, 
-    allowCertificateDownload: boolean, allowStatementManagement: boolean, allowSystemManagement: boolean, allowPostTestOrganisationUpdate: boolean, 
+  createCommunity(shortName: string, fullName: string, email: string|undefined,
+    selfRegType: number, selfRegRestriction: number, selfRegToken: string|undefined, selfRegTokenHelpText: string|undefined, selfRegNotification: boolean|undefined,
+    description: string|undefined, selfRegForceTemplate: boolean|undefined, selfRegForceProperties: boolean|undefined,
+    allowCertificateDownload: boolean, allowStatementManagement: boolean, allowSystemManagement: boolean, allowPostTestOrganisationUpdate: boolean,
     allowPostTestSystemUpdate: boolean, allowPostTestStatementUpdate: boolean, allowAutomationApi: boolean|undefined,
     domainId: number|undefined) {
     const data: any = {
@@ -166,10 +166,10 @@ export class CommunityService {
     })
   }
 
-  updateCommunity(communityId: number, shortName: string, fullName: string, email: string|undefined, 
-    selfRegType: number, selfRegRestriction: number, selfRegToken: string|undefined, selfRegTokenHelpText: string|undefined, selfRegNotification: boolean|undefined, 
-    description: string|undefined, selfRegForceTemplate: boolean|undefined, selfRegForceProperties: boolean|undefined, 
-    allowCertificateDownload: boolean, allowStatementManagement: boolean, allowSystemManagement: boolean, allowPostTestOrganisationUpdate: boolean, 
+  updateCommunity(communityId: number, shortName: string, fullName: string, email: string|undefined,
+    selfRegType: number, selfRegRestriction: number, selfRegToken: string|undefined, selfRegTokenHelpText: string|undefined, selfRegNotification: boolean|undefined,
+    description: string|undefined, selfRegForceTemplate: boolean|undefined, selfRegForceProperties: boolean|undefined,
+    allowCertificateDownload: boolean, allowStatementManagement: boolean, allowSystemManagement: boolean, allowPostTestOrganisationUpdate: boolean,
     allowPostTestSystemUpdate: boolean, allowPostTestStatementUpdate: boolean, allowAutomationApi: boolean|undefined,
     domainId: number|undefined) {
     const data: any = {
@@ -305,7 +305,7 @@ export class CommunityService {
       path: ROUTES.controllers.CommunityService.createSystemParameter().url,
       data: data,
       authenticate: true
-    })  
+    })
   }
 
   updateOrganisationParameter(parameter: Parameter, communityId: number) {
@@ -363,7 +363,7 @@ export class CommunityService {
     return this.restService.get<TypedLabelConfig[]>({
       path: ROUTES.controllers.CommunityService.getCommunityLabels(communityId).url,
       authenticate: true
-    })    
+    })
   }
 
   setCommunityLabels(communityId: number, labels: TypedLabelConfig[]) {
@@ -402,7 +402,7 @@ export class CommunityService {
     return this.restService.post<void>({
       path: ROUTES.controllers.RepositoryService.cancelCommunityImport(communityId).url,
       data: {
-        pending_id: pendingImportId        
+        pending_id: pendingImportId
       },
       authenticate: true
     })
@@ -430,7 +430,7 @@ export class CommunityService {
     return this.restService.get<CommunityResourceSearchResult>({
       path: ROUTES.controllers.CommunityService.searchCommunityResources(communityId).url,
       params: {
-        filter: filter, 
+        filter: filter,
         page: page,
         limit: limit,
       },
@@ -461,7 +461,7 @@ export class CommunityService {
           param: "file",
           data: file.file!
       }]
-    })    
+    })
   }
 
   uploadCommunityResourcesInBulk(communityId: number, file: FileData, updateMatching?: boolean) {
@@ -476,8 +476,8 @@ export class CommunityService {
           param: "file",
           data: file.file!
       }]
-    })    
-  }  
+    })
+  }
 
   updateCommunityResource(resourceId: number, name: string, description: string|undefined, file?: FileData) {
     const files: FileParam[] = []
@@ -507,7 +507,7 @@ export class CommunityService {
       path: ROUTES.controllers.CommunityService.deleteCommunityResources(communityId).url,
       data: {
         ids: resourceIds.join(',')
-      },      
+      },
       authenticate: true
     })
   }

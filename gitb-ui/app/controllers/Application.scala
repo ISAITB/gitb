@@ -48,7 +48,8 @@ class Application @Inject() (implicit ec: ExecutionContext, cc: ControllerCompon
       Configurations.MORE_INFO_ENABLED,
       Configurations.MORE_INFO_ADDRESS,
       Configurations.RELEASE_INFO_ENABLED,
-      Configurations.RELEASE_INFO_ADDRESS
+      Configurations.RELEASE_INFO_ADDRESS,
+      Configurations.WELCOME_MESSAGE
     )))
   }
 

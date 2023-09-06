@@ -2,30 +2,46 @@ package controllers
 
 import java.io.InputStream
 import java.nio.charset.StandardCharsets
-
 import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, ResponseConstructor}
 import exceptions.ErrorCodes
+
 import javax.inject.Inject
 import managers.{AuthorizationManager, SystemConfigurationManager}
 import models.Constants
 import org.apache.commons.io.IOUtils
 import org.slf4j.{Logger, LoggerFactory}
+import play.api.libs.json.JsString
 import play.api.mvc.{AbstractController, ControllerComponents}
-import utils.JsonUtil
+import utils.{HtmlUtil, JsonUtil}
 
 import scala.concurrent.ExecutionContext
 
 class SystemConfigurationService @Inject()(implicit ec: ExecutionContext, authorizedAction: AuthorizedAction, cc: ControllerComponents, systemConfigurationManager: SystemConfigurationManager, environment: play.api.Environment, authorizationManager: AuthorizationManager) extends AbstractController(cc) {
   private final val logger: Logger = LoggerFactory.getLogger(classOf[SystemConfigurationService])
 
-  /**
-   * Gets session alive time
-   */
-  def getSessionAliveTime = authorizedAction { request =>
-    authorizationManager.canViewTheSessionAliveTime(request)
-    val config = systemConfigurationManager.getSystemConfiguration(Constants.SessionAliveTime)
-    val json: String = JsonUtil.serializeSystemConfig(config)
+  def getConfigurationValues() = authorizedAction { request =>
+    authorizationManager.canViewSystemConfigurationValues(request)
+    val configs = systemConfigurationManager.getEditableSystemConfigurationValues()
+    val json: String = JsonUtil.jsSystemConfigurations(configs).toString
     ResponseConstructor.constructJsonResponse(json)
+  }
+
+  def updateConfigurationValue() = authorizedAction { request =>
+    authorizationManager.canUpdateSystemConfigurationValues(request)
+    val name = ParameterExtractor.requiredBodyParameter(request, Parameters.NAME)
+    var value = ParameterExtractor.optionalBodyParameter(request, Parameters.PARAMETER)
+    if (name == Constants.WelcomeMessage && value.isDefined) {
+      value = Some(HtmlUtil.sanitizeEditorContent(value.get))
+      if (value.get.isBlank) {
+        value = None
+      }
+    }
+    val resultToReport = systemConfigurationManager.updateSystemParameter(name, value)
+    if (resultToReport.isDefined) {
+      ResponseConstructor.constructJsonResponse(JsString(resultToReport.get).toString)
+    } else {
+      ResponseConstructor.constructEmptyResponse
+    }
   }
 
   /**

@@ -1,12 +1,141 @@
 <div class="page">
     <div class="panel panel-default">
-        <div class="panel-heading">
-            <h4 class="title">System administration</h4>
+        <div class="panel-heading clickable" (click)="configsCollapsed = !configsCollapsed">
+            <h4 class="title">System configuration</h4>
+        </div>
+        <div [collapse]="configsCollapsed" [isAnimated]="true">
+            <div class="configsContainer" [ngSwitch]="configValuesPending">
+                <ng-container *ngSwitchCase="true">
+                    <div class="pending-container">
+                        <div class="pending-icon"><app-pending-block [pending]="true"></app-pending-block></div>
+                        <div class="pending-message">Loading system configuration properties...</div>
+                    </div>
+                </ng-container>
+                <ng-container *ngSwitchDefault>
+                    <!-- Idle session timeout. -->
+                    <div class="configContainer" >
+                        <app-configuration-entry
+                            configTitle="Test session timeout"
+                            configDescription="Maximum duration after which test sessions will be automatically terminated."
+                            [(status)]="ttlStatus"
+                        >
+                            <form class="form-inline">
+                                <div class="form-group">
+                                    <div class="checkbox">
+                                        <label>
+                                            <input type="checkbox" name="ttlEnabled" (change)="ttlCheckChanged()" [(ngModel)]="ttlEnabled"> Enabled?
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="sr-only" for="ttlValue">Seconds before terminating sessions:</label>
+                                    <div class="input-group">
+                                        <input type="number" min="1" class="form-control" id="ttlValue" name="ttlValue" placeholder="Timeout" [disabled]="!ttlEnabled" [(ngModel)]="ttlValue">
+                                        <div class="input-group-addon">seconds</div>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-default" [disable]="ttlEnabled && ttlValue == undefined" [pending]="ttlStatus.pending" (click)="saveTTL()">Save</button>
+                            </form>
+                        </app-configuration-entry>
+                    </div>
+                    <!-- Self-registration. -->
+                    <div class="configContainer">
+                        <app-configuration-entry
+                            configTitle="Self-registration"
+                            configDescription="Enable user self-registration for hosted communities."
+                            [(status)]="selfRegistrationStatus"
+                        >
+                            <form class="form-inline">
+                                <div class="form-group">
+                                    <div class="checkbox">
+                                        <label>
+                                            <input type="checkbox" name="selfRegistrationEnabled" [(ngModel)]="selfRegistrationEnabled"> Enabled?
+                                        </label>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-default" [pending]="selfRegistrationStatus.pending" (click)="saveSelfRegistration()">Save</button>
+                            </form>
+                        </app-configuration-entry>
+                    </div>
+                    <!-- Demo account. -->
+                    <div class="configContainer">
+                        <app-configuration-entry
+                            configTitle="Demo account"
+                            configDescription="Account presented on the welcome page as usable for access to demos."
+                            [(status)]="demoAccountStatus"
+                        >
+                            <form class="form-inline">
+                                <div class="form-group">
+                                    <div class="checkbox">
+                                        <label>
+                                            <input type="checkbox" name="demoAccountEnabled" [(ngModel)]="demoAccountEnabled"> Enabled?
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="form-group" [ngSwitch]="loadCommunitiesPending">
+                                    <app-pending-block *ngSwitchCase="true"></app-pending-block>
+                                    <select *ngSwitchDefault name="selectedCommunity" [disabled]="!demoAccountEnabled || loadCommunitiesPending || communities.length == 0" [(ngModel)]="selectedCommunity" [compareWith]="sameId" (change)="selectCommunity()" class="form-control">
+                                        <option *ngFor="let community of communities" [ngValue]="community">{{community.fname}}</option>
+                                    </select>
+                                </div>
+                                <div class="form-group" *ngIf="!loadCommunitiesPending" [ngSwitch]="loadOrganisationsPending">
+                                    <app-pending-block *ngSwitchCase="true"></app-pending-block>
+                                    <select *ngSwitchDefault name="selectedOrganisation" [disabled]="!demoAccountEnabled || loadOrganisationsPending || organisations.length == 0" [(ngModel)]="selectedOrganisation" [compareWith]="sameId" (change)="selectCommunityOrganisation()" class="form-control">
+                                        <option *ngFor="let organisation of organisations" [ngValue]="organisation">{{organisation.fname}}</option>
+                                    </select>
+                                </div>
+                                <div class="form-group" *ngIf="!loadCommunitiesPending && !loadOrganisationsPending" [ngSwitch]="loadUsersPending">
+                                    <app-pending-block *ngSwitchCase="true"></app-pending-block>
+                                    <select *ngSwitchDefault name="demoAccount" [disabled]="!demoAccountEnabled || loadUsersPending || users.length == 0" [(ngModel)]="demoAccount" [compareWith]="sameId" class="form-control">
+                                        <option *ngFor="let user of users" [ngValue]="user">{{user.name}}</option>
+                                    </select>
+                                </div>
+                                <button type="submit" class="btn btn-default" [disable]="demoAccountEnabled && demoAccount == undefined" [pending]="demoAccountStatus.pending" (click)="saveDemoAccount()">Save</button>
+                            </form>
+                        </app-configuration-entry>
+                    </div>            
+                    <!-- REST API. -->
+                    <div class="configContainer">
+                        <app-configuration-entry
+                            configTitle="REST API"
+                            configDescription="Allow operations by means of the Test Bed's REST API."
+                            [(status)]="restApiStatus"
+                        >
+                            <form class="form-inline">
+                                <div class="form-group">
+                                    <div class="checkbox">
+                                        <label>
+                                            <input type="checkbox" name="restApiEnabled" [(ngModel)]="restApiEnabled"> Enabled?
+                                        </label>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-default" [pending]="restApiStatus.pending" (click)="saveRestApi()">Save</button>
+                            </form>
+                        </app-configuration-entry>
+                    </div>
+                    <!-- Welcome page. -->
+                    <div class="configContainer">
+                        <app-configuration-entry
+                            configTitle="Custom welcome page message"
+                            configDescription="A custom message displayed on the Test Bed's welcome page."
+                            [(status)]="welcomePageStatus"
+                        >
+                            <form class="form-inline">
+                                <app-editor id="welcomePageMessage" name="welcomePageMessage" [(ngModel)]="welcomePageMessage" type="normal" [height]="200"></app-editor>
+                                <div class="btn-toolbar topMargin">
+                                    <button type="submit" class="btn btn-default" [disable]="welcomePageResetPending || !textProvided(welcomePageMessage)" [pending]="welcomePageStatus.pending" (click)="saveWelcomePage()">Save</button>
+                                    <button type="button" class="btn btn-default" [disable]="welcomePageStatus.pending" [pending]="welcomePageResetPending" (click)="resetWelcomePage()">Reset to default</button>
+                                </div>
+                            </form>
+                        </app-configuration-entry>
+                    </div>
+                </ng-container>
+            </div>
         </div>
     </div>
     <div>
         <tabset #tabs>
-            <tab heading="System administrators" (selectTab)="showAdministrators()">
+            <tab heading="Administrators" (selectTab)="showAdministrators()">
                 <!-- Administrators -->
                 <div class="tabPanel">
                     <div class="tabControls">

@@ -168,6 +168,7 @@ import { TagsDisplayComponent } from './components/tags-display/tags-display.com
 import { CreateEditTagComponent } from './modals/create-edit-tag/create-edit-tag.component';
 import { DomainSpecificationDisplayComponent } from './components/domain-specification-display/domain-specification-display.component';
 import { SystemAdministrationComponent } from './pages/admin/system-administration/system-administration.component';
+import { ConfigurationEntryComponent } from './pages/admin/system-administration/configuration-entry/configuration-entry.component';
 
 @NgModule({
   providers: [ 
@@ -325,7 +326,8 @@ import { SystemAdministrationComponent } from './pages/admin/system-administrati
     TagsDisplayComponent,
     CreateEditTagComponent,
     DomainSpecificationDisplayComponent,
-    SystemAdministrationComponent],
+    SystemAdministrationComponent,
+    ConfigurationEntryComponent],
   imports: [
     ColorPickerModule,
     BrowserModule,

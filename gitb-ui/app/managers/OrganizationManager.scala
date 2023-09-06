@@ -70,8 +70,11 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils, systemMan
   /**
     * Gets organizations with specified community
     */
-  def getOrganizationsByCommunity(communityId: Long): List[Organizations] = {
-    val organizations = exec(PersistenceSchema.organizations.filter(_.adminOrganization === false).filter(_.community === communityId)
+  def getOrganizationsByCommunity(communityId: Long, includeAdmin: Boolean = false): List[Organizations] = {
+    val organizations = exec(
+      PersistenceSchema.organizations
+        .filterIf(!includeAdmin)(_.adminOrganization === false)
+        .filter(_.community === communityId)
       .sortBy(_.shortname.asc)
       .result.map(_.toList))
     organizations

@@ -53,10 +53,15 @@ export class OrganisationService {
     })
   }
 
-  getOrganisationsByCommunity(communityId: number) {
+  getOrganisationsByCommunity(communityId: number, includeAdminOrganisation?: boolean) {
+    const params: any = {}
+    if (includeAdminOrganisation) {
+      params.admin = true
+    }
     return this.restService.get<Organisation[]>({
       path: ROUTES.controllers.OrganizationService.getOrganizationsByCommunity(communityId).url,
-      authenticate: true
+      authenticate: true,
+      params: params
     })
   }
 

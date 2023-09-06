@@ -74,25 +74,4 @@
             </div>
         </div>
     </div>
-    <!-- configuration -->
-    <div class="panel panel-default" *ngIf="dataService.isSystemAdmin">
-        <div class="panel-heading">
-            <h4 class="title">Automatically terminate idle sessions</h4>
-            <div class="btn-toolbar">
-                <app-toggle id="dashboard-toggle-ttl" class="btn-group" name="ttlToggle" [(ngModel)]="ttlEnabled" on="Enabled" off="Disabled" (toggle)="ttlToggled()"></app-toggle>
-            </div>
-        </div>
-        <!-- configuration form -->
-        <div [collapse]="!ttlEnabled" [isAnimated]="true">
-            <div style="padding: 10px">
-                <form class="form-inline">
-                    <div class="form-group">
-                        <input type="number" min="1" name="ttlEnabled" [(ngModel)]="prevParameter" class="form-control"
-                               id="parameter" placeholder="Seconds">
-                    </div>
-                    <button type="submit" (click)="apply()" [disabled]="!prevParameter" class="btn btn-default" style="margin-left: 5px">Apply</button>
-                </form>
-            </div>
-        </div>
-    </div>
 </div>

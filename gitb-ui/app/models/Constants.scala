@@ -11,7 +11,11 @@ object Constants {
 
   // System configuration constants
   val SessionAliveTime = "session_alive_time"
+  val RestApiEnabled = "rest_api_enabled"
+  val SelfRegistrationEnabled = "self_registration_enabled"
   val MasterPassword = "master_password"
+  val DemoAccount = "demo_account"
+  val WelcomeMessage = "welcome"
 
   // env variables
   val EnvironmentTheme = "THEME"

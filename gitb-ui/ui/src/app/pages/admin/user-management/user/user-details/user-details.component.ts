@@ -63,14 +63,14 @@ export class UserDetailsComponent extends BaseComponent implements OnInit, After
     this.userId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.USER_ID))
     this.isSelf = this.dataService.user!.id == this.userId
     this.roleChoices = this.Constants.VENDOR_USER_ROLES
-    let result: Observable<User>
+    let result: Observable<User|undefined>
     if (this.fromCommunityManagement) {
       result = this.userService.getUserById(this.userId)
     } else {
       result = this.userService.getOwnOrganisationUserById(this.userId)
     }
     result.subscribe((data) => {
-      this.user = data
+      this.user = data!
       this.user.ssoStatusText = this.dataService.userStatus(this.user.ssoStatus)
       this.user.roleText = this.Constants.USER_ROLE_LABEL[this.user.role!]
       this.originalRoleId = this.user.role!

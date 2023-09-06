@@ -12,13 +12,6 @@ export class SystemConfigurationService {
 
   constructor(private restService: RestService) { }
 
-  getSessionAliveTime() {
-    return this.restService.get<SystemConfiguration>({
-      path: ROUTES.controllers.SystemConfigurationService.getSessionAliveTime().url,
-      authenticate: true
-    })
-  }
-
   getLogo() {
     return this.restService.get<string>({
       path: ROUTES.controllers.SystemConfigurationService.getLogo().url,
@@ -33,6 +26,27 @@ export class SystemConfigurationService {
       authenticate: false,
       text: true
     })
+  }
+
+  getConfigurationValues() {
+    return this.restService.get<SystemConfiguration[]>({
+      path: ROUTES.controllers.SystemConfigurationService.getConfigurationValues().url,
+      authenticate: false
+    })    
+  }
+
+  updateConfigurationValue(name: string, value?: string) {
+    const data: any = {
+      name: name
+    }
+    if (value !== undefined) {
+      data.parameter = value
+    }
+    return this.restService.post<string|undefined>({
+      path: ROUTES.controllers.SystemConfigurationService.updateConfigurationValue().url,
+      data: data,
+      authenticate: true
+    })    
   }
 
   updateSessionAliveTime(value?: number) {

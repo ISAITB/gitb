@@ -417,12 +417,11 @@ object PersistenceSchema {
 
   class SystemConfigurationsTable(tag: Tag) extends Table[SystemConfigurations](tag, "SystemConfigurations") {
     def name = column[String]("name", O.PrimaryKey)
-    def parameter = column[Option[String]]("parameter")
+    def parameter = column[Option[String]]("parameter", O.SqlType("TEXT"))
     def description = column[Option[String]]("description")
     def * = (name, parameter, description) <> (SystemConfigurations.tupled, SystemConfigurations.unapply)
   }
   val systemConfigurations = TableQuery[SystemConfigurationsTable]
-  val insertSystemConfiguration = systemConfigurations returning systemConfigurations.map(_.name)
 
   class LegalNoticesTable(tag: Tag) extends Table[LegalNotices](tag, "LegalNotices") {
     def id = column[Long]("id", O.PrimaryKey, O.AutoInc)

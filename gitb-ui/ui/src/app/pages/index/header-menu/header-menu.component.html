@@ -12,7 +12,7 @@
                 <div class="header-popup-options" *ngIf="!logoutInProgress">
                   <div class="profile-option" *ngIf="!dataService.isDemoAccount() && (dataService.configuration.ssoEnabled || !dataService.user?.onetime) && isAuthenticated()" (click)="routingService.toProfile(); expanded = false"><span class="icon"><i class="fa-solid fa-user-pen"></i></span><span>My profile</span></div>
                   <div class="profile-option" *ngIf="dataService.configuration.ssoEnabled && isAuthenticated()" (click)="switchAccount(); expanded = false"><span class="icon"><i class="fa-solid fa-arrows-rotate"></i></span><span>Switch role</span></div>
-                  <div class="profile-option" *ngIf="!dataService.configuration.ssoEnabled" (click)="routingService.toChangePassword(); expanded = false"><span class="icon"><i class="fa-solid fa-key"></i></span><span>Change password</span></div>
+                  <div class="profile-option" *ngIf="!dataService.isDemoAccount() && !dataService.configuration.ssoEnabled" (click)="routingService.toChangePassword(); expanded = false"><span class="icon"><i class="fa-solid fa-key"></i></span><span>Change password</span></div>
                   <div class="profile-option" (click)="logout(); expanded = false"><span class="icon"><i class="fa-solid fa-power-off"></i></span><span>Logout</span></div>
                 </div>
             </div>

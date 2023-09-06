@@ -43,7 +43,7 @@
         </div>
     </div>
 </div>
-<div [collapse]="!selfRegOptionsVisible" [isAnimated]="true">
+<div *ngIf="selfRegEnabled" [collapse]="!selfRegOptionsVisible" [isAnimated]="true">
     <div class="row">
         <div class="col-xs-12">
             <div class="form-separator expandable" (click)="selfRegOptionsCollapsed = !selfRegOptionsCollapsed">

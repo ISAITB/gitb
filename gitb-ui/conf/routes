@@ -158,8 +158,10 @@ POST    /api/search/systems                     @controllers.SystemService.searc
 POST    /api/search/systemsInCommunity          @controllers.SystemService.searchSystemsInCommunity()
 POST    /api/dashboard/active                   @controllers.ReportService.getActiveTestResults()
 POST    /api/dashboard/finished                 @controllers.ReportService.getFinishedTestResults()
-GET     /api/dashboard/config                   @controllers.SystemConfigurationService.getSessionAliveTime()
-POST    /api/dashboard/config                   @controllers.SystemConfigurationService.updateSessionAliveTime()
+
+GET     /api/system/configs                     @controllers.SystemConfigurationService.getConfigurationValues()
+POST    /api/system/configs                     @controllers.SystemConfigurationService.updateConfigurationValue()
+
 POST    /api/dashboard/suites/search            @controllers.TestSuiteService.searchTestSuites()
 POST    /api/dashboard/suites/searchInDomain    @controllers.TestSuiteService.searchTestSuitesInDomain()
 
@@ -190,6 +192,7 @@ POST    /api/trigger/testTriggerCall            @controllers.TriggerService.test
 GET     /api/organizations/all                  @controllers.OrganizationService.getOrganizations()
 POST    /api/organizations/create               @controllers.OrganizationService.createOrganization()
 GET     /api/organizations/users                @controllers.UserService.getUsersByOrganization(id : Long)
+GET     /api/organizations/basicusers           @controllers.UserService.getBasicUsersByOrganization(id : Long)
 GET     /api/organizations/:org_id              @controllers.OrganizationService.getOrganizationById(org_id : Long)
 GET     /api/organizations/system/:system_id    @controllers.OrganizationService.getOrganizationBySystemId(system_id : Long)
 

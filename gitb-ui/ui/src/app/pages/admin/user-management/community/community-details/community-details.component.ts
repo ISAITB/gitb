@@ -190,10 +190,11 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
   private setupTabs() {
     const temp: Partial<Record<CommunityTab, {index: number, loader: () => any}>> = {}
     temp[CommunityTab.organisations] = {index: 0, loader: () => {this.showOrganisations()}}
-    temp[CommunityTab.landingPages] = {index: 1, loader: () => {this.showLandingPages()}}
-    temp[CommunityTab.legalNotices] = {index: 2, loader: () => {this.showLegalNotices()}}
-    temp[CommunityTab.errorTemplates] = {index: 3, loader: () => {this.showErrorTemplates()}}
-    temp[CommunityTab.triggers] = {index: 4, loader: () => {this.showTriggers()}}
+    temp[CommunityTab.administrators] = {index: 1, loader: () => {this.showAdministrators()}}
+    temp[CommunityTab.landingPages] = {index: 2, loader: () => {this.showLandingPages()}}
+    temp[CommunityTab.legalNotices] = {index: 3, loader: () => {this.showLegalNotices()}}
+    temp[CommunityTab.errorTemplates] = {index: 4, loader: () => {this.showErrorTemplates()}}
+    temp[CommunityTab.triggers] = {index: 5, loader: () => {this.showTriggers()}}
     this.tabTriggers = temp as Record<CommunityTab, {index: number, loader: () => any}>
   }
 

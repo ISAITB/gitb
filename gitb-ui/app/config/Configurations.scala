@@ -132,6 +132,9 @@ object Configurations {
   var AUTOMATION_API_ENABLED = false
   var BUILD_TIMESTAMP = ""
 
+  val WELCOME_MESSAGE_DEFAULT = "<h4>The Interoperability Test Bed is a platform for self-service conformance testing against semantic and technical specifications.</h4>"
+  var WELCOME_MESSAGE: String = WELCOME_MESSAGE_DEFAULT
+
   def versionInfo(): String = {
     if (Constants.VersionNumber.toLowerCase.endsWith("snapshot")) {
       Constants.VersionNumber + " (" + Configurations.BUILD_TIMESTAMP + ")"

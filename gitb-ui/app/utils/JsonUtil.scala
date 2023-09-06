@@ -513,12 +513,21 @@ object JsonUtil {
     json
   }
 
-  def jsSystemConfiguration(sc: SystemConfigurations):JsObject = {
-    val json = Json.obj(
-      "name"    -> sc.name,
-      "parameter"  -> (if(sc.parameter.isDefined) sc.parameter.get else JsNull),
-      "description"  -> (if(sc.description.isDefined) sc.description.get else JsNull)
+  def jsSystemConfigurations(configs: List[SystemConfigurationsWithEnvironment]): JsArray = {
+    var json = Json.arr()
+    configs.foreach { config =>
+      json = json.append(jsSystemConfiguration(config))
+    }
+    json
+  }
+
+  def jsSystemConfiguration(config: SystemConfigurationsWithEnvironment):JsObject = {
+    var json = Json.obj(
+      "name"    -> config.config.name,
+      "default" -> config.defaultSetting,
+      "environment" -> config.environmentSetting
     )
+    if (config.config.parameter.isDefined) json = json + ("parameter" -> JsString(config.config.parameter.get))
     json
   }
 
@@ -1805,11 +1814,6 @@ object JsonUtil {
       "versionNumber" -> config.get("versionNumber")
     )
     json
-  }
-
-  def serializeSystemConfig(sc:SystemConfiguration):String = {
-    val jConfig:JsObject = jsSystemConfiguration(sc.toCaseObject)
-    jConfig.toString
   }
 
   /**

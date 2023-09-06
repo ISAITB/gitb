@@ -174,7 +174,9 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     val principal = getPrincipal(request)
     if (principal != null) {
       val user = userManager.getUserById(userId)
-      ok = user.ssoEmail.isDefined && user.ssoEmail.get.toLowerCase == principal.email.toLowerCase
+      if (user.isDefined) {
+        ok = user.get.ssoEmail.isDefined && user.get.ssoEmail.get.toLowerCase == principal.email.toLowerCase
+      }
     }
     setAuthResult(request, ok, "You cannot access the requested account")
   }
@@ -195,7 +197,9 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
       val principal = getPrincipal(request)
       if (principal != null) {
         val user = userManager.getUserById(id)
-        ok = user.ssoUid.isDefined && user.ssoUid.get == principal.uid
+        if (user.isDefined) {
+          ok = user.get.ssoUid.isDefined && user.get.ssoUid.get == principal.uid
+        }
       }
     }
     setAuthResult(request, ok, "You cannot access the requested account")
@@ -675,7 +679,11 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     checkTestBedAdmin(request)
   }
 
-  def canViewTheSessionAliveTime(request: RequestWithAttributes[_]):Boolean = {
+  def canUpdateSystemConfigurationValues(request: RequestWithAttributes[_]): Boolean = {
+    checkTestBedAdmin(request)
+  }
+
+  def canViewSystemConfigurationValues(request: RequestWithAttributes[_]): Boolean = {
     checkTestBedAdmin(request)
   }
 
@@ -1583,12 +1591,15 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
 
   private def getUser(userId: Long): User = {
     val user = userManager.getUserById(userId)
-    user
+    if (user.isEmpty) {
+      throw UnauthorizedAccessException("User not found")
+    } else {
+      user.get
+    }
   }
 
   private def getUserOrganisation(userId: Long): Option[Organizations] = {
-    val user = getUser(userId)
-    user.organization
+    getUser(userId).organization
   }
 
   private def getCommunityDomain(communityId: Long): Option[Long] = {

@@ -331,6 +331,14 @@ export class Constants {
 		TRIGGER_ID: 'trigger_id',
 	}
 
+	public static SYSTEM_CONFIG = {
+		SESSION_ALIVE_TIME: 'session_alive_time',
+		REST_API_ENABLED: 'rest_api_enabled',
+		SELF_REGISTRATION_ENABLED: 'self_registration_enabled',
+		DEMO_ACCOUNT: 'demo_account',
+		WELCOME_MESSAGE: 'welcome'
+	}
+
 	public static PASSWORD_REGEX = /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#&()_–\[{}\]:;'",?/\\*~$^+=<>]).{8,}$/
 	public static END_OF_TEST_STEP = "-1"
 	public static END_OF_TEST_STEP_EXTERNAL = "-2"

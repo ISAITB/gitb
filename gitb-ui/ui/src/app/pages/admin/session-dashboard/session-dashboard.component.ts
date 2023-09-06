@@ -50,7 +50,6 @@ export class SessionDashboardComponent implements OnInit {
   isNextPageDisabled = false
   action = false
   stop = false
-  ttlEnabled = false
   prevParameter?: number
   showFilters = false
   refreshActivePending = false
@@ -111,23 +110,7 @@ export class SessionDashboardComponent implements OnInit {
     if (this.dataService.isSystemAdmin) {
       this.filterState.filters.push(Constants.FILTER_TYPE.COMMUNITY)
     }
-    if (this.dataService.isSystemAdmin) {
-      this.systemConfigurationService.getSessionAliveTime().subscribe((data) => {
-        this.ttlEnabled = data.parameter != undefined
-        if (this.ttlEnabled) {
-          this.prevParameter = parseInt(data.parameter!)
-        }
-      })
-    }
     this.applyFilters()
-  }
-
-  ttlToggled() {
-    if (this.ttlEnabled) {
-      this.dataService.focus('parameter')
-    } else {
-      this.turnOff()    
-    }
   }
 
   setFilterRefreshState() {
@@ -369,28 +352,6 @@ export class SessionDashboardComponent implements OnInit {
     } else {
       this.isNextPageDisabled = false
       this.isPreviousPageDisabled = false
-    }
-  }
-
-  turnOff() {
-    if (this.prevParameter !== undefined) {
-      this.systemConfigurationService.updateSessionAliveTime()
-      .subscribe(() => {
-        this.prevParameter = undefined
-        this.popupService.success('Automatic session termination disabled.')
-      })
-    }
-  }
-
-  apply() {
-    if (this.prevParameter !== undefined) {
-      this.systemConfigurationService.updateSessionAliveTime(this.prevParameter)
-      .subscribe(() => {
-        this.popupService.success('Maximum session time set to '+this.prevParameter+' seconds.')
-      })
-    } else {
-      this.turnOff()
-      this.ttlEnabled = false
     }
   }
 

@@ -33,7 +33,7 @@
             <app-menu-item (click)="dataService.isSystemAdmin?routingService.toUserManagement():routingService.toCommunity(dataService.community!.id)" [type]="MenuItem.communityManagement" label="Community management" icon="fa-solid fa-people-group" [expanded]="menuExpanded"></app-menu-item>
             <app-menu-item (click)="routingService.toDataExport()" [type]="MenuItem.dataExport" label="Data export" icon="fa-solid fa-file-export" [expanded]="menuExpanded"></app-menu-item>
             <app-menu-item (click)="routingService.toDataImport()" [type]="MenuItem.dataImport" label="Data import" icon="fa-solid fa-file-import" [expanded]="menuExpanded"></app-menu-item>
-            <app-menu-item (click)="routingService.toSystemAdministration()" [type]="MenuItem.systemAdministration" label="System administration" *ngIf="dataService.isSystemAdmin" icon="fa-solid fa-screwdriver-wrench" [expanded]="menuExpanded"></app-menu-item>
+            <app-menu-item (click)="routingService.toSystemAdministration()" [type]="MenuItem.systemAdministration" label="System administration" *ngIf="dataService.isSystemAdmin" icon="fa-solid fa-gear" [expanded]="menuExpanded"></app-menu-item>
           </ng-container>
           <app-menu-group label="My tests" [expanded]="menuExpanded"></app-menu-group>
           <app-menu-item (click)="routingService.toOwnConformanceStatements(dataService.vendor!.id)" [type]="MenuItem.myConformanceStatements" label="My conformance statements" icon="fa-solid fa-award" [expanded]="menuExpanded"></app-menu-item>
