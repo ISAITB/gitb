@@ -8,10 +8,23 @@
                 <div class="row">
                     <div class="col-xs-10 col-xs-offset-1">
                         <div class="form-group">
-                            <label class="col-xs-3 control-label" for="title">Title:</label>
-                            <div class="col-xs-7"><input id="title" name="title" [(ngModel)]="settings.title" class="form-control" type="text"></div>
-                            <app-tooltip tbTooltip="The title to display for the certificate. If unspecified 'Conformance Certificate' is used."></app-tooltip>
+                            <label class="col-xs-3 control-label">Title:</label>
+                            <div class="col-xs-8">
+                                <div class="titleFormContainer">
+                                    <div class="checkbox">
+                                        <label>
+                                            <input type="checkbox" name="includeTitle" (change)="includeTitleChanged()" [(ngModel)]="settings.includeTitle"> Included?
+                                        </label>
+                                    </div>
+                                    <div class="titleText">
+                                        <input id="title" name="title" [(ngModel)]="settings.title" [readonly]="!settings.includeTitle" class="form-control" type="text">
+                                        <app-tooltip tbTooltip="The title to display for the certificate. If unspecified 'Conformance Certificate' is used."></app-tooltip>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
+                    </div>
+                    <div class="col-xs-10 col-xs-offset-1">
                         <div class="form-group">
                             <label class="col-xs-3 control-label">Included sections:</label>
                             <div class="col-xs-8">

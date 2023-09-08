@@ -492,9 +492,13 @@ class ReportManager @Inject() (reportHelper: ReportHelper, triggerHelper: Trigge
     if (settings.includeSignature) {
       pathToUseForPdf = reportPath.resolveSibling(reportPath.getFileName.toString + ".signed.pdf")
     }
-    var title = "Conformance Certificate"
-    if (settings.title.isDefined && !StringUtils.isBlank(settings.title.get)) {
-      title = settings.title.get.trim
+    var title: Option[String] = None
+    if (settings.includeTitle) {
+      if (settings.title.isDefined && !StringUtils.isBlank(settings.title.get)) {
+        title = Some(settings.title.get.trim)
+      } else {
+        title = Some("Conformance Certificate")
+      }
     }
     val labels = communityLabelManager.getLabels(settings.community)
     generateCoreConformanceReport(pathToUseForPdf, addTestCases = false, title, addDetails = settings.includeDetails, addTestCaseResults = settings.includeTestCases, addTestStatus = settings.includeTestStatus, addMessage = settings.includeMessage, settings.message, conformanceInfo, labels, communityId)
@@ -550,10 +554,10 @@ class ReportManager @Inject() (reportHelper: ReportHelper, triggerHelper: Trigge
 
   private def generateCoreConformanceReport(reportPath: Path, addTestCases: Boolean, message: Option[String], actorId: Long, systemId: Long, labels: Map[Short, CommunityLabels], communityId: Long): Path = {
     val conformanceInfo = conformanceManager.getConformanceStatementsFull(None, None, None, Some(List(actorId)), None, None, Some(List(systemId)), None, None, None, None, None, None, None)
-    generateCoreConformanceReport(reportPath, addTestCases, "Conformance Statement Report", addDetails = true, addTestCaseResults = true, addTestStatus = true, addMessage = false, message, conformanceInfo, labels, communityId)
+    generateCoreConformanceReport(reportPath, addTestCases, Some("Conformance Statement Report"), addDetails = true, addTestCaseResults = true, addTestStatus = true, addMessage = false, message, conformanceInfo, labels, communityId)
   }
 
-  private def generateCoreConformanceReport(reportPath: Path, addTestCases: Boolean, title: String, addDetails: Boolean, addTestCaseResults: Boolean, addTestStatus: Boolean, addMessage: Boolean, message: Option[String], conformanceInfo: List[ConformanceStatementFull], labels: Map[Short, CommunityLabels], communityId: Long): Path = {
+  private def generateCoreConformanceReport(reportPath: Path, addTestCases: Boolean, title: Option[String], addDetails: Boolean, addTestCaseResults: Boolean, addTestStatus: Boolean, addMessage: Boolean, message: Option[String], conformanceInfo: List[ConformanceStatementFull], labels: Map[Short, CommunityLabels], communityId: Long): Path = {
     val sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss")
     val overview = new ConformanceStatementOverview()
     val specs = reportHelper.createReportSpecs(Some(communityId))
@@ -566,7 +570,7 @@ class ReportManager @Inject() (reportHelper: ReportHelper, triggerHelper: Trigge
 
     val conformanceData = conformanceInfo.head
     overview.setIncludeTestCases(addTestCases)
-    overview.setTitle(title)
+    overview.setTitle(title.orNull)
     overview.setTestDomain(conformanceData.domainNameFull)
     overview.setTestSpecification(conformanceData.specificationNameFull)
     overview.setTestActor(conformanceData.actorFull)

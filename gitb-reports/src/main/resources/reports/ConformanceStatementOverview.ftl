@@ -159,7 +159,7 @@
 	    </style>
     </head>
     <body>
-        <div class="title">${escape(title)}</div>
+        <#if title??><div class="title">${escape(title)}</div></#if>
         <#if includeMessage?? && includeMessage>
             <div class="report-message">
                 ${message}

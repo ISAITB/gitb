@@ -319,7 +319,7 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
     val storedSettings = conformanceManager.getConformanceCertificateSettingsWrapper(communityId)
     if (storedSettings.isEmpty) {
       // Use default settings.
-      settingsToUse = Some(ConformanceCertificates(0L, None, None, includeMessage = false, includeTestStatus = true, includeTestCases = true, includeDetails = true, includeSignature = false, None, None, None, None, communityId))
+      settingsToUse = Some(ConformanceCertificates(0L, None, None, includeTitle = true, includeMessage = false, includeTestStatus = true, includeTestCases = true, includeDetails = true, includeSignature = false, None, None, None, None, communityId))
     } else {
       val completeSettings = new ConformanceCertificate(storedSettings.get)
       if (storedSettings.get.includeSignature) {

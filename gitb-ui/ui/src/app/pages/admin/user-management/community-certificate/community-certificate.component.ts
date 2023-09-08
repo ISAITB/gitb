@@ -17,8 +17,7 @@ import { KeyValue } from 'src/app/types/key-value';
 @Component({
   selector: 'app-community-certificate',
   templateUrl: './community-certificate.component.html',
-  styles: [
-  ]
+  styleUrls: [ './community-certificate.component.less' ]
 })
 export class CommunityCertificateComponent extends BaseComponent implements OnInit, AfterViewInit {
 
@@ -44,7 +43,9 @@ export class CommunityCertificateComponent extends BaseComponent implements OnIn
   ) { super() }
 
   ngAfterViewInit(): void {
-    this.dataService.focus('title')
+    if (this.settings.includeTitle) {
+      this.dataService.focus('title')
+    }
   }
 
   ngOnInit(): void {
@@ -71,6 +72,9 @@ export class CommunityCertificateComponent extends BaseComponent implements OnIn
         this.originalSettings = cloneDeep(this.settings)
       } else {
         this.updatePasswords = true
+      }
+      if (this.settings.includeTitle) {
+        this.dataService.focus('title', 200)
       }
       setTimeout(() => {
         this.loading = false
@@ -198,4 +202,9 @@ export class CommunityCertificateComponent extends BaseComponent implements OnIn
     this.routingService.toCommunity(this.communityId)
   }
 
+  includeTitleChanged() {
+    if (this.settings.includeTitle) {
+      this.dataService.focus('title')
+    }
+  }
 }

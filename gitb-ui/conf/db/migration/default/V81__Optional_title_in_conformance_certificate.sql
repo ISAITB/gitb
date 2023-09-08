@@ -1,0 +1,1 @@
+ALTER TABLE `conformancecertificates` ADD COLUMN `include_title` TINYINT DEFAULT 1 NOT NULL;

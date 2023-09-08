@@ -954,12 +954,13 @@ class ConformanceManager @Inject() (systemManager: SystemManager, triggerManager
 				if (existingSettings.isDefined) {
 					if (removeKeystore) {
 						val q = for {c <- PersistenceSchema.conformanceCertificates if c.id === existingSettings.get.id} yield (
-							c.message, c.title, c.includeMessage, c.includeTestStatus, c.includeTestCases, c.includeDetails,
+							c.message, c.title, c.includeTitle, c.includeMessage, c.includeTestStatus, c.includeTestCases, c.includeDetails,
 							c.includeSignature, c.keystoreFile, c.keystoreType, c.keystorePassword, c.keyPassword
 						)
 						actions += q.update(
 							conformanceCertificate.message,
 							conformanceCertificate.title,
+							conformanceCertificate.includeTitle,
 							conformanceCertificate.includeMessage,
 							conformanceCertificate.includeTestStatus,
 							conformanceCertificate.includeTestCases,
@@ -977,7 +978,7 @@ class ConformanceManager @Inject() (systemManager: SystemManager, triggerManager
 						}
 						if (updatePasswords) {
 							val q = for {c <- PersistenceSchema.conformanceCertificates if c.id === existingSettings.get.id} yield (
-								c.message, c.title, c.includeMessage, c.includeTestStatus, c.includeTestCases, c.includeDetails,
+								c.message, c.title, c.includeTitle, c.includeMessage, c.includeTestStatus, c.includeTestCases, c.includeDetails,
 								c.includeSignature, c.keystoreType, c.keystorePassword, c.keyPassword
 							)
 							var keystorePasswordToUpdate = conformanceCertificate.keystorePassword
@@ -991,6 +992,7 @@ class ConformanceManager @Inject() (systemManager: SystemManager, triggerManager
 							actions += q.update(
 								conformanceCertificate.message,
 								conformanceCertificate.title,
+								conformanceCertificate.includeTitle,
 								conformanceCertificate.includeMessage,
 								conformanceCertificate.includeTestStatus,
 								conformanceCertificate.includeTestCases,
@@ -1002,12 +1004,13 @@ class ConformanceManager @Inject() (systemManager: SystemManager, triggerManager
 							)
 						} else {
 							val q = for {c <- PersistenceSchema.conformanceCertificates if c.id === existingSettings.get.id} yield (
-								c.message, c.title, c.includeMessage, c.includeTestStatus, c.includeTestCases, c.includeDetails,
+								c.message, c.title, c.includeTitle, c.includeMessage, c.includeTestStatus, c.includeTestCases, c.includeDetails,
 								c.includeSignature, c.keystoreType
 							)
 							actions += q.update(
 								conformanceCertificate.message,
 								conformanceCertificate.title,
+								conformanceCertificate.includeTitle,
 								conformanceCertificate.includeMessage,
 								conformanceCertificate.includeTestStatus,
 								conformanceCertificate.includeTestCases,

@@ -52,6 +52,7 @@
             <xsd:element name="message" type="xsd:string" minOccurs="0"/>
             <xsd:element name="signature" type="SignatureSettings" minOccurs="0"/>
         </xsd:sequence>
+        <xsd:attribute name="addTitle" type="xsd:boolean" default="true"/>
         <xsd:attribute name="addDetails" type="xsd:boolean" default="false"/>
         <xsd:attribute name="addResultOverview" type="xsd:boolean" default="false"/>
         <xsd:attribute name="addTestCases" type="xsd:boolean" default="false"/>

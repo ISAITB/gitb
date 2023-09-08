@@ -668,6 +668,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, communityResour
       val certificateSettings = conformanceManager.getConformanceCertificateSettingsWrapper(communityId)
       if (certificateSettings.isDefined) {
         communityData.setConformanceCertificateSettings(new ConformanceCertificateSettings)
+        communityData.getConformanceCertificateSettings.setAddTitle(certificateSettings.get.includeTitle)
         communityData.getConformanceCertificateSettings.setAddDetails(certificateSettings.get.includeDetails)
         communityData.getConformanceCertificateSettings.setAddMessage(certificateSettings.get.includeMessage)
         communityData.getConformanceCertificateSettings.setAddTestCases(certificateSettings.get.includeTestCases)

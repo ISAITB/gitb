@@ -392,24 +392,28 @@ public class ReportGenerator {
             parameters.put("completedTests", overview.getCompletedTests());
             parameters.put("failedTests", overview.getFailedTests());
             parameters.put("undefinedTests", overview.getUndefinedTests());
-            // Flags for presence of optional and disabled test cases.
-            boolean hasOptionalTests = overview.getTestSuites().stream().anyMatch(testSuite -> testSuite.getTestCases().stream().anyMatch(TestCaseOverview::isOptional));
-            boolean hasDisabledTests = overview.getTestSuites().stream().anyMatch(testSuite -> testSuite.getTestCases().stream().anyMatch(TestCaseOverview::isDisabled));
-            boolean hasRequiredTests = overview.getTestSuites().stream().anyMatch(testSuite -> testSuite.getTestCases().stream().anyMatch((tc) -> !tc.isDisabled() && !tc.isOptional()));
-            parameters.put("hasOptionalTests", hasOptionalTests);
-            parameters.put("hasDisabledTests", hasDisabledTests);
-            parameters.put("hasRequiredTests", hasRequiredTests);
-            var distinctTags = extractDistinctTags(overview.getTestSuites());
-            if (!distinctTags.isEmpty()) {
-                parameters.put("distinctTags", distinctTags);
-            }
             if (overview.getIncludeTestStatus()) {
                 parameters.put("testStatus", overview.getTestStatus());
             }
             parameters.put("overallStatus", overview.getOverallStatus());
             parameters.put("reportDate", overview.getReportDate());
             if (overview.getTestSuites() != null && !overview.getTestSuites().isEmpty()) {
+                // Flags for presence of optional and disabled test cases.
+                boolean hasOptionalTests = overview.getTestSuites().stream().anyMatch(testSuite -> testSuite.getTestCases().stream().anyMatch(TestCaseOverview::isOptional));
+                boolean hasDisabledTests = overview.getTestSuites().stream().anyMatch(testSuite -> testSuite.getTestCases().stream().anyMatch(TestCaseOverview::isDisabled));
+                boolean hasRequiredTests = overview.getTestSuites().stream().anyMatch(testSuite -> testSuite.getTestCases().stream().anyMatch((tc) -> !tc.isDisabled() && !tc.isOptional()));
+                parameters.put("hasOptionalTests", hasOptionalTests);
+                parameters.put("hasDisabledTests", hasDisabledTests);
+                parameters.put("hasRequiredTests", hasRequiredTests);
+                var distinctTags = extractDistinctTags(overview.getTestSuites());
+                if (!distinctTags.isEmpty()) {
+                    parameters.put("distinctTags", distinctTags);
+                }
                 parameters.put("testSuites", overview.getTestSuites());
+            } else {
+                parameters.put("hasOptionalTests", false);
+                parameters.put("hasDisabledTests", false);
+                parameters.put("hasRequiredTests", false);
             }
             parameters.put("includeTestCases", overview.getIncludeTestCases());
             parameters.put("includeMessage", overview.getIncludeMessage());

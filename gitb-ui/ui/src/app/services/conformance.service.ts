@@ -287,6 +287,7 @@ export class ConformanceService {
     if (settings != undefined) {
       data.title = settings.title
       data.message = settings.message
+      data.includeTitle = settings.includeTitle != undefined && settings.includeTitle
       data.includeMessage = settings.includeMessage != undefined && settings.includeMessage
       data.includeTestStatus = settings.includeTestStatus != undefined && settings.includeTestStatus
       data.includeTestCases = settings.includeTestCases != undefined && settings.includeTestCases
@@ -339,6 +340,7 @@ export class ConformanceService {
     const data: any = {}
     if (settings != undefined) {
       data.title = settings.title
+      data.includeTitle = settings.includeTitle != undefined && settings.includeTitle
       data.includeMessage = settings.includeMessage != undefined && settings.includeMessage
       data.includeTestStatus = settings.includeTestStatus != undefined && settings.includeTestStatus
       data.includeTestCases = settings.includeTestCases != undefined && settings.includeTestCases
@@ -383,6 +385,7 @@ export class ConformanceService {
     let data: any = {}
     if (settings != undefined) {
       data.title = settings.title
+      data.includeTitle = settings.includeTitle != undefined && settings.includeTitle
       data.includeMessage = settings.includeMessage != undefined && settings.includeMessage
       data.includeTestStatus = settings.includeTestStatus != undefined && settings.includeTestStatus
       data.includeTestCases = settings.includeTestCases != undefined && settings.includeTestCases
