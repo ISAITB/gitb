@@ -580,10 +580,18 @@ class ReportManager @Inject() (reportHelper: ReportHelper, triggerHelper: Trigge
     overview.setIncludeMessage(addMessage)
 
     // Prepare message
-    var messageToUse:String  = null
+    var messageToUse:String = null
     if (addMessage && message.isDefined) {
+      messageToUse = message.get
       // Replace placeholders
-      messageToUse = message.get.replace(Constants.PlaceholderActor, overview.getTestActor)
+      if (messageToUse.contains(Constants.PlaceholderDomain+"{")) {
+        // We are referring to domain parameters.
+        val parameters = conformanceManager.getDomainParametersByCommunityId(communityId, onlySimple = true, loadValues = true)
+        parameters.foreach { param =>
+          messageToUse = messageToUse.replace("$DOMAIN{"+param.name+"}", param.value.getOrElse(""))
+        }
+      }
+      messageToUse = messageToUse.replace(Constants.PlaceholderActor, overview.getTestActor)
       messageToUse = messageToUse.replace(Constants.PlaceholderDomain, overview.getTestDomain)
       messageToUse = messageToUse.replace(Constants.PlaceholderOrganisation, overview.getOrganisation)
       messageToUse = messageToUse.replace(Constants.PlaceholderSpecificationGroupOption, conformanceData.specificationGroupOptionNameFull)

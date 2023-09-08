@@ -146,18 +146,27 @@ class ConformanceManager @Inject() (systemManager: SystemManager, triggerManager
 		exec(PersistenceSchema.domainParameters.filter(_.id === domainParameterId).result.head)
 	}
 
-	def getDomainParametersByCommunityId(communityId: Long): List[DomainParameter] = {
+	def getDomainParametersByCommunityId(communityId: Long, onlySimple: Boolean, loadValues: Boolean): List[DomainParameter] = {
 		exec(
 			for {
 				domainId <- PersistenceSchema.communities.filter(_.id === communityId).map(x => x.domain).result.head
 				domainParameters <- {
 					if (domainId.isDefined) {
-						PersistenceSchema.domainParameters
+						val query = PersistenceSchema.domainParameters
 							.filter(_.domain === domainId.get)
-							.map(x => (x.id, x.name, x.kind))
-							.sortBy(_._2.asc)
-							.result
-							.map(_.toList.map(x => DomainParameter(x._1, x._2, None, x._3, None, inTests = false, None, domainId.get)))
+							.filterIf(onlySimple)(_.kind === "SIMPLE")
+						if (loadValues) {
+							query.map(x => (x.id, x.name, x.kind, x.desc, x.value))
+								.sortBy(_._2.asc)
+								.result
+								.map(_.toList.map(x => DomainParameter(x._1, x._2, x._4, x._3, x._5, inTests = false, None, domainId.get)))
+						} else {
+							query.map(x => (x.id, x.name, x.kind, x.desc))
+								.sortBy(_._2.asc)
+								.result
+								.map(_.toList.map(x => DomainParameter(x._1, x._2, x._4, x._3, None, inTests = false, None, domainId.get)))
+
+						}
 					} else {
 						DBIO.successful(List[DomainParameter]())
 					}
@@ -166,9 +175,10 @@ class ConformanceManager @Inject() (systemManager: SystemManager, triggerManager
 		)
 	}
 
-	def getDomainParameters(domainId: Long, loadValues: Boolean, onlyForTests: Option[Boolean]): List[DomainParameter] = {
+	def getDomainParameters(domainId: Long, loadValues: Boolean, onlyForTests: Option[Boolean], onlySimple: Boolean): List[DomainParameter] = {
 		val query = PersistenceSchema.domainParameters.filter(_.domain === domainId)
 			.filterOpt(onlyForTests)((table, filterValue) => table.inTests === filterValue)
+			.filterIf(onlySimple)(_.kind === "SIMPLE")
 			.sortBy(_.name.asc)
 		if (loadValues) {
 			exec(
@@ -186,7 +196,7 @@ class ConformanceManager @Inject() (systemManager: SystemManager, triggerManager
 	}
 
 	def getDomainParameters(domainId: Long): List[DomainParameter] = {
-		getDomainParameters(domainId, loadValues = true, None)
+		getDomainParameters(domainId, loadValues = true, None, onlySimple = false)
 	}
 
 	def getDomainParameterByDomainAndName(domainId: Long, name: String) = {

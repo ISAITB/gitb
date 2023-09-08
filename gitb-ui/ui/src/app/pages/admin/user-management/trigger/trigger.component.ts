@@ -145,9 +145,9 @@ export class TriggerComponent extends BaseComponent implements OnInit, AfterView
 
     let domainParameterFnResult: Observable<DomainParameter[]>|undefined
     if (this.dataService.isCommunityAdmin && this.dataService.community!.domainId != undefined) {
-      domainParameterFnResult = this.conformanceService.getDomainParameters(this.dataService.community!.domainId, false)
+      domainParameterFnResult = this.conformanceService.getDomainParameters(this.dataService.community!.domainId, false, false)
     } else if (this.dataService.isSystemAdmin) {
-      domainParameterFnResult = this.conformanceService.getDomainParametersOfCommunity(this.communityId)
+      domainParameterFnResult = this.conformanceService.getDomainParametersOfCommunity(this.communityId, false, false)
     }
     if (domainParameterFnResult != undefined) {
       loadPromises.push(domainParameterFnResult.pipe(

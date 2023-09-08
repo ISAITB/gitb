@@ -158,6 +158,7 @@ object Parameters {
   val CONFIG     = "config"
   val INPUTS     = "inputs"
   val VALUES     = "values"
+  val SIMPLE     = "simple"
   val ALLOWED_VALUES     = "allowedValues"
   val PROPERTIES = "properties"
   val TEST_STEP  = "teststep"

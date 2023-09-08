@@ -439,10 +439,13 @@ export class ConformanceService {
     })
   }
 
-  getDomainParameters(domainId: number, loadValues?: boolean) {
+  getDomainParameters(domainId: number, loadValues?: boolean, onlySimple?: boolean) {
     const params: any = {}
     if (loadValues != undefined) {
       params.values = loadValues
+    }
+    if (onlySimple != undefined) {
+      params.simple = onlySimple
     }
     return this.restService.get<DomainParameter[]>({
       path: ROUTES.controllers.ConformanceService.getDomainParameters(domainId).url,
@@ -451,10 +454,18 @@ export class ConformanceService {
     })
   }
 
-  getDomainParametersOfCommunity(communityId: number) {
+  getDomainParametersOfCommunity(communityId: number, loadValues?: boolean, onlySimple?: boolean) {
+    const params: any = {}
+    if (loadValues != undefined) {
+      params.values = loadValues
+    }
+    if (onlySimple != undefined) {
+      params.simple = onlySimple
+    }
     return this.restService.get<DomainParameter[]>({
       path: ROUTES.controllers.ConformanceService.getDomainParametersOfCommunity(communityId).url,
-      authenticate: true
+      authenticate: true,
+      params: params
     })
   }
 

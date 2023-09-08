@@ -7,6 +7,8 @@ import { ReportService } from 'src/app/services/report.service';
 import { ConformanceCertificateSettings } from 'src/app/types/conformance-certificate-settings';
 import { ConformanceResultFull } from 'src/app/types/conformance-result-full';
 import { saveAs } from 'file-saver'
+import { Observable } from 'rxjs';
+import { DomainParameter } from 'src/app/types/domain-parameter';
 
 @Component({
   selector: 'app-conformance-certificate-modal',
@@ -32,16 +34,33 @@ export class ConformanceCertificateModalComponent implements OnInit {
   ngOnInit(): void {
     if (this.settings.message != undefined) {
       // Replace the placeholders for the preview.
-      this.settings.message = this.settings.message.split(Constants.PLACEHOLDER__DOMAIN).join(this.conformanceStatement.domainName)
-      this.settings.message = this.settings.message.split(Constants.PLACEHOLDER__SPECIFICATION_GROUP_OPTION).join(this.conformanceStatement.specGroupOptionName)
-      this.settings.message = this.settings.message.split(Constants.PLACEHOLDER__SPECIFICATION_GROUP).join(this.conformanceStatement.specGroupName?this.conformanceStatement.specGroupName:'')
-      this.settings.message = this.settings.message.split(Constants.PLACEHOLDER__SPECIFICATION).join(this.conformanceStatement.specName)
-      this.settings.message = this.settings.message.split(Constants.PLACEHOLDER__ACTOR).join(this.conformanceStatement.actorName)
-      this.settings.message = this.settings.message.split(Constants.PLACEHOLDER__ORGANISATION).join(this.conformanceStatement.organizationName)
-      this.settings.message = this.settings.message.split(Constants.PLACEHOLDER__SYSTEM).join(this.conformanceStatement.systemName)
+      if (this.settings.message.includes(Constants.PLACEHOLDER__DOMAIN+'{')) {
+        // The message includes domain parameter placeholders.
+        this.conformanceService.getDomainParametersOfCommunity(this.settings.community, true, true)
+        .subscribe((data) => {
+          let message = this.settings.message!
+          for (let param of data) {
+            message = message.split(Constants.PLACEHOLDER__DOMAIN+'{'+param.name+'}').join((param.value == undefined)?'':param.value!)
+          }
+          this.settings.message = this.replacePlaceholders(message)
+        })
+      } else {
+        this.settings.message = this.replacePlaceholders(this.settings.message)
+      }
     } else {
       this.settings.message = ''
     }
+  }
+
+  private replacePlaceholders(message: string) {
+    message = message.split(Constants.PLACEHOLDER__DOMAIN).join(this.conformanceStatement.domainName)
+    message = message.split(Constants.PLACEHOLDER__SPECIFICATION_GROUP_OPTION).join(this.conformanceStatement.specGroupOptionName)
+    message = message.split(Constants.PLACEHOLDER__SPECIFICATION_GROUP).join(this.conformanceStatement.specGroupName?this.conformanceStatement.specGroupName:'')
+    message = message.split(Constants.PLACEHOLDER__SPECIFICATION).join(this.conformanceStatement.specName)
+    message = message.split(Constants.PLACEHOLDER__ACTOR).join(this.conformanceStatement.actorName)
+    message = message.split(Constants.PLACEHOLDER__ORGANISATION).join(this.conformanceStatement.organizationName)
+    message = message.split(Constants.PLACEHOLDER__SYSTEM).join(this.conformanceStatement.systemName)
+    return message
   }
 
   certificateChoice() {

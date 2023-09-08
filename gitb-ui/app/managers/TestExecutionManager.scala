@@ -117,7 +117,7 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
 
   def loadDomainParameters(actorId: Long): Option[ActorConfiguration] = {
     val domainId = actorManager.getById(actorId).get.domain
-    val parameters = conformanceManager.getDomainParameters(domainId, loadValues = true, Some(true))
+    val parameters = conformanceManager.getDomainParameters(domainId, loadValues = true, Some(true), onlySimple = false)
     if (parameters.nonEmpty) {
       val domainConfiguration = new ActorConfiguration()
       domainConfiguration.setActor(Constants.domainConfigurationName)

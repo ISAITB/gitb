@@ -386,15 +386,18 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
   def getDomainParameters(domainId: Long) = authorizedAction { request =>
     authorizationManager.canManageDomainParameters(request, domainId)
     // Optionally skip loading values (if we only want to show the list of parameters)
-    val loadValues = ParameterExtractor.optionalBooleanQueryParameter(request, Parameters.VALUES).getOrElse(true)
-    val result = conformanceManager.getDomainParameters(domainId, loadValues, None)
+    val loadValues = ParameterExtractor.optionalBooleanQueryParameter(request, Parameters.VALUES).getOrElse(false)
+    val onlySimple = ParameterExtractor.optionalBooleanQueryParameter(request, Parameters.SIMPLE).getOrElse(false)
+    val result = conformanceManager.getDomainParameters(domainId, loadValues, None, onlySimple)
     val json = JsonUtil.jsDomainParameters(result).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
 
   def getDomainParametersOfCommunity(communityId: Long) = authorizedAction { request =>
     authorizationManager.canViewDomainParametersForCommunity(request, communityId)
-    val result = conformanceManager.getDomainParametersByCommunityId(communityId)
+    val loadValues = ParameterExtractor.optionalBooleanQueryParameter(request, Parameters.VALUES).getOrElse(false)
+    val onlySimple = ParameterExtractor.optionalBooleanQueryParameter(request, Parameters.SIMPLE).getOrElse(false)
+    val result = conformanceManager.getDomainParametersByCommunityId(communityId, onlySimple, loadValues)
     val json = JsonUtil.jsDomainParameters(result).toString()
     ResponseConstructor.constructJsonResponse(json)
   }

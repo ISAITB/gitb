@@ -135,7 +135,7 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
     if (this.parameterStatus.status == Constants.STATUS.NONE || forceLoad) {
       this.domainParameters = []
       this.parameterStatus.status = Constants.STATUS.PENDING
-      this.conformanceService.getDomainParameters(this.domainId)
+      this.conformanceService.getDomainParameters(this.domainId, true, false)
       .subscribe((data) => {
         for (let parameter of data) {
           if (parameter.kind == 'HIDDEN') {
