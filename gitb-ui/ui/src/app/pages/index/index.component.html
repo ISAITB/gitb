@@ -37,7 +37,7 @@
           </ng-container>
           <app-menu-group label="My tests" [expanded]="menuExpanded"></app-menu-group>
           <app-menu-item (click)="routingService.toOwnConformanceStatements(dataService.vendor!.id)" [type]="MenuItem.myConformanceStatements" label="My conformance statements" icon="fa-solid fa-award" [expanded]="menuExpanded"></app-menu-item>
-          <app-menu-item (click)="routingService.toTestHistory(dataService.vendor!.id)" [type]="MenuItem.myTestSessions" label="My test sessions" icon="fa-solid fa-list" [expanded]="menuExpanded"></app-menu-item>
+          <app-menu-item (click)="routingService.toTestHistory(dataService.vendor!.id)" [type]="MenuItem.myTestSessions" label="My test sessions" icon="fa-regular fa-rectangle-list" [expanded]="menuExpanded"></app-menu-item>
           <app-menu-item (click)="routingService.toOwnOrganisationDetails()" [type]="MenuItem.myOrganisation" [label]="'My '+dataService.labelOrganisationLower()" icon="fa-solid fa-building" [expanded]="menuExpanded"></app-menu-item>
           <app-menu-group [expanded]="menuExpanded"></app-menu-group>
           <app-menu-item [label]="menuExpanded?'Collapse menu':'Expand menu'" [icon]="'fa-solid '+(menuExpanded?'fa-angles-left':'fa-angles-right')" (click)="toggleMenu()" [expanded]="menuExpanded"></app-menu-item>

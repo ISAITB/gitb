@@ -612,3 +612,14 @@ div.non-padded-alert div.alert {
         }
     }
 }
+
+.nav-item.tabClass {
+	&:not(.active) {
+		.nav-link {
+			border-radius: 4px 4px 0px 0px;
+			border-top: 1px solid @gray-dark-1;
+			border-left: 1px solid @gray-dark-1;
+			border-right: 1px solid @gray-dark-1;
+		}
+	}
+}

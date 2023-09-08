@@ -25,7 +25,8 @@
     </div>
     <div>
         <tabset #tabs>
-            <tab heading="{{dataService.labelOrganisations()}}" *ngIf="true" (selectTab)="showOrganisations()">
+            <tab *ngIf="true" (selectTab)="showOrganisations()" customClass="tabClass">
+                <ng-template tabHeading><app-tab-title icon="fa-solid fa-building" [text]="dataService.labelOrganisations()"></app-tab-title></ng-template>
                 <!-- Organisations -->
                 <div class="tabPanel">
                     <div class="tabControls form-inline">
@@ -65,7 +66,8 @@
                     </div>
                 </div>
             </tab>
-            <tab heading="Administrators" *ngIf="communityId != Constants.DEFAULT_COMMUNITY_ID" (selectTab)="showAdministrators()">
+            <tab *ngIf="communityId != Constants.DEFAULT_COMMUNITY_ID" (selectTab)="showAdministrators()" customClass="tabClass">
+                <ng-template tabHeading><app-tab-title icon="fa-solid fa-user" text="Administrators"></app-tab-title></ng-template>
                 <!-- Administrators -->
                 <div class="tabPanel">
                     <div class="tabControls">
@@ -83,7 +85,8 @@
                     </div>
                 </div>
             </tab>
-            <tab heading="Landing pages" *ngIf="true" (selectTab)="showLandingPages()">
+            <tab *ngIf="true" (selectTab)="showLandingPages()" customClass="tabClass">
+                <ng-template tabHeading><app-tab-title icon="fa-solid fa-house" text="Landing pages"></app-tab-title></ng-template>
                 <!-- Landing pages -->
                 <div class="tabPanel">
                     <div class="tabControls">
@@ -104,7 +107,8 @@
                     </div>
                 </div>
             </tab>
-            <tab heading="Legal notices" *ngIf="true" (selectTab)="showLegalNotices()">
+            <tab *ngIf="true" (selectTab)="showLegalNotices()" customClass="tabClass">
+                <ng-template tabHeading><app-tab-title icon="fa-solid fa-scale-balanced" text="Legal notices"></app-tab-title></ng-template>
                 <!-- Legal notices -->
                 <div class="tabPanel">
                     <div class="tabControls">
@@ -125,7 +129,8 @@
                     </div>
                 </div>
             </tab>
-            <tab heading="Error templates" *ngIf="true" (selectTab)="showErrorTemplates()">
+            <tab *ngIf="true" (selectTab)="showErrorTemplates()" customClass="tabClass">
+                <ng-template tabHeading><app-tab-title icon="fa-solid fa-bug" text="Error templates"></app-tab-title></ng-template>
                 <!-- error templates -->
                 <div class="tabPanel">
                     <div class="tabControls">
@@ -146,7 +151,8 @@
                     </div>
                 </div>
             </tab>
-            <tab heading="Triggers" *ngIf="true" (selectTab)="showTriggers()">
+            <tab *ngIf="true" (selectTab)="showTriggers()" customClass="tabClass">
+                <ng-template tabHeading><app-tab-title icon="fa-solid fa-bolt" text="Triggers"></app-tab-title></ng-template>
                 <!-- Triggers -->
                 <div class="tabPanel">
                     <div class="tabControls">
@@ -164,7 +170,8 @@
                     </div>
                 </div>
             </tab>
-            <tab heading="Resources" *ngIf="true" (selectTab)="showResources()">
+            <tab *ngIf="true" (selectTab)="showResources()" customClass="tabClass">
+                <ng-template tabHeading><app-tab-title icon="fa-solid fa-image" text="Resources"></app-tab-title></ng-template>
                 <!-- Community resources -->
                 <div class="tabPanel">
                     <div class="tabControls form-inline">

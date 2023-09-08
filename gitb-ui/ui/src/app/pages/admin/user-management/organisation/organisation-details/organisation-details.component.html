@@ -30,7 +30,8 @@
     </div>
     <div>
         <tabset #tabs>
-            <tab heading="{{dataService.labelSystems()}}" (selectTab)="showSystems()">
+            <tab (selectTab)="showSystems()" customClass="tabClass">
+                <ng-template tabHeading><app-tab-title icon="fa-solid fa-cube" [text]="dataService.labelSystems()"></app-tab-title></ng-template>
                 <div class="tabPanel">
                     <div class="tabControls" *ngIf="!readonly">
                         <button type="button" class="btn btn-default" (click)="createSystem()">Create {{dataService.labelSystemLower()}}</button>
@@ -47,7 +48,8 @@
                     </div>
                 </div>
             </tab>
-            <tab heading="Users" (selectTab)="showUsers()">
+            <tab (selectTab)="showUsers()" customClass="tabClass">
+                <ng-template tabHeading><app-tab-title icon="fa-solid fa-user" text="Users"></app-tab-title></ng-template>
                 <div class="tabPanel">
                     <div class="tabControls" *ngIf="!readonly && showCreateUser">
                         <button type="button" class="btn btn-default" (click)="createUser()">Create user</button>
@@ -64,7 +66,8 @@
                     </div>
                 </div>
             </tab>
-            <tab heading="REST API keys" (selectTab)="showApiInfo()" *ngIf="apiInfoVisible">
+            <tab (selectTab)="showApiInfo()" *ngIf="apiInfoVisible" customClass="tabClass">
+                <ng-template tabHeading><app-tab-title icon="fa-solid fa-key" text="REST API keys"></app-tab-title></ng-template>
                 <div class="tabPanel">
                     <app-api-key-info 
                         [organisationId]="orgId" 

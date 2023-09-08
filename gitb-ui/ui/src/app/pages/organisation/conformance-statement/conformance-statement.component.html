@@ -53,7 +53,8 @@
 		</div>
 	</div>
 	<tabset #tabs>
-		<tab heading="Conformance tests">
+		<tab customClass="tabClass">
+			<ng-template tabHeading><app-tab-title icon="fa-solid fa-list-ul" text="Conformance tests"></app-tab-title></ng-template>
 			<div class="tabPanel">
 				<div class="tabControls">
 					<div class="testFilters">
@@ -99,7 +100,8 @@
 				</ng-container>
 			</div>
 		</tab>
-		<tab heading="Configuration parameters" (selectTab)="loadConfigurations()">
+		<tab (selectTab)="loadConfigurations()" customClass="tabClass">
+			<ng-template tabHeading><app-tab-title icon="fa-solid fa-sliders" text="Configuration parameters"></app-tab-title></ng-template>
 			<div class="tabPanel" [ngSwitch]="loadingConfiguration.status != Constants.STATUS.FINISHED">
 				<app-pending-block *ngSwitchCase="true"></app-pending-block>
 				<ng-container *ngSwitchDefault [ngSwitch]="endpointRepresentations.length">

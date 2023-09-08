@@ -72,7 +72,8 @@
 	</div>
 	<div>
 		<tabset #tabs>
-			<tab heading="Test cases" (selectTab)="loadTestCases()">
+			<tab (selectTab)="loadTestCases()" customClass="tabClass">
+                <ng-template tabHeading><app-tab-title icon="fa-solid fa-file-code" text="Test cases"></app-tab-title></ng-template>
 				<div class="tabPanel">
 					<div class="panel panel-default">
 						<div table-directive
@@ -86,7 +87,8 @@
 					</div>
 				</div>
 			</tab>
-			<tab heading="Linked specifications" *ngIf="testSuite.shared" (selectTab)="loadLinkedSpecifications()">
+			<tab *ngIf="testSuite.shared" (selectTab)="loadLinkedSpecifications()" customClass="tabClass">
+                <ng-template tabHeading><app-tab-title icon="fa-solid fa-list-check" text="Linked specifications"></app-tab-title></ng-template>
 				<div class="tabPanel">
                     <div class="tabControls">
 						<div class="btn-toolbar">

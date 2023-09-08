@@ -22,7 +22,8 @@
     </div>
     <div>
         <tabset #tabs>
-            <tab heading="{{dataService.labelSpecifications()}}" (selectTab)="loadSpecifications()">
+            <tab (selectTab)="loadSpecifications()" customClass="tabClass">
+                <ng-template tabHeading><app-tab-title icon="fa-solid fa-list-check" [text]="dataService.labelSpecifications()"></app-tab-title></ng-template>
                 <div class="tabPanel">
                     <div class="tabControls">
                         <div class="btn-toolbar">
@@ -93,7 +94,8 @@
                 </div>
             </tab>
 
-            <tab heading="Shared test suites" (selectTab)="loadSharedTestSuites()">
+            <tab (selectTab)="loadSharedTestSuites()" customClass="tabClass">
+                <ng-template tabHeading><app-tab-title icon="fa-solid fa-box-archive" text="Shared test suites"></app-tab-title></ng-template>
                 <div class="tabPanel">
                     <div class="tabControls">
                         <div class="btn-toolbar">
@@ -113,7 +115,8 @@
                 </div>
             </tab>
 
-            <tab heading="Parameters" (selectTab)="loadDomainParameters()">
+            <tab (selectTab)="loadDomainParameters()" customClass="tabClass">
+                <ng-template tabHeading><app-tab-title icon="fa-solid fa-sliders" text="Parameters"></app-tab-title></ng-template>
                 <div class="tabPanel">
                     <div class="tabControls">
                         <button type="button" class="btn btn-default" (click)="createDomainParameter()">Create parameter</button>

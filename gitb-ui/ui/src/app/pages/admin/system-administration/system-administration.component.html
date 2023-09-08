@@ -144,7 +144,8 @@
     </div>
     <div>
         <tabset #tabs>
-            <tab heading="Administrators" (selectTab)="showAdministrators()">
+            <tab (selectTab)="showAdministrators()" customClass="tabClass">
+                <ng-template tabHeading><app-tab-title icon="fa-solid fa-user" text="Administrators"></app-tab-title></ng-template>
                 <!-- Administrators -->
                 <div class="tabPanel">
                     <div class="tabControls">
@@ -162,7 +163,8 @@
                     </div>
                 </div>
             </tab>
-            <tab heading="Default landing pages" (selectTab)="showLandingPages()">
+            <tab (selectTab)="showLandingPages()" customClass="tabClass">
+                <ng-template tabHeading><app-tab-title icon="fa-solid fa-house" text="Default landing pages"></app-tab-title></ng-template>
                 <!-- Landing pages -->
                 <div class="tabPanel">
                     <div class="tabControls">
@@ -182,7 +184,8 @@
                     </div>
                 </div>
             </tab>
-            <tab heading="Default legal notices" (selectTab)="showLegalNotices()">
+            <tab (selectTab)="showLegalNotices()" customClass="tabClass">
+                <ng-template tabHeading><app-tab-title icon="fa-solid fa-scale-balanced" text="Default legal notices"></app-tab-title></ng-template>
                 <!-- Legal notices -->
                 <div class="tabPanel">
                     <div class="tabControls">
@@ -202,7 +205,8 @@
                     </div>
                 </div>
             </tab>
-            <tab heading="Default error templates" (selectTab)="showErrorTemplates()">
+            <tab (selectTab)="showErrorTemplates()" customClass="tabClass">
+                <ng-template tabHeading><app-tab-title icon="fa-solid fa-bug" text="Default error templates"></app-tab-title></ng-template>
                 <!-- error templates -->
                 <div class="tabPanel">
                     <div class="tabControls">

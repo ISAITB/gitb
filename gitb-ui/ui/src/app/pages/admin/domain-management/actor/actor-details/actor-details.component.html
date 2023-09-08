@@ -22,7 +22,8 @@
 	</div>
 	<div>
 		<tabset>
-			<tab heading="{{dataService.labelEndpoints()}}">
+			<tab customClass="tabClass">
+                <ng-template tabHeading><app-tab-title icon="fa-solid fa-gear" [text]="dataService.labelEndpoints()"></app-tab-title></ng-template>
 				<div class="tabPanel">
 					<div class="tabControls">
 						<button type="button" class="btn btn-default" (click)="createEndpoint()">Create {{dataService.labelEndpointLower()}}</button>

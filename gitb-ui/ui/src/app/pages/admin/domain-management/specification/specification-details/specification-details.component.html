@@ -22,7 +22,8 @@
 	</div>
 	<div>
 		<tabset #tabs>
-			<tab heading="Test suites" (selectTab)="loadTestSuites()">
+			<tab (selectTab)="loadTestSuites()" customClass="tabClass">
+                <ng-template tabHeading><app-tab-title icon="fa-solid fa-box-archive" text="Test suites"></app-tab-title></ng-template>
 				<div class="tabPanel">
 					<div class="tabControls">
 						<div class="btn-toolbar">
@@ -69,7 +70,8 @@
 					</div>
 				</div>
 			</tab>
-			<tab heading="{{dataService.labelActors()}}" (selectTab)="loadActors()">
+			<tab (selectTab)="loadActors()" customClass="tabClass">
+                <ng-template tabHeading><app-tab-title icon="fa-solid fa-circle-user" [text]="dataService.labelActors()"></app-tab-title></ng-template>
 				<div class="tabPanel">
 					<div class="tabControls">
 						<button class="btn btn-default" type="button" (click)="createActor()">Create {{dataService.labelActorLower()}}</button>
