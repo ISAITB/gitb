@@ -63,7 +63,6 @@ export class TestFilterComponent implements OnInit {
   organisationProperties: Array<CustomProperty> = []
   systemProperties: Array<{id?: number, value?: string, uuid?: number}> = []
   definedFilters: { [key: string]: boolean } = {}
-  enableFiltering = false
   showFiltering = false
   sessionId?: string
   uuidCounter = 0
@@ -518,7 +517,6 @@ export class TestFilterComponent implements OnInit {
   }
 
   clearFilters() {
-    this.enableFiltering = false
     this.showFiltering = false
     this.clearFilter(Constants.FILTER_TYPE.DOMAIN)
     this.clearFilter(Constants.FILTER_TYPE.SPECIFICATION)
@@ -551,28 +549,13 @@ export class TestFilterComponent implements OnInit {
   }
 
   clickedHeader() {
-    if (this.enableFiltering) {
-      this.showFiltering = !this.showFiltering
-    }
-  }
-
-  toggleFiltering() {
-    if (!this.enableFiltering) {
-      this.dataService.async(this.clearFilters.bind(this))
-    } else {
-      this.showFiltering = true
-      this.resetApplicableCommunityId()
-      this.resetFilters()
-      this.applyFilters()
-    }
+    this.showFiltering = !this.showFiltering
   }
 
   applyTimeFiltering() {
-    if (this.enableFiltering) {
-      setTimeout(() => {
-        this.applyFilters()
-      })
-    }
+    setTimeout(() => {
+      this.applyFilters()
+    })
   }
 
   resetFilters() {

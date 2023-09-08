@@ -42,7 +42,6 @@ import { SessionDashboardComponent } from './pages/admin/session-dashboard/sessi
 import { SessionTableComponent } from './components/session-table/session-table.component';
 import { TestFilterComponent } from './components/test-filter/test-filter.component';
 import { CustomPropertyFilterComponent } from './components/custom-property-filter/custom-property-filter.component';
-import { ToggleComponent } from './components/toggle/toggle.component';
 import { TestSessionPresentationComponent } from './components/diagram/test-session-presentation/test-session-presentation.component';
 import { SequenceDiagramComponent } from './components/diagram/sequence-diagram/sequence-diagram.component';
 import { SequenceDiagramActorComponent } from './components/diagram/sequence-diagram-actor/sequence-diagram-actor.component';
@@ -205,7 +204,6 @@ import { ConfigurationEntryComponent } from './pages/admin/system-administration
     SessionTableComponent,
     TestFilterComponent,
     CustomPropertyFilterComponent,
-    ToggleComponent,
     TestSessionPresentationComponent,
     SequenceDiagramComponent,
     SequenceDiagramActorComponent,

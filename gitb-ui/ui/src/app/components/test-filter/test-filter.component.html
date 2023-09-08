@@ -1,9 +1,9 @@
 <div class="panel panel-default">
-    <div class="panel-heading" (click)="clickedHeader()" [ngClass]="{'clickable': enableFiltering}">
-        <h4 class="title"><app-collapsing-icon [hidden]="!enableFiltering" [isCollapsed]="!showFiltering"></app-collapsing-icon>Filters</h4>
+    <div class="panel-heading clickable" (click)="clickedHeader()">
+        <h4 class="title"><app-collapsing-icon [isCollapsed]="!showFiltering"></app-collapsing-icon>Filters</h4>
         <div class="btn-toolbar">
             <button type="button" class="btn btn-default" (click)="applyFilters(); $event.stopPropagation()" [pending]="filterState.updatePending">Refresh</button>
-            <app-toggle id="sessions-toggle-filter" class="btn-group" name="filterToggle" (click)="$event.stopPropagation()" [(ngModel)]="enableFiltering" on="Enabled" off="Disabled" (toggle)="toggleFiltering()"></app-toggle>
+            <button type="button" class="btn btn-default" (click)="clearFilters(); $event.stopPropagation()" [disabled]="filterState.updatePending">Clear filters</button>
         </div>
     </div>
     <div [collapse]="!showFiltering" [isAnimated]="true">
