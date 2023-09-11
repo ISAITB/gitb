@@ -49,7 +49,7 @@ export class ParameterDetailsModalComponent extends BaseParameterModalComponent 
   }
 
   deleteParameter() {
-    this.confirmationDialogService.confirmed("Confirm delete", this.confirmMessage, "Yes", "No")
+    this.confirmationDialogService.confirmedDangerous("Confirm delete", this.confirmMessage, "Delete", "Cancel")
     .subscribe(() => {
       this.deleted.emit(this.parameter as Parameter)
       this.modalInstance.hide()

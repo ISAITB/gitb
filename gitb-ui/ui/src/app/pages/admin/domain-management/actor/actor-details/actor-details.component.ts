@@ -78,7 +78,7 @@ export class ActorDetailsComponent extends BaseComponent implements OnInit, Afte
   }
 
   delete() {
-    this.confirmationDialogService.confirmed("Confirm delete", "Are you sure you want to delete this "+this.dataService.labelActorLower()+"?", "Yes", "No")
+    this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this "+this.dataService.labelActorLower()+"?", "Delete", "Cancel")
     .subscribe(() => {
       this.deletePending = true
       this.actorService.deleteActor(this.actorId)

@@ -136,7 +136,7 @@ export class EditEndpointConfigurationModalComponent extends BaseComponent imple
   }
 
   delete() {
-    this.confirmationDialogService.confirmed("Confirm delete", "Are you sure you want to delete the value for this parameter?", "Yes", "No")
+    this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete the value for this parameter?", "Delete", "Cancel")
     .subscribe(() => {
       this.deletePending = true
       this.systemService.deleteEndpointConfiguration(this.systemId, this.parameter.id, this.endpoint.id)

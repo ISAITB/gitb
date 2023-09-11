@@ -236,7 +236,7 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
   }
 
 	deleteSpecification() {
-		this.confirmationDialogService.confirmed("Confirm delete", "Are you sure you want to delete this "+this.dataService.labelSpecificationLower()+"?", "Yes", "No")
+		this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this "+this.dataService.labelSpecificationLower()+"?", "Delete", "Cancel")
 		.subscribe(() => {
       this.deletePending = true
       this.specificationService.deleteSpecification(this.specificationId)

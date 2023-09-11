@@ -132,7 +132,7 @@ export class EndpointDetailsComponent extends BaseComponent implements OnInit, A
   }
 
 	delete() {
-		this.confirmationDialogService.confirmed("Confirm delete", "Are you sure you want to delete this "+this.dataService.labelEndpointLower()+"?", "Yes", "No")
+		this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this "+this.dataService.labelEndpointLower()+"?", "Delete", "Cancel")
     .subscribe(() => {
       this.deletePending = true
       this.endpointService.deleteEndPoint(this.endpointId)

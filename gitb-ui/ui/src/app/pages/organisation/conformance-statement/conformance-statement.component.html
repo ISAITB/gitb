@@ -42,12 +42,14 @@
 					<div class="col-md-10"><span containerClass="shortTooltip" [tooltip]="dataService.tooltipForTestResult(conformanceStatus)"><i [ngClass]="dataService.iconForTestResult(conformanceStatus)"></i></span></div>
 				</div>
 			</div>
-			<div class="panel-footer">
+			<div class="panel-footer button-container">
 				<div class="btn-toolbar">
 					<button *ngIf="canExportConformanceCertificate()" type="button" class="btn btn-default" (click)="onExportConformanceCertificate()" [pending]="exportCertificatePending" [disable]="exportCertificatePending">Download conformance certificate</button>
 					<button type="button" class="btn btn-default" (click)="onExportConformanceStatement()" [pending]="exportPending">Download report</button>
-					<button type="button" class="btn btn-default" *ngIf="canDelete()" (click)="deleteConformanceStatement()" [pending]="deletePending">Delete statement</button>
 					<button type="button" class="btn btn-default" (click)="back()">Back</button>
+				</div>
+				<div class="btn-toolbar" *ngIf="canDelete()">
+					<button type="button" class="btn btn-link" (click)="deleteConformanceStatement()" [pending]="deletePending">Delete statement</button>
 				</div>
 			</div>
 		</div>

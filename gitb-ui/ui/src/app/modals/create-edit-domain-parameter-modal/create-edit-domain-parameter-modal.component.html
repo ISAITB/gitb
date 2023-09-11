@@ -67,9 +67,13 @@
             </div>
         </div>
     </div>
-    <div class="modal-footer">
-        <button class="btn btn-default" type="submit" (click)="save()" [disable]="!saveAllowed()" [pending]="savePending">Save</button>
-        <button class="btn btn-default" type="button" (click)="delete()" *ngIf="domainParameter.id" [disable]="pending" [pending]="deletePending">Delete</button>
-        <button class="btn btn-default" type="button" (click)="cancel()" [disabled]="pending">Cancel</button>
+    <div class="modal-footer button-container">
+        <div class="btn-toolbar" *ngIf="domainParameter.id">
+            <button class="btn btn-link" type="button" (click)="delete()" [disable]="pending" [pending]="deletePending">Delete</button>
+        </div>
+        <div class="btn-toolbar">
+            <button class="btn btn-default" type="button" (click)="cancel()" [disabled]="pending">Cancel</button>
+            <button class="btn btn-default" type="submit" (click)="save()" [disable]="!saveAllowed()" [pending]="savePending">Save</button>
+        </div>
     </div>
 </form>

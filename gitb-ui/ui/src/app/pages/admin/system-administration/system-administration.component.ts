@@ -499,7 +499,7 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
   }
 
   resetWelcomePage() {
-    this.confirmationDialogService.confirmed("Confirm reset", "Are you sure you want to reset the welcome page message to its default?", "Yes", "No")
+    this.confirmationDialogService.confirmedDangerous("Confirm reset", "Are you sure you want to reset the welcome page message to its default?", "Reset", "Cancel")
     .subscribe(() => {
       this.welcomePageResetPending = true
       this.systemConfigurationService.updateConfigurationValue(Constants.SYSTEM_CONFIG.WELCOME_MESSAGE)

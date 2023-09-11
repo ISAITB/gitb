@@ -74,7 +74,7 @@ export class AdminDetailsComponent extends BaseComponent implements OnInit, Afte
   }
 
   deleteAdmin() {
-    this.confirmationDialogService.confirmed("Confirm delete", "Are you sure you want to delete this administrator?", "Yes", "No")
+    this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this administrator?", "Delete", "Cancel")
     .subscribe(() => {
       this.deletePending = true
       this.userService.deleteAdmin(this.userId)

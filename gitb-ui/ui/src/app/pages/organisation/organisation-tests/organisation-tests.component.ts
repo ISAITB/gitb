@@ -373,7 +373,7 @@ export class OrganisationTestsComponent implements OnInit {
   }
 
   stopAll() {
-    this.confirmationDialogService.confirmed('Confirm delete', 'Are you certain you want to terminate all active sessions?', 'Yes', 'No')
+    this.confirmationDialogService.confirmedDangerous('Confirm termination', 'Are you certain you want to terminate all active sessions?', 'Terminate', 'Cancel')
     .subscribe(() => {
       let result = this.testService.stopAllOrganisationSessions(this.organisationId)
       this.stopAllPending = true
@@ -387,7 +387,7 @@ export class OrganisationTestsComponent implements OnInit {
   }
   
   stopSession(session: TestResultForDisplay) {
-    this.confirmationDialogService.confirmed('Confirm delete', 'Are you certain you want to terminate this session?', 'Yes', 'No')
+    this.confirmationDialogService.confirmedDangerous('Confirm termination', 'Are you certain you want to terminate this session?', 'Terminate', 'Cancel')
     .subscribe(() => {
       session.deletePending = true
       this.testService.stop(session.session)
@@ -401,7 +401,7 @@ export class OrganisationTestsComponent implements OnInit {
   }
 
   deleteObsolete() {
-    this.confirmationDialogService.confirmed('Confirm delete', 'Are you sure you want to delete all obsolete test results?', 'Yes', 'No')
+    this.confirmationDialogService.confirmedDangerous('Confirm delete', 'Are you sure you want to delete all obsolete test results?', 'Delete', 'Cancel')
     .subscribe(() => {
       this.deletePending = true
       this.conformanceService.deleteObsoleteTestResultsForOrganisation(this.organisationId)

@@ -133,7 +133,7 @@ export class CreateEditDomainParameterModalComponent extends BaseComponent imple
   }
 
   delete() {
-    this.confirmationDialogService.confirmed("Confirm delete", "Are you sure you want to delete this parameter?", "Yes", "No")
+    this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this parameter?", "Delete", "Cancel")
     .subscribe(() => {
       this.pending = true
       this.deletePending = true

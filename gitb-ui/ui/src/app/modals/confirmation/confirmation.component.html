@@ -5,6 +5,6 @@
     <p>{{bodyText}}</p>
 </div>
 <div class="modal-footer">
-    <button [ngClass]="okClass()" type="button" (click)="ok()">{{actionButtonText}}</button>
     <button [ngClass]="cancelClass()" type="button" (click)="cancel()" *ngIf="!oneButton">{{closeButtonText}}</button>
+    <button [ngClass]="actionClass" type="button" (click)="ok()">{{actionButtonText}}</button>
 </div>

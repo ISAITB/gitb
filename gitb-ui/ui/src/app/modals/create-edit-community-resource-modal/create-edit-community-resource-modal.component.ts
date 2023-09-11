@@ -100,7 +100,7 @@ export class CreateEditCommunityResourceModalComponent extends BaseComponent imp
 
   delete() {
     if (this.resource.id != undefined) {
-      this.confirmationDialogService.confirmed("Confirm delete", "Are you sure you want to delete this resource?", "Yes", "No").subscribe(() => {
+      this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this resource?", "Delete", "Cancel").subscribe(() => {
         this.deletePending = true
         this.communityService.deleteCommunityResource(this.resource.id!).subscribe(() => {
           this.resourceUpdated.emit(true)

@@ -556,7 +556,7 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
   }
 
   deleteConformanceStatement() {
-    this.confirmationDialogService.confirmed("Confirm delete", "Are you sure you want to delete this conformance statement?", "Yes", "No")
+    this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this conformance statement?", "Delete", "Cancel")
     .subscribe(() => {
       this.deletePending = true
       this.systemService.deleteConformanceStatement(this.systemId, [this.actorId])

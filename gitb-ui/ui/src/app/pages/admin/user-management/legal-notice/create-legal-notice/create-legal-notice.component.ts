@@ -63,7 +63,7 @@ export class CreateLegalNoticeComponent extends BaseComponent implements OnInit,
   createLegalNotice() {
     this.clearAlerts()
     if (this.notice.default) {
-      this.confirmationDialogService.confirmed("Confirm default", "You are about to change the default legal notice. Are you sure?", "Yes", "No")
+      this.confirmationDialogService.confirmed("Confirm default", "You are about to change the default legal notice. Are you sure?", "Change", "Cancel")
       .subscribe(() => {
         this.doCreate()
       })

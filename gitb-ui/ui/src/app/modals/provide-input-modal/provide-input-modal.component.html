@@ -44,8 +44,8 @@
 		</div>
 	</div>
 	<div class="modal-footer">
+		<button type="button" *ngIf="!needsInput" (click)="hideInput()" class="btn btn-default">Close</button>
 		<button type="button" *ngIf="needsInput" (click)="reset()" class="btn btn-default">Reset</button>
 		<button type="submit" *ngIf="needsInput" (click)="hideInput()" class="btn btn-default">Submit</button>
-		<button type="button" *ngIf="!needsInput" (click)="hideInput()" class="btn btn-default">Close</button>
 	</div>
 </form>

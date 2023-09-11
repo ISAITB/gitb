@@ -76,7 +76,7 @@ export class CommunityAdminDetailsComponent extends BaseComponent implements OnI
   }
 
   deleteAdmin() {
-    this.confirmationDialogService.confirmed("Confirm delete", "Are you sure you want to delete this administrator?", "Yes", "No")
+    this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this administrator?", "Delete", "Cancel")
     .subscribe(() => {
       this.deletePending = true
       this.userService.deleteAdmin(this.userId)

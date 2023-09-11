@@ -65,7 +65,7 @@ export class LandingPageDetailsComponent extends BaseComponent implements OnInit
   updateLandingPage(copy: boolean) {
     this.clearAlerts()
     if (!this.isDefault && this.page.default) {
-      this.confirmationDialogService.confirmed("Confirm default", "You are about to change the default landing page. Are you sure?", "Yes", "No")
+      this.confirmationDialogService.confirmed("Confirm default", "You are about to change the default landing page. Are you sure?", "Change", "Cancel")
       .subscribe(() => {
         this.doUpdate(copy)
       })
@@ -111,7 +111,7 @@ export class LandingPageDetailsComponent extends BaseComponent implements OnInit
   }
 
   deleteLandingPage() {
-    this.confirmationDialogService.confirmed("Confirm delete", "Are you sure you want to delete this landing page?", "Yes", "No")
+    this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this landing page?", "Delete", "Cancel")
     .subscribe(() => {
       this.deletePending = true
       this.landingPageService.deleteLandingPage(this.pageId)

@@ -46,9 +46,13 @@
             <app-tooltip [tbTooltip]="'Confirm the provided parameter value.'"></app-tooltip>
 		</div>
 	</div>
-	<div class="modal-footer">
-		<button class="btn btn-default" type="submit" (click)="save()" [pending]="savePending" [disable]="saveDisabled()">Save</button>
-		<button class="btn btn-default" type="button" *ngIf="isConfigurationSet" (click)="delete()" [pending]="deletePending" [disable]="savePending">Delete</button>
-		<button class="btn btn-default" type="button" (click)="cancel()" [disabled]="savePending || deletePending">Cancel</button>
+	<div class="modal-footer button-container">
+		<div class="btn-toolbar" *ngIf="isConfigurationSet">
+			<button class="btn btn-link" type="button" (click)="delete()" [pending]="deletePending" [disable]="savePending">Delete</button>
+		</div>
+		<div class="btn-toolbar">
+			<button class="btn btn-default" type="button" (click)="cancel()" [disabled]="savePending || deletePending">Cancel</button>
+			<button class="btn btn-default" type="submit" (click)="save()" [pending]="savePending" [disable]="saveDisabled()">Save</button>
+		</div>
 	</div>
 </form>

@@ -347,7 +347,7 @@ export class TestSuiteUploadModalComponent implements OnInit {
     }
     const resolve$ = new Observable<boolean>((subscriber) => {
       if (hasDropHistory) {
-        this.confirmationDialogService.confirm("Confirm test history reset", "Resetting the testing history will render the selected test cases' existing tests obsolete. Are you sure you want to proceed?", "Yes", "No")
+        this.confirmationDialogService.confirmDangerous("Confirm test history reset", "Resetting the testing history will render the selected test cases' existing tests obsolete. Are you sure you want to proceed?", "Reset history", "Cancel")
         .subscribe((choice: boolean) => {
           subscriber.next(choice)
           subscriber.complete()

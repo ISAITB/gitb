@@ -278,7 +278,7 @@ export class SessionDashboardComponent implements OnInit {
   }
 
   stopAll() {
-    this.confirmationDialogService.confirmed('Confirm delete', 'Are you certain you want to terminate all active sessions?', 'Yes', 'No')
+    this.confirmationDialogService.confirmedDangerous('Confirm termination', 'Are you certain you want to terminate all active sessions?', 'Terminate', 'Cancel')
     .subscribe(() => {
       let result: Observable<void>
       if (this.dataService.isSystemAdmin) {
@@ -297,7 +297,7 @@ export class SessionDashboardComponent implements OnInit {
   }
 
   stopSession(session: TestResultForDisplay) {
-    this.confirmationDialogService.confirmed('Confirm delete', 'Are you certain you want to terminate this session?', 'Yes', 'No')
+    this.confirmationDialogService.confirmedDangerous('Confirm termination', 'Are you certain you want to terminate this session?', 'Terminate', 'Cancel')
     .subscribe(() => {
       session.deletePending = true
       this.testService.stop(session.session)
@@ -450,7 +450,7 @@ export class SessionDashboardComponent implements OnInit {
   }
 
   deleteObsolete() {
-    this.confirmationDialogService.confirmed('Confirm delete', 'Are you sure you want to delete all obsolete test results?', 'Yes', 'No')
+    this.confirmationDialogService.confirmedDangerous('Confirm delete', 'Are you sure you want to delete all obsolete test results?', 'Delete', 'Cancel')
     .subscribe(() => {
       this.deletePending = true
       let result: Observable<any>
@@ -508,7 +508,7 @@ export class SessionDashboardComponent implements OnInit {
     } else {
       msg = 'Are you sure you want to delete the selected test results?'
     }
-    const dialog = this.confirmationDialogService.confirmed('Confirm delete', msg, 'Yes', 'No')
+    const dialog = this.confirmationDialogService.confirmedDangerous('Confirm delete', msg, 'Delete', 'Cancel')
     .subscribe(() => {
       this.deleteSessionsPending = true
       this.conformanceService.deleteTestResults(testsToDelete)

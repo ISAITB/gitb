@@ -64,7 +64,7 @@ export class LegalNoticeDetailsComponent extends BaseComponent implements OnInit
 
   updateLegalNotice(copy: boolean) {
     if (!this.isDefault && this.notice.default) {
-      this.confirmationDialogService.confirmed("Confirm default", "You are about to change the default legal notice. Are you sure?", "Yes", "No")
+      this.confirmationDialogService.confirmed("Confirm default", "You are about to change the default legal notice. Are you sure?", "Change", "Cancel")
       .subscribe(() => {
         this.doUpdate(copy)
       })
@@ -101,7 +101,7 @@ export class LegalNoticeDetailsComponent extends BaseComponent implements OnInit
   }
 
   deleteLegalNotice() {
-    this.confirmationDialogService.confirmed("Confirm delete", "Are you sure you want to delete this legal notice?", "Yes", "No")
+    this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this legal notice?", "Delete", "Cancel")
     .subscribe(() => {
       this.deletePending = true
       this.legalNoticeService.deleteLegalNotice(this.noticeId)

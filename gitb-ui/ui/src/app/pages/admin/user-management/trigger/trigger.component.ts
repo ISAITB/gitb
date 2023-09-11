@@ -327,7 +327,7 @@ export class TriggerComponent extends BaseComponent implements OnInit, AfterView
 
   delete() {
     this.clearAlerts()
-    this.confirmationDialogService.confirmed("Confirm delete", "Are you sure you want to delete this trigger?", "Yes", "No")
+    this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this trigger?", "Delete", "Cancel")
     .subscribe(() => {
       this.deletePending = true
       this.triggerService.deleteTrigger(this.triggerId!)

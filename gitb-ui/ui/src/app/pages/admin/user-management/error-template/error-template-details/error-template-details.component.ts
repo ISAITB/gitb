@@ -110,7 +110,7 @@ export class ErrorTemplateDetailsComponent extends BaseComponent implements OnIn
   }
 
   deleteErrorTemplate() {
-    this.confirmationDialogService.confirmed("Confirm delete", "Are you sure you want to delete this error template?", "Yes", "No")
+    this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this error template?", "Delete", "Cancel")
     .subscribe(() => {
       this.deletePending = true
       this.errorTemplateService.deleteErrorTemplate(this.templateId)

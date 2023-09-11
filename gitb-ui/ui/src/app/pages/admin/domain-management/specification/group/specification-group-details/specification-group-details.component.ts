@@ -47,7 +47,7 @@ export class SpecificationGroupDetailsComponent extends BaseComponent implements
     } else {
       message = "Are you sure you want to delete this "+this.dataService.labelSpecificationGroupLower()+" ("+this.dataService.labelSpecificationInGroupsLower()+" will not be deleted)?"
     }
-		this.confirmationDialogService.confirmed("Confirm delete", message, "Yes", "No")
+		this.confirmationDialogService.confirmedDangerous("Confirm delete", message, "Delete", "Cancel")
     .subscribe(() => {
       this.deletePending = true
       this.specificationService.deleteSpecificationGroup(this.groupId, withSpecs)

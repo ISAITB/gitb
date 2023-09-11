@@ -143,7 +143,7 @@ export class TestSuiteDetailsComponent extends BaseComponent implements OnInit, 
     } else {
       message = "Are you sure you want to delete this test suite?"
     }
-		this.confirmationDialogService.confirmed("Confirm delete", message, "Yes", "No")
+		this.confirmationDialogService.confirmedDangerous("Confirm delete", message, "Delete", "Cancel")
 		.subscribe(() => {
       this.deletePending = true
       this.testSuiteService.undeployTestSuite(this.testSuite.id!)

@@ -33,11 +33,13 @@
                     </div>
                 </div>
             </div>
-            <div class="panel-footer">
+            <div class="panel-footer button-container">
                 <div class="btn-toolbar">
                     <button class="btn btn-default" type="submit" (click)="updateUser()" [disable]="deletePending || saveDisabled()" [pending]="savePending">Update</button>
-                    <button *ngIf="!isSelf" class="btn btn-default" type="button" (click)="deleteUser()" [disable]="savePending" [pending]="deletePending">Delete</button>
                     <button class="btn btn-default" type="button" (click)="cancelDetailUser()">Back</button>
+                </div>
+                <div class="btn-toolbar" *ngIf="!isSelf">
+                    <button class="btn btn-link" type="button" (click)="deleteUser()" [disable]="savePending" [pending]="deletePending">Delete</button>
                 </div>
             </div>
         </form>

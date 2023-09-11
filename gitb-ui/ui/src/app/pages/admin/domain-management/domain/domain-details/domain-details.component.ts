@@ -164,7 +164,7 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
   }
 
 	deleteDomain() {
-		this.confirmationDialogService.confirmed("Confirm delete", "Are you sure you want to delete this "+this.dataService.labelDomainLower()+"?", "Yes", "No")
+		this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this "+this.dataService.labelDomainLower()+"?", "Delete", "Cancel")
     .subscribe(() => {
       this.deletePending = true
       this.conformanceService.deleteDomain(this.domainId)

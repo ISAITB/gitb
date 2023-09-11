@@ -437,7 +437,7 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
     } else {
       msg = 'Are you sure you want to delete the selected resources?'
     }
-    this.confirmationDialogService.confirmed("Confirm delete", msg, "Yes", "No").subscribe(() => {
+    this.confirmationDialogService.confirmedDangerous("Confirm delete", msg, "Delete", "Cancel").subscribe(() => {
       this.deleteResourcesPending = true
       this.resourcesRefreshing = true
       this.communityService.deleteCommunityResources(this.communityId, resourceIds).subscribe(() => {
@@ -470,7 +470,7 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
   }
 
   deleteResource(resource: CommunityResource) {
-    this.confirmationDialogService.confirmed("Confirm delete", "Are you sure you want to delete this resource?", "Yes", "No").subscribe(() => {
+    this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this resource?", "Delete", "Cancel").subscribe(() => {
       resource.deletePending = true
       this.communityService.deleteCommunityResource(resource.id).subscribe(() => {
         this.popupService.success("Resource deleted.")
@@ -521,7 +521,7 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
         } else {
           confirmationMessage = "Changing the "+this.dataService.labelDomainLower()+" will remove all existing conformance statements. Are you sure you want to proceed?"
         }
-        this.confirmationDialogService.confirmed("Confirm "+this.dataService.labelDomainLower()+" change", confirmationMessage, "Yes", "No")
+        this.confirmationDialogService.confirmedDangerous("Confirm "+this.dataService.labelDomainLower()+" change", confirmationMessage, "Change", "Cancel")
         .subscribe(() => {
           this.updateCommunityInternal(descriptionToUse)
         })
@@ -532,7 +532,7 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
   }
 
   deleteCommunity() {
-    this.confirmationDialogService.confirmed("Confirm delete", "Are you sure you want to delete this community?", "Yes", "No")
+    this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this community?", "Delete", "Cancel")
     .subscribe(() => {
       this.deletePending = true
       this.communityService.deleteCommunity(this.communityId)

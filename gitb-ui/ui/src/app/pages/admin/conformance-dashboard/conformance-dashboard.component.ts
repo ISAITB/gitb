@@ -14,7 +14,6 @@ import { ConformanceResultFullWithTestSuites } from 'src/app/types/conformance-r
 import { ConformanceStatusItem } from 'src/app/types/conformance-status-item';
 import { FilterState } from 'src/app/types/filter-state';
 import { TestResultSearchCriteria } from 'src/app/types/test-result-search-criteria';
-import { ConformanceTestSuite } from '../../organisation/conformance-statement/conformance-test-suite';
 import { find } from 'lodash';
 
 @Component({
