@@ -6,6 +6,8 @@ import { ReportService } from 'src/app/services/report.service';
 import { saveAs } from 'file-saver'
 import { TestCaseTag } from 'src/app/types/test-case-tag';
 import { sortBy } from 'lodash';
+import { ConformanceService } from 'src/app/services/conformance.service';
+import { HtmlService } from 'src/app/services/html.service';
 
 @Component({
   selector: 'app-test-case-display',
@@ -19,14 +21,15 @@ export class TestCaseDisplayComponent implements OnInit {
   @Input() hasDisabled? = false
   @Input() showExecute? = true
   @Input() showExport? = false
+  @Input() showViewDocumentation? = true
 
   @Output() viewTestSession = new EventEmitter<string>()
-  @Output() viewDocumentation = new EventEmitter<number>()
   @Output() execute = new EventEmitter<ConformanceTestCase>()
 
   Constants = Constants
   exportXmlPending: {[key:number]: boolean } = {}
   exportPdfPending: {[key:number]: boolean } = {}
+  viewDocumentationPending: {[key:number]: boolean } = {}
 
   hasDescriptions = false
   hasDescription: {[key:number]: boolean } = {}
@@ -35,7 +38,9 @@ export class TestCaseDisplayComponent implements OnInit {
   tagsToDisplay!: TestCaseTag[]
 
   constructor(
-    private reportService: ReportService
+    private reportService: ReportService,
+    private htmlService: HtmlService,
+    private conformanceService: ConformanceService
   ) { }
 
   ngOnInit(): void {
@@ -56,7 +61,13 @@ export class TestCaseDisplayComponent implements OnInit {
   }
 
   showTestCaseDocumentation(testCase: ConformanceTestCase) {
-    this.viewDocumentation.emit(testCase.id)
+    this.viewDocumentationPending[testCase.id] = true
+    this.conformanceService.getTestCaseDocumentation(testCase.id)
+    .subscribe((data) => {
+      this.htmlService.showHtml("Test case documentation", data)
+    }).add(() => {
+      this.viewDocumentationPending[testCase.id] = false
+    })
   }
 
   onTestSelect(testCase: ConformanceTestCase) {

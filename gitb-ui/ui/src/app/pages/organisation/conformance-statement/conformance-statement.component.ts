@@ -110,7 +110,6 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
     private reportService: ReportService,
     private testService: TestService,
     private popupService: PopupService,
-    private htmlService: HtmlService,
     private organisationService: OrganisationService,
     private specificationService: SpecificationService,
     private routingService: RoutingService
@@ -596,24 +595,6 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
 
   canExportConformanceCertificate() {
     return this.allTestsSuccessful && (this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin || this.dataService.community!.allowCertificateDownload)
-  }
-
-  showDocumentation(title: string, content: string) {
-    this.htmlService.showHtml(title, content)
-  }
-
-  showTestCaseDocumentation(testCaseId: number) {
-    this.conformanceService.getTestCaseDocumentation(testCaseId)
-    .subscribe((data) => {
-      this.showDocumentation("Test case documentation", data)
-    })
-  }
-
-  showTestSuiteDocumentation(testSuiteId: number) {
-    this.conformanceService.getTestSuiteDocumentation(testSuiteId)
-    .subscribe((data) => {
-      this.showDocumentation("Test suite documentation", data)
-    })
   }
 
   toTestSession(sessionId: string) {
