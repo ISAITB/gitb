@@ -1,6 +1,6 @@
 <div id="conformanceDashboardPage" class="page conformancedashboard">
     <app-test-filter [filterState]="filterState" [communityId]="communityId" (onApply)="getConformanceStatements()"></app-test-filter>
-	<div id="conformanceDashboardPageTable" class="panel panel-default">
+	<div id="conformanceDashboardPageTable" class="panel panel-default no-bottom-margin">
 		<div class="panel-heading">
 			<h4 id="conformance-statements-title" class="title">Conformance statements</h4>
 			<div class="btn-toolbar allStatementControls" [class.disable-events]="filterState.updatePending">
@@ -90,7 +90,7 @@
                 </tbody>
             </table>
         </div>
-        <div *ngIf="(!prevDisabled || !nextDisabled) && conformanceStatements && conformanceStatements.length > 0" class="text-center table-paging-controls-expandable">
+        <div *ngIf="(!prevDisabled || !nextDisabled) && conformanceStatements && conformanceStatements.length > 0" class="text-center table-paging-controls">
             <ul class="pagination pagination-sm" [class.disable-events]="filterState.updatePending">
                 <li [class.disabled]="prevDisabled"><a href (click)="doFirstPage(); $event.preventDefault()">First</a></li>
                 <li [class.disabled]="prevDisabled"><a href (click)="doPrevPage(); $event.preventDefault()">Previous</a></li>

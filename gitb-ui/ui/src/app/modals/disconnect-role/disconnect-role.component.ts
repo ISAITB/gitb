@@ -8,7 +8,8 @@ import { DataService } from 'src/app/services/data.service';
 
 @Component({
   selector: 'app-disconnect-role',
-  templateUrl: './disconnect-role.component.html'
+  templateUrl: './disconnect-role.component.html',
+  styleUrls: [ './disconnect-role.component.less' ]
 })
 export class DisconnectRoleComponent extends BaseComponent {
 

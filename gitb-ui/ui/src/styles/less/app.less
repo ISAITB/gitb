@@ -1,5 +1,53 @@
 @import './_common.less';
 
+html {
+	overflow-x: hidden;
+	overflow-y: auto;
+}
+
+body {
+	background-color: #FFF;
+	color: #777;
+	font-family: "Open Sans", sans-serif;
+	font-size: 14px;
+	line-height: 22px;
+	margin: 0;
+}
+
+/* Scroll to Top */
+a.scroll-to-top {
+	-moz-border-radius: 7px 7px 0 0;
+	-moz-transition: all 0.3s;
+	-o-transition: all 0.3s;
+	-webkit-border-radius: 7px 7px 0 0;
+	-webkit-transition: all 0.3s;
+	background: #404040;
+	border-radius: 7px 7px 0 0;
+	bottom: 0px;
+	color: #FFF;
+	display: block;
+	height: 9px;
+	opacity: 0;
+	padding: 13px 0 35px;
+	position: fixed;
+	right: 10px;
+	text-align: center;
+	text-decoration: none;
+	transition: all 0.3s;
+	width: 49px;
+	z-index: 1040;
+}
+
+a.scroll-to-top:hover {
+	filter: alpha(opacity=100);
+	opacity: 1;
+}
+
+a.scroll-to-top.visible {
+	filter: alpha(opacity=75);
+	opacity: 0.75;
+}
+
 h1, h2, h3, h4, h5, h6 {
 	color: @blue
 }
@@ -16,17 +64,6 @@ h1, h2, h3, h4, h5, h6 {
 
 .page-with-margins {
     margin: @page-content-margin;
-}
-
-.version-div {
-	padding-top:15px;
-	a {
-		text-decoration: underline;
-	}
-}
-
-.version-text {
-	color:white;
 }
 
 .welcome-text {
@@ -139,12 +176,13 @@ h1, h2, h3, h4, h5, h6 {
 	padding: 20px;
 }
 
-.table-paging-controls-expandable {
-	border-top: 2px solid #ddd;
-}
-
 .table-paging-controls {
-	border-top: 2px solid #ddd;
+	border-top: 2px solid @gray-dark-1;
+	display: flex;
+	justify-content: center;
+	.pagination {
+		margin: 10px 0px;
+	}	
 }
 
 table.expandable-table {
@@ -606,14 +644,95 @@ div.non-padded-alert div.alert {
 	left: 2px !important;
 }
 
+.header {
+	clear: both;
+	border-top: 5px solid @gray-light-2;
+	background: #f6f6f6;
+	background: -moz-linear-gradient(top,  #f6f6f6 0%, #ffffff 100%);
+	background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#f6f6f6), color-stop(100%,#ffffff));
+	background: -webkit-linear-gradient(top,  #f6f6f6 0%,#ffffff 100%);
+	background: -o-linear-gradient(top,  #f6f6f6 0%,#ffffff 100%);
+	background: -ms-linear-gradient(top,  #f6f6f6 0%,#ffffff 100%);
+	background: linear-gradient(to bottom,  #f6f6f6 0%,#ffffff 100%);
+	min-height: 100px;
+	padding: 8px 0;
+	width: 100%;
+	z-index: 1001;
+	box-shadow: 0 0 3px rgba(0, 0, 0, 0.10);
+	filter: none;
+}
+
+.header-bar {
+	border-top: 5px solid @gray-light-2;	
+}
 .header-container {
     display: flex;
+	min-height: 64px;
+    position: relative;
     .header-logo-container {
         display: flex;
         align-items: flex-end;
         margin-bottom: 3px;
         .logo {
             height: 48px;
+        }
+    }
+}
+
+.footer-bar {
+    background-color: #0065a2;
+    border-top: 4px solid #074A8B;
+    font-size: 0.9em;
+    min-height: 60px;
+    .container, .version-div .footer-links {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+    .footer-logo img {
+        height: 50px;
+    }
+    .version-div {
+        display: flex;
+        margin-left: auto;        
+    }
+    .footer-links {
+        margin-top: 1px;
+        white-space: wrap;
+        margin-left: 10px;
+        .footer-link {
+            &:not(:first-child) {
+                border-left: 1px solid @white;
+                padding-left: 5px;
+            }
+            display: inline-flex;
+            margin: 5px 0px 5px 5px;
+            span, a, a:visited {
+                text-decoration: underline;
+                color: @white;
+            }
+        }
+    }
+    .footer-devmode-container {
+        flex-grow: 1;
+        display: flex;
+		padding-left: 10px;
+        .footer-devmode {
+            display: flex;
+            align-self: center;
+            align-content: center;
+            border-color: #faebcc;
+            color: #8A6D3B;
+            background-color: #fcf8e3;
+            padding: 5px;
+            border-radius: 4px;
+            border: 1px solid;
+            font-weight: bold;
+            white-space: nowrap;
+            margin-left: auto;
+            i {
+                margin-right: 5px;
+            }
         }
     }
 }
@@ -654,4 +773,13 @@ div.non-padded-alert div.alert {
 }
 .btn {
 	min-width: 40px;
+}
+span.tab{
+    padding: 10px;
+}
+span.mini-tab{
+    margin-right: 10px;
+}
+.hidden {
+	display: none;
 }

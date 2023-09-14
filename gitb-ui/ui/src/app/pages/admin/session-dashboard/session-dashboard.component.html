@@ -29,7 +29,7 @@
         </div>
     </div>
     <!-- completed sessions -->
-    <div class="panel panel-default">
+    <div class="panel panel-default no-bottom-margin">
         <div class="panel-heading clickable" (click)="completedSessionsCollapsed = !completedSessionsCollapsed">
             <h4 class="title"><app-collapsing-icon [isCollapsed]="completedSessionsCollapsed"></app-collapsing-icon>Completed test sessions</h4>
             <div class="btn-toolbar" [class.disable-events]="filterState.updatePending">

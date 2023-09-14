@@ -15,7 +15,7 @@
             <div class="searchControls">
                 <app-text-filter name="organisationFilter" [width]="300" [placeholder]="'Search snapshots...'" [(ngModel)]="snapshotFilter" (apply)="applySnapshotFilter()"></app-text-filter>
             </div>
-            <div class="panel panel-default" >
+            <div class="panel panel-default no-bottom-margin">
                 <div table-directive
                     [columns]="snapshotColumns"
                     [classes]="{'snapshotTime': 'td-min padding-right-large'}"

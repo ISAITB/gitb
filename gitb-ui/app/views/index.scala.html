@@ -85,36 +85,35 @@
 					</div>
 				</div>
 			</div>
-			<footer>
+
+			<div class="footer-bar">
 				<div class="container">
-					<div class="row">
-						<div class="col-xs-2">
-							<img src="@config.footerLogoPath" class="pull-left"/>
-						</div>
-						<div class="col-xs-10 version-div">
-							<div class="pull-right">
-								@if(config.developmentMode) {
-								<div class="footer-devmode"><i class="fa-solid fa-exclamation-circle" aria-hidden="true"></i> Development mode</div>
-								}
-								<div class="footer-links">
-									<a href="@config.userGuideLink" target="blank">User guide</a><span class="version-text">
-									@if(config.hasDefaultLegalNotice) {
-										| </span><a href="#" data-toggle="modal" data-target="#legalModal">Legal notice</a><span class="version-text">
-									}
-									@if(config.moreInfoEnabled) {
-										| </span><a href="@config.moreInfoLink" target="blank">Find out more</a><span class="version-text">
-									}
-									@if(config.releaseInfoEnabled) {
-										| </span><a href="@config.releaseInfoLink" target="blank">@config.versionNumber</a>
-									} else {
-										| </span><span class="version-text">@config.versionNumber</span>
-									}
-								</div>
-							</div>
+					<div class="footer-logo">
+						<img src="@config.footerLogoPath"/>
+					</div>
+					@if(config.developmentMode) {
+					<div class="footer-devmode-container">
+						<div class="footer-devmode"><span><i class="fa-solid fa-exclamation-circle" aria-hidden="true"></i></span><span>Development mode</span></div>
+					</div>
+					}
+					<div class="version-div">
+						<div class="footer-links">
+							<div class="footer-link"><a href="@config.userGuideLink">User guide</a></div>
+							@if(config.hasDefaultLegalNotice) {
+							<div class="footer-link"><a href="#" data-toggle="modal" data-target="#legalModal">Legal notice</a></div>
+							}
+							@if(config.moreInfoEnabled) {
+							<div class="footer-link"><a href="@config.moreInfoLink" target="blank">Find out more</a></div>
+							}
+							@if(config.releaseInfoEnabled) {
+							<div class="footer-link"><a href="@config.releaseInfoLink" target="blank">@config.versionNumber</a></div>
+							} else {
+							<div class="footer-link"><span class="version-text">@config.versionNumber</span></div>
+							}
 						</div>
 					</div>
 				</div>
-			</footer>
+			</div>
 		</div>
 		@if(config.hasDefaultLegalNotice) {
 			<!-- Legal notice modal -->

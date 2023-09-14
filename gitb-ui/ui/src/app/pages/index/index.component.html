@@ -51,27 +51,25 @@
       </div>
     </div>
   </div>
-  <footer>
+  <div class="footer-bar">
     <div class="container">
-      <div class="row">
-        <div class="col-xs-2">
-          <img [src]="footer" class="pull-left"/>
-        </div>
-        <div class="col-xs-10 version-div">
-          <div class="pull-right">
-            <div class="footer-devmode" *ngIf="dataService.isDevelopmentMode()"><i class="fa-solid fa-exclamation-circle" aria-hidden="true"></i> Development mode</div>
-            <div class="footer-links">
-              <a href *ngIf="showUserGuide()" (click)="userGuideLink();$event.preventDefault()">User guide</a>
-              <span *ngIf="showUserGuide()" class="version-text"> | </span><a *ngIf="showProvideFeedback()" [href]="provideFeedbackLink()" target="blank">Provide feedback</a>
-              <span *ngIf="showProvideFeedback()" class="version-text"> | </span><a href="#" *ngIf="showContactUs()" (click)="contactUs();$event.preventDefault()">Contact support</a>
-              <span *ngIf="showContactUs()" class="version-text"> | </span><a href (click)="onLegalNotice();$event.preventDefault()">Legal notice</a>
-              <span *ngIf="showMoreInfo()" class="version-text"> | </span><a *ngIf="showMoreInfo()" [href]="moreInfoLink()" target="blank">Find out more</a><span class="version-text"> | </span>
-              <a *ngIf="showReleaseInfo()" [href]="releaseInfoLink()" target="blank">{{version}}</a>
-              <span *ngIf="!showReleaseInfo()" class="version-text">{{version}}</span>
-            </div>
-          </div>
-        </div>
+      <div class="footer-logo">
+        <img [src]="footer"/>
       </div>
+      <div class="footer-devmode-container" *ngIf="dataService.isDevelopmentMode()">
+        <div class="footer-devmode"><span><i class="fa-solid fa-exclamation-circle" aria-hidden="true"></i></span><span>Development mode</span></div>
+      </div>
+      <div class="version-div">
+        <div class="footer-links">
+          <div *ngIf="showUserGuide()" class="footer-link"><a href (click)="userGuideLink();$event.preventDefault()">User guide</a></div>
+          <div *ngIf="showProvideFeedback()" class="footer-link"><a [href]="provideFeedbackLink()" target="blank">Provide feedback</a></div>
+          <div *ngIf="showContactUs()" class="footer-link"><a href="#" (click)="contactUs();$event.preventDefault()">Contact support</a></div>
+          <div class="footer-link"><a href (click)="onLegalNotice();$event.preventDefault()">Legal notice</a></div>
+          <div *ngIf="showMoreInfo()" class="footer-link"><a [href]="moreInfoLink()" target="blank">Find out more</a></div>
+          <div *ngIf="showReleaseInfo()" class="footer-link"><a [href]="releaseInfoLink()" target="blank">{{version}}</a></div>
+          <div *ngIf="!showReleaseInfo()" class="footer-link"><span class="version-text">{{version}}</span></div>
+        </div>
+      </div>    
     </div>
-  </footer>
+  </div>
 </div>

@@ -42,9 +42,9 @@
                 <div class="row">
                     <div class="col-xs-12">
                         <div class="row">
-                            <div class="page settings">
+                            <div class="page">
                                 <form class="form-horizontal">
-                                    <div class="panel panel-default">
+                                    <div class="panel panel-default no-bottom-margin">
                                         <div class="panel-heading">
                                             <h4 class="title">{{loginOption == Constants.LOGIN_OPTION.REGISTER && dataService.configuration.registrationEnabled?'Registration':(onetimePassword?'Change password':'Login')}}</h4>
                                         </div>
@@ -85,7 +85,7 @@
                                                         <span *ngIf="onetimePassword">The password you used is a one-time password that needs to be changed upon your first login.</span>
                                                         <div *ngIf="weakPassword">
                                                             <span>The password you used is not complex enough and needs to be replaced. Your password must:</span>
-                                                            <ul style="margin-bottom: 0px;">
+                                                            <ul class="no-bottom-margin">
                                                                 <li>Contain at least one uppercase letter, one lowercase letter, one digit and one symbol.</li>
                                                                 <li>Be at least eight characters long.</li>
                                                             </ul>

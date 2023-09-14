@@ -46,10 +46,6 @@
               "node_modules/ngx-bootstrap/datepicker/bs-datepicker.css",
               "node_modules/codemirror/lib/codemirror.css",
               "src/styles/css/fonts/opensans/stylesheet.css",
-              "src/styles/css/theme.css",
-              "src/styles/css/custom.css",
-              "src/styles/css/theme-animate.css",
-              "src/styles/css/skins/blue.css",
               "src/styles/styles.less"
             ],
             "scripts": [
