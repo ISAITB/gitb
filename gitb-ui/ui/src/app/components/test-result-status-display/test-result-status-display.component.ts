@@ -29,4 +29,10 @@ export class TestResultStatusDisplayComponent implements OnInit {
     }
   }
 
+  clicked(event: Event) {
+    if (this.message != undefined) {
+      event.stopPropagation()
+    }
+  }
+
 }
