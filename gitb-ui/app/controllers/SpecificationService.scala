@@ -2,20 +2,18 @@ package controllers
 
 import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, ResponseConstructor}
 import exceptions.{ErrorCodes, NotFoundException}
-
-import javax.inject.Inject
-import managers.{AuthorizationManager, CommunityLabelManager, ConformanceManager, SpecificationManager}
+import managers.{AuthorizationManager, CommunityLabelManager, SpecificationManager}
 import models.Enums.LabelType
-import org.slf4j.{Logger, LoggerFactory}
 import play.api.mvc.{AbstractController, ControllerComponents}
 import utils.JsonUtil
 
-class SpecificationService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerComponents, specificationManager: SpecificationManager, conformanceManager: ConformanceManager, authorizationManager: AuthorizationManager, communityLabelManager: CommunityLabelManager) extends AbstractController(cc) {
-  private final val logger: Logger = LoggerFactory.getLogger(classOf[SpecificationService])
+import javax.inject.Inject
+
+class SpecificationService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerComponents, specificationManager: SpecificationManager, authorizationManager: AuthorizationManager, communityLabelManager: CommunityLabelManager) extends AbstractController(cc) {
 
   def deleteSpecification(specId: Long) = authorizedAction { request =>
     authorizationManager.canDeleteSpecification(request, specId)
-    conformanceManager.deleteSpecification(specId)
+    specificationManager.deleteSpecification(specId)
     ResponseConstructor.constructEmptyResponse
   }
 

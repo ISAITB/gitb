@@ -4,10 +4,9 @@ import config.Configurations
 import models.Enums._
 import models._
 import org.apache.commons.lang3.StringUtils
-import org.slf4j.LoggerFactory
 import persistence.db._
 import play.api.db.slick.DatabaseConfigProvider
-import utils.{CryptoUtil, RepositoryUtils}
+import utils.{CryptoUtil, MimeUtil, RepositoryUtils}
 
 import java.util
 import javax.inject.{Inject, Singleton}
@@ -19,8 +18,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityResourceManager: CommunityResourceManager, triggerHelper: TriggerHelper, testResultManager: TestResultManager, organizationManager: OrganizationManager, landingPageManager: LandingPageManager, legalNoticeManager: LegalNoticeManager, errorTemplateManager: ErrorTemplateManager, conformanceManager: ConformanceManager, accountManager: AccountManager, triggerManager: TriggerManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
-
-  def logger = LoggerFactory.getLogger("CommunityManager")
 
   def existsOrganisationWithSameUserEmail(communityId: Long, email: String): Boolean = {
     exec(PersistenceSchema.users
@@ -386,7 +383,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityRes
       errorTemplateManager.deleteErrorTemplateByCommunity(communityId) andThen
       triggerManager.deleteTriggersByCommunity(communityId) andThen
       testResultManager.updateForDeletedCommunity(communityId) andThen
-      conformanceManager.deleteConformanceCertificateSettings(communityId) andThen
+      deleteConformanceCertificateSettings(communityId) andThen
       deleteOrganisationParametersByCommunity(communityId) andThen
       deleteSystemParametersByCommunity(communityId) andThen
       communityResourceManager.deleteResourcesOfCommunity(communityId, onSuccessCalls) andThen
@@ -743,12 +740,110 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityRes
     toDBIO(actions)
   }
 
-  def setCommunityLabels(communityId: Long, labels: List[CommunityLabels]) = {
+  def setCommunityLabels(communityId: Long, labels: List[CommunityLabels]): Unit = {
     exec(setCommunityLabelsInternal(communityId, labels).transactionally)
   }
 
   def getCommunityLabels(communityId: Long): List[CommunityLabels] = {
     exec(PersistenceSchema.communityLabels.filter(_.community === communityId).result).toList
+  }
+
+  def getConformanceCertificateSettingsWrapper(communityId: Long): Option[ConformanceCertificates] = {
+    exec(getConformanceCertificateSettings(communityId))
+  }
+
+  def getConformanceCertificateSettings(communityId: Long): DBIO[Option[ConformanceCertificates]] = {
+    PersistenceSchema.conformanceCertificates.filter(_.community === communityId).result.headOption
+  }
+
+  def updateConformanceCertificateSettingsInternal(conformanceCertificate: ConformanceCertificates, updatePasswords: Boolean, removeKeystore: Boolean): DBIO[_] = {
+    for {
+      existingSettings <- getConformanceCertificateSettings(conformanceCertificate.community)
+      _ <- {
+        var actions = ListBuffer[DBIO[_]]()
+        if (existingSettings.isDefined) {
+          if (removeKeystore) {
+            val q = for {c <- PersistenceSchema.conformanceCertificates if c.id === existingSettings.get.id} yield (
+              c.message, c.title, c.includeTitle, c.includeMessage, c.includeTestStatus, c.includeTestCases, c.includeDetails,
+              c.includeSignature, c.keystoreFile, c.keystoreType, c.keystorePassword, c.keyPassword
+            )
+            actions += q.update(
+              conformanceCertificate.message,
+              conformanceCertificate.title,
+              conformanceCertificate.includeTitle,
+              conformanceCertificate.includeMessage,
+              conformanceCertificate.includeTestStatus,
+              conformanceCertificate.includeTestCases,
+              conformanceCertificate.includeDetails,
+              conformanceCertificate.includeSignature,
+              None,
+              None,
+              None,
+              None
+            )
+          } else {
+            if (conformanceCertificate.keystoreFile.isDefined) {
+              val q = for {c <- PersistenceSchema.conformanceCertificates if c.id === existingSettings.get.id} yield c.keystoreFile
+              actions += q.update(conformanceCertificate.keystoreFile)
+            }
+            if (updatePasswords) {
+              val q = for {c <- PersistenceSchema.conformanceCertificates if c.id === existingSettings.get.id} yield (
+                c.message, c.title, c.includeTitle, c.includeMessage, c.includeTestStatus, c.includeTestCases, c.includeDetails,
+                c.includeSignature, c.keystoreType, c.keystorePassword, c.keyPassword
+              )
+              var keystorePasswordToUpdate = conformanceCertificate.keystorePassword
+              if (keystorePasswordToUpdate.isDefined) {
+                keystorePasswordToUpdate = Some(MimeUtil.encryptString(keystorePasswordToUpdate.get))
+              }
+              var keyPasswordToUpdate = conformanceCertificate.keyPassword
+              if (keyPasswordToUpdate.isDefined) {
+                keyPasswordToUpdate = Some(MimeUtil.encryptString(keyPasswordToUpdate.get))
+              }
+              actions += q.update(
+                conformanceCertificate.message,
+                conformanceCertificate.title,
+                conformanceCertificate.includeTitle,
+                conformanceCertificate.includeMessage,
+                conformanceCertificate.includeTestStatus,
+                conformanceCertificate.includeTestCases,
+                conformanceCertificate.includeDetails,
+                conformanceCertificate.includeSignature,
+                conformanceCertificate.keystoreType,
+                keystorePasswordToUpdate,
+                keyPasswordToUpdate
+              )
+            } else {
+              val q = for {c <- PersistenceSchema.conformanceCertificates if c.id === existingSettings.get.id} yield (
+                c.message, c.title, c.includeTitle, c.includeMessage, c.includeTestStatus, c.includeTestCases, c.includeDetails,
+                c.includeSignature, c.keystoreType
+              )
+              actions += q.update(
+                conformanceCertificate.message,
+                conformanceCertificate.title,
+                conformanceCertificate.includeTitle,
+                conformanceCertificate.includeMessage,
+                conformanceCertificate.includeTestStatus,
+                conformanceCertificate.includeTestCases,
+                conformanceCertificate.includeDetails,
+                conformanceCertificate.includeSignature,
+                conformanceCertificate.keystoreType
+              )
+            }
+          }
+        } else {
+          actions += (PersistenceSchema.insertConformanceCertificate += conformanceCertificate)
+        }
+        toDBIO(actions)
+      }
+    } yield ()
+  }
+
+  def updateConformanceCertificateSettings(conformanceCertificate: ConformanceCertificates, updatePasswords: Boolean, removeKeystore: Boolean): Unit = {
+    exec(updateConformanceCertificateSettingsInternal(conformanceCertificate, updatePasswords, removeKeystore).transactionally)
+  }
+
+  def deleteConformanceCertificateSettings(communityId: Long): DBIO[_] = {
+    PersistenceSchema.conformanceCertificates.filter(_.community === communityId).delete
   }
 
 }

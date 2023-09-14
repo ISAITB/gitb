@@ -17,7 +17,7 @@ import org.apache.commons.lang3.StringUtils
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
 import utils.signature.{CreateSignature, SigUtils}
-import utils.{JacksonUtil, JsonUtil, MimeUtil, RepositoryUtils, TimeUtil}
+import utils._
 
 import java.io.{File, FileOutputStream, StringReader}
 import java.nio.file.{Files, Path}
@@ -36,7 +36,7 @@ import scala.util.Using
   * Created by senan on 03.12.2014.
   */
 @Singleton
-class ReportManager @Inject() (reportHelper: ReportHelper, triggerHelper: TriggerHelper, testCaseReportProducer: TestCaseReportProducer, testSuiteManager: TestSuiteManager, specificationManager: SpecificationManager, conformanceManager: ConformanceManager, dbConfigProvider: DatabaseConfigProvider, communityLabelManager: CommunityLabelManager, repositoryUtils: RepositoryUtils, testResultManager: TestResultManager) extends BaseManager(dbConfigProvider) {
+class ReportManager @Inject() (domainParameterManager: DomainParameterManager, reportHelper: ReportHelper, triggerHelper: TriggerHelper, testCaseReportProducer: TestCaseReportProducer, testSuiteManager: TestSuiteManager, specificationManager: SpecificationManager, conformanceManager: ConformanceManager, dbConfigProvider: DatabaseConfigProvider, communityLabelManager: CommunityLabelManager, repositoryUtils: RepositoryUtils, testResultManager: TestResultManager) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
 
@@ -586,7 +586,7 @@ class ReportManager @Inject() (reportHelper: ReportHelper, triggerHelper: Trigge
       // Replace placeholders
       if (messageToUse.contains(Constants.PlaceholderDomain+"{")) {
         // We are referring to domain parameters.
-        val parameters = conformanceManager.getDomainParametersByCommunityId(communityId, onlySimple = true, loadValues = true)
+        val parameters = domainParameterManager.getDomainParametersByCommunityId(communityId, onlySimple = true, loadValues = true)
         parameters.foreach { param =>
           messageToUse = messageToUse.replace("$DOMAIN{"+param.name+"}", param.value.getOrElse(""))
         }

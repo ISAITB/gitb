@@ -6,9 +6,9 @@ import akka.actor.{ActorRef, ActorSystem}
 import com.gitb.core.{ActorConfiguration, AnyContent, Configuration, ValueEmbeddingEnumeration}
 import exceptions.{AutomationApiException, ErrorCodes, MissingRequiredParameterException}
 import models.Enums.InputMappingMatchType
+import models._
 import models.automation.{InputMappingContent, TestSessionLaunchInfo, TestSessionLaunchRequest, TestSessionStatus}
 import models.prerequisites.PrerequisiteUtil
-import models._
 import org.apache.commons.io.FileUtils
 import org.apache.commons.lang3.StringUtils
 import org.slf4j.LoggerFactory
@@ -26,7 +26,7 @@ import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
-class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClient, testCaseReportProducer: TestCaseReportProducer, reportManager: ReportManager, conformanceManager: ConformanceManager, repositoryUtils: RepositoryUtils, actorManager: ActorManager, actorSystem: ActorSystem, organisationManager: OrganizationManager, systemManager: SystemManager, testResultManager: TestResultManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClient, testCaseReportProducer: TestCaseReportProducer, domainParameterManager: DomainParameterManager, reportManager: ReportManager, repositoryUtils: RepositoryUtils, actorManager: ActorManager, actorSystem: ActorSystem, organisationManager: OrganizationManager, systemManager: SystemManager, testResultManager: TestResultManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
   private val logger = LoggerFactory.getLogger(classOf[TestExecutionManager])
@@ -117,7 +117,7 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
 
   def loadDomainParameters(actorId: Long): Option[ActorConfiguration] = {
     val domainId = actorManager.getById(actorId).get.domain
-    val parameters = conformanceManager.getDomainParameters(domainId, loadValues = true, Some(true), onlySimple = false)
+    val parameters = domainParameterManager.getDomainParameters(domainId, loadValues = true, Some(true), onlySimple = false)
     if (parameters.nonEmpty) {
       val domainConfiguration = new ActorConfiguration()
       domainConfiguration.setActor(Constants.domainConfigurationName)

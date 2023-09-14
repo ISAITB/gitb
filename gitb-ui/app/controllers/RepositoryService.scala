@@ -29,7 +29,7 @@ import scala.jdk.CollectionConverters.CollectionHasAsScala
 /**
  * Created by serbay on 10/16/14.
  */
-class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedAction: AuthorizedAction, cc: ControllerComponents, testCaseReportProducer: TestCaseReportProducer, systemManager: SystemManager, testCaseManager: TestCaseManager, testSuiteManager: TestSuiteManager, reportManager: ReportManager, testResultManager: TestResultManager, conformanceManager: ConformanceManager, authorizationManager: AuthorizationManager, communityLabelManager: CommunityLabelManager, exportManager: ExportManager, importPreviewManager: ImportPreviewManager, importCompleteManager: ImportCompleteManager, repositoryUtils: RepositoryUtils, reportHelper: ReportHelper) extends AbstractController(cc) {
+class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedAction: AuthorizedAction, cc: ControllerComponents, communityManager: CommunityManager, testCaseReportProducer: TestCaseReportProducer, systemManager: SystemManager, testCaseManager: TestCaseManager, testSuiteManager: TestSuiteManager, reportManager: ReportManager, testResultManager: TestResultManager, conformanceManager: ConformanceManager, authorizationManager: AuthorizationManager, communityLabelManager: CommunityLabelManager, exportManager: ExportManager, importPreviewManager: ImportPreviewManager, importCompleteManager: ImportCompleteManager, repositoryUtils: RepositoryUtils, reportHelper: ReportHelper) extends AbstractController(cc) {
 
 	private val logger = LoggerFactory.getLogger(classOf[RepositoryService])
 	private val codec = new URLCodec()
@@ -321,7 +321,7 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
     authorizationManager.canViewOwnConformanceCertificateReport(request, systemId)
     val communityId = systemManager.getCommunityIdOfSystem(systemId)
     var settingsToUse: Option[ConformanceCertificates] = None
-    val storedSettings = conformanceManager.getConformanceCertificateSettingsWrapper(communityId)
+    val storedSettings = communityManager.getConformanceCertificateSettingsWrapper(communityId)
     if (storedSettings.isEmpty) {
       // Use default settings.
       settingsToUse = Some(ConformanceCertificates(0L, None, None, includeTitle = true, includeMessage = false, includeTestStatus = true, includeTestCases = true, includeDetails = true, includeSignature = false, None, None, None, None, communityId))
@@ -351,7 +351,7 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
     var settings = JsonUtil.parseJsConformanceCertificateSettings(jsSettings, communityId, None)
     if (settings.includeSignature) {
       // The signature information needs to be looked up from the stored data.
-      val storedSettings = conformanceManager.getConformanceCertificateSettingsWrapper(communityId)
+      val storedSettings = communityManager.getConformanceCertificateSettingsWrapper(communityId)
       val completeSettings = new ConformanceCertificate(settings)
       completeSettings.keystoreFile = storedSettings.get.keystoreFile
       completeSettings.keystoreType = storedSettings.get.keystoreType
@@ -393,7 +393,7 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
         FileUtils.deleteQuietly(reportPath.toFile.getParentFile)
         if (settings.includeSignature && (settings.keystorePassword.isEmpty || settings.keyPassword.isEmpty || settings.keystoreFile.isEmpty)) {
           // The passwords or file need to be looked up from the stored data.
-          val storedSettings = conformanceManager.getConformanceCertificateSettingsWrapper(communityId)
+          val storedSettings = communityManager.getConformanceCertificateSettingsWrapper(communityId)
           val completeSettings = new ConformanceCertificate(settings)
           completeSettings.keyPassword = Some(MimeUtil.decryptString(storedSettings.get.keyPassword.get))
           completeSettings.keystorePassword = Some(MimeUtil.decryptString(storedSettings.get.keystorePassword.get))

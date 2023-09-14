@@ -18,7 +18,7 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 @Singleton
-class ExportManager @Inject() (repositoryUtils: RepositoryUtils, communityResourceManager: CommunityResourceManager, triggerManager: TriggerManager, communityManager: CommunityManager, conformanceManager: ConformanceManager, testSuiteManager: TestSuiteManager, landingPageManager: LandingPageManager, legalNoticeManager: LegalNoticeManager, errorTemplateManager: ErrorTemplateManager, specificationManager: SpecificationManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class ExportManager @Inject() (repositoryUtils: RepositoryUtils, domainManager: DomainManager, domainParameterManager: DomainParameterManager, communityResourceManager: CommunityResourceManager, triggerManager: TriggerManager, communityManager: CommunityManager, conformanceManager: ConformanceManager, testSuiteManager: TestSuiteManager, landingPageManager: LandingPageManager, legalNoticeManager: LegalNoticeManager, errorTemplateManager: ErrorTemplateManager, specificationManager: SpecificationManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   private final val logger: Logger = LoggerFactory.getLogger(classOf[ExportManager])
   private final val DEFAULT_CONTENT_TYPE = "application/octet-stream"
@@ -362,7 +362,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, communityResour
     val exportedDomainParameterMap: scala.collection.mutable.Map[Long, com.gitb.xml.export.DomainParameter] = scala.collection.mutable.Map()
     val exportedSharedTestSuiteMap: scala.collection.mutable.Map[Long, com.gitb.xml.export.TestSuite] = scala.collection.mutable.Map()
     // Domain.
-    val domain = conformanceManager.getById(domainId)
+    val domain = domainManager.getDomainById(domainId)
     val exportedDomain = new com.gitb.xml.export.Domain
     exportedDomain.setId(toId(sequence.next()))
     exportedDomain.setShortName(domain.shortname)
@@ -400,7 +400,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, communityResour
         }
       }
       // Specs.
-      val specifications = conformanceManager.getSpecifications(domain.id, withGroups = false)
+      val specifications = specificationManager.getSpecifications(domain.id, withGroups = false)
       if (specifications.nonEmpty) {
         exportedDomain.setSpecifications(new com.gitb.xml.export.Specifications)
         specifications.foreach { specification =>
@@ -497,7 +497,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, communityResour
     }
     // Domain parameters.
     if (exportSettings.domainParameters) {
-      val domainParameters = conformanceManager.getDomainParameters(domain.id)
+      val domainParameters = domainParameterManager.getDomainParameters(domain.id)
       if (domainParameters.nonEmpty) {
         exportedDomain.setParameters(new com.gitb.xml.export.DomainParameters)
         domainParameters.foreach { parameter =>
@@ -665,7 +665,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, communityResour
     }
     // Certificate settings.
     if (exportSettings.certificateSettings) {
-      val certificateSettings = conformanceManager.getConformanceCertificateSettingsWrapper(communityId)
+      val certificateSettings = communityManager.getConformanceCertificateSettingsWrapper(communityId)
       if (certificateSettings.isDefined) {
         communityData.setConformanceCertificateSettings(new ConformanceCertificateSettings)
         communityData.getConformanceCertificateSettings.setAddTitle(certificateSettings.get.includeTitle)

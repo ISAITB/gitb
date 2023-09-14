@@ -170,4 +170,13 @@ class ParameterManager @Inject() (repositoryUtils: RepositoryUtils, dbConfigProv
     exec(toDBIO(dbActions).transactionally)
   }
 
+  def getEndpointParameters(endpointId: Long): List[models.Parameters] = {
+    exec(
+      PersistenceSchema.parameters.filter(_.endpoint === endpointId)
+        .sortBy(x => (x.displayOrder.asc, x.name.asc))
+        .result
+        .map(_.toList)
+    )
+  }
+
 }

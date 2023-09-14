@@ -25,7 +25,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.Using
 
 @Singleton
-class ImportCompleteManager @Inject()(communityResourceManager: CommunityResourceManager, triggerManager: TriggerManager, exportManager: ExportManager, communityManager: CommunityManager, conformanceManager: ConformanceManager, specificationManager: SpecificationManager, actorManager: ActorManager, endpointManager: EndPointManager, parameterManager: ParameterManager, testSuiteManager: TestSuiteManager, landingPageManager: LandingPageManager, legalNoticeManager: LegalNoticeManager, errorTemplateManager: ErrorTemplateManager, organisationManager: OrganizationManager, systemManager: SystemManager, importPreviewManager: ImportPreviewManager, repositoryUtils: RepositoryUtils, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class ImportCompleteManager @Inject()(domainParameterManager: DomainParameterManager, communityResourceManager: CommunityResourceManager, domainManager: DomainManager, triggerManager: TriggerManager, exportManager: ExportManager, communityManager: CommunityManager, conformanceManager: ConformanceManager, specificationManager: SpecificationManager, actorManager: ActorManager, endpointManager: EndPointManager, parameterManager: ParameterManager, testSuiteManager: TestSuiteManager, landingPageManager: LandingPageManager, legalNoticeManager: LegalNoticeManager, errorTemplateManager: ErrorTemplateManager, organisationManager: OrganizationManager, systemManager: SystemManager, importPreviewManager: ImportPreviewManager, repositoryUtils: RepositoryUtils, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   private def logger = LoggerFactory.getLogger("ImportCompleteManager")
 
@@ -767,10 +767,10 @@ class ImportCompleteManager @Inject()(communityResourceManager: CommunityResourc
         processFromArchive(ImportItemType.Domain, exportedDomain, exportedDomain.getId, ctx,
           ImportCallbacks.set(
             (data: com.gitb.xml.export.Domain, item: ImportItem) => {
-              conformanceManager.createDomainInternal(models.Domain(0L, data.getShortName, data.getFullName, Option(data.getDescription)))
+              domainManager.createDomainInternal(models.Domain(0L, data.getShortName, data.getFullName, Option(data.getDescription)))
             },
             (data: com.gitb.xml.export.Domain, targetKey: String, item: ImportItem) => {
-              conformanceManager.updateDomainInternal(targetKey.toLong, data.getShortName, data.getFullName, Option(data.getDescription))
+              domainManager.updateDomainInternal(targetKey.toLong, data.getShortName, data.getFullName, Option(data.getDescription))
             },
             (data: com.gitb.xml.export.Domain, targetKey: Any, item: ImportItem) => {
               // Record this in case we need to do a global cleanup.
@@ -789,7 +789,7 @@ class ImportCompleteManager @Inject()(communityResourceManager: CommunityResourc
       _ <- {
         processRemaining(ImportItemType.Domain, ctx,
           (targetKey: String, item: ImportItem) => {
-            conformanceManager.deleteDomainInternal(targetKey.toLong, ctx.onSuccessCalls)
+            domainManager.deleteDomainInternal(targetKey.toLong, ctx.onSuccessCalls)
           }
         )
       }
@@ -803,7 +803,7 @@ class ImportCompleteManager @Inject()(communityResourceManager: CommunityResourc
                 (data: com.gitb.xml.export.DomainParameter, item: ImportItem) => {
                   val domainId = getDomainIdFromParentItem(item)
                   val fileData = parameterFileMetadata(ctx, data.getType, isDomainParameter = true, data.getValue)
-                  conformanceManager.createDomainParameterInternal(
+                  domainParameterManager.createDomainParameterInternal(
                     models.DomainParameter(0L, data.getName, Option(data.getDescription),
                       fileData._1, manageEncryptionIfNeeded(ctx.importSettings, data.getType, Option(data.getValue)), data.isInTests,
                       fileData._2, domainId), fileData._3, ctx.onSuccessCalls)
@@ -811,7 +811,7 @@ class ImportCompleteManager @Inject()(communityResourceManager: CommunityResourc
                 (data: com.gitb.xml.export.DomainParameter, targetKey: String, item: ImportItem) => {
                   val domainId = getDomainIdFromParentItem(item)
                   val fileData = parameterFileMetadata(ctx, data.getType, isDomainParameter = true, data.getValue)
-                  conformanceManager.updateDomainParameterInternal(domainId,
+                  domainParameterManager.updateDomainParameterInternal(domainId,
                     targetKey.toLong, data.getName, Option(data.getDescription), fileData._1,
                     manageEncryptionIfNeeded(ctx.importSettings, data.getType, Option(data.getValue)), data.isInTests,
                     fileData._2, fileData._3, ctx.onSuccessCalls)
@@ -826,7 +826,7 @@ class ImportCompleteManager @Inject()(communityResourceManager: CommunityResourc
         processRemaining(ImportItemType.DomainParameter, ctx,
           (targetKey: String, item: ImportItem) => {
             val domainId = getDomainIdFromParentItem(item)
-            conformanceManager.deleteDomainParameter(domainId, targetKey.toLong, ctx.onSuccessCalls)
+            domainParameterManager.deleteDomainParameter(domainId, targetKey.toLong, ctx.onSuccessCalls)
           }
         )
       }
@@ -889,7 +889,7 @@ class ImportCompleteManager @Inject()(communityResourceManager: CommunityResourc
                   val relatedGroupId = getProcessedDbId(data.getGroup, ImportItemType.SpecificationGroup, ctx)
                   if (data.getGroup == null || relatedGroupId.nonEmpty) {
                     val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
-                    conformanceManager.createSpecificationsInternal(models.Specifications(0L, data.getShortName, data.getFullName, Option(data.getDescription), data.isHidden, apiKey, getDomainIdFromParentItem(item), data.getDisplayOrder, relatedGroupId), checkApiKeyUniqueness = true)
+                    specificationManager.createSpecificationsInternal(models.Specifications(0L, data.getShortName, data.getFullName, Option(data.getDescription), data.isHidden, apiKey, getDomainIdFromParentItem(item), data.getDisplayOrder, relatedGroupId), checkApiKeyUniqueness = true)
                   } else {
                     DBIO.successful(())
                   }
@@ -915,7 +915,7 @@ class ImportCompleteManager @Inject()(communityResourceManager: CommunityResourc
       _ <- {
         processRemaining(ImportItemType.Specification, ctx,
           (targetKey: String, item: ImportItem) => {
-            conformanceManager.deleteSpecificationInternal(targetKey.toLong, ctx.onSuccessCalls)
+            specificationManager.deleteSpecificationInternal(targetKey.toLong, ctx.onSuccessCalls)
           }
         )
       }
@@ -936,7 +936,7 @@ class ImportCompleteManager @Inject()(communityResourceManager: CommunityResourc
                       val specificationId = item.parentItem.get.targetKey.get.toLong // Specification
                       val domainId = getDomainIdFromParentItem(item)
                       val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
-                      conformanceManager.createActor(models.Actors(0L, data.getActorId, data.getName, Option(data.getDescription), Some(data.isDefault), data.isHidden, order, apiKey, domainId), specificationId, checkApiKeyUniqueness = true)
+                      actorManager.createActor(models.Actors(0L, data.getActorId, data.getName, Option(data.getDescription), Some(data.isDefault), data.isHidden, order, apiKey, domainId), specificationId, checkApiKeyUniqueness = true)
                     },
                     (data: com.gitb.xml.export.Actor, targetKey: String, item: ImportItem) => {
                       // Record actor info (needed for test suite processing).
@@ -1133,7 +1133,7 @@ class ImportCompleteManager @Inject()(communityResourceManager: CommunityResourc
               testSuiteManager.unlinkSharedTestSuiteInternal(testSuiteId, List(specificationId))
             } else {
               // This is either a specification-specific test suite or a shared test suite that needs deleting.
-              conformanceManager.undeployTestSuite(targetKey.toLong, ctx.onSuccessCalls)
+              testSuiteManager.undeployTestSuite(targetKey.toLong, ctx.onSuccessCalls)
             }
           }
         )
@@ -1366,7 +1366,7 @@ class ImportCompleteManager @Inject()(communityResourceManager: CommunityResourc
         if (communityId.isDefined) {
           if (exportedCommunity.getConformanceCertificateSettings == null) {
             // Delete
-            conformanceManager.deleteConformanceCertificateSettings(communityId.get)
+            communityManager.deleteConformanceCertificateSettings(communityId.get)
           } else {
             // Update/Add
             var keystoreFile: Option[String] = None
@@ -1381,7 +1381,7 @@ class ImportCompleteManager @Inject()(communityResourceManager: CommunityResourc
               keystorePassword = prepareCertificateSettingKey(exportedCommunity.getConformanceCertificateSettings.getSignature.getKeystorePassword, importSettings)
               keyPassword = prepareCertificateSettingKey(exportedCommunity.getConformanceCertificateSettings.getSignature.getKeyPassword, importSettings)
             }
-            conformanceManager.updateConformanceCertificateSettingsInternal(
+            communityManager.updateConformanceCertificateSettingsInternal(
                 models.ConformanceCertificates(
                   0L, Option(exportedCommunity.getConformanceCertificateSettings.getTitle), Option(exportedCommunity.getConformanceCertificateSettings.getMessage),
                   exportedCommunity.getConformanceCertificateSettings.isAddTitle, exportedCommunity.getConformanceCertificateSettings.isAddMessage, exportedCommunity.getConformanceCertificateSettings.isAddResultOverview,

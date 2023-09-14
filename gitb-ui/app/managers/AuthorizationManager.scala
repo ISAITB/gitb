@@ -1546,7 +1546,7 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
       val userDomain = getVisibleDomainForUser(userInfo)
       if (userDomain.isDefined) {
         if (ids.isDefined && ids.get.nonEmpty) {
-          val specs = conformanceManager.getSpecifications(ids)
+          val specs = specificationManager.getSpecifications(ids)
           ok = specificationsMatchDomain(specs, userDomain.get)
         }
       } else {

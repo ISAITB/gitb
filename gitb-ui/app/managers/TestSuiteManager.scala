@@ -53,7 +53,7 @@ object TestSuiteManager {
 }
 
 @Singleton
-class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorManager: ActorManager, conformanceManager: ConformanceManager, endPointManager: EndPointManager, testCaseManager: TestCaseManager, parameterManager: ParameterManager, repositoryUtils: RepositoryUtils, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class TestSuiteManager @Inject() (domainParameterManager: DomainParameterManager, testResultManager: TestResultManager, actorManager: ActorManager, conformanceManager: ConformanceManager, endPointManager: EndPointManager, testCaseManager: TestCaseManager, parameterManager: ParameterManager, repositoryUtils: RepositoryUtils, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
 	import dbConfig.profile.api._
 
@@ -338,11 +338,11 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 		} else {
 			throw new IllegalArgumentException("Either the domain ID or a specification ID must be provided")
 		}
-		val parameterSet = conformanceManager.getDomainParameters(domainId).map(p => p.name).toSet
+		val parameterSet = domainParameterManager.getDomainParameters(domainId).map(p => p.name).toSet
 		// Actor IDs (if multiple specs these are ones in common).
 		var actorIdSet: Option[mutable.Set[String]] = None
 		if (specifications.isDefined) {
-			conformanceManager.getActorIdsOfSpecifications(specifications.get).values.foreach { specActorIds =>
+			actorManager.getActorIdsOfSpecifications(specifications.get).values.foreach { specActorIds =>
 				if (actorIdSet.isEmpty) {
 					actorIdSet = Some(mutable.Set[String]())
 					actorIdSet.get ++= specActorIds
@@ -812,7 +812,7 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 							throw new IllegalStateException("Actor reference [" + actorToSave.actorId + "] not found in specification")
 						} else {
 							// New actor.
-							savedActorId = conformanceManager.createActor(actorToSave, specificationId)
+							savedActorId = actorManager.createActor(actorToSave, specificationId)
 							savedActorStringId = actorToSave.actorId
 						}
 						result += new TestSuiteUploadItemResult(actorToSave.actorId, TestSuiteUploadItemResult.ITEM_TYPE_ACTOR, TestSuiteUploadItemResult.ACTION_TYPE_ADD, specificationId)
@@ -1664,11 +1664,39 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 		exec(unlinkSharedTestSuiteInternal(testSuiteId, specificationIds))
 	}
 
-	def getLinkedSpecifications(testSuiteId: Long): Seq[Specifications] = {
-		val specificationIds = exec(
-			PersistenceSchema.specificationHasTestSuites.filter(_.testSuiteId === testSuiteId).map(_.specId).result
-		)
-		conformanceManager.getSpecifications(Some(specificationIds), None, withGroups = true)
+	def undeployTestSuiteWrapper(testSuiteId: Long) = {
+		val onSuccessCalls = mutable.ListBuffer[() => _]()
+		val action = undeployTestSuite(testSuiteId, onSuccessCalls)
+		exec(dbActionFinalisation(Some(onSuccessCalls), None, action).transactionally)
+	}
+
+	def undeployTestSuite(testSuiteId: Long, onSuccessCalls: mutable.ListBuffer[() => _]) = {
+		testResultManager.updateForDeletedTestSuite(testSuiteId) andThen
+			PersistenceSchema.specificationHasTestSuites.filter(_.testSuiteId === testSuiteId).delete andThen
+			PersistenceSchema.testSuiteHasActors.filter(_.testsuite === testSuiteId).delete andThen
+			PersistenceSchema.conformanceSnapshotResults.filter(_.testSuiteId === testSuiteId).map(_.testSuiteId).update(testSuiteId * -1) andThen
+			PersistenceSchema.conformanceResults.filter(_.testsuite === testSuiteId).delete andThen
+			(for {
+				testCases <- PersistenceSchema.testSuiteHasTestCases.filter(_.testsuite === testSuiteId).map(_.testcase).result
+				_ <- DBIO.seq(testCases.map(testCase => {
+					testResultManager.updateForDeletedTestCase(testCase) andThen
+						testCaseManager.removeActorLinksForTestCase(testCase) andThen
+						PersistenceSchema.testCaseCoversOptions.filter(_.testcase === testCase).delete andThen
+						PersistenceSchema.testSuiteHasTestCases.filter(_.testcase === testCase).delete andThen
+						PersistenceSchema.conformanceSnapshotResults.filter(_.testCaseId === testCase).map(_.testCaseId).update(testCase * -1) andThen
+						PersistenceSchema.testCases.filter(_.id === testCase).delete
+				}): _*)
+			} yield ()) andThen
+			(for {
+				testSuite <- PersistenceSchema.testSuites.filter(_.id === testSuiteId).result.head
+				_ <- {
+					onSuccessCalls += (() => {
+						repositoryUtils.undeployTestSuite(testSuite.domain, testSuite.filename)
+					})
+					DBIO.successful(())
+				}
+			} yield testSuite) andThen
+			PersistenceSchema.testSuites.filter(_.id === testSuiteId).delete
 	}
 
 }

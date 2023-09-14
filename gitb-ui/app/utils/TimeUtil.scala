@@ -1,9 +1,11 @@
 package utils
 
+import models.Constants
+
 import java.sql.Timestamp
 import java.text.SimpleDateFormat
 import java.time.format.DateTimeFormatter
-import java.time.{ZoneId, ZoneOffset, ZonedDateTime}
+import java.time.{ZoneId, ZonedDateTime}
 import java.util.{Calendar, Date, TimeZone}
 
 object TimeUtil {
@@ -23,6 +25,14 @@ object TimeUtil {
   val formatDate = {
     val format = new SimpleDateFormat("yyyy-MM-dd")
     format
+  }
+
+  def dateFromFilterString(dateStr: Option[String]): Option[Date] = {
+    if (dateStr.isEmpty) {
+      None
+    } else {
+      Some(new SimpleDateFormat(Constants.FilterDateFormat).parse(dateStr.get))
+    }
   }
 
   def serializeTimestamp(t:Timestamp): String = {
