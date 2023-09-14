@@ -169,6 +169,7 @@ import { DomainSpecificationDisplayComponent } from './components/domain-specifi
 import { SystemAdministrationComponent } from './pages/admin/system-administration/system-administration.component';
 import { ConfigurationEntryComponent } from './pages/admin/system-administration/configuration-entry/configuration-entry.component';
 import { TabTitleComponent } from './components/tab-title/tab-title.component';
+import { ConformanceSnapshotsModalComponent } from './modals/conformance-snapshots-modal/conformance-snapshots-modal.component';
 
 @NgModule({
   providers: [ 
@@ -327,7 +328,8 @@ import { TabTitleComponent } from './components/tab-title/tab-title.component';
     DomainSpecificationDisplayComponent,
     SystemAdministrationComponent,
     ConfigurationEntryComponent,
-    TabTitleComponent],
+    TabTitleComponent,
+    ConformanceSnapshotsModalComponent],
   imports: [
     ColorPickerModule,
     BrowserModule,

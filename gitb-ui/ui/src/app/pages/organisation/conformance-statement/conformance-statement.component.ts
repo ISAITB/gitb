@@ -162,27 +162,29 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
     // Load conformance results.
     this.conformanceService.getConformanceStatus(this.actorId, this.systemId)
     .subscribe((data) => {
-      for (let testSuite of data.testSuites) {
-        testSuite.hasDisabledTestCases = find(testSuite.testCases, (testCase) => testCase.disabled) != undefined
-        testSuite.hasOptionalTestCases = find(testSuite.testCases, (testCase) => testCase.optional) != undefined
-        if (!this.hasDisabledTests && testSuite.hasDisabledTestCases) {
-          this.hasDisabledTests = true
+      if (data) {
+        for (let testSuite of data.testSuites) {
+          testSuite.hasDisabledTestCases = find(testSuite.testCases, (testCase) => testCase.disabled) != undefined
+          testSuite.hasOptionalTestCases = find(testSuite.testCases, (testCase) => testCase.optional) != undefined
+          if (!this.hasDisabledTests && testSuite.hasDisabledTestCases) {
+            this.hasDisabledTests = true
+          }
+          if (!this.hasOptionalTests && testSuite.hasOptionalTestCases) {
+            this.hasOptionalTests = true
+          }
         }
-        if (!this.hasOptionalTests && testSuite.hasOptionalTestCases) {
-          this.hasOptionalTests = true
+        this.testSuites = data.testSuites
+        this.displayedTestSuites = this.testSuites
+        this.statusCounters = { 
+          completed: data.summary.completed, failed: data.summary.failed, other: data.summary.undefined,
+          completedOptional: data.summary.completedOptional, failedOptional: data.summary.failedOptional, otherOptional: data.summary.undefinedOptional
         }
+        this.lastUpdate = data.summary.updateTime
+        this.conformanceStatus = data.summary.result
+        this.allTestsSuccessful = this.conformanceStatus == Constants.TEST_CASE_RESULT.SUCCESS
+        this.prepareTestFilter()
+        this.applySearchFilters()
       }
-      this.testSuites = data.testSuites
-      this.displayedTestSuites = this.testSuites
-      this.statusCounters = { 
-        completed: data.summary.completed, failed: data.summary.failed, other: data.summary.undefined,
-        completedOptional: data.summary.completedOptional, failedOptional: data.summary.failedOptional, otherOptional: data.summary.undefinedOptional
-      }
-      this.lastUpdate = data.summary.updateTime
-      this.conformanceStatus = data.summary.result
-      this.allTestsSuccessful = this.conformanceStatus == Constants.TEST_CASE_RESULT.SUCCESS
-      this.prepareTestFilter()
-      this.applySearchFilters()
     }).add(() => {
       this.loadingTests = false
     })

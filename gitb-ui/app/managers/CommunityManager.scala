@@ -273,7 +273,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityRes
           PersistenceSchema.communities.filter(_.id === community.id).map(_.shortname).update(shortName) andThen
             testResultManager.updateForUpdatedCommunity(community.id, shortName)
         } else {
-          DBIO.successful()
+          DBIO.successful(())
         }
       }
       // Update full name.
@@ -281,7 +281,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityRes
         if (fullName.nonEmpty && community.fullname != fullName) {
           PersistenceSchema.communities.filter(_.id === community.id).map(_.fullname).update(fullName)
         } else {
-          DBIO.successful()
+          DBIO.successful(())
         }
       }
       // Handle domain update.
@@ -309,7 +309,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityRes
               selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties
             )
         } else {
-          DBIO.successful()
+          DBIO.successful(())
         }
       }
       // Update REST-API properties.
@@ -319,7 +319,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityRes
             .map(c => c.allowAutomationApi)
             .update(allowAutomationApi.getOrElse(community.allowAutomationApi))
         } else {
-          DBIO.successful()
+          DBIO.successful(())
         }
       }
       // API key update.
@@ -335,7 +335,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityRes
           val apiKeyToUse = if (replaceApiKey) CryptoUtil.generateApiKey() else apiKey.get
           PersistenceSchema.communities.filter(_.id === community.id).map(_.apiKey).update(apiKeyToUse)
         } else {
-          DBIO.successful()
+          DBIO.successful(())
         }
       }
     } yield ()
@@ -378,7 +378,9 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityRes
     */
   def deleteCommunity(communityId: Long): Unit = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
-    val dbAction = organizationManager.deleteOrganizationByCommunity(communityId, onSuccessCalls) andThen
+    val dbAction = {
+      conformanceManager.deleteConformanceSnapshotsOfCommunity(communityId) andThen
+      organizationManager.deleteOrganizationByCommunity(communityId, onSuccessCalls) andThen
       landingPageManager.deleteLandingPageByCommunity(communityId) andThen
       legalNoticeManager.deleteLegalNoticeByCommunity(communityId) andThen
       errorTemplateManager.deleteErrorTemplateByCommunity(communityId) andThen
@@ -390,6 +392,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityRes
       communityResourceManager.deleteResourcesOfCommunity(communityId, onSuccessCalls) andThen
       PersistenceSchema.communityLabels.filter(_.community === communityId).delete andThen
       PersistenceSchema.communities.filter(_.id === communityId).delete
+    }
     exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
   }
 

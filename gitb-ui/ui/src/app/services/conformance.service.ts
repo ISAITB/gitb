@@ -25,6 +25,7 @@ import { ConformanceStatus } from '../types/conformance-status';
 import { FileParam } from '../types/file-param.type';
 import { StatementParameterMinimal } from '../types/statement-parameter-minimal';
 import { ConformanceStatementItemInfo } from '../types/conformance-statement-item-info';
+import { ConformanceSnapshot } from '../types/conformance-snapshot';
 
 @Injectable({
   providedIn: 'root'
@@ -199,11 +200,14 @@ export class ConformanceService {
     })
   }
 
-  getConformanceOverview(criteria: TestResultSearchCriteria, fullResults: boolean, forExport: boolean, sortColumn: string, sortOrder: string, page: number, limit: number) {
+  getConformanceOverview(criteria: TestResultSearchCriteria, snapshotId: number|undefined, fullResults: boolean, forExport: boolean, sortColumn: string, sortOrder: string, page: number, limit: number) {
     let params: any = {}
     params.full = fullResults
     params.page = page
     params.limit = limit
+    if (snapshotId != undefined) {
+      params.snapshot = snapshotId
+    }
     if (criteria.domainIds != undefined && criteria.domainIds.length > 0) {
       params.domain_ids = criteria.domainIds.join(',')
     }
@@ -250,10 +254,17 @@ export class ConformanceService {
     })
   }
 
-  getConformanceStatus(actorId: number, sutId: number) {
-    return this.restService.get<ConformanceStatus>({
+  getConformanceStatus(actorId: number, sutId: number, snapshotId?: number) {
+    let params: any = undefined
+    if (snapshotId != undefined) {
+      params = {
+        snapshot: snapshotId
+      }
+    }
+    return this.restService.get<ConformanceStatus|undefined>({
       path: ROUTES.controllers.ConformanceService.getConformanceStatus(actorId, sutId).url,
-      authenticate: true
+      authenticate: true,
+      params: params
     })
   }
 
@@ -381,28 +392,32 @@ export class ConformanceService {
     })
   }
 
-  exportConformanceCertificateReport(communityId: number, actorId: number, systemId: number, settings: ConformanceCertificateSettings) {
-    let data: any = {}
+  exportConformanceCertificateReport(communityId: number, actorId: number, systemId: number, settings: ConformanceCertificateSettings, snapshotId?: number) {
+    let settingsData: any = {}
     if (settings != undefined) {
-      data.title = settings.title
-      data.includeTitle = settings.includeTitle != undefined && settings.includeTitle
-      data.includeMessage = settings.includeMessage != undefined && settings.includeMessage
-      data.includeTestStatus = settings.includeTestStatus != undefined && settings.includeTestStatus
-      data.includeTestCases = settings.includeTestCases != undefined && settings.includeTestCases
-      data.includeDetails = settings.includeDetails != undefined && settings.includeDetails
-      data.includeSignature = settings.includeSignature != undefined && settings.includeSignature
-      if (data.includeMessage) {
-        data.message = settings.message
+      settingsData.title = settings.title
+      settingsData.includeTitle = settings.includeTitle != undefined && settings.includeTitle
+      settingsData.includeMessage = settings.includeMessage != undefined && settings.includeMessage
+      settingsData.includeTestStatus = settings.includeTestStatus != undefined && settings.includeTestStatus
+      settingsData.includeTestCases = settings.includeTestCases != undefined && settings.includeTestCases
+      settingsData.includeDetails = settings.includeDetails != undefined && settings.includeDetails
+      settingsData.includeSignature = settings.includeSignature != undefined && settings.includeSignature
+      if (settingsData.includeMessage) {
+        settingsData.message = settings.message
       }
+    }
+    let data: any = {
+      settings: JSON.stringify(settingsData),
+      community_id: communityId,
+      actor_id: actorId,
+      system_id: systemId
+    }
+    if (snapshotId != undefined) {
+      data.snapshot = snapshotId
     }
     return this.restService.post<ArrayBuffer>({
       path: ROUTES.controllers.RepositoryService.exportConformanceCertificateReport().url,
-      data: {
-        settings: JSON.stringify(data),
-        community_id: communityId,
-        actor_id: actorId,
-        system_id: systemId
-      },
+      data: data,
       authenticate: true,
       arrayBuffer: true
     })
@@ -864,6 +879,44 @@ export class ConformanceService {
       path: ROUTES.controllers.ConformanceService.getAvailableConformanceStatements(systemId).url,
       authenticate: true,
       params: params
+    })
+  }
+
+  createConformanceSnapshot(communityId: number, label: string) {
+    return this.restService.post<void>({
+      path: ROUTES.controllers.ConformanceService.createConformanceSnapshot().url,
+      authenticate: true,
+      data: {
+        community_id: communityId,
+        label: label
+      }
+    })
+  }
+
+  getConformanceSnapshots(communityId: number) {
+    return this.restService.get<ConformanceSnapshot[]>({
+      path: ROUTES.controllers.ConformanceService.getConformanceSnapshots().url,
+      authenticate: true,
+      params: {
+        community_id: communityId
+      }
+    })
+  }
+
+  editConformanceSnapshot(snapshotId: number, label: string) {
+    return this.restService.post<void>({
+      path: ROUTES.controllers.ConformanceService.editConformanceSnapshot(snapshotId).url,
+      authenticate: true,
+      data: {
+        label: label
+      }
+    })
+  }
+
+  deleteConformanceSnapshot(snapshotId: number) {
+    return this.restService.delete<void>({
+      path: ROUTES.controllers.ConformanceService.deleteConformanceSnapshot(snapshotId).url,
+      authenticate: true
     })
   }
 

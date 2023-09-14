@@ -62,7 +62,6 @@ h1, h2, h3, h4, h5, h6 {
 .div-padded-small {
 	padding: 8px;
 }
-
 .account-card {
 	&:extend(.div-rounded);
 	cursor: pointer;
@@ -286,10 +285,16 @@ table.table-directive {
 	padding-top: 8px;
 	padding-bottom: 8px;
 	white-space: nowrap;
+	&.padding-right-large {
+		padding-right: 40px;
+	}
 }
 .th-min {
 	width: 1px;
 	white-space: nowrap;
+	&.padding-right-large {
+		padding-right: 40px;
+	}	
 }
 #system-tests-table, #dashboard-table, #conformanceDashboardPageTable {
 	th.tb-result {
@@ -646,4 +651,7 @@ div.non-padded-alert div.alert {
 			}
 		}
 	}
+}
+.btn {
+	min-width: 40px;
 }

@@ -12,6 +12,7 @@ export class TestStatusIconsComponent implements OnInit {
 
   @Input() counters!: Counters
   @Input() centerAligned = true
+  @Input() asLine? = false
 
   successIcon!: string
   failedIcon!: string

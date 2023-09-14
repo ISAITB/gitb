@@ -2122,6 +2122,23 @@ object JsonUtil {
     json
   }
 
+  def jsConformanceSnapshots(snapshots: Iterable[ConformanceSnapshot]): JsArray = {
+    var array = Json.arr()
+    snapshots.foreach { snapshot =>
+      array = array.append(jsConformanceSnapshot(snapshot))
+    }
+    array
+  }
+
+  def jsConformanceSnapshot(snapshot: ConformanceSnapshot):JsObject = {
+    Json.obj(
+      "id" -> snapshot.id,
+      "label" -> snapshot.label,
+      "snapshotTime" -> TimeUtil.serializeTimestamp(snapshot.snapshotTime),
+      "community" -> snapshot.community
+    )
+  }
+
   def jsTestSuiteUploadResult(result: TestSuiteUploadResult):JsObject = {
     val json = Json.obj(
       "success"    -> result.success,

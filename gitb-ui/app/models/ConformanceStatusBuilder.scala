@@ -2,6 +2,7 @@ package models
 
 import models.ConformanceStatusBuilder.FilterCriteria
 import models.Enums.TestResultStatus
+import utils.TimeUtil
 
 import java.util
 import java.util.Date
@@ -55,7 +56,7 @@ class ConformanceStatusBuilder[A <: ConformanceStatement](recordDetails: Boolean
     val key = s"${result.systemId}|${result.actorId}"
     var data = conformanceMap.get(key)
     if (data == null) {
-      data = (result, new ListBuffer[A])
+      data = (result.copy().asInstanceOf[A], new ListBuffer[A])
       conformanceMap.put(key, data)
     }
     // Record statistics.
@@ -79,7 +80,7 @@ class ConformanceStatusBuilder[A <: ConformanceStatement](recordDetails: Boolean
       }
       // Set overall last update time.
       if (result.updateTime.isDefined && (data._1.updateTime.isEmpty || data._1.updateTime.get.before(result.updateTime.get))) {
-        data._1.updateTime = result.updateTime
+        data._1.updateTime = TimeUtil.copyTimestamp(result.updateTime)
       }
     }
     // Record individual result.

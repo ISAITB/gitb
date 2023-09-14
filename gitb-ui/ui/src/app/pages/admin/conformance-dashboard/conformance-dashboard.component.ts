@@ -5,7 +5,6 @@ import { Constants } from 'src/app/common/constants';
 import { ConformanceCertificateModalComponent } from 'src/app/modals/conformance-certificate-modal/conformance-certificate-modal.component';
 import { ConformanceService } from 'src/app/services/conformance.service';
 import { DataService } from 'src/app/services/data.service';
-import { ReportService } from 'src/app/services/report.service';
 import { RoutingService } from 'src/app/services/routing.service';
 import { ConformanceCertificateSettings } from 'src/app/types/conformance-certificate-settings';
 import { ConformanceResultFull } from 'src/app/types/conformance-result-full';
@@ -15,6 +14,8 @@ import { ConformanceStatusItem } from 'src/app/types/conformance-status-item';
 import { FilterState } from 'src/app/types/filter-state';
 import { TestResultSearchCriteria } from 'src/app/types/test-result-search-criteria';
 import { find } from 'lodash';
+import { ConformanceSnapshot } from 'src/app/types/conformance-snapshot';
+import { ConformanceSnapshotsModalComponent } from 'src/app/modals/conformance-snapshots-modal/conformance-snapshots-modal.component';
 
 @Component({
   selector: 'app-conformance-dashboard',
@@ -30,6 +31,7 @@ export class ConformanceDashboardComponent implements OnInit {
     updatePending: false
   }
   communityId?: number
+  selectedCommunityId? :number
   columnCount!: number
   expandedStatements: { [key: string]: any, count: number } = {
     count: 0
@@ -45,10 +47,13 @@ export class ConformanceDashboardComponent implements OnInit {
   sortOrder = Constants.ORDER.ASC
   sortColumn = Constants.FILTER_TYPE.COMMUNITY
 
+  latestSnapshotButtonLabel = 'Latest conformance status'
+  snapshotButtonLabel = this.latestSnapshotButtonLabel
+  activeConformanceSnapshot?: ConformanceSnapshot
+
   constructor(
     public dataService: DataService,
     private conformanceService: ConformanceService,
-    private reportService: ReportService,
     private modalService: BsModalService,
     private routingService: RoutingService
   ) { }
@@ -64,6 +69,7 @@ export class ConformanceDashboardComponent implements OnInit {
     } else if (this.dataService.isCommunityAdmin) {
       this.sortColumn = Constants.FILTER_TYPE.ORGANISATION
 			this.communityId = this.dataService.community!.id
+      this.selectedCommunityId = this.communityId
 			if (this.dataService.community!.domain == undefined) {
 				this.columnCount = 10
 				this.filterState.filters.push(Constants.FILTER_TYPE.DOMAIN)
@@ -106,6 +112,20 @@ export class ConformanceDashboardComponent implements OnInit {
       searchCriteria.organisationProperties = filterData.organisationProperties
       searchCriteria.systemProperties = filterData.systemProperties
     }
+    if (this.communityId == undefined) {
+      if (searchCriteria.communityIds != undefined && searchCriteria.communityIds.length == 1) {
+        const communityIdFromFilters = searchCriteria.communityIds[0]
+        if (communityIdFromFilters != this.selectedCommunityId) {
+          this.snapshotButtonLabel = this.latestSnapshotButtonLabel
+          this.activeConformanceSnapshot = undefined
+          this.selectedCommunityId = communityIdFromFilters
+        }
+      } else {
+        this.snapshotButtonLabel = this.latestSnapshotButtonLabel
+        this.activeConformanceSnapshot = undefined
+        this.selectedCommunityId = undefined
+      }
+    }
 		return searchCriteria
   }
 
@@ -118,7 +138,7 @@ export class ConformanceDashboardComponent implements OnInit {
         pageToUse = 1
         limitToUse = 1000000
       }
-      this.conformanceService.getConformanceOverview(params, fullResults, forExport, this.sortColumn, this.sortOrder, pageToUse, limitToUse)
+      this.conformanceService.getConformanceOverview(params, this.activeConformanceSnapshot?.id, fullResults, forExport, this.sortColumn, this.sortOrder, pageToUse, limitToUse)
       .subscribe((data: ConformanceResultFullList) => {
         for (let conformanceStatement of data.data) {
           const completedCount = Number(conformanceStatement.completed)
@@ -164,10 +184,12 @@ export class ConformanceDashboardComponent implements OnInit {
       this.expand(statement)
       if (statement.testSuites == undefined) {
         statement.testSuitesLoaded = false
-        this.conformanceService.getConformanceStatus(statement.actorId, statement.systemId)
+        this.conformanceService.getConformanceStatus(statement.actorId, statement.systemId, this.activeConformanceSnapshot?.id)
         .subscribe((data) => {
-          statement.testSuites = data.testSuites
-          this.organiseTestSuites(statement)
+          if (data) {
+            statement.testSuites = data.testSuites
+            this.organiseTestSuites(statement)
+          }
         }).add(() => {
           statement.testSuitesLoaded = true
         })
@@ -265,11 +287,12 @@ export class ConformanceDashboardComponent implements OnInit {
   }
 
   private showSettingsPopup(statement: ConformanceResultFull) {
-    const modalRef = this.modalService.show(ConformanceCertificateModalComponent, {
+    this.modalService.show(ConformanceCertificateModalComponent, {
       class: 'modal-lg',
       initialState: {
         settings: JSON.parse(JSON.stringify(this.settings)),
-        conformanceStatement: statement
+        conformanceStatement: statement,
+        snapshotId: this.activeConformanceSnapshot?.id
       }
     })
   }
@@ -283,8 +306,16 @@ export class ConformanceDashboardComponent implements OnInit {
     }
   }
 
+  showToOrganisation(statement: ConformanceResultFull) {
+    return statement.organizationId != undefined && statement.organizationId >= 0
+  }
+
   toSystem(statement: ConformanceResultFull) {
     this.routingService.toSystemDetails(statement.communityId, statement.organizationId, statement.systemId)
+  }
+
+  showToSystem(statement: ConformanceResultFull) {
+    return this.showToOrganisation(statement) && statement.systemId != undefined && statement.systemId >= 0
   }
 
   toStatement(statement: ConformanceResultFull) {
@@ -295,12 +326,24 @@ export class ConformanceDashboardComponent implements OnInit {
     }
   }
 
+  showToStatement(statement: ConformanceResultFull) {
+    return this.showToSystem(statement) && statement.actorId != undefined && statement.actorId >= 0
+  }
+
   toSpecification(statement: ConformanceResultFull) {
     this.routingService.toSpecification(statement.domainId, statement.specId)
   }
 
+  showToSpecification(statement: ConformanceResultFull) {
+    return statement.domainId != undefined && statement.domainId >= 0 && statement.specId != undefined && statement.specId >= 0
+  }
+
   toActor(statement: ConformanceResultFull) {
     this.routingService.toActor(statement.domainId, statement.specId, statement.actorId)
+  }
+
+  showToActor(statement: ConformanceResultFull) {
+    return this.showToSpecification(statement) && statement.actorId != undefined && statement.actorId >= 0
   }
 
   toTestSession(sessionId: string) {
@@ -373,6 +416,38 @@ export class ConformanceDashboardComponent implements OnInit {
       this.sortOrder = Constants.ORDER.DESC
     }
     this.getConformanceStatements()
+  }
+
+  manageConformanceSnapshots() {
+    if (this.selectedCommunityId) {
+      const modalRef = this.modalService.show(ConformanceSnapshotsModalComponent, {
+        class: 'modal-lg',
+        initialState: {
+          communityId: this.selectedCommunityId!,
+          currentlySelectedSnapshot: this.activeConformanceSnapshot?.id
+        }
+      })
+      modalRef.content!.select.subscribe((selectedSnapshot) => {
+        if (selectedSnapshot) {
+          this.snapshotButtonLabel = selectedSnapshot.label + " ("+selectedSnapshot.snapshotTime+")"
+          if (this.activeConformanceSnapshot == undefined || this.activeConformanceSnapshot.id != selectedSnapshot.id) {
+            this.activeConformanceSnapshot = selectedSnapshot
+            this.getConformanceStatements()
+          }
+          this.activeConformanceSnapshot = selectedSnapshot
+        } else {
+          this.viewLatestConformanceSnapshot()
+        }
+      })
+    }
+  }
+
+  viewLatestConformanceSnapshot() {
+    if (this.activeConformanceSnapshot != undefined) {
+      this.activeConformanceSnapshot = undefined
+      this.getConformanceStatements()
+    }
+    this.snapshotButtonLabel = this.latestSnapshotButtonLabel
   }
 
 }

@@ -1,5 +1,7 @@
 package models
 
+import utils.TimeUtil
+
 import java.sql.Timestamp
 
 class ConformanceStatement(
@@ -27,4 +29,16 @@ class ConformanceStatement(
     var specificationGroupName: Option[String] = None,
     var specificationDisplayOrder: Short = 0,
     var specificationGroupDisplayOrder: Option[Short] = None
-) {}
+) {
+
+  def copy(): ConformanceStatement = {
+    new ConformanceStatement(
+      domainId, domainName, domainNameFull, actorId, actorName, actorFull,
+      specificationId, specificationName, specificationNameFull, systemId,
+      result, TimeUtil.copyTimestamp(this.updateTime), completedTests, failedTests, undefinedTests,
+      completedOptionalTests, failedOptionalTests, undefinedOptionalTests,
+      specificationGroupId, specificationGroupName, specificationDisplayOrder, specificationGroupDisplayOrder
+    )
+  }
+
+}

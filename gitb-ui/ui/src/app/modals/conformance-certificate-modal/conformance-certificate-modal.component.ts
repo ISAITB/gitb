@@ -7,8 +7,6 @@ import { ReportService } from 'src/app/services/report.service';
 import { ConformanceCertificateSettings } from 'src/app/types/conformance-certificate-settings';
 import { ConformanceResultFull } from 'src/app/types/conformance-result-full';
 import { saveAs } from 'file-saver'
-import { Observable } from 'rxjs';
-import { DomainParameter } from 'src/app/types/domain-parameter';
 
 @Component({
   selector: 'app-conformance-certificate-modal',
@@ -19,6 +17,7 @@ export class ConformanceCertificateModalComponent implements OnInit {
 
   @Input() settings!: ConformanceCertificateSettings
   @Input() conformanceStatement!: ConformanceResultFull
+  @Input() snapshotId?: number
 
   exportPending = false
   choice = Constants.REPORT_OPTION_CHOICE.REPORT
@@ -78,7 +77,7 @@ export class ConformanceCertificateModalComponent implements OnInit {
   generate() {
     this.exportPending = true
     if (this.choice == Constants.REPORT_OPTION_CHOICE.CERTIFICATE) {
-        this.conformanceService.exportConformanceCertificateReport(this.conformanceStatement.communityId, this.conformanceStatement.actorId, this.conformanceStatement.systemId, this.settings)
+        this.conformanceService.exportConformanceCertificateReport(this.conformanceStatement.communityId, this.conformanceStatement.actorId, this.conformanceStatement.systemId, this.settings, this.snapshotId)
         .subscribe((data) => {
           const blobData = new Blob([data], {type: 'application/pdf'});
           saveAs(blobData, "conformance_certificate.pdf");
@@ -88,7 +87,7 @@ export class ConformanceCertificateModalComponent implements OnInit {
         })
     } else {
         const includeDetails = this.choice == Constants.REPORT_OPTION_CHOICE.DETAILED_REPORT
-        this.reportService.exportConformanceStatementReport(this.conformanceStatement.actorId, this.conformanceStatement.systemId, includeDetails)
+        this.reportService.exportConformanceStatementReport(this.conformanceStatement.actorId, this.conformanceStatement.systemId, includeDetails, this.snapshotId)
         .subscribe((data) => {
           const blobData = new Blob([data], {type: 'application/pdf'});
           saveAs(blobData, "conformance_report.pdf");

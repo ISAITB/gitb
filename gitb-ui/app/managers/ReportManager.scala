@@ -466,7 +466,7 @@ class ReportManager @Inject() (reportHelper: ReportHelper, triggerHelper: Trigge
       0L, "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Specification), "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Specification),
       Some("Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.SpecificationGroup)), Some("Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.SpecificationGroup)),
       "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.SpecificationInGroup), "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.SpecificationInGroup),
-      Some(index), Some("Sample Test Suite "+index), Some("Description for Sample Test Suite "+index), Some("Sample Test Case "+index), Some("Description for Sample Test Case "+index), Some(false), Some(false), None,  "SUCCESS", Some("An output message for the test session"),
+      Some(index), Some("Sample Test Suite "+index), Some("Description for Sample Test Suite "+index), Some(index), Some("Sample Test Case "+index), Some("Description for Sample Test Case "+index), Some(false), Some(false), None,  None, "SUCCESS", Some("An output message for the test session"),
       None, None, 0L, 0L, 0L, 0L, 0L, 0L)
   }
 
@@ -482,8 +482,8 @@ class ReportManager @Inject() (reportHelper: ReportHelper, triggerHelper: Trigge
     generateConformanceCertificate(reportPath, settings, conformanceInfo.toList, communityId)
   }
 
-  def generateConformanceCertificate(reportPath: Path, settings: ConformanceCertificates, actorId: Long, systemId: Long, communityId: Long): Path = {
-    val conformanceInfo = conformanceManager.getConformanceStatementsFull(None, None, None, Some(List(actorId)), None, None, Some(List(systemId)), None, None, None, None, None, None, None)
+  def generateConformanceCertificate(reportPath: Path, settings: ConformanceCertificates, actorId: Long, systemId: Long, communityId: Long, snapshotId: Option[Long]): Path = {
+    val conformanceInfo = conformanceManager.getConformanceStatementsFull(None, None, None, Some(List(actorId)), None, None, Some(List(systemId)), None, None, None, None, None, None, None, snapshotId)
     generateConformanceCertificate(reportPath, settings, conformanceInfo, communityId)
   }
 
@@ -548,12 +548,12 @@ class ReportManager @Inject() (reportHelper: ReportHelper, triggerHelper: Trigge
     reportPath
   }
 
-  def generateConformanceStatementReport(reportPath: Path, addTestCases: Boolean, actorId: Long, systemId: Long, labels: Map[Short, CommunityLabels], communityId: Long): Path = {
-    generateCoreConformanceReport(reportPath, addTestCases, None, actorId, systemId, labels, communityId)
+  def generateConformanceStatementReport(reportPath: Path, addTestCases: Boolean, actorId: Long, systemId: Long, labels: Map[Short, CommunityLabels], communityId: Long, snapshotId: Option[Long]): Path = {
+    generateCoreConformanceReport(reportPath, addTestCases, None, actorId, systemId, labels, communityId, snapshotId)
   }
 
-  private def generateCoreConformanceReport(reportPath: Path, addTestCases: Boolean, message: Option[String], actorId: Long, systemId: Long, labels: Map[Short, CommunityLabels], communityId: Long): Path = {
-    val conformanceInfo = conformanceManager.getConformanceStatementsFull(None, None, None, Some(List(actorId)), None, None, Some(List(systemId)), None, None, None, None, None, None, None)
+  private def generateCoreConformanceReport(reportPath: Path, addTestCases: Boolean, message: Option[String], actorId: Long, systemId: Long, labels: Map[Short, CommunityLabels], communityId: Long, snapshotId: Option[Long]): Path = {
+    val conformanceInfo = conformanceManager.getConformanceStatementsFull(None, None, None, Some(List(actorId)), None, None, Some(List(systemId)), None, None, None, None, None, None, None, snapshotId)
     generateCoreConformanceReport(reportPath, addTestCases, Some("Conformance Statement Report"), addDetails = true, addTestCaseResults = true, addTestStatus = true, addMessage = false, message, conformanceInfo, labels, communityId)
   }
 

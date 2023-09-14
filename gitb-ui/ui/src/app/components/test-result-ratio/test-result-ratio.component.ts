@@ -12,6 +12,7 @@ export class TestResultRatioComponent implements OnInit {
   
   @Input() counters!: Counters
   @Input() alignRight = true
+  @Input() asLine? = false
 
   completedPercentage = ''
   failedPercentage = ''

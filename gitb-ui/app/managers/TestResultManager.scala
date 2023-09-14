@@ -319,6 +319,8 @@ class TestResultManager @Inject() (repositoryUtils: RepositoryUtils, dbConfigPro
           DBIO.successful(())
         }
       }
+      // Delete from conformance snapshot results (where we don't care about updating the overall conformance status.
+      _ <- PersistenceSchema.conformanceSnapshotResults.filter(_.testSessionId === testSession.sessionId).map(_.testSessionId).update(None)
       // Delete test result definition
       _ <- PersistenceSchema.testResultDefinitions.filter(_.testSessionId === testSession.sessionId).delete
       // Delete test step reports

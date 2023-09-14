@@ -748,8 +748,12 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     canManageCommunity(request, communityId)
   }
 
-  def canViewConformanceCertificateReport(request: RequestWithAttributes[_], communityId: Long):Boolean = {
-    canManageCommunity(request, communityId)
+  def canViewConformanceCertificateReport(request: RequestWithAttributes[_], communityId: Long, snapshotId: Option[Long] = None):Boolean = {
+    if (snapshotId.isDefined) {
+      canManageConformanceSnapshot(request, snapshotId.get)
+    } else {
+      canManageCommunity(request, communityId)
+    }
   }
 
   def canViewOwnConformanceCertificateReport(request: RequestWithAttributes[_], systemId: Long):Boolean = {
@@ -779,8 +783,12 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     setAuthResult(request, ok, "User cannot download this conformance certificate")
   }
 
-  def canViewConformanceStatementReport(request: RequestWithAttributes[_], systemId: String):Boolean = {
-    canViewSystem(request, systemId.toLong)
+  def canViewConformanceStatementReport(request: RequestWithAttributes[_], systemId: String, snapshotId: Option[Long] = None):Boolean = {
+    if (snapshotId.isDefined) {
+      canManageConformanceSnapshot(request, snapshotId.get)
+    } else {
+      canViewSystem(request, systemId.toLong)
+    }
   }
 
   def canManageTestSession(request: RequestWithAttributes[_], sessionId: String): Boolean = {
@@ -1222,6 +1230,21 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     setAuthResult(request, ok, "User cannot manage the requested community")
   }
 
+  def canManageConformanceSnapshot(request: RequestWithAttributes[_], snapshotId: Long): Boolean = {
+    canManageConformanceSnapshot(request, getUser(getRequestUserId(request)), snapshotId)
+  }
+
+  private def canManageConformanceSnapshot(request: RequestWithAttributes[_], userInfo: User, snapshotId: Long): Boolean = {
+    var ok = false
+    if (isTestBedAdmin(userInfo)) {
+      ok = true
+    } else if (isCommunityAdmin(userInfo) && userInfo.organization.isDefined) {
+      val snapshot = conformanceManager.getConformanceSnapshot(snapshotId)
+      ok = snapshot.community == userInfo.organization.get.community
+    }
+    setAuthResult(request, ok, "User cannot manage the requested conformance snapshot")
+  }
+
   def canManageCommunity(request: RequestWithAttributes[_], communityId: Long): Boolean = {
     canManageCommunity(request, getUser(getRequestUserId(request)), communityId)
   }
@@ -1264,12 +1287,16 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     checkTestBedAdmin(request)
   }
 
-  def canViewConformanceOverview(request: RequestWithAttributes[_], communityIds: Option[List[Long]]):Boolean = {
+  def canViewConformanceOverview(request: RequestWithAttributes[_], communityIds: Option[List[Long]], snapshotId: Option[Long] = None):Boolean = {
     if (communityIds.isEmpty || (communityIds.isDefined && communityIds.get.size > 1)) {
       checkTestBedAdmin(request)
     } else {
       // Single community. This can also be a community admin.
-      canManageCommunity(request, communityIds.get.head)
+      if (snapshotId.isDefined) {
+        canManageConformanceSnapshot(request, snapshotId.get)
+      } else {
+        canManageCommunity(request, communityIds.get.head)
+      }
     }
   }
 
@@ -1319,13 +1346,17 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     setAuthResult(request, ok, "User doesn't have access to the requested test suite")
   }
 
-  def canViewConformanceStatus(request: RequestWithAttributes[_], actorId: Long, sutId: Long):Boolean = {
+  def canViewConformanceStatus(request: RequestWithAttributes[_], actorId: Long, sutId: Long, snapshotId: Option[Long] = None):Boolean = {
     var ok = false
     val userInfo = getUser(getRequestUserId(request))
     if (isTestBedAdmin(userInfo)) {
       ok = true
     } else {
-      ok = canViewSystemsById(request, userInfo, Some(List(sutId)))
+      if (snapshotId.isDefined) {
+        ok = canManageConformanceSnapshot(request, userInfo, snapshotId.get)
+      } else {
+        ok = canViewSystemsById(request, userInfo, Some(List(sutId)))
+      }
     }
     setAuthResult(request, ok, "User cannot view the requested conformance status")
   }

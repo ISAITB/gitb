@@ -105,18 +105,17 @@ class TestCaseManager @Inject() (testResultManager: TestResultManager, dbConfigP
 	}
 
 	def delete(testCaseId: Long): DBIO[_] = {
-		deleteInternal(testCaseId, skipConformanceResult = false)
+		deleteInternal(testCaseId)
 	}
 
-	private def deleteInternal(testCaseId: Long, skipConformanceResult: Boolean): DBIO[_] = {
+	private def deleteInternal(testCaseId: Long): DBIO[_] = {
 		val actions = new ListBuffer[DBIO[_]]()
 		actions += testResultManager.updateForDeletedTestCase(testCaseId)
 		actions += removeActorLinksForTestCase(testCaseId)
 		actions += PersistenceSchema.testCaseCoversOptions.filter(_.testcase === testCaseId).delete
 		actions += PersistenceSchema.testSuiteHasTestCases.filter(_.testcase === testCaseId).delete
-		if (!skipConformanceResult) {
-			actions += PersistenceSchema.conformanceResults.filter(_.testcase === testCaseId).delete
-		}
+		actions += PersistenceSchema.conformanceSnapshotResults.filter(_.testCaseId === testCaseId).map(_.testCaseId).update(testCaseId * -1)
+		actions += PersistenceSchema.conformanceResults.filter(_.testcase === testCaseId).delete
 		actions += PersistenceSchema.testCases.filter(_.id === testCaseId).delete
 		DBIO.seq(actions.toList.map(a => a): _*)
 	}

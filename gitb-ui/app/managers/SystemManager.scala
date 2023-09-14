@@ -806,6 +806,7 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils, testResultManag
     PersistenceSchema.systemImplementsActors.filter(_.systemId === systemId).delete andThen
     PersistenceSchema.systemImplementsOptions.filter(_.systemId === systemId).delete andThen
     PersistenceSchema.conformanceResults.filter(_.sut === systemId).delete andThen
+    PersistenceSchema.conformanceSnapshotResults.filter(_.systemId === systemId).map(_.systemId).update(systemId * -1) andThen
     deleteSystemParameterValues(systemId, onSuccess) andThen
     PersistenceSchema.systems.filter(_.id === systemId).delete
   }

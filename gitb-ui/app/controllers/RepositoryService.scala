@@ -256,8 +256,9 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
   }
 
   def exportConformanceStatementReport(): Action[AnyContent] = authorizedAction { request =>
+    val snapshotId = ParameterExtractor.optionalLongQueryParameter(request, Parameters.SNAPSHOT)
     val systemId = ParameterExtractor.requiredQueryParameter(request, Parameters.SYSTEM_ID)
-    authorizationManager.canViewConformanceStatementReport(request, systemId)
+    authorizationManager.canViewConformanceStatementReport(request, systemId, snapshotId)
     val actorId = ParameterExtractor.requiredQueryParameter(request, Parameters.ACTOR_ID)
     val includeTests = ParameterExtractor.requiredQueryParameter(request, Parameters.TESTS).toBoolean
     val reportPath = Paths.get(
@@ -270,8 +271,12 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
     FileUtils.deleteQuietly(reportPath.toFile.getParentFile)
     try {
       val labels = communityLabelManager.getLabels(request)
-      val communityId = systemManager.getCommunityIdOfSystem(systemId.toLong)
-      reportManager.generateConformanceStatementReport(reportPath, includeTests, actorId.toLong, systemId.toLong, labels, communityId)
+      val communityId = if (snapshotId.isDefined) {
+        conformanceManager.getConformanceSnapshot(snapshotId.get).community
+      } else {
+        systemManager.getCommunityIdOfSystem(systemId.toLong)
+      }
+      reportManager.generateConformanceStatementReport(reportPath, includeTests, actorId.toLong, systemId.toLong, labels, communityId, snapshotId)
       Ok.sendFile(
         content = reportPath.toFile,
         fileName = _ => Some(reportPath.toFile.getName),
@@ -286,7 +291,7 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
     }
   }
 
-  private def exportConformanceCertificateInternal(settings: ConformanceCertificates, communityId: Long, systemId: Long, actorId: Long) = {
+  private def exportConformanceCertificateInternal(settings: ConformanceCertificates, communityId: Long, systemId: Long, actorId: Long, snapshotId: Option[Long]) = {
     val reportPath = Paths.get(
       repositoryUtils.getTempReportFolder().getAbsolutePath,
       "conformance_reports",
@@ -295,7 +300,7 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
     )
     FileUtils.deleteQuietly(reportPath.toFile.getParentFile)
     try {
-      reportManager.generateConformanceCertificate(reportPath, settings, actorId, systemId, communityId)
+      reportManager.generateConformanceCertificate(reportPath, settings, actorId, systemId, communityId, snapshotId)
       Ok.sendFile(
         content = reportPath.toFile,
         fileName = _ => Some(reportPath.toFile.getName),
@@ -332,14 +337,15 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
         settingsToUse = storedSettings
       }
     }
-    exportConformanceCertificateInternal(settingsToUse.get, communityId, systemId, actorId)
+    exportConformanceCertificateInternal(settingsToUse.get, communityId, systemId, actorId, None)
   }
 
   def exportConformanceCertificateReport(): Action[AnyContent] = authorizedAction { request =>
+    val snapshotId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.SNAPSHOT)
     val systemId = ParameterExtractor.requiredBodyParameter(request, Parameters.SYSTEM_ID).toLong
     val communityId = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_ID).toLong
     val actorId = ParameterExtractor.requiredBodyParameter(request, Parameters.ACTOR_ID).toLong
-    authorizationManager.canViewConformanceCertificateReport(request, communityId)
+    authorizationManager.canViewConformanceCertificateReport(request, communityId, snapshotId)
 
     val jsSettings = ParameterExtractor.requiredBodyParameter(request, Parameters.SETTINGS)
     var settings = JsonUtil.parseJsConformanceCertificateSettings(jsSettings, communityId, None)
@@ -353,7 +359,7 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
       completeSettings.keystorePassword = Some(MimeUtil.decryptString(storedSettings.get.keystorePassword.get))
       settings = completeSettings.toCaseObject
     }
-    exportConformanceCertificateInternal(settings, communityId, systemId, actorId)
+    exportConformanceCertificateInternal(settings, communityId, systemId, actorId, snapshotId)
   }
 
   def exportDemoConformanceCertificateReport(communityId: Long): Action[AnyContent] = authorizedAction { request =>

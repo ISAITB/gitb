@@ -171,6 +171,7 @@ class SpecificationManager @Inject() (testResultManager: TestResultManager, conf
           // There may be linked specifications to the group.
           actions += PersistenceSchema.specifications.filter(_.group === groupId).map(x => (x.group, x.displayOrder)).update(None, 0)
         }
+        actions += PersistenceSchema.conformanceSnapshotResults.filter(_.specificationGroupId === groupId).map(_.specificationGroupId).update(Some(groupId * -1))
         actions += PersistenceSchema.specificationGroups.filter(_.id === groupId).delete
         toDBIO(actions)
       }

@@ -43,6 +43,14 @@ object TimeUtil {
     new Timestamp(System.currentTimeMillis)
   }
 
+  def copyTimestamp(source: Option[Timestamp]): Option[Timestamp] = {
+    if (source.isDefined) {
+      Some(new Timestamp(source.get.getTime))
+    } else {
+      None
+    }
+  }
+
   def getCurrentTime():String = {
     val time = Calendar.getInstance(TimeZone.getTimeZone("UTC")).getTime()
     formatUTC.format(time)

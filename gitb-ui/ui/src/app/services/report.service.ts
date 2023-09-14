@@ -212,14 +212,18 @@ export class ReportService {
     }))
   }
 
-  exportConformanceStatementReport(actorId: number, systemId: number, includeTests: boolean) {
+  exportConformanceStatementReport(actorId: number, systemId: number, includeTests: boolean, snapshotId?: number) {
+    let params:any = {
+      actor_id: actorId,
+      system_id: systemId,
+      tests: includeTests 
+    }
+    if (snapshotId != undefined) {
+      params.snapshot = snapshotId
+    }
     return this.restService.get<ArrayBuffer>({
       path: ROUTES.controllers.RepositoryService.exportConformanceStatementReport().url,
-      params: {
-        actor_id: actorId,
-        system_id: systemId,
-        tests: includeTests 
-      },
+      params: params,
       authenticate: true,
       arrayBuffer: true
     })

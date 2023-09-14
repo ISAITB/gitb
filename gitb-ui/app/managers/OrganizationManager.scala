@@ -412,6 +412,7 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils, systemMan
       deleteUserByOrganization(orgId) andThen
       systemManager.deleteSystemByOrganization(orgId, onSuccess) andThen
       deleteOrganizationParameterValues(orgId, onSuccess) andThen
+      PersistenceSchema.conformanceSnapshotResults.filter(_.organisationId === orgId).map(_.organisationId).update(orgId * -1) andThen
       PersistenceSchema.organizations.filter(_.id === orgId).delete andThen
       DBIO.successful(())
   }

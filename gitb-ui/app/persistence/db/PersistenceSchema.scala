@@ -1,8 +1,9 @@
 package persistence.db
 
 import models._
-import java.sql.Timestamp
+import slick.collection.heterogeneous.HNil
 
+import java.sql.Timestamp
 import slick.jdbc.MySQLProfile.api._
 
 object PersistenceSchema {
@@ -589,8 +590,53 @@ object PersistenceSchema {
     def domain = column[Long]("domain")
     def * = (id, shortname, fullname, description, displayOrder, domain) <> (SpecificationGroups.tupled, SpecificationGroups.unapply)
   }
-
   val specificationGroups = TableQuery[SpecificationGroupsTable]
   val insertSpecificationGroups = specificationGroups returning specificationGroups.map(_.id)
+
+  class ConformanceSnapshotsTable(tag: Tag) extends Table[ConformanceSnapshot](tag, "ConformanceSnapshots") {
+    def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
+    def label = column[String]("label")
+    def snapshotTime = column[Timestamp]("snapshot_time", O.SqlType("TIMESTAMP"))
+    def community = column[Long]("community")
+    def * = (id, label, snapshotTime, community) <> (ConformanceSnapshot.tupled, ConformanceSnapshot.unapply)
+  }
+  val conformanceSnapshots = TableQuery[ConformanceSnapshotsTable]
+  val insertConformanceSnapshot = conformanceSnapshots returning conformanceSnapshots.map(_.id)
+
+  class ConformanceSnapshotResultsTable(tag: Tag) extends Table[ConformanceSnapshotResult](tag, "ConformanceSnapshotResults") {
+    def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
+    def organisationId = column[Long] ("organization_id")
+    def organisation = column[String] ("organization")
+    def systemId = column[Long]("sut_id")
+    def system = column[String]("sut")
+    def domainId = column[Long]("domain_id")
+    def domain = column[String]("domain")
+    def specificationGroupId = column[Option[Long]]("spec_group_id")
+    def specificationGroup = column[Option[String]]("spec_group")
+    def specificationGroupDisplayOrder = column[Option[Short]]("spec_group_display_order")
+    def specificationId = column[Long]("spec_id")
+    def specification = column[String]("spec")
+    def specificationDisplayOrder = column[Short]("spec_display_order")
+    def actorId = column[Long]("actor_id")
+    def actor = column[String]("actor")
+    def testSuiteId = column[Long]("test_suite_id")
+    def testSuite = column[String]("test_suite")
+    def testSuiteDescription = column[Option[String]]("test_suite_description", O.SqlType("TEXT"))
+    def testCaseId = column[Long]("test_case_id")
+    def testCase = column[String]("test_case")
+    def testCaseDescription = column[Option[String]]("test_case_description", O.SqlType("TEXT"))
+    def testCaseOrder = column[Short]("test_case_order")
+    def testCaseIsOptional = column[Boolean]("test_case_optional")
+    def testCaseIsDisabled = column[Boolean]("test_case_disabled")
+    def testCaseTags = column[Option[String]]("test_case_tags", O.SqlType("TEXT"))
+    def testSessionId = column[Option[String]]("test_session_id")
+    def result = column[String]("result")
+    def outputMessage = column[Option[String]]("output_message", O.SqlType("TEXT"))
+    def updateTime = column[Option[Timestamp]]("update_time", O.SqlType("TIMESTAMP"))
+    def snapshotId = column[Long]("snapshot_id")
+    def * = (id :: snapshotId :: organisationId :: organisation :: systemId :: system :: domainId :: domain :: specificationGroupId :: specificationGroup :: specificationGroupDisplayOrder :: specificationId :: specification :: specificationDisplayOrder :: actorId :: actor :: testSuiteId :: testSuite :: testSuiteDescription :: testCaseId :: testCase :: testCaseDescription :: testCaseOrder:: testCaseIsOptional :: testCaseIsDisabled :: testCaseTags :: testSessionId :: result :: outputMessage :: updateTime :: HNil).mapTo[ConformanceSnapshotResult]
+  }
+  val conformanceSnapshotResults = TableQuery[ConformanceSnapshotResultsTable]
+  val insertConformanceSnapshotResult = conformanceSnapshotResults returning conformanceSnapshotResults.map(_.id)
 
 }

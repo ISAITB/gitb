@@ -43,34 +43,66 @@
 .popup-panel {
     border: 1px solid @gray-light;
     border-radius: 4px;
-    padding: 8px;
     box-shadow: 0 1px 5px #959595;
-    position: absolute;
-    top: -1px;
     background: @white;
     z-index: 1;
-    min-width: 200px;
-    &.align-right {
+    position: absolute;
+    &.asLine {
         right: 0px;
-    }
-    .status-title {
-        display: flex;
-    }
-    .close-container {
-        width: 30px;
-        position: absolute;
-        right: 0px;
-        top: 4px;
-        display: flex;
-        justify-content: center;
-        cursor: pointer;
-    }
-    .status-title {
-        padding: 5px 0px 5px 0px;
-        &.optional {
-            padding-top: 5px;
+        top: -6px;
+        .popup-panel-container {
+            display: flex;
+            align-items: center;
+            padding: 5px 0px 5px 5px;
+        }        
+        .close-container, .status-containers, .status-container, .status-title, .statusRootContainer {
+            display: inline-flex;
         }
-        font-weight: bold;
+        .close-container {
+            display: inline-flex;
+            justify-content: center;
+            cursor: pointer;
+            width: 30px;
+        }
+        .status-title {
+            font-weight: bold;
+            align-self: center;
+            padding: 0px 10px;
+            &.optional {
+                margin-left: 15px;
+            }
+            white-space: nowrap;            
+        }        
+    }
+    &.defaultPopup {
+        top: -1px;
+        min-width: 200px;
+        .popup-panel-container {
+            padding: 8px 8px 14px 8px;
+        }
+        &.align-right {
+            right: 0px;
+        }
+        .status-title {
+            display: flex;
+        }
+        .close-container {
+            width: 30px;
+            position: absolute;
+            right: 0px;
+            top: 4px;
+            display: flex;
+            justify-content: center;
+            cursor: pointer;
+        }
+        .status-title {
+            padding: 5px 0px 8px 0px;
+            &.optional {
+                padding-top: 15px;
+            }
+            font-weight: bold;
+            white-space: nowrap;
+        }
     }
 }
 ::ng-deep {

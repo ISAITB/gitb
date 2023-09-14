@@ -3,7 +3,15 @@
 	<div id="conformanceDashboardPageTable" class="panel panel-default">
 		<div class="panel-heading">
 			<h4 id="conformance-statements-title" class="title">Conformance statements</h4>
-			<div class="btn-toolbar" [class.disable-events]="filterState.updatePending">
+			<div class="btn-toolbar allStatementControls" [class.disable-events]="filterState.updatePending">
+                <div class="btn-group" dropdown [isDisabled]="selectedCommunityId == undefined">
+                    <button id="button-snapshot" dropdownToggle type="button" class="btn btn-default dropdown-toggle" aria-controls="dropdown-snapshot">{{snapshotButtonLabel}}<span class="caret"></span></button>
+                    <ul id="dropdown-snapshot" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-snapshot">
+                      <li role="menuitem"><a class="dropdown-item" href (click)="viewLatestConformanceSnapshot();$event.preventDefault()">{{latestSnapshotButtonLabel}}</a></li>
+                      <li class="divider dropdown-divider"></li>
+                      <li role="menuitem"><a class="dropdown-item" href (click)="manageConformanceSnapshots();$event.preventDefault()">Manage conformance snapshots</a></li>
+                    </ul>
+                </div>
 				<button type="button" class="btn btn-default" *ngIf="conformanceStatements.length > 0" (click)="onExportConformanceStatementsAsCsv()" [disable]="conformanceStatements.length == 0" [pending]="exportPending">Export CSV</button>
 				<button type="button" class="btn btn-default" *ngIf="showCollapseAll()" (click)="onCollapseAll()">Collapse all</button>
 			</div>
@@ -43,7 +51,7 @@
                             <td>{{statement.specName}}</td>
                             <td>{{statement.actorName}}</td>
                             <td class="td-min">{{statement.updateTime}}</td>
-                            <td class="td-min-centered"><app-test-status-icons [counters]="statement.counters!"></app-test-status-icons></td>
+                            <td class="td-min-centered"><app-test-status-icons [counters]="statement.counters!" [asLine]="true"></app-test-status-icons></td>
                             <td class="td-min-centered"><span><i containerClass="shortTooltip" [tooltip]="dataService.tooltipForTestResult(statement.overallStatus)" [ngClass]="dataService.iconForTestResult(statement.overallStatus)"></i></span></td>
                             <td class="td-min-centered">
                                 <button class="btn btn-default" (click)="onExportConformanceStatement(statement); $event.stopPropagation();" [pending]="statement.exportPending" [icon]="true"  containerClass="shortTooltip" tooltip="Export" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-regular fa-file-pdf"></i></button>
@@ -57,15 +65,15 @@
                                             <span><i class="fa-solid fa-spinner fa-spin-override fa-lg"></i></span>
                                         </div>
                                         <div class="statementControls">
-                                            <div class="statementButtons btn-toolbar">
-                                                <button type="button" class="btn btn-default" (click)="toOrganisation(statement)">View {{dataService.labelOrganisationLower()}}</button>
-                                                <button type="button" class="btn btn-default" (click)="toSystem(statement)">View {{dataService.labelSystemLower()}}</button>
-                                                <button type="button" class="btn btn-default" (click)="toStatement(statement)">View conformance statement</button>
-                                                <button type="button" class="btn btn-default" (click)="toSpecification(statement)">View {{dataService.labelSpecificationLower()}}</button>
-                                                <button type="button" class="btn btn-default" (click)="toActor(statement)">View {{dataService.labelActorLower()}}</button>
+                                            <div class="statementButtons btn-toolbar" *ngIf="showToOrganisation(statement) || showToSystem(statement) || showToStatement(statement) || showToSpecification(statement) || showToActor(statement)">
+                                                <button type="button" class="btn btn-default" *ngIf="showToOrganisation(statement)" (click)="toOrganisation(statement)">View {{dataService.labelOrganisationLower()}}</button>
+                                                <button type="button" class="btn btn-default" *ngIf="showToSystem(statement)" (click)="toSystem(statement)">View {{dataService.labelSystemLower()}}</button>
+                                                <button type="button" class="btn btn-default" *ngIf="showToStatement(statement)" (click)="toStatement(statement)">View conformance statement</button>
+                                                <button type="button" class="btn btn-default" *ngIf="showToSpecification(statement)" (click)="toSpecification(statement)">View {{dataService.labelSpecificationLower()}}</button>
+                                                <button type="button" class="btn btn-default" *ngIf="showToActor(statement)" (click)="toActor(statement)">View {{dataService.labelActorLower()}}</button>
                                             </div>
                                             <div class="statementRatios">
-                                                <app-test-result-ratio [counters]="statement.counters!"></app-test-result-ratio>
+                                                <app-test-result-ratio [counters]="statement.counters!" [asLine]="true"></app-test-result-ratio>
                                             </div>
                                         </div>
                                         <app-test-suite-display

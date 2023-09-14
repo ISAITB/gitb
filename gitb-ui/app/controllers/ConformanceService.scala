@@ -357,17 +357,26 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
   }
 
   def getConformanceStatus(actorId: Long, sutId: Long) = authorizedAction { request =>
-    authorizationManager.canViewConformanceStatus(request, actorId, sutId)
-    val results = conformanceManager.getConformanceStatus(actorId, sutId, None)
-    val json: String = JsonUtil.jsConformanceStatus(results).toString
-    ResponseConstructor.constructJsonResponse(json)
+    val snapshotId = ParameterExtractor.optionalLongQueryParameter(request, Parameters.SNAPSHOT)
+    authorizationManager.canViewConformanceStatus(request, actorId, sutId, snapshotId)
+    val results = conformanceManager.getConformanceStatus(actorId, sutId, None, includeDisabled = true, snapshotId)
+    if (results.isEmpty) {
+      ResponseConstructor.constructEmptyResponse
+    } else {
+      val json: String = JsonUtil.jsConformanceStatus(results.get).toString
+      ResponseConstructor.constructJsonResponse(json)
+    }
   }
 
   def getConformanceStatusForTestSuiteExecution(actorId: Long, sutId: Long, testSuite: Long) = authorizedAction { request =>
     authorizationManager.canViewConformanceStatus(request, actorId, sutId)
     val results = conformanceManager.getConformanceStatus(actorId, sutId, Some(testSuite), includeDisabled = false)
-    val json: String = JsonUtil.jsConformanceStatus(results).toString
-    ResponseConstructor.constructJsonResponse(json)
+    if (results.isEmpty) {
+      ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_REQUEST, "No details could be found for the provided parameters")
+    } else {
+      val json: String = JsonUtil.jsConformanceStatus(results.get).toString
+      ResponseConstructor.constructJsonResponse(json)
+    }
   }
 
   def getTestSuiteTestCaseForExecution(testCaseId: Long) = authorizedAction { request =>
@@ -508,6 +517,7 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
   def getConformanceOverview() = authorizedAction { request =>
     val page = getPageOrDefault(ParameterExtractor.optionalBodyParameter(request, Parameters.PAGE))
     val limit = getLimitOrDefault(ParameterExtractor.optionalBodyParameter(request, Parameters.LIMIT))
+    val snapshotId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.SNAPSHOT)
     val communityIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.COMMUNITY_IDS)
     authorizationManager.canViewConformanceOverview(request, communityIds)
     val fullResults = ParameterExtractor.requiredBodyParameter(request, Parameters.FULL).toBoolean
@@ -530,12 +540,12 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
       results = conformanceManager.getConformanceStatementsFull(domainIds, specIds, specGroupIds, actorIds,
         communityIds, organizationIds, systemIds, orgParameters, sysParameters,
         status, updateTimeBegin, updateTimeEnd,
-        sortColumn, sortOrder)
+        sortColumn, sortOrder, snapshotId)
     } else {
       results = conformanceManager.getConformanceStatements(domainIds, specIds, specGroupIds, actorIds,
         communityIds, organizationIds, systemIds, orgParameters, sysParameters,
         status, updateTimeBegin, updateTimeEnd,
-        sortColumn, sortOrder)
+        sortColumn, sortOrder, snapshotId)
     }
     var orgParameterDefinitions: Option[List[OrganisationParameters]] = None
     var orgParameterValues: Option[scala.collection.mutable.Map[Long, scala.collection.mutable.Map[Long, String]]] = None
@@ -849,6 +859,34 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
     val specificationIds = ParameterExtractor.requiredLongListBodyParameter(request, Parameters.SPEC_IDS)
     authorizationManager.canManageSpecifications(request, specificationIds)
     testSuiteManager.unlinkSharedTestSuite(testSuiteId, specificationIds)
+    ResponseConstructor.constructEmptyResponse
+  }
+
+  def createConformanceSnapshot() = authorizedAction { request =>
+    val communityId = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_ID).toLong
+    authorizationManager.canManageCommunity(request, communityId)
+    val label = ParameterExtractor.requiredBodyParameter(request, Parameters.LABEL)
+    val snapshot = conformanceManager.createConformanceSnapshot(communityId, label)
+    ResponseConstructor.constructJsonResponse(JsonUtil.jsConformanceSnapshot(snapshot).toString)
+  }
+
+  def getConformanceSnapshots() = authorizedAction { request =>
+    val communityId = ParameterExtractor.requiredQueryParameter(request, Parameters.COMMUNITY_ID).toLong
+    authorizationManager.canManageCommunity(request, communityId)
+    val snapshots = conformanceManager.getConformanceSnapshots(communityId)
+    ResponseConstructor.constructJsonResponse(JsonUtil.jsConformanceSnapshots(snapshots).toString)
+  }
+
+  def editConformanceSnapshot(snapshotId: Long) = authorizedAction { request =>
+    authorizationManager.canManageConformanceSnapshot(request, snapshotId)
+    val label = ParameterExtractor.requiredBodyParameter(request, Parameters.LABEL)
+    conformanceManager.editConformanceSnapshot(snapshotId, label)
+    ResponseConstructor.constructEmptyResponse
+  }
+
+  def deleteConformanceSnapshot(snapshotId: Long) = authorizedAction { request =>
+    authorizationManager.canManageConformanceSnapshot(request, snapshotId)
+    conformanceManager.deleteConformanceSnapshot(snapshotId)
     ResponseConstructor.constructEmptyResponse
   }
 

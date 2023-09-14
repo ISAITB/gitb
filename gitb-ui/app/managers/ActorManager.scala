@@ -54,6 +54,7 @@ class ActorManager @Inject() (testResultManager: TestResultManager, endPointMana
     endPointManager.deleteEndPointByActor(actorId, onSuccessCalls) andThen
     optionManager.deleteOptionByActor(actorId) andThen
     PersistenceSchema.conformanceResults.filter(_.actor === actorId).delete andThen
+    PersistenceSchema.conformanceSnapshotResults.filter(_.actorId === actorId).map(_.actorId).update(actorId * -1) andThen
     PersistenceSchema.actors.filter(_.id === actorId).delete
   }
 
