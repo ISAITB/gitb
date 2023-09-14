@@ -272,17 +272,18 @@ class ConformanceManager @Inject() (systemManager: SystemManager, endpointManage
 				)
 			})
 			val status = new ConformanceStatus(0, 0, 0, 0, 0, 0, TestResultType.UNDEFINED, None, new ListBuffer[ConformanceTestSuite])
+			val testSuiteMap = new mutable.LinkedHashMap[Long, ConformanceTestSuite]()
 			statusItems.foreach { item =>
-				val testSuite = if (status.testSuites.isEmpty || status.testSuites.last.id != item.testSuiteId) {
+				val testSuite = if (testSuiteMap.contains(item.testSuiteId)) {
+					testSuiteMap(item.testSuiteId)
+				} else {
 					// New test suite.
 					val newTestSuite = new ConformanceTestSuite(item.testSuiteId, item.testSuiteName, item.testSuiteDescription, item.testSuiteHasDocumentation, TestResultType.UNDEFINED, 0, 0, 0, 0, 0, 0, new ListBuffer[ConformanceTestCase])
-					status.testSuites.asInstanceOf[ListBuffer[ConformanceTestSuite]].append(newTestSuite)
+					testSuiteMap += (item.testSuiteId -> newTestSuite)
 					newTestSuite
-				} else {
-					status.testSuites.last
 				}
 				val testCase = new ConformanceTestCase(item.testCaseId, item.testCaseName, item.testCaseDescription, item.sessionId, item.sessionTime, item.outputMessage, item.testCaseHasDocumentation, item.testCaseOptional, item.testCaseDisabled, TestResultType.fromValue(item.result), item.testCaseTags)
-				status.testSuites.last.testCases.asInstanceOf[ListBuffer[ConformanceTestCase]].append(testCase)
+				testSuite.testCases.asInstanceOf[ListBuffer[ConformanceTestCase]].append(testCase)
 				if (!testCase.disabled) {
 					// Update time.
 					if (testCase.updateTime.isDefined && (status.updateTime.isEmpty || status.updateTime.get.before(testCase.updateTime.get))) {
@@ -319,6 +320,7 @@ class ConformanceManager @Inject() (systemManager: SystemManager, endpointManage
 					}
 				}
 			}
+			status.testSuites = testSuiteMap.values
 			status.result = if (status.failed > 0) {
 				TestResultType.FAILURE
 			} else if (status.undefined > 0) {

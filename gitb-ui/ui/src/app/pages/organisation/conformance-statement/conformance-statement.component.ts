@@ -5,7 +5,6 @@ import { Constants } from 'src/app/common/constants';
 import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
 import { ConformanceService } from 'src/app/services/conformance.service';
 import { DataService } from 'src/app/services/data.service';
-import { HtmlService } from 'src/app/services/html.service';
 import { OrganisationService } from 'src/app/services/organisation.service';
 import { PopupService } from 'src/app/services/popup.service';
 import { ReportService } from 'src/app/services/report.service';
