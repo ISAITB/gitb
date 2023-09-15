@@ -13,8 +13,9 @@
 					<div class="pending-message">Loading {{dataService.labelSystemsLower()}}...</div>
 				</div>
 				<ng-container *ngSwitchCase="Constants.STATUS.FINISHED" [ngSwitch]="systems.length == 0">
-					<div class="bg-info div-rounded div-padded" *ngSwitchCase="true">
-						<span>No {{dataService.labelSystemsLower()}} defined.</span>
+					<div class="bg-info div-rounded div-padded" *ngSwitchCase="true" [ngSwitch]="showCreateSystem">
+						<span *ngSwitchCase="true">No {{dataService.labelSystemsLower()}} defined. You must <a href (click)="toCreateSystem();$event.preventDefault()">create a system</a> before defining its conformance statements.</span>
+						<span *ngSwitchDefault>No {{dataService.labelSystemsLower()}} defined. One must be created by an administrator before conformance statements can be defined.</span>
 					</div>
 					<ng-container *ngSwitchDefault>
 						<div class="filters">

@@ -48,6 +48,7 @@ export class ConformanceStatementsComponent implements OnInit {
       {key: ConformanceStatementsComponent.SHOW_INCOMPLETE, label: 'Incomplete statements', default: this.showIncomplete, iconClass: this.dataService.iconForTestResult(Constants.TEST_CASE_RESULT.UNDEFINED)},
     ]
   ]
+  showCreateSystem = false
 
   constructor(
     private systemService: SystemService,
@@ -80,6 +81,7 @@ export class ConformanceStatementsComponent implements OnInit {
       this.systemStatus.status = Constants.STATUS.FINISHED
     })
     this.showCreate = this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin || (this.dataService.isVendorAdmin && this.dataService.community!.allowStatementManagement)
+    this.showCreateSystem = this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin || this.dataService.isVendorAdmin
     this.showDomain = this.dataService.isSystemAdmin || this.dataService.community?.domainId == undefined
     this.columnCount = this.showDomain?6:5
   }
@@ -314,4 +316,12 @@ export class ConformanceStatementsComponent implements OnInit {
     })
     this.visibleItemCount = count
   }  
+
+  toCreateSystem() {
+    if (this.communityId != undefined) {
+      this.routingService.toCreateSystem(this.communityId, this.organisationId)
+    } else {
+      this.routingService.toCreateOwnSystem()
+    }
+  }
 }
