@@ -19,8 +19,8 @@
                     <button class="btn btn-default" type="button" (click)="editLabels()" [disabled]="savePending || deletePending">Edit labels</button>
                     <button class="btn btn-default" type="button" *ngIf="dataService.isSystemAdmin" (click)="cancelCommunityDetail()">Back</button>
                 </div>
-                <div class="btn-toolbar">
-                    <button class="btn btn-link" type="button" *ngIf="dataService.isSystemAdmin" (click)="deleteCommunity()" [disable]="savePending" [pending]="deletePending">Delete</button>
+                <div class="btn-toolbar" *ngIf="dataService.isSystemAdmin">
+                    <button class="btn btn-link" type="button" (click)="deleteCommunity()" [disable]="savePending" [pending]="deletePending">Delete</button>
                 </div>
             </div>
         </form>
