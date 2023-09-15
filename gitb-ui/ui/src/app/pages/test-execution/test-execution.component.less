@@ -28,6 +28,7 @@
 }
 .viewLogButton {
     position: relative;
+    margin-left: 5px;
     .unreadBadge {
         &.badgeLogErrors {
             background-color: @error-red;
@@ -49,6 +50,27 @@
             display: none;
         }
     }
+}
+.session-execution-info {
+	display: flex;
+	width: 100%;
+	.session-table-title {
+		display: inline-flex;
+		padding-left: 0px;
+		.session-table-title-part {
+			padding-top: 15px;
+			padding-bottom: 15px;
+		}
+	}
+	.session-table-operations {
+		display: inline-flex;
+		align-items: center;
+        .export-group {
+            .caret {
+                margin-left: 0px;
+            }
+        }
+	}
 }
 .sessionButtonDiv {
     display: flex;

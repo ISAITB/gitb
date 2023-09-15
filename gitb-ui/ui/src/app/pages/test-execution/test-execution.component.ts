@@ -40,6 +40,7 @@ import { LogLevel } from 'src/app/types/log-level';
 import { CheckboxOption } from 'src/app/components/checkbox-option-panel/checkbox-option';
 import { CheckboxOptionState } from 'src/app/components/checkbox-option-panel/checkbox-option-state';
 import { SpecificationService } from 'src/app/services/specification.service';
+import { saveAs } from 'file-saver'
 
 @Component({
   selector: 'app-test-execution',
@@ -85,6 +86,8 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
   unreadLogErrors: {[key: number]: boolean} = {}
   unreadLogWarnings: {[key: number]: boolean} = {}
   testCaseWithOpenLogView?: number
+  exportXmlPending: {[key: number]: boolean} = {}
+  exportPdfPending: {[key: number]: boolean} = {}
 
   organisationProperties: OrganisationParameterWithValue[] = []
   systemProperties: SystemParameterWithValue[] = []
@@ -1141,6 +1144,40 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
         this.testCaseExpanded[test.id] = false
       }
     }
+  }
+
+  exportEnabled(testCase: ConformanceTestCase) {
+    return this.testCaseStatus[testCase.id] == Constants.TEST_CASE_STATUS.ERROR 
+      || this.testCaseStatus[testCase.id] == Constants.TEST_CASE_STATUS.COMPLETED
+      || this.testCaseStatus[testCase.id] == Constants.TEST_CASE_STATUS.STOPPED
+  }    
+
+  exportPdf(testCase: ConformanceTestCase) {
+    this.exportPdfPending[testCase.id] = true
+    this.onExportTestCase(testCase, 'application/pdf', 'test_case_report.pdf')
+    .subscribe(() => {
+      this.exportPdfPending[testCase.id] = false
+    })
+  }
+
+  exportXml(testCase: ConformanceTestCase) {
+    this.exportXmlPending[testCase.id] = true
+    this.onExportTestCase(testCase, 'application/xml', 'test_case_report.xml')
+    .subscribe(() => {
+      this.exportXmlPending[testCase.id] = false
+    })
+  }
+
+	private onExportTestCase(testCase: Partial<ConformanceTestCase>, contentType: string, fileName: string) {
+    return this.reportService.exportTestCaseReport(testCase.sessionId!, testCase.id!, contentType)
+    .pipe(
+      mergeMap((data) => {
+        const blobData = new Blob([data], {type: contentType});
+        saveAs(blobData, fileName);
+        return of(data)
+      }),
+      share()
+    )
   }
 
 }
