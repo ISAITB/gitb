@@ -66,7 +66,7 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext, actorSystem: Actor
     }
     // Demo account.
     val demoAccountConfig = persistedConfigs.find(config => config.config.name == Constants.DemoAccount).map(_.config)
-    Configurations.DEMOS_ENABLED = demoAccountConfig.get.parameter.nonEmpty
+    Configurations.DEMOS_ENABLED = demoAccountConfig.nonEmpty && demoAccountConfig.get.parameter.nonEmpty
     if (Configurations.DEMOS_ENABLED) {
       Configurations.DEMOS_ACCOUNT = demoAccountConfig.get.parameter.get.toLong
     } else {
