@@ -27,7 +27,7 @@
 						<div class="btn-toolbar">
 							<button class="btn btn-default" (click)="uploadTestSuite()">Upload test suite</button>
 							<div class="btn-group" dropdown (onShown)="loadAvailableSharedTestSuites()">
-								<button id="button-link" [disable]="unlinkPending" [pending]="linkPending" dropdownToggle type="button" class="btn btn-default dropdown-toggle" aria-controls="dropdown-link">Link shared test suite<span class="caret"></span></button>
+								<button id="button-link" [disable]="unlinkPending" [pending]="linkPending" dropdownToggle type="button" class="btn btn-default dropdown-toggle" aria-controls="dropdown-link">Link shared test suite<span class="caret withMargin"></span></button>
 								<ul id="dropdown-link" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-link">
 									<li role="menuitem" class="disabled" *ngIf="!availableSharedTestSuitesLoaded">
 										<a class="dropdown-item" href (click)="$event.preventDefault()"><app-pending-block></app-pending-block></a>
@@ -47,7 +47,7 @@
 								</ul>
 							</div>
 							<div class="btn-group" dropdown>
-								<button id="button-unlink" [disable]="sharedTestSuites.length == 0" [pending]="unlinkPending" dropdownToggle type="button" class="btn btn-default dropdown-toggle" aria-controls="dropdown-unlink">Unlink shared test suite<span class="caret"></span></button>
+								<button id="button-unlink" [disable]="sharedTestSuites.length == 0" [pending]="unlinkPending" dropdownToggle type="button" class="btn btn-default dropdown-toggle" aria-controls="dropdown-unlink">Unlink shared test suite<span class="caret withMargin"></span></button>
 								<ul id="dropdown-unlink" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-unlink">
 									<li role="menuitem" *ngFor="let testSuite of sharedTestSuites">
 										<a class="dropdown-item" href (click)="unlinkTestSuite(testSuite); $event.preventDefault()">{{testSuite.identifier}}</a>

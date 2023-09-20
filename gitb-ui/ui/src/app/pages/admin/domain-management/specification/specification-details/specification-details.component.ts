@@ -22,8 +22,7 @@ import { TestSuite } from 'src/app/types/test-suite';
 
 @Component({
   selector: 'app-specification-details',
-  templateUrl: './specification-details.component.html',
-  styleUrls: [ './specification-details.component.less' ]
+  templateUrl: './specification-details.component.html'
 })
 export class SpecificationDetailsComponent extends BaseTabbedComponent implements OnInit, AfterViewInit {
 

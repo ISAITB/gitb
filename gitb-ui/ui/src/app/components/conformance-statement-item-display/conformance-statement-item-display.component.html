@@ -14,10 +14,10 @@
                         <app-tag *ngIf="updateTime" label="fa-solid fa-clock" [icon]="true" tooltipText="Last update time" [value]="updateTime"></app-tag>
                         <ng-container *ngIf="counters">
                             <div class="item-counters">
-                                <app-test-status-icons [counters]="counters"></app-test-status-icons>
+                                <app-test-status-icons [counters]="counters" [asLine]="true"></app-test-status-icons>
                             </div>
                             <div class="item-ratios">
-                                <app-test-result-ratio [counters]="counters"></app-test-result-ratio>
+                                <app-test-result-ratio [counters]="counters" [asLine]="true"></app-test-result-ratio>
                             </div>
                         </ng-container>
                         <div class="item-status" *ngIf="status"><i containerClass="shortTooltip" [tooltip]="dataService.tooltipForTestResult(status)" [ngClass]="dataService.iconForTestResult(status)"></i></div>

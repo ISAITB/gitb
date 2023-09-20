@@ -1,5 +1,5 @@
 <div class="rootDiv">
-    <button id="button-options" type="button" [class.open]="open" class="btn btn-default" (click)="buttonClicked()">{{label}}<span class="caret"></span></button>
+    <button id="button-options" type="button" [class.open]="open" class="btn btn-default" (click)="buttonClicked()">{{label}}<span class="caret withMargin"></span></button>
     <div *ngIf="optionFormVisible" class="optionForm">
         <div class="container-fluid">
             <div class="row" *ngFor="let optionSet of options; let last = last;">

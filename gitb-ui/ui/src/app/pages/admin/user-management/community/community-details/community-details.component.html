@@ -35,7 +35,7 @@
                         <div class="searchControls btn-toolbar">
                             <app-text-filter name="organisationFilter" [width]="300" [placeholder]="'Search '+dataService.labelOrganisationsLower()+'...'" [(ngModel)]="organisationFilter" (apply)="applyOrganisationFilter()"></app-text-filter>
                             <div class="btn-group" dropdown>
-                                <button id="button-order" dropdownToggle type="button" class="btn btn-default dropdown-toggle" aria-controls="dropdown-result">{{sortByCreationOrderLabel}}<span class="caret"></span></button>
+                                <button id="button-order" dropdownToggle type="button" class="btn btn-default dropdown-toggle" aria-controls="dropdown-result">{{sortByCreationOrderLabel}}<span class="caret withMargin"></span></button>
                                 <ul id="dropdown-order" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-order">
                                     <li role="menuitem"><a class="dropdown-item" href (click)="applyCreationOrderSort(sortByCreationOrderNone, sortByCreationOrderLabelNone); $event.preventDefault()">Do not apply</a></li>
                                     <li class="divider dropdown-divider"></li>
@@ -187,7 +187,7 @@
                             <div class="btn-group" dropdown>
                                 <button type="button" class="btn btn-default" (click)="uploadResource()" [disabled]="downloadAllResourcesPending || selectingForDeleteResources">Upload resource</button>
                                 <button id="button-upload-resource" dropdownToggle type="button" class="btn btn-default dropdown-toggle dropdown-toggle-split" aria-controls="dropdown-upload-resource" [disabled]="downloadAllResourcesPending || selectingForDeleteResources">
-                                    <span class="caret no-spacing"></span>
+                                    <span class="caret"></span>
                                     <span class="sr-only visually-hidden"></span>
                                 </button>
                                 <ul id="dropdown-upload-resource" *dropdownMenu class="dropdown-menu">

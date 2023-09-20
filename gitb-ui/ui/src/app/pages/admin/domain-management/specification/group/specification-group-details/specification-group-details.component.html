@@ -15,7 +15,7 @@
 				<div class="btn-toolbar">
 					<button (click)="saveGroupChanges()" type="submit" class="btn btn-default" [disable]="deletePending || saveDisabled()" [pending]="savePending">Save changes</button>
                     <div class="btn-group" dropdown>
-                        <button id="button-delete" [disable]="savePending" [pending]="deletePending" dropdownToggle type="button" class="btn btn-default dropdown-toggle" aria-controls="dropdown-delete">Delete<span class="caret"></span></button>
+                        <button id="button-delete" [disable]="savePending" [pending]="deletePending" dropdownToggle type="button" class="btn btn-default dropdown-toggle" aria-controls="dropdown-delete">Delete<span class="caret withMargin"></span></button>
                         <ul id="dropdown-delete" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-result">
                             <li role="menuitem"><a class="dropdown-item" href (click)="deleteGroup(false);$event.preventDefault()">Delete this {{dataService.labelSpecificationGroupLower()}} but keep its {{dataService.labelSpecificationInGroupsLower()}}</a></li>
                             <li role="menuitem"><a class="dropdown-item" href (click)="deleteGroup(true);$event.preventDefault()">Delete this {{dataService.labelSpecificationGroupLower()}} and all its {{dataService.labelSpecificationInGroupsLower()}}</a></li>

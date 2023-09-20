@@ -11,8 +11,7 @@ import { SpecificationGroup } from 'src/app/types/specification-group';
 
 @Component({
   selector: 'app-specification-group-details',
-  templateUrl: './specification-group-details.component.html',
-  styleUrls: [ './specification-group-details.component.less' ]
+  templateUrl: './specification-group-details.component.html'
 })
 export class SpecificationGroupDetailsComponent extends BaseComponent implements OnInit {
 

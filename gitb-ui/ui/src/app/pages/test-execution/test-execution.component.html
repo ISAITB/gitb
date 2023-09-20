@@ -14,7 +14,7 @@
                         <div class="btn-toolbar actionButtonDiv">
                             <ng-container *ngIf="testsToExecute.length > 1">
                                 <div class="btn-group" dropdown [isDisabled]="!firstTestStarted || reload">
-                                    <button id="button-stop" dropdownToggle type="button" class="btn btn-default dropdown-toggle" aria-controls="dropdown-stop">Stop<span class="caret"></span></button>
+                                    <button id="button-stop" dropdownToggle type="button" class="btn btn-default dropdown-toggle" aria-controls="dropdown-stop">Stop<span class="caret withMargin"></span></button>
                                     <ul id="dropdown-stopType" *dropdownMenu class="dropdown-menu dropdown-menu" role="menu" aria-labelledby="button-stop">
                                         <li role="menuitem" [class.disabled]="!started || stopped"><a class="dropdown-item" href (click)="stop(session!); $event.preventDefault()">Stop current test</a></li>
                                         <li role="menuitem"><a class="dropdown-item" href (click)="stopAll(); $event.preventDefault()">Stop all tests</a></li>

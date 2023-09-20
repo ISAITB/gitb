@@ -41,7 +41,7 @@
                                 </ul>
                             </div>
                             <div class="btn-group" dropdown *ngIf="specificationGroups.length > 0">
-                                <button id="button-option-visibility" (click)="$event.stopPropagation()" dropdownToggle type="button" class="btn btn-default dropdown-toggle" aria-controls="dropdown-option-visibility">View {{dataService.labelSpecificationInGroupsLower()}}<span class="caret"></span></button>
+                                <button id="button-option-visibility" (click)="$event.stopPropagation()" dropdownToggle type="button" class="btn btn-default dropdown-toggle" aria-controls="dropdown-option-visibility">View {{dataService.labelSpecificationInGroupsLower()}}<span class="caret withMargin"></span></button>
                                 <ul id="dropdown-option-visibility" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-option-visibility">
                                     <li role="menuitem"><a class="dropdown-item" href (click)="toggleSpecificationGroupCollapse(false);$event.preventDefault();">Show {{dataService.labelSpecificationInGroupsLower()}}</a></li>
                                     <li role="menuitem"><a class="dropdown-item" href (click)="toggleSpecificationGroupCollapse(true);$event.preventDefault();">Hide {{dataService.labelSpecificationInGroupsLower()}}</a></li>
