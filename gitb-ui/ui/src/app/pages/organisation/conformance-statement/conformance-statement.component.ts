@@ -615,7 +615,7 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
   }
 
   toOrganisation() {
-    if (this.communityId == undefined) {
+    if (this.communityId == undefined || this.organisationId == this.dataService.vendor!.id) {
       this.routingService.toOwnOrganisationDetails()
     } else {
       this.routingService.toOrganisationDetails(this.communityId!, this.organisationId)
@@ -623,7 +623,7 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
   }  
 
   toSystem() {
-    if (this.communityId == undefined) {
+    if (this.communityId == undefined || this.organisationId == this.dataService.vendor!.id) {
       this.routingService.toOwnSystemDetails(this.systemId)
     } else {
       this.routingService.toSystemDetails(this.communityId!, this.organisationId, this.systemId)

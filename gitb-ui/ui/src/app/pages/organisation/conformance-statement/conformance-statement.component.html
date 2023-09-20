@@ -44,8 +44,19 @@
 			</div>
 			<div class="panel-footer button-container">
 				<div class="btn-toolbar">
-					<button *ngIf="canExportConformanceCertificate()" type="button" class="btn btn-default" (click)="onExportConformanceCertificate()" [pending]="exportCertificatePending" [disable]="exportCertificatePending">Download conformance certificate</button>
-					<button type="button" class="btn btn-default" (click)="onExportConformanceStatement()" [pending]="exportPending">Download report</button>
+					<ng-container [ngSwitch]="canExportConformanceCertificate()">
+						<div *ngSwitchCase="true" class="btn-group export-group" dropdown [isDisabled]="exportCertificatePending || exportPending">
+							<button type="button" [disable]="exportCertificatePending || exportPending" [pending]="exportCertificatePending || exportPending" class="btn btn-default" (click)="onExportConformanceStatement()">Download report</button>
+							<button id="button-export" type="button" dropdownToggle class="btn btn-default dropdown-toggle dropdown-toggle-split">
+								<span class="caret"></span>
+								<span class="sr-only visually-hidden">Download report</span>
+							</button>
+							<ul id="dropdown-export" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-export">
+								<li role="menuitem"><a class="dropdown-item" href (click)="onExportConformanceCertificate();$event.preventDefault();">Download conformance certificate</a></li>
+							</ul>
+						</div>                                                                                
+						<button *ngSwitchDefault type="button" class="btn btn-default" (click)="onExportConformanceStatement()" [pending]="exportPending">Download report</button>
+					</ng-container>
 					<app-view-badge-button *ngIf="hasBadge" [systemId]="systemId" [actorId]="actorId" [leftMargin]="true"></app-view-badge-button>
 					<div class="btn-group" dropdown>
 						<button id="button-navigation" dropdownToggle type="button" class="btn btn-default dropdown-toggle" aria-controls="dropdown-navigation">Go to ...<span class="caret withMargin"></span></button>

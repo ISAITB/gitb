@@ -129,8 +129,7 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
   }
 
   toSystem(row: TestResultForDisplay) {
-    const targetOrganisationId = row.organizationId!
-    if (targetOrganisationId == this.dataService.vendor!.id) {
+    if (row.organizationId! == this.dataService.vendor!.id) {
       // This is the user's own organisation
       this.routingService.toOwnSystemDetails(row.systemId!)
     } else {
@@ -147,13 +146,12 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
   }
 
   toOrganisation(row: TestResultForDisplay) {
-    const targetOrganisationId = row.organizationId!
-    if (targetOrganisationId == this.dataService.vendor!.id) {
+    if (row.organizationId! == this.dataService.vendor!.id) {
       // This is the user's own organisation
       this.routingService.toOwnOrganisationDetails()
     } else {
       // Another organisation
-      this.routingService.toOrganisationDetails(row.communityId!, targetOrganisationId)
+      this.routingService.toOrganisationDetails(row.communityId!, row.organizationId!)
     }
   }
 
