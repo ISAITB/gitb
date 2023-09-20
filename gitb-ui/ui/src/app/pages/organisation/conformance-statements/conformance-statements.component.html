@@ -2,9 +2,6 @@
 	<div class="panel panel-default no-bottom-margin">
 		<div class="panel-heading">
 			<h4 class="title">Conformance statements</h4>
-			<div class="btn-toolbar" *ngIf="showCreate && system">
-				<button (click)="createStatement()" class="btn btn-default">Create conformance statements</button>
-			</div>
 		</div>
 		<div class="panel-body">
 			<ng-container [ngSwitch]="systemStatus.status">
@@ -18,8 +15,8 @@
 						<span *ngSwitchDefault>No {{dataService.labelSystemsLower()}} defined. One must be created by an administrator before conformance statements can be defined.</span>
 					</div>
 					<ng-container *ngSwitchDefault>
-						<div class="filters">
-							<div class="system-filter">
+						<div class="controls">
+							<div class="system-filter" [class.with-separation]="(statements.length > 0) || showCreate">
 								<div class="system-filter-label">
 									{{dataService.labelSystem()}}
 								</div>
@@ -41,6 +38,7 @@
 										(updated)="filterByStatus($event)"></app-checkbox-option-panel>
 								</div>
 							</ng-container>
+							<button *ngIf="showCreate" (click)="createStatement()" [disabled]="system == undefined" class="btn btn-default">Create statements</button>
 						</div>
 						<ng-container [ngSwitch]="system != undefined">
 							<ng-container *ngSwitchCase="true" [ngSwitch]="dataStatus.status">

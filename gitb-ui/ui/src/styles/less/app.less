@@ -732,24 +732,32 @@ div.non-padded-alert div.alert {
 }
 .button-container {
 	display: flex;
-	.btn-toolbar:not(:first-child) {
-		margin-left: 15px;
-		&:has(.btn-link) {
-			margin-left: 30px;
+	.btn-delete {
+		color: #dc3545;
+		border-color: #dc3545;
+		&:hover {
+			border-color: #dc3545;
 		}
-		padding-left: 10px;
-		border-left: 1px solid @gray-dark-1;		
+		&:hover:not([disabled]) {
+			color: @white;
+			background-color: #dc3545;
+		}
+	}
+	.btn-toolbar:not(:first-child) {
+		&:has(.btn-delete) {
+			margin-left: auto;
+		}
 		display: flex;
 	}
 	&.modal-footer {
 		.btn-toolbar {
-			&:first-child {
-				margin-left: auto;
-			}
-		}
-		&:has(.btn-toolbar .btn-link) {
-			.btn-toolbar:nth-child(n+2) {
-				padding-left: 25px;
+			margin-left: auto;
+			&:has(.btn-delete) {
+				margin-left: inherit;
+				margin-right: auto;
+				.btn:first-child {
+					margin-left: 0px;
+				}
 			}
 		}
 	}

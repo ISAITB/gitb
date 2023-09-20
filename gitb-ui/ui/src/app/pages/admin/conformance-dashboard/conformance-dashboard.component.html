@@ -61,9 +61,6 @@
                             <td [attr.colspan]="columnCount" class="expandable-table-expandable-cell">
                                 <div [collapse]="!isExpanded(statement)" [isAnimated]="true">
                                     <div class="collapsing-div">
-                                        <div *ngIf="statement.testSuitesLoaded == undefined || !statement.testSuitesLoaded" class="spinnerPadded">
-                                            <span><i class="fa-solid fa-spinner fa-spin-override fa-lg"></i></span>
-                                        </div>
                                         <div class="statementControls">
                                             <div class="statementButtons btn-toolbar" *ngIf="showToOrganisation(statement) || showToSystem(statement) || showToStatement(statement) || showToDomain(statement) || showToSpecification(statement) || showToActor(statement)">
                                                 <div class="btn-group" dropdown>
@@ -85,6 +82,9 @@
                                             <div class="statementRatios">
                                                 <app-test-result-ratio [counters]="statement.counters!" [asLine]="true"></app-test-result-ratio>
                                             </div>
+                                        </div>
+                                        <div *ngIf="statement.testSuitesLoaded == undefined || !statement.testSuitesLoaded" class="spinnerPadded">
+                                            <app-pending-block></app-pending-block>
                                         </div>
                                         <app-test-suite-display
                                             [testSuites]="statement.testSuites"

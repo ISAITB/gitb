@@ -73,7 +73,7 @@
 					<button type="button" class="btn btn-default" (click)="back()">Back</button>
 				</div>
 				<div class="btn-toolbar" *ngIf="canDelete()">
-					<button type="button" class="btn btn-link" (click)="deleteConformanceStatement()" [pending]="deletePending">Delete statement</button>
+					<button type="button" class="btn btn-default btn-delete" (click)="deleteConformanceStatement()" [pending]="deletePending">Delete statement</button>
 				</div>
 			</div>
 		</div>

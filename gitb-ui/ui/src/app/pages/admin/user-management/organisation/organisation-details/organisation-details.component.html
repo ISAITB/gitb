@@ -25,7 +25,7 @@
                     </ng-container>
                 </div>
                 <div class="btn-toolbar" *ngIf="showAdminInfo">
-                    <button class="btn btn-link" type="button" (click)="deleteOrganisation()" [disable]="savePending" [pending]="deletePending">Delete</button>
+                    <button class="btn btn-default btn-delete" type="button" (click)="deleteOrganisation()" [disable]="savePending" [pending]="deletePending">Delete</button>
                 </div>
             </div>
         </form>
