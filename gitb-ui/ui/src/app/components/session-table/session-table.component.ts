@@ -128,7 +128,7 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
     })
   }
 
-  goToSystem(row: TestResultForDisplay) {
+  toSystem(row: TestResultForDisplay) {
     const targetOrganisationId = row.organizationId!
     if (targetOrganisationId == this.dataService.vendor!.id) {
       // This is the user's own organisation
@@ -138,7 +138,7 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
     }
   }
 
-  goToStatement(row: TestResultForDisplay) {
+  toStatement(row: TestResultForDisplay) {
     if (row.organizationId! == this.dataService.vendor?.id) {
       this.routingService.toOwnConformanceStatement(row.organizationId!, row.systemId!, row.actorId!)
     } else {
@@ -146,7 +146,7 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
     }
   }
 
-  goToOrganisation(row: TestResultForDisplay) {
+  toOrganisation(row: TestResultForDisplay) {
     const targetOrganisationId = row.organizationId!
     if (targetOrganisationId == this.dataService.vendor!.id) {
       // This is the user's own organisation
@@ -155,6 +155,58 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
       // Another organisation
       this.routingService.toOrganisationDetails(row.communityId!, targetOrganisationId)
     }
+  }
+
+  toCommunity(row: TestResultForDisplay) {
+    this.routingService.toCommunity(row.communityId!)
+  }
+
+  toDomain(row: TestResultForDisplay) {
+    this.routingService.toDomain(row.domainId!)
+  }
+
+  toSpecification(row: TestResultForDisplay) {
+    this.routingService.toSpecification(row.domainId!, row.specificationId!)
+  }
+
+  toActor(row: TestResultForDisplay) {
+    this.routingService.toActor(row.domainId!, row.specificationId!, row.actorId!)
+  }
+
+  showToCommunity(row: TestResultForDisplay) {
+    return row.communityId != undefined && (this.dataService.isCommunityAdmin || this.dataService.isSystemAdmin)
+  }
+
+  showToOrganisation(row: TestResultForDisplay) {
+    return row.organizationId != undefined
+  }
+
+  showToSystem(row: TestResultForDisplay) {
+    return this.showToOrganisation(row) && row.systemId != undefined
+  }
+
+  showToDomain(row: TestResultForDisplay) {
+    return row.domainId != undefined && (this.dataService.isCommunityAdmin || this.dataService.isSystemAdmin)
+  }
+
+  showToSpecification(row: TestResultForDisplay) {
+    return this.showToDomain(row) && row.specificationId != undefined
+  }
+
+  showToActor(row: TestResultForDisplay) {
+    return this.showToSpecification(row) && row.actorId != undefined
+  }
+
+  showToStatement(row: TestResultForDisplay) {
+    return row.organizationId != undefined && row.systemId != undefined && row.communityId != undefined && row.actorId != undefined && row.specificationId != undefined
+  }
+
+  showPartyNavigation(row: TestResultForDisplay) {
+    return this.showToCommunity(row) || this.showToOrganisation(row) || this.showToSystem(row)
+  }
+
+  showSpecificationNavigation(row: TestResultForDisplay) {
+    return this.showToDomain(row) || this.showToSpecification(row) || this.showToActor(row)
   }
 
   refresh(row: TestResultForDisplay) {

@@ -42,11 +42,12 @@ import { SpecificationService } from 'src/app/services/specification.service';
 })
 export class ConformanceStatementComponent implements OnInit, AfterViewInit {
 
-  systemId!: number
-  actorId!: number
-  specId!: number
-  organisationId!: number
   communityId?: number
+  organisationId!: number
+  systemId!: number
+  domainId?: number
+  specId?: number
+  actorId!: number
   loadingTests = true
   loadingConfiguration: LoadingStatus = {status: Constants.STATUS.NONE}
   Constants = Constants
@@ -198,6 +199,7 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
     this.conformanceService.getDomainOfActor(this.actorId)
     .subscribe((data) => {
       this.domain = data
+      this.domainId = this.domain.id
     })
     // Load specification.
     this.specificationService.getSpecificationOfActor(this.actorId)
@@ -450,7 +452,7 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
       } else {
         // Proceed with execution.
         const testCaseIds = map(testCases, (test) => { return test.id } )
-        this.testService.startHeadlessTestSessions(testCaseIds, this.specId, this.systemId, this.actorId, this.executionMode == this.executionModeSequential)
+        this.testService.startHeadlessTestSessions(testCaseIds, this.specId!, this.systemId, this.actorId, this.executionMode == this.executionModeSequential)
         .subscribe(() => {
           if (testCaseIds.length == 1) {
             this.popupService.success('Started test session.<br/>Check <b>Test Sessions</b> for progress.')
@@ -606,6 +608,58 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
     } else {
       this.routingService.toSessionDashboard(sessionId)
     }
+  }
+
+  toCommunity() {
+    this.routingService.toCommunity(this.communityId!)
+  }
+
+  toOrganisation() {
+    if (this.communityId == undefined) {
+      this.routingService.toOwnOrganisationDetails()
+    } else {
+      this.routingService.toOrganisationDetails(this.communityId!, this.organisationId)
+    }
+  }  
+
+  toSystem() {
+    if (this.communityId == undefined) {
+      this.routingService.toOwnSystemDetails(this.systemId)
+    } else {
+      this.routingService.toSystemDetails(this.communityId!, this.organisationId, this.systemId)
+    }
+  }
+
+  toDomain() {
+    this.routingService.toDomain(this.domainId!)
+  }
+
+  toSpecification() {
+    this.routingService.toSpecification(this.domainId!, this.specId!)
+  }
+
+  toActor() {
+    this.routingService.toActor(this.domainId!, this.specId!, this.actorId)
+  }
+
+  showToCommunity() {
+    return this.communityId != undefined && (this.dataService.isCommunityAdmin || this.dataService.isSystemAdmin)
+  }
+
+  showToDomain() {
+    return this.domainId != undefined && (this.dataService.isCommunityAdmin || this.dataService.isSystemAdmin)
+  }
+
+  showToSpecification() {
+    return this.showToDomain() && this.specId != undefined
+  }
+
+  showToActor() {
+    return this.showToSpecification()
+  }
+
+  showSpecificationNavigation() {
+    return this.showToDomain() || this.showToSpecification() || this.showToActor()
   }
 
   back() {

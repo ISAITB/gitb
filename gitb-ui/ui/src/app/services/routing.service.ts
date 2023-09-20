@@ -89,22 +89,22 @@ export class RoutingService {
 
   toTestHistory(organisationId: number, sessionIdToShow?: string) {
     if (sessionIdToShow != undefined) {
-      return this.navigate(MenuItem.myTestSessions, ['organisation', organisationId, 'tests'], { queryParams: this.createQueryParams(Constants.NAVIGATION_QUERY_PARAM.TEST_SESSION_ID, sessionIdToShow) })
+      return this.navigate(MenuItem.myTestSessions, ['organisation', 'tests', organisationId], { queryParams: this.createQueryParams(Constants.NAVIGATION_QUERY_PARAM.TEST_SESSION_ID, sessionIdToShow) })
     } else {
-      return this.navigate(MenuItem.myTestSessions, ['organisation', organisationId, 'tests'])
+      return this.navigate(MenuItem.myTestSessions, ['organisation', 'tests', organisationId])
     }
   }
 
   toCreateConformanceStatement(organisationId: number, systemId: number, communityId?: number) {
     if (communityId == undefined) {
-      return this.navigate(MenuItem.myOrganisation, ['organisation', organisationId, 'conformance', 'system', systemId, 'create'])
+      return this.navigate(MenuItem.myOrganisation, ['organisation', 'conformance', organisationId, 'system', systemId, 'create'])
     } else {
       return this.navigate(MenuItem.communityManagement, ['admin', 'users', 'community', communityId, 'organisation', organisationId, 'conformance', 'system', systemId, 'create'])
     }
   }
 
   toOwnConformanceStatement(organisationId: number, systemId: number, actorId: number, tab?: ConformanceStatementTab) {
-    const pathParts = ['organisation', organisationId, 'conformance', 'system', systemId, 'actor', actorId]
+    const pathParts = ['organisation', 'conformance', organisationId, 'system', systemId, 'actor', actorId]
     if (tab != undefined) {
       return this.navigate(MenuItem.myConformanceStatements, pathParts, { state: { tab: ConformanceStatementTab[tab] } })
     } else {
@@ -131,9 +131,9 @@ export class RoutingService {
 
   toOwnConformanceStatements(organisationId: number, systemId?: number) {
     if (systemId != undefined) {
-      return this.navigate(MenuItem.myConformanceStatements, ['organisation', organisationId, 'conformance'], { queryParams: this.createQueryParams(Constants.NAVIGATION_QUERY_PARAM.SYSTEM_ID, systemId) })
+      return this.navigate(MenuItem.myConformanceStatements, ['organisation', 'conformance', organisationId], { queryParams: this.createQueryParams(Constants.NAVIGATION_QUERY_PARAM.SYSTEM_ID, systemId) })
     } else {
-      return this.navigate(MenuItem.myConformanceStatements, ['organisation', organisationId, 'conformance'])
+      return this.navigate(MenuItem.myConformanceStatements, ['organisation', 'conformance', organisationId])
     }
   }
 
@@ -212,7 +212,7 @@ export class RoutingService {
   }
 
   toOwnTestCaseExecution(organisationId: number, systemId: number, actorId: number, testCaseId: number) {
-    return this.navigate(MenuItem.myConformanceStatements, ['organisation', organisationId, 'test', systemId, actorId, 'execute'], { queryParams: this.createQueryParams(Constants.NAVIGATION_QUERY_PARAM.TEST_CASE_ID, testCaseId)})
+    return this.navigate(MenuItem.myConformanceStatements, ['organisation', 'test', organisationId, systemId, actorId, 'execute'], { queryParams: this.createQueryParams(Constants.NAVIGATION_QUERY_PARAM.TEST_CASE_ID, testCaseId)})
   }
 
   toTestSuiteExecution(communityId: number, organisationId: number, systemId: number, actorId: number, testSuiteId: number) {
@@ -220,7 +220,7 @@ export class RoutingService {
   }
 
   toOwnTestSuiteExecution(organisationId: number, systemId: number, actorId: number, testSuiteId: number) {
-    return this.navigate(MenuItem.myConformanceStatements, ['organisation', organisationId, 'test', systemId, actorId, 'execute'], { queryParams: this.createQueryParams(Constants.NAVIGATION_QUERY_PARAM.TEST_SUITE_ID, testSuiteId)})
+    return this.navigate(MenuItem.myConformanceStatements, ['organisation', 'test', organisationId, systemId, actorId, 'execute'], { queryParams: this.createQueryParams(Constants.NAVIGATION_QUERY_PARAM.TEST_SUITE_ID, testSuiteId)})
   }
 
   toCreateDomain() {

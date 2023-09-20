@@ -65,9 +65,20 @@
                                                 <div class="btn-toolbar">
                                                     <button *ngIf="supportRefresh" type="button" class="btn btn-default" (click)="refresh(row)" [pending]="sessionBeingRefreshed?.session == row.session" [disable]="row.endTime != undefined">Refresh</button>
                                                     <button type="button" class="btn btn-default" (click)="showTestSessionLog(row)" [pending]="viewLogPending[row.session]">View log</button>
-                                                    <button *ngIf="row.organizationId != undefined" type="button" class="btn btn-default" (click)="goToOrganisation(row)">View {{dataService.labelOrganisationLower()}}</button>
-                                                    <button *ngIf="row.organizationId != undefined && row.systemId != undefined" type="button" class="btn btn-default" (click)="goToSystem(row)">View {{dataService.labelSystemLower()}}</button>
-                                                    <button *ngIf="row.organizationId != undefined && row.systemId != undefined && row.actorId != undefined && row.specificationId != undefined" type="button" class="btn btn-default" (click)="goToStatement(row)">View conformance statement</button>
+                                                    <div class="btn-group" dropdown>
+                                                        <button id="button-navigation" dropdownToggle type="button" class="btn btn-default dropdown-toggle" aria-controls="dropdown-navigation">Go to ...<span class="caret withMargin"></span></button>
+                                                        <ul id="dropdown-navigation" *dropdownMenu class="dropdown-menu dropdown-menu" role="menu" aria-labelledby="button-navigation">
+                                                            <li *ngIf="showToStatement(row)" role="menuitem"><a class="dropdown-item" href (click)="toStatement(row); $event.preventDefault()">Conformance statement</a></li>
+                                                            <li *ngIf="showPartyNavigation(row) && showToStatement(row)" class="divider dropdown-divider"></li>
+                                                            <li *ngIf="showToCommunity(row)" role="menuitem"><a class="dropdown-item" href (click)="toCommunity(row); $event.preventDefault()">Community</a></li>
+                                                            <li *ngIf="showToOrganisation(row)" role="menuitem"><a class="dropdown-item" href (click)="toOrganisation(row); $event.preventDefault()">{{dataService.labelOrganisation()}}</a></li>
+                                                            <li *ngIf="showToSystem(row)" role="menuitem"><a class="dropdown-item" href (click)="toSystem(row); $event.preventDefault()">{{dataService.labelSystem()}}</a></li>
+                                                            <li *ngIf="showSpecificationNavigation(row) && (showToStatement(row) || showPartyNavigation(row))" class="divider dropdown-divider"></li>
+                                                            <li *ngIf="showToDomain(row)" role="menuitem"><a class="dropdown-item" href (click)="toDomain(row); $event.preventDefault()">{{dataService.labelDomain()}}</a></li>
+                                                            <li *ngIf="showToSpecification(row)" role="menuitem"><a class="dropdown-item" href (click)="toSpecification(row); $event.preventDefault()">{{dataService.labelSpecification()}}</a></li>
+                                                            <li *ngIf="showToActor(row)" role="menuitem"><a class="dropdown-item" href (click)="toActor(row); $event.preventDefault()">{{dataService.labelActor()}}</a></li>
+                                                        </ul>
+                                                    </div>
                                                 </div>
                                             </div>
                                             <div class="panel panel-default">

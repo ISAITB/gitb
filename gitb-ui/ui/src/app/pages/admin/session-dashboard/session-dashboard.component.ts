@@ -216,6 +216,7 @@ export class SessionDashboardComponent implements OnInit {
     const result: Partial<TestResultForDisplay> = {
       session: testResult.result.sessionId,
       domain: testResult.domain?.sname,
+      domainId: testResult.domain?.id,
       specification: testResult.specification?.sname,
       actor: testResult.actor?.name,
       testSuite: testResult.testSuite?.sname,

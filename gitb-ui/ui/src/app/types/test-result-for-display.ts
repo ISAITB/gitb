@@ -3,6 +3,7 @@ import { SessionData } from "src/app/components/diagram/test-session-presentatio
 export interface TestResultForDisplay extends SessionData {
 
     domain?: string,
+    domainId?: number
     specification?: string,
     specificationId?: number,
     actor?: string,
