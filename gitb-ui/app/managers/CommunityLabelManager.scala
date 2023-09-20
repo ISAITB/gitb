@@ -13,15 +13,15 @@ class CommunityLabelManager @Inject() (dbConfigProvider: DatabaseConfigProvider)
   import dbConfig.profile.api._
 
   def getLabel(request: RequestWithAttributes[_], labelType: LabelType): String = {
-    getLabel(getLabels(request), labelType, true, false)
+    getLabel(getLabelsByUserId(ParameterExtractor.extractUserId(request)), labelType, single = true, lowercase = false)
   }
 
   def getLabel(labels: Map[Short, CommunityLabels], labelType: LabelType): String = {
-    getLabel(labels, labelType, true, false)
+    getLabel(labels, labelType, single = true, lowercase = false)
   }
 
   def getLabel(request: RequestWithAttributes[_], labelType: LabelType, single: Boolean, lowercase: Boolean): String = {
-    getLabel(getLabels(request), labelType, single, lowercase)
+    getLabel(getLabelsByUserId(ParameterExtractor.extractUserId(request)), labelType, single, lowercase)
   }
 
   def getLabel(labels: Map[Short, CommunityLabels], labelType: LabelType, single: Boolean, lowercase: Boolean): String = {
@@ -39,8 +39,7 @@ class CommunityLabelManager @Inject() (dbConfigProvider: DatabaseConfigProvider)
     }
   }
 
-  def getLabels(request: RequestWithAttributes[_]): Map[Short, CommunityLabels]  = {
-    val userId = ParameterExtractor.extractUserId(request)
+  def getLabelsByUserId(userId: Long): Map[Short, CommunityLabels]  = {
     val communityId = exec(PersistenceSchema.users
       .join(PersistenceSchema.organizations).on(_.organization === _.id)
       .filter(_._1.id === userId)
@@ -54,14 +53,14 @@ class CommunityLabelManager @Inject() (dbConfigProvider: DatabaseConfigProvider)
     exec(PersistenceSchema.communityLabels.filter(_.community === communityId).result).map(label => {
       labelMap += (label.labelType -> label)
     })
-    checkToAddDefault(labelMap, Enums.LabelType.Domain.id.toShort, "Domain", "Domains", false)
-    checkToAddDefault(labelMap, Enums.LabelType.Specification.id.toShort, "Specification", "Specifications", false)
-    checkToAddDefault(labelMap, Enums.LabelType.Actor.id.toShort, "Actor", "Actors", false)
-    checkToAddDefault(labelMap, Enums.LabelType.Endpoint.id.toShort, "Endpoint", "Endpoints", false)
-    checkToAddDefault(labelMap, Enums.LabelType.Organisation.id.toShort, "Organisation", "Organisations", false)
-    checkToAddDefault(labelMap, Enums.LabelType.System.id.toShort, "System", "Systems", false)
-    checkToAddDefault(labelMap, Enums.LabelType.SpecificationInGroup.id.toShort, "Option", "Options", false)
-    checkToAddDefault(labelMap, Enums.LabelType.SpecificationGroup.id.toShort, "Specification group", "Specification groups", false)
+    checkToAddDefault(labelMap, Enums.LabelType.Domain.id.toShort, "Domain", "Domains", fixedCase = false)
+    checkToAddDefault(labelMap, Enums.LabelType.Specification.id.toShort, "Specification", "Specifications", fixedCase = false)
+    checkToAddDefault(labelMap, Enums.LabelType.Actor.id.toShort, "Actor", "Actors", fixedCase = false)
+    checkToAddDefault(labelMap, Enums.LabelType.Endpoint.id.toShort, "Endpoint", "Endpoints", fixedCase = false)
+    checkToAddDefault(labelMap, Enums.LabelType.Organisation.id.toShort, "Organisation", "Organisations", fixedCase = false)
+    checkToAddDefault(labelMap, Enums.LabelType.System.id.toShort, "System", "Systems", fixedCase = false)
+    checkToAddDefault(labelMap, Enums.LabelType.SpecificationInGroup.id.toShort, "Option", "Options", fixedCase = false)
+    checkToAddDefault(labelMap, Enums.LabelType.SpecificationGroup.id.toShort, "Specification group", "Specification groups", fixedCase = false)
     labelMap.toMap
   }
 

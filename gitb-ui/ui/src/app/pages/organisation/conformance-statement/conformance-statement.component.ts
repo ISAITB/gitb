@@ -72,6 +72,7 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
   tabToShow = ConformanceStatementTab.tests
   @ViewChild('tabs', { static: false }) tabs?: TabsetComponent;
   collapsedDetails = false
+  hasBadge = false
   
   hasDisabledTests = false
   hasOptionalTests = false
@@ -181,6 +182,7 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
         this.lastUpdate = data.summary.updateTime
         this.conformanceStatus = data.summary.result
         this.allTestsSuccessful = this.conformanceStatus == Constants.TEST_CASE_RESULT.SUCCESS
+        this.hasBadge = data.summary.hasBadge
         this.prepareTestFilter()
         this.applySearchFilters()
       }

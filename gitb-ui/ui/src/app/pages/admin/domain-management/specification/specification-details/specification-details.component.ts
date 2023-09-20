@@ -86,12 +86,18 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
   ngOnInit(): void {
     this.domainId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID))
     this.specificationId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.SPECIFICATION_ID))
-		this.conformanceService.getSpecificationsWithIds([this.specificationId], undefined, undefined, true, false)
+		this.conformanceService.getSpecification(this.specificationId)
 		.subscribe((data) => {
-      this.specification = data[0]
+      this.specification = data
       if (!this.specification.group) {
         // Set to undefined to make sure the "undefined" option in the group select is pre-selected.
         this.specification.group = undefined
+      }
+      if (this.specification.badges) {
+        this.specification.badges.specificationId = this.specificationId
+        this.specification.badges.enabled = this.specification.badges.success != undefined && this.specification.badges.success.enabled!
+        this.specification.badges.initiallyEnabled = this.specification.badges.enabled
+        this.specification.badges.failureBadgeActive = this.specification.badges.failure != undefined && this.specification.badges.failure.enabled!
       }
     })
   }
@@ -251,7 +257,7 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
 
 	saveSpecificationChanges() {
     this.savePending = true
-		this.specificationService.updateSpecification(this.specificationId, this.specification.sname!, this.specification.fname!, this.specification.description, this.specification.hidden, this.specification.group)
+		this.specificationService.updateSpecification(this.specificationId, this.specification.sname!, this.specification.fname!, this.specification.description, this.specification.hidden, this.specification.group, this.specification.badges!)
 		.subscribe(() => {
 			this.popupService.success(this.dataService.labelSpecification()+' updated.')
     }).add(() => {
@@ -260,7 +266,21 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
   }
 
 	saveDisabled() {
-    return !(this.textProvided(this.specification?.sname) && this.textProvided(this.specification?.fname))
+    return !(
+      this.textProvided(this.specification?.sname) && 
+      this.textProvided(this.specification?.fname) &&
+      (
+        !this.specification.badges!.enabled || 
+        (
+          this.specification.badges!.success.enabled && 
+          this.specification.badges!.other.enabled && 
+          (
+            !this.specification.badges!.failureBadgeActive ||
+            this.specification.badges!.failure.enabled
+          )
+        )
+      )
+    )
   }
 
 	back() {

@@ -7,9 +7,9 @@ import managers.testsuite.TestSuitePaths
 import models.Enums.ImportItemType.ImportItemType
 import models.Enums.TestSuiteReplacementChoice.PROCEED
 import models.Enums._
-import models.{Enums, TestCaseDeploymentAction, TestCases, TestSuiteDeploymentAction}
+import models.{BadgeFile, Badges, Enums, TestCaseDeploymentAction, TestCases, TestSuiteDeploymentAction}
 import org.apache.commons.codec.binary.Base64
-import org.apache.commons.io.FileUtils
+import org.apache.commons.io.{FileUtils, FilenameUtils}
 import org.apache.commons.lang3.StringUtils
 import org.slf4j.LoggerFactory
 import persistence.db._
@@ -889,7 +889,8 @@ class ImportCompleteManager @Inject()(domainParameterManager: DomainParameterMan
                   val relatedGroupId = getProcessedDbId(data.getGroup, ImportItemType.SpecificationGroup, ctx)
                   if (data.getGroup == null || relatedGroupId.nonEmpty) {
                     val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
-                    specificationManager.createSpecificationsInternal(models.Specifications(0L, data.getShortName, data.getFullName, Option(data.getDescription), data.isHidden, apiKey, getDomainIdFromParentItem(item), data.getDisplayOrder, relatedGroupId), checkApiKeyUniqueness = true)
+                    specificationManager.createSpecificationsInternal(models.Specifications(0L, data.getShortName, data.getFullName, Option(data.getDescription), data.isHidden, apiKey, getDomainIdFromParentItem(item), data.getDisplayOrder, relatedGroupId), checkApiKeyUniqueness = true,
+                      toModelBadges(data.getBadges, ctx), ctx.onSuccessCalls)
                   } else {
                     DBIO.successful(())
                   }
@@ -898,7 +899,8 @@ class ImportCompleteManager @Inject()(domainParameterManager: DomainParameterMan
                   val relatedGroupId = getProcessedDbId(data.getGroup, ImportItemType.SpecificationGroup, ctx)
                   if (data.getGroup == null || relatedGroupId.nonEmpty) {
                     val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
-                    specificationManager.updateSpecificationInternal(targetKey.toLong, data.getShortName, data.getFullName, Option(data.getDescription), data.isHidden, Some(apiKey), checkApiKeyUniqueness = true, relatedGroupId, Some(data.getDisplayOrder))
+                    specificationManager.updateSpecificationInternal(targetKey.toLong, data.getShortName, data.getFullName, Option(data.getDescription), data.isHidden, Some(apiKey), checkApiKeyUniqueness = true, relatedGroupId, Some(data.getDisplayOrder),
+                      toModelBadges(data.getBadges, ctx), ctx.onSuccessCalls)
                   } else {
                     DBIO.successful(())
                   }
@@ -936,7 +938,8 @@ class ImportCompleteManager @Inject()(domainParameterManager: DomainParameterMan
                       val specificationId = item.parentItem.get.targetKey.get.toLong // Specification
                       val domainId = getDomainIdFromParentItem(item)
                       val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
-                      actorManager.createActor(models.Actors(0L, data.getActorId, data.getName, Option(data.getDescription), Some(data.isDefault), data.isHidden, order, apiKey, domainId), specificationId, checkApiKeyUniqueness = true)
+                      actorManager.createActor(models.Actors(0L, data.getActorId, data.getName, Option(data.getDescription), Some(data.isDefault), data.isHidden, order, apiKey, domainId), specificationId, checkApiKeyUniqueness = true,
+                        toModelBadges(data.getBadges, ctx), ctx.onSuccessCalls)
                     },
                     (data: com.gitb.xml.export.Actor, targetKey: String, item: ImportItem) => {
                       // Record actor info (needed for test suite processing).
@@ -951,7 +954,8 @@ class ImportCompleteManager @Inject()(domainParameterManager: DomainParameterMan
                         order = Some(data.getOrder.shortValue())
                       }
                       val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
-                      actorManager.updateActor(targetKey.toLong, data.getActorId, data.getName, Option(data.getDescription), Some(data.isDefault), data.isHidden, order, item.parentItem.get.targetKey.get.toLong, Some(apiKey), checkApiKeyUniqueness = true)
+                      actorManager.updateActor(targetKey.toLong, data.getActorId, data.getName, Option(data.getDescription), Some(data.isDefault), data.isHidden, order, item.parentItem.get.targetKey.get.toLong, Some(apiKey), checkApiKeyUniqueness = true,
+                        toModelBadges(data.getBadges, ctx), ctx.onSuccessCalls)
                     },
                     (data: com.gitb.xml.export.Actor, targetKey: Any, item: ImportItem) => {
                       // Record actor info (needed for test suite processing).
@@ -1153,6 +1157,37 @@ class ImportCompleteManager @Inject()(domainParameterManager: DomainParameterMan
         DBIO.successful(())
       }
     })
+  }
+
+  private def toModelBadgeFile(exportBadge: ConformanceBadge, ctx: ImportContext): Option[BadgeFile] = {
+    if (exportBadge != null) {
+      val extension = FilenameUtils.getExtension(exportBadge.getName)
+      val extensionToUse = if (extension.isBlank) {
+        None
+      } else {
+        Some("."+extension)
+      }
+      val fileToStore = dataUrlToTempFile(exportBadge.getContent, extensionToUse)
+      ctx.onFailureCalls += (() => if (fileToStore.exists()) {
+        FileUtils.deleteQuietly(fileToStore)
+      })
+      Some(BadgeFile(fileToStore, fileToStore.getName))
+    } else {
+      None
+    }
+  }
+
+  private def toModelBadges(exportBadges: ConformanceBadges, ctx: ImportContext): Option[Badges] = {
+    if (exportBadges != null) {
+      Some(Badges(
+        exportBadges.getSuccess != null, exportBadges.getFailure != null, exportBadges.getOther != null,
+        toModelBadgeFile(exportBadges.getSuccess, ctx),
+        toModelBadgeFile(exportBadges.getFailure, ctx),
+        toModelBadgeFile(exportBadges.getOther, ctx)
+      ))
+    } else {
+      None
+    }
   }
 
   private def hasExisting(itemType: ImportItemType, key: String, ctx: ImportContext): Boolean = {
@@ -1842,10 +1877,10 @@ class ImportCompleteManager @Inject()(domainParameterManager: DomainParameterMan
                 dbActions += processFromArchive(ImportItemType.System, exportedSystem, exportedSystem.getId, ctx,
                   ImportCallbacks.set(
                     (data: com.gitb.xml.export.System, item: ImportItem) => {
-                      systemManager.registerSystemInternal(models.Systems(0L, data.getShortName, data.getFullName, Option(data.getDescription), Option(data.getVersion), Option(data.getApiKey), item.parentItem.get.targetKey.get.toLong), checkApiKeyUniqueness = true)
+                      systemManager.registerSystemInternal(models.Systems(0L, data.getShortName, data.getFullName, Option(data.getDescription), Option(data.getVersion), Option(data.getApiKey), Option(data.getBadgeKey).getOrElse(CryptoUtil.generateApiKey()), item.parentItem.get.targetKey.get.toLong), checkApiKeyUniqueness = true)
                     },
                     (data: com.gitb.xml.export.System, targetKey: String, item: ImportItem) => {
-                      systemManager.updateSystemProfileInternal(None, targetCommunityId, item.targetKey.get.toLong, data.getShortName, data.getFullName, Option(data.getDescription), Option(data.getVersion), Some(Option(data.getApiKey)),
+                      systemManager.updateSystemProfileInternal(None, targetCommunityId, item.targetKey.get.toLong, data.getShortName, data.getFullName, Option(data.getDescription), Option(data.getVersion), Some(Option(data.getApiKey)), Option(data.getBadgeKey),
                         None, None, None, copySystemParameters = false, copyStatementParameters = false,
                         checkApiKeyUniqueness = true, ctx.onSuccessCalls
                       )
@@ -2139,8 +2174,8 @@ class ImportCompleteManager @Inject()(domainParameterManager: DomainParameterMan
     }
   }
 
-  private def dataUrlToTempFile(dataUrl: String): File = {
-    Files.write(Files.createTempFile("itb", null), Base64.decodeBase64(MimeUtil.getBase64FromDataURL(dataUrl))).toFile
+  private def dataUrlToTempFile(dataUrl: String, suffix: Option[String] = None): File = {
+    Files.write(Files.createTempFile("itb", suffix.orNull), Base64.decodeBase64(MimeUtil.getBase64FromDataURL(dataUrl))).toFile
   }
 
   private def parameterFileMetadata(ctx: ImportContext, parameterType: PropertyType, isDomainParameter: Boolean, parameterValue: String): (String, Option[String], Option[File]) = {

@@ -4,7 +4,7 @@ import config.Configurations
 import exceptions.{ErrorCodes, InvalidRequestException}
 import models.Enums._
 import controllers.util.Parameters
-import models.{Actor, Communities, CommunityResources, Domain, Endpoints, ErrorTemplates, FileInfo, LandingPages, LegalNotices, Options, OrganisationParameterValues, Organizations, SpecificationGroups, Specifications, SystemParameterValues, Systems, Trigger, TriggerData, Triggers, Users}
+import models.{Actor, BadgeFile, Badges, Communities, CommunityResources, Domain, Endpoints, ErrorTemplates, FileInfo, LandingPages, LegalNotices, Options, OrganisationParameterValues, Organizations, SpecificationGroups, Specifications, SystemParameterValues, Systems, Trigger, TriggerData, Triggers, Users}
 import org.apache.commons.lang3.StringUtils
 import org.mindrot.jbcrypt.BCrypt
 import play.api.mvc._
@@ -12,6 +12,7 @@ import utils.{ClamAVClient, CryptoUtil, HtmlUtil, JsonUtil}
 
 import java.io.File
 import java.util.concurrent.ThreadLocalRandom
+import scala.collection.mutable.ListBuffer
 
 object ParameterExtractor {
 
@@ -421,7 +422,7 @@ object ParameterExtractor {
     val descr = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.SYSTEM_DESC)
     val version = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.SYSTEM_VERSION)
     val owner:Long = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.ORGANIZATION_ID).toLong
-    Systems(0L, sname, fname, descr, version, None, owner)
+    Systems(0L, sname, fname, descr, version, None, "", owner)
   }
 
 	def extractDomain(request:Request[AnyContent]):Domain = {
@@ -431,13 +432,13 @@ object ParameterExtractor {
 		Domain(0L, sname, fname, descr)
 	}
 
-	def extractSpecification(request:Request[AnyContent]): Specifications = {
-		val sname:String = ParameterExtractor.requiredBodyParameter(request, Parameters.SHORT_NAME)
-		val fname:String = ParameterExtractor.requiredBodyParameter(request, Parameters.FULL_NAME)
-		val descr:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DESC)
-    val hidden = ParameterExtractor.requiredBodyParameter(request, Parameters.HIDDEN).toBoolean
-		val domain = ParameterExtractor.optionalLongBodyParameter(request, Parameters.DOMAIN_ID)
-    val group = ParameterExtractor.optionalLongBodyParameter(request, Parameters.GROUP_ID)
+	def extractSpecification(paramMap:Option[Map[String, Seq[String]]]): Specifications = {
+		val sname:String = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.SHORT_NAME)
+		val fname:String = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.FULL_NAME)
+		val descr:Option[String] = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.DESC)
+    val hidden = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.HIDDEN).toBoolean
+		val domain = ParameterExtractor.optionalLongBodyParameter(paramMap, Parameters.DOMAIN_ID)
+    val group = ParameterExtractor.optionalLongBodyParameter(paramMap, Parameters.GROUP_ID)
 
     Specifications(0L, sname, fname, descr, hidden, CryptoUtil.generateApiKey(), domain.getOrElse(0L), 0, group)
 	}
@@ -451,24 +452,24 @@ object ParameterExtractor {
     SpecificationGroups(0L, sname, fname, descr, 0, domain)
   }
 
-  def extractActor(request:Request[AnyContent]):Actor = {
-    val id:Long = ParameterExtractor. optionalBodyParameter(request, Parameters.ID) match {
+  def extractActor(paramMap:Option[Map[String, Seq[String]]]):Actor = {
+    val id:Long = ParameterExtractor. optionalBodyParameter(paramMap, Parameters.ID) match {
       case Some(i) => i.toLong
       case _ => 0L
     }
-		val actorId:String = ParameterExtractor.requiredBodyParameter(request, Parameters.ACTOR_ID)
-		val name:String = ParameterExtractor.requiredBodyParameter(request, Parameters.NAME)
-		val description:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DESCRIPTION)
+		val actorId:String = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.ACTOR_ID)
+		val name:String = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.NAME)
+		val description:Option[String] = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.DESCRIPTION)
     var default:Option[Boolean] = None
-    val defaultStr = ParameterExtractor.optionalBodyParameter(request, Parameters.ACTOR_DEFAULT)
+    val defaultStr = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.ACTOR_DEFAULT)
     if (defaultStr.isDefined) {
       default = Some(defaultStr.get.toBoolean)
     } else {
       default = Some(false)
     }
-    val hidden = ParameterExtractor.requiredBodyParameter(request, Parameters.HIDDEN).toBoolean
+    val hidden = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.HIDDEN).toBoolean
     var displayOrder:Option[Short] = None
-    val displayOrderStr = ParameterExtractor.optionalBodyParameter(request, Parameters.DISPLAY_ORDER)
+    val displayOrderStr = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.DISPLAY_ORDER)
     if (displayOrderStr.isDefined) {
       displayOrder = Some(displayOrderStr.get.toShort)
     }
@@ -743,6 +744,34 @@ object ParameterExtractor {
   def requiredLongListBodyParameter(request: Request[AnyContent], parameter: String): List[Long] = {
     val listStr = ParameterExtractor.requiredBodyParameter(request, parameter)
     listStr.split(",").map(_.toLong).toList
+  }
+
+  def extractBadges(request: Request[AnyContent], paramMap: Option[Map[String, Seq[String]]]): (Option[Badges], Option[Result]) = {
+    val files = ParameterExtractor.extractFiles(request)
+    var resultToReturn: Option[Result] = None
+    val hasSuccess = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.SUCCESS_BADGE_ENABLED).toBoolean
+    val hasFailure = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.FAILURE_BADGE_ENABLED).toBoolean
+    val hasOther = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.OTHER_BADGE_ENABLED).toBoolean
+    var successBadgeToStore: Option[BadgeFile] = None
+    var failureBadgeToStore: Option[BadgeFile] = None
+    var otherBadgeToStore: Option[BadgeFile] = None
+    val filesToScan = new ListBuffer[BadgeFile]
+    if (hasSuccess && files.contains(Parameters.SUCCESS_BADGE)) {
+      successBadgeToStore = Some(BadgeFile(files(Parameters.SUCCESS_BADGE).file, files(Parameters.SUCCESS_BADGE).name))
+      filesToScan += successBadgeToStore.get
+    }
+    if (files.contains(Parameters.FAILURE_BADGE)) {
+      failureBadgeToStore = Some(BadgeFile(files(Parameters.FAILURE_BADGE).file, files(Parameters.FAILURE_BADGE).name))
+      filesToScan += failureBadgeToStore.get
+    }
+    if (files.contains(Parameters.OTHER_BADGE)) {
+      otherBadgeToStore = Some(BadgeFile(files(Parameters.OTHER_BADGE).file, files(Parameters.OTHER_BADGE).name))
+      filesToScan += otherBadgeToStore.get
+    }
+    if (Configurations.ANTIVIRUS_SERVER_ENABLED && filesToScan.nonEmpty && ParameterExtractor.virusPresentInFiles(filesToScan.toList.map(_.file))) {
+      resultToReturn = Some(ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "Files failed virus scan."))
+    }
+    (Some(Badges(hasSuccess, hasFailure, hasOther, successBadgeToStore, failureBadgeToStore, otherBadgeToStore)), resultToReturn)
   }
 
 }

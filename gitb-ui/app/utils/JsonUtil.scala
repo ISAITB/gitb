@@ -788,7 +788,7 @@ object JsonUtil {
    * @param spec Specification object to be converted
    * @return JsObject
    */
-  def jsSpecification(spec:Specifications, withApiKeys:Boolean = false) : JsObject = {
+  def jsSpecification(spec:Specifications, withApiKeys:Boolean = false, badgeStatus: Option[BadgeStatus] = None) : JsObject = {
     var json = Json.obj(
       "id"      -> spec.id,
       "sname"   -> spec.shortname,
@@ -802,7 +802,27 @@ object JsonUtil {
     if (withApiKeys && Configurations.AUTOMATION_API_ENABLED) {
       json = json.+("apiKey" -> JsString(spec.apiKey))
     }
+    if (badgeStatus.isDefined) {
+      json = json.+("badges" -> jsBadgeStatus(badgeStatus.get))
+    }
     json
+  }
+
+  private def jsBadgeStatus(badgeStatus: BadgeStatus): JsObject = {
+    Json.obj(
+      "success" -> Json.obj(
+        "enabled" -> badgeStatus.success.isDefined,
+        "nameToShow" -> (if (badgeStatus.success.isDefined) badgeStatus.success.get else JsNull)
+      ),
+      "failure" -> Json.obj(
+        "enabled" -> badgeStatus.failure.isDefined,
+        "nameToShow" -> (if (badgeStatus.failure.isDefined) badgeStatus.failure.get else JsNull)
+      ),
+      "other" -> Json.obj(
+        "enabled" -> badgeStatus.other.isDefined,
+        "nameToShow" -> (if (badgeStatus.other.isDefined) badgeStatus.other.get else JsNull)
+      )
+    )
   }
 
   def jsSpecificationGroup(group: SpecificationGroups): JsObject = {
@@ -818,13 +838,12 @@ object JsonUtil {
 
   /**
    * Converts a List of Specifications into Play!'s JSON notation
-   * @param list List of Specifications to be converted
    * @return JsArray
    */
-  def jsSpecifications(list:Iterable[Specifications], withApiKeys:Boolean = false):JsArray = {
+  def jsSpecifications(list:Iterable[Specifications], withApiKeys:Boolean = false, badgeStatus: Option[BadgeStatus] = None):JsArray = {
     var json = Json.arr()
     list.foreach{ spec =>
-      json = json.append(jsSpecification(spec, withApiKeys))
+      json = json.append(jsSpecification(spec, withApiKeys, badgeStatus))
     }
     json
   }
@@ -856,7 +875,7 @@ object JsonUtil {
     json
   }
 
-  def jsActor(actor:Actor) : JsObject = {
+  def jsActor(actor:Actor, badgeStatus: Option[BadgeStatus] = None) : JsObject = {
     var json = Json.obj(
       "id" -> actor.id,
       "actorId" -> actor.actorId,
@@ -870,6 +889,9 @@ object JsonUtil {
     )
     if (Configurations.AUTOMATION_API_ENABLED) {
       json = json.+("apiKey"  -> (if(actor.apiKey.isDefined) JsString(actor.apiKey.get) else JsNull))
+    }
+    if (badgeStatus.isDefined) {
+      json = json.+("badges" -> jsBadgeStatus(badgeStatus.get))
     }
     json
   }
@@ -2337,6 +2359,7 @@ object JsonUtil {
         "completedOptional" -> status.completedOptional,
         "undefinedOptional" -> status.undefinedOptional,
         "result" -> status.result.value(),
+        "hasBadge" -> status.hasBadge,
         "updateTime" -> (if (status.updateTime.isDefined) TimeUtil.serializeTimestamp(status.updateTime.get) else JsNull)
       ),
       "testSuites" -> jsConformanceTestSuites(status.testSuites)

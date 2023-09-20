@@ -222,7 +222,7 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
         if (communityId.nonEmpty && communityId.get._2.nonEmpty) {
           Some(() => communityLabelManager.getLabels(communityId.get._2.get))
         } else {
-          Some(() => communityLabelManager.getLabels(request))
+          Some(() => communityLabelManager.getLabelsByUserId(ParameterExtractor.extractUserId(request)))
         },
         // ReportSpec provider
         if (communityId.nonEmpty) {
@@ -270,7 +270,7 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
     )
     FileUtils.deleteQuietly(reportPath.toFile.getParentFile)
     try {
-      val labels = communityLabelManager.getLabels(request)
+      val labels = communityLabelManager.getLabelsByUserId(ParameterExtractor.extractUserId(request))
       val communityId = if (snapshotId.isDefined) {
         conformanceManager.getConformanceSnapshot(snapshotId.get).community
       } else {

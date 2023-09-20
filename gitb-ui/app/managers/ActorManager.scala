@@ -1,23 +1,22 @@
 package managers
 
+import models.Enums.TestResultStatus
+
 import javax.inject.{Inject, Singleton}
-import models.{Actor, Actors}
-import org.slf4j.LoggerFactory
+import models.{Actor, Actors, Badges}
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
 import slick.dbio.DBIOAction
-import utils.CryptoUtil
+import utils.{CryptoUtil, RepositoryUtils}
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
-class ActorManager @Inject() (testResultManager: TestResultManager, endPointManager: EndPointManager, optionManager: OptionManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class ActorManager @Inject() (repositoryUtils: RepositoryUtils, testResultManager: TestResultManager, endPointManager: EndPointManager, optionManager: OptionManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
-
-  def logger = LoggerFactory.getLogger("ActorManager")
 
   /**
    * Checks if actor exists
@@ -46,24 +45,34 @@ class ActorManager @Inject() (testResultManager: TestResultManager, endPointMana
   }
 
   private def delete(actorId: Long, onSuccessCalls: mutable.ListBuffer[() => _]) = {
-    testResultManager.updateForDeletedActor(actorId) andThen
-    PersistenceSchema.testCaseHasActors.filter(_.actor === actorId).delete andThen
-    PersistenceSchema.testSuiteHasActors.filter(_.actor === actorId).delete andThen
-    PersistenceSchema.systemImplementsActors.filter(_.actorId === actorId).delete andThen
-    PersistenceSchema.specificationHasActors.filter(_.actorId === actorId).delete andThen
-    PersistenceSchema.endpointSupportsTransactions.filter(_.actorId === actorId).delete andThen
-    endPointManager.deleteEndPointByActor(actorId, onSuccessCalls) andThen
-    optionManager.deleteOptionByActor(actorId) andThen
-    PersistenceSchema.conformanceResults.filter(_.actor === actorId).delete andThen
-    PersistenceSchema.conformanceSnapshotResults.filter(_.actorId === actorId).map(_.actorId).update(actorId * -1) andThen
-    PersistenceSchema.actors.filter(_.id === actorId).delete
+    for {
+      specificationId <- PersistenceSchema.specificationHasActors.filter(_.actorId === actorId).map(_.specId).result.head
+      _ <- {
+        testResultManager.updateForDeletedActor(actorId) andThen
+          PersistenceSchema.testCaseHasActors.filter(_.actor === actorId).delete andThen
+          PersistenceSchema.testSuiteHasActors.filter(_.actor === actorId).delete andThen
+          PersistenceSchema.systemImplementsActors.filter(_.actorId === actorId).delete andThen
+          PersistenceSchema.specificationHasActors.filter(_.actorId === actorId).delete andThen
+          PersistenceSchema.endpointSupportsTransactions.filter(_.actorId === actorId).delete andThen
+          endPointManager.deleteEndPointByActor(actorId, onSuccessCalls) andThen
+          optionManager.deleteOptionByActor(actorId) andThen
+          PersistenceSchema.conformanceResults.filter(_.actor === actorId).delete andThen
+          PersistenceSchema.conformanceSnapshotResults.filter(_.actorId === actorId).map(_.actorId).update(actorId * -1) andThen
+          PersistenceSchema.actors.filter(_.id === actorId).delete andThen {
+            onSuccessCalls += (() => repositoryUtils.deleteActorBadges(specificationId, actorId))
+            DBIO.successful(())
+        }
+      }
+    } yield ()
   }
 
-  def updateActorWrapper(id: Long, actorId: String, name: String, description: Option[String], default: Option[Boolean], hidden: Boolean, displayOrder: Option[Short], specificationId: Long): Unit = {
-    exec(updateActor(id, actorId, name, description, default, hidden, displayOrder, specificationId, None, checkApiKeyUniqueness = false).transactionally)
+  def updateActorWrapper(id: Long, actorId: String, name: String, description: Option[String], default: Option[Boolean], hidden: Boolean, displayOrder: Option[Short], specificationId: Long, badges: Option[Badges]): Unit = {
+    val onSuccessCalls = mutable.ListBuffer[() => _]()
+    val dbAction = updateActor(id, actorId, name, description, default, hidden, displayOrder, specificationId, None, checkApiKeyUniqueness = false, badges, onSuccessCalls)
+    exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
   }
 
-  def updateActor(id: Long, actorId: String, name: String, description: Option[String], default: Option[Boolean], hidden: Boolean, displayOrder: Option[Short], specificationId: Long, apiKey: Option[String], checkApiKeyUniqueness: Boolean): DBIO[_] = {
+  def updateActor(id: Long, actorId: String, name: String, description: Option[String], default: Option[Boolean], hidden: Boolean, displayOrder: Option[Short], specificationId: Long, apiKey: Option[String], checkApiKeyUniqueness: Boolean, badges: Option[Badges], onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
     var defaultToSet: Option[Boolean] = null
     if (default.isEmpty) {
       defaultToSet = Some(false)
@@ -98,6 +107,12 @@ class ActorManager @Inject() (testResultManager: TestResultManager, endPointMana
           DBIOAction.successful(())
         }
       }
+      _ <- {
+        if (badges.isDefined) {
+          onSuccessCalls += (() => updateActorBadges(specificationId, id, badges.get))
+        }
+        DBIO.successful(())
+      }
     } yield()) andThen
     testResultManager.updateForUpdatedActor(id, name)
   }
@@ -124,15 +139,13 @@ class ActorManager @Inject() (testResultManager: TestResultManager, endPointMana
     actions
   }
 
-  def createActorWrapper(actor: Actors, specificationId: Long): Long = {
-    exec(createActor(actor, specificationId).transactionally)
+  def createActorWrapper(actor: Actors, specificationId: Long, badges: Option[Badges]): Long = {
+    val onSuccessCalls = mutable.ListBuffer[() => _]()
+    val dbAction = createActor(actor, specificationId, checkApiKeyUniqueness = false, badges, onSuccessCalls)
+    exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
   }
 
-  def createActor(actor: Actors, specificationId: Long): DBIO[Long] = {
-    createActor(actor, specificationId, checkApiKeyUniqueness = false)
-  }
-
-  def createActor(actor: Actors, specificationId: Long, checkApiKeyUniqueness: Boolean): DBIO[Long] = {
+  def createActor(actor: Actors, specificationId: Long, checkApiKeyUniqueness: Boolean, badges: Option[Badges], onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[Long] = {
     for {
       replaceApiKey <- if (checkApiKeyUniqueness) {
         PersistenceSchema.actors.filter(_.apiKey === actor.apiKey).exists.result
@@ -152,7 +165,33 @@ class ActorManager @Inject() (testResultManager: TestResultManager, endPointMana
         }
         DBIO.seq(actions.toList.map(a => a): _*)
       }
+      _ <- {
+        if (badges.isDefined) {
+          onSuccessCalls += (() => updateActorBadges(specificationId, savedActorId, badges.get))
+        }
+        DBIO.successful(())
+      }
     } yield savedActorId
+  }
+
+  private def updateActorBadges(specId: Long, actorId: Long, badges: Badges): Unit = {
+    // We can either have no badges or at least the success and other ones.
+    if ((!badges.hasSuccess && !badges.hasOther && !badges.hasFailure) || (badges.hasSuccess && badges.hasOther)) {
+      // Delete previous or removed files.
+      if (!badges.hasSuccess && !badges.hasOther && !badges.hasFailure) {
+        repositoryUtils.deleteActorBadges(specId, actorId)
+      } else if (!badges.hasSuccess || badges.success.isDefined) {
+        repositoryUtils.deleteActorBadge(specId, actorId, TestResultStatus.SUCCESS.toString)
+      } else if (!badges.hasOther || badges.other.isDefined) {
+        repositoryUtils.deleteActorBadge(specId, actorId, TestResultStatus.UNDEFINED.toString)
+      } else if (!badges.hasFailure || badges.failure.isDefined) {
+        repositoryUtils.deleteActorBadge(specId, actorId, TestResultStatus.FAILURE.toString)
+      }
+      // Add new files.
+      if (badges.success.isDefined) repositoryUtils.setActorBadge(specId, actorId, badges.success.get, TestResultStatus.SUCCESS.toString)
+      if (badges.other.isDefined) repositoryUtils.setActorBadge(specId, actorId, badges.other.get, TestResultStatus.UNDEFINED.toString)
+      if (badges.failure.isDefined) repositoryUtils.setActorBadge(specId, actorId, badges.failure.get, TestResultStatus.FAILURE.toString)
+    }
   }
 
   def searchActors(domainIds: Option[List[Long]], specificationIds: Option[List[Long]], specificationGroupIds: Option[List[Long]]): List[Actor] = {

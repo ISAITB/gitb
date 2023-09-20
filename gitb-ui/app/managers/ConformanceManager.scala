@@ -1,15 +1,18 @@
 package managers
 
 import com.gitb.tr.TestResultType
+import config.Configurations
 import managers.ConformanceManager.{ConformanceResultDbQuery, ConformanceResultFullDbQuery, ConformanceStatusDbQuery}
 import models.Enums.ConformanceStatementItemType
 import models._
+import org.apache.commons.lang3.StringUtils
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
 import slick.lifted.{Query, Rep}
-import utils.TimeUtil
+import utils.{CryptoUtil, RepositoryUtils, TimeUtil}
 import utils.TimeUtil.dateFromFilterString
 
+import java.io.File
 import java.sql.Timestamp
 import javax.inject.{Inject, Singleton}
 import scala.collection.mutable
@@ -19,71 +22,71 @@ import scala.concurrent.ExecutionContext.Implicits.global
 object ConformanceManager {
 
 	type ConformanceResultFullDbTuple = (
-		(Rep[Long], Rep[String]),
-		(Rep[Long], Rep[String]),
-		(Rep[Long], Rep[String]),
-		(Rep[Long], Rep[String], Rep[String]),
-		(Rep[Long], Rep[String], Rep[String]),
-		(Rep[Long], Rep[String], Rep[String]),
-		(Rep[String], Rep[Option[String]], Rep[Option[Timestamp]], Rep[Option[String]]),
-		(Rep[Option[String]], Rep[Option[String]]),
-		(Rep[Long], Rep[String], Rep[Option[String]], Rep[Boolean], Rep[Boolean], Rep[Option[String]], Rep[Short]),
-		(Rep[Long], Rep[String], Rep[Option[String]])
+		(Rep[Long], Rep[String]), // Community
+		(Rep[Long], Rep[String]), // Organisation
+		(Rep[Long], Rep[String], Rep[String]), // System
+		(Rep[Long], Rep[String], Rep[String]), // Domain
+		(Rep[Long], Rep[String], Rep[String], Rep[String]), // Actor
+		(Rep[Long], Rep[String], Rep[String]), // Specification
+		(Rep[String], Rep[Option[String]], Rep[Option[Timestamp]], Rep[Option[String]]), // Result
+		(Rep[Option[String]], Rep[Option[String]]), // Specification group
+		(Rep[Long], Rep[String], Rep[Option[String]], Rep[Boolean], Rep[Boolean], Rep[Option[String]], Rep[Short]), // Test case
+		(Rep[Long], Rep[String], Rep[Option[String]]) // Test suite
 	)
 	type ConformanceResultFullTuple = (
-		(Long, String),
-		(Long, String),
-		(Long, String),
-		(Long, String, String),
-		(Long, String, String),
-		(Long, String, String),
-		(String, Option[String], Option[Timestamp], Option[String]),
-		(Option[String], Option[String]),
-		(Long, String, Option[String], Boolean, Boolean, Option[String], Short),
-		(Long, String, Option[String])
+		(Long, String), // Community
+		(Long, String), // Organisation
+		(Long, String, String), // System
+		(Long, String, String), // Domain
+		(Long, String, String, String), // Actor
+		(Long, String, String), // Specification
+		(String, Option[String], Option[Timestamp], Option[String]), // Result
+		(Option[String], Option[String]), // Specification group
+		(Long, String, Option[String], Boolean, Boolean, Option[String], Short), // Test case
+		(Long, String, Option[String]) // Test suite
 	)
 	type ConformanceResultFullDbQuery = Query[ConformanceResultFullDbTuple, ConformanceResultFullTuple, Seq]
 
 	type ConformanceResultDbTuple = (
-		(Rep[Long], Rep[String]),
-		(Rep[Long], Rep[String]),
-		(Rep[Long], Rep[String]),
-		(Rep[Long], Rep[String], Rep[String]),
-		(Rep[Long], Rep[String], Rep[String]),
-		(Rep[Long], Rep[String], Rep[String]),
-		(Rep[String], Rep[Option[String]], Rep[Option[Timestamp]]),
-		(Rep[Option[String]], Rep[Option[String]]),
-		(Rep[Boolean], Rep[Boolean])
+		(Rep[Long], Rep[String]), // Community
+		(Rep[Long], Rep[String]), // Organisation
+		(Rep[Long], Rep[String]), // System
+		(Rep[Long], Rep[String], Rep[String]), // Domain
+		(Rep[Long], Rep[String], Rep[String]), // Actor
+		(Rep[Long], Rep[String], Rep[String]), // Specification
+		(Rep[String], Rep[Option[String]], Rep[Option[Timestamp]]), // Result
+		(Rep[Option[String]], Rep[Option[String]]), // Specification group
+		(Rep[Boolean], Rep[Boolean]) // Test case
 	)
 	type ConformanceResultTuple = (
-		(Long, String),
-		(Long, String),
-		(Long, String),
-		(Long, String, String),
-		(Long, String, String),
-		(Long, String, String),
-		(String, Option[String], Option[Timestamp]),
-		(Option[String], Option[String]),
-		(Boolean, Boolean)
+		(Long, String), // Community
+		(Long, String), // Organisation
+		(Long, String), // System
+		(Long, String, String), // Domain
+		(Long, String, String), // Actor
+		(Long, String, String), // Specification
+		(String, Option[String], Option[Timestamp]), // Result
+		(Option[String], Option[String]), // Specification group
+		(Boolean, Boolean) // Test case
 	)
 	type ConformanceResultDbQuery = Query[ConformanceResultDbTuple, ConformanceResultTuple, Seq]
 
 	type ConformanceStatusDbTuple = (
-		(Rep[Long], Rep[String], Rep[Option[String]], Rep[Boolean]),
-		(Rep[Long], Rep[String], Rep[Option[String]], Rep[Boolean], Rep[Boolean], Rep[Boolean], Rep[Option[String]], Rep[Short]),
-		(Rep[String], Rep[Option[String]], Rep[Option[String]], Rep[Option[Timestamp]])
+		(Rep[Long], Rep[String], Rep[Option[String]], Rep[Boolean]), // Test suite
+		(Rep[Long], Rep[String], Rep[Option[String]], Rep[Boolean], Rep[Boolean], Rep[Boolean], Rep[Option[String]], Rep[Short]), // Test case
+		(Rep[String], Rep[Option[String]], Rep[Option[String]], Rep[Option[Timestamp]]) // Result
 	)
 	type ConformanceStatusTuple = (
-		(Long, String, Option[String], Boolean),
-		(Long, String, Option[String], Boolean, Boolean, Boolean, Option[String], Short),
-		(String, Option[String], Option[String], Option[Timestamp])
+		(Long, String, Option[String], Boolean), // Test suite
+		(Long, String, Option[String], Boolean, Boolean, Boolean, Option[String], Short), // Test case
+		(String, Option[String], Option[String], Option[Timestamp]) // Result
 	)
 	type ConformanceStatusDbQuery = Query[ConformanceStatusDbTuple, ConformanceStatusTuple, Seq]
 
 }
 
 @Singleton
-class ConformanceManager @Inject() (systemManager: SystemManager, endpointManager: EndPointManager, parameterManager: ParameterManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils, systemManager: SystemManager, endpointManager: EndPointManager, parameterManager: ParameterManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
 	import dbConfig.profile.api._
 
@@ -258,22 +261,30 @@ class ConformanceManager @Inject() (systemManager: SystemManager, endpointManage
 						(x._1._1.result, x._1._1.outputMessage, x._1._1.testsession, x._1._1.updateTime) // Result
 					))
 			}
+			val specificationIdQuery = if (snapshotId.isDefined) {
+				PersistenceSchema.conformanceSnapshotResults.filter(_.actorId === actorId).filter(_.systemId === sutId).filter(_.snapshotId === snapshotId.get).map(_.specificationId).result.head
+			} else {
+				PersistenceSchema.specificationHasActors.filter(_.actorId === actorId).map(_.specId).result.head
+			}
 			val statusItems = exec(
-				query
-					.sortBy(x => (x._1._2, x._2._8))
-					.result
-					.map(_.toList)
-			).map(r => {
-				ConformanceStatusItem(
-					testSuiteId = r._1._1, testSuiteName = r._1._2, testSuiteDescription = r._1._3, testSuiteHasDocumentation = r._1._4,
-					testCaseId = r._2._1, testCaseName = r._2._2, testCaseDescription = r._2._3, testCaseHasDocumentation = r._2._4,
-					result = r._3._1, outputMessage = r._3._2, sessionId = r._3._3, sessionTime = r._3._4,
-					testCaseOptional = r._2._5, testCaseDisabled = r._2._6, testCaseTags = r._2._7
-				)
-			})
-			val status = new ConformanceStatus(0, 0, 0, 0, 0, 0, TestResultType.UNDEFINED, None, new ListBuffer[ConformanceTestSuite])
+				for {
+					results <- query.sortBy(x => (x._1._2, x._2._8)).result
+						.map(_.map(r => {
+							ConformanceStatusItem(
+								testSuiteId = r._1._1, testSuiteName = r._1._2, testSuiteDescription = r._1._3, testSuiteHasDocumentation = r._1._4,
+								testCaseId = r._2._1, testCaseName = r._2._2, testCaseDescription = r._2._3, testCaseHasDocumentation = r._2._4,
+								result = r._3._1, outputMessage = r._3._2, sessionId = r._3._3, sessionTime = r._3._4,
+								testCaseOptional = r._2._5, testCaseDisabled = r._2._6, testCaseTags = r._2._7
+							)
+						}))
+					specificationId <- specificationIdQuery
+				} yield (results, specificationId)
+			)
+			// Check to see if we have badges. We use the SUCCESS badge as this will always be present if badges are defined.
+			val hasBadge = repositoryUtil.getConformanceBadge(statusItems._2, Some(actorId), snapshotId, TestResultType.SUCCESS.toString, exactMatch = false).isDefined
+			val status = new ConformanceStatus(0, 0, 0, 0, 0, 0, TestResultType.UNDEFINED, None, hasBadge, new ListBuffer[ConformanceTestSuite])
 			val testSuiteMap = new mutable.LinkedHashMap[Long, ConformanceTestSuite]()
-			statusItems.foreach { item =>
+			statusItems._1.foreach { item =>
 				val testSuite = if (testSuiteMap.contains(item.testSuiteId)) {
 					testSuiteMap(item.testSuiteId)
 				} else {
@@ -359,9 +370,9 @@ class ConformanceManager @Inject() (systemManager: SystemManager, endpointManage
 				.map(x => (
 					(x._2.id, x._2.shortname), // 1.1: Community ID, 1.2: Community shortname
 					(x._1._1.organisationId, x._1._1.organisation), // 2.1: Organisation ID, 2.2: Organisation shortname
-					(x._1._1.systemId, x._1._1.system), // 3.1: System ID, 3.2: System shortname
+					(x._1._1.systemId, x._1._1.system, x._1._1.systemBadgeKey), // 3.1: System ID, 3.2: System shortname, 3.3: System badge key
 					(x._1._1.domainId, x._1._1.domain, x._1._1.domain), // 4.1: Domain ID, 4.2: Domain shortname, 4.3: Domain fullname
-					(x._1._1.actorId, x._1._1.actor, x._1._1.actor), // 5.1: Actor ID, 5.2: Actor identifier, 5.3: Actor name
+					(x._1._1.actorId, x._1._1.actor, x._1._1.actor, x._1._1.actorApiKey), // 5.1: Actor ID, 5.2: Actor identifier, 5.3: Actor name, 5.4: Actor API key
 					(x._1._1.specificationId, x._1._1.specification, x._1._1.specification), // 6.1: Specification ID, 6.2: Specification shortname, 6.3: Specification fullname
 					(x._1._1.result, x._1._1.testSessionId, x._1._1.updateTime, x._1._1.outputMessage), // 7.1: Result, 7.2: Session ID, 7.3: Update time, 7.4: Output message
 					(x._1._1.specificationGroup, x._1._1.specificationGroup), // 8.1: Specification group shortname, 8.2: Specification group fullname,
@@ -389,9 +400,9 @@ class ConformanceManager @Inject() (systemManager: SystemManager, endpointManage
 				.map(x => (
 					(x._1._1._2.id, x._1._1._2.shortname), // 1.1: Community ID, 1.2: Community shortname
 					(x._1._1._1._2.id, x._1._1._1._2.shortname), // 2.1: Organisation ID, 2.2: Organisation shortname
-					(x._1._1._1._1._2.id, x._1._1._1._1._2.shortname), // 3.1: System ID, 3.2: System shortname
+					(x._1._1._1._1._2.id, x._1._1._1._1._2.shortname, x._1._1._1._1._2.badgeKey), // 3.1: System ID, 3.2: System shortname, 3.3: System badge key
 					(x._1._1._1._1._1._2.id, x._1._1._1._1._1._2.shortname, x._1._1._1._1._1._2.fullname), // 4.1: Domain ID, 4.2: Domain shortname, 4.3: Domain fullname
-					(x._1._1._1._1._1._1._2.id, x._1._1._1._1._1._1._2.actorId, x._1._1._1._1._1._1._2.name), // 5.1: Actor ID, 5.2: Actor identifier, 5.3: Actor name
+					(x._1._1._1._1._1._1._2.id, x._1._1._1._1._1._1._2.actorId, x._1._1._1._1._1._1._2.name, x._1._1._1._1._1._1._2.apiKey), // 5.1: Actor ID, 5.2: Actor identifier, 5.3: Actor name, 5.4: Actor API key
 					(x._1._1._1._1._1._1._1._1._2.id, x._1._1._1._1._1._1._1._1._2.shortname, x._1._1._1._1._1._1._1._1._2.fullname), // 6.1: Specification ID, 6.2: Specification shortname, 6.3: Specification fullname
 					(x._1._1._1._1._1._1._1._1._1.result, x._1._1._1._1._1._1._1._1._1.testsession, x._1._1._1._1._1._1._1._1._1.updateTime, x._1._1._1._1._1._1._1._1._1.outputMessage), // 7.1: Result, 7.2: Session ID, 7.3: Update time, 7.4: Output message
 					(x._1._1._1._1._1._1._1._2.map(_.shortname), x._1._1._1._1._1._1._1._2.map(_.fullname)), // 8.1: Specification group shortname, 8.2: Specification group fullname,
@@ -435,9 +446,9 @@ class ConformanceManager @Inject() (systemManager: SystemManager, endpointManage
 			}
 			val conformanceStatement = new ConformanceStatementFull(
 				communityId = result._1._1, communityName = result._1._2, organizationId = result._2._1, organizationName = result._2._2,
-				systemId = result._3._1, systemName = result._3._2,
+				systemId = result._3._1, systemName = result._3._2, systemBadgeKey = result._3._3,
 				domainId = result._4._1, domainName = result._4._2, domainNameFull = result._4._3,
-				actorId = result._5._1, actorName = result._5._2, actorFull = result._5._3,
+				actorId = result._5._1, actorName = result._5._2, actorFull = result._5._3, actorApiKey = result._5._4,
 				specificationId = result._6._1, specificationName = specName, specificationNameFull = specNameFull,
 				specificationGroupName = result._8._1, specificationGroupNameFull = result._8._1, specificationGroupOptionName = result._6._2, specificationGroupOptionNameFull = result._6._3,
 				testSuiteId = Some(result._10._1), testSuiteName = Some(result._10._2), testSuiteDescription = result._10._3,
@@ -546,9 +557,9 @@ class ConformanceManager @Inject() (systemManager: SystemManager, endpointManage
 			}
 			val conformanceStatement = new ConformanceStatementFull(
 				communityId = result._1._1, communityName = result._1._2, organizationId = result._2._1, organizationName = result._2._2,
-				systemId = result._3._1, systemName = result._3._2,
+				systemId = result._3._1, systemName = result._3._2, systemBadgeKey = "",
 				domainId = result._4._1, domainName = result._4._2, domainNameFull = result._4._3,
-				actorId = result._5._1, actorName = result._5._2, actorFull = result._5._3,
+				actorId = result._5._1, actorName = result._5._2, actorFull = result._5._3, actorApiKey = "",
 				specificationId = result._6._1, specificationName = specName, specificationNameFull = specNameFull,
 				specificationGroupName = result._8._1, specificationGroupNameFull = result._8._1, specificationGroupOptionName = result._6._2, specificationGroupOptionNameFull = result._6._3,
 				testSuiteId = None, testSuiteName = None, testSuiteDescription = None,
@@ -706,20 +717,22 @@ class ConformanceManager @Inject() (systemManager: SystemManager, endpointManage
 	def createConformanceSnapshot(communityId: Long, label: String): ConformanceSnapshot = {
 		val snapshotTime = TimeUtil.getCurrentTimestamp()
 		val communityResults = getConformanceStatementsFull(None, None, None, None, Some(List(communityId)), None, None, None, None, None, None, None, None, None, None)
+		val apiKey = CryptoUtil.generateApiKey()
+		val onSuccessCalls = mutable.ListBuffer[() => _]()
 		val dbAction = for {
 			// Create snapshot
-			snapshotId <- PersistenceSchema.insertConformanceSnapshot += ConformanceSnapshot(0L, label, snapshotTime, communityId)
+			snapshotId <- PersistenceSchema.insertConformanceSnapshot += ConformanceSnapshot(0L, label, snapshotTime, apiKey, communityId)
 			// Populate snapshot
 			_ <- {
 				val dbActions = new ListBuffer[DBIO[_]]
 				communityResults.foreach { result =>
 					dbActions += (PersistenceSchema.insertConformanceSnapshotResult += ConformanceSnapshotResult(
 						id = 0L, snapshotId = snapshotId, organisationId = result.organizationId, organisation = result.organizationName,
-						systemId = result.systemId, system = result.systemName,
+						systemId = result.systemId, system = result.systemName, systemBadgeKey = result.systemBadgeKey,
 						domainId = result.domainId, domain = result.domainName,
 						specGroupId = result.specificationGroupId, specGroup = result.specificationGroupName, specGroupDisplayOrder = result.specificationGroupDisplayOrder,
 						specId = result.specificationId, spec = result.specificationName, specDisplayOrder = result.specificationDisplayOrder,
-						actorId = result.actorId, actor = result.actorName,
+						actorId = result.actorId, actor = result.actorName, actorApiKey = result.actorApiKey,
 						testSuiteId = result.testSuiteId.get, testSuite = result.testSuiteName.get, testSuiteDescription = result.testSuiteDescription,
 						testCaseId = result.testCaseId.get, testCase = result.testCaseName.get, testCaseDescription = result.testCaseDescription, testCaseOrder = result.testCaseOrder.get,
 						testCaseOptional = result.testCaseOptional.get, testCaseDisabled = result.testCaseDisabled.get, testCaseTags = result.testCaseTags,
@@ -728,9 +741,18 @@ class ConformanceManager @Inject() (systemManager: SystemManager, endpointManage
 				}
 				toDBIO(dbActions)
 			}
+			// Copy badges
+			_ <- {
+				onSuccessCalls += (() => {
+					communityResults.map(_.specificationId).toSet.foreach { specificationId =>
+						repositoryUtil.addBadgesToConformanceSnapshot(specificationId, snapshotId)
+					}
+				})
+				DBIO.successful(())
+			}
 		} yield snapshotId
-		val snapshotId = exec(dbAction.transactionally)
-		ConformanceSnapshot(snapshotId, label, snapshotTime, communityId)
+		val snapshotId = exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
+		ConformanceSnapshot(snapshotId, label, snapshotTime, apiKey, communityId)
 	}
 
 	def getConformanceSnapshots(community: Long): List[ConformanceSnapshot] = {
@@ -755,13 +777,13 @@ class ConformanceManager @Inject() (systemManager: SystemManager, endpointManage
 			.transactionally)
 	}
 
-	def deleteConformanceSnapshotsOfCommunity(community: Long): DBIO[_] = {
+	def deleteConformanceSnapshotsOfCommunity(community: Long, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
 		for {
 			snapshotIds <- PersistenceSchema.conformanceSnapshots.filter(_.community === community).map(_.id).result
 			_ <- {
 				val dbActions = new ListBuffer[DBIO[_]]
 				snapshotIds.foreach { snapshotId =>
-					dbActions += deleteConformanceSnapshotInternal(snapshotId)
+					dbActions += deleteConformanceSnapshotInternal(snapshotId, onSuccessCalls)
 				}
 				toDBIO(dbActions)
 			}
@@ -769,16 +791,130 @@ class ConformanceManager @Inject() (systemManager: SystemManager, endpointManage
 	}
 
 	def deleteConformanceSnapshot(snapshot: Long): Unit = {
-		exec(deleteConformanceSnapshotInternal(snapshot).transactionally)
+		val onSuccessCalls = mutable.ListBuffer[() => _]()
+		val dbAction = deleteConformanceSnapshotInternal(snapshot, onSuccessCalls)
+		exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
 	}
 
-	private def deleteConformanceSnapshotInternal(snapshot: Long): DBIO[_] = {
+	private def deleteConformanceSnapshotInternal(snapshot: Long, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
 		for {
 			// Delete results.
 			_ <- PersistenceSchema.conformanceSnapshotResults.filter(_.snapshotId === snapshot).delete
 			// Delete snapshot.
 			_ <- PersistenceSchema.conformanceSnapshots.filter(_.id === snapshot).delete
+			// Delete badges.
+			_ <- {
+				onSuccessCalls += (() => repositoryUtil.deleteSnapshotBadges(snapshot))
+				DBIO.successful(())
+			}
 		} yield ()
+	}
+
+	def getConformanceBadge(systemKey: String, actorKey: String, snapshotKey: Option[String]): Option[File] = {
+		val query = if (snapshotKey.isDefined) {
+			// Query conformance snapshot.
+			for {
+				statementIds <- PersistenceSchema.conformanceSnapshotResults
+					.filter(_.systemBadgeKey === systemKey)
+					.filter(_.actorApiKey === actorKey)
+					.map(x => (x.systemId, x.specificationId, x.actorId))
+					.result
+					.headOption
+				snapshotId <- PersistenceSchema.conformanceSnapshots.filter(_.apiKey === snapshotKey.get).map(_.id).result.headOption
+			} yield (statementIds.map(_._1), statementIds.map(_._2), statementIds.map(_._3), snapshotId)
+		} else {
+			// Query latest conformance status.
+			for {
+				systemId <- PersistenceSchema.systems.filter(_.badgeKey === systemKey).map(_.id).result.headOption
+				specIds <- {
+					if (systemId.isDefined) {
+						PersistenceSchema.actors.filter(_.apiKey === actorKey)
+							.join(PersistenceSchema.specificationHasActors).on(_.id === _.actorId)
+							.map(x => (x._2.specId, x._2.actorId))
+							.result
+							.headOption
+					} else {
+						DBIO.successful(None)
+					}
+				}
+				snapshotId <- DBIO.successful(None)
+			} yield (systemId, specIds.map(_._1), specIds.map(_._2), snapshotId)
+		}
+		val ids: (Option[Long], Option[Long], Option[Long], Option[Long]) = exec(query) // 1: System ID, 2: Specification ID, 3: Actor ID, 4: Snapshot ID
+		val systemId = ids._1
+		val specificationId = ids._2
+		val actorId = ids._3
+		val snapshotId = ids._4
+		if (systemId.isDefined && specificationId.isDefined && actorId.isDefined && (snapshotKey.isEmpty || snapshotId.isDefined)) {
+			val status = getConformanceStatus(actorId.get, systemId.get, testSuiteId = None, includeDisabled = false, snapshotId)
+			if (status.isDefined) {
+				repositoryUtil.getConformanceBadge(specificationId.get, actorId, snapshotId, status = status.get.result.value(), exactMatch = false)
+			} else {
+				None
+			}
+		} else {
+			None
+		}
+	}
+
+	def getConformanceBadgeByIds(systemId: Long, actorId: Long, snapshotId: Option[Long]): Option[File] = {
+		val status = getConformanceStatus(actorId, systemId, testSuiteId = None, includeDisabled = false, snapshotId)
+		if (status.isDefined) {
+			val specificationId = if (snapshotId.isDefined) {
+				exec(
+					PersistenceSchema.conformanceSnapshotResults
+						.filter(_.systemId === systemId)
+						.filter(_.actorId === actorId)
+						.filter(_.snapshotId === snapshotId)
+						.map(_.specificationId)
+						.result
+						.head
+				)
+			} else {
+				exec(PersistenceSchema.specificationHasActors.filter(_.actorId === actorId).map(_.specId).result.head)
+			}
+			repositoryUtil.getConformanceBadge(specificationId, Some(actorId), snapshotId, status = status.get.result.value(), exactMatch = false)
+		} else {
+			None
+		}
+	}
+
+	def getConformanceBadgeUrl(systemId: Long, actorId: Long, snapshotId: Option[Long]): Option[String] = {
+		val query = if (snapshotId.isDefined) {
+			// Snapshot.
+			PersistenceSchema.conformanceSnapshotResults
+				.join(PersistenceSchema.conformanceSnapshots).on(_.snapshotId === _.id)
+				.filter(_._1.systemId === systemId)
+				.filter(_._1.actorId === actorId)
+				.filter(_._1.snapshotId === snapshotId.get)
+				.map(x => (x._1.systemBadgeKey, x._1.actorApiKey, x._2.apiKey))
+				.result
+				.headOption
+				.map(_.map(x => (x._1, x._2, Some(x._3))))
+		} else {
+			// Latest status.
+			PersistenceSchema.conformanceResults
+				.join(PersistenceSchema.systems).on(_.sut === _.id)
+				.join(PersistenceSchema.actors).on(_._1.actor === _.id)
+				.filter(_._1._1.sut === systemId)
+				.filter(_._1._1.actor === actorId)
+				.map(x => (x._1._2.badgeKey, x._2.apiKey))
+				.result
+				.headOption
+				.map(_.map(x => (x._1, x._2, None)))
+		}
+		val keys = exec(query)
+		if (keys.isDefined) {
+			Some(
+				StringUtils.appendIfMissing(Configurations.TESTBED_HOME_LINK, "/") // Base URL
+					+ "badge/" // Badge API prefix
+					+ keys.get._1 // System key
+					+ "/" + keys.get._2 // Actor key
+					+ keys.get._3.map(x => "/" + x).getOrElse("") // Snapshot key (optional)
+			)
+		} else {
+			None
+		}
 	}
 
 }

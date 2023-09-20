@@ -11,6 +11,7 @@ export interface ConformanceStatus {
         undefinedOptional: number
         result: string
         updateTime?: string
+        hasBadge: boolean
     }
     testSuites: ConformanceTestSuite[]
 

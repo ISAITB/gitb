@@ -54,9 +54,16 @@ export class ActorDetailsComponent extends BaseComponent implements OnInit, Afte
     this.domainId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID))
     this.specificationId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.SPECIFICATION_ID))
     this.actorId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.ACTOR_ID))
-    this.conformanceService.getActorsWithIds([this.actorId])
+    this.conformanceService.getActor(this.actorId, this.specificationId)
     .subscribe((data) => {
-      this.actor = data[0]
+      this.actor = data
+      if (this.actor.badges) {
+        this.actor.badges.specificationId = this.specificationId
+        this.actor.badges.actorId = this.actorId
+        this.actor.badges.enabled = this.actor.badges.success != undefined && this.actor.badges.success.enabled!
+        this.actor.badges.initiallyEnabled = this.actor.badges.enabled
+        this.actor.badges.failureBadgeActive = this.actor.badges.failure != undefined && this.actor.badges.failure.enabled!
+      }      
     })
     this.conformanceService.getEndpointsForActor(this.actorId)
     .subscribe((data) => {
@@ -93,7 +100,7 @@ export class ActorDetailsComponent extends BaseComponent implements OnInit, Afte
 
   saveChanges() {
     this.savePending = true
-    this.actorService.updateActor(this.actorId, this.actor.actorId!, this.actor.name!, this.actor.description, this.actor.default, this.actor.hidden, this.actor.displayOrder, this.domainId, this.specificationId)
+    this.actorService.updateActor(this.actorId, this.actor.actorId!, this.actor.name!, this.actor.description, this.actor.default, this.actor.hidden, this.actor.displayOrder, this.domainId, this.specificationId, this.actor.badges!)
     .subscribe(() => {
       this.popupService.success(this.dataService.labelActor()+' updated.')
     }).add(() => {
@@ -106,7 +113,22 @@ export class ActorDetailsComponent extends BaseComponent implements OnInit, Afte
   }
 
   saveDisabled() {
-    return !(this.textProvided(this.actor?.actorId) && this.textProvided(this.actor?.name) && this.numberOrEmpty(this.actor?.displayOrder))
+    return !(
+      this.textProvided(this.actor?.actorId) && 
+      this.textProvided(this.actor?.name) && 
+      this.numberOrEmpty(this.actor?.displayOrder) &&
+      (
+        !this.actor.badges!.enabled || 
+        (
+          this.actor.badges!.success.enabled && 
+          this.actor.badges!.other.enabled && 
+          (
+            !this.actor.badges!.failureBadgeActive ||
+            this.actor.badges!.failure.enabled
+          )
+        )
+      )
+    )
   }
 
   onEndpointSelect(endpoint: EndpointRepresentation) {

@@ -170,6 +170,10 @@ import { SystemAdministrationComponent } from './pages/admin/system-administrati
 import { ConfigurationEntryComponent } from './pages/admin/system-administration/configuration-entry/configuration-entry.component';
 import { TabTitleComponent } from './components/tab-title/tab-title.component';
 import { ConformanceSnapshotsModalComponent } from './modals/conformance-snapshots-modal/conformance-snapshots-modal.component';
+import { ManageBadgesComponent } from './components/manage-badges/manage-badges.component';
+import { ManageBadgeComponent } from './components/manage-badges/manage-badge/manage-badge.component';
+import { PreviewBadgeModalComponent } from './modals/preview-badge-modal/preview-badge-modal.component';
+import { ViewBadgeButtonComponent } from './components/view-badge-button/view-badge-button.component';
 
 @NgModule({
   providers: [ 
@@ -287,7 +291,6 @@ import { ConformanceSnapshotsModalComponent } from './modals/conformance-snapsho
     SecretInputComponent,
     TextFilterComponent,
     CopyEnabledTextComponent,
-    SanitizeHtmlPipe,
     ApiKeyTextComponent,
     ApiKeyInfoComponent,
     MissingConfigurationDisplayComponent,
@@ -329,7 +332,13 @@ import { ConformanceSnapshotsModalComponent } from './modals/conformance-snapsho
     SystemAdministrationComponent,
     ConfigurationEntryComponent,
     TabTitleComponent,
-    ConformanceSnapshotsModalComponent],
+    ConformanceSnapshotsModalComponent,
+    ManageBadgesComponent,
+    ManageBadgeComponent,
+    SanitizeHtmlPipe,
+    PreviewBadgeModalComponent,
+    ViewBadgeButtonComponent
+  ],
   imports: [
     ColorPickerModule,
     BrowserModule,

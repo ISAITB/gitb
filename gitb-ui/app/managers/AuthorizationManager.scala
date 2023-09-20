@@ -53,6 +53,10 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     setAuthResult(request, ok, "User not allowed to view the organisation's automation keys")
   }
 
+  def canLookupConformanceBadge(request: RequestWithAttributes[_]): Boolean = {
+    setAuthResult(request, ok = true, "User not allowed to lookup conformance badges")
+  }
+
   private def checkApiKeyUpdateForOrganisation(request: RequestWithAttributes[_], organisation: Option[Organizations]): Boolean = {
     var ok = false
     if (Configurations.AUTOMATION_API_ENABLED) {

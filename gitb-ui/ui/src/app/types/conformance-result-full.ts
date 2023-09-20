@@ -32,8 +32,11 @@ export interface ConformanceResultFull {
     outputMessage?: string
 
     testSuitesLoaded?: boolean
+    hasBadge?: boolean
     testSuites?: ConformanceTestSuite[]
     counters?: Counters
+    copyBadgePending?: boolean
+
     [key: string]: any
 
 }

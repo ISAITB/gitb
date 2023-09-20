@@ -3,6 +3,8 @@ import { Injectable } from '@angular/core';
 import { RestService } from './rest.service';
 import { SpecificationGroup } from '../types/specification-group';
 import { Specification } from '../types/specification';
+import { BadgesInfo } from '../components/manage-badges/badges-info';
+import { DataService } from './data.service';
 
 @Injectable({
   providedIn: 'root'
@@ -10,7 +12,8 @@ import { Specification } from '../types/specification';
 export class SpecificationService {
 
   constructor(
-    private restService: RestService
+    private restService: RestService,
+    private dataService: DataService
   ) { }
 
   deleteSpecification(specId: number) {
@@ -20,7 +23,7 @@ export class SpecificationService {
     })
   }
 
-  updateSpecification(specId: number, shortName: string, fullName: string, description: string|undefined, hidden: boolean|undefined, groupId: number|undefined) {
+  updateSpecification(specId: number, shortName: string, fullName: string, description: string|undefined, hidden: boolean|undefined, groupId: number|undefined, badges: BadgesInfo) {
     const params:any = {
       sname: shortName,
       fname: fullName,
@@ -33,10 +36,12 @@ export class SpecificationService {
     if (description != undefined) {
       params.description = description
     }
+    const files = this.dataService.parametersForBadgeUpdate(badges, params)
     return this.restService.post<void>({
       path: ROUTES.controllers.SpecificationService.updateSpecification(specId).url,
       data: params,
-      authenticate: true
+      authenticate: true,
+      files: files
     })
   }
 

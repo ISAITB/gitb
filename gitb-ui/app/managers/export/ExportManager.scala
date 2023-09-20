@@ -3,7 +3,7 @@ package managers.export
 import com.gitb.xml
 import com.gitb.xml.export._
 import managers._
-import models.Enums.{LabelType, SelfRegistrationRestriction, SelfRegistrationType, UserRole}
+import models.Enums.{LabelType, SelfRegistrationRestriction, SelfRegistrationType, TestResultStatus, UserRole}
 import models.{TestCases, Actors => _, Endpoints => _, Systems => _, _}
 import org.apache.commons.codec.binary.Base64
 import org.apache.commons.io.{FileUtils, IOUtils}
@@ -12,6 +12,7 @@ import persistence.db._
 import play.api.db.slick.DatabaseConfigProvider
 import utils.{MimeUtil, RepositoryUtils}
 
+import java.io.File
 import java.nio.file.Files
 import javax.inject.{Inject, Singleton}
 import scala.collection.mutable
@@ -415,6 +416,12 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, domainManager: 
           if (specification.group.nonEmpty) {
             exportedSpecification.setGroup(exportedGroupMap(specification.group.get))
           }
+          exportedSpecification.setBadges(badgesInfo(
+              repositoryUtils.getConformanceBadge(specification.id, None, None, TestResultStatus.SUCCESS.toString, exactMatch = true),
+              repositoryUtils.getConformanceBadge(specification.id, None, None, TestResultStatus.UNDEFINED.toString, exactMatch = true),
+              repositoryUtils.getConformanceBadge(specification.id, None, None, TestResultStatus.FAILURE.toString, exactMatch = true)
+            ).orNull
+          )
           // Actors
           if (exportSettings.actors && specificationActorMap.contains(specification.id)) {
             exportedSpecification.setActors(new com.gitb.xml.export.Actors)
@@ -432,6 +439,12 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, domainManager: 
                 exportedActor.setDefault(false)
               }
               exportedActor.setHidden(actor.hidden)
+              exportedActor.setBadges(badgesInfo(
+                  repositoryUtils.getConformanceBadge(specification.id, Some(actor.id), None, TestResultStatus.SUCCESS.toString, exactMatch = true),
+                  repositoryUtils.getConformanceBadge(specification.id, Some(actor.id), None, TestResultStatus.UNDEFINED.toString, exactMatch = true),
+                  repositoryUtils.getConformanceBadge(specification.id, Some(actor.id), None, TestResultStatus.FAILURE.toString, exactMatch = true)
+                ).orNull
+              )
               // Endpoints.
               if (exportSettings.endpoints && actorEndpointMap.contains(actor.id)) {
                 exportedActor.setEndpoints(new com.gitb.xml.export.Endpoints)
@@ -1025,6 +1038,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, domainManager: 
               exportedSystem.setDescription(system.description.orNull)
               exportedSystem.setVersion(system.version.orNull)
               exportedSystem.setApiKey(system.apiKey.orNull)
+              exportedSystem.setBadgeKey(system.badgeKey)
               // System property values.
               if (exportSettings.customProperties && exportSettings.systemPropertyValues && systemParameterValueMap.contains(system.id)) {
                 exportedSystem.setPropertyValues(new SystemPropertyValues)
@@ -1095,6 +1109,33 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, domainManager: 
       }
     }
     exportData
+  }
+
+  private def badgesInfo(successBadge: Option[File], otherBadge: Option[File], failureBadge: Option[File]): Option[ConformanceBadges] = {
+    var result: Option[ConformanceBadges] = None
+    if (successBadge.isDefined || otherBadge.isDefined || failureBadge.isDefined) {
+      val badges = new ConformanceBadges
+      if (successBadge.isDefined) {
+        val badge = new ConformanceBadge()
+        badge.setName(successBadge.get.getName)
+        badge.setContent(MimeUtil.getFileAsDataURL(successBadge.get, DEFAULT_CONTENT_TYPE))
+        badges.setSuccess(badge)
+      }
+      if (otherBadge.isDefined) {
+        val badge = new ConformanceBadge()
+        badge.setName(otherBadge.get.getName)
+        badge.setContent(MimeUtil.getFileAsDataURL(otherBadge.get, DEFAULT_CONTENT_TYPE))
+        badges.setOther(badge)
+      }
+      if (failureBadge.isDefined) {
+        val badge = new ConformanceBadge()
+        badge.setName(failureBadge.get.getName)
+        badge.setContent(MimeUtil.getFileAsDataURL(failureBadge.get, DEFAULT_CONTENT_TYPE))
+        badges.setFailure(badge)
+      }
+      result = Some(badges)
+    }
+    result
   }
 
 }

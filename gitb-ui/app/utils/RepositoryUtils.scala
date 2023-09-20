@@ -1,12 +1,13 @@
 package utils
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.gitb.core.{Documentation, EndpointParameter, TestCaseType, TestRoleEnumeration, Update}
+import com.gitb.core._
 import com.gitb.utils.XMLUtils
 import config.Configurations
 import managers.{BaseManager, TestSuiteManager}
+import models.Enums.TestResultStatus
 import models._
-import org.apache.commons.io.{FileUtils, IOUtils}
+import org.apache.commons.io.{FileUtils, FilenameUtils, IOUtils}
 import org.apache.commons.lang3.{RandomStringUtils, StringUtils}
 import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
@@ -45,6 +46,9 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 	private final val FILES_SP_PATH: String = "sp"
 	private final val FILES_EP_PATH: String = "ep"
 	private final val FILES_CR_PATH: String = "cr"
+	private final val FILES_BADGES_PATH: String = "badges"
+	private final val FILES_BADGES_LATEST_PATH: String = "latest"
+	private final val FILES_BADGES_SNAPSHOT_PATH: String = "snapshot"
 	private final val DATA_PATH: String = "data"
 	private final val DATA_PATH_IN: String = "in"
 	private final val DATA_PATH_PROCESSED: String = "processed"
@@ -53,6 +57,140 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 
 	def getFilesRootFolder(): File = {
 		Paths.get(Configurations.TEST_CASE_REPOSITORY_PATH, FILES_PATH).toFile
+	}
+
+	def getConformanceBadge(specificationId: Long, actorId: Option[Long], snapshotId: Option[Long], status: String, exactMatch: Boolean): Option[File] = {
+		/*
+		 Structure is as follows (folders in square brackets):
+		 [badges]
+     	[latest]
+      	[SPEC_ID]
+          SUCCESS/FAILURE/UNDEFINED
+          [ACTOR_ID]
+						SUCCESS/FAILURE/UNDEFINED
+      [snapshot]
+        [SNAPSHOT_ID]
+          [SPEC_ID]
+            SUCCESS/FAILURE/UNDEFINED
+            [ACTOR_ID]
+              SUCCESS/FAILURE/UNDEFINED
+		 */
+		val pathParts = new ListBuffer[String]
+		pathParts += FILES_PATH
+		pathParts += FILES_BADGES_PATH
+		if (snapshotId.isDefined) {
+			pathParts += FILES_BADGES_SNAPSHOT_PATH
+			pathParts += snapshotId.get.toString
+		} else {
+			pathParts += FILES_BADGES_LATEST_PATH
+		}
+		pathParts += Math.abs(specificationId).toString
+		val specificationFolder = Paths.get(Configurations.TEST_CASE_REPOSITORY_PATH, pathParts.toList:_*)
+		var badge: Option[Path] = None
+		if (actorId.isDefined) {
+			val actorFolder = specificationFolder.resolve(actorId.get.toString)
+			badge = findBadge(actorFolder, status, exactMatch).headOption
+			if (badge.isEmpty && !exactMatch) {
+				badge = findBadge(specificationFolder, status, exactMatch).headOption
+			}
+		} else {
+			badge = findBadge(specificationFolder, status, exactMatch).headOption
+		}
+		badge.map(_.toFile)
+	}
+
+	private def findBadgeFile(badgeFolder: Path, status: String): List[Path] = {
+		Files.find(badgeFolder, 1, { (file, _) =>
+			status.equals(FilenameUtils.getBaseName(file.getFileName.toString))
+		}).toList.asScala.toList
+	}
+
+	private def findBadge(badgeFolder: Path, status: String, exactMatch: Boolean): List[Path] = {
+		if (Files.exists(badgeFolder)) {
+			val statusValue = TestResultStatus.withName(status)
+			val pathToReturn = if (statusValue == TestResultStatus.SUCCESS) {
+				findBadgeFile(badgeFolder, TestResultStatus.SUCCESS.toString)
+			} else if (statusValue == TestResultStatus.FAILURE) {
+				// Return the failure badge if this is defined.
+				var failurePath = findBadgeFile(badgeFolder, TestResultStatus.FAILURE.toString)
+				if (failurePath.isEmpty && !exactMatch) {
+					// If not defined return the other/incomplete badge.
+					failurePath = findBadgeFile(badgeFolder, TestResultStatus.UNDEFINED.toString)
+				}
+				failurePath
+			} else {
+				findBadgeFile(badgeFolder, TestResultStatus.UNDEFINED.toString)
+			}
+			pathToReturn
+		} else {
+			List.empty
+		}
+	}
+
+	private def badgeFileName(baseName: String, reference: BadgeFile): String = {
+		val extension = FilenameUtils.getExtension(reference.name)
+		if (StringUtils.isBlank(extension)) {
+			baseName
+		} else {
+			baseName + FilenameUtils.EXTENSION_SEPARATOR + extension
+		}
+	}
+
+	def setSpecificationBadge(specificationId: Long, badge: BadgeFile, status: String): Unit = {
+		val specificationFolder = Paths.get(Configurations.TEST_CASE_REPOSITORY_PATH, FILES_PATH, FILES_BADGES_PATH, FILES_BADGES_LATEST_PATH, specificationId.toString)
+		if (Files.notExists(specificationFolder)) {
+			Files.createDirectories(specificationFolder)
+		}
+		_setFile(specificationFolder.resolve(badgeFileName(status, badge)).toFile, badge.file, copy = false)
+	}
+
+	def setActorBadge(specificationId: Long, actorId: Long, badge: BadgeFile, status: String): Unit = {
+		val actorFolder = Paths.get(Configurations.TEST_CASE_REPOSITORY_PATH, FILES_PATH, FILES_BADGES_PATH, FILES_BADGES_LATEST_PATH, specificationId.toString, actorId.toString)
+		if (Files.notExists(actorFolder)) {
+			Files.createDirectories(actorFolder)
+		}
+		_setFile(actorFolder.resolve(badgeFileName(status, badge)).toFile, badge.file, copy = false)
+	}
+
+	def deleteSpecificationBadges(specificationId: Long): Unit = {
+		_deleteFile(Paths.get(Configurations.TEST_CASE_REPOSITORY_PATH, FILES_PATH, FILES_BADGES_PATH, FILES_BADGES_LATEST_PATH, specificationId.toString).toFile)
+	}
+
+	def deleteSpecificationBadge(specificationId: Long, status: String): Unit = {
+		val specificationFolder = Paths.get(Configurations.TEST_CASE_REPOSITORY_PATH, FILES_PATH, FILES_BADGES_PATH, FILES_BADGES_LATEST_PATH, specificationId.toString)
+		if (Files.exists(specificationFolder)) {
+			findBadge(specificationFolder, status, exactMatch = true).foreach { badge =>
+				_deleteFile(badge.toFile)
+			}
+		}
+	}
+
+	def deleteActorBadges(specificationId: Long, actorId: Long): Unit = {
+		_deleteFile(Paths.get(Configurations.TEST_CASE_REPOSITORY_PATH, FILES_PATH, FILES_BADGES_PATH, FILES_BADGES_LATEST_PATH, specificationId.toString, actorId.toString).toFile)
+	}
+
+	def deleteActorBadge(specificationId: Long, actorId: Long, status: String): Unit = {
+		val actorFolder = Paths.get(Configurations.TEST_CASE_REPOSITORY_PATH, FILES_PATH, FILES_BADGES_PATH, FILES_BADGES_LATEST_PATH, specificationId.toString, actorId.toString)
+		if (Files.exists(actorFolder)) {
+			findBadge(actorFolder, status, exactMatch = true).foreach { badge =>
+				_deleteFile(badge.toFile)
+			}
+		}
+	}
+
+	def deleteSnapshotBadges(snapshotId: Long): Unit = {
+		_deleteFile(Paths.get(Configurations.TEST_CASE_REPOSITORY_PATH, FILES_PATH, FILES_BADGES_PATH, FILES_BADGES_SNAPSHOT_PATH, snapshotId.toString).toFile)
+	}
+
+	def addBadgesToConformanceSnapshot(specificationId: Long, snapshotId: Long): Unit = {
+		val specificationFolder = Paths.get(Configurations.TEST_CASE_REPOSITORY_PATH, FILES_PATH, FILES_BADGES_PATH, FILES_BADGES_LATEST_PATH, specificationId.toString)
+		if (Files.exists(specificationFolder)) {
+			val snapshotFolder = Paths.get(Configurations.TEST_CASE_REPOSITORY_PATH, FILES_PATH, FILES_BADGES_PATH, FILES_BADGES_SNAPSHOT_PATH, snapshotId.toString)
+			if (Files.notExists(snapshotFolder)) {
+				Files.createDirectories(snapshotFolder)
+			}
+			FileUtils.copyDirectoryToDirectory(specificationFolder.toFile, snapshotFolder.toFile)
+		}
 	}
 
 	def getCommunityResourceFolder(communityId: Long): File = {
@@ -445,7 +583,7 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 		results.toList
 	}
 
-	def testSuiteActorInfo(tdlTestSuite: com.gitb.tdl.TestSuite): List[Actor] = {
+	def testSuiteActorInfo(tdlTestSuite: com.gitb.tdl.TestSuite): List[models.Actor] = {
 		val tdlActors = toActorList(tdlTestSuite.getActors)
 		val actors = tdlActors.map { tdlActor =>
 			val endpoints = tdlActor.getEndpoint.asScala.map { tdlEndpoint => // construct actor endpoints
@@ -465,13 +603,13 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 					}
 					models.Parameters(0L, labelToUse, tdlParameter.getName, Option(tdlParameter.getDesc), tdlParameter.getUse.value(), tdlParameter.getKind.value(), tdlParameter.isAdminOnly, tdlParameter.isNotForTests, tdlParameter.isHidden, allowedValues, 0, dependsOn, dependsOnValue, Option(tdlParameter.getDefaultValue), 0L)
 				}.toList
-				new Endpoint(Endpoints(0L, tdlEndpoint.getName, Option(tdlEndpoint.getDesc), 0L), parameters)
+				new models.Endpoint(models.Endpoints(0L, tdlEndpoint.getName, Option(tdlEndpoint.getDesc), 0L), parameters)
 			}.toList
 			var displayOrder: Option[Short] = None
 			if (tdlActor.getDisplayOrder != null) {
 				displayOrder = Some(tdlActor.getDisplayOrder)
 			}
-			new Actor(0L, tdlActor.getId, tdlActor.getName, Option(tdlActor.getDesc), Option(tdlActor.isDefault), tdlActor.isHidden, displayOrder, None, Some(endpoints), None, None)
+			new models.Actor(0L, tdlActor.getId, tdlActor.getName, Option(tdlActor.getDesc), Option(tdlActor.isDefault), tdlActor.isHidden, displayOrder, None, Some(endpoints), None, None)
 		}
 		actors
 	}

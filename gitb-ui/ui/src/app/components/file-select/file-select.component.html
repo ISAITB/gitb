@@ -3,10 +3,14 @@
     <button type="button" class="btn btn-default" (click)="onButtonClick()">{{label}}</button>
   </div>
   <div *ngSwitchCase="false" class="input-group">
-    <div class="input-group-btn">
+    <div class="input-group-btn" *ngIf="!extraActions">
       <button class="btn btn-default" type="button" (click)="onButtonClick()" containerClass="shortTooltip" tooltip="Open" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-regular fa-folder-open"></i></button>
     </div>
     <input type="text" autocomplete="off" class="form-control clickable" [value]="(fileName != undefined)?fileName:''" [attr.placeholder]="placeholder" (click)="onButtonClick()" readonly="readonly"/>
+    <div class="input-group-btn" *ngIf="extraActions">
+      <button class="btn btn-default" type="button" (click)="onButtonClick()" containerClass="shortTooltip" tooltip="Open" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-regular fa-folder-open"></i></button>
+      <ng-content></ng-content>
+    </div>
   </div>
   <input #fileInput type="file" style="display:none" (change)="onFileChange()" [attr.accept]="acceptString"/>
 </ng-container>

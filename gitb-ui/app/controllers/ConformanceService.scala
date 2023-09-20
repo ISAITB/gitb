@@ -9,7 +9,7 @@ import models.Enums.{Result => _, _}
 import models._
 import models.prerequisites.PrerequisiteUtil
 import org.apache.commons.codec.binary.Base64
-import org.apache.commons.io.FileUtils
+import org.apache.commons.io.{FileUtils, FilenameUtils}
 import org.apache.commons.lang3.RandomStringUtils
 import org.slf4j.{Logger, LoggerFactory}
 import play.api.mvc._
@@ -72,15 +72,37 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
     val ids = ParameterExtractor.extractLongIdsBodyParameter(request)
     val domainIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.DOMAIN_IDS)
     val groupIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.GROUP_IDS)
-    val withApiKeys = ParameterExtractor.optionalBooleanBodyParameter(request, Parameters.WITH_API_KEYS)
-    val withGroups = ParameterExtractor.optionalBooleanBodyParameter(request, Parameters.GROUPS).getOrElse(true)
     if (domainIds.isDefined && domainIds.get.nonEmpty) {
       authorizationManager.canViewDomains(request, domainIds)
     } else {
       authorizationManager.canViewSpecifications(request, ids)
     }
-    val result = specificationManager.getSpecifications(ids, domainIds, groupIds, withGroups)
-    val json = JsonUtil.jsSpecifications(result, withApiKeys.getOrElse(false)).toString()
+    val result = specificationManager.getSpecifications(ids, domainIds, groupIds)
+    val json = JsonUtil.jsSpecifications(result).toString()
+    ResponseConstructor.constructJsonResponse(json)
+  }
+
+  def nameForBadge(badgeFile: File, baseName: String): String = {
+    val extension = FilenameUtils.getExtension(badgeFile.getName)
+    if (extension.isEmpty) {
+      baseName
+    } else {
+      baseName + "." + extension.toLowerCase
+    }
+  }
+
+  def getSpecification(specificationId: Long) = authorizedAction { request =>
+    authorizationManager.canManageSpecification(request, specificationId)
+    val result = specificationManager.getSpecificationById(specificationId)
+    val successBadge = repositoryUtils.getConformanceBadge(specificationId, None, None, TestResultStatus.SUCCESS.toString, exactMatch = true)
+    val otherBadge = repositoryUtils.getConformanceBadge(specificationId, None, None, TestResultStatus.UNDEFINED.toString, exactMatch = true)
+    val failureBadge = repositoryUtils.getConformanceBadge(specificationId, None, None, TestResultStatus.FAILURE.toString, exactMatch = true)
+    val badgeStatus = BadgeStatus(
+      successBadge.map(nameForBadge(_, "success")),
+      failureBadge.map(nameForBadge(_, "failure")),
+      otherBadge.map(nameForBadge(_, "other"))
+    )
+    val json = JsonUtil.jsSpecification(result, withApiKeys = true, Some(badgeStatus)).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
 
@@ -95,6 +117,26 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
     val result = actorManager.getActorsWithSpecificationId(ids, specificationIds)
     val json = JsonUtil.jsActorsNonCase(result).toString()
     ResponseConstructor.constructJsonResponse(json)
+  }
+
+  def getActor(actorId: Long) = authorizedAction { request =>
+    authorizationManager.canManageActor(request, actorId)
+    val specificationId = ParameterExtractor.requiredQueryParameter(request, Parameters.SPEC).toLong
+    val result = actorManager.getActorsWithSpecificationId(Some(List(actorId)), Some(List(specificationId))).headOption
+    if (result.isDefined) {
+      val successBadge = repositoryUtils.getConformanceBadge(specificationId, Some(result.get.id), None, TestResultStatus.SUCCESS.toString, exactMatch = true)
+      val otherBadge = repositoryUtils.getConformanceBadge(specificationId, Some(result.get.id), None, TestResultStatus.UNDEFINED.toString, exactMatch = true)
+      val failureBadge = repositoryUtils.getConformanceBadge(specificationId, Some(result.get.id), None, TestResultStatus.FAILURE.toString, exactMatch = true)
+      val badgeStatus = BadgeStatus(
+        successBadge.map(nameForBadge(_, "success")),
+        failureBadge.map(nameForBadge(_, "failure")),
+        otherBadge.map(nameForBadge(_, "other"))
+      )
+      val json = JsonUtil.jsActor(result.get, Some(badgeStatus)).toString()
+      ResponseConstructor.constructJsonResponse(json)
+    } else {
+      ResponseConstructor.constructEmptyResponse
+    }
   }
 
   def searchActors() = authorizedAction { request =>
@@ -182,21 +224,27 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
       domainManager.updateDomain(domainId, shortName, fullName, description)
       ResponseConstructor.constructEmptyResponse
     } else{
-      throw new NotFoundException(ErrorCodes.SYSTEM_NOT_FOUND, communityLabelManager.getLabel(request, LabelType.Domain) + " with ID '" + domainId + "' not found.")
+      throw NotFoundException(ErrorCodes.SYSTEM_NOT_FOUND, communityLabelManager.getLabel(request, LabelType.Domain) + " with ID '" + domainId + "' not found.")
     }
   }
 
   def createActor() = authorizedAction { request =>
-    val specificationId = ParameterExtractor.requiredBodyParameter(request, Parameters.SPECIFICATION_ID).toLong
+    val paramMap = ParameterExtractor.paramMap(request)
+    val specificationId = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.SPECIFICATION_ID).toLong
     authorizationManager.canCreateActor(request, specificationId)
-    val actor = ParameterExtractor.extractActor(request)
+    val actor = ParameterExtractor.extractActor(paramMap)
     if (actorManager.checkActorExistsInSpecification(actor.actorId, specificationId, None)) {
-      val labels = communityLabelManager.getLabels(request)
+      val labels = communityLabelManager.getLabelsByUserId(ParameterExtractor.extractUserId(request))
       ResponseConstructor.constructBadRequestResponse(500, communityLabelManager.getLabel(labels, LabelType.Actor)+" already exists for this ID in the " + communityLabelManager.getLabel(labels, LabelType.Specification, true, true)+".")
     } else {
-      val domainId = ParameterExtractor.requiredBodyParameter(request, Parameters.DOMAIN_ID).toLong
-      actorManager.createActorWrapper(actor.toCaseObject(CryptoUtil.generateApiKey(), domainId), specificationId)
-      ResponseConstructor.constructEmptyResponse
+      val badgeInfo = ParameterExtractor.extractBadges(request, paramMap)
+      if (badgeInfo._2.nonEmpty) {
+        badgeInfo._2.get
+      } else {
+        val domainId = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.DOMAIN_ID).toLong
+        actorManager.createActorWrapper(actor.toCaseObject(CryptoUtil.generateApiKey(), domainId), specificationId, badgeInfo._1)
+        ResponseConstructor.constructEmptyResponse
+      }
     }
   }
 
@@ -204,7 +252,7 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
     val endpoint = ParameterExtractor.extractEndpoint(request)
     authorizationManager.canCreateEndpoint(request, endpoint.actor)
     if (endpointManager.checkEndPointExistsForActor(endpoint.name, endpoint.actor, None)) {
-      val labels = communityLabelManager.getLabels(request)
+      val labels = communityLabelManager.getLabelsByUserId(ParameterExtractor.extractUserId(request))
       ResponseConstructor.constructBadRequestResponse(500, communityLabelManager.getLabel(labels, LabelType.Endpoint)+" with this name already exists for the "+communityLabelManager.getLabel(labels, LabelType.Actor, true, true))
     } else{
       endpointManager.createEndpointWrapper(endpoint)
@@ -224,10 +272,16 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
   }
 
   def createSpecification() = authorizedAction { request =>
-    val specification = ParameterExtractor.extractSpecification(request)
+    val paramMap = ParameterExtractor.paramMap(request)
+    val specification = ParameterExtractor.extractSpecification(paramMap)
     authorizationManager.canCreateSpecification(request, specification.domain)
-    specificationManager.createSpecifications(specification)
-    ResponseConstructor.constructEmptyResponse
+    val badgeInfo = ParameterExtractor.extractBadges(request, paramMap)
+    if (badgeInfo._2.nonEmpty) {
+      badgeInfo._2.get
+    } else {
+      specificationManager.createSpecifications(specification, badgeInfo._1)
+      ResponseConstructor.constructEmptyResponse
+    }
   }
 
   def getEndpointsForActor(actorId: Long) = authorizedAction { request =>
@@ -888,6 +942,48 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
     authorizationManager.canManageConformanceSnapshot(request, snapshotId)
     conformanceManager.deleteConformanceSnapshot(snapshotId)
     ResponseConstructor.constructEmptyResponse
+  }
+
+  def conformanceBadge(systemKey: String, actorKey: String): Action[AnyContent] = authorizedAction { request =>
+    authorizationManager.canLookupConformanceBadge(request)
+    val badge = conformanceManager.getConformanceBadge(systemKey: String, actorKey: String, None)
+    if (badge.isDefined && badge.get.exists()) {
+      Ok.sendFile(content = badge.get)
+    } else {
+      NotFound
+    }
+  }
+
+  def conformanceBadgeForSnapshot(systemKey: String, actorKey: String, snapshotKey: String): Action[AnyContent] = authorizedAction { request =>
+    authorizationManager.canLookupConformanceBadge(request)
+    val badge = conformanceManager.getConformanceBadge(systemKey: String, actorKey: String, Some(snapshotKey))
+    if (badge.isDefined && badge.get.exists()) {
+      Ok.sendFile(content = badge.get)
+    } else {
+      NotFound
+    }
+  }
+
+  def conformanceBadgeByIds(systemId: Long, actorId: Long): Action[AnyContent] = authorizedAction { request =>
+    authorizationManager.canViewSystem(request, systemId)
+    val snapshotId = ParameterExtractor.optionalLongQueryParameter(request, Parameters.SNAPSHOT)
+    val badge = conformanceManager.getConformanceBadgeByIds(systemId, actorId, snapshotId)
+    if (badge.isDefined && badge.get.exists()) {
+      Ok.sendFile(content = badge.get)
+    } else {
+      NotFound
+    }
+  }
+
+  def conformanceBadgeUrl(systemId: Long, actorId: Long): Action[AnyContent] = authorizedAction { request =>
+    authorizationManager.canViewSystem(request, systemId)
+    val snapshotId = ParameterExtractor.optionalLongQueryParameter(request, Parameters.SNAPSHOT)
+    val url = conformanceManager.getConformanceBadgeUrl(systemId, actorId, snapshotId)
+    if (url.isDefined) {
+      ResponseConstructor.constructStringResponse(url.get)
+    } else {
+      ResponseConstructor.constructEmptyResponse
+    }
   }
 
 }

@@ -24,11 +24,9 @@
                         <button class="btn btn-default" type="button" (click)="cancelDetailOrganisation()">Back</button>
                     </ng-container>
                 </div>
-                <ng-container *ngIf="showAdminInfo">
-                    <div class="btn-toolbar">
-                        <button class="btn btn-link" type="button" (click)="deleteOrganisation()" [disable]="savePending" [pending]="deletePending">Delete</button>
-                    </div>
-                </ng-container>
+                <div class="btn-toolbar" *ngIf="showAdminInfo">
+                    <button class="btn btn-link" type="button" (click)="deleteOrganisation()" [disable]="savePending" [pending]="deletePending">Delete</button>
+                </div>
             </div>
         </form>
     </div>

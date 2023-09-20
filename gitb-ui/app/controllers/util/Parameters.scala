@@ -32,7 +32,6 @@ object Parameters {
   val SORT_ORDER = "sort_order"
   val CREATION_ORDER_SORT = "creationOrderSort"
   //Some common parameters
-  val USERNAME = "username"
   val PASSWORD = "password"
   val NAME     = "name"
   val EMAIL    = "email"
@@ -59,11 +58,6 @@ object Parameters {
   val LEGAL_NOTICE_ID = "legal_notice_id"
   val ERROR_TEMPLATE_ID = "error_template_id"
 
-  //Authentication Service and OAuth 2.0 parameters
-  val GRANT_TYPE = "grant_type"
-  val GRANT_TYPE_PASSWORD = "password"
-  val REFRESH_TOKEN = "refresh_token"
-
   //System configuration parameters
   val PARAMETER = "parameter"
   val PARAMETER_ID = "parameter_id"
@@ -74,7 +68,6 @@ object Parameters {
   val USER_NAME    = "user_name"
   val USER_EMAIL   = "user_email"
   val OLD_PASSWORD = "old_password"
-  val USER_ROLE    = "user_role"
   val ROLE_ID      = "role_id"
   val ORGANIZATION_ID = "organization_id"
   val OTHER_ORGANISATION = "other_organisation"
@@ -99,18 +92,13 @@ object Parameters {
   val IS_BASE64 = "is_base64"
 
   //Conformance Service parameters
-  val ACTORS  = "actors"
   val ACTOR   = "actor"
   val SPEC    = "spec"
   val SPECS   = "specs"
-  val OPTION  = "option"
   val OPTIONS = "options"
 	val SHORT_NAME = "sname"
 	val FULL_NAME = "fname"
 	val DESC  = "description"
-	val URLS = "urls"
-	val DIAGRAM = "diagram"
-	val SPEC_TYPE = "spec_type"
 	val DOMAIN_ID = "domain_id"
   val GROUP_ID = "group_id"
   val GROUP_IDS = "group_ids"
@@ -120,8 +108,6 @@ object Parameters {
   val ACTIONS = "actions"
   val PENDING_ID = "pending_id"
   val PENDING_ACTION = "pending_action"
-  val PENDING_ACTION_HISTORY = "pending_action_history"
-  val PENDING_ACTION_METADATA = "pending_action_metadata"
   val FULL = "full"
   val TESTS = "tests"
   val ITEMS = "items"
@@ -152,11 +138,8 @@ object Parameters {
   val ACTOR_IDS   = "actor_ids"
   val ENDPOINT_ID   = "endpoint_id"
   val TEST_ID    = "test_id"
-  val INCLUDE_CONTEXT = "include_context"
   val SESSION_ID = "session_id"
-  val TEST_IDS   = "test_ids"
   val SESSION_IDS= "session_ids"
-  val CONFIGS    = "configs"
   val CONFIG     = "config"
   val INPUTS     = "inputs"
   val VALUES     = "values"
@@ -192,9 +175,16 @@ object Parameters {
   val FILTER = "filter"
 
   val SEQUENTIAL = "sequential"
-  var WITH_API_KEYS = "with_api_keys"
   var PAYLOAD = "payload"
 
   var UPDATE = "update"
   var SHARED = "shared"
+
+  val SUCCESS_BADGE = "success_badge"
+  val FAILURE_BADGE = "failure_badge"
+  val OTHER_BADGE = "other_badge"
+  val SUCCESS_BADGE_ENABLED = "success_badge_enabled"
+  val FAILURE_BADGE_ENABLED = "failure_badge_enabled"
+  val OTHER_BADGE_ENABLED = "other_badge_enabled"
+
 }

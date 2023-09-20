@@ -376,7 +376,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityRes
   def deleteCommunity(communityId: Long): Unit = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction = {
-      conformanceManager.deleteConformanceSnapshotsOfCommunity(communityId) andThen
+      conformanceManager.deleteConformanceSnapshotsOfCommunity(communityId, onSuccessCalls) andThen
       organizationManager.deleteOrganizationByCommunity(communityId, onSuccessCalls) andThen
       landingPageManager.deleteLandingPageByCommunity(communityId) andThen
       legalNoticeManager.deleteLegalNoticeByCommunity(communityId) andThen

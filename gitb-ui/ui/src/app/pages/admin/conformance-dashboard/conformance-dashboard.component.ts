@@ -187,6 +187,7 @@ export class ConformanceDashboardComponent implements OnInit {
         this.conformanceService.getConformanceStatus(statement.actorId, statement.systemId, this.activeConformanceSnapshot?.id)
         .subscribe((data) => {
           if (data) {
+            statement.hasBadge = data.summary.hasBadge
             statement.testSuites = data.testSuites
             this.organiseTestSuites(statement)
           }
@@ -297,6 +298,10 @@ export class ConformanceDashboardComponent implements OnInit {
     })
   }
 
+  toCommunity(statement: ConformanceResultFull) {
+    this.routingService.toCommunity(statement.communityId)
+  }
+
   toOrganisation(statement: ConformanceResultFull) {
     if (statement.organizationId == this.dataService.vendor!.id) {
       // Own organisation
@@ -330,12 +335,20 @@ export class ConformanceDashboardComponent implements OnInit {
     return this.showToSystem(statement) && statement.actorId != undefined && statement.actorId >= 0
   }
 
+  toDomain(statement: ConformanceResultFull) {
+    this.routingService.toDomain(statement.domainId)
+  }
+
+  showToDomain(statement: ConformanceResultFull) {
+    return statement.domainId != undefined && statement.domainId >= 0
+  }
+
   toSpecification(statement: ConformanceResultFull) {
     this.routingService.toSpecification(statement.domainId, statement.specId)
   }
 
   showToSpecification(statement: ConformanceResultFull) {
-    return statement.domainId != undefined && statement.domainId >= 0 && statement.specId != undefined && statement.specId >= 0
+    return this.showToDomain(statement) && statement.specId != undefined && statement.specId >= 0
   }
 
   toActor(statement: ConformanceResultFull) {

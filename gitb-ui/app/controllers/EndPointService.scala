@@ -21,7 +21,7 @@ class EndPointService @Inject() (authorizedAction: AuthorizedAction, cc: Control
     val description:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DESC)
     val actorId = ParameterExtractor.requiredBodyParameter(request, Parameters.ACTOR_ID).toLong
     if (endPointManager.checkEndPointExistsForActor(name, actorId, Some(endPointId))) {
-      val labels = communityLabelManager.getLabels(request)
+      val labels = communityLabelManager.getLabelsByUserId(ParameterExtractor.extractUserId(request))
       ResponseConstructor.constructBadRequestResponse(500, communityLabelManager.getLabel(labels, models.Enums.LabelType.Endpoint) + " with this name already exists for the " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Actor, true, true)+".")
     } else{
       endPointManager.updateEndPointWrapper(endPointId, name, description)

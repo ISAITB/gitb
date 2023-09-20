@@ -802,7 +802,7 @@ class TestSuiteManager @Inject() (domainParameterManager: DomainParameterManager
 						if (!updateActions.updateActors.get || isActorReference(actorToSave) || theSameActor(existingActor.get, actorToSave)) {
 							result += new TestSuiteUploadItemResult(existingActor.get.name, TestSuiteUploadItemResult.ITEM_TYPE_ACTOR, TestSuiteUploadItemResult.ACTION_TYPE_UNCHANGED, specificationId)
 						} else {
-							updateAction = Some(actorManager.updateActor(existingActor.get.id, actorToSave.actorId, actorToSave.name, actorToSave.description, actorToSave.default, actorToSave.hidden, actorToSave.displayOrder, specificationId, None, checkApiKeyUniqueness = false))
+							updateAction = Some(actorManager.updateActor(existingActor.get.id, actorToSave.actorId, actorToSave.name, actorToSave.description, actorToSave.default, actorToSave.hidden, actorToSave.displayOrder, specificationId, None, checkApiKeyUniqueness = false, None, onSuccessCalls))
 							result += new TestSuiteUploadItemResult(existingActor.get.name, TestSuiteUploadItemResult.ITEM_TYPE_ACTOR, TestSuiteUploadItemResult.ACTION_TYPE_UPDATE, specificationId)
 						}
 						savedActorId = DBIO.successful(existingActor.get.id)
@@ -812,7 +812,7 @@ class TestSuiteManager @Inject() (domainParameterManager: DomainParameterManager
 							throw new IllegalStateException("Actor reference [" + actorToSave.actorId + "] not found in specification")
 						} else {
 							// New actor.
-							savedActorId = actorManager.createActor(actorToSave, specificationId)
+							savedActorId = actorManager.createActor(actorToSave, specificationId, checkApiKeyUniqueness = false, None, onSuccessCalls)
 							savedActorStringId = actorToSave.actorId
 						}
 						result += new TestSuiteUploadItemResult(actorToSave.actorId, TestSuiteUploadItemResult.ITEM_TYPE_ACTOR, TestSuiteUploadItemResult.ACTION_TYPE_ADD, specificationId)

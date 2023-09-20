@@ -47,7 +47,7 @@
                 <div *ngIf="isReadonly">
                   <p class="form-control-static"><a *ngIf="property.value != undefined" href (click)="downloadProperty(property);$event.preventDefault()" style="padding-right:10px;">{{fileName(property)}}</a><span *ngIf="isReadonly && property.desc" [ngStyle]="{'margin-left':(property.value?'20px':'0px')}" [tooltip]="property.desc" [containerClass]="'tooltipContainer'"><i class="fa-solid fa-question-circle"></i></span></p>
                 </div>
-                <div *ngIf="!isReadonly">
+                <div *ngIf="!isReadonly" class="filePropertyRow">
                   <span *ngIf="property.value == undefined && property.adminOnly && !isAdmin" class="form-control-static">&nbsp;</span>
                   <p *ngIf="property.value != undefined && property.adminOnly && !isAdmin" class="form-control-static"><a href (click)="downloadProperty(property);$event.preventDefault()" style="padding-right:10px;">{{fileName(property)}}</a></p>
                   <span *ngIf="property.value != undefined && (!property.adminOnly || isAdmin)" class="form-control-static"><a href (click)="downloadProperty(property);$event.preventDefault()" style="padding-right:10px;">{{fileName(property)}}</a></span>

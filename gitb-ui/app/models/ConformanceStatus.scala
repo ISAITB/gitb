@@ -13,5 +13,6 @@ class ConformanceStatus (
   var undefinedOptional: Int,
   var result: TestResultType,
   var updateTime: Option[Timestamp],
+  var hasBadge: Boolean,
   var testSuites: Iterable[ConformanceTestSuite]
 ) {}

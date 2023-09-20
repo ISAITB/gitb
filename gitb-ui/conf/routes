@@ -88,6 +88,7 @@ POST	/api/domains/suites/linkconfirm         @controllers.ConformanceService.con
 POST	/api/domains/suites/unlink              @controllers.ConformanceService.unlinkSharedTestSuite()
 GET     /api/domains/suites/:testsuite_id/linked @controllers.TestSuiteService.getLinkedSpecifications(testsuite_id: Long)
 POST    /api/search/specs                       @controllers.ConformanceService.getSpecs()
+GET     /api/spec/:spec_id                      @controllers.ConformanceService.getSpecification(spec_id: Long)
 POST    /api/specs                              @controllers.ConformanceService.createSpecification()
 GET	    /api/specs/:spec_id/actors              @controllers.ConformanceService.getSpecActors(spec_id : Long)
 GET	    /api/specs/:spec_id/suites              @controllers.ConformanceService.getSpecTestSuites(spec_id : Long)
@@ -112,6 +113,7 @@ POST    /api/search/actors                      @controllers.ConformanceService.
 POST    /api/search/actorsInDomain              @controllers.ConformanceService.searchActorsInDomain()
 POST    /api/search/actorsForIds                @controllers.ConformanceService.getActors()
 POST    /api/actors                             @controllers.ConformanceService.createActor()
+GET     /api/actors/:actor_id                   @controllers.ConformanceService.getActor(actor_id: Long)
 DELETE  /api/actors/:actor_id                   @controllers.ActorService.deleteActor(actor_id : Long)
 POST    /api/actors/:actor_id                   @controllers.ActorService.updateActor(actor_id : Long)
 GET	    /api/actors/:actor_id/conformance/:sut_id @controllers.ConformanceService.getConformanceStatus(actor_id : Long, sut_id : Long)
@@ -262,7 +264,7 @@ GET     /api/tests/result/:sessionId            @controllers.ReportService.getTe
 
 # Test management API
 GET	    /api/tests/:test_id/definition          @controllers.TestService.getTestCaseDefinition(test_id : String)
-GET	    /api/actors/definition                  @controllers.TestService.getActorDefinitions()
+GET	    /api/actordefinitions                   @controllers.TestService.getActorDefinitions()
 POST	/api/tests/:test_id/initiate            @controllers.TestService.initiate(test_id:String)
 POST	/api/tests/:session_id/configure        @controllers.TestService.configure(session_id:String)
 POST	/api/tests/:session_id/provide          @controllers.TestService.provideInput(session_id:String)
@@ -343,7 +345,14 @@ POST    /api/rest/testsuite/undeployShared                       @controllers.Te
 POST    /api/rest/testsuite/linkShared                           @controllers.TestSuiteAutomationService.linkShared()
 POST    /api/rest/testsuite/unlinkShared                         @controllers.TestSuiteAutomationService.unlinkShared()
 
-GET     /resources/:resourceName                    @controllers.CommunityService.downloadCommunityResourceByName(resourceName: String)
+GET     /resources/:resourceName                                 @controllers.CommunityService.downloadCommunityResourceByName(resourceName: String)
+
+GET     /badge/:systemKey/:actorKey                              @controllers.ConformanceService.conformanceBadge(systemKey: String, actorKey: String)
+GET     /badge/:systemKey/:actorKey/:snapshotKey                 @controllers.ConformanceService.conformanceBadgeForSnapshot(systemKey: String, actorKey: String, snapshotKey: String)
+GET     /api/badge/spec/:spec_id/badge/:status                   @controllers.SpecificationService.getBadgeForStatus(spec_id: Long, status: String)
+GET     /api/badge/spec/:spec_id/actor/:actor_id/badge/:status   @controllers.ActorService.getBadgeForStatus(spec_id: Long, actor_id: Long, status: String)
+GET     /api/badgeurl/system/:systemId/actor/:actorId            @controllers.ConformanceService.conformanceBadgeUrl(systemId: Long, actorId: Long)
+GET     /api/badge/system/:systemId/actor/:actorId               @controllers.ConformanceService.conformanceBadgeByIds(systemId: Long, actorId: Long)
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)

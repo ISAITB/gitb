@@ -65,12 +65,22 @@
                                             <span><i class="fa-solid fa-spinner fa-spin-override fa-lg"></i></span>
                                         </div>
                                         <div class="statementControls">
-                                            <div class="statementButtons btn-toolbar" *ngIf="showToOrganisation(statement) || showToSystem(statement) || showToStatement(statement) || showToSpecification(statement) || showToActor(statement)">
-                                                <button type="button" class="btn btn-default" *ngIf="showToOrganisation(statement)" (click)="toOrganisation(statement)">View {{dataService.labelOrganisationLower()}}</button>
-                                                <button type="button" class="btn btn-default" *ngIf="showToSystem(statement)" (click)="toSystem(statement)">View {{dataService.labelSystemLower()}}</button>
-                                                <button type="button" class="btn btn-default" *ngIf="showToStatement(statement)" (click)="toStatement(statement)">View conformance statement</button>
-                                                <button type="button" class="btn btn-default" *ngIf="showToSpecification(statement)" (click)="toSpecification(statement)">View {{dataService.labelSpecificationLower()}}</button>
-                                                <button type="button" class="btn btn-default" *ngIf="showToActor(statement)" (click)="toActor(statement)">View {{dataService.labelActorLower()}}</button>
+                                            <div class="statementButtons btn-toolbar" *ngIf="showToOrganisation(statement) || showToSystem(statement) || showToStatement(statement) || showToDomain(statement) || showToSpecification(statement) || showToActor(statement)">
+                                                <div class="btn-group" dropdown>
+                                                    <button id="button-navigation" dropdownToggle type="button" class="btn btn-default dropdown-toggle" aria-controls="dropdown-navigation">Go to ...<span class="caret withMargin"></span></button>
+                                                    <ul id="dropdown-navigation" *dropdownMenu class="dropdown-menu dropdown-menu" role="menu" aria-labelledby="button-navigation">
+                                                        <li *ngIf="showToStatement(statement)" role="menuitem"><a class="dropdown-item" href (click)="toStatement(statement); $event.preventDefault()">Conformance statement</a></li>
+                                                        <li class="divider dropdown-divider" *ngIf="showToStatement(statement)"></li>
+                                                        <li role="menuitem"><a class="dropdown-item" href (click)="toCommunity(statement); $event.preventDefault()">Community</a></li>
+                                                        <li *ngIf="showToOrganisation(statement)" role="menuitem"><a class="dropdown-item" href (click)="toOrganisation(statement); $event.preventDefault()">{{dataService.labelOrganisation()}}</a></li>
+                                                        <li *ngIf="showToSystem(statement)" role="menuitem"><a class="dropdown-item" href (click)="toSystem(statement); $event.preventDefault()">{{dataService.labelSystem()}}</a></li>
+                                                        <li class="divider dropdown-divider" *ngIf="showToDomain(statement) || showToSpecification(statement) || showToActor(statement)"></li>
+                                                        <li *ngIf="showToDomain(statement)" role="menuitem"><a class="dropdown-item" href (click)="toDomain(statement); $event.preventDefault()">{{dataService.labelDomain()}}</a></li>
+                                                        <li *ngIf="showToSpecification(statement)" role="menuitem"><a class="dropdown-item" href (click)="toSpecification(statement); $event.preventDefault()">{{dataService.labelSpecification()}}</a></li>
+                                                        <li *ngIf="showToActor(statement)" role="menuitem"><a class="dropdown-item" href (click)="toActor(statement); $event.preventDefault()">{{dataService.labelActor()}}</a></li>
+                                                    </ul>
+                                                </div>
+                                                <app-view-badge-button *ngIf="statement.hasBadge" [systemId]="statement.systemId" [actorId]="statement.actorId" [snapshotId]="activeConformanceSnapshot?.id" [leftMargin]="true"></app-view-badge-button>
                                             </div>
                                             <div class="statementRatios">
                                                 <app-test-result-ratio [counters]="statement.counters!" [asLine]="true"></app-test-result-ratio>

@@ -82,8 +82,9 @@ object PersistenceSchema {
     def description = column[Option[String]]("description", O.SqlType("TEXT"))
     def version = column[Option[String]]("version")
     def apiKey = column[Option[String]]("api_key")
+    def badgeKey = column[String]("badge_key")
     def owner = column[Long]("owner")
-    def * = (id, shortname, fullname, description, version, apiKey, owner) <> (Systems.tupled, Systems.unapply)
+    def * = (id, shortname, fullname, description, version, apiKey, badgeKey, owner) <> (Systems.tupled, Systems.unapply)
   }
   val systems = TableQuery[SystemsTable]
   val insertSystem = systems returning systems.map(_.id)
@@ -597,8 +598,9 @@ object PersistenceSchema {
     def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
     def label = column[String]("label")
     def snapshotTime = column[Timestamp]("snapshot_time", O.SqlType("TIMESTAMP"))
+    def apiKey = column[String]("api_key")
     def community = column[Long]("community")
-    def * = (id, label, snapshotTime, community) <> (ConformanceSnapshot.tupled, ConformanceSnapshot.unapply)
+    def * = (id, label, snapshotTime, apiKey, community) <> (ConformanceSnapshot.tupled, ConformanceSnapshot.unapply)
   }
   val conformanceSnapshots = TableQuery[ConformanceSnapshotsTable]
   val insertConformanceSnapshot = conformanceSnapshots returning conformanceSnapshots.map(_.id)
@@ -609,6 +611,7 @@ object PersistenceSchema {
     def organisation = column[String] ("organization")
     def systemId = column[Long]("sut_id")
     def system = column[String]("sut")
+    def systemBadgeKey = column[String]("system_badge_key")
     def domainId = column[Long]("domain_id")
     def domain = column[String]("domain")
     def specificationGroupId = column[Option[Long]]("spec_group_id")
@@ -619,6 +622,7 @@ object PersistenceSchema {
     def specificationDisplayOrder = column[Short]("spec_display_order")
     def actorId = column[Long]("actor_id")
     def actor = column[String]("actor")
+    def actorApiKey = column[String]("actor_api_key")
     def testSuiteId = column[Long]("test_suite_id")
     def testSuite = column[String]("test_suite")
     def testSuiteDescription = column[Option[String]]("test_suite_description", O.SqlType("TEXT"))
@@ -634,7 +638,7 @@ object PersistenceSchema {
     def outputMessage = column[Option[String]]("output_message", O.SqlType("TEXT"))
     def updateTime = column[Option[Timestamp]]("update_time", O.SqlType("TIMESTAMP"))
     def snapshotId = column[Long]("snapshot_id")
-    def * = (id :: snapshotId :: organisationId :: organisation :: systemId :: system :: domainId :: domain :: specificationGroupId :: specificationGroup :: specificationGroupDisplayOrder :: specificationId :: specification :: specificationDisplayOrder :: actorId :: actor :: testSuiteId :: testSuite :: testSuiteDescription :: testCaseId :: testCase :: testCaseDescription :: testCaseOrder:: testCaseIsOptional :: testCaseIsDisabled :: testCaseTags :: testSessionId :: result :: outputMessage :: updateTime :: HNil).mapTo[ConformanceSnapshotResult]
+    def * = (id :: snapshotId :: organisationId :: organisation :: systemId :: system :: systemBadgeKey :: domainId :: domain :: specificationGroupId :: specificationGroup :: specificationGroupDisplayOrder :: specificationId :: specification :: specificationDisplayOrder :: actorId :: actor :: actorApiKey :: testSuiteId :: testSuite :: testSuiteDescription :: testCaseId :: testCase :: testCaseDescription :: testCaseOrder:: testCaseIsOptional :: testCaseIsDisabled :: testCaseTags :: testSessionId :: result :: outputMessage :: updateTime :: HNil).mapTo[ConformanceSnapshotResult]
   }
   val conformanceSnapshotResults = TableQuery[ConformanceSnapshotResultsTable]
   val insertConformanceSnapshotResult = conformanceSnapshotResults returning conformanceSnapshotResults.map(_.id)

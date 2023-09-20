@@ -15,6 +15,7 @@ export class FileSelectComponent implements OnInit {
   @Input() label?: string
   @Input() accepts?: string[]
   @Input() maxSize!: number
+  @Input() extraActions = false
   @Output() onUpload: EventEmitter<FileData> = new EventEmitter()
   @ViewChild('fileInput') fileInput?: ElementRef
 
@@ -43,15 +44,17 @@ export class FileSelectComponent implements OnInit {
   onFileChange() {
     const files: { [key: string]: File} = this.fileInput?.nativeElement.files
     const file = files[0]
-    if (this.maxSize > 0 && file.size >= this.maxSize) {
-      this.errorService.showSimpleErrorMessage('File upload problem', 'The maximum allowed size for files is '+this.maxSizeKbs+' KBs.')
-    } else {
-      this.onUpload.emit({
-        name: file.name,
-        size: file.size,
-        type: file.type,
-        file: file
-      })
+    if (file != undefined) {
+      if (this.maxSize > 0 && file.size >= this.maxSize) {
+        this.errorService.showSimpleErrorMessage('File upload problem', 'The maximum allowed size for files is '+this.maxSizeKbs+' KBs.')
+      } else {
+        this.onUpload.emit({
+          name: file.name,
+          size: file.size,
+          type: file.type,
+          file: file
+        })
+      }
     }
   }
 

@@ -26,6 +26,7 @@ import { Specification } from '../types/specification';
 import { DomainSpecification } from '../types/domain-specification';
 import { find } from 'lodash';
 import { PageChange } from '../types/page-change';
+import { BadgesInfo } from '../components/manage-badges/badges-info';
 
 @Injectable({
   providedIn: 'root'
@@ -518,10 +519,38 @@ export class DataService {
       result = ".png"
     } else if (mimeType == "image/gif") {
       result = ".gif"
-    } else if (mimeType == "image/gif") {
-      result = ".gif"
     } else if (mimeType == "image/jpeg") {
       result = ".jpeg"
+    } else if (mimeType == "image/svg+xml") {
+      result = ".svg"
+    }
+    return result
+  }
+
+  mimeTypeFromExtension(extension: string|undefined) {
+    let result: string
+    if (extension == ".xml") {
+      result = "application/xml"
+    } else if (extension == ".zip") {
+      result = "application/zip"
+    } else if (extension == ".cer") {
+      result = "application/pkix-cert"
+    } else if (extension == ".pdf") {
+      result = "application/pdf"
+    } else if (extension == ".json") {
+      result = "application/json"
+    } else if (extension == ".txt") {
+      result = "text/plain"
+    } else if (extension == ".png") {
+      result = "image/png"
+    } else if (extension == ".gif") {
+      result = "image/gif"
+    } else if (extension == ".jpeg" || extension == ".jpg") {
+      result = "image/jpeg"
+    } else if (extension == ".svg") {
+      result = "image/svg+xml"
+    } else {
+      result = "application/octet-stream"
     }
     return result
   }
@@ -1199,6 +1228,26 @@ export class DataService {
 
   public changeBanner(banner: string) {
     this.onBannerChangeSource.next(banner)
+  }
+
+  parametersForBadgeUpdate(badges: BadgesInfo, params:any): FileParam[]|undefined {
+    let files: FileParam[]|undefined
+    params.success_badge_enabled = badges && badges.enabled && badges.success.enabled
+    params.other_badge_enabled = badges && badges.enabled && badges.other.enabled
+    params.failure_badge_enabled = badges && badges.enabled && badges.failureBadgeActive && badges.failure.enabled
+    if (badges && badges.enabled) {
+      files = []
+      if (badges.success.enabled && badges.success.file && badges.success.file.file) {
+        files.push({ param: 'success_badge', data: badges.success.file.file})
+      }
+      if (badges.other.enabled && badges.other.file && badges.other.file.file) {
+        files.push({ param: 'other_badge', data: badges.other.file.file})
+      }
+      if (badges.failureBadgeActive && badges.failure.enabled && badges.failure.file && badges.failure.file.file) {
+        files.push({ param: 'failure_badge', data: badges.failure.file.file})
+      }
+    }
+    return files
   }
 
 }

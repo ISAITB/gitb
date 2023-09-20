@@ -134,8 +134,20 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils, testResultManag
       } else {
         DBIO.successful(false)
       }
+      replaceBadgeKey <- {
+        if (system.badgeKey.isEmpty) {
+          DBIO.successful(true)
+        } else {
+          if (checkApiKeyUniqueness) {
+            PersistenceSchema.systems.filter(_.badgeKey === system.badgeKey).exists.result
+          } else {
+            DBIO.successful(false)
+          }
+        }
+      }
       newSysId <- {
-        val sysToUse = if (replaceApiKey) system.withApiKey(CryptoUtil.generateApiKey()) else system
+        var sysToUse = if (replaceApiKey) system.withApiKey(CryptoUtil.generateApiKey()) else system
+        sysToUse = if (replaceBadgeKey) system.withBadgeKey(CryptoUtil.generateApiKey()) else sysToUse
         PersistenceSchema.insertSystem += sysToUse
       }
     } yield newSysId
@@ -245,15 +257,16 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils, testResultManag
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction = for {
       communityId <- getCommunityIdForSystemId(systemId)
-      linkedActorIds <- updateSystemProfileInternal(Some(userId), None, systemId, sname, fname, description, version, None, otherSystem, propertyValues, propertyFiles, copySystemParameters, copyStatementParameters, checkApiKeyUniqueness = false, onSuccessCalls)
+      linkedActorIds <- updateSystemProfileInternal(Some(userId), None, systemId, sname, fname, description, version, None, None, otherSystem, propertyValues, propertyFiles, copySystemParameters, copyStatementParameters, checkApiKeyUniqueness = false, onSuccessCalls)
     } yield (communityId, linkedActorIds)
     val result = exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
     triggerHelper.publishTriggerEvent(new SystemUpdatedEvent(result._1, systemId))
     triggerHelper.triggersFor(result._1, systemId, Some(result._2))
   }
 
-  def updateSystemProfileInternal(userId: Option[Long], communityId: Option[Long], systemId: Long, sname: String, fname: String, description: Option[String], version: Option[String], apiKey: Option[Option[String]], otherSystem: Option[Long], propertyValues: Option[List[SystemParameterValues]], propertyFiles: Option[Map[Long, FileInfo]], copySystemParameters: Boolean, copyStatementParameters: Boolean, checkApiKeyUniqueness: Boolean, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[List[Long]] = {
+  def updateSystemProfileInternal(userId: Option[Long], communityId: Option[Long], systemId: Long, sname: String, fname: String, description: Option[String], version: Option[String], apiKey: Option[Option[String]], badgeKey: Option[String], otherSystem: Option[Long], propertyValues: Option[List[SystemParameterValues]], propertyFiles: Option[Map[Long, FileInfo]], copySystemParameters: Boolean, copyStatementParameters: Boolean, checkApiKeyUniqueness: Boolean, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[List[Long]] = {
     for {
+      _ <- PersistenceSchema.systems.filter(_.id === systemId).map(s => (s.shortname, s.fullname, s.version, s.description)).update(sname, fname, version, description)
       _ <- {
         val actions = new ListBuffer[DBIO[_]]()
         if (apiKey.isDefined) {
@@ -268,13 +281,25 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils, testResultManag
             }
             _ <- {
               val apiKeyToUse = if (replaceApiKey) Some(CryptoUtil.generateApiKey()) else apiKey.get
-              val q = for {s <- PersistenceSchema.systems if s.id === systemId} yield (s.shortname, s.fullname, s.version, s.description, s.apiKey)
-              q.update(sname, fname, version, description, apiKeyToUse)
+              PersistenceSchema.systems.filter(_.id === systemId).map(_.apiKey).update(apiKeyToUse)
             }
           } yield ())
-        } else {
-          val q = for {s <- PersistenceSchema.systems if s.id === systemId} yield (s.shortname, s.fullname, s.version, s.description)
-          actions += q.update(sname, fname, version, description)
+        }
+        if (badgeKey.isDefined) {
+          // Update the badge key conditionally.
+          actions += (for {
+            replaceBadgeKey <- {
+              if (badgeKey.isDefined && checkApiKeyUniqueness) {
+                PersistenceSchema.systems.filter(_.badgeKey === badgeKey.get).filter(_.id =!= systemId).exists.result
+              } else {
+                DBIO.successful(false)
+              }
+            }
+            _ <- {
+              val badgeKeyToUse = if (replaceBadgeKey) CryptoUtil.generateApiKey() else badgeKey.get
+              PersistenceSchema.systems.filter(_.id === systemId).map(_.badgeKey).update(badgeKeyToUse)
+            }
+          } yield ())
         }
         actions += testResultManager.updateForUpdatedSystem(systemId, sname)
         toDBIO(actions)
