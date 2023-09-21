@@ -9,7 +9,7 @@
         background-color: @white;
         & > .item-header {
             border-radius: 4px;
-            &:hover {
+            &.actionable:hover {
                 background-color: @white-hover;
                 +.item-content {
                     background-color: @white-hover;
@@ -21,7 +21,11 @@
         display: flex;
         align-items: center;        
         padding: 10px 15px 10px 15px;
-        &:hover {
+        min-height: 55px;
+        .item-header-title {
+            display: flex;
+        }
+        &.actionable:hover {
             cursor: pointer;
             background-color: @gray-highlight;
             +.item-content {
@@ -34,10 +38,21 @@
         .item-name {
             font-weight: bold;
         }
-        .item-description {
-            border-left: 1px solid @gray-dark-1;
-            padding-left: 10px;
-            margin-left: 10px;
+        &.wrapDescriptions {
+            flex-wrap: wrap;
+            .item-header-title {
+                flex-basis: 100%;
+            }
+            .item-description {
+                margin: 10px 0px 0px 0px;
+            }
+        }
+        &:not(.wrapDescriptions) {
+            .item-description {
+                border-left: 1px solid @gray-dark-1;
+                padding-left: 10px;
+                margin-left: 10px;
+            }
         }
     }
     .item-content {

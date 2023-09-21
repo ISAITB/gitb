@@ -19,7 +19,6 @@ export class TestStatusIconsComponent implements OnInit {
   otherIcon!: string
   hasRequired!: boolean
   hasOptional!: boolean
-  alignRight = true
   expanded = false
 
   constructor(

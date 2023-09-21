@@ -9,6 +9,7 @@ import { System } from 'src/app/types/system';
 import { ConformanceStatementItem } from 'src/app/types/conformance-statement-item';
 import { CheckboxOptionState } from 'src/app/components/checkbox-option-panel/checkbox-option-state';
 import { CheckboxOption } from 'src/app/components/checkbox-option-panel/checkbox-option';
+import { ConformanceService } from 'src/app/services/conformance.service';
 
 @Component({
   selector: 'app-conformance-statements',
@@ -52,6 +53,7 @@ export class ConformanceStatementsComponent implements OnInit {
 
   constructor(
     private systemService: SystemService,
+    private conformanceService: ConformanceService,
     public dataService: DataService,
     private route: ActivatedRoute,
     public routingService: RoutingService
@@ -92,7 +94,7 @@ export class ConformanceStatementsComponent implements OnInit {
 
   getConformanceStatements() {
     this.dataStatus.status = Constants.STATUS.PENDING
-    this.systemService.getConformanceStatements(this.system!.id)
+    this.conformanceService.getConformanceStatementsForSystem(this.system!.id)
     .subscribe((data) => {
       this.itemsByType = this.getItemsByType(data)
       this.statements = this.processItems(data)
@@ -136,8 +138,8 @@ export class ConformanceStatementsComponent implements OnInit {
 
   private processItems(items: ConformanceStatementItem[]) {
     if (items.length == 1) {
-      // We only have one domain.
-      items[0].hidden = true
+      // We only have one domain. Hide it unless the user has access to any domain.
+      items[0].hidden = this.dataService.community?.domain != undefined
     }
     // Initialise item state.
     this.visit(items, (item) => {

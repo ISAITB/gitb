@@ -16,8 +16,11 @@ export class ConformanceStatementItemDisplayComponent implements OnInit {
   @Input() shade = false
   @Input() hideSelf = false
   @Input() animated = true
+  @Input() expandable = true
+  @Input() wrapDescriptions = false
   @Input() withCheck = true
   @Input() withResults = false
+  @Input() filtering = true
 
   @Output() selectionChanged = new EventEmitter<ConformanceStatementItem>()
   hasChildren = false
@@ -75,7 +78,7 @@ export class ConformanceStatementItemDisplayComponent implements OnInit {
 
   clickHeader() {
     if (this.hasChildren && !this.allChildrenHidden) {
-      this.item.collapsed = !this.item.collapsed
+      this.item.collapsed = this.expandable && !this.item.collapsed
     } else {
       if (this.showCheck) {
         this.item.checked = !this.item.checked

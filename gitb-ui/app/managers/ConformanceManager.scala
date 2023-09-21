@@ -2,9 +2,10 @@ package managers
 
 import com.gitb.tr.TestResultType
 import config.Configurations
-import managers.ConformanceManager.{ConformanceResultDbQuery, ConformanceResultFullDbQuery, ConformanceStatusDbQuery}
+import managers.ConformanceManager.{ConformanceResultDbQuery, ConformanceResultFullDbQuery, ConformanceStatementDbQuery, ConformanceStatementTuple, ConformanceStatusDbQuery}
 import models.Enums.ConformanceStatementItemType
 import models._
+import models.statement.ConformanceStatementResults
 import org.apache.commons.lang3.StringUtils
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
@@ -21,7 +22,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 object ConformanceManager {
 
-	type ConformanceResultFullDbTuple = (
+	private type ConformanceResultFullDbTuple = (
 		(Rep[Long], Rep[String]), // Community
 		(Rep[Long], Rep[String]), // Organisation
 		(Rep[Long], Rep[String], Rep[String]), // System
@@ -33,7 +34,7 @@ object ConformanceManager {
 		(Rep[Long], Rep[String], Rep[Option[String]], Rep[Boolean], Rep[Boolean], Rep[Option[String]], Rep[Short]), // Test case
 		(Rep[Long], Rep[String], Rep[Option[String]]) // Test suite
 	)
-	type ConformanceResultFullTuple = (
+	private type ConformanceResultFullTuple = (
 		(Long, String), // Community
 		(Long, String), // Organisation
 		(Long, String, String), // System
@@ -45,9 +46,9 @@ object ConformanceManager {
 		(Long, String, Option[String], Boolean, Boolean, Option[String], Short), // Test case
 		(Long, String, Option[String]) // Test suite
 	)
-	type ConformanceResultFullDbQuery = Query[ConformanceResultFullDbTuple, ConformanceResultFullTuple, Seq]
+	private type ConformanceResultFullDbQuery = Query[ConformanceResultFullDbTuple, ConformanceResultFullTuple, Seq]
 
-	type ConformanceResultDbTuple = (
+	private type ConformanceResultDbTuple = (
 		(Rep[Long], Rep[String]), // Community
 		(Rep[Long], Rep[String]), // Organisation
 		(Rep[Long], Rep[String]), // System
@@ -58,7 +59,7 @@ object ConformanceManager {
 		(Rep[Option[String]], Rep[Option[String]]), // Specification group
 		(Rep[Boolean], Rep[Boolean]) // Test case
 	)
-	type ConformanceResultTuple = (
+	private type ConformanceResultTuple = (
 		(Long, String), // Community
 		(Long, String), // Organisation
 		(Long, String), // System
@@ -69,19 +70,37 @@ object ConformanceManager {
 		(Option[String], Option[String]), // Specification group
 		(Boolean, Boolean) // Test case
 	)
-	type ConformanceResultDbQuery = Query[ConformanceResultDbTuple, ConformanceResultTuple, Seq]
+	private type ConformanceResultDbQuery = Query[ConformanceResultDbTuple, ConformanceResultTuple, Seq]
 
-	type ConformanceStatusDbTuple = (
+	private type ConformanceStatusDbTuple = (
 		(Rep[Long], Rep[String], Rep[Option[String]], Rep[Boolean]), // Test suite
 		(Rep[Long], Rep[String], Rep[Option[String]], Rep[Boolean], Rep[Boolean], Rep[Boolean], Rep[Option[String]], Rep[Short]), // Test case
 		(Rep[String], Rep[Option[String]], Rep[Option[String]], Rep[Option[Timestamp]]) // Result
 	)
-	type ConformanceStatusTuple = (
+	private type ConformanceStatusTuple = (
 		(Long, String, Option[String], Boolean), // Test suite
 		(Long, String, Option[String], Boolean, Boolean, Boolean, Option[String], Short), // Test case
 		(String, Option[String], Option[String], Option[Timestamp]) // Result
 	)
-	type ConformanceStatusDbQuery = Query[ConformanceStatusDbTuple, ConformanceStatusTuple, Seq]
+	private type ConformanceStatusDbQuery = Query[ConformanceStatusDbTuple, ConformanceStatusTuple, Seq]
+
+	private type ConformanceStatementDbTuple = (
+			(Rep[Long], Rep[String], Rep[Option[String]]), // Domain
+			(Rep[Long], Rep[String], Rep[Short], Rep[Option[String]]), // Specification
+			(Rep[Option[Long]], Rep[Option[String]], Rep[Option[Short]], Rep[Option[Option[String]]]), // Specification group
+			(Rep[Long], Rep[String], Rep[String], Rep[Option[String]]),  // Actor
+			(Rep[String], Rep[Option[Timestamp]]), // Result
+			(Rep[Boolean], Rep[Boolean]) // Test case
+		)
+	private type ConformanceStatementTuple = (
+			(Long, String, Option[String]), // Domain
+			(Long, String, Short, Option[String]), // Specification
+			(Option[Long], Option[String], Option[Short], Option[Option[String]]), // Specification group
+			(Long, String, String, Option[String]), // Actor
+			(String, Option[Timestamp]), // Result
+			(Boolean, Boolean) // Test case
+		)
+	private type ConformanceStatementDbQuery = Query[ConformanceStatementDbTuple, ConformanceStatementTuple, Seq]
 
 }
 
@@ -574,6 +593,150 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils, systemManag
 			dateFromFilterString(updateTimeEnd),
 			status))
 		)
+	}
+
+	private def descriptionOrNone(result: Option[String], withDescriptions: Boolean): Option[String] = {
+		if (withDescriptions) {
+			result
+		} else {
+			None
+		}
+	}
+
+	private def toConformanceResult(result: ConformanceStatementTuple, systemId: Long, withDescriptions: Boolean): ConformanceStatement = {
+			new ConformanceStatement(
+				result._1._1, result._1._2, result._1._2, descriptionOrNone(result._1._3, withDescriptions),
+				result._4._1, result._4._2, result._4._3, descriptionOrNone(result._4._4, withDescriptions),
+				result._2._1, result._2._2, result._2._2, descriptionOrNone(result._2._4, withDescriptions),
+				systemId, result._5._1, result._5._2,
+				0L, 0L, 0L,
+				0L, 0L, 0L,
+				result._3._1, result._3._2, descriptionOrNone(result._3._4.flatten, withDescriptions),
+				result._2._3, result._3._3
+			)
+	}
+
+	def getConformanceStatementsForSystem(systemId: Long, actorId: Option[Long] = None, withDescriptions: Boolean = false, withResults: Boolean = true): Iterable[ConformanceStatementItem] = {
+		val results = exec(for {
+			statements <- {
+				var query: ConformanceStatementDbQuery = PersistenceSchema.conformanceResults
+					.join(PersistenceSchema.specifications).on(_.spec === _.id)
+					.join(PersistenceSchema.actors).on(_._1.actor === _.id)
+					.join(PersistenceSchema.domains).on(_._1._2.domain === _.id)
+					.join(PersistenceSchema.testCases).on(_._1._1._1.testcase === _.id)
+					.joinLeft(PersistenceSchema.specificationGroups).on(_._1._1._1._2.group === _.id)
+					.filter(_._1._1._1._1._1.sut === systemId)
+					.filterOpt(actorId)((q, id) => q._1._1._1._1._1.actor === id)
+					.map(x => (
+						(x._1._1._2.id, x._1._1._2.fullname, x._1._1._2.description), // 1.1: Domain ID, 1.2: Domain name, 1.3: Description
+						(x._1._1._1._1._2.id, x._1._1._1._1._2.fullname, x._1._1._1._1._2.displayOrder, x._1._1._1._1._2.description), // 2.1: Specification ID, 2.2: Specification name, 2.3: Specification display order, 2.4: Specification description
+						(x._1._1._1._1._2.group, x._2.map(_.fullname), x._2.map(_.displayOrder), x._2.map(_.description)), // 3.1: Specification group ID, 3.2: Specification group name, 3.3: Specification group display order, 3.4: Specification group description
+						(x._1._1._1._2.id, x._1._1._1._2.actorId, x._1._1._1._2.name, x._1._1._1._2.desc), // 4.1: Actor ID, 4.2: Actor identifier, 4.3: Actor name, 4.4: Actor description
+						(x._1._1._1._1._1.result, x._1._1._1._1._1.updateTime), // 5.1: Result, 5.2: Update time
+						(x._1._2.isOptional, x._1._2.isDisabled) // 6.1: Optional test case, 6.2: Disabled test case
+					))
+				if (!withResults) {
+					query = query.take(1)
+				}
+				query
+					.result
+					.map(rawResults => {
+						if (withResults) {
+							val resultBuilder = new ConformanceStatusBuilder[ConformanceStatement](recordDetails = false)
+							rawResults.foreach { result =>
+								resultBuilder.addConformanceResult(toConformanceResult(result, systemId, withDescriptions), result._6._1, result._6._2)
+							}
+							resultBuilder.getOverview(None)
+						} else {
+							rawResults.map(toConformanceResult(_, systemId, withDescriptions))
+						}
+					})
+			}
+			actorIdsToDisplay <- {
+				PersistenceSchema.testCaseHasActors
+					.filter(_.specification inSet statements.map(_.specificationId))
+					.filter(_.sut === true)
+					.map(x => (x.specification, x.actor))
+					.distinct
+					.result
+					.map { actorResults =>
+						// This map gives us the SUT actors IDs per specification.
+						val specMap = new mutable.HashMap[Long, mutable.HashSet[Long]]() // Spec ID to set of actor IDs
+						actorResults.foreach { actorResult =>
+							if (!specMap.contains(actorResult._1)) {
+								specMap += (actorResult._1 -> new mutable.HashSet[Long]())
+							}
+							specMap(actorResult._1).add(actorResult._2)
+						}
+						// Check to see if the actor IDs we loaded previously have also other SUT actors.
+						// If yes these are actors we will want to display.
+						val actorIdsToDisplay = statements.filter { statement =>
+							specMap(statement.specificationId).size > 1 // We have more than one actor as a SUT
+						}.map(_.actorId)
+						actorIdsToDisplay.toSet
+					}
+			}
+		} yield (statements, actorIdsToDisplay))
+		// Convert to hierarchical item structure.
+		val domainMap = new mutable.HashMap[Long, (ConformanceStatementItem,
+			mutable.HashMap[Long, (ConformanceStatementItem, mutable.HashMap[Long, (ConformanceStatementItem, ListBuffer[ConformanceStatementItem])])], // Specification groups pointing to specifications
+			mutable.HashMap[Long, (ConformanceStatementItem, ListBuffer[ConformanceStatementItem])], // Specifications not in groups
+			)]()
+		results._1.foreach { statement =>
+			val actorResults = if (withResults) {
+				Some(ConformanceStatementResults(statement.updateTime, statement.completedTests, statement.failedTests, statement.undefinedTests, statement.completedOptionalTests, statement.failedOptionalTests, statement.undefinedOptionalTests))
+			} else {
+				None
+			}
+			val actorItem = ConformanceStatementItem(statement.actorId, statement.actorName, statement.actorDescription, ConformanceStatementItemType.ACTOR, None, 0,
+				actorResults, results._2.contains(statement.actorId)
+			)
+			if (!domainMap.contains(statement.domainId)) {
+				domainMap += (statement.domainId -> (ConformanceStatementItem(statement.domainId, statement.domainName, statement.domainDescription, ConformanceStatementItemType.DOMAIN, None, 0), new mutable.HashMap(), new mutable.HashMap()))
+			}
+			val domainEntry = domainMap(statement.domainId)
+			if (statement.specificationGroupId.isDefined) {
+				// Specification group
+				if (!domainEntry._2.contains(statement.specificationGroupId.get)) {
+					// Record the specification group
+					domainEntry._2 += (statement.specificationGroupId.get -> (
+						ConformanceStatementItem(statement.specificationGroupId.get, statement.specificationGroupName.get, statement.specificationGroupDescription, ConformanceStatementItemType.SPECIFICATION_GROUP, None, statement.specificationGroupDisplayOrder.getOrElse(0)),
+						new mutable.HashMap()
+					)
+						)
+				}
+				val specificationGroupEntry = domainEntry._2(statement.specificationGroupId.get)
+				if (!specificationGroupEntry._2.contains(statement.specificationId)) {
+					// Record the specification
+					specificationGroupEntry._2 += (statement.specificationId -> (ConformanceStatementItem(statement.specificationId, statement.specificationName, statement.specificationDescription, ConformanceStatementItemType.SPECIFICATION, None, statement.specificationDisplayOrder), new ListBuffer))
+				}
+				// Record the actor
+				val specificationEntry = specificationGroupEntry._2(statement.specificationId)
+				specificationEntry._2 += actorItem
+			} else {
+				// Specification not in group
+				if (!domainEntry._3.contains(statement.specificationId)) {
+					domainEntry._3 += (statement.specificationId -> (ConformanceStatementItem(statement.specificationId, statement.specificationName, statement.specificationDescription, ConformanceStatementItemType.SPECIFICATION, None, statement.specificationDisplayOrder), new ListBuffer))
+				}
+				// Record the actor
+				val specificationEntry = domainEntry._3(statement.specificationId)
+				specificationEntry._2 += actorItem
+			}
+		}
+		// Now convert the collected children to their final form.
+		val domains = domainMap.values.map { domainEntry =>
+			val specificationGroups = domainEntry._2.values.map { specificationGroupEntry =>
+				val specifications = specificationGroupEntry._2.values.map { specificationEntry =>
+					specificationEntry._1.withChildren(specificationEntry._2.toList)
+				}
+				specificationGroupEntry._1.withChildren(specifications.toSeq)
+			}
+			val specifications = domainEntry._3.values.map { specificationEntry =>
+				specificationEntry._1.withChildren(specificationEntry._2.toList)
+			}
+			domainEntry._1.withChildren(specificationGroups.toSeq ++ specifications.toSeq)
+		}
+		domains
 	}
 
 	def getSystemConfigurationStatus(systemId: Long, actorId: Long): List[SystemConfigurationEndpoint] = {

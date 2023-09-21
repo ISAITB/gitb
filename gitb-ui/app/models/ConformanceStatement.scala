@@ -8,12 +8,15 @@ class ConformanceStatement(
     val domainId: Long,
     val domainName: String,
     val domainNameFull: String,
+    val domainDescription: Option[String],
     val actorId: Long,
     val actorName: String,
     val actorFull: String,
+    val actorDescription: Option[String],
     val specificationId: Long,
     val specificationName: String,
     val specificationNameFull: String,
+    val specificationDescription: Option[String],
     val systemId: Long,
     var result: String,
     var updateTime: Option[Timestamp],
@@ -27,17 +30,18 @@ class ConformanceStatement(
 
     var specificationGroupId: Option[Long] = None,
     var specificationGroupName: Option[String] = None,
+    var specificationGroupDescription: Option[String] = None,
     var specificationDisplayOrder: Short = 0,
     var specificationGroupDisplayOrder: Option[Short] = None
 ) {
 
   def copy(): ConformanceStatement = {
     new ConformanceStatement(
-      domainId, domainName, domainNameFull, actorId, actorName, actorFull,
-      specificationId, specificationName, specificationNameFull, systemId,
+      domainId, domainName, domainNameFull, domainDescription, actorId, actorName, actorFull, actorDescription,
+      specificationId, specificationName, specificationNameFull, specificationDescription, systemId,
       result, TimeUtil.copyTimestamp(this.updateTime), completedTests, failedTests, undefinedTests,
       completedOptionalTests, failedOptionalTests, undefinedOptionalTests,
-      specificationGroupId, specificationGroupName, specificationDisplayOrder, specificationGroupDisplayOrder
+      specificationGroupId, specificationGroupName, specificationGroupDescription, specificationDisplayOrder, specificationGroupDisplayOrder
     )
   }
 

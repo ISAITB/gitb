@@ -47,61 +47,52 @@
     background: @white;
     z-index: 1;
     position: absolute;
+    .popup-panel-container {
+        display: flex;
+        align-items: center;
+        padding: 5px 0px 5px 5px;
+    }     
+    .close-container {
+        justify-content: center;
+        cursor: pointer;
+        width: 30px;
+    }
+    .status-title {
+        font-weight: bold;
+        padding: 0px 10px;
+        white-space: nowrap;            
+    }
     &.asLine {
         right: 0px;
         top: -6px;
-        .popup-panel-container {
-            display: flex;
-            align-items: center;
-            padding: 5px 0px 5px 5px;
-        }        
         .close-container, .status-containers, .status-container, .status-title, .statusRootContainer {
             display: inline-flex;
         }
-        .close-container {
-            display: inline-flex;
-            justify-content: center;
-            cursor: pointer;
-            width: 30px;
-        }
         .status-title {
-            font-weight: bold;
             align-self: center;
-            padding: 0px 10px;
             &.optional {
                 margin-left: 15px;
             }
-            white-space: nowrap;            
         }        
     }
     &.defaultPopup {
-        top: -1px;
-        min-width: 200px;
-        .popup-panel-container {
-            padding: 8px 8px 14px 8px;
-        }
-        &.align-right {
-            right: 0px;
-        }
-        .status-title {
-            display: flex;
-        }
+        right: 0px;
+        top: -4px;
         .close-container {
-            width: 30px;
-            position: absolute;
-            right: 0px;
-            top: 4px;
+            margin-top: 3px;
             display: flex;
-            justify-content: center;
-            cursor: pointer;
+            align-self: flex-start;
         }
-        .status-title {
-            padding: 5px 0px 8px 0px;
+        .status-container {
+            flex-wrap: nowrap;
+            display: flex;
+            align-items: center;
             &.optional {
-                padding-top: 15px;
+                margin-top: 5px;
             }
-            font-weight: bold;
-            white-space: nowrap;
+        }
+        .statusRootContainer {
+            margin-left: auto;
         }
     }
 }
@@ -115,7 +106,7 @@
         font-weight: bold;
         margin-bottom: 5px;
         &.with-margin {
-            margin-top:10px;
+            margin-top: 10px;
         }
     }
 }

@@ -10,9 +10,6 @@ import { PopupService } from 'src/app/services/popup.service';
 import { ReportService } from 'src/app/services/report.service';
 import { SystemService } from 'src/app/services/system.service';
 import { TestService } from 'src/app/services/test.service';
-import { Actor } from 'src/app/types/actor';
-import { Domain } from 'src/app/types/domain';
-import { Specification } from 'src/app/types/specification';
 import { ConformanceConfiguration } from './conformance-configuration';
 import { ConformanceEndpoint } from './conformance-endpoint';
 import { ConformanceTestCase } from './conformance-test-case';
@@ -33,7 +30,7 @@ import { Counters } from 'src/app/components/test-status-icons/counters';
 import { saveAs } from 'file-saver'
 import { CheckboxOption } from 'src/app/components/checkbox-option-panel/checkbox-option';
 import { CheckboxOptionState } from 'src/app/components/checkbox-option-panel/checkbox-option-state';
-import { SpecificationService } from 'src/app/services/specification.service';
+import { ConformanceStatementItem } from 'src/app/types/conformance-statement-item';
 
 @Component({
   selector: 'app-conformance-statement',
@@ -58,9 +55,6 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
   lastUpdate?: string
   conformanceStatus = ''
   allTestsSuccessful = false
-  actor?: Actor
-  domain?: Domain
-  specification?: Specification
   endpoints: ConformanceEndpoint[] = []
   configurations: ConformanceConfiguration[] = []
   endpointRepresentations: EndpointRepresentation[] = []
@@ -100,6 +94,8 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
   testDisplayOptions!: CheckboxOption[][]
   refreshDisplayOptions = new EventEmitter<CheckboxOption[][]>()
 
+  statement?: ConformanceStatementItem
+
   constructor(
     public dataService: DataService,
     private route: ActivatedRoute,
@@ -112,7 +108,6 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
     private testService: TestService,
     private popupService: PopupService,
     private organisationService: OrganisationService,
-    private specificationService: SpecificationService,
     private routingService: RoutingService
   ) { 
     // Access the tab to show via router state to have it cleared upon refresh.
@@ -152,6 +147,28 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
     this.refreshDisplayOptions.emit(this.testDisplayOptions)
   }
 
+  private findByType(items: ConformanceStatementItem[], itemType: number): ConformanceStatementItem|undefined {
+    if (items) {
+      for (let item of items) {
+        if (item.itemType == itemType) {
+          return item;
+        } else if (item.items) {
+          return this.findByType(item.items, itemType)
+        }
+      }
+      return undefined
+    } else {
+      return undefined
+    }
+  }
+
+  private prepareStatement(statement: ConformanceStatementItem) {
+    if (statement.itemType == Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.DOMAIN) {
+      // Hide the domain unless the user has access to any domain.
+      statement.hidden = this.dataService.community?.domain != undefined
+    }
+  }
+
   ngOnInit(): void {
     this.systemId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.SYSTEM_ID))
     this.actorId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.ACTOR_ID))
@@ -160,11 +177,18 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
       this.communityId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID))
     }
     this.prepareTestFilter()
-    // Load conformance results.
-    this.conformanceService.getConformanceStatus(this.actorId, this.systemId)
+    // Load conformance statement and its results.
+    this.conformanceService.getConformanceStatement(this.systemId, this.actorId)
     .subscribe((data) => {
       if (data) {
-        for (let testSuite of data.testSuites) {
+        // Statement definition.
+        this.prepareStatement(data.statement)
+        this.statement = data.statement
+        // IDs.
+        this.domainId = this.findByType([this.statement]!, Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.DOMAIN)!.id
+        this.specId = this.findByType([this.statement]!, Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.SPECIFICATION)!.id
+        // Test results.
+        for (let testSuite of data.results.testSuites) {
           testSuite.hasDisabledTestCases = find(testSuite.testCases, (testCase) => testCase.disabled) != undefined
           testSuite.hasOptionalTestCases = find(testSuite.testCases, (testCase) => testCase.optional) != undefined
           if (!this.hasDisabledTests && testSuite.hasDisabledTestCases) {
@@ -174,38 +198,21 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
             this.hasOptionalTests = true
           }
         }
-        this.testSuites = data.testSuites
+        this.testSuites = data.results.testSuites
         this.displayedTestSuites = this.testSuites
         this.statusCounters = { 
-          completed: data.summary.completed, failed: data.summary.failed, other: data.summary.undefined,
-          completedOptional: data.summary.completedOptional, failedOptional: data.summary.failedOptional, otherOptional: data.summary.undefinedOptional
+          completed: data.results.summary.completed, failed: data.results.summary.failed, other: data.results.summary.undefined,
+          completedOptional: data.results.summary.completedOptional, failedOptional: data.results.summary.failedOptional, otherOptional: data.results.summary.undefinedOptional
         }
-        this.lastUpdate = data.summary.updateTime
-        this.conformanceStatus = data.summary.result
+        this.lastUpdate = data.results.summary.updateTime
+        this.conformanceStatus = data.results.summary.result
         this.allTestsSuccessful = this.conformanceStatus == Constants.TEST_CASE_RESULT.SUCCESS
-        this.hasBadge = data.summary.hasBadge
+        this.hasBadge = data.results.summary.hasBadge
         this.prepareTestFilter()
         this.applySearchFilters()
       }
     }).add(() => {
       this.loadingTests = false
-    })
-    // Load actor.
-    this.conformanceService.getActorsWithIds([this.actorId])
-    .subscribe((data) => {
-      this.actor = data[0]
-    })
-    // Load domain.
-    this.conformanceService.getDomainOfActor(this.actorId)
-    .subscribe((data) => {
-      this.domain = data
-      this.domainId = this.domain.id
-    })
-    // Load specification.
-    this.specificationService.getSpecificationOfActor(this.actorId)
-    .subscribe((data) => {
-      this.specification = data
-      this.specId = this.specification.id
     })
   }
 

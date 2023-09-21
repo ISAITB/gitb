@@ -1,40 +1,5 @@
 @import '../../../../styles/less/_common.less';
 
-th.th-nowrap {
-    white-space: nowrap;
-}
-
-.conformanceStatusDiv {
-    display:flex;
-    margin-bottom:-14px;
-    & > div {
-        display:inline-flex;
-    }
-    div:last-of-type {
-        align-items: center;
-        line-height:0px;
-    }
-}
-
-.row {
-    min-height: 45px;
-    &.row-display-last {
-        padding-top: 0px;
-    }
-}
-
-.oneLineDiv {
-    display:flex;
-    align-items: center;
-    ::ng-deep {
-        .statusRootContainer {
-            margin-top: -5px;
-            margin-bottom: -5px;
-            height: 30px;
-        }
-    }
-}
-
 .tabPanel {
     & > div:last-child {
         margin-bottom: 0px;
@@ -79,4 +44,47 @@ th.th-nowrap {
     .status-ratios {
         margin-left: 30px;
     }
+}
+.statementDetails {
+    margin-top: -10px;
+}
+.statementStatus {
+    display: flex;
+    align-items: center;
+    border-radius: 4px;
+    border: 1px solid @gray-dark-1;
+    background-color: @gray-light-1;
+    margin-top: 15px;
+    padding: 0px 15px;
+    flex-wrap: wrap;
+    .statusLabel {
+        padding: 15px 0px;
+        font-weight: bold;
+        margin-left: 0px;
+    }
+    .lastUpdateLabel, .resultsLabel {
+        font-weight: bold;
+    }
+    .statementResult, .lastUpdateContainer {
+        min-height: 35px;
+        border-right: 1px solid @gray-dark-1;
+        padding-right: 30px;
+        margin-right: 30px;
+    }
+    .lastUpdateContainer, .resultsContainer {
+        display: flex;
+        align-items: center;
+        flex-wrap: nowrap;
+        margin-top: 5px;
+        margin-bottom: 5px;
+        & > *:not(:last-child) {
+            margin-right: 30px;
+        }
+    }
+}
+.statementResult {
+    margin-left: 30px;
+    margin-right: 30px;
+    display: flex;
+    align-items: center;    
 }

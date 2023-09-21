@@ -2349,6 +2349,13 @@ object JsonUtil {
     json
   }
 
+  def jsConformanceStatement(statement: ConformanceStatementItem, results: ConformanceStatus): JsObject = {
+    Json.obj(
+      "statement" -> jsConformanceStatementItem(statement),
+      "results" -> jsConformanceStatus(results)
+    )
+  }
+
   def jsConformanceStatus(status: ConformanceStatus): JsObject = {
     val json = Json.obj(
       "summary" -> Json.obj(

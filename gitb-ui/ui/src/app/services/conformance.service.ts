@@ -29,6 +29,8 @@ import { ConformanceSnapshot } from '../types/conformance-snapshot';
 import { BadgesInfo } from '../components/manage-badges/badges-info';
 import { HtmlService } from './html.service';
 import { HttpResponse } from '@angular/common/http';
+import { ConformanceStatementItem } from '../types/conformance-statement-item';
+import { ConformanceStatementWithResults } from '../types/conformance-statement-with-results';
 
 @Injectable({
   providedIn: 'root'
@@ -982,6 +984,20 @@ export class ConformanceService {
       authenticate: true,
       arrayBuffer: true,
       httpResponse: true
+    })
+  }
+
+  getConformanceStatementsForSystem(system: number) {
+    return this.restService.get<ConformanceStatementItem[]>({
+      path: ROUTES.controllers.ConformanceService.getConformanceStatementsForSystem(system).url,
+      authenticate: true
+    })
+  }
+
+  getConformanceStatement(system: number, actor: number) {
+    return this.restService.get<ConformanceStatementWithResults>({
+      path: ROUTES.controllers.ConformanceService.getConformanceStatement(system, actor).url,
+      authenticate: true
     })
   }
 

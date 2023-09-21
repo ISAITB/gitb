@@ -4,43 +4,37 @@
 			<h4 class="title"><app-collapsing-icon [isCollapsed]="collapsedDetails"></app-collapsing-icon>Conformance statement details</h4>
 		</div>
 		<div [collapse]="collapsedDetails" [isAnimated]="true">
-			<div class="panel-body">
-				<div class="row row-display-first">
-					<div class="col-md-2"><strong>{{dataService.labelDomain()}}</strong></div>
-					<div class="col-md-10">{{domain?.fname}}</div>
-					<div class="col-md-10 col-md-offset-2 row-display-inner" *ngIf="domain?.description">{{domain?.description}}</div>
-				</div>
-				<div class="row row-display">
-					<div class="col-md-2"><strong>{{dataService.labelSpecification()}}</strong></div>
-					<div class="col-md-10">{{specification?.fname}}</div>
-					<div class="col-md-10 col-md-offset-2 row-display-inner" *ngIf="specification?.description">{{specification?.description}}</div>
-				</div>
-				<div class="row row-display">
-					<div class="col-md-2"><strong>{{dataService.labelActor()}}</strong></div>
-					<div class="col-md-10">{{actor?.name}}</div>
-					<div class="col-md-10 col-md-offset-2 row-display-inner" *ngIf="actor?.description">{{actor?.description}}</div>
-				</div>
-				<div class="row row-display oneLineDiv" *ngIf="lastUpdate">
-					<div class="col-md-2"><strong>Last update</strong></div>
-					<div class="col-md-10"><span>{{lastUpdate}}</span></div>
-				</div>
-				<div class="row row-display oneLineDiv">
-					<div class="col-md-2"><strong>Test results</strong></div>
-					<div class="col-md-10">
-						<div class="status-container" *ngIf="statusCounters">
+			<div class="panel-body detailsPanel">
+				<div class="statementDetails">
+					<app-conformance-statement-items-display *ngIf="statement" [items]="[statement]" [wrapDescriptions]="true" [expandable]="false" [filtering]="false" [withCheck]="false" [withResults]="false"></app-conformance-statement-items-display>
+					<div *ngIf="statusCounters && conformanceStatus" class="statementStatus">
+						<div class="statusLabel">
+							Status
+						</div>
+						<div class="statementResult">
+							<app-result-label [status]="conformanceStatus"></app-result-label>
+						</div>
+						<div class="lastUpdateContainer" *ngIf="lastUpdate">
+							<div class="lastUpdateLabel">
+								Last update
+							</div>
+							<div>
+								<app-tag label="fa-solid fa-clock" [icon]="true" tooltipText="The last time a test session was executed for the statement." [value]="lastUpdate"></app-tag>
+							</div>
+						</div>
+						<div class="resultsContainer">
+							<div class="resultsLabel">
+								Test results
+							</div>
 							<div class="status-counts">
 								<app-test-status-icons [counters]="statusCounters" [centerAligned]="false"></app-test-status-icons>
 							</div>
 							<div class="status-ratios">
-								<app-test-result-ratio [counters]="statusCounters"></app-test-result-ratio>
+								<app-test-result-ratio [counters]="statusCounters" [asLine]="true"></app-test-result-ratio>
 							</div>
 						</div>
 					</div>
-				</div>
-				<div class="row row-display-last oneLineDiv conformanceStatusDiv">
-					<div class="col-md-2"><strong>Status</strong></div>
-					<div class="col-md-10"><span containerClass="shortTooltip" [tooltip]="dataService.tooltipForTestResult(conformanceStatus)"><i [ngClass]="dataService.iconForTestResult(conformanceStatus)"></i></span></div>
-				</div>
+				</div>				
 			</div>
 			<div class="panel-footer button-container">
 				<div class="btn-toolbar">

@@ -7,7 +7,7 @@
         </div>
         <div *ngIf="hasOptional" class="expand-icon" (click)="expanded = true" tooltip="Expand" containerClass="shortTooltip"><span><i class="fa-solid fa-plus-circle"></i></span></div>
     </div>
-    <div *ngIf="expanded" class="popup-panel" [class.asLine]="asLine" [class.defaultPopup]="!asLine" [class.align-right]="alignRight" (click)="$event.stopPropagation()">
+    <div *ngIf="expanded" class="popup-panel" [class.asLine]="asLine" [class.defaultPopup]="!asLine" (click)="$event.stopPropagation()">
         <div class="popup-panel-container">
             <div class="status-containers">
                 <div class="status-container">
@@ -18,7 +18,7 @@
                         <div class="statusContainer"><div class="statusCount">{{ counters.other }}</div><div class="statusIcon"><span><i [class]="otherIcon"></i></span></div></div>
                     </div>
                 </div>
-                <div class="status-container">
+                <div class="status-container optional">
                     <div class="status-title optional">Optional</div>
                     <div class="statusRootContainer" [tooltip]="counters.completedOptional + ' passed, '+counters.failedOptional+' failed, '+counters.otherOptional+' incomplete optional tests ('+(counters.completedOptional+counters.failedOptional+counters.otherOptional)+' in total)'">
                         <div class="statusContainer"><div class="statusCount">{{ counters.completedOptional }}</div><div class="statusIcon"><span><i [class]="successIcon"></i></span></div></div>

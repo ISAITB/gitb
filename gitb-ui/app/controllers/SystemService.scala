@@ -123,13 +123,6 @@ class SystemService @Inject() (implicit ec: ExecutionContext, repositoryUtils: R
     ResponseConstructor.constructEmptyResponse
   }
 
-  def getConformanceStatements(systemId: Long) = authorizedAction { request =>
-    authorizationManager.canViewConformanceStatements(request, systemId)
-    val conformanceStatements = systemManager.getConformanceStatements(systemId)
-    val json: String = JsonUtil.jsConformanceStatementItems(conformanceStatements).toString()
-    ResponseConstructor.constructJsonResponse(json)
-  }
-
 	def deleteConformanceStatement(sut_id: Long) = authorizedAction { request =>
     val actorIds = ParameterExtractor.extractLongIdsQueryParameter(request)
     authorizationManager.canDeleteConformanceStatement(request, sut_id, actorIds)

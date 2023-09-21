@@ -2,7 +2,7 @@
     <div class="col-md-12">
         <div class="result-container">
             <div class="result-label">Result</div>
-            <div class="result-value"><span class="overall-result" [ngClass]="report.result!">{{report.result}}</span></div>
+            <div class="result-value"><app-result-label [status]="report.result!"></app-result-label></div>
             <div class="result-label">Time</div>
             <div class="result-value">{{report.date}}</div>
         </div>

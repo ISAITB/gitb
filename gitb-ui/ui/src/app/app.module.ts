@@ -174,6 +174,7 @@ import { ManageBadgesComponent } from './components/manage-badges/manage-badges.
 import { ManageBadgeComponent } from './components/manage-badges/manage-badge/manage-badge.component';
 import { PreviewBadgeModalComponent } from './modals/preview-badge-modal/preview-badge-modal.component';
 import { ViewBadgeButtonComponent } from './components/view-badge-button/view-badge-button.component';
+import { ResultLabelComponent } from './components/result-label/result-label.component';
 
 @NgModule({
   providers: [ 
@@ -337,7 +338,8 @@ import { ViewBadgeButtonComponent } from './components/view-badge-button/view-ba
     ManageBadgeComponent,
     SanitizeHtmlPipe,
     PreviewBadgeModalComponent,
-    ViewBadgeButtonComponent
+    ViewBadgeButtonComponent,
+    ResultLabelComponent
   ],
   imports: [
     ColorPickerModule,

@@ -82,7 +82,7 @@ export class CreateConformanceStatementComponent implements OnInit {
   private processItems(items: ConformanceStatementItem[]) {
     if (items.length == 1) {
       if (this.domainId != undefined) {
-        // We only have one domain.
+        // We only have one domain. Hide it unless the user has access to any domain.
         items[0].hidden = true
       }
       // Display single option as expanded.

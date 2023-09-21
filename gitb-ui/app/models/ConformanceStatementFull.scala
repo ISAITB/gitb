@@ -47,10 +47,10 @@ class ConformanceStatementFull(
     failedOptionalTests: Long,
     undefinedOptionalTests: Long
 ) extends ConformanceStatement(
-  domainId, domainName, domainNameFull,
-  actorId, actorName, actorFull,
-  specificationId, specificationName, specificationNameFull, systemId,
-  result, updateTime, completedTests, failedTests, undefinedTests, completedOptionalTests, failedOptionalTests, undefinedOptionalTests, None, specificationGroupName) {
+  domainId, domainName, domainNameFull, None,
+  actorId, actorName, actorFull, None,
+  specificationId, specificationName, specificationNameFull, None, systemId,
+  result, updateTime, completedTests, failedTests, undefinedTests, completedOptionalTests, failedOptionalTests, undefinedOptionalTests, None, specificationGroupName, None) {
 
 
   override def copy(): ConformanceStatementFull = {

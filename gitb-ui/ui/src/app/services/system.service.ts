@@ -8,7 +8,6 @@ import { SystemParameter } from '../types/system-parameter';
 import { SystemParameterWithValue } from '../types/system-parameter-with-value';
 import { DataService } from './data.service';
 import { RestService } from './rest.service';
-import { ConformanceStatementItem } from '../types/conformance-statement-item';
 
 @Injectable({
   providedIn: 'root'
@@ -172,13 +171,6 @@ export class SystemService {
       params: {
         organization_id: organisationId
       },
-      authenticate: true
-    })
-  }
-
-  getConformanceStatements(system: number) {
-    return this.restService.get<ConformanceStatementItem[]>({
-      path: ROUTES.controllers.SystemService.getConformanceStatements(system).url,
       authenticate: true
     })
   }

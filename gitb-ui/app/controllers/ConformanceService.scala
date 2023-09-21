@@ -986,4 +986,27 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
     }
   }
 
+  def getConformanceStatementsForSystem(systemId: Long) = authorizedAction { request =>
+    authorizationManager.canViewConformanceStatements(request, systemId)
+    val conformanceStatements = conformanceManager.getConformanceStatementsForSystem(systemId)
+    val json: String = JsonUtil.jsConformanceStatementItems(conformanceStatements).toString()
+    ResponseConstructor.constructJsonResponse(json)
+  }
+
+  def getConformanceStatement(systemId: Long, actorId: Long) = authorizedAction { request =>
+    authorizationManager.canViewConformanceStatements(request, systemId)
+    val conformanceStatement = conformanceManager.getConformanceStatementsForSystem(systemId, Some(actorId), withDescriptions = true, withResults = false).headOption
+    if (conformanceStatement.isDefined) {
+      val results = conformanceManager.getConformanceStatus(actorId, systemId, None, includeDisabled = true, None)
+      if (results.isDefined) {
+        val json = JsonUtil.jsConformanceStatement(conformanceStatement.get, results.get).toString()
+        ResponseConstructor.constructJsonResponse(json)
+      } else {
+        ResponseConstructor.constructEmptyResponse
+      }
+    } else {
+      ResponseConstructor.constructEmptyResponse
+    }
+  }
+
 }
