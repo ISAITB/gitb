@@ -19,7 +19,7 @@
                     <button class="btn btn-default" type="button" (click)="editLabels()" [disabled]="savePending || deletePending">Edit labels</button>
                     <button class="btn btn-default" type="button" *ngIf="dataService.isSystemAdmin" (click)="cancelCommunityDetail()">Back</button>
                 </div>
-                <div class="btn-toolbar" *ngIf="dataService.isSystemAdmin">
+                <div class="btn-toolbar btn-toolbar-delete" *ngIf="dataService.isSystemAdmin">
                     <button class="btn btn-default btn-delete" type="button" (click)="deleteCommunity()" [disable]="savePending" [pending]="deletePending">Delete</button>
                 </div>
             </div>
@@ -189,8 +189,8 @@
                                 </ul>
                             </div>
                             <button type="button" class="btn btn-default" (click)="downloadAllResources()" [disable]="resources.length == 0 || selectingForDeleteResources" [pending]="downloadAllResourcesPending">Download all</button>
-                            <button type="button" class="btn btn-default btn-delete" (click)="selectDeleteResources()" *ngIf="!selectingForDeleteResources" [disabled]="resources.length == 0 || downloadAllResourcesPending">Delete resources...</button>
-                            <button type="button" class="btn btn-default btn-delete" (click)="confirmDeleteResources()" *ngIf="selectingForDeleteResources" [disable]="!resourcesChecked()" [pending]="deleteResourcesPending">Confirm</button>
+                            <button type="button" class="btn btn-default" (click)="selectDeleteResources()" *ngIf="!selectingForDeleteResources" [disabled]="resources.length == 0 || downloadAllResourcesPending">Delete resources...</button>
+                            <button type="button" class="btn btn-default" (click)="confirmDeleteResources()" *ngIf="selectingForDeleteResources" [disable]="!resourcesChecked()" [pending]="deleteResourcesPending">Confirm</button>
                             <button type="button" class="btn btn-default" (click)="cancelDeleteResources()" *ngIf="selectingForDeleteResources" [disabled]="deleteResourcesPending">Cancel</button>
                         </div>
                     </div>

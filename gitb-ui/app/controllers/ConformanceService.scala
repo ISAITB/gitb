@@ -24,7 +24,7 @@ import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.util.Using
 
-class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAction: AuthorizedAction, cc: ControllerComponents, endpointManager: EndPointManager, specificationManager: SpecificationManager, domainParameterManager: DomainParameterManager, domainManager: DomainManager, communityManager: CommunityManager, conformanceManager: ConformanceManager, accountManager: AccountManager, actorManager: ActorManager, testSuiteManager: TestSuiteManager, testResultManager: TestResultManager, testCaseManager: TestCaseManager, parameterManager: ParameterManager, authorizationManager: AuthorizationManager, communityLabelManager: CommunityLabelManager, repositoryUtils: RepositoryUtils) extends AbstractController(cc) {
+class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAction: AuthorizedAction, cc: ControllerComponents, systemManager: SystemManager, endpointManager: EndPointManager, specificationManager: SpecificationManager, domainParameterManager: DomainParameterManager, domainManager: DomainManager, communityManager: CommunityManager, conformanceManager: ConformanceManager, accountManager: AccountManager, actorManager: ActorManager, testSuiteManager: TestSuiteManager, testResultManager: TestResultManager, testCaseManager: TestCaseManager, parameterManager: ParameterManager, authorizationManager: AuthorizationManager, communityLabelManager: CommunityLabelManager, repositoryUtils: RepositoryUtils) extends AbstractController(cc) {
   private final val logger: Logger = LoggerFactory.getLogger(classOf[ConformanceService])
 
   /**
@@ -999,7 +999,8 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
     if (conformanceStatement.isDefined) {
       val results = conformanceManager.getConformanceStatus(actorId, systemId, None, includeDisabled = true, None)
       if (results.isDefined) {
-        val json = JsonUtil.jsConformanceStatement(conformanceStatement.get, results.get).toString()
+        val systemInfo = systemManager.getSystemProfile(systemId)
+        val json = JsonUtil.jsConformanceStatement(conformanceStatement.get, results.get, systemInfo).toString()
         ResponseConstructor.constructJsonResponse(json)
       } else {
         ResponseConstructor.constructEmptyResponse

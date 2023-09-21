@@ -32,8 +32,8 @@ class System(_id: Long, _shortname: String, _fullname:String, _description:Optio
   def this(_case:Systems) =
     this(_case.id, _case.shortname, _case.fullname, _case.description, _case.version, _case.apiKey, _case.badgeKey, None, None)
 
-  def this(_case:Systems, _owner:Organizations, _admins:List[Users]) =
-      this(_case.id, _case.shortname, _case.fullname, _case.description, _case.version, _case.apiKey, _case.badgeKey, Some(_owner), Some(_admins))
+  def this(_case:Systems, _owner:Organizations) =
+      this(_case.id, _case.shortname, _case.fullname, _case.description, _case.version, _case.apiKey, _case.badgeKey, Some(_owner), None)
 
   def toCaseObject:Systems = {
     if(owner.isDefined) {

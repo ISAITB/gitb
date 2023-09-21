@@ -95,6 +95,8 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
   refreshDisplayOptions = new EventEmitter<CheckboxOption[][]>()
 
   statement?: ConformanceStatementItem
+  systemName?: string
+  organisationName?: string
 
   constructor(
     public dataService: DataService,
@@ -122,6 +124,56 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
       if (this.tabToShow == ConformanceStatementTab.configuration) {
         this.showConfigurationTab()
       }
+    })
+  }
+
+  ngOnInit(): void {
+    this.systemId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.SYSTEM_ID))
+    this.actorId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.ACTOR_ID))
+    this.organisationId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.ORGANISATION_ID))
+    if (this.route.snapshot.paramMap.has(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID)) {
+      this.communityId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID))
+    }
+    this.prepareTestFilter()
+    // Load conformance statement and its results.
+    this.conformanceService.getConformanceStatement(this.systemId, this.actorId)
+    .subscribe((data) => {
+      if (data) {
+        // Party definition.
+        this.systemName = data.system.fname
+        this.organisationName = data.organisation.fname
+        // Statement definition.
+        this.prepareStatement(data.statement)
+        this.statement = data.statement
+        // IDs.
+        this.domainId = this.findByType([this.statement]!, Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.DOMAIN)!.id
+        this.specId = this.findByType([this.statement]!, Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.SPECIFICATION)!.id
+        // Test results.
+        for (let testSuite of data.results.testSuites) {
+          testSuite.hasDisabledTestCases = find(testSuite.testCases, (testCase) => testCase.disabled) != undefined
+          testSuite.hasOptionalTestCases = find(testSuite.testCases, (testCase) => testCase.optional) != undefined
+          if (!this.hasDisabledTests && testSuite.hasDisabledTestCases) {
+            this.hasDisabledTests = true
+          }
+          if (!this.hasOptionalTests && testSuite.hasOptionalTestCases) {
+            this.hasOptionalTests = true
+          }
+        }
+        this.testSuites = data.results.testSuites
+        this.displayedTestSuites = this.testSuites
+        this.statusCounters = { 
+          completed: data.results.summary.completed, failed: data.results.summary.failed, other: data.results.summary.undefined,
+          completedOptional: data.results.summary.completedOptional, failedOptional: data.results.summary.failedOptional, otherOptional: data.results.summary.undefinedOptional
+        }
+        this.lastUpdate = data.results.summary.updateTime
+        this.conformanceStatus = data.results.summary.result
+        this.allTestsSuccessful = this.conformanceStatus == Constants.TEST_CASE_RESULT.SUCCESS
+        this.hasBadge = data.results.summary.hasBadge
+        this.prepareTestFilter()
+        this.applySearchFilters()
+      }
+    }).add(() => {
+      this.loadingTests = false
     })
   }
 
@@ -167,53 +219,6 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
       // Hide the domain unless the user has access to any domain.
       statement.hidden = this.dataService.community?.domain != undefined
     }
-  }
-
-  ngOnInit(): void {
-    this.systemId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.SYSTEM_ID))
-    this.actorId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.ACTOR_ID))
-    this.organisationId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.ORGANISATION_ID))
-    if (this.route.snapshot.paramMap.has(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID)) {
-      this.communityId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID))
-    }
-    this.prepareTestFilter()
-    // Load conformance statement and its results.
-    this.conformanceService.getConformanceStatement(this.systemId, this.actorId)
-    .subscribe((data) => {
-      if (data) {
-        // Statement definition.
-        this.prepareStatement(data.statement)
-        this.statement = data.statement
-        // IDs.
-        this.domainId = this.findByType([this.statement]!, Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.DOMAIN)!.id
-        this.specId = this.findByType([this.statement]!, Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.SPECIFICATION)!.id
-        // Test results.
-        for (let testSuite of data.results.testSuites) {
-          testSuite.hasDisabledTestCases = find(testSuite.testCases, (testCase) => testCase.disabled) != undefined
-          testSuite.hasOptionalTestCases = find(testSuite.testCases, (testCase) => testCase.optional) != undefined
-          if (!this.hasDisabledTests && testSuite.hasDisabledTestCases) {
-            this.hasDisabledTests = true
-          }
-          if (!this.hasOptionalTests && testSuite.hasOptionalTestCases) {
-            this.hasOptionalTests = true
-          }
-        }
-        this.testSuites = data.results.testSuites
-        this.displayedTestSuites = this.testSuites
-        this.statusCounters = { 
-          completed: data.results.summary.completed, failed: data.results.summary.failed, other: data.results.summary.undefined,
-          completedOptional: data.results.summary.completedOptional, failedOptional: data.results.summary.failedOptional, otherOptional: data.results.summary.undefinedOptional
-        }
-        this.lastUpdate = data.results.summary.updateTime
-        this.conformanceStatus = data.results.summary.result
-        this.allTestsSuccessful = this.conformanceStatus == Constants.TEST_CASE_RESULT.SUCCESS
-        this.hasBadge = data.results.summary.hasBadge
-        this.prepareTestFilter()
-        this.applySearchFilters()
-      }
-    }).add(() => {
-      this.loadingTests = false
-    })
   }
 
   loadConfigurations() {

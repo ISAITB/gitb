@@ -1,5 +1,12 @@
 @import '../../../../styles/less/_common.less';
 
+.pending-container {
+    display: flex;
+    .pending-message {
+        opacity: 0.5;
+    }
+}
+
 .tabPanel {
     & > div:last-child {
         margin-bottom: 0px;
@@ -54,7 +61,7 @@
     border-radius: 4px;
     border: 1px solid @gray-dark-1;
     background-color: @gray-light-1;
-    margin-top: 15px;
+    margin-top: 10px;
     padding: 0px 15px;
     flex-wrap: wrap;
     .statusLabel {
@@ -87,4 +94,35 @@
     margin-right: 30px;
     display: flex;
     align-items: center;    
+}
+
+.partyContainer {
+    display: flex;
+    border-radius: 4px;
+    border: 1px solid @gray-dark-1;
+    background-color: @gray-light-1;
+    margin-top: 10px;
+    padding: 6px 15px;
+    min-height: 54px;
+    .partyContent {
+        display: flex;
+        align-self: center;
+    }
+    .organisationContainer {
+        border-right: 1px solid @gray-dark-1;
+        margin-right: 30px;
+        padding-right: 30px;
+    }
+    .organisationContainer, .systemContainer {
+        display: flex;
+        align-items: stretch;
+    }
+    .partyLabel {
+        font-weight: bold;
+        align-self: center;
+        margin-right: 30px;
+    }
+    .partyValue {
+        align-self: center;
+    }
 }

@@ -16,7 +16,7 @@
                     <button type="submit" (click)="saveDomainChanges()" class="btn btn-default" [disable]="deletePending || saveDisabled()" [pending]="savePending">Save changes</button>
                     <button type="button" *ngIf="dataService.isSystemAdmin || (dataService.isCommunityAdmin && !dataService.community!.domainId)" (click)="back()" class="btn btn-default">Back</button>
                 </div>
-                <div class="btn-toolbar" *ngIf="dataService.isSystemAdmin">
+                <div class="btn-toolbar btn-toolbar-delete" *ngIf="dataService.isSystemAdmin">
                     <button type="button" (click)="deleteDomain()" class="btn btn-default btn-delete" [disable]="savePending" [pending]="deletePending">Delete</button>
                 </div>
             </div>

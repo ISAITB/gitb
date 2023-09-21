@@ -732,6 +732,13 @@ div.non-padded-alert div.alert {
 }
 .button-container {
 	display: flex;
+	.btn-group.open {
+		.btn-delete {
+			color: @white;
+			background-color: #dc3545;
+			border-color: #dc3545;
+		}
+	}
 	.btn-delete {
 		color: #dc3545;
 		border-color: #dc3545;
@@ -743,16 +750,16 @@ div.non-padded-alert div.alert {
 			background-color: #dc3545;
 		}
 	}
-	.btn-toolbar:not(:first-child) {
-		&:has(.btn-delete) {
+	.btn-toolbar {
+		display: flex;
+		&.btn-toolbar-delete {
 			margin-left: auto;
 		}
-		display: flex;
 	}
 	&.modal-footer {
 		.btn-toolbar {
 			margin-left: auto;
-			&:has(.btn-delete) {
+			&.btn-toolbar-delete {
 				margin-left: inherit;
 				margin-right: auto;
 				.btn:first-child {

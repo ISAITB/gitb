@@ -5,7 +5,7 @@
 		</div>
 		<div class="panel-body">
 			<ng-container [ngSwitch]="systemStatus.status">
-				<div class="pending-container with-padding" *ngSwitchDefault>
+				<div class="pending-container" *ngSwitchDefault>
 					<div class="pending-icon"><app-pending-block [pending]="true"></app-pending-block></div>
 					<div class="pending-message">Loading {{dataService.labelSystemsLower()}}...</div>
 				</div>

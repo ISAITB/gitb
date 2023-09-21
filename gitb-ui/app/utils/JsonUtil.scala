@@ -2349,10 +2349,12 @@ object JsonUtil {
     json
   }
 
-  def jsConformanceStatement(statement: ConformanceStatementItem, results: ConformanceStatus): JsObject = {
+  def jsConformanceStatement(statement: ConformanceStatementItem, results: ConformanceStatus, systemInfo: System): JsObject = {
     Json.obj(
       "statement" -> jsConformanceStatementItem(statement),
-      "results" -> jsConformanceStatus(results)
+      "results" -> jsConformanceStatus(results),
+      "system" -> jsSystem(systemInfo.toCaseObject),
+      "organisation" -> jsOrganization(systemInfo.owner.get) // This is always present.
     )
   }
 

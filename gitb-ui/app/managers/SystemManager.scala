@@ -342,23 +342,14 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils, testResultManag
   }
 
   def getSystemProfile(systemId: Long): models.System = {
-    //1) Get system info
-    val s = exec(PersistenceSchema.systems.filter(_.id === systemId).result.head)
-
-    //2) Get organization info
-    val o = exec(PersistenceSchema.organizations.filter(_.id === s.owner).result.head)
-
-    //3) Get admins
-    val list = exec(PersistenceSchema.systemHasAdmins.filter(_.systemId === systemId).map(_.userId).result.map(_.toList))
-    var admins: List[Users] = List()
-    list.foreach { adminId =>
-      val user = exec(PersistenceSchema.users.filter(_.id === adminId).result.head)
-      admins ::= user
-    }
-
-    //4) Merge all info and return
-    val system: models.System = new models.System(s, o, admins)
-    system
+    val result = exec(
+      PersistenceSchema.systems
+        .join(PersistenceSchema.organizations).on(_.owner === _.id)
+        .filter(_._1.id === systemId)
+        .result
+        .head
+    )
+    new models.System(result._1, result._2)
   }
 
   def getSystemIdsForOrganization(orgId: Long): Set[Long] = {

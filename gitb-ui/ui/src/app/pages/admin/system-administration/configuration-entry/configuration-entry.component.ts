@@ -15,6 +15,7 @@ export class ConfigurationEntryComponent implements OnInit {
   @Output() statusChange = new EventEmitter<ConfigStatus>();
 
   Constants = Constants
+  hovering = false
 
   constructor() { }
 
