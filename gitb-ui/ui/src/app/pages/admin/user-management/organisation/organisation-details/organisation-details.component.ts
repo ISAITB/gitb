@@ -49,6 +49,7 @@ export class OrganisationDetailsComponent extends BaseComponent implements OnIni
   tabTriggers!: Record<OrganisationTab, {index: number, loader: () => any}>
   @ViewChild('tabs', { static: false }) tabs?: TabsetComponent;
   showAdminInfo!: boolean
+  showLandingPage!: boolean
   showCreateUser!: boolean
   readonly!: boolean
   apiInfoVisible?: boolean
@@ -93,6 +94,10 @@ export class OrganisationDetailsComponent extends BaseComponent implements OnIni
     return true
   }
 
+  protected isShowLandingPage() {
+    return false
+  }
+
   protected isReadonly() {
     return false
   }
@@ -115,6 +120,7 @@ export class OrganisationDetailsComponent extends BaseComponent implements OnIni
     this.organisation.id = this.orgId
     this.communityId = this.getCommunityId()
     this.showAdminInfo = this.isShowAdminInfo()
+    this.showLandingPage = this.isShowLandingPage()
     this.readonly = this.isReadonly()
     this.showCreateUser = this.isShowCreateUser()
     const viewPropertiesParam = this.route.snapshot.queryParamMap.get(Constants.NAVIGATION_QUERY_PARAM.VIEW_PROPERTIES)

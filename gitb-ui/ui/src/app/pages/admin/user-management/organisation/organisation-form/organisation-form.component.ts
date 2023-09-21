@@ -24,6 +24,7 @@ export class OrganisationFormComponent implements OnInit, AfterViewInit {
   @Input() communityId!: number
   @Input() propertyData!: OptionalCustomPropertyFormData
   @Input() showAdminInfo = true
+  @Input() showLandingPage = false
   @Input() readonly = false
 
   selfRegEnabled = false
@@ -64,11 +65,13 @@ export class OrganisationFormComponent implements OnInit, AfterViewInit {
         this.propertyData.properties = data
       })
     }
-    if (this.showAdminInfo) {
+    if (this.showAdminInfo || this.showLandingPage) {
       this.landingPageService.getLandingPagesByCommunity(this.communityId)
       .subscribe((data) => {
         this.landingPages = data
       })
+    }
+    if (this.showAdminInfo) {
       this.legalNoticeService.getLegalNoticesByCommunity(this.communityId)
       .subscribe((data) => {
         this.legalNotices = data

@@ -1187,6 +1187,10 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     checkIsAuthenticated(request)
   }
 
+  def canUpdateOwnOrganisationAndLandingPage(request: RequestWithAttributes[_], landingPageId: Option[Long]):Boolean = {
+    canUpdateOwnOrganisation(request, ignoreExistingTests = false) && (landingPageId.isEmpty || landingPageId.get == -1 || canManageLandingPage(request, landingPageId.get))
+  }
+
   def canUpdateOwnOrganisation(request: RequestWithAttributes[_], ignoreExistingTests: Boolean):Boolean = {
     var ok = false
     val userId = getRequestUserId(request)

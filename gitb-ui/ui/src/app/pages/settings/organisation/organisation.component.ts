@@ -44,6 +44,10 @@ export class OrganisationComponent extends OrganisationDetailsComponent implemen
     return false
   }
 
+  protected isShowLandingPage() {
+    return this.dataService.isCommunityAdmin || this.dataService.isSystemAdmin
+  }
+
   override isReadonly() {
     return !this.route.snapshot.data.canEditOwnOrganisation
   }
@@ -81,12 +85,22 @@ export class OrganisationComponent extends OrganisationDetailsComponent implemen
   override doUpdate() {
     this.clearAlerts()
     this.savePending = true
-    this.accountService.updateVendorProfile(this.organisation.fname, this.organisation.sname, this.propertyData.edit, this.propertyData.properties)
+    let landingPageIdToUse: number|undefined = undefined
+    if (this.showAdminInfo || this.showLandingPage) {
+      landingPageIdToUse = this.organisation.landingPage
+      if (landingPageIdToUse == undefined) {
+        landingPageIdToUse = -1
+      }
+    }
+    this.accountService.updateVendorProfile(this.organisation.fname, this.organisation.sname, this.propertyData.edit, this.propertyData.properties, landingPageIdToUse)
     .subscribe(() => {
       this.dataService.user!.organization!.fname = this.organisation.fname!
       this.dataService.user!.organization!.sname = this.organisation.sname!
       this.dataService.vendor!.fname = this.organisation.fname!
       this.dataService.vendor!.sname = this.organisation.sname!
+      if (landingPageIdToUse != undefined) {
+        this.dataService.currentLandingPageContent = undefined
+      }
       this.popupService.success(this.dataService.labelOrganisation()+" information updated.")
     }).add(() => {
       this.savePending = false

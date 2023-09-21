@@ -291,21 +291,34 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils, systemMan
     result.isEmpty
   }
 
-  def updateOwnOrganization(userId: Long, shortName: String, fullName: String, propertyValues: Option[List[OrganisationParameterValues]], propertyFiles: Option[Map[Long, FileInfo]]) = {
-    val user = exec(PersistenceSchema.users.filter(_.id === userId).result.head)
-    val organisation = exec(PersistenceSchema.organizations.filter(_.id === user.organization).result.head)
-
+  def updateOwnOrganization(userId: Long, shortName: String, fullName: String, propertyValues: Option[List[OrganisationParameterValues]], propertyFiles: Option[Map[Long, FileInfo]], landingPageId: Option[Option[Long]]): Unit = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
-    val actions = new ListBuffer[DBIO[_]]()
-    val q = for {o <- PersistenceSchema.organizations if o.id === user.organization} yield (o.shortname, o.fullname)
-    actions += q.update(shortName, fullName)
-    if (propertyValues.isDefined && propertyFiles.isDefined) {
-      val isAdmin = user.role == UserRole.SystemAdmin.id.toShort || user.role == UserRole.CommunityAdmin.id.toShort
-      actions += saveOrganisationParameterValues(user.organization, organisation.community, isAdmin, propertyValues.get, propertyFiles.get, onSuccessCalls)
-    }
-    val dbAction = DBIO.seq(actions.toList.map(a => a): _*)
-    exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
-    triggerHelper.publishTriggerEvent(new OrganisationUpdatedEvent(organisation.community, organisation.id))
+    val dbAction = for {
+      userInfo <- PersistenceSchema.users.filter(_.id === userId).map(x => (x.organization, x.role)).result.head
+      communityId <- PersistenceSchema.organizations.filter(_.id === userInfo._1).map(_.community).result.head
+      // Update core properties.
+      _ <- PersistenceSchema.organizations
+        .filter(_.id === userInfo._1).map(x => (x.shortname, x.fullname))
+        .update(shortName, fullName)
+      // Update landing page (if applicable).
+      _ <- {
+        if (landingPageId.isDefined) {
+          PersistenceSchema.organizations.filter(_.id === userInfo._1).map(_.landingPage).update(landingPageId.get)
+        } else {
+          DBIO.successful(())
+        }
+      }
+      _ <- {
+        if (propertyValues.isDefined && propertyFiles.isDefined) {
+          val isAdmin = userInfo._2 == UserRole.SystemAdmin.id.toShort || userInfo._2 == UserRole.CommunityAdmin.id.toShort
+          saveOrganisationParameterValues(userInfo._1, communityId, isAdmin, propertyValues.get, propertyFiles.get, onSuccessCalls)
+        } else {
+          DBIO.successful(())
+        }
+      }
+    } yield (communityId, userInfo._1)
+    val results = exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
+    triggerHelper.publishTriggerEvent(new OrganisationUpdatedEvent(results._1, results._2))
   }
 
   def updateOrganizationInternal(orgId: Long, shortName: String, fullName: String, landingPageId: Option[Long], legalNoticeId: Option[Long], errorTemplateId: Option[Long], otherOrganisation: Option[Long], template: Boolean, templateName: Option[String], apiKey: Option[Option[String]], propertyValues: Option[List[OrganisationParameterValues]], propertyFiles: Option[Map[Long, FileInfo]], copyOrganisationParameters: Boolean, copySystemParameters: Boolean, copyStatementParameters: Boolean, checkApiKeyUniqueness: Boolean, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[Option[List[SystemCreationDbInfo]]] = {
