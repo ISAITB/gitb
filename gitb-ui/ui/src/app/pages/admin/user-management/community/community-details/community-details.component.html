@@ -190,8 +190,8 @@
                             </div>
                             <button type="button" class="btn btn-default" (click)="downloadAllResources()" [disable]="resources.length == 0 || selectingForDeleteResources" [pending]="downloadAllResourcesPending">Download all</button>
                             <button type="button" class="btn btn-default" (click)="selectDeleteResources()" *ngIf="!selectingForDeleteResources" [disabled]="resources.length == 0 || downloadAllResourcesPending">Delete resources...</button>
-                            <button type="button" class="btn btn-default" (click)="confirmDeleteResources()" *ngIf="selectingForDeleteResources" [disable]="!resourcesChecked()" [pending]="deleteResourcesPending">Confirm</button>
                             <button type="button" class="btn btn-default" (click)="cancelDeleteResources()" *ngIf="selectingForDeleteResources" [disabled]="deleteResourcesPending">Cancel</button>
+                            <button type="button" class="btn btn-default btn-delete" (click)="confirmDeleteResources()" *ngIf="selectingForDeleteResources" [disable]="!resourcesChecked()" [pending]="deleteResourcesPending">Confirm</button>
                         </div>
                     </div>
                     <div class="panel panel-default">

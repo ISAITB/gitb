@@ -34,11 +34,11 @@
             <h4 class="title"><app-collapsing-icon [isCollapsed]="completedSessionsCollapsed"></app-collapsing-icon>Completed test sessions</h4>
             <div class="btn-toolbar" [class.disable-events]="filterState.updatePending">
                 <button type="button" class="btn btn-default" (click)="selectDeleteSessions();$event.stopPropagation()" *ngIf="!selectingForDelete" [disable]="completedTests.length == 0 || deletePending" [pending]="deleteSessionsPending">Delete sessions...</button>
-                <button type="button" class="btn btn-default" (click)="confirmDeleteSessions();$event.stopPropagation()" *ngIf="selectingForDelete" [disable]="!testsChecked()" [pending]="deleteSessionsPending">Confirm</button>
+                <button type="button" class="btn btn-default btn-delete" (click)="confirmDeleteSessions();$event.stopPropagation()" *ngIf="selectingForDelete" [disable]="!testsChecked()" [pending]="deleteSessionsPending">Confirm</button>
                 <button type="button" class="btn btn-default" (click)="cancelDeleteSessions();$event.stopPropagation()" *ngIf="selectingForDelete" [disabled]="deleteSessionsPending">Cancel</button>
                 <button type="button" class="btn btn-default" (click)="deleteObsolete();$event.stopPropagation()" [disable]="selectingForDelete || deleteSessionsPending" [pending]="deletePending">Delete obsolete sessions</button>
                 <button type="button" class="btn btn-default" (click)="exportCompletedSessionsToCsv();$event.stopPropagation()" [disable]="completedTests.length == 0 || selectingForDelete || deleteSessionsPending" [pending]="exportCompletedPending">Export CSV</button>
-				<button type="button" class="btn btn-default" *ngIf="showCollapseAll()" (click)="onCollapseAll();$event.stopPropagation()">Collapse all</button>
+                <button type="button" class="btn btn-default" *ngIf="showCollapseAll()" (click)="onCollapseAll();$event.stopPropagation()">Collapse all</button>
             </div>
         </div>
         <div [collapse]="completedSessionsCollapsed" [isAnimated]="true">

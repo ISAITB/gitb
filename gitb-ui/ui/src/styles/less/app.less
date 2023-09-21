@@ -730,24 +730,29 @@ div.non-padded-alert div.alert {
 		}
 	}
 }
+.btn-delete {
+	color: #dc3545 !important;
+	border-color: #dc3545 !important;
+	&:hover &:hover[disabled] {
+		border-color: #dc3545 !important;
+	}
+	&:hover:not([disabled]) {
+		color: @white  !important;
+		background-color: #dc3545 !important;
+	}
+}
+.btn-group.open {
+	.btn-delete {
+		color: @white !important;
+		background-color: #dc3545 !important;
+		border-color: #dc3545 !important;
+	}
+}
 .button-container {
 	display: flex;
-	.btn-group.open {
-		.btn-delete {
-			color: @white;
-			background-color: #dc3545;
-			border-color: #dc3545;
-		}
-	}
-	.btn-delete {
-		color: #dc3545;
-		border-color: #dc3545;
-		&:hover {
-			border-color: #dc3545;
-		}
-		&:hover:not([disabled]) {
-			color: @white;
-			background-color: #dc3545;
+	&.panel-heading {
+		.btn-toolbar.btn-toolbar-delete {
+			margin-left: inherit;
 		}
 	}
 	.btn-toolbar {
