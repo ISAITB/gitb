@@ -320,24 +320,18 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
     val actorId = ParameterExtractor.requiredBodyParameter(request, Parameters.ACTOR_ID).toLong
     authorizationManager.canViewOwnConformanceCertificateReport(request, systemId)
     val communityId = systemManager.getCommunityIdOfSystem(systemId)
-    var settingsToUse: Option[ConformanceCertificates] = None
-    val storedSettings = communityManager.getConformanceCertificateSettingsWrapper(communityId)
-    if (storedSettings.isEmpty) {
-      // Use default settings.
-      settingsToUse = Some(ConformanceCertificates(0L, None, None, includeTitle = true, includeMessage = false, includeTestStatus = true, includeTestCases = true, includeDetails = true, includeSignature = false, None, None, None, None, communityId))
+    var settingsToUse = communityManager.getConformanceCertificateSettingsWrapper(communityId, defaultIfMissing = true).get
+    val completeSettings = new ConformanceCertificate(settingsToUse)
+    if (settingsToUse.includeSignature) {
+      completeSettings.keystoreFile = settingsToUse.keystoreFile
+      completeSettings.keystoreType = settingsToUse.keystoreType
+      completeSettings.keyPassword = Some(MimeUtil.decryptString(settingsToUse.keyPassword.get))
+      completeSettings.keystorePassword = Some(MimeUtil.decryptString(settingsToUse.keystorePassword.get))
+      settingsToUse = completeSettings.toCaseObject
     } else {
-      val completeSettings = new ConformanceCertificate(storedSettings.get)
-      if (storedSettings.get.includeSignature) {
-        completeSettings.keystoreFile = storedSettings.get.keystoreFile
-        completeSettings.keystoreType = storedSettings.get.keystoreType
-        completeSettings.keyPassword = Some(MimeUtil.decryptString(storedSettings.get.keyPassword.get))
-        completeSettings.keystorePassword = Some(MimeUtil.decryptString(storedSettings.get.keystorePassword.get))
-        settingsToUse = Some(completeSettings.toCaseObject)
-      } else {
-        settingsToUse = storedSettings
-      }
+      settingsToUse = settingsToUse
     }
-    exportConformanceCertificateInternal(settingsToUse.get, communityId, systemId, actorId, None)
+    exportConformanceCertificateInternal(settingsToUse, communityId, systemId, actorId, None)
   }
 
   def exportConformanceCertificateReport(): Action[AnyContent] = authorizedAction { request =>
@@ -351,7 +345,7 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
     var settings = JsonUtil.parseJsConformanceCertificateSettings(jsSettings, communityId, None)
     if (settings.includeSignature) {
       // The signature information needs to be looked up from the stored data.
-      val storedSettings = communityManager.getConformanceCertificateSettingsWrapper(communityId)
+      val storedSettings = communityManager.getConformanceCertificateSettingsWrapper(communityId, defaultIfMissing = true)
       val completeSettings = new ConformanceCertificate(settings)
       completeSettings.keystoreFile = storedSettings.get.keystoreFile
       completeSettings.keystoreType = storedSettings.get.keystoreType
@@ -393,7 +387,7 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
         FileUtils.deleteQuietly(reportPath.toFile.getParentFile)
         if (settings.includeSignature && (settings.keystorePassword.isEmpty || settings.keyPassword.isEmpty || settings.keystoreFile.isEmpty)) {
           // The passwords or file need to be looked up from the stored data.
-          val storedSettings = communityManager.getConformanceCertificateSettingsWrapper(communityId)
+          val storedSettings = communityManager.getConformanceCertificateSettingsWrapper(communityId, defaultIfMissing = true)
           val completeSettings = new ConformanceCertificate(settings)
           completeSettings.keyPassword = Some(MimeUtil.decryptString(storedSettings.get.keyPassword.get))
           completeSettings.keystorePassword = Some(MimeUtil.decryptString(storedSettings.get.keystorePassword.get))

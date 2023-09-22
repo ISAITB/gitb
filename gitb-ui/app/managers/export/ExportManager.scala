@@ -678,7 +678,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, domainManager: 
     }
     // Certificate settings.
     if (exportSettings.certificateSettings) {
-      val certificateSettings = communityManager.getConformanceCertificateSettingsWrapper(communityId)
+      val certificateSettings = communityManager.getConformanceCertificateSettingsWrapper(communityId, defaultIfMissing = false)
       if (certificateSettings.isDefined) {
         communityData.setConformanceCertificateSettings(new ConformanceCertificateSettings)
         communityData.getConformanceCertificateSettings.setAddTitle(certificateSettings.get.includeTitle)

@@ -748,8 +748,12 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityRes
     exec(PersistenceSchema.communityLabels.filter(_.community === communityId).result).toList
   }
 
-  def getConformanceCertificateSettingsWrapper(communityId: Long): Option[ConformanceCertificates] = {
-    exec(getConformanceCertificateSettings(communityId))
+  def getConformanceCertificateSettingsWrapper(communityId: Long, defaultIfMissing: Boolean): Option[ConformanceCertificates] = {
+    var settings = exec(getConformanceCertificateSettings(communityId))
+    if (settings.isEmpty && defaultIfMissing) {
+      settings = Some(ConformanceCertificates(0L, Some("Conformance Certificate"), None, includeTitle = true, includeMessage = false, includeTestStatus = true, includeTestCases = true, includeDetails = true, includeSignature = false, None, None, None, None, communityId))
+    }
+    settings
   }
 
   def getConformanceCertificateSettings(communityId: Long): DBIO[Option[ConformanceCertificates]] = {
