@@ -3,7 +3,6 @@ import { Constants } from 'src/app/common/constants';
 import { ConformanceService } from 'src/app/services/conformance.service';
 import { DataService } from 'src/app/services/data.service';
 import { ReportService } from 'src/app/services/report.service';
-import { SystemConfigurationService } from 'src/app/services/system-configuration.service';
 import { FilterState } from 'src/app/types/filter-state';
 import { TableColumnDefinition } from 'src/app/types/table-column-definition.type';
 import { TestResultSearchCriteria } from 'src/app/types/test-result-search-criteria';
@@ -68,7 +67,6 @@ export class SessionDashboardComponent implements OnInit {
   
   constructor(
     public dataService: DataService,
-    private systemConfigurationService: SystemConfigurationService,
     private conformanceService: ConformanceService,
     private reportService: ReportService,
     private confirmationDialogService: ConfirmationDialogService,

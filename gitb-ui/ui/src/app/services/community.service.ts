@@ -438,6 +438,13 @@ export class CommunityService {
     })
   }
 
+  getCommunityResources(communityId: number) {
+    return this.restService.get<CommunityResource[]>({
+      path: ROUTES.controllers.CommunityService.getCommunityResources(communityId).url,
+      authenticate: true
+    })    
+  }
+
   downloadCommunityResources(communityId: number, filter: string|undefined) {
     return this.restService.get<ArrayBuffer>({
       path: ROUTES.controllers.CommunityService.downloadCommunityResources(communityId).url,

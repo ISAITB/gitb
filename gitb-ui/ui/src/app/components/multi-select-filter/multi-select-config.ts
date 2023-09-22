@@ -9,5 +9,7 @@ export interface MultiSelectConfig<T extends EntityWithId> {
     loader?: () => Observable<T[]>
     clearItems?: EventEmitter<void>
     replaceSelectedItems?: EventEmitter<T[]>
+    singleSelection?: boolean
+    filterLabel?: string
 
 }

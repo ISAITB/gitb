@@ -39,6 +39,9 @@
 				<div [collapse]="!showContent" [isAnimated]="true">
 					<div class="row">
 						<div class="col-sm-12">
+							<div class="div-padded-bottom" *ngIf="dataService.isCommunityAdmin">
+								<app-placeholder-selector [resources]="true" [community]="communityId"></app-placeholder-selector>
+							</div>
                             <app-editor id="content" name="content" [(ngModel)]="page.content"></app-editor>
 						</div>
                     </div>                    

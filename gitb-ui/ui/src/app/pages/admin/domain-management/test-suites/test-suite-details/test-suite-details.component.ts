@@ -21,7 +21,8 @@ import { forkJoin } from 'rxjs';
 
 @Component({
   selector: 'app-test-suite-details',
-  templateUrl: './test-suite-details.component.html'
+  templateUrl: './test-suite-details.component.html',
+  styleUrls: [ './test-suite-details.component.less' ]
 })
 export class TestSuiteDetailsComponent extends BaseComponent implements OnInit, AfterViewInit {
 

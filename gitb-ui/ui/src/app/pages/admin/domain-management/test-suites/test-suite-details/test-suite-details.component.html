@@ -40,15 +40,20 @@
 					<div class="col-xs-12">
 						<div class="form-separator expandable" (click)="showDocumentation = !showDocumentation">
 							<div><h4 class="title"><app-collapsing-icon [isCollapsed]="!showDocumentation"></app-collapsing-icon>Documentation</h4></div>
-						</div>						
+						</div>
 					</div>
 				</div>
 				<div [collapse]="!showDocumentation" [isAnimated]="true">
 					<div class="row form-group">
 						<div class="col-xs-offset-1 col-xs-10">
-							<app-editor id="documentation" name="documentation" [(ngModel)]="testSuite.documentation"></app-editor>
+							<div class="div-padded-bottom" *ngIf="dataService.isCommunityAdmin">
+								<app-placeholder-selector [resources]="true" [community]="dataService.vendor?.community"></app-placeholder-selector>
+							</div>
+							<div class="editorContainer">
+								<app-editor id="documentation" name="documentation" [(ngModel)]="testSuite.documentation"></app-editor>
+								<app-tooltip tbTooltip="Extended documentation on the test suite that users can click to view before test execution. Use this to provide detailed information, prerequisites and references to external resources." [withMargin]="true"></app-tooltip>
+							</div>
 						</div>
-						<app-tooltip tbTooltip="Extended documentation on the test suite that users can click to view before test execution. Use this to provide detailed information, prerequisites and references to external resources."></app-tooltip>
 					</div>
 					<div class="row form-group">
 						<div class="col-xs-offset-1 col-xs-10">
@@ -82,7 +87,7 @@
 							[columns]="testCaseTableColumns"
 							[data]="testSuite.testCases"
 							noDataMessage="No test cases found"
-							[loadingStatus]="dataStatus" 
+							[loadingStatus]="dataStatus"
 							[allowSelect]="true"
 							(onSelect)="onTestCaseSelect($event)">
 						</div>
@@ -105,7 +110,7 @@
 							[columns]="specificationTableColumns"
 							[data]="linkedSpecifications"
 							[noDataMessage]="'No '+dataService.labelSpecificationsLower()+' found being linked to this test suite'"
-							[loadingStatus]="specificationStatus" 
+							[loadingStatus]="specificationStatus"
 							[allowSelect]="!selectingForUnlink"
 							(onSelect)="onSpecificationSelect($event)"
 							[checkboxEnabled]="selectingForUnlink"
@@ -113,7 +118,7 @@
 						</div>
 					</div>
 				</div>
-			</tab>			
+			</tab>
 		</tabset>
 	</div>
 </div>

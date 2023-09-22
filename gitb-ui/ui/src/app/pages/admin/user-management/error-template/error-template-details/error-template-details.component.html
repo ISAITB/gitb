@@ -40,7 +40,7 @@
 					<div class="row">
                         <div class="col-sm-12">
                             <div class="div-padded-bottom">
-                                <app-placeholder-selector [placeholders]="placeholders"></app-placeholder-selector>
+                                <app-placeholder-selector [placeholders]="placeholders" [resources]="dataService.isCommunityAdmin" [community]="communityId"></app-placeholder-selector>
                             </div>
                             <div>
                                 <app-editor id="content" name="content" [(ngModel)]="template.content"></app-editor>

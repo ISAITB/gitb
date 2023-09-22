@@ -66,9 +66,14 @@
 				<div [collapse]="!showDocumentation" [isAnimated]="true">
 					<div class="row form-group">
 						<div class="col-xs-offset-1 col-xs-10">
-                            <app-editor id="documentation" name="documentation" [(ngModel)]="testCase.documentation"></app-editor>
+							<div class="div-padded-bottom" *ngIf="dataService.isCommunityAdmin">
+								<app-placeholder-selector [resources]="true" [community]="dataService.vendor?.community"></app-placeholder-selector>
+							</div>
+							<div class="editorContainer">
+								<app-editor id="documentation" name="documentation" [(ngModel)]="testCase.documentation"></app-editor>
+								<app-tooltip tbTooltip="Extended documentation on the test case that users can click to view before and during test execution. Use this to provide detailed information, prerequisites, steps to follow and references to external resources." [withMargin]="true"></app-tooltip>
+							</div>
 						</div>
-						<app-tooltip tbTooltip="Extended documentation on the test case that users can click to view before and during test execution. Use this to provide detailed information, prerequisites, steps to follow and references to external resources."></app-tooltip>
 					</div>
 					<div class="row form-group">
 						<div class="col-xs-offset-1 col-xs-10">

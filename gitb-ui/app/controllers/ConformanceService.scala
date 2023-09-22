@@ -648,7 +648,7 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
 
   def downloadConformanceCertificateKeystore(communityId: Long) = authorizedAction { request =>
     authorizationManager.canViewConformanceCertificateSettings(request, communityId)
-    val settings = communityManager.getConformanceCertificateSettingsWrapper(communityId)
+    val settings = communityManager.getConformanceCertificateSettingsWrapper(communityId, defaultIfMissing = false)
     if (settings.isDefined && settings.get.keystoreFile.isDefined) {
       val tempFile = Files.createTempFile("itb", "store")
       try {
@@ -670,7 +670,7 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
 
   def getConformanceCertificateSettings(communityId: Long) = authorizedAction { request =>
     authorizationManager.canViewConformanceCertificateSettings(request, communityId)
-    val settings = communityManager.getConformanceCertificateSettingsWrapper(communityId)
+    val settings = communityManager.getConformanceCertificateSettingsWrapper(communityId, defaultIfMissing = true)
     val includeKeystoreData = ParameterExtractor.optionalQueryParameter(request, Parameters.INCLUDE_KEYSTORE_DATA).getOrElse("false").toBoolean
     val json = JsonUtil.jsConformanceSettings(settings, includeKeystoreData)
     if (json.isDefined) {
@@ -743,7 +743,7 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
           }
         }
         if (keyPassword.isEmpty || keystorePassword.isEmpty || keystoreFile.isEmpty) {
-          val storedSettings = communityManager.getConformanceCertificateSettingsWrapper(communityId)
+          val storedSettings = communityManager.getConformanceCertificateSettingsWrapper(communityId, defaultIfMissing = false)
           if (storedSettings.isDefined) {
             if (keyPassword.isEmpty && storedSettings.get.keyPassword.isDefined) {
               keyPassword = Some(MimeUtil.decryptString(storedSettings.get.keyPassword.get))

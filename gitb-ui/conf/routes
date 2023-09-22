@@ -256,6 +256,7 @@ DELETE  /api/communities/resources/:id          @controllers.CommunityService.de
 POST    /api/communities/:communityId/resources/delete @controllers.CommunityService.deleteCommunityResources(communityId: Long)
 GET     /api/communities/:communityId/resources @controllers.CommunityService.searchCommunityResources(communityId: Long)
 GET     /api/communities/resources/:id/download @controllers.CommunityService.downloadCommunityResourceById(id: Long)
+GET     /api/communities/:communityId/resources/list @controllers.CommunityService.getCommunityResources(communityId: Long)
 GET     /api/communities/:communityId/resources/archive @controllers.CommunityService.downloadCommunityResources(communityId: Long)
 POST    /api/communities/:communityId/resources/archive @controllers.CommunityService.uploadCommunityResourcesInBulk(communityId: Long)
 

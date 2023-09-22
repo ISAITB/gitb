@@ -471,6 +471,12 @@ class CommunityService @Inject() (implicit ec: ExecutionContext, authorizedActio
     }
   }
 
+  def getCommunityResources(communityId: Long) = authorizedAction { request =>
+    authorizationManager.canManageCommunity(request, communityId)
+    val result = communityResourceManager.getCommunityResources(communityId)
+    ResponseConstructor.constructJsonResponse(JsonUtil.jsCommunityResources(result).toString)
+  }
+
   def searchCommunityResources(communityId: Long) = authorizedAction { request =>
     authorizationManager.canManageCommunity(request, communityId)
     val filter = ParameterExtractor.optionalQueryParameter(request, Parameters.FILTER)

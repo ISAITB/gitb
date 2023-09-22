@@ -43,7 +43,7 @@ export class TestCaseDetailsComponent extends BaseComponent implements OnInit, A
   private tagCounter = 0
 
   constructor(
-    private dataService: DataService,
+    public dataService: DataService,
     private testSuiteService: TestSuiteService,
     private routingService: RoutingService,
     private route: ActivatedRoute,
