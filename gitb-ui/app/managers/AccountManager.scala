@@ -16,7 +16,7 @@ import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
-class AccountManager @Inject()(dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class AccountManager @Inject()(dbConfigProvider: DatabaseConfigProvider, landingPageManager: LandingPageManager, legalNoticeManager: LegalNoticeManager, errorTemplateManager: ErrorTemplateManager) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
 
@@ -95,31 +95,36 @@ class AccountManager @Inject()(dbConfigProvider: DatabaseConfigProvider) extends
   }
 
   def getVendorProfile(userId: Long) = {
-    //1) Get organization id
-    val orgId = exec(PersistenceSchema.users.filter(_.id === userId).result.headOption).get.organization
-
-    //2) Get Admin info
-    val admin = exec(PersistenceSchema.users.filter(_.organization === orgId).filter(_.role === UserRole.VendorAdmin.id.toShort).result.headOption)
-
-    //3) Get System info
-    val systems: List[Systems] = exec(PersistenceSchema.systems.filter(_.owner === orgId).result.map(_.toList))
-
-    //4) Get Organization info
-    val org = exec(PersistenceSchema.organizations.filter(_.id === orgId).result.headOption).get
-
-    //5) Get Landing Page info
-    val page = exec(PersistenceSchema.landingPages.filter(_.id === org.landingPage).result.headOption)
-
-    //6) Get Legal Notice info
-    val ln = exec(PersistenceSchema.legalNotices.filter(_.id === org.legalNotice).result.headOption)
-
-    //7) Get Error Template info
-    val et = exec(PersistenceSchema.errorTemplates.filter(_.id === org.errorTemplate).result.headOption)
-
-    //8) Get Community info
-    val c = exec(PersistenceSchema.communities.filter(_.id === org.community).result.headOption)
-
-    new Organization(org, systems, admin.orNull, page.orNull, ln.orNull, et.orNull, c)
+    val result = exec(for {
+      organisation <- PersistenceSchema.users
+        .join(PersistenceSchema.organizations).on(_.organization === _.id)
+        .filter(_._1.id === userId)
+        .map(_._2)
+        .result
+        .head
+      landingPage <- {
+        if (organisation.landingPage.isDefined) {
+          landingPageManager.getLandingPageByIdInternal(organisation.landingPage.get)
+        } else {
+          landingPageManager.getCommunityDefaultLandingPageInternal(organisation.community)
+        }
+      }
+      legalNotice <- {
+        if (organisation.legalNotice.isDefined) {
+          legalNoticeManager.getLegalNoticeByIdInternal(organisation.legalNotice.get)
+        } else {
+          DBIO.successful(None)
+        }
+      }
+      errorTemplate <- {
+        if (organisation.errorTemplate.isDefined) {
+          errorTemplateManager.getErrorTemplateByIdInternal(organisation.errorTemplate.get)
+        } else {
+          DBIO.successful(None)
+        }
+      }
+    } yield (organisation, landingPage, legalNotice, errorTemplate))
+    new Organization(result._1, result._2.orNull, result._3.orNull, result._4.orNull)
   }
 
   def registerUser(adminId: Long, user: Users) = {

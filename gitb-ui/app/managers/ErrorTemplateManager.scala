@@ -46,9 +46,12 @@ class ErrorTemplateManager @Inject() (dbConfigProvider: DatabaseConfigProvider) 
    * Gets error template with specified id
    */
   def getErrorTemplateById(templateId: Long): ErrorTemplate = {
-    val r = exec(PersistenceSchema.errorTemplates.filter(_.id === templateId).result.head)
-    val e = new ErrorTemplate(r)
-    e
+    val r = exec(getErrorTemplateByIdInternal(templateId))
+    new ErrorTemplate(r.get)
+  }
+
+  def getErrorTemplateByIdInternal(templateId: Long): DBIO[Option[ErrorTemplates]] = {
+    PersistenceSchema.errorTemplates.filter(_.id === templateId).result.headOption
   }
 
   def getCommunityId(templateId: Long): Long = {
@@ -91,7 +94,7 @@ class ErrorTemplateManager @Inject() (dbConfigProvider: DatabaseConfigProvider) 
         if (errorTemplateOption.isDefined) {
           val errorTemplate = errorTemplateOption.get
 
-          if (!name.isEmpty && errorTemplate.name != name) {
+          if (name.nonEmpty && errorTemplate.name != name) {
             val q = for {l <- PersistenceSchema.errorTemplates if l.id === templateId} yield (l.name)
             actions += q.update(name)
           }

@@ -1846,24 +1846,8 @@ object JsonUtil {
    * @return String
    */
   def serializeOrganization(org:Organization, includeAdminInfo: Boolean):String = {
-    //1) Serialize Organization
+    // Serialize Organization
     var jOrganization:JsObject = jsOrganization(org.toCaseObject)
-    //2) If User exists, convert and append it to Organization
-    if(org.admin.isDefined){
-      jOrganization = jOrganization ++ Json.obj("admin" -> jsUser(org.admin.get))
-    } else{
-      jOrganization = jOrganization ++ Json.obj("admin" -> JsNull)
-    }
-    //3) If Systems exist, convert and append them to Organization
-    if(org.systems.isDefined){
-      var jsSystems:JsArray = Json.arr()
-      org.systems.get.foreach { system =>
-        jsSystems = jsSystems.append( jsSystem(system) )
-      }
-      jOrganization = jOrganization ++ Json.obj("systems" -> jsSystems)
-    } else{
-      jOrganization = jOrganization ++ Json.obj("systems" -> JsNull)
-    }
     //
     if(org.landingPageObj.isDefined){
       jOrganization = jOrganization ++ Json.obj("landingPages" -> jsLandingPage(org.landingPageObj.get))
@@ -1883,12 +1867,7 @@ object JsonUtil {
       jOrganization = jOrganization ++ Json.obj("errorTemplates" -> JsNull)
     }
     //
-    if(org.community.isDefined){
-      jOrganization = jOrganization ++ Json.obj("communities" -> jsCommunity(org.community.get, includeAdminInfo))
-    } else{
-      jOrganization = jOrganization ++ Json.obj("communities" -> JsNull)
-    }
-    //4) Return JSON String
+    // Return JSON String
     jOrganization.toString
   }
 

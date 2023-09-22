@@ -45,9 +45,12 @@ class LegalNoticeManager @Inject() (dbConfigProvider: DatabaseConfigProvider) ex
    * Gets legal notice with specified id
    */
   def getLegalNoticeById(noticeId: Long): LegalNotice = {
-    val l = exec(PersistenceSchema.legalNotices.filter(_.id === noticeId).result.head)
-    val ln = new LegalNotice(l)
-    ln
+    val l = exec(getLegalNoticeByIdInternal(noticeId))
+    new LegalNotice(l.get)
+  }
+
+  def getLegalNoticeByIdInternal(noticeId: Long): DBIO[Option[LegalNotices]] = {
+    PersistenceSchema.legalNotices.filter(_.id === noticeId).result.headOption
   }
 
   def getCommunityId(noticeId: Long): Long = {

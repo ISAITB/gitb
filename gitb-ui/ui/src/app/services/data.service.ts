@@ -188,6 +188,7 @@ export class DataService {
 
   setVendor(vendor: Organisation) {
     this.vendor = vendor
+    this.currentLandingPageContent = vendor.landingPages?.content
   }
 
   setCommunity(community: Community) {
