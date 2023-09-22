@@ -10,6 +10,7 @@ import { LegalNotice } from 'src/app/types/legal-notice';
 import { CommunityTab } from '../../community/community-details/community-tab.enum';
 import { Constants } from 'src/app/common/constants';
 import { SystemAdministrationTab } from '../../../system-administration/system-administration-tab.enum';
+import { HtmlService } from 'src/app/services/html.service';
 
 @Component({
   selector: 'app-legal-notice-details',
@@ -35,7 +36,8 @@ export class LegalNoticeDetailsComponent extends BaseComponent implements OnInit
     private route: ActivatedRoute,
     private legalNoticeService: LegalNoticeService,
     private confirmationDialogService: ConfirmationDialogService,
-    private popupService: PopupService
+    private popupService: PopupService,
+    private htmlService: HtmlService
     ) { super() }
 
   ngAfterViewInit(): void {
@@ -120,6 +122,10 @@ export class LegalNoticeDetailsComponent extends BaseComponent implements OnInit
     } else {
       this.routingService.toCommunity(this.communityId, CommunityTab.legalNotices)
     }
+  }
+
+  preview() {
+    this.htmlService.showHtml('Legal Notice', this.notice.content!)
   }
 
 }

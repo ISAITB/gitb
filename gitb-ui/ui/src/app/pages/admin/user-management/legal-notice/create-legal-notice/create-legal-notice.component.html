@@ -50,6 +50,7 @@
             <div class="panel-footer">
                 <div class="btn-toolbar">
                     <button class="btn btn-default" type="submit" (click)="createLegalNotice()" [disable]="saveDisabled()" [pending]="savePending">Save</button>
+                    <button class="btn btn-default" type="button" (click)="preview()" [disabled]="!textProvided(notice.content)">Preview</button>
                     <button class="btn btn-default" type="button" (click)="cancelCreateLegalNotice()">Cancel</button>
                 </div>
             </div>

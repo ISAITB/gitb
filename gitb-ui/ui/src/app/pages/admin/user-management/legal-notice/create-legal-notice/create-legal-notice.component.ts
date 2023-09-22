@@ -10,6 +10,7 @@ import { LegalNotice } from 'src/app/types/legal-notice';
 import { CommunityTab } from '../../community/community-details/community-tab.enum';
 import { Constants } from 'src/app/common/constants';
 import { SystemAdministrationTab } from '../../../system-administration/system-administration-tab.enum';
+import { HtmlService } from 'src/app/services/html.service';
 
 @Component({
   selector: 'app-create-legal-notice',
@@ -33,7 +34,8 @@ export class CreateLegalNoticeComponent extends BaseComponent implements OnInit,
     private legalNoticeService: LegalNoticeService,
     private confirmationDialogService: ConfirmationDialogService,
     private popupService: PopupService,
-    public dataService: DataService
+    public dataService: DataService,
+    private htmlService: HtmlService
   ) { super() }
 
   ngAfterViewInit(): void {
@@ -94,5 +96,9 @@ export class CreateLegalNoticeComponent extends BaseComponent implements OnInit,
       this.routingService.toCommunity(this.communityId, CommunityTab.legalNotices)
     }
   }
+
+  preview() {
+    this.htmlService.showHtml('Legal Notice', this.notice.content!)
+  }  
 
 }

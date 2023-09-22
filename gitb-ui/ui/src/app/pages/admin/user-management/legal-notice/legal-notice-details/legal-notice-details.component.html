@@ -50,6 +50,7 @@
             <div class="panel-footer button-container">
                 <div class="btn-toolbar">
                     <button class="btn btn-default" type="submit" (click)="updateLegalNotice(false)" [disable]="saveDisabled() || copyPending" [pending]="savePending">Update</button>
+                    <button class="btn btn-default" type="button" (click)="preview()" [disabled]="!textProvided(notice.content)">Preview</button>
                     <button class="btn btn-default" type="button" (click)="updateLegalNotice(true)" [disable]="saveDisabled() || savePending" [pending]="copyPending">Copy</button>
                     <button class="btn btn-default" type="button" (click)="cancelDetailLegalNotice()">Back</button>
                 </div>
