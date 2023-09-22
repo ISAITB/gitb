@@ -10,12 +10,12 @@ import { LandingPage } from 'src/app/types/landing-page';
 import { CommunityTab } from '../../community/community-details/community-tab.enum';
 import { Constants } from 'src/app/common/constants';
 import { SystemAdministrationTab } from '../../../system-administration/system-administration-tab.enum';
+import { BsModalService } from 'ngx-bootstrap/modal';
+import { PreviewLandingPageComponent } from '../preview-landing-page/preview-landing-page.component';
 
 @Component({
   selector: 'app-landing-page-details',
-  templateUrl: './landing-page-details.component.html',
-  styles: [
-  ]
+  templateUrl: './landing-page-details.component.html'
 })
 export class LandingPageDetailsComponent extends BaseComponent implements OnInit, AfterViewInit {
 
@@ -35,7 +35,8 @@ export class LandingPageDetailsComponent extends BaseComponent implements OnInit
     public dataService: DataService,
     private landingPageService: LandingPageService,
     private confirmationDialogService: ConfirmationDialogService,
-    private popupService: PopupService
+    private popupService: PopupService,
+    private modalService: BsModalService
   ) { super() }
 
   ngAfterViewInit(): void {
@@ -131,6 +132,14 @@ export class LandingPageDetailsComponent extends BaseComponent implements OnInit
     } else {
       this.routingService.toCommunity(this.communityId, CommunityTab.landingPages)
     }
+  }
+
+  preview() {
+    this.modalService.show(PreviewLandingPageComponent, {
+      initialState: {
+        previewContent: this.page.content!
+      }
+    })
   }
 
 }

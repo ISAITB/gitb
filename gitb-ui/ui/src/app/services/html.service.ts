@@ -11,19 +11,19 @@ export class HtmlService {
     private modalService: BsModalService
   ) { }
 
-  showHtml(headerText: string, html: string, size?: string):void {
+  showHtml(headerText: string|undefined, html: string, size?: string, customClass?: string):void {
     if (size == undefined) {
       size = 'modal-lg'
     }
     const initialState = {
       headerText: headerText,
-      html: html
+      html: html,
+      customClass: customClass
     }
     this.modalService.show(HtmlComponent, {
       initialState,
-      class: size
+      class: size,
     })
-
   }
 
 }

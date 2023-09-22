@@ -175,6 +175,7 @@ import { ManageBadgeComponent } from './components/manage-badges/manage-badge/ma
 import { PreviewBadgeModalComponent } from './modals/preview-badge-modal/preview-badge-modal.component';
 import { ViewBadgeButtonComponent } from './components/view-badge-button/view-badge-button.component';
 import { ResultLabelComponent } from './components/result-label/result-label.component';
+import { PreviewLandingPageComponent } from './pages/admin/user-management/landing-page/preview-landing-page/preview-landing-page.component';
 
 @NgModule({
   providers: [ 
@@ -339,7 +340,8 @@ import { ResultLabelComponent } from './components/result-label/result-label.com
     SanitizeHtmlPipe,
     PreviewBadgeModalComponent,
     ViewBadgeButtonComponent,
-    ResultLabelComponent
+    ResultLabelComponent,
+    PreviewLandingPageComponent
   ],
   imports: [
     ColorPickerModule,

@@ -14,6 +14,28 @@ body {
 	margin: 0;
 }
 
+section.page-top {
+    height: @page-header-height * 1px;
+    position: relative;
+    align-items: center;
+    display: flex;
+	border-bottom-width: 5px;
+	border-bottom-style: solid;
+	h2 {
+		display: inline-block;
+		font-weight: 200;
+		margin: 0px;
+		padding: 0px;
+		position: relative;
+	}
+}
+
+footer {
+    font-size: 0.9em;
+    position: relative;
+    clear: both;
+}
+
 /* Scroll to Top */
 a.scroll-to-top {
 	-moz-border-radius: 7px 7px 0 0;
@@ -182,7 +204,7 @@ h1, h2, h3, h4, h5, h6 {
 	justify-content: center;
 	.pagination {
 		margin: 10px 0px;
-	}	
+	}
 }
 
 table.expandable-table {
@@ -315,7 +337,7 @@ table.table-directive {
 	white-space: nowrap;
 	&.padding-right-large {
 		padding-right: 40px;
-	}	
+	}
 }
 #system-tests-table, #dashboard-table, #conformanceDashboardPageTable {
 	th.tb-result {
@@ -646,11 +668,11 @@ div.non-padded-alert div.alert {
 }
 
 .header-bar {
-	border-top: 5px solid @gray-light-2;	
+	border-top: @page-header-bar-border-width * 1px solid @gray-light-2;
 }
 .header-container {
     display: flex;
-	min-height: 59px;
+	height: @page-header-bar-height * 1px;
     position: relative;
     .header-logo-container {
         display: flex;
@@ -663,10 +685,11 @@ div.non-padded-alert div.alert {
 }
 
 .footer-bar {
-    background-color: #0065a2;
-    border-top: 4px solid #074A8B;
     font-size: 0.9em;
     min-height: 60px;
+	display: flex;
+	border-top-width: 4px;
+	border-top-style: solid;
     .container, .version-div .footer-links {
         display: flex;
         align-items: center;
@@ -677,7 +700,7 @@ div.non-padded-alert div.alert {
     }
     .version-div {
         display: flex;
-        margin-left: auto;        
+        margin-left: auto;
     }
     .footer-links {
         margin-top: 1px;
@@ -788,4 +811,20 @@ span.mini-tab{
 }
 span.caret.withMargin {
 	margin-left: 10px;
+}
+
+.modal-dialog.landingPagePreview {
+	margin-top: (@page-root-margin-top+@page-header-height+@page-header-bar-border-width+@page-header-bar-height) * 1px;
+	@media (min-width: 768px) {
+		width: 750px;
+	}
+	@media (min-width: 992px) {
+		width: 970px;
+	}
+	@media (min-width: 1200px) {
+		width: 1170px;
+	}
+	.modal-body {
+		padding: 0px;
+	}
 }

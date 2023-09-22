@@ -50,6 +50,7 @@
             <div class="panel-footer">
                 <div class="btn-toolbar">
                     <button class="btn btn-default" type="submit" (click)="createLandingPage()" [disable]="saveDisabled()" [pending]="savePending">Save</button>
+                    <button class="btn btn-default" type="button" (click)="preview()" [disabled]="!textProvided(page.content)">Preview</button>
                     <button class="btn btn-default" type="button" (click)="cancelCreateLandingPage()">Cancel</button>
                 </div>
             </div>

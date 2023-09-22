@@ -50,6 +50,7 @@
             <div class="panel-footer button-container">
                 <div class="btn-toolbar">
                     <button class="btn btn-default" type="submit" (click)="updateLandingPage(false)" [disable]="saveDisabled() || copyPending" [pending]="savePending">Update</button>
+                    <button class="btn btn-default" type="button" (click)="preview()" [disabled]="!textProvided(page.content)">Preview</button>
                     <button class="btn btn-default" type="button" (click)="updateLandingPage(true)" [disable]="saveDisabled() || savePending" [pending]="copyPending">Copy</button>
                     <button class="btn btn-default" type="button" (click)="cancelDetailLandingPage()">Back</button>
                 </div>
