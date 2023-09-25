@@ -54,14 +54,15 @@ export class IndexComponent implements OnInit {
     this.systemConfigurationService.getFooterLogo().subscribe((data) => {
       this.footer = data
     })
-    this.authProviderService.onLogout$.subscribe(() => {
-      this.logoutInProgress = true
-    })
   }
 
 	switchAccount() {
+    this.logoutInProgress = true
     this.cookieService.set(Constants.LOGIN_OPTION_COOKIE_KEY, Constants.LOGIN_OPTION.FORCE_CHOICE)
     this.authProviderService.signalLogout({full: false, keepLoginOption: true})
+    this.authProviderService.onLogout$.subscribe(() => {
+      this.logoutInProgress = false
+    })    
   }
 
 	logout() {

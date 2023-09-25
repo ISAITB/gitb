@@ -30,7 +30,6 @@ import { BaseComponent } from '../base-component.component';
 })
 export class LoginComponent extends BaseComponent implements OnInit, AfterViewInit {
 
-  directLogin = false
   spinner = false
   createPending = false
   rememberMe = false
@@ -44,6 +43,7 @@ export class LoginComponent extends BaseComponent implements OnInit, AfterViewIn
   onetimePassword = false
   weakPassword = false
   passwordChangeData: PasswordChangeData = {}
+  loginInProgress = false
 
   constructor(
     private authProvider: AuthProviderService,
@@ -81,16 +81,14 @@ export class LoginComponent extends BaseComponent implements OnInit, AfterViewIn
       } else if (this.loginOption == Constants.LOGIN_OPTION.MIGRATE || this.loginOption == Constants.LOGIN_OPTION.LINK_ACCOUNT) {
         this.createAccount(this.loginOption)
       } else if (this.loginOption == Constants.LOGIN_OPTION.DEMO) {
-        this.directLogin = true
         this.loginViaSelection(this.dataService.configuration.demosAccount)
       } else {
         if (this.dataService.actualUser && this.dataService.actualUser.accounts && this.dataService.actualUser.accounts.length == 1 && this.loginOption != Constants.LOGIN_OPTION.FORCE_CHOICE) {
-          this.directLogin = true
           this.loginViaSelection(this.dataService.actualUser.accounts[0].id)
         }
       }
     }
-    this.dataService.changeBanner(this.directLogin?'Home':'Welcome to the Interoperability Test Bed')
+    this.dataService.changeBanner(this.loginInProgress?'Home':'Welcome to the Interoperability Test Bed')
   }
 
   ngAfterViewInit(): void {
@@ -123,6 +121,7 @@ export class LoginComponent extends BaseComponent implements OnInit, AfterViewIn
   }
 
 	loginViaSelection(userId: number) {
+    this.loginInProgress = true
     let config: HttpRequestConfig = {
       path: ROUTES.controllers.AuthenticationService.selectFunctionalAccount().url,
       data: {

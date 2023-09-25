@@ -1,119 +1,121 @@
-<div class="page-with-margins">
-    <div *ngIf="directLogin">
+<div class="page-with-margins" [ngSwitch]="loginInProgress">
+    <div *ngSwitchCase="true">
         <div class="container">
             <span class="tab" style="font-size: xx-large;"><i class="fa-solid fa-spinner fa-spin-override fa-lg"></i></span>
         </div>
     </div>
-    <div *ngIf="dataService.configuration && !directLogin">
-        <div *ngIf="dataService.configuration.ssoEnabled && dataService.actualUser != undefined">
-            <div class="container">
-                <div class="row">
-                    <div class="col-xs-12">
-                        <div class="container-fluid">
-                            <div class="row">
-                                <h4 *ngIf="dataService.actualUser.accounts.length > 0" style="padding-bottom: 10px;">Select a role linked to your account</h4>
-                                <h4 *ngIf="dataService.actualUser.accounts.length == 0" style="padding-bottom: 10px;">No roles are currently linked to your account</h4>
-                            </div>
-                            <div class="row" *ngIf="dataService.actualUser.accounts.length == 0">
-                                <div class="bg-info div-rounded div-padded">
-                                    <span>To use the Test Bed you need to first be assigned a role in one or more communities. To link such a role to your account click the button below to view available options.</span>
-                                </div>                        
-                            </div>
-                            <div class="row" [ngClass]="{'div-spaced-small': i > 0, 'account-card-ou': account.role == Constants.USER_ROLE.VENDOR_USER, 'account-card-oa': account.role == Constants.USER_ROLE.VENDOR_ADMIN, 'account-card-ca': account.role == Constants.USER_ROLE.COMMUNITY_ADMIN, 'account-card-ta': account.role == Constants.USER_ROLE.SYSTEM_ADMIN}" *ngFor="let account of dataService.actualUser.accounts; let i=index">
-                                <div class="account-card-internal" (click)="loginViaSelection(account.id)">
-                                    <div class="account-card-text">
-                                        {{dataService.getRoleDescription(true, account)}}
+    <ng-container *ngSwitchDefault>
+        <div *ngIf="dataService.configuration">
+            <div *ngIf="dataService.configuration.ssoEnabled && dataService.actualUser != undefined">
+                <div class="container">
+                    <div class="row">
+                        <div class="col-xs-12">
+                            <div class="container-fluid">
+                                <div class="row">
+                                    <h4 *ngIf="dataService.actualUser.accounts.length > 0" style="padding-bottom: 10px;">Select a role linked to your account</h4>
+                                    <h4 *ngIf="dataService.actualUser.accounts.length == 0" style="padding-bottom: 10px;">No roles are currently linked to your account</h4>
+                                </div>
+                                <div class="row" *ngIf="dataService.actualUser.accounts.length == 0">
+                                    <div class="bg-info div-rounded div-padded">
+                                        <span>To use the Test Bed you need to first be assigned a role in one or more communities. To link such a role to your account click the button below to view available options.</span>
+                                    </div>                        
+                                </div>
+                                <div class="row" [ngClass]="{'div-spaced-small': i > 0, 'account-card-ou': account.role == Constants.USER_ROLE.VENDOR_USER, 'account-card-oa': account.role == Constants.USER_ROLE.VENDOR_ADMIN, 'account-card-ca': account.role == Constants.USER_ROLE.COMMUNITY_ADMIN, 'account-card-ta': account.role == Constants.USER_ROLE.SYSTEM_ADMIN}" *ngFor="let account of dataService.actualUser.accounts; let i=index">
+                                    <div class="account-card-internal" (click)="loginViaSelection(account.id)">
+                                        <div class="account-card-text">
+                                            {{dataService.getRoleDescription(true, account)}}
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                            <div class="row account-list-new" *ngIf="dataService.actualUser != undefined">
-                                <button type="button" class="btn btn-primary" (click)="createAccount()" [pending]="createPending">
-                                    <span *ngIf="dataService.actualUser.accounts.length > 0">Link another role to your account</span>
-                                    <span *ngIf="dataService.actualUser.accounts.length == 0">Link a role to your account</span>
-                                </button>
+                                <div class="row account-list-new" *ngIf="dataService.actualUser != undefined">
+                                    <button type="button" class="btn btn-primary" (click)="createAccount()" [pending]="createPending">
+                                        <span *ngIf="dataService.actualUser.accounts.length > 0">Link another role to your account</span>
+                                        <span *ngIf="dataService.actualUser.accounts.length == 0">Link a role to your account</span>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-        <div *ngIf="!dataService.configuration.ssoEnabled">
-            <div class="container" *ngIf="!isAuthenticated()">
-                <div class="row">
-                    <div class="col-xs-12">
-                        <div class="row">
-                            <div class="page">
-                                <form class="form-horizontal">
-                                    <div class="panel panel-default no-bottom-margin">
-                                        <div class="panel-heading">
-                                            <h4 class="title">{{loginOption == Constants.LOGIN_OPTION.REGISTER && dataService.configuration.registrationEnabled?'Registration':(onetimePassword?'Change password':'Login')}}</h4>
-                                        </div>
-                                        <div class="panel-body">
-                                            <app-alert-display [alerts]="alerts" [innerClass]="(loginOption == Constants.LOGIN_OPTION.REGISTER)?'col-xs-12':'col-xs-10 col-xs-offset-1'"></app-alert-display>
-                                            <div class="row" *ngIf="loginOption == Constants.LOGIN_OPTION.NONE">
-                                                <div *ngIf="onetimePassword || weakPassword">
-                                                    <app-change-password-form [model]="passwordChangeData"></app-change-password-form>
-                                                </div>
-                                                <div *ngIf="!onetimePassword && !weakPassword">
-                                                    <div class="col-xs-10 col-xs-offset-1">
-                                                        <div class="form-group">
-                                                            <label class="col-xs-3 control-label" for="email">Username:</label>
-                                                            <div class="col-xs-7"><input id="email" name="email" type="text" [(ngModel)]="email" class="form-control"></div>
-                                                            <app-tooltip tbTooltip="The username used to identify your account. This was either provided by you or by an administrator on your behalf."></app-tooltip>
-                                                        </div>
-                                                        <div class="form-group">
-                                                            <label class="col-xs-3 control-label" for="password">Password:</label>
-                                                            <div class="col-xs-7">
-                                                                <input id="password" name="password" [(ngModel)]="password" class="form-control" type="password">
+            <div *ngIf="!dataService.configuration.ssoEnabled">
+                <div class="container" *ngIf="!isAuthenticated()">
+                    <div class="row">
+                        <div class="col-xs-12">
+                            <div class="row">
+                                <div class="page">
+                                    <form class="form-horizontal">
+                                        <div class="panel panel-default no-bottom-margin">
+                                            <div class="panel-heading">
+                                                <h4 class="title">{{loginOption == Constants.LOGIN_OPTION.REGISTER && dataService.configuration.registrationEnabled?'Registration':(onetimePassword?'Change password':'Login')}}</h4>
+                                            </div>
+                                            <div class="panel-body">
+                                                <app-alert-display [alerts]="alerts" [innerClass]="(loginOption == Constants.LOGIN_OPTION.REGISTER)?'col-xs-12':'col-xs-10 col-xs-offset-1'"></app-alert-display>
+                                                <div class="row" *ngIf="loginOption == Constants.LOGIN_OPTION.NONE">
+                                                    <div *ngIf="onetimePassword || weakPassword">
+                                                        <app-change-password-form [model]="passwordChangeData"></app-change-password-form>
+                                                    </div>
+                                                    <div *ngIf="!onetimePassword && !weakPassword">
+                                                        <div class="col-xs-10 col-xs-offset-1">
+                                                            <div class="form-group">
+                                                                <label class="col-xs-3 control-label" for="email">Username:</label>
+                                                                <div class="col-xs-7"><input id="email" name="email" type="text" [(ngModel)]="email" class="form-control"></div>
+                                                                <app-tooltip tbTooltip="The username used to identify your account. This was either provided by you or by an administrator on your behalf."></app-tooltip>
                                                             </div>
-                                                            <app-tooltip tbTooltip="The secret password used to authenticate your account. This was either selected by you or provided by an administrator as a one-time password."></app-tooltip>
-                                                        </div>
-                                                        <div class="form-group">
-                                                            <div class="col-xs-offset-3 col-xs-7">
-                                                                <div class="checkbox">
-                                                                    <label>
-                                                                        <input type="checkbox"> Remember me
-                                                                    </label>
+                                                            <div class="form-group">
+                                                                <label class="col-xs-3 control-label" for="password">Password:</label>
+                                                                <div class="col-xs-7">
+                                                                    <input id="password" name="password" [(ngModel)]="password" class="form-control" type="password">
+                                                                </div>
+                                                                <app-tooltip tbTooltip="The secret password used to authenticate your account. This was either selected by you or provided by an administrator as a one-time password."></app-tooltip>
+                                                            </div>
+                                                            <div class="form-group">
+                                                                <div class="col-xs-offset-3 col-xs-7">
+                                                                    <div class="checkbox">
+                                                                        <label>
+                                                                            <input type="checkbox"> Remember me
+                                                                        </label>
+                                                                    </div>
                                                                 </div>
                                                             </div>
                                                         </div>
                                                     </div>
-                                                </div>
-                                                <div class="row col-xs-10 col-xs-offset-1">
-                                                    <div class="bg-info div-rounded div-padded">
-                                                        <span *ngIf="!onetimePassword && !weakPassword"><b>Privacy note:</b> By clicking 'Log in' you consent to the use of cookies to manage your session. Please refer to the legal notice (link available in the screen's footer) for more information.</span>
-                                                        <span *ngIf="onetimePassword">The password you used is a one-time password that needs to be changed upon your first login.</span>
-                                                        <div *ngIf="weakPassword">
-                                                            <span>The password you used is not complex enough and needs to be replaced. Your password must:</span>
-                                                            <ul class="no-bottom-margin">
-                                                                <li>Contain at least one uppercase letter, one lowercase letter, one digit and one symbol.</li>
-                                                                <li>Be at least eight characters long.</li>
-                                                            </ul>
+                                                    <div class="row col-xs-10 col-xs-offset-1">
+                                                        <div class="bg-info div-rounded div-padded">
+                                                            <span *ngIf="!onetimePassword && !weakPassword"><b>Privacy note:</b> By clicking 'Log in' you consent to the use of cookies to manage your session. Please refer to the legal notice (link available in the screen's footer) for more information.</span>
+                                                            <span *ngIf="onetimePassword">The password you used is a one-time password that needs to be changed upon your first login.</span>
+                                                            <div *ngIf="weakPassword">
+                                                                <span>The password you used is not complex enough and needs to be replaced. Your password must:</span>
+                                                                <ul class="no-bottom-margin">
+                                                                    <li>Contain at least one uppercase letter, one lowercase letter, one digit and one symbol.</li>
+                                                                    <li>Be at least eight characters long.</li>
+                                                                </ul>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
+                                                <div class="row" *ngIf="loginOption == Constants.LOGIN_OPTION.REGISTER && dataService.configuration.registrationEnabled">
+                                                    <div class="col-xs-12">
+                                                        <app-self-registration [model]="selfRegData"></app-self-registration>
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <div class="row" *ngIf="loginOption == Constants.LOGIN_OPTION.REGISTER && dataService.configuration.registrationEnabled">
-                                                <div class="col-xs-12">
-                                                    <app-self-registration [model]="selfRegData"></app-self-registration>
+                                            <div class="panel-footer">
+                                                <div class="btn-toolbar">
+                                                    <button *ngIf="loginOption == Constants.LOGIN_OPTION.NONE && !onetimePassword && !weakPassword" type="submit" (click)="login()" class="btn btn-default" [disable]="loginDisabled()" [pending]="spinner">Log in</button>
+                                                    <button *ngIf="loginOption == Constants.LOGIN_OPTION.NONE && (onetimePassword || weakPassword)" type="submit" (click)="replacePassword()" class="btn btn-default" [disable]="replaceDisabled()" [pending]="spinner">Save</button>
+                                                    <button *ngIf="loginOption == Constants.LOGIN_OPTION.REGISTER" type="submit" (click)="register()" class="btn btn-default" [disable]="registerDisabled()" [pending]="spinner">Register</button>
+                                                    <button (click)="cancelLogin()" type="button" class="btn btn-default">Cancel</button>
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="panel-footer">
-                                            <div class="btn-toolbar">
-                                                <button *ngIf="loginOption == Constants.LOGIN_OPTION.NONE && !onetimePassword && !weakPassword" type="submit" (click)="login()" class="btn btn-default" [disable]="loginDisabled()" [pending]="spinner">Log in</button>
-                                                <button *ngIf="loginOption == Constants.LOGIN_OPTION.NONE && (onetimePassword || weakPassword)" type="submit" (click)="replacePassword()" class="btn btn-default" [disable]="replaceDisabled()" [pending]="spinner">Save</button>
-                                                <button *ngIf="loginOption == Constants.LOGIN_OPTION.REGISTER" type="submit" (click)="register()" class="btn btn-default" [disable]="registerDisabled()" [pending]="spinner">Register</button>
-                                                <button (click)="cancelLogin()" type="button" class="btn btn-default">Cancel</button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </form>
-                            </div>                    
+                                    </form>
+                                </div>                    
+                            </div>
                         </div>
                     </div>
-                </div>
-            </div>    
+                </div>    
+            </div>
         </div>
-    </div>
+    </ng-container>
 </div>
