@@ -23,7 +23,7 @@
           </div>
       </section>
       <div class="page-root">
-        <div class="page-menu" [class.hidden]="!isAuthenticated() || logoutInProgress || !dataService.user">
+        <div class="page-menu" [class.hidden]="logoutInProgress" *ngIf="isAuthenticated() && (dataService.isSystemAdmin || dataService.isCommunityAdmin || dataService.isVendorAdmin || dataService.isVendorUser)">
           <app-menu-item (click)="routingService.toHome()" [type]="MenuItem.home" label="Home" icon="fa-solid fa-house" [expanded]="menuExpanded"></app-menu-item>
           <ng-container *ngIf="dataService.isSystemAdmin || dataService.isCommunityAdmin">
             <app-menu-group label="Administration" [expanded]="menuExpanded"></app-menu-group>
