@@ -18,6 +18,10 @@ export class MenuItemComponent implements OnInit {
   constructor(private dataService: DataService) { }
 
   ngOnInit(): void {
+    if (this.dataService.latestPageChange && this.dataService.latestPageChange.menuItem == this.type) {
+      this.active = true
+      this.dataService.changeBanner(this.label)
+    }
     this.dataService.onPageChange$.subscribe((event) => {
       if (event.menuItem != undefined) {
         setTimeout(() => {

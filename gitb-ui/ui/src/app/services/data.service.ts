@@ -50,6 +50,7 @@ export class DataService {
   public currentLandingPageContent?: string
   private apiRoot?: string
 
+  public latestPageChange?: PageChange
   private onBannerChangeSource = new Subject<string>()
   public onBannerChange$ = this.onBannerChangeSource.asObservable()
   private onPageChangeSource = new Subject<PageChange>()
@@ -77,6 +78,7 @@ export class DataService {
     this.isDomainUser = false
     this.acceptedEmailAttachmentTypes = undefined
     this.tests = undefined
+    this.latestPageChange = undefined
     this.currentLandingPageContent = undefined
   }
 
@@ -1224,6 +1226,7 @@ export class DataService {
   }
 
   public changePage(changeInfo: PageChange) {
+    this.latestPageChange = changeInfo
     this.onPageChangeSource.next(changeInfo)
   }
 
