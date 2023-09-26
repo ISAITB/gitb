@@ -13,6 +13,7 @@ import { CommunityTab } from '../../community/community-details/community-tab.en
 import { Constants } from 'src/app/common/constants';
 import { KeyValue } from 'src/app/types/key-value';
 import { SystemAdministrationTab } from '../../../system-administration/system-administration-tab.enum';
+import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
 
 @Component({
   selector: 'app-error-template-details',
@@ -64,6 +65,11 @@ export class ErrorTemplateDetailsComponent extends BaseComponent implements OnIn
     .subscribe((data) => {
       this.template = data
       this.isDefault = data.default
+      if (this.communityId == Constants.DEFAULT_COMMUNITY_ID) {
+        this.routingService.systemErrorTemplateBreadcrumbs(this.templateId, this.template.name!)
+      } else {
+        this.routingService.errorTemplateBreadcrumbs(this.communityId, this.templateId, this.template.name!)
+      }
     })
   }
 
@@ -93,6 +99,11 @@ export class ErrorTemplateDetailsComponent extends BaseComponent implements OnIn
           this.copyErrorTemplate()
         } else {
           this.popupService.success('Error template updated.')
+          if (this.communityId == Constants.DEFAULT_COMMUNITY_ID) {
+            this.dataService.breadcrumbUpdate({id: this.templateId, type: BreadcrumbType.systemErrorTemplate, label: this.template.name})
+          } else {
+            this.dataService.breadcrumbUpdate({id: this.templateId, type: BreadcrumbType.errorTemplate, label: this.template.name})
+          }
         }
       }
     }).add(() => {

@@ -1,0 +1,23 @@
+@import '../../../styles/less/_common.less';
+
+.breacrumbContainer {
+    border: 1px solid @gray-dark-1;
+    border-radius: 4px;
+    background-color: @gray-light-1;
+    margin: 5px 10px;
+    display: flex;
+    align-items: center;
+    font-size: small;
+    .breacrumbItemSeparator {
+        margin: 0px 5px;
+    }
+    .breacrumbItem {
+        padding: 2px 5px;
+        margin: 4px;
+        border-radius: 4px;        
+        cursor: pointer;
+        &:hover {
+            background-color: @gray-light;
+        }
+    }
+}

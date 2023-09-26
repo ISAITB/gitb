@@ -160,6 +160,11 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     ok
   }
 
+  def canViewBreadcrumbLabels(request: RequestWithAttributes[_]): Boolean = {
+    val ok = checkIsAuthenticated(request)
+    setAuthResult(request, ok, "User not allowed to view breadcrumbs")
+  }
+
   def canViewSelfRegistrationOptions(request: RequestWithAttributes[_]): Boolean = {
     val ok = Configurations.REGISTRATION_ENABLED
     setAuthResult(request, ok, "User not allowed to view self-registration options")

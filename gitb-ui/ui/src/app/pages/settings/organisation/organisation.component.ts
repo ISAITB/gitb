@@ -78,6 +78,10 @@ export class OrganisationComponent extends OrganisationDetailsComponent implemen
       )
   }
 
+  override breadcrumbLabel() {
+    this.routingService.ownOrganisationBreadcrumbs()
+  }
+
   override ngOnInit(): void {
     super.ngOnInit()
   }

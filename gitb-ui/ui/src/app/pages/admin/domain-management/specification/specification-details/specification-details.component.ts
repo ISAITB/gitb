@@ -16,6 +16,7 @@ import { PopupService } from 'src/app/services/popup.service';
 import { RoutingService } from 'src/app/services/routing.service';
 import { SpecificationService } from 'src/app/services/specification.service';
 import { Actor } from 'src/app/types/actor';
+import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
 import { Specification } from 'src/app/types/specification';
 import { TableColumnDefinition } from 'src/app/types/table-column-definition.type';
 import { TestSuite } from 'src/app/types/test-suite';
@@ -98,6 +99,7 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
         this.specification.badges.initiallyEnabled = this.specification.badges.enabled
         this.specification.badges.failureBadgeActive = this.specification.badges.failure != undefined && this.specification.badges.failure.enabled!
       }
+      this.routingService.specificationBreadcrumbs(this.domainId, this.specificationId, this.specification.sname!)
     })
   }
 
@@ -259,6 +261,7 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
 		this.specificationService.updateSpecification(this.specificationId, this.specification.sname!, this.specification.fname!, this.specification.description, this.specification.hidden, this.specification.group, this.specification.badges!)
 		.subscribe(() => {
 			this.popupService.success(this.dataService.labelSpecification()+' updated.')
+      this.dataService.breadcrumbUpdate({id: this.specificationId, type: BreadcrumbType.specification, label: this.specification.sname!})
     }).add(() => {
       this.savePending = false
     })

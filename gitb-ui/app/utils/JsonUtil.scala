@@ -7,6 +7,7 @@ import com.gitb.tr._
 import config.Configurations
 import exceptions.JsonValidationException
 import jakarta.xml.bind.JAXBElement
+import managers.breadcrumb.BreadcrumbLabelResponse
 import managers.export.{ExportSettings, ImportItem, ImportSettings}
 import models.Enums.TestSuiteReplacementChoice.TestSuiteReplacementChoice
 import models.Enums._
@@ -1808,6 +1809,18 @@ object JsonUtil {
     options.foreach{ option =>
       json = json.append(jsSelfRegOption(option))
     }
+    json
+  }
+
+  def jsBreadcrumbLabelResponse(labels: BreadcrumbLabelResponse): JsObject = {
+    var json = Json.obj()
+    if (labels.domain.isDefined) json = json + ("domain" -> JsString(labels.domain.get))
+    if (labels.specificationGroup.isDefined) json = json + ("specificationGroup" -> JsString(labels.specificationGroup.get))
+    if (labels.specification.isDefined) json = json + ("specification" -> JsString(labels.specification.get))
+    if (labels.actor.isDefined) json = json + ("actor" -> JsString(labels.actor.get))
+    if (labels.community.isDefined) json = json + ("community" -> JsString(labels.community.get))
+    if (labels.organisation.isDefined) json = json + ("organisation" -> JsString(labels.organisation.get))
+    if (labels.system.isDefined) json = json + ("system" -> JsString(labels.system.get))
     json
   }
 

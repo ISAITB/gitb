@@ -11,6 +11,7 @@ import { CommunityTab } from '../../community/community-details/community-tab.en
 import { Constants } from 'src/app/common/constants';
 import { SystemAdministrationTab } from '../../../system-administration/system-administration-tab.enum';
 import { HtmlService } from 'src/app/services/html.service';
+import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
 
 @Component({
   selector: 'app-legal-notice-details',
@@ -57,6 +58,11 @@ export class LegalNoticeDetailsComponent extends BaseComponent implements OnInit
     .subscribe((data) => {
       this.notice = data
       this.isDefault = data.default
+      if (this.communityId == Constants.DEFAULT_COMMUNITY_ID) {
+        this.routingService.systemLegalNoticeBreadcrumbs(this.noticeId, this.notice.name!)
+      } else {
+        this.routingService.legalNoticeBreadcrumbs(this.communityId, this.noticeId, this.notice.name!)
+      }
     })
   }
 
@@ -86,6 +92,11 @@ export class LegalNoticeDetailsComponent extends BaseComponent implements OnInit
           this.copyLegalNotice()
         } else {
           this.popupService.success('Legal notice updated.')
+          if (this.communityId == Constants.DEFAULT_COMMUNITY_ID) {
+            this.dataService.breadcrumbUpdate({id: this.noticeId, type: BreadcrumbType.systemLegalNotice, label: this.notice.name})
+          } else {
+            this.dataService.breadcrumbUpdate({id: this.noticeId, type: BreadcrumbType.legalNotice, label: this.notice.name})
+          }
         }
       }
     }).add(() => {

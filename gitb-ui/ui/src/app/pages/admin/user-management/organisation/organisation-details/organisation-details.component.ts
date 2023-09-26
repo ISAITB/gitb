@@ -17,6 +17,7 @@ import { OrganisationTab } from './OrganisationTab';
 import { TabsetComponent } from 'ngx-bootstrap/tabs';
 import { SystemService } from 'src/app/services/system.service';
 import { System } from 'src/app/types/system';
+import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
 
 @Component({
   selector: 'app-organisation-details',
@@ -64,7 +65,7 @@ export class OrganisationDetailsComponent extends BaseComponent implements OnIni
     private userService: UserService,
     public dataService: DataService,
     protected popupService: PopupService,
-    private routingService: RoutingService,
+    protected routingService: RoutingService,
     private systemService: SystemService,
     router: Router
   ) {
@@ -114,6 +115,10 @@ export class OrganisationDetailsComponent extends BaseComponent implements OnIni
     return true
   }
 
+  protected breadcrumbLabel() {
+    this.routingService.organisationBreadcrumbs(this.communityId, this.orgId, this.organisation.sname!)
+  }
+
   ngOnInit(): void {
     this.fromCommunityManagement = this.route.snapshot.paramMap.has(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID)
     this.orgId = this.getOrganisationId()
@@ -144,6 +149,7 @@ export class OrganisationDetailsComponent extends BaseComponent implements OnIni
       if (data.landingPage == null) this.organisation.landingPage = undefined
       if (data.errorTemplate == null) this.organisation.errorTemplate = undefined
       if (data.legalNotice == null) this.organisation.legalNotice = undefined
+      this.breadcrumbLabel()
     })
     this.apiInfoVisible = this.isApiInfoVisible()
     // Setup tab triggers
@@ -224,6 +230,7 @@ export class OrganisationDetailsComponent extends BaseComponent implements OnIni
         this.addAlertError(result.error_description)
       } else {
         this.popupService.success(this.dataService.labelOrganisation()+" updated.")
+        this.dataService.breadcrumbUpdate({ id: this.orgId, type: BreadcrumbType.organisation, label: this.organisation.sname })
       }
     }).add(() => {
       this.savePending = false

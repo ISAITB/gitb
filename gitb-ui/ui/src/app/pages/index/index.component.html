@@ -22,6 +22,7 @@
               </div>
           </div>
       </section>
+      <app-breadcrumb></app-breadcrumb>
       <div class="page-root">
         <div class="page-menu" [class.hidden]="logoutInProgress" *ngIf="isAuthenticated() && (dataService.isSystemAdmin || dataService.isCommunityAdmin || dataService.isVendorAdmin || dataService.isVendorUser)">
           <app-menu-item (click)="routingService.toHome()" [type]="MenuItem.home" label="Home" icon="fa-solid fa-house" [expanded]="menuExpanded"></app-menu-item>

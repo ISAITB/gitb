@@ -9,6 +9,7 @@ import { UserService } from 'src/app/services/user.service';
 import { User } from 'src/app/types/user.type';
 import { CommunityTab } from '../../community/community-details/community-tab.enum';
 import { Constants } from 'src/app/common/constants';
+import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
 
 @Component({
   selector: 'app-community-admin-details',
@@ -50,6 +51,7 @@ export class CommunityAdminDetailsComponent extends BaseComponent implements OnI
       this.user = data!
       this.user.ssoStatusText = this.dataService.userStatus(this.user.ssoStatus)
       this.user.roleText = this.Constants.USER_ROLE_LABEL[this.user.role!]
+      this.routingService.communityAdminBreadcrumbs(this.communityId, this.userId, this.dataService.userDisplayName(this.user))
     })
   }
 
@@ -69,6 +71,7 @@ export class CommunityAdminDetailsComponent extends BaseComponent implements OnI
       .subscribe(() => {
         this.cancelDetailAdmin()
         this.popupService.success('Administrator updated')
+        this.dataService.breadcrumbUpdate({ id: this.userId, type: BreadcrumbType.communityAdmin, label: this.dataService.userDisplayName(this.user)})
       }).add(() => {
         this.savePending = false
       })

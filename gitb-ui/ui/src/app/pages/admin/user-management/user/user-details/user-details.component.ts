@@ -13,6 +13,7 @@ import { IdLabel } from 'src/app/types/id-label';
 import { User } from 'src/app/types/user.type';
 import { OrganisationTab } from '../../organisation/organisation-details/OrganisationTab';
 import { Constants } from 'src/app/common/constants';
+import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
 
 @Component({
   selector: 'app-user-details',
@@ -74,6 +75,7 @@ export class UserDetailsComponent extends BaseComponent implements OnInit, After
       this.user.ssoStatusText = this.dataService.userStatus(this.user.ssoStatus)
       this.user.roleText = this.Constants.USER_ROLE_LABEL[this.user.role!]
       this.originalRoleId = this.user.role!
+      this.routingService.organisationUserBreadcrumbs(this.communityId, this.orgId, this.userId, this.dataService.userDisplayName(this.user))
     })
   }
 
@@ -121,6 +123,7 @@ export class UserDetailsComponent extends BaseComponent implements OnInit, After
               map(() => {
                 this.cancelDetailUser()
                 this.popupService.success('User updated.')
+                this.dataService.breadcrumbUpdate({ id: this.userId, type: BreadcrumbType.organisationUser, label: this.dataService.userDisplayName(this.user)})
               })
             )
           } else {

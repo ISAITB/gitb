@@ -176,6 +176,7 @@ import { PreviewBadgeModalComponent } from './modals/preview-badge-modal/preview
 import { ViewBadgeButtonComponent } from './components/view-badge-button/view-badge-button.component';
 import { ResultLabelComponent } from './components/result-label/result-label.component';
 import { PreviewLandingPageComponent } from './pages/admin/user-management/landing-page/preview-landing-page/preview-landing-page.component';
+import { BreadcrumbComponent } from './components/breadcrumb/breadcrumb.component';
 
 @NgModule({
   providers: [ 
@@ -341,7 +342,8 @@ import { PreviewLandingPageComponent } from './pages/admin/user-management/landi
     PreviewBadgeModalComponent,
     ViewBadgeButtonComponent,
     ResultLabelComponent,
-    PreviewLandingPageComponent
+    PreviewLandingPageComponent,
+    BreadcrumbComponent
   ],
   imports: [
     ColorPickerModule,

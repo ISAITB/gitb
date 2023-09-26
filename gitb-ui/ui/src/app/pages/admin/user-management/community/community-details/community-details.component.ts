@@ -30,6 +30,7 @@ import { BsModalService } from 'ngx-bootstrap/modal';
 import { CreateEditCommunityResourceModalComponent } from 'src/app/modals/create-edit-community-resource-modal/create-edit-community-resource-modal.component';
 import { saveAs } from 'file-saver';
 import { CommunityResourceBulkUploadModalComponent } from 'src/app/modals/community-resource-bulk-upload-modal/community-resource-bulk-upload-modal.component';
+import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
 
 @Component({
   selector: 'app-community-details',
@@ -183,6 +184,7 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
         this.domains = data
       })
     }
+    this.routingService.communityBreadcrumbs(this.communityId, this.community.sname)
     // Setup tab triggers
     this.setupTabs()
   }
@@ -500,6 +502,7 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
     .subscribe(() => {
       this.originalDomainId = this.community.domainId
       this.popupService.success('Community updated.')
+      this.dataService.breadcrumbUpdate({id: this.communityId, type: BreadcrumbType.community, label: this.community.sname!})
     }).add(() => {
       this.savePending = false
     })

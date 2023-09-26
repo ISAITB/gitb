@@ -339,6 +339,12 @@ export class Constants {
 		WELCOME_MESSAGE: 'welcome'
 	}
 
+	public static USER_SSO_STATUS = {
+		NOT_MIGRATED: 1,
+		NOT_LINKED: 2,
+		LINKED: 3
+	}
+
 	public static PASSWORD_REGEX = /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#&()_–\[{}\]:;'",?/\\*~$^+=<>]).{8,}$/
 	public static END_OF_TEST_STEP = "-1"
 	public static END_OF_TEST_STEP_EXTERNAL = "-2"

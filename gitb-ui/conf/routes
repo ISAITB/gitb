@@ -347,6 +347,8 @@ POST    /api/rest/testsuite/undeployShared                       @controllers.Te
 POST    /api/rest/testsuite/linkShared                           @controllers.TestSuiteAutomationService.linkShared()
 POST    /api/rest/testsuite/unlinkShared                         @controllers.TestSuiteAutomationService.unlinkShared()
 
+POST    /api/crumbs                                              @controllers.BreadcrumbService.getBreadcrumbLabels()
+
 GET     /resources/:resourceName                                 @controllers.CommunityService.downloadCommunityResourceByName(resourceName: String)
 
 GET     /badge/:systemKey/:actorKey                              @controllers.ConformanceService.conformanceBadge(systemKey: String, actorKey: String)

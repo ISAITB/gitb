@@ -10,6 +10,7 @@ import { BaseComponent } from 'src/app/pages/base-component.component';
 import { SystemService } from 'src/app/services/system.service';
 import { OrganisationTab } from '../../organisation/organisation-details/OrganisationTab';
 import { Constants } from 'src/app/common/constants';
+import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
 
 @Component({
   selector: 'app-system-details',
@@ -59,6 +60,11 @@ export class SystemDetailsComponent extends BaseComponent implements OnInit {
     this.systemService.getSystemById(this.systemId)
     .subscribe((data) => {
       this.system = data
+      if (this.system.owner == this.dataService.vendor?.id) {
+        this.routingService.ownSystemBreadcrumbs(this.systemId, this.system.sname!)
+      } else {
+        this.routingService.systemBreadcrumbs(this.communityId, this.organisationId, this.systemId, this.system.sname!)
+      }
     })
   }
 
@@ -73,6 +79,11 @@ export class SystemDetailsComponent extends BaseComponent implements OnInit {
       .subscribe(() => {
         this.cancel()
         this.popupService.success(this.dataService.labelSystem() + ' updated.')
+        if (this.system.owner == this.dataService.vendor?.id) {
+          this.dataService.breadcrumbUpdate({ id: this.system.id!, type: BreadcrumbType.ownSystem, label: this.system.sname })
+        } else {
+          this.dataService.breadcrumbUpdate({ id: this.system.id!, type: BreadcrumbType.system, label: this.system.sname })
+        }        
       }).add(() => {
         this.savePending = false
       })

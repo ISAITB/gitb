@@ -27,6 +27,8 @@ import { DomainSpecification } from '../types/domain-specification';
 import { find } from 'lodash';
 import { PageChange } from '../types/page-change';
 import { BadgesInfo } from '../components/manage-badges/badges-info';
+import { BreadcrumbType } from '../types/breadcrumb-type';
+import { BreadcrumbChange } from '../types/breadcrumb-change';
 
 @Injectable({
   providedIn: 'root'
@@ -55,6 +57,8 @@ export class DataService {
   public onBannerChange$ = this.onBannerChangeSource.asObservable()
   private onPageChangeSource = new Subject<PageChange>()
   public onPageChange$ = this.onPageChangeSource.asObservable()
+  private onBreadcrumbChangeSource = new Subject<BreadcrumbChange>()
+  public onBreadcrumbChange$ = this.onBreadcrumbChangeSource.asObservable()
 
   private renderer: Renderer2
   triggerEventToDataTypeMap?: {[key: number]: { [key: number]: boolean } }
@@ -427,9 +431,9 @@ export class DataService {
 
   userStatus(ssoStatus?: number): string {
     if (this.configuration.ssoEnabled) {
-      if (ssoStatus == 1) {
+      if (ssoStatus == Constants.USER_SSO_STATUS.NOT_MIGRATED) {
         return 'Not migrated'
-      } else if (ssoStatus == 2) {
+      } else if (ssoStatus == Constants.USER_SSO_STATUS.NOT_LINKED) {
         return 'Inactive'
       } else {
         return 'Active'
@@ -1234,6 +1238,10 @@ export class DataService {
     this.onBannerChangeSource.next(banner)
   }
 
+  public breadcrumbUpdate(info: BreadcrumbChange) {
+    this.onBreadcrumbChangeSource.next(info)
+  }
+
   parametersForBadgeUpdate(badges: BadgesInfo, params:any): FileParam[]|undefined {
     let files: FileParam[]|undefined
     params.success_badge_enabled = badges && badges.enabled && badges.success.enabled
@@ -1252,6 +1260,18 @@ export class DataService {
       }
     }
     return files
+  }
+
+  userDisplayName(user: User):string {
+    if (this.configuration.ssoEnabled) {
+      if (user.ssoStatus == Constants.USER_SSO_STATUS.LINKED || user.ssoStatus == Constants.USER_SSO_STATUS.NOT_MIGRATED) {
+        return user.name!
+      } else {
+        return user.email!
+      }
+    } else {
+      return user.name!
+    }
   }
 
 }

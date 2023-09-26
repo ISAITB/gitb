@@ -9,6 +9,7 @@ import { RoutingService } from 'src/app/services/routing.service';
 import { UserService } from 'src/app/services/user.service';
 import { User } from 'src/app/types/user.type';
 import { SystemAdministrationTab } from '../../../system-administration/system-administration-tab.enum';
+import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
 
 @Component({
   selector: 'app-admin-details',
@@ -48,6 +49,7 @@ export class AdminDetailsComponent extends BaseComponent implements OnInit, Afte
       this.user = data!
       this.user.ssoStatusText = this.dataService.userStatus(this.user.ssoStatus)
       this.user.roleText = this.Constants.USER_ROLE_LABEL[this.user.role!]
+      this.routingService.testBedAdminBreadcrumbs(this.userId, this.dataService.userDisplayName(this.user))
     })
   }
 
@@ -67,6 +69,7 @@ export class AdminDetailsComponent extends BaseComponent implements OnInit, Afte
       .subscribe(() => {
         this.cancelDetailAdmin()
         this.popupService.success('Administrator updated')
+        this.dataService.breadcrumbUpdate({ id: this.userId, type: BreadcrumbType.systemAdmin, label: this.dataService.userDisplayName(this.user)})
       }).add(() => {
         this.savePending = false
       })

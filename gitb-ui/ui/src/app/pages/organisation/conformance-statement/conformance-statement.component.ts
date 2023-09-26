@@ -31,6 +31,7 @@ import { saveAs } from 'file-saver'
 import { CheckboxOption } from 'src/app/components/checkbox-option-panel/checkbox-option';
 import { CheckboxOptionState } from 'src/app/components/checkbox-option-panel/checkbox-option-state';
 import { ConformanceStatementItem } from 'src/app/types/conformance-statement-item';
+import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
 
 @Component({
   selector: 'app-conformance-statement',
@@ -145,6 +146,7 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
         // Statement definition.
         this.prepareStatement(data.statement)
         this.statement = data.statement
+        this.routingService.conformanceStatementBreadcrumbs(this.organisationId, this.systemId, this.actorId, this.communityId, this.breadcrumbLabel())
         // IDs.
         this.domainId = this.findByType([this.statement]!, Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.DOMAIN)!.id
         this.specId = this.findByType([this.statement]!, Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.SPECIFICATION)!.id
@@ -175,6 +177,34 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
     }).add(() => {
       this.loadingTests = false
     })
+  }
+
+  private breadcrumbId(): string {
+    return this.systemId + '|' + this.actorId
+  }
+
+  private appendToLabel(label: string, newPart: ConformanceStatementItem|undefined): string {
+    if (newPart && !newPart.hidden) {
+      if (label.length > 0) label += ' - '
+      label += newPart.name
+    }
+    return label
+  }
+
+  private breadcrumbLabel(): string {
+    let label = ''
+    if (this.statement) {
+      const domainItem = this.findByType([this.statement]!, Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.DOMAIN)
+      const specGroupItem = this.findByType([this.statement]!, Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.SPECIFICATION_GROUP)
+      const specItem = this.findByType([this.statement]!, Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.SPECIFICATION)
+      const actorItem = this.findByType([this.statement]!, Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.ACTOR)
+      label = this.appendToLabel(label, domainItem)
+      label = this.appendToLabel(label, specGroupItem)
+      label = this.appendToLabel(label, specItem)
+      label = this.appendToLabel(label, actorItem)
+    }
+    console.log(label)
+    return label
   }
 
   private showConfigurationTab() {

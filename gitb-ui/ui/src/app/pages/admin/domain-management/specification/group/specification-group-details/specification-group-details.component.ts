@@ -7,6 +7,7 @@ import { DataService } from 'src/app/services/data.service';
 import { PopupService } from 'src/app/services/popup.service';
 import { RoutingService } from 'src/app/services/routing.service';
 import { SpecificationService } from 'src/app/services/specification.service';
+import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
 import { SpecificationGroup } from 'src/app/types/specification-group';
 
 @Component({
@@ -36,6 +37,7 @@ export class SpecificationGroupDetailsComponent extends BaseComponent implements
     this.specificationService.getSpecificationGroup(this.groupId)
     .subscribe((data) => {
       this.group = data
+      this.routingService.specificationGroupBreadcrumbs(this.domainId, this.groupId, this.group.sname!)
     })
   }
 
@@ -68,6 +70,7 @@ export class SpecificationGroupDetailsComponent extends BaseComponent implements
 		this.specificationService.updateSpecificationGroup(this.groupId, this.group.sname!, this.group.fname!, this.group.description)
 		.subscribe(() => {
 			this.popupService.success(this.dataService.labelSpecificationGroup()+' updated.')
+      this.dataService.breadcrumbUpdate({id: this.groupId, type: BreadcrumbType.specificationGroup, label: this.group.sname!})
     }).add(() => {
       this.savePending = false
     })

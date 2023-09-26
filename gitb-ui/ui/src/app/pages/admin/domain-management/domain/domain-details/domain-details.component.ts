@@ -21,6 +21,7 @@ import { forkJoin } from 'rxjs';
 import { DomainSpecification } from 'src/app/types/domain-specification';
 import { SpecificationGroup } from 'src/app/types/specification-group';
 import { find, remove, findIndex } from 'lodash';
+import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
 
 @Component({
   selector: 'app-domain-details',
@@ -89,6 +90,7 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
     this.conformanceService.getDomains([this.domainId])
     .subscribe((data) => {
       this.domain = data[0]
+      this.routingService.domainBreadcrumbs(this.domainId, this.domain.sname!)
     })
     this.loadSpecifications()
   }
@@ -186,6 +188,7 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
 		this.conformanceService.updateDomain(this.domainId, this.domain.sname!, this.domain.fname!, this.domain.description)
     .subscribe(() => {
       this.popupService.success(this.dataService.labelDomain()+' updated.')
+      this.dataService.breadcrumbUpdate({id: this.domainId, type: BreadcrumbType.domain, label: this.domain.sname!})
     }).add(() => {
       this.savePending = false
     })

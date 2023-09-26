@@ -12,6 +12,7 @@ import { Actor } from 'src/app/types/actor';
 import { Endpoint } from 'src/app/types/endpoint';
 import { TableColumnDefinition } from 'src/app/types/table-column-definition.type';
 import { EndpointRepresentation } from './endpoint-representation';
+import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
 
 @Component({
   selector: 'app-actor-details',
@@ -63,7 +64,9 @@ export class ActorDetailsComponent extends BaseComponent implements OnInit, Afte
         this.actor.badges.enabled = this.actor.badges.success != undefined && this.actor.badges.success.enabled!
         this.actor.badges.initiallyEnabled = this.actor.badges.enabled
         this.actor.badges.failureBadgeActive = this.actor.badges.failure != undefined && this.actor.badges.failure.enabled!
-      }      
+      }
+
+      this.routingService.actorBreadcrumbs(this.domainId, this.specificationId, this.actorId, this.actor.actorId)
     })
     this.conformanceService.getEndpointsForActor(this.actorId)
     .subscribe((data) => {
@@ -103,6 +106,7 @@ export class ActorDetailsComponent extends BaseComponent implements OnInit, Afte
     this.actorService.updateActor(this.actorId, this.actor.actorId!, this.actor.name!, this.actor.description, this.actor.default, this.actor.hidden, this.actor.displayOrder, this.domainId, this.specificationId, this.actor.badges!)
     .subscribe(() => {
       this.popupService.success(this.dataService.labelActor()+' updated.')
+      this.dataService.breadcrumbUpdate({id: this.actorId, type: BreadcrumbType.actor, label: this.actor.actorId!})
     }).add(() => {
       this.savePending = false
     })

@@ -25,6 +25,7 @@ import { RoutingService } from 'src/app/services/routing.service';
 import { CommunityTab } from '../community/community-details/community-tab.enum';
 import { StatementParameterMinimal } from 'src/app/types/statement-parameter-minimal';
 import { TestTriggerModalComponent } from './test-trigger-modal/test-trigger-modal.component';
+import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
 
 @Component({
   selector: 'app-trigger',
@@ -170,6 +171,7 @@ export class TriggerComponent extends BaseComponent implements OnInit, AfterView
         this.triggerService.getTriggerById(this.triggerId!)
         .subscribe((data) => {
           this.trigger = data.trigger
+          this.routingService.triggerBreadcrumbs(this.communityId, this.triggerId!, this.trigger.name!)
           if (this.trigger.latestResultOk != undefined) {
             if (this.trigger.latestResultOk) {
               this.applyStatusValues(this.statusTextOk)
@@ -315,6 +317,7 @@ export class TriggerComponent extends BaseComponent implements OnInit, AfterView
       } else {
         if (this.update) {
           this.popupService.success('Trigger updated.')
+          this.dataService.breadcrumbUpdate({id: this.triggerId, type: BreadcrumbType.trigger, label: this.trigger.name})
         } else {
           this.back()
           this.popupService.success('Trigger created.')

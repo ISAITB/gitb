@@ -19,6 +19,7 @@ import { EndpointParameter } from 'src/app/types/endpoint-parameter';
 import { ParameterDetailsModalComponent } from 'src/app/components/parameters/parameter-details-modal/parameter-details-modal.component';
 import { ParameterReference } from 'src/app/types/parameter-reference';
 import { RoutingService } from 'src/app/services/routing.service';
+import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
 
 @Component({
   selector: 'app-endpoint-details',
@@ -99,6 +100,7 @@ export class EndpointDetailsComponent extends BaseComponent implements OnInit, A
 					this.parameterValues.push(itemRef as ParameterReference)
         }
       }
+      this.routingService.endpointBreadcrumbs(this.domainId, this.specificationId, this.actorId, this.endpointId, this.endpoint.name!)
     }).add(() => {
 			this.dataStatus.status = Constants.STATUS.FINISHED
     })
@@ -150,6 +152,7 @@ export class EndpointDetailsComponent extends BaseComponent implements OnInit, A
 		this.endpointService.updateEndPoint(this.endpointId, this.endpoint.name!, this.endpoint.description, this.actorId)
     .subscribe(() => {
       this.popupService.success(this.dataService.labelEndpoint()+' updated.')
+      this.dataService.breadcrumbUpdate({id: this.endpointId, type: BreadcrumbType.endpoint, label: this.endpoint.name!})
     }).add(() => {
       this.savePending = false
     })

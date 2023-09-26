@@ -18,6 +18,7 @@ import { BsModalService } from 'ngx-bootstrap/modal';
 import { LinkSharedTestSuiteModalComponent } from 'src/app/modals/link-shared-test-suite-modal/link-shared-test-suite-modal.component';
 import { filter, find } from 'lodash';
 import { forkJoin } from 'rxjs';
+import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
 
 @Component({
   selector: 'app-test-suite-details',
@@ -85,6 +86,11 @@ export class TestSuiteDetailsComponent extends BaseComponent implements OnInit, 
       this.testSuiteService.getTestSuiteWithTestCases(this.testSuiteId)
       .subscribe((data) => {
         this.testSuite = data
+        if (this.specificationId) {
+          this.routingService.testSuiteBreadcrumbs(this.domainId, this.specificationId, this.testSuiteId, this.testSuite.identifier!)
+        } else {
+          this.routingService.sharedTestSuiteBreadcrumbs(this.domainId, this.testSuiteId, this.testSuite.identifier!)
+        }
       }).add(() => {
         this.dataStatus.status = Constants.STATUS.FINISHED
       })

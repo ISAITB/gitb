@@ -12,6 +12,7 @@ import { Constants } from 'src/app/common/constants';
 import { SystemAdministrationTab } from '../../../system-administration/system-administration-tab.enum';
 import { BsModalService } from 'ngx-bootstrap/modal';
 import { PreviewLandingPageComponent } from '../preview-landing-page/preview-landing-page.component';
+import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
 
 @Component({
   selector: 'app-landing-page-details',
@@ -56,6 +57,11 @@ export class LandingPageDetailsComponent extends BaseComponent implements OnInit
     .subscribe((data) => {
       this.page = data
       this.isDefault = data.default
+      if (this.communityId == Constants.DEFAULT_COMMUNITY_ID) {
+        this.routingService.systemLandingPageBreadcrumbs(this.pageId, this.page.name!)
+      } else {
+        this.routingService.landingPageBreadcrumbs(this.communityId, this.pageId, this.page.name!)
+      }
     })
   }
 
@@ -95,6 +101,11 @@ export class LandingPageDetailsComponent extends BaseComponent implements OnInit
         } else {
           this.clearCachedLandingPageIfNeeded()
           this.popupService.success('Landing page updated.')
+          if (this.communityId == Constants.DEFAULT_COMMUNITY_ID) {
+            this.dataService.breadcrumbUpdate({id: this.pageId, type: BreadcrumbType.systemLandingPage, label: this.page.name})
+          } else {
+            this.dataService.breadcrumbUpdate({id: this.pageId, type: BreadcrumbType.landingPage, label: this.page.name})
+          }
         }
       }
     }).add(() => {
