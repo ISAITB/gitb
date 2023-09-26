@@ -1,5 +1,6 @@
 export enum BreadcrumbType {
 
+    home,
     domain,
     myDomain,
     specification,

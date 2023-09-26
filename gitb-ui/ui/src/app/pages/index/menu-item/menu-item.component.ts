@@ -1,4 +1,5 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnDestroy, OnInit } from '@angular/core';
+import { Subscription } from 'rxjs';
 import { DataService } from 'src/app/services/data.service';
 import { MenuItem } from 'src/app/types/menu-item.enum';
 
@@ -7,13 +8,14 @@ import { MenuItem } from 'src/app/types/menu-item.enum';
   templateUrl: './menu-item.component.html',
   styleUrls: [ './menu-item.component.less' ]
 })
-export class MenuItemComponent implements OnInit {
+export class MenuItemComponent implements OnInit, OnDestroy {
 
   @Input() label!: string
   @Input() icon!: string
   @Input() expanded = false
   @Input() type!: MenuItem
   active = false
+  pageChangeSubscription?: Subscription
 
   constructor(private dataService: DataService) { }
 
@@ -22,7 +24,7 @@ export class MenuItemComponent implements OnInit {
       this.active = true
       this.dataService.changeBanner(this.label)
     }
-    this.dataService.onPageChange$.subscribe((event) => {
+    this.pageChangeSubscription = this.dataService.onPageChange$.subscribe((event) => {
       if (event.menuItem != undefined) {
         setTimeout(() => {
           this.active = event.menuItem  == this.type
@@ -32,6 +34,10 @@ export class MenuItemComponent implements OnInit {
         }, 1)
       }
     })
+  }
+
+  ngOnDestroy(): void {
+    if (this.pageChangeSubscription) this.pageChangeSubscription.unsubscribe()
   }
 
 }

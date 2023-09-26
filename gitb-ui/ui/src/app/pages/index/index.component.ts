@@ -1,10 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { SystemConfigurationService } from "../../services/system-configuration.service"
 import { DataService } from '../../services/data.service'
 import { UserGuideService } from '../../services/user-guide.service'
 import { HtmlService } from '../../services/html.service';
 import { LegalNoticeService } from '../../services/legal-notice.service';
-import { Observable } from 'rxjs';
+import { Observable, Subscription } from 'rxjs';
 import { Constants } from 'src/app/common/constants';
 import { AuthProviderService } from '../../services/auth-provider.service'
 import { CookieService } from 'ngx-cookie-service';
@@ -18,7 +18,7 @@ import { MenuItem } from 'src/app/types/menu-item.enum';
   templateUrl: './index.component.html',
   styleUrls: ['./index.component.less']
 })
-export class IndexComponent implements OnInit {
+export class IndexComponent implements OnInit, OnDestroy {
 
   logo?: string
   footer?: string
@@ -27,6 +27,8 @@ export class IndexComponent implements OnInit {
   menuExpanded = false
   logoutInProgress = false
   MenuItem = MenuItem
+  logoutSubscription?: Subscription
+  bannerSubscription?: Subscription
 
   constructor(
     public dataService: DataService,
@@ -42,7 +44,7 @@ export class IndexComponent implements OnInit {
 
   ngOnInit(): void {
     this.logoutInProgress = false
-    this.dataService.onBannerChange$.subscribe((newBanner) => {
+    this.bannerSubscription = this.dataService.onBannerChange$.subscribe((newBanner) => {
       setTimeout(() => {
         this.pageTitle = newBanner
       }, 1)
@@ -54,15 +56,19 @@ export class IndexComponent implements OnInit {
     this.systemConfigurationService.getFooterLogo().subscribe((data) => {
       this.footer = data
     })
+    this.logoutSubscription = this.authProviderService.onLogout$.subscribe(() => {
+      this.logoutInProgress = true
+    })
+  }
+
+  ngOnDestroy(): void {
+    if (this.logoutSubscription) this.logoutSubscription.unsubscribe()
+    if (this.bannerSubscription) this.bannerSubscription.unsubscribe()
   }
 
 	switchAccount() {
-    this.logoutInProgress = true
     this.cookieService.set(Constants.LOGIN_OPTION_COOKIE_KEY, Constants.LOGIN_OPTION.FORCE_CHOICE)
     this.authProviderService.signalLogout({full: false, keepLoginOption: true})
-    this.authProviderService.onLogout$.subscribe(() => {
-      this.logoutInProgress = false
-    })    
   }
 
 	logout() {

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, Input, OnDestroy, OnInit } from '@angular/core';
 import { RoutingService } from 'src/app/services/routing.service';
 import { BreadcrumbItem } from './breadcrumb-item';
 import { DataService } from 'src/app/services/data.service';
@@ -6,15 +6,19 @@ import { find } from 'lodash';
 import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
 import { BreadcrumbService } from 'src/app/services/breadcrumb.service';
 import { BreadcrumbLabelRequest } from 'src/app/types/breadcrumb-label-request';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-breadcrumb',
   templateUrl: './breadcrumb.component.html',
   styleUrls: [ './breadcrumb.component.less' ]
 })
-export class BreadcrumbComponent implements OnInit {
+export class BreadcrumbComponent implements OnInit, OnDestroy {
 
-  breadcrumbs!: BreadcrumbItem[]
+  @Input() logoutInProgress: boolean = false
+  breadcrumbs?: BreadcrumbItem[]
+  homeCrumb!: BreadcrumbItem
+  breadcrumbSubscription?: Subscription
 
   constructor(
     private routingService: RoutingService,
@@ -23,14 +27,23 @@ export class BreadcrumbComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
-    this.dataService.onBreadcrumbChange$.subscribe((info) => {
+    this.homeCrumb = {
+      label: 'Home',
+      type: BreadcrumbType.home,
+      action: () => this.routingService.toHome()
+    }
+    this.breadcrumbSubscription = this.dataService.onBreadcrumbChange$.subscribe((info) => {
       if (info.breadcrumbs) {
         this.updateBreadcrumbs(info.breadcrumbs)
       }
-      if (info.id != undefined && info.type != undefined && info.label != undefined) {
+      if (info.id != undefined && info.type != undefined && info.label != undefined && this.breadcrumbs) {
         this.updateBreadcrumbLabel(this.breadcrumbs, info.id, info.type, info.label)
       }
     })
+  }
+
+  ngOnDestroy(): void {
+    if (this.breadcrumbSubscription) this.breadcrumbSubscription.unsubscribe()
   }
 
   private updateBreadcrumbLabel(crumbs: BreadcrumbItem[], id: number|string, type: BreadcrumbType, label: string) {
@@ -41,13 +54,17 @@ export class BreadcrumbComponent implements OnInit {
   }
 
   private updateBreadcrumbs(newCrumbs: BreadcrumbItem[]) {
-    const previousCrumbs = this.breadcrumbs
     const crumbsToLookup: BreadcrumbItem[] = []
     for (let newCrumb of newCrumbs) {
       if (newCrumb.label == undefined && newCrumb.typeId != undefined) {
-        const locatedCrumb = find(previousCrumbs, (crumb) => crumb.type == newCrumb.type && crumb.typeId == newCrumb.typeId)
-        if (locatedCrumb) {
-          newCrumb.label = locatedCrumb.label
+        if (this.breadcrumbs) {
+          const previousCrumbs = this.breadcrumbs
+          const locatedCrumb = find(previousCrumbs, (crumb) => crumb.type == newCrumb.type && crumb.typeId == newCrumb.typeId)
+          if (locatedCrumb) {
+            newCrumb.label = locatedCrumb.label
+          } else {
+            crumbsToLookup.push(newCrumb)
+          }
         } else {
           crumbsToLookup.push(newCrumb)
         }

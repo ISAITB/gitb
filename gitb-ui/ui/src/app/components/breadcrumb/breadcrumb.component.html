@@ -1,7 +1,11 @@
-<div class="breacrumbContainer">
-    <div class="breacrumbItem" (click)="toHome()"><i class="fa-solid fa-house"></i></div>
-    <ng-container *ngFor="let crumb of breadcrumbs">
-        <div class="breacrumbItemSeparator"><i class="fa-solid fa-angle-right"></i></div>
-        <div class="breacrumbItem" (click)="breadcrumbClicked(crumb)">{{crumb.label}}-{{crumb.typeId}}</div>
+<div class="breacrumbContainer" [class.hidden]="logoutInProgress">
+    <ng-container *ngIf="breadcrumbs != undefined">
+        <div class="breacrumbItem" (click)="breadcrumbClicked(homeCrumb)">{{homeCrumb.label}}</div>
+        <ng-container *ngFor="let crumb of breadcrumbs">
+            <ng-container *ngIf="crumb.label != undefined">
+                <div class="breacrumbItemSeparator"><i class="fa-solid fa-angle-right"></i></div>
+                <div class="breacrumbItem" (click)="breadcrumbClicked(crumb)">{{crumb.label}}</div>
+            </ng-container>
+        </ng-container>
     </ng-container>
 </div>
