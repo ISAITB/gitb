@@ -20,7 +20,6 @@ import { Constants } from 'src/app/common/constants';
 import { BsModalService } from 'ngx-bootstrap/modal';
 import { CreateEditTagComponent } from 'src/app/modals/create-edit-tag/create-edit-tag.component';
 import { TestCaseTag } from 'src/app/types/test-case-tag';
-import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
 
 @Component({
   selector: 'app-test-case-details',
