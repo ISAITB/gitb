@@ -45,10 +45,22 @@ class BreadcrumbManager @Inject()(dbConfigProvider: DatabaseConfigProvider) exte
       specification <- {
         if (ids.specification.isDefined) {
           PersistenceSchema.specifications
-            .filter(_.id === ids.specification.get)
+            .joinLeft(PersistenceSchema.specificationGroups).on(_.group === _.id)
+            .filter(_._1.id === ids.specification.get)
             // Filter also by the user's assigned domain unless no domain is assigned (e.g. for a Test Bed admin).
-            .filterOpt(userInfo._3)((q, id) => q.domain === id)
-            .map(_.shortname).result.headOption
+            .filterOpt(userInfo._3)((q, id) => q._1.domain === id)
+            .map(x => (x._1.shortname, x._2.map(_.shortname))).result.headOption
+            .map(x => {
+              if (x.isDefined) {
+                if (x.get._2.isDefined) {
+                  Some(x.get._2.get + " - " + x.get._1)
+                } else {
+                  Some(x.get._1)
+                }
+              } else {
+                None
+              }
+            })
         } else {
           DBIO.successful(None)
         }

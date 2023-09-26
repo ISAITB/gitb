@@ -80,6 +80,7 @@ export class CommunityCertificateComponent extends BaseComponent implements OnIn
         this.loading = false
       })
     })
+    this.routingService.communityCertificateSettingsBreadcrumbs(this.communityId)
   }
 
   attachKeystore(file: FileData) {

@@ -1,4 +1,4 @@
-<div class="breacrumbContainer" [class.hidden]="logoutInProgress">
+<div class="breacrumbContainer" [class.hidden]="logoutInProgress" *ngIf="isAuthenticated()">
     <ng-container *ngIf="breadcrumbs != undefined">
         <div class="breacrumbItem" (click)="breadcrumbClicked(homeCrumb)">{{homeCrumb.label}}</div>
         <ng-container *ngFor="let crumb of breadcrumbs">

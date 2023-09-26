@@ -9,6 +9,7 @@ import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.
 import { DataService } from 'src/app/services/data.service';
 import { PopupService } from 'src/app/services/popup.service';
 import { BaseComponent } from '../../base-component.component';
+import { RoutingService } from 'src/app/services/routing.service';
 
 @Component({
   selector: 'app-profile',
@@ -29,7 +30,8 @@ export class ProfileComponent extends BaseComponent implements OnInit, AfterView
     private accountService: AccountService,
     private cookieService: CookieService,
     private popupService: PopupService,
-    private modalService: BsModalService
+    private modalService: BsModalService,
+    private routingService: RoutingService
   ) {
     super()
   }
@@ -38,6 +40,7 @@ export class ProfileComponent extends BaseComponent implements OnInit, AfterView
     this.data.name = this.dataService.user!.name
     this.data!.email = this.dataService.user!.email
 		this.data!.role = Constants.USER_ROLE_LABEL[this.dataService.user!.role!]
+    this.routingService.profileBreadcrumbs()
   }
 
   ngAfterViewInit(): void {

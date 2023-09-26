@@ -332,6 +332,9 @@ table.table-directive {
 		padding-right: 40px;
 	}
 }
+.td-nowrap {
+	white-space: nowrap;
+}
 .th-min {
 	width: 1px;
 	white-space: nowrap;
@@ -814,7 +817,7 @@ span.caret.withMargin {
 }
 
 .modal-dialog.landingPagePreview {
-	margin-top: (@page-root-margin-top+@page-header-height+@page-header-bar-border-width+@page-header-bar-height) * 1px;
+	margin-top: (@page-root-margin-top+@page-header-height+@page-header-bar-border-width+@page-header-bar-height+@breadcrumb-height) * 1px;
 	@media (min-width: 768px) {
 		width: 750px;
 	}

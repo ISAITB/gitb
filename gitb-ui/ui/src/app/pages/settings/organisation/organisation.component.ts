@@ -64,6 +64,10 @@ export class OrganisationComponent extends OrganisationDetailsComponent implemen
     return super.isApiInfoVisible() && this.dataService.community?.allowAutomationApi == true
   }
 
+  override breadcrumbInit() {
+    this.routingService.ownOrganisationBreadcrumbs()
+  }
+
   override getUsers() {
     return this.accountService.getVendorUsers()
       .pipe(
@@ -76,10 +80,6 @@ export class OrganisationComponent extends OrganisationDetailsComponent implemen
           })
         })
       )
-  }
-
-  override breadcrumbLabel() {
-    this.routingService.ownOrganisationBreadcrumbs()
   }
 
   override ngOnInit(): void {

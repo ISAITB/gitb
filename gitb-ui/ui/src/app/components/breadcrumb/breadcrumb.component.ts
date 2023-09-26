@@ -7,6 +7,7 @@ import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
 import { BreadcrumbService } from 'src/app/services/breadcrumb.service';
 import { BreadcrumbLabelRequest } from 'src/app/types/breadcrumb-label-request';
 import { Subscription } from 'rxjs';
+import { AuthProviderService } from 'src/app/services/auth-provider.service';
 
 @Component({
   selector: 'app-breadcrumb',
@@ -23,7 +24,8 @@ export class BreadcrumbComponent implements OnInit, OnDestroy {
   constructor(
     private routingService: RoutingService,
     private dataService: DataService,
-    private breadcrumbService: BreadcrumbService
+    private breadcrumbService: BreadcrumbService,
+    private authProviderService: AuthProviderService
   ) { }
 
   ngOnInit(): void {
@@ -145,6 +147,10 @@ export class BreadcrumbComponent implements OnInit, OnDestroy {
 
   breadcrumbClicked(crumb: BreadcrumbItem) {
     crumb.action()
+  }
+
+  isAuthenticated(): boolean {
+    return this.authProviderService.isAuthenticated()
   }
 
 }

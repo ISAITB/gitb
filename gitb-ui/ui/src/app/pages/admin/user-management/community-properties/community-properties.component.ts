@@ -67,6 +67,7 @@ export class CommunityPropertiesComponent implements OnInit {
     this.communityId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID))
     this.loadOrganisationParameters()
     this.loadSystemParameters()
+    this.routingService.communityParametersBreadcrumbs(this.communityId)
   }
 
   loadOrganisationParameters() {

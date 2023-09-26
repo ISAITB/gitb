@@ -78,6 +78,8 @@ export class ConformanceStatementsComponent implements OnInit {
       }
       if (this.system) {
         this.systemChanged()
+      } else {
+        this.updateBreadcrumbs()
       }
     }).add(() => {
       this.systemStatus.status = Constants.STATUS.FINISHED
@@ -88,7 +90,16 @@ export class ConformanceStatementsComponent implements OnInit {
     this.columnCount = this.showDomain?6:5
   }
 
+  private updateBreadcrumbs() {
+    if (this.communityId == undefined) {
+      this.routingService.ownConformanceStatementsBreadcrumbs(this.organisationId, this.system?.id, this.system?.sname)
+    } else {
+      this.routingService.conformanceStatementsBreadcrumbs(this.communityId, this.organisationId, this.system?.id, this.system?.sname)
+    }
+  }
+
   systemChanged() {
+    this.updateBreadcrumbs()
     this.getConformanceStatements()
   }
 
@@ -174,7 +185,7 @@ export class ConformanceStatementsComponent implements OnInit {
         this.sortItems(item.items)
       }
     })
-  }  
+  }
 
   onStatementSelect(statement: ConformanceStatementItem) {
     if (this.communityId == undefined) {
@@ -317,7 +328,7 @@ export class ConformanceStatementsComponent implements OnInit {
       }
     })
     this.visibleItemCount = count
-  }  
+  }
 
   toCreateSystem() {
     if (this.communityId != undefined) {

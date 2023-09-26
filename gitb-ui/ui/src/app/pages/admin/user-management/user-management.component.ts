@@ -37,6 +37,7 @@ export class UserManagementComponent implements OnInit {
     }).add(() => {
       this.communityStatus.status = Constants.STATUS.FINISHED
     })
+    this.routingService.communitiesBreadcrumbs()
   }
 
   communitySelect(community: Community) {

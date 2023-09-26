@@ -77,6 +77,7 @@ export class ConformanceDashboardComponent implements OnInit {
 				this.columnCount = 9
       }
     }
+    this.routingService.conformanceDashboardBreadcrumbs()
     this.getConformanceStatements()
   }
 

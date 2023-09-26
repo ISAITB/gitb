@@ -16,6 +16,7 @@ import { TestResultSearchCriteria } from 'src/app/types/test-result-search-crite
 import { TestResultForDisplay } from '../../../types/test-result-for-display';
 import { saveAs } from 'file-saver'
 import { mergeMap, share, of } from 'rxjs';
+import { RoutingService } from 'src/app/services/routing.service';
 
 @Component({
   selector: 'app-organisation-tests',
@@ -68,7 +69,8 @@ export class OrganisationTestsComponent implements OnInit {
     private confirmationDialogService: ConfirmationDialogService,
     private testService: TestService,
     private popupService: PopupService,
-    private diagramLoaderService: DiagramLoaderService
+    private diagramLoaderService: DiagramLoaderService,
+    private routingService: RoutingService
   ) { }
 
   ngOnInit(): void {
@@ -100,6 +102,7 @@ export class OrganisationTestsComponent implements OnInit {
       { field: 'system', title: this.dataService.labelSystem(), sortable: true },
       { field: 'result', title: 'Result', sortable: true, iconFn: this.dataService.iconForTestResult, iconTooltipFn: this.dataService.tooltipForTestResult }
     ]
+    this.routingService.testHistoryBreadcrumbs(this.organisationId)
     this.goFirstPage()
   }
 

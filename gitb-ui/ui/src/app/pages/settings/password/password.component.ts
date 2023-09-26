@@ -7,12 +7,13 @@ import { DataService } from 'src/app/services/data.service';
 import { ErrorService } from 'src/app/services/error.service';
 import { PopupService } from 'src/app/services/popup.service';
 import { BaseComponent } from '../../base-component.component';
+import { RoutingService } from 'src/app/services/routing.service';
 
 @Component({
   selector: 'app-password',
   templateUrl: './password.component.html'
 })
-export class PasswordComponent extends BaseComponent implements AfterViewInit {
+export class PasswordComponent extends BaseComponent implements OnInit, AfterViewInit {
 
   passwordChangeData: PasswordChangeData = {}
   spinner = false
@@ -21,8 +22,13 @@ export class PasswordComponent extends BaseComponent implements AfterViewInit {
     private accountService: AccountService,
     private errorService: ErrorService,
     private dataService: DataService,
-    private popupService: PopupService
+    private popupService: PopupService,
+    private routingService: RoutingService
   ) { super() }
+
+  ngOnInit(): void {
+    this.routingService.changePasswordBreadcrumbs()
+  }
 
   ngAfterViewInit(): void {
     this.dataService.focus('current')

@@ -74,12 +74,10 @@ export class RoutingService {
   }
 
   toHome() {
-    this.dataService.breadcrumbUpdate({breadcrumbs: []})
     return this.navigate(MenuItem.home, ['home'])
   }
 
   toLogin() {
-    this.dataService.breadcrumbUpdate({breadcrumbs: []})
     return this.navigate(MenuItem.login, ['login'])
   }
 
@@ -88,12 +86,10 @@ export class RoutingService {
   }
 
   toTestBedAdmin(adminId: number) {
-    this.testBedAdminBreadcrumbs(adminId)    
     return this.navigate(MenuItem.systemAdministration, ['admin', 'system', 'admin', adminId])
   }
 
   toTestHistory(organisationId: number, sessionIdToShow?: string) {
-    this.testHistoryBreadcrumbs(organisationId)
     if (sessionIdToShow != undefined) {
       return this.navigate(MenuItem.myTestSessions, ['organisation', 'tests', organisationId], { queryParams: this.createQueryParams(Constants.NAVIGATION_QUERY_PARAM.TEST_SESSION_ID, sessionIdToShow) })
     } else {
@@ -128,7 +124,6 @@ export class RoutingService {
   }
 
   toConformanceStatements(communityId: number, organisationId: number, systemId?: number) {
-    this.conformanceStatementsBreadcrumbs(communityId, organisationId, systemId)
     if (systemId != undefined) {
       return this.navigate(MenuItem.communityManagement, ['admin', 'users', 'community', communityId, 'organisation', organisationId, 'conformance'], { queryParams: this.createQueryParams(Constants.NAVIGATION_QUERY_PARAM.SYSTEM_ID, systemId) })
     } else {
@@ -137,7 +132,6 @@ export class RoutingService {
   }
 
   toOwnConformanceStatements(organisationId: number, systemId?: number) {
-    this.ownConformanceStatementsBreadcrumbs(organisationId, systemId)
     if (systemId != undefined) {
       return this.navigate(MenuItem.myConformanceStatements, ['organisation', 'conformance', organisationId], { queryParams: this.createQueryParams(Constants.NAVIGATION_QUERY_PARAM.SYSTEM_ID, systemId) })
     } else {
@@ -151,7 +145,6 @@ export class RoutingService {
 
   toOwnOrganisationDetails(tab?: OrganisationTab, viewProperties?: boolean) {
     const navigationPaths = ['settings', 'organisation']
-    this.ownOrganisationBreadcrumbs()
     if (viewProperties == true) {
       if (tab != undefined) {
         return this.navigate(MenuItem.myOrganisation, navigationPaths, { state: { tab: OrganisationTab[tab] }, queryParams: this.createQueryParams(Constants.NAVIGATION_QUERY_PARAM.VIEW_PROPERTIES, true) })
@@ -209,12 +202,10 @@ export class RoutingService {
   }
 
   toProfile() {
-    this.profileBreadcrumbs()    
     return this.navigate(MenuItem.myProfile, ['settings', 'profile'])
   }
 
   toChangePassword() {
-    this.changePasswordBreadcrumbs()
     return this.navigate(MenuItem.changePassword, ['settings', 'password'])
   }
 
@@ -243,7 +234,6 @@ export class RoutingService {
   }
 
   toDomains() {
-    this.domainsBreadcrumbs()    
     return this.navigate(MenuItem.domainManagement, ['admin', 'domains'])
   }
 
@@ -312,17 +302,14 @@ export class RoutingService {
   }
 
   toCommunityParameters(communityId: number) {
-    this.communityParametersBreadcrumbs(communityId)    
     return this.navigate(MenuItem.communityManagement, ['admin', 'users', 'community', communityId, 'parameters'])
   }
 
   toCommunityLabels(communityId: number) {
-    this.communityLabelsBreadcrumbs(communityId)    
     return this.navigate(MenuItem.communityManagement, ['admin', 'users', 'community', communityId, 'labels'])
   }
 
   toCommunityCertificateSettings(communityId: number) {
-    this.communityCertificateSettingsBreadcrumbs(communityId)    
     return this.navigate(MenuItem.communityManagement, ['admin', 'users', 'community', communityId, 'certificate'])
   }
 
@@ -343,7 +330,6 @@ export class RoutingService {
   }
 
   toUserManagement() {
-    this.communitiesBreadcrumbs()    
     return this.navigate(MenuItem.communityManagement, ['admin', 'users'])
   }
 
@@ -412,7 +398,6 @@ export class RoutingService {
   }
 
   toSessionDashboard(sessionIdToShow?: string) {
-    this.sessionDashboardBreadcrumbs()
     if (sessionIdToShow != undefined) {
       return this.navigate(MenuItem.sessionDashboard, ['admin', 'sessions'], { queryParams: this.createQueryParams(Constants.NAVIGATION_QUERY_PARAM.TEST_SESSION_ID, sessionIdToShow) })
     } else {
@@ -421,22 +406,18 @@ export class RoutingService {
   }
 
   toConformanceDashboard() {
-    this.conformanceDashboardBreadcrumbs()    
     return this.navigate(MenuItem.conformanceDashboard, ['admin', 'conformance'])
   }
 
   toDataImport() {
-    this.importBreadcrumbs()    
     return this.navigate(MenuItem.dataImport, ['admin', 'import'])
   }
 
   toDataExport() {
-    this.exportBreadcrumbs()    
     return this.navigate(MenuItem.dataExport, ['admin', 'export'])
   }
 
   toSystemAdministration(tab?: SystemAdministrationTab) {
-    this.systemConfigurationBreadcrumbs()
     if (tab != undefined) {
       return this.navigate(MenuItem.systemAdministration, [ 'admin', 'system' ], { state: { tab: SystemAdministrationTab[tab] } })
     } else {
@@ -566,10 +547,10 @@ export class RoutingService {
     return crumbs
   }
 
-  systemBreadcrumbs(communityId: number, organisationId: number, systemId: number, label?: string): BreadcrumbItem[] {
+  systemBreadcrumbs(communityId: number, organisationId: number, systemId: number, label?: string, skipUpdate?: boolean): BreadcrumbItem[] {
     const crumbs = this.organisationBreadcrumbs(communityId, organisationId)
     crumbs.push({ type: BreadcrumbType.system, typeId: systemId, label: label, action: (() => this.toSystemDetails(communityId, organisationId, systemId)).bind(this) })
-    if (label) this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
+    if (label && !skipUpdate) this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
     return crumbs
   }
 
@@ -615,12 +596,12 @@ export class RoutingService {
     return crumbs
   }  
 
-  conformanceStatementsBreadcrumbs(communityId: number, organisationId: number, systemId?: number, skipUpdate?: boolean): BreadcrumbItem[] {
+  conformanceStatementsBreadcrumbs(communityId: number, organisationId: number, systemId?: number, systemLabel?: string, skipUpdate?: boolean): BreadcrumbItem[] {
     let crumbs: BreadcrumbItem[]
     if (systemId == undefined) {
       crumbs = this.organisationBreadcrumbs(communityId, organisationId)
     } else {
-      crumbs = this.systemBreadcrumbs(communityId, organisationId, systemId)
+      crumbs = this.systemBreadcrumbs(communityId, organisationId, systemId, systemLabel, true)
     }
     crumbs.push({ type: BreadcrumbType.statements, label: 'Conformance statements', action: (() => this.toConformanceStatements(communityId, organisationId, systemId)).bind(this) })
     if (!skipUpdate) this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
@@ -630,24 +611,24 @@ export class RoutingService {
   conformanceStatementBreadcrumbs(organisationId: number, systemId: number, actorId: number, communityId: number|undefined, label?: string): BreadcrumbItem[] {
     let crumbs: BreadcrumbItem[]
     if (communityId) {
-      crumbs = this.conformanceStatementsBreadcrumbs(communityId, organisationId, systemId, true)
+      crumbs = this.conformanceStatementsBreadcrumbs(communityId, organisationId, systemId, undefined, true)
       crumbs.push({ type: BreadcrumbType.statement, typeId: systemId+'|'+actorId, label: label, action: (() => this.toConformanceStatement(organisationId, systemId, actorId, communityId)).bind(this) })
     } else {
-      crumbs = this.ownConformanceStatementsBreadcrumbs(organisationId, systemId, true)
+      crumbs = this.ownConformanceStatementsBreadcrumbs(organisationId, systemId, undefined, true)
       crumbs.push({ type: BreadcrumbType.statement, typeId: systemId+'|'+actorId, label: label, action: (() => this.toOwnConformanceStatement(organisationId, systemId, actorId)).bind(this) })
     }
     if (label) this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
     return crumbs
   }
 
-  ownConformanceStatementsBreadcrumbs(organisationId: number, systemId?: number, skipUpdate?: boolean): BreadcrumbItem[] {
+  ownConformanceStatementsBreadcrumbs(organisationId: number, systemId?: number, systemLabel?: string, skipUpdate?: boolean): BreadcrumbItem[] {
     let crumbs: BreadcrumbItem[]
     if (systemId == undefined) {
       crumbs = this.ownOrganisationBreadcrumbs()
     } else {
-      crumbs = this.ownSystemBreadcrumbs(systemId)
+      crumbs = this.ownSystemBreadcrumbs(systemId, systemLabel, true)
     }
-    crumbs.push({ type: BreadcrumbType.ownStatements, label: 'My conformance statements', action: (() => this.toOwnConformanceStatements(organisationId, systemId)).bind(this) })
+    crumbs.push({ type: BreadcrumbType.ownStatements, label: 'Conformance statements', action: (() => this.toOwnConformanceStatements(organisationId, systemId)).bind(this) })
     if (!skipUpdate) this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
     return crumbs
   }
@@ -658,10 +639,10 @@ export class RoutingService {
     return crumbs
   }
 
-  ownSystemBreadcrumbs(systemId: number, label?: string): BreadcrumbItem[] {
+  ownSystemBreadcrumbs(systemId: number, label?: string, skipUpdate?: boolean): BreadcrumbItem[] {
     const crumbs = this.ownOrganisationBreadcrumbs(true)
     crumbs.push({ type: BreadcrumbType.ownSystem, typeId: systemId, label: label, action: (() => this.toOwnSystemDetails(systemId)).bind(this) })
-    if (label) this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
+    if (label && !skipUpdate) this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
     return crumbs
   }
 

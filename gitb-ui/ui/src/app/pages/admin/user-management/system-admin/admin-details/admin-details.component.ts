@@ -51,6 +51,7 @@ export class AdminDetailsComponent extends BaseComponent implements OnInit, Afte
       this.user.roleText = this.Constants.USER_ROLE_LABEL[this.user.role!]
       this.routingService.testBedAdminBreadcrumbs(this.userId, this.dataService.userDisplayName(this.user))
     })
+    this.routingService.testBedAdminBreadcrumbs(this.userId)
   }
 
   saveDisabled() {

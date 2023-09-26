@@ -24,6 +24,7 @@ export class HomeComponent implements OnInit {
         }
       })
     }
+    this.dataService.breadcrumbUpdate({breadcrumbs: []})
   }
 
   private orEmptyString(content: string|undefined) {

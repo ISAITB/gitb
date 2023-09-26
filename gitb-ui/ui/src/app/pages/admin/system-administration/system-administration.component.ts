@@ -133,7 +133,7 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
     } else {
       this.adminColumns.push({ field: 'email', title: 'Username' })
     }
-    this.adminColumns.push({ field: 'ssoStatusText', title: 'Status' })
+    this.adminColumns.push({ field: 'ssoStatusText', title: 'Status', cellClass: 'td-nowrap' })
     this.loadCommunitiesPending = true
     const communityObs = this.communityService.getUserCommunities()
     .pipe(
@@ -215,6 +215,7 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
     })
     // Setup tab triggers
     this.setupTabs()
+    this.routingService.systemConfigurationBreadcrumbs()
   }
 
   applyDemoCommunity() {

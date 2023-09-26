@@ -89,6 +89,7 @@ export class LoginComponent extends BaseComponent implements OnInit, AfterViewIn
       }
     }
     this.dataService.changeBanner(this.loginInProgress?'Home':'Welcome to the Interoperability Test Bed')
+    this.dataService.breadcrumbUpdate({breadcrumbs: []})
   }
 
   ngAfterViewInit(): void {

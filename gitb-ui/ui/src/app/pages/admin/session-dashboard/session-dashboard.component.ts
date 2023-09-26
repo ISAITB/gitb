@@ -17,6 +17,7 @@ import { mergeMap, Observable, of, share } from 'rxjs';
 import { ActivatedRoute } from '@angular/router';
 import { DiagramLoaderService } from 'src/app/components/diagram/test-session-presentation/diagram-loader.service';
 import { saveAs } from 'file-saver'
+import { RoutingService } from 'src/app/services/routing.service';
 
 @Component({
   selector: 'app-session-dashboard',
@@ -73,7 +74,8 @@ export class SessionDashboardComponent implements OnInit {
     private testService: TestService,
     private popupService: PopupService,
     private route: ActivatedRoute,
-    private diagramLoaderService: DiagramLoaderService
+    private diagramLoaderService: DiagramLoaderService,
+    private routingService: RoutingService
   ) { }
 
   ngOnInit(): void {
@@ -108,6 +110,7 @@ export class SessionDashboardComponent implements OnInit {
     if (this.dataService.isSystemAdmin) {
       this.filterState.filters.push(Constants.FILTER_TYPE.COMMUNITY)
     }
+    this.routingService.sessionDashboardBreadcrumbs()
     this.applyFilters()
   }
 

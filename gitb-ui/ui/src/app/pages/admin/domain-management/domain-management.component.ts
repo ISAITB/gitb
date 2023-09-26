@@ -31,6 +31,7 @@ export class DomainManagementComponent implements OnInit {
 
   ngOnInit(): void {
 		this.getDomains()
+    this.routingService.domainsBreadcrumbs()    
   }
 
 	getDomains() {

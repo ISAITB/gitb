@@ -28,6 +28,7 @@ export class IndexComponent implements OnInit, OnDestroy {
   logoutInProgress = false
   MenuItem = MenuItem
   logoutSubscription?: Subscription
+  logoutCompleteSubscription?: Subscription
   bannerSubscription?: Subscription
 
   constructor(
@@ -59,6 +60,9 @@ export class IndexComponent implements OnInit, OnDestroy {
     this.logoutSubscription = this.authProviderService.onLogout$.subscribe(() => {
       this.logoutInProgress = true
     })
+    this.logoutCompleteSubscription = this.authProviderService.onLogoutComplete$.subscribe(() => {
+      this.logoutInProgress = false
+    })    
   }
 
   ngOnDestroy(): void {

@@ -115,7 +115,7 @@ export class OrganisationDetailsComponent extends BaseComponent implements OnIni
     return true
   }
 
-  protected breadcrumbLabel() {
+  protected breadcrumbInit() {
     this.routingService.organisationBreadcrumbs(this.communityId, this.orgId, this.organisation.sname!)
   }
 
@@ -141,7 +141,7 @@ export class OrganisationDetailsComponent extends BaseComponent implements OnIni
     }
     this.userColumns.push({ field: 'roleText', title: 'Role' })
     if (this.showUserStatus()) {
-      this.userColumns.push({ field: 'ssoStatusText', title: 'Status' })
+      this.userColumns.push({ field: 'ssoStatusText', title: 'Status', cellClass: 'td-nowrap' })
     }
     this.organisationService.getOrganisationById(this.orgId)
     .subscribe((data) => {
@@ -149,7 +149,7 @@ export class OrganisationDetailsComponent extends BaseComponent implements OnIni
       if (data.landingPage == null) this.organisation.landingPage = undefined
       if (data.errorTemplate == null) this.organisation.errorTemplate = undefined
       if (data.legalNotice == null) this.organisation.legalNotice = undefined
-      this.breadcrumbLabel()
+      this.breadcrumbInit()
     })
     this.apiInfoVisible = this.isApiInfoVisible()
     // Setup tab triggers
@@ -265,7 +265,11 @@ export class OrganisationDetailsComponent extends BaseComponent implements OnIni
   }
 
   manageOrganisationTests() {
-    this.routingService.toConformanceStatements(this.communityId, this.orgId)
+    if (this.orgId == this.dataService.vendor?.id) {
+      this.routingService.toOwnConformanceStatements(this.orgId)
+    } else {
+      this.routingService.toConformanceStatements(this.communityId, this.orgId)
+    }
   }
 
   createUser() {

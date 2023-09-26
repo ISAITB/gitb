@@ -52,6 +52,7 @@ export class CommunityLabelsComponent extends BaseComponent implements OnInit {
       this.labels.push(labelMap[Constants.LABEL_TYPE.ORGANISATION])
       this.labels.push(labelMap[Constants.LABEL_TYPE.SYSTEM])
     })
+    this.routingService.communityLabelsBreadcrumbs(this.communityId)
   }
 
   labelTypeLabel(labelType: number) {
