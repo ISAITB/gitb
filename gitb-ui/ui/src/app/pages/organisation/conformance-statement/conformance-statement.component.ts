@@ -203,7 +203,6 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
       label = this.appendToLabel(label, specItem)
       label = this.appendToLabel(label, actorItem)
     }
-    console.log(label)
     return label
   }
 
