@@ -82,8 +82,16 @@ export class LandingPageDetailsComponent extends BaseComponent implements OnInit
   }
 
   private clearCachedLandingPageIfNeeded() {
-    if ((this.dataService.isCommunityAdmin || this.dataService.isSystemAdmin) 
-      && this.dataService.vendor!.community == this.communityId && this.page.default) {
+    if ((this.dataService.isCommunityAdmin || this.dataService.isSystemAdmin) && 
+        (
+          (this.dataService.vendor!.landingPage == this.page.id) ||
+          (
+            this.dataService.vendor!.landingPage == undefined && 
+            this.dataService.vendor!.community == this.communityId && 
+            this.page.default
+          )
+        )
+      ) {
         // Update if we are Test Bed or community admins and we are editing the default landing page.
         this.dataService.currentLandingPageContent = undefined
     }
