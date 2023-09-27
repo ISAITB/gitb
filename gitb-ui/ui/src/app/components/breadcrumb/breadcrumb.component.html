@@ -1,10 +1,18 @@
 <div class="breacrumbContainer" [class.hidden]="logoutInProgress" *ngIf="isAuthenticated()">
     <ng-container *ngIf="breadcrumbs != undefined">
-        <div class="breacrumbItem" (click)="breadcrumbClicked(homeCrumb)">{{homeCrumb.label}}</div>
-        <ng-container *ngFor="let crumb of breadcrumbs">
+        <ng-container *ngFor="let crumb of breadcrumbsToShow; let first = first;">
             <ng-container *ngIf="crumb.label != undefined">
-                <div class="breacrumbItemSeparator"><i class="fa-solid fa-angle-right"></i></div>
-                <div class="breacrumbItem" (click)="breadcrumbClicked(crumb)">{{crumb.label}}</div>
+                <div *ngIf="!first" class="breacrumbItemSeparator"><i class="fa-solid fa-angle-right"></i></div>
+                <div class="breacrumbItem" 
+                    #popup="bs-tooltip"                
+                    (mouseover)="mouseOver($event)"
+                    containerClass="shortTooltip"
+                    placement="bottom"
+                    [tooltip]="crumb.label"
+                    [delay]="Constants.TOOLTIP_DELAY"
+                    [isDisabled]="!hasOverflow"
+                    (click)="popup.hide();breadcrumbClicked(crumb)"
+                >{{crumb.label}}</div>
             </ng-container>
         </ng-container>
     </ng-container>

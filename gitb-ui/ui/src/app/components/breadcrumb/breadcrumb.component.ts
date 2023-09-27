@@ -8,6 +8,7 @@ import { BreadcrumbService } from 'src/app/services/breadcrumb.service';
 import { BreadcrumbLabelRequest } from 'src/app/types/breadcrumb-label-request';
 import { Subscription } from 'rxjs';
 import { AuthProviderService } from 'src/app/services/auth-provider.service';
+import { Constants } from 'src/app/common/constants';
 
 @Component({
   selector: 'app-breadcrumb',
@@ -17,9 +18,14 @@ import { AuthProviderService } from 'src/app/services/auth-provider.service';
 export class BreadcrumbComponent implements OnInit, OnDestroy {
 
   @Input() logoutInProgress: boolean = false
+
   breadcrumbs?: BreadcrumbItem[]
+  breadcrumbsToShow?: BreadcrumbItem[]
   homeCrumb!: BreadcrumbItem
   breadcrumbSubscription?: Subscription
+  hasOverflow = false
+
+  Constants = Constants
 
   constructor(
     private routingService: RoutingService,
@@ -55,6 +61,10 @@ export class BreadcrumbComponent implements OnInit, OnDestroy {
     }
   }
 
+  private completeBreadcrumbs(breadcrumbs: BreadcrumbItem[]) {
+    return [this.homeCrumb].concat(breadcrumbs)
+  }
+
   private updateBreadcrumbs(newCrumbs: BreadcrumbItem[]) {
     const crumbsToLookup: BreadcrumbItem[] = []
     for (let newCrumb of newCrumbs) {
@@ -74,6 +84,7 @@ export class BreadcrumbComponent implements OnInit, OnDestroy {
     }
     if (crumbsToLookup.length == 0) {
       this.breadcrumbs = newCrumbs
+      this.breadcrumbsToShow = this.completeBreadcrumbs(this.breadcrumbs)
     } else {
       // Lookup missing breadcrumb labels.
       const request: BreadcrumbLabelRequest = {}
@@ -137,12 +148,9 @@ export class BreadcrumbComponent implements OnInit, OnDestroy {
           }
         }
         this.breadcrumbs = newCrumbs
+        this.breadcrumbsToShow = this.completeBreadcrumbs(newCrumbs)
       })
     }
-  }
-
-  toHome() {
-    this.routingService.toHome()
   }
 
   breadcrumbClicked(crumb: BreadcrumbItem) {
@@ -152,5 +160,15 @@ export class BreadcrumbComponent implements OnInit, OnDestroy {
   isAuthenticated(): boolean {
     return this.authProviderService.isAuthenticated()
   }
+
+  mouseOver(element: MouseEvent) {
+    if ((element.target as HTMLElement).offsetWidth && 
+        (element.target as HTMLElement).scrollWidth &&
+        (element.target as HTMLElement).offsetWidth < (element.target as HTMLElement).scrollWidth) {
+      this.hasOverflow = true
+    } else {
+      this.hasOverflow = false
+    }
+  }  
 
 }
