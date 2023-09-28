@@ -27,8 +27,8 @@ import { DomainSpecification } from '../types/domain-specification';
 import { find } from 'lodash';
 import { PageChange } from '../types/page-change';
 import { BadgesInfo } from '../components/manage-badges/badges-info';
-import { BreadcrumbType } from '../types/breadcrumb-type';
 import { BreadcrumbChange } from '../types/breadcrumb-change';
+import { FieldInfo } from '../types/field-info';
 
 @Injectable({
   providedIn: 'root'
@@ -624,22 +624,21 @@ export class DataService {
     return textStr
   }
 
-  exportAllAsCsv(header: string[], data: any[]) {
+  exportAllAsCsv(fields: FieldInfo[], data: any[]) {
     if (data.length > 0) {
-      let csv = header.toString() + '\n'
-      data.forEach((item, i) => {
+      let csv = ''
+      fields.forEach((item) => {
+        if (csv.length > 0) csv += ','
+        csv += this.asCsvString(item.header)
+      })
+      csv += '\n'
+      data.forEach((dataItem) => {
         let line = ''
-        let idx = 0
-        for (let key in item) {
-          if (idx++ != 0) {
-            line += ','
-          }
-          line += this.asCsvString(item[key])
-        }
-        csv += line
-        if (i < data.length) {
-          csv += '\n'
-        }
+        fields.forEach((fieldItem) => {
+          if (line.length > 0) line += ','
+          line += this.asCsvString(dataItem[fieldItem.field])
+        })
+        csv += line + '\n'
       })
       const blobData = new Blob([csv], {type: 'text/csv'});
       saveAs(blobData, 'export.csv');

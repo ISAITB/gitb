@@ -17,6 +17,7 @@ import { TestResultForDisplay } from '../../../types/test-result-for-display';
 import { saveAs } from 'file-saver'
 import { mergeMap, share, of } from 'rxjs';
 import { RoutingService } from 'src/app/services/routing.service';
+import { FieldInfo } from 'src/app/types/field-info';
 
 @Component({
   selector: 'app-organisation-tests',
@@ -90,16 +91,16 @@ export class OrganisationTestsComponent implements OnInit {
       { field: 'specification', title: this.dataService.labelSpecification(), sortable: true },
       { field: 'actor', title: this.dataService.labelActor(), sortable: true },
       { field: 'testCase', title: 'Test case', sortable: true },
-      { field: 'startTime', title: 'Start time', sortable: true, order: 'asc' },
-      { field: 'system', title: this.dataService.labelSystem(), sortable: true }
+      { field: 'system', title: this.dataService.labelSystem(), sortable: true },
+      { field: 'startTime', title: 'Start time', sortable: true, order: 'asc' }
     ]
     this.completedTestsColumns = [
       { field: 'specification', title: this.dataService.labelSpecification(), sortable: true },
       { field: 'actor', title: this.dataService.labelActor(), sortable: true },
       { field: 'testCase', title: 'Test case', sortable: true },
+      { field: 'system', title: this.dataService.labelSystem(), sortable: true },
       { field: 'startTime', title: 'Start time', sortable: true },
       { field: 'endTime', title: 'End time', sortable: true, order: 'desc' },
-      { field: 'system', title: this.dataService.labelSystem(), sortable: true },
       { field: 'result', title: 'Result', sortable: true, iconFn: this.dataService.iconForTestResult, iconTooltipFn: this.dataService.tooltipForTestResult }
     ]
     this.routingService.testHistoryBreadcrumbs(this.organisationId)
@@ -324,8 +325,20 @@ export class OrganisationTestsComponent implements OnInit {
       const tests = map(data.data, (testResult) => {
         return this.newTestResult(testResult, true)
       })
-      const headers = ['Session', this.dataService.labelDomain(), this.dataService.labelSpecification(), this.dataService.labelActor(), 'Test suite', 'Test case', 'Start time', 'End time', 'Result', 'Obsolete']
-      this.dataService.exportAllAsCsv(headers, tests)
+      const fields: FieldInfo[] = [
+        { header: 'Session', field: 'session'},
+        { header: this.dataService.labelDomain(), field: 'domain'},
+        { header: this.dataService.labelSpecification(), field: 'specification'},
+        { header: this.dataService.labelActor(), field: 'actor'},
+        { header: 'Test suite', field: 'testSuite'},
+        { header: 'Test case', field: 'testCase'},
+        { header: this.dataService.labelSystem(), field: 'system'},
+        { header: 'Start time', field: 'startTime'},
+        { header: 'End time', field: 'endTime'},
+        { header: 'Result', field: 'result'},
+        { header: 'Obsolete', field: 'obsolete'}
+      ]
+      this.dataService.exportAllAsCsv(fields, tests)
     }).add(() => {
       this.exportCompletedPending = false
     })
@@ -339,8 +352,17 @@ export class OrganisationTestsComponent implements OnInit {
       const tests = map(data.data, (testResult) => {
         return this.newTestResult(testResult, false)
       })
-      const headers = ['Session', this.dataService.labelDomain(), this.dataService.labelSpecification(), this.dataService.labelActor(), 'Test suite', 'Test case', 'Start time']
-      this.dataService.exportAllAsCsv(headers, tests)
+      const fields: FieldInfo[] = [
+        { header: 'Session', field: 'session'},
+        { header: this.dataService.labelDomain(), field: 'domain'},
+        { header: this.dataService.labelSpecification(), field: 'specification'},
+        { header: this.dataService.labelActor(), field: 'actor'},
+        { header: 'Test suite', field: 'testSuite'},
+        { header: 'Test case', field: 'testCase'},
+        { header: this.dataService.labelSystem(), field: 'system'},
+        { header: 'Start time', field: 'startTime'},
+      ]
+      this.dataService.exportAllAsCsv(fields, tests)
     }).add(() => {
       this.exportActivePending = false
     })

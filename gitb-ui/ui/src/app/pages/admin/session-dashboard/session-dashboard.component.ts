@@ -18,6 +18,7 @@ import { ActivatedRoute } from '@angular/router';
 import { DiagramLoaderService } from 'src/app/components/diagram/test-session-presentation/diagram-loader.service';
 import { saveAs } from 'file-saver'
 import { RoutingService } from 'src/app/services/routing.service';
+import { FieldInfo } from 'src/app/types/field-info';
 
 @Component({
   selector: 'app-session-dashboard',
@@ -399,21 +400,34 @@ export class SessionDashboardComponent implements OnInit {
     const params = this.getCurrentSearchCriteria()
     this.reportService.getCompletedTestResults(1, 1000000, params, true)
     .subscribe((data) => {
-      const headers = ['Session', this.dataService.labelDomain(), this.dataService.labelSpecification(), this.dataService.labelActor(), 'Test suite', 'Test case', this.dataService.labelOrganisation(), this.dataService.labelSystem(), 'Start time', 'End time', 'Result', 'Obsolete']
+      const fields: FieldInfo[] = [
+        { header: 'Session', field: 'session' },
+        { header: this.dataService.labelDomain(), field: 'domain' },
+        { header: this.dataService.labelSpecification(), field: 'specification' },
+        { header: this.dataService.labelActor(), field: 'actor' },
+        { header: 'Test suite', field: 'testSuite' },
+        { header: 'Test case', field: 'testCase' },
+        { header: this.dataService.labelOrganisation(), field: 'organization' },
+        { header: this.dataService.labelSystem(), field: 'system' },
+        { header: 'Start time', field: 'startTime' },
+        { header: 'End time', field: 'endTime' },
+        { header: 'Result', field: 'result' },
+        { header: 'Obsolete', field: 'obsolete' }
+      ]
       if (data.orgParameters !== undefined) {
         for (let param of data.orgParameters) {
-          headers.push(this.dataService.labelOrganisation() + ' ('+param+')')
+          fields.push({ header: this.dataService.labelOrganisation() + ' ('+param+')', field: 'organization_'+param})
         }
       }
       if (data.sysParameters !== undefined) {
         for (let param of data.sysParameters) {
-          headers.push(this.dataService.labelSystem() + ' ('+param+')')
+          fields.push({ header: this.dataService.labelSystem() + ' ('+param+')', field: 'system_'+param})
         }
       }
       const tests = map(data.data, (testResult) => {
         return this.newTestResultForExport(testResult, true, data.orgParameters, data.sysParameters)
       })
-      this.dataService.exportAllAsCsv(headers, tests)
+      this.dataService.exportAllAsCsv(fields, tests)
     }).add(() => {
       this.exportCompletedPending = false
     })
@@ -424,21 +438,31 @@ export class SessionDashboardComponent implements OnInit {
     const params = this.getCurrentSearchCriteria()
     this.reportService.getActiveTestResults(params, true)
     .subscribe((data) => {
-      const headers = ['Session', this.dataService.labelDomain(), this.dataService.labelSpecification(), this.dataService.labelActor(), 'Test suite', 'Test case', this.dataService.labelOrganisation(), this.dataService.labelSystem(), 'Start time', 'End time', 'Result', 'Obsolete']
+      const fields: FieldInfo[] = [
+        { header: 'Session', field: 'session' },
+        { header: this.dataService.labelDomain(), field: 'domain' },
+        { header: this.dataService.labelSpecification(), field: 'specification' },
+        { header: this.dataService.labelActor(), field: 'actor' },
+        { header: 'Test suite', field: 'testSuite' },
+        { header: 'Test case', field: 'testCase' },
+        { header: this.dataService.labelOrganisation(), field: 'organization' },
+        { header: this.dataService.labelSystem(), field: 'system' },
+        { header: 'Start time', field: 'startTime' }
+      ]
       if (data.orgParameters !== undefined) {
         for (let param of data.orgParameters) {
-          headers.push(this.dataService.labelOrganisation() + ' ('+param+')')
+          fields.push({ header: this.dataService.labelOrganisation() + ' ('+param+')', field: 'organization_'+param})
         }
       }
       if (data.sysParameters !== undefined) {
         for (let param of data.sysParameters) {
-          headers.push(this.dataService.labelSystem() + ' ('+param+')')
+          fields.push({ header: this.dataService.labelSystem() + ' ('+param+')', field: 'system_'+param})
         }
       }
       const tests = map(data.data, (testResult) => {
         return this.newTestResultForExport(testResult, false, data.orgParameters, data.sysParameters)
       })
-      this.dataService.exportAllAsCsv(headers, tests)
+      this.dataService.exportAllAsCsv(fields, tests)
     }).add(() => {
       this.exportActivePending = false
     })
