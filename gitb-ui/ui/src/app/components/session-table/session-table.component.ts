@@ -171,6 +171,14 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
     this.routingService.toActor(row.domainId!, row.specificationId!, row.actorId!)
   }
 
+  toTestSuite(row: TestResultForDisplay) {
+    this.routingService.toTestSuite(row.domainId!, row.specificationId!, row.testSuiteId!)
+  }
+
+  toTestCase(row: TestResultForDisplay) {
+    this.routingService.toTestCase(row.domainId!, row.specificationId!, row.testSuiteId!, row.testCaseId!)
+  }
+
   showToCommunity(row: TestResultForDisplay) {
     return row.communityId != undefined && (this.dataService.isCommunityAdmin || this.dataService.isSystemAdmin)
   }
@@ -193,6 +201,14 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
 
   showToActor(row: TestResultForDisplay) {
     return this.showToSpecification(row) && row.actorId != undefined
+  }
+
+  showToTestSuite(row: TestResultForDisplay) {
+    return this.showToSpecification(row) && row.testSuiteId != undefined
+  }
+
+  showToTestCase(row: TestResultForDisplay) {
+    return this.showToTestSuite(row) && row.testCaseId != undefined
   }
 
   showToStatement(row: TestResultForDisplay) {

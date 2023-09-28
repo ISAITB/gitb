@@ -258,6 +258,7 @@ export class SessionDashboardComponent implements OnInit {
 
   private newTestResultForDisplay(testResult: TestResultReport, completed: boolean) {
     const result: TestResultForDisplay = this.newTestResult(testResult, completed)
+    result.testSuiteId = testResult.testSuite?.id
     result.testCaseId = testResult.test?.id
     if (this.sessionIdToShow != undefined && this.sessionIdToShow == testResult.result.sessionId) {
       // We have been asked to open a session. Set it as expand and keep it once.

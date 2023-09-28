@@ -77,6 +77,8 @@
                                                             <li *ngIf="showToDomain(row)" role="menuitem"><a class="dropdown-item" href (click)="toDomain(row); $event.preventDefault()">{{dataService.labelDomain()}}</a></li>
                                                             <li *ngIf="showToSpecification(row)" role="menuitem"><a class="dropdown-item" href (click)="toSpecification(row); $event.preventDefault()">{{dataService.labelSpecification()}}</a></li>
                                                             <li *ngIf="showToActor(row)" role="menuitem"><a class="dropdown-item" href (click)="toActor(row); $event.preventDefault()">{{dataService.labelActor()}}</a></li>
+                                                            <li *ngIf="showToTestSuite(row)" role="menuitem"><a class="dropdown-item" href (click)="toTestSuite(row); $event.preventDefault()">Test suite</a></li>
+                                                            <li *ngIf="showToTestCase(row)" role="menuitem"><a class="dropdown-item" href (click)="toTestCase(row); $event.preventDefault()">Test case</a></li>
                                                         </ul>
                                                     </div>
                                                 </div>
