@@ -17,9 +17,9 @@
                     [readonly]="readonly"
                 ></app-organisation-form>
             </div>
-            <div class="panel-footer button-container" *ngIf="!readonly">
+            <div class="panel-footer button-container">
                 <div class="btn-toolbar">
-                    <button class="btn btn-default" type="submit" (click)="updateOrganisation()" [disable]="deletePending || saveDisabled()" [pending]="savePending">Update</button>
+                    <button class="btn btn-default" *ngIf="!readonly" type="submit" (click)="updateOrganisation()" [disable]="deletePending || saveDisabled()" [pending]="savePending">Update</button>
                     <button class="btn btn-default" type="button" (click)="manageOrganisationTests()">Manage tests</button>
                     <ng-container *ngIf="showAdminInfo">
                         <button class="btn btn-default" type="button" (click)="cancelDetailOrganisation()">Back</button>
@@ -45,7 +45,7 @@
                             [data]="systems"
                             [noDataMessage]="'No '+dataService.labelSystemsLower()+' found'"
                             [loadingStatus]="systemsStatus" 
-                            [allowSelect]="!readonly"
+                            [allowSelect]="true"
                             (onSelect)="systemSelect($event)">
                         </div>
                     </div>
@@ -54,7 +54,7 @@
             <tab (selectTab)="showUsers()" customClass="tabClass">
                 <ng-template tabHeading><app-tab-title icon="fa-solid fa-user" text="Users"></app-tab-title></ng-template>
                 <div class="tabPanel">
-                    <div class="tabControls" *ngIf="!readonly && showCreateUser">
+                    <div class="tabControls" *ngIf="showCreateUser">
                         <button type="button" class="btn btn-default" (click)="createUser()">Create user</button>
                     </div>
                     <div class="panel panel-default">
@@ -63,7 +63,7 @@
                             [data]="users"
                             [noDataMessage]="'No users found'"
                             [loadingStatus]="usersStatus" 
-                            [allowSelect]="!readonly"
+                            [allowSelect]="showCreateUser"
                             (onSelect)="userSelect($event)">
                         </div>
                     </div>

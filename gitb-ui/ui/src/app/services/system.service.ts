@@ -261,4 +261,11 @@ export class SystemService {
     })
   }
 
+  ownSystemHasTests(systemId: number) {
+    return this.restService.get<{hasTests: boolean}>({
+      path: ROUTES.controllers.SystemService.ownSystemHasTests(systemId).url,
+      authenticate: true
+    })  
+  }
+
 }

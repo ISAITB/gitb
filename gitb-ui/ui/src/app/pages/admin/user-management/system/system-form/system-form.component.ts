@@ -19,6 +19,7 @@ export class SystemFormComponent implements OnInit, AfterViewInit {
   @Input() organisationId!: number
   @Input() propertyData!: OptionalCustomPropertyFormData
   @Input() showAdminInfo = true
+  @Input() readonly = false
 
   otherSystems: System[] = []
 
@@ -56,7 +57,9 @@ export class SystemFormComponent implements OnInit, AfterViewInit {
   }
 
   ngAfterViewInit(): void {
-    this.dataService.focus('sname')
+    if (!this.readonly) {
+      this.dataService.focus('sname')
+    }
   }
 
   copyChanged() {

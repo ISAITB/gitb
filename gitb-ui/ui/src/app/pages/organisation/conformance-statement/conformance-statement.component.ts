@@ -168,6 +168,9 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
           completedOptional: data.results.summary.completedOptional, failedOptional: data.results.summary.failedOptional, otherOptional: data.results.summary.undefinedOptional
         }
         this.lastUpdate = data.results.summary.updateTime
+        if (this.lastUpdate) {
+          this.hasTests = true
+        }
         this.conformanceStatus = data.results.summary.result
         this.allTestsSuccessful = this.conformanceStatus == Constants.TEST_CASE_RESULT.SUCCESS
         this.hasBadge = data.results.summary.hasBadge

@@ -49,6 +49,7 @@ POST    /api/user/feedback                      @controllers.AccountService.subm
 POST    /api/user/selfreg                       @controllers.CommunityService.selfRegister()
 GET     /api/user/selfreg                       @controllers.CommunityService.getSelfRegistrationOptions()
 GET     /api/vendor/organisation/hasTests       @controllers.OrganizationService.ownOrganisationHasTests()
+GET     /api/vendor/system/:sut_id/hasTests     @controllers.SystemService.ownSystemHasTests(sut_id: Long)
 GET     /api/vendor/user/:id                    @controllers.UserService.getOwnOrganisationUserById(id : Long)
 
 # System mangement API

@@ -8,7 +8,7 @@ import models.Enums.UserRole
 import models.prerequisites.PrerequisiteUtil
 import models.{Configs, Systems}
 import org.apache.commons.io.FileUtils
-import org.slf4j._
+import play.api.libs.json.Json
 import play.api.mvc._
 import utils.{JsonUtil, RepositoryUtils}
 
@@ -19,8 +19,7 @@ import scala.concurrent.ExecutionContext
 import utils.ClamAVClient
 import utils.MimeUtil
 
-class SystemService @Inject() (implicit ec: ExecutionContext, repositoryUtils: RepositoryUtils, accountManager: AccountManager, authorizedAction: AuthorizedAction, cc: ControllerComponents, systemManager: SystemManager, parameterManager: ParameterManager, testCaseManager: TestCaseManager, authorizationManager: AuthorizationManager, communityLabelManager: CommunityLabelManager) extends AbstractController(cc) {
-  private final val logger: Logger = LoggerFactory.getLogger(classOf[SystemService])
+class SystemService @Inject() (implicit ec: ExecutionContext, repositoryUtils: RepositoryUtils, testResultManager: TestResultManager, accountManager: AccountManager, authorizedAction: AuthorizedAction, cc: ControllerComponents, systemManager: SystemManager, parameterManager: ParameterManager, testCaseManager: TestCaseManager, authorizationManager: AuthorizationManager, communityLabelManager: CommunityLabelManager) extends AbstractController(cc) {
 
   def deleteSystem(systemId:Long) = authorizedAction { request =>
     authorizationManager.canDeleteSystem(request, systemId)
@@ -329,6 +328,12 @@ class SystemService @Inject() (implicit ec: ExecutionContext, repositoryUtils: R
     authorizationManager.canUpdateSystemApiKey(request, systemId)
     systemManager.deleteSystemApiKey(systemId)
     ResponseConstructor.constructEmptyResponse
+  }
+
+  def ownSystemHasTests(systemId: Long) = authorizedAction { request =>
+    authorizationManager.canViewSystem(request, systemId)
+    val hasTests = testResultManager.testSessionsExistForSystem(systemId)
+    ResponseConstructor.constructJsonResponse(Json.obj("hasTests" -> hasTests).toString())
   }
 
 }

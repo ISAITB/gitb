@@ -60,6 +60,7 @@ import { SystemDetailsComponent } from './pages/admin/user-management/system/sys
 import { OrganisationTestsComponent } from './pages/organisation/organisation-tests/organisation-tests.component';
 import { Constants } from './common/constants';
 import { SystemAdministrationComponent } from './pages/admin/system-administration/system-administration.component';
+import { EditOwnSystemResolver } from './resolvers/edit-own-system-resolver';
 
 const routes: Routes = [
   { path: '', redirectTo: '/home', pathMatch: 'full' },  
@@ -79,7 +80,7 @@ const routes: Routes = [
       { path: 'settings/organisation/user/create', component: CreateUserComponent },
       { path: 'settings/organisation/user/:'+Constants.NAVIGATION_PATH_PARAM.USER_ID, component: UserDetailsComponent },
       { path: 'settings/organisation/system/create', component: CreateSystemComponent },
-      { path: 'settings/organisation/system/:'+Constants.NAVIGATION_PATH_PARAM.SYSTEM_ID, component: SystemDetailsComponent },
+      { path: 'settings/organisation/system/:'+Constants.NAVIGATION_PATH_PARAM.SYSTEM_ID, component: SystemDetailsComponent, resolve: { canEditOwnSystem: EditOwnSystemResolver } },
       { path: 'settings/password', component: PasswordComponent },
       // Administration
       { path: 'admin/sessions', component: SessionDashboardComponent },

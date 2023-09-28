@@ -26,7 +26,7 @@
                             [deletePending]="organisationDeletePending"
                             (delete)="deleteOrganisationKey()"
                             (update)="updateOrganisationKey()"></app-api-key-text>
-                        <button *ngIf="apiInfo.organisation == undefined" class="btn btn-default" (click)="newOrganisationKey()" [pending]="organisationUpdatePending">Generate API key</button>
+                        <button *ngIf="apiInfo.organisation == undefined && canUpdate" class="btn btn-default" (click)="newOrganisationKey()" [pending]="organisationUpdatePending">Generate API key</button>
                     </td>
                 </tr>
                 <tr *ngIf="selectedSystem">
@@ -46,7 +46,7 @@
                         [deletePending]="systemDeletePending[selectedSystem.id]"
                         (delete)="deleteSystemKey(selectedSystem.id)"
                         (update)="updateSystemKey(selectedSystem.id)"></app-api-key-text>
-                        <button *ngIf="selectedSystem.key == undefined" class="btn btn-default" (click)="newSystemKey(selectedSystem.id)" [pending]="systemUpdatePending[selectedSystem.id]">Generate API key</button>
+                        <button *ngIf="selectedSystem.key == undefined && canUpdate" class="btn btn-default" (click)="newSystemKey(selectedSystem.id)" [pending]="systemUpdatePending[selectedSystem.id]">Generate API key</button>
                     </td>
                 </tr>
                 <tr *ngIf="apiInfo.specifications.length > 0">

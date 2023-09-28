@@ -14,15 +14,16 @@
                     [organisationId]="organisationId"
                     [propertyData]="propertyData"
                     [showAdminInfo]="fromCommunityManagement"
+                    [readonly]="readonly"
                 ></app-system-form>
             </div>
             <div class="panel-footer button-container">
                 <div class="btn-toolbar">
-                    <button class="btn btn-default" type="submit" (click)="update()" [disable]="deletePending || !saveEnabled()" [pending]="savePending">Update</button>
+                    <button *ngIf="!readonly" class="btn btn-default" type="submit" (click)="update()" [disable]="deletePending || !saveEnabled()" [pending]="savePending">Update</button>
                     <button class="btn btn-default" type="button" (click)="manageSystemTests()">Manage tests</button>
                     <button class="btn btn-default" type="button" (click)="cancel()">Back</button>
                 </div>
-                <div class="btn-toolbar btn-toolbar-delete">
+                <div class="btn-toolbar btn-toolbar-delete" *ngIf="!readonly">
                     <button class="btn btn-default btn-delete" type="button" (click)="delete()" [disable]="savePending" [pending]="deletePending">Delete</button>
                 </div>
             </div>

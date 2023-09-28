@@ -1,6 +1,24 @@
 <ng-container>
-    <div class="row">
-        <div class="col-xs-10 col-xs-offset-1">
+    <div class="row" [ngSwitch]="readonly">
+        <div class="col-xs-10 col-xs-offset-1" *ngSwitchCase="true">
+            <div class="form-group">
+                <label class="col-sm-3 control-label">Short name:</label>
+                <div class="col-sm-8"><p class="form-control-static">{{system.sname}}</p></div>
+            </div>
+            <div class="form-group">
+                <label class="col-sm-3 control-label">Full name:</label>
+                <div class="col-sm-8"><p class="form-control-static">{{system.fname}}</p></div>
+            </div>            
+            <div class="form-group">
+                <label class="col-sm-3 control-label">Description:</label>
+                <div class="col-sm-8"><p class="form-control-static">{{system.description}}</p></div>
+            </div>            
+            <div class="form-group">
+                <label class="col-sm-3 control-label">Version:</label>
+                <div class="col-sm-8"><p class="form-control-static">{{system.version}}</p></div>
+            </div>            
+        </div>
+        <div class="col-xs-10 col-xs-offset-1" *ngSwitchDefault>
             <div class="form-group">
                 <label class="col-xs-3 control-label" for="sname">* Short name:</label>
                 <div class="col-xs-7"><input id="sname" name="sname" [(ngModel)]="system.sname" class="form-control" type="text"></div>
@@ -55,5 +73,6 @@
         [tbPropertyType]="'system'"
         [tbOwner]="system.id"
         [tbColInputLess]="1"
+        [tbReadonly]="readonly"
         [tbSetDefaults]="system.id == undefined"></app-optional-custom-property-form>
 </ng-container>
