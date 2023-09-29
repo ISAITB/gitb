@@ -69,19 +69,15 @@ export class CreateUserComponent extends BaseComponent implements OnInit, AfterV
     const isSSO = this.dataService.configuration.ssoEnabled
     let ok = true
     let emailCheckResult: Observable<{available: boolean}>
-    if (this.fromCommunityManagement) {
-      if (isSSO) {
+    if (isSSO) {
+      if (this.fromCommunityManagement) {
         emailCheckResult = this.authService.checkEmailOfOrganisationUser(this.user.email!, this.orgId!, this.user.role!)
       } else {
-        ok = this.requireSame(this.user.password, this.user.passwordConfirmation, "Please enter equal passwords.")
-        emailCheckResult = this.authService.checkEmail(this.user.email!)
+        emailCheckResult = this.authService.checkEmailOfOrganisationMember(this.user.email!, this.user.role!)
       }
     } else {
-      if (isSSO) {
-        emailCheckResult = this.authService.checkEmailOfOrganisationMember(this.user.email!, this.user.role!)
-      } else {
-        emailCheckResult = this.authService.checkEmailOfOrganisationMember(this.user.email!)
-      }
+      ok = this.requireSame(this.user.password, this.user.passwordConfirmation, "Please enter equal passwords.")
+      emailCheckResult = this.authService.checkEmail(this.user.email!)
     }
     if (ok) {
       this.savePending = true

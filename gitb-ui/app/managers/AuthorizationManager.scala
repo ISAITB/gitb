@@ -1128,7 +1128,7 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
 
   def canCheckAnyUserEmail(request: RequestWithAttributes[_]):Boolean = {
     val userInfo = getUser(getRequestUserId(request))
-    setAuthResult(request, isTestBedAdmin(userInfo) || isCommunityAdmin(userInfo), "User cannot manage any organisation")
+    setAuthResult(request, isTestBedAdmin(userInfo) || isCommunityAdmin(userInfo) || isOrganisationAdmin((userInfo)), "User cannot check verify user data")
   }
 
   def canCheckUserEmail(request: RequestWithAttributes[_], organisationId: Long):Boolean = {
