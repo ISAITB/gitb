@@ -155,7 +155,8 @@ class AuthenticationService @Inject() (authorizedAction: AuthorizedAction, cc: C
     val userInfo = accountManager.getUserProfile(userId)
     authorizationManager.canCheckUserEmail(request, userInfo.organization.get.id)
     val email = ParameterExtractor.requiredQueryParameter(request, Parameters.EMAIL)
-    val isAvailable = authManager.checkEmailAvailability(email, Some(userInfo.organization.get.id), None, None)
+    val roleId = ParameterExtractor.requiredQueryParameter(request, Parameters.ROLE_ID).toShort
+    val isAvailable = authManager.checkEmailAvailability(email, Some(userInfo.organization.get.id), None, Some(roleId))
     ResponseConstructor.constructAvailabilityResponse(isAvailable)
   }
 

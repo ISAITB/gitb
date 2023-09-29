@@ -77,7 +77,11 @@ export class CreateUserComponent extends BaseComponent implements OnInit, AfterV
         emailCheckResult = this.authService.checkEmail(this.user.email!)
       }
     } else {
-      emailCheckResult = this.authService.checkEmailOfOrganisationMember(this.user.email!)
+      if (isSSO) {
+        emailCheckResult = this.authService.checkEmailOfOrganisationMember(this.user.email!, this.user.role!)
+      } else {
+        emailCheckResult = this.authService.checkEmailOfOrganisationMember(this.user.email!)
+      }
     }
     if (ok) {
       this.savePending = true

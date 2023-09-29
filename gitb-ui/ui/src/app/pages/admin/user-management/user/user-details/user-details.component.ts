@@ -101,7 +101,11 @@ export class UserDetailsComponent extends BaseComponent implements OnInit, After
     let emailCheckResult = this.emptyEmailCheck()
     if (isSSO) {
       if (this.originalRoleId != this.user.role) {
-        emailCheckResult = this.authService.checkEmailOfOrganisationUser(this.user.email!, this.orgId, this.user.role!)
+        if (this.fromCommunityManagement) {
+          emailCheckResult = this.authService.checkEmailOfOrganisationUser(this.user.email!, this.orgId, this.user.role!)
+        } else {
+          emailCheckResult = this.authService.checkEmailOfOrganisationMember(this.user.email!, this.user.role!)
+        }
       }
     } else {
       ok = this.requireSame(this.user.password, this.user.passwordConfirmation, "Passwords do not match.")
