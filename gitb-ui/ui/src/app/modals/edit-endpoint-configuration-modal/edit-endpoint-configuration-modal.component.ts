@@ -52,7 +52,9 @@ export class EditEndpointConfigurationModalComponent extends BaseComponent imple
 
   ngAfterViewChecked(): void {
     if (!this.isBinary) {
-      this.valueField?.nativeElement.focus()
+      if (this.valueField != undefined) {
+        this.valueField!.nativeElement.focus()
+      }
     }
   }
 
@@ -167,26 +169,13 @@ export class EditEndpointConfigurationModalComponent extends BaseComponent imple
         this.popupService.success('Parameter updated.')
       }).add(() => { this.savePending = false })
     } else if (this.parameter.kind == "SECRET") {
-      let configurationValue = ''
-      if (this.configuration.value != undefined) {
-        configurationValue = this.configuration.value
-      }
-      let configurationValueConfirm = ''
-      if (this.configuration.valueConfirm != undefined) {
-        configurationValueConfirm = this.configuration.valueConfirm
-      }
-      if (configurationValue != configurationValueConfirm) {
-        this.errorService.showSimpleErrorMessage('Invalid value', 'The provided value and its confirmation don\'t match.')
-      } else {
-        this.savePending = true
-        this.systemService.saveEndpointConfiguration(this.endpoint.id, this.configuration)
-        .subscribe(() => {
-          this.configuration.value = undefined
-          this.configuration.valueConfirm = undefined
-          this.closeDialog()
-          this.popupService.success('Parameter updated.')
-        }).add(() => { this.savePending = false })
-      }
+      this.savePending = true
+      this.systemService.saveEndpointConfiguration(this.endpoint.id, this.configuration)
+      .subscribe(() => {
+        this.configuration.value = undefined
+        this.closeDialog()
+        this.popupService.success('Parameter updated.')
+      }).add(() => { this.savePending = false })
     } else if (this.parameter.kind == "BINARY") {
       this.configuration.value = ''
       this.savePending = true
@@ -205,7 +194,7 @@ export class EditEndpointConfigurationModalComponent extends BaseComponent imple
     return this.deletePending 
       || (this.parameter.kind == 'BINARY' && this.file == undefined && this.configuration.configured)
       || (this.parameter.kind == 'SIMPLE' && !this.textProvided(this.configuration.value))
-      || (this.parameter.kind == 'SECRET' && (!this.textProvided(this.configuration.value) || !this.textProvided(this.configuration.valueConfirm)))
+      || (this.parameter.kind == 'SECRET' && !this.textProvided(this.configuration.value))
   }
 
 }

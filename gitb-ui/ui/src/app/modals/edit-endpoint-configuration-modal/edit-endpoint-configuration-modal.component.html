@@ -27,7 +27,7 @@
 					</div>
 				</div>
                 <div *ngIf="parameter.kind == 'SECRET'">
-                    <input #value id="value" name="value" [(ngModel)]="configuration.value" class="form-control" type="password" />
+					<app-secret-input id="value" name="value" [(ngModel)]="configuration.value"></app-secret-input>
                 </div>
 				<div *ngIf="parameter.kind == 'BINARY'">
                     <a class="form-control-static" href *ngIf="showFileName()" (click)="download();$event.preventDefault();" style="padding-right:10px;">{{fileName()}}</a>
@@ -36,14 +36,6 @@
 				</div>
 			</div>
             <app-tooltip *ngIf="parameter.kind != 'BINARY'" [tbTooltip]="'The value to set for the parameter.'"></app-tooltip>
-		</div>
-		<div class="form-group" *ngIf="parameter.kind == 'SECRET'">
-			<label class="col-sm-3 control-label" for="valueConfirm" *ngIf="parameter.use == 'R'" style="font-weight: bold;">* Confirm value:</label>
-			<label class="col-sm-3 control-label" for="valueConfirm" *ngIf="parameter.use != 'R'">Confirm value:</label>
-			<div class="col-sm-8">
-				<input id="valueConfirm" name="valueConfirm" [(ngModel)]="configuration.valueConfirm" class="form-control" type="password" *ngIf="parameter.kind == 'SECRET'"/>
-			</div>
-            <app-tooltip [tbTooltip]="'Confirm the provided parameter value.'"></app-tooltip>
 		</div>
 	</div>
 	<div class="modal-footer button-container">

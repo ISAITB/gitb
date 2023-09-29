@@ -50,13 +50,10 @@
         </div>
         <div class="form-group" *ngIf="domainParameter.kind == 'HIDDEN' && (!domainParameter.id || formData.updateValue)">
             <label class="col-xs-3 control-label" for="value">* Value:</label>
-            <div class="col-xs-7"><input id="value" name="value" [(ngModel)]="formData.hiddenValue" class="form-control" type="password"/></div>
+            <div class="col-xs-7">
+                <app-secret-input id="value" name="value" [(ngModel)]="formData.hiddenValue"></app-secret-input>
+            </div>
             <app-tooltip tbTooltip="The value to consider for this parameter."></app-tooltip>
-        </div>
-        <div class="form-group" *ngIf="domainParameter.kind == 'HIDDEN' && (!domainParameter.id || formData.updateValue)">
-            <label class="col-xs-3 control-label" for="repeat">* Repeat value:</label>
-            <div class="col-xs-7"><input id="repeat" name="repeat" [(ngModel)]="formData.hiddenValueRepeat" class="form-control" type="password"/></div>
-            <app-tooltip tbTooltip="Repeat the provided value to ensure it is correct."></app-tooltip>
         </div>
         <div class="form-group" *ngIf="domainParameter.kind == 'BINARY'">
             <label class="col-xs-3 control-label" for="value">* Value:</label>
