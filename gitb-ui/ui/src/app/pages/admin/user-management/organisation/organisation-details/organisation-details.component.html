@@ -36,7 +36,7 @@
             <tab (selectTab)="showSystems()" customClass="tabClass">
                 <ng-template tabHeading><app-tab-title icon="fa-solid fa-cube" [text]="dataService.labelSystems()"></app-tab-title></ng-template>
                 <div class="tabPanel">
-                    <div class="tabControls" *ngIf="!readonly">
+                    <div class="tabControls" *ngIf="showCreateSystem">
                         <button type="button" class="btn btn-default" (click)="createSystem()">Create {{dataService.labelSystemLower()}}</button>
                     </div>
                     <div class="panel panel-default">

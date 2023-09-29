@@ -33,6 +33,7 @@ export class SystemDetailsComponent extends BaseComponent implements OnInit {
   deletePending = false
   fromCommunityManagement!: boolean
   readonly!: boolean
+  showDelete!: boolean
 
   constructor(
     private route: ActivatedRoute,
@@ -45,6 +46,7 @@ export class SystemDetailsComponent extends BaseComponent implements OnInit {
 
   ngOnInit(): void {
     this.readonly = this.dataService.isVendorUser || (this.dataService.isVendorAdmin && !this.route.snapshot.data.canEditOwnSystem)
+    this.showDelete = !this.readonly && (!this.dataService.isVendorAdmin || this.dataService.community!.allowSystemManagement)
     this.fromCommunityManagement = this.route.snapshot.paramMap.has(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID)
     if (this.fromCommunityManagement) {
       this.communityId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID))

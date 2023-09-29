@@ -598,7 +598,7 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     setAuthResult(request, ok, "User cannot view the requested system")
   }
 
-  def canUpdateSystem(request: RequestWithAttributes[_], systemId: Long):Boolean = {
+  def canUpdateSystem(request: RequestWithAttributes[_], systemId: Long, isDelete: Boolean = false):Boolean = {
     var ok = false
     val userInfo = getUser(getRequestUserId(request))
     if (isTestBedAdmin(userInfo)) {
@@ -615,10 +615,12 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
         // Check to see if special permissions are in place.
         val community = communityManager.getById(userInfo.organization.get.community)
         if (community.isDefined) {
-          if (community.get.allowPostTestSystemUpdates) {
-            ok = true
-          } else {
-            ok = !testResultManager.testSessionsExistForSystem(systemId)
+          if (!isDelete || community.get.allowSystemManagement) {
+            if (community.get.allowPostTestSystemUpdates) {
+              ok = true
+            } else {
+              ok = !testResultManager.testSessionsExistForSystem(systemId)
+            }
           }
         }
       }
@@ -676,7 +678,7 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
   }
 
   def canDeleteSystem(request: RequestWithAttributes[_], systemId: Long):Boolean = {
-    canUpdateSystem(request, systemId)
+    canUpdateSystem(request, systemId, isDelete = true)
   }
 
   def canAccessThemeData(request: RequestWithAttributes[_]):Boolean = {
