@@ -36,6 +36,7 @@ import org.slf4j.LoggerFactory;
 import jakarta.xml.bind.*;
 import javax.xml.transform.stream.StreamSource;
 import java.io.*;
+import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -146,7 +147,7 @@ public class ReportGenerator {
                         return Objects.requireNonNull(Thread.currentThread().getContextClassLoader().getResource(StringUtils.removeStart(uri, "classpath:"))).toString();
                     } else if (specsToUse.getResourceResolver() != null && uri.startsWith("resources/")) {
                         // This is a community-specific resource.
-                        return specsToUse.getResourceResolver().apply(StringUtils.removeStart(uri, "resources/"));
+                        return specsToUse.getResourceResolver().apply(URLDecoder.decode(StringUtils.removeStart(uri, "resources/"), StandardCharsets.UTF_8));
                     }
                     return super.resolveURI(baseUri, uri);
                 }
