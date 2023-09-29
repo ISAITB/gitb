@@ -253,25 +253,25 @@ export class ConformanceStatementsComponent implements OnInit {
 
   private filterItem(item: ConformanceStatementItem) {
     if (!item.hidden) {
-      let filteredByText = false
+      item.filteredByText = false
       // Text filter.
       if (this.statementFilter) {
         const filterToApply = this.statementFilter.trim().toLowerCase()
         if ((item.name.toLowerCase().indexOf(filterToApply)) >= 0) {
-          filteredByText = true
+          item.filteredByText = true
         }
       }
       // Status filter
-      let filteredByStatus = false
+      item.filteredByStatus = false
       const statusFilterApplied = !this.showCompleted || !this.showFailed || !this.showIncomplete
       if (statusFilterApplied) {
         if ((this.showCompleted && this.checkItemStatus(item, Constants.TEST_CASE_RESULT.SUCCESS))
             || (this.showFailed && this.checkItemStatus(item, Constants.TEST_CASE_RESULT.FAILURE))
             || (this.showIncomplete && this.checkItemStatus(item, Constants.TEST_CASE_RESULT.UNDEFINED))) {
-              filteredByStatus = true
+              item.filteredByStatus = true
         }
       }
-      if ((!this.statementFilter || filteredByText) && (!statusFilterApplied || filteredByStatus)) {
+      if ((!this.statementFilter || item.filteredByText) && (!statusFilterApplied || item.filteredByStatus)) {
         item.filtered = true
       }
     }
@@ -314,7 +314,9 @@ export class ConformanceStatementsComponent implements OnInit {
       } else {
         // Apply filtering logic to children.
         this.visit(item.items, (item) => {
-          item.filtered = true
+          if (item.filteredByStatus) {
+            item.filtered = true
+          }
         })
       }
     }

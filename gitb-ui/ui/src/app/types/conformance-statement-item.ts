@@ -13,6 +13,8 @@ export interface ConformanceStatementItem {
 
     matched?: boolean
     filtered?: boolean
+    filteredByStatus?: boolean
+    filteredByText?: boolean
     collapsed?: boolean
     checked?: boolean
 }
