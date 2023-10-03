@@ -41,13 +41,10 @@
 					</div>
 					<div class="form-group">
 						<label class="col-xs-3 control-label" for="encryptionPassword">* Export password:</label>
-						<div class="col-xs-4 inline-checkbox-container">
-							<input id="encryptionPassword" name="encryptionPassword" autocomplete="off" [(ngModel)]="settings.encryptionKey" class="form-control" [attr.type]="showEncryptionKey?'text':'password'"/>
-							<label class="inline-checkbox">
-								<input type="checkbox" name="showEncryptionKey" [(ngModel)]="showEncryptionKey">Show
-								<app-tooltip [inline]="true" tbTooltip="Used to encrypt the exported ZIP archive and also any sensitive values it may include. This password will need to be provided when importing or opening the archive."></app-tooltip>
-							</label>
+						<div class="col-xs-4">
+							<app-secret-input id="encryptionPassword" name="encryptionPassword" [(ngModel)]="settings.encryptionKey"></app-secret-input>
 						</div>
+						<app-tooltip tbTooltip="Used to encrypt the exported ZIP archive and also any sensitive values it may include. This password will need to be provided when importing or opening the archive."></app-tooltip>
 					</div>
 					<div class="row">
 						<div class="col-xs-offset-1 col-xs-10">

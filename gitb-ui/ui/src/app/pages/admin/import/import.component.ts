@@ -41,7 +41,6 @@ export class ImportComponent extends BaseComponent implements OnInit, OnDestroy 
   archiveData?: FileData
   importItemActionLabels: {[key: number]: string} = {}
   importItemTypeLabels: {[key: number]: string} = {}
-  showEncryptionKey = false
 
   constructor(
     private communityService: CommunityService,

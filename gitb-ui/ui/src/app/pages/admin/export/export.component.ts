@@ -29,7 +29,6 @@ export class ExportComponent extends BaseComponent implements OnInit {
   allCommunityData = false
   allDomainData = false
   allOrganisationData = false
-  showEncryptionKey = false
   settings: ExportSettings = {
     landingPages: false,
     errorTemplates: false,
