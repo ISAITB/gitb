@@ -53,6 +53,7 @@ export class OrganisationDetailsComponent extends BaseComponent implements OnIni
   showLandingPage!: boolean
   showCreateUser!: boolean
   showCreateSystem!: boolean
+  showUsersTab!: boolean
   readonly!: boolean
   apiInfoVisible?: boolean
   fromCommunityManagement?: boolean
@@ -124,6 +125,10 @@ export class OrganisationDetailsComponent extends BaseComponent implements OnIni
     this.routingService.organisationBreadcrumbs(this.communityId, this.orgId, this.organisation.sname!)
   }
 
+  protected isShowUsersTab() {
+    return true
+  }
+
   ngOnInit(): void {
     this.fromCommunityManagement = this.route.snapshot.paramMap.has(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID)
     this.orgId = this.getOrganisationId()
@@ -134,6 +139,7 @@ export class OrganisationDetailsComponent extends BaseComponent implements OnIni
     this.readonly = this.isReadonly()
     this.showCreateUser = this.isShowCreateUser()
     this.showCreateSystem = this.isShowCreateSystem()
+    this.showUsersTab = this.isShowUsersTab()
     const viewPropertiesParam = this.route.snapshot.queryParamMap.get(Constants.NAVIGATION_QUERY_PARAM.VIEW_PROPERTIES)
     if (viewPropertiesParam != undefined) {
       this.propertyData.edit = Boolean(viewPropertiesParam)

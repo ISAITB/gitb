@@ -192,7 +192,11 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
   }
 
   showToDomain(row: TestResultForDisplay) {
-    return row.domainId != undefined && (this.dataService.isCommunityAdmin || this.dataService.isSystemAdmin)
+    return row.domainId != undefined && (
+      this.dataService.isSystemAdmin || (
+        this.dataService.isCommunityAdmin && this.dataService.community?.domain != undefined
+      )
+    )
   }
 
   showToSpecification(row: TestResultForDisplay) {

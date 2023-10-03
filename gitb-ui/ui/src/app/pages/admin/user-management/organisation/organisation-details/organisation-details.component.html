@@ -51,7 +51,7 @@
                     </div>
                 </div>
             </tab>
-            <tab (selectTab)="showUsers()" customClass="tabClass">
+            <tab *ngIf="showUsersTab" (selectTab)="showUsers()" customClass="tabClass">
                 <ng-template tabHeading><app-tab-title icon="fa-solid fa-user" text="Users"></app-tab-title></ng-template>
                 <div class="tabPanel">
                     <div class="tabControls" *ngIf="showCreateUser">

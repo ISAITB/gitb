@@ -57,11 +57,15 @@ export class OrganisationComponent extends OrganisationDetailsComponent implemen
   }
 
   override isShowCreateSystem() {
-    return this.dataService.isVendorAdmin && this.dataService.community!.allowSystemManagement
+    return (this.dataService.isVendorAdmin && this.dataService.community!.allowSystemManagement) || this.dataService.isCommunityAdmin || this.dataService.isSystemAdmin
   }
 
   override showUserStatus() {
     return !this.dataService.isVendorUser
+  }
+
+  override isShowUsersTab() {
+    return this.dataService.isVendorAdmin || this.dataService.isVendorUser
   }
 
   override isApiInfoVisible() {

@@ -691,7 +691,11 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
   }
 
   showToDomain() {
-    return this.domainId != undefined && (this.dataService.isCommunityAdmin || this.dataService.isSystemAdmin)
+    return this.domainId != undefined && (
+      this.dataService.isSystemAdmin || (
+        this.dataService.isCommunityAdmin && this.dataService.community?.domain != undefined
+      )
+    )
   }
 
   showToSpecification() {

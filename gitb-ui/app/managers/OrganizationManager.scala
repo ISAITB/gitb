@@ -604,18 +604,20 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils, systemMan
             .join(PersistenceSchema.actors).on(_._1.actor === _.id)
             .join(PersistenceSchema.testSuites).on(_._1._1.testsuite === _.id)
             .join(PersistenceSchema.testCases).on(_._1._1._1.testcase === _.id)
-            .filter(_._1._1._1._1.sut inSet systemApiKeys.map(_._1).toSet)
+            .joinLeft(PersistenceSchema.specificationGroups).on(_._1._1._1._2.group === _.id)
+            .filter(_._1._1._1._1._1.sut inSet systemApiKeys.map(_._1).toSet)
             .map(x => (
-              x._1._1._1._2.shortname, // Specification name [1]
-              x._1._1._2.name, // Actor name [2]
-              x._1._1._2.apiKey, // Actor API key [3]
-              x._1._2.shortname, // Test suite name [4]
-              x._1._2.identifier, // Test suite identifier [5]
-              x._2.shortname, // Test case name [6]
-              x._2.identifier, // Test case identifier [7]
-              x._1._1._1._2.id // Specification ID [8]
+              x._1._1._1._1._2.shortname, // Specification name [1]
+              x._1._1._1._2.name, // Actor name [2]
+              x._1._1._1._2.apiKey, // Actor API key [3]
+              x._1._1._2.shortname, // Test suite name [4]
+              x._1._1._2.identifier, // Test suite identifier [5]
+              x._1._2.shortname, // Test case name [6]
+              x._1._2.identifier, // Test case identifier [7]
+              x._1._1._1._1._2.id, // Specification ID [8]
+              x._2.map(_.shortname) // Specification group name [9]
             ))
-            .sortBy(x => (x._1.asc, x._2.asc, x._4.asc, x._6.asc))
+            .sortBy(x => (x._9.asc, x._1.asc, x._2.asc, x._4.asc, x._6.asc))
             .result
         } else {
           DBIO.successful(List.empty)
@@ -624,14 +626,14 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils, systemMan
     } yield (organisationApiKey, systemApiKeys, domainApiKeys))
     // Process results from DB
     type testSuiteMapTuple = (String, mutable.TreeMap[String, String]) // Test suite name, Test case identifier, Test case name
-    type specificationMapTuple = (String, mutable.TreeMap[String, String], mutable.TreeMap[String, testSuiteMapTuple]) // Specification name, Actor API key, Actor name, Test suite identifier, Test suite info
+    type specificationMapTuple = (String, mutable.TreeMap[String, String], mutable.TreeMap[String, testSuiteMapTuple], Option[String]) // Specification name, Actor API key, Actor name, Test suite identifier, Test suite info, Specification group name
     // Organise results into a tree hierarchy
-    val specificationMap = new mutable.TreeMap[Long, specificationMapTuple]()
+    val specificationMap = new mutable.LinkedHashMap[Long, specificationMapTuple]()
     results._3.foreach { result =>
       var spec = specificationMap.get(result._8)
       // Spec info.
       if (spec.isEmpty) {
-        spec = Some((result._1, new mutable.TreeMap[String, String](), new mutable.TreeMap[String, testSuiteMapTuple]()))
+        spec = Some((result._1, new mutable.TreeMap[String, String](), new mutable.TreeMap[String, testSuiteMapTuple](), result._9))
         specificationMap += (result._8 -> spec.get)
       }
       // Actor info.
@@ -651,7 +653,11 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils, systemMan
     }
     // Map the tree hierarchies to the types to return.
     val specifications = specificationMap.map { spec =>
-      val specName = spec._2._1
+      val specName = if (spec._2._4.isDefined) {
+        spec._2._4.get + " - " + spec._2._1
+      } else {
+        spec._2._1
+      }
       ApiKeySpecificationInfo(
         specName,
         spec._2._2.map { actor =>

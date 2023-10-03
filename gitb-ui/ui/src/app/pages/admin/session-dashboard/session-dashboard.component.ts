@@ -123,7 +123,7 @@ export class SessionDashboardComponent implements OnInit {
     let searchCriteria: TestResultSearchCriteria = {}
     if (this.dataService.isCommunityAdmin) {
       searchCriteria.communityIds = [this.dataService.community!.id]
-      if (this.dataService.community?.domain !== undefined) {
+      if (this.dataService.community?.domain != undefined) {
         searchCriteria.domainIds = [this.dataService.community.domain.id]
       }
     }
@@ -133,7 +133,7 @@ export class SessionDashboardComponent implements OnInit {
     }
     if (filterData) {
       if (this.dataService.isCommunityAdmin) {
-        if (this.dataService.community!.domain === undefined) {
+        if (this.dataService.community!.domain == undefined) {
           searchCriteria.domainIds = filterData[Constants.FILTER_TYPE.DOMAIN]
         }
       } else {
@@ -360,7 +360,7 @@ export class SessionDashboardComponent implements OnInit {
   }
 
   exportVisible(session: TestResultForDisplay) {
-    return session.obsolete === undefined || !session.obsolete
+    return session.obsolete == undefined || !session.obsolete
   }
 
   onReportExportPdf(testResult: TestResultForDisplay) {

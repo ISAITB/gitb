@@ -70,18 +70,44 @@
 						<button *ngSwitchDefault type="button" class="btn btn-default" (click)="onExportConformanceStatement()" [pending]="exportPending">Download report</button>
 					</ng-container>
 					<app-view-badge-button *ngIf="hasBadge" [systemId]="systemId" [actorId]="actorId" [leftMargin]="true"></app-view-badge-button>
+					<!-- View party -->
 					<div class="btn-group" dropdown>
-						<button id="button-navigation" dropdownToggle type="button" class="btn btn-default dropdown-toggle" aria-controls="dropdown-navigation">Go to ...<span class="caret withMargin"></span></button>
-						<ul id="dropdown-navigation" *dropdownMenu class="dropdown-menu dropdown-menu" role="menu" aria-labelledby="button-navigation">
-							<li *ngIf="showToCommunity()" role="menuitem"><a class="dropdown-item" href (click)="toCommunity(); $event.preventDefault()">Community</a></li>
-							<li role="menuitem"><a class="dropdown-item" href (click)="toOrganisation(); $event.preventDefault()">{{dataService.labelOrganisation()}}</a></li>
-							<li role="menuitem"><a class="dropdown-item" href (click)="toSystem(); $event.preventDefault()">{{dataService.labelSystem()}}</a></li>
-							<li *ngIf="showSpecificationNavigation()" class="divider dropdown-divider"></li>
-							<li *ngIf="showToDomain()" role="menuitem"><a class="dropdown-item" href (click)="toDomain(); $event.preventDefault()">{{dataService.labelDomain()}}</a></li>
-							<li *ngIf="showToSpecification()" role="menuitem"><a class="dropdown-item" href (click)="toSpecification(); $event.preventDefault()">{{dataService.labelSpecification()}}</a></li>
-							<li *ngIf="showToActor()" role="menuitem"><a class="dropdown-item" href (click)="toActor(); $event.preventDefault()">{{dataService.labelActor()}}</a></li>
+						<button type="button" class="btn btn-default" (click)="toSystem()">View {{dataService.labelSystemLower()}}</button>
+						<button id="button-system" type="button" dropdownToggle class="btn btn-default dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
+						<ul id="dropdown-system" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-system">
+							<li *ngIf="showToCommunity()" role="menuitem"><a class="dropdown-item" href (click)="toCommunity();$event.preventDefault();">View community</a></li>
+							<li role="menuitem"><a class="dropdown-item" href (click)="toOrganisation(); $event.preventDefault();">View {{dataService.labelOrganisationLower()}}</a></li>
 						</ul>
 					</div>
+					<!-- View specification -->
+					<ng-container *ngIf="showToDomain() || showToSpecification() || showToActor()">
+						<ng-container [ngSwitch]="showToSpecification()">
+							<ng-container *ngSwitchCase="true">
+								<div class="btn-group" dropdown>
+									<button type="button" class="btn btn-default" (click)="toSpecification()">View {{dataService.labelSpecificationLower()}}</button>
+									<button id="button-spec" type="button" dropdownToggle class="btn btn-default dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
+									<ul id="dropdown-spec" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-spec">
+										<li role="menuitem"><a class="dropdown-item" href (click)="toDomain();$event.preventDefault();">View {{dataService.labelDomainLower()}}</a></li>
+										<li *ngIf="showToActor()" role="menuitem"><a class="dropdown-item" href (click)="toActor(); $event.preventDefault();">View {{dataService.labelActorLower()}}</a></li>
+									</ul>
+								</div>
+							</ng-container>
+							<ng-container *ngSwitchDefault [ngSwitch]="showToActor()">
+								<ng-container *ngSwitchCase="true">
+									<div class="btn-group" dropdown>
+										<button type="button" class="btn btn-default" (click)="toActor()">View {{dataService.labelActorLower()}}</button>
+										<button id="button-spec" type="button" dropdownToggle class="btn btn-default dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
+										<ul id="dropdown-spec" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-spec">
+											<li role="menuitem"><a class="dropdown-item" href (click)="toDomain();$event.preventDefault();">View {{dataService.labelDomainLower()}}</a></li>
+										</ul>
+									</div>
+								</ng-container>
+								<ng-container *ngSwitchDefault>
+									<button type="button" class="btn btn-default" (click)="toDomain()">View {{dataService.labelDomainLower()}}</button>
+								</ng-container>
+							</ng-container>
+						</ng-container>
+					</ng-container>
 					<button type="button" class="btn btn-default" (click)="back()">Back</button>
 				</div>
 				<div class="btn-toolbar btn-toolbar-delete" *ngIf="canDelete()">

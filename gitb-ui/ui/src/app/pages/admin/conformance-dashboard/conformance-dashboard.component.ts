@@ -85,7 +85,7 @@ export class ConformanceDashboardComponent implements OnInit {
     let searchCriteria: TestResultSearchCriteria = {}
     if (this.dataService.isCommunityAdmin) {
       searchCriteria.communityIds = [this.dataService.community!.id]
-      if (this.dataService.community!.domain !== undefined) {
+      if (this.dataService.community!.domain != undefined) {
         searchCriteria.domainIds = [this.dataService.community!.domain.id]
       }
     }
@@ -95,7 +95,7 @@ export class ConformanceDashboardComponent implements OnInit {
     }
     if (filterData) {
       if (this.dataService.isCommunityAdmin) {
-        if (this.dataService.community!.domain === undefined) {
+        if (this.dataService.community!.domain == undefined) {
           searchCriteria.domainIds = filterData[Constants.FILTER_TYPE.DOMAIN]
         }
       } else {
@@ -345,7 +345,11 @@ export class ConformanceDashboardComponent implements OnInit {
   }
 
   showToDomain(statement: ConformanceResultFull) {
-    return statement.domainId != undefined && statement.domainId >= 0
+    return statement.domainId != undefined && statement.domainId >= 0 && (
+      this.dataService.isSystemAdmin || (
+        this.dataService.isCommunityAdmin && this.dataService.community?.domain != undefined
+      )
+    )
   }
 
   toSpecification(statement: ConformanceResultFull) {
