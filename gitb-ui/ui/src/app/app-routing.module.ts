@@ -131,7 +131,7 @@ const routes: Routes = [
       // System administration
       { path: 'admin/system', component: SystemAdministrationComponent },
       { path: 'admin/system/admin/create' , component: CreateAdminComponent },
-      { path: 'admin/system/admin/:'+Constants.NAVIGATION_PATH_PARAM.USER_ID , component: AdminDetailsComponent },
+      { path: 'admin/system/admin/:'+Constants.NAVIGATION_PATH_PARAM.USER_ID, component: AdminDetailsComponent },
       { path: 'admin/system/pages/create', component: CreateLandingPageComponent, resolve: { base: LandingPageResolver } },
       { path: 'admin/system/pages/:'+Constants.NAVIGATION_PATH_PARAM.LANDING_PAGE_ID, component: LandingPageDetailsComponent },
       { path: 'admin/system/notices/create', component: CreateLegalNoticeComponent, resolve: { base: LegalNoticeResolver } },
