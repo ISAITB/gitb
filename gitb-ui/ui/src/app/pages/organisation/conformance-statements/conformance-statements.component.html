@@ -2,6 +2,9 @@
 	<div class="panel panel-default no-bottom-margin">
 		<div class="panel-heading">
 			<h4 class="title">Conformance statements</h4>
+			<div class="btn-toolbar" *ngIf="showCreate">
+				<button (click)="createStatement()" [disabled]="system == undefined" class="btn btn-default">Create statements</button>
+			</div>
 		</div>
 		<div class="panel-body">
 			<ng-container [ngSwitch]="systemStatus.status">
@@ -38,7 +41,6 @@
 										(updated)="filterByStatus($event)"></app-checkbox-option-panel>
 								</div>
 							</ng-container>
-							<button *ngIf="showCreate" (click)="createStatement()" [disabled]="system == undefined" class="btn btn-default">Create statements</button>
 						</div>
 						<ng-container [ngSwitch]="system != undefined">
 							<ng-container *ngSwitchCase="true" [ngSwitch]="dataStatus.status">
