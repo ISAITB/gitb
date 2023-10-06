@@ -28,7 +28,7 @@ export class HeaderMenuComponent implements OnInit {
   }
 
 	userLoaded(): boolean {
-		return this.dataService.user !== undefined && this.dataService.user.name != undefined
+		return this.dataService.user != undefined && this.dataService.user.name != undefined
   }
 
 	userFullyLoaded(): boolean {
