@@ -44,8 +44,6 @@ CREATE TABLE `conformancesnapshotresults` (
   `output_message` text COLLATE utf8mb4_bin,
   `update_time` timestamp NULL DEFAULT NULL,
   `snapshot_id` bigint NOT NULL,
-  `system_badge_key` varchar(254) COLLATE utf8mb4_bin NOT NULL,
-  `actor_api_key` varchar(254) COLLATE utf8mb4_bin NOT NULL,
   PRIMARY KEY (`id`),
   KEY `csr_idx_org` (`organization_id`),
   KEY `csr_idx_sut` (`sut_id`),
@@ -56,8 +54,6 @@ CREATE TABLE `conformancesnapshotresults` (
   KEY `csr_idx_testcase` (`test_case_id`),
   KEY `csr_idx_testsession` (`test_session_id`),
   KEY `csr_idx_snapshot` (`snapshot_id`),
-  KEY `csr_idx_system_badge_key` (`system_badge_key`),
-  KEY `csr_idx_actor_api_key` (`actor_api_key`),
   CONSTRAINT `crs_fk_snapshot` FOREIGN KEY (`snapshot_id`) REFERENCES `conformancesnapshots` (`id`),
   CONSTRAINT `crs_fk_testsession` FOREIGN KEY (`test_session_id`) REFERENCES `testresults` (`test_session_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=333 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin;
