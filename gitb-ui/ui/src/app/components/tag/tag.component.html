@@ -1,0 +1,25 @@
+<div class="root-container">
+    <div class="tag-container"
+        [class.pill]="pill"
+        [tooltip]="tooltipText"
+        [isDisabled]="tooltipText == undefined || tooltipText == ''"
+        [style.background]="background ? background : null"
+        [style.color]="foreground ? foreground : null"
+        [style.border]="(!setDefaultBorder) ? ('1px solid '+background) : null"
+        [class.editable]="editable"
+    >
+        <div *ngIf="label" class="tag-label">
+            <ng-container [ngSwitch]="icon">
+                <span *ngSwitchCase="true"><i [ngClass]="label"></i></span>
+                <span *ngSwitchDefault>{{label}}</span>
+            </ng-container>
+        </div>
+        <div *ngIf="value" class="tag-value">{{value}}</div>
+    </div>
+    <div *ngIf="editable" class="tag-controls">
+        <div class="btn-group">
+            <button (click)="editTag()" class="btn btn-default" tooltip="Edit" [delay]="Constants.TOOLTIP_DELAY" containerClass="shortTooltip"><i class="fa-solid fa-pencil" aria-hidden="true"></i></button>
+            <button (click)="deleteTag()" class="btn btn-default" tooltip="Delete" [delay]="Constants.TOOLTIP_DELAY" containerClass="shortTooltip"><i class="fa-solid fa-trash" aria-hidden="true"></i></button>
+        </div>            
+    </div>
+</div>

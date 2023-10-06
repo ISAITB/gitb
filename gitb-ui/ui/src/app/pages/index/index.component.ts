@@ -1,26 +1,35 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { SystemConfigurationService } from "../../services/system-configuration.service"
 import { DataService } from '../../services/data.service'
 import { UserGuideService } from '../../services/user-guide.service'
 import { HtmlService } from '../../services/html.service';
 import { LegalNoticeService } from '../../services/legal-notice.service';
-import { Observable } from 'rxjs';
+import { Observable, Subscription } from 'rxjs';
 import { Constants } from 'src/app/common/constants';
 import { AuthProviderService } from '../../services/auth-provider.service'
 import { CookieService } from 'ngx-cookie-service';
 import { BsModalService } from 'ngx-bootstrap/modal';
 import { ContactSupportComponent } from 'src/app/modals/contact-support/contact-support.component';
 import { RoutingService } from 'src/app/services/routing.service';
+import { MenuItem } from 'src/app/types/menu-item.enum';
 
 @Component({
   selector: 'app-index',
-  templateUrl: './index.component.html'
+  templateUrl: './index.component.html',
+  styleUrls: ['./index.component.less']
 })
-export class IndexComponent implements OnInit {
+export class IndexComponent implements OnInit, OnDestroy {
 
   logo?: string
   footer?: string
   version?: string
+  pageTitle = ''
+  menuExpanded = false
+  logoutInProgress = false
+  MenuItem = MenuItem
+  logoutSubscription?: Subscription
+  logoutCompleteSubscription?: Subscription
+  bannerSubscription?: Subscription
 
   constructor(
     public dataService: DataService,
@@ -35,6 +44,12 @@ export class IndexComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.logoutInProgress = false
+    this.bannerSubscription = this.dataService.onBannerChange$.subscribe((newBanner) => {
+      setTimeout(() => {
+        this.pageTitle = newBanner
+      }, 1)
+    })
     this.version = this.dataService.configuration.versionNumber
     this.systemConfigurationService.getLogo().subscribe((data) => {
       this.logo = data
@@ -42,6 +57,17 @@ export class IndexComponent implements OnInit {
     this.systemConfigurationService.getFooterLogo().subscribe((data) => {
       this.footer = data
     })
+    this.logoutSubscription = this.authProviderService.onLogout$.subscribe(() => {
+      this.logoutInProgress = true
+    })
+    this.logoutCompleteSubscription = this.authProviderService.onLogoutComplete$.subscribe(() => {
+      this.logoutInProgress = false
+    })    
+  }
+
+  ngOnDestroy(): void {
+    if (this.logoutSubscription) this.logoutSubscription.unsubscribe()
+    if (this.bannerSubscription) this.bannerSubscription.unsubscribe()
   }
 
 	switchAccount() {
@@ -132,9 +158,8 @@ export class IndexComponent implements OnInit {
     return this.authProviderService.isAuthenticated()
   }
 
-	onTestsClick() {
-    localStorage.setItem(Constants.LOCAL_DATA.ORGANISATION, JSON.stringify(this.dataService.vendor))
-    this.routingService.toSystems(this.dataService.vendor!.id)
+  toggleMenu() {
+    this.menuExpanded = !this.menuExpanded
   }
 
 }

@@ -40,15 +40,20 @@
 					<div class="col-xs-12">
 						<div class="form-separator expandable" (click)="showDocumentation = !showDocumentation">
 							<div><h4 class="title"><app-collapsing-icon [isCollapsed]="!showDocumentation"></app-collapsing-icon>Documentation</h4></div>
-						</div>						
+						</div>
 					</div>
 				</div>
 				<div [collapse]="!showDocumentation" [isAnimated]="true">
 					<div class="row form-group">
 						<div class="col-xs-offset-1 col-xs-10">
-							<app-editor id="documentation" name="documentation" [(ngModel)]="testSuite.documentation"></app-editor>
+							<div class="div-padded-bottom" *ngIf="dataService.isCommunityAdmin">
+								<app-placeholder-selector [resources]="true" [community]="dataService.vendor?.community"></app-placeholder-selector>
+							</div>
+							<div class="editorContainer">
+								<app-editor id="documentation" name="documentation" [(ngModel)]="testSuite.documentation"></app-editor>
+								<app-tooltip tbTooltip="Extended documentation on the test suite that users can click to view before test execution. Use this to provide detailed information, prerequisites and references to external resources." [withMargin]="true"></app-tooltip>
+							</div>
 						</div>
-						<app-tooltip tbTooltip="Extended documentation on the test suite that users can click to view before test execution. Use this to provide detailed information, prerequisites and references to external resources."></app-tooltip>
 					</div>
 					<div class="row form-group">
 						<div class="col-xs-offset-1 col-xs-10">
@@ -60,33 +65,37 @@
 					</div>
 				</div>
 			</div>
-			<div class="panel-footer">
+			<div class="panel-footer button-container">
 				<div class="btn-toolbar">
 					<button (click)="saveChanges()" type="submit" class="btn btn-default" [disable]="downloadPending || deletePending || saveDisabled()" [pending]="savePending">Save changes</button>
 					<button (click)="download()" type="button" class="btn btn-default" [disable]="savePending || deletePending" [pending]="downloadPending">Download</button>
-					<button (click)="delete()" type="button" class="btn btn-default" [disable]="savePending || downloadPending" [pending]="deletePending">Delete</button>
 					<button (click)="back()" type="button" class="btn btn-default">Back</button>
+				</div>
+				<div class="btn-toolbar btn-toolbar-delete">
+					<button (click)="delete()" type="button" class="btn btn-default btn-delete" [disable]="savePending || downloadPending" [pending]="deletePending">Delete</button>
 				</div>
 			</div>
 		</form>
 	</div>
 	<div>
 		<tabset #tabs>
-			<tab heading="Test cases" (selectTab)="loadTestCases()">
+			<tab (selectTab)="loadTestCases()" customClass="tabClass">
+                <ng-template tabHeading><app-tab-title icon="fa-solid fa-file-code" text="Test cases"></app-tab-title></ng-template>
 				<div class="tabPanel">
 					<div class="panel panel-default">
 						<div table-directive
 							[columns]="testCaseTableColumns"
 							[data]="testSuite.testCases"
 							noDataMessage="No test cases found"
-							[loadingStatus]="dataStatus" 
+							[loadingStatus]="dataStatus"
 							[allowSelect]="true"
 							(onSelect)="onTestCaseSelect($event)">
 						</div>
 					</div>
 				</div>
 			</tab>
-			<tab heading="Linked specifications" *ngIf="testSuite.shared" (selectTab)="loadLinkedSpecifications()">
+			<tab *ngIf="testSuite.shared" (selectTab)="loadLinkedSpecifications()" customClass="tabClass">
+                <ng-template tabHeading><app-tab-title icon="fa-solid fa-list-check" text="Linked specifications"></app-tab-title></ng-template>
 				<div class="tabPanel">
                     <div class="tabControls">
 						<div class="btn-toolbar">
@@ -101,7 +110,7 @@
 							[columns]="specificationTableColumns"
 							[data]="linkedSpecifications"
 							[noDataMessage]="'No '+dataService.labelSpecificationsLower()+' found being linked to this test suite'"
-							[loadingStatus]="specificationStatus" 
+							[loadingStatus]="specificationStatus"
 							[allowSelect]="!selectingForUnlink"
 							(onSelect)="onSpecificationSelect($event)"
 							[checkboxEnabled]="selectingForUnlink"
@@ -109,7 +118,7 @@
 						</div>
 					</div>
 				</div>
-			</tab>			
+			</tab>
 		</tabset>
 	</div>
 </div>

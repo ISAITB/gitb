@@ -17,7 +17,7 @@ import org.apache.commons.lang3.StringUtils
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
 import utils.signature.{CreateSignature, SigUtils}
-import utils.{JacksonUtil, MimeUtil, RepositoryUtils, TimeUtil}
+import utils._
 
 import java.io.{File, FileOutputStream, StringReader}
 import java.nio.file.{Files, Path}
@@ -36,31 +36,33 @@ import scala.util.Using
   * Created by senan on 03.12.2014.
   */
 @Singleton
-class ReportManager @Inject() (reportHelper: ReportHelper, triggerHelper: TriggerHelper, testCaseReportProducer: TestCaseReportProducer, testSuiteManager: TestSuiteManager, specificationManager: SpecificationManager, conformanceManager: ConformanceManager, dbConfigProvider: DatabaseConfigProvider, communityLabelManager: CommunityLabelManager, repositoryUtils: RepositoryUtils, testResultManager: TestResultManager) extends BaseManager(dbConfigProvider) {
+class ReportManager @Inject() (domainParameterManager: DomainParameterManager, reportHelper: ReportHelper, triggerHelper: TriggerHelper, testCaseReportProducer: TestCaseReportProducer, testSuiteManager: TestSuiteManager, specificationManager: SpecificationManager, conformanceManager: ConformanceManager, dbConfigProvider: DatabaseConfigProvider, communityLabelManager: CommunityLabelManager, repositoryUtils: RepositoryUtils, testResultManager: TestResultManager) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
 
-  def getSystemActiveTestResults(systemId: Long,
-                                 domainIds: Option[List[Long]],
-                                 specIds: Option[List[Long]],
-                                 specGroupIds: Option[List[Long]],
-                                 actorIds: Option[List[Long]],
-                                 testSuiteIds: Option[List[Long]],
-                                 testCaseIds: Option[List[Long]],
-                                 startTimeBegin: Option[String],
-                                 startTimeEnd: Option[String],
-                                 sessionId: Option[String],
-                                 sortColumn: Option[String],
-                                 sortOrder: Option[String]): List[TestResult] = {
+  def getOrganisationActiveTestResults(organisationId: Long,
+                                       systemIds: Option[List[Long]],
+                                       domainIds: Option[List[Long]],
+                                       specIds: Option[List[Long]],
+                                       specGroupIds: Option[List[Long]],
+                                       actorIds: Option[List[Long]],
+                                       testSuiteIds: Option[List[Long]],
+                                       testCaseIds: Option[List[Long]],
+                                       startTimeBegin: Option[String],
+                                       startTimeEnd: Option[String],
+                                       sessionId: Option[String],
+                                       sortColumn: Option[String],
+                                       sortOrder: Option[String]): List[TestResult] = {
     exec(
-      getTestResultsQuery(None, domainIds, getSpecIdsCriterionToUse(specIds, specGroupIds), actorIds, testSuiteIds, testCaseIds, None, Some(List(systemId)), None, startTimeBegin, startTimeEnd, None, None, sessionId, Some(false), sortColumn, sortOrder)
+      getTestResultsQuery(None, domainIds, getSpecIdsCriterionToUse(specIds, specGroupIds), actorIds, testSuiteIds, testCaseIds, Some(List(organisationId)), systemIds, None, startTimeBegin, startTimeEnd, None, None, sessionId, Some(false), sortColumn, sortOrder)
         .result.map(_.toList)
     )
   }
 
   def getTestResults(page: Long,
                      limit: Long,
-                     systemId: Long,
+                     organisationId: Long,
+                     systemIds: Option[List[Long]],
                      domainIds: Option[List[Long]],
                      specIds: Option[List[Long]],
                      specGroupIds: Option[List[Long]],
@@ -76,7 +78,7 @@ class ReportManager @Inject() (reportHelper: ReportHelper, triggerHelper: Trigge
                      sortColumn: Option[String],
                      sortOrder: Option[String]): (Iterable[TestResult], Int) = {
 
-    val query = getTestResultsQuery(None, domainIds, getSpecIdsCriterionToUse(specIds, specGroupIds), actorIds, testSuiteIds, testCaseIds, None, Some(List(systemId)), results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, Some(true), sortColumn, sortOrder)
+    val query = getTestResultsQuery(None, domainIds, getSpecIdsCriterionToUse(specIds, specGroupIds), actorIds, testSuiteIds, testCaseIds, Some(List(organisationId)), systemIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, Some(true), sortColumn, sortOrder)
     val output = exec(
       for {
         results <- query.drop((page - 1) * limit).take(limit).result
@@ -458,14 +460,14 @@ class ReportManager @Inject() (reportHelper: ReportHelper, triggerHelper: Trigge
     new ConformanceStatementFull(
       0L, "Sample Community",
       0L, "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Organisation),
-      0L, "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.System),
+      0L, "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.System), "",
       0L, "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Domain), "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Domain),
-      0L, "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Actor), "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Actor),
+      0L, "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Actor), "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Actor), "",
       0L, "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Specification), "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Specification),
       Some("Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.SpecificationGroup)), Some("Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.SpecificationGroup)),
       "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.SpecificationInGroup), "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.SpecificationInGroup),
-      Some(index), Some("Sample Test Suite "+index), Some("Description for Sample Test Suite "+index), Some("Sample Test Case "+index), Some("Description for Sample Test Case "+index), "SUCCESS", Some("An output message for the test session"),
-      None, None, 0L, 0L, 0L)
+      Some(index), Some("Sample Test Suite "+index), Some("Description for Sample Test Suite "+index), Some(index), Some("Sample Test Case "+index), Some("Description for Sample Test Case "+index), Some(false), Some(false), None,  None, "SUCCESS", Some("An output message for the test session"),
+      None, None, 0L, 0L, 0L, 0L, 0L, 0L)
   }
 
   def generateDemoConformanceCertificate(reportPath: Path, settings: ConformanceCertificates, communityId: Long): Path = {
@@ -480,8 +482,8 @@ class ReportManager @Inject() (reportHelper: ReportHelper, triggerHelper: Trigge
     generateConformanceCertificate(reportPath, settings, conformanceInfo.toList, communityId)
   }
 
-  def generateConformanceCertificate(reportPath: Path, settings: ConformanceCertificates, actorId: Long, systemId: Long, communityId: Long): Path = {
-    val conformanceInfo = conformanceManager.getConformanceStatementsFull(None, None, None, Some(List(actorId)), None, None, Some(List(systemId)), None, None, None, None, None, None, None)
+  def generateConformanceCertificate(reportPath: Path, settings: ConformanceCertificates, actorId: Long, systemId: Long, communityId: Long, snapshotId: Option[Long]): Path = {
+    val conformanceInfo = conformanceManager.getConformanceStatementsFull(None, None, None, Some(List(actorId)), None, None, Some(List(systemId)), None, None, None, None, None, None, None, snapshotId)
     generateConformanceCertificate(reportPath, settings, conformanceInfo, communityId)
   }
 
@@ -490,9 +492,13 @@ class ReportManager @Inject() (reportHelper: ReportHelper, triggerHelper: Trigge
     if (settings.includeSignature) {
       pathToUseForPdf = reportPath.resolveSibling(reportPath.getFileName.toString + ".signed.pdf")
     }
-    var title = "Conformance Certificate"
-    if (settings.title.isDefined && !StringUtils.isBlank(settings.title.get)) {
-      title = settings.title.get.trim
+    var title: Option[String] = None
+    if (settings.includeTitle) {
+      if (settings.title.isDefined && !StringUtils.isBlank(settings.title.get)) {
+        title = Some(settings.title.get.trim)
+      } else {
+        title = Some("Conformance Certificate")
+      }
     }
     val labels = communityLabelManager.getLabels(settings.community)
     generateCoreConformanceReport(pathToUseForPdf, addTestCases = false, title, addDetails = settings.includeDetails, addTestCaseResults = settings.includeTestCases, addTestStatus = settings.includeTestStatus, addMessage = settings.includeMessage, settings.message, conformanceInfo, labels, communityId)
@@ -542,16 +548,16 @@ class ReportManager @Inject() (reportHelper: ReportHelper, triggerHelper: Trigge
     reportPath
   }
 
-  def generateConformanceStatementReport(reportPath: Path, addTestCases: Boolean, actorId: Long, systemId: Long, labels: Map[Short, CommunityLabels], communityId: Long): Path = {
-    generateCoreConformanceReport(reportPath, addTestCases, None, actorId, systemId, labels, communityId)
+  def generateConformanceStatementReport(reportPath: Path, addTestCases: Boolean, actorId: Long, systemId: Long, labels: Map[Short, CommunityLabels], communityId: Long, snapshotId: Option[Long]): Path = {
+    generateCoreConformanceReport(reportPath, addTestCases, None, actorId, systemId, labels, communityId, snapshotId)
   }
 
-  private def generateCoreConformanceReport(reportPath: Path, addTestCases: Boolean, message: Option[String], actorId: Long, systemId: Long, labels: Map[Short, CommunityLabels], communityId: Long): Path = {
-    val conformanceInfo = conformanceManager.getConformanceStatementsFull(None, None, None, Some(List(actorId)), None, None, Some(List(systemId)), None, None, None, None, None, None, None)
-    generateCoreConformanceReport(reportPath, addTestCases, "Conformance Statement Report", addDetails = true, addTestCaseResults = true, addTestStatus = true, addMessage = false, message, conformanceInfo, labels, communityId)
+  private def generateCoreConformanceReport(reportPath: Path, addTestCases: Boolean, message: Option[String], actorId: Long, systemId: Long, labels: Map[Short, CommunityLabels], communityId: Long, snapshotId: Option[Long]): Path = {
+    val conformanceInfo = conformanceManager.getConformanceStatementsFull(None, None, None, Some(List(actorId)), None, None, Some(List(systemId)), None, None, None, None, None, None, None, snapshotId)
+    generateCoreConformanceReport(reportPath, addTestCases, Some("Conformance Statement Report"), addDetails = true, addTestCaseResults = true, addTestStatus = true, addMessage = false, message, conformanceInfo, labels, communityId)
   }
 
-  private def generateCoreConformanceReport(reportPath: Path, addTestCases: Boolean, title: String, addDetails: Boolean, addTestCaseResults: Boolean, addTestStatus: Boolean, addMessage: Boolean, message: Option[String], conformanceInfo: List[ConformanceStatementFull], labels: Map[Short, CommunityLabels], communityId: Long): Path = {
+  private def generateCoreConformanceReport(reportPath: Path, addTestCases: Boolean, title: Option[String], addDetails: Boolean, addTestCaseResults: Boolean, addTestStatus: Boolean, addMessage: Boolean, message: Option[String], conformanceInfo: List[ConformanceStatementFull], labels: Map[Short, CommunityLabels], communityId: Long): Path = {
     val sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss")
     val overview = new ConformanceStatementOverview()
     val specs = reportHelper.createReportSpecs(Some(communityId))
@@ -564,7 +570,7 @@ class ReportManager @Inject() (reportHelper: ReportHelper, triggerHelper: Trigge
 
     val conformanceData = conformanceInfo.head
     overview.setIncludeTestCases(addTestCases)
-    overview.setTitle(title)
+    overview.setTitle(title.orNull)
     overview.setTestDomain(conformanceData.domainNameFull)
     overview.setTestSpecification(conformanceData.specificationNameFull)
     overview.setTestActor(conformanceData.actorFull)
@@ -574,10 +580,18 @@ class ReportManager @Inject() (reportHelper: ReportHelper, triggerHelper: Trigge
     overview.setIncludeMessage(addMessage)
 
     // Prepare message
-    var messageToUse:String  = null
+    var messageToUse:String = null
     if (addMessage && message.isDefined) {
+      messageToUse = message.get
       // Replace placeholders
-      messageToUse = message.get.replace(Constants.PlaceholderActor, overview.getTestActor)
+      if (messageToUse.contains(Constants.PlaceholderDomain+"{")) {
+        // We are referring to domain parameters.
+        val parameters = domainParameterManager.getDomainParametersByCommunityId(communityId, onlySimple = true, loadValues = true)
+        parameters.foreach { param =>
+          messageToUse = messageToUse.replace("$DOMAIN{"+param.name+"}", param.value.getOrElse(""))
+        }
+      }
+      messageToUse = messageToUse.replace(Constants.PlaceholderActor, overview.getTestActor)
       messageToUse = messageToUse.replace(Constants.PlaceholderDomain, overview.getTestDomain)
       messageToUse = messageToUse.replace(Constants.PlaceholderOrganisation, overview.getOrganisation)
       messageToUse = messageToUse.replace(Constants.PlaceholderSpecificationGroupOption, conformanceData.specificationGroupOptionNameFull)
@@ -595,23 +609,18 @@ class ReportManager @Inject() (reportHelper: ReportHelper, triggerHelper: Trigge
     var undefinedTests = 0
     var totalTests = 0
     var index = 1
-    val testMap = new mutable.TreeMap[Long, TestSuiteOverview]
+    val testMap = new mutable.TreeMap[Long, (TestSuiteOverview, Counters)]
     conformanceInfo.foreach { info =>
-      totalTests += 1
       val result = TestResultStatus.withName(info.result)
-      if (result == TestResultStatus.SUCCESS) {
-        completedTests += 1
-      } else if (result == TestResultStatus.FAILURE) {
-        failedTests += 1
-      } else {
-        undefinedTests += 1
-      }
-      if (completedTests == totalTests) {
-        overview.setOverallStatus("SUCCESS")
-      } else if (failedTests > 0) {
-        overview.setOverallStatus("FAILURE")
-      } else {
-        overview.setOverallStatus("UNDEFINED")
+      if (!info.testCaseDisabled.get && !info.testCaseOptional.get) {
+        totalTests += 1
+        if (result == TestResultStatus.SUCCESS) {
+          completedTests += 1
+        } else if (result == TestResultStatus.FAILURE) {
+          failedTests += 1
+        } else {
+          undefinedTests += 1
+        }
       }
       if (addTestCaseResults) {
         val testCaseOverview = new TestCaseOverview()
@@ -624,6 +633,12 @@ class ReportManager @Inject() (reportHelper: ReportHelper, triggerHelper: Trigge
         }
         testCaseOverview.setReportResult(info.result)
         testCaseOverview.setOutputMessage(info.outputMessage.orNull)
+        testCaseOverview.setOptional(info.testCaseOptional.get)
+        testCaseOverview.setDisabled(info.testCaseDisabled.get)
+        if (info.testCaseTags.isDefined) {
+          val parsedTags = JsonUtil.parseJsTags(info.testCaseTags.get).map(x => new TestCaseOverview.Tag(x.name, x.description.orNull, x.foreground.getOrElse("#777777"), x.background.getOrElse("#FFFFFF")))
+          testCaseOverview.setTags(new util.ArrayList(parsedTags.asJavaCollection))
+        }
         if (addTestCases) {
           testCaseOverview.setTitle("Test Case Report #" + index)
           testCaseOverview.setOrganisation(info.organizationName)
@@ -662,29 +677,50 @@ class ReportManager @Inject() (reportHelper: ReportHelper, triggerHelper: Trigge
           val testSuite = new TestSuiteOverview
           testSuite.setTestSuiteName(info.testSuiteName.get)
           testSuite.setTestSuiteDescription(info.testSuiteDescription.orNull)
-          testSuite.setOverallStatus("SUCCESS");
+          testSuite.setOverallStatus("UNDEFINED")
           testSuite.setTestCases(new util.ArrayList[TestCaseOverview]())
-          testSuite
+          (testSuite, new Counters(0, 0, 0))
         })
-        // Update the test suite's status.
-        if ("SUCCESS".equals(testSuiteOverview.getOverallStatus)) {
-          if (!testCaseOverview.getReportResult.equals(testSuiteOverview.getOverallStatus)) {
-            testSuiteOverview.setOverallStatus(testCaseOverview.getReportResult)
-          }
-        } else if ("UNDEFINED".equals(testSuiteOverview.getOverallStatus)) {
-          if ("FAILURE".equals(testCaseOverview.getReportResult)) {
-            testSuiteOverview.setOverallStatus("FAILURE")
+        // Update the test suite's results.
+        if (!info.testCaseDisabled.get && !info.testCaseOptional.get) {
+          if (result == TestResultStatus.SUCCESS) {
+            testSuiteOverview._2.successes += 1
+          } else if (result == TestResultStatus.FAILURE) {
+            testSuiteOverview._2.failures += 1
+          } else {
+            testSuiteOverview._2.other += 1
           }
         }
-        testSuiteOverview.getTestCases.add(testCaseOverview)
+        testSuiteOverview._1.getTestCases.add(testCaseOverview)
         index += 1
       }
+    }
+    overview.setOverallStatus("UNDEFINED")
+    if (failedTests > 0) {
+      overview.setOverallStatus("FAILURE")
+    } else if (undefinedTests > 0) {
+      overview.setOverallStatus("UNDEFINED")
+    } else if (completedTests > 0) {
+      overview.setOverallStatus("SUCCESS")
     }
     overview.setCompletedTests(completedTests)
     overview.setFailedTests(failedTests)
     overview.setUndefinedTests(undefinedTests)
     if (testMap.nonEmpty) {
-      overview.setTestSuites(new util.ArrayList[TestSuiteOverview](testMap.values.toList.asJavaCollection))
+      // Set the status of the collected test suites
+      testMap.values.foreach { testSuiteInfo =>
+        if (testSuiteInfo._2.failures > 0) {
+          testSuiteInfo._1.setOverallStatus("FAILURE")
+        } else if (testSuiteInfo._2.other > 0) {
+          testSuiteInfo._1.setOverallStatus("UNDEFINED")
+        } else if (testSuiteInfo._2.successes > 0) {
+          testSuiteInfo._1.setOverallStatus("SUCCESS")
+        } else {
+          testSuiteInfo._1.setOverallStatus("UNDEFINED")
+        }
+      }
+      // Add to overall output
+      overview.setTestSuites(new util.ArrayList[TestSuiteOverview](testMap.values.map(_._1).toList.asJavaCollection))
     }
     overview.setIncludeTestStatus(addTestStatus)
     Files.createDirectories(reportPath.getParent)
@@ -702,3 +738,5 @@ class ReportManager @Inject() (reportHelper: ReportHelper, triggerHelper: Trigge
   }
 
 }
+
+private class Counters(var successes: Int, var failures: Int, var other: Int)

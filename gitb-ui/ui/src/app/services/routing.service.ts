@@ -1,276 +1,428 @@
 import { Injectable } from '@angular/core';
-import { NavigationExtras, Params, Router } from '@angular/router';
+import { NavigationEnd, NavigationExtras, Router } from '@angular/router';
 import { CommunityTab } from '../pages/admin/user-management/community/community-details/community-tab.enum';
 import { ConformanceStatementTab } from '../pages/organisation/conformance-statement/conformance-statement-tab';
+import { OrganisationTab } from '../pages/admin/user-management/organisation/organisation-details/OrganisationTab';
+import { Constants } from '../common/constants';
+import { DataService } from './data.service';
+import { MenuItem } from '../types/menu-item.enum';
+import { SystemAdministrationTab } from '../pages/admin/system-administration/system-administration-tab.enum';
+import { BreadcrumbItem } from '../components/breadcrumb/breadcrumb-item';
+import { BreadcrumbType } from '../types/breadcrumb-type';
 
 @Injectable({
   providedIn: 'root'
 })
 export class RoutingService {
 
+  private navigationMethodExecuted = false
+
   constructor(
-    private router: Router
-  ) { }
+    private router: Router,
+    private dataService: DataService
+  ) { 
+    this.initialise()
+  }
+
+  private initialise() {
+    this.router.events.subscribe((event) => {
+      if (!this.navigationMethodExecuted && event instanceof NavigationEnd) {
+        /*
+         * We only need to do this matching if we are coming to a page without going through
+         * one of the navigation methods (e.g. after a refresh). In other cases we skip this as
+         * we always know what menu item applies through the navigate() method.
+         */
+        setTimeout(() => {
+          if (event.url.startsWith('/home')) {
+            this.dataService.changePage({ menuItem: MenuItem.home })
+          } else if (event.url.startsWith('/login')) {
+            this.dataService.changePage({ menuItem: MenuItem.login })
+          } else if (event.url.startsWith('/settings/profile')) {
+            this.dataService.changePage({ menuItem: MenuItem.myProfile })
+          } else if (event.url.startsWith('/settings/organisation')) {
+            this.dataService.changePage({ menuItem: MenuItem.myOrganisation })
+          } else if (event.url.startsWith('/settings/password')) {
+            this.dataService.changePage({ menuItem: MenuItem.changePassword })
+          } else if (event.url.startsWith('/admin/sessions')) {
+            this.dataService.changePage({ menuItem: MenuItem.sessionDashboard })
+          } else if (event.url.startsWith('/admin/conformance')) {
+            this.dataService.changePage({ menuItem: MenuItem.conformanceDashboard })
+          } else if (event.url.startsWith('/admin/conformance')) {
+            this.dataService.changePage({ menuItem: MenuItem.conformanceDashboard })
+          } else if (event.url.startsWith('/admin/domains')) {
+            this.dataService.changePage({ menuItem: MenuItem.domainManagement })
+          } else if (event.url.startsWith('/admin/users')) {
+            this.dataService.changePage({ menuItem: MenuItem.communityManagement })
+          } else if (event.url.startsWith('/admin/export')) {
+            this.dataService.changePage({ menuItem: MenuItem.dataExport })
+          } else if (event.url.startsWith('/admin/import')) {
+            this.dataService.changePage({ menuItem: MenuItem.dataImport })
+          } else if (event.url.startsWith('/admin/system')) {
+            this.dataService.changePage({ menuItem: MenuItem.systemAdministration })
+          } else if (event.url.startsWith('/organisation/conformance')) {
+            this.dataService.changePage({ menuItem: MenuItem.myConformanceStatements })
+          } else if (event.url.startsWith('/organisation/tests')) {
+            this.dataService.changePage({ menuItem: MenuItem.myTestSessions })
+          } else if (event.url.startsWith('/organisation/test')) {
+            this.dataService.changePage({ menuItem: MenuItem.myConformanceStatements })
+          } else if (event.url.startsWith('/organisation')) {
+            this.dataService.changePage({ menuItem: MenuItem.myOrganisation })
+          }
+        }, 1)
+      }
+    })
+  }
 
   toHome() {
-    return this.router.navigate(['home'])
+    return this.navigate(MenuItem.home, ['home'])
   }
 
   toLogin() {
-    return this.router.navigate(['login'])
+    return this.navigate(MenuItem.login, ['login'])
   }
 
   toCreateTestBedAdmin() {
-    return this.router.navigate(['admin', 'users', 'admin', 'create'])
+    return this.navigate(MenuItem.systemAdministration, ['admin', 'system', 'admin', 'create'])
   }
 
   toTestBedAdmin(adminId: number) {
-    return this.router.navigate(['admin', 'users', 'admin', adminId])
+    return this.navigate(MenuItem.systemAdministration, ['admin', 'system', 'admin', adminId])
   }
 
-  toSystems(organisationId: number, systemToView?: number, viewProperties?: boolean) {
-    const params: Params = {}
-    if (systemToView != undefined) {
-      params['id'] = systemToView
-    }
-    if (viewProperties == true) {
-      params['viewProperties'] = true
-    }
-    return this.router.navigate(['organisation', organisationId, 'systems'], { queryParams: params })
-  }
-
-  toSystemInfo(organisationId: number, systemId: number, viewProperties?: boolean) {
-    if (viewProperties == true) {
-      return this.router.navigate(['organisation', organisationId, 'systems', systemId, 'info'], { queryParams: { 'viewProperties': true } })
-    } else {
-      return this.router.navigate(['organisation', organisationId, 'systems', systemId, 'info'])
-    }
-  }
-
-  toTestHistory(organisationId: number, systemId: number, sessionIdToShow?: string) {
+  toTestHistory(organisationId: number, sessionIdToShow?: string) {
     if (sessionIdToShow != undefined) {
-      return this.router.navigate(['organisation', organisationId, 'systems', systemId, 'tests'], { queryParams: { sessionId: sessionIdToShow }})
+      return this.navigate(MenuItem.myTestSessions, ['organisation', 'tests', organisationId], { queryParams: this.createQueryParams(Constants.NAVIGATION_QUERY_PARAM.TEST_SESSION_ID, sessionIdToShow) })
     } else {
-      return this.router.navigate(['organisation', organisationId, 'systems', systemId, 'tests'])
+      return this.navigate(MenuItem.myTestSessions, ['organisation', 'tests', organisationId])
     }
   }
 
-  toCreateConformanceStatement(organisationId: number, systemId: number) {
-    return this.router.navigate(['organisation', organisationId, 'systems', systemId, 'conformance', 'create'])
+  toCreateConformanceStatement(organisationId: number, systemId: number, communityId?: number) {
+    if (communityId == undefined) {
+      return this.navigate(MenuItem.myOrganisation, ['organisation', 'conformance', organisationId, 'system', systemId, 'create'])
+    } else {
+      return this.navigate(MenuItem.communityManagement, ['admin', 'users', 'community', communityId, 'organisation', organisationId, 'conformance', 'system', systemId, 'create'])
+    }
   }
 
-  toConformanceStatement(organisationId: number, systemId: number, actorId: number, specificationId: number, tab?: ConformanceStatementTab) {
+  toOwnConformanceStatement(organisationId: number, systemId: number, actorId: number, tab?: ConformanceStatementTab) {
+    const pathParts = ['organisation', 'conformance', organisationId, 'system', systemId, 'actor', actorId]
     if (tab != undefined) {
-      return this.router.navigate(['organisation', organisationId, 'systems', systemId, 'conformance', 'detail', actorId, specificationId], { state: { tab: ConformanceStatementTab[tab] } })
+      return this.navigate(MenuItem.myConformanceStatements, pathParts, { state: { tab: ConformanceStatementTab[tab] } })
     } else {
-      return this.router.navigate(['organisation', organisationId, 'systems', systemId, 'conformance', 'detail', actorId, specificationId])
+      return this.navigate(MenuItem.myConformanceStatements, pathParts)
     }
   }
 
-  toConformanceStatements(organisationId: number, systemId: number, systemCount?: number) {
-    if (systemCount != undefined) {
-      return this.router.navigate(['organisation', organisationId, 'systems', systemId, 'conformance'], { state: { systemCount: systemCount } })
+  toConformanceStatement(organisationId: number, systemId: number, actorId: number, communityId: number, tab?: ConformanceStatementTab) {
+    const pathParts = ['admin', 'users', 'community', communityId, 'organisation', organisationId, 'conformance', 'system', systemId, 'actor', actorId]
+    if (tab != undefined) {
+      return this.navigate(MenuItem.communityManagement, pathParts, { state: { tab: ConformanceStatementTab[tab] } })
     } else {
-      return this.router.navigate(['organisation', organisationId, 'systems', systemId, 'conformance'])
+      return this.navigate(MenuItem.communityManagement, pathParts)
+    }
+  }
+
+  toConformanceStatements(communityId: number, organisationId: number, systemId?: number) {
+    if (systemId != undefined) {
+      return this.navigate(MenuItem.communityManagement, ['admin', 'users', 'community', communityId, 'organisation', organisationId, 'conformance'], { queryParams: this.createQueryParams(Constants.NAVIGATION_QUERY_PARAM.SYSTEM_ID, systemId) })
+    } else {
+      return this.navigate(MenuItem.communityManagement, ['admin', 'users', 'community', communityId, 'organisation', organisationId, 'conformance'])
+    }
+  }
+
+  toOwnConformanceStatements(organisationId: number, systemId?: number) {
+    if (systemId != undefined) {
+      return this.navigate(MenuItem.myConformanceStatements, ['organisation', 'conformance', organisationId], { queryParams: this.createQueryParams(Constants.NAVIGATION_QUERY_PARAM.SYSTEM_ID, systemId) })
+    } else {
+      return this.navigate(MenuItem.myConformanceStatements, ['organisation', 'conformance', organisationId])
     }
   }
 
   toCreateOrganisation(communityId: number) {
-    return this.router.navigate(['admin', 'users', 'community', communityId, 'organisation', 'create'])
+    return this.navigate(MenuItem.communityManagement, ['admin', 'users', 'community', communityId, 'organisation', 'create'])
   }
 
-  toOrganisationDetails(communityId: number, organisationId: number, viewProperties?: boolean) {
+  toOwnOrganisationDetails(tab?: OrganisationTab, viewProperties?: boolean) {
+    const navigationPaths = ['settings', 'organisation']
     if (viewProperties == true) {
-      return this.router.navigate(['admin', 'users', 'community', communityId, 'organisation', organisationId], { queryParams: { 'viewProperties': true } })
+      if (tab != undefined) {
+        return this.navigate(MenuItem.myOrganisation, navigationPaths, { state: { tab: OrganisationTab[tab] }, queryParams: this.createQueryParams(Constants.NAVIGATION_QUERY_PARAM.VIEW_PROPERTIES, true) })
+      } else {
+        return this.navigate(MenuItem.myOrganisation, navigationPaths, { queryParams: this.createQueryParams(Constants.NAVIGATION_QUERY_PARAM.VIEW_PROPERTIES, true) })
+      }
     } else {
-      return this.router.navigate(['admin', 'users', 'community', communityId, 'organisation', organisationId])
+      if (tab != undefined) {
+        return this.navigate(MenuItem.myOrganisation, navigationPaths, { state: { tab: OrganisationTab[tab] } })
+      } else {
+        return this.navigate(MenuItem.myOrganisation, navigationPaths)
+      }
     }
   }
 
-  toOwnOrganisationDetails(viewProperties?: boolean) {
+  toOrganisationDetails(communityId: number, organisationId: number, tab?: OrganisationTab, viewProperties?: boolean) {
+    let navigationPaths = ['admin', 'users', 'community', communityId, 'organisation', organisationId]
     if (viewProperties == true) {
-      return this.router.navigate(['settings', 'organisation'], { queryParams: { 'viewProperties': true } })
+      if (tab != undefined) {
+        return this.navigate(MenuItem.communityManagement, navigationPaths, { state: { tab: OrganisationTab[tab] }, queryParams: this.createQueryParams(Constants.NAVIGATION_QUERY_PARAM.VIEW_PROPERTIES, true) })
+      } else {
+        return this.navigate(MenuItem.communityManagement, navigationPaths, { queryParams: this.createQueryParams(Constants.NAVIGATION_QUERY_PARAM.VIEW_PROPERTIES, true) })
+      }
     } else {
-      return this.router.navigate(['settings', 'organisation'])
+      if (tab != undefined) {
+        return this.navigate(MenuItem.communityManagement, navigationPaths, { state: { tab: OrganisationTab[tab] } })
+      } else {
+        return this.navigate(MenuItem.communityManagement, navigationPaths)
+      }
+    }
+  }
+
+  toCreateOwnSystem() {
+    return this.navigate(MenuItem.myOrganisation, ['settings', 'organisation', 'system', 'create'])
+  }
+
+  toCreateSystem(communityId: number, organisationId: number) {
+    return this.navigate(MenuItem.communityManagement, ['admin', 'users', 'community', communityId, 'organisation', organisationId, 'system', 'create'])
+  }
+
+  toOwnSystemDetails(systemId: number, viewProperties?: boolean) {
+    if (viewProperties == true) {
+      return this.navigate(MenuItem.myOrganisation, ['settings', 'organisation', 'system', systemId], { queryParams: this.createQueryParams(Constants.NAVIGATION_QUERY_PARAM.VIEW_PROPERTIES, true) })
+    } else {
+      return this.navigate(MenuItem.myOrganisation, ['settings', 'organisation', 'system', systemId])
+    }
+  }
+
+  toSystemDetails(communityId: number, organisationId: number, systemId: number, viewProperties?: boolean) {
+    if (viewProperties == true) {
+      return this.navigate(MenuItem.communityManagement, ['admin', 'users', 'community', communityId, 'organisation', organisationId, 'system', systemId], { queryParams: this.createQueryParams(Constants.NAVIGATION_QUERY_PARAM.VIEW_PROPERTIES, true) })
+    } else {
+      return this.navigate(MenuItem.communityManagement, ['admin', 'users', 'community', communityId, 'organisation', organisationId, 'system', systemId])
     }
   }
 
   toProfile() {
-    return this.router.navigate(['settings', 'profile'])
+    return this.navigate(MenuItem.myProfile, ['settings', 'profile'])
   }
 
   toChangePassword() {
-    return this.router.navigate(['settings', 'password'])
+    return this.navigate(MenuItem.changePassword, ['settings', 'password'])
   }
 
-  toTestCaseExecution(organisationId: number, systemId: number, actorId: number, specificationId: number, testCaseId: number) {
-    return this.router.navigate(['organisation', organisationId, 'test', systemId, actorId, specificationId, 'execute'], { queryParams: { tc: testCaseId }})
+  toTestCaseExecution(communityId: number, organisationId: number, systemId: number, actorId: number, testCaseId: number) {
+    return this.navigate(MenuItem.communityManagement, ['admin', 'users', 'community', communityId, 'organisation', organisationId, 'test', systemId, actorId, 'execute'], { queryParams: this.createQueryParams(Constants.NAVIGATION_QUERY_PARAM.TEST_CASE_ID, testCaseId) })
   }
 
-  toTestSuiteExecution(organisationId: number, systemId: number, actorId: number, specificationId: number, testSuiteId: number) {
-    return this.router.navigate(['organisation', organisationId, 'test', systemId, actorId, specificationId, 'execute'], { queryParams: { ts: testSuiteId }})
+  toOwnTestCaseExecution(organisationId: number, systemId: number, actorId: number, testCaseId: number) {
+    return this.navigate(MenuItem.myConformanceStatements, ['organisation', 'test', organisationId, systemId, actorId, 'execute'], { queryParams: this.createQueryParams(Constants.NAVIGATION_QUERY_PARAM.TEST_CASE_ID, testCaseId)})
+  }
+
+  toTestSuiteExecution(communityId: number, organisationId: number, systemId: number, actorId: number, testSuiteId: number) {
+    return this.navigate(MenuItem.communityManagement, ['admin', 'users', 'community', communityId, 'organisation', organisationId, 'test', systemId, actorId, 'execute'], { queryParams: this.createQueryParams(Constants.NAVIGATION_QUERY_PARAM.TEST_SUITE_ID, testSuiteId)})
+  }
+
+  toOwnTestSuiteExecution(organisationId: number, systemId: number, actorId: number, testSuiteId: number) {
+    return this.navigate(MenuItem.myConformanceStatements, ['organisation', 'test', organisationId, systemId, actorId, 'execute'], { queryParams: this.createQueryParams(Constants.NAVIGATION_QUERY_PARAM.TEST_SUITE_ID, testSuiteId)})
   }
 
   toCreateDomain() {
-    return this.router.navigate(['admin', 'domains', 'create'])
+    return this.navigate(MenuItem.domainManagement, ['admin', 'domains', 'create'])
   }
 
   toDomain(domainId: number, tab?: number) {
-    return this.router.navigate(['admin', 'domains', domainId], this.addTabExtras(tab))
+    return this.navigate(MenuItem.domainManagement, ['admin', 'domains', domainId], this.addTabExtras(tab))
   }
 
   toDomains() {
-    return this.router.navigate(['admin', 'domains'])
+    return this.navigate(MenuItem.domainManagement, ['admin', 'domains'])
   }
 
   toCreateSpecification(domainId: number, groupId?:number) {
     if (groupId) {
-      return this.router.navigate(['admin', 'domains', domainId, 'specifications', 'create'], { queryParams: {
-        group: groupId
-      }})
+      return this.navigate(MenuItem.domainManagement, ['admin', 'domains', domainId, 'specifications', 'create'], { queryParams: this.createQueryParams(Constants.NAVIGATION_QUERY_PARAM.SPECIFICATION_GROUP_ID, groupId) })
     } else {
-      return this.router.navigate(['admin', 'domains', domainId, 'specifications', 'create'])
+      return this.navigate(MenuItem.domainManagement, ['admin', 'domains', domainId, 'specifications', 'create'])
     }
   }
 
   toCreateSpecificationGroup(domainId: number) {
-    return this.router.navigate(['admin', 'domains', domainId, 'specifications', 'groups', 'create'])
+    return this.navigate(MenuItem.domainManagement, ['admin', 'domains', domainId, 'specifications', 'groups', 'create'])
   }
 
   toSpecification(domainId: number, specificationId: number, tab?: number) {
-    return this.router.navigate(['admin', 'domains', domainId, 'specifications', specificationId], this.addTabExtras(tab))
+    return this.navigate(MenuItem.domainManagement, ['admin', 'domains', domainId, 'specifications', specificationId], this.addTabExtras(tab))
   }
 
   toSpecificationGroup(domainId: number, groupId: number) {
-    return this.router.navigate(['admin', 'domains', domainId, 'specifications', 'groups', groupId])
+    return this.navigate(MenuItem.domainManagement, ['admin', 'domains', domainId, 'specifications', 'groups', groupId])
   }
 
   toCreateEndpoint(domainId: number, specificationId: number, actorId: number) {
-    return this.router.navigate(['admin', 'domains', domainId, 'specifications', specificationId, 'actors', actorId, 'endpoints', 'create'])
+    return this.navigate(MenuItem.domainManagement, ['admin', 'domains', domainId, 'specifications', specificationId, 'actors', actorId, 'endpoints', 'create'])
   }
 
   toEndpoint(domainId: number, specificationId: number, actorId: number, endpointId: number) {
-    return this.router.navigate(['admin', 'domains', domainId, 'specifications', specificationId, 'actors', actorId, 'endpoints', endpointId])
+    return this.navigate(MenuItem.domainManagement, ['admin', 'domains', domainId, 'specifications', specificationId, 'actors', actorId, 'endpoints', endpointId])
   }
 
   toCreateActor(domainId: number, specificationId: number) {
-    return this.router.navigate(['admin', 'domains', domainId, 'specifications', specificationId, 'actors', 'create'])
+    return this.navigate(MenuItem.domainManagement, ['admin', 'domains', domainId, 'specifications', specificationId, 'actors', 'create'])
   }
 
   toActor(domainId: number, specificationId: number, actorId: number) {
-    return this.router.navigate(['admin', 'domains', domainId, 'specifications', specificationId, 'actors', actorId])
+    return this.navigate(MenuItem.domainManagement, ['admin', 'domains', domainId, 'specifications', specificationId, 'actors', actorId])
   }
 
   toSharedTestSuite(domainId: number, testSuiteId: number) {
-    return this.router.navigate(['admin', 'domains', domainId, 'testsuites', testSuiteId])
+    return this.navigate(MenuItem.domainManagement, ['admin', 'domains', domainId, 'testsuites', testSuiteId])
   }
 
   toTestSuite(domainId: number, specificationId: number, testSuiteId: number) {
-    return this.router.navigate(['admin', 'domains', domainId, 'specifications', specificationId, 'testsuites', testSuiteId])
+    return this.navigate(MenuItem.domainManagement, ['admin', 'domains', domainId, 'specifications', specificationId, 'testsuites', testSuiteId])
   }
 
   toSharedTestCase(domainId: number, testSuiteId: number, testCaseId: number) {
-    return this.router.navigate(['admin', 'domains', domainId, 'testsuites', testSuiteId, 'testcases', testCaseId])
+    return this.navigate(MenuItem.domainManagement, ['admin', 'domains', domainId, 'testsuites', testSuiteId, 'testcases', testCaseId])
   }
 
   toTestCase(domainId: number, specificationId: number, testSuiteId: number, testCaseId: number) {
-    return this.router.navigate(['admin', 'domains', domainId, 'specifications', specificationId, 'testsuites', testSuiteId, 'testcases', testCaseId])
+    return this.navigate(MenuItem.domainManagement, ['admin', 'domains', domainId, 'specifications', specificationId, 'testsuites', testSuiteId, 'testcases', testCaseId])
   }
 
   toCreateCommunity() {
-    return this.router.navigate(['admin', 'users', 'community', 'create'])
+    return this.navigate(MenuItem.communityManagement, ['admin', 'users', 'community', 'create'])
   }
 
   toCommunity(communityId: number, tab?: CommunityTab) {
     if (tab != undefined) {
-      return this.router.navigate(['admin', 'users', 'community', communityId], { state: { tab: CommunityTab[tab] } })
+      return this.navigate(MenuItem.communityManagement, ['admin', 'users', 'community', communityId], { state: { tab: CommunityTab[tab] } })
     } else {
-      return this.router.navigate(['admin', 'users', 'community', communityId])
+      return this.navigate(MenuItem.communityManagement, ['admin', 'users', 'community', communityId])
     }
   }
 
   toCommunityParameters(communityId: number) {
-    return this.router.navigate(['admin', 'users', 'community', communityId, 'parameters'])
+    return this.navigate(MenuItem.communityManagement, ['admin', 'users', 'community', communityId, 'parameters'])
   }
 
   toCommunityLabels(communityId: number) {
-    return this.router.navigate(['admin', 'users', 'community', communityId, 'labels'])
+    return this.navigate(MenuItem.communityManagement, ['admin', 'users', 'community', communityId, 'labels'])
   }
 
   toCommunityCertificateSettings(communityId: number) {
-    return this.router.navigate(['admin', 'users', 'community', communityId, 'certificate'])
+    return this.navigate(MenuItem.communityManagement, ['admin', 'users', 'community', communityId, 'certificate'])
   }
 
   toCreateCommunityAdmin(communityId: number) {
-    return this.router.navigate(['admin', 'users', 'community', communityId, 'admin', 'create'])
+    return this.navigate(MenuItem.communityManagement, ['admin', 'users', 'community', communityId, 'admin', 'create'])
   }
 
   toCommunityAdmin(communityId: number, adminId: number) {
-    return this.router.navigate(['admin', 'users', 'community', communityId, 'admin', adminId])
+    return this.navigate(MenuItem.communityManagement, ['admin', 'users', 'community', communityId, 'admin', adminId])
   }
 
   toCreateTrigger(communityId: number) {
-    return this.router.navigate(['admin', 'users', 'community', communityId, 'triggers', 'create'])
+    return this.navigate(MenuItem.communityManagement, ['admin', 'users', 'community', communityId, 'triggers', 'create'])
   }
 
   toTrigger(communityId: number, triggerId: number) {
-    return this.router.navigate(['admin', 'users', 'community', communityId, 'triggers', triggerId])
+    return this.navigate(MenuItem.communityManagement, ['admin', 'users', 'community', communityId, 'triggers', triggerId])
   }
 
   toUserManagement() {
-    return this.router.navigate(['admin', 'users'])
+    return this.navigate(MenuItem.communityManagement, ['admin', 'users'])
   }
 
-  toCreateErrorTemplate(communityId: number, addCopyTestBedDefault: boolean, copySource?: number) {
-    this.router.navigate(['admin', 'users', 'community', communityId, 'errortemplates', 'create'], this.addCommunityContentExtras(addCopyTestBedDefault, copySource))
+  toCreateErrorTemplate(communityId?: number, addCopyTestBedDefault?: boolean, copySource?: number) {
+    if (communityId == undefined) {
+      return this.navigate(MenuItem.systemAdministration, ['admin', 'system', 'errortemplates', 'create'], this.addCommunityContentExtras(undefined, copySource))
+    } else {
+      return this.navigate(MenuItem.communityManagement, ['admin', 'users', 'community', communityId, 'errortemplates', 'create'], this.addCommunityContentExtras(addCopyTestBedDefault, copySource))
+    }
   }
 
-  toErrorTemplate(communityId: number, templateId: number) {
-    return this.router.navigate(['admin', 'users', 'community', communityId, 'errortemplates', templateId])
+  toErrorTemplate(communityId: number|undefined, templateId: number) {
+    if (communityId == undefined) {
+      return this.navigate(MenuItem.systemAdministration, ['admin', 'system', 'errortemplates', templateId])
+    } else {
+      return this.navigate(MenuItem.communityManagement, ['admin', 'users', 'community', communityId, 'errortemplates', templateId])
+    }
   }
 
-  toCreateLegalNotice(communityId: number, addCopyTestBedDefault: boolean, copySource?: number) {
-    return this.router.navigate(['admin', 'users', 'community', communityId, 'notices', 'create'], this.addCommunityContentExtras(addCopyTestBedDefault, copySource))
+  toCreateLegalNotice(communityId?: number, addCopyTestBedDefault?: boolean, copySource?: number) {
+    if (communityId == undefined) {
+      return this.navigate(MenuItem.systemAdministration, ['admin', 'system', 'notices', 'create'], this.addCommunityContentExtras(undefined, copySource))
+    } else {
+      return this.navigate(MenuItem.communityManagement, ['admin', 'users', 'community', communityId, 'notices', 'create'], this.addCommunityContentExtras(addCopyTestBedDefault, copySource))
+    }
   }
 
-  toLegalNotice(communityId: number, noticeId: number) {
-    return this.router.navigate(['admin', 'users', 'community', communityId, 'notices', noticeId])
+  toLegalNotice(communityId: number|undefined, noticeId: number) {
+    if (communityId == undefined) {
+      return this.navigate(MenuItem.systemAdministration, ['admin', 'system', 'notices', noticeId])
+    } else {
+      return this.navigate(MenuItem.communityManagement, ['admin', 'users', 'community', communityId, 'notices', noticeId])
+    }
   }
 
-  toCreateLandingPage(communityId: number, addCopyTestBedDefault: boolean, copySource?: number) {
-    return this.router.navigate(['admin', 'users', 'community', communityId, 'pages', 'create'], this.addCommunityContentExtras(addCopyTestBedDefault, copySource))
+  toCreateLandingPage(communityId?: number, addCopyTestBedDefault?: boolean, copySource?: number) {
+    if (communityId == undefined) {
+      return this.navigate(MenuItem.systemAdministration, ['admin', 'system', 'pages', 'create'], this.addCommunityContentExtras(undefined, copySource))
+    } else {
+      return this.navigate(MenuItem.communityManagement, ['admin', 'users', 'community', communityId, 'pages', 'create'], this.addCommunityContentExtras(addCopyTestBedDefault, copySource))
+    }    
   }
 
-  toLandingPage(communityId: number, pageId: number) {
-    return this.router.navigate(['admin', 'users', 'community', communityId, 'pages', pageId])
+  toLandingPage(communityId: number|undefined, pageId: number) {
+    if (communityId == undefined) {
+      return this.navigate(MenuItem.systemAdministration, ['admin', 'system', 'pages', pageId])
+    } else {
+      return this.navigate(MenuItem.communityManagement, ['admin', 'users', 'community', communityId, 'pages', pageId])
+    }
+  }
+
+  toCreateOwnOrganisationUser() {
+    return this.navigate(MenuItem.myOrganisation, ['settings', 'organisation', 'user', 'create'])
   }
 
   toCreateOrganisationUser(communityId: number, organisationId: number) {
-    return this.router.navigate(['admin', 'users', 'community', communityId, 'organisation', organisationId, 'user', 'create'])
+    return this.navigate(MenuItem.communityManagement, ['admin', 'users', 'community', communityId, 'organisation', organisationId, 'user', 'create'])
+  }
+
+  toOwnOrganisationUser(userId: number) {
+    return this.navigate(MenuItem.myOrganisation, ['settings', 'organisation', 'user', userId])
   }
 
   toOrganisationUser(communityId: number, organisationId: number, userId: number) {
-    return this.router.navigate(['admin', 'users', 'community', communityId, 'organisation', organisationId, 'user', userId])
+    return this.navigate(MenuItem.communityManagement, ['admin', 'users', 'community', communityId, 'organisation', organisationId, 'user', userId])
   }
 
   toSessionDashboard(sessionIdToShow?: string) {
     if (sessionIdToShow != undefined) {
-      return this.router.navigate(['admin', 'sessions'], { queryParams: { sessionId: sessionIdToShow }})
+      return this.navigate(MenuItem.sessionDashboard, ['admin', 'sessions'], { queryParams: this.createQueryParams(Constants.NAVIGATION_QUERY_PARAM.TEST_SESSION_ID, sessionIdToShow) })
     } else {
-      return this.router.navigate(['admin', 'sessions'])
+      return this.navigate(MenuItem.sessionDashboard, ['admin', 'sessions'])
     }
   }
 
   toConformanceDashboard() {
-    return this.router.navigate(['admin', 'conformance'])
+    return this.navigate(MenuItem.conformanceDashboard, ['admin', 'conformance'])
   }
 
   toDataImport() {
-    return this.router.navigate(['admin', 'import'])
+    return this.navigate(MenuItem.dataImport, ['admin', 'import'])
   }
 
   toDataExport() {
-    return this.router.navigate(['admin', 'export'])
+    return this.navigate(MenuItem.dataExport, ['admin', 'export'])
+  }
+
+  toSystemAdministration(tab?: SystemAdministrationTab) {
+    if (tab != undefined) {
+      return this.navigate(MenuItem.systemAdministration, [ 'admin', 'system' ], { state: { tab: SystemAdministrationTab[tab] } })
+    } else {
+      return this.navigate(MenuItem.systemAdministration, [ 'admin', 'system' ])
+    }
   }
 
   private addTabExtras(tabIndex?: number) {
@@ -281,18 +433,326 @@ export class RoutingService {
     return extras
   }
 
-  private addCommunityContentExtras(copyTestBedDefault: boolean, copySourceId?: number) {
+  private addCommunityContentExtras(copyTestBedDefault: boolean|undefined, copySourceId?: number) {
     let extras: NavigationExtras|undefined = undefined
-    if (copyTestBedDefault || copySourceId != undefined) {
+    if ((copyTestBedDefault != undefined && copyTestBedDefault) || copySourceId != undefined) {
       extras = {}
       extras.queryParams = {}
       if (copyTestBedDefault) {
-        extras.queryParams['copyDefault'] = true
+        extras.queryParams[Constants.NAVIGATION_QUERY_PARAM.COPY_DEFAULT] = true
       }
       if (copySourceId != undefined) {
-        extras.queryParams['copy'] = copySourceId
+        extras.queryParams[Constants.NAVIGATION_QUERY_PARAM.COPY] = copySourceId
       }
     }
     return extras
   }  
+
+  private createQueryParams(name: string, value: any) {
+    let params: {[key: string]: any} = {}
+    params[name] = value
+    return params
+  }
+
+  private navigate(menuItem: MenuItem, commands: any[], extras?: NavigationExtras|undefined) {
+    this.dataService.changePage({ menuItem: menuItem })
+    this.navigationMethodExecuted = true    
+    return this.router.navigate(commands, extras)
+  }
+
+  domainBreadcrumbs(domainId: number, label?: string): BreadcrumbItem[] {
+    let crumbs: BreadcrumbItem[]
+    if (this.dataService.isSystemAdmin || (this.dataService.isCommunityAdmin && this.dataService.vendor?.community == undefined)) {
+      crumbs = this.domainsBreadcrumbs(true)
+    } else {
+      crumbs = []
+    }
+    crumbs.push({ type: BreadcrumbType.domain, typeId: domainId, label: label, action: (() => this.toDomain(domainId)).bind(this)})
+    if (label) this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
+    return crumbs
+  }
+
+  specificationBreadcrumbs(domainId: number, specificationId: number, label?: string): BreadcrumbItem[] {
+    const crumbs = this.domainBreadcrumbs(domainId)
+    crumbs.push({ type: BreadcrumbType.specification, typeId: specificationId, label: label, action: (() => this.toSpecification(domainId, specificationId)).bind(this)})
+    if (label) this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
+    return crumbs
+  }  
+
+  specificationGroupBreadcrumbs(domainId: number, groupId: number, label?: string): BreadcrumbItem[] {
+    const crumbs = this.domainBreadcrumbs(domainId)
+    crumbs.push({ type: BreadcrumbType.specificationGroup, typeId: groupId, label: label, action: (() => this.toSpecificationGroup(domainId, groupId)).bind(this)})
+    if (label) this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
+    return crumbs
+  }
+
+  actorBreadcrumbs(domainId: number, specificationId: number, actorId: number, label?: string): BreadcrumbItem[] {
+    const crumbs = this.specificationBreadcrumbs(domainId, specificationId)
+    crumbs.push({ type: BreadcrumbType.actor, typeId: actorId, label: label, action: (() => this.toActor(domainId, specificationId, actorId)).bind(this)})
+    if (label) this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
+    return crumbs
+  }
+
+  endpointBreadcrumbs(domainId: number, specificationId: number, actorId: number, endpointId: number, label?: string): BreadcrumbItem[] {
+    const crumbs = this.actorBreadcrumbs(domainId, specificationId, actorId)
+    crumbs.push({ type: BreadcrumbType.endpoint, typeId: endpointId, label: label, action: (() => this.toEndpoint(domainId, specificationId, actorId, endpointId)).bind(this)})
+    if (label) this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
+    return crumbs
+  }
+
+  testSuiteBreadcrumbs(domainId: number, specificationId: number, testSuiteId: number, label?: string): BreadcrumbItem[] {
+    const crumbs = this.specificationBreadcrumbs(domainId, specificationId)
+    crumbs.push({ type: BreadcrumbType.testSuite, typeId: testSuiteId, label: label, action: (() => this.toTestSuite(domainId, specificationId, testSuiteId)).bind(this)})
+    if (label) this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
+    return crumbs
+  }
+
+  testCaseBreadcrumbs(domainId: number, specificationId: number, testSuiteId: number, testCaseId: number, label?: string): BreadcrumbItem[] {
+    const crumbs = this.testSuiteBreadcrumbs(domainId, specificationId, testSuiteId)
+    crumbs.push({ type: BreadcrumbType.testCase, typeId: testCaseId, label: label, action: (() => this.toTestCase(domainId, specificationId, testSuiteId, testCaseId)).bind(this)})
+    if (label) this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
+    return crumbs
+  }  
+
+  sharedTestSuiteBreadcrumbs(domainId: number, testSuiteId: number, label?: string): BreadcrumbItem[] {
+    const crumbs = this.domainBreadcrumbs(domainId)
+    crumbs.push({ type: BreadcrumbType.sharedTestSuite, typeId: testSuiteId, label: label, action: (() => this.toSharedTestSuite(domainId, testSuiteId)).bind(this)})
+    if (label) this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
+    return crumbs
+  }
+
+  sharedTestCaseBreadcrumbs(domainId: number, testSuiteId: number, testCaseId: number, label?: string): BreadcrumbItem[] {
+    const crumbs = this.sharedTestSuiteBreadcrumbs(domainId, testSuiteId)
+    crumbs.push({ type: BreadcrumbType.sharedTestCase, typeId: testCaseId, label: label, action: (() => this.toSharedTestCase(domainId, testSuiteId, testCaseId)).bind(this)})
+    if (label) this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
+    return crumbs
+  }
+
+  communityBreadcrumbs(communityId: number, label?: string): BreadcrumbItem[] {
+    let crumbs: BreadcrumbItem[] = []
+    if (this.dataService.isSystemAdmin) {
+      crumbs = this.communitiesBreadcrumbs(true)
+    } else {
+      crumbs = []
+    }
+    crumbs.push({ type: BreadcrumbType.community, typeId: communityId, label: label, action: (() => this.toCommunity(communityId)).bind(this) })
+    if (label) this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
+    return crumbs
+  }
+
+  organisationBreadcrumbs(communityId: number, organisationId: number, label?: string): BreadcrumbItem[] {
+    const crumbs = this.communityBreadcrumbs(communityId)
+    crumbs.push({ type: BreadcrumbType.organisation, typeId: organisationId, label: label, action: (() => this.toOrganisationDetails(communityId, organisationId)).bind(this) })
+    if (label) this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
+    return crumbs
+  }
+
+  systemBreadcrumbs(communityId: number, organisationId: number, systemId: number, label?: string, skipUpdate?: boolean): BreadcrumbItem[] {
+    const crumbs = this.organisationBreadcrumbs(communityId, organisationId)
+    crumbs.push({ type: BreadcrumbType.system, typeId: systemId, label: label, action: (() => this.toSystemDetails(communityId, organisationId, systemId)).bind(this) })
+    if (label && !skipUpdate) this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
+    return crumbs
+  }
+
+  communityAdminBreadcrumbs(communityId: number, adminId: number, label?: string): BreadcrumbItem[] {
+    const crumbs = this.communityBreadcrumbs(communityId)
+    crumbs.push({ type: BreadcrumbType.communityAdmin, typeId: adminId, label: label, action: (() => this.toCommunityAdmin(communityId, adminId)).bind(this) })
+    if (label) this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
+    return crumbs
+  }
+
+  organisationUserBreadcrumbs(communityId: number, organisationId: number, userId: number, label?: string): BreadcrumbItem[] {
+    const crumbs = this.organisationBreadcrumbs(communityId, organisationId)
+    crumbs.push({ type: BreadcrumbType.organisationUser, typeId: userId, label: label, action: (() => this.toOrganisationUser(communityId, organisationId, userId)).bind(this) })
+    if (label) this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
+    return crumbs
+  }
+
+  landingPageBreadcrumbs(communityId: number, pageId: number, label?: string): BreadcrumbItem[] {
+    const crumbs = this.communityBreadcrumbs(communityId)
+    crumbs.push({ type: BreadcrumbType.landingPage, typeId: pageId, label: label, action: (() => this.toLandingPage(communityId, pageId)).bind(this) })
+    if (label) this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
+    return crumbs
+  }  
+
+  errorTemplateBreadcrumbs(communityId: number, templateId: number, label?: string): BreadcrumbItem[] {
+    const crumbs = this.communityBreadcrumbs(communityId)
+    crumbs.push({ type: BreadcrumbType.errorTemplate, typeId: templateId, label: label, action: (() => this.toErrorTemplate(communityId, templateId)).bind(this) })
+    if (label) this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
+    return crumbs
+  }  
+
+  legalNoticeBreadcrumbs(communityId: number, noticeId: number, label?: string): BreadcrumbItem[] {
+    const crumbs = this.communityBreadcrumbs(communityId)
+    crumbs.push({ type: BreadcrumbType.legalNotice, typeId: noticeId, label: label, action: (() => this.toLegalNotice(communityId, noticeId)).bind(this) })
+    if (label) this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
+    return crumbs
+  }  
+
+  triggerBreadcrumbs(communityId: number, triggerId: number, label?: string): BreadcrumbItem[] {
+    const crumbs = this.communityBreadcrumbs(communityId)
+    crumbs.push({ type: BreadcrumbType.trigger, typeId: triggerId, label: label, action: (() => this.toTrigger(communityId, triggerId)).bind(this) })
+    if (label) this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
+    return crumbs
+  }  
+
+  conformanceStatementsBreadcrumbs(communityId: number, organisationId: number, systemId?: number, systemLabel?: string, skipUpdate?: boolean): BreadcrumbItem[] {
+    let crumbs: BreadcrumbItem[]
+    if (systemId == undefined) {
+      crumbs = this.organisationBreadcrumbs(communityId, organisationId)
+    } else {
+      crumbs = this.systemBreadcrumbs(communityId, organisationId, systemId, systemLabel, true)
+    }
+    crumbs.push({ type: BreadcrumbType.statements, label: 'Conformance statements', action: (() => this.toConformanceStatements(communityId, organisationId, systemId)).bind(this) })
+    if (!skipUpdate) this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
+    return crumbs
+  }
+
+  conformanceStatementBreadcrumbs(organisationId: number, systemId: number, actorId: number, communityId: number|undefined, label?: string): BreadcrumbItem[] {
+    let crumbs: BreadcrumbItem[]
+    if (communityId) {
+      crumbs = this.conformanceStatementsBreadcrumbs(communityId, organisationId, systemId, undefined, true)
+      crumbs.push({ type: BreadcrumbType.statement, typeId: systemId+'|'+actorId, label: label, action: (() => this.toConformanceStatement(organisationId, systemId, actorId, communityId)).bind(this) })
+    } else {
+      crumbs = this.ownConformanceStatementsBreadcrumbs(organisationId, systemId, undefined, true)
+      crumbs.push({ type: BreadcrumbType.statement, typeId: systemId+'|'+actorId, label: label, action: (() => this.toOwnConformanceStatement(organisationId, systemId, actorId)).bind(this) })
+    }
+    if (label) this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
+    return crumbs
+  }
+
+  ownConformanceStatementsBreadcrumbs(organisationId: number, systemId?: number, systemLabel?: string, skipUpdate?: boolean): BreadcrumbItem[] {
+    let crumbs: BreadcrumbItem[]
+    if (systemId == undefined) {
+      crumbs = this.ownOrganisationBreadcrumbs()
+    } else {
+      crumbs = this.ownSystemBreadcrumbs(systemId, systemLabel, true)
+    }
+    crumbs.push({ type: BreadcrumbType.ownStatements, label: 'Conformance statements', action: (() => this.toOwnConformanceStatements(organisationId, systemId)).bind(this) })
+    if (!skipUpdate) this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
+    return crumbs
+  }
+
+  ownOrganisationBreadcrumbs(skipUpdate?: boolean): BreadcrumbItem[] {
+    const crumbs = [{ type: BreadcrumbType.ownOrganisation, label: 'My '+this.dataService.labelOrganisationLower(), action: (() => this.toOwnOrganisationDetails()).bind(this) }]
+    if (!skipUpdate) this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
+    return crumbs
+  }
+
+  ownSystemBreadcrumbs(systemId: number, label?: string, skipUpdate?: boolean): BreadcrumbItem[] {
+    const crumbs = this.ownOrganisationBreadcrumbs(true)
+    crumbs.push({ type: BreadcrumbType.ownSystem, typeId: systemId, label: label, action: (() => this.toOwnSystemDetails(systemId)).bind(this) })
+    if (label && !skipUpdate) this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
+    return crumbs
+  }
+
+  testHistoryBreadcrumbs(organisationId: number): BreadcrumbItem[] {
+    const crumbs = [{ type: BreadcrumbType.ownTestHistory, label: 'My test sessions', action: (() => this.toTestHistory(organisationId)).bind(this) }]
+    this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
+    return crumbs
+  }
+
+  conformanceDashboardBreadcrumbs(): BreadcrumbItem[] {
+    const crumbs = [{ type: BreadcrumbType.conformanceDashboard, label: 'Conformance dashboard', action: (() => this.toConformanceDashboard()).bind(this) }]
+    this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
+    return crumbs
+  }
+
+  sessionDashboardBreadcrumbs(): BreadcrumbItem[] {
+    const crumbs = [{ type: BreadcrumbType.sessionDashboard, label: 'Session dashboard', action: (() => this.toSessionDashboard()).bind(this) }]
+    this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
+    return crumbs
+  }
+
+  exportBreadcrumbs(): BreadcrumbItem[] {
+    const crumbs = [{ type: BreadcrumbType.export, label: 'Data export', action: (() => this.toDataExport()).bind(this) }]
+    this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
+    return crumbs
+  }
+
+  importBreadcrumbs(): BreadcrumbItem[] {
+    const crumbs = [{ type: BreadcrumbType.import, label: 'Data import', action: (() => this.toDataImport()).bind(this) }]
+    this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
+    return crumbs
+  }
+
+  domainsBreadcrumbs(skipUpdate?: boolean): BreadcrumbItem[] {
+    const crumbs = [{ type: BreadcrumbType.domains, label: 'Domains', action: (() => this.toDomains()).bind(this) }]
+    if (!skipUpdate) this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
+    return crumbs
+  }
+
+  communitiesBreadcrumbs(skipUpdate?: boolean): BreadcrumbItem[] {
+    const crumbs = [{ type: BreadcrumbType.communities, label: 'Communities', action: (() => this.toUserManagement()).bind(this) }]
+    if (!skipUpdate) this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
+    return crumbs
+  }
+
+  systemConfigurationBreadcrumbs(skipUpdate?: boolean): BreadcrumbItem[] {
+    const crumbs = [{ type: BreadcrumbType.systemConfiguration, label: 'System administration', action: (() => this.toSystemAdministration()).bind(this) }]
+    if (!skipUpdate) this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
+    return crumbs
+  }
+
+  testBedAdminBreadcrumbs(adminId: number, label?: string): BreadcrumbItem[] {
+    const crumbs = this.systemConfigurationBreadcrumbs(true)
+    crumbs.push({ type: BreadcrumbType.systemAdmin, typeId: adminId, label: label, action: (() => this.toTestBedAdmin(adminId)).bind(this) })
+    if (label) this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
+    return crumbs
+  }
+
+  systemLandingPageBreadcrumbs(pageId: number, label?: string): BreadcrumbItem[] {
+    const crumbs = this.systemConfigurationBreadcrumbs(true)
+    crumbs.push({ type: BreadcrumbType.systemLandingPage, typeId: pageId, label: label, action: (() => this.toLandingPage(undefined, pageId)).bind(this) })
+    if (label) this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
+    return crumbs
+  }
+
+  systemLegalNoticeBreadcrumbs(noticeId: number, label?: string): BreadcrumbItem[] {
+    const crumbs = this.systemConfigurationBreadcrumbs(true)
+    crumbs.push({ type: BreadcrumbType.systemLegalNotice, typeId: noticeId, label: label, action: (() => this.toLegalNotice(undefined, noticeId)).bind(this) })
+    if (label) this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
+    return crumbs
+  }
+
+  systemErrorTemplateBreadcrumbs(templateId: number, label?: string): BreadcrumbItem[] {
+    const crumbs = this.systemConfigurationBreadcrumbs(true)
+    crumbs.push({ type: BreadcrumbType.systemErrorTemplate, typeId: templateId, label: label, action: (() => this.toErrorTemplate(undefined, templateId)).bind(this) })
+    if (label) this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
+    return crumbs
+  }
+
+  communityLabelsBreadcrumbs(communityId: number): BreadcrumbItem[] {
+    const crumbs = this.communityBreadcrumbs(communityId)
+    crumbs.push({ type: BreadcrumbType.communityLabels, label: 'Labels', action: (() => this.toCommunityLabels(communityId)).bind(this) })
+    this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
+    return crumbs
+  }
+
+  communityParametersBreadcrumbs(communityId: number): BreadcrumbItem[] {
+    const crumbs = this.communityBreadcrumbs(communityId)
+    crumbs.push({ type: BreadcrumbType.communityParameters, label: 'Properties', action: (() => this.toCommunityParameters(communityId)).bind(this) })
+    this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
+    return crumbs
+  }
+
+  communityCertificateSettingsBreadcrumbs(communityId: number): BreadcrumbItem[] {
+    const crumbs = this.communityBreadcrumbs(communityId)
+    crumbs.push({ type: BreadcrumbType.communityParameters, label: 'Certificate settings', action: (() => this.toCommunityCertificateSettings(communityId)).bind(this) })
+    this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
+    return crumbs
+  }
+
+  profileBreadcrumbs(): BreadcrumbItem[] {
+    const crumbs = [{ type: BreadcrumbType.profile, label: 'Profile', action: (() => this.toProfile()).bind(this) }]
+    this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
+    return crumbs
+  }  
+
+  changePasswordBreadcrumbs(): BreadcrumbItem[] {
+    const crumbs = [{ type: BreadcrumbType.changePassword, label: 'Change password', action: (() => this.toChangePassword()).bind(this) }]
+    this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
+    return crumbs
+  }  
+
 }

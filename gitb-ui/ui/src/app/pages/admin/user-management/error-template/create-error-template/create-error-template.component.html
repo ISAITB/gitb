@@ -1,5 +1,5 @@
 <div class="page users create">
-    <div class="panel panel-default">
+    <div class="panel panel-default no-bottom-margin">
         <div class="panel-heading">
             <h4 class="title">Create error template</h4>
         </div>
@@ -25,7 +25,7 @@
                         <label class="col-sm-3 control-label" for="default">Default:</label>
                         <div class="col-sm-8">
                             <input id="default" name="default" [(ngModel)]="template.default" type="checkbox" class="form-check">
-                            <app-tooltip [inline]="true" [tbTooltip]="'Check this to make this error template the default one assumed for the community\'s '+dataService.labelOrganisationsLower()+'.'"></app-tooltip>
+                            <app-tooltip [inline]="true" [tbTooltip]="tooltipForDefaultCheck"></app-tooltip>
                         </div>
                     </div>
                 </div>
@@ -40,7 +40,7 @@
 					<div class="row">
                         <div class="col-sm-12">
                             <div class="div-padded-bottom">
-                                <app-placeholder-selector [placeholders]="placeholders"></app-placeholder-selector>
+                                <app-placeholder-selector [placeholders]="placeholders" [resources]="dataService.isCommunityAdmin" [community]="communityId"></app-placeholder-selector>
                             </div>
                             <div>
                                 <app-editor id="content" name="content" [(ngModel)]="template.content"></app-editor>

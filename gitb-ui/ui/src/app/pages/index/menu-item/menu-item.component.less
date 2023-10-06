@@ -1,0 +1,37 @@
+@import '../../../../styles/less/_common.less';
+
+.menu-item-root {
+    display: flex;
+    margin-top: 5px;
+    margin-bottom: 5px;            
+    border-radius: 4px;
+    background-color: @gray-light-1;
+    &:hover {
+        background: @gray-light;
+        cursor: pointer;
+    }
+    &.active {
+        background-color: @gray-light;
+        &:hover {
+            cursor: pointer;
+        }
+    }
+}
+.menu-item-text {
+    white-space: nowrap;
+    display: flex;
+    align-content: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    font-size: small;
+    padding: 0px 10px;
+    user-select: none;
+}
+.menu-item {
+    width: 35px;
+    height: 35px;
+    display: flex;
+    align-content: center;
+    justify-content: center;
+    flex-wrap: wrap;
+}

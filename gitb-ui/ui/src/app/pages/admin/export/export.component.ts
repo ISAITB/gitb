@@ -9,6 +9,7 @@ import { BaseComponent } from '../../base-component.component';
 import { ExportSettings } from '../../../types/export-settings';
 import { PopupService } from 'src/app/services/popup.service';
 import { saveAs } from 'file-saver'
+import { RoutingService } from 'src/app/services/routing.service';
 
 @Component({
   selector: 'app-export',
@@ -28,7 +29,6 @@ export class ExportComponent extends BaseComponent implements OnInit {
   allCommunityData = false
   allDomainData = false
   allOrganisationData = false
-  showEncryptionKey = false
   settings: ExportSettings = {
     landingPages: false,
     errorTemplates: false,
@@ -58,7 +58,8 @@ export class ExportComponent extends BaseComponent implements OnInit {
     public dataService: DataService,
     private communityService: CommunityService,
     private conformanceService: ConformanceService,
-    private popupService: PopupService
+    private popupService: PopupService,
+    private routingService: RoutingService
   ) { super() }
 
   ngOnInit(): void {
@@ -75,7 +76,7 @@ export class ExportComponent extends BaseComponent implements OnInit {
         this.domains = data
       })
     }
-
+    this.routingService.exportBreadcrumbs()
   }
 
   resetIncludes() {

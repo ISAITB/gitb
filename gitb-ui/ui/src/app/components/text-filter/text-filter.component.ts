@@ -1,4 +1,4 @@
-import { Component, ElementRef, EventEmitter, forwardRef, Input, OnInit, Output, ViewChild } from '@angular/core';
+import { Component, ElementRef, EventEmitter, forwardRef, HostListener, Input, OnInit, Output, ViewChild } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 import { Constants } from 'src/app/common/constants';
 
@@ -39,6 +39,15 @@ export class TextFilterComponent implements OnInit, ControlValueAccessor {
 
   get value() {
     return this._filterValue
+  }
+
+  @HostListener('document:keyup.escape', ['$event'])  
+  escapeRegistered(event: KeyboardEvent) {
+    if (!this.readonly) {
+      this.clear()
+      this.readonly = true
+      this.filterTextElement?.nativeElement.blur()
+    }
   }
 
   emitChanges() {

@@ -1,19 +1,15 @@
-import { AfterViewInit, Component, OnInit, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, EventEmitter, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { BsModalService } from 'ngx-bootstrap/modal';
 import { Constants } from 'src/app/common/constants';
 import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
 import { ConformanceService } from 'src/app/services/conformance.service';
 import { DataService } from 'src/app/services/data.service';
-import { HtmlService } from 'src/app/services/html.service';
 import { OrganisationService } from 'src/app/services/organisation.service';
 import { PopupService } from 'src/app/services/popup.service';
 import { ReportService } from 'src/app/services/report.service';
 import { SystemService } from 'src/app/services/system.service';
 import { TestService } from 'src/app/services/test.service';
-import { Actor } from 'src/app/types/actor';
-import { Domain } from 'src/app/types/domain';
-import { Specification } from 'src/app/types/specification';
 import { ConformanceConfiguration } from './conformance-configuration';
 import { ConformanceEndpoint } from './conformance-endpoint';
 import { ConformanceTestCase } from './conformance-test-case';
@@ -22,7 +18,6 @@ import { EndpointRepresentation } from './endpoint-representation';
 import { cloneDeep, find, map, remove } from 'lodash'
 import { ParameterPresetValue } from 'src/app/types/parameter-preset-value';
 import { SystemConfigurationParameter } from 'src/app/types/system-configuration-parameter';
-import { Organisation } from 'src/app/types/organisation.type';
 import { forkJoin } from 'rxjs'
 import { MissingConfigurationModalComponent } from 'src/app/modals/missing-configuration-modal/missing-configuration-modal.component';
 import { EditEndpointConfigurationModalComponent } from 'src/app/modals/edit-endpoint-configuration-modal/edit-endpoint-configuration-modal.component';
@@ -33,6 +28,10 @@ import { LoadingStatus } from 'src/app/types/loading-status.type';
 import { MissingConfigurationAction } from 'src/app/components/missing-configuration-display/missing-configuration-action';
 import { Counters } from 'src/app/components/test-status-icons/counters';
 import { saveAs } from 'file-saver'
+import { CheckboxOption } from 'src/app/components/checkbox-option-panel/checkbox-option';
+import { CheckboxOptionState } from 'src/app/components/checkbox-option-panel/checkbox-option-state';
+import { ConformanceStatementItem } from 'src/app/types/conformance-statement-item';
+import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
 
 @Component({
   selector: 'app-conformance-statement',
@@ -41,10 +40,12 @@ import { saveAs } from 'file-saver'
 })
 export class ConformanceStatementComponent implements OnInit, AfterViewInit {
 
-  systemId!: number
-  actorId!: number
-  specId!: number
+  communityId?: number
   organisationId!: number
+  systemId!: number
+  domainId?: number
+  specId?: number
+  actorId!: number
   loadingTests = true
   loadingConfiguration: LoadingStatus = {status: Constants.STATUS.NONE}
   Constants = Constants
@@ -55,9 +56,6 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
   lastUpdate?: string
   conformanceStatus = ''
   allTestsSuccessful = false
-  actor?: Actor
-  domain?: Domain
-  specification?: Specification
   endpoints: ConformanceEndpoint[] = []
   configurations: ConformanceConfiguration[] = []
   endpointRepresentations: EndpointRepresentation[] = []
@@ -70,14 +68,14 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
   tabToShow = ConformanceStatementTab.tests
   @ViewChild('tabs', { static: false }) tabs?: TabsetComponent;
   collapsedDetails = false
+  hasBadge = false
   
-  resultFilterAll = "any"
-  resultFilterLabelAll = "Show all tests"
-  resultFilterLabelSucceeded = "Show succeeded tests"
-  resultFilterLabelFailed = "Show failed tests"
-  resultFilterLabelUndefined = "Show incomplete tests"
-  resultFilter = this.resultFilterAll
-  resultFilterButton = this.resultFilterLabelAll
+  hasDisabledTests = false
+  hasOptionalTests = false
+
+  showResults = new Set<string>([Constants.TEST_CASE_RESULT.SUCCESS, Constants.TEST_CASE_RESULT.FAILURE, Constants.TEST_CASE_RESULT.UNDEFINED]);
+  showOptional = true
+  showDisabled = false
 
   executionModeSequential = "backgroundSequential"
   executionModeParallel = "backgroundParallel"
@@ -88,7 +86,18 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
   
   executionMode = this.executionModeInteractive
   executionModeButton = this.executionModeLabelInteractive
-  testCaseFilter?: string  
+  testCaseFilter?: string
+  private static SHOW_SUCCEEDED = '0'
+  private static SHOW_FAILED = '1'
+  private static SHOW_INCOMPLETE = '2'
+  private static SHOW_OPTIONAL = '3'
+  private static SHOW_DISABLED = '4'
+  testDisplayOptions!: CheckboxOption[][]
+  refreshDisplayOptions = new EventEmitter<CheckboxOption[][]>()
+
+  statement?: ConformanceStatementItem
+  systemName?: string
+  organisationName?: string
 
   constructor(
     public dataService: DataService,
@@ -101,7 +110,6 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
     private reportService: ReportService,
     private testService: TestService,
     private popupService: PopupService,
-    private htmlService: HtmlService,
     private organisationService: OrganisationService,
     private routingService: RoutingService
   ) { 
@@ -120,6 +128,87 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
     })
   }
 
+  ngOnInit(): void {
+    this.systemId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.SYSTEM_ID))
+    this.actorId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.ACTOR_ID))
+    this.organisationId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.ORGANISATION_ID))
+    if (this.route.snapshot.paramMap.has(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID)) {
+      this.communityId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID))
+    }
+    this.prepareTestFilter()
+    // Load conformance statement and its results.
+    this.conformanceService.getConformanceStatement(this.systemId, this.actorId)
+    .subscribe((data) => {
+      if (data) {
+        // Party definition.
+        this.systemName = data.system.fname
+        this.organisationName = data.organisation.fname
+        // Statement definition.
+        this.prepareStatement(data.statement)
+        this.statement = data.statement
+        this.routingService.conformanceStatementBreadcrumbs(this.organisationId, this.systemId, this.actorId, this.communityId, this.breadcrumbLabel())
+        // IDs.
+        this.domainId = this.findByType([this.statement]!, Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.DOMAIN)!.id
+        this.specId = this.findByType([this.statement]!, Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.SPECIFICATION)!.id
+        // Test results.
+        for (let testSuite of data.results.testSuites) {
+          testSuite.hasDisabledTestCases = find(testSuite.testCases, (testCase) => testCase.disabled) != undefined
+          testSuite.hasOptionalTestCases = find(testSuite.testCases, (testCase) => testCase.optional) != undefined
+          if (!this.hasDisabledTests && testSuite.hasDisabledTestCases) {
+            this.hasDisabledTests = true
+          }
+          if (!this.hasOptionalTests && testSuite.hasOptionalTestCases) {
+            this.hasOptionalTests = true
+          }
+        }
+        this.testSuites = data.results.testSuites
+        this.displayedTestSuites = this.testSuites
+        this.statusCounters = { 
+          completed: data.results.summary.completed, failed: data.results.summary.failed, other: data.results.summary.undefined,
+          completedOptional: data.results.summary.completedOptional, failedOptional: data.results.summary.failedOptional, otherOptional: data.results.summary.undefinedOptional
+        }
+        this.lastUpdate = data.results.summary.updateTime
+        if (this.lastUpdate) {
+          this.hasTests = true
+        }
+        this.conformanceStatus = data.results.summary.result
+        this.allTestsSuccessful = this.conformanceStatus == Constants.TEST_CASE_RESULT.SUCCESS
+        this.hasBadge = data.results.summary.hasBadge
+        this.prepareTestFilter()
+        this.applySearchFilters()
+      }
+    }).add(() => {
+      this.loadingTests = false
+    })
+  }
+
+  private breadcrumbId(): string {
+    return this.systemId + '|' + this.actorId
+  }
+
+  private appendToLabel(label: string, newPart: ConformanceStatementItem|undefined): string {
+    if (newPart && !newPart.hidden) {
+      if (label.length > 0) label += ' - '
+      label += newPart.name
+    }
+    return label
+  }
+
+  private breadcrumbLabel(): string {
+    let label = ''
+    if (this.statement) {
+      const domainItem = this.findByType([this.statement]!, Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.DOMAIN)
+      const specGroupItem = this.findByType([this.statement]!, Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.SPECIFICATION_GROUP)
+      const specItem = this.findByType([this.statement]!, Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.SPECIFICATION)
+      const actorItem = this.findByType([this.statement]!, Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.ACTOR)
+      label = this.appendToLabel(label, domainItem)
+      label = this.appendToLabel(label, specGroupItem)
+      label = this.appendToLabel(label, specItem)
+      label = this.appendToLabel(label, actorItem)
+    }
+    return label
+  }
+
   private showConfigurationTab() {
     this.loadConfigurations()
     if (this.tabs) {
@@ -127,84 +216,41 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
     }
   }
 
-  ngOnInit(): void {
-    this.systemId = Number(this.route.snapshot.paramMap.get('id'))
-    this.actorId = Number(this.route.snapshot.paramMap.get('actor_id'))
-    this.specId = Number(this.route.snapshot.paramMap.get('spec_id'))
-    this.organisationId = Number(this.route.snapshot.paramMap.get('org_id'))
-    // Load conformance results.
-    this.conformanceService.getConformanceStatus(this.actorId, this.systemId)
-    .subscribe((data) => {
-      let testSuiteResults: ConformanceTestSuite[] = []
-      let testSuiteIds: number[] = []
-      let testSuiteData: {[key: number]: ConformanceTestSuite} = {}
-      for (let result of data.items) {
-        let testCase: ConformanceTestCase = {
-          id: result.testCaseId,
-          sname: result.testCaseName,
-          description: result.testCaseDescription,
-          outputMessage: result.outputMessage,
-          hasDocumentation: result.testCaseHasDocumentation,
-          sessionId: result.sessionId,
-          result: result.result,
-          updateTime: result.sessionTime
+  private prepareTestFilter(): void {
+    this.testDisplayOptions = [[
+        {key: ConformanceStatementComponent.SHOW_SUCCEEDED, label: 'Succeeded tests', default: true, iconClass: this.dataService.iconForTestResult(Constants.TEST_CASE_RESULT.SUCCESS)},
+        {key: ConformanceStatementComponent.SHOW_FAILED, label: 'Failed tests', default: true, iconClass: this.dataService.iconForTestResult(Constants.TEST_CASE_RESULT.FAILURE)},
+        {key: ConformanceStatementComponent.SHOW_INCOMPLETE, label: 'Incomplete tests', default: true, iconClass: this.dataService.iconForTestResult(Constants.TEST_CASE_RESULT.UNDEFINED)}
+    ]]
+    if (this.hasOptionalTests) {
+      this.testDisplayOptions.push([{key: ConformanceStatementComponent.SHOW_OPTIONAL, label: 'Optional tests', default: true}])
+    }
+    if (this.hasDisabledTests) {
+      this.testDisplayOptions.push([{key: ConformanceStatementComponent.SHOW_DISABLED, label: 'Disabled tests', default: false}])
+    }
+    this.refreshDisplayOptions.emit(this.testDisplayOptions)
+  }
+
+  private findByType(items: ConformanceStatementItem[], itemType: number): ConformanceStatementItem|undefined {
+    if (items) {
+      for (let item of items) {
+        if (item.itemType == itemType) {
+          return item;
+        } else if (item.items) {
+          return this.findByType(item.items, itemType)
         }
-        if (testSuiteData[result.testSuiteId] == undefined) {
-          let currentTestSuite: ConformanceTestSuite = {
-            id: result.testSuiteId,
-            sname: result.testSuiteName,
-            description: result.testSuiteDescription,
-            result: result.result,
-            hasDocumentation: result.testSuiteHasDocumentation,
-            expanded: false,
-            testCases: []
-          }
-          testSuiteIds.push(result.testSuiteId)
-          testSuiteData[result.testSuiteId] = currentTestSuite
-        } else {
-          if (testSuiteData[result.testSuiteId].result == Constants.TEST_CASE_RESULT.SUCCESS) {
-            if (testCase.result == Constants.TEST_CASE_RESULT.FAILURE || testCase.result == Constants.TEST_CASE_RESULT.UNDEFINED) {
-              testSuiteData[result.testSuiteId].result = testCase.result
-            }
-          } else if (testSuiteData[result.testSuiteId].result == Constants.TEST_CASE_RESULT.UNDEFINED) {
-            if (testCase.result == Constants.TEST_CASE_RESULT.FAILURE) {
-              testSuiteData[result.testSuiteId].result = Constants.TEST_CASE_RESULT.FAILURE
-            }
-          }
-        }
-        testSuiteData[result.testSuiteId].testCases.push(testCase)
       }
-      this.hasTests = data.summary.failed > 0 || data.summary.completed > 0
-      for (let testSuiteId of testSuiteIds) {
-        testSuiteResults.push(testSuiteData[testSuiteId])
-      }
-      if (testSuiteResults.length == 1) {
-        testSuiteResults[0].expanded = true
-      }
-      this.testSuites = testSuiteResults
-      this.displayedTestSuites = this.testSuites
-      this.statusCounters = { completed: data.summary.completed, failed: data.summary.failed, other: data.summary.undefined}
-      this.lastUpdate = data.summary.updateTime
-      this.conformanceStatus = data.summary.result
-      this.allTestsSuccessful = data.summary.failed == 0 && data.summary.undefined == 0
-    }).add(() => {
-      this.loadingTests = false
-    })
-    // Load actor.
-    this.conformanceService.getActorsWithIds([this.actorId])
-    .subscribe((data) => {
-      this.actor = data[0]
-    })
-    // Load domain.
-    this.conformanceService.getDomainForSpecification(this.specId)
-    .subscribe((data) => {
-      this.domain = data
-    })
-    // Load specification.
-    this.conformanceService.getSpecificationsWithIds([this.specId])
-    .subscribe((data) => {
-      this.specification = data[0]
-    })
+      return undefined
+    } else {
+      return undefined
+    }
+  }
+
+  private prepareStatement(statement: ConformanceStatementItem) {
+    if (statement.itemType == Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.DOMAIN) {
+      // Hide the domain unless the user has access to any domain.
+      statement.hidden = this.dataService.community?.domain != undefined
+    }
   }
 
   loadConfigurations() {
@@ -330,17 +376,24 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
     this.runTestClicked = false
   }
 
-  getOrganisation(): Organisation {
-    let organisation = this.dataService.vendor
-    if (this.dataService.isCommunityAdmin || this.dataService.isSystemAdmin) {
-      organisation = JSON.parse(localStorage.getItem(Constants.LOCAL_DATA.ORGANISATION)!)
+  resultFilterUpdated(choices: CheckboxOptionState) {
+    this.showOptional = choices[ConformanceStatementComponent.SHOW_OPTIONAL]
+    this.showDisabled = choices[ConformanceStatementComponent.SHOW_DISABLED]
+    if (choices[ConformanceStatementComponent.SHOW_SUCCEEDED]) {
+      this.showResults.add(Constants.TEST_CASE_RESULT.SUCCESS)
+    } else {
+      this.showResults.delete(Constants.TEST_CASE_RESULT.SUCCESS)
     }
-    return organisation!
-  }
-
-  resultFilterSelected(itemValue: string, itemLabel: string) {
-    this.resultFilter = itemValue
-    this.resultFilterButton = itemLabel
+    if (choices[ConformanceStatementComponent.SHOW_FAILED]) {
+      this.showResults.add(Constants.TEST_CASE_RESULT.FAILURE)
+    } else {
+      this.showResults.delete(Constants.TEST_CASE_RESULT.FAILURE)
+    }
+    if (choices[ConformanceStatementComponent.SHOW_INCOMPLETE]) {
+      this.showResults.add(Constants.TEST_CASE_RESULT.UNDEFINED)
+    } else {
+      this.showResults.delete(Constants.TEST_CASE_RESULT.UNDEFINED)
+    }
     this.applySearchFilters()
   }
 
@@ -354,13 +407,14 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
         testCaseFilter = testCaseFilter.toLocaleLowerCase()
       }
     }
-    let resultFilter = this.resultFilter
     let filteredTestSuites: ConformanceTestSuite[] = []
     for (let testSuite of this.testSuites) {
       let testCases: ConformanceTestCase[] = []
       for (let testCase of testSuite.testCases) {
-        if ((resultFilter == this.resultFilterAll || testCase.result == resultFilter) &&
-            (testCaseFilter == undefined || 
+        if (this.showResults.has(testCase.result) 
+          && (!testCase.optional || this.showOptional)
+          && (!testCase.disabled || this.showDisabled)
+          && (testCaseFilter == undefined || 
               (testCase.sname.toLocaleLowerCase().indexOf(testCaseFilter) >= 0) || 
               (testCase.description != undefined && testCase.description.toLocaleLowerCase().indexOf(testCaseFilter) >= 0))) {
           testCases.push(testCase)
@@ -374,6 +428,8 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
           hasDocumentation: testSuite.hasDocumentation,
           expanded: true,
           description: testSuite.description,
+          hasOptionalTestCases: testSuite.hasOptionalTestCases && this.showOptional,
+          hasDisabledTestCases: testSuite.hasDisabledTestCases && this.showDisabled,
           testCases: testCases
         })
       }
@@ -383,7 +439,7 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
 
   private executeHeadless(testCases: ConformanceTestCase[]) {
     // Check configurations
-    const organisationParameterCheck = this.organisationService.checkOrganisationParameterValues(this.getOrganisation().id)
+    const organisationParameterCheck = this.organisationService.checkOrganisationParameterValues(this.organisationId)
     const systemParameterCheck = this.systemService.checkSystemParameterValues(this.systemId)
     const statementParameterCheck = this.conformanceService.checkConfigurations(this.actorId, this.systemId)
     // Check status once everything is loaded.
@@ -414,30 +470,33 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
             this.showConfigurationTab()
           } else if (actionType == MissingConfigurationAction.viewOrganisation) {
             if (this.dataService.isVendorUser || this.dataService.isVendorAdmin) {
-              this.routingService.toOwnOrganisationDetails(true)
+              this.routingService.toOwnOrganisationDetails(undefined, true)
             } else {
-              const organisation = this.getOrganisation()
-              if (this.dataService.vendor!.id == organisation.id) {
-                this.routingService.toOwnOrganisationDetails(true)
+              if (this.dataService.vendor!.id == this.organisationId) {
+                this.routingService.toOwnOrganisationDetails(undefined, true)
               } else {
                 this.organisationService.getOrganisationBySystemId(this.systemId)
                 .subscribe((data) => {
-                  this.routingService.toOrganisationDetails(data.community, data.id, true)
+                  this.routingService.toOrganisationDetails(data.community, data.id, undefined, true)
                 })
               }
             }
           } else if (actionType == MissingConfigurationAction.viewSystem) {
-            if (this.dataService.isVendorUser) {
-              this.routingService.toSystemInfo(this.organisationId, this.systemId, true)
+            if (this.dataService.isVendorUser || this.dataService.isVendorAdmin) {
+              this.routingService.toOwnSystemDetails(this.systemId, true)
             } else {
-              this.routingService.toSystems(this.organisationId, this.systemId, true)
+              if (this.dataService.vendor!.id == this.organisationId) {
+                this.routingService.toOwnSystemDetails(this.systemId, true)
+              } else {
+                this.routingService.toSystemDetails(this.communityId!, this.organisationId, this.systemId, true)
+              }
             }
           }
         })
       } else {
         // Proceed with execution.
         const testCaseIds = map(testCases, (test) => { return test.id } )
-        this.testService.startHeadlessTestSessions(testCaseIds, this.specId, this.systemId, this.actorId, this.executionMode == this.executionModeSequential)
+        this.testService.startHeadlessTestSessions(testCaseIds, this.specId!, this.systemId, this.actorId, this.executionMode == this.executionModeSequential)
         .subscribe(() => {
           if (testCaseIds.length == 1) {
             this.popupService.success('Started test session.<br/>Check <b>Test Sessions</b> for progress.')
@@ -452,7 +511,11 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
   onTestSelect(test: ConformanceTestCase) {
     if (this.executionMode == this.executionModeInteractive) {
       this.dataService.setTestsToExecute([test])
-      this.routingService.toTestCaseExecution(this.organisationId, this.systemId, this.actorId, this.specId, test.id)
+      if (this.communityId == undefined) {
+        this.routingService.toOwnTestCaseExecution(this.organisationId, this.systemId, this.actorId, test.id)
+      } else {
+        this.routingService.toTestCaseExecution(this.communityId, this.organisationId, this.systemId, this.actorId, test.id)
+      }
     } else {
       this.executeHeadless([test])
     }
@@ -461,11 +524,17 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
   onTestSuiteSelect(testSuite: ConformanceTestSuite) {
     const testsToExecute: ConformanceTestCase[] = []
     for (let testCase of testSuite.testCases) {
-      testsToExecute.push(testCase)
+      if (!testCase.disabled) {
+        testsToExecute.push(testCase)
+      }
     }
     if (this.executionMode == this.executionModeInteractive) {
       this.dataService.setTestsToExecute(testsToExecute)
-      this.routingService.toTestSuiteExecution(this.organisationId, this.systemId, this.actorId, this.specId, testSuite.id)
+      if (this.communityId == undefined) {
+        this.routingService.toOwnTestSuiteExecution(this.organisationId, this.systemId, this.actorId, testSuite.id)
+      } else {
+        this.routingService.toTestSuiteExecution(this.communityId, this.organisationId, this.systemId, this.actorId, testSuite.id)
+      }
     } else {
       this.executeHeadless(testsToExecute)
     }
@@ -535,12 +604,12 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
   }
 
   deleteConformanceStatement() {
-    this.confirmationDialogService.confirmed("Confirm delete", "Are you sure you want to delete this conformance statement?", "Yes", "No")
+    this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this conformance statement?", "Delete", "Cancel")
     .subscribe(() => {
       this.deletePending = true
       this.systemService.deleteConformanceStatement(this.systemId, [this.actorId])
       .subscribe(() => {
-        this.routingService.toConformanceStatements(this.organisationId, this.systemId)
+        this.back()
         this.popupService.success('Conformance statement deleted.')
       }).add(() => {
         this.deletePending = false
@@ -577,25 +646,75 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
     return this.allTestsSuccessful && (this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin || this.dataService.community!.allowCertificateDownload)
   }
 
-  showDocumentation(title: string, content: string) {
-    this.htmlService.showHtml(title, content)
-  }
-
-  showTestCaseDocumentation(testCaseId: number) {
-    this.conformanceService.getTestCaseDocumentation(testCaseId)
-    .subscribe((data) => {
-      this.showDocumentation("Test case documentation", data)
-    })
-  }
-
-  showTestSuiteDocumentation(testSuiteId: number) {
-    this.conformanceService.getTestSuiteDocumentation(testSuiteId)
-    .subscribe((data) => {
-      this.showDocumentation("Test suite documentation", data)
-    })
-  }
-
   toTestSession(sessionId: string) {
-    this.routingService.toTestHistory(this.organisationId, this.systemId, sessionId)
+    if (this.organisationId == this.dataService.vendor?.id) {
+      this.routingService.toTestHistory(this.organisationId, sessionId)
+    } else {
+      this.routingService.toSessionDashboard(sessionId)
+    }
+  }
+
+  toCommunity() {
+    this.routingService.toCommunity(this.communityId!)
+  }
+
+  toOrganisation() {
+    if (this.communityId == undefined || this.organisationId == this.dataService.vendor!.id) {
+      this.routingService.toOwnOrganisationDetails()
+    } else {
+      this.routingService.toOrganisationDetails(this.communityId!, this.organisationId)
+    }
+  }  
+
+  toSystem() {
+    if (this.communityId == undefined || this.organisationId == this.dataService.vendor!.id) {
+      this.routingService.toOwnSystemDetails(this.systemId)
+    } else {
+      this.routingService.toSystemDetails(this.communityId!, this.organisationId, this.systemId)
+    }
+  }
+
+  toDomain() {
+    this.routingService.toDomain(this.domainId!)
+  }
+
+  toSpecification() {
+    this.routingService.toSpecification(this.domainId!, this.specId!)
+  }
+
+  toActor() {
+    this.routingService.toActor(this.domainId!, this.specId!, this.actorId)
+  }
+
+  showToCommunity() {
+    return this.communityId != undefined && (this.dataService.isCommunityAdmin || this.dataService.isSystemAdmin)
+  }
+
+  showToDomain() {
+    return this.domainId != undefined && (
+      this.dataService.isSystemAdmin || (
+        this.dataService.isCommunityAdmin && this.dataService.community?.domain != undefined
+      )
+    )
+  }
+
+  showToSpecification() {
+    return this.showToDomain() && this.specId != undefined
+  }
+
+  showToActor() {
+    return this.showToSpecification()
+  }
+
+  showSpecificationNavigation() {
+    return this.showToDomain() || this.showToSpecification() || this.showToActor()
+  }
+
+  back() {
+    if (this.communityId == undefined) {
+      this.routingService.toOwnConformanceStatements(this.organisationId, this.systemId)
+    } else {
+      this.routingService.toConformanceStatements(this.communityId, this.organisationId, this.systemId)
+    }
   }
 }

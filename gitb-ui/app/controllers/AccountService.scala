@@ -4,6 +4,7 @@ import config.Configurations
 import controllers.util._
 import exceptions.ErrorCodes
 import managers._
+import models.Enums.UserRole
 import org.apache.commons.io.FileUtils
 import org.apache.tika.Tika
 import org.slf4j.{Logger, LoggerFactory}
@@ -36,7 +37,21 @@ class AccountService @Inject() (authorizedAction: AuthorizedAction, cc: Controll
    */
   def updateVendorProfile = authorizedAction { request =>
     try {
-      authorizationManager.canUpdateOwnOrganisation(request, ignoreExistingTests = false)
+      val landingPageId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.LANDING_PAGE_ID)
+      val landingPageIdToUse = if (landingPageId.isDefined) {
+        authorizationManager.canUpdateOwnOrganisationAndLandingPage(request, landingPageId)
+        if (landingPageId.get == -1) {
+          // Remove the currently set landing page.
+          Some(None)
+        } else {
+          // Set the landing page.
+          Some(landingPageId)
+        }
+      } else {
+        authorizationManager.canUpdateOwnOrganisation(request, ignoreExistingTests = false)
+        // No update to the landing page.
+        None
+      }
       val adminId = ParameterExtractor.extractUserId(request)
       val paramMap = ParameterExtractor.paramMap(request)
 
@@ -49,7 +64,7 @@ class AccountService @Inject() (authorizedAction: AuthorizedAction, cc: Controll
       if (Configurations.ANTIVIRUS_SERVER_ENABLED && ParameterExtractor.virusPresentInFiles(files.map(entry => entry._2.file))) {
         ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "File failed virus scan.")
       } else {
-        organisationManager.updateOwnOrganization(adminId, shortName, fullName, values, Some(files))
+        organisationManager.updateOwnOrganization(adminId, shortName, fullName, values, Some(files), landingPageIdToUse)
         ResponseConstructor.constructEmptyResponse
       }
     } finally {
@@ -75,8 +90,12 @@ class AccountService @Inject() (authorizedAction: AuthorizedAction, cc: Controll
   def registerUser = authorizedAction { request =>
     authorizationManager.canCreateUserInOwnOrganisation(request)
     val adminId = ParameterExtractor.extractUserId(request)
-    val user = ParameterExtractor.extractUserInfo(request)
-
+    val roleId = ParameterExtractor.requiredBodyParameter(request, Parameters.ROLE_ID).toShort
+    val user = UserRole(roleId) match {
+      case UserRole.VendorUser => ParameterExtractor.extractUserInfo(request)
+      case UserRole.VendorAdmin => ParameterExtractor.extractAdminInfo(request)
+      case _ => throw new IllegalArgumentException("Cannot create user with role " + roleId)
+    }
     accountManager.registerUser(adminId, user)
     ResponseConstructor.constructEmptyResponse
   }

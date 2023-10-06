@@ -1,0 +1,47 @@
+<div class="modal-header">
+    <h4>Conformance snapshots</h4>
+</div>
+<form class="form-horizontal">
+    <div class="modal-body" [ngSwitch]="editMode">
+        <div *ngSwitchCase="true">
+            <label class="col-xs-3 control-label" for="label">Snapshot label:</label>
+            <div class="col-xs-8"><input id="label" name="label" [(ngModel)]="snapshotToEdit!.label" class="form-control" type="text"></div>
+            <app-tooltip tbTooltip="A label to help in distinguishing and referring to the snapshot."></app-tooltip>
+        </div>
+        <ng-container *ngSwitchDefault>
+            <div class="bg-info div-rounded div-padded">
+                <span>Select the snapshot to view in the conformance dashboard.</span>
+            </div>
+            <div class="searchControls">
+                <app-text-filter name="organisationFilter" [width]="300" [placeholder]="'Search snapshots...'" [(ngModel)]="snapshotFilter" (apply)="applySnapshotFilter()"></app-text-filter>
+            </div>
+            <div class="panel panel-default no-bottom-margin">
+                <div table-directive
+                    [columns]="snapshotColumns"
+                    [classes]="{'snapshotTime': 'td-min padding-right-large'}"
+                    [data]="visibleSnapshots"
+                    noDataMessage="No snapshots found"
+                    [loadingStatus]="snapshotsStatus"
+                    actionIcon="fa-solid fa-pencil"
+                    actionTooltip="Edit label"
+                    [allowSelect]="true"
+                    [actionVisible]="true"
+                    [operationsVisible]="true"
+                    (onSelect)="selectSnapshot($event)"
+                    (onAction)="editSnapshot($event)"
+                    (onDelete)="deleteSnapshot($event)"
+                ></div>
+            </div>
+        </ng-container>
+    </div>
+    <div class="modal-footer" [ngSwitch]="editMode">
+        <ng-container *ngSwitchCase="true">
+            <button class="btn btn-default" type="button" (click)="cancel()">Cancel</button>
+            <button type="submit" class="btn btn-default" [disable]="saveDisabled()" [pending]="savePending" (click)="saveSnapshot()">Save</button>
+        </ng-container>
+        <ng-container *ngSwitchDefault>
+            <button class="btn btn-default" type="button" (click)="close()">Close</button>
+            <button type="button" class="btn btn-default" (click)="createSnapshot()">Create snapshot</button>
+        </ng-container>
+    </div>
+</form>

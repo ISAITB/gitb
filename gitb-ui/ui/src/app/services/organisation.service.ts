@@ -53,10 +53,15 @@ export class OrganisationService {
     })
   }
 
-  getOrganisationsByCommunity(communityId: number) {
+  getOrganisationsByCommunity(communityId: number, includeAdminOrganisation?: boolean) {
+    const params: any = {}
+    if (includeAdminOrganisation) {
+      params.admin = true
+    }
     return this.restService.get<Organisation[]>({
       path: ROUTES.controllers.OrganizationService.getOrganizationsByCommunity(communityId).url,
-      authenticate: true
+      authenticate: true,
+      params: params
     })
   }
 
@@ -96,7 +101,7 @@ export class OrganisationService {
     if (errorTemplate != undefined) {
       data.error_template_id = errorTemplate
     }
-    if (otherOrganisation != undefined) {
+    if (otherOrganisation) {
       data.other_organisation = otherOrganisation
       data.org_params = copyOrganisationParameters
       data.sys_params = copySystemParameters
@@ -144,7 +149,7 @@ export class OrganisationService {
     if (errorTemplate != undefined) {
       data.error_template_id = errorTemplate
     }
-    if (otherOrganisation != undefined) {
+    if (otherOrganisation) {
       data.other_organisation = otherOrganisation
       data.org_params = copyOrganisationParameters
       data.sys_params = copySystemParameters

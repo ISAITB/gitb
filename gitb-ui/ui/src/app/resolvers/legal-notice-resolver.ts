@@ -3,6 +3,7 @@ import { ActivatedRouteSnapshot, Resolve, RouterStateSnapshot } from "@angular/r
 import { Observable, Subscriber } from "rxjs";
 import { LegalNoticeService } from "../services/legal-notice.service";
 import { LegalNotice } from "../types/legal-notice";
+import { Constants } from "../common/constants";
 
 @Injectable({
     providedIn: "root"
@@ -15,10 +16,10 @@ export class LegalNoticeResolver implements Resolve<any> {
 
     resolve(route: ActivatedRouteSnapshot, state: RouterStateSnapshot) {
         return new Observable<LegalNotice|undefined>((subscriber) => {
-            if (route.queryParamMap.has('copyDefault')) {
+            if (route.queryParamMap.has(Constants.NAVIGATION_QUERY_PARAM.COPY_DEFAULT)) {
                 this.handleResult(subscriber, this.legalNoticeService.getTestBedDefaultLegalNotice())
-            } else if (route.queryParamMap.has('copy')) {
-                this.handleResult(subscriber, this.legalNoticeService.getLegalNoticeById(Number(route.queryParamMap.get('copy'))))
+            } else if (route.queryParamMap.has(Constants.NAVIGATION_QUERY_PARAM.COPY)) {
+                this.handleResult(subscriber, this.legalNoticeService.getLegalNoticeById(Number(route.queryParamMap.get(Constants.NAVIGATION_QUERY_PARAM.COPY))))
             } else {
                 subscriber.next()
                 subscriber.complete()

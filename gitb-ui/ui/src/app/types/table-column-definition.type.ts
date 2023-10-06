@@ -5,6 +5,7 @@ export interface TableColumnDefinition {
     iconFn?: (columnData: any) => string,
     iconTooltipFn?: (columnData: any) => string,
     headerClass?: string,
+    cellClass?: string,
     sortable?: boolean,
     order?: 'asc'|'desc'|null
     atEnd?: boolean

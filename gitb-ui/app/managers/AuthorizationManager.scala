@@ -53,6 +53,10 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     setAuthResult(request, ok, "User not allowed to view the organisation's automation keys")
   }
 
+  def canLookupConformanceBadge(request: RequestWithAttributes[_]): Boolean = {
+    setAuthResult(request, ok = true, "User not allowed to lookup conformance badges")
+  }
+
   private def checkApiKeyUpdateForOrganisation(request: RequestWithAttributes[_], organisation: Option[Organizations]): Boolean = {
     var ok = false
     if (Configurations.AUTOMATION_API_ENABLED) {
@@ -156,6 +160,11 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     ok
   }
 
+  def canViewBreadcrumbLabels(request: RequestWithAttributes[_]): Boolean = {
+    val ok = checkIsAuthenticated(request)
+    setAuthResult(request, ok, "User not allowed to view breadcrumbs")
+  }
+
   def canViewSelfRegistrationOptions(request: RequestWithAttributes[_]): Boolean = {
     val ok = Configurations.REGISTRATION_ENABLED
     setAuthResult(request, ok, "User not allowed to view self-registration options")
@@ -174,7 +183,9 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     val principal = getPrincipal(request)
     if (principal != null) {
       val user = userManager.getUserById(userId)
-      ok = user.ssoEmail.isDefined && user.ssoEmail.get.toLowerCase == principal.email.toLowerCase
+      if (user.isDefined) {
+        ok = user.get.ssoEmail.isDefined && user.get.ssoEmail.get.toLowerCase == principal.email.toLowerCase
+      }
     }
     setAuthResult(request, ok, "You cannot access the requested account")
   }
@@ -195,7 +206,9 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
       val principal = getPrincipal(request)
       if (principal != null) {
         val user = userManager.getUserById(id)
-        ok = user.ssoUid.isDefined && user.ssoUid.get == principal.uid
+        if (user.isDefined) {
+          ok = user.get.ssoUid.isDefined && user.get.ssoUid.get == principal.uid
+        }
       }
     }
     setAuthResult(request, ok, "You cannot access the requested account")
@@ -338,6 +351,10 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
 
   def canViewUser(request: RequestWithAttributes[_], userId: Long):Boolean = {
     canUpdateOrganisationUser(request, userId)
+  }
+
+  def canViewOwnOrganisationUser(request: RequestWithAttributes[_], userId: Long): Boolean = {
+    checkIsAuthenticated(request)
   }
 
   def canViewOrganisationUsers(request: RequestWithAttributes[_], orgId: Long):Boolean = {
@@ -581,7 +598,7 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     setAuthResult(request, ok, "User cannot view the requested system")
   }
 
-  def canUpdateSystem(request: RequestWithAttributes[_], systemId: Long):Boolean = {
+  def canUpdateSystem(request: RequestWithAttributes[_], systemId: Long, isDelete: Boolean = false):Boolean = {
     var ok = false
     val userInfo = getUser(getRequestUserId(request))
     if (isTestBedAdmin(userInfo)) {
@@ -598,10 +615,12 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
         // Check to see if special permissions are in place.
         val community = communityManager.getById(userInfo.organization.get.community)
         if (community.isDefined) {
-          if (community.get.allowPostTestSystemUpdates) {
-            ok = true
-          } else {
-            ok = !testResultManager.testSessionsExistForSystem(systemId)
+          if (!isDelete || community.get.allowSystemManagement) {
+            if (community.get.allowPostTestSystemUpdates) {
+              ok = true
+            } else {
+              ok = !testResultManager.testSessionsExistForSystem(systemId)
+            }
           }
         }
       }
@@ -659,7 +678,7 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
   }
 
   def canDeleteSystem(request: RequestWithAttributes[_], systemId: Long):Boolean = {
-    canUpdateSystem(request, systemId)
+    canUpdateSystem(request, systemId, isDelete = true)
   }
 
   def canAccessThemeData(request: RequestWithAttributes[_]):Boolean = {
@@ -671,7 +690,11 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     checkTestBedAdmin(request)
   }
 
-  def canViewTheSessionAliveTime(request: RequestWithAttributes[_]):Boolean = {
+  def canUpdateSystemConfigurationValues(request: RequestWithAttributes[_]): Boolean = {
+    checkTestBedAdmin(request)
+  }
+
+  def canViewSystemConfigurationValues(request: RequestWithAttributes[_]): Boolean = {
     checkTestBedAdmin(request)
   }
 
@@ -736,8 +759,12 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     canManageCommunity(request, communityId)
   }
 
-  def canViewConformanceCertificateReport(request: RequestWithAttributes[_], communityId: Long):Boolean = {
-    canManageCommunity(request, communityId)
+  def canViewConformanceCertificateReport(request: RequestWithAttributes[_], communityId: Long, snapshotId: Option[Long] = None):Boolean = {
+    if (snapshotId.isDefined) {
+      canManageConformanceSnapshot(request, snapshotId.get)
+    } else {
+      canManageCommunity(request, communityId)
+    }
   }
 
   def canViewOwnConformanceCertificateReport(request: RequestWithAttributes[_], systemId: Long):Boolean = {
@@ -767,8 +794,12 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     setAuthResult(request, ok, "User cannot download this conformance certificate")
   }
 
-  def canViewConformanceStatementReport(request: RequestWithAttributes[_], systemId: String):Boolean = {
-    canViewSystem(request, systemId.toLong)
+  def canViewConformanceStatementReport(request: RequestWithAttributes[_], systemId: String, snapshotId: Option[Long] = None):Boolean = {
+    if (snapshotId.isDefined) {
+      canManageConformanceSnapshot(request, snapshotId.get)
+    } else {
+      canViewSystem(request, systemId.toLong)
+    }
   }
 
   def canManageTestSession(request: RequestWithAttributes[_], sessionId: String): Boolean = {
@@ -827,8 +858,8 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     canViewCommunities(request, communityIds)
   }
 
-  def canViewTestResultsForSystem(request: RequestWithAttributes[_], systemId: Long):Boolean = {
-    canViewSystem(request, systemId)
+  def canViewTestResultsForOrganisation(request: RequestWithAttributes[_], organisationId: Long):Boolean = {
+    canViewOrganisation(request, organisationId)
   }
 
   def canUpdateParameter(request: RequestWithAttributes[_], parameterId: Long):Boolean = {
@@ -1097,7 +1128,7 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
 
   def canCheckAnyUserEmail(request: RequestWithAttributes[_]):Boolean = {
     val userInfo = getUser(getRequestUserId(request))
-    setAuthResult(request, isTestBedAdmin(userInfo) || isCommunityAdmin(userInfo), "User cannot manage any organisation")
+    setAuthResult(request, isTestBedAdmin(userInfo) || isCommunityAdmin(userInfo) || isOrganisationAdmin((userInfo)), "User cannot check verify user data")
   }
 
   def canCheckUserEmail(request: RequestWithAttributes[_], organisationId: Long):Boolean = {
@@ -1163,6 +1194,10 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     checkIsAuthenticated(request)
   }
 
+  def canUpdateOwnOrganisationAndLandingPage(request: RequestWithAttributes[_], landingPageId: Option[Long]):Boolean = {
+    canUpdateOwnOrganisation(request, ignoreExistingTests = false) && (landingPageId.isEmpty || landingPageId.get == -1 || canManageLandingPage(request, landingPageId.get))
+  }
+
   def canUpdateOwnOrganisation(request: RequestWithAttributes[_], ignoreExistingTests: Boolean):Boolean = {
     var ok = false
     val userId = getRequestUserId(request)
@@ -1210,6 +1245,21 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     setAuthResult(request, ok, "User cannot manage the requested community")
   }
 
+  def canManageConformanceSnapshot(request: RequestWithAttributes[_], snapshotId: Long): Boolean = {
+    canManageConformanceSnapshot(request, getUser(getRequestUserId(request)), snapshotId)
+  }
+
+  private def canManageConformanceSnapshot(request: RequestWithAttributes[_], userInfo: User, snapshotId: Long): Boolean = {
+    var ok = false
+    if (isTestBedAdmin(userInfo)) {
+      ok = true
+    } else if (isCommunityAdmin(userInfo) && userInfo.organization.isDefined) {
+      val snapshot = conformanceManager.getConformanceSnapshot(snapshotId)
+      ok = snapshot.community == userInfo.organization.get.community
+    }
+    setAuthResult(request, ok, "User cannot manage the requested conformance snapshot")
+  }
+
   def canManageCommunity(request: RequestWithAttributes[_], communityId: Long): Boolean = {
     canManageCommunity(request, getUser(getRequestUserId(request)), communityId)
   }
@@ -1236,8 +1286,8 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     canManageCommunity(request, communityId)
   }
 
-  def canDeleteObsoleteTestResultsForSystem(request: RequestWithAttributes[_], systemId: Long):Boolean = {
-    canManageSystem(request, getUser(getRequestUserId(request)), systemId)
+  def canDeleteObsoleteTestResultsForOrganisation(request: RequestWithAttributes[_], organisationId: Long):Boolean = {
+    canManageOrganisationBasic(request, organisationId)
   }
 
   def canDeleteTestResults(request: RequestWithAttributes[_], communityId: Option[Long]):Boolean = {
@@ -1252,12 +1302,16 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     checkTestBedAdmin(request)
   }
 
-  def canViewConformanceOverview(request: RequestWithAttributes[_], communityIds: Option[List[Long]]):Boolean = {
+  def canViewConformanceOverview(request: RequestWithAttributes[_], communityIds: Option[List[Long]], snapshotId: Option[Long] = None):Boolean = {
     if (communityIds.isEmpty || (communityIds.isDefined && communityIds.get.size > 1)) {
       checkTestBedAdmin(request)
     } else {
       // Single community. This can also be a community admin.
-      canManageCommunity(request, communityIds.get.head)
+      if (snapshotId.isDefined) {
+        canManageConformanceSnapshot(request, snapshotId.get)
+      } else {
+        canManageCommunity(request, communityIds.get.head)
+      }
     }
   }
 
@@ -1307,13 +1361,17 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     setAuthResult(request, ok, "User doesn't have access to the requested test suite")
   }
 
-  def canViewConformanceStatus(request: RequestWithAttributes[_], actorId: Long, sutId: Long):Boolean = {
+  def canViewConformanceStatus(request: RequestWithAttributes[_], actorId: Long, sutId: Long, snapshotId: Option[Long] = None):Boolean = {
     var ok = false
     val userInfo = getUser(getRequestUserId(request))
     if (isTestBedAdmin(userInfo)) {
       ok = true
     } else {
-      ok = canViewSystemsById(request, userInfo, Some(List(sutId)))
+      if (snapshotId.isDefined) {
+        ok = canManageConformanceSnapshot(request, userInfo, snapshotId.get)
+      } else {
+        ok = canViewSystemsById(request, userInfo, Some(List(sutId)))
+      }
     }
     setAuthResult(request, ok, "User cannot view the requested conformance status")
   }
@@ -1503,7 +1561,7 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
       val userDomain = getVisibleDomainForUser(userInfo)
       if (userDomain.isDefined) {
         if (ids.isDefined && ids.get.nonEmpty) {
-          val specs = conformanceManager.getSpecifications(ids)
+          val specs = specificationManager.getSpecifications(ids)
           ok = specificationsMatchDomain(specs, userDomain.get)
         }
       } else {
@@ -1579,12 +1637,15 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
 
   private def getUser(userId: Long): User = {
     val user = userManager.getUserById(userId)
-    user
+    if (user.isEmpty) {
+      throw UnauthorizedAccessException("User not found")
+    } else {
+      user.get
+    }
   }
 
   private def getUserOrganisation(userId: Long): Option[Organizations] = {
-    val user = getUser(userId)
-    user.organization
+    getUser(userId).organization
   }
 
   private def getCommunityDomain(communityId: Long): Option[Long] = {

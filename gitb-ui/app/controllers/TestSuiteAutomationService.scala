@@ -3,7 +3,7 @@ package controllers
 import config.Configurations
 import controllers.util.{AuthorizedAction, ParameterExtractor, RequestWithAttributes, ResponseConstructor}
 import exceptions.{ErrorCodes, InvalidRequestException}
-import managers.{AuthorizationManager, ConformanceManager, SpecificationManager, TestSuiteManager}
+import managers.{AuthorizationManager, SpecificationManager, TestSuiteManager}
 import models.{Constants, TestCaseDeploymentAction}
 import models.automation.TestSuiteDeployRequest
 import org.apache.commons.io.FileUtils
@@ -19,14 +19,16 @@ import scala.collection.mutable
 import scala.util.Using
 
 @Singleton
-class TestSuiteAutomationService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerComponents, authorizationManager: AuthorizationManager, repositoryUtils: RepositoryUtils, specificationManager: SpecificationManager, testSuiteManager: TestSuiteManager, conformanceManager: ConformanceManager) extends BaseAutomationService(cc) {
+class TestSuiteAutomationService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerComponents, authorizationManager: AuthorizationManager, repositoryUtils: RepositoryUtils, specificationManager: SpecificationManager, testSuiteManager: TestSuiteManager) extends BaseAutomationService(cc) {
 
   private def deployInternal(input: TestSuiteDeployRequest, testSuiteArchive: File, request: Request[AnyContent]) = {
     var response: Result = null
     val communityKey = request.headers.get(Constants.AutomationHeader).get
 
     val ids = specificationManager.getSpecificationInfoByApiKeys(input.specification, communityKey)
-    if (input.specification.isDefined && (ids.isEmpty || ids.get._2.isEmpty)) {
+    if (input.specification.isEmpty && !input.sharedTestSuite) {
+      response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_REQUEST, "A specification API key was expected.")
+    } else if (input.specification.isDefined && (ids.isEmpty || ids.get._2.isEmpty)) {
       response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_REQUEST, "No specification could be identified based on the provided API keys.")
     } else if (input.specification.isEmpty && ids.isEmpty) {
       response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_REQUEST, "No domain could be identified based on the provided API key.")
@@ -60,32 +62,32 @@ class TestSuiteAutomationService @Inject() (authorizedAction: AuthorizedAction, 
       if (request.body.asMultipartFormData.isDefined) {
         // Multipart form request.
         val params = Some(request.body.asMultipartFormData.get.dataParts)
-        val defaultReplaceTestHistory = ParameterExtractor.optionalBodyParameter(params, "replaceTestHistory").getOrElse("false").toBoolean
-        val defaultUpdateSpecification = ParameterExtractor.optionalBodyParameter(params, "updateSpecification").getOrElse("false").toBoolean
+        val defaultReplaceTestHistory = ParameterExtractor.optionalBodyParameter(params, "replaceTestHistory").map(_.toBoolean)
+        val defaultUpdateSpecification = ParameterExtractor.optionalBodyParameter(params, "updateSpecification").map(_.toBoolean)
         val testCaseActions = mutable.HashMap[String, TestCaseDeploymentAction]()
         // Set update specification flags.
         ParameterExtractor.optionalArrayBodyParameter(params, "testCaseWithSpecificationUpdate").getOrElse(List.empty).foreach { identifier =>
           if (StringUtils.isNotBlank(identifier)) {
-            testCaseActions.put(identifier, new TestCaseDeploymentAction(identifier, true, defaultReplaceTestHistory))
+            testCaseActions.put(identifier, new TestCaseDeploymentAction(identifier, Some(true), defaultReplaceTestHistory))
           }
         }
         ParameterExtractor.optionalArrayBodyParameter(params, "testCaseWithoutSpecificationUpdate").getOrElse(List.empty).foreach { identifier =>
           if (StringUtils.isNotBlank(identifier)) {
-            val testCase = testCaseActions.getOrElseUpdate(identifier, new TestCaseDeploymentAction(identifier, false, defaultReplaceTestHistory))
-            testCase.updateDefinition = false
+            val testCase = testCaseActions.getOrElseUpdate(identifier, new TestCaseDeploymentAction(identifier, Some(false), defaultReplaceTestHistory))
+            testCase.updateDefinition = Some(false)
           }
         }
         // Set replace test history flags.
         ParameterExtractor.optionalArrayBodyParameter(params, "testCaseWithTestHistoryReplacement").getOrElse(List.empty).foreach { identifier =>
           if (StringUtils.isNotBlank(identifier)) {
-            val testCase = testCaseActions.getOrElseUpdate(identifier, new TestCaseDeploymentAction(identifier, defaultUpdateSpecification, true))
-            testCase.resetTestHistory = true
+            val testCase = testCaseActions.getOrElseUpdate(identifier, new TestCaseDeploymentAction(identifier, defaultUpdateSpecification, Some(true)))
+            testCase.resetTestHistory = Some(true)
           }
         }
         ParameterExtractor.optionalArrayBodyParameter(params, "testCaseWithoutTestHistoryReplacement").getOrElse(List.empty).foreach { identifier =>
           if (StringUtils.isNotBlank(identifier)) {
-            val testCase = testCaseActions.getOrElseUpdate(identifier, new TestCaseDeploymentAction(identifier, defaultUpdateSpecification, false))
-            testCase.resetTestHistory = false
+            val testCase = testCaseActions.getOrElseUpdate(identifier, new TestCaseDeploymentAction(identifier, defaultUpdateSpecification, Some(false)))
+            testCase.resetTestHistory = Some(false)
           }
         }
         val specification = if (sharedTestSuite) {
@@ -154,7 +156,7 @@ class TestSuiteAutomationService @Inject() (authorizedAction: AuthorizedAction, 
           } else if (!sharedTestSuite && testSuiteInfo.get._3) {
             ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_REQUEST, "The identified test suite is defined as being shared. Removal was skipped.")
           } else {
-            conformanceManager.undeployTestSuiteWrapper(testSuiteInfo.get._1)
+            testSuiteManager.undeployTestSuiteWrapper(testSuiteInfo.get._1)
             ResponseConstructor.constructEmptyResponse
           }
         } else {

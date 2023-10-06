@@ -21,13 +21,16 @@ export class AccountService {
     private dataService: DataService
   ) { }
 
-  updateVendorProfile(vendorFname: string|undefined, vendorSname: string|undefined, processProperties: boolean, properties: CustomProperty[]) {
+  updateVendorProfile(vendorFname: string|undefined, vendorSname: string|undefined, processProperties: boolean, properties: CustomProperty[], landingPageId: number|undefined) {
     let data: any = {}
     if (vendorFname != undefined) {
       data.vendor_fname = vendorFname
     }
     if (vendorSname != undefined) {
       data.vendor_sname = vendorSname
+    }
+    if (landingPageId != undefined) {
+      data.landing_page_id = landingPageId
     }
     let files: FileParam[]|undefined
     if (processProperties) {
@@ -94,13 +97,14 @@ export class AccountService {
     })
   }
 
-  registerUser(userName: string, userEmail: string, userPassword: string) {
+  registerUser(userName: string, userEmail: string, userPassword: string, roleId: number) {
     return this.restService.post<void>({
       path: ROUTES.controllers.AccountService.registerUser().url,
       data: {
         user_name  : userName,
         user_email : userEmail,
-        password   : userPassword
+        password   : userPassword,
+        role_id: roleId
       },
       authenticate: true
     })

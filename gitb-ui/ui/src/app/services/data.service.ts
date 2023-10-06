@@ -1,5 +1,5 @@
 import { Injectable, Renderer2, RendererFactory2 } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, Subject } from 'rxjs';
 import { Constants } from '../common/constants'
 import { ObjectWithId } from '../components/test-filter/object-with-id';
 import { ConformanceTestCase } from '../pages/organisation/conformance-statement/conformance-test-case';
@@ -24,7 +24,11 @@ import { LogLevel } from '../types/log-level';
 import { SpecificationGroup } from '../types/specification-group';
 import { Specification } from '../types/specification';
 import { DomainSpecification } from '../types/domain-specification';
-import { find, sortBy } from 'lodash';
+import { find } from 'lodash';
+import { PageChange } from '../types/page-change';
+import { BadgesInfo } from '../components/manage-badges/badges-info';
+import { BreadcrumbChange } from '../types/breadcrumb-change';
+import { FieldInfo } from '../types/field-info';
 
 @Injectable({
   providedIn: 'root'
@@ -44,9 +48,17 @@ export class DataService {
   public isVendorAdmin = false
   public isCommunityAdmin = false
   public isDomainUser = false
-  public tests?: ConformanceTestCase[]
+  private tests?: ConformanceTestCase[]
   public currentLandingPageContent?: string
   private apiRoot?: string
+
+  public latestPageChange?: PageChange
+  private onBannerChangeSource = new Subject<string>()
+  public onBannerChange$ = this.onBannerChangeSource.asObservable()
+  private onPageChangeSource = new Subject<PageChange>()
+  public onPageChange$ = this.onPageChangeSource.asObservable()
+  private onBreadcrumbChangeSource = new Subject<BreadcrumbChange>()
+  public onBreadcrumbChange$ = this.onBreadcrumbChangeSource.asObservable()
 
   private renderer: Renderer2
   triggerEventToDataTypeMap?: {[key: number]: { [key: number]: boolean } }
@@ -70,6 +82,7 @@ export class DataService {
     this.isDomainUser = false
     this.acceptedEmailAttachmentTypes = undefined
     this.tests = undefined
+    this.latestPageChange = undefined
     this.currentLandingPageContent = undefined
   }
 
@@ -181,6 +194,7 @@ export class DataService {
 
   setVendor(vendor: Organisation) {
     this.vendor = vendor
+    this.currentLandingPageContent = vendor.landingPages?.content
   }
 
   setCommunity(community: Community) {
@@ -229,196 +243,168 @@ export class DataService {
       }
   }
 
+  private getLabelSingular(type: number) {
+    if (this.labels == undefined) {
+      this.setupLabels()
+    }
+    return this.labels![type].singularForm
+  }
+
+  private getLabelLowerSingular(type: number) {
+    if (this.labels == undefined) {
+      this.setupLabels()
+    }
+    if (this.labels![type].fixedCase) {
+      return this.labels![type].singularForm
+    } else {
+      return this.labels![type].singularForm.toLowerCase()
+    }
+  }
+
+  private getLabelPlural(type: number) {
+    if (this.labels == undefined) {
+      this.setupLabels()
+    }
+    return this.labels![type].pluralForm
+  }
+
+  private getLabelLowerPlural(type: number) {
+    if (this.labels == undefined) {
+      this.setupLabels()
+    }
+    if (this.labels![type].fixedCase) {
+      return this.labels![type].pluralForm
+    } else {
+      return this.labels![type].pluralForm.toLowerCase()
+    }
+  }
+
   labelDomain() {
-    return this.labels![Constants.LABEL_TYPE.DOMAIN].singularForm
+    return this.getLabelSingular(Constants.LABEL_TYPE.DOMAIN)
   }
 
   labelDomainLower() {
-    if (this.labels![Constants.LABEL_TYPE.DOMAIN].fixedCase) {
-      return this.labels![Constants.LABEL_TYPE.DOMAIN].singularForm
-    } else {
-      return this.labels![Constants.LABEL_TYPE.DOMAIN].singularForm.toLowerCase()
-    }
+    return this.getLabelLowerSingular(Constants.LABEL_TYPE.DOMAIN)
   }
 
   labelDomains() {
-    return this.labels![Constants.LABEL_TYPE.DOMAIN].pluralForm
+    return this.getLabelPlural(Constants.LABEL_TYPE.DOMAIN)
   }
 
   labelDomainsLower() {
-    if (this.labels![Constants.LABEL_TYPE.DOMAIN].fixedCase) {
-      return this.labels![Constants.LABEL_TYPE.DOMAIN].pluralForm
-    } else {
-      return this.labels![Constants.LABEL_TYPE.DOMAIN].pluralForm.toLowerCase()
-    }
+    return this.getLabelLowerPlural(Constants.LABEL_TYPE.DOMAIN)
   }
 
   labelSpecification() {
-    return this.labels![Constants.LABEL_TYPE.SPECIFICATION].singularForm
+    return this.getLabelSingular(Constants.LABEL_TYPE.SPECIFICATION)
   }
 
   labelSpecificationLower() {
-    if (this.labels![Constants.LABEL_TYPE.SPECIFICATION].fixedCase) {
-      return this.labels![Constants.LABEL_TYPE.SPECIFICATION].singularForm
-    } else {
-      return this.labels![Constants.LABEL_TYPE.SPECIFICATION].singularForm.toLowerCase()
-    }
+    return this.getLabelLowerSingular(Constants.LABEL_TYPE.SPECIFICATION)
   }
 
   labelSpecifications() {
-    return this.labels![Constants.LABEL_TYPE.SPECIFICATION].pluralForm
+    return this.getLabelPlural(Constants.LABEL_TYPE.SPECIFICATION)
   }
 
   labelSpecificationsLower() {
-    if (this.labels![Constants.LABEL_TYPE.SPECIFICATION].fixedCase) {
-      return this.labels![Constants.LABEL_TYPE.SPECIFICATION].pluralForm
-    } else {
-      return this.labels![Constants.LABEL_TYPE.SPECIFICATION].pluralForm.toLowerCase()
-    }
+    return this.getLabelLowerPlural(Constants.LABEL_TYPE.SPECIFICATION)
   }
 
   labelSpecificationGroup() {
-    return this.labels![Constants.LABEL_TYPE.SPECIFICATION_GROUP].singularForm
+    return this.getLabelSingular(Constants.LABEL_TYPE.SPECIFICATION_GROUP)
   }
 
   labelSpecificationGroupLower() {
-    if (this.labels![Constants.LABEL_TYPE.SPECIFICATION_GROUP].fixedCase) {
-      return this.labels![Constants.LABEL_TYPE.SPECIFICATION_GROUP].singularForm
-    } else {
-      return this.labels![Constants.LABEL_TYPE.SPECIFICATION_GROUP].singularForm.toLowerCase()
-    }
+    return this.getLabelLowerSingular(Constants.LABEL_TYPE.SPECIFICATION_GROUP)
   }
 
   labelSpecificationGroups() {
-    return this.labels![Constants.LABEL_TYPE.SPECIFICATION_GROUP].pluralForm
+    return this.getLabelPlural(Constants.LABEL_TYPE.SPECIFICATION_GROUP)
   }
 
   labelSpecificationGroupsLower() {
-    if (this.labels![Constants.LABEL_TYPE.SPECIFICATION_GROUP].fixedCase) {
-      return this.labels![Constants.LABEL_TYPE.SPECIFICATION_GROUP].pluralForm
-    } else {
-      return this.labels![Constants.LABEL_TYPE.SPECIFICATION_GROUP].pluralForm.toLowerCase()
-    }
+    return this.getLabelLowerPlural(Constants.LABEL_TYPE.SPECIFICATION_GROUP)
   }
 
   labelSpecificationInGroup() {
-    return this.labels![Constants.LABEL_TYPE.SPECIFICATION_IN_GROUP].singularForm
+    return this.getLabelSingular(Constants.LABEL_TYPE.SPECIFICATION_IN_GROUP)
   }
 
   labelSpecificationInGroupLower() {
-    if (this.labels![Constants.LABEL_TYPE.SPECIFICATION_IN_GROUP].fixedCase) {
-      return this.labels![Constants.LABEL_TYPE.SPECIFICATION_IN_GROUP].singularForm
-    } else {
-      return this.labels![Constants.LABEL_TYPE.SPECIFICATION_IN_GROUP].singularForm.toLowerCase()
-    }
+    return this.getLabelLowerSingular(Constants.LABEL_TYPE.SPECIFICATION_IN_GROUP)
   }
 
   labelSpecificationInGroups() {
-    return this.labels![Constants.LABEL_TYPE.SPECIFICATION_IN_GROUP].pluralForm
+    return this.getLabelPlural(Constants.LABEL_TYPE.SPECIFICATION_IN_GROUP)
   }
 
   labelSpecificationInGroupsLower() {
-    if (this.labels![Constants.LABEL_TYPE.SPECIFICATION_IN_GROUP].fixedCase) {
-      return this.labels![Constants.LABEL_TYPE.SPECIFICATION_IN_GROUP].pluralForm
-    } else {
-      return this.labels![Constants.LABEL_TYPE.SPECIFICATION_IN_GROUP].pluralForm.toLowerCase()
-    }
+    return this.getLabelLowerPlural(Constants.LABEL_TYPE.SPECIFICATION_IN_GROUP)
   }
 
   labelActor() {
-    return this.labels![Constants.LABEL_TYPE.ACTOR].singularForm
+    return this.getLabelSingular(Constants.LABEL_TYPE.ACTOR)
   }
 
   labelActorLower() {
-    if (this.labels![Constants.LABEL_TYPE.ACTOR].fixedCase) {
-      return this.labels![Constants.LABEL_TYPE.ACTOR].singularForm
-    } else {
-      return this.labels![Constants.LABEL_TYPE.ACTOR].singularForm.toLowerCase()
-    }
+    return this.getLabelLowerSingular(Constants.LABEL_TYPE.ACTOR)
   }
 
   labelActors() {
-    return this.labels![Constants.LABEL_TYPE.ACTOR].pluralForm
+    return this.getLabelPlural(Constants.LABEL_TYPE.ACTOR)
   }
 
   labelActorsLower() {
-    if (this.labels![Constants.LABEL_TYPE.ACTOR].fixedCase) {
-      return this.labels![Constants.LABEL_TYPE.ACTOR].pluralForm
-    } else {
-      return this.labels![Constants.LABEL_TYPE.ACTOR].pluralForm.toLowerCase()
-    }
+    return this.getLabelLowerPlural(Constants.LABEL_TYPE.ACTOR)
   }
 
   labelEndpoint() {
-    return this.labels![Constants.LABEL_TYPE.ENDPOINT].singularForm
+    return this.getLabelSingular(Constants.LABEL_TYPE.ENDPOINT)
   }
 
   labelEndpointLower() {
-    if (this.labels![Constants.LABEL_TYPE.ENDPOINT].fixedCase) {
-      return this.labels![Constants.LABEL_TYPE.ENDPOINT].singularForm
-    } else {
-      return this.labels![Constants.LABEL_TYPE.ENDPOINT].singularForm.toLowerCase()
-    }
+    return this.getLabelLowerSingular(Constants.LABEL_TYPE.ENDPOINT)
   }
 
   labelEndpoints() {
-    return this.labels![Constants.LABEL_TYPE.ENDPOINT].pluralForm
+    return this.getLabelPlural(Constants.LABEL_TYPE.ENDPOINT)
   }
 
   labelEndpointsLower() {
-    if (this.labels![Constants.LABEL_TYPE.ENDPOINT].fixedCase) {
-      return this.labels![Constants.LABEL_TYPE.ENDPOINT].pluralForm
-    } else {
-      return this.labels![Constants.LABEL_TYPE.ENDPOINT].pluralForm.toLowerCase()
-    }
+    return this.getLabelLowerPlural(Constants.LABEL_TYPE.ENDPOINT)
   }
 
   labelOrganisation() {
-    return this.labels![Constants.LABEL_TYPE.ORGANISATION].singularForm
+    return this.getLabelSingular(Constants.LABEL_TYPE.ORGANISATION)
   }
 
   labelOrganisationLower() {
-    if (this.labels![Constants.LABEL_TYPE.ORGANISATION].fixedCase) {
-      return this.labels![Constants.LABEL_TYPE.ORGANISATION].singularForm
-    } else {
-      return this.labels![Constants.LABEL_TYPE.ORGANISATION].singularForm.toLowerCase()
-    }
+    return this.getLabelLowerSingular(Constants.LABEL_TYPE.ORGANISATION)
   }
 
   labelOrganisations() {
-    return this.labels![Constants.LABEL_TYPE.ORGANISATION].pluralForm
+    return this.getLabelPlural(Constants.LABEL_TYPE.ORGANISATION)
   }
 
   labelOrganisationsLower() {
-    if (this.labels![Constants.LABEL_TYPE.ORGANISATION].fixedCase) {
-      return this.labels![Constants.LABEL_TYPE.ORGANISATION].pluralForm
-    } else {
-      return this.labels![Constants.LABEL_TYPE.ORGANISATION].pluralForm.toLowerCase()
-    }
+    return this.getLabelLowerPlural(Constants.LABEL_TYPE.ORGANISATION)
   }
 
   labelSystem() {
-    return this.labels![Constants.LABEL_TYPE.SYSTEM].singularForm
+    return this.getLabelSingular(Constants.LABEL_TYPE.SYSTEM)
   }
 
   labelSystemLower() {
-    if (this.labels![Constants.LABEL_TYPE.SYSTEM].fixedCase) {
-      return this.labels![Constants.LABEL_TYPE.SYSTEM].singularForm
-    } else {
-      return this.labels![Constants.LABEL_TYPE.SYSTEM].singularForm.toLowerCase()
-    }
+    return this.getLabelLowerSingular(Constants.LABEL_TYPE.SYSTEM)
   }
 
   labelSystems() {
-    return this.labels![Constants.LABEL_TYPE.SYSTEM].pluralForm
+    return this.getLabelPlural(Constants.LABEL_TYPE.SYSTEM)
   }
 
   labelSystemsLower() {
-    if (this.labels![Constants.LABEL_TYPE.SYSTEM].fixedCase) {
-      return this.labels![Constants.LABEL_TYPE.SYSTEM].pluralForm
-    } else {
-      return this.labels![Constants.LABEL_TYPE.SYSTEM].pluralForm.toLowerCase()
-    }
+    return this.getLabelLowerPlural(Constants.LABEL_TYPE.SYSTEM)
   }
 
   focus(inputId: string|undefined, delay?: number) {
@@ -445,9 +431,9 @@ export class DataService {
 
   userStatus(ssoStatus?: number): string {
     if (this.configuration.ssoEnabled) {
-      if (ssoStatus == 1) {
+      if (ssoStatus == Constants.USER_SSO_STATUS.NOT_MIGRATED) {
         return 'Not migrated'
-      } else if (ssoStatus == 2) {
+      } else if (ssoStatus == Constants.USER_SSO_STATUS.NOT_LINKED) {
         return 'Inactive'
       } else {
         return 'Active'
@@ -540,10 +526,38 @@ export class DataService {
       result = ".png"
     } else if (mimeType == "image/gif") {
       result = ".gif"
-    } else if (mimeType == "image/gif") {
-      result = ".gif"
     } else if (mimeType == "image/jpeg") {
       result = ".jpeg"
+    } else if (mimeType == "image/svg+xml") {
+      result = ".svg"
+    }
+    return result
+  }
+
+  mimeTypeFromExtension(extension: string|undefined) {
+    let result: string
+    if (extension == ".xml") {
+      result = "application/xml"
+    } else if (extension == ".zip") {
+      result = "application/zip"
+    } else if (extension == ".cer") {
+      result = "application/pkix-cert"
+    } else if (extension == ".pdf") {
+      result = "application/pdf"
+    } else if (extension == ".json") {
+      result = "application/json"
+    } else if (extension == ".txt") {
+      result = "text/plain"
+    } else if (extension == ".png") {
+      result = "image/png"
+    } else if (extension == ".gif") {
+      result = "image/gif"
+    } else if (extension == ".jpeg" || extension == ".jpg") {
+      result = "image/jpeg"
+    } else if (extension == ".svg") {
+      result = "image/svg+xml"
+    } else {
+      result = "application/octet-stream"
     }
     return result
   }
@@ -572,11 +586,11 @@ export class DataService {
   iconForTestResult(result?: string): string {
     let icon: string
     if (result == Constants.TEST_CASE_RESULT.SUCCESS) {
-      icon = "fa testsuite-progress-icon fa-check-circle test-case-success"
+      icon = "fa-solid testsuite-progress-icon fa-check-circle test-case-success"
     } else if (result == Constants.TEST_CASE_RESULT.FAILURE) {
-      icon = "fa testsuite-progress-icon fa-times-circle test-case-error"
+      icon = "fa-solid testsuite-progress-icon fa-times-circle test-case-error"
     } else {
-      icon = "fa testsuite-progress-icon fa-ban test-case-undefined"
+      icon = "fa-solid testsuite-progress-icon fa-ban test-case-undefined"
     }
     return icon
   }
@@ -610,22 +624,21 @@ export class DataService {
     return textStr
   }
 
-  exportAllAsCsv(header: string[], data: any[]) {
+  exportAllAsCsv(fields: FieldInfo[], data: any[]) {
     if (data.length > 0) {
-      let csv = header.toString() + '\n'
-      data.forEach((item, i) => {
+      let csv = ''
+      fields.forEach((item) => {
+        if (csv.length > 0) csv += ','
+        csv += this.asCsvString(item.header)
+      })
+      csv += '\n'
+      data.forEach((dataItem) => {
         let line = ''
-        let idx = 0
-        for (let key in item) {
-          if (idx++ != 0) {
-            line += ','
-          }
-          line += this.asCsvString(item[key])
-        }
-        csv += line
-        if (i < data.length) {
-          csv += '\n'
-        }
+        fields.forEach((fieldItem) => {
+          if (line.length > 0) line += ','
+          line += this.asCsvString(dataItem[fieldItem.field])
+        })
+        csv += line + '\n'
       })
       const blobData = new Blob([csv], {type: 'text/csv'});
       saveAs(blobData, 'export.csv');
@@ -654,11 +667,12 @@ export class DataService {
   }
 
   conformanceStatusForTests(completedCount: number, failedCount: number, undefinedCount: number) {
-    let totalCount = completedCount + failedCount + undefinedCount
-    if (completedCount == totalCount) {
-      return Constants.TEST_CASE_RESULT.SUCCESS
-    } else if (failedCount > 0) {
+    if (failedCount > 0) {
       return Constants.TEST_CASE_RESULT.FAILURE
+    } else if (undefinedCount > 0) {
+      return Constants.TEST_CASE_RESULT.UNDEFINED
+    } else if (completedCount > 0) {
+      return Constants.TEST_CASE_RESULT.SUCCESS
     } else {
       return Constants.TEST_CASE_RESULT.UNDEFINED
     }
@@ -923,8 +937,32 @@ export class DataService {
 		return true
   }
 
+  getTestsToExecute(): ConformanceTestCase[]|undefined {
+    if (localStorage) {
+      const cachedTests = localStorage.getItem('tests')
+      if (cachedTests) {
+        return JSON.parse(cachedTests)
+      } else {
+        return undefined
+      }
+    } else {
+      return this.tests
+    }
+  }
+
 	setTestsToExecute(tests: ConformanceTestCase[]) {
-		this.tests = tests
+    if (localStorage) {
+      localStorage.setItem('tests', JSON.stringify(tests))
+    } else {
+      this.tests = tests
+    }
+  }
+
+  clearTestsToExecute() {
+    if (localStorage) {
+      localStorage.removeItem('tests')
+    }
+    this.tests = undefined
   }
 
   isDataURL(configuration: string) {
@@ -1189,4 +1227,50 @@ export class DataService {
     }
     return specs
   }
+
+  public changePage(changeInfo: PageChange) {
+    this.latestPageChange = changeInfo
+    this.onPageChangeSource.next(changeInfo)
+  }
+
+  public changeBanner(banner: string) {
+    this.onBannerChangeSource.next(banner)
+  }
+
+  public breadcrumbUpdate(info: BreadcrumbChange) {
+    this.onBreadcrumbChangeSource.next(info)
+  }
+
+  parametersForBadgeUpdate(badges: BadgesInfo, params:any): FileParam[]|undefined {
+    let files: FileParam[]|undefined
+    params.success_badge_enabled = badges && badges.enabled && badges.success.enabled
+    params.other_badge_enabled = badges && badges.enabled && badges.other.enabled
+    params.failure_badge_enabled = badges && badges.enabled && badges.failureBadgeActive && badges.failure.enabled
+    if (badges && badges.enabled) {
+      files = []
+      if (badges.success.enabled && badges.success.file && badges.success.file.file) {
+        files.push({ param: 'success_badge', data: badges.success.file.file})
+      }
+      if (badges.other.enabled && badges.other.file && badges.other.file.file) {
+        files.push({ param: 'other_badge', data: badges.other.file.file})
+      }
+      if (badges.failureBadgeActive && badges.failure.enabled && badges.failure.file && badges.failure.file.file) {
+        files.push({ param: 'failure_badge', data: badges.failure.file.file})
+      }
+    }
+    return files
+  }
+
+  userDisplayName(user: User):string {
+    if (this.configuration.ssoEnabled) {
+      if (user.ssoStatus == Constants.USER_SSO_STATUS.LINKED || user.ssoStatus == Constants.USER_SSO_STATUS.NOT_MIGRATED) {
+        return user.name!
+      } else {
+        return user.email!
+      }
+    } else {
+      return user.name!
+    }
+  }
+
 }

@@ -1,40 +1,79 @@
 <div class="page conformance">
-	<div class="panel panel-default">
+	<div class="panel panel-default no-bottom-margin">
 		<div class="panel-heading">
 			<h4 class="title">Conformance statements</h4>
 			<div class="btn-toolbar" *ngIf="showCreate">
-				<button (click)="routingService.toCreateConformanceStatement(organisationId, systemId)" class="btn btn-default">Create conformance statements</button>
+				<button (click)="createStatement()" [disabled]="system == undefined" class="btn btn-default">Create statements</button>
 			</div>
 		</div>
-		<div class="table-container">
-			<table class="table table-directive">
-				<thead>
-					<tr>
-						<th *ngIf="showDomain">{{dataService.labelDomain()}}</th>
-						<th>{{dataService.labelSpecification()}}</th>
-						<th>{{dataService.labelActor()}}</th>
-						<th class="th-update">Last update</th>
-						<th class="th-min-centered">Test results</th>
-						<th class="th-min-centered">Status</th>
-					</tr>
-				</thead>
-				<tbody>
-					<tr *ngIf="dataStatus && dataStatus.status != Constants.STATUS.FINISHED">
-						<td [attr.colspan]="columnCount" class="td-data-loading"><app-pending-block></app-pending-block></td>
-					</tr>
-					<tr *ngIf="dataStatus && dataStatus.status == Constants.STATUS.FINISHED && (!conformanceStatementRepresentations || conformanceStatementRepresentations.length == 0)">
-						<td [attr.colspan]="columnCount" class="td-no-data"><span>No statements found</span></td>
-					</tr>
-					<tr *ngFor="let statement of conformanceStatementRepresentations" class="selectable" (click)="onConformanceStatementSelect(statement)">
-						<td *ngIf="showDomain">{{statement.domainFull}}</td>
-						<td>{{statement.specificationFull}}</td>
-						<td>{{statement.actorFull}}</td>
-						<td class="td-update">{{statement.updateTime}}</td>
-						<td class="td-min-centered"><app-test-status-icons [counters]="statement.counters!"></app-test-status-icons></td>
-						<td class="td-min-centered"><span><i containerClass="shortTooltip" [tooltip]="dataService.tooltipForTestResult(statement.status)" [ngClass]="dataService.iconForTestResult(statement.status)"></i></span></td>
-					</tr>
-				</tbody>
-			</table>
+		<div class="panel-body">
+			<ng-container [ngSwitch]="systemStatus.status">
+				<div class="pending-container" *ngSwitchDefault>
+					<div class="pending-icon"><app-pending-block [pending]="true"></app-pending-block></div>
+					<div class="pending-message">Loading {{dataService.labelSystemsLower()}}...</div>
+				</div>
+				<ng-container *ngSwitchCase="Constants.STATUS.FINISHED" [ngSwitch]="systems.length == 0">
+					<div class="bg-info div-rounded div-padded" *ngSwitchCase="true" [ngSwitch]="showCreateSystem">
+						<span *ngSwitchCase="true">No {{dataService.labelSystemsLower()}} defined. You must <a href (click)="toCreateSystem();$event.preventDefault()">create a system</a> before defining its conformance statements.</span>
+						<span *ngSwitchDefault>No {{dataService.labelSystemsLower()}} defined. One must be created by an administrator before conformance statements can be defined.</span>
+					</div>
+					<ng-container *ngSwitchDefault>
+						<div class="controls">
+							<div class="system-filter" [class.with-separation]="(statements.length > 0) || showCreate">
+								<div class="system-filter-label">
+									{{dataService.labelSystem()}}
+								</div>
+								<div class="system-filter-value" [ngSwitch]="systems.length == 1">
+									<input *ngSwitchCase="true" type="text" name="system" [(ngModel)]="system!.fname" readonly="readonly" class="form-control"/>
+									<select *ngSwitchDefault name="system" [(ngModel)]="system" (change)="systemChanged()" class="form-control">
+										<option *ngFor="let system of systems" [ngValue]="system">{{system.fname}}</option>
+									</select>
+								</div>
+							</div>
+							<ng-container *ngIf="statements.length > 0">
+								<div class="text-filter">
+									<app-text-filter name="statementFilter" [width]="350" [placeholder]="'Search conformance statements...'" [(ngModel)]="statementFilter" (apply)="filterStatements()"></app-text-filter>
+								</div>
+								<div class="status-filter">
+									<app-checkbox-option-panel 
+										label="Show statements..." 
+										[options]="statusOptions" 
+										(updated)="filterByStatus($event)"></app-checkbox-option-panel>
+								</div>
+							</ng-container>
+						</div>
+						<ng-container [ngSwitch]="system != undefined">
+							<ng-container *ngSwitchCase="true" [ngSwitch]="dataStatus.status">
+								<div class="pending-container" *ngSwitchDefault>
+									<div class="pending-icon"><app-pending-block [pending]="true"></app-pending-block></div>
+									<div class="pending-message">Loading conformance statements for {{system!.fname}}...</div>
+								</div>
+								<ng-container *ngSwitchCase="Constants.STATUS.FINISHED" [ngSwitch]="statements.length == 0">
+									<div class="bg-info div-rounded div-padded" *ngSwitchCase="true">
+										<span>No conformance statements defined.</span>
+									</div>
+									<ng-container *ngSwitchDefault>
+										<div class="statement-container" [ngSwitch]="visibleItemCount">
+											<div *ngSwitchCase="0" class="bg-info div-rounded div-padded">
+												<span>No conformance statements match your search criteria.</span>
+											</div>
+											<app-conformance-statement-items-display *ngSwitchDefault [items]="statements" [animated]="animated" [withCheck]="false" [withResults]="true" (selectionChanged)="onStatementSelect($event)"></app-conformance-statement-items-display>
+										</div>
+									</ng-container>
+								</ng-container>
+							</ng-container>
+							<div class="bg-info div-rounded div-padded" *ngSwitchDefault>
+								<span>Select a {{dataService.labelSystemLower()}} to view its conformance statements.</span>
+							</div>
+						</ng-container>
+					</ng-container>
+				</ng-container>
+			</ng-container>
+		</div>
+		<div class="panel-footer" *ngIf="showBack">
+			<div class="btn-toolbar">
+				<button type="button" class="btn btn-default" (click)="back()">Back</button>
+			</div>
 		</div>
 	</div>
 </div>

@@ -16,10 +16,10 @@ export class ErrorTemplateResolver implements Resolve<any> {
 
     resolve(route: ActivatedRouteSnapshot, state: RouterStateSnapshot) {
         return new Observable<ErrorTemplate|undefined>((subscriber) => {
-            if (route.queryParamMap.has('copyDefault')) {
+            if (route.queryParamMap.has(Constants.NAVIGATION_QUERY_PARAM.COPY_DEFAULT)) {
                 this.handleResult(subscriber, this.errorTemplateService.getCommunityDefaultErrorTemplate(Constants.DEFAULT_COMMUNITY_ID))
-            } else if (route.queryParamMap.has('copy')) {
-                this.handleResult(subscriber, this.errorTemplateService.getErrorTemplateById(Number(route.queryParamMap.get('copy'))))
+            } else if (route.queryParamMap.has(Constants.NAVIGATION_QUERY_PARAM.COPY)) {
+                this.handleResult(subscriber, this.errorTemplateService.getErrorTemplateById(Number(route.queryParamMap.get(Constants.NAVIGATION_QUERY_PARAM.COPY))))
     
             } else {
                 subscriber.next()

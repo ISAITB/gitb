@@ -51,12 +51,16 @@ export class AuthService {
     })
   }
 
-  checkEmailOfOrganisationMember(email: string) {
+  checkEmailOfOrganisationMember(email: string, roleId?: number) {
+    const params: any = {
+      email: email,
+    }
+    if (roleId != undefined) {
+      params.role_id = roleId
+    }
     return this.restService.get<{available: boolean}>({
       path: ROUTES.controllers.AuthenticationService.checkEmailOfOrganisationMember().url,
-      params: {
-        email: email
-      }
+      params: params
    })
   }
 

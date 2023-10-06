@@ -85,10 +85,7 @@ class LandingPageService @Inject() (authorizedAction: AuthorizedAction, cc: Cont
   def getCommunityDefaultLandingPage() = authorizedAction { request =>
     val communityId = ParameterExtractor.requiredQueryParameter(request, Parameters.COMMUNITY_ID).toLong
     authorizationManager.canViewDefaultLandingPage(request, communityId)
-    var landingPage = landingPageManager.getCommunityDefaultLandingPage(communityId)
-    if (landingPage.isEmpty) {
-      landingPage = landingPageManager.getCommunityDefaultLandingPage(Constants.DefaultCommunityId)
-    }
+    val landingPage = landingPageManager.getCommunityDefaultLandingPage(communityId)
     val json: String = JsonUtil.serializeLandingPage(landingPage)
     ResponseConstructor.constructJsonResponse(json)
   }

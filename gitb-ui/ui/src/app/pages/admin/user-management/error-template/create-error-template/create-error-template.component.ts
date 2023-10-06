@@ -12,6 +12,7 @@ import { ErrorTemplate } from 'src/app/types/error-template';
 import { CommunityTab } from '../../community/community-details/community-tab.enum';
 import { KeyValue } from 'src/app/types/key-value';
 import { Constants } from 'src/app/common/constants';
+import { SystemAdministrationTab } from '../../../system-administration/system-administration-tab.enum';
 
 @Component({
   selector: 'app-create-error-template',
@@ -28,6 +29,7 @@ export class CreateErrorTemplateComponent extends BaseComponent implements OnIni
   placeholders: KeyValue[] = []
   savePending = false
   showContent = true
+  tooltipForDefaultCheck!: string
 
   constructor(
     private routingService: RoutingService,
@@ -44,7 +46,13 @@ export class CreateErrorTemplateComponent extends BaseComponent implements OnIni
   }
 
   ngOnInit(): void {
-    this.communityId = Number(this.route.snapshot.paramMap.get('community_id'))
+    if (this.route.snapshot.paramMap.has(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID)) {
+      this.communityId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID))
+      this.tooltipForDefaultCheck = 'Check this to make this error template the default one assumed for the community\'s '+this.dataService.labelOrganisationsLower()+'.'
+    } else {
+      this.communityId = Constants.DEFAULT_COMMUNITY_ID
+      this.tooltipForDefaultCheck = 'Check this to make this error template the default one assumed for all communities.'
+    }
     this.placeholders = [
       { key: Constants.PLACEHOLDER__ERROR_DESCRIPTION, value: "The error message text (a text value that may be empty)." },
       { key: Constants.PLACEHOLDER__ERROR_ID, value: "The error identifier (used to trace the error in the logs)." }
@@ -64,7 +72,7 @@ export class CreateErrorTemplateComponent extends BaseComponent implements OnIni
   createErrorTemplate() {
     this.clearAlerts()
     if (this.template.default) {
-      this.confirmationDialogService.confirmed("Confirm default", "You are about to change the default error template. Are you sure?", "Yes", "No")
+      this.confirmationDialogService.confirmed("Confirm default", "You are about to change the default error template. Are you sure?", "Change", "Cancel")
       .subscribe(() => {
         this.doCreate()
       })
@@ -89,7 +97,11 @@ export class CreateErrorTemplateComponent extends BaseComponent implements OnIni
   }
 
   cancelCreateErrorTemplate() {
-    this.routingService.toCommunity(this.communityId, CommunityTab.errorTemplates)
+    if (this.communityId == Constants.DEFAULT_COMMUNITY_ID) {
+      this.routingService.toSystemAdministration(SystemAdministrationTab.errorTemplates)
+    } else {
+      this.routingService.toCommunity(this.communityId, CommunityTab.errorTemplates)
+    }
   }
 
 preview() {

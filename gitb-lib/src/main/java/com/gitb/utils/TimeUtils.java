@@ -18,7 +18,7 @@ public class TimeUtils {
         return format;
     }
 
-    private static final SimpleDateFormat getDateFormat() {
+    private static SimpleDateFormat getDateFormat() {
         return new SimpleDateFormat(FORMAT_DATE);
     }
 

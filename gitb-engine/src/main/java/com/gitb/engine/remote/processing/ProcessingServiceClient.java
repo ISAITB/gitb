@@ -2,8 +2,8 @@ package com.gitb.engine.remote.processing;
 
 import com.gitb.ps.ProcessingServiceService;
 
-import javax.jws.HandlerChain;
-import javax.xml.ws.WebServiceClient;
+import jakarta.jws.HandlerChain;
+import jakarta.xml.ws.WebServiceClient;
 import java.net.URL;
 
 /**

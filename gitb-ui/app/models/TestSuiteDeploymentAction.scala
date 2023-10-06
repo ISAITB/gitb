@@ -20,7 +20,7 @@ class TestSuiteDeploymentAction(
       if (testCaseUpdates.isDefined) {
         val tempMap = new mutable.HashMap[String, (Boolean, Boolean)]()
         testCaseUpdates.get.foreach { entry =>
-          tempMap += (entry.identifier -> (entry.updateDefinition, entry.resetTestHistory))
+          tempMap += (entry.identifier -> (entry.updateDefinition.getOrElse(false), entry.resetTestHistory.getOrElse(false)))
         }
         testCaseMap = Some(tempMap.toMap)
       } else {

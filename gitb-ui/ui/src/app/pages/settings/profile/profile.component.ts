@@ -9,6 +9,7 @@ import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.
 import { DataService } from 'src/app/services/data.service';
 import { PopupService } from 'src/app/services/popup.service';
 import { BaseComponent } from '../../base-component.component';
+import { RoutingService } from 'src/app/services/routing.service';
 
 @Component({
   selector: 'app-profile',
@@ -29,7 +30,8 @@ export class ProfileComponent extends BaseComponent implements OnInit, AfterView
     private accountService: AccountService,
     private cookieService: CookieService,
     private popupService: PopupService,
-    private modalService: BsModalService
+    private modalService: BsModalService,
+    private routingService: RoutingService
   ) {
     super()
   }
@@ -38,6 +40,7 @@ export class ProfileComponent extends BaseComponent implements OnInit, AfterView
     this.data.name = this.dataService.user!.name
     this.data!.email = this.dataService.user!.email
 		this.data!.role = Constants.USER_ROLE_LABEL[this.dataService.user!.role!]
+    this.routingService.profileBreadcrumbs()
   }
 
   ngAfterViewInit(): void {
@@ -64,7 +67,7 @@ export class ProfileComponent extends BaseComponent implements OnInit, AfterView
   }
 
 	linkOtherRole() {
-    this.confirmationDialogService.confirmed("Confirmation", "Before linking another role to your account your current session will be closed. Are you sure you want to proceed?", "Yes", "No")
+    this.confirmationDialogService.confirmed("Confirmation", "Before linking another role to your account your current session will be closed. Are you sure you want to proceed?", "Disconnect", "Cancel")
       .subscribe(() => {
         this.cookieService.set(Constants.LOGIN_OPTION_COOKIE_KEY, Constants.LOGIN_OPTION.LINK_ACCOUNT)
         this.authProviderService.signalLogout({full: false, keepLoginOption: true})
@@ -72,7 +75,7 @@ export class ProfileComponent extends BaseComponent implements OnInit, AfterView
   }
 
 	register() {
-		this.confirmationDialogService.confirmed("Confirmation", "Before registering another "+this.dataService.labelOrganisationLower()+" your current session will be closed. Are you sure you want to proceed?", "Yes", "No")
+		this.confirmationDialogService.confirmed("Confirmation", "Before registering another "+this.dataService.labelOrganisationLower()+" your current session will be closed. Are you sure you want to proceed?", "Disconnect", "Cancel")
 		.subscribe(() => {
       this.cookieService.set(Constants.LOGIN_OPTION_COOKIE_KEY, Constants.LOGIN_OPTION.REGISTER)
       this.authProviderService.signalLogout({full: false, keepLoginOption: true})

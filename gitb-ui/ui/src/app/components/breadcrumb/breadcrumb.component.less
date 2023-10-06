@@ -1,0 +1,28 @@
+@import '../../../styles/less/_common.less';
+
+.breacrumbContainer {
+    background-color: @gray-light-1;
+    display: flex;
+    align-items: center;
+    font-size: small;
+    border-bottom: 1px solid @gray-dark-1;
+    height: @breadcrumb-height * 1px;
+    .breacrumbItemSeparator {
+        margin: 0px 3px;
+    }
+    .breacrumbItem {
+        padding: 1px 5px;
+        margin: 0px 2px;
+        border-radius: 4px;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        overflow: hidden;        
+        cursor: pointer;
+        &:hover {
+            background-color: @gray-light;
+        }
+        &:first-child {
+            margin-left: 5px;
+        }
+    }
+}

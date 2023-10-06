@@ -53,13 +53,13 @@ export class CodeEditorModalComponent extends BaseCodeEditorModalComponent imple
         let indicatorIcon = ''
         let indicatorClass = ''
         if (indicator.type == 'info') {
-          indicatorIcon = '<i class="fa fa-info-circle"></i>'
+          indicatorIcon = '<i class="fa-solid fa-info-circle"></i>'
           indicatorClass = 'info-indicator-editor-widget'
         } else if (indicator.type == 'warning') {
-          indicatorIcon = '<i class="fa fa-warning"></i>'
+          indicatorIcon = '<i class="fa-solid fa-warning"></i>'
           indicatorClass = 'warning-indicator-editor-widget'
         } else if (indicator.type == 'error') {
-            indicatorIcon = '<i class="fa fa-times-circle"></i>'
+            indicatorIcon = '<i class="fa-solid fa-times-circle"></i>'
             indicatorClass = 'error-indicator-editor-widget'
         }
         let widget = document.createElement('div')

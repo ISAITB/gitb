@@ -2,7 +2,6 @@ package managers
 
 import javax.inject.{Inject, Singleton}
 import models._
-import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
 
@@ -16,8 +15,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 class LandingPageManager @Inject() (dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
-
-  def logger = LoggerFactory.getLogger("landingPageManager")
 
   /**
    * Gets all landing pages for the specified community
@@ -63,9 +60,12 @@ class LandingPageManager @Inject() (dbConfigProvider: DatabaseConfigProvider) ex
     * Gets landing page with specified id
     */
   def getLandingPageById(pageId: Long): LandingPage = {
-    val p = exec(PersistenceSchema.landingPages.filter(_.id === pageId).result.head)
-    val page = new LandingPage(p)
-    page
+    val p = exec(getLandingPageByIdInternal(pageId))
+    new LandingPage(p.get)
+  }
+
+  def getLandingPageByIdInternal(pageId: Long): DBIO[Option[LandingPages]] = {
+    PersistenceSchema.landingPages.filter(_.id === pageId).result.headOption
   }
 
   def getCommunityId(pageId: Long): Long = {
@@ -143,12 +143,21 @@ class LandingPageManager @Inject() (dbConfigProvider: DatabaseConfigProvider) ex
     * Gets the default landing page for given community
     */
   def getCommunityDefaultLandingPage(communityId: Long): Option[LandingPage] = {
-    val p = exec(PersistenceSchema.landingPages.filter(_.community === communityId).filter(_.default === true).result.headOption)
-    val defaultPage = p match {
-      case Some(p) => Some(new LandingPage(p))
-      case None => None
-    }
-    defaultPage
+    exec(getCommunityDefaultLandingPageInternal(communityId)).map(x => new LandingPage(x))
+  }
+
+  def getCommunityDefaultLandingPageInternal(communityId: Long): DBIO[Option[LandingPages]] = {
+    for {
+      communityLandingPage <- PersistenceSchema.landingPages.filter(_.community === communityId).filter(_.default === true).result.headOption
+      landingPageToUse <- {
+        if (communityLandingPage.isDefined) {
+          DBIO.successful(communityLandingPage)
+        } else {
+          // Test Bed default landing page.
+          PersistenceSchema.landingPages.filter(_.community === Constants.DefaultCommunityId).filter(_.default === true).result.headOption
+        }
+      }
+    } yield landingPageToUse
   }
 
   def deleteLandingPageByCommunity(communityId: Long) = {

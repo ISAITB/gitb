@@ -34,18 +34,41 @@ export class CreateActorComponent extends BaseComponent implements OnInit, After
   }
 
   ngOnInit(): void {
-    this.domainId = Number(this.route.snapshot.paramMap.get('id'))
-    this.specificationId = Number(this.route.snapshot.paramMap.get('spec_id'))
+    this.domainId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID))
+    this.specificationId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.SPECIFICATION_ID))
+    this.actor.badges = {
+      enabled: false,
+      initiallyEnabled: false,
+      failureBadgeActive: false,
+      success: { enabled: false },
+      other: { enabled: false },
+      failure: { enabled: false }
+    }    
   }
 
 	saveDisabled() {
-    return !(this.textProvided(this.actor?.actorId) && this.textProvided(this.actor?.name) && this.numberOrEmpty(this.actor?.displayOrder))
+    return !(
+      this.textProvided(this.actor?.actorId) && 
+      this.textProvided(this.actor?.name) && 
+      this.numberOrEmpty(this.actor?.displayOrder) &&
+      (
+        !this.actor.badges!.enabled || 
+        (
+          this.actor.badges!.success.enabled && 
+          this.actor.badges!.other.enabled && 
+          (
+            !this.actor.badges!.failureBadgeActive ||
+            this.actor.badges!.failure.enabled
+          )
+        )
+      )
+    )
   }
 
 	createActor() {
 		if (!this.saveDisabled()) {
       this.savePending = true
-      this.conformanceService.createActor(this.actor.actorId!, this.actor.name!, this.actor.description, this.actor.default, this.actor.hidden, this.actor.displayOrder, this.domainId, this.specificationId)
+      this.conformanceService.createActor(this.actor.actorId!, this.actor.name!, this.actor.description, this.actor.default, this.actor.hidden, this.actor.displayOrder, this.domainId, this.specificationId, this.actor.badges!)
       .subscribe(() => {
         this.cancel()
         this.popupService.success(this.dataService.labelActor()+' created.')

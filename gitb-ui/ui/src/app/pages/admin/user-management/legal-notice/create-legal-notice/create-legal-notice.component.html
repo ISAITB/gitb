@@ -1,5 +1,5 @@
 <div class="page users create">
-    <div class="panel panel-default">
+    <div class="panel panel-default no-bottom-margin">
         <div class="panel-heading">
             <h4 class="title">Create legal notice</h4>
         </div>
@@ -25,7 +25,7 @@
                         <label class="col-sm-3 control-label" for="default">Default:</label>
                         <div class="col-sm-8">
                             <input id="default" name="default" [(ngModel)]="notice.default" type="checkbox" class="form-check">
-                            <app-tooltip [inline]="true" [tbTooltip]="'Check this to make this legal notice the default one assumed for the community\'s '+dataService.labelOrganisationsLower()+'.'"></app-tooltip>
+                            <app-tooltip [inline]="true" [tbTooltip]="tooltipForDefaultCheck"></app-tooltip>
                         </div>
                     </div>
                 </div>
@@ -39,6 +39,9 @@
 				<div [collapse]="!showContent" [isAnimated]="true">
 					<div class="row">
                         <div class="col-sm-12">
+							<div class="div-padded-bottom" *ngIf="dataService.isCommunityAdmin">
+								<app-placeholder-selector [resources]="true" [community]="communityId"></app-placeholder-selector>
+							</div>
                             <app-editor id="content" name="content" [(ngModel)]="notice.content"></app-editor>
 						</div>
                     </div>
@@ -47,6 +50,7 @@
             <div class="panel-footer">
                 <div class="btn-toolbar">
                     <button class="btn btn-default" type="submit" (click)="createLegalNotice()" [disable]="saveDisabled()" [pending]="savePending">Save</button>
+                    <button class="btn btn-default" type="button" (click)="preview()" [disabled]="!textProvided(notice.content)">Preview</button>
                     <button class="btn btn-default" type="button" (click)="cancelCreateLegalNotice()">Cancel</button>
                 </div>
             </div>

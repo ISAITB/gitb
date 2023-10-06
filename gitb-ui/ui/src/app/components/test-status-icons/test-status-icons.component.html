@@ -1,8 +1,33 @@
-<ng-template #popTemplate><div class="status-icon-tooltip" [innerHtml]="tooltipText"></div></ng-template>
-<div class="overallContainer" [class.centerAligned]="centerAligned">
-    <div class="statusRootContainer" [tooltip]="popTemplate">
-        <div class="statusContainer"><div class="statusCount">{{ counters.completed }}</div><div class="statusIcon"><span><i [class]="successIcon"></i></span></div></div>
-        <div class="statusContainer"><div class="statusCount">{{ counters.failed }}</div><div class="statusIcon"><span><i [class]="failedIcon"></i></span></div></div>
-        <div class="statusContainer"><div class="statusCount">{{ counters.other }}</div><div class="statusIcon"><span><i [class]="otherIcon"></i></span></div></div>
+<div class="rootContainer" (click)="$event.stopPropagation()">
+    <div class="statusRootContainer" #containerRoot>
+        <div class="statusContainerGroup" [tooltip]="counters.completed + ' passed, '+counters.failed+' failed, '+counters.other+' incomplete required tests ('+(counters.completed+counters.failed+counters.other)+' in total)'">
+            <div class="statusContainer"><div class="statusCount">{{ counters.completed }}</div><div class="statusIcon"><span><i [class]="successIcon"></i></span></div></div>
+            <div class="statusContainer"><div class="statusCount">{{ counters.failed }}</div><div class="statusIcon"><span><i [class]="failedIcon"></i></span></div></div>
+            <div class="statusContainer"><div class="statusCount">{{ counters.other }}</div><div class="statusIcon"><span><i [class]="otherIcon"></i></span></div></div>
+        </div>
+        <div *ngIf="hasOptional" class="expand-icon" (click)="expanded = true" tooltip="Expand" containerClass="shortTooltip"><span><i class="fa-solid fa-plus-circle"></i></span></div>
+    </div>
+    <div *ngIf="expanded" class="popup-panel" [class.asLine]="asLine" [class.defaultPopup]="!asLine" (click)="$event.stopPropagation()">
+        <div class="popup-panel-container">
+            <div class="status-containers">
+                <div class="status-container">
+                    <div class="status-title">Required</div>
+                    <div class="statusRootContainer" [tooltip]="counters.completed + ' passed, '+counters.failed+' failed, '+counters.other+' incomplete required tests ('+(counters.completed+counters.failed+counters.other)+' in total)'">
+                        <div class="statusContainer"><div class="statusCount">{{ counters.completed }}</div><div class="statusIcon"><span><i [class]="successIcon"></i></span></div></div>
+                        <div class="statusContainer"><div class="statusCount">{{ counters.failed }}</div><div class="statusIcon"><span><i [class]="failedIcon"></i></span></div></div>
+                        <div class="statusContainer"><div class="statusCount">{{ counters.other }}</div><div class="statusIcon"><span><i [class]="otherIcon"></i></span></div></div>
+                    </div>
+                </div>
+                <div class="status-container optional">
+                    <div class="status-title optional">Optional</div>
+                    <div class="statusRootContainer" [tooltip]="counters.completedOptional + ' passed, '+counters.failedOptional+' failed, '+counters.otherOptional+' incomplete optional tests ('+(counters.completedOptional+counters.failedOptional+counters.otherOptional)+' in total)'">
+                        <div class="statusContainer"><div class="statusCount">{{ counters.completedOptional }}</div><div class="statusIcon"><span><i [class]="successIcon"></i></span></div></div>
+                        <div class="statusContainer"><div class="statusCount">{{ counters.failedOptional }}</div><div class="statusIcon"><span><i [class]="failedIcon"></i></span></div></div>
+                        <div class="statusContainer"><div class="statusCount">{{ counters.otherOptional }}</div><div class="statusIcon"><span><i [class]="otherIcon"></i></span></div></div>
+                    </div>
+                </div>
+            </div>
+            <div class="close-container" (click)="expanded = false" tooltip="Close" containerClass="shortTooltip"><span><i class="fa-solid fa-times"></i></span></div>
+        </div>
     </div>
 </div>

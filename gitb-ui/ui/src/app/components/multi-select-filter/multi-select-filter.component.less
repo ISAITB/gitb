@@ -11,6 +11,7 @@
     display: flex;
     & :first-child {
         flex-grow: 1;
+        color: @gray-button-text;
     }
 }
 .filterForm {
@@ -53,7 +54,7 @@
     .itemsContainer {
         border-top: 1px solid @gray-light-2;
         .loadingDiv {
-            padding: 4px 5px;
+            padding: 5px 5px;
         }
         .itemContainer {
             padding-top: 3px;
@@ -73,4 +74,8 @@
             max-height: 300px;
         }
     }
+}
+.noItems {
+    padding: 5px 10px;
+    opacity: 0.5;
 }

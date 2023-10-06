@@ -1,6 +1,7 @@
 package managers
 
 import config.Configurations
+
 import javax.inject.{Inject, Singleton}
 import models.Enums.UserRole
 import models.Enums.UserRole._
@@ -49,8 +50,11 @@ class UserManager @Inject() (accountManager: AccountManager, organizationManager
   /**
    * Gets all users of specified organization
    */
-  def getUsersByOrganization(orgId: Long): List[Users] = {
-    val users = exec(PersistenceSchema.users.filter(_.organization === orgId).filter(x => x.role === UserRole.VendorUser.id.toShort || x.role === UserRole.VendorAdmin.id.toShort)
+  def getUsersByOrganization(orgId: Long, role: Option[UserRole] = None): List[Users] = {
+    val users = exec(PersistenceSchema.users
+      .filter(_.organization === orgId)
+      .filterOpt(role)((q, r) => q.role === r.id.toShort)
+      .filterIf(role.isEmpty)(_.role inSet Set(UserRole.VendorUser.id.toShort, UserRole.VendorAdmin.id.toShort))
       .sortBy(_.name.asc)
       .result.map(_.toList))
     users
@@ -63,11 +67,38 @@ class UserManager @Inject() (accountManager: AccountManager, organizationManager
   /**
    * Gets user with specified id
    */
-  def getUserById(userId: Long): User = {
-    val u = exec(PersistenceSchema.users.filter(_.id === userId).result.head)
-    val o = exec(PersistenceSchema.organizations.filter(_.id === u.organization).result.head)
-    val user = new User(u, o)
-    user
+  def getUserById(userId: Long): Option[User] = {
+    val result = exec(for {
+      user <- PersistenceSchema.users.filter(_.id === userId).result.headOption
+      organisation <- if (user.isDefined) {
+        PersistenceSchema.organizations.filter(_.id === user.get.organization).result.headOption
+      } else {
+        DBIO.successful(None)
+      }
+    } yield (user, organisation))
+    if (result._1.isDefined && result._2.isDefined) {
+      Some(new User(result._1.get, result._2.get))
+    } else {
+      None
+    }
+  }
+
+  /**
+   * Gets user with specified id in the same organisation as the given user
+   */
+  def getUserByIdInSameOrganisationAsUser(userId: Long, referenceUserId: Long): Option[User] = {
+    exec(for {
+      referenceOrganisationId <- PersistenceSchema.users.filter(_.id === referenceUserId).map(_.organization).result.headOption
+      user <- if (referenceOrganisationId.isDefined) {
+        PersistenceSchema.users
+          .filter(_.organization === referenceOrganisationId.get)
+          .filter(_.id === userId)
+          .result
+          .headOption
+      } else {
+        DBIO.successful(None)
+      }
+    } yield user).map(x => new User(x))
   }
 
   /**
@@ -79,7 +110,7 @@ class UserManager @Inject() (accountManager: AccountManager, organizationManager
       var action: DBIO[_] = null
       if (password.isDefined) {
         val q = for {u <- PersistenceSchema.users if u.id === userId} yield (u.name, u.password, u.onetimePassword)
-        action = q.update(name, BCrypt.hashpw(password.get, BCrypt.gensalt()), true)
+        action = q.update(name, BCrypt.hashpw(password.get.trim, BCrypt.gensalt()), true)
       } else {
         val q = for {u <- PersistenceSchema.users if u.id === userId} yield (u.name)
         action = q.update(name)
@@ -97,7 +128,7 @@ class UserManager @Inject() (accountManager: AccountManager, organizationManager
       var action: DBIO[_] = null
       if (password.isDefined) {
         val q = for {u <- PersistenceSchema.users if u.id === userId} yield (u.name, u.password, u.onetimePassword)
-        action = q.update(name, BCrypt.hashpw(password.get, BCrypt.gensalt()), true)
+        action = q.update(name, BCrypt.hashpw(password.get.trim, BCrypt.gensalt()), true)
       } else {
         val q = for {u <- PersistenceSchema.users if u.id === userId} yield (u.name)
         action = q.update(name)
@@ -120,7 +151,7 @@ class UserManager @Inject() (accountManager: AccountManager, organizationManager
       } else {
         if (password.isDefined) {
           val q = for {u <- PersistenceSchema.users if u.id === userId} yield (u.name, u.role, u.password, u.onetimePassword)
-          action = q.update(name.get, roleId, BCrypt.hashpw(password.get, BCrypt.gensalt()), true)
+          action = q.update(name.get, roleId, BCrypt.hashpw(password.get.trim, BCrypt.gensalt()), true)
         } else {
           val q = for {u <- PersistenceSchema.users if u.id === userId} yield (u.name, u.role)
           action = q.update(name.get, roleId)

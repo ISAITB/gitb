@@ -5,7 +5,7 @@ import com.gitb.tr.TestAssertionReportType;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
-import javax.xml.bind.JAXBElement;
+import jakarta.xml.bind.JAXBElement;
 import java.util.Comparator;
 import java.util.function.Function;
 

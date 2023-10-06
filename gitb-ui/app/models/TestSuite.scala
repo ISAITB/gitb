@@ -1,5 +1,7 @@
 package models
 
+import com.gitb.core.Update
+
 /**
  * Created by serbay on 10/17/14.
  */
@@ -51,6 +53,7 @@ class TestSuite(
 	               _keywords: Option[List[String]],
 	               _actors: Option[List[Actor]],
 	               _testCases: Option[List[TestCases]],
+								 _testCaseUpdateApproach: Option[Map[String, Update]],
 							   _filename: String,
 							   _hasDocumentation: Boolean,
 							   _documentation: Option[String],
@@ -59,8 +62,9 @@ class TestSuite(
 								 _shared: Boolean,
 							 	_domain: Long,
 							  _specifications: Option[List[Long]] = None,
-							  _definitionPath: Option[String]
-	               ) {
+							  _definitionPath: Option[String],
+							 	_updateApproach: Option[Update]
+							 ) {
 	var id: Long = _id
 	var shortname: String = _shortname
 	var fullname: String = _fullname
@@ -72,6 +76,7 @@ class TestSuite(
 	var keywords: Option[List[String]] = _keywords
 	var actors: Option[List[Actor]] = _actors
 	var testCases: Option[List[TestCases]] = _testCases
+	var testCaseUpdateApproach: Option[Map[String, Update]] = _testCaseUpdateApproach
 	var filename: String = _filename
 	var hasDocumentation: Boolean = _hasDocumentation
 	var documentation: Option[String] = _documentation
@@ -81,13 +86,16 @@ class TestSuite(
 	var domain: Long = _domain
 	var specifications: Option[List[Long]] = _specifications
 	var definitionPath: Option[String] = _definitionPath
+	var updateApproach: Option[Update] = _updateApproach
 
 	def this(testSuite: TestSuites, actors: Option[List[Actor]], testCases: Option[List[TestCases]]) = {
 		this(testSuite.id, testSuite.shortname, testSuite.fullname, testSuite.version,
 			if(testSuite.authors.isDefined) Some(testSuite.authors.get.split(",").toList) else None,
 			testSuite.originalDate,	testSuite.modificationDate, testSuite.description,
 			if(testSuite.keywords.isDefined) Some(testSuite.keywords.get.split(",").toList) else None,
-			actors, testCases, testSuite.filename, testSuite.hasDocumentation, testSuite.documentation, testSuite.identifier, testSuite.hidden, testSuite.shared, testSuite.domain, None, testSuite.definitionPath)
+			actors, testCases, None, testSuite.filename, testSuite.hasDocumentation, testSuite.documentation, testSuite.identifier, testSuite.hidden, testSuite.shared, testSuite.domain, None, testSuite.definitionPath,
+			None
+		)
 	}
 
 	def this(testSuite: TestSuites, testCases: List[TestCases]) = {

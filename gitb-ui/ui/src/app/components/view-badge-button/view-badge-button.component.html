@@ -1,0 +1,10 @@
+<div class="btn-group" dropdown [class.leftMargin]="leftMargin">
+    <button type="button" [pending]="copyBadgePending" class="btn btn-default" (click)="copyBadgeURL()">Copy badge URL</button>
+    <button id="button-badge" type="button" dropdownToggle class="btn btn-default dropdown-toggle dropdown-toggle-split">
+        <span class="caret"></span>
+        <span class="sr-only visually-hidden">Copy badge URL</span>
+    </button>
+    <ul id="dropdown-badge" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-badge">
+        <li role="menuitem"><a class="dropdown-item" href (click)="previewBadge();$event.preventDefault();">Preview badge</a></li>
+    </ul>
+</div>

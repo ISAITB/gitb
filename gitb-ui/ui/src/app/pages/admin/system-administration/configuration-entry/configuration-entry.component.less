@@ -1,0 +1,52 @@
+@import '../../../../../styles/less/_common.less';
+
+.rootContainer {
+    padding: 10px;
+    border: 1px solid @gray-dark-1;
+    border-radius: 5px;
+    background-color: @gray-light-1;
+    &.hovering {
+        cursor: pointer;
+        background-color: @gray-highlight;
+    }
+    .titleContainer {
+        display: flex;
+        align-items: center;
+        & > div {
+            display: flex;
+        }
+        .configTitle {
+            font-weight: bold;
+            white-space: nowrap;
+        }
+        .configDescription {
+            border-left: 1px solid @gray-dark-1;
+            padding-left: 10px;
+            margin-left: 10px;
+            padding-top: 5px;
+            padding-bottom: 5px;
+        }
+        .configStatus {
+            margin-left: auto;
+            padding-left: 10px;
+            white-space: nowrap;
+            font-weight: bold;
+            color: @gray-medium;
+            &.active {
+                color: @blue;
+            }
+            .envNote {
+                margin-left: 5px;
+            }
+        }
+    }
+    .contentContainerOuter {
+        margin-top: 10px;
+        .contentContainer {
+            background-color: @white;
+            padding: 20px;
+            border: 1px solid @gray-dark-1;
+            border-radius: 5px;
+        }
+    }
+}

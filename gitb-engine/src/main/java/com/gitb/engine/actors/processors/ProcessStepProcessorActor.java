@@ -12,9 +12,11 @@ import com.gitb.engine.processing.ProcessingContext;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.engine.utils.TestCaseUtils;
 import com.gitb.exceptions.GITBEngineInternalError;
+import com.gitb.processing.DeferredProcessingReport;
 import com.gitb.processing.IProcessingHandler;
 import com.gitb.processing.ProcessingReport;
 import com.gitb.tdl.Process;
+import com.gitb.tr.TAR;
 import com.gitb.tr.TestResultType;
 import com.gitb.tr.TestStepReportType;
 import com.gitb.types.DataType;
@@ -24,6 +26,7 @@ import scala.concurrent.Future;
 import scala.concurrent.Promise;
 
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 public class ProcessStepProcessorActor extends AbstractProcessingStepProcessorActor<Process> {
 
@@ -42,9 +45,7 @@ public class ProcessStepProcessorActor extends AbstractProcessingStepProcessorAc
     @Override
     protected void init() {
         final ActorContext context = getContext();
-
         promise = Futures.promise();
-
         promise.future().foreach(new OnSuccess<>() {
             @Override
             public void onSuccess(TestStepReportType result) {
@@ -61,7 +62,6 @@ public class ProcessStepProcessorActor extends AbstractProcessingStepProcessorAc
                 }
             }
         }, context.dispatcher());
-
         promise.future().failed().foreach(new OnFailure() {
             @Override
             public void onFailure(Throwable failure) {
@@ -91,7 +91,7 @@ public class ProcessStepProcessorActor extends AbstractProcessingStepProcessorAc
             context = this.scope.getContext().getProcessingContext(step.getTxnId());
         }
 
-        Future<TestStepReportType> future = Futures.future(() -> {
+        Future<Future<TestStepReportType>> future = Futures.future(() -> {
             IProcessingHandler handler = context.getHandler();
             String operation = null;
             if (step.getOperation() != null) {
@@ -100,43 +100,34 @@ public class ProcessStepProcessorActor extends AbstractProcessingStepProcessorAc
                 operation = step.getOperationAttribute();
             }
             ProcessingReport report = handler.process(context.getSession(), step.getId(), operation, getData(handler, operation));
-            if (report.getData() != null && (step.getId() != null || step.getOutput() != null)) {
-                if (step.getOutput() != null) {
-                    if (report.getData().getData() != null && report.getData().getData().size() == 1) {
-                        // Single output - set as direct result.
-                        scope.createVariable(step.getOutput()).setValue(report.getData().getData().values().iterator().next());
-                    } else {
-                        // Multiple outputs - set as map result.
-                        scope.createVariable(step.getOutput()).setValue(getValue(report.getData()));
-                    }
-                }
-                if (step.getId() != null) {
-                    // Backwards compatibility - set output map linked to id.
-                    scope.createVariable(step.getId()).setValue(getValue(report.getData()));
-                }
+            Promise<TestStepReportType> taskPromise = Futures.promise();
+            if (report instanceof DeferredProcessingReport deferredReport) {
+                getContext().getSystem().getScheduler().scheduleOnce(
+                        scala.concurrent.duration.Duration.apply(deferredReport.getDelayToApply(), TimeUnit.MILLISECONDS),
+                        () -> taskPromise.success(produceReport(report, handler)),
+                        getContext().dispatcher()
+                );
+            } else {
+                taskPromise.success(produceReport(report, handler));
             }
-            if (step.getHidden() != null && !handler.isRemote()) {
-                var isHidden = true;
-                if (VariableResolver.isVariableReference(step.getHidden())) {
-                    var hiddenVariable = new VariableResolver(scope).resolveVariable(step.getHidden());
-                    isHidden = hiddenVariable != null && Boolean.TRUE.equals(hiddenVariable.convertTo(DataType.BOOLEAN_DATA_TYPE).getValue());
-                } else {
-                    isHidden = Boolean.parseBoolean(step.getHidden());
-                }
-                if (!isHidden) {
-                    // We only add to the report's context the created data if this is visible and
-                    // if the handler is not a custom one (for custom ones you can return anything
-                    // you like).
-                    completeProcessingReportContext(report);
-                }
-            }
-            return report.getReport();
+            return taskPromise.future();
         }, getContext().dispatcher());
 
-        future.foreach(new OnSuccess<>() {
+        future.onSuccess(new OnSuccess<>() {
             @Override
-            public void onSuccess(TestStepReportType result) {
-                promise.trySuccess(result);
+            public void onSuccess(Future<TestStepReportType> reportFuture) {
+                reportFuture.onSuccess(new OnSuccess<>() {
+                    @Override
+                    public void onSuccess(TestStepReportType report) {
+                        promise.trySuccess(report);
+                    }
+                }, getContext().dispatcher());
+                reportFuture.onFailure(new OnFailure() {
+                    @Override
+                    public void onFailure(Throwable failure) {
+                        promise.tryFailure(failure);
+                    }
+                }, getContext().dispatcher());
             }
         }, getContext().dispatcher());
 
@@ -146,6 +137,40 @@ public class ProcessStepProcessorActor extends AbstractProcessingStepProcessorAc
                 promise.tryFailure(failure);
             }
         }, getContext().dispatcher());
+    }
+
+    private TAR produceReport(ProcessingReport report, IProcessingHandler handler) {
+        if (report.getData() != null && (step.getId() != null || step.getOutput() != null)) {
+            if (step.getOutput() != null) {
+                if (report.getData().getData() != null && report.getData().getData().size() == 1) {
+                    // Single output - set as direct result.
+                    scope.createVariable(step.getOutput()).setValue(report.getData().getData().values().iterator().next());
+                } else {
+                    // Multiple outputs - set as map result.
+                    scope.createVariable(step.getOutput()).setValue(getValue(report.getData()));
+                }
+            }
+            if (step.getId() != null) {
+                // Backwards compatibility - set output map linked to id.
+                scope.createVariable(step.getId()).setValue(getValue(report.getData()));
+            }
+        }
+        if (step.getHidden() != null && !handler.isRemote()) {
+            var isHidden = true;
+            if (VariableResolver.isVariableReference(step.getHidden())) {
+                var hiddenVariable = new VariableResolver(scope).resolveVariable(step.getHidden());
+                isHidden = hiddenVariable != null && Boolean.TRUE.equals(hiddenVariable.convertTo(DataType.BOOLEAN_DATA_TYPE).getValue());
+            } else {
+                isHidden = Boolean.parseBoolean(step.getHidden());
+            }
+            if (!isHidden) {
+                // We only add to the report's context the created data if this is visible and
+                // if the handler is not a custom one (for custom ones you can return anything
+                // you like).
+                completeProcessingReportContext(report);
+            }
+        }
+        return report.getReport();
     }
 
     @Override

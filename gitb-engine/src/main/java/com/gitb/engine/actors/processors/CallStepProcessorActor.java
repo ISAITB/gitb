@@ -7,6 +7,7 @@ import com.gitb.engine.commands.interaction.StartCommand;
 import com.gitb.engine.events.model.StatusEvent;
 import com.gitb.engine.expr.ExpressionHandler;
 import com.gitb.engine.expr.resolvers.VariableResolver;
+import com.gitb.engine.testcase.TestCaseContext;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.engine.utils.TestCaseUtils;
 import com.gitb.exceptions.GITBEngineInternalError;
@@ -81,54 +82,56 @@ public class CallStepProcessorActor extends AbstractTestStepActor<CallStep> {
 	}
 
 	private void generateOutput() {
-		Set<String> specificOutputsToReturn = new HashSet<>();
-		for (var output: step.getOutput()) {
-			if (StringUtils.isNotBlank(output.getName())) {
-				if (specificOutputsToReturn.contains(output.getName())) {
-					LOG.warn(MarkerFactory.getDetachedMarker(scope.getContext().getSessionId()), String.format("Ignoring duplicate output [%s] - step [%s] - ID [%s]", output.getName(), TestCaseUtils.extractStepDescription(step, childScope), stepId));
-				} else {
-					specificOutputsToReturn.add(output.getName());
-				}
-			}
-		}
-		ExpressionHandler expressionHandler = new ExpressionHandler(childScope);
-		Map<String, DataType> elements = new HashMap<>();
-		for (var output: scriptlet.getOutput()) {
-			if (specificOutputsToReturn.isEmpty() || (output.getName() != null && specificOutputsToReturn.contains(output.getName()))) {
-				// Add the scriptlet output to the call outputs.
-				DataType result;
-				if (StringUtils.isBlank(output.getValue())) {
-					if (output.getName() == null) {
-						throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, String.format("Scriptlet outputs must either define an expression or be provided with a name to match a variable in the scriptlet's scope - step [%s] - ID [%s]", TestCaseUtils.extractStepDescription(step, childScope), stepId)));
+		if (scope.getContext().getCurrentState() != TestCaseContext.TestCaseStateEnum.STOPPING && scope.getContext().getCurrentState() != TestCaseContext.TestCaseStateEnum.STOPPED) {
+			Set<String> specificOutputsToReturn = new HashSet<>();
+			for (var output: step.getOutput()) {
+				if (StringUtils.isNotBlank(output.getName())) {
+					if (specificOutputsToReturn.contains(output.getName())) {
+						LOG.warn(MarkerFactory.getDetachedMarker(scope.getContext().getSessionId()), String.format("Ignoring duplicate output [%s] - step [%s] - ID [%s]", output.getName(), TestCaseUtils.extractStepDescription(step, childScope), stepId));
 					} else {
-						TestCaseScope.ScopedVariable variable = childScope.getVariable(output.getName());
-						if (variable == null) {
-							throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, String.format("Scriptlet output [%s] must either define an expression or match a variable in the scriptlet's scope - step [%s] - ID [%s]", output.getName(), TestCaseUtils.extractStepDescription(step, childScope), stepId)));
-						}
-						result = variable.getValue();
+						specificOutputsToReturn.add(output.getName());
 					}
-				} else {
-					// Output defines an expression. Use it to define value.
-					result = expressionHandler.processExpression(output);
 				}
-				elements.put(output.getName() == null?"":output.getName(), result);
 			}
-		}
-		// Log a warning for any expected outputs that were not returned.
-		specificOutputsToReturn.removeAll(elements.keySet());
-		for (var unhandledOutput: specificOutputsToReturn) {
-			LOG.warn(MarkerFactory.getDetachedMarker(scope.getContext().getSessionId()), String.format("Requested output [%s] not found in the scriptlet's outputs - step [%s] - ID [%s]", unhandledOutput, TestCaseUtils.extractStepDescription(step, childScope), stepId));
-		}
-		if (step.getId() != null) {
-			setOutputMap(elements, step.getId());
-		}
-		if (step.getOutputAttribute() != null) {
-			if (elements.size() > 1) {
-				// Set as map.
-				setOutputMap(elements, step.getOutputAttribute());
-			} else if (elements.size() == 1) {
-				// Set as direct result.
-				scope.createVariable(step.getOutputAttribute()).setValue(elements.values().iterator().next());
+			ExpressionHandler expressionHandler = new ExpressionHandler(childScope);
+			Map<String, DataType> elements = new HashMap<>();
+			for (var output: scriptlet.getOutput()) {
+				if (specificOutputsToReturn.isEmpty() || (output.getName() != null && specificOutputsToReturn.contains(output.getName()))) {
+					// Add the scriptlet output to the call outputs.
+					DataType result;
+					if (StringUtils.isBlank(output.getValue())) {
+						if (output.getName() == null) {
+							throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, String.format("Scriptlet outputs must either define an expression or be provided with a name to match a variable in the scriptlet's scope - step [%s] - ID [%s]", TestCaseUtils.extractStepDescription(step, childScope), stepId)));
+						} else {
+							TestCaseScope.ScopedVariable variable = childScope.getVariable(output.getName());
+							if (variable == null) {
+								throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, String.format("Scriptlet output [%s] must either define an expression or match a variable in the scriptlet's scope - step [%s] - ID [%s]", output.getName(), TestCaseUtils.extractStepDescription(step, childScope), stepId)));
+							}
+							result = variable.getValue();
+						}
+					} else {
+						// Output defines an expression. Use it to define value.
+						result = expressionHandler.processExpression(output);
+					}
+					elements.put(output.getName() == null?"":output.getName(), result);
+				}
+			}
+			// Log a warning for any expected outputs that were not returned.
+			specificOutputsToReturn.removeAll(elements.keySet());
+			for (var unhandledOutput: specificOutputsToReturn) {
+				LOG.warn(MarkerFactory.getDetachedMarker(scope.getContext().getSessionId()), String.format("Requested output [%s] not found in the scriptlet's outputs - step [%s] - ID [%s]", unhandledOutput, TestCaseUtils.extractStepDescription(step, childScope), stepId));
+			}
+			if (step.getId() != null) {
+				setOutputMap(elements, step.getId());
+			}
+			if (step.getOutputAttribute() != null) {
+				if (elements.size() > 1) {
+					// Set as map.
+					setOutputMap(elements, step.getOutputAttribute());
+				} else if (elements.size() == 1) {
+					// Set as direct result.
+					scope.createVariable(step.getOutputAttribute()).setValue(elements.values().iterator().next());
+				}
 			}
 		}
 	}
@@ -188,24 +191,25 @@ public class CallStepProcessorActor extends AbstractTestStepActor<CallStep> {
 				if (isNameBinding) {
 					setInputWithNameBinding(childScope);
 					step.getInput().forEach(input -> parameters.remove(input.getName()));
-					if (!parameters.isEmpty()) {
-						// Consider also default values for parameters.
-						scriptlet.getParams().getVar().forEach(variable -> {
-							if (parameters.contains(variable.getName()) && !variable.getValue().isEmpty()) {
-								setContextVariable(childScope, DataTypeFactory.getInstance().create(variable), null, variable);
-								parameters.remove(variable.getName());
-							}
-						});
-					}
 				} else {
 					if (step.getInput().size() != scriptlet.getParams().getVar().size()) {
 						throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Wrong number of parameters for scriptlet ["+scriptlet.getId()+"]. Expected ["+scriptlet.getParams().getVar().size()+"] but encountered ["+step.getInput().size()+"]."));
 					}
 					setInputWithIndexBinding(childScope);
+					parameters.clear();
 				}
 			}
 			if (!parameters.isEmpty()) {
-				throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, String.format("All scriptlet parameters must either be provided explicitly via call inputs or have default values. No values could be determined for parameters [%s].", StringUtils.join(parameters, ", "))));
+				// Consider also default values for parameters.
+				scriptlet.getParams().getVar().forEach(variable -> {
+					if (parameters.contains(variable.getName()) && !variable.getValue().isEmpty()) {
+						setContextVariable(childScope, DataTypeFactory.getInstance().create(variable), null, variable);
+						parameters.remove(variable.getName());
+					}
+				});
+				if (!parameters.isEmpty()) {
+					throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, String.format("All scriptlet parameters must either be provided explicitly via call inputs or have default values. No values could be determined for parameters [%s].", StringUtils.join(parameters, ", "))));
+				}
 			}
 		}
 		// Variables.

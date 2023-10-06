@@ -42,7 +42,11 @@ export class ConfirmationDialogService {
     return modal.content!.result
   }
 
-  confirm(headerText: string, bodyText: string, actionButtonText: string, closeButtonText: string, sameStyles?: boolean): EventEmitter<boolean> {
+  confirmDangerous(headerText: string, bodyText: string, actionButtonText: string, closeButtonText: string): EventEmitter<boolean> {
+    return this.confirm(headerText, bodyText, actionButtonText, closeButtonText, false, true)
+  }
+
+  confirm(headerText: string, bodyText: string, actionButtonText: string, closeButtonText: string, sameStyles?: boolean, dangerous?: boolean): EventEmitter<boolean> {
     const modal = this.modalService.show(ConfirmationComponent, {
       initialState: {
         headerText: headerText,
@@ -50,15 +54,20 @@ export class ConfirmationDialogService {
         actionButtonText: actionButtonText,
         closeButtonText: closeButtonText,
         sameStyles: sameStyles,
-        oneButton: false
+        oneButton: false,
+        actionClass: dangerous?'btn btn-danger':'btn btn-default'
       }
     })
     return modal.content!.result
   }
 
-  confirmed(headerText: string, bodyText: string, actionButtonText: string, closeButtonText: string, sameStyles?: boolean): Observable<void> {
+  confirmedDangerous(headerText: string, bodyText: string, actionButtonText: string, closeButtonText: string): Observable<void> {
+    return this.confirmed(headerText, bodyText, actionButtonText, closeButtonText, false, true)
+  }
+
+  confirmed(headerText: string, bodyText: string, actionButtonText: string, closeButtonText: string, sameStyles?: boolean, dangerous?: boolean): Observable<void> {
     const result = new ReplaySubject<void>(1)
-    this.confirm(headerText, bodyText, actionButtonText, closeButtonText, sameStyles).subscribe((choice: boolean) => {
+    this.confirm(headerText, bodyText, actionButtonText, closeButtonText, sameStyles, dangerous).subscribe((choice: boolean) => {
       if (choice) {
         result.next()
         result.complete()

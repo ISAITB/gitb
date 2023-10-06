@@ -1,0 +1,25 @@
+@import '../../../styles/less/_common.less';
+
+.overall-result {
+    text-shadow: 1px 1px 0 rgb(90 90 90 / 50%);
+    padding: 6px 10px;
+    font-weight: bold;
+    line-height: 1;
+    color: @white;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+    border-radius: 0.25em;
+    &.SUCCESS {
+        background-color: @success-green;
+    }
+    &.FAILURE {
+        background-color: @error-red;
+    }
+    &.WARNING {
+        background-color: @warning-yellow;
+    }
+    &.UNDEFINED {
+        background-color: @gray;
+    }
+}

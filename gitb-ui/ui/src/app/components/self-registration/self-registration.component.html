@@ -41,7 +41,7 @@
           </div>
         </div>
         <div [ngClass]="{'form-separator-popup': sso, 'form-separator': !sso}" class="form-separator-top-padding">
-            <h4 class="title">{{dataService.labelOrganisation()}} details <span [tooltip]="'This information defines the member of the selected community through which will you be testing for conformance'" [containerClass]="'tooltipContainerBig'"><i class="fa fa-question-circle"></i></span></h4>
+            <h4 class="title">{{dataService.labelOrganisation()}} details <span [tooltip]="'This information defines the member of the selected community through which will you be testing for conformance.'" [containerClass]="'tooltipContainerBig'"><i class="fa-solid fa-question-circle"></i></span></h4>
         </div>
         <div class="form-group">
             <label class="col-xs-3 control-label" for="orgShortName">* Short name:</label>
@@ -84,7 +84,7 @@
             [tbPropertyType]="'organisation'"></app-custom-property-form>
         <div *ngIf="!sso">
           <div class="form-separator form-separator-top-padding">
-              <h4 class="title">Administrator account details <span [tooltip]="'Through your administrator account you can manage your' + dataService.labelOrganisationLower() + ' users, configure your conformance statements and execute tests'" [containerClass]="'tooltipContainerBig'"><i class="fa fa-question-circle"></i></span></h4>
+              <h4 class="title">Administrator account details <span [tooltip]="'Through your administrator account you can manage your ' + dataService.labelOrganisationLower() + ' users, configure your conformance statements and execute tests.'" [containerClass]="'tooltipContainerBig'"><i class="fa-solid fa-question-circle"></i></span></h4>
           </div>
           <div class="form-group">
               <label class="col-xs-3 control-label" for="adminName">* Name:</label>

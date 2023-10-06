@@ -69,7 +69,7 @@ export class LinkAccountComponent extends BaseComponent implements OnInit {
     } else if (this.choice == Constants.CREATE_ACCOUNT_OPTION.SELF_REGISTER) {
         return this.selfRegData.selfRegOption?.communityId != undefined && 
             (this.selfRegData.selfRegOption.selfRegType != Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING_WITH_TOKEN || this.textProvided(this.selfRegData.selfRegToken)) && 
-            (!this.selfRegData.selfRegOption.forceTemplateSelection || this.selfRegData.selfRegOption.templates?.length == 0 || this.selfRegData.template != undefined) &&
+            (!this.selfRegData.selfRegOption.forceTemplateSelection || (this.selfRegData.selfRegOption.templates == undefined || this.selfRegData.selfRegOption.templates.length == 0) || this.selfRegData.template != undefined) &&
             (!this.selfRegData.selfRegOption.forceRequiredProperties || this.dataService.customPropertiesValid(this.selfRegData.selfRegOption.organisationProperties, true)) &&
             this.textProvided(this.selfRegData.orgShortName) && this.textProvided(this.selfRegData.orgFullName)
     } else {

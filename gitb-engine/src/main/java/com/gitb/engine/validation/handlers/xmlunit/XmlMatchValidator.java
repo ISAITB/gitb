@@ -2,16 +2,13 @@ package com.gitb.engine.validation.handlers.xmlunit;
 
 import com.gitb.core.*;
 import com.gitb.engine.validation.ValidationHandler;
+import com.gitb.engine.validation.handlers.common.AbstractValidator;
 import com.gitb.engine.validation.handlers.xml.DocumentNamespaceContext;
 import com.gitb.tr.ObjectFactory;
 import com.gitb.tr.*;
-import com.gitb.types.DataType;
-import com.gitb.types.ListType;
-import com.gitb.types.ObjectType;
-import com.gitb.types.StringType;
+import com.gitb.types.*;
 import com.gitb.utils.XMLDateTimeUtils;
 import com.gitb.utils.XMLUtils;
-import com.gitb.validation.IValidationHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
@@ -24,6 +21,7 @@ import org.xmlunit.diff.DifferenceEvaluator;
 import org.xmlunit.diff.DifferenceEvaluators;
 
 import javax.xml.datatype.DatatypeConfigurationException;
+import javax.xml.namespace.NamespaceContext;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
@@ -31,11 +29,14 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.gitb.engine.validation.handlers.xpath.XPathValidator.NAMESPACE_MAP_INPUT;
+
 @ValidationHandler(name="XmlMatchValidator")
-public class XmlMatchValidator implements IValidationHandler {
+public class XmlMatchValidator extends AbstractValidator {
 
     private static final Logger logger = LoggerFactory.getLogger(XmlMatchValidator.class);
     private static final String INPUT__XML = "xml";
@@ -68,7 +69,7 @@ public class XmlMatchValidator implements IValidationHandler {
     }
 
     @Override
-    public TestStepReportType validate(List<Configuration> configurations, Map<String, DataType> inputs, String stepId) {
+    public TestStepReportType validate(List<Configuration> configurations, Map<String, DataType> inputs) {
         if (!inputs.containsKey(INPUT__XML)) {
             throw new IllegalArgumentException("The ["+INPUT__XML+"] input is required.");
         }
@@ -77,6 +78,7 @@ public class XmlMatchValidator implements IValidationHandler {
         }
         ObjectType xml = getAsObjectType(inputs.get(INPUT__XML));
         ObjectType template = getAsObjectType(inputs.get(INPUT__TEMPLATE));
+        MapType namespaces = (MapType) inputs.get(NAMESPACE_MAP_INPUT);
 
         List<String> pathsToIgnore = new ArrayList<>();
         if (inputs.containsKey(INPUT__IGNORED_PATHS)) {
@@ -102,8 +104,23 @@ public class XmlMatchValidator implements IValidationHandler {
         } catch (IOException|SAXException e) {
             throw new IllegalStateException(e);
         }
-        DocumentNamespaceContext nsContext = new DocumentNamespaceContext(document, false);
-
+        var documentContext = new DocumentNamespaceContext(document, false);
+        var documentNamespaces = documentContext.getPrefixToUriMap();
+        Map<String, String> namespacesToUse;
+        NamespaceContext contextToUse;
+        if (namespaces != null) {
+            namespacesToUse = new HashMap<>();
+            for (var entry: ((Map<String, DataType>)namespaces.getValue()).entrySet()) {
+                namespacesToUse.put(entry.getKey(), (String) entry.getValue().getValue());
+            }
+            for (var documentPrefix: documentNamespaces.entrySet()) {
+                namespacesToUse.putIfAbsent(documentPrefix.getKey(), documentPrefix.getValue());
+            }
+            contextToUse = new com.gitb.utils.NamespaceContext(namespacesToUse);
+        } else {
+            contextToUse = documentContext;
+            namespacesToUse = documentNamespaces;
+        }
         DifferenceEvaluator chain = DifferenceEvaluators.chain(
                 DifferenceEvaluators.Default,
                 getDifferenceEvaluator(pathsToIgnore)
@@ -115,11 +132,11 @@ public class XmlMatchValidator implements IValidationHandler {
                 .ignoreWhitespace()
                 .normalizeWhitespace()
                 .checkForSimilar()
-                .withNamespaceContext(nsContext.getPrefixToUriMap())
+                .withNamespaceContext(namespacesToUse)
                 .withDifferenceEvaluator(chain)
                 .build();
 
-        return diffToTAR(diff, nsContext, document, template);
+        return diffToTAR(diff, contextToUse, document, template);
     }
 
     private CustomDifferenceEvaluator getDifferenceEvaluator(List<String> xpathsToIgnore) {
@@ -136,7 +153,7 @@ public class XmlMatchValidator implements IValidationHandler {
         return obj;
     }
 
-    private TAR diffToTAR(Diff diff, DocumentNamespaceContext nsContext, Document xml, ObjectType template) {
+    private TAR diffToTAR(Diff diff, NamespaceContext nsContext, Document xml, ObjectType template) {
         ObjectFactory objectFactory = new ObjectFactory();
         TAR report = new TAR();
         report.setResult(TestResultType.SUCCESS);
@@ -190,14 +207,16 @@ public class XmlMatchValidator implements IValidationHandler {
     }
 
     private String getLineNumberFromXPath(XPath xPath, String xpathExpression, Document document) {
-        Node node;
-        try {
-            node = (Node) xPath.evaluate(xpathExpression, document, XPathConstants.NODE);
-            if (node != null) {
-                return (String) node.getUserData(XMLUtils.LINE_NUMBER_KEY_NAME);
+        if (xpathExpression != null) {
+            Node node;
+            try {
+                node = (Node) xPath.evaluate(xpathExpression, document, XPathConstants.NODE);
+                if (node != null) {
+                    return (String) node.getUserData(XMLUtils.LINE_NUMBER_KEY_NAME);
+                }
+            } catch (XPathExpressionException e) {
+                logger.debug(e.getMessage());
             }
-        } catch (XPathExpressionException e) {
-            logger.debug(e.getMessage());
         }
         return null;
     }

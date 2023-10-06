@@ -128,27 +128,103 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
     })
   }
 
-  goToSystem(row: TestResultForDisplay) {
-    if (this.dataService.isVendorUser) {
-      this.routingService.toSystemInfo(row.organizationId!, row.systemId!)
+  toSystem(row: TestResultForDisplay) {
+    if (row.organizationId! == this.dataService.vendor!.id) {
+      // This is the user's own organisation
+      this.routingService.toOwnSystemDetails(row.systemId!)
     } else {
-      this.routingService.toSystems(row.organizationId!, row.systemId!)
+      this.routingService.toSystemDetails(row.communityId!, row.organizationId!, row.systemId!)
     }
   }
 
-  goToStatement(row: TestResultForDisplay) {
-    this.routingService.toConformanceStatement(row.organizationId!, row.systemId!, row.actorId!, row.specificationId!)
+  toStatement(row: TestResultForDisplay) {
+    if (row.organizationId! == this.dataService.vendor?.id) {
+      this.routingService.toOwnConformanceStatement(row.organizationId!, row.systemId!, row.actorId!)
+    } else {
+      this.routingService.toConformanceStatement(row.organizationId!, row.systemId!, row.actorId!, row.communityId!)
+    }
   }
 
-  goToOrganisation(row: TestResultForDisplay) {
-    const targetOrganisationId = row.organizationId!
-    if (targetOrganisationId == this.dataService.vendor!.id) {
+  toOrganisation(row: TestResultForDisplay) {
+    if (row.organizationId! == this.dataService.vendor!.id) {
       // This is the user's own organisation
       this.routingService.toOwnOrganisationDetails()
     } else {
       // Another organisation
-      this.routingService.toOrganisationDetails(row.communityId!, targetOrganisationId)
+      this.routingService.toOrganisationDetails(row.communityId!, row.organizationId!)
     }
+  }
+
+  toCommunity(row: TestResultForDisplay) {
+    this.routingService.toCommunity(row.communityId!)
+  }
+
+  toDomain(row: TestResultForDisplay) {
+    this.routingService.toDomain(row.domainId!)
+  }
+
+  toSpecification(row: TestResultForDisplay) {
+    this.routingService.toSpecification(row.domainId!, row.specificationId!)
+  }
+
+  toActor(row: TestResultForDisplay) {
+    this.routingService.toActor(row.domainId!, row.specificationId!, row.actorId!)
+  }
+
+  toTestSuite(row: TestResultForDisplay) {
+    this.routingService.toTestSuite(row.domainId!, row.specificationId!, row.testSuiteId!)
+  }
+
+  toTestCase(row: TestResultForDisplay) {
+    this.routingService.toTestCase(row.domainId!, row.specificationId!, row.testSuiteId!, row.testCaseId!)
+  }
+
+  showToCommunity(row: TestResultForDisplay) {
+    return row.communityId != undefined && (this.dataService.isCommunityAdmin || this.dataService.isSystemAdmin)
+  }
+
+  showToOrganisation(row: TestResultForDisplay) {
+    return row.organizationId != undefined
+  }
+
+  showToSystem(row: TestResultForDisplay) {
+    return this.showToOrganisation(row) && row.systemId != undefined
+  }
+
+  showToDomain(row: TestResultForDisplay) {
+    return row.domainId != undefined && (
+      this.dataService.isSystemAdmin || (
+        this.dataService.isCommunityAdmin && this.dataService.community?.domain != undefined
+      )
+    )
+  }
+
+  showToSpecification(row: TestResultForDisplay) {
+    return this.showToDomain(row) && row.specificationId != undefined
+  }
+
+  showToActor(row: TestResultForDisplay) {
+    return this.showToSpecification(row) && row.actorId != undefined
+  }
+
+  showToTestSuite(row: TestResultForDisplay) {
+    return this.showToSpecification(row) && row.testSuiteId != undefined
+  }
+
+  showToTestCase(row: TestResultForDisplay) {
+    return this.showToTestSuite(row) && row.testCaseId != undefined
+  }
+
+  showToStatement(row: TestResultForDisplay) {
+    return row.organizationId != undefined && row.systemId != undefined && row.communityId != undefined && row.actorId != undefined && row.specificationId != undefined
+  }
+
+  showPartyNavigation(row: TestResultForDisplay) {
+    return this.showToCommunity(row) || this.showToOrganisation(row) || this.showToSystem(row)
+  }
+
+  showSpecificationNavigation(row: TestResultForDisplay) {
+    return this.showToDomain(row) || this.showToSpecification(row) || this.showToActor(row)
   }
 
   refresh(row: TestResultForDisplay) {

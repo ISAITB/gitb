@@ -18,6 +18,7 @@ export class AuthProviderService {
   private onLoginSource = new Subject<LoginEventInfo>()
   private afterLoginSource = new Subject<any>()
   private onLogoutSource = new Subject<LogoutEventInfo>()
+  private onLogoutCompleteSource = new Subject<void>()
   private authenticated: boolean = false
   public logoutSignalled: boolean = false
   private logoutOngoing: boolean = false
@@ -29,6 +30,7 @@ export class AuthProviderService {
   public onLogin$ = this.onLoginSource.asObservable()
   public afterLogin$ = this.afterLoginSource.asObservable()
   public onLogout$ = this.onLogoutSource.asObservable()
+  public onLogoutComplete$ = this.onLogoutCompleteSource.asObservable()
 
   constructor(
       private cookieService: CookieService,
@@ -78,6 +80,9 @@ export class AuthProviderService {
           console.debug('Successfully signalled logout')
         }).add(() => {
           this.dataService.destroy()
+          if (localStorage) {
+            localStorage.clear()
+          }
           this.cookieService.delete(this.atKey)
 					if (this.cookiePath) {
             this.cookieService.delete(this.atKey, this.cookiePath)
@@ -90,7 +95,9 @@ export class AuthProviderService {
             let url = window.location.href
             window.location.href = url.substring(0, url.indexOf('app#'))
           } else {
-            this.routingService.toLogin()
+            this.routingService.toLogin().finally(() => {
+              this.onLogoutCompleteSource.next()
+            })
           }
         })
       }

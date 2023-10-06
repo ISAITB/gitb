@@ -9,9 +9,9 @@ import com.gitb.utils.ConfigurationUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.activation.DataHandler;
-import javax.mail.util.ByteArrayDataSource;
-import javax.xml.soap.*;
+import jakarta.activation.DataHandler;
+import jakarta.mail.util.ByteArrayDataSource;
+import jakarta.xml.soap.*;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

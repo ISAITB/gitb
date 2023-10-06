@@ -19,7 +19,7 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
 import javax.xml.XMLConstants;
-import javax.xml.bind.JAXBElement;
+import jakarta.xml.bind.JAXBElement;
 import javax.xml.namespace.NamespaceContext;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
@@ -128,7 +128,7 @@ public class SchematronReportHandler extends AbstractReportHandler {
         for (T message : svrlMessages) {
             var error = new BAR();
             error.setDescription(message.getText());
-            error.setLocation(XML_ITEM_NAME + ":" + getLineNumbeFromXPath(message.getLocation()) + ":0");
+            error.setLocation(XML_ITEM_NAME + ":" + getLineNumberFromXPath(message.getLocation()) + ":0");
             if (showTests) {
                 error.setTest(message.getTest());
             }
@@ -155,7 +155,7 @@ public class SchematronReportHandler extends AbstractReportHandler {
         return namespaceContext;
     }
 
-    private String getLineNumbeFromXPath(String xpathExpression) {
+    private String getLineNumberFromXPath(String xpathExpression) {
         String xpathExpressionConverted = convertToXPathExpression(xpathExpression);
         XPath xPath = new net.sf.saxon.xpath.XPathFactoryImpl().newXPath();
         xPath.setNamespaceContext(getNamespaceContext());
@@ -170,20 +170,11 @@ public class SchematronReportHandler extends AbstractReportHandler {
     }
 
     private String convertToXPathExpression(String xpathExpression) {
-        /*
-        Schematron reports arrays as 0-based whereas xpath has 1-based arrays.
-        This is used to increment each array index by one.
-         */
-        if (isXPathConversionNeeded()) {
+        if (convertXPathExpressions) {
             try {
-                StringBuffer s = new StringBuffer();
-                Matcher m = ARRAY_PATTERN.matcher(xpathExpression);
-                while (m.find()) {
-                    m.appendReplacement(s, "["+String.valueOf(1 + Integer.parseInt(m.group(0).substring(1, m.group(0).length()-1)))+"]");
-                }
-                m.appendTail(s);
                 if (documentHasDefaultNamespace(node)) {
-                    m = DEFAULTNS_PATTERN.matcher(s.toString());
+                    StringBuilder s = new StringBuilder(xpathExpression);
+                    Matcher m = DEFAULTNS_PATTERN.matcher(s.toString());
                     s.delete(0, s.length());
                     while (m.find()) {
                         String match = m.group(0);
@@ -193,19 +184,13 @@ public class SchematronReportHandler extends AbstractReportHandler {
                         m.appendReplacement(s, match);
                     }
                     m.appendTail(s);
+                    xpathExpression = s.toString();
                 }
-                return s.toString();
             } catch (Exception e) {
                 logger.warn("Failed to convert XPath expression.", e);
-                return xpathExpression;
             }
-        } else {
-            return xpathExpression;
         }
-    }
-
-    private boolean isXPathConversionNeeded() {
-        return convertXPathExpressions;
+        return xpathExpression;
     }
 
     private boolean documentHasDefaultNamespace(Document node) {
@@ -222,7 +207,7 @@ public class SchematronReportHandler extends AbstractReportHandler {
                 hasDefaultNamespace = Boolean.FALSE;
             }
         }
-        return hasDefaultNamespace.booleanValue();
+        return hasDefaultNamespace;
     }
 
 }

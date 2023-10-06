@@ -52,6 +52,7 @@
             <xsd:element name="message" type="xsd:string" minOccurs="0"/>
             <xsd:element name="signature" type="SignatureSettings" minOccurs="0"/>
         </xsd:sequence>
+        <xsd:attribute name="addTitle" type="xsd:boolean" default="true"/>
         <xsd:attribute name="addDetails" type="xsd:boolean" default="false"/>
         <xsd:attribute name="addResultOverview" type="xsd:boolean" default="false"/>
         <xsd:attribute name="addTestCases" type="xsd:boolean" default="false"/>
@@ -259,6 +260,19 @@
             </xsd:extension>
         </xsd:complexContent>
     </xsd:complexType>
+    <xsd:complexType name="ConformanceBadges">
+        <xsd:sequence>
+            <xsd:element name="success" type="ConformanceBadge"/>
+            <xsd:element name="other" type="ConformanceBadge"/>
+            <xsd:element name="failure" type="ConformanceBadge" minOccurs="0"/>
+        </xsd:sequence>
+    </xsd:complexType>
+    <xsd:complexType name="ConformanceBadge">
+        <xsd:sequence>
+            <xsd:element name="name" type="xsd:string"/>
+            <xsd:element name="content" type="xsd:string"/>
+        </xsd:sequence>
+    </xsd:complexType>
     <xsd:complexType name="CommunityResource">
         <xsd:complexContent>
             <xsd:extension base="ExportType">
@@ -348,6 +362,7 @@
                     <xsd:element name="apiKey" type="xsd:string" minOccurs="0"/>
                     <xsd:element name="propertyValues" type="SystemPropertyValues" minOccurs="0"/>
                     <xsd:element name="statements" type="ConformanceStatements" minOccurs="0"/>
+                    <xsd:element name="badgeKey" type="xsd:string" minOccurs="0"/>
                 </xsd:sequence>
             </xsd:extension>
         </xsd:complexContent>
@@ -416,6 +431,7 @@
                     <xsd:element name="actors" type="Actors" minOccurs="0"/>
                     <xsd:element name="testSuites" type="TestSuites" minOccurs="0"/>
                     <xsd:element name="sharedTestSuites" type="xsd:IDREFS" minOccurs="0"/>
+                    <xsd:element name="badges" type="ConformanceBadges" minOccurs="0"/>
                 </xsd:sequence>
                 <xsd:attribute name="hidden" type="xsd:boolean" default="false"/>
                 <xsd:attribute name="displayOrder" type="xsd:short" default="0"/>
@@ -454,6 +470,7 @@
                     <xsd:element name="description" type="xsd:string" minOccurs="0"/>
                     <xsd:element name="apiKey" type="xsd:string" minOccurs="0"/>
                     <xsd:element name="endpoints" type="Endpoints" minOccurs="0"/>
+                    <xsd:element name="badges" type="ConformanceBadges" minOccurs="0"/>
                 </xsd:sequence>
                 <xsd:attribute name="specification" use="required" type="xsd:IDREF"/>
                 <xsd:attribute name="default" type="xsd:boolean" default="false"/>
@@ -643,6 +660,9 @@
                     <xsd:element name="targetActors" type="xsd:string" minOccurs="0"/>
                     <xsd:element name="path" type="xsd:string"/>
                     <xsd:element name="actors" type="TestCaseActors" minOccurs="0"/>
+                    <xsd:element name="optional" type="xsd:boolean" minOccurs="0"/>
+                    <xsd:element name="disabled" type="xsd:boolean" minOccurs="0"/>
+                    <xsd:element name="tags" type="xsd:string" minOccurs="0"/>
                 </xsd:sequence>
                 <xsd:attribute name="testSuite" use="required" type="xsd:IDREF"/>
                 <xsd:attribute name="specification" type="xsd:IDREF"/>

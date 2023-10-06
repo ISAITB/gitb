@@ -2,6 +2,7 @@ package models
 
 import models.ConformanceStatusBuilder.FilterCriteria
 import models.Enums.TestResultStatus
+import utils.TimeUtil
 
 import java.util
 import java.util.Date
@@ -15,7 +16,7 @@ object ConformanceStatusBuilder {
     def check(overview: A): Boolean = {
       // Check overall status.
       if (status.isDefined) {
-        if (!status.get.contains(statusFromResultCounts(overview.failedTests, overview.undefinedTests))) {
+        if (!status.get.contains(statusFromResultCounts(overview.completedTests, overview.failedTests, overview.undefinedTests))) {
           return false
         }
       }
@@ -30,13 +31,15 @@ object ConformanceStatusBuilder {
       true
     }
 
-    private def statusFromResultCounts(failed: Long, undefined: Long): String = {
+    private def statusFromResultCounts(completed: Long, failed: Long, undefined: Long): String = {
       if (failed > 0) {
         TestResultStatus.FAILURE.toString
       } else if (undefined > 0) {
         TestResultStatus.UNDEFINED.toString
-      } else {
+      } else if (completed > 0) {
         TestResultStatus.SUCCESS.toString
+      } else {
+        TestResultStatus.UNDEFINED.toString
       }
     }
 
@@ -49,24 +52,36 @@ class ConformanceStatusBuilder[A <: ConformanceStatement](recordDetails: Boolean
   // SystemID|ActorID -> (Aggregated conformance status, List of conformance results)
   private val conformanceMap = new util.LinkedHashMap[String, (A, ListBuffer[A])]
 
-  def addConformanceResult(result: A): Unit = {
+  def addConformanceResult(result: A, isOptional: Boolean, isDisabled: Boolean): Unit = {
     val key = s"${result.systemId}|${result.actorId}"
     var data = conformanceMap.get(key)
     if (data == null) {
-      data = (result, new ListBuffer[A])
+      data = (result.copy().asInstanceOf[A], new ListBuffer[A])
       conformanceMap.put(key, data)
     }
     // Record statistics.
-    if (TestResultStatus.withName(result.result) == TestResultStatus.SUCCESS) {
-      data._1.completedTests += 1
-    } else if (TestResultStatus.withName(result.result) == TestResultStatus.FAILURE) {
-      data._1.failedTests += 1
-    } else {
-      data._1.undefinedTests += 1
-    }
-    // Set overall last update time.
-    if (result.updateTime.isDefined && (data._1.updateTime.isEmpty || data._1.updateTime.get.before(result.updateTime.get))) {
-      data._1.updateTime = result.updateTime
+    if (!isDisabled) {
+      if (isOptional) {
+        if (TestResultStatus.withName(result.result) == TestResultStatus.SUCCESS) {
+          data._1.completedOptionalTests += 1
+        } else if (TestResultStatus.withName(result.result) == TestResultStatus.FAILURE) {
+          data._1.failedOptionalTests += 1
+        } else {
+          data._1.undefinedOptionalTests += 1
+        }
+      } else {
+        if (TestResultStatus.withName(result.result) == TestResultStatus.SUCCESS) {
+          data._1.completedTests += 1
+        } else if (TestResultStatus.withName(result.result) == TestResultStatus.FAILURE) {
+          data._1.failedTests += 1
+        } else {
+          data._1.undefinedTests += 1
+        }
+      }
+      // Set overall last update time.
+      if (result.updateTime.isDefined && (data._1.updateTime.isEmpty || data._1.updateTime.get.before(result.updateTime.get))) {
+        data._1.updateTime = TimeUtil.copyTimestamp(result.updateTime)
+      }
     }
     // Record individual result.
     if (recordDetails) {

@@ -8,12 +8,15 @@ import { PopupService } from 'src/app/services/popup.service';
 import { RoutingService } from 'src/app/services/routing.service';
 import { LandingPage } from 'src/app/types/landing-page';
 import { CommunityTab } from '../../community/community-details/community-tab.enum';
+import { Constants } from 'src/app/common/constants';
+import { SystemAdministrationTab } from '../../../system-administration/system-administration-tab.enum';
+import { BsModalService } from 'ngx-bootstrap/modal';
+import { PreviewLandingPageComponent } from '../preview-landing-page/preview-landing-page.component';
+import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
 
 @Component({
   selector: 'app-landing-page-details',
-  templateUrl: './landing-page-details.component.html',
-  styles: [
-  ]
+  templateUrl: './landing-page-details.component.html'
 })
 export class LandingPageDetailsComponent extends BaseComponent implements OnInit, AfterViewInit {
 
@@ -25,6 +28,7 @@ export class LandingPageDetailsComponent extends BaseComponent implements OnInit
   copyPending = false
   page: Partial<LandingPage> = {}
   showContent = true
+  tooltipForDefaultCheck!: string
 
   constructor(
     private routingService: RoutingService,
@@ -32,7 +36,8 @@ export class LandingPageDetailsComponent extends BaseComponent implements OnInit
     public dataService: DataService,
     private landingPageService: LandingPageService,
     private confirmationDialogService: ConfirmationDialogService,
-    private popupService: PopupService
+    private popupService: PopupService,
+    private modalService: BsModalService
   ) { super() }
 
   ngAfterViewInit(): void {
@@ -40,12 +45,23 @@ export class LandingPageDetailsComponent extends BaseComponent implements OnInit
   }
 
   ngOnInit(): void {
-    this.communityId = Number(this.route.snapshot.paramMap.get('community_id'))
-    this.pageId = Number(this.route.snapshot.paramMap.get('page_id'))
+    if (this.route.snapshot.paramMap.has(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID)) {
+      this.communityId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID))
+      this.tooltipForDefaultCheck = 'Check this to make this landing page the default one assumed for the community\'s '+this.dataService.labelOrganisationsLower()+'.'
+    } else {
+      this.communityId = Constants.DEFAULT_COMMUNITY_ID
+      this.tooltipForDefaultCheck = 'Check this to make this landing page the default one assumed for all communities.'
+    }
+    this.pageId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.LANDING_PAGE_ID))
     this.landingPageService.getLandingPageById(this.pageId)
     .subscribe((data) => {
       this.page = data
       this.isDefault = data.default
+      if (this.communityId == Constants.DEFAULT_COMMUNITY_ID) {
+        this.routingService.systemLandingPageBreadcrumbs(this.pageId, this.page.name!)
+      } else {
+        this.routingService.landingPageBreadcrumbs(this.communityId, this.pageId, this.page.name!)
+      }
     })
   }
 
@@ -56,7 +72,7 @@ export class LandingPageDetailsComponent extends BaseComponent implements OnInit
   updateLandingPage(copy: boolean) {
     this.clearAlerts()
     if (!this.isDefault && this.page.default) {
-      this.confirmationDialogService.confirmed("Confirm default", "You are about to change the default landing page. Are you sure?", "Yes", "No")
+      this.confirmationDialogService.confirmed("Confirm default", "You are about to change the default landing page. Are you sure?", "Change", "Cancel")
       .subscribe(() => {
         this.doUpdate(copy)
       })
@@ -66,8 +82,16 @@ export class LandingPageDetailsComponent extends BaseComponent implements OnInit
   }
 
   private clearCachedLandingPageIfNeeded() {
-    if ((this.dataService.isCommunityAdmin || this.dataService.isSystemAdmin) 
-      && this.dataService.vendor!.community == this.communityId && this.page.default) {
+    if ((this.dataService.isCommunityAdmin || this.dataService.isSystemAdmin) && 
+        (
+          (this.dataService.vendor!.landingPage == this.page.id) ||
+          (
+            this.dataService.vendor!.landingPage == undefined && 
+            this.dataService.vendor!.community == this.communityId && 
+            this.page.default
+          )
+        )
+      ) {
         // Update if we are Test Bed or community admins and we are editing the default landing page.
         this.dataService.currentLandingPageContent = undefined
     }
@@ -85,6 +109,11 @@ export class LandingPageDetailsComponent extends BaseComponent implements OnInit
         } else {
           this.clearCachedLandingPageIfNeeded()
           this.popupService.success('Landing page updated.')
+          if (this.communityId == Constants.DEFAULT_COMMUNITY_ID) {
+            this.dataService.breadcrumbUpdate({id: this.pageId, type: BreadcrumbType.systemLandingPage, label: this.page.name})
+          } else {
+            this.dataService.breadcrumbUpdate({id: this.pageId, type: BreadcrumbType.landingPage, label: this.page.name})
+          }
         }
       }
     }).add(() => {
@@ -94,11 +123,15 @@ export class LandingPageDetailsComponent extends BaseComponent implements OnInit
 
   copyLandingPage() {
     this.copyPending = true
-    this.routingService.toCreateLandingPage(this.communityId, false, this.pageId)
+    if (this.communityId == Constants.DEFAULT_COMMUNITY_ID) {
+      this.routingService.toCreateLandingPage(undefined, undefined, this.pageId)
+    } else {
+      this.routingService.toCreateLandingPage(this.communityId, false, this.pageId)
+    }
   }
 
   deleteLandingPage() {
-    this.confirmationDialogService.confirmed("Confirm delete", "Are you sure you want to delete this landing page?", "Yes", "No")
+    this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this landing page?", "Delete", "Cancel")
     .subscribe(() => {
       this.deletePending = true
       this.landingPageService.deleteLandingPage(this.pageId)
@@ -113,7 +146,19 @@ export class LandingPageDetailsComponent extends BaseComponent implements OnInit
   }
 
   cancelDetailLandingPage() {
-    this.routingService.toCommunity(this.communityId, CommunityTab.landingPages)
+    if (this.communityId == Constants.DEFAULT_COMMUNITY_ID) {
+      this.routingService.toSystemAdministration(SystemAdministrationTab.landingPages)
+    } else {
+      this.routingService.toCommunity(this.communityId, CommunityTab.landingPages)
+    }
+  }
+
+  preview() {
+    this.modalService.show(PreviewLandingPageComponent, {
+      initialState: {
+        previewContent: this.page.content!
+      }
+    })
   }
 
 }

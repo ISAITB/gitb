@@ -7,9 +7,9 @@ import managers.testsuite.TestSuitePaths
 import models.Enums.ImportItemType.ImportItemType
 import models.Enums.TestSuiteReplacementChoice.PROCEED
 import models.Enums._
-import models.{Enums, TestCaseDeploymentAction, TestCases, TestSuiteDeploymentAction}
+import models.{BadgeFile, Badges, Enums, TestCaseDeploymentAction, TestCases, TestSuiteDeploymentAction}
 import org.apache.commons.codec.binary.Base64
-import org.apache.commons.io.FileUtils
+import org.apache.commons.io.{FileUtils, FilenameUtils}
 import org.apache.commons.lang3.StringUtils
 import org.slf4j.LoggerFactory
 import persistence.db._
@@ -25,7 +25,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.Using
 
 @Singleton
-class ImportCompleteManager @Inject()(communityResourceManager: CommunityResourceManager, triggerManager: TriggerManager, exportManager: ExportManager, communityManager: CommunityManager, conformanceManager: ConformanceManager, specificationManager: SpecificationManager, actorManager: ActorManager, endpointManager: EndPointManager, parameterManager: ParameterManager, testSuiteManager: TestSuiteManager, landingPageManager: LandingPageManager, legalNoticeManager: LegalNoticeManager, errorTemplateManager: ErrorTemplateManager, organisationManager: OrganizationManager, systemManager: SystemManager, importPreviewManager: ImportPreviewManager, repositoryUtils: RepositoryUtils, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class ImportCompleteManager @Inject()(domainParameterManager: DomainParameterManager, communityResourceManager: CommunityResourceManager, domainManager: DomainManager, triggerManager: TriggerManager, exportManager: ExportManager, communityManager: CommunityManager, conformanceManager: ConformanceManager, specificationManager: SpecificationManager, actorManager: ActorManager, endpointManager: EndPointManager, parameterManager: ParameterManager, testSuiteManager: TestSuiteManager, landingPageManager: LandingPageManager, legalNoticeManager: LegalNoticeManager, errorTemplateManager: ErrorTemplateManager, organisationManager: OrganizationManager, systemManager: SystemManager, importPreviewManager: ImportPreviewManager, repositoryUtils: RepositoryUtils, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   private def logger = LoggerFactory.getLogger("ImportCompleteManager")
 
@@ -262,6 +262,8 @@ class ImportCompleteManager @Inject()(communityResourceManager: CommunityResourc
     labelType match {
       case CustomLabelType.DOMAIN => Enums.LabelType.Domain.id.toShort
       case CustomLabelType.SPECIFICATION => Enums.LabelType.Specification.id.toShort
+      case CustomLabelType.SPECIFICATION_GROUP => Enums.LabelType.SpecificationGroup.id.toShort
+      case CustomLabelType.SPECIFICATION_IN_GROUP => Enums.LabelType.SpecificationInGroup.id.toShort
       case CustomLabelType.ACTOR => Enums.LabelType.Actor.id.toShort
       case CustomLabelType.ENDPOINT => Enums.LabelType.Endpoint.id.toShort
       case CustomLabelType.ORGANISATION => Enums.LabelType.Organisation.id.toShort
@@ -312,7 +314,9 @@ class ImportCompleteManager @Inject()(communityResourceManager: CommunityResourc
         Option(exportedTestCase.getOriginalDate), Option(exportedTestCase.getModificationDate), Option(exportedTestCase.getDescription),
         Option(exportedTestCase.getKeywords), exportedTestCase.getTestCaseType, "",
         Option(exportedTestCase.getTargetActors), None, exportedTestCase.getTestSuiteOrder, exportedTestCase.isHasDocumentation,
-        Option(exportedTestCase.getDocumentation), exportedTestCase.getIdentifier
+        Option(exportedTestCase.getDocumentation), exportedTestCase.getIdentifier,
+        Option(exportedTestCase.isOptional).exists(_.booleanValue()), Option(exportedTestCase.isDisabled).exists(_.booleanValue()),
+        Option(exportedTestCase.getTags)
       )
     }
     testCases.toList
@@ -592,7 +596,7 @@ class ImportCompleteManager @Inject()(communityResourceManager: CommunityResourc
       None
     } else {
       Some(testCases.map { testCase =>
-        new TestCaseDeploymentAction(testCase.getIdentifier, updateDefinition = true, resetTestHistory = false)
+        new TestCaseDeploymentAction(testCase.getIdentifier, updateDefinition = Some(true), resetTestHistory = Some(false))
       })
     }
     new TestSuiteDeploymentAction(specification, PROCEED, updateTestSuite = true, updateActors, sharedTestSuite, testCaseUpdates)
@@ -763,10 +767,10 @@ class ImportCompleteManager @Inject()(communityResourceManager: CommunityResourc
         processFromArchive(ImportItemType.Domain, exportedDomain, exportedDomain.getId, ctx,
           ImportCallbacks.set(
             (data: com.gitb.xml.export.Domain, item: ImportItem) => {
-              conformanceManager.createDomainInternal(models.Domain(0L, data.getShortName, data.getFullName, Option(data.getDescription)))
+              domainManager.createDomainInternal(models.Domain(0L, data.getShortName, data.getFullName, Option(data.getDescription)))
             },
             (data: com.gitb.xml.export.Domain, targetKey: String, item: ImportItem) => {
-              conformanceManager.updateDomainInternal(targetKey.toLong, data.getShortName, data.getFullName, Option(data.getDescription))
+              domainManager.updateDomainInternal(targetKey.toLong, data.getShortName, data.getFullName, Option(data.getDescription))
             },
             (data: com.gitb.xml.export.Domain, targetKey: Any, item: ImportItem) => {
               // Record this in case we need to do a global cleanup.
@@ -785,7 +789,7 @@ class ImportCompleteManager @Inject()(communityResourceManager: CommunityResourc
       _ <- {
         processRemaining(ImportItemType.Domain, ctx,
           (targetKey: String, item: ImportItem) => {
-            conformanceManager.deleteDomainInternal(targetKey.toLong, ctx.onSuccessCalls)
+            domainManager.deleteDomainInternal(targetKey.toLong, ctx.onSuccessCalls)
           }
         )
       }
@@ -799,7 +803,7 @@ class ImportCompleteManager @Inject()(communityResourceManager: CommunityResourc
                 (data: com.gitb.xml.export.DomainParameter, item: ImportItem) => {
                   val domainId = getDomainIdFromParentItem(item)
                   val fileData = parameterFileMetadata(ctx, data.getType, isDomainParameter = true, data.getValue)
-                  conformanceManager.createDomainParameterInternal(
+                  domainParameterManager.createDomainParameterInternal(
                     models.DomainParameter(0L, data.getName, Option(data.getDescription),
                       fileData._1, manageEncryptionIfNeeded(ctx.importSettings, data.getType, Option(data.getValue)), data.isInTests,
                       fileData._2, domainId), fileData._3, ctx.onSuccessCalls)
@@ -807,7 +811,7 @@ class ImportCompleteManager @Inject()(communityResourceManager: CommunityResourc
                 (data: com.gitb.xml.export.DomainParameter, targetKey: String, item: ImportItem) => {
                   val domainId = getDomainIdFromParentItem(item)
                   val fileData = parameterFileMetadata(ctx, data.getType, isDomainParameter = true, data.getValue)
-                  conformanceManager.updateDomainParameterInternal(domainId,
+                  domainParameterManager.updateDomainParameterInternal(domainId,
                     targetKey.toLong, data.getName, Option(data.getDescription), fileData._1,
                     manageEncryptionIfNeeded(ctx.importSettings, data.getType, Option(data.getValue)), data.isInTests,
                     fileData._2, fileData._3, ctx.onSuccessCalls)
@@ -822,7 +826,7 @@ class ImportCompleteManager @Inject()(communityResourceManager: CommunityResourc
         processRemaining(ImportItemType.DomainParameter, ctx,
           (targetKey: String, item: ImportItem) => {
             val domainId = getDomainIdFromParentItem(item)
-            conformanceManager.deleteDomainParameter(domainId, targetKey.toLong, ctx.onSuccessCalls)
+            domainParameterManager.deleteDomainParameter(domainId, targetKey.toLong, ctx.onSuccessCalls)
           }
         )
       }
@@ -885,7 +889,8 @@ class ImportCompleteManager @Inject()(communityResourceManager: CommunityResourc
                   val relatedGroupId = getProcessedDbId(data.getGroup, ImportItemType.SpecificationGroup, ctx)
                   if (data.getGroup == null || relatedGroupId.nonEmpty) {
                     val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
-                    conformanceManager.createSpecificationsInternal(models.Specifications(0L, data.getShortName, data.getFullName, Option(data.getDescription), data.isHidden, apiKey, getDomainIdFromParentItem(item), data.getDisplayOrder, relatedGroupId), checkApiKeyUniqueness = true)
+                    specificationManager.createSpecificationsInternal(models.Specifications(0L, data.getShortName, data.getFullName, Option(data.getDescription), data.isHidden, apiKey, getDomainIdFromParentItem(item), data.getDisplayOrder, relatedGroupId), checkApiKeyUniqueness = true,
+                      toModelBadges(data.getBadges, ctx), ctx.onSuccessCalls)
                   } else {
                     DBIO.successful(())
                   }
@@ -894,7 +899,8 @@ class ImportCompleteManager @Inject()(communityResourceManager: CommunityResourc
                   val relatedGroupId = getProcessedDbId(data.getGroup, ImportItemType.SpecificationGroup, ctx)
                   if (data.getGroup == null || relatedGroupId.nonEmpty) {
                     val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
-                    specificationManager.updateSpecificationInternal(targetKey.toLong, data.getShortName, data.getFullName, Option(data.getDescription), data.isHidden, Some(apiKey), checkApiKeyUniqueness = true, relatedGroupId, Some(data.getDisplayOrder))
+                    specificationManager.updateSpecificationInternal(targetKey.toLong, data.getShortName, data.getFullName, Option(data.getDescription), data.isHidden, Some(apiKey), checkApiKeyUniqueness = true, relatedGroupId, Some(data.getDisplayOrder),
+                      toModelBadges(data.getBadges, ctx), ctx.onSuccessCalls)
                   } else {
                     DBIO.successful(())
                   }
@@ -911,7 +917,7 @@ class ImportCompleteManager @Inject()(communityResourceManager: CommunityResourc
       _ <- {
         processRemaining(ImportItemType.Specification, ctx,
           (targetKey: String, item: ImportItem) => {
-            conformanceManager.deleteSpecificationInternal(targetKey.toLong, ctx.onSuccessCalls)
+            specificationManager.deleteSpecificationInternal(targetKey.toLong, ctx.onSuccessCalls)
           }
         )
       }
@@ -932,7 +938,8 @@ class ImportCompleteManager @Inject()(communityResourceManager: CommunityResourc
                       val specificationId = item.parentItem.get.targetKey.get.toLong // Specification
                       val domainId = getDomainIdFromParentItem(item)
                       val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
-                      conformanceManager.createActor(models.Actors(0L, data.getActorId, data.getName, Option(data.getDescription), Some(data.isDefault), data.isHidden, order, apiKey, domainId), specificationId, checkApiKeyUniqueness = true)
+                      actorManager.createActor(models.Actors(0L, data.getActorId, data.getName, Option(data.getDescription), Some(data.isDefault), data.isHidden, order, apiKey, domainId), specificationId, checkApiKeyUniqueness = true,
+                        toModelBadges(data.getBadges, ctx), ctx.onSuccessCalls)
                     },
                     (data: com.gitb.xml.export.Actor, targetKey: String, item: ImportItem) => {
                       // Record actor info (needed for test suite processing).
@@ -947,7 +954,8 @@ class ImportCompleteManager @Inject()(communityResourceManager: CommunityResourc
                         order = Some(data.getOrder.shortValue())
                       }
                       val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
-                      actorManager.updateActor(targetKey.toLong, data.getActorId, data.getName, Option(data.getDescription), Some(data.isDefault), data.isHidden, order, item.parentItem.get.targetKey.get.toLong, Some(apiKey), checkApiKeyUniqueness = true)
+                      actorManager.updateActor(targetKey.toLong, data.getActorId, data.getName, Option(data.getDescription), Some(data.isDefault), data.isHidden, order, item.parentItem.get.targetKey.get.toLong, Some(apiKey), checkApiKeyUniqueness = true,
+                        toModelBadges(data.getBadges, ctx), ctx.onSuccessCalls)
                     },
                     (data: com.gitb.xml.export.Actor, targetKey: Any, item: ImportItem) => {
                       // Record actor info (needed for test suite processing).
@@ -1129,7 +1137,7 @@ class ImportCompleteManager @Inject()(communityResourceManager: CommunityResourc
               testSuiteManager.unlinkSharedTestSuiteInternal(testSuiteId, List(specificationId))
             } else {
               // This is either a specification-specific test suite or a shared test suite that needs deleting.
-              conformanceManager.undeployTestSuite(targetKey.toLong, ctx.onSuccessCalls)
+              testSuiteManager.undeployTestSuite(targetKey.toLong, ctx.onSuccessCalls)
             }
           }
         )
@@ -1149,6 +1157,37 @@ class ImportCompleteManager @Inject()(communityResourceManager: CommunityResourc
         DBIO.successful(())
       }
     })
+  }
+
+  private def toModelBadgeFile(exportBadge: ConformanceBadge, ctx: ImportContext): Option[BadgeFile] = {
+    if (exportBadge != null) {
+      val extension = FilenameUtils.getExtension(exportBadge.getName)
+      val extensionToUse = if (extension.isBlank) {
+        None
+      } else {
+        Some("."+extension)
+      }
+      val fileToStore = dataUrlToTempFile(exportBadge.getContent, extensionToUse)
+      ctx.onFailureCalls += (() => if (fileToStore.exists()) {
+        FileUtils.deleteQuietly(fileToStore)
+      })
+      Some(BadgeFile(fileToStore, fileToStore.getName))
+    } else {
+      None
+    }
+  }
+
+  private def toModelBadges(exportBadges: ConformanceBadges, ctx: ImportContext): Option[Badges] = {
+    if (exportBadges != null) {
+      Some(Badges(
+        exportBadges.getSuccess != null, exportBadges.getFailure != null, exportBadges.getOther != null,
+        toModelBadgeFile(exportBadges.getSuccess, ctx),
+        toModelBadgeFile(exportBadges.getFailure, ctx),
+        toModelBadgeFile(exportBadges.getOther, ctx)
+      ))
+    } else {
+      None
+    }
   }
 
   private def hasExisting(itemType: ImportItemType, key: String, ctx: ImportContext): Boolean = {
@@ -1362,7 +1401,7 @@ class ImportCompleteManager @Inject()(communityResourceManager: CommunityResourc
         if (communityId.isDefined) {
           if (exportedCommunity.getConformanceCertificateSettings == null) {
             // Delete
-            conformanceManager.deleteConformanceCertificateSettings(communityId.get)
+            communityManager.deleteConformanceCertificateSettings(communityId.get)
           } else {
             // Update/Add
             var keystoreFile: Option[String] = None
@@ -1377,10 +1416,10 @@ class ImportCompleteManager @Inject()(communityResourceManager: CommunityResourc
               keystorePassword = prepareCertificateSettingKey(exportedCommunity.getConformanceCertificateSettings.getSignature.getKeystorePassword, importSettings)
               keyPassword = prepareCertificateSettingKey(exportedCommunity.getConformanceCertificateSettings.getSignature.getKeyPassword, importSettings)
             }
-            conformanceManager.updateConformanceCertificateSettingsInternal(
+            communityManager.updateConformanceCertificateSettingsInternal(
                 models.ConformanceCertificates(
                   0L, Option(exportedCommunity.getConformanceCertificateSettings.getTitle), Option(exportedCommunity.getConformanceCertificateSettings.getMessage),
-                  exportedCommunity.getConformanceCertificateSettings.isAddMessage, exportedCommunity.getConformanceCertificateSettings.isAddResultOverview,
+                  exportedCommunity.getConformanceCertificateSettings.isAddTitle, exportedCommunity.getConformanceCertificateSettings.isAddMessage, exportedCommunity.getConformanceCertificateSettings.isAddResultOverview,
                   exportedCommunity.getConformanceCertificateSettings.isAddTestCases, exportedCommunity.getConformanceCertificateSettings.isAddDetails,
                   exportedCommunity.getConformanceCertificateSettings.isAddSignature, keystoreFile, keystoreType, keystorePassword, keyPassword,
                   communityId.get
@@ -1838,10 +1877,10 @@ class ImportCompleteManager @Inject()(communityResourceManager: CommunityResourc
                 dbActions += processFromArchive(ImportItemType.System, exportedSystem, exportedSystem.getId, ctx,
                   ImportCallbacks.set(
                     (data: com.gitb.xml.export.System, item: ImportItem) => {
-                      systemManager.registerSystemInternal(models.Systems(0L, data.getShortName, data.getFullName, Option(data.getDescription), Option(data.getVersion), Option(data.getApiKey), item.parentItem.get.targetKey.get.toLong), checkApiKeyUniqueness = true)
+                      systemManager.registerSystemInternal(models.Systems(0L, data.getShortName, data.getFullName, Option(data.getDescription), Option(data.getVersion), Option(data.getApiKey), Option(data.getBadgeKey).getOrElse(CryptoUtil.generateApiKey()), item.parentItem.get.targetKey.get.toLong), checkApiKeyUniqueness = true)
                     },
                     (data: com.gitb.xml.export.System, targetKey: String, item: ImportItem) => {
-                      systemManager.updateSystemProfileInternal(None, targetCommunityId, item.targetKey.get.toLong, data.getShortName, data.getFullName, Option(data.getDescription), Option(data.getVersion), Some(Option(data.getApiKey)),
+                      systemManager.updateSystemProfileInternal(None, targetCommunityId, item.targetKey.get.toLong, data.getShortName, data.getFullName, Option(data.getDescription), Option(data.getVersion), Some(Option(data.getApiKey)), Option(data.getBadgeKey),
                         None, None, None, copySystemParameters = false, copyStatementParameters = false,
                         checkApiKeyUniqueness = true, ctx.onSuccessCalls
                       )
@@ -2135,8 +2174,8 @@ class ImportCompleteManager @Inject()(communityResourceManager: CommunityResourc
     }
   }
 
-  private def dataUrlToTempFile(dataUrl: String): File = {
-    Files.write(Files.createTempFile("itb", null), Base64.decodeBase64(MimeUtil.getBase64FromDataURL(dataUrl))).toFile
+  private def dataUrlToTempFile(dataUrl: String, suffix: Option[String] = None): File = {
+    Files.write(Files.createTempFile("itb", suffix.orNull), Base64.decodeBase64(MimeUtil.getBase64FromDataURL(dataUrl))).toFile
   }
 
   private def parameterFileMetadata(ctx: ImportContext, parameterType: PropertyType, isDomainParameter: Boolean, parameterValue: String): (String, Option[String], Option[File]) = {

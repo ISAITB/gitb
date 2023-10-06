@@ -6,17 +6,17 @@ import com.gitb.tbs.UserInput
 import com.gitb.tr._
 import config.Configurations
 import exceptions.JsonValidationException
+import jakarta.xml.bind.JAXBElement
+import managers.breadcrumb.BreadcrumbLabelResponse
 import managers.export.{ExportSettings, ImportItem, ImportSettings}
 import models.Enums.TestSuiteReplacementChoice.TestSuiteReplacementChoice
 import models.Enums._
 import models._
 import models.automation._
 import org.apache.commons.codec.binary.Base64
-import play.api.libs.json.{JsObject, _}
+import play.api.libs.json.{JsObject, Json, _}
 
-import java.sql.Timestamp
 import java.util
-import javax.xml.bind.JAXBElement
 import scala.collection.mutable.ListBuffer
 import scala.collection.{immutable, mutable}
 import scala.jdk.CollectionConverters.{CollectionHasAsScala, IterableHasAsJava}
@@ -213,8 +213,23 @@ object JsonUtil {
     if (item.description.nonEmpty && item.description.get.nonEmpty) {
       json = json +("description" -> JsString(item.description.get))
     }
+    if (item.itemType == ConformanceStatementItemType.ACTOR && !item.actorToShow) {
+      json = json + ("hidden" -> JsBoolean(true))
+    }
     if (item.items.nonEmpty) {
       json = json +("items" -> jsConformanceStatementItems(item.items.get))
+    }
+    if (item.results.isDefined) {
+      json = json +("results" -> Json.obj(
+          "updateTime" -> (if (item.results.get.updateTime.isDefined) TimeUtil.serializeTimestamp(item.results.get.updateTime.get) else JsNull),
+          "undefined" -> item.results.get.undefinedTests,
+          "failed" -> item.results.get.failedTests,
+          "completed" -> item.results.get.completedTests,
+          "undefinedOptional" -> item.results.get.undefinedOptionalTests,
+          "failedOptional" -> item.results.get.failedOptionalTests,
+          "completedOptional" -> item.results.get.completedOptionalTests
+        )
+      )
     }
     json
   }
@@ -499,12 +514,21 @@ object JsonUtil {
     json
   }
 
-  def jsSystemConfiguration(sc: SystemConfigurations):JsObject = {
-    val json = Json.obj(
-      "name"    -> sc.name,
-      "parameter"  -> (if(sc.parameter.isDefined) sc.parameter.get else JsNull),
-      "description"  -> (if(sc.description.isDefined) sc.description.get else JsNull)
+  def jsSystemConfigurations(configs: List[SystemConfigurationsWithEnvironment]): JsArray = {
+    var json = Json.arr()
+    configs.foreach { config =>
+      json = json.append(jsSystemConfiguration(config))
+    }
+    json
+  }
+
+  def jsSystemConfiguration(config: SystemConfigurationsWithEnvironment):JsObject = {
+    var json = Json.obj(
+      "name"    -> config.config.name,
+      "default" -> config.defaultSetting,
+      "environment" -> config.environmentSetting
     )
+    if (config.config.parameter.isDefined) json = json + ("parameter" -> JsString(config.config.parameter.get))
     json
   }
 
@@ -765,7 +789,7 @@ object JsonUtil {
    * @param spec Specification object to be converted
    * @return JsObject
    */
-  def jsSpecification(spec:Specifications, withApiKeys:Boolean = false) : JsObject = {
+  def jsSpecification(spec:Specifications, withApiKeys:Boolean = false, badgeStatus: Option[BadgeStatus] = None) : JsObject = {
     var json = Json.obj(
       "id"      -> spec.id,
       "sname"   -> spec.shortname,
@@ -779,7 +803,27 @@ object JsonUtil {
     if (withApiKeys && Configurations.AUTOMATION_API_ENABLED) {
       json = json.+("apiKey" -> JsString(spec.apiKey))
     }
+    if (badgeStatus.isDefined) {
+      json = json.+("badges" -> jsBadgeStatus(badgeStatus.get))
+    }
     json
+  }
+
+  private def jsBadgeStatus(badgeStatus: BadgeStatus): JsObject = {
+    Json.obj(
+      "success" -> Json.obj(
+        "enabled" -> badgeStatus.success.isDefined,
+        "nameToShow" -> (if (badgeStatus.success.isDefined) badgeStatus.success.get else JsNull)
+      ),
+      "failure" -> Json.obj(
+        "enabled" -> badgeStatus.failure.isDefined,
+        "nameToShow" -> (if (badgeStatus.failure.isDefined) badgeStatus.failure.get else JsNull)
+      ),
+      "other" -> Json.obj(
+        "enabled" -> badgeStatus.other.isDefined,
+        "nameToShow" -> (if (badgeStatus.other.isDefined) badgeStatus.other.get else JsNull)
+      )
+    )
   }
 
   def jsSpecificationGroup(group: SpecificationGroups): JsObject = {
@@ -795,13 +839,12 @@ object JsonUtil {
 
   /**
    * Converts a List of Specifications into Play!'s JSON notation
-   * @param list List of Specifications to be converted
    * @return JsArray
    */
-  def jsSpecifications(list:Iterable[Specifications], withApiKeys:Boolean = false):JsArray = {
+  def jsSpecifications(list:Iterable[Specifications], withApiKeys:Boolean = false, badgeStatus: Option[BadgeStatus] = None):JsArray = {
     var json = Json.arr()
     list.foreach{ spec =>
-      json = json.append(jsSpecification(spec, withApiKeys))
+      json = json.append(jsSpecification(spec, withApiKeys, badgeStatus))
     }
     json
   }
@@ -833,7 +876,7 @@ object JsonUtil {
     json
   }
 
-  def jsActor(actor:Actor) : JsObject = {
+  def jsActor(actor:Actor, badgeStatus: Option[BadgeStatus] = None) : JsObject = {
     var json = Json.obj(
       "id" -> actor.id,
       "actorId" -> actor.actorId,
@@ -847,6 +890,9 @@ object JsonUtil {
     )
     if (Configurations.AUTOMATION_API_ENABLED) {
       json = json.+("apiKey"  -> (if(actor.apiKey.isDefined) JsString(actor.apiKey.get) else JsNull))
+    }
+    if (badgeStatus.isDefined) {
+      json = json.+("badges" -> jsBadgeStatus(badgeStatus.get))
     }
     json
   }
@@ -874,8 +920,11 @@ object JsonUtil {
 			"results" -> Json.obj(
 				"undefined" -> conformanceStatement.undefinedTests,
         "failed" -> conformanceStatement.failedTests,
-				"completed" -> conformanceStatement.completedTests
-			)
+				"completed" -> conformanceStatement.completedTests,
+        "undefinedOptional" -> conformanceStatement.undefinedOptionalTests,
+        "failedOptional" -> conformanceStatement.failedOptionalTests,
+        "completedOptional" -> conformanceStatement.completedOptionalTests
+      )
 		)
 		json
 	}
@@ -966,14 +1015,17 @@ object JsonUtil {
     }
     val testSuite = (jsonConfig \ "testSuite").as[String]
     val ignoreWarnings = (jsonConfig \ "ignoreWarnings").asOpt[Boolean].getOrElse(false)
-    val replaceTestHistory = (jsonConfig \ "replaceTestHistory").asOpt[Boolean].getOrElse(false)
-    val updateSpecification = (jsonConfig \ "updateSpecification").asOpt[Boolean].getOrElse(false)
+    val replaceTestHistory = (jsonConfig \ "replaceTestHistory").asOpt[Boolean]
+    val updateSpecification = (jsonConfig \ "updateSpecification").asOpt[Boolean]
     val testCaseActions = (jsonConfig \ "testCases").asOpt[List[JsValue]].getOrElse(List.empty).map { item =>
-      new TestCaseDeploymentAction(
+      val testCase = new TestCaseDeploymentAction(
         (item \ "identifier").as[String],
-        (item \ "updateSpecification").asOpt[Boolean].getOrElse(updateSpecification),
-        (item \ "replaceTestHistory").asOpt[Boolean].getOrElse(replaceTestHistory)
+        (item \ "updateSpecification").asOpt[Boolean],
+        (item \ "replaceTestHistory").asOpt[Boolean]
       )
+      if (testCase.updateDefinition.isEmpty) testCase.updateDefinition = updateSpecification
+      if (testCase.resetTestHistory.isEmpty) testCase.resetTestHistory = replaceTestHistory
+      testCase
     }
     val testCaseMap = new mutable.HashMap[String, TestCaseDeploymentAction]()
     testCaseActions.foreach { action =>
@@ -1026,6 +1078,19 @@ object JsonUtil {
       items = items.append(item)
     }
     items
+  }
+
+  def parseJsTags(json: String): List[TestCaseTag] = {
+    val tags = new ListBuffer[TestCaseTag]
+    Json.parse(json).as[JsArray].value.foreach { value =>
+      tags += TestCaseTag(
+        (value \ "name").as[String],
+        (value \ "description").asOpt[String],
+        (value \ "foreground").asOpt[String],
+        (value \ "background").asOpt[String]
+      )
+    }
+    tags.toList
   }
 
   private def parseJsInputMapping(json: JsValue): InputMapping = {
@@ -1087,8 +1152,8 @@ object JsonUtil {
         testCaseActions ++= (jsonConfig \ "testCaseUpdates").asOpt[List[JsValue]].getOrElse(List.empty).map { item =>
           new TestCaseDeploymentAction(
             (item \ "identifier").as[String],
-            (item \ "updateDefinition").asOpt[Boolean].getOrElse(false),
-            (item \ "resetTestHistory").asOpt[Boolean].getOrElse(false)
+            (item \ "updateDefinition").asOpt[Boolean],
+            (item \ "resetTestHistory").asOpt[Boolean]
           )
         }
         testCasesToReset = Some(testCaseActions.toList)
@@ -1343,6 +1408,7 @@ object JsonUtil {
       0L,
       (jsonConfig \ "title").asOpt[String],
       certificateMessage,
+      (jsonConfig \ "includeTitle").as[Boolean],
       (jsonConfig \ "includeMessage").as[Boolean],
       (jsonConfig \ "includeTestStatus").as[Boolean],
       (jsonConfig \ "includeTestCases").as[Boolean],
@@ -1362,6 +1428,7 @@ object JsonUtil {
       0L,
       None,
       None,
+      includeTitle = false,
       includeMessage = false,
       includeTestStatus = false,
       includeTestCases = false,
@@ -1380,8 +1447,8 @@ object JsonUtil {
    * @param testCase TestCase object to be converted
    * @return JsObject
    */
-  def jsTestCases(testCase:TestCases, withDocumentation: Boolean) : JsObject = {
-    val json = Json.obj(
+  def jsTestCases(testCase:TestCases, withDocumentation: Boolean, withTags: Boolean) : JsObject = {
+    var json = Json.obj(
       "id"      -> testCase.id,
       "identifier"    -> testCase.identifier,
       "sname"   -> testCase.shortname,
@@ -1395,8 +1462,11 @@ object JsonUtil {
       "type" -> testCase.testCaseType,
       "path" -> testCase.path,
       "hasDocumentation" -> testCase.hasDocumentation,
-      "documentation" -> (if (withDocumentation && testCase.documentation.isDefined) testCase.documentation.get else JsNull)
+      "optional" -> testCase.isOptional,
+      "disabled" -> testCase.isDisabled
     )
+    if (withDocumentation && testCase.documentation.isDefined) json = json + ("documentation" -> JsString(testCase.documentation.get))
+    if (withTags && testCase.tags.isDefined) json = json + ("tags" -> JsString(testCase.tags.get))
     json
   }
 
@@ -1419,7 +1489,9 @@ object JsonUtil {
       "keywords" -> (if(testCase.keywords.isDefined) testCase.keywords.get else JsNull),
       "type" -> testCase.testCaseType,
       "path" -> testCase.path,
-      "hasDocumentation"  -> testCase.hasDocumentation
+      "hasDocumentation"  -> testCase.hasDocumentation,
+      "optional"  -> testCase.isOptional,
+      "disabled"  -> testCase.isDisabled
     )
     json
   }
@@ -1432,7 +1504,7 @@ object JsonUtil {
   def jsTestCasesList(list:List[TestCases]):JsArray = {
     var json = Json.arr()
     list.foreach{ testCase =>
-      json = json.append(jsTestCases(testCase, withDocumentation = false))
+      json = json.append(jsTestCases(testCase, withDocumentation = false, withTags = false))
     }
     json
   }
@@ -1740,6 +1812,18 @@ object JsonUtil {
     json
   }
 
+  def jsBreadcrumbLabelResponse(labels: BreadcrumbLabelResponse): JsObject = {
+    var json = Json.obj()
+    if (labels.domain.isDefined) json = json + ("domain" -> JsString(labels.domain.get))
+    if (labels.specificationGroup.isDefined) json = json + ("specificationGroup" -> JsString(labels.specificationGroup.get))
+    if (labels.specification.isDefined) json = json + ("specification" -> JsString(labels.specification.get))
+    if (labels.actor.isDefined) json = json + ("actor" -> JsString(labels.actor.get))
+    if (labels.community.isDefined) json = json + ("community" -> JsString(labels.community.get))
+    if (labels.organisation.isDefined) json = json + ("organisation" -> JsString(labels.organisation.get))
+    if (labels.system.isDefined) json = json + ("system" -> JsString(labels.system.get))
+    json
+  }
+
   def serializeConfigurationProperties(config: util.HashMap[String, String]):JsObject = {
     val json = Json.obj(
       "emailEnabled" -> config.get("email.enabled").toBoolean,
@@ -1769,35 +1853,14 @@ object JsonUtil {
     json
   }
 
-  def serializeSystemConfig(sc:SystemConfiguration):String = {
-    val jConfig:JsObject = jsSystemConfiguration(sc.toCaseObject)
-    jConfig.toString
-  }
-
   /**
    * Converts an Organization object into a JSON string with its complex objects
    * @param org Organization object to be converted
    * @return String
    */
   def serializeOrganization(org:Organization, includeAdminInfo: Boolean):String = {
-    //1) Serialize Organization
+    // Serialize Organization
     var jOrganization:JsObject = jsOrganization(org.toCaseObject)
-    //2) If User exists, convert and append it to Organization
-    if(org.admin.isDefined){
-      jOrganization = jOrganization ++ Json.obj("admin" -> jsUser(org.admin.get))
-    } else{
-      jOrganization = jOrganization ++ Json.obj("admin" -> JsNull)
-    }
-    //3) If Systems exist, convert and append them to Organization
-    if(org.systems.isDefined){
-      var jsSystems:JsArray = Json.arr()
-      org.systems.get.foreach { system =>
-        jsSystems = jsSystems.append( jsSystem(system) )
-      }
-      jOrganization = jOrganization ++ Json.obj("systems" -> jsSystems)
-    } else{
-      jOrganization = jOrganization ++ Json.obj("systems" -> JsNull)
-    }
     //
     if(org.landingPageObj.isDefined){
       jOrganization = jOrganization ++ Json.obj("landingPages" -> jsLandingPage(org.landingPageObj.get))
@@ -1817,12 +1880,7 @@ object JsonUtil {
       jOrganization = jOrganization ++ Json.obj("errorTemplates" -> JsNull)
     }
     //
-    if(org.community.isDefined){
-      jOrganization = jOrganization ++ Json.obj("communities" -> jsCommunity(org.community.get, includeAdminInfo))
-    } else{
-      jOrganization = jOrganization ++ Json.obj("communities" -> JsNull)
-    }
-    //4) Return JSON String
+    // Return JSON String
     jOrganization.toString
   }
 
@@ -2078,6 +2136,23 @@ object JsonUtil {
     json
   }
 
+  def jsConformanceSnapshots(snapshots: Iterable[ConformanceSnapshot]): JsArray = {
+    var array = Json.arr()
+    snapshots.foreach { snapshot =>
+      array = array.append(jsConformanceSnapshot(snapshot))
+    }
+    array
+  }
+
+  def jsConformanceSnapshot(snapshot: ConformanceSnapshot):JsObject = {
+    Json.obj(
+      "id" -> snapshot.id,
+      "label" -> snapshot.label,
+      "snapshotTime" -> TimeUtil.serializeTimestamp(snapshot.snapshotTime),
+      "community" -> snapshot.community
+    )
+  }
+
   def jsTestSuiteUploadResult(result: TestSuiteUploadResult):JsObject = {
     val json = Json.obj(
       "success"    -> result.success,
@@ -2090,7 +2165,9 @@ object JsonUtil {
       "needsConfirmation" -> result.needsConfirmation,
       "testCases" -> (if (result.testCases.isDefined) jsTestSuiteUploadSpecificationTestCases(result.testCases.get) else JsNull),
       "sharedTestSuiteId" -> (if (result.sharedTestSuiteId.isDefined) result.sharedTestSuiteId.get else JsNull),
-      "sharedTestCases" -> (if (result.sharedTestCases.isDefined) jsTestSuiteUploadTestCases(result.sharedTestCases.get) else JsNull)
+      "sharedTestCases" -> (if (result.sharedTestCases.isDefined) jsTestSuiteUploadTestCases(result.sharedTestCases.get) else JsNull),
+      "updateMetadata" -> result.updateMetadata,
+      "updateSpecification" -> result.updateSpecification
     )
     json
   }
@@ -2125,7 +2202,9 @@ object JsonUtil {
       testCaseArray = testCaseArray.append(Json.obj(
         "identifier" -> testCase.identifier,
         "name" -> testCase.name,
-        "status" -> testCase.matchType.id
+        "status" -> testCase.matchType.id,
+        "updateMetadata" -> testCase.updateMetadata,
+        "resetTestHistory" -> testCase.resetTestHistory
       ))
     }
     testCaseArray
@@ -2215,69 +2294,88 @@ object JsonUtil {
     json
   }
 
-  def jsConformanceResultList(list: List[ConformanceStatusItem]): JsObject = {
-    var updateTime: Option[Timestamp] = None
-    var undefinedTests = 0L
-    var completedTests = 0L
-    var failedTests = 0L
-    var itemArray = Json.arr()
-    list.foreach{ info =>
-      if (info.sessionTime.isDefined && (updateTime.isEmpty || updateTime.get.before(info.sessionTime.get))) {
-        updateTime = info.sessionTime
-      }
-      if (TestResultStatus.withName(info.result) == TestResultStatus.SUCCESS) {
-        completedTests += 1
-      } else if (TestResultStatus.withName(info.result) == TestResultStatus.FAILURE) {
-        failedTests += 1
-      } else {
-        undefinedTests += 1
-      }
-      itemArray = itemArray.append(jsConformanceResult(info))
+  def jsConformanceTestCases(testCases: Iterable[ConformanceTestCase]): JsArray = {
+    var json = Json.arr()
+    testCases.foreach { testCase =>
+      json = json.append(Json.obj(
+        "id" -> testCase.id,
+        "sname" -> testCase.name,
+        "description" -> (if (testCase.description.isDefined) testCase.description.get else JsNull),
+        "outputMessage" -> (if (testCase.outputMessage.isDefined) testCase.outputMessage.get else JsNull),
+        "sessionId" -> (if (testCase.sessionId.isDefined) testCase.sessionId.get else JsNull),
+        "updateTime" -> (if (testCase.updateTime.isDefined) TimeUtil.serializeTimestamp(testCase.updateTime.get) else JsNull),
+        "hasDocumentation" -> testCase.hasDocumentation,
+        "optional" -> testCase.optional,
+        "disabled" -> testCase.disabled,
+        "result" -> testCase.result.value(),
+        "tags" -> (if (testCase.tags.isDefined) testCase.tags.get else JsNull)
+      ))
     }
-    var result = TestResultStatus.SUCCESS.toString
-    if (failedTests > 0) {
-      result = TestResultStatus.FAILURE.toString
-    } else if (undefinedTests > 0) {
-      result = TestResultStatus.UNDEFINED.toString
+    json
+  }
+
+  def jsConformanceTestSuites(testSuites: Iterable[ConformanceTestSuite]): JsArray = {
+    var json = Json.arr()
+    testSuites.foreach { testSuite =>
+      json = json.append(Json.obj(
+        "id" -> testSuite.id,
+        "sname" -> testSuite.name,
+        "description" -> (if (testSuite.description.isDefined) testSuite.description.get else JsNull),
+        "hasDocumentation" -> testSuite.hasDocumentation,
+        "result" -> testSuite.result.value(),
+        "testCases" -> jsConformanceTestCases(testSuite.testCases)
+      ))
     }
+    json
+  }
+
+  def jsTags(tags: Iterable[TestCaseTag]): JsArray = {
+    var json = Json.arr()
+    tags.foreach { tag =>
+      var tagJson = Json.obj("name" -> tag.name)
+      if (tag.description.isDefined) tagJson = tagJson + ("description" -> JsString(tag.description.get))
+      if (tag.foreground.isDefined) tagJson = tagJson + ("foreground" -> JsString(tag.foreground.get))
+      if (tag.background.isDefined) tagJson = tagJson + ("background" -> JsString(tag.background.get))
+      json = json.append(tagJson)
+    }
+    json
+  }
+
+  def jsConformanceStatement(statement: ConformanceStatementItem, results: ConformanceStatus, systemInfo: System): JsObject = {
+    Json.obj(
+      "statement" -> jsConformanceStatementItem(statement),
+      "results" -> jsConformanceStatus(results),
+      "system" -> jsSystem(systemInfo.toCaseObject),
+      "organisation" -> jsOrganization(systemInfo.owner.get) // This is always present.
+    )
+  }
+
+  def jsConformanceStatus(status: ConformanceStatus): JsObject = {
     val json = Json.obj(
       "summary" -> Json.obj(
-        "failed"    -> failedTests,
-        "completed"    -> completedTests,
-        "undefined"    -> undefinedTests,
-        "result" -> result,
-        "updateTime" -> (if (updateTime.isDefined) TimeUtil.serializeTimestamp(updateTime.get) else JsNull)
+        "failed"    -> status.failed,
+        "completed"    -> status.completed,
+        "undefined"    -> status.undefined,
+        "failedOptional" -> status.failedOptional,
+        "completedOptional" -> status.completedOptional,
+        "undefinedOptional" -> status.undefinedOptional,
+        "result" -> status.result.value(),
+        "hasBadge" -> status.hasBadge,
+        "updateTime" -> (if (status.updateTime.isDefined) TimeUtil.serializeTimestamp(status.updateTime.get) else JsNull)
       ),
-      "items" -> itemArray
+      "testSuites" -> jsConformanceTestSuites(status.testSuites)
     )
     json
   }
 
-  def jsConformanceResult(listItem: ConformanceStatusItem): JsObject = {
-    val json = Json.obj(
-      "testSuiteId"    -> listItem.testSuiteId,
-      "testSuiteName"    -> listItem.testSuiteName,
-      "testSuiteDescription"    -> listItem.testSuiteDescription,
-      "testSuiteHasDocumentation"    -> listItem.testSuiteHasDocumentation,
-      "testCaseId"    -> listItem.testCaseId,
-      "testCaseName"    -> listItem.testCaseName,
-      "testCaseDescription"    -> listItem.testCaseDescription,
-      "testCaseHasDocumentation"    -> listItem.testCaseHasDocumentation,
-      "result"    -> listItem.result,
-      "outputMessage" -> listItem.outputMessage,
-      "sessionId"    -> listItem.sessionId,
-      "sessionTime"    -> (if (listItem.sessionTime.isDefined) TimeUtil.serializeTimestamp(listItem.sessionTime.get) else JsNull)
-    )
-    json
-  }
-
-  def jsConformanceResultFullList(list: List[ConformanceStatementFull], orgParameterDefinitions: Option[List[OrganisationParameters]], orgParameterValues: Option[scala.collection.mutable.Map[Long, scala.collection.mutable.Map[Long, String]]], sysParameterDefinitions: Option[List[SystemParameters]], sysParameterValues: Option[scala.collection.mutable.Map[Long, scala.collection.mutable.Map[Long, String]]]): JsObject = {
+  def jsConformanceResultFullList(list: List[ConformanceStatementFull], orgParameterDefinitions: Option[List[OrganisationParameters]], orgParameterValues: Option[scala.collection.mutable.Map[Long, scala.collection.mutable.Map[Long, String]]], sysParameterDefinitions: Option[List[SystemParameters]], sysParameterValues: Option[scala.collection.mutable.Map[Long, scala.collection.mutable.Map[Long, String]]], count: Int): JsObject = {
     var json = Json.arr()
     list.foreach{ info =>
       json = json.append(jsConformanceResultFull(info, orgParameterDefinitions, orgParameterValues, sysParameterDefinitions, sysParameterValues))
     }
     var jsonResult = Json.obj(
-      "data" -> json
+      "data" -> json,
+      "count" -> count
     )
     if (orgParameterDefinitions.isDefined) {
       var orgParameters = Json.arr()
@@ -2322,6 +2420,9 @@ object JsonUtil {
       "failed"    -> item.failedTests,
       "completed"    -> item.completedTests,
       "undefined"    -> item.undefinedTests,
+      "failedOptional" -> item.failedOptionalTests,
+      "completedOptional" -> item.completedOptionalTests,
+      "undefinedOptional" -> item.undefinedOptionalTests,
       "result" -> item.result,
       "updateTime" -> (if(item.updateTime.isDefined) TimeUtil.serializeTimestamp(item.updateTime.get) else JsNull),
       "outputMessage" -> item.outputMessage
@@ -2355,6 +2456,7 @@ object JsonUtil {
         "id"    -> settings.get.id,
         "title" -> (if(settings.get.title.isDefined) settings.get.title.get else JsNull),
         "message" -> (if(settings.get.message.isDefined) settings.get.message.get else JsNull),
+        "includeTitle" -> settings.get.includeTitle,
         "includeMessage" -> settings.get.includeMessage,
         "includeTestStatus" -> settings.get.includeTestStatus,
         "includeTestCases" -> settings.get.includeTestCases,

@@ -5,7 +5,6 @@ import controllers.util._
 import exceptions._
 import managers.{AccountManager, AuthenticationManager, AuthorizationManager, UserManager}
 import models.Enums
-import org.pac4j.core.context.session.SessionStore
 import org.slf4j.{Logger, LoggerFactory}
 import persistence.cache.TokenCache
 import play.api.mvc._
@@ -13,7 +12,7 @@ import utils.{CryptoUtil, JsonUtil, RepositoryUtils}
 
 import javax.inject.Inject
 
-class AuthenticationService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerComponents, accountManager: AccountManager, authManager: AuthenticationManager, authorizationManager: AuthorizationManager, sessionStore: SessionStore, userManager: UserManager, repositoryUtils: RepositoryUtils) extends AbstractController(cc) {
+class AuthenticationService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerComponents, accountManager: AccountManager, authManager: AuthenticationManager, authorizationManager: AuthorizationManager, userManager: UserManager, repositoryUtils: RepositoryUtils) extends AbstractController(cc) {
 
   private final val logger: Logger = LoggerFactory.getLogger(classOf[AuthenticationService])
   private final val BEARER = "Bearer"
@@ -43,8 +42,8 @@ class AuthenticationService @Inject() (authorizedAction: AuthorizedAction, cc: C
 
   def migrateFunctionalAccount = authorizedAction { request =>
     authorizationManager.canMigrateAccount(request)
-    val email = ParameterExtractor.requiredBodyParameter(request, Parameters.EMAIL)
-    val password = ParameterExtractor.requiredBodyParameter(request, Parameters.PASSWORD)
+    val email = ParameterExtractor.requiredBodyParameter(request, Parameters.EMAIL).trim
+    val password = ParameterExtractor.requiredBodyParameter(request, Parameters.PASSWORD).trim
     val result = authManager.checkUserByEmail(email, password)
     if (result.isDefined) {
       if (result.get.ssoUid.isDefined || result.get.ssoEmail.isDefined) {
@@ -156,7 +155,12 @@ class AuthenticationService @Inject() (authorizedAction: AuthorizedAction, cc: C
     val userInfo = accountManager.getUserProfile(userId)
     authorizationManager.canCheckUserEmail(request, userInfo.organization.get.id)
     val email = ParameterExtractor.requiredQueryParameter(request, Parameters.EMAIL)
-    val isAvailable = authManager.checkEmailAvailability(email, Some(userInfo.organization.get.id), None, None)
+    val roleId = if (Configurations.AUTHENTICATION_SSO_ENABLED) {
+      Some(ParameterExtractor.requiredQueryParameter(request, Parameters.ROLE_ID).toShort)
+    } else {
+      None
+    }
+    val isAvailable = authManager.checkEmailAvailability(email, Some(userInfo.organization.get.id), None, roleId)
     ResponseConstructor.constructAvailabilityResponse(isAvailable)
   }
 

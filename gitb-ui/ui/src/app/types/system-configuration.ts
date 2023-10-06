@@ -2,6 +2,7 @@ export interface SystemConfiguration {
 
     name: string,
     parameter?: string
-    description?: string
+    default: boolean
+    environment: boolean
 
 }

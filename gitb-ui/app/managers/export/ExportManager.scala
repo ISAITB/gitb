@@ -3,7 +3,7 @@ package managers.export
 import com.gitb.xml
 import com.gitb.xml.export._
 import managers._
-import models.Enums.{LabelType, SelfRegistrationRestriction, SelfRegistrationType, UserRole}
+import models.Enums.{LabelType, SelfRegistrationRestriction, SelfRegistrationType, TestResultStatus, UserRole}
 import models.{TestCases, Actors => _, Endpoints => _, Systems => _, _}
 import org.apache.commons.codec.binary.Base64
 import org.apache.commons.io.{FileUtils, IOUtils}
@@ -12,13 +12,14 @@ import persistence.db._
 import play.api.db.slick.DatabaseConfigProvider
 import utils.{MimeUtil, RepositoryUtils}
 
+import java.io.File
 import java.nio.file.Files
 import javax.inject.{Inject, Singleton}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 @Singleton
-class ExportManager @Inject() (repositoryUtils: RepositoryUtils, communityResourceManager: CommunityResourceManager, triggerManager: TriggerManager, communityManager: CommunityManager, conformanceManager: ConformanceManager, testSuiteManager: TestSuiteManager, landingPageManager: LandingPageManager, legalNoticeManager: LegalNoticeManager, errorTemplateManager: ErrorTemplateManager, specificationManager: SpecificationManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class ExportManager @Inject() (repositoryUtils: RepositoryUtils, domainManager: DomainManager, domainParameterManager: DomainParameterManager, communityResourceManager: CommunityResourceManager, triggerManager: TriggerManager, communityManager: CommunityManager, conformanceManager: ConformanceManager, testSuiteManager: TestSuiteManager, landingPageManager: LandingPageManager, legalNoticeManager: LegalNoticeManager, errorTemplateManager: ErrorTemplateManager, specificationManager: SpecificationManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   private final val logger: Logger = LoggerFactory.getLogger(classOf[ExportManager])
   private final val DEFAULT_CONTENT_TYPE = "application/octet-stream"
@@ -311,7 +312,6 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, communityResour
     var specificationTestSuiteMap: scala.collection.mutable.Map[Long, ListBuffer[models.TestSuites]] = null
     var testSuiteTestCaseMap: scala.collection.mutable.Map[Long, ListBuffer[models.TestCases]] = null
     var testSuiteActorMap: scala.collection.mutable.Map[Long, ListBuffer[Long]] = null
-    var testCaseActorMap: scala.collection.mutable.Map[Long, ListBuffer[(Long, Boolean)]] = null
     if (exportSettings.specifications) {
       if (exportSettings.actors) {
         // Actors.
@@ -327,7 +327,6 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, communityResour
       if (exportSettings.testSuites) {
         testSuiteActorMap = scala.collection.mutable.Map[Long, ListBuffer[Long]]()
         testSuiteTestCaseMap = scala.collection.mutable.Map[Long, ListBuffer[models.TestCases]]()
-        testCaseActorMap = scala.collection.mutable.Map[Long, ListBuffer[(Long, Boolean)]]()
         specificationTestSuiteMap = loadSpecificationTestSuiteMap(domainId)
         exec(PersistenceSchema.testSuites
             .join(PersistenceSchema.testSuiteHasActors).on(_.id === _.testsuite)
@@ -357,20 +356,6 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, communityResour
           }
           testCases.get += x._2
         }
-        exec(PersistenceSchema.testCases
-          .join(PersistenceSchema.testCaseHasActors).on(_.id === _.testcase)
-          .join(PersistenceSchema.actors).on(_._2.actor === _.id)
-          .filter(_._2.domain === domainId)
-          .map(x => x._1._2)
-          .result
-        ).foreach { x =>
-          var actors = testCaseActorMap.get(x._1) // Test case
-          if (actors.isEmpty) {
-            actors = Some(new ListBuffer[(Long, Boolean)])
-            testCaseActorMap += (x._1 -> actors.get)
-          }
-          actors.get += ((x._3, x._4)) // (actor, isSut)
-        }
       }
     }
     val exportedActorMap: scala.collection.mutable.Map[Long, com.gitb.xml.export.Actor] = scala.collection.mutable.Map()
@@ -378,7 +363,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, communityResour
     val exportedDomainParameterMap: scala.collection.mutable.Map[Long, com.gitb.xml.export.DomainParameter] = scala.collection.mutable.Map()
     val exportedSharedTestSuiteMap: scala.collection.mutable.Map[Long, com.gitb.xml.export.TestSuite] = scala.collection.mutable.Map()
     // Domain.
-    val domain = conformanceManager.getById(domainId)
+    val domain = domainManager.getDomainById(domainId)
     val exportedDomain = new com.gitb.xml.export.Domain
     exportedDomain.setId(toId(sequence.next()))
     exportedDomain.setShortName(domain.shortname)
@@ -416,7 +401,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, communityResour
         }
       }
       // Specs.
-      val specifications = conformanceManager.getSpecifications(domain.id, withGroups = false)
+      val specifications = specificationManager.getSpecifications(domain.id, withGroups = false)
       if (specifications.nonEmpty) {
         exportedDomain.setSpecifications(new com.gitb.xml.export.Specifications)
         specifications.foreach { specification =>
@@ -431,6 +416,12 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, communityResour
           if (specification.group.nonEmpty) {
             exportedSpecification.setGroup(exportedGroupMap(specification.group.get))
           }
+          exportedSpecification.setBadges(badgesInfo(
+              repositoryUtils.getConformanceBadge(specification.id, None, None, TestResultStatus.SUCCESS.toString, exactMatch = true),
+              repositoryUtils.getConformanceBadge(specification.id, None, None, TestResultStatus.UNDEFINED.toString, exactMatch = true),
+              repositoryUtils.getConformanceBadge(specification.id, None, None, TestResultStatus.FAILURE.toString, exactMatch = true)
+            ).orNull
+          )
           // Actors
           if (exportSettings.actors && specificationActorMap.contains(specification.id)) {
             exportedSpecification.setActors(new com.gitb.xml.export.Actors)
@@ -448,6 +439,12 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, communityResour
                 exportedActor.setDefault(false)
               }
               exportedActor.setHidden(actor.hidden)
+              exportedActor.setBadges(badgesInfo(
+                  repositoryUtils.getConformanceBadge(specification.id, Some(actor.id), None, TestResultStatus.SUCCESS.toString, exactMatch = true),
+                  repositoryUtils.getConformanceBadge(specification.id, Some(actor.id), None, TestResultStatus.UNDEFINED.toString, exactMatch = true),
+                  repositoryUtils.getConformanceBadge(specification.id, Some(actor.id), None, TestResultStatus.FAILURE.toString, exactMatch = true)
+                ).orNull
+              )
               // Endpoints.
               if (exportSettings.endpoints && actorEndpointMap.contains(actor.id)) {
                 exportedActor.setEndpoints(new com.gitb.xml.export.Endpoints)
@@ -513,7 +510,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, communityResour
     }
     // Domain parameters.
     if (exportSettings.domainParameters) {
-      val domainParameters = conformanceManager.getDomainParameters(domain.id)
+      val domainParameters = domainParameterManager.getDomainParameters(domain.id)
       if (domainParameters.nonEmpty) {
         exportedDomain.setParameters(new com.gitb.xml.export.DomainParameters)
         domainParameters.foreach { parameter =>
@@ -584,6 +581,9 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, communityResour
         exportedTestCase.setTargetActors(testCase.targetActors.orNull)
         exportedTestCase.setTestSuite(exportedTestSuite)
         exportedTestCase.setSpecification(specificationToSet.orNull)
+        exportedTestCase.setOptional(testCase.isOptional)
+        exportedTestCase.setDisabled(testCase.isDisabled)
+        exportedTestCase.setTags(testCase.tags.orNull)
         // Test case path - remove first part which represents the test suite
         val firstPathSeparatorIndex = testCase.path.indexOf('/')
         if (firstPathSeparatorIndex != -1) {
@@ -591,17 +591,6 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, communityResour
         } else {
           exportedTestCase.setPath(testCase.path)
         }
-//        if (testCaseActorMap.contains(testCase.id)) {
-//          exportedTestCase.setActors(new TestCaseActors)
-//          testCaseActorMap(testCase.id).foreach { actorInfo =>
-//            val exportedTestCaseActor = new TestCaseActor
-//            idSequence += 1
-//            exportedTestCaseActor.setId(toId(idSequence))
-//            exportedTestCaseActor.setActor(exportedActorMap(actorInfo._1))
-//            exportedTestCaseActor.setSut(actorInfo._2)
-//            exportedTestCase.getActors.getActor.add(exportedTestCaseActor)
-//          }
-//        }
         exportedTestSuite.getTestCases.getTestCase.add(exportedTestCase)
       }
     }
@@ -689,9 +678,10 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, communityResour
     }
     // Certificate settings.
     if (exportSettings.certificateSettings) {
-      val certificateSettings = conformanceManager.getConformanceCertificateSettingsWrapper(communityId)
+      val certificateSettings = communityManager.getConformanceCertificateSettingsWrapper(communityId, defaultIfMissing = false)
       if (certificateSettings.isDefined) {
         communityData.setConformanceCertificateSettings(new ConformanceCertificateSettings)
+        communityData.getConformanceCertificateSettings.setAddTitle(certificateSettings.get.includeTitle)
         communityData.getConformanceCertificateSettings.setAddDetails(certificateSettings.get.includeDetails)
         communityData.getConformanceCertificateSettings.setAddMessage(certificateSettings.get.includeMessage)
         communityData.getConformanceCertificateSettings.setAddTestCases(certificateSettings.get.includeTestCases)
@@ -1048,6 +1038,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, communityResour
               exportedSystem.setDescription(system.description.orNull)
               exportedSystem.setVersion(system.version.orNull)
               exportedSystem.setApiKey(system.apiKey.orNull)
+              exportedSystem.setBadgeKey(system.badgeKey)
               // System property values.
               if (exportSettings.customProperties && exportSettings.systemPropertyValues && systemParameterValueMap.contains(system.id)) {
                 exportedSystem.setPropertyValues(new SystemPropertyValues)
@@ -1118,6 +1109,33 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, communityResour
       }
     }
     exportData
+  }
+
+  private def badgesInfo(successBadge: Option[File], otherBadge: Option[File], failureBadge: Option[File]): Option[ConformanceBadges] = {
+    var result: Option[ConformanceBadges] = None
+    if (successBadge.isDefined || otherBadge.isDefined || failureBadge.isDefined) {
+      val badges = new ConformanceBadges
+      if (successBadge.isDefined) {
+        val badge = new ConformanceBadge()
+        badge.setName(successBadge.get.getName)
+        badge.setContent(MimeUtil.getFileAsDataURL(successBadge.get, DEFAULT_CONTENT_TYPE))
+        badges.setSuccess(badge)
+      }
+      if (otherBadge.isDefined) {
+        val badge = new ConformanceBadge()
+        badge.setName(otherBadge.get.getName)
+        badge.setContent(MimeUtil.getFileAsDataURL(otherBadge.get, DEFAULT_CONTENT_TYPE))
+        badges.setOther(badge)
+      }
+      if (failureBadge.isDefined) {
+        val badge = new ConformanceBadge()
+        badge.setName(failureBadge.get.getName)
+        badge.setContent(MimeUtil.getFileAsDataURL(failureBadge.get, DEFAULT_CONTENT_TYPE))
+        badges.setFailure(badge)
+      }
+      result = Some(badges)
+    }
+    result
   }
 
 }

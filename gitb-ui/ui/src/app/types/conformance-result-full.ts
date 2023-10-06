@@ -1,4 +1,5 @@
 import { Counters } from "../components/test-status-icons/counters";
+import { ConformanceTestSuite } from "../pages/organisation/conformance-statement/conformance-test-suite";
 import { ConformanceStatusItem } from "./conformance-status-item";
 
 export interface ConformanceResultFull {
@@ -23,13 +24,19 @@ export interface ConformanceResultFull {
     failed: number
     completed: number
     undefined: number
+    failedOptional: number
+    completedOptional: number
+    undefinedOptional: number
     result?: string
     updateTime?: string
     outputMessage?: string
 
-    testCasesLoaded?: boolean
-    testCases?: Partial<ConformanceStatusItem>[]
+    testSuitesLoaded?: boolean
+    hasBadge?: boolean
+    testSuites?: ConformanceTestSuite[]
     counters?: Counters
+    copyBadgePending?: boolean
+
     [key: string]: any
 
 }

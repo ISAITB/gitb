@@ -98,7 +98,7 @@ public class ListenStepProcessorActor extends AbstractMessagingStepProcessorActo
                     }
                 }
                 MessagingModule moduleDefinition = messagingHandler.getModuleDefinition();
-                if (moduleDefinition.getReceiveConfigs() != null) {
+                if (moduleDefinition != null && moduleDefinition.getReceiveConfigs() != null) {
                     checkRequiredConfigsAndSetDefaultValues(moduleDefinition.getReceiveConfigs().getParam(), step.getConfig());
                 }
 

@@ -8,6 +8,10 @@ import { PopupService } from 'src/app/services/popup.service';
 import { RoutingService } from 'src/app/services/routing.service';
 import { LandingPage } from 'src/app/types/landing-page';
 import { CommunityTab } from '../../community/community-details/community-tab.enum';
+import { Constants } from 'src/app/common/constants';
+import { SystemAdministrationTab } from '../../../system-administration/system-administration-tab.enum';
+import { BsModalService } from 'ngx-bootstrap/modal';
+import { PreviewLandingPageComponent } from '../preview-landing-page/preview-landing-page.component';
 
 @Component({
   selector: 'app-create-landing-page',
@@ -23,6 +27,7 @@ export class CreateLandingPageComponent extends BaseComponent implements OnInit,
   }
   savePending = false
   showContent = true
+  tooltipForDefaultCheck!: string
 
   constructor(
     private routingService: RoutingService,
@@ -30,7 +35,8 @@ export class CreateLandingPageComponent extends BaseComponent implements OnInit,
     private landingPageService: LandingPageService,
     private confirmationDialogService: ConfirmationDialogService,
     private popupService: PopupService,
-    public dataService: DataService
+    public dataService: DataService,
+    private modalService: BsModalService
   ) { super() }
 
   ngAfterViewInit(): void {
@@ -38,7 +44,13 @@ export class CreateLandingPageComponent extends BaseComponent implements OnInit,
   }
 
   ngOnInit(): void {
-    this.communityId = Number(this.route.snapshot.paramMap.get('community_id'))
+    if (this.route.snapshot.paramMap.has(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID)) {
+      this.communityId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID))
+      this.tooltipForDefaultCheck = 'Check this to make this landing page the default one assumed for the community\'s '+this.dataService.labelOrganisationsLower()+'.'
+    } else {
+      this.communityId = Constants.DEFAULT_COMMUNITY_ID
+      this.tooltipForDefaultCheck = 'Check this to make this landing page the default one assumed for all communities.'
+    }
     const base = this.route.snapshot.data['base'] as LandingPage|undefined
     if (base != undefined) {
       this.page.name = base.name
@@ -54,7 +66,7 @@ export class CreateLandingPageComponent extends BaseComponent implements OnInit,
   createLandingPage() {
     this.clearAlerts()
     if (this.page.default) {
-      this.confirmationDialogService.confirmed("Confirm default", "You are about to change the default landing page. Are you sure?", "Yes", "No")
+      this.confirmationDialogService.confirmed("Confirm default", "You are about to change the default landing page. Are you sure?", "Change", "Cancel")
       .subscribe(() => {
         this.doCreate()
       })
@@ -88,7 +100,19 @@ export class CreateLandingPageComponent extends BaseComponent implements OnInit,
   }
 
   cancelCreateLandingPage() {
-    this.routingService.toCommunity(this.communityId, CommunityTab.landingPages)
+    if (this.communityId == Constants.DEFAULT_COMMUNITY_ID) {
+      this.routingService.toSystemAdministration(SystemAdministrationTab.landingPages)
+    } else {
+      this.routingService.toCommunity(this.communityId, CommunityTab.landingPages)
+    }
+  }
+
+  preview() {
+    this.modalService.show(PreviewLandingPageComponent, {
+      initialState: {
+        previewContent: this.page.content!
+      }
+    })
   }
 
 }

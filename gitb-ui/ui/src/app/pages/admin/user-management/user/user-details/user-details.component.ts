@@ -11,6 +11,9 @@ import { RoutingService } from 'src/app/services/routing.service';
 import { UserService } from 'src/app/services/user.service';
 import { IdLabel } from 'src/app/types/id-label';
 import { User } from 'src/app/types/user.type';
+import { OrganisationTab } from '../../organisation/organisation-details/OrganisationTab';
+import { Constants } from 'src/app/common/constants';
+import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
 
 @Component({
   selector: 'app-user-details',
@@ -29,6 +32,8 @@ export class UserDetailsComponent extends BaseComponent implements OnInit, After
   deletePending = false
   originalRoleId!: number
   changePassword = false
+  fromCommunityManagement!: boolean
+  isSelf = false
 
   @ViewChild("role") roleField?: ElementRef;
 
@@ -51,16 +56,26 @@ export class UserDetailsComponent extends BaseComponent implements OnInit, After
   }
 
   ngOnInit(): void {
-    this.communityId = Number(this.route.snapshot.paramMap.get('community_id'))
-    this.orgId = Number(this.route.snapshot.paramMap.get('org_id'))
-    this.userId = Number(this.route.snapshot.paramMap.get('user_id'))
+    this.fromCommunityManagement = this.route.snapshot.paramMap.has(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID)
+    if (this.fromCommunityManagement) {
+      this.communityId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID))
+      this.orgId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.ORGANISATION_ID))
+    }
+    this.userId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.USER_ID))
+    this.isSelf = this.dataService.user!.id == this.userId
     this.roleChoices = this.Constants.VENDOR_USER_ROLES
-    this.userService.getUserById(this.userId)
-    .subscribe((data) => {
-      this.user = data
+    let result: Observable<User|undefined>
+    if (this.fromCommunityManagement) {
+      result = this.userService.getUserById(this.userId)
+    } else {
+      result = this.userService.getOwnOrganisationUserById(this.userId)
+    }
+    result.subscribe((data) => {
+      this.user = data!
       this.user.ssoStatusText = this.dataService.userStatus(this.user.ssoStatus)
       this.user.roleText = this.Constants.USER_ROLE_LABEL[this.user.role!]
       this.originalRoleId = this.user.role!
+      this.routingService.organisationUserBreadcrumbs(this.communityId, this.orgId, this.userId, this.dataService.userDisplayName(this.user))
     })
   }
 
@@ -86,7 +101,11 @@ export class UserDetailsComponent extends BaseComponent implements OnInit, After
     let emailCheckResult = this.emptyEmailCheck()
     if (isSSO) {
       if (this.originalRoleId != this.user.role) {
-        emailCheckResult = this.authService.checkEmailOfOrganisationUser(this.user.email!, this.orgId, this.user.role!)
+        if (this.fromCommunityManagement) {
+          emailCheckResult = this.authService.checkEmailOfOrganisationUser(this.user.email!, this.orgId, this.user.role!)
+        } else {
+          emailCheckResult = this.authService.checkEmailOfOrganisationMember(this.user.email!, this.user.role!)
+        }
       }
     } else {
       ok = this.requireSame(this.user.password, this.user.passwordConfirmation, "Passwords do not match.")
@@ -108,6 +127,7 @@ export class UserDetailsComponent extends BaseComponent implements OnInit, After
               map(() => {
                 this.cancelDetailUser()
                 this.popupService.success('User updated.')
+                this.dataService.breadcrumbUpdate({ id: this.userId, type: BreadcrumbType.organisationUser, label: this.dataService.userDisplayName(this.user)})
               })
             )
           } else {
@@ -128,7 +148,7 @@ export class UserDetailsComponent extends BaseComponent implements OnInit, After
 
   deleteUser() {
     this.clearAlerts()
-    this.confirmationDialogService.confirmed("Confirm delete", "Are you sure you want to delete this user?", "Yes", "No")
+    this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this user?", "Delete", "Cancel")
     .subscribe(() => {
       this.deletePending = true
       this.userService.deleteVendorUser(this.userId)
@@ -146,7 +166,11 @@ export class UserDetailsComponent extends BaseComponent implements OnInit, After
   }
 
   cancelDetailUser() {
-    this.routingService.toOrganisationDetails(this.communityId, this.orgId)
+    if (this.fromCommunityManagement) {
+      this.routingService.toOrganisationDetails(this.communityId, this.orgId, OrganisationTab.users)
+    } else {
+      this.routingService.toOwnOrganisationDetails(OrganisationTab.users)
+    }
   }
 
 }

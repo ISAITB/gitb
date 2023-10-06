@@ -46,6 +46,12 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
   ) { }
 
   ngOnInit(): void {
+    if (this.config.singleSelection == undefined) {
+      this.config.singleSelection = false
+    }
+    if (this.config.filterLabel) {
+      this.filterLabel = this.config.filterLabel
+    }
     if (this.config.clearItems) {
       this.config.clearItems.subscribe(() => {
         this.selectedSelectedItems = {}
@@ -255,7 +261,14 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
   }
 
   availableItemClicked(item: T) {
-    this.itemClicked(this.selectedAvailableItems, item)
+    if (this.config.singleSelection) {
+      const itemToReport: FilterValues<T> = { active: [], other: [] }
+      itemToReport.active = this.getItemsToSignalForItem(item)
+      this.apply.emit({ values: itemToReport, applyFilters: false })
+      this.close()
+    } else {
+      this.itemClicked(this.selectedAvailableItems, item)
+    }
   }
 
   selectedItemClicked(item: T) {

@@ -1,5 +1,6 @@
 import { AfterViewInit, Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
+import { Constants } from 'src/app/common/constants';
 import { BaseComponent } from 'src/app/pages/base-component.component';
 import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
 import { DataService } from 'src/app/services/data.service';
@@ -7,6 +8,8 @@ import { PopupService } from 'src/app/services/popup.service';
 import { RoutingService } from 'src/app/services/routing.service';
 import { UserService } from 'src/app/services/user.service';
 import { User } from 'src/app/types/user.type';
+import { SystemAdministrationTab } from '../../../system-administration/system-administration-tab.enum';
+import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
 
 @Component({
   selector: 'app-admin-details',
@@ -39,14 +42,16 @@ export class AdminDetailsComponent extends BaseComponent implements OnInit, Afte
   }
 
   ngOnInit(): void {
-    this.userId = Number(this.route.snapshot.paramMap.get('id'))
+    this.userId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.USER_ID))
     this.disableDeleteButton = Number(this.dataService.user!.id) == Number(this.userId)
     this.userService.getUserById(this.userId)
     .subscribe((data) => {
-      this.user = data
+      this.user = data!
       this.user.ssoStatusText = this.dataService.userStatus(this.user.ssoStatus)
       this.user.roleText = this.Constants.USER_ROLE_LABEL[this.user.role!]
+      this.routingService.testBedAdminBreadcrumbs(this.userId, this.dataService.userDisplayName(this.user))
     })
+    this.routingService.testBedAdminBreadcrumbs(this.userId)
   }
 
   saveDisabled() {
@@ -65,6 +70,7 @@ export class AdminDetailsComponent extends BaseComponent implements OnInit, Afte
       .subscribe(() => {
         this.cancelDetailAdmin()
         this.popupService.success('Administrator updated')
+        this.dataService.breadcrumbUpdate({ id: this.userId, type: BreadcrumbType.systemAdmin, label: this.dataService.userDisplayName(this.user)})
       }).add(() => {
         this.savePending = false
       })
@@ -72,7 +78,7 @@ export class AdminDetailsComponent extends BaseComponent implements OnInit, Afte
   }
 
   deleteAdmin() {
-    this.confirmationDialogService.confirmed("Confirm delete", "Are you sure you want to delete this administrator?", "Yes", "No")
+    this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this administrator?", "Delete", "Cancel")
     .subscribe(() => {
       this.deletePending = true
       this.userService.deleteAdmin(this.userId)
@@ -86,7 +92,7 @@ export class AdminDetailsComponent extends BaseComponent implements OnInit, Afte
   }
 
   cancelDetailAdmin() {
-    this.routingService.toUserManagement()
+    this.routingService.toSystemAdministration(SystemAdministrationTab.administrators)
   }
 
 }

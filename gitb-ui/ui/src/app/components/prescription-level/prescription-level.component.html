@@ -1,0 +1,7 @@
+<div class="rootDiv" [ngSwitch]="disabled">
+    <span *ngSwitchCase="true" class="boundary" tooltip="Disabled test case that cannot be executed and is ignored for the conformance statement's status."><i class="fa-solid fa-ban"></i></span>
+    <ng-container *ngSwitchDefault [ngSwitch]="optional">
+        <span *ngSwitchCase="true" class="boundary" tooltip="Optional test case that is ignored for the conformance statement's status."><i class="fa-regular fa-circle"></i></span>
+        <span *ngSwitchDefault class="boundary" tooltip="Required test case that is counted towards the conformance statement's status."><i class="fa-regular fa-circle-dot"></i></span>
+    </ng-container>
+</div>

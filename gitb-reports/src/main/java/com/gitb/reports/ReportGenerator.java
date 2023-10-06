@@ -4,6 +4,7 @@ import com.gitb.core.AnyContent;
 import com.gitb.core.ValueEmbeddingEnumeration;
 import com.gitb.reports.dto.ConformanceStatementOverview;
 import com.gitb.reports.dto.TestCaseOverview;
+import com.gitb.reports.dto.TestSuiteOverview;
 import com.gitb.reports.dto.tar.ContextItem;
 import com.gitb.reports.dto.tar.Report;
 import com.gitb.reports.dto.tar.ReportItem;
@@ -32,9 +33,10 @@ import org.jsoup.helper.W3CDom;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.xml.bind.*;
+import jakarta.xml.bind.*;
 import javax.xml.transform.stream.StreamSource;
 import java.io.*;
+import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -81,7 +83,7 @@ public class ReportGenerator {
 
     private Template getTemplate(String reportPath) {
         return templateCache.computeIfAbsent(reportPath, path -> {
-            var configuration = new Configuration(Configuration.VERSION_2_3_31);
+            var configuration = new Configuration(Configuration.VERSION_2_3_32);
             configuration.setTemplateLoader(new ClassTemplateLoader(ReportGenerator.class, "/"));
             Template template;
             try {
@@ -145,7 +147,7 @@ public class ReportGenerator {
                         return Objects.requireNonNull(Thread.currentThread().getContextClassLoader().getResource(StringUtils.removeStart(uri, "classpath:"))).toString();
                     } else if (specsToUse.getResourceResolver() != null && uri.startsWith("resources/")) {
                         // This is a community-specific resource.
-                        return specsToUse.getResourceResolver().apply(StringUtils.removeStart(uri, "resources/"));
+                        return specsToUse.getResourceResolver().apply(URLDecoder.decode(StringUtils.removeStart(uri, "resources/"), StandardCharsets.UTF_8));
                     }
                     return super.resolveURI(baseUri, uri);
                 }
@@ -357,6 +359,24 @@ public class ReportGenerator {
         return report;
     }
 
+    private List<TestCaseOverview.Tag> extractDistinctTags(List<TestSuiteOverview> testSuites) {
+        // Collect all distinct tags (by name and colours) that have a description.
+        Map<String, TestCaseOverview.Tag> uniqueTags = new HashMap<>();
+        testSuites.stream().map(TestSuiteOverview::getTestCases)
+                .flatMap(List::stream)
+                .filter((tc) -> tc.getTags() != null && !tc.getTags().isEmpty())
+                .map(TestCaseOverview::getTags)
+                .flatMap(List::stream)
+                .filter(tag -> StringUtils.isNotBlank(tag.description()))
+                .forEach(tag -> uniqueTags.putIfAbsent(tag.name()+"|"+tag.background()+"|"+tag.foreground(), tag));
+        // Sort by name.
+        if (uniqueTags.isEmpty()) {
+            return Collections.emptyList();
+        } else {
+            return uniqueTags.values().stream().sorted(Comparator.comparing(TestCaseOverview.Tag::name)).toList();
+        }
+    }
+
     public void writeConformanceStatementOverviewReport(ConformanceStatementOverview overview, OutputStream outputStream, ReportSpecs specs) {
         if (overview.getReportDate() == null) {
             SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
@@ -379,7 +399,22 @@ public class ReportGenerator {
             parameters.put("overallStatus", overview.getOverallStatus());
             parameters.put("reportDate", overview.getReportDate());
             if (overview.getTestSuites() != null && !overview.getTestSuites().isEmpty()) {
+                // Flags for presence of optional and disabled test cases.
+                boolean hasOptionalTests = overview.getTestSuites().stream().anyMatch(testSuite -> testSuite.getTestCases().stream().anyMatch(TestCaseOverview::isOptional));
+                boolean hasDisabledTests = overview.getTestSuites().stream().anyMatch(testSuite -> testSuite.getTestCases().stream().anyMatch(TestCaseOverview::isDisabled));
+                boolean hasRequiredTests = overview.getTestSuites().stream().anyMatch(testSuite -> testSuite.getTestCases().stream().anyMatch((tc) -> !tc.isDisabled() && !tc.isOptional()));
+                parameters.put("hasOptionalTests", hasOptionalTests);
+                parameters.put("hasDisabledTests", hasDisabledTests);
+                parameters.put("hasRequiredTests", hasRequiredTests);
+                var distinctTags = extractDistinctTags(overview.getTestSuites());
+                if (!distinctTags.isEmpty()) {
+                    parameters.put("distinctTags", distinctTags);
+                }
                 parameters.put("testSuites", overview.getTestSuites());
+            } else {
+                parameters.put("hasOptionalTests", false);
+                parameters.put("hasDisabledTests", false);
+                parameters.put("hasRequiredTests", false);
             }
             parameters.put("includeTestCases", overview.getIncludeTestCases());
             parameters.put("includeMessage", overview.getIncludeMessage());

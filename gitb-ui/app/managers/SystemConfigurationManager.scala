@@ -1,42 +1,120 @@
 package managers
 
-import models.{Constants, SystemConfiguration}
+import config.Configurations
+import models.{Constants, SystemConfigurations, SystemConfigurationsWithEnvironment}
 import org.mindrot.jbcrypt.BCrypt
-import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
 import utils.MimeUtil
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import javax.inject.{Inject, Singleton}
 import scala.collection.mutable.ListBuffer
+import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
 class SystemConfigurationManager @Inject() (dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
 
-  def logger = LoggerFactory.getLogger("SystemConfigurationManager")
-
   /**
    * Gets system config by name
    */
-  def getSystemConfiguration(name: String): SystemConfiguration = {
-    val sc = exec(PersistenceSchema.systemConfigurations.filter(_.name === name).result.head)
-    val config = new SystemConfiguration(sc)
-    config
+  def getSystemConfiguration(name: String): Option[SystemConfigurations] = {
+    exec(PersistenceSchema.systemConfigurations.filter(_.name === name).result.headOption)
+  }
+
+  def getEditableSystemConfigurationValues(onlyPersisted: Boolean = false): List[SystemConfigurationsWithEnvironment] = {
+    var persistedConfigs = exec(
+      PersistenceSchema.systemConfigurations
+        .filter(_.name inSet Set(
+          Constants.RestApiEnabled,
+          Constants.SessionAliveTime,
+          Constants.SelfRegistrationEnabled,
+          Constants.DemoAccount,
+          Constants.WelcomeMessage)
+        )
+        .map(x => (x.name, x.parameter))
+        .result
+    ).map(x => SystemConfigurationsWithEnvironment(SystemConfigurations(x._1, x._2, None), defaultSetting = false, environmentSetting = false)).toList
+    if (!onlyPersisted) {
+      val restApiEnabledConfig = persistedConfigs.find(config => config.config.name == Constants.RestApiEnabled)
+      val demoAccountConfig = persistedConfigs.find(config => config.config.name == Constants.DemoAccount)
+      val selfRegistrationConfig = persistedConfigs.find(config => config.config.name == Constants.SelfRegistrationEnabled)
+      val welcomeMessageConfig = persistedConfigs.find(config => config.config.name == Constants.WelcomeMessage)
+      if (restApiEnabledConfig.isEmpty) {
+        persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.RestApiEnabled, Some(Configurations.AUTOMATION_API_ENABLED.toString), None), defaultSetting = true, environmentSetting = sys.env.contains("AUTOMATION_API_ENABLED"))
+      }
+      if (selfRegistrationConfig.isEmpty) {
+        persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.SelfRegistrationEnabled, Some(Configurations.REGISTRATION_ENABLED.toString), None), defaultSetting = true, environmentSetting = sys.env.contains("REGISTRATION_ENABLED"))
+      }
+      if (demoAccountConfig.isEmpty) {
+        if (Configurations.DEMOS_ENABLED && Configurations.DEMOS_ACCOUNT != -1) {
+          persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.DemoAccount, Some(Configurations.DEMOS_ACCOUNT.toString), None), defaultSetting = true, environmentSetting = sys.env.contains("DEMOS_ENABLED") && sys.env.contains("DEMOS_ACCOUNT"))
+        } else {
+          persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.DemoAccount, None, None), defaultSetting = true, environmentSetting = sys.env.contains("DEMOS_ENABLED") || sys.env.contains("DEMOS_ACCOUNT"))
+        }
+      } else if (demoAccountConfig.get.config.parameter.nonEmpty && demoAccountConfig.get.config.parameter.get.toLong != Configurations.DEMOS_ACCOUNT) {
+        // Invalid ID configured in the DB.
+        persistedConfigs = persistedConfigs.filterNot(config => config.config.name == Constants.DemoAccount)
+        persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.DemoAccount, None, None), defaultSetting = true, environmentSetting = sys.env.contains("DEMOS_ENABLED") || sys.env.contains("DEMOS_ACCOUNT"))
+      }
+      if (welcomeMessageConfig.isEmpty) {
+        persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.WelcomeMessage, Some(Configurations.WELCOME_MESSAGE), None), defaultSetting = true, environmentSetting = false)
+      }
+    }
+    persistedConfigs
   }
 
   /**
    * Set system parameter
    */
-  def updateSystemParameter(name: String, value: Option[String] = None) = {
-    exec(updateSystemParameterInternal(name, value).transactionally)
+  def updateSystemParameter(name: String, value: Option[String] = None): Option[String] = {
+    // Persist in the DB.
+    if (name == Constants.WelcomeMessage && value.isEmpty) {
+      exec(PersistenceSchema.systemConfigurations.filter(_.name === name).delete.transactionally)
+    } else {
+      exec(updateSystemParameterInternal(name, value).transactionally)
+    }
+    var returnValue: Option[String] = None
+    // Now apply also to the current instance.
+    name match {
+      case Constants.RestApiEnabled =>
+        if (value.isDefined) {
+          Configurations.AUTOMATION_API_ENABLED = value.get.toBoolean
+        }
+      case Constants.SelfRegistrationEnabled =>
+        if (value.isDefined) {
+          Configurations.REGISTRATION_ENABLED = value.get.toBoolean
+        }
+      case Constants.DemoAccount =>
+        if (value.isDefined) {
+          Configurations.DEMOS_ENABLED = true
+          Configurations.DEMOS_ACCOUNT = value.get.toLong
+        } else {
+          Configurations.DEMOS_ENABLED = false
+          Configurations.DEMOS_ACCOUNT = -1
+        }
+      case Constants.WelcomeMessage =>
+        if (value.isDefined) {
+          Configurations.WELCOME_MESSAGE = value.get
+        } else {
+          Configurations.WELCOME_MESSAGE = Configurations.WELCOME_MESSAGE_DEFAULT
+          returnValue = Some(Configurations.WELCOME_MESSAGE_DEFAULT)
+        }
+      case _ => // No action needed.
+    }
+    returnValue
   }
 
   private def updateSystemParameterInternal(name: String, value: Option[String] = None): DBIO[_] = {
-    val q = for {c <- PersistenceSchema.systemConfigurations if c.name === name} yield c.parameter
-    q.update(value)
+    for {
+      exists <- PersistenceSchema.systemConfigurations.filter(_.name === name).exists.result
+      _ <- if (exists) {
+        PersistenceSchema.systemConfigurations.filter(_.name === name).map(_.parameter).update(value)
+      } else {
+        PersistenceSchema.systemConfigurations += SystemConfigurations(name, value, None)
+      }
+    } yield ()
   }
 
   def getFaviconPath(): String = {

@@ -1,186 +1,122 @@
-import { AfterViewInit, Component, EventEmitter, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
-import { BsModalService } from 'ngx-bootstrap/modal';
-import { Constants } from 'src/app/common/constants';
-import { LoadStatus } from 'src/app/common/load-status';
-import { OptionalCustomPropertyFormData } from 'src/app/components/optional-custom-property-form/optional-custom-property-form-data.type';
-import { AddMemberComponent } from 'src/app/modals/add-member/add-member.component';
-import { AccountService } from 'src/app/services/account.service';
+import { Component, OnInit } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
 import { DataService } from 'src/app/services/data.service';
-import { ErrorService } from 'src/app/services/error.service';
 import { OrganisationService } from 'src/app/services/organisation.service';
 import { PopupService } from 'src/app/services/popup.service';
 import { UserService } from 'src/app/services/user.service';
-import { Organisation } from 'src/app/types/organisation.type';
-import { TableColumnDefinition } from 'src/app/types/table-column-definition.type';
-import { User } from 'src/app/types/user.type';
-import { BaseComponent } from '../../base-component.component';
+import { OrganisationDetailsComponent } from '../../admin/user-management/organisation/organisation-details/organisation-details.component';
+import { RoutingService } from 'src/app/services/routing.service';
+import { SystemService } from 'src/app/services/system.service';
+import { map } from 'rxjs';
+import { AccountService } from 'src/app/services/account.service';
 
 @Component({
   selector: 'app-organisation',
-  templateUrl: './organisation.component.html'
+  templateUrl: './../../admin/user-management/organisation/organisation-details/organisation-details.component.html'
 })
-export class OrganisationComponent extends BaseComponent implements OnInit, AfterViewInit {
-
-  users?: User[]
-  udata: User = {} 
-  vdata!: Partial<Organisation>
-  dataStatus = new LoadStatus()
-  propertyData:OptionalCustomPropertyFormData = {
-    properties: [],
-    edit: false,
-    propertyType: 'organisation'
-  }
-  tableColumns: TableColumnDefinition[] = []
-  canEditOwnOrganisation = false
-  vendorUpdatePending = false
-  apiTabVisible = false
-  loadApiInfo = new EventEmitter<void>()
+export class OrganisationComponent extends OrganisationDetailsComponent implements OnInit {
 
   constructor(
-    public dataService: DataService,
-    private organisationService: OrganisationService,
-    private userService: UserService,
-    private accountService: AccountService,
-    private confirmationDialogService: ConfirmationDialogService,
-    private popupService: PopupService,
-    private errorService: ErrorService,
-    private route: ActivatedRoute,
-    private modalService: BsModalService
-  ) { super() }
-
-  ngAfterViewInit(): void {
-    if (this.dataService.isVendorAdmin || this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin) {
-      this.dataService.focus('shortName')  
-    }
+    route: ActivatedRoute,
+    confirmationDialogService: ConfirmationDialogService,
+    organisationService: OrganisationService,
+    userService: UserService,
+    dataService: DataService,
+    popupService: PopupService,
+    routingService: RoutingService,
+    systemService: SystemService,
+    router: Router,
+    private accountService: AccountService
+  ) {
+    super(route, confirmationDialogService, organisationService, userService, dataService, popupService, routingService, systemService, router)
   }
 
-  ngOnInit(): void {
-    const viewPropertiesParam = this.route.snapshot.queryParamMap.get('viewProperties')
-    if (viewPropertiesParam != undefined) {
-      this.propertyData.edit = Boolean(viewPropertiesParam)
-    }
-    this.tableColumns.push({ field: 'name', title: 'Name' })
-    if (this.dataService.configuration.ssoEnabled) {
-      this.tableColumns.push({ field: 'email', title: 'Email' })
-    } else {
-      this.tableColumns.push({ field: 'email', title: 'Username' })
-    }
-    this.tableColumns.push({ field: 'roleText', title: 'Role' })
-    this.vdata = {
-      fname: this.dataService.vendor!.fname,
-      sname: this.dataService.vendor!.sname
-    }
-    this.organisationService.getOwnOrganisationParameterValues().subscribe((data) => {
-      this.propertyData.properties = data
-    })
-    if (!this.dataService.isVendorUser) {
-      this.tableColumns.push({
-          field: 'ssoStatusText',
-          title: 'Status'
-      })
-    }
-    this.getVendorUsers()
-    this.canEditOwnOrganisation = this.route.snapshot.data.canEditOwnOrganisation
-    if (this.dataService.configuration.automationApiEnabled && this.dataService.community?.allowAutomationApi) {
-      this.apiTabVisible = true
-    }
+  override getOrganisationId() {
+    return this.dataService.user?.organization?.id!
   }
 
-  userStatus(ssoStatus: number) {
-    return this.dataService.userStatus(ssoStatus)
+  override getCommunityId(): number {
+    return this.dataService.community!.id
+  }
+  
+  override isShowAdminInfo() {
+    return false
   }
 
-  deleteVisible() {
-    return ((member: User) => {
-      // Don't allow deletion of own account or demo user account.
-      return member.id != this.dataService.user?.id && (!this.dataService.configuration.demosEnabled || this.dataService.configuration.demosAccount != member.id)
-    }).bind(this)
+  protected isShowLandingPage() {
+    return this.dataService.isCommunityAdmin || this.dataService.isSystemAdmin
   }
 
-  deleteMember(member: User) {
-    this.confirmationDialogService.confirmed("Confirm delete", "Are you sure you want to delete this user?", "Yes", "No")
-    .subscribe(() => {
-      this.userService.deleteVendorUser(member.id!)
-      .subscribe((data) => {
-        if (this.isErrorDescription(data)) {
-          this.errorService.showErrorMessage(data.error_description!)
-        } else {
-          this.getVendorUsers() // Get user list again
-          this.popupService.success('User deleted.')
-        }
-      })
-    })
+  override isReadonly() {
+    return !this.route.snapshot.data.canEditOwnOrganisation
   }
 
-  getVendorUsers() {
-    this.accountService.getVendorUsers()
-    .subscribe((data) => {
-      this.users = data.map((user) => {
-          if (user.id == this.dataService.user!.id) {
-            user.name = user.name + ' (You)'
-          }
-          user.roleText = Constants.USER_ROLE_LABEL[user.role!]
-          user.ssoStatusText = this.userStatus(user.ssoStatus!)
-          return user
-        }
+  override isShowCreateUser() {
+    return this.dataService.isVendorAdmin
+  }
+
+  override isShowCreateSystem() {
+    return (this.dataService.isVendorAdmin && this.dataService.community!.allowSystemManagement) || this.dataService.isCommunityAdmin || this.dataService.isSystemAdmin
+  }
+
+  override showUserStatus() {
+    return !this.dataService.isVendorUser
+  }
+
+  override isShowUsersTab() {
+    return this.dataService.isVendorAdmin || this.dataService.isVendorUser
+  }
+
+  override isApiInfoVisible() {
+    return super.isApiInfoVisible() && this.dataService.community?.allowAutomationApi == true
+  }
+
+  override breadcrumbInit() {
+    this.routingService.ownOrganisationBreadcrumbs()
+  }
+
+  override getUsers() {
+    return this.accountService.getVendorUsers()
+      .pipe(
+        map((data) => {
+          return data.map((user) => {
+            if (user.id == this.dataService.user!.id) {
+              user.name = user.name + ' (You)'
+            }
+            return user
+          })
+        })
       )
-    }).add(() => {
-      this.dataStatus.finished()
-    })
   }
 
-  saveDisabled() {
-    return this.vendorUpdatePending
-      || !this.textProvided(this.vdata.fname) 
-      || !this.textProvided(this.vdata.sname)
-      || (this.propertyData.edit && !this.dataService.customPropertiesValid(this.propertyData.properties))
+  override ngOnInit(): void {
+    super.ngOnInit()
   }
 
-  updateVendorProfile() {
-    this.vendorUpdatePending = true
-    if (this.checkForm1()) {
-      this.accountService.updateVendorProfile(this.vdata.fname, this.vdata.sname, this.propertyData.edit, this.propertyData.properties)
-      .subscribe(() => {
-        this.dataService.user!.organization!.fname = this.vdata.fname!
-        this.dataService.user!.organization!.sname = this.vdata.sname!
-        this.dataService.vendor!.fname = this.vdata.fname!
-        this.dataService.vendor!.sname = this.vdata.sname!
-        this.popupService.success(this.dataService.labelOrganisation()+" information updated.")
-      })
-      .add(() => {
-        this.vendorUpdatePending = false
-      })
-    }
-  }
-
-  checkForm1() {
+  override doUpdate() {
     this.clearAlerts()
-    let valid = true
-    if (!this.textProvided(this.vdata.fname)) {
-      this.addAlertError("Full name of your "+this.dataService.labelOrganisationLower()+" can not be empty.")
-      valid = false
-    } else if (!this.textProvided(this.vdata.sname)) {
-      this.addAlertError("Short name of your "+this.dataService.labelOrganisationLower()+" can not be empty.")
-      valid = false
-    }
-    return valid
-  }
-
-  popupMemberForm() {
-    this.clearAlerts()
-    this.modalService.show(AddMemberComponent, {
-      class: 'modal-lg'
-    }).content!.$memberAdded.subscribe((memberAdded: boolean) => {
-      if (memberAdded) {
-        this.getVendorUsers() // Refresh user list
+    this.savePending = true
+    let landingPageIdToUse: number|undefined = undefined
+    if (this.showAdminInfo || this.showLandingPage) {
+      landingPageIdToUse = this.organisation.landingPage
+      if (landingPageIdToUse == undefined) {
+        landingPageIdToUse = -1
       }
+    }
+    this.accountService.updateVendorProfile(this.organisation.fname, this.organisation.sname, this.propertyData.edit, this.propertyData.properties, landingPageIdToUse)
+    .subscribe(() => {
+      this.dataService.user!.organization!.fname = this.organisation.fname!
+      this.dataService.user!.organization!.sname = this.organisation.sname!
+      this.dataService.vendor!.fname = this.organisation.fname!
+      this.dataService.vendor!.sname = this.organisation.sname!
+      if (landingPageIdToUse != undefined) {
+        this.dataService.currentLandingPageContent = undefined
+      }
+      this.popupService.success(this.dataService.labelOrganisation()+" information updated.")
+    }).add(() => {
+      this.savePending = false
     })
-  }
-
-  apiInfoSelected() {
-    this.loadApiInfo.emit()
   }
 
 }

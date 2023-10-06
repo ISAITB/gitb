@@ -1,9 +1,9 @@
 <div class="panel panel-default">
-    <div class="panel-heading" (click)="clickedHeader()" [ngClass]="{'clickable': enableFiltering}">
-        <h4 class="title"><app-collapsing-icon [hidden]="!enableFiltering" [isCollapsed]="!showFiltering"></app-collapsing-icon>Filters</h4>
+    <div class="panel-heading clickable" (click)="clickedHeader()">
+        <h4 class="title"><app-collapsing-icon [isCollapsed]="!showFiltering"></app-collapsing-icon>Filters</h4>
         <div class="btn-toolbar">
             <button type="button" class="btn btn-default" (click)="applyFilters(); $event.stopPropagation()" [pending]="filterState.updatePending">Refresh</button>
-            <app-toggle id="sessions-toggle-filter" class="btn-group" name="filterToggle" (click)="$event.stopPropagation()" [(ngModel)]="enableFiltering" on="Enabled" off="Disabled" (toggle)="toggleFiltering()"></app-toggle>
+            <button type="button" class="btn btn-default" (click)="clearFilters(); $event.stopPropagation()" [disabled]="filterState.updatePending">Clear filters</button>
         </div>
     </div>
     <div [collapse]="!showFiltering" [isAnimated]="true">
@@ -77,7 +77,7 @@
               <div class="input-group">
                 <input class="form-control pointer" bsDaterangepicker [(ngModel)]="startDateModel" [bsConfig]="datePickerSettings" (bsValueChange)="applyTimeFiltering()" readonly="readonly">
                 <div class="input-group-btn">
-                  <button class="btn btn-default" type="button" (click)="clearStartRange()" [disabled]="startDateModel == undefined" containerClass="shortTooltip" tooltip="Clear" [delay]="Constants.TOOLTIP_DELAY"><i class="fa fa-times" [ngClass]="{'faded': startDateModel == undefined}"></i></button>
+                  <button class="btn btn-default" type="button" (click)="clearStartRange()" [disabled]="startDateModel == undefined" containerClass="shortTooltip" tooltip="Clear" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-times" [ngClass]="{'faded': startDateModel == undefined}"></i></button>
                 </div>
               </div>
             </div>
@@ -88,7 +88,7 @@
               <div class="input-group">
                 <input class="form-control pointer" bsDaterangepicker [(ngModel)]="endDateModel" [bsConfig]="datePickerSettings" (bsValueChange)="applyTimeFiltering()" readonly="readonly">
                 <div class="input-group-btn">
-                  <button class="btn btn-default" type="button" (click)="clearEndRange()" [disabled]="endDateModel == undefined" containerClass="shortTooltip" tooltip="Clear" [delay]="Constants.TOOLTIP_DELAY"><i class="fa fa-times" [ngClass]="{'faded': endDateModel == undefined}"></i></button>
+                  <button class="btn btn-default" type="button" (click)="clearEndRange()" [disabled]="endDateModel == undefined" containerClass="shortTooltip" tooltip="Clear" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-times" [ngClass]="{'faded': endDateModel == undefined}"></i></button>
                 </div>
               </div>
             </div>

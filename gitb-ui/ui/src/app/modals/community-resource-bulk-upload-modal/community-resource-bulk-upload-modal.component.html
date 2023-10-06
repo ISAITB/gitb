@@ -28,7 +28,7 @@
         </div>
     </div>
     <div class="modal-footer">
-        <button class="btn btn-default" type="submit" (click)="upload()" [disable]="!uploadEnabled()" [pending]="uploadPending">Upload</button>
         <button class="btn btn-default" type="button" (click)="cancel()" [disabled]="uploadPending">Cancel</button>
+        <button class="btn btn-default" type="submit" (click)="upload()" [disable]="!uploadEnabled()" [pending]="uploadPending">Upload</button>
     </div>
 </form>

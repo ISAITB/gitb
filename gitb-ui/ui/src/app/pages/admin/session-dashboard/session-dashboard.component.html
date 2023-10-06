@@ -29,16 +29,16 @@
         </div>
     </div>
     <!-- completed sessions -->
-    <div class="panel panel-default">
+    <div class="panel panel-default no-bottom-margin">
         <div class="panel-heading clickable" (click)="completedSessionsCollapsed = !completedSessionsCollapsed">
             <h4 class="title"><app-collapsing-icon [isCollapsed]="completedSessionsCollapsed"></app-collapsing-icon>Completed test sessions</h4>
             <div class="btn-toolbar" [class.disable-events]="filterState.updatePending">
                 <button type="button" class="btn btn-default" (click)="selectDeleteSessions();$event.stopPropagation()" *ngIf="!selectingForDelete" [disable]="completedTests.length == 0 || deletePending" [pending]="deleteSessionsPending">Delete sessions...</button>
-                <button type="button" class="btn btn-default" (click)="confirmDeleteSessions();$event.stopPropagation()" *ngIf="selectingForDelete" [disable]="!testsChecked()" [pending]="deleteSessionsPending">Confirm</button>
+                <button type="button" class="btn btn-default btn-delete" (click)="confirmDeleteSessions();$event.stopPropagation()" *ngIf="selectingForDelete" [disable]="!testsChecked()" [pending]="deleteSessionsPending">Confirm</button>
                 <button type="button" class="btn btn-default" (click)="cancelDeleteSessions();$event.stopPropagation()" *ngIf="selectingForDelete" [disabled]="deleteSessionsPending">Cancel</button>
                 <button type="button" class="btn btn-default" (click)="deleteObsolete();$event.stopPropagation()" [disable]="selectingForDelete || deleteSessionsPending" [pending]="deletePending">Delete obsolete sessions</button>
                 <button type="button" class="btn btn-default" (click)="exportCompletedSessionsToCsv();$event.stopPropagation()" [disable]="completedTests.length == 0 || selectingForDelete || deleteSessionsPending" [pending]="exportCompletedPending">Export CSV</button>
-				<button type="button" class="btn btn-default" *ngIf="showCollapseAll()" (click)="onCollapseAll();$event.stopPropagation()">Collapse all</button>
+                <button type="button" class="btn btn-default" *ngIf="showCollapseAll()" (click)="onCollapseAll();$event.stopPropagation()">Collapse all</button>
             </div>
         </div>
         <div [collapse]="completedSessionsCollapsed" [isAnimated]="true">
@@ -51,7 +51,7 @@
                 [loadingStatus]="completedStatus"
 
                 [actionVisible]="true"
-                [actionIcon]="'fa fa-file-text-o'"
+                [actionIcon]="'fa-regular fa-file-lines'"
                 (onAction)="onReportExportXml($event)"
                 [actionVisibleForRow]="exportVisible"
                 [actionTooltip]="'Export (XML)'"
@@ -71,27 +71,6 @@
                 [rowStyle]="rowStyle"
                 [showCheckbox]="completedTestsCheckboxEmitter"
                 [contentRefreshing]="filterState.updatePending">
-            </div>
-        </div>
-    </div>
-    <!-- configuration -->
-    <div class="panel panel-default" *ngIf="dataService.isSystemAdmin">
-        <div class="panel-heading">
-            <h4 class="title">Automatically terminate idle sessions</h4>
-            <div class="btn-toolbar">
-                <app-toggle id="dashboard-toggle-ttl" class="btn-group" name="ttlToggle" [(ngModel)]="ttlEnabled" on="Enabled" off="Disabled" (toggle)="ttlToggled()"></app-toggle>
-            </div>
-        </div>
-        <!-- configuration form -->
-        <div [collapse]="!ttlEnabled" [isAnimated]="true">
-            <div style="padding: 10px">
-                <form class="form-inline">
-                    <div class="form-group">
-                        <input type="number" min="1" name="ttlEnabled" [(ngModel)]="prevParameter" class="form-control"
-                               id="parameter" placeholder="Seconds">
-                    </div>
-                    <button type="submit" (click)="apply()" [disabled]="!prevParameter" class="btn btn-default" style="margin-left: 5px">Apply</button>
-                </form>
             </div>
         </div>
     </div>

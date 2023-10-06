@@ -3,7 +3,7 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { NgModule } from '@angular/core';
 import { HttpClientModule } from '@angular/common/http';
 import { CookieService } from 'ngx-cookie-service';
-
+import { ColorPickerModule } from 'ngx-color-picker';
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { LoginComponent } from './pages/login/login.component';
@@ -19,7 +19,6 @@ import { FormsModule } from '@angular/forms';
 import { TooltipComponent } from './components/tooltip/tooltip.component';
 import { ErrorComponent } from './modals/error/error.component';
 import { HomeComponent } from './pages/home/home.component';
-import { SettingsComponent } from './pages/settings/settings.component';
 import { ProfileComponent } from './pages/settings/profile/profile.component';
 import { OrganisationComponent } from './pages/settings/organisation/organisation.component';
 import { PasswordComponent } from './pages/settings/password/password.component';
@@ -36,16 +35,13 @@ import { ChangePasswordFormComponent } from './components/change-password-form/c
 import { LinkAccountComponent } from './modals/link-account/link-account.component';
 import { DisconnectRoleComponent } from './modals/disconnect-role/disconnect-role.component';
 import { OptionalCustomPropertyFormComponent } from './components/optional-custom-property-form/optional-custom-property-form.component';
-import { AddMemberComponent } from './modals/add-member/add-member.component';
 import { AlertDisplayComponent } from './components/alert-display/alert-display.component';
 import { PendingBlockComponent } from './components/pending-block/pending-block.component';
 import { NoAutoCompleteDirective } from './directives/no-auto-complete.directive';
-import { AdminComponent } from './pages/admin/admin.component';
 import { SessionDashboardComponent } from './pages/admin/session-dashboard/session-dashboard.component';
 import { SessionTableComponent } from './components/session-table/session-table.component';
 import { TestFilterComponent } from './components/test-filter/test-filter.component';
 import { CustomPropertyFilterComponent } from './components/custom-property-filter/custom-property-filter.component';
-import { ToggleComponent } from './components/toggle/toggle.component';
 import { TestSessionPresentationComponent } from './components/diagram/test-session-presentation/test-session-presentation.component';
 import { SequenceDiagramComponent } from './components/diagram/sequence-diagram/sequence-diagram.component';
 import { SequenceDiagramActorComponent } from './components/diagram/sequence-diagram-actor/sequence-diagram-actor.component';
@@ -117,13 +113,8 @@ import { ExportComponent } from './pages/admin/export/export.component';
 import { ImportComponent } from './pages/admin/import/import.component';
 import { ImportItemPreviewComponent } from './pages/admin/import/import-item-preview/import-item-preview.component';
 import { ImportItemGroupPreviewComponent } from './pages/admin/import/import-item-group-preview/import-item-group-preview.component';
-import { SystemListComponent } from './pages/organisation/system-list/system-list.component';
-import { SystemDetailsComponent } from './pages/organisation/system-details/system-details.component';
-import { SystemTestsComponent } from './pages/organisation/system-tests/system-tests.component';
-import { OrganisationIndexComponent } from './pages/organisation/organisation-index.component';
-import { CreateEditSystemModalComponent } from './modals/create-edit-system-modal/create-edit-system-modal.component';
+import { OrganisationTestsComponent } from './pages/organisation/organisation-tests/organisation-tests.component';
 import { ConformanceStatementsComponent } from './pages/organisation/conformance-statements/conformance-statements.component';
-import { SystemInfoComponent } from './pages/organisation/system-info/system-info.component';
 import { CreateConformanceStatementComponent } from './pages/organisation/create-conformance-statement/create-conformance-statement.component';
 import { ConformanceStatementComponent } from './pages/organisation/conformance-statement/conformance-statement.component';
 import { MissingConfigurationModalComponent } from './modals/missing-configuration-modal/missing-configuration-modal.component';
@@ -147,7 +138,6 @@ import { MultiSelectFilterComponent } from './components/multi-select-filter/mul
 import { TestStatusIconsComponent } from './components/test-status-icons/test-status-icons.component';
 import { TableColumnContentComponent } from './components/table-row/table-column-content/table-column-content.component';
 import { TestTriggerModalComponent } from './pages/admin/user-management/trigger/test-trigger-modal/test-trigger-modal.component';
-import { TestOptionButtonComponent } from './pages/test-execution/test-option-button/test-option-button.component';
 import { CreateEditCommunityResourceModalComponent } from './modals/create-edit-community-resource-modal/create-edit-community-resource-modal.component';
 import { CommunityResourceBulkUploadModalComponent } from './modals/community-resource-bulk-upload-modal/community-resource-bulk-upload-modal.component';
 import { LinkSharedTestSuiteModalComponent } from './modals/link-shared-test-suite-modal/link-shared-test-suite-modal.component';
@@ -156,13 +146,37 @@ import { TestSuiteUploadSpecificationChoicesComponent } from './components/test-
 import { CreateSpecificationGroupComponent } from './pages/admin/domain-management/specification/group/create-specification-group/create-specification-group.component';
 import { SpecificationGroupFormComponent } from './pages/admin/domain-management/specification/group/specification-group-form/specification-group-form.component';
 import { SpecificationGroupDetailsComponent } from './pages/admin/domain-management/specification/group/specification-group-details/specification-group-details.component';
-import { DomainSpecificationTableRowComponent } from './components/domain-specification-table-row/domain-specification-table-row.component';
 import { HiddenIconComponent } from './components/hidden-icon/hidden-icon.component';
 import { ConformanceStatementItemDisplayComponent } from './components/conformance-statement-item-display/conformance-statement-item-display.component';
 import { ConformanceStatementItemsDisplayComponent } from './components/conformance-statement-items-display/conformance-statement-items-display.component';
 import { CollapsingIconComponent } from './components/collapsing-icon/collapsing-icon.component';
 import { PlaceholderSelectorComponent } from './components/placeholder-selector/placeholder-selector.component';
 import { TestResultRatioComponent } from './components/test-result-ratio/test-result-ratio.component';
+import { PrescriptionLevelComponent } from './components/prescription-level/prescription-level.component';
+import { CheckboxOptionPanelComponent } from './components/checkbox-option-panel/checkbox-option-panel.component';
+import { MenuItemComponent } from './pages/index/menu-item/menu-item.component';
+import { MenuGroupComponent } from './pages/index/menu-group/menu-group.component';
+import { CreateSystemComponent } from './pages/admin/user-management/system/create-system/create-system.component';
+import { SystemDetailsComponent } from './pages/admin/user-management/system/system-details/system-details.component';
+import { SystemFormComponent } from './pages/admin/user-management/system/system-form/system-form.component';
+import { HeaderMenuComponent } from './pages/index/header-menu/header-menu.component';
+import { TagComponent } from './components/tag/tag.component';
+import { TestCaseDisplayComponent } from './components/test-case-display/test-case-display.component';
+import { TestSuiteDisplayComponent } from './components/test-suite-display/test-suite-display.component';
+import { TagsDisplayComponent } from './components/tags-display/tags-display.component';
+import { CreateEditTagComponent } from './modals/create-edit-tag/create-edit-tag.component';
+import { DomainSpecificationDisplayComponent } from './components/domain-specification-display/domain-specification-display.component';
+import { SystemAdministrationComponent } from './pages/admin/system-administration/system-administration.component';
+import { ConfigurationEntryComponent } from './pages/admin/system-administration/configuration-entry/configuration-entry.component';
+import { TabTitleComponent } from './components/tab-title/tab-title.component';
+import { ConformanceSnapshotsModalComponent } from './modals/conformance-snapshots-modal/conformance-snapshots-modal.component';
+import { ManageBadgesComponent } from './components/manage-badges/manage-badges.component';
+import { ManageBadgeComponent } from './components/manage-badges/manage-badge/manage-badge.component';
+import { PreviewBadgeModalComponent } from './modals/preview-badge-modal/preview-badge-modal.component';
+import { ViewBadgeButtonComponent } from './components/view-badge-button/view-badge-button.component';
+import { ResultLabelComponent } from './components/result-label/result-label.component';
+import { PreviewLandingPageComponent } from './pages/admin/user-management/landing-page/preview-landing-page/preview-landing-page.component';
+import { BreadcrumbComponent } from './components/breadcrumb/breadcrumb.component';
 
 @NgModule({
   providers: [ 
@@ -178,7 +192,6 @@ import { TestResultRatioComponent } from './components/test-result-ratio/test-re
     TooltipComponent,
     ErrorComponent,
     HomeComponent,
-    SettingsComponent,
     ProfileComponent,
     OrganisationComponent,
     PasswordComponent,
@@ -193,16 +206,13 @@ import { TestResultRatioComponent } from './components/test-result-ratio/test-re
     LinkAccountComponent,
     DisconnectRoleComponent,
     OptionalCustomPropertyFormComponent,
-    AddMemberComponent,
     AlertDisplayComponent,
     PendingBlockComponent,
     NoAutoCompleteDirective,
-    AdminComponent,
     SessionDashboardComponent,
     SessionTableComponent,
     TestFilterComponent,
     CustomPropertyFilterComponent,
-    ToggleComponent,
     TestSessionPresentationComponent,
     SequenceDiagramComponent,
     SequenceDiagramActorComponent,
@@ -271,13 +281,8 @@ import { TestResultRatioComponent } from './components/test-result-ratio/test-re
     ImportComponent,
     ImportItemPreviewComponent,
     ImportItemGroupPreviewComponent,
-    SystemListComponent,
-    SystemDetailsComponent,
-    SystemTestsComponent,
-    OrganisationIndexComponent,
-    CreateEditSystemModalComponent,
+    OrganisationTestsComponent,
     ConformanceStatementsComponent,
-    SystemInfoComponent,
     CreateConformanceStatementComponent,
     ConformanceStatementComponent,
     MissingConfigurationModalComponent,
@@ -289,7 +294,6 @@ import { TestResultRatioComponent } from './components/test-result-ratio/test-re
     SecretInputComponent,
     TextFilterComponent,
     CopyEnabledTextComponent,
-    SanitizeHtmlPipe,
     ApiKeyTextComponent,
     ApiKeyInfoComponent,
     MissingConfigurationDisplayComponent,
@@ -300,7 +304,6 @@ import { TestResultRatioComponent } from './components/test-result-ratio/test-re
     TestStatusIconsComponent,
     TableColumnContentComponent,
     TestTriggerModalComponent,
-    TestOptionButtonComponent,
     CreateEditCommunityResourceModalComponent,
     CommunityResourceBulkUploadModalComponent,
     LinkSharedTestSuiteModalComponent,
@@ -309,14 +312,41 @@ import { TestResultRatioComponent } from './components/test-result-ratio/test-re
     CreateSpecificationGroupComponent,
     SpecificationGroupFormComponent,
     SpecificationGroupDetailsComponent,
-    DomainSpecificationTableRowComponent,
     HiddenIconComponent,
     ConformanceStatementItemDisplayComponent,
     ConformanceStatementItemsDisplayComponent,
     CollapsingIconComponent,
     PlaceholderSelectorComponent,
-    TestResultRatioComponent],
+    TestResultRatioComponent,
+    PrescriptionLevelComponent,
+    CheckboxOptionPanelComponent,
+    MenuItemComponent,
+    MenuGroupComponent,
+    CreateSystemComponent,
+    SystemFormComponent,
+    SystemDetailsComponent,
+    HeaderMenuComponent,
+    TagComponent,
+    TestCaseDisplayComponent,
+    TestSuiteDisplayComponent,
+    TagsDisplayComponent,
+    CreateEditTagComponent,
+    DomainSpecificationDisplayComponent,
+    SystemAdministrationComponent,
+    ConfigurationEntryComponent,
+    TabTitleComponent,
+    ConformanceSnapshotsModalComponent,
+    ManageBadgesComponent,
+    ManageBadgeComponent,
+    SanitizeHtmlPipe,
+    PreviewBadgeModalComponent,
+    ViewBadgeButtonComponent,
+    ResultLabelComponent,
+    PreviewLandingPageComponent,
+    BreadcrumbComponent
+  ],
   imports: [
+    ColorPickerModule,
     BrowserModule,
     BrowserAnimationsModule,
     EditorModule,

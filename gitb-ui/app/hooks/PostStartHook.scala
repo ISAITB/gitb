@@ -1,6 +1,5 @@
 package hooks
 
-import actors.WebSocketActor
 import akka.actor.ActorSystem
 import config.Configurations
 import config.Configurations.BUILD_TIMESTAMP
@@ -13,7 +12,6 @@ import org.apache.commons.lang3.{RandomStringUtils, StringUtils}
 import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
 import play.api.Environment
-import play.api.inject.ApplicationLifecycle
 import utils.{RepositoryUtils, TimeUtil, ZipArchiver}
 
 import java.io.{File, FileFilter}
@@ -22,13 +20,15 @@ import java.nio.file.{Files, Path}
 import java.time.LocalDate
 import java.util.Properties
 import javax.inject.{Inject, Singleton}
-import javax.xml.ws.Endpoint
+import jakarta.xml.ws.Endpoint
+import models.Enums.UserRole
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.DurationInt
 import scala.util.Using
 
 @Singleton
-class PostStartHook @Inject() (implicit ec: ExecutionContext, appLifecycle: ApplicationLifecycle, actorSystem: ActorSystem, systemConfigurationManager: SystemConfigurationManager, testResultManager: TestResultManager, testExecutionManager: TestExecutionManager, testSuiteManager: TestSuiteManager, reportManager: ReportManager, webSocketActor: WebSocketActor, testbedBackendClient: TestbedBackendClient, importCompleteManager: ImportCompleteManager, triggerManager: TriggerManager, repositoryUtils: RepositoryUtils, environment: Environment) {
+class PostStartHook @Inject() (implicit ec: ExecutionContext, actorSystem: ActorSystem, systemConfigurationManager: SystemConfigurationManager, testResultManager: TestResultManager, testExecutionManager: TestExecutionManager, importCompleteManager: ImportCompleteManager, repositoryUtils: RepositoryUtils, environment: Environment, userManager: UserManager) {
 
   private def logger = LoggerFactory.getLogger(this.getClass)
 
@@ -39,6 +39,7 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext, appLifecycle: Appl
     System.setProperty("java.io.tmpdir", System.getProperty("user.dir"))
     BUILD_TIMESTAMP = getBuildTimestamp()
     initialiseTestbedClient()
+    adaptSystemConfiguration()
     checkMasterPassword()
     destroyIdleSessions()
     cleanupPendingTestSuiteUploads()
@@ -47,6 +48,46 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext, appLifecycle: Appl
     archiveOldTestSessions()
     prepareRestApiDocumentation()
     logger.info("Application has started in "+Configurations.TESTBED_MODE+" mode - release "+Constants.VersionNumber + " built at "+Configurations.BUILD_TIMESTAMP)
+  }
+
+  private def adaptSystemConfiguration(): Unit = {
+    // Load persisted configuration parameters.
+    val persistedConfigs = systemConfigurationManager.getEditableSystemConfigurationValues(onlyPersisted = true)
+    // Check against environment settings.
+    val restApiEnabledConfig = persistedConfigs.find(config => config.config.name == Constants.RestApiEnabled).map(_.config)
+    // REST API.
+    if (restApiEnabledConfig.nonEmpty && restApiEnabledConfig.get.parameter.nonEmpty) {
+      Configurations.AUTOMATION_API_ENABLED = restApiEnabledConfig.get.parameter.get.toBoolean
+    }
+    // Self-registration.
+    val selfRegistrationConfig = persistedConfigs.find(config => config.config.name == Constants.SelfRegistrationEnabled).map(_.config)
+    if (selfRegistrationConfig.nonEmpty && selfRegistrationConfig.get.parameter.nonEmpty) {
+      Configurations.REGISTRATION_ENABLED = selfRegistrationConfig.get.parameter.get.toBoolean
+    }
+    // Demo account.
+    val demoAccountConfig = persistedConfigs.find(config => config.config.name == Constants.DemoAccount).map(_.config)
+    Configurations.DEMOS_ENABLED = demoAccountConfig.nonEmpty && demoAccountConfig.get.parameter.nonEmpty
+    if (Configurations.DEMOS_ENABLED) {
+      Configurations.DEMOS_ACCOUNT = demoAccountConfig.get.parameter.get.toLong
+    } else {
+      Configurations.DEMOS_ACCOUNT = -1
+    }
+    // Make sure that the configured demo account is an existing basic user.
+    if (Configurations.DEMOS_ACCOUNT != -1) {
+      val demoUser = userManager.getUserById(Configurations.DEMOS_ACCOUNT)
+      if (demoUser.isEmpty || demoUser.get.role != UserRole.VendorUser.id.toShort) {
+        logger.warn("Configured demo account ID [{}] does not match a non-administrator user and will be ignored.", Configurations.DEMOS_ACCOUNT)
+        Configurations.DEMOS_ENABLED = false
+        Configurations.DEMOS_ACCOUNT = -1
+      }
+    }
+    // Welcome message.
+    val welcomeMessageConfig = persistedConfigs.find(config => config.config.name == Constants.WelcomeMessage).map(_.config)
+    if (welcomeMessageConfig.nonEmpty && welcomeMessageConfig.get.parameter.nonEmpty) {
+      Configurations.WELCOME_MESSAGE = welcomeMessageConfig.get.parameter.get
+    } else {
+      Configurations.WELCOME_MESSAGE = Configurations.WELCOME_MESSAGE_DEFAULT
+    }
   }
 
   private def getBuildTimestamp(): String = {
@@ -61,12 +102,15 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext, appLifecycle: Appl
 
   private def checkMasterPassword(): Unit = {
     val existingHash = systemConfigurationManager.getSystemConfiguration(Constants.MasterPassword)
-    if (existingHash.parameter.isEmpty) {
+    var existingValue: Option[String] = None
+    if (existingHash.isEmpty || existingHash.get.parameter.isEmpty) {
       // Store master password.
-      existingHash.parameter = Some(BCrypt.hashpw(String.valueOf(Configurations.MASTER_PASSWORD), BCrypt.gensalt()))
-      systemConfigurationManager.updateSystemParameter(existingHash.name, existingHash.parameter)
+      existingValue = Some(BCrypt.hashpw(String.valueOf(Configurations.MASTER_PASSWORD), BCrypt.gensalt()))
+      systemConfigurationManager.updateSystemParameter(Constants.MasterPassword, existingValue)
+    } else {
+      existingValue = existingHash.get.parameter
     }
-    if (BCrypt.checkpw(String.valueOf(Configurations.MASTER_PASSWORD), existingHash.parameter.get)) {
+    if (BCrypt.checkpw(String.valueOf(Configurations.MASTER_PASSWORD), existingValue.get)) {
       // Set master password matches stored value.
       if (Configurations.MASTER_PASSWORD_TO_REPLACE.isDefined) {
         Configurations.MASTER_PASSWORD_TO_REPLACE = None
@@ -81,13 +125,13 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext, appLifecycle: Appl
     } else {
       // Set master password does not match stored value.
       if (Configurations.MASTER_PASSWORD_TO_REPLACE.isDefined) {
-        if (BCrypt.checkpw(String.valueOf(Configurations.MASTER_PASSWORD_TO_REPLACE.get), existingHash.parameter.get)) {
+        if (BCrypt.checkpw(String.valueOf(Configurations.MASTER_PASSWORD_TO_REPLACE.get), existingValue.get)) {
           systemConfigurationManager.updateMasterPassword(Configurations.MASTER_PASSWORD_TO_REPLACE.get, Configurations.MASTER_PASSWORD)
           logger.info("The master password has been successfully updated and existing secrets have been re-encrypted using it. " +
             "In the application's next startup remove property MASTER_PASSWORD_TO_REPLACE to avoid startup warnings.")
         } else {
           if (Configurations.MASTER_PASSWORD_FORCE) {
-            systemConfigurationManager.updateSystemParameter(existingHash.name, Some(BCrypt.hashpw(String.valueOf(Configurations.MASTER_PASSWORD), BCrypt.gensalt())))
+            systemConfigurationManager.updateSystemParameter(Constants.MasterPassword, Some(BCrypt.hashpw(String.valueOf(Configurations.MASTER_PASSWORD), BCrypt.gensalt())))
             logger.warn("The configured MASTER_PASSWORD does not match the one currently in place but the previous one to " +
               "replace, provided via MASTER_PASSWORD_TO_REPLACE, does not match it either. As property MASTER_PASSWORD_FORCE " +
               "is set to true the new MASTER_PASSWORD will be used from now on, however any existing secret values will be " +
@@ -105,7 +149,7 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext, appLifecycle: Appl
         }
       } else {
         if (Configurations.MASTER_PASSWORD_FORCE) {
-          systemConfigurationManager.updateSystemParameter(existingHash.name, Some(BCrypt.hashpw(String.valueOf(Configurations.MASTER_PASSWORD), BCrypt.gensalt())))
+          systemConfigurationManager.updateSystemParameter(Constants.MasterPassword, Some(BCrypt.hashpw(String.valueOf(Configurations.MASTER_PASSWORD), BCrypt.gensalt())))
           logger.warn("The configured MASTER_PASSWORD does not match the one currently in place but you did not specify " +
             "the previous password via property MASTER_PASSWORD_TO_REPLACE. As property MASTER_PASSWORD_FORCE is set to true " +
             "the new MASTER_PASSWORD will be used from now on, however any existing secret values will be rendered invalid and lost " +
@@ -135,12 +179,11 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext, appLifecycle: Appl
     actorSystem.scheduler.scheduleWithFixedDelay(5.minutes, 30.minutes) {
       () => {
         val config = systemConfigurationManager.getSystemConfiguration(Constants.SessionAliveTime)
-        val aliveTime = config.parameter
-        if (aliveTime.isDefined) {
+        if (config.isDefined && config.get.parameter.isDefined) {
           val list = testResultManager.getRunningTestResults
           list.foreach { result =>
             val difference = TimeUtil.getTimeDifferenceInSeconds(result.startTime)
-            if (difference >= aliveTime.get.toInt) {
+            if (difference >= config.get.parameter.get.toInt) {
               val sessionId = result.sessionId
               testExecutionManager.endSession(sessionId)
               logger.info("Terminated idle session [" + sessionId + "]")
@@ -263,26 +306,24 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext, appLifecycle: Appl
     if (apiDocsFile.exists()) {
       FileUtils.deleteQuietly(apiDocsFile)
     }
-    if (Configurations.AUTOMATION_API_ENABLED) {
-      var apiUrl = Configurations.TESTBED_HOME_LINK
-      if (apiUrl == "/") {
-        apiUrl = s"http://localhost:${sys.env.getOrElse("http.port", 9000)}/${Configurations.API_ROOT}/rest"
-      } else {
-        if (!apiUrl.endsWith("/")) {
-          apiUrl += "/"
-        }
-        apiUrl += Configurations.API_ROOT+"/rest"
+    var apiUrl = Configurations.TESTBED_HOME_LINK
+    if (apiUrl == "/") {
+      apiUrl = s"http://localhost:${sys.env.getOrElse("http.port", 9000)}/${Configurations.API_ROOT}/rest"
+    } else {
+      if (!apiUrl.endsWith("/")) {
+        apiUrl += "/"
       }
-      Using (Thread.currentThread().getContextClassLoader.getResourceAsStream("api/openapi.json")) { stream =>
-        var template = new String(stream.readAllBytes(), StandardCharsets.UTF_8)
-        template = StringUtils.replaceEach(template,
-          Array("${version}", "${contactEmail}", "${userGuideAddress}", "${apiUrl}"),
-          Array(Constants.VersionNumber, Configurations.EMAIL_TO.headOption.getOrElse("-"), Configurations.USERGUIDE_OU, apiUrl)
-        )
-        FileUtils.writeStringToFile(apiDocsFile, template, StandardCharsets.UTF_8)
-      }
-      logger.info("Prepared REST API documentation")
+      apiUrl += Configurations.API_ROOT+"/rest"
     }
+    Using (Thread.currentThread().getContextClassLoader.getResourceAsStream("api/openapi.json")) { stream =>
+      var template = new String(stream.readAllBytes(), StandardCharsets.UTF_8)
+      template = StringUtils.replaceEach(template,
+        Array("${version}", "${contactEmail}", "${userGuideAddress}", "${apiUrl}"),
+        Array(Constants.VersionNumber, Configurations.EMAIL_TO.headOption.getOrElse("-"), Configurations.USERGUIDE_OU, apiUrl)
+      )
+      FileUtils.writeStringToFile(apiDocsFile, template, StandardCharsets.UTF_8)
+    }
+    logger.info("Prepared REST API documentation")
   }
 
   private def isNumeric(name: String): Boolean = {

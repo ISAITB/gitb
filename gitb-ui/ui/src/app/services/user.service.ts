@@ -1,5 +1,4 @@
 import { Injectable } from '@angular/core';
-import { ROUTER_CONFIGURATION } from '@angular/router';
 import { Constants } from '../common/constants';
 import { ROUTES } from '../common/global';
 import { ErrorDescription } from '../types/error-description';
@@ -39,8 +38,22 @@ export class UserService {
     })
   }
 
-  getUserById(userId: number) {
+  getBasicUsersByOrganization(orgId: number) {
+    return this.restService.get<User[]>({
+      path: ROUTES.controllers.UserService.getBasicUsersByOrganization(orgId).url,
+      authenticate: true
+    })
+  }
+
+  getOwnOrganisationUserById(userId: number) {
     return this.restService.get<User>({
+      path: ROUTES.controllers.UserService.getOwnOrganisationUserById(userId).url,
+      authenticate: true
+    })
+  }
+
+  getUserById(userId: number) {
+    return this.restService.get<User|undefined>({
       path: ROUTES.controllers.UserService.getUserById(userId).url,
       authenticate: true
     })

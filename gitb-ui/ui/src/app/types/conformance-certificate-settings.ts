@@ -3,6 +3,7 @@ export interface ConformanceCertificateSettings {
     id: number
     title?: string
     message?: string
+    includeTitle: boolean
     includeMessage: boolean
     includeTestStatus: boolean
     includeTestCases: boolean

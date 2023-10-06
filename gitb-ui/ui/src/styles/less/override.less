@@ -1,0 +1,39 @@
+/*
+ * Override of spin behaviour in FontAwesome to avoid disabling due to accessibility settings (prefers-reduced-motion).
+ * Instead of referring to 'fa-spin' you may use 'fa-spin-override' in place.
+ */
+.fa-spin-override {
+	-webkit-animation-name: fa-spin-override;
+			animation-name: fa-spin-override;
+	-webkit-animation-delay: var(--fa-animation-delay, 0s);
+			animation-delay: var(--fa-animation-delay, 0s);
+	-webkit-animation-direction: var(--fa-animation-direction, normal);
+			animation-direction: var(--fa-animation-direction, normal);
+	-webkit-animation-duration: var(--fa-animation-duration, 2s);
+			animation-duration: var(--fa-animation-duration, 2s);
+	-webkit-animation-iteration-count: var(--fa-animation-iteration-count, infinite);
+			animation-iteration-count: var(--fa-animation-iteration-count, infinite);
+	-webkit-animation-timing-function: var(--fa-animation-timing, linear);
+			animation-timing-function: var(--fa-animation-timing, linear);
+}
+@-webkit-keyframes fa-spin-override {
+	0% {
+	  -webkit-transform: rotate(0deg);
+			  transform: rotate(0deg);
+	}
+	100% {
+	  -webkit-transform: rotate(360deg);
+			  transform: rotate(360deg);
+	}
+}
+
+@keyframes fa-spin-override {
+	0% {
+	  -webkit-transform: rotate(0deg);
+			  transform: rotate(0deg);
+	}
+	100% {
+	  -webkit-transform: rotate(360deg);
+			  transform: rotate(360deg);
+	}
+}

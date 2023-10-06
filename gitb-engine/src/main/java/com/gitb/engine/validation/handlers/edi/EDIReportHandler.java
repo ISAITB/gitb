@@ -1,6 +1,6 @@
 package com.gitb.engine.validation.handlers.edi;
 
-import javax.xml.bind.JAXBElement;
+import jakarta.xml.bind.JAXBElement;
 
 import com.gitb.core.AnyContent;
 import com.gitb.core.ValueEmbeddingEnumeration;

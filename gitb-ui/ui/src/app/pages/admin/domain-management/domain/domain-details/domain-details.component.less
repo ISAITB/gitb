@@ -1,45 +1,11 @@
 @import '../../../../../../styles/less/_common.less';
-tr {
-    min-height: 100px;
-}
-tr.group {
-    &:hover {
-        cursor: pointer;
-        background-color: @gray-highlight;
-        +tr.group-options {
-            .spec-group-options {
-                ::ng-deep {
-                    tbody > tr > td {
-                        background-color: @gray-highlight;
-                    }
-                }
-            }
-            background-color: @gray-highlight;
-        }        
+.spec-message-div {
+    padding: 10px;
+    background-color: @white;
+    border: 1px solid @gray-dark-1;
+    border-radius: 5px;
+    display: flex;
+    div, span {
+        opacity: 0.5;
     }
-}
-td.spec-group-options-td {
-    border-top: 0px;
-    padding: 0px;
-    .spec-group-options {
-        margin: 8px;
-        ::ng-deep {
-            tbody > tr {
-                &.selectable {
-                    &:hover {
-                        cursor: pointer;
-                        background-color: @gray-highlight;                    
-                    }
-                }
-                > td.td-no-data {
-                    height: 51px;
-                    background: @gray-light-1;
-                }
-                background: @gray-light-1;
-            } 
-        }
-    }
-}
-#button-option-visibility span.caret {
-    margin-left: 10px;
 }

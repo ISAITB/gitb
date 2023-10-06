@@ -1,9 +1,11 @@
 package utils
 
+import models.Constants
+
 import java.sql.Timestamp
 import java.text.SimpleDateFormat
 import java.time.format.DateTimeFormatter
-import java.time.{ZoneId, ZoneOffset, ZonedDateTime}
+import java.time.{ZoneId, ZonedDateTime}
 import java.util.{Calendar, Date, TimeZone}
 
 object TimeUtil {
@@ -25,6 +27,14 @@ object TimeUtil {
     format
   }
 
+  def dateFromFilterString(dateStr: Option[String]): Option[Date] = {
+    if (dateStr.isEmpty) {
+      None
+    } else {
+      Some(new SimpleDateFormat(Constants.FilterDateFormat).parse(dateStr.get))
+    }
+  }
+
   def serializeTimestamp(t:Timestamp): String = {
     new SimpleDateFormat("dd-MM-yyyy HH:mm:ss").format(new Date(t.getTime))
   }
@@ -41,6 +51,14 @@ object TimeUtil {
 
   def getCurrentTimestamp(): Timestamp = {
     new Timestamp(System.currentTimeMillis)
+  }
+
+  def copyTimestamp(source: Option[Timestamp]): Option[Timestamp] = {
+    if (source.isDefined) {
+      Some(new Timestamp(source.get.getTime))
+    } else {
+      None
+    }
   }
 
   def getCurrentTime():String = {

@@ -8,6 +8,10 @@ import { PopupService } from 'src/app/services/popup.service';
 import { RoutingService } from 'src/app/services/routing.service';
 import { LegalNotice } from 'src/app/types/legal-notice';
 import { CommunityTab } from '../../community/community-details/community-tab.enum';
+import { Constants } from 'src/app/common/constants';
+import { SystemAdministrationTab } from '../../../system-administration/system-administration-tab.enum';
+import { HtmlService } from 'src/app/services/html.service';
+import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
 
 @Component({
   selector: 'app-legal-notice-details',
@@ -25,6 +29,7 @@ export class LegalNoticeDetailsComponent extends BaseComponent implements OnInit
   copyPending = false
   deletePending = false
   showContent = true
+  tooltipForDefaultCheck!: string
 
   constructor(
     public dataService: DataService,
@@ -32,7 +37,8 @@ export class LegalNoticeDetailsComponent extends BaseComponent implements OnInit
     private route: ActivatedRoute,
     private legalNoticeService: LegalNoticeService,
     private confirmationDialogService: ConfirmationDialogService,
-    private popupService: PopupService
+    private popupService: PopupService,
+    private htmlService: HtmlService
     ) { super() }
 
   ngAfterViewInit(): void {
@@ -40,12 +46,23 @@ export class LegalNoticeDetailsComponent extends BaseComponent implements OnInit
   }
 
   ngOnInit(): void {
-    this.communityId = Number(this.route.snapshot.paramMap.get('community_id'))
-    this.noticeId = Number(this.route.snapshot.paramMap.get('notice_id'))
+    if (this.route.snapshot.paramMap.has(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID)) {
+      this.communityId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID))
+      this.tooltipForDefaultCheck = 'Check this to make this legal notice the default one assumed for the community\'s '+this.dataService.labelOrganisationsLower()+'.'
+    } else {
+      this.communityId = Constants.DEFAULT_COMMUNITY_ID
+      this.tooltipForDefaultCheck = 'Check this to make this legal notice the default one assumed for all communities.'
+    }
+    this.noticeId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.LEGAL_NOTICE_ID))
     this.legalNoticeService.getLegalNoticeById(this.noticeId)
     .subscribe((data) => {
       this.notice = data
       this.isDefault = data.default
+      if (this.communityId == Constants.DEFAULT_COMMUNITY_ID) {
+        this.routingService.systemLegalNoticeBreadcrumbs(this.noticeId, this.notice.name!)
+      } else {
+        this.routingService.legalNoticeBreadcrumbs(this.communityId, this.noticeId, this.notice.name!)
+      }
     })
   }
 
@@ -55,7 +72,7 @@ export class LegalNoticeDetailsComponent extends BaseComponent implements OnInit
 
   updateLegalNotice(copy: boolean) {
     if (!this.isDefault && this.notice.default) {
-      this.confirmationDialogService.confirmed("Confirm default", "You are about to change the default legal notice. Are you sure?", "Yes", "No")
+      this.confirmationDialogService.confirmed("Confirm default", "You are about to change the default legal notice. Are you sure?", "Change", "Cancel")
       .subscribe(() => {
         this.doUpdate(copy)
       })
@@ -75,6 +92,11 @@ export class LegalNoticeDetailsComponent extends BaseComponent implements OnInit
           this.copyLegalNotice()
         } else {
           this.popupService.success('Legal notice updated.')
+          if (this.communityId == Constants.DEFAULT_COMMUNITY_ID) {
+            this.dataService.breadcrumbUpdate({id: this.noticeId, type: BreadcrumbType.systemLegalNotice, label: this.notice.name})
+          } else {
+            this.dataService.breadcrumbUpdate({id: this.noticeId, type: BreadcrumbType.legalNotice, label: this.notice.name})
+          }
         }
       }
     }).add(() => {
@@ -84,11 +106,15 @@ export class LegalNoticeDetailsComponent extends BaseComponent implements OnInit
 
   copyLegalNotice() {
     this.copyPending = true
-    this.routingService.toCreateLegalNotice(this.communityId, false, this.noticeId)
+    if (this.communityId == Constants.DEFAULT_COMMUNITY_ID) {
+      this.routingService.toCreateLegalNotice(undefined, undefined, this.noticeId)
+    } else {
+      this.routingService.toCreateLegalNotice(this.communityId, false, this.noticeId)
+    }
   }
 
   deleteLegalNotice() {
-    this.confirmationDialogService.confirmed("Confirm delete", "Are you sure you want to delete this legal notice?", "Yes", "No")
+    this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this legal notice?", "Delete", "Cancel")
     .subscribe(() => {
       this.deletePending = true
       this.legalNoticeService.deleteLegalNotice(this.noticeId)
@@ -102,7 +128,15 @@ export class LegalNoticeDetailsComponent extends BaseComponent implements OnInit
   }
 
   cancelDetailLegalNotice() {
-    this.routingService.toCommunity(this.communityId, CommunityTab.legalNotices)
+    if (this.communityId == Constants.DEFAULT_COMMUNITY_ID) {
+      this.routingService.toSystemAdministration(SystemAdministrationTab.legalNotices)
+    } else {
+      this.routingService.toCommunity(this.communityId, CommunityTab.legalNotices)
+    }
+  }
+
+  preview() {
+    this.htmlService.showHtml('Legal Notice', this.notice.content!)
   }
 
 }

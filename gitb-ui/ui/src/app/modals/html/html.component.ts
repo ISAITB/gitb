@@ -9,14 +9,18 @@ import { BsModalRef } from 'ngx-bootstrap/modal'
 })
 export class HtmlComponent implements OnInit {
 
-  headerText: string = ''
+  headerText?: string
   html: string = ''
+  customClass?: string
 
   constructor(
     public modalRef: BsModalRef
   ) { }
 
   ngOnInit(): void {
+    if (this.customClass) {
+      this.modalRef.setClass(this.customClass)
+    }
   }
 
   close() {

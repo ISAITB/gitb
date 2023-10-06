@@ -3,7 +3,6 @@ package controllers
 import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, ResponseConstructor}
 import managers._
 import org.apache.commons.io.FileUtils
-import org.slf4j.{Logger, LoggerFactory}
 import play.api.mvc.{AbstractController, ControllerComponents}
 import utils.{HtmlUtil, JsonUtil, RepositoryUtils}
 
@@ -15,9 +14,7 @@ import scala.concurrent.ExecutionContext
 /**
  * Created by serbay.Tes
  */
-class TestSuiteService @Inject() (implicit ec: ExecutionContext, authorizedAction: AuthorizedAction, cc: ControllerComponents, repositoryUtils: RepositoryUtils, reportManager: ReportManager, communityManager: CommunityManager, testSuiteManager: TestSuiteManager, testCaseManager: TestCaseManager, conformanceManager: ConformanceManager, authorizationManager: AuthorizationManager) extends AbstractController(cc) {
-
-	private final val logger: Logger = LoggerFactory.getLogger(classOf[TestSuiteService])
+class TestSuiteService @Inject() (implicit ec: ExecutionContext, authorizedAction: AuthorizedAction, cc: ControllerComponents, specificationManager: SpecificationManager, repositoryUtils: RepositoryUtils, reportManager: ReportManager, communityManager: CommunityManager, testSuiteManager: TestSuiteManager, testCaseManager: TestCaseManager, authorizationManager: AuthorizationManager) extends AbstractController(cc) {
 
 	def updateTestSuiteMetadata(testSuiteId:Long) = authorizedAction { request =>
 		authorizationManager.canEditTestSuite(request, testSuiteId)
@@ -37,11 +34,27 @@ class TestSuiteService @Inject() (implicit ec: ExecutionContext, authorizedActio
 		val name:String = ParameterExtractor.requiredBodyParameter(request, Parameters.NAME)
 		val description:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DESCRIPTION)
 		var documentation:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DOCUMENTATION)
+		val isOptional = ParameterExtractor.optionalBooleanBodyParameter(request, Parameters.OPTIONAL).getOrElse(false)
+		val isDisabled = ParameterExtractor.optionalBooleanBodyParameter(request, Parameters.DISABLED).getOrElse(false)
+		val tags = sanitizeTags(ParameterExtractor.optionalBodyParameter(request, Parameters.TAGS))
 		if (documentation.isDefined) {
 			documentation = Some(HtmlUtil.sanitizeEditorContent(documentation.get))
 		}
-		testCaseManager.updateTestCaseMetadata(testCaseId, name, description, documentation)
+		testCaseManager.updateTestCaseMetadata(testCaseId, name, description, documentation, isOptional, isDisabled, tags)
 		ResponseConstructor.constructEmptyResponse
+	}
+
+	private def sanitizeTags(tagDefinition: Option[String]): Option[String] = {
+		if (tagDefinition.isDefined) {
+			val parsedTags = JsonUtil.parseJsTags(tagDefinition.get)
+			if (parsedTags.nonEmpty) {
+				Some(JsonUtil.jsTags(parsedTags).toString)
+			} else {
+				None
+			}
+		} else {
+			None
+		}
 	}
 
 	def previewTestCaseDocumentationInReports() = authorizedAction { request =>
@@ -72,7 +85,7 @@ class TestSuiteService @Inject() (implicit ec: ExecutionContext, authorizedActio
 
 	def undeployTestSuite(testSuiteId: Long) = authorizedAction { request =>
 		authorizationManager.canDeleteTestSuite(request, testSuiteId)
-		conformanceManager.undeployTestSuiteWrapper(testSuiteId)
+		testSuiteManager.undeployTestSuiteWrapper(testSuiteId)
 		ResponseConstructor.constructEmptyResponse
 	}
 
@@ -110,7 +123,7 @@ class TestSuiteService @Inject() (implicit ec: ExecutionContext, authorizedActio
 		authorizationManager.canViewTestCase(request, testCaseId.toString)
 
 		val testCase = testCaseManager.getTestCaseWithDocumentation(testCaseId)
-		val json = JsonUtil.jsTestCases(testCase, withDocumentation = true).toString()
+		val json = JsonUtil.jsTestCases(testCase, withDocumentation = true, withTags = true).toString()
 		ResponseConstructor.constructJsonResponse(json)
 	}
 
@@ -128,7 +141,7 @@ class TestSuiteService @Inject() (implicit ec: ExecutionContext, authorizedActio
 
 	def getLinkedSpecifications(testSuiteId: Long) = authorizedAction { request =>
 		authorizationManager.canManageTestSuite(request, testSuiteId)
-		val specs = testSuiteManager.getLinkedSpecifications(testSuiteId)
+		val specs = specificationManager.getSpecificationsLinkedToTestSuite(testSuiteId)
 		val json = JsonUtil.jsSpecifications(specs).toString()
 		ResponseConstructor.constructJsonResponse(json)
 	}

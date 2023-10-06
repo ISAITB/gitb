@@ -1,5 +1,5 @@
 <div class="page domains detail detail-spec">
-	<div class="panel panel-default">
+	<div class="panel panel-default no-bottom-margin">
 		<div class="panel-heading">
 			<h4 class="title">{{dataService.labelSpecificationGroup()}} details</h4>
 		</div>
@@ -11,17 +11,19 @@
                     </div>
 				</div>
 			</div>
-			<div class="panel-footer">
+			<div class="panel-footer button-container">
 				<div class="btn-toolbar">
 					<button (click)="saveGroupChanges()" type="submit" class="btn btn-default" [disable]="deletePending || saveDisabled()" [pending]="savePending">Save changes</button>
+					<button (click)="back()" type="button" class="btn btn-default">Back</button>
+				</div>
+				<div class="btn-toolbar btn-toolbar-delete">
                     <div class="btn-group" dropdown>
-                        <button id="button-delete" [disable]="savePending" [pending]="deletePending" dropdownToggle type="button" class="btn btn-default dropdown-toggle" aria-controls="dropdown-delete">Delete<span class="caret"></span></button>
-                        <ul id="dropdown-delete" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-result">
+                        <button id="button-delete" [disable]="savePending" [pending]="deletePending" dropdownToggle type="button" class="btn btn-default btn-delete dropdown-toggle" aria-controls="dropdown-delete">Delete<span class="caret withMargin"></span></button>
+                        <ul id="dropdown-delete" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-result">
                             <li role="menuitem"><a class="dropdown-item" href (click)="deleteGroup(false);$event.preventDefault()">Delete this {{dataService.labelSpecificationGroupLower()}} but keep its {{dataService.labelSpecificationInGroupsLower()}}</a></li>
                             <li role="menuitem"><a class="dropdown-item" href (click)="deleteGroup(true);$event.preventDefault()">Delete this {{dataService.labelSpecificationGroupLower()}} and all its {{dataService.labelSpecificationInGroupsLower()}}</a></li>
                         </ul>
                     </div>
-					<button (click)="back()" type="button" class="btn btn-default">Back</button>
 				</div>
 			</div>
 		</form>

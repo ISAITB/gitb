@@ -6,8 +6,8 @@ import play.api.http.DefaultHttpFilters
 class Filters @Inject() (
   cors: CorsFilter,
   error: ErrorFilter,
-  auth: AuthenticationFilter,
   timeout: TimeoutFilter,
   securityFilter: SecurityFilter,
+  auth: AuthenticationFilter,
   headerFilter: HeaderFilter
-) extends DefaultHttpFilters(securityFilter, cors, error, auth, timeout, headerFilter)
+) extends DefaultHttpFilters(securityFilter, auth, cors, error, timeout, headerFilter)

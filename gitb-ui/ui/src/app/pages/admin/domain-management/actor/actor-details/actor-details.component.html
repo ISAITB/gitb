@@ -5,24 +5,23 @@
 		</div>
 		<form class="form-horizontal">
 			<div class="panel-body">
-				<div class="row">
-					<div class="col-md-10 col-md-offset-1">
-                        <app-actor-form [actor]="actor"></app-actor-form>
-                    </div>
-				</div>
+				<app-actor-form [actor]="actor"></app-actor-form>
 			</div>
-			<div class="panel-footer">
+			<div class="panel-footer button-container">
 				<div class="btn-toolbar">
 					<button (click)="saveChanges()" type="submit" class="btn btn-default" [disable]="saveDisabled()" [pending]="savePending">Save changes</button>
-					<button (click)="delete()" type="button" class="btn btn-default" [pending]="deletePending">Delete</button>
 					<button (click)="back()" type="button" class="btn btn-default">Back</button>
+				</div>
+				<div class="btn-toolbar btn-toolbar-delete">
+					<button (click)="delete()" type="button" class="btn btn-default btn-delete" [pending]="deletePending">Delete</button>
 				</div>
 			</div>
 		</form>
 	</div>
 	<div>
 		<tabset>
-			<tab heading="{{dataService.labelEndpoints()}}">
+			<tab customClass="tabClass">
+                <ng-template tabHeading><app-tab-title icon="fa-solid fa-gear" [text]="dataService.labelEndpoints()"></app-tab-title></ng-template>
 				<div class="tabPanel">
 					<div class="tabControls">
 						<button type="button" class="btn btn-default" (click)="createEndpoint()">Create {{dataService.labelEndpointLower()}}</button>

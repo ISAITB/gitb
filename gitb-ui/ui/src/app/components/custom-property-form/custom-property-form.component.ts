@@ -9,7 +9,8 @@ import { Observable } from 'rxjs';
 
 @Component({
   selector: 'app-custom-property-form',
-  templateUrl: './custom-property-form.component.html'
+  templateUrl: './custom-property-form.component.html',
+  styleUrls: [ './custom-property-form.component.less' ]
 })
 export class CustomPropertyFormComponent implements OnInit {
 

@@ -25,6 +25,7 @@ import { RoutingService } from 'src/app/services/routing.service';
 import { CommunityTab } from '../community/community-details/community-tab.enum';
 import { StatementParameterMinimal } from 'src/app/types/statement-parameter-minimal';
 import { TestTriggerModalComponent } from './test-trigger-modal/test-trigger-modal.component';
+import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
 
 @Component({
   selector: 'app-trigger',
@@ -90,8 +91,8 @@ export class TriggerComponent extends BaseComponent implements OnInit, AfterView
   }
 
   ngOnInit(): void {
-    this.communityId = Number(this.route.snapshot.paramMap.get('community_id'))
-    let triggerIdParam = this.route.snapshot.paramMap.get('trigger_id')
+    this.communityId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID))
+    let triggerIdParam = this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.TRIGGER_ID)
     if (triggerIdParam != undefined) {
       this.triggerId = Number(triggerIdParam)
       this.update = true
@@ -145,9 +146,9 @@ export class TriggerComponent extends BaseComponent implements OnInit, AfterView
 
     let domainParameterFnResult: Observable<DomainParameter[]>|undefined
     if (this.dataService.isCommunityAdmin && this.dataService.community!.domainId != undefined) {
-      domainParameterFnResult = this.conformanceService.getDomainParameters(this.dataService.community!.domainId, false)
+      domainParameterFnResult = this.conformanceService.getDomainParameters(this.dataService.community!.domainId, false, false)
     } else if (this.dataService.isSystemAdmin) {
-      domainParameterFnResult = this.conformanceService.getDomainParametersOfCommunity(this.communityId)
+      domainParameterFnResult = this.conformanceService.getDomainParametersOfCommunity(this.communityId, false, false)
     }
     if (domainParameterFnResult != undefined) {
       loadPromises.push(domainParameterFnResult.pipe(
@@ -170,6 +171,7 @@ export class TriggerComponent extends BaseComponent implements OnInit, AfterView
         this.triggerService.getTriggerById(this.triggerId!)
         .subscribe((data) => {
           this.trigger = data.trigger
+          this.routingService.triggerBreadcrumbs(this.communityId, this.triggerId!, this.trigger.name!)
           if (this.trigger.latestResultOk != undefined) {
             if (this.trigger.latestResultOk) {
               this.applyStatusValues(this.statusTextOk)
@@ -315,6 +317,7 @@ export class TriggerComponent extends BaseComponent implements OnInit, AfterView
       } else {
         if (this.update) {
           this.popupService.success('Trigger updated.')
+          this.dataService.breadcrumbUpdate({id: this.triggerId, type: BreadcrumbType.trigger, label: this.trigger.name})
         } else {
           this.back()
           this.popupService.success('Trigger created.')
@@ -327,7 +330,7 @@ export class TriggerComponent extends BaseComponent implements OnInit, AfterView
 
   delete() {
     this.clearAlerts()
-    this.confirmationDialogService.confirmed("Confirm delete", "Are you sure you want to delete this trigger?", "Yes", "No")
+    this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this trigger?", "Delete", "Cancel")
     .subscribe(() => {
       this.deletePending = true
       this.triggerService.deleteTrigger(this.triggerId!)

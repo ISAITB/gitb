@@ -5,5 +5,4 @@ export interface ParameterFormData {
     updateValue: boolean
     file?: File
     hiddenValue?: string
-    hiddenValueRepeat?: string
 }

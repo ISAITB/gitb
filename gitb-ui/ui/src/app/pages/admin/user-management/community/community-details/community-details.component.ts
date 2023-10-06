@@ -30,6 +30,7 @@ import { BsModalService } from 'ngx-bootstrap/modal';
 import { CreateEditCommunityResourceModalComponent } from 'src/app/modals/create-edit-community-resource-modal/create-edit-community-resource-modal.component';
 import { saveAs } from 'file-saver';
 import { CommunityResourceBulkUploadModalComponent } from 'src/app/modals/community-resource-bulk-upload-modal/community-resource-bulk-upload-modal.component';
+import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
 
 @Component({
   selector: 'app-community-details',
@@ -162,6 +163,9 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
   ngOnInit(): void {
     this.community = this.route.snapshot.data['community']
     this.communityId = this.community.id
+    if (Number(this.communityId) == Constants.DEFAULT_COMMUNITY_ID) {
+      this.routingService.toSystemAdministration()
+    }    
     this.community.domainId = this.community.domain?.id
     this.originalDomainId = this.community.domain?.id
     this.adminColumns.push({ field: 'name', title: 'Name' })
@@ -170,7 +174,7 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
     } else {
       this.adminColumns.push({ field: 'email', title: 'Username' })
     }
-    this.adminColumns.push({ field: 'ssoStatusText', title: 'Status' })
+    this.adminColumns.push({ field: 'ssoStatusText', title: 'Status', cellClass: 'td-nowrap' })
     if (this.dataService.configuration.registrationEnabled) {
       this.organizationColumns.push({ field: 'templateName', title: 'Set as template', sortable: true })
     }
@@ -180,6 +184,7 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
         this.domains = data
       })
     }
+    this.routingService.communityBreadcrumbs(this.communityId, this.community.sname)
     // Setup tab triggers
     this.setupTabs()
   }
@@ -187,15 +192,11 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
   private setupTabs() {
     const temp: Partial<Record<CommunityTab, {index: number, loader: () => any}>> = {}
     temp[CommunityTab.organisations] = {index: 0, loader: () => {this.showOrganisations()}}
-    let tabIndexOffset = 1
-    if (this.communityId != Constants.DEFAULT_COMMUNITY_ID) {
-      tabIndexOffset = 0
-      temp[CommunityTab.administrators] = {index: 1, loader: () => {this.showAdministrators()}}
-    }
-    temp[CommunityTab.landingPages] = {index: 2-tabIndexOffset, loader: () => {this.showLandingPages()}}
-    temp[CommunityTab.legalNotices] = {index: 3-tabIndexOffset, loader: () => {this.showLegalNotices()}}
-    temp[CommunityTab.errorTemplates] = {index: 4-tabIndexOffset, loader: () => {this.showErrorTemplates()}}
-    temp[CommunityTab.triggers] = {index: 5-tabIndexOffset, loader: () => {this.showTriggers()}}
+    temp[CommunityTab.administrators] = {index: 1, loader: () => {this.showAdministrators()}}
+    temp[CommunityTab.landingPages] = {index: 2, loader: () => {this.showLandingPages()}}
+    temp[CommunityTab.legalNotices] = {index: 3, loader: () => {this.showLegalNotices()}}
+    temp[CommunityTab.errorTemplates] = {index: 4, loader: () => {this.showErrorTemplates()}}
+    temp[CommunityTab.triggers] = {index: 5, loader: () => {this.showTriggers()}}
     this.tabTriggers = temp as Record<CommunityTab, {index: number, loader: () => any}>
   }
 
@@ -438,7 +439,7 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
     } else {
       msg = 'Are you sure you want to delete the selected resources?'
     }
-    this.confirmationDialogService.confirmed("Confirm delete", msg, "Yes", "No").subscribe(() => {
+    this.confirmationDialogService.confirmedDangerous("Confirm delete", msg, "Delete", "Cancel").subscribe(() => {
       this.deleteResourcesPending = true
       this.resourcesRefreshing = true
       this.communityService.deleteCommunityResources(this.communityId, resourceIds).subscribe(() => {
@@ -471,7 +472,7 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
   }
 
   deleteResource(resource: CommunityResource) {
-    this.confirmationDialogService.confirmed("Confirm delete", "Are you sure you want to delete this resource?", "Yes", "No").subscribe(() => {
+    this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this resource?", "Delete", "Cancel").subscribe(() => {
       resource.deletePending = true
       this.communityService.deleteCommunityResource(resource.id).subscribe(() => {
         this.popupService.success("Resource deleted.")
@@ -501,6 +502,7 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
     .subscribe(() => {
       this.originalDomainId = this.community.domainId
       this.popupService.success('Community updated.')
+      this.dataService.breadcrumbUpdate({id: this.communityId, type: BreadcrumbType.community, label: this.community.sname!})
     }).add(() => {
       this.savePending = false
     })
@@ -522,7 +524,7 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
         } else {
           confirmationMessage = "Changing the "+this.dataService.labelDomainLower()+" will remove all existing conformance statements. Are you sure you want to proceed?"
         }
-        this.confirmationDialogService.confirmed("Confirm "+this.dataService.labelDomainLower()+" change", confirmationMessage, "Yes", "No")
+        this.confirmationDialogService.confirmedDangerous("Confirm "+this.dataService.labelDomainLower()+" change", confirmationMessage, "Change", "Cancel")
         .subscribe(() => {
           this.updateCommunityInternal(descriptionToUse)
         })
@@ -533,7 +535,7 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
   }
 
   deleteCommunity() {
-    this.confirmationDialogService.confirmed("Confirm delete", "Are you sure you want to delete this community?", "Yes", "No")
+    this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this community?", "Delete", "Cancel")
     .subscribe(() => {
       this.deletePending = true
       this.communityService.deleteCommunity(this.communityId)
@@ -548,10 +550,6 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
 
   organisationSelect(organization: Organisation) {
     this.routingService.toOrganisationDetails(this.communityId, organization.id)
-  }
-
-  isDefaultCommunity() {
-    return this.communityId == Number(Constants.DEFAULT_COMMUNITY_ID)
   }
 
   createLandingPage(copyTestBedDefault: boolean) {

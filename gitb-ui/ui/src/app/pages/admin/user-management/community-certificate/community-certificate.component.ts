@@ -17,8 +17,7 @@ import { KeyValue } from 'src/app/types/key-value';
 @Component({
   selector: 'app-community-certificate',
   templateUrl: './community-certificate.component.html',
-  styles: [
-  ]
+  styleUrls: [ './community-certificate.component.less' ]
 })
 export class CommunityCertificateComponent extends BaseComponent implements OnInit, AfterViewInit {
 
@@ -44,11 +43,13 @@ export class CommunityCertificateComponent extends BaseComponent implements OnIn
   ) { super() }
 
   ngAfterViewInit(): void {
-    this.dataService.focus('title')
+    if (this.settings.includeTitle) {
+      this.dataService.focus('title')
+    }
   }
 
   ngOnInit(): void {
-    this.communityId = Number(this.route.snapshot.paramMap.get('community_id'))
+    this.communityId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID))
     this.placeholders = [
       { key: Constants.PLACEHOLDER__DOMAIN, value: 'The full name of the ' + this.dataService.labelDomainLower() + '.' },
       { key: Constants.PLACEHOLDER__SPECIFICATION, value: 'The full name of the ' + this.dataService.labelSpecificationLower() + '.' },
@@ -72,10 +73,14 @@ export class CommunityCertificateComponent extends BaseComponent implements OnIn
       } else {
         this.updatePasswords = true
       }
+      if (this.settings.includeTitle) {
+        this.dataService.focus('title', 200)
+      }
       setTimeout(() => {
         this.loading = false
       })
     })
+    this.routingService.communityCertificateSettingsBreadcrumbs(this.communityId)
   }
 
   attachKeystore(file: FileData) {
@@ -198,4 +203,9 @@ export class CommunityCertificateComponent extends BaseComponent implements OnIn
     this.routingService.toCommunity(this.communityId)
   }
 
+  includeTitleChanged() {
+    if (this.settings.includeTitle) {
+      this.dataService.focus('title')
+    }
+  }
 }

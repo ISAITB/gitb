@@ -8,7 +8,8 @@ import { DataService } from 'src/app/services/data.service';
 
 @Component({
   selector: 'app-disconnect-role',
-  templateUrl: './disconnect-role.component.html'
+  templateUrl: './disconnect-role.component.html',
+  styleUrls: [ './disconnect-role.component.less' ]
 })
 export class DisconnectRoleComponent extends BaseComponent {
 
@@ -30,18 +31,15 @@ export class DisconnectRoleComponent extends BaseComponent {
     } else {
       message = "This action will end your current session and cannot be undone. Are you sure you want to proceed?"
     }
-    this.confirmationDialogService.confirm("Confirmation", message, "Yes", "No")
-    .subscribe((result: boolean) => {
-      if (result) {
-        this.authService.disconnectFunctionalAccount(this.choice).subscribe(() => {
-          this.modalRef.hide()
-          this.result.emit(this.choice)
-        }).add(() => {
-          this.disconnectPending = false
-        })
-      } else {
+    this.confirmationDialogService.confirmedDangerous("Confirmation", message, "End session", "Cancel")
+    .subscribe(() => {
+      this.disconnectPending = true
+      this.authService.disconnectFunctionalAccount(this.choice).subscribe(() => {
+        this.modalRef.hide()
+        this.result.emit(this.choice)
+      }).add(() => {
         this.disconnectPending = false
-      }
+      })
     })
   }
 

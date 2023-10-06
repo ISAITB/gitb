@@ -2,36 +2,46 @@ package controllers
 
 import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, ResponseConstructor}
 import exceptions.{ErrorCodes, NotFoundException}
+import managers.{AuthorizationManager, CommunityLabelManager, SpecificationManager}
+import models.Enums.{LabelType, TestResultStatus}
+import org.apache.commons.io.FileUtils
+import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents}
+import utils.{JsonUtil, RepositoryUtils}
 
 import javax.inject.Inject
-import managers.{AuthorizationManager, CommunityLabelManager, ConformanceManager, SpecificationManager}
-import models.Enums.LabelType
-import org.slf4j.{Logger, LoggerFactory}
-import play.api.mvc.{AbstractController, ControllerComponents}
-import utils.JsonUtil
+import scala.concurrent.ExecutionContext
 
-class SpecificationService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerComponents, specificationManager: SpecificationManager, conformanceManager: ConformanceManager, authorizationManager: AuthorizationManager, communityLabelManager: CommunityLabelManager) extends AbstractController(cc) {
-  private final val logger: Logger = LoggerFactory.getLogger(classOf[SpecificationService])
+class SpecificationService @Inject() (implicit ec: ExecutionContext, authorizedAction: AuthorizedAction, cc: ControllerComponents, repositoryUtils: RepositoryUtils, specificationManager: SpecificationManager, authorizationManager: AuthorizationManager, communityLabelManager: CommunityLabelManager) extends AbstractController(cc) {
 
   def deleteSpecification(specId: Long) = authorizedAction { request =>
     authorizationManager.canDeleteSpecification(request, specId)
-    conformanceManager.deleteSpecification(specId)
+    specificationManager.deleteSpecification(specId)
     ResponseConstructor.constructEmptyResponse
   }
 
   def updateSpecification(specId: Long) = authorizedAction { request =>
-    authorizationManager.canUpdateSpecification(request, specId)
-    val specExists = specificationManager.checkSpecificationExists(specId)
-    if (specExists) {
-      val sname: String = ParameterExtractor.requiredBodyParameter(request, Parameters.SHORT_NAME)
-      val fname: String = ParameterExtractor.requiredBodyParameter(request, Parameters.FULL_NAME)
-      val descr: Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DESC)
-      val hidden = ParameterExtractor.requiredBodyParameter(request, Parameters.HIDDEN).toBoolean
-      val groupId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.GROUP_ID)
-      specificationManager.updateSpecification(specId, sname, fname, descr, hidden, groupId)
-      ResponseConstructor.constructEmptyResponse
-    } else {
-      throw NotFoundException(ErrorCodes.SYSTEM_NOT_FOUND, communityLabelManager.getLabel(request, LabelType.Specification) + " with ID '" + specId + "' not found.")
+    try {
+      authorizationManager.canUpdateSpecification(request, specId)
+      val paramMap = ParameterExtractor.paramMap(request)
+      val specExists = specificationManager.checkSpecificationExists(specId)
+      if (specExists) {
+        val badgeInfo = ParameterExtractor.extractBadges(request, paramMap)
+        if (badgeInfo._2.nonEmpty) {
+          badgeInfo._2.get
+        } else {
+          val sname: String = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.SHORT_NAME)
+          val fname: String = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.FULL_NAME)
+          val descr: Option[String] = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.DESC)
+          val hidden = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.HIDDEN).toBoolean
+          val groupId = ParameterExtractor.optionalLongBodyParameter(paramMap, Parameters.GROUP_ID)
+          specificationManager.updateSpecification(specId, sname, fname, descr, hidden, groupId, badgeInfo._1)
+          ResponseConstructor.constructEmptyResponse
+        }
+      } else {
+        throw NotFoundException(ErrorCodes.SYSTEM_NOT_FOUND, communityLabelManager.getLabel(request, LabelType.Specification) + " with ID '" + specId + "' not found.")
+      }
+    } finally {
+      if (request.body.asMultipartFormData.isDefined) request.body.asMultipartFormData.get.files.foreach { file => FileUtils.deleteQuietly(file.ref) }
     }
   }
 
@@ -80,6 +90,18 @@ class SpecificationService @Inject() (authorizedAction: AuthorizedAction, cc: Co
     ResponseConstructor.constructJsonResponse(JsonUtil.jsId(newSpecificationId).toString())
   }
 
+  def getSpecificationOfActor(actorId: Long) = authorizedAction { request =>
+    authorizationManager.canViewActor(request, actorId)
+    val specification = specificationManager.getSpecificationOfActor(actorId)
+    ResponseConstructor.constructJsonResponse(JsonUtil.jsSpecification(specification).toString())
+  }
+
+  def getSpecificationIdOfActor(actorId: Long) = authorizedAction { request =>
+    authorizationManager.canViewActor(request, actorId)
+    val specificationId = specificationManager.getSpecificationIdOfActor(actorId)
+    ResponseConstructor.constructJsonResponse(JsonUtil.jsId(specificationId).toString())
+  }
+
   def getSpecificationGroups() = authorizedAction { request =>
     val domainId = ParameterExtractor.requiredQueryParameter(request, Parameters.DOMAIN_ID).toLong
     authorizationManager.canManageDomain(request, domainId)
@@ -118,4 +140,16 @@ class SpecificationService @Inject() (authorizedAction: AuthorizedAction, cc: Co
     ResponseConstructor.constructEmptyResponse
 
   }
+
+  def getBadgeForStatus(specId: Long, status: String): Action[AnyContent] = authorizedAction { request =>
+    authorizationManager.canManageSpecification(request, specId)
+    val statusToLookup = TestResultStatus.withName(status).toString
+    val badge = repositoryUtils.getConformanceBadge(specId, None, None, statusToLookup, exactMatch = true)
+    if (badge.isDefined && badge.get.exists()) {
+      Ok.sendFile(content = badge.get)
+    } else {
+      NotFound
+    }
+  }
+
 }

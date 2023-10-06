@@ -371,14 +371,15 @@ public class TestCaseConverter {
 
         int childIndex = 1;
 
-        for(com.gitb.tdl.InstructionOrRequest interaction : description.getInstructOrRequest()){
+        for (com.gitb.tdl.InstructionOrRequest interaction : description.getInstructOrRequest()){
             com.gitb.tpl.InstructionOrRequest ior = null;
-            if(interaction instanceof Instruction) {
+            if (interaction instanceof Instruction) {
                 ior = new com.gitb.tpl.Instruction();
+                ((com.gitb.tpl.Instruction)ior).setForceDisplay(((Instruction) interaction).isForceDisplay());
             } else if (interaction instanceof UserRequest) {
                 ior = new com.gitb.tpl.UserRequest();
             }
-            if(ior != null) {
+            if (ior != null) {
                 ior.setId("" + childIndex);
                 ior.setDesc(fixedOrVariableValueAsString(interaction.getDesc()));
                 ior.setWith(interaction.getWith());

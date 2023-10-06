@@ -22,7 +22,7 @@ import java.nio.charset.{Charset, StandardCharsets}
 import java.nio.file.Files
 import java.util.Base64
 import javax.inject.{Inject, Singleton}
-import javax.xml.bind.JAXBElement
+import jakarta.xml.bind.JAXBElement
 import javax.xml.namespace.QName
 import javax.xml.transform.stream.StreamSource
 import scala.annotation.tailrec

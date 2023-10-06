@@ -15,7 +15,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.xml.bind.JAXBElement;
+import jakarta.xml.bind.JAXBElement;
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 import java.io.IOException;
@@ -31,14 +31,14 @@ public class TestSuiteValidationAdapter {
     private static final Object MUTEX = new Object();
     private static TestSuiteValidationAdapter INSTANCE;
 
-    private ObjectFactory objectFactory = new ObjectFactory();
+    private final ObjectFactory objectFactory = new ObjectFactory();
     private Set<String> dataTypes;
     private Set<String> containerDataTypes;
     private Set<String> containedDataTypes;
     private Set<String> acceptedMimeTypes;
-    private Map<String, ExternalConfiguration.MessagingHandlerConfiguration> embeddedMessagingHandlers = new HashMap<>();
-    private Map<String, ExternalConfiguration.ProcessingHandlerConfiguration> embeddedProcessingHandlers = new HashMap<>();
-    private Map<String, ExternalConfiguration.ValidationHandlerConfiguration> embeddedValidationHandlers = new HashMap<>();
+    private final Map<String, ExternalConfiguration.MessagingHandlerConfiguration> embeddedMessagingHandlers = new HashMap<>();
+    private final Map<String, ExternalConfiguration.ProcessingHandlerConfiguration> embeddedProcessingHandlers = new HashMap<>();
+    private final Map<String, ExternalConfiguration.ValidationHandlerConfiguration> embeddedValidationHandlers = new HashMap<>();
     private ValidationService remoteServiceClient;
 
     public static TestSuiteValidationAdapter getInstance() {

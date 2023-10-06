@@ -48,10 +48,13 @@ public abstract class AbstractMessagingStepProcessorActor<T extends MessagingSte
     protected MapType generateOutputWithModuleDefinition(MessagingContext messagingContext, Message message) {
         final IMessagingHandler messagingHandler = messagingContext.getHandler();
         MapType map = new MapType();
-        List<TypedParameter> expectedOutputs = messagingHandler.getModuleDefinition().getOutputs().getParam();
-        for (TypedParameter outputParam : expectedOutputs) {
-            DataType data = message.getFragments().get(outputParam.getName());
-            map.addItem(outputParam.getName(), data);
+        var definition = messagingHandler.getModuleDefinition();
+        if (definition != null) {
+            List<TypedParameter> expectedOutputs = definition.getOutputs().getParam();
+            for (TypedParameter outputParam : expectedOutputs) {
+                DataType data = message.getFragments().get(outputParam.getName());
+                map.addItem(outputParam.getName(), data);
+            }
         }
         return map;
     }
@@ -156,8 +159,9 @@ public abstract class AbstractMessagingStepProcessorActor<T extends MessagingSte
 
     private List<TypedParameter> getExpectedInputs(IMessagingHandler messagingHandler) {
         List<TypedParameter> expectedInputs = new ArrayList<>();
-        if (messagingHandler.getModuleDefinition().getInputs() != null) {
-            expectedInputs.addAll(messagingHandler.getModuleDefinition().getInputs().getParam());
+        var definition = messagingHandler.getModuleDefinition();
+        if (definition != null && definition.getInputs() != null) {
+            expectedInputs.addAll(definition.getInputs().getParam());
         }
         return expectedInputs;
     }

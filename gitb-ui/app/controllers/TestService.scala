@@ -15,7 +15,7 @@ import utils._
 import javax.inject.{Inject, Singleton}
 
 @Singleton
-class TestService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerComponents, conformanceManager: ConformanceManager, authorizationManager: AuthorizationManager, testbedClient: managers.TestbedBackendClient, actorSystem: ActorSystem, testResultManager: TestResultManager, testExecutionManager: TestExecutionManager, triggerHelper: TriggerHelper) extends AbstractController(cc) {
+class TestService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerComponents, actorManager: ActorManager, authorizationManager: AuthorizationManager, testbedClient: managers.TestbedBackendClient, actorSystem: ActorSystem, testResultManager: TestResultManager, testExecutionManager: TestExecutionManager, triggerHelper: TriggerHelper) extends AbstractController(cc) {
 
   def getTestCasePresentation(testId:String, sessionId: Option[String]): GetTestCaseDefinitionResponse = {
     testbedClient.getTestCaseDefinition(testId, sessionId)
@@ -36,7 +36,7 @@ class TestService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerC
   def getActorDefinitions: Action[AnyContent] = authorizedAction { request =>
     val specId = ParameterExtractor.requiredQueryParameter(request, Parameters.SPECIFICATION_ID).toLong
     authorizationManager.canViewActorsBySpecificationId(request, specId)
-    val actors = conformanceManager.getActorsWithSpecificationId(None, Some(List(specId)))
+    val actors = actorManager.getActorsWithSpecificationId(None, Some(List(specId)))
     val json = JsonUtil.jsActorsNonCase(actors).toString()
     ResponseConstructor.constructJsonResponse(json)
   }

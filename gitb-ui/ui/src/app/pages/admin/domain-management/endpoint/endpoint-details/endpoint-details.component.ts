@@ -19,6 +19,7 @@ import { EndpointParameter } from 'src/app/types/endpoint-parameter';
 import { ParameterDetailsModalComponent } from 'src/app/components/parameters/parameter-details-modal/parameter-details-modal.component';
 import { ParameterReference } from 'src/app/types/parameter-reference';
 import { RoutingService } from 'src/app/services/routing.service';
+import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
 
 @Component({
   selector: 'app-endpoint-details',
@@ -58,10 +59,10 @@ export class EndpointDetailsComponent extends BaseComponent implements OnInit, A
   }
 
   ngOnInit(): void {
-		this.endpointId = Number(this.route.snapshot.paramMap.get('endpoint_id'))
-		this.actorId  = Number(this.route.snapshot.paramMap.get('actor_id'))
-		this.domainId = Number(this.route.snapshot.paramMap.get('id'))
-		this.specificationId = Number(this.route.snapshot.paramMap.get('spec_id'))
+		this.endpointId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.ENDPOINT_ID))
+		this.actorId  = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.ACTOR_ID))
+		this.domainId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID))
+		this.specificationId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.SPECIFICATION_ID))
     this.loadEndpointData()
   }
 
@@ -99,6 +100,7 @@ export class EndpointDetailsComponent extends BaseComponent implements OnInit, A
 					this.parameterValues.push(itemRef as ParameterReference)
         }
       }
+      this.routingService.endpointBreadcrumbs(this.domainId, this.specificationId, this.actorId, this.endpointId, this.endpoint.name!)
     }).add(() => {
 			this.dataStatus.status = Constants.STATUS.FINISHED
     })
@@ -132,7 +134,7 @@ export class EndpointDetailsComponent extends BaseComponent implements OnInit, A
   }
 
 	delete() {
-		this.confirmationDialogService.confirmed("Confirm delete", "Are you sure you want to delete this "+this.dataService.labelEndpointLower()+"?", "Yes", "No")
+		this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this "+this.dataService.labelEndpointLower()+"?", "Delete", "Cancel")
     .subscribe(() => {
       this.deletePending = true
       this.endpointService.deleteEndPoint(this.endpointId)
@@ -150,6 +152,7 @@ export class EndpointDetailsComponent extends BaseComponent implements OnInit, A
 		this.endpointService.updateEndPoint(this.endpointId, this.endpoint.name!, this.endpoint.description, this.actorId)
     .subscribe(() => {
       this.popupService.success(this.dataService.labelEndpoint()+' updated.')
+      this.dataService.breadcrumbUpdate({id: this.endpointId, type: BreadcrumbType.endpoint, label: this.endpoint.name!})
     }).add(() => {
       this.savePending = false
     })

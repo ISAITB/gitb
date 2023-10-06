@@ -1,4 +1,5 @@
 import { EntityWithId } from "./entity-with-id"
+import { TestCaseTag } from "./test-case-tag"
 
 export interface TestCase extends EntityWithId {
 
@@ -7,5 +8,9 @@ export interface TestCase extends EntityWithId {
     description?: string
     documentation?:string
     hasDocumentation?: boolean
+    optional?: boolean
+    disabled?: boolean
+    tags?: string
+    parsedTags?: TestCaseTag[]
 
 }

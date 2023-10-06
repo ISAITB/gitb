@@ -17,12 +17,15 @@ case class TestCases(
 											testSuiteOrder: Short,
 											hasDocumentation: Boolean,
 											documentation: Option[String],
-											identifier: String
+											identifier: String,
+											isOptional: Boolean,
+											isDisabled: Boolean,
+											tags: Option[String] = None
 	                    ) {
 
 	def withPath(path: String): TestCases = {
 		TestCases(this.id, this.shortname, this.fullname, this.version, this.authors, this.originalDate,
-			this.modificationDate, this.description, this.keywords, this.testCaseType, path, this.targetActors, this.targetOptions, this.testSuiteOrder, this.hasDocumentation, this.documentation, this.identifier)
+			this.modificationDate, this.description, this.keywords, this.testCaseType, path, this.targetActors, this.targetOptions, this.testSuiteOrder, this.hasDocumentation, this.documentation, this.identifier, this.isOptional, this.isDisabled, this.tags)
 	}
 
 }
@@ -45,7 +48,9 @@ class TestCase(
 	              _testSuiteOrder: Short,
 								_hasDocumentation: Boolean,
 							  _documentation: Option[String],
-								_identifier: String
+								_identifier: String,
+								_isOptional: Boolean,
+								_isDisabled: Boolean
 	              ) {
 	var id: Long = _id
 	var shortname: String = _sname
@@ -64,14 +69,16 @@ class TestCase(
 	var hasDocumentation: Boolean = _hasDocumentation
 	var documentation: Option[String] = _documentation
 	var identifier: String = _identifier
-
+	var isOptional: Boolean = _isOptional
+	var isDisabled: Boolean = _isDisabled
 
 	def this(_case: TestCases, targetActors: Option[List[Actors]], targetOptions: Option[List[models.Options]]) = {
 		this(_case.id, _case.shortname, _case.fullname, _case.version,
 			if (_case.authors.isDefined) Some(_case.authors.get.split(",").toList) else None,
 			_case.originalDate, _case.modificationDate, _case.description,
 			if (_case.keywords.isDefined) Some(_case.keywords.get.split(",").toList) else None,
-			_case.testCaseType, _case.path, targetActors, targetOptions, _case.testSuiteOrder, _case.hasDocumentation, _case.documentation, _case.identifier)
+			_case.testCaseType, _case.path, targetActors, targetOptions, _case.testSuiteOrder, _case.hasDocumentation, _case.documentation, _case.identifier,
+			_case.isOptional, _case.isDisabled)
 	}
 
 	def this(_case: TestCases) = {

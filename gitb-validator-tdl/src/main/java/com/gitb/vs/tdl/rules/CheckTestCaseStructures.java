@@ -21,13 +21,17 @@ public class CheckTestCaseStructures extends AbstractCheck {
         initialise(context, report);
         // Check test cases.
         for (TestCase testCase: context.getTestCases().values()) {
-            var validator = new TestCaseContentValidator(testCase, observers);
-            validator.process();
+            if (context.isValidTestCaseId(testCase.getId())) {
+                var validator = new TestCaseContentValidator(testCase, observers);
+                validator.process();
+            }
         }
         // Check standalone scriptlets.
         for (var scriptletEntry: context.getScriptletPaths().entrySet()) {
-            var validator = new TestCaseContentValidator(new ScriptletAsTestCase(scriptletEntry.getValue(), scriptletEntry.getKey()), observers);
-            validator.process();
+            if (context.isValidScriptletId(scriptletEntry.getValue().getId())) {
+                var validator = new TestCaseContentValidator(new ScriptletAsTestCase(scriptletEntry.getValue(), scriptletEntry.getKey()), observers);
+                validator.process();
+            }
         }
         finalise();
     }

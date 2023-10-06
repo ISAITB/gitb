@@ -1,5 +1,9 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { filter } from 'lodash';
 import { ConformanceStatementItem } from 'src/app/types/conformance-statement-item';
+import { ConformanceStatementResult } from 'src/app/types/conformance-statement-result';
+import { Counters } from '../test-status-icons/counters';
+import { DataService } from 'src/app/services/data.service';
 
 @Component({
   selector: 'app-conformance-statement-item-display',
@@ -12,23 +16,78 @@ export class ConformanceStatementItemDisplayComponent implements OnInit {
   @Input() shade = false
   @Input() hideSelf = false
   @Input() animated = true
+  @Input() expandable = true
+  @Input() wrapDescriptions = false
+  @Input() withCheck = true
+  @Input() withResults = false
+  @Input() filtering = true
+
   @Output() selectionChanged = new EventEmitter<ConformanceStatementItem>()
   hasChildren = false
+  allChildrenHidden = false
   showCheck = false
+  showResults = false
+  results?: ConformanceStatementResult
+  counters?: Counters
+  status?: string
+  updateTime?: string
 
-  constructor() { }
+  constructor(public dataService: DataService) { }
 
   ngOnInit(): void {
     this.hasChildren = this.item.items != undefined && this.item.items.length > 0
-    this.showCheck = !this.hasChildren
+    if (this.hasChildren) {
+      const hiddenChildren = filter(this.item.items, (item) => {
+        return item.hidden == true
+      })
+      this.allChildrenHidden = this.item.items!.length == hiddenChildren.length
+    } else {
+      this.allChildrenHidden = true
+    }
+    this.showCheck = this.withCheck && (!this.hasChildren || this.allChildrenHidden)
+    if (this.withResults && this.allChildrenHidden) {
+      this.results = this.findResults(this.item)
+      if (this.results) {
+        this.showResults = true
+        this.counters = {
+          completed: this.results.completed,
+          failed: this.results.failed,
+          other: this.results.undefined,
+          completedOptional: this.results.completedOptional,
+          failedOptional: this.results.failedOptional,
+          otherOptional: this.results.undefinedOptional
+        }
+        this.updateTime = this.results.updateTime
+        this.status = this.dataService.conformanceStatusForTests(this.results.completed, this.results.failed, this.results.undefined)
+      }
+    }
+  }
+
+  findResults(item: ConformanceStatementItem):ConformanceStatementResult|undefined  {
+    if (item.results) {
+      return item.results
+    } else if (item.items) {
+      for (let child of item.items) {
+        if (child.results) {
+          return child.results
+        }
+      }
+    }
+    return undefined
   }
 
   clickHeader() {
-    if (this.hasChildren) {
-      this.item.collapsed = !this.item.collapsed
+    if (this.hasChildren && !this.allChildrenHidden) {
+      this.item.collapsed = this.expandable && !this.item.collapsed
     } else {
-      this.item.checked = !this.item.checked
-      this.notifyForSelectionChange()
+      if (this.showCheck) {
+        this.item.checked = !this.item.checked
+      }
+      if (this.hasChildren) {
+        this.notifyForSelectionChange(this.item.items![0])
+      } else {
+        this.notifyForSelectionChange()
+      }
     }
   }
 

@@ -1,0 +1,34 @@
+<div class="testCaseContainer" (click)="$event.stopPropagation()">
+    <div class="testCase" (click)="descriptionVisible[testCase.id] = !descriptionVisible[testCase.id]" [class.disabled]="testCase.disabled" [class.hasDescription]="testCase.description != undefined && testCase.description != ''" [class.padded]="!first" [class.last]="last" *ngFor="let testCase of testCases; let first = first; let last = last">
+        <div class="mainLine">
+            <div *ngIf="this.hasDescriptions" class="collapseIconContainer"><app-collapsing-icon *ngIf="hasDescription[testCase.id]" [isCollapsed]="!descriptionVisible[testCase.id]"></app-collapsing-icon></div>
+            <div *ngIf="hasOptional || hasDisabled" class="testCasePrescription">
+                <app-prescription-level [optional]="testCase.optional" [disabled]="testCase.disabled"></app-prescription-level>
+            </div>
+            <div class="testCaseName">{{testCase.sname}}</div>
+            <div class="testCaseExecution">
+                <div class="testCaseTagsContainer" *ngIf="testCase.parsedTags">
+                    <app-tags-display [tags]="testCase.parsedTags"></app-tags-display>
+                </div>
+                <div class="testCaseUpdateTimeContainer" *ngIf="testCase.updateTime">
+                    <app-tag label="fa-solid fa-clock" [icon]="true" tooltipText="Last execution time" [value]="testCase.updateTime"></app-tag>
+                </div>
+                <div class="btn-toolbar" (click)="$event.stopPropagation()" *ngIf="testCase.sessionId != undefined || (testCase.hasDocumentation && showViewDocumentation) || showExportTestCase(testCase) || showExecute">
+                    <button *ngIf="testCase.sessionId != undefined" class="btn btn-default" (click)="viewTestCase(testCase)" containerClass="shortTooltip" tooltip="View session" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-search"></i></button>
+                    <button type="button" class="btn btn-default" *ngIf="testCase.hasDocumentation && showViewDocumentation" (click)="showTestCaseDocumentation(testCase)" [icon]="true" [pending]="viewDocumentationPending[testCase.id]" containerClass="shortTooltip" tooltip="Documentation" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-info-circle"></i></button>
+                    <ng-container *ngIf="showExportTestCase(testCase)">
+                        <button type="button" class="btn btn-default" [icon]="true" (click)="onExportTestCaseXml(testCase)" [pending]="exportXmlPending[testCase.id]" containerClass="shortTooltip" tooltip="Export (XML)" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-regular fa-file-lines"></i></button>
+                        <button type="button" class="btn btn-default" [icon]="true" (click)="onExportTestCasePdf(testCase)" [pending]="exportPdfPending[testCase.id]" containerClass="shortTooltip" tooltip="Export (PDF)" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-regular fa-file-pdf"></i></button>
+                    </ng-container>
+                    <button *ngIf="showExecute" class="btn btn-primary" (click)="onTestSelect(testCase)" containerClass="shortTooltip" tooltip="Run" [disabled]="testCase.disabled" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-play"></i></button>
+                </div>
+                <div class="testCaseStatus">
+                    <app-test-result-status-display [message]="testCase.outputMessage" [result]="testCase.result"></app-test-result-status-display>
+                </div>
+            </div>
+        </div>
+        <div *ngIf="hasDescription[testCase.id]" [collapse]="!descriptionVisible[testCase.id]" [isAnimated]="true">
+            <div class="testCaseDescription">{{testCase.description}}</div>
+        </div>
+    </div>
+</div>

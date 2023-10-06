@@ -590,6 +590,8 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
         exportedLabel.getLabelType match {
           case com.gitb.xml.export.CustomLabelType.DOMAIN => labelType = LabelType.Domain
           case com.gitb.xml.export.CustomLabelType.SPECIFICATION => labelType = LabelType.Specification
+          case com.gitb.xml.export.CustomLabelType.SPECIFICATION_GROUP => labelType = LabelType.SpecificationGroup
+          case com.gitb.xml.export.CustomLabelType.SPECIFICATION_IN_GROUP => labelType = LabelType.SpecificationInGroup
           case com.gitb.xml.export.CustomLabelType.ACTOR => labelType = LabelType.Actor
           case com.gitb.xml.export.CustomLabelType.ENDPOINT => labelType = LabelType.Endpoint
           case com.gitb.xml.export.CustomLabelType.ORGANISATION => labelType = LabelType.Organisation

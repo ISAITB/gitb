@@ -1,5 +1,5 @@
 <div class="page users detail">
-    <div class="panel panel-default">
+    <div class="panel panel-default no-bottom-margin">
         <div class="panel-heading">
             <h4 class="title">Legal notice details</h4>
         </div>
@@ -25,7 +25,7 @@
                         <label class="col-sm-3 control-label" for="default">Default:</label>
                         <div class="col-sm-8">
                             <input id="default" name="default" [(ngModel)]="notice.default" [disabled]="isDefault" type="checkbox" class="form-check">
-                            <app-tooltip [inline]="true" [tbTooltip]="'Check this to make this legal notice the default one assumed for the community\'s '+dataService.labelOrganisationsLower()+'.'"></app-tooltip>
+                            <app-tooltip [inline]="true" [tbTooltip]="tooltipForDefaultCheck"></app-tooltip>
                         </div>
                     </div>
                 </div>
@@ -39,17 +39,23 @@
 				<div [collapse]="!showContent" [isAnimated]="true">
 					<div class="row">
                         <div class="col-sm-12">
+							<div class="div-padded-bottom" *ngIf="dataService.isCommunityAdmin">
+								<app-placeholder-selector [resources]="true" [community]="communityId"></app-placeholder-selector>
+							</div>
                             <app-editor id="content" name="content" [(ngModel)]="notice.content"></app-editor>
 						</div>
                     </div>
                 </div>
             </div>
-            <div class="panel-footer">
+            <div class="panel-footer button-container">
                 <div class="btn-toolbar">
                     <button class="btn btn-default" type="submit" (click)="updateLegalNotice(false)" [disable]="saveDisabled() || copyPending" [pending]="savePending">Update</button>
+                    <button class="btn btn-default" type="button" (click)="preview()" [disabled]="!textProvided(notice.content)">Preview</button>
                     <button class="btn btn-default" type="button" (click)="updateLegalNotice(true)" [disable]="saveDisabled() || savePending" [pending]="copyPending">Copy</button>
-                    <button class="btn btn-default" type="button" (click)="deleteLegalNotice()" [pending]="deletePending">Delete</button>
                     <button class="btn btn-default" type="button" (click)="cancelDetailLegalNotice()">Back</button>
+                </div>
+                <div class="btn-toolbar btn-toolbar-delete">
+                    <button class="btn btn-default btn-delete" type="button" (click)="deleteLegalNotice()" [pending]="deletePending">Delete</button>
                 </div>
             </div>
         </form>

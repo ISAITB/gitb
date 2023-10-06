@@ -1,4 +1,6 @@
+import { BadgesInfo } from "../components/manage-badges/badges-info"
 import { EntityWithId } from "./entity-with-id"
+import { SpecificationGroup } from "./specification-group"
 
 export interface Specification extends EntityWithId {
 
@@ -10,7 +12,9 @@ export interface Specification extends EntityWithId {
     apiKey?: string
     group?: number
     order: number
+    badges?: BadgesInfo
 
     checked?: boolean
+    groups?: SpecificationGroup[]
 
 }

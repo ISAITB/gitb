@@ -25,6 +25,12 @@ import { ConformanceStatus } from '../types/conformance-status';
 import { FileParam } from '../types/file-param.type';
 import { StatementParameterMinimal } from '../types/statement-parameter-minimal';
 import { ConformanceStatementItemInfo } from '../types/conformance-statement-item-info';
+import { ConformanceSnapshot } from '../types/conformance-snapshot';
+import { BadgesInfo } from '../components/manage-badges/badges-info';
+import { HtmlService } from './html.service';
+import { HttpResponse } from '@angular/common/http';
+import { ConformanceStatementItem } from '../types/conformance-statement-item';
+import { ConformanceStatementWithResults } from '../types/conformance-statement-with-results';
 
 @Injectable({
   providedIn: 'root'
@@ -33,7 +39,8 @@ export class ConformanceService {
 
   constructor(
     private restService: RestService,
-    private dataService: DataService
+    private dataService: DataService,
+    private htmlService: HtmlService
   ) { }
 
   getDomains(ids?: number[]) {
@@ -51,6 +58,13 @@ export class ConformanceService {
   getDomainForSpecification(specId: number) {
     return this.restService.get<Domain>({
       path: ROUTES.controllers.ConformanceService.getDomainOfSpecification(specId).url,
+      authenticate: true
+    })
+  }
+
+  getDomainOfActor(actorId: number) {
+    return this.restService.get<Domain>({
+      path: ROUTES.controllers.ConformanceService.getDomainOfActor(actorId).url,
       authenticate: true
     })
   }
@@ -77,7 +91,14 @@ export class ConformanceService {
     })
   }
 
-  getSpecificationsWithIds(ids?: number[], domainIds?: number[], groupIds?: number[], withApiKeys?: boolean, withGroups?: boolean) {
+  getSpecification(id: number) {
+    return this.restService.get<Specification>({
+      path: ROUTES.controllers.ConformanceService.getSpecification(id).url,
+      authenticate: true
+    })
+  }
+
+  getSpecificationsWithIds(ids?: number[], domainIds?: number[], groupIds?: number[]) {
     let params: any = {}
     if (ids != undefined && ids.length > 0) {
       params['ids'] = ids.join(',')
@@ -88,12 +109,6 @@ export class ConformanceService {
     if (groupIds != undefined && groupIds.length > 0) {
       params['group_ids'] = groupIds.join(',')
     }
-    if (withApiKeys != undefined && withApiKeys) {
-      params['with_api_keys'] = withApiKeys
-    }
-    if (withGroups != undefined) {
-      params['groups'] = withGroups
-    }    
     return this.restService.post<Specification[]>({
       path: ROUTES.controllers.ConformanceService.getSpecs().url,
       authenticate: true,
@@ -151,6 +166,16 @@ export class ConformanceService {
     })
   }
 
+  getActor(actorId: number, specificationId: number) {
+    return this.restService.get<Actor>({
+      path: ROUTES.controllers.ConformanceService.getActor(actorId).url,
+      authenticate: true,
+      params: {
+        spec: specificationId
+      }
+    })
+  }
+
   deleteTestResults(sessionIds: string[]) {
     const data: any = {
         session_ids: JSON.stringify(sessionIds)
@@ -182,19 +207,24 @@ export class ConformanceService {
     })
   }
 
-  deleteObsoleteTestResultsForSystem(systemId: number) {
+  deleteObsoleteTestResultsForOrganisation(organisationId: number) {
     return this.restService.delete<void>({
-      path: ROUTES.controllers.ConformanceService.deleteObsoleteTestResultsForSystem().url,
+      path: ROUTES.controllers.ConformanceService.deleteObsoleteTestResultsForOrganisation().url,
       authenticate: true,
       params: {
-        system_id: systemId
+        organization_id: organisationId
       }
     })
   }
 
-  getConformanceOverview(criteria: TestResultSearchCriteria, fullResults: boolean, forExport: boolean, sortColumn: string, sortOrder: string) {
+  getConformanceOverview(criteria: TestResultSearchCriteria, snapshotId: number|undefined, fullResults: boolean, forExport: boolean, sortColumn: string, sortOrder: string, page: number, limit: number) {
     let params: any = {}
     params.full = fullResults
+    params.page = page
+    params.limit = limit
+    if (snapshotId != undefined) {
+      params.snapshot = snapshotId
+    }
     if (criteria.domainIds != undefined && criteria.domainIds.length > 0) {
       params.domain_ids = criteria.domainIds.join(',')
     }
@@ -241,16 +271,23 @@ export class ConformanceService {
     })
   }
 
-  getConformanceStatus(actorId: number, sutId: number) {
-    return this.restService.get<ConformanceStatus>({
+  getConformanceStatus(actorId: number, sutId: number, snapshotId?: number) {
+    let params: any = undefined
+    if (snapshotId != undefined) {
+      params = {
+        snapshot: snapshotId
+      }
+    }
+    return this.restService.get<ConformanceStatus|undefined>({
       path: ROUTES.controllers.ConformanceService.getConformanceStatus(actorId, sutId).url,
-      authenticate: true
+      authenticate: true,
+      params: params
     })
   }
 
-  getConformanceStatusForTestSuite(actorId: number, sutId: number, testSuiteId: number) {
+  getConformanceStatusForTestSuiteExecution(actorId: number, sutId: number, testSuiteId: number) {
     return this.restService.get<ConformanceStatus>({
-      path: ROUTES.controllers.ConformanceService.getConformanceStatusForTestSuite(actorId, sutId, testSuiteId).url,
+      path: ROUTES.controllers.ConformanceService.getConformanceStatusForTestSuiteExecution(actorId, sutId, testSuiteId).url,
       authenticate: true
     })
   }
@@ -278,6 +315,7 @@ export class ConformanceService {
     if (settings != undefined) {
       data.title = settings.title
       data.message = settings.message
+      data.includeTitle = settings.includeTitle != undefined && settings.includeTitle
       data.includeMessage = settings.includeMessage != undefined && settings.includeMessage
       data.includeTestStatus = settings.includeTestStatus != undefined && settings.includeTestStatus
       data.includeTestCases = settings.includeTestCases != undefined && settings.includeTestCases
@@ -330,6 +368,7 @@ export class ConformanceService {
     const data: any = {}
     if (settings != undefined) {
       data.title = settings.title
+      data.includeTitle = settings.includeTitle != undefined && settings.includeTitle
       data.includeMessage = settings.includeMessage != undefined && settings.includeMessage
       data.includeTestStatus = settings.includeTestStatus != undefined && settings.includeTestStatus
       data.includeTestCases = settings.includeTestCases != undefined && settings.includeTestCases
@@ -370,27 +409,32 @@ export class ConformanceService {
     })
   }
 
-  exportConformanceCertificateReport(communityId: number, actorId: number, systemId: number, settings: ConformanceCertificateSettings) {
-    let data: any = {}
+  exportConformanceCertificateReport(communityId: number, actorId: number, systemId: number, settings: ConformanceCertificateSettings, snapshotId?: number) {
+    let settingsData: any = {}
     if (settings != undefined) {
-      data.title = settings.title
-      data.includeMessage = settings.includeMessage != undefined && settings.includeMessage
-      data.includeTestStatus = settings.includeTestStatus != undefined && settings.includeTestStatus
-      data.includeTestCases = settings.includeTestCases != undefined && settings.includeTestCases
-      data.includeDetails = settings.includeDetails != undefined && settings.includeDetails
-      data.includeSignature = settings.includeSignature != undefined && settings.includeSignature
-      if (data.includeMessage) {
-        data.message = settings.message
+      settingsData.title = settings.title
+      settingsData.includeTitle = settings.includeTitle != undefined && settings.includeTitle
+      settingsData.includeMessage = settings.includeMessage != undefined && settings.includeMessage
+      settingsData.includeTestStatus = settings.includeTestStatus != undefined && settings.includeTestStatus
+      settingsData.includeTestCases = settings.includeTestCases != undefined && settings.includeTestCases
+      settingsData.includeDetails = settings.includeDetails != undefined && settings.includeDetails
+      settingsData.includeSignature = settings.includeSignature != undefined && settings.includeSignature
+      if (settingsData.includeMessage) {
+        settingsData.message = settings.message
       }
+    }
+    let data: any = {
+      settings: JSON.stringify(settingsData),
+      community_id: communityId,
+      actor_id: actorId,
+      system_id: systemId
+    }
+    if (snapshotId != undefined) {
+      data.snapshot = snapshotId
     }
     return this.restService.post<ArrayBuffer>({
       path: ROUTES.controllers.RepositoryService.exportConformanceCertificateReport().url,
-      data: {
-        settings: JSON.stringify(data),
-        community_id: communityId,
-        actor_id: actorId,
-        system_id: systemId
-      },
+      data: data,
       authenticate: true,
       arrayBuffer: true
     })
@@ -427,10 +471,13 @@ export class ConformanceService {
     })
   }
 
-  getDomainParameters(domainId: number, loadValues?: boolean) {
+  getDomainParameters(domainId: number, loadValues?: boolean, onlySimple?: boolean) {
     const params: any = {}
     if (loadValues != undefined) {
       params.values = loadValues
+    }
+    if (onlySimple != undefined) {
+      params.simple = onlySimple
     }
     return this.restService.get<DomainParameter[]>({
       path: ROUTES.controllers.ConformanceService.getDomainParameters(domainId).url,
@@ -439,10 +486,18 @@ export class ConformanceService {
     })
   }
 
-  getDomainParametersOfCommunity(communityId: number) {
+  getDomainParametersOfCommunity(communityId: number, loadValues?: boolean, onlySimple?: boolean) {
+    const params: any = {}
+    if (loadValues != undefined) {
+      params.values = loadValues
+    }
+    if (onlySimple != undefined) {
+      params.simple = onlySimple
+    }
     return this.restService.get<DomainParameter[]>({
       path: ROUTES.controllers.ConformanceService.getDomainParametersOfCommunity(communityId).url,
-      authenticate: true
+      authenticate: true,
+      params: params
     })
   }
 
@@ -553,7 +608,7 @@ export class ConformanceService {
     })
   }
 
-  createSpecification(shortName: string, fullName: string, description: string|undefined, hidden: boolean|undefined, domainId: number, groupId: number|undefined) {
+  createSpecification(shortName: string, fullName: string, description: string|undefined, hidden: boolean|undefined, domainId: number, groupId: number|undefined, badges: BadgesInfo) {
     const params:any = {
       sname: shortName,
       fname: fullName,
@@ -569,10 +624,12 @@ export class ConformanceService {
     if (groupId != undefined) {
       params.group_id = groupId
     }
+    const files = this.dataService.parametersForBadgeUpdate(badges, params)
     return this.restService.post<void>({
       path: ROUTES.controllers.ConformanceService.createSpecification().url,
       authenticate: true,
-      data: params
+      data: params,
+      files: files
     })
   }
 
@@ -608,7 +665,7 @@ export class ConformanceService {
     })
   }
 
-  createActor(shortName: string, fullName: string, description: string|undefined, defaultActor: boolean|undefined, hiddenActor: boolean|undefined, displayOrder: number|undefined, domainId: number, specificationId: number) {
+  createActor(shortName: string, fullName: string, description: string|undefined, defaultActor: boolean|undefined, hiddenActor: boolean|undefined, displayOrder: number|undefined, domainId: number, specificationId: number, badges: BadgesInfo) {
     if (hiddenActor == undefined) {
       hiddenActor = false
     }
@@ -627,10 +684,12 @@ export class ConformanceService {
     if (displayOrder != undefined) {
       data.displayOrder = Number(displayOrder)
     }
+    const files = this.dataService.parametersForBadgeUpdate(badges, data)
     return this.restService.post<void>({
       path: ROUTES.controllers.ConformanceService.createActor().url,
       authenticate: true,
-      data: data
+      data: data,
+      files: files
     })
   }
 
@@ -773,9 +832,9 @@ export class ConformanceService {
     })
   }
 
-  getTestSuiteTestCase(testCaseId: number) {
+  getTestSuiteTestCaseForExecution(testCaseId: number) {
     return this.restService.get<TestCase>({
-      path: ROUTES.controllers.ConformanceService.getTestSuiteTestCase(testCaseId).url,
+      path: ROUTES.controllers.ConformanceService.getTestSuiteTestCaseForExecution(testCaseId).url,
       authenticate: true
     })
   }
@@ -841,6 +900,104 @@ export class ConformanceService {
       path: ROUTES.controllers.ConformanceService.getAvailableConformanceStatements(systemId).url,
       authenticate: true,
       params: params
+    })
+  }
+
+  createConformanceSnapshot(communityId: number, label: string) {
+    return this.restService.post<void>({
+      path: ROUTES.controllers.ConformanceService.createConformanceSnapshot().url,
+      authenticate: true,
+      data: {
+        community_id: communityId,
+        label: label
+      }
+    })
+  }
+
+  getConformanceSnapshots(communityId: number) {
+    return this.restService.get<ConformanceSnapshot[]>({
+      path: ROUTES.controllers.ConformanceService.getConformanceSnapshots().url,
+      authenticate: true,
+      params: {
+        community_id: communityId
+      }
+    })
+  }
+
+  editConformanceSnapshot(snapshotId: number, label: string) {
+    return this.restService.post<void>({
+      path: ROUTES.controllers.ConformanceService.editConformanceSnapshot(snapshotId).url,
+      authenticate: true,
+      data: {
+        label: label
+      }
+    })
+  }
+
+  deleteConformanceSnapshot(snapshotId: number) {
+    return this.restService.delete<void>({
+      path: ROUTES.controllers.ConformanceService.deleteConformanceSnapshot(snapshotId).url,
+      authenticate: true
+    })
+  }
+
+  getBadgeForStatus(specificationId: number, actorId: number|undefined, status: string) {
+    let path: string
+    if (actorId == undefined) {
+      path = ROUTES.controllers.SpecificationService.getBadgeForStatus(specificationId, status).url
+    } else {
+      path = ROUTES.controllers.ActorService.getBadgeForStatus(specificationId, actorId, status).url
+    }
+    return this.restService.get<HttpResponse<ArrayBuffer>>({
+      path: path,
+      authenticate: true,
+      arrayBuffer: true,
+      httpResponse: true
+    })
+  }
+
+  conformanceBadgeUrl(systemId: number, actorId: number, snapshotId?: number) {
+    let params: any = undefined
+    if (snapshotId != undefined) {
+      params = {
+        snapshot: snapshotId
+      }
+    }
+    return this.restService.get<string|undefined>({
+      path: ROUTES.controllers.ConformanceService.conformanceBadgeUrl(systemId, actorId).url,
+      params: params,
+      authenticate: true,
+      text: true
+    })
+  }
+
+  conformanceBadgeByIds(systemId: number, actorId: number, snapshotId?: number) {
+    let params: any = undefined
+    if (snapshotId != undefined) {
+      params = {
+        snapshot: snapshotId
+      }
+    }
+    return this.restService.get<HttpResponse<ArrayBuffer>>({
+      path: ROUTES.controllers.ConformanceService.conformanceBadgeByIds(systemId, actorId).url,
+      params: params,
+      authenticate: true,
+      arrayBuffer: true,
+      httpResponse: true
+    })
+  }
+
+  getConformanceStatementsForSystem(system: number) {
+    return this.restService.get<ConformanceStatementItem[]>({
+      path: ROUTES.controllers.ConformanceService.getConformanceStatementsForSystem(system).url,
+      authenticate: true
+    })
+  }
+
+  getConformanceStatement(system: number, actor: number) {
+    return this.restService.get<ConformanceStatementWithResults>({
+      path: ROUTES.controllers.ConformanceService.getConformanceStatement(system, actor).url,
+      authenticate: true
     })
   }
 

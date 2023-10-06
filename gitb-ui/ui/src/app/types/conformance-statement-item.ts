@@ -1,3 +1,5 @@
+import { ConformanceStatementResult } from "./conformance-statement-result"
+
 export interface ConformanceStatementItem {
 
     id: number,
@@ -6,10 +8,13 @@ export interface ConformanceStatementItem {
     itemType: number,
     order: number
     items?: ConformanceStatementItem[]
-
     hidden?: boolean
+    results?: ConformanceStatementResult
+
     matched?: boolean
     filtered?: boolean
+    filteredByStatus?: boolean
+    filteredByText?: boolean
     collapsed?: boolean
     checked?: boolean
 }

@@ -3,10 +3,9 @@ package managers
 import actors.events.{ConformanceStatementCreatedEvent, ConformanceStatementUpdatedEvent, SystemUpdatedEvent}
 import models.Enums.{TestResultStatus, UserRole}
 import models._
-import org.slf4j.LoggerFactory
 import persistence.db._
 import play.api.db.slick.DatabaseConfigProvider
-import utils.{CryptoUtil, RepositoryUtils}
+import utils.{CryptoUtil, MimeUtil, RepositoryUtils}
 
 import java.io.File
 import java.sql.Timestamp
@@ -15,14 +14,11 @@ import javax.inject.{Inject, Singleton}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
-import utils.MimeUtil
 
 @Singleton
 class SystemManager @Inject() (repositoryUtils: RepositoryUtils, testResultManager: TestResultManager, triggerHelper: TriggerHelper, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
-
-  def logger = LoggerFactory.getLogger("SystemManager")
 
   def checkSystemExists(sysId: Long): Boolean = {
     val firstOption = exec(PersistenceSchema.systems.filter(_.id === sysId).result.headOption)
@@ -137,8 +133,20 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils, testResultManag
       } else {
         DBIO.successful(false)
       }
+      replaceBadgeKey <- {
+        if (system.badgeKey.isEmpty) {
+          DBIO.successful(true)
+        } else {
+          if (checkApiKeyUniqueness) {
+            PersistenceSchema.systems.filter(_.badgeKey === system.badgeKey).exists.result
+          } else {
+            DBIO.successful(false)
+          }
+        }
+      }
       newSysId <- {
-        val sysToUse = if (replaceApiKey) system.withApiKey(CryptoUtil.generateApiKey()) else system
+        var sysToUse = if (replaceApiKey) system.withApiKey(CryptoUtil.generateApiKey()) else system
+        sysToUse = if (replaceBadgeKey) system.withBadgeKey(CryptoUtil.generateApiKey()) else sysToUse
         PersistenceSchema.insertSystem += sysToUse
       }
     } yield newSysId
@@ -248,15 +256,16 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils, testResultManag
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction = for {
       communityId <- getCommunityIdForSystemId(systemId)
-      linkedActorIds <- updateSystemProfileInternal(Some(userId), None, systemId, sname, fname, description, version, None, otherSystem, propertyValues, propertyFiles, copySystemParameters, copyStatementParameters, checkApiKeyUniqueness = false, onSuccessCalls)
+      linkedActorIds <- updateSystemProfileInternal(Some(userId), None, systemId, sname, fname, description, version, None, None, otherSystem, propertyValues, propertyFiles, copySystemParameters, copyStatementParameters, checkApiKeyUniqueness = false, onSuccessCalls)
     } yield (communityId, linkedActorIds)
     val result = exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
     triggerHelper.publishTriggerEvent(new SystemUpdatedEvent(result._1, systemId))
     triggerHelper.triggersFor(result._1, systemId, Some(result._2))
   }
 
-  def updateSystemProfileInternal(userId: Option[Long], communityId: Option[Long], systemId: Long, sname: String, fname: String, description: Option[String], version: Option[String], apiKey: Option[Option[String]], otherSystem: Option[Long], propertyValues: Option[List[SystemParameterValues]], propertyFiles: Option[Map[Long, FileInfo]], copySystemParameters: Boolean, copyStatementParameters: Boolean, checkApiKeyUniqueness: Boolean, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[List[Long]] = {
+  def updateSystemProfileInternal(userId: Option[Long], communityId: Option[Long], systemId: Long, sname: String, fname: String, description: Option[String], version: Option[String], apiKey: Option[Option[String]], badgeKey: Option[String], otherSystem: Option[Long], propertyValues: Option[List[SystemParameterValues]], propertyFiles: Option[Map[Long, FileInfo]], copySystemParameters: Boolean, copyStatementParameters: Boolean, checkApiKeyUniqueness: Boolean, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[List[Long]] = {
     for {
+      _ <- PersistenceSchema.systems.filter(_.id === systemId).map(s => (s.shortname, s.fullname, s.version, s.description)).update(sname, fname, version, description)
       _ <- {
         val actions = new ListBuffer[DBIO[_]]()
         if (apiKey.isDefined) {
@@ -271,13 +280,25 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils, testResultManag
             }
             _ <- {
               val apiKeyToUse = if (replaceApiKey) Some(CryptoUtil.generateApiKey()) else apiKey.get
-              val q = for {s <- PersistenceSchema.systems if s.id === systemId} yield (s.shortname, s.fullname, s.version, s.description, s.apiKey)
-              q.update(sname, fname, version, description, apiKeyToUse)
+              PersistenceSchema.systems.filter(_.id === systemId).map(_.apiKey).update(apiKeyToUse)
             }
           } yield ())
-        } else {
-          val q = for {s <- PersistenceSchema.systems if s.id === systemId} yield (s.shortname, s.fullname, s.version, s.description)
-          actions += q.update(sname, fname, version, description)
+        }
+        if (badgeKey.isDefined) {
+          // Update the badge key conditionally.
+          actions += (for {
+            replaceBadgeKey <- {
+              if (badgeKey.isDefined && checkApiKeyUniqueness) {
+                PersistenceSchema.systems.filter(_.badgeKey === badgeKey.get).filter(_.id =!= systemId).exists.result
+              } else {
+                DBIO.successful(false)
+              }
+            }
+            _ <- {
+              val badgeKeyToUse = if (replaceBadgeKey) CryptoUtil.generateApiKey() else badgeKey.get
+              PersistenceSchema.systems.filter(_.id === systemId).map(_.badgeKey).update(badgeKeyToUse)
+            }
+          } yield ())
         }
         actions += testResultManager.updateForUpdatedSystem(systemId, sname)
         toDBIO(actions)
@@ -321,23 +342,14 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils, testResultManag
   }
 
   def getSystemProfile(systemId: Long): models.System = {
-    //1) Get system info
-    val s = exec(PersistenceSchema.systems.filter(_.id === systemId).result.head)
-
-    //2) Get organization info
-    val o = exec(PersistenceSchema.organizations.filter(_.id === s.owner).result.head)
-
-    //3) Get admins
-    val list = exec(PersistenceSchema.systemHasAdmins.filter(_.systemId === systemId).map(_.userId).result.map(_.toList))
-    var admins: List[Users] = List()
-    list.foreach { adminId =>
-      val user = exec(PersistenceSchema.users.filter(_.id === adminId).result.head)
-      admins ::= user
-    }
-
-    //4) Merge all info and return
-    val system: models.System = new models.System(s, o, admins)
-    system
+    val result = exec(
+      PersistenceSchema.systems
+        .join(PersistenceSchema.organizations).on(_.owner === _.id)
+        .filter(_._1.id === systemId)
+        .result
+        .head
+    )
+    new models.System(result._1, result._2)
   }
 
   def getSystemIdsForOrganization(orgId: Long): Set[Long] = {
@@ -525,124 +537,9 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils, testResultManag
     } yield ()
   }
 
-  def getConformanceStatementReferences(systemId: Long) = {
-    val conformanceStatements = exec(getConformanceStatementReferencesInternal(systemId))
-    conformanceStatements
-  }
-
   private def getConformanceStatementReferencesInternal(systemId: Long) = {
     PersistenceSchema.conformanceResults.filter(_.sut === systemId).result.map(_.toList)
   }
-
-  def getConformanceStatements(systemId: Long, spec: Option[Long], actor: Option[Long]): List[ConformanceStatement] = {
-    var query = PersistenceSchema.conformanceResults
-        .join(PersistenceSchema.specifications).on(_.spec === _.id)
-        .joinLeft(PersistenceSchema.specificationGroups).on(_._2.group === _.id)
-        .join(PersistenceSchema.actors).on(_._1._1.actor === _.id)
-        .join(PersistenceSchema.domains).on(_._2.domain === _.id)
-        .filter(_._1._1._1._1.sut === systemId)
-    if (spec.isDefined && actor.isDefined) {
-      query = query
-        .filter(_._1._1._1._1.spec === spec.get)
-        .filter(_._1._1._1._1.actor === actor.get)
-    }
-    /*
-    DB sorting is skipped as we have custom sorting that follows.
-
-    query = query.sortBy(x => (
-      x._2.fullname.asc, // Domain
-      x._1._1._2.map(_.displayOrder).getOrElse(0.toShort).asc, // Specification group order
-      x._1._1._2.map(_.fullname).getOrElse("").asc, // Specification group name
-      x._1._1._1._2.displayOrder.asc, // Specification order
-      x._1._1._1._2.fullname.asc, // Specification name
-      x._1._2.name.asc // Actor
-    ))
-    */
-    // Apply custom sorting.
-    val results = exec(query.result.map(_.toList)).sortWith((a, b) => {
-      val domainNameA = a._2.fullname
-      val groupOrderA = a._1._1._2.map(_.displayOrder)
-      val groupNameA = a._1._1._2.map(_.fullname)
-      val specOrderA = a._1._1._1._2.displayOrder
-      val specNameA = a._1._1._1._2.fullname
-      val actorNameA = a._1._2.name
-      val domainNameB = b._2.fullname
-      val groupOrderB = b._1._1._2.map(_.displayOrder)
-      val groupNameB = b._1._1._2.map(_.fullname)
-      val specOrderB = b._1._1._1._2.displayOrder
-      val specNameB = b._1._1._1._2.fullname
-      val actorNameB = b._1._2.name
-
-      // Check domains
-      val domains = domainNameA.compareTo(domainNameB)
-      if (domains > 0) {
-        false
-      } else if (domains < 0) {
-        true
-      } else {
-        // Specification group order
-        val groupOrderToCheckForA = if (groupOrderA.isDefined) groupOrderA.get else specOrderA
-        val groupOrderToCheckForB = if (groupOrderB.isDefined) groupOrderB.get else specOrderB
-        val orders = groupOrderToCheckForA.compareTo(groupOrderToCheckForB)
-        if (orders > 0) {
-          false
-        } else if (orders < 0) {
-          true
-        } else {
-          // Specification order
-          val specOrders = specOrderA.compareTo(specOrderB)
-          if (specOrders > 0) {
-            false
-          } else if (specOrders < 0) {
-            true
-          } else {
-            // Specification with group vs without group
-            if (groupNameA.isEmpty && groupNameB.isDefined) {
-              false
-            } else if (groupNameA.isDefined && groupNameB.isEmpty) {
-              true
-            } else { // Botḣ without group or with groups with same name
-              val nameToCheckForA = (if (groupNameA.isDefined) groupNameA.get + " - " else "") + specNameA
-              val nameToCheckForB = (if (groupNameB.isDefined) groupNameB.get + " - " else "") + specNameB
-              val names = nameToCheckForA.compareTo(nameToCheckForB)
-              if (names > 0) {
-                false
-              } else if (names < 0) {
-                true
-              } else {
-                val actors = actorNameA.compareTo(actorNameB)
-                if (actors >= 0) {
-                  false
-                } else {
-                  true
-                }
-              }
-            }
-          }
-        }
-      }
-    })
-
-    val resultBuilder = new ConformanceStatusBuilder[ConformanceStatement](recordDetails = false)
-    results.foreach { result =>
-      var specName = result._1._1._1._2.shortname
-      var specNameFull = result._1._1._1._2.fullname
-      if (result._1._1._2.nonEmpty) {
-        specName = result._1._1._2.get.shortname + " - " + specName
-        specNameFull = result._1._1._2.get.fullname + " - " + specNameFull
-      }
-      resultBuilder.addConformanceResult(
-        new ConformanceStatement(
-          result._2.id, result._2.shortname, result._2.fullname,
-          result._1._2.id, result._1._2.actorId, result._1._2.name,
-          result._1._1._1._2.id, specName, specNameFull,
-          result._1._1._1._1.sut, result._1._1._1._1.result, result._1._1._1._1.updateTime,
-          0L, 0L, 0L)
-      )
-    }
-    resultBuilder.getOverview(None)
-  }
-
 
   def deleteAllConformanceStatements(systemId: Long, onSuccess: mutable.ListBuffer[() => _]) = {
     for {
@@ -801,6 +698,7 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils, testResultManag
     PersistenceSchema.systemImplementsActors.filter(_.systemId === systemId).delete andThen
     PersistenceSchema.systemImplementsOptions.filter(_.systemId === systemId).delete andThen
     PersistenceSchema.conformanceResults.filter(_.sut === systemId).delete andThen
+    PersistenceSchema.conformanceSnapshotResults.filter(_.systemId === systemId).map(_.systemId).update(systemId * -1) andThen
     deleteSystemParameterValues(systemId, onSuccess) andThen
     PersistenceSchema.systems.filter(_.id === systemId).delete
   }
@@ -878,6 +776,7 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils, testResultManag
         .filterOpt(organisationIds)((q, ids) => q._1.owner inSet ids)
         .filterOpt(communityIds)((q, ids) => q._2.community inSet ids)
         .map(_._1)
+        .sortBy(_.shortname.asc)
         .result
         .map(_.toList)
     )

@@ -1,9 +1,10 @@
 package controllers
 
 import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, ResponseConstructor}
+
 import javax.inject.Inject
 import managers.{AuthorizationManager, CommunityManager, ReportManager}
-import models.{OrganisationParameters, SystemParameters}
+import models.{Constants, OrganisationParameters, SystemParameters}
 import play.api.mvc._
 import utils.JsonUtil
 
@@ -12,14 +13,12 @@ import utils.JsonUtil
  */
 class ReportService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerComponents, reportManager: ReportManager, testService: TestService, authorizationManager: AuthorizationManager, communityManager: CommunityManager) extends AbstractController(cc) {
 
-  val defaultPage = 1L
-  val defaultLimit = 10L
-
   def getSystemActiveTestResults = authorizedAction { request =>
-    val systemId = ParameterExtractor.requiredBodyParameter(request, Parameters.SYSTEM_ID).toLong
+    val organisationId = ParameterExtractor.requiredBodyParameter(request, Parameters.ORGANIZATION_ID).toLong
 
-    authorizationManager.canViewTestResultsForSystem(request, systemId)
+    authorizationManager.canViewTestResultsForOrganisation(request, organisationId)
 
+    val systemIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.SYSTEM_IDS)
     val domainIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.DOMAIN_IDS)
     val specIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.SPEC_IDS)
     val specGroupIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.GROUP_IDS)
@@ -32,19 +31,20 @@ class ReportService @Inject() (authorizedAction: AuthorizedAction, cc: Controlle
     val sortColumn = ParameterExtractor.optionalBodyParameter(request, Parameters.SORT_COLUMN)
     val sortOrder = ParameterExtractor.optionalBodyParameter(request, Parameters.SORT_ORDER)
 
-    val testResultReports = reportManager.getSystemActiveTestResults(systemId, domainIds, specIds, specGroupIds, actorIds, testSuiteIds, testCaseIds, startTimeBegin, startTimeEnd, sessionId, sortColumn, sortOrder)
+    val testResultReports = reportManager.getOrganisationActiveTestResults(organisationId, systemIds, domainIds, specIds, specGroupIds, actorIds, testSuiteIds, testCaseIds, startTimeBegin, startTimeEnd, sessionId, sortColumn, sortOrder)
     val json = JsonUtil.jsTestResultReports(testResultReports, None).toString()
     ResponseConstructor.constructJsonResponse(json)
 
   }
 
   def getTestResults = authorizedAction { request =>
-    val systemId = ParameterExtractor.requiredBodyParameter(request, Parameters.SYSTEM_ID).toLong
+    val organisationId = ParameterExtractor.requiredBodyParameter(request, Parameters.ORGANIZATION_ID).toLong
 
-    authorizationManager.canViewTestResultsForSystem(request, systemId)
+    authorizationManager.canViewTestResultsForOrganisation(request, organisationId)
 
     val page = getPageOrDefault(ParameterExtractor.optionalBodyParameter(request, Parameters.PAGE))
     val limit = getLimitOrDefault(ParameterExtractor.optionalBodyParameter(request, Parameters.LIMIT))
+    val systemIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.SYSTEM_IDS)
     val domainIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.DOMAIN_IDS)
     val specIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.SPEC_IDS)
     val specGroupIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.GROUP_IDS)
@@ -60,7 +60,7 @@ class ReportService @Inject() (authorizedAction: AuthorizedAction, cc: Controlle
     val sortColumn = ParameterExtractor.optionalBodyParameter(request, Parameters.SORT_COLUMN)
     val sortOrder = ParameterExtractor.optionalBodyParameter(request, Parameters.SORT_ORDER)
 
-    val output = reportManager.getTestResults(page, limit, systemId, domainIds, specIds, specGroupIds, actorIds, testSuiteIds, testCaseIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, sortColumn, sortOrder)
+    val output = reportManager.getTestResults(page, limit, organisationId, systemIds, domainIds, specIds, specGroupIds, actorIds, testSuiteIds, testCaseIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, sortColumn, sortOrder)
     val json = JsonUtil.jsTestResultReports(output._1, Some(output._2)).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
@@ -159,12 +159,12 @@ class ReportService @Inject() (authorizedAction: AuthorizedAction, cc: Controlle
 
   private def getPageOrDefault(_page: Option[String] = None) = _page match {
     case Some(p) => p.toLong
-    case None => defaultPage
+    case None => Constants.defaultPage
   }
 
   private def getLimitOrDefault(_limit: Option[String] = None) = _limit match {
     case Some(l) => l.toLong
-    case None => defaultLimit
+    case None => Constants.defaultLimit
   }
 
   def getTestResultOfSession(sessionId: String) = authorizedAction { request =>

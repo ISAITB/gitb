@@ -18,10 +18,12 @@ import { BsModalService } from 'ngx-bootstrap/modal';
 import { LinkSharedTestSuiteModalComponent } from 'src/app/modals/link-shared-test-suite-modal/link-shared-test-suite-modal.component';
 import { filter, find } from 'lodash';
 import { forkJoin } from 'rxjs';
+import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
 
 @Component({
   selector: 'app-test-suite-details',
-  templateUrl: './test-suite-details.component.html'
+  templateUrl: './test-suite-details.component.html',
+  styleUrls: [ './test-suite-details.component.less' ]
 })
 export class TestSuiteDetailsComponent extends BaseComponent implements OnInit, AfterViewInit {
 
@@ -35,7 +37,9 @@ export class TestSuiteDetailsComponent extends BaseComponent implements OnInit, 
   testCaseTableColumns: TableColumnDefinition[] = [
     { field: 'identifier', title: 'ID' },
     { field: 'sname', title: 'Name' },
-    { field: 'description', title: 'Description'}
+    { field: 'description', title: 'Description'},
+    { field: 'optional', title: 'Optional'},
+    { field: 'disabled', title: 'Disabled'}
   ]
   specificationTableColumns: TableColumnDefinition[] = [
     { field: 'sname', title: 'Specification' },
@@ -68,12 +72,12 @@ export class TestSuiteDetailsComponent extends BaseComponent implements OnInit, 
   }
 
   ngOnInit(): void {
-    this.domainId = Number(this.route.snapshot.paramMap.get('id'))
-    const specIdParameter = this.route.snapshot.paramMap.get('spec_id')
+    this.domainId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID))
+    const specIdParameter = this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.SPECIFICATION_ID)
     if (specIdParameter) {
       this.specificationId = Number(specIdParameter)
     }
-    this.testSuiteId = Number(this.route.snapshot.paramMap.get('testsuite_id'))
+    this.testSuiteId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.TEST_SUITE_ID))
     this.loadTestCases()
   }
 
@@ -82,6 +86,11 @@ export class TestSuiteDetailsComponent extends BaseComponent implements OnInit, 
       this.testSuiteService.getTestSuiteWithTestCases(this.testSuiteId)
       .subscribe((data) => {
         this.testSuite = data
+        if (this.specificationId) {
+          this.routingService.testSuiteBreadcrumbs(this.domainId, this.specificationId, this.testSuiteId, this.testSuite.identifier!)
+        } else {
+          this.routingService.sharedTestSuiteBreadcrumbs(this.domainId, this.testSuiteId, this.testSuite.identifier!)
+        }
       }).add(() => {
         this.dataStatus.status = Constants.STATUS.FINISHED
       })
@@ -141,7 +150,7 @@ export class TestSuiteDetailsComponent extends BaseComponent implements OnInit, 
     } else {
       message = "Are you sure you want to delete this test suite?"
     }
-		this.confirmationDialogService.confirmed("Confirm delete", message, "Yes", "No")
+		this.confirmationDialogService.confirmedDangerous("Confirm delete", message, "Delete", "Cancel")
 		.subscribe(() => {
       this.deletePending = true
       this.testSuiteService.undeployTestSuite(this.testSuite.id!)

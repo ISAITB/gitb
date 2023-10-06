@@ -13,9 +13,20 @@
         </div>
         <div [collapse]="choice != Constants.REPORT_OPTION_CHOICE.CERTIFICATE" [isAnimated]="true">
             <div class="form-group">
-                <label class="col-xs-3 control-label" for="title">Title:</label>
-                <div class="col-xs-7"><input id="title" [(ngModel)]="settings.title" name="title" class="form-control" type="text"></div>
-                <app-tooltip tbTooltip="Specify a specific title to use to override the default."></app-tooltip>
+                <label class="col-xs-3 control-label">Title:</label>
+                <div class="col-xs-8">
+                    <div class="titleFormContainer">
+                        <div class="checkbox">
+                            <label>
+                                <input type="checkbox" name="includeTitle" (change)="includeTitleChanged()" [(ngModel)]="settings.includeTitle"> Included?
+                            </label>
+                        </div>
+                        <div class="titleText">
+                            <input id="title" name="title" [(ngModel)]="settings.title" [readonly]="!settings.includeTitle" class="form-control" type="text">
+                            <app-tooltip tbTooltip="Specify a specific title to use to override the default."></app-tooltip>
+                        </div>
+                    </div>
+                </div>
             </div>
             <div class="form-group">
                 <label class="col-xs-3 control-label">Included sections:</label>
@@ -48,7 +59,7 @@
         </div>
     </div>
     <div class="modal-footer">
-        <button class="btn btn-default" type="submit" (click)="generate()" [pending]="exportPending">Generate report</button>
         <button class="btn btn-default" type="button" (click)="cancel()">Cancel</button>
+        <button class="btn btn-default" type="submit" (click)="generate()" [pending]="exportPending">Generate report</button>
     </div>
 </form>

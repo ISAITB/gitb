@@ -2,8 +2,6 @@ import { Injectable } from '@angular/core';
 import { ROUTES } from '../common/global';
 import { ConformanceConfiguration } from '../pages/organisation/conformance-statement/conformance-configuration';
 import { BinaryMetadata } from '../types/binary-metadata';
-import { ConformanceStatement } from '../types/conformance-statement';
-import { ErrorDescription } from '../types/error-description';
 import { FileParam } from '../types/file-param.type';
 import { System } from '../types/system';
 import { SystemParameter } from '../types/system-parameter';
@@ -32,6 +30,13 @@ export class SystemService {
       path: ROUTES.controllers.SystemService.getSystemsByOrganization().url,
       authenticate: true,
       params: params
+    })
+  }
+
+  getSystemById(systemId: number) {
+    return this.restService.get<System>({
+      path: ROUTES.controllers.SystemService.getSystemById(systemId).url,
+      authenticate: true
     })
   }
 
@@ -109,7 +114,7 @@ export class SystemService {
     if (description != undefined) {
       data.system_description = description
     }
-    if (otherSystem != undefined) {
+    if (otherSystem) {
       data.other_system = otherSystem
       data.sys_params = copySystemParameters
       data.stm_params = copyStatementParameters
@@ -138,7 +143,7 @@ export class SystemService {
     if (version != undefined) {
       data.system_version = version
     }
-    if (otherSystem != undefined) {
+    if (otherSystem) {
       data.other_system = otherSystem
       data.sys_params = copySystemParameters
       data.stm_params = copyStatementParameters
@@ -168,24 +173,6 @@ export class SystemService {
       },
       authenticate: true
     })
-  }
-
-  getConformanceStatements(system: number, specId?: number, actorId?: number) {
-    if (actorId != undefined && specId != undefined) {
-      return this.restService.get<ConformanceStatement[]>({
-        path: ROUTES.controllers.SystemService.getConformanceStatements(system).url,
-        authenticate: true,
-        params: {
-          spec: specId,
-          actor: actorId
-        }
-      })
-    } else {
-      return this.restService.get<ConformanceStatement[]>({
-        path: ROUTES.controllers.SystemService.getConformanceStatements(system).url,
-        authenticate: true
-      })
-    }
   }
 
   defineConformanceStatements(system: number, actorIds: number[]) {
@@ -272,6 +259,13 @@ export class SystemService {
       path: ROUTES.controllers.SystemService.deleteSystemApiKey(systemId).url,
       authenticate: true
     })
+  }
+
+  ownSystemHasTests(systemId: number) {
+    return this.restService.get<{hasTests: boolean}>({
+      path: ROUTES.controllers.SystemService.ownSystemHasTests(systemId).url,
+      authenticate: true
+    })  
   }
 
 }

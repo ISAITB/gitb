@@ -34,6 +34,14 @@ class CommunityService @Inject() (implicit ec: ExecutionContext, authorizedActio
     ResponseConstructor.constructJsonResponse(json)
   }
 
+  def getUserCommunities() = authorizedAction { request =>
+    val communityIds = ParameterExtractor.extractLongIdsQueryParameter(request)
+    authorizationManager.canViewCommunities(request, communityIds)
+    val communities = communityManager.getCommunities(communityIds, skipDefault = true)
+    val json = JsonUtil.jsCommunities(communities).toString()
+    ResponseConstructor.constructJsonResponse(json)
+  }
+
   /**
     * Creates new community
     */
@@ -461,6 +469,12 @@ class CommunityService @Inject() (implicit ec: ExecutionContext, authorizedActio
         }
         throw e
     }
+  }
+
+  def getCommunityResources(communityId: Long) = authorizedAction { request =>
+    authorizationManager.canManageCommunity(request, communityId)
+    val result = communityResourceManager.getCommunityResources(communityId)
+    ResponseConstructor.constructJsonResponse(JsonUtil.jsCommunityResources(result).toString)
   }
 
   def searchCommunityResources(communityId: Long) = authorizedAction { request =>

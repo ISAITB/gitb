@@ -106,18 +106,18 @@
                                 <td><input class="form-control" type="text" [name]="'presetValueLabel-'+index" [(ngModel)]="presetValue.label"/></td>
                                 <td class="btn-stacked-container">
                                     <div class="btn-toolbar btn-stacked">
-                                        <button *ngIf="!first" class="btn btn-xs btn-default" type="button" (click)="movePresetUp(index)" containerClass="shortTooltip" tooltip="Move up" [delay]="Constants.TOOLTIP_DELAY"><i class="fa fa-chevron-up"></i></button>
-                                        <button *ngIf="!last" class="btn btn-xs btn-default" type="button" (click)="movePresetDown(index)" containerClass="shortTooltip" tooltip="Move down" [delay]="Constants.TOOLTIP_DELAY"><i class="fa fa-chevron-down"></i></button>
+                                        <button *ngIf="!first" class="btn btn-xs btn-default" type="button" (click)="movePresetUp(index)" containerClass="shortTooltip" tooltip="Move up" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-chevron-up"></i></button>
+                                        <button *ngIf="!last" class="btn btn-xs btn-default" type="button" (click)="movePresetDown(index)" containerClass="shortTooltip" tooltip="Move down" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-chevron-down"></i></button>
                                     </div>
                                 </td>
-                                <td><button class="btn btn-default" type="button" (click)="removePresetValue(index)" containerClass="shortTooltip" tooltip="Delete" [delay]="Constants.TOOLTIP_DELAY"><i class="fa fa-trash"></i></button></td>
+                                <td><button class="btn btn-default" type="button" (click)="removePresetValue(index)" containerClass="shortTooltip" tooltip="Delete" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-trash"></i></button></td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
             </div>
             <div class="col-xs-8 col-xs-offset-3">
-                <button class="btn btn-default" type="button" (click)="addPresetValue()" containerClass="shortTooltip" tooltip="Add" [delay]="Constants.TOOLTIP_DELAY"><i class="fa fa-plus"></i></button>
+                <button class="btn btn-default" type="button" (click)="addPresetValue()" containerClass="shortTooltip" tooltip="Add" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-plus"></i></button>
             </div>
         </div>
     </div>

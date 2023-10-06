@@ -8,6 +8,7 @@ import com.gitb.core.ErrorCode;
 import com.gitb.core.StepStatus;
 import com.gitb.core.TestRole;
 import com.gitb.core.TestRoleEnumeration;
+import com.gitb.engine.PropertyConstants;
 import com.gitb.engine.actors.Actor;
 import com.gitb.engine.commands.interaction.PrepareForStopCommand;
 import com.gitb.engine.commands.interaction.RestartCommand;
@@ -18,7 +19,6 @@ import com.gitb.engine.events.model.ErrorStatusEvent;
 import com.gitb.engine.events.model.InputEvent;
 import com.gitb.engine.events.model.StatusEvent;
 import com.gitb.engine.events.model.TestStepStatusEvent;
-import com.gitb.engine.testcase.TestCaseContext;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.engine.utils.TestCaseUtils;
 import com.gitb.exceptions.GITBEngineInternalError;
@@ -258,11 +258,11 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 	}
 
 	protected MapType getStepSuccessMap() {
-		return ((MapType)(scope.getVariable(TestCaseContext.STEP_SUCCESS_MAP, true).getValue()));
+		return ((MapType)(scope.getVariable(PropertyConstants.STEP_SUCCESS_MAP, true).getValue()));
 	}
 
 	protected MapType getStepStatusMap() {
-		return ((MapType)(scope.getVariable(TestCaseContext.STEP_STATUS_MAP, true).getValue()));
+		return ((MapType)(scope.getVariable(PropertyConstants.STEP_STATUS_MAP, true).getValue()));
 	}
 
 	protected void updateStepStatusMaps(StepStatus status) {

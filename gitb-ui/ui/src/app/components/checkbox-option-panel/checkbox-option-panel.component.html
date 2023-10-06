@@ -1,0 +1,15 @@
+<div class="rootDiv">
+    <button id="button-options" type="button" [class.open]="open" class="btn btn-default" (click)="buttonClicked()">{{label}}<span class="caret withMargin"></span></button>
+    <div *ngIf="optionFormVisible" class="optionForm">
+        <div class="container-fluid">
+            <div class="row" *ngFor="let optionSet of options; let last = last;">
+                <div class="col-xs-12" *ngFor="let option of optionSet">
+                    <label class="checkbox-inline disable-select" (click)="$event.stopPropagation()">
+                        <input type="checkbox" [(ngModel)]="currentState[option.key]" (ngModelChange)="updated.emit(currentState)"><span class="optionLabel"><ng-container *ngIf="option.iconClass"><i class="optionIcon" [ngClass]="option.iconClass!"></i> </ng-container>{{option.label}}</span>
+                    </label>
+                </div>
+                <div class="separator" *ngIf="!last"></div>
+            </div>
+        </div>
+    </div>
+</div>

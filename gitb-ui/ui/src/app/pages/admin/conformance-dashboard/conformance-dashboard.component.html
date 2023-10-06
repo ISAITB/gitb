@@ -1,9 +1,17 @@
 <div id="conformanceDashboardPage" class="page conformancedashboard">
     <app-test-filter [filterState]="filterState" [communityId]="communityId" (onApply)="getConformanceStatements()"></app-test-filter>
-	<div id="conformanceDashboardPageTable" class="panel panel-default">
+	<div id="conformanceDashboardPageTable" class="panel panel-default no-bottom-margin">
 		<div class="panel-heading">
 			<h4 id="conformance-statements-title" class="title">Conformance statements</h4>
-			<div class="btn-toolbar" [class.disable-events]="filterState.updatePending">
+			<div class="btn-toolbar allStatementControls" [class.disable-events]="filterState.updatePending">
+                <div class="btn-group" dropdown [isDisabled]="selectedCommunityId == undefined">
+                    <button id="button-snapshot" dropdownToggle type="button" class="btn btn-default dropdown-toggle" aria-controls="dropdown-snapshot">{{snapshotButtonLabel}}<span class="caret withMargin"></span></button>
+                    <ul id="dropdown-snapshot" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-snapshot">
+                      <li role="menuitem"><a class="dropdown-item" href (click)="viewLatestConformanceSnapshot();$event.preventDefault()">{{latestSnapshotButtonLabel}}</a></li>
+                      <li class="divider dropdown-divider"></li>
+                      <li role="menuitem"><a class="dropdown-item" href (click)="manageConformanceSnapshots();$event.preventDefault()">Manage conformance snapshots</a></li>
+                    </ul>
+                </div>
 				<button type="button" class="btn btn-default" *ngIf="conformanceStatements.length > 0" (click)="onExportConformanceStatementsAsCsv()" [disable]="conformanceStatements.length == 0" [pending]="exportPending">Export CSV</button>
 				<button type="button" class="btn btn-default" *ngIf="showCollapseAll()" (click)="onCollapseAll()">Collapse all</button>
 			</div>
@@ -26,13 +34,13 @@
                     </tr>
                 </thead>
                 <tbody *ngIf="dataStatus.status != Constants.STATUS.FINISHED">
-                    <tr><td [attr.colspan]="columnCount" class="td-data-loading"><span><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span></td></tr>
+                    <tr><td [attr.colspan]="columnCount" class="td-data-loading"><span><i class="fa-solid fa-spinner fa-spin-override fa-lg"></i></span></td></tr>
                 </tbody>
                 <tbody *ngIf="dataStatus.status == Constants.STATUS.FINISHED && conformanceStatements.length == 0">
                     <tr><td [attr.colspan]="columnCount" class="td-no-data"><span>No conformance data found</span></td></tr>
                 </tbody>
                 <tbody *ngIf="conformanceStatements.length > 0" [class.disable-events]="filterState.updatePending">
-                    <ng-container *ngFor="let statement of conformanceStatementsPage">
+                    <ng-container *ngFor="let statement of conformanceStatements">
                         <tr (click)="onExpand(statement)"
                             class="table-row-directive expandable-table-row-collapsed">
                             <td class="td-min-centered"><app-collapsing-icon [padded]="false" [isCollapsed]="!isExpanded(statement)"></app-collapsing-icon></td>
@@ -43,72 +51,91 @@
                             <td>{{statement.specName}}</td>
                             <td>{{statement.actorName}}</td>
                             <td class="td-min">{{statement.updateTime}}</td>
-                            <td class="td-min-centered"><app-test-status-icons [counters]="statement.counters!"></app-test-status-icons></td>
+                            <td class="td-min-centered"><app-test-status-icons [counters]="statement.counters!" [asLine]="true"></app-test-status-icons></td>
                             <td class="td-min-centered"><span><i containerClass="shortTooltip" [tooltip]="dataService.tooltipForTestResult(statement.overallStatus)" [ngClass]="dataService.iconForTestResult(statement.overallStatus)"></i></span></td>
                             <td class="td-min-centered">
-                                <button class="btn btn-default" (click)="onExportConformanceStatement(statement); $event.stopPropagation();" [pending]="statement.exportPending" [icon]="true"  containerClass="shortTooltip" tooltip="Export" [delay]="Constants.TOOLTIP_DELAY"><i class="fa fa-file-pdf-o"></i></button>
+                                <button class="btn btn-default" (click)="onExportConformanceStatement(statement); $event.stopPropagation();" [pending]="statement.exportPending" [icon]="true"  containerClass="shortTooltip" tooltip="Export" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-regular fa-file-pdf"></i></button>
                             </td>
                         </tr>
                         <tr class="expandable-table-row-expanded">
                             <td [attr.colspan]="columnCount" class="expandable-table-expandable-cell">
                                 <div [collapse]="!isExpanded(statement)" [isAnimated]="true">
                                     <div class="collapsing-div">
-                                        <div *ngIf="statement.testCasesLoaded == undefined || !statement.testCasesLoaded" class="spinnerPadded">
-                                            <span><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>
-                                        </div>
                                         <div class="statementControls">
-                                            <div class="statementButtons btn-toolbar">
-                                                <button type="button" class="btn btn-default" (click)="toOrganisation(statement)">View {{dataService.labelOrganisationLower()}}</button>
-                                                <button type="button" class="btn btn-default" (click)="toSystem(statement)">View {{dataService.labelSystemLower()}}</button>
-                                                <button type="button" class="btn btn-default" (click)="toStatement(statement)">View conformance statement</button>
-                                                <button type="button" class="btn btn-default" (click)="toSpecification(statement)">View {{dataService.labelSpecificationLower()}}</button>
-                                                <button type="button" class="btn btn-default" (click)="toActor(statement)">View {{dataService.labelActorLower()}}</button>
+                                            <div class="statementButtons btn-toolbar" *ngIf="showToOrganisation(statement) || showToSystem(statement) || showToStatement(statement) || showToDomain(statement) || showToSpecification(statement) || showToActor(statement)">
+                                                <!-- View statement -->
+                                                <button *ngIf="showToStatement(statement)" type="button" class="btn btn-default" (click)="toStatement(statement)">View statement</button>
+                                                <!-- View party -->
+                                                <ng-container [ngSwitch]="showToSystem(statement)">
+                                                    <ng-container *ngSwitchCase="true">
+                                                        <div class="btn-group" dropdown>
+                                                            <button type="button" class="btn btn-default" (click)="toSystem(statement)">View {{dataService.labelSystemLower()}}</button>
+                                                            <button id="button-system" type="button" dropdownToggle class="btn btn-default dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
+                                                            <ul id="dropdown-system" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-system">
+                                                                <li role="menuitem"><a class="dropdown-item" href (click)="toCommunity(statement);$event.preventDefault();">View community</a></li>
+                                                                <li role="menuitem"><a class="dropdown-item" href (click)="toOrganisation(statement); $event.preventDefault();">View {{dataService.labelOrganisationLower()}}</a></li>
+                                                            </ul>
+                                                        </div>
+                                                    </ng-container>
+                                                    <ng-container *ngSwitchDefault [ngSwitch]="showToOrganisation(statement)">
+                                                        <ng-container *ngSwitchCase="true">
+                                                            <div class="btn-group" dropdown>
+                                                                <button type="button" class="btn btn-default" (click)="toOrganisation(statement)">View {{dataService.labelOrganisationLower()}}</button>
+                                                                <button id="button-system" type="button" dropdownToggle class="btn btn-default dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
+                                                                <ul id="dropdown-system" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-system">
+                                                                    <li role="menuitem"><a class="dropdown-item" href (click)="toCommunity(statement);$event.preventDefault();">View community</a></li>
+                                                                </ul>
+                                                            </div>
+                                                        </ng-container>
+                                                        <ng-container *ngSwitchDefault>
+                                                            <button type="button" class="btn btn-default" (click)="toCommunity(statement)">View community</button>
+                                                        </ng-container>
+                                                    </ng-container>
+                                                </ng-container>
+                                                <!-- View specification -->
+                                                <ng-container *ngIf="showToDomain(statement) || showToSpecification(statement) || showToActor(statement)">
+                                                    <ng-container [ngSwitch]="showToSpecification(statement)">
+                                                        <ng-container *ngSwitchCase="true">
+                                                            <div class="btn-group" dropdown>
+                                                                <button type="button" class="btn btn-default" (click)="toSpecification(statement)">View {{dataService.labelSpecificationLower()}}</button>
+                                                                <button id="button-spec" type="button" dropdownToggle class="btn btn-default dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
+                                                                <ul id="dropdown-spec" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-spec">
+                                                                    <li role="menuitem"><a class="dropdown-item" href (click)="toDomain(statement);$event.preventDefault();">View {{dataService.labelDomainLower()}}</a></li>
+                                                                    <li *ngIf="showToActor(statement)" role="menuitem"><a class="dropdown-item" href (click)="toActor(statement); $event.preventDefault();">View {{dataService.labelActorLower()}}</a></li>
+                                                                </ul>
+                                                            </div>
+                                                        </ng-container>
+                                                        <ng-container *ngSwitchDefault [ngSwitch]="showToActor(statement)">
+                                                            <ng-container *ngSwitchCase="true">
+                                                                <div class="btn-group" dropdown>
+                                                                    <button type="button" class="btn btn-default" (click)="toActor(statement)">View {{dataService.labelActorLower()}}</button>
+                                                                    <button id="button-spec" type="button" dropdownToggle class="btn btn-default dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
+                                                                    <ul id="dropdown-spec" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-spec">
+                                                                        <li role="menuitem"><a class="dropdown-item" href (click)="toDomain(statement);$event.preventDefault();">View {{dataService.labelDomainLower()}}</a></li>
+                                                                    </ul>
+                                                                </div>
+                                                            </ng-container>
+                                                            <ng-container *ngSwitchDefault>
+                                                                <button type="button" class="btn btn-default" (click)="toDomain(statement)">View {{dataService.labelDomainLower()}}</button>
+                                                            </ng-container>
+                                                        </ng-container>
+                                                    </ng-container>
+                                                </ng-container>
+                                                <app-view-badge-button *ngIf="statement.hasBadge" [systemId]="statement.systemId" [actorId]="statement.actorId" [snapshotId]="activeConformanceSnapshot?.id" [leftMargin]="true"></app-view-badge-button>
                                             </div>
                                             <div class="statementRatios">
-                                                <app-test-result-ratio [counters]="statement.counters!"></app-test-result-ratio>
+                                                <app-test-result-ratio [counters]="statement.counters!" [asLine]="true"></app-test-result-ratio>
                                             </div>
                                         </div>
-                                        <div class="testSuitePanel" *ngFor="let testSuite of statement.testSuites">
-                                            <div class="panel panel-default">
-                                                <div class="panel-heading" (click)="testSuite.expanded = !testSuite.expanded">
-                                                    <div class="testSuiteHeaderLabel"><app-collapsing-icon [isCollapsed]="!testSuite.expanded"></app-collapsing-icon>Test suite</div>
-                                                    <div class="testSuiteHeaderValue">{{testSuite.testSuiteName}}</div>
-                                                    <div class="testSuiteResult"><app-test-result-status-display [result]="testSuite.result"></app-test-result-status-display></div>
-                                                </div>
-                                                <div class="collapsibleTestCaseDiv" [collapse]="!testSuite.expanded" [isAnimated]="true">
-                                                    <div class="panel-body">
-                                                        <div class="testCaseContainer table-container">
-                                                            <table class="table table-directive">
-                                                                <thead>
-                                                                    <tr>
-                                                                        <th width="90%">Test case</th>
-                                                                        <th class="sessionTime">Last run</th>
-                                                                        <th class="th-min-centered"></th>
-                                                                        <th class="th-min-centered"></th>
-                                                                    </tr>
-                                                                </thead>
-                                                                <tbody>
-                                                                    <tr *ngFor="let testCase of testSuite.testCases">
-                                                                        <td>{{testCase.testCaseName}}</td>
-                                                                        <td class="sessionTime">{{testCase.sessionTime}}</td>
-                                                                        <td class="td-min-centered test-case-controls">
-                                                                            <div class="btn-toolbar testcase-toolbar">
-                                                                                <button *ngIf="testCase.sessionId != undefined" class="btn btn-default" (click)="toTestSession(testCase.sessionId)" containerClass="shortTooltip" tooltip="View session" [delay]="Constants.TOOLTIP_DELAY"><i class="fa fa-search"></i></button>
-                                                                                <button *ngIf="showExportTestCase(testCase)" [pending]="testCase.actionPending" [icon]="true" class="btn btn-default" (click)="onExportTestCaseXml(testCase)" containerClass="shortTooltip" tooltip="Export (XML)" [delay]="Constants.TOOLTIP_DELAY"><i class="fa fa-file-text-o"></i></button>
-                                                                                <button *ngIf="showExportTestCase(testCase)" [pending]="testCase.exportPending" [icon]="true" class="btn btn-default" (click)="onExportTestCasePdf(testCase)" containerClass="shortTooltip" tooltip="Export (PDF)" [delay]="Constants.TOOLTIP_DELAY"><i class="fa fa-file-pdf-o"></i></button>
-                                                                            </div>
-                                                                        </td>
-                                                                        <td class="td-min-centered test-case-result">
-                                                                            <app-test-result-status-display [message]="testCase.outputMessage" [result]="testCase.result"></app-test-result-status-display>
-                                                                        </td>
-                                                                    </tr>
-                                                                </tbody>
-                                                            </table>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
+                                        <div *ngIf="statement.testSuitesLoaded == undefined || !statement.testSuitesLoaded" class="spinnerPadded">
+                                            <app-pending-block></app-pending-block>
                                         </div>
+                                        <app-test-suite-display
+                                            [testSuites]="statement.testSuites"
+                                            [showExecute]="false"
+                                            [showExport]="true"
+                                            (viewTestSession)="toTestSession($event)"
+                                        ></app-test-suite-display>
                                     </div>
                                 </div>
                             </td>
@@ -117,12 +144,12 @@
                 </tbody>
             </table>
         </div>
-        <div *ngIf="(!prevDisabled || !nextDisabled) && conformanceStatements && conformanceStatements.length > 0" class="text-center table-paging-controls-expandable">
+        <div *ngIf="(!prevDisabled || !nextDisabled) && conformanceStatements && conformanceStatements.length > 0" class="text-center table-paging-controls">
             <ul class="pagination pagination-sm" [class.disable-events]="filterState.updatePending">
-                <li [ngClass]="prevDisabled ? 'disabled' : ''"><a href (click)="doFirstPage(); $event.preventDefault()">First</a></li>
-                <li [ngClass]="prevDisabled ? 'disabled' : ''"><a href (click)="doPrevPage(); $event.preventDefault()">Previous</a></li>
-                <li [ngClass]="nextDisabled ? 'disabled' : ''"><a href (click)="doNextPage(); $event.preventDefault()">Next</a></li>
-                <li [ngClass]="nextDisabled ? 'disabled' : ''"><a href (click)="doLastPage(); $event.preventDefault()">Last</a></li>
+                <li [class.disabled]="prevDisabled"><a href (click)="doFirstPage(); $event.preventDefault()">First</a></li>
+                <li [class.disabled]="prevDisabled"><a href (click)="doPrevPage(); $event.preventDefault()">Previous</a></li>
+                <li [class.disabled]="nextDisabled"><a href (click)="doNextPage(); $event.preventDefault()">Next</a></li>
+                <li [class.disabled]="nextDisabled"><a href (click)="doLastPage(); $event.preventDefault()">Last</a></li>
             </ul>
         </div>
 	</div>

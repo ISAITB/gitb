@@ -42,6 +42,7 @@ export class TestFilterComponent implements OnInit {
 
   @Input() filterState!: FilterState
   @Input() communityId?: number
+  @Input() organisationId?: number
 
   @Input() loadDomainsFn?: () => Observable<Domain[]>
   @Input() loadSpecificationsFn?: () => Observable<Specification[]>
@@ -62,7 +63,6 @@ export class TestFilterComponent implements OnInit {
   organisationProperties: Array<CustomProperty> = []
   systemProperties: Array<{id?: number, value?: string, uuid?: number}> = []
   definedFilters: { [key: string]: boolean } = {}
-  enableFiltering = false
   showFiltering = false
   sessionId?: string
   uuidCounter = 0
@@ -207,10 +207,14 @@ export class TestFilterComponent implements OnInit {
     }
     if (this.filterDefined(Constants.FILTER_TYPE.SYSTEM) && this.loadSystemsFn == undefined) {
       this.loadSystemsFn = (() => {
-        if (this.dataService.isSystemAdmin) {
-          return this.systemService.searchSystems(this.filterValue(Constants.FILTER_TYPE.COMMUNITY), this.filterValue(Constants.FILTER_TYPE.ORGANISATION))
+        if (this.organisationId != undefined) {
+          return this.systemService.getSystemsByOrganisation(this.organisationId)
         } else {
-          return this.systemService.searchSystemsInCommunity(this.dataService.community!.id, this.filterValue(Constants.FILTER_TYPE.ORGANISATION))
+          if (this.dataService.isSystemAdmin) {
+            return this.systemService.searchSystems(this.filterValue(Constants.FILTER_TYPE.COMMUNITY), this.filterValue(Constants.FILTER_TYPE.ORGANISATION))
+          } else {
+            return this.systemService.searchSystemsInCommunity(this.dataService.community!.id, this.filterValue(Constants.FILTER_TYPE.ORGANISATION))
+          }
         }
       }).bind(this)
     }
@@ -513,7 +517,6 @@ export class TestFilterComponent implements OnInit {
   }
 
   clearFilters() {
-    this.enableFiltering = false
     this.showFiltering = false
     this.clearFilter(Constants.FILTER_TYPE.DOMAIN)
     this.clearFilter(Constants.FILTER_TYPE.SPECIFICATION)
@@ -546,28 +549,13 @@ export class TestFilterComponent implements OnInit {
   }
 
   clickedHeader() {
-    if (this.enableFiltering) {
-      this.showFiltering = !this.showFiltering
-    }
-  }
-
-  toggleFiltering() {
-    if (!this.enableFiltering) {
-      this.dataService.async(this.clearFilters.bind(this))
-    } else {
-      this.showFiltering = true
-      this.resetApplicableCommunityId()
-      this.resetFilters()
-      this.applyFilters()
-    }
+    this.showFiltering = !this.showFiltering
   }
 
   applyTimeFiltering() {
-    if (this.enableFiltering) {
-      setTimeout(() => {
-        this.applyFilters()
-      })
-    }
+    setTimeout(() => {
+      this.applyFilters()
+    })
   }
 
   resetFilters() {

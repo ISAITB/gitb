@@ -1,11 +1,14 @@
 import { AfterViewInit, Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
+import { Constants } from 'src/app/common/constants';
 import { BaseComponent } from 'src/app/pages/base-component.component';
 import { ConformanceService } from 'src/app/services/conformance.service';
 import { DataService } from 'src/app/services/data.service';
 import { PopupService } from 'src/app/services/popup.service';
 import { RoutingService } from 'src/app/services/routing.service';
+import { SpecificationService } from 'src/app/services/specification.service';
 import { Specification } from 'src/app/types/specification';
+import { SpecificationGroup } from 'src/app/types/specification-group';
 
 @Component({
   selector: 'app-create-specification',
@@ -15,15 +18,18 @@ import { Specification } from 'src/app/types/specification';
 })
 export class CreateSpecificationComponent extends BaseComponent implements OnInit, AfterViewInit {
 
+  domainId!: number
   specification: Partial<Specification> = {}
   pending = false
+  groups?: SpecificationGroup[]
 
   constructor(
     public dataService: DataService,
     private conformanceService: ConformanceService,
     private popupService: PopupService,
     private route: ActivatedRoute,
-    private routingService: RoutingService
+    private routingService: RoutingService,
+    private specificationService: SpecificationService
   ) { super() }
 
   ngAfterViewInit(): void {
@@ -31,23 +37,49 @@ export class CreateSpecificationComponent extends BaseComponent implements OnIni
   }
 
   ngOnInit(): void {
-    const groupId = this.route.snapshot.queryParamMap.get('group')
+    this.domainId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID))
+    const groupId = this.route.snapshot.queryParamMap.get(Constants.NAVIGATION_QUERY_PARAM.SPECIFICATION_GROUP_ID)
     if (groupId) {
       this.specification.group = Number(groupId)
+    }
+    this.specificationService.getSpecificationGroups(this.domainId)
+    .subscribe((data) => {
+      this.specification.groups = data
+    })    
+    this.specification.badges = {
+      enabled: false,
+      initiallyEnabled: false,
+      failureBadgeActive: false,
+      success: { enabled: false },
+      other: { enabled: false },
+      failure: { enabled: false }
     }
   }
 
 	saveDisabled() {
-		return !(this.textProvided(this.specification.sname) && this.textProvided(this.specification.fname))
+    return !(
+      this.textProvided(this.specification?.sname) && 
+      this.textProvided(this.specification?.fname) &&
+      (
+        !this.specification.badges!.enabled || 
+        (
+          this.specification.badges!.success.enabled && 
+          this.specification.badges!.other.enabled && 
+          (
+            !this.specification.badges!.failureBadgeActive ||
+            this.specification.badges!.failure.enabled
+          )
+        )
+      )
+    )
   }
 
 	createSpecification() {
 		if (!this.saveDisabled()) {
-			let domainId = Number(this.route.snapshot.paramMap.get('id'))
       this.pending = true
-      this.conformanceService.createSpecification(this.specification.sname!, this.specification.fname!, this.specification.description, this.specification.hidden, domainId, this.specification.group)
+      this.conformanceService.createSpecification(this.specification.sname!, this.specification.fname!, this.specification.description, this.specification.hidden, this.domainId, this.specification.group, this.specification.badges!)
       .subscribe(() => {
-        this.routingService.toDomain(domainId)
+        this.routingService.toDomain(this.domainId)
         this.popupService.success(this.dataService.labelSpecification()+' created.')
       }).add(() => {
         this.pending = false
@@ -56,7 +88,7 @@ export class CreateSpecificationComponent extends BaseComponent implements OnIni
   }
 
 	cancel() {
-    let domainId = Number(this.route.snapshot.paramMap.get('id'))
+    let domainId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID))
     this.routingService.toDomain(domainId)
   }
 

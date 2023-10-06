@@ -25,8 +25,7 @@ public class CheckTestCaseImports extends AbstractTestCaseObserver {
     @Override
     public void handleImport(Object artifactObj) {
         super.handleImport(artifactObj);
-        if (artifactObj instanceof TestArtifact) {
-            TestArtifact artifact = (TestArtifact)artifactObj;
+        if (artifactObj instanceof TestArtifact artifact) {
             if (artifact.getFrom() == null || artifact.getFrom().equals(context.getTestSuite().getId())) {
                 // Resource from the test suite.
                 if (!Utils.isVariableExpression(artifact.getValue())) {

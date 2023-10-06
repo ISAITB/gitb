@@ -23,6 +23,9 @@ export class OrganisationFormComponent implements OnInit, AfterViewInit {
   @Input() organisation!: Partial<OrganisationFormData>
   @Input() communityId!: number
   @Input() propertyData!: OptionalCustomPropertyFormData
+  @Input() showAdminInfo = true
+  @Input() showLandingPage = false
+  @Input() readonly = false
 
   selfRegEnabled = false
   landingPages: LandingPage[] = []
@@ -40,7 +43,9 @@ export class OrganisationFormComponent implements OnInit, AfterViewInit {
   ) { }
 
   ngAfterViewInit(): void {
-    this.dataService.focus('sname')
+    if (!this.readonly) {
+      this.dataService.focus('sname')
+    }
   }
 
   ngOnInit(): void {
@@ -60,26 +65,30 @@ export class OrganisationFormComponent implements OnInit, AfterViewInit {
         this.propertyData.properties = data
       })
     }
-    this.landingPageService.getLandingPagesByCommunity(this.communityId)
-    .subscribe((data) => {
-      this.landingPages = data
-    })
-    this.legalNoticeService.getLegalNoticesByCommunity(this.communityId)
-    .subscribe((data) => {
-      this.legalNotices = data
-    })
-    this.errorTemplateService.getErrorTemplatesByCommunity(this.communityId)
-    .subscribe((data) => {
-      this.errorTemplates = data
-    })
-    this.organisationService.getOrganisationsByCommunity(this.communityId)
-    .subscribe((data) => {
-      for (let organisation of data) {
-        if (this.organisation.id == undefined || Number(organisation.id) != Number(this.organisation.id)) {
-          this.otherOrganisations.push(organisation)
+    if (this.showAdminInfo || this.showLandingPage) {
+      this.landingPageService.getLandingPagesByCommunity(this.communityId)
+      .subscribe((data) => {
+        this.landingPages = data
+      })
+    }
+    if (this.showAdminInfo) {
+      this.legalNoticeService.getLegalNoticesByCommunity(this.communityId)
+      .subscribe((data) => {
+        this.legalNotices = data
+      })
+      this.errorTemplateService.getErrorTemplatesByCommunity(this.communityId)
+      .subscribe((data) => {
+        this.errorTemplates = data
+      })
+      this.organisationService.getOrganisationsByCommunity(this.communityId)
+      .subscribe((data) => {
+        for (let organisation of data) {
+          if (this.organisation.id == undefined || Number(organisation.id) != Number(this.organisation.id)) {
+            this.otherOrganisations.push(organisation)
+          }
         }
-      }
-    })
+      })
+    }
   }
 
   copyChanged() {

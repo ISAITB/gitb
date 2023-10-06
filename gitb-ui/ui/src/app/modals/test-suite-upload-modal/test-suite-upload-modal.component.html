@@ -147,6 +147,6 @@
 	</form>
 </div>
 <div class="modal-footer">
-    <button *ngIf="proceedVisible()" type="button" class="btn btn-default" (click)="proceed()" [disable]="proceedDisabled()" [pending]="actionProceedPending">Proceed</button>
 	<button type="button" class="btn btn-default" (click)="close()" [disabled]="actionPending">{{step == 'results'?'Close':'Cancel'}}</button>
+    <button *ngIf="proceedVisible()" type="button" class="btn btn-default" (click)="proceed()" [disable]="proceedDisabled()" [pending]="actionProceedPending">Proceed</button>
 </div>

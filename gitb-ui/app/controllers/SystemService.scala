@@ -8,7 +8,7 @@ import models.Enums.UserRole
 import models.prerequisites.PrerequisiteUtil
 import models.{Configs, Systems}
 import org.apache.commons.io.FileUtils
-import org.slf4j._
+import play.api.libs.json.Json
 import play.api.mvc._
 import utils.{JsonUtil, RepositoryUtils}
 
@@ -19,8 +19,7 @@ import scala.concurrent.ExecutionContext
 import utils.ClamAVClient
 import utils.MimeUtil
 
-class SystemService @Inject() (implicit ec: ExecutionContext, repositoryUtils: RepositoryUtils, accountManager: AccountManager, authorizedAction: AuthorizedAction, cc: ControllerComponents, systemManager: SystemManager, parameterManager: ParameterManager, testCaseManager: TestCaseManager, authorizationManager: AuthorizationManager, communityLabelManager: CommunityLabelManager) extends AbstractController(cc) {
-  private final val logger: Logger = LoggerFactory.getLogger(classOf[SystemService])
+class SystemService @Inject() (implicit ec: ExecutionContext, repositoryUtils: RepositoryUtils, testResultManager: TestResultManager, accountManager: AccountManager, authorizedAction: AuthorizedAction, cc: ControllerComponents, systemManager: SystemManager, parameterManager: ParameterManager, testCaseManager: TestCaseManager, authorizationManager: AuthorizationManager, communityLabelManager: CommunityLabelManager) extends AbstractController(cc) {
 
   def deleteSystem(systemId:Long) = authorizedAction { request =>
     authorizationManager.canDeleteSystem(request, systemId)
@@ -87,6 +86,17 @@ class SystemService @Inject() (implicit ec: ExecutionContext, repositoryUtils: R
       if (request.body.asMultipartFormData.isDefined) request.body.asMultipartFormData.get.files.foreach { file => FileUtils.deleteQuietly(file.ref) }
     }
   }
+
+  def getSystemById(systemId: Long) = authorizedAction { request =>
+    authorizationManager.canViewSystem(request, systemId)
+    val system = systemManager.getSystemById(systemId)
+    if (system.isDefined) {
+      ResponseConstructor.constructJsonResponse(JsonUtil.jsSystem(system.get).toString())
+    } else {
+      throw NotFoundException(ErrorCodes.SYSTEM_NOT_FOUND, communityLabelManager.getLabel(request, models.Enums.LabelType.System)+ " with ID '" + systemId + "' not found.")
+    }
+  }
+
   /**
    * Gets the system profile for the specific system
    */
@@ -98,7 +108,7 @@ class SystemService @Inject() (implicit ec: ExecutionContext, repositoryUtils: R
       val json:String = JsonUtil.serializeSystem(system)
       ResponseConstructor.constructJsonResponse(json)
     } else{
-      throw new NotFoundException(ErrorCodes.SYSTEM_NOT_FOUND, communityLabelManager.getLabel(request, models.Enums.LabelType.System)+ " with ID '" + sut_id + "' not found.")
+      throw NotFoundException(ErrorCodes.SYSTEM_NOT_FOUND, communityLabelManager.getLabel(request, models.Enums.LabelType.System)+ " with ID '" + sut_id + "' not found.")
     }
   }
 
@@ -111,16 +121,6 @@ class SystemService @Inject() (implicit ec: ExecutionContext, repositoryUtils: R
     systemManager.defineConformanceStatements(systemId, actorIds.getOrElse(List.empty))
     ResponseConstructor.constructEmptyResponse
   }
-
-	def getConformanceStatements(sut_id: Long) = authorizedAction { request =>
-    authorizationManager.canViewConformanceStatements(request, sut_id)
-    val specification = ParameterExtractor.optionalLongQueryParameter(request, Parameters.SPEC)
-    val actor = ParameterExtractor.optionalLongQueryParameter(request, Parameters.ACTOR)
-
-		val conformanceStatements = systemManager.getConformanceStatements(sut_id, specification, actor)
-    val json:String = JsonUtil.jsConformanceStatements(conformanceStatements).toString()
-    ResponseConstructor.constructJsonResponse(json)
-	}
 
 	def deleteConformanceStatement(sut_id: Long) = authorizedAction { request =>
     val actorIds = ParameterExtractor.extractLongIdsQueryParameter(request)
@@ -328,6 +328,12 @@ class SystemService @Inject() (implicit ec: ExecutionContext, repositoryUtils: R
     authorizationManager.canUpdateSystemApiKey(request, systemId)
     systemManager.deleteSystemApiKey(systemId)
     ResponseConstructor.constructEmptyResponse
+  }
+
+  def ownSystemHasTests(systemId: Long) = authorizedAction { request =>
+    authorizationManager.canViewSystem(request, systemId)
+    val hasTests = testResultManager.testSessionsExistForSystem(systemId)
+    ResponseConstructor.constructJsonResponse(Json.obj("hasTests" -> hasTests).toString())
   }
 
 }

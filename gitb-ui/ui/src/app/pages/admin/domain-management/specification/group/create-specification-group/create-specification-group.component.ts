@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
+import { Constants } from 'src/app/common/constants';
 import { BaseComponent } from 'src/app/pages/base-component.component';
 import { DataService } from 'src/app/services/data.service';
 import { PopupService } from 'src/app/services/popup.service';
@@ -36,7 +37,7 @@ export class CreateSpecificationGroupComponent extends BaseComponent implements 
 
   createSpecificationGroup() {
 		if (!this.saveDisabled()) {
-			let domainId = Number(this.route.snapshot.paramMap.get('id'))
+			let domainId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID))
       this.pending = true
       this.specificationService.createSpecificationGroup(this.group.sname!, this.group.fname!, this.group.description, domainId)
       .subscribe(() => {
@@ -49,7 +50,7 @@ export class CreateSpecificationGroupComponent extends BaseComponent implements 
   }
 
 	cancel() {
-    let domainId = Number(this.route.snapshot.paramMap.get('id'))
+    let domainId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID))
     this.routingService.toDomain(domainId)
   }  
 }

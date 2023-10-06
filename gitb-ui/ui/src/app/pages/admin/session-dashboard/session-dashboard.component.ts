@@ -3,7 +3,6 @@ import { Constants } from 'src/app/common/constants';
 import { ConformanceService } from 'src/app/services/conformance.service';
 import { DataService } from 'src/app/services/data.service';
 import { ReportService } from 'src/app/services/report.service';
-import { SystemConfigurationService } from 'src/app/services/system-configuration.service';
 import { FilterState } from 'src/app/types/filter-state';
 import { TableColumnDefinition } from 'src/app/types/table-column-definition.type';
 import { TestResultSearchCriteria } from 'src/app/types/test-result-search-criteria';
@@ -18,6 +17,8 @@ import { mergeMap, Observable, of, share } from 'rxjs';
 import { ActivatedRoute } from '@angular/router';
 import { DiagramLoaderService } from 'src/app/components/diagram/test-session-presentation/diagram-loader.service';
 import { saveAs } from 'file-saver'
+import { RoutingService } from 'src/app/services/routing.service';
+import { FieldInfo } from 'src/app/types/field-info';
 
 @Component({
   selector: 'app-session-dashboard',
@@ -50,7 +51,6 @@ export class SessionDashboardComponent implements OnInit {
   isNextPageDisabled = false
   action = false
   stop = false
-  ttlEnabled = false
   prevParameter?: number
   showFilters = false
   refreshActivePending = false
@@ -69,18 +69,18 @@ export class SessionDashboardComponent implements OnInit {
   
   constructor(
     public dataService: DataService,
-    private systemConfigurationService: SystemConfigurationService,
     private conformanceService: ConformanceService,
     private reportService: ReportService,
     private confirmationDialogService: ConfirmationDialogService,
     private testService: TestService,
     private popupService: PopupService,
     private route: ActivatedRoute,
-    private diagramLoaderService: DiagramLoaderService
+    private diagramLoaderService: DiagramLoaderService,
+    private routingService: RoutingService
   ) { }
 
   ngOnInit(): void {
-    const sessionIdValue = this.route.snapshot.queryParamMap.get('sessionId')
+    const sessionIdValue = this.route.snapshot.queryParamMap.get(Constants.NAVIGATION_QUERY_PARAM.TEST_SESSION_ID)
     if (sessionIdValue != undefined) {
       this.sessionIdToShow = sessionIdValue
     }
@@ -111,23 +111,8 @@ export class SessionDashboardComponent implements OnInit {
     if (this.dataService.isSystemAdmin) {
       this.filterState.filters.push(Constants.FILTER_TYPE.COMMUNITY)
     }
-    if (this.dataService.isSystemAdmin) {
-      this.systemConfigurationService.getSessionAliveTime().subscribe((data) => {
-        this.ttlEnabled = data.parameter != undefined
-        if (this.ttlEnabled) {
-          this.prevParameter = parseInt(data.parameter!)
-        }
-      })
-    }
+    this.routingService.sessionDashboardBreadcrumbs()
     this.applyFilters()
-  }
-
-  ttlToggled() {
-    if (this.ttlEnabled) {
-      this.dataService.focus('parameter')
-    } else {
-      this.turnOff()    
-    }
   }
 
   setFilterRefreshState() {
@@ -138,7 +123,7 @@ export class SessionDashboardComponent implements OnInit {
     let searchCriteria: TestResultSearchCriteria = {}
     if (this.dataService.isCommunityAdmin) {
       searchCriteria.communityIds = [this.dataService.community!.id]
-      if (this.dataService.community?.domain !== undefined) {
+      if (this.dataService.community?.domain != undefined) {
         searchCriteria.domainIds = [this.dataService.community.domain.id]
       }
     }
@@ -148,7 +133,7 @@ export class SessionDashboardComponent implements OnInit {
     }
     if (filterData) {
       if (this.dataService.isCommunityAdmin) {
-        if (this.dataService.community!.domain === undefined) {
+        if (this.dataService.community!.domain == undefined) {
           searchCriteria.domainIds = filterData[Constants.FILTER_TYPE.DOMAIN]
         }
       } else {
@@ -233,6 +218,7 @@ export class SessionDashboardComponent implements OnInit {
     const result: Partial<TestResultForDisplay> = {
       session: testResult.result.sessionId,
       domain: testResult.domain?.sname,
+      domainId: testResult.domain?.id,
       specification: testResult.specification?.sname,
       actor: testResult.actor?.name,
       testSuite: testResult.testSuite?.sname,
@@ -273,6 +259,7 @@ export class SessionDashboardComponent implements OnInit {
 
   private newTestResultForDisplay(testResult: TestResultReport, completed: boolean) {
     const result: TestResultForDisplay = this.newTestResult(testResult, completed)
+    result.testSuiteId = testResult.testSuite?.id
     result.testCaseId = testResult.test?.id
     if (this.sessionIdToShow != undefined && this.sessionIdToShow == testResult.result.sessionId) {
       // We have been asked to open a session. Set it as expand and keep it once.
@@ -295,7 +282,7 @@ export class SessionDashboardComponent implements OnInit {
   }
 
   stopAll() {
-    this.confirmationDialogService.confirmed('Confirm delete', 'Are you certain you want to terminate all active sessions?', 'Yes', 'No')
+    this.confirmationDialogService.confirmedDangerous('Confirm termination', 'Are you certain you want to terminate all active sessions?', 'Terminate', 'Cancel')
     .subscribe(() => {
       let result: Observable<void>
       if (this.dataService.isSystemAdmin) {
@@ -314,7 +301,7 @@ export class SessionDashboardComponent implements OnInit {
   }
 
   stopSession(session: TestResultForDisplay) {
-    this.confirmationDialogService.confirmed('Confirm delete', 'Are you certain you want to terminate this session?', 'Yes', 'No')
+    this.confirmationDialogService.confirmedDangerous('Confirm termination', 'Are you certain you want to terminate this session?', 'Terminate', 'Cancel')
     .subscribe(() => {
       session.deletePending = true
       this.testService.stop(session.session)
@@ -372,30 +359,8 @@ export class SessionDashboardComponent implements OnInit {
     }
   }
 
-  turnOff() {
-    if (this.prevParameter !== undefined) {
-      this.systemConfigurationService.updateSessionAliveTime()
-      .subscribe(() => {
-        this.prevParameter = undefined
-        this.popupService.success('Automatic session termination disabled.')
-      })
-    }
-  }
-
-  apply() {
-    if (this.prevParameter !== undefined) {
-      this.systemConfigurationService.updateSessionAliveTime(this.prevParameter)
-      .subscribe(() => {
-        this.popupService.success('Maximum session time set to '+this.prevParameter+' seconds.')
-      })
-    } else {
-      this.turnOff()
-      this.ttlEnabled = false
-    }
-  }
-
   exportVisible(session: TestResultForDisplay) {
-    return session.obsolete === undefined || !session.obsolete
+    return session.obsolete == undefined || !session.obsolete
   }
 
   onReportExportPdf(testResult: TestResultForDisplay) {
@@ -435,21 +400,34 @@ export class SessionDashboardComponent implements OnInit {
     const params = this.getCurrentSearchCriteria()
     this.reportService.getCompletedTestResults(1, 1000000, params, true)
     .subscribe((data) => {
-      const headers = ['Session', this.dataService.labelDomain(), this.dataService.labelSpecification(), this.dataService.labelActor(), 'Test suite', 'Test case', this.dataService.labelOrganisation(), this.dataService.labelSystem(), 'Start time', 'End time', 'Result', 'Obsolete']
+      const fields: FieldInfo[] = [
+        { header: 'Session', field: 'session' },
+        { header: this.dataService.labelDomain(), field: 'domain' },
+        { header: this.dataService.labelSpecification(), field: 'specification' },
+        { header: this.dataService.labelActor(), field: 'actor' },
+        { header: 'Test suite', field: 'testSuite' },
+        { header: 'Test case', field: 'testCase' },
+        { header: this.dataService.labelOrganisation(), field: 'organization' },
+        { header: this.dataService.labelSystem(), field: 'system' },
+        { header: 'Start time', field: 'startTime' },
+        { header: 'End time', field: 'endTime' },
+        { header: 'Result', field: 'result' },
+        { header: 'Obsolete', field: 'obsolete' }
+      ]
       if (data.orgParameters !== undefined) {
         for (let param of data.orgParameters) {
-          headers.push(this.dataService.labelOrganisation() + ' ('+param+')')
+          fields.push({ header: this.dataService.labelOrganisation() + ' ('+param+')', field: 'organization_'+param})
         }
       }
       if (data.sysParameters !== undefined) {
         for (let param of data.sysParameters) {
-          headers.push(this.dataService.labelSystem() + ' ('+param+')')
+          fields.push({ header: this.dataService.labelSystem() + ' ('+param+')', field: 'system_'+param})
         }
       }
       const tests = map(data.data, (testResult) => {
         return this.newTestResultForExport(testResult, true, data.orgParameters, data.sysParameters)
       })
-      this.dataService.exportAllAsCsv(headers, tests)
+      this.dataService.exportAllAsCsv(fields, tests)
     }).add(() => {
       this.exportCompletedPending = false
     })
@@ -460,21 +438,31 @@ export class SessionDashboardComponent implements OnInit {
     const params = this.getCurrentSearchCriteria()
     this.reportService.getActiveTestResults(params, true)
     .subscribe((data) => {
-      const headers = ['Session', this.dataService.labelDomain(), this.dataService.labelSpecification(), this.dataService.labelActor(), 'Test suite', 'Test case', this.dataService.labelOrganisation(), this.dataService.labelSystem(), 'Start time', 'End time', 'Result', 'Obsolete']
+      const fields: FieldInfo[] = [
+        { header: 'Session', field: 'session' },
+        { header: this.dataService.labelDomain(), field: 'domain' },
+        { header: this.dataService.labelSpecification(), field: 'specification' },
+        { header: this.dataService.labelActor(), field: 'actor' },
+        { header: 'Test suite', field: 'testSuite' },
+        { header: 'Test case', field: 'testCase' },
+        { header: this.dataService.labelOrganisation(), field: 'organization' },
+        { header: this.dataService.labelSystem(), field: 'system' },
+        { header: 'Start time', field: 'startTime' }
+      ]
       if (data.orgParameters !== undefined) {
         for (let param of data.orgParameters) {
-          headers.push(this.dataService.labelOrganisation() + ' ('+param+')')
+          fields.push({ header: this.dataService.labelOrganisation() + ' ('+param+')', field: 'organization_'+param})
         }
       }
       if (data.sysParameters !== undefined) {
         for (let param of data.sysParameters) {
-          headers.push(this.dataService.labelSystem() + ' ('+param+')')
+          fields.push({ header: this.dataService.labelSystem() + ' ('+param+')', field: 'system_'+param})
         }
       }
       const tests = map(data.data, (testResult) => {
         return this.newTestResultForExport(testResult, false, data.orgParameters, data.sysParameters)
       })
-      this.dataService.exportAllAsCsv(headers, tests)
+      this.dataService.exportAllAsCsv(fields, tests)
     }).add(() => {
       this.exportActivePending = false
     })
@@ -489,7 +477,7 @@ export class SessionDashboardComponent implements OnInit {
   }
 
   deleteObsolete() {
-    this.confirmationDialogService.confirmed('Confirm delete', 'Are you sure you want to delete all obsolete test results?', 'Yes', 'No')
+    this.confirmationDialogService.confirmedDangerous('Confirm delete', 'Are you sure you want to delete all obsolete test results?', 'Delete', 'Cancel')
     .subscribe(() => {
       this.deletePending = true
       let result: Observable<any>
@@ -547,7 +535,7 @@ export class SessionDashboardComponent implements OnInit {
     } else {
       msg = 'Are you sure you want to delete the selected test results?'
     }
-    const dialog = this.confirmationDialogService.confirmed('Confirm delete', msg, 'Yes', 'No')
+    const dialog = this.confirmationDialogService.confirmedDangerous('Confirm delete', msg, 'Delete', 'Cancel')
     .subscribe(() => {
       this.deleteSessionsPending = true
       this.conformanceService.deleteTestResults(testsToDelete)

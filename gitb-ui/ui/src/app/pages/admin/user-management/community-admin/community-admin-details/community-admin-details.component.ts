@@ -8,6 +8,8 @@ import { RoutingService } from 'src/app/services/routing.service';
 import { UserService } from 'src/app/services/user.service';
 import { User } from 'src/app/types/user.type';
 import { CommunityTab } from '../../community/community-details/community-tab.enum';
+import { Constants } from 'src/app/common/constants';
+import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
 
 @Component({
   selector: 'app-community-admin-details',
@@ -41,14 +43,15 @@ export class CommunityAdminDetailsComponent extends BaseComponent implements OnI
   }
 
   ngOnInit(): void {
-    this.communityId = Number(this.route.snapshot.paramMap.get('community_id'))
-    this.userId = Number(this.route.snapshot.paramMap.get('admin_id'))
+    this.communityId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID))
+    this.userId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.USER_ID))
     this.disableDeleteButton = Number(this.dataService.user!.id) == Number(this.userId)
     this.userService.getUserById(this.userId)
     .subscribe((data) => {
-      this.user = data
+      this.user = data!
       this.user.ssoStatusText = this.dataService.userStatus(this.user.ssoStatus)
       this.user.roleText = this.Constants.USER_ROLE_LABEL[this.user.role!]
+      this.routingService.communityAdminBreadcrumbs(this.communityId, this.userId, this.dataService.userDisplayName(this.user))
     })
   }
 
@@ -68,6 +71,7 @@ export class CommunityAdminDetailsComponent extends BaseComponent implements OnI
       .subscribe(() => {
         this.cancelDetailAdmin()
         this.popupService.success('Administrator updated')
+        this.dataService.breadcrumbUpdate({ id: this.userId, type: BreadcrumbType.communityAdmin, label: this.dataService.userDisplayName(this.user)})
       }).add(() => {
         this.savePending = false
       })
@@ -75,7 +79,7 @@ export class CommunityAdminDetailsComponent extends BaseComponent implements OnI
   }
 
   deleteAdmin() {
-    this.confirmationDialogService.confirmed("Confirm delete", "Are you sure you want to delete this administrator?", "Yes", "No")
+    this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this administrator?", "Delete", "Cancel")
     .subscribe(() => {
       this.deletePending = true
       this.userService.deleteAdmin(this.userId)

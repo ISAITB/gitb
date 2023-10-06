@@ -73,67 +73,63 @@ export class CreateEditDomainParameterModalComponent extends BaseComponent imple
     return this.textProvided(this.domainParameter.name) && this.domainParameter.kind != undefined && (
       (this.domainParameter.kind == 'SIMPLE' && this.textProvided(this.domainParameter.value)) ||
       (this.domainParameter.kind == 'BINARY' && (this.formData.file != undefined || (this.domainParameter.id != undefined && this.initialFileName != undefined))) ||
-      (this.domainParameter.kind == 'HIDDEN' && (!this.formData.updateValue || (this.textProvided(this.formData.hiddenValue) && this.textProvided(this.formData.hiddenValueRepeat))))
+      (this.domainParameter.kind == 'HIDDEN' && (!this.formData.updateValue || this.textProvided(this.formData.hiddenValue)))
     )
   }
 
   save() {
     this.clearAlerts()
-    if (this.domainParameter.kind == 'HIDDEN' && this.formData.hiddenValue != this.formData.hiddenValueRepeat) {
-      this.addAlertError('The provided values must match.')
-    } else {
-      if (this.saveAllowed()) {
-        if (!Constants.VARIABLE_NAME_REGEX.test(this.domainParameter.name!)) {
-          this.addAlertError('The provided name is invalid. A parameter name must begin with a character followed by zero or more characters, digits, or one of [\'.\', \'_\', \'-\'].')
-        } else {
-          this.pending = true
-          this.savePending = true
-          if (this.domainParameter.id != undefined) {
-            // Update
-            let valueToSave: string|File|undefined
-            if (this.domainParameter.kind == 'HIDDEN' && this.formData.updateValue) {
-              valueToSave = this.formData.hiddenValue!
-            } else if (this.domainParameter.kind == 'BINARY' && this.formData.file != undefined) {
-              valueToSave = this.formData.file
-            } else if (this.domainParameter.kind == 'SIMPLE') {
-              valueToSave = this.domainParameter.value!
-            }
-            this.conformanceService.updateDomainParameter(this.domainParameter.id, this.domainParameter.name!, this.domainParameter.description, valueToSave, this.domainParameter.kind!, this.domainParameter.inTests, this.domainId)
-            .subscribe(() => {
-            }).add(() => {
-              this.pending = false
-              this.savePending = false
-              this.parametersUpdated.emit(true)
-              this.modalInstance.hide()
-              this.popupService.success('Parameter updated.')
-            })
-          } else {
-            // Create
-            let valueToSave: string|File
-            if (this.domainParameter.kind == 'HIDDEN') {
-              valueToSave = this.formData.hiddenValue!
-            } else if (this.domainParameter.kind == 'BINARY') {
-              valueToSave = this.formData.file!
-            } else {
-              valueToSave = this.domainParameter.value!
-            }
-            this.conformanceService.createDomainParameter(this.domainParameter.name!, this.domainParameter.description, valueToSave, this.domainParameter.kind!, this.domainParameter.inTests, this.domainId)
-            .subscribe(() => {
-              this.parametersUpdated.emit(true)
-              this.modalInstance.hide()
-              this.popupService.success('Parameter created.')
-            }).add(() => {
-              this.pending = false
-              this.savePending = false
-            })
+    if (this.saveAllowed()) {
+      if (!Constants.VARIABLE_NAME_REGEX.test(this.domainParameter.name!)) {
+        this.addAlertError('The provided name is invalid. A parameter name must begin with a character followed by zero or more characters, digits, or one of [\'.\', \'_\', \'-\'].')
+      } else {
+        this.pending = true
+        this.savePending = true
+        if (this.domainParameter.id != undefined) {
+          // Update
+          let valueToSave: string|File|undefined
+          if (this.domainParameter.kind == 'HIDDEN' && this.formData.updateValue) {
+            valueToSave = this.formData.hiddenValue!
+          } else if (this.domainParameter.kind == 'BINARY' && this.formData.file != undefined) {
+            valueToSave = this.formData.file
+          } else if (this.domainParameter.kind == 'SIMPLE') {
+            valueToSave = this.domainParameter.value!
           }
+          this.conformanceService.updateDomainParameter(this.domainParameter.id, this.domainParameter.name!, this.domainParameter.description, valueToSave, this.domainParameter.kind!, this.domainParameter.inTests, this.domainId)
+          .subscribe(() => {
+          }).add(() => {
+            this.pending = false
+            this.savePending = false
+            this.parametersUpdated.emit(true)
+            this.modalInstance.hide()
+            this.popupService.success('Parameter updated.')
+          })
+        } else {
+          // Create
+          let valueToSave: string|File
+          if (this.domainParameter.kind == 'HIDDEN') {
+            valueToSave = this.formData.hiddenValue!
+          } else if (this.domainParameter.kind == 'BINARY') {
+            valueToSave = this.formData.file!
+          } else {
+            valueToSave = this.domainParameter.value!
+          }
+          this.conformanceService.createDomainParameter(this.domainParameter.name!, this.domainParameter.description, valueToSave, this.domainParameter.kind!, this.domainParameter.inTests, this.domainId)
+          .subscribe(() => {
+            this.parametersUpdated.emit(true)
+            this.modalInstance.hide()
+            this.popupService.success('Parameter created.')
+          }).add(() => {
+            this.pending = false
+            this.savePending = false
+          })
         }
       }
     }
   }
 
   delete() {
-    this.confirmationDialogService.confirmed("Confirm delete", "Are you sure you want to delete this parameter?", "Yes", "No")
+    this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this parameter?", "Delete", "Cancel")
     .subscribe(() => {
       this.pending = true
       this.deletePending = true

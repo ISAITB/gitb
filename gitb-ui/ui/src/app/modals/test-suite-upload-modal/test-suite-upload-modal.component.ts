@@ -13,7 +13,6 @@ import { PendingTestSuiteUploadChoice } from './pending-test-suite-upload-choice
 import { SpecificationChoice } from './specification-choice';
 import { SpecificationResult } from './specification-result';
 import { TestSuiteUploadResult } from './test-suite-upload-result';
-import { TestSuiteUploadTestCase } from './test-suite-upload-test-case';
 import { TestSuiteUploadTestCaseChoice } from './test-suite-upload-test-case-choice';
 import { ValidationReport } from './validation-report';
 import { find } from 'lodash';
@@ -77,7 +76,7 @@ export class TestSuiteUploadModalComponent implements OnInit {
   }
 
   proceedDisabled() {
-    return this.hasValidationErrors || this.actionPending || this.actionProceedPending || !(this.file != undefined && (this.specifications.length > 0 || this.sharedTestSuite)) || (this.step == 'replace' && !this.hasChoicesToComplete)
+    return this.hasValidationErrors || this.actionPending || this.actionProceedPending || !(this.file != undefined && (this.specifications.length > 0 || this.sharedTestSuite)) || (this.step == 'replace' && (this.specificationChoices != undefined && this.specificationChoices.length > 0 && !this.hasChoicesToComplete))
   }
 
   parseValidationReport() {
@@ -136,8 +135,8 @@ export class TestSuiteUploadModalComponent implements OnInit {
           const testCaseInfo = {
             identifier: testCase.identifier,
             name: testCase.name,
-            updateDefinition: false,
-            resetTestHistory: false
+            updateDefinition: testCase.updateMetadata,
+            resetTestHistory: testCase.resetTestHistory
           }
           if (testCase.status == Constants.TEST_CASE_UPLOAD_MATCH.IN_ARCHIVE_AND_DB) {
             testCasesInArchiveAndDB.push(testCaseInfo)
@@ -157,9 +156,9 @@ export class TestSuiteUploadModalComponent implements OnInit {
           const specData: SpecificationChoice = {
             specification: spec.id,
             name: spec.fname,
-            updateActors: false,
+            updateActors: this.uploadResult!.updateSpecification,
             sharedTestSuite: true,
-            updateTestSuite: false,
+            updateTestSuite: this.uploadResult!.updateMetadata,
             skipUpdate: false,
             dataExists: true,
             testSuiteExists: existingTestSuite,
@@ -171,6 +170,7 @@ export class TestSuiteUploadModalComponent implements OnInit {
           this.specificationChoiceMap[spec.id] = specData        
         }
       }
+      this.updateTestSuiteMetadata = this.uploadResult!.updateMetadata
     } else {
       // Specification related choices
       const matchingDataMap: {[key: number]: number} = {}
@@ -193,8 +193,8 @@ export class TestSuiteUploadModalComponent implements OnInit {
               const testCaseInfo = {
                 identifier: testCase.identifier,
                 name: testCase.name,
-                updateDefinition: false,
-                resetTestHistory: false
+                updateDefinition: testCase.updateMetadata,
+                resetTestHistory: testCase.resetTestHistory
               }
               if (testCase.status == Constants.TEST_CASE_UPLOAD_MATCH.IN_ARCHIVE_AND_DB) {
                 testCasesInArchiveAndDB.push(testCaseInfo)
@@ -208,9 +208,9 @@ export class TestSuiteUploadModalComponent implements OnInit {
           const specData: SpecificationChoice = {
             specification: spec.id,
             name: spec.fname,
-            updateActors: false,
+            updateActors: this.uploadResult!.updateSpecification,
             sharedTestSuite: existingTestSuiteIsShared,
-            updateTestSuite: false,
+            updateTestSuite: this.uploadResult!.updateMetadata,
             skipUpdate: false,
             dataExists: existingData,
             testSuiteExists: existingTestSuite,
@@ -224,19 +224,6 @@ export class TestSuiteUploadModalComponent implements OnInit {
       }
     }
     this.hasMultipleChoices = this.specificationChoices.length > 1
-  }
-
-  toTestCaseChoices(testCases: TestSuiteUploadTestCase[]): TestSuiteUploadTestCaseChoice[] {
-    const choices: TestSuiteUploadTestCaseChoice[] = []
-    for (let testCase of testCases) {
-      choices.push({
-        identifier: testCase.identifier,
-        name: testCase.name,
-        updateDefinition: false,
-        resetTestHistory: false
-      })
-    }
-    return choices
   }
 
   specificationIds() {
@@ -360,7 +347,7 @@ export class TestSuiteUploadModalComponent implements OnInit {
     }
     const resolve$ = new Observable<boolean>((subscriber) => {
       if (hasDropHistory) {
-        this.confirmationDialogService.confirm("Confirm test history reset", "Resetting the testing history will render the selected test cases' existing tests obsolete. Are you sure you want to proceed?", "Yes", "No")
+        this.confirmationDialogService.confirmDangerous("Confirm test history reset", "Resetting the testing history will render the selected test cases' existing tests obsolete. Are you sure you want to proceed?", "Reset history", "Cancel")
         .subscribe((choice: boolean) => {
           subscriber.next(choice)
           subscriber.complete()

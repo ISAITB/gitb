@@ -5,7 +5,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.Version;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.fasterxml.jackson.module.jaxb.JaxbAnnotationModule;
+import com.fasterxml.jackson.module.jakarta.xmlbind.JakartaXmlBindAnnotationModule;
 import com.gitb.core.Actor;
 import com.gitb.core.StepStatus;
 import com.gitb.core.TestCaseType;
@@ -15,13 +15,12 @@ import com.gitb.tbs.InteractWithUsersRequest;
 import com.gitb.tbs.TestStepStatus;
 import com.gitb.tpl.*;
 import com.gitb.tr.*;
+import jakarta.xml.bind.JAXBElement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.xml.bind.JAXBElement;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.util.function.BiConsumer;
 
 /**
  * A Jackson wrapper for converting JAVA objects into JSON and vice versa
@@ -39,8 +38,7 @@ public class JacksonUtil {
         mapper.setDateFormat(new SimpleDateFormat("yyyy-MM-dd HH:mm"));
 
         //register JAXBAnnotation module
-        JaxbAnnotationModule module = new JaxbAnnotationModule();
-        mapper.registerModule(module);
+        mapper.registerModule(new JakartaXmlBindAnnotationModule());
 
         //register custom module for enum serializations
         SimpleModule customSerializersModule = new SimpleModule("CustomSerializersModule", new Version(1, 0, 0, null, null, null));
@@ -192,8 +190,7 @@ public class JacksonUtil {
 
             json.writeArrayFieldStart("interactions");
             for(Object ior : value.getInteraction().getInstructionOrRequest()){
-                if(ior instanceof InputRequest) {
-                    InputRequest inputRequest = (InputRequest) ior;
+                if(ior instanceof InputRequest inputRequest) {
                     json.writeStartObject();
                     json.writeStringField("type", "request");
                     if(inputRequest.getId() != null) {
@@ -233,8 +230,7 @@ public class JacksonUtil {
                         json.writeStringField("mimeType", inputRequest.getMimeType());
                     }
                     json.writeEndObject();
-                } else if (ior instanceof com.gitb.tbs.Instruction) {
-                    com.gitb.tbs.Instruction instruction = (com.gitb.tbs.Instruction) ior;
+                } else if (ior instanceof com.gitb.tbs.Instruction instruction) {
                     json.writeStartObject();
                     json.writeStringField("type", "instruction");
                     if(instruction.getId() != null) {
@@ -263,6 +259,9 @@ public class JacksonUtil {
                     }
                     if (instruction.getMimeType() != null) {
                         json.writeStringField("mimeType", instruction.getMimeType());
+                    }
+                    if (instruction.isForceDisplay()) {
+                        json.writeBooleanField("forceDisplay", instruction.isForceDisplay());
                     }
                     json.writeEndObject();
                 }

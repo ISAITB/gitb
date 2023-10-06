@@ -1,9 +1,10 @@
 package managers
 
-import models.{Actors, Constants, Endpoints, SpecificationGroups, Specifications}
+import models.Enums.TestResultStatus
+import models.{Actors, Badges, Constants, Endpoints, SpecificationGroups, Specifications}
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
-import utils.CryptoUtil
+import utils.{CryptoUtil, RepositoryUtils}
 
 import javax.inject.{Inject, Singleton}
 import scala.collection.mutable
@@ -11,9 +12,50 @@ import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
-class SpecificationManager @Inject() (testResultManager: TestResultManager, conformanceManager: ConformanceManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils, testSuiteManager: TestSuiteManager, actorManager: ActorManager, testResultManager: TestResultManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
+
+  def deleteSpecificationByDomain(domainId: Long, onSuccessCalls: mutable.ListBuffer[() => _]) = {
+    val action = (for {
+      ids <- PersistenceSchema.specifications.filter(_.domain === domainId).map(_.id).result
+      _ <- DBIO.seq(ids.map(id => deleteSpecificationInternal(id, onSuccessCalls)): _*)
+    } yield ()).transactionally
+    action
+  }
+
+  def deleteSpecification(specId: Long) = {
+    val onSuccessCalls = mutable.ListBuffer[() => _]()
+    val action = deleteSpecificationInternal(specId, onSuccessCalls)
+    exec(dbActionFinalisation(Some(onSuccessCalls), None, action).transactionally)
+  }
+
+  def deleteSpecificationInternal(specId: Long, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
+    for {
+      _ <- testResultManager.updateForDeletedSpecification(specId)
+      // Delete also actors from the domain (they are now linked only to specifications
+      actorIds <- PersistenceSchema.specificationHasActors.filter(_.specId === specId).map(_.actorId).result
+      _ <- DBIO.seq(actorIds.map(id => actorManager.deleteActor(id, onSuccessCalls)): _*)
+      _ <- PersistenceSchema.specificationHasActors.filter(_.specId === specId).delete
+      testSuiteIds <- {
+        PersistenceSchema.specificationHasTestSuites
+          .join(PersistenceSchema.testSuites).on(_.testSuiteId === _.id)
+          .filter(_._1.specId === specId)
+          .filter(_._2.shared =!= true) // We must keep shared test suites.
+          .map(_._2.id)
+          .result
+      }
+      _ <- DBIO.seq(testSuiteIds.map(id => testSuiteManager.undeployTestSuite(id, onSuccessCalls)): _*)
+      _ <- PersistenceSchema.specificationHasTestSuites.filter(_.specId === specId).delete
+      _ <- PersistenceSchema.conformanceSnapshotResults.filter(_.specificationId === specId).map(_.specificationId).update(specId * -1)
+      _ <- PersistenceSchema.conformanceResults.filter(_.spec === specId).delete
+      _ <- PersistenceSchema.specifications.filter(_.id === specId).delete
+      _ <- {
+        onSuccessCalls += (() => repositoryUtils.deleteSpecificationBadges(specId))
+        DBIO.successful(())
+      }
+    } yield ()
+  }
 
   def getSpecificationGroups(domainId: Long): List[SpecificationGroups] = {
     getSpecificationGroupsByDomainIds(Some(List(domainId)))
@@ -157,7 +199,7 @@ class SpecificationManager @Inject() (testResultManager: TestResultManager, conf
         if (specificationsToDelete.nonEmpty) {
           val actions = ListBuffer[DBIO[_]]()
           specificationsToDelete.foreach { specification =>
-            conformanceManager.deleteSpecificationInternal(specification, onSuccessCalls)
+            actions += deleteSpecificationInternal(specification, onSuccessCalls)
           }
           toDBIO(actions)
         } else {
@@ -171,6 +213,7 @@ class SpecificationManager @Inject() (testResultManager: TestResultManager, conf
           // There may be linked specifications to the group.
           actions += PersistenceSchema.specifications.filter(_.group === groupId).map(x => (x.group, x.displayOrder)).update(None, 0)
         }
+        actions += PersistenceSchema.conformanceSnapshotResults.filter(_.specificationGroupId === groupId).map(_.specificationGroupId).update(Some(groupId * -1))
         actions += PersistenceSchema.specificationGroups.filter(_.id === groupId).delete
         toDBIO(actions)
       }
@@ -187,8 +230,7 @@ class SpecificationManager @Inject() (testResultManager: TestResultManager, conf
   }
 
   def getSpecificationById(specId: Long): Specifications = {
-    val spec = exec(PersistenceSchema.specifications.filter(_.id === specId).result.head)
-    spec
+    getSpecificationsById(List(specId)).head
   }
 
   def getSpecificationsById(specIds: List[Long]): List[Specifications] = {
@@ -234,7 +276,7 @@ class SpecificationManager @Inject() (testResultManager: TestResultManager, conf
     } yield idsToReturn)
   }
 
-  def updateSpecificationInternal(specId: Long, sname: String, fname: String, descr: Option[String], hidden:Boolean, apiKey: Option[String], checkApiKeyUniqueness: Boolean, groupId: Option[Long], displayOrder: Option[Short]): DBIO[_] = {
+  def updateSpecificationInternal(specId: Long, sname: String, fname: String, descr: Option[String], hidden:Boolean, apiKey: Option[String], checkApiKeyUniqueness: Boolean, groupId: Option[Long], displayOrder: Option[Short], badges: Option[Badges], onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
     for {
       _ <- {
         val q = for {s <- PersistenceSchema.specifications if s.id === specId} yield (s.shortname, s.fullname, s.description, s.hidden, s.group)
@@ -263,11 +305,39 @@ class SpecificationManager @Inject() (testResultManager: TestResultManager, conf
           DBIO.successful(())
         }
       }
+      _ <- {
+        if (badges.isDefined) {
+          onSuccessCalls += (() => updateSpecificationBadges(specId, badges.get))
+        }
+        DBIO.successful(())
+      }
     } yield ()
   }
 
-  def updateSpecification(specId: Long, sname: String, fname: String, descr: Option[String], hidden:Boolean, groupId: Option[Long]) = {
-    exec(updateSpecificationInternal(specId, sname, fname, descr, hidden, None, checkApiKeyUniqueness = false, groupId, None).transactionally)
+  private def updateSpecificationBadges(specId: Long, badges: Badges): Unit = {
+    // We can either have no badges or at least the success and other ones.
+    if ((!badges.hasSuccess && !badges.hasOther && !badges.hasFailure) || (badges.hasSuccess && badges.hasOther)) {
+      // Delete previous or removed files.
+      if (!badges.hasSuccess && !badges.hasOther && !badges.hasFailure) {
+        repositoryUtils.deleteSpecificationBadges(specId)
+      } else if (!badges.hasSuccess || badges.success.isDefined) {
+        repositoryUtils.deleteSpecificationBadge(specId, TestResultStatus.SUCCESS.toString)
+      } else if (!badges.hasOther || badges.other.isDefined) {
+        repositoryUtils.deleteSpecificationBadge(specId, TestResultStatus.UNDEFINED.toString)
+      } else if (!badges.hasFailure || badges.failure.isDefined) {
+        repositoryUtils.deleteSpecificationBadge(specId, TestResultStatus.FAILURE.toString)
+      }
+      // Add new files.
+      if (badges.success.isDefined) repositoryUtils.setSpecificationBadge(specId, badges.success.get, TestResultStatus.SUCCESS.toString)
+      if (badges.other.isDefined) repositoryUtils.setSpecificationBadge(specId, badges.other.get, TestResultStatus.UNDEFINED.toString)
+      if (badges.failure.isDefined) repositoryUtils.setSpecificationBadge(specId, badges.failure.get, TestResultStatus.FAILURE.toString)
+    }
+  }
+
+  def updateSpecification(specId: Long, sname: String, fname: String, descr: Option[String], hidden:Boolean, groupId: Option[Long], badges: Option[Badges]) = {
+    val onSuccessCalls = mutable.ListBuffer[() => _]()
+    val dbAction = updateSpecificationInternal(specId, sname, fname, descr, hidden, None, checkApiKeyUniqueness = false, groupId, None, badges, onSuccessCalls)
+    exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
   }
 
   def getSpecificationIdOfActor(actorId: Long) = {
@@ -304,4 +374,96 @@ class SpecificationManager @Inject() (testResultManager: TestResultManager, conf
       PersistenceSchema.specificationGroups.filter(_.domain === domainId).map(_.displayOrder).update(0)
     )
   }
+
+  private def mergeSpecsWithGroups(data: Seq[(Specifications, Option[SpecificationGroups])]): Seq[Specifications] = {
+    data.map { specData =>
+      if (specData._2.isEmpty) {
+        specData._1
+      } else {
+        specData._1.withGroupNames(specData._2.get.shortname, specData._2.get.fullname)
+      }
+    }.sortBy(_.shortname)
+  }
+
+  def getSpecifications(ids: Option[Iterable[Long]] = None, domainIds: Option[List[Long]] = None, groupIds: Option[List[Long]] = None, withGroups: Boolean = false): Seq[Specifications] = {
+    val specs = if (withGroups) {
+      val specData = exec(
+        PersistenceSchema.specifications
+          .joinLeft(PersistenceSchema.specificationGroups).on(_.group === _.id)
+          .filterOpt(ids)((q, ids) => q._1.id inSet ids)
+          .filterOpt(domainIds)((q, domainIds) => q._1.domain inSet domainIds)
+          .filterOpt(groupIds)((q, groupIds) => q._1.group inSet groupIds)
+          .map(x => (x._1, x._2))
+          .result
+      )
+      mergeSpecsWithGroups(specData)
+    } else {
+      exec(
+        PersistenceSchema.specifications
+          .filterOpt(ids)((q, ids) => q.id inSet ids)
+          .filterOpt(domainIds)((q, domainIds) => q.domain inSet domainIds)
+          .filterOpt(groupIds)((q, groupIds) => q.group inSet groupIds)
+          .sortBy(_.shortname.asc)
+          .result
+          .map(_.toList)
+      )
+    }
+    specs
+  }
+
+  def getSpecifications(domain: Long, withGroups: Boolean): Seq[Specifications] = {
+    val specs = if (withGroups) {
+      val specData = exec(
+        PersistenceSchema.specifications
+          .joinLeft(PersistenceSchema.specificationGroups).on(_.group === _.id)
+          .filter(_._1.domain === domain)
+          .map(x => (x._1, x._2))
+          .result
+      )
+      mergeSpecsWithGroups(specData)
+    } else {
+      exec(
+        PersistenceSchema.specifications
+          .filter(_.domain === domain)
+          .sortBy(_.shortname.asc)
+          .result
+      )
+    }
+    specs
+  }
+
+  def getSpecificationsLinkedToTestSuite(testSuiteId: Long): Seq[Specifications] = {
+    val specificationIds = exec(
+      PersistenceSchema.specificationHasTestSuites.filter(_.testSuiteId === testSuiteId).map(_.specId).result
+    )
+    getSpecifications(Some(specificationIds), None, withGroups = true)
+  }
+
+  def createSpecificationsInternal(specification: Specifications, checkApiKeyUniqueness: Boolean, badges: Option[Badges], onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[Long] = {
+    for {
+      replaceApiKey <- if (checkApiKeyUniqueness) {
+        PersistenceSchema.specifications.filter(_.apiKey === specification.apiKey).exists.result
+      } else {
+        DBIO.successful(false)
+      }
+      newSpecId <- {
+        val specToUse = if (replaceApiKey) specification.withApiKey(CryptoUtil.generateApiKey()) else specification
+        PersistenceSchema.specifications.returning(PersistenceSchema.specifications.map(_.id)) += specToUse
+      }
+      _ <- {
+        if (badges.isDefined) {
+          onSuccessCalls += (() => updateSpecificationBadges(newSpecId, badges.get))
+        }
+        DBIO.successful(())
+      }
+    } yield newSpecId
+  }
+
+  def createSpecifications(specification: Specifications, badges: Option[Badges]): Long = {
+    val onSuccessCalls = mutable.ListBuffer[() => _]()
+    val dbAction = createSpecificationsInternal(specification, checkApiKeyUniqueness = false, badges, onSuccessCalls)
+    exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
+  }
+
+
 }

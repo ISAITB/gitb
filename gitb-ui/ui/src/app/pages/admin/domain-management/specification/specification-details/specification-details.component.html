@@ -5,30 +5,29 @@
 		</div>
 		<form class="form-horizontal">
 			<div class="panel-body">
-				<div class="row">
-					<div class="col-md-10 col-md-offset-1">
-                        <app-specification-form [specification]="specification"></app-specification-form>
-                    </div>
-				</div>
+				<app-specification-form [specification]="specification"></app-specification-form>
 			</div>
-			<div class="panel-footer">
+			<div class="panel-footer button-container">
 				<div class="btn-toolbar">
 					<button (click)="saveSpecificationChanges()" type="submit" class="btn btn-default" [disable]="deletePending || saveDisabled()" [pending]="savePending">Save changes</button>
-					<button (click)="deleteSpecification()" type="button" class="btn btn-default" [pending]="deletePending" [disable]="savePending">Delete</button>
 					<button (click)="back()" type="button" class="btn btn-default">Back</button>
+				</div>
+				<div class="btn-toolbar btn-toolbar-delete">
+					<button (click)="deleteSpecification()" type="button" class="btn btn-default btn-delete" [pending]="deletePending" [disable]="savePending">Delete</button>
 				</div>
 			</div>
 		</form>
 	</div>
 	<div>
 		<tabset #tabs>
-			<tab heading="Test suites" (selectTab)="loadTestSuites()">
+			<tab (selectTab)="loadTestSuites()" customClass="tabClass">
+                <ng-template tabHeading><app-tab-title icon="fa-solid fa-box-archive" text="Test suites"></app-tab-title></ng-template>
 				<div class="tabPanel">
 					<div class="tabControls">
 						<div class="btn-toolbar">
 							<button class="btn btn-default" (click)="uploadTestSuite()">Upload test suite</button>
 							<div class="btn-group" dropdown (onShown)="loadAvailableSharedTestSuites()">
-								<button id="button-link" [disable]="unlinkPending" [pending]="linkPending" dropdownToggle type="button" class="btn btn-default dropdown-toggle" aria-controls="dropdown-link">Link shared test suite<span class="caret"></span></button>
+								<button id="button-link" [disable]="unlinkPending" [pending]="linkPending" dropdownToggle type="button" class="btn btn-default dropdown-toggle" aria-controls="dropdown-link">Link shared test suite<span class="caret withMargin"></span></button>
 								<ul id="dropdown-link" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-link">
 									<li role="menuitem" class="disabled" *ngIf="!availableSharedTestSuitesLoaded">
 										<a class="dropdown-item" href (click)="$event.preventDefault()"><app-pending-block></app-pending-block></a>
@@ -48,7 +47,7 @@
 								</ul>
 							</div>
 							<div class="btn-group" dropdown>
-								<button id="button-unlink" [disable]="sharedTestSuites.length == 0" [pending]="unlinkPending" dropdownToggle type="button" class="btn btn-default dropdown-toggle" aria-controls="dropdown-unlink">Unlink shared test suite<span class="caret"></span></button>
+								<button id="button-unlink" [disable]="sharedTestSuites.length == 0" [pending]="unlinkPending" dropdownToggle type="button" class="btn btn-default dropdown-toggle" aria-controls="dropdown-unlink">Unlink shared test suite<span class="caret withMargin"></span></button>
 								<ul id="dropdown-unlink" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-unlink">
 									<li role="menuitem" *ngFor="let testSuite of sharedTestSuites">
 										<a class="dropdown-item" href (click)="unlinkTestSuite(testSuite); $event.preventDefault()">{{testSuite.identifier}}</a>
@@ -69,7 +68,8 @@
 					</div>
 				</div>
 			</tab>
-			<tab heading="{{dataService.labelActors()}}" (selectTab)="loadActors()">
+			<tab (selectTab)="loadActors()" customClass="tabClass">
+                <ng-template tabHeading><app-tab-title icon="fa-solid fa-circle-user" [text]="dataService.labelActors()"></app-tab-title></ng-template>
 				<div class="tabPanel">
 					<div class="tabControls">
 						<button class="btn btn-default" type="button" (click)="createActor()">Create {{dataService.labelActorLower()}}</button>

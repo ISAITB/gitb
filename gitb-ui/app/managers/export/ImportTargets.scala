@@ -131,6 +131,9 @@ object ImportTargets {
   private def updateForDomain(domain: com.gitb.xml.export.Domain, result: ImportTargets): Unit = {
     if (domain != null) {
       result.hasDomain = true
+      if (domain.getSharedTestSuites != null && !domain.getSharedTestSuites.getTestSuite.isEmpty) {
+        result.hasTestSuites = true
+      }
       if (domain.getSpecifications != null && !domain.getSpecifications.getSpecification.isEmpty) {
         result.hasSpecifications = true
         domain.getSpecifications.getSpecification.asScala.foreach { specification =>

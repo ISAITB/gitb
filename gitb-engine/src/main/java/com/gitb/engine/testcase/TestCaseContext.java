@@ -52,21 +52,6 @@ public class TestCaseContext {
 
 	private static final Logger logger = LoggerFactory.getLogger(TestCaseContext.class);
 
-	/**
-	 * The map containing the success flags for each executed step.
-	 */
-	public static final String STEP_SUCCESS_MAP = "STEP_SUCCESS";
-
-	/**
-	 * The map containing the status values for all steps.
-	 */
-	public static final String STEP_STATUS_MAP = "STEP_STATUS";
-
-	/**
-	 * The scope variable holding the overall result of the test session.
-	 */
-	public static final String TEST_SUCCESS = "TEST_SUCCESS";
-
     /**
      * Test case to be executed
      */

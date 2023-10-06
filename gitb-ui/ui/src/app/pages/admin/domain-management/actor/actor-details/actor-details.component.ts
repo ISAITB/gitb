@@ -12,6 +12,7 @@ import { Actor } from 'src/app/types/actor';
 import { Endpoint } from 'src/app/types/endpoint';
 import { TableColumnDefinition } from 'src/app/types/table-column-definition.type';
 import { EndpointRepresentation } from './endpoint-representation';
+import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
 
 @Component({
   selector: 'app-actor-details',
@@ -51,12 +52,21 @@ export class ActorDetailsComponent extends BaseComponent implements OnInit, Afte
   }
 
   ngOnInit(): void {
-    this.domainId = Number(this.route.snapshot.paramMap.get('id'))
-    this.specificationId = Number(this.route.snapshot.paramMap.get('spec_id'))
-    this.actorId = Number(this.route.snapshot.paramMap.get('actor_id'))
-    this.conformanceService.getActorsWithIds([this.actorId])
+    this.domainId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID))
+    this.specificationId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.SPECIFICATION_ID))
+    this.actorId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.ACTOR_ID))
+    this.conformanceService.getActor(this.actorId, this.specificationId)
     .subscribe((data) => {
-      this.actor = data[0]
+      this.actor = data
+      if (this.actor.badges) {
+        this.actor.badges.specificationId = this.specificationId
+        this.actor.badges.actorId = this.actorId
+        this.actor.badges.enabled = this.actor.badges.success != undefined && this.actor.badges.success.enabled!
+        this.actor.badges.initiallyEnabled = this.actor.badges.enabled
+        this.actor.badges.failureBadgeActive = this.actor.badges.failure != undefined && this.actor.badges.failure.enabled!
+      }
+
+      this.routingService.actorBreadcrumbs(this.domainId, this.specificationId, this.actorId, this.actor.actorId)
     })
     this.conformanceService.getEndpointsForActor(this.actorId)
     .subscribe((data) => {
@@ -78,7 +88,7 @@ export class ActorDetailsComponent extends BaseComponent implements OnInit, Afte
   }
 
   delete() {
-    this.confirmationDialogService.confirmed("Confirm delete", "Are you sure you want to delete this "+this.dataService.labelActorLower()+"?", "Yes", "No")
+    this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this "+this.dataService.labelActorLower()+"?", "Delete", "Cancel")
     .subscribe(() => {
       this.deletePending = true
       this.actorService.deleteActor(this.actorId)
@@ -93,9 +103,10 @@ export class ActorDetailsComponent extends BaseComponent implements OnInit, Afte
 
   saveChanges() {
     this.savePending = true
-    this.actorService.updateActor(this.actorId, this.actor.actorId!, this.actor.name!, this.actor.description, this.actor.default, this.actor.hidden, this.actor.displayOrder, this.domainId, this.specificationId)
+    this.actorService.updateActor(this.actorId, this.actor.actorId!, this.actor.name!, this.actor.description, this.actor.default, this.actor.hidden, this.actor.displayOrder, this.domainId, this.specificationId, this.actor.badges!)
     .subscribe(() => {
       this.popupService.success(this.dataService.labelActor()+' updated.')
+      this.dataService.breadcrumbUpdate({id: this.actorId, type: BreadcrumbType.actor, label: this.actor.actorId!})
     }).add(() => {
       this.savePending = false
     })
@@ -106,7 +117,22 @@ export class ActorDetailsComponent extends BaseComponent implements OnInit, Afte
   }
 
   saveDisabled() {
-    return !(this.textProvided(this.actor?.actorId) && this.textProvided(this.actor?.name) && this.numberOrEmpty(this.actor?.displayOrder))
+    return !(
+      this.textProvided(this.actor?.actorId) && 
+      this.textProvided(this.actor?.name) && 
+      this.numberOrEmpty(this.actor?.displayOrder) &&
+      (
+        !this.actor.badges!.enabled || 
+        (
+          this.actor.badges!.success.enabled && 
+          this.actor.badges!.other.enabled && 
+          (
+            !this.actor.badges!.failureBadgeActive ||
+            this.actor.badges!.failure.enabled
+          )
+        )
+      )
+    )
   }
 
   onEndpointSelect(endpoint: EndpointRepresentation) {

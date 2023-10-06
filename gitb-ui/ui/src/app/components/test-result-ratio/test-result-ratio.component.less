@@ -1,8 +1,90 @@
 @import '../../../styles/less/_common.less';
 
+.root-container {
+    position: relative;
+    cursor: default;
+}
+.popup-panel {
+    border: 1px solid @gray-light;
+    border-radius: 4px;
+    box-shadow: 0 1px 5px #959595;
+    position: absolute;
+    background: @white;
+    z-index: 1;
+    &.asLine {
+        right: 0px;
+        top: -4px;
+        .popup-panel-container {
+            display: flex;
+            align-items: center;
+            padding: 5px 0px 5px 5px;
+        }
+        .ratio-root-container {
+            display: flex;
+            &.optional {
+                margin-top: 5px;
+            }
+        }        
+        .ratio-title, .ratio-container {
+            display: inline-flex;
+        }
+        .ratio-title {
+            margin-left: auto;            
+            align-self: center;
+            padding: 0px 10px;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+        .close-container {
+            margin-top: 3px;
+            width: 30px;
+            display: flex;
+            align-self: flex-start;
+            justify-content: center;
+            cursor: pointer;
+        }        
+    }
+    &.defaultPopup {
+        padding: 8px;
+        top: -4px;
+        &.align-right {
+            right: 0px;
+        }
+        .close-container {
+            width: 30px;
+            position: absolute;
+            right: 0px;
+            top: 4px;
+            display: flex;
+            justify-content: center;
+            cursor: pointer;
+        }
+        .ratio-title {
+            padding: 5px 0px 5px 0px;
+            &.optional {
+                padding-top: 16px;
+            }
+            font-weight: bold;
+            white-space: nowrap;
+        }
+    }
+}
 .ratio-container {
-    width: 300px;
+    width: 420px;
+    display: inline-flex;
+}
+.expand-icon {
     display: flex;
+    justify-content: center;    
+    position: absolute;
+    color: @white;
+    right: 5px;
+    top: 5px;
+    padding: 0px 4px;    
+    cursor: pointer;
+}
+.optional-container {
+    margin-left: 35px;
 }
 .ratio {
     white-space: nowrap;
@@ -10,8 +92,11 @@
     color: @white;
     font-weight: bold;
     font-size: 90%;
-    min-width: 50px;
-    text-align: center;
+    min-width: 90px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 32px;    
     &.completed {
         background: @success-green;
     }

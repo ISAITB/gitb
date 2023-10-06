@@ -110,7 +110,7 @@ public class ConformanceStatementOverview {
     public String getTestStatus() {
         var resultText = new StringBuilder();
         var totalTests = completedTests + failedTests + undefinedTests;
-        resultText.append(completedTests).append(" of ").append(totalTests).append(" passed");
+        resultText.append(completedTests).append(" of ").append(totalTests).append(" required tests passed");
         if (totalTests > completedTests) {
             resultText.append(" (");
             if (failedTests > 0) {

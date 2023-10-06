@@ -1,5 +1,5 @@
-import { Component, EventEmitter, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { AfterViewInit, Component, EventEmitter, OnInit, ViewChild } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Constants } from 'src/app/common/constants';
 import { OptionalCustomPropertyFormData } from 'src/app/components/optional-custom-property-form/optional-custom-property-form-data.type';
 import { BaseComponent } from 'src/app/pages/base-component.component';
@@ -13,12 +13,17 @@ import { TableColumnDefinition } from 'src/app/types/table-column-definition.typ
 import { User } from 'src/app/types/user.type';
 import { CommunityTab } from '../../community/community-details/community-tab.enum';
 import { OrganisationFormData } from '../organisation-form/organisation-form-data';
+import { OrganisationTab } from './OrganisationTab';
+import { TabsetComponent } from 'ngx-bootstrap/tabs';
+import { SystemService } from 'src/app/services/system.service';
+import { System } from 'src/app/types/system';
+import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
 
 @Component({
   selector: 'app-organisation-details',
   templateUrl: './organisation-details.component.html'
 })
-export class OrganisationDetailsComponent extends BaseComponent implements OnInit {
+export class OrganisationDetailsComponent extends BaseComponent implements OnInit, AfterViewInit {
 
   orgId!: number
   communityId!: number
@@ -29,30 +34,117 @@ export class OrganisationDetailsComponent extends BaseComponent implements OnIni
     propertyType: 'organisation'
   }
   users: User[] = []
-  dataStatus = {status: Constants.STATUS.PENDING}
+  systems: System[] = []
+  usersStatus = {status: Constants.STATUS.NONE}
+  systemsStatus = {status: Constants.STATUS.NONE}
   userColumns: TableColumnDefinition[] = []
+  systemColumns: TableColumnDefinition[] = [
+    { field: 'sname', title: 'Short name' },
+    { field: 'fname', title: 'Full name' },
+    { field: 'description', title: 'Description' },
+    { field: 'version', title: 'Version' }
+  ]  
   savePending = false
   deletePending = false
+  tabToShow = OrganisationTab.systems
+  tabTriggers!: Record<OrganisationTab, {index: number, loader: () => any}>
+  @ViewChild('tabs', { static: false }) tabs?: TabsetComponent;
+  showAdminInfo!: boolean
+  showLandingPage!: boolean
+  showCreateUser!: boolean
+  showCreateSystem!: boolean
+  showUsersTab!: boolean
+  readonly!: boolean
+  apiInfoVisible?: boolean
+  fromCommunityManagement?: boolean
+
   loadApiInfo = new EventEmitter<void>()
 
   constructor(
-    private route: ActivatedRoute,
+    protected route: ActivatedRoute,
     private confirmationDialogService: ConfirmationDialogService,
     private organisationService: OrganisationService,
     private userService: UserService,
     public dataService: DataService,
-    private popupService: PopupService,
-    private routingService: RoutingService
-  ) { super() }
+    protected popupService: PopupService,
+    protected routingService: RoutingService,
+    private systemService: SystemService,
+    router: Router
+  ) {
+    super()
+    // Access the tab to show via router state to have it cleared upon refresh.
+    const tabParam = router.getCurrentNavigation()?.extras?.state?.tab
+    if (tabParam != undefined) {
+      this.tabToShow = OrganisationTab[tabParam as keyof typeof OrganisationTab]
+    }    
+  }
+
+  ngAfterViewInit(): void {
+    setTimeout(() => {
+      this.triggerTab(this.tabToShow)
+    })  
+  }
+
+  protected getOrganisationId() {
+    return Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.ORGANISATION_ID))
+  }
+
+  protected getCommunityId() {
+    return Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID))
+  }
+
+  protected isShowAdminInfo() {
+    return true
+  }
+
+  protected isShowLandingPage() {
+    return false
+  }
+
+  protected isReadonly() {
+    return false
+  }
+
+  protected showUserStatus() {
+    return true
+  }
+
+  protected isApiInfoVisible() {
+    return this.dataService.configuration.automationApiEnabled
+  }
+
+  protected isShowCreateUser() {
+    return true
+  }
+
+  protected isShowCreateSystem() {
+    return true
+  }
+
+  protected breadcrumbInit() {
+    this.routingService.organisationBreadcrumbs(this.communityId, this.orgId, this.organisation.sname!)
+  }
+
+  protected isShowUsersTab() {
+    return true
+  }
 
   ngOnInit(): void {
-    this.orgId = Number(this.route.snapshot.paramMap.get('org_id'))
+    this.fromCommunityManagement = this.route.snapshot.paramMap.has(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID)
+    this.orgId = this.getOrganisationId()
     this.organisation.id = this.orgId
-    this.communityId = Number(this.route.snapshot.paramMap.get('community_id'))
-    const viewPropertiesParam = this.route.snapshot.queryParamMap.get('viewProperties')
+    this.communityId = this.getCommunityId()
+    this.showAdminInfo = this.isShowAdminInfo()
+    this.showLandingPage = this.isShowLandingPage()
+    this.readonly = this.isReadonly()
+    this.showCreateUser = this.isShowCreateUser()
+    this.showCreateSystem = this.isShowCreateSystem()
+    this.showUsersTab = this.isShowUsersTab()
+    const viewPropertiesParam = this.route.snapshot.queryParamMap.get(Constants.NAVIGATION_QUERY_PARAM.VIEW_PROPERTIES)
     if (viewPropertiesParam != undefined) {
       this.propertyData.edit = Boolean(viewPropertiesParam)
     }
+    this.userColumns = []
     this.userColumns.push({ field: 'name', title: 'Name' })
     if (this.dataService.configuration.ssoEnabled) {
       this.userColumns.push({ field: 'email', title: 'Email' })
@@ -60,28 +152,71 @@ export class OrganisationDetailsComponent extends BaseComponent implements OnIni
       this.userColumns.push({ field: 'email', title: 'Username' })
     }
     this.userColumns.push({ field: 'roleText', title: 'Role' })
-    this.userColumns.push({ field: 'ssoStatusText', title: 'Status' })
+    if (this.showUserStatus()) {
+      this.userColumns.push({ field: 'ssoStatusText', title: 'Status', cellClass: 'td-nowrap' })
+    }
     this.organisationService.getOrganisationById(this.orgId)
     .subscribe((data) => {
       this.organisation = data
       if (data.landingPage == null) this.organisation.landingPage = undefined
       if (data.errorTemplate == null) this.organisation.errorTemplate = undefined
       if (data.legalNotice == null) this.organisation.legalNotice = undefined
+      this.breadcrumbInit()
     })
-    this.userService.getUsersByOrganisation(this.orgId)
-    .subscribe((data) => {
-      for (let user of data) {
-        user.ssoStatusText = this.dataService.userStatus(user.ssoStatus)
-        user.roleText = Constants.USER_ROLE_LABEL[user.role!]
-      }
-      this.users = data
-    }).add(() => {
-      this.dataStatus.status = Constants.STATUS.FINISHED
-    })
+    this.apiInfoVisible = this.isApiInfoVisible()
+    // Setup tab triggers
+    this.setupTabs()    
+  }
+
+  private setupTabs() {
+    const temp: Partial<Record<OrganisationTab, {index: number, loader: () => any}>> = {}
+    temp[OrganisationTab.systems] = {index: 0, loader: () => {this.showSystems()}}
+    temp[OrganisationTab.users] = {index: 1, loader: () => {this.showUsers()}}
+    temp[OrganisationTab.apiKeys] = {index: 2, loader: () => {this.showApiInfo()}}
+    this.tabTriggers = temp as Record<OrganisationTab, {index: number, loader: () => any}>
+  }
+
+  triggerTab(tab: OrganisationTab) {
+    this.tabTriggers[tab].loader()
+    if (this.tabs) {
+      this.tabs.tabs[this.tabTriggers[tab].index].active = true
+    }
+  }
+
+  protected getUsers() {
+    return this.userService.getUsersByOrganisation(this.orgId)
+  }
+
+  showUsers() {
+    if (this.usersStatus.status == Constants.STATUS.NONE) {
+      this.usersStatus.status = Constants.STATUS.PENDING
+
+      this.getUsers().subscribe((data) => {
+        for (let user of data) {
+          user.ssoStatusText = this.dataService.userStatus(user.ssoStatus)
+          user.roleText = Constants.USER_ROLE_LABEL[user.role!]
+        }
+        this.users = data
+      }).add(() => {
+        this.usersStatus.status = Constants.STATUS.FINISHED
+      })
+    }
+  }
+
+  showSystems() {
+    if (this.systemsStatus.status == Constants.STATUS.NONE) {
+      this.systemsStatus.status = Constants.STATUS.PENDING
+      this.systemService.getSystemsByOrganisation(this.orgId, false)
+      .subscribe((data) => {
+        this.systems = data
+      }).add(() => {
+        this.systemsStatus.status = Constants.STATUS.FINISHED
+      })      
+    }
   }
 
   deleteOrganisation() {
-    this.confirmationDialogService.confirmed("Confirm delete", "Are you sure you want to delete this "+this.dataService.labelOrganisationLower()+"?", "Yes", "No")
+    this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this "+this.dataService.labelOrganisationLower()+"?", "Delete", "Cancel")
     .subscribe(() => {
       this.deletePending = true
       this.organisationService.deleteOrganisation(this.orgId)
@@ -107,6 +242,7 @@ export class OrganisationDetailsComponent extends BaseComponent implements OnIni
         this.addAlertError(result.error_description)
       } else {
         this.popupService.success(this.dataService.labelOrganisation()+" updated.")
+        this.dataService.breadcrumbUpdate({ id: this.orgId, type: BreadcrumbType.organisation, label: this.organisation.sname })
       }
     }).add(() => {
       this.savePending = false
@@ -115,7 +251,7 @@ export class OrganisationDetailsComponent extends BaseComponent implements OnIni
 
   updateOrganisation() {
     if (this.organisation.otherOrganisations != undefined) {
-      this.confirmationDialogService.confirmed("Confirm test setup copy", "Copying the test setup from another "+this.dataService.labelOrganisationLower()+" will remove current "+this.dataService.labelSystemsLower()+", conformance statements and test results. Are you sure you want to proceed?", "Yes", "No")
+      this.confirmationDialogService.confirmedDangerous("Confirm test setup copy", "Copying the test setup from another "+this.dataService.labelOrganisationLower()+" will remove current "+this.dataService.labelSystemsLower()+", conformance statements and test results. Are you sure you want to proceed?", "Copy", "Cancel")
       .subscribe(() => {
         this.doUpdate()
       })
@@ -125,7 +261,15 @@ export class OrganisationDetailsComponent extends BaseComponent implements OnIni
   }
 
   userSelect(user: User) {
-    this.routingService.toOrganisationUser(this.communityId, this.orgId, user.id!)
+    if (user.id == this.dataService.user?.id) {
+      this.routingService.toProfile()
+    } else {
+      if (this.fromCommunityManagement) {
+        this.routingService.toOrganisationUser(this.communityId, this.orgId, user.id!)
+      } else {
+        this.routingService.toOwnOrganisationUser(user.id!)
+      }
+    }
   }
 
   cancelDetailOrganisation() {
@@ -133,15 +277,38 @@ export class OrganisationDetailsComponent extends BaseComponent implements OnIni
   }
 
   manageOrganisationTests() {
-    localStorage.setItem(Constants.LOCAL_DATA.ORGANISATION, JSON.stringify(this.organisation))
-    this.routingService.toSystems(this.organisation.id!)
+    if (this.orgId == this.dataService.vendor?.id) {
+      this.routingService.toOwnConformanceStatements(this.orgId)
+    } else {
+      this.routingService.toConformanceStatements(this.communityId, this.orgId)
+    }
   }
 
   createUser() {
-    this.routingService.toCreateOrganisationUser(this.communityId, this.organisation.id!)
+    if (this.fromCommunityManagement) {
+      this.routingService.toCreateOrganisationUser(this.communityId, this.organisation.id!)
+    } else {
+      this.routingService.toCreateOwnOrganisationUser()
+    }
   }
 
-  apiInfoSelected() {
+  systemSelect(system: System) {
+    if (this.fromCommunityManagement) {
+      this.routingService.toSystemDetails(this.communityId, this.orgId, system.id)
+    } else {
+      this.routingService.toOwnSystemDetails(system.id)
+    }
+  }
+
+	createSystem() {
+    if (this.fromCommunityManagement) {
+      this.routingService.toCreateSystem(this.communityId, this.orgId)
+    } else {
+      this.routingService.toCreateOwnSystem()
+    }
+  }
+
+  showApiInfo() {
     this.loadApiInfo.emit()
   }
 

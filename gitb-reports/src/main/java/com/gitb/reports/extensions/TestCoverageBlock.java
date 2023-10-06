@@ -51,6 +51,10 @@ public class TestCoverageBlock implements TemplateMethodModelEx {
         int width = ((TemplateNumberModel)arguments.get(3)).getAsNumber().intValue();
         // Do calculations
         int total = counts[PASSED] + counts[FAILED] + counts[UNDEFINED];
+        if (total == 0) {
+            total = 1;
+            counts[UNDEFINED] = 1;
+        }
         var ratios = new float[] { (float) counts[PASSED] /total, (float) counts[FAILED] /total, (float) counts[UNDEFINED] /total };
         var widths = new int[] {
                 Math.round(width * ratios[PASSED]),

@@ -29,7 +29,7 @@ of scaffolding and build using Angular CLI.
 # Prerequisites
 
 To build and run the Test Bed's components you need to have the following tools:
-- JDK 11+, used as the base platform for both ``gitb-srv`` and ``gitb-ui``.
+- JDK 17+, used as the base platform for both ``gitb-srv`` and ``gitb-ui``.
 - Maven 3+, used to build ``gitb-srv``.
 - SBT 1.3.13+, used to build ``gitb-ui``.
 - Scala 2.13+, used to build the backend app of ``gitb-ui``.
@@ -44,10 +44,10 @@ you will also require at least:
 - A MySQL database (version 8.*) for its persistence.
 - A REDIS instance for the caching of user sessions.
 
-Both these instances are set up separately (e.g. via Docker) environment. These can be set-up from Docker 
+Both these instances are set up separately (e.g. via Docker) environment. These can be set up from Docker 
 as follows:
 - MySQL: ``docker run --name gitb-mysql -p 3306:3306 -d isaitb/gitb-mysql``
-- REDIS: ``docker run --name gitb-redis -p 6379:6379 -d redis:6.2.7``
+- REDIS: ``docker run --name gitb-redis -p 6379:6379 -d redis:7.0.11``
 
 > **Note**  
 > All images and containers are defined in ``docker-compose.yml`` and explained in detail the [developer installation guide](https://www.itb.ec.europa.eu/docs/guides/latest/installingTheTestBed/index.html). You may build and launch the complete service as described [here](#build-for-deployment).
@@ -167,22 +167,22 @@ to build Docker images.
 1. Follow the [development installation guide](https://www.itb.ec.europa.eu/docs/guides/latest/installingTheTestBed/index.html).
 2. Create or [download](https://www.itb.ec.europa.eu/docs/guides/latest/_downloads/d863ccca4f45b40bb17be79b4841ad4b/docker-compose.yml) your docker-compose.yml file
    making use of the locally built images (see previous steps).
-3. Launch the service from the folder containing your `docker-compose.yml` file with `docker-compose up -d`.
+3. Launch the service from the folder containing your `docker-compose.yml` file with `docker compose up -d`.
 
 ## Build using Docker Compose
 
 This approach is more suitable for a containerised build, avoiding any manual steps and developer tool installations (apart from Docker Compose). Make sure that your 
-Docker Compose is at least at version `1.29.0`. Note that the overall build time in this case is slower compared to building with the relevant tools.
+Docker Compose is at least at version `2.0.0`. Note that the overall build time in this case is slower compared to building with the relevant tools.
 
-To build and launch all containers, issue from the repository's root folder: `docker-compose up -d --build`.
+To build and launch all containers, issue from the repository's root folder: `docker compose up -d --build`.
 
 # Using the application
 
-Once a complete Test Bed instance has been setup, either in development or as a Dockerised service, access using the default
+Once a complete Test Bed instance has been set up, either in development or as a Dockerised service, access using the default
 Test Bed administrator account as follows:
 1. Go to http://localhost:9000.
 2. Click on the login button.
-3. Authenticate using ``test@test.com`` with a password of ``test``.
+3. Authenticate using ``test@test.com`` with a (one-time) password of ``test``.
 
 For information on how to proceed you may refer to the Test Bed's [user guide](https://www.itb.ec.europa.eu/docs/itb-ta/latest/) 
 and [sample usage tutorials](https://www.itb.ec.europa.eu/docs/guides/latest/definingYourTestConfiguration/index.html).
@@ -201,7 +201,7 @@ relevant welcome page link.
 
 # Contact
 
-For feedback or questions regarding this library you are invited to post issues in the current repository. In addition,
+For feedback or questions regarding the GITB Test Bed software you are invited to post issues in the current repository. In addition,
 feel free to contact the Test Bed team via email at [DIGIT-ITB@ec.europa.eu](mailto:DIGIT-ITB@ec.europa.eu).
 
 # See also

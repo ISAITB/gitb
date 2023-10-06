@@ -1,6 +1,5 @@
 package com.gitb.utils;
 
-import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.codec.digest.HmacAlgorithms;
 import org.slf4j.Logger;
@@ -8,6 +7,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.crypto.Mac;
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 
 public class HmacUtils {
 
@@ -38,7 +38,7 @@ public class HmacUtils {
         Mac mac = org.apache.commons.codec.digest.HmacUtils.getInitializedMac(HmacAlgorithms.HMAC_SHA_256, hmacSecretKey.getBytes(StandardCharsets.UTF_8));
         String content = DigestUtils.md5Hex(textToSign).toUpperCase() + '\n' + timestamp;
         mac.update(content.getBytes(StandardCharsets.UTF_8));
-        return new TokenData(Base64.encodeBase64String(mac.doFinal()), timestamp);
+        return new TokenData(Base64.getEncoder().encodeToString(mac.doFinal()), timestamp);
     }
 
     public static TokenData getTokenData(String textToSign) {

@@ -26,6 +26,34 @@
 							</div>
 							<app-tooltip tbTooltip="A description for the test case presented to users when viewing a conformance statement. This should be informative enough for users to understand the purpose of the test case. Where extended information is needed consider complementing the description with the test case's documentation."></app-tooltip>
 						</div>
+            <div class="form-group">
+              <label class="col-xs-3 control-label" for="optional">Optional:</label>
+              <div class="col-xs-7">
+                <input id="optional" name="optional" [(ngModel)]="testCase.optional" type="checkbox" class="form-check">
+                <app-tooltip [inline]="true" tbTooltip="Optional test case sessions are not counted towards conformance statement results."></app-tooltip>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-xs-3 control-label" for="disabled">Disabled:</label>
+              <div class="col-xs-7">
+                <input id="disabled" name="disabled" [(ngModel)]="testCase.disabled" type="checkbox" class="form-check">
+                <app-tooltip [inline]="true" tbTooltip="Disabled test cases cannot be executed and any existing test sessions are not counted towards conformance statement results."></app-tooltip>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-xs-3 control-label">Tags:</label>
+              <div class="col-xs-7">
+                <div class="tag-container">
+                  <app-tags-display
+                    [tags]="testCase.parsedTags"
+                    [editable]="true"
+                    (edit)="tagEdited($event)"
+                    (delete)="tagDeleted($event)"
+                    (create)="createTag()"
+                  ></app-tags-display>
+                </div>
+              </div>
+            </div>
 					</div>
 				</div>
 				<div class="row">
@@ -38,9 +66,14 @@
 				<div [collapse]="!showDocumentation" [isAnimated]="true">
 					<div class="row form-group">
 						<div class="col-xs-offset-1 col-xs-10">
-                            <app-editor id="documentation" name="documentation" [(ngModel)]="testCase.documentation"></app-editor>
+							<div class="div-padded-bottom" *ngIf="dataService.isCommunityAdmin">
+								<app-placeholder-selector [resources]="true" [community]="dataService.vendor?.community"></app-placeholder-selector>
+							</div>
+							<div class="editorContainer">
+								<app-editor id="documentation" name="documentation" [(ngModel)]="testCase.documentation"></app-editor>
+								<app-tooltip tbTooltip="Extended documentation on the test case that users can click to view before and during test execution. Use this to provide detailed information, prerequisites, steps to follow and references to external resources." [withMargin]="true"></app-tooltip>
+							</div>
 						</div>
-						<app-tooltip tbTooltip="Extended documentation on the test case that users can click to view before and during test execution. Use this to provide detailed information, prerequisites, steps to follow and references to external resources."></app-tooltip>
 					</div>
 					<div class="row form-group">
 						<div class="col-xs-offset-1 col-xs-10">
@@ -69,7 +102,7 @@
 			</div>
 		</form>
 	</div>
-	<div class="panel panel-default">
+	<div class="panel panel-default no-bottom-margin">
 		<div class="panel-heading">
 			<h4 class="title">Test case preview</h4>
 		</div>

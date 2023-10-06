@@ -1,37 +1,98 @@
 @import '../../../styles/less/_common.less';
 
-.overallContainer {
+.rootContainer {
+    position: relative;
+    cursor: default;
+}
+.statusRootContainer {
     display: flex;
-    align-items: flex-start;
-    &.centerAligned {
-        justify-content: center;
-    }
-    .statusRootContainer {
+    flex-wrap: nowrap;
+    border-radius: 5px;
+    background: @white;
+    padding: 4px 8px;
+    border: 1px solid @gray-light;
+    justify-content: center;
+    .statusContainerGroup {
         display: flex;
-        flex-wrap: nowrap;
-        border-radius: 5px;
-        padding: 4px 8px;
-        border: 1px solid @gray-light;
-        justify-content: center;
-        .statusContainer {
+    }
+    .statusContainer {
+        display: flex;
+        align-items: center;
+        .statusCount {
+            margin-left: 10px;
+            margin-right: 3px;            
             display: flex;
-            align-items: center;
-            .statusCount {
-                margin-left: 10px;
-                margin-right: 3px;            
-                display: flex;
-            }
-            .statusIcon {
-                display: flex;
-                i {
-                    font-size: 14px;                
-                }
+        }
+        .statusIcon {
+            display: flex;
+            i {
+                font-size: 14px;                
             }
         }
-        :first-child.statusContainer{
-            .statusCount {
-                margin-left: 0px;
-            }    
+    }
+    :first-child.statusContainer{
+        .statusCount {
+            margin-left: 0px;
+        }    
+    }
+    .expand-icon {
+        margin-left: 20px;
+        cursor: pointer;
+    }
+}
+.popup-panel {
+    border: 1px solid @gray-light;
+    border-radius: 4px;
+    box-shadow: 0 1px 5px #959595;
+    background: @white;
+    z-index: 1;
+    position: absolute;
+    .popup-panel-container {
+        display: flex;
+        align-items: center;
+        padding: 5px 0px 5px 5px;
+    }     
+    .close-container {
+        justify-content: center;
+        cursor: pointer;
+        width: 30px;
+    }
+    .status-title {
+        font-weight: bold;
+        padding: 0px 10px;
+        white-space: nowrap;            
+    }
+    &.asLine {
+        right: 0px;
+        top: -6px;
+        .close-container, .status-containers, .status-container, .status-title, .statusRootContainer {
+            display: inline-flex;
+        }
+        .status-title {
+            align-self: center;
+            &.optional {
+                margin-left: 15px;
+            }
+        }        
+    }
+    &.defaultPopup {
+        right: 0px;
+        top: -4px;
+        .close-container {
+            margin-top: 3px;
+            display: flex;
+            align-self: flex-start;
+        }
+        .status-container {
+            flex-wrap: nowrap;
+            display: flex;
+            align-items: center;
+            &.optional {
+                margin-top: 5px;
+            }
+        }
+        .statusRootContainer {
+            margin-left: auto;
         }
     }
 }
@@ -40,5 +101,12 @@
         min-width: auto !important;
         max-width: inherit !important;
         white-space: nowrap;
+    }
+    .tooltip-label {
+        font-weight: bold;
+        margin-bottom: 5px;
+        &.with-margin {
+            margin-top: 10px;
+        }
     }
 }

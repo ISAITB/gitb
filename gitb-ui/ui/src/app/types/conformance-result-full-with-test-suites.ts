@@ -1,8 +1,8 @@
+import { ConformanceTestSuite } from "../pages/organisation/conformance-statement/conformance-test-suite";
 import { ConformanceResultFull } from "./conformance-result-full";
-import { ConformanceResultTestSuite } from "./conformance-result-test-suite";
 
 export interface ConformanceResultFullWithTestSuites extends ConformanceResultFull {
 
-    testSuites?: ConformanceResultTestSuite[]
+    testSuites?: ConformanceTestSuite[]
 
 }

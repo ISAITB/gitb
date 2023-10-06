@@ -1,37 +1,9 @@
 @import '../../../../styles/less/_common.less';
 
-th.th-nowrap {
-    white-space: nowrap;
-}
-
-.conformanceStatusDiv {
-    display:flex;
-    margin-bottom:-14px;
-    & > div {
-        display:inline-flex;
-    }
-    div:last-of-type {
-        align-items: center;
-        line-height:0px;
-    }
-}
-
-.row {
-    min-height: 45px;
-    &.row-display-last {
-        padding-top: 0px;
-    }
-}
-
-.oneLineDiv {
-    display:flex;
-    align-items: center;
-    ::ng-deep {
-        .statusRootContainer {
-            margin-top: -5px;
-            margin-bottom: -5px;
-            height: 30px;
-        }
+.pending-container {
+    display: flex;
+    .pending-message {
+        opacity: 0.5;
     }
 }
 
@@ -52,82 +24,6 @@ th.th-nowrap {
     }
 }
 
-.testSuitePanel {
-    background-color: @white;
-    &.panel.panel-default {
-        margin-bottom: 5px;
-    }
-    .testSuiteDisplay {
-        display:flex;
-        align-items: center;
-        border-radius: 4px;
-        padding: 10px 15px 10px 15px;
-        cursor: pointer;
-        & > div {
-            display: inline-flex;
-        }
-        .testSuiteName {
-            font-weight: bold;
-            min-height: 40px;
-            align-items: center;
-        }
-        .testSuiteDescription {
-            min-height: 40px;
-            border-left: 1px solid @gray-dark-1;
-            padding-left: 10px;
-            margin-left: 10px;
-            align-items: center;
-        }
-        .testSuiteControls {
-            flex-grow: 1;
-            justify-content: right;  
-            padding-right: 8px;
-            padding-left: 30px;
-            & > div.btn-toolbar {
-                display: flex;
-                flex-wrap: nowrap;            
-            }
-        }
-        .testSuiteResult {
-            padding-left:30px;
-            padding-right:11px;
-        }
-        &:hover {
-            background-color: @white-shaded;
-            &.expanded {
-                border-bottom-left-radius: 0px;
-                border-bottom-right-radius: 0px;
-            }
-            +.collapsibleTestCaseDiv {
-                background-color: @white-shaded;
-                border-bottom-left-radius: 4px;
-                border-bottom-right-radius: 4px;
-            }
-        }
-    }
-    .testCaseContainer {
-        padding: 5px 15px 15px 15px;
-    }
-    .testCaseDisplay {
-        border: 1px solid @gray-dark-1;
-    }
-    .testcase-controls {
-        width:1px;
-        padding-left: 30px;
-        & > div.btn-toolbar {
-            display: flex;
-            flex-wrap: nowrap;
-            justify-content: right;
-        }
-    }
-    .testcase-result {
-        width: 1px;
-        text-align: center;
-        white-space: nowrap;
-        padding-left: 30px;
-        padding-right: 10px;        
-    }
-}
 .tabControls {
     display: flex;
     .testFilters {
@@ -143,13 +39,6 @@ th.th-nowrap {
 
 .resultFilterDiv {
     margin-left: 4px;
-    i.resultIcon {
-        font-size: 14px;
-        margin-right: 8px;
-    }
-}
-.caret {
-    margin-left: 10px;
 }
 .noTestCasesDiv, .noConfigurationDiv {
     span {
@@ -161,5 +50,79 @@ th.th-nowrap {
     align-items: center;
     .status-ratios {
         margin-left: 20px;
+    }
+}
+.statementDetails {
+    margin-top: -10px;
+}
+.statementStatus {
+    display: flex;
+    align-items: center;
+    border-radius: 4px;
+    border: 1px solid @gray-dark-1;
+    background-color: @gray-light-1;
+    margin-top: 10px;
+    padding: 0px 15px;
+    flex-wrap: wrap;
+    .statusLabel {
+        padding: 15px 0px;
+        font-weight: bold;
+        margin-left: 0px;
+    }
+    .lastUpdateLabel, .resultsLabel {
+        font-weight: bold;
+    }
+    .statementResult, .lastUpdateContainer {
+        min-height: 35px;
+        border-right: 1px solid @gray-dark-1;
+        padding-right: 20px;
+        margin-right: 20px;
+    }
+    .lastUpdateContainer, .resultsContainer {
+        display: flex;
+        align-items: center;
+        flex-wrap: nowrap;
+        margin-top: 5px;
+        margin-bottom: 5px;
+        & > *:not(:last-child) {
+            margin-right: 20px;
+        }
+    }
+}
+.statementResult {
+    margin-left: 20px;
+    margin-right: 20px;
+    display: flex;
+    align-items: center;    
+}
+
+.partyContainer {
+    display: flex;
+    border-radius: 4px;
+    border: 1px solid @gray-dark-1;
+    background-color: @gray-light-1;
+    margin-top: 10px;
+    padding: 6px 15px;
+    min-height: 54px;
+    .partyContent {
+        display: flex;
+        align-self: center;
+    }
+    .organisationContainer {
+        border-right: 1px solid @gray-dark-1;
+        margin-right: 20px;
+        padding-right: 20px;
+    }
+    .organisationContainer, .systemContainer {
+        display: flex;
+        align-items: stretch;
+    }
+    .partyLabel {
+        font-weight: bold;
+        align-self: center;
+        margin-right: 20px;
+    }
+    .partyValue {
+        align-self: center;
     }
 }

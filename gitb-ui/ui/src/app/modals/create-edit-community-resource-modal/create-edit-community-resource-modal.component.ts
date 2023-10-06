@@ -16,9 +16,11 @@ import { saveAs } from 'file-saver'
 })
 export class CreateEditCommunityResourceModalComponent extends BaseComponent implements OnInit {
 
-  @Input() resource: Partial<CommunityResource> = {}
+  @Input() resource?: CommunityResource
   @Input() communityId!: number
   @Output() resourceUpdated = new EventEmitter<boolean>()
+
+  resourceToUse!: Partial<CommunityResource>
   title!: string
   savePending = false
   downloadPending = false
@@ -35,10 +37,13 @@ export class CreateEditCommunityResourceModalComponent extends BaseComponent imp
   }
 
   ngOnInit(): void {
-    if (this.resource == undefined) {
-      this.resource = {}
+    this.resourceToUse = {}
+    if (this.resource != undefined) {
+      this.resourceToUse.id = this.resource.id
+      this.resourceToUse.name = this.resource.name
+      this.resourceToUse.description = this.resource.description
     }
-    if (this.resource.id == undefined) {
+    if (this.resourceToUse.id == undefined) {
       this.title = "Upload community resource"
     } else {
       this.title = "Update community resource"
@@ -47,19 +52,19 @@ export class CreateEditCommunityResourceModalComponent extends BaseComponent imp
 
   selectFile(file: FileData) {
     this.file = file
-    this.resource.name = file.name
+    this.resourceToUse.name = file.name
   }
 
   saveAllowed() {
-    return this.textProvided(this.resource?.name)
+    return this.textProvided(this.resourceToUse?.name)
   }
 
   save() {
     if (this.saveAllowed()) {
       this.savePending = true
-      if (this.resource.id == undefined) {
+      if (this.resourceToUse.id == undefined) {
         // Create.
-        this.communityService.createCommunityResource(this.resource.name!, this.resource.description, this.file!, this.communityId)
+        this.communityService.createCommunityResource(this.resourceToUse.name!, this.resourceToUse.description, this.file!, this.communityId)
         .subscribe(() => {
           this.resourceUpdated.emit(true)
           this.modalInstance.hide()
@@ -69,7 +74,7 @@ export class CreateEditCommunityResourceModalComponent extends BaseComponent imp
         })
       } else {
         // Update.
-        this.communityService.updateCommunityResource(this.resource.id!, this.resource.name!, this.resource.description, this.file)
+        this.communityService.updateCommunityResource(this.resourceToUse.id!, this.resourceToUse.name!, this.resourceToUse.description, this.file)
         .subscribe(() => {
           this.resourceUpdated.emit(true)
           this.modalInstance.hide()
@@ -84,14 +89,14 @@ export class CreateEditCommunityResourceModalComponent extends BaseComponent imp
   download() {
     if (this.file?.file) {
       this.downloadPending = true
-      saveAs(this.file.file!, this.resource.name)
+      saveAs(this.file.file!, this.resourceToUse.name)
       this.downloadPending = false
-    } else if (this.resource.id != undefined) {
+    } else if (this.resourceToUse.id != undefined) {
       this.downloadPending = true
-      this.communityService.downloadCommunityResourceById(this.resource.id)
+      this.communityService.downloadCommunityResourceById(this.resourceToUse.id)
       .subscribe((response) => {
         const bb = new Blob([response.body as ArrayBuffer])
-        saveAs(bb, this.resource.name)
+        saveAs(bb, this.resourceToUse.name)
       }).add(() => {
         this.downloadPending = false
       })
@@ -99,10 +104,10 @@ export class CreateEditCommunityResourceModalComponent extends BaseComponent imp
   }
 
   delete() {
-    if (this.resource.id != undefined) {
-      this.confirmationDialogService.confirmed("Confirm delete", "Are you sure you want to delete this resource?", "Yes", "No").subscribe(() => {
+    if (this.resourceToUse.id != undefined) {
+      this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this resource?", "Delete", "Cancel").subscribe(() => {
         this.deletePending = true
-        this.communityService.deleteCommunityResource(this.resource.id!).subscribe(() => {
+        this.communityService.deleteCommunityResource(this.resourceToUse.id!).subscribe(() => {
           this.resourceUpdated.emit(true)
           this.modalInstance.hide()
           this.popupService.success("Resource deleted.")

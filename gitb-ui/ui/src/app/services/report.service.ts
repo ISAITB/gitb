@@ -73,7 +73,7 @@ export class ReportService {
     })
   }
 
-  private criteriaToRequestParams(criteria: TestResultSearchCriteria, activeResults: boolean, systemId?: number) {
+  private criteriaToRequestParams(criteria: TestResultSearchCriteria, activeResults: boolean, organisationId?: number) {
     const params: any = {}
     if (criteria.specIds !== undefined && criteria.specIds.length > 0) {
       params.specification_ids = criteria.specIds.join(',')
@@ -102,9 +102,12 @@ export class ReportService {
     if (criteria.sessionId !== undefined) {
       params.session_id = criteria.sessionId
     }
-    if (systemId !== undefined) {
-      // System-specific parameters
-      params.system_id = systemId
+    if (criteria.systemIds !== undefined && criteria.systemIds.length > 0) {
+      params.system_ids = criteria.systemIds.join(',')
+    }
+    if (organisationId !== undefined) {
+      // Organisation-specific parameters
+      params.organization_id = organisationId
     } else {
       // General parameters
       if (criteria.communityIds !== undefined && criteria.communityIds.length > 0) {
@@ -112,9 +115,6 @@ export class ReportService {
       }
       if (criteria.organisationIds !== undefined && criteria.organisationIds.length > 0) {
         params.organization_ids = criteria.organisationIds.join(',')
-      }
-      if (criteria.systemIds !== undefined && criteria.systemIds.length > 0) {
-        params.system_ids = criteria.systemIds.join(',')
       }
       if (criteria.organisationProperties !== undefined && criteria.organisationProperties.length > 0) {
         params.org_params = JSON.stringify(criteria.organisationProperties)
@@ -169,8 +169,8 @@ export class ReportService {
     })
   }
 
-  getSystemActiveTestResults(systemId: number, criteria: TestResultSearchCriteria) {
-    const params = this.criteriaToRequestParams(criteria, true, systemId)
+  getSystemActiveTestResults(organisationId: number, criteria: TestResultSearchCriteria) {
+    const params = this.criteriaToRequestParams(criteria, true, organisationId)
     return this.restService.post<TestResultData>({
       path: ROUTES.controllers.ReportService.getSystemActiveTestResults().url,
       authenticate: true,
@@ -190,8 +190,8 @@ export class ReportService {
     })
   }
 
-  getTestResults(systemId: number, page: number, limit: number, criteria: TestResultSearchCriteria) {
-    const params = this.criteriaToRequestParams(criteria, false, systemId)
+  getTestResults(organisationId: number, page: number, limit: number, criteria: TestResultSearchCriteria) {
+    const params = this.criteriaToRequestParams(criteria, false, organisationId)
     params.page = page
     params.limit = limit
     return this.restService.post<TestResultData>({
@@ -212,14 +212,18 @@ export class ReportService {
     }))
   }
 
-  exportConformanceStatementReport(actorId: number, systemId: number, includeTests: boolean) {
+  exportConformanceStatementReport(actorId: number, systemId: number, includeTests: boolean, snapshotId?: number) {
+    let params:any = {
+      actor_id: actorId,
+      system_id: systemId,
+      tests: includeTests 
+    }
+    if (snapshotId != undefined) {
+      params.snapshot = snapshotId
+    }
     return this.restService.get<ArrayBuffer>({
       path: ROUTES.controllers.RepositoryService.exportConformanceStatementReport().url,
-      params: {
-        actor_id: actorId,
-        system_id: systemId,
-        tests: includeTests 
-      },
+      params: params,
       authenticate: true,
       arrayBuffer: true
     })

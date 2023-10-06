@@ -1,26 +1,15 @@
-@import '../../../../../../styles/less/components/common.less';
+@import '../../../../../../styles/less/_common.less';
 
-.caret {
-    margin-left: 10px;
-    &.no-spacing {
-        margin-left: 0px;
-    }
-}
 .tabControls {
     display: flex;
     .searchControls {
         display: flex;
-        flex-wrap: nowrap;
-    }
-    .otherControls {
-        display: flex;
-        flex-grow: 1;
-        justify-content: right;
+        flex-wrap: wrap;
     }
 }
 ::ng-deep {
     .tb-active, .tb-status, .tb-default {
-        .min-width;
-        .td-centered;
+        width: 1px !important;
+        text-align: center;
     }
 }

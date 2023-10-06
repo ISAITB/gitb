@@ -10,6 +10,7 @@ import { RoutingService } from 'src/app/services/routing.service';
 import { UserService } from 'src/app/services/user.service';
 import { User } from 'src/app/types/user.type';
 import { CommunityTab } from '../../community/community-details/community-tab.enum';
+import { Constants } from 'src/app/common/constants';
 
 @Component({
   selector: 'app-create-community-admin',
@@ -42,7 +43,7 @@ export class CreateCommunityAdminComponent extends BaseComponent implements OnIn
   }
 
   ngOnInit(): void {
-    this.communityId = Number(this.route.snapshot.paramMap.get('community_id'))
+    this.communityId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID))
     this.isSSO = this.dataService.configuration.ssoEnabled
   }
 

@@ -1,18 +1,22 @@
 package models
 
-case class Systems(id:Long, shortname:String, fullname:String, description:Option[String], version:Option[String], apiKey: Option[String], owner:Long) {
+case class Systems(id:Long, shortname:String, fullname:String, description:Option[String], version:Option[String], apiKey: Option[String], badgeKey: String, owner:Long) {
 
   def withOrganizationId(id:Long): Systems = {
-    Systems(this.id, this.shortname, this.fullname, this.description, this.version, this.apiKey, id)
+    Systems(this.id, this.shortname, this.fullname, this.description, this.version, this.apiKey, this.badgeKey, id)
   }
 
   def withApiKey(apiKey: String): Systems = {
-    Systems(this.id, this.shortname, this.fullname, this.description, this.version, Some(apiKey), this.owner)
+    Systems(this.id, this.shortname, this.fullname, this.description, this.version, Some(apiKey), this.badgeKey, this.owner)
+  }
+
+  def withBadgeKey(badgeKey: String): Systems = {
+    Systems(this.id, this.shortname, this.fullname, this.description, this.version, this.apiKey, badgeKey, this.owner)
   }
 
 }
 
-class System(_id: Long, _shortname: String, _fullname:String, _description:Option[String], _version:Option[String], _apiKey: Option[String],
+class System(_id: Long, _shortname: String, _fullname:String, _description:Option[String], _version:Option[String], _apiKey: Option[String], _badgeKey: String,
                _owner:Option[Organizations], _admins:Option[List[Users]])
 {
   var id:Long = _id
@@ -21,20 +25,21 @@ class System(_id: Long, _shortname: String, _fullname:String, _description:Optio
   var description:Option[String] = _description
   var version:Option[String] = _version
   var apiKey: Option[String] = _apiKey
+  var badgeKey: String = _badgeKey
   var owner:Option[Organizations] = _owner
   var admins:Option[List[Users]] = _admins
 
   def this(_case:Systems) =
-    this(_case.id, _case.shortname, _case.fullname, _case.description, _case.version, _case.apiKey, None, None)
+    this(_case.id, _case.shortname, _case.fullname, _case.description, _case.version, _case.apiKey, _case.badgeKey, None, None)
 
-  def this(_case:Systems, _owner:Organizations, _admins:List[Users]) =
-      this(_case.id, _case.shortname, _case.fullname, _case.description, _case.version, _case.apiKey, Some(_owner), Some(_admins))
+  def this(_case:Systems, _owner:Organizations) =
+      this(_case.id, _case.shortname, _case.fullname, _case.description, _case.version, _case.apiKey, _case.badgeKey, Some(_owner), None)
 
   def toCaseObject:Systems = {
     if(owner.isDefined) {
-      Systems(id, shortname, fullname, description, version, apiKey, owner.get.id)
+      Systems(id, shortname, fullname, description, version, apiKey, badgeKey, owner.get.id)
     } else{
-      Systems(id, shortname, fullname, description, version, apiKey, 0)
+      Systems(id, shortname, fullname, description, version, apiKey, badgeKey, 0)
     }
   }
 }

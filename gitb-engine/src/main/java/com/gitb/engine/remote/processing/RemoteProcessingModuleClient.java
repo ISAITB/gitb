@@ -13,7 +13,7 @@ import com.gitb.types.DataType;
 import com.gitb.types.DataTypeFactory;
 import com.gitb.utils.DataTypeUtils;
 
-import javax.xml.ws.soap.AddressingFeature;
+import jakarta.xml.ws.soap.AddressingFeature;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;

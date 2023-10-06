@@ -4,8 +4,18 @@
 <div class="modal-body">
 	<app-test-step-report id="report" [step]="step" [report]="report" [sessionId]="sessionId"></app-test-step-report>
 </div>
-<div class="modal-footer">
-    <button type="button" class="btn btn-default" (click)="exportPdf()" [pending]="exportPdfPending" [disable]="exportPdfPending || exportXmlPending">Export as PDF</button>
-    <button type="button" class="btn btn-default" (click)="exportXml()" [pending]="exportXmlPending" [disable]="exportPdfPending || exportXmlPending">Export as XML</button>
-	<button type="button" class="btn btn-default" (click)="close()">Close</button>
+<div class="modal-footer button-container">
+	<div class="btn-toolbar">
+		<button type="button" class="btn btn-default" (click)="close()">Close</button>
+		<div class="btn-group" dropdown [isDisabled]="exportPdfPending || exportXmlPending">
+			<button type="button" [pending]="exportPdfPending || exportXmlPending" class="btn btn-default" (click)="exportPdf()">Export report as PDF</button>
+			<button id="button-export" type="button" dropdownToggle class="btn btn-default dropdown-toggle dropdown-toggle-split">
+				<span class="caret"></span>
+				<span class="sr-only visually-hidden">Export report as PDF</span>
+			</button>
+			<ul id="dropdown-export" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-export">
+				<li role="menuitem"><a class="dropdown-item" href (click)="exportXml();$event.preventDefault();">Export report as XML</a></li>
+			</ul>
+		</div>
+	</div>
 </div>

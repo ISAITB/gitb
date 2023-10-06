@@ -244,9 +244,9 @@ class TestResultManager @Inject() (repositoryUtils: RepositoryUtils, dbConfigPro
     q1.update(None)
   }
 
-  def deleteObsoleteTestResultsForSystemWrapper(systemId: Long): Unit = {
+  def deleteObsoleteTestResultsForOrganisationWrapper(organisationId: Long): Unit = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
-    val action = deleteObsoleteTestResultsForSystem(systemId, onSuccessCalls)
+    val action = deleteObsoleteTestResultsForOrganisation(organisationId, onSuccessCalls)
     exec(dbActionFinalisation(Some(onSuccessCalls), None, action).transactionally)
   }
 
@@ -319,6 +319,8 @@ class TestResultManager @Inject() (repositoryUtils: RepositoryUtils, dbConfigPro
           DBIO.successful(())
         }
       }
+      // Delete from conformance snapshot results (where we don't care about updating the overall conformance status.
+      _ <- PersistenceSchema.conformanceSnapshotResults.filter(_.testSessionId === testSession.sessionId).map(_.testSessionId).update(None)
       // Delete test result definition
       _ <- PersistenceSchema.testResultDefinitions.filter(_.testSessionId === testSession.sessionId).delete
       // Delete test step reports
@@ -345,11 +347,11 @@ class TestResultManager @Inject() (repositoryUtils: RepositoryUtils, dbConfigPro
     toDBIO(actions)
   }
 
-  def deleteObsoleteTestResultsForSystem(systemId: Long, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
+  def deleteObsoleteTestResultsForOrganisation(organisationId: Long, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
     for  {
       sessions <- PersistenceSchema.testResults
-        .filter(x => x.sutId === systemId &&
-          (x.testSuiteId.isEmpty || x.testCaseId.isEmpty || x.communityId.isEmpty || x.organizationId.isEmpty || x.domainId.isEmpty || x.actorId.isEmpty || x.specificationId.isEmpty)
+        .filter(x => x.organizationId === organisationId &&
+          (x.testSuiteId.isEmpty || x.testCaseId.isEmpty || x.communityId.isEmpty || x.sutId.isEmpty || x.domainId.isEmpty || x.actorId.isEmpty || x.specificationId.isEmpty)
         ).result
       _ <- deleteObsoleteTestSessions(sessions, onSuccessCalls)
     } yield ()

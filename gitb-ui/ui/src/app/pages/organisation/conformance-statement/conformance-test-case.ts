@@ -1,3 +1,4 @@
+import { TestCaseTag } from "src/app/types/test-case-tag";
 import { UserInteraction } from "src/app/types/user-interaction";
 
 export interface ConformanceTestCase {
@@ -11,5 +12,10 @@ export interface ConformanceTestCase {
     preliminary?: UserInteraction[]
     sessionId?: string
     updateTime?: string
+    optional?: boolean
+    disabled?: boolean
+    tags?: string
+
+    parsedTags?: TestCaseTag[]
 
 }

@@ -1,0 +1,19 @@
+<div class="rootContainer" *ngIf="tags || editable">
+    <div class="tagContainer" *ngFor="let tag of tags; let last = last" [class.withMargin]="!last || (last && editable)">
+        <app-tag 
+            [id]="tag.id"
+            [label]="tag.name"
+            [tooltipText]="tag.description"
+            [foreground]="tag.foreground"
+            [background]="tag.background"
+            [editable]="editable"
+            [pill]="true"
+            (edit)="tagEdited($event)"
+            (delete)="tagDeleted($event)"
+        ></app-tag>
+    </div>
+    <div *ngIf="editable" class="create-tag-container">
+        <button (click)="createTag()" type="button" class="btn btn-default">Add</button>
+        <app-tooltip [inline]="true" inlineType="button" tbTooltip="Tags used to visually distinguish and highlight test cases."></app-tooltip>
+    </div>
+</div>

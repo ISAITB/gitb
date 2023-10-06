@@ -14,6 +14,7 @@ import { ImportSettings } from 'src/app/types/import-settings';
 import { BaseComponent } from '../../base-component.component';
 import { ImportItemState } from './import-item-state';
 import { ImportItemStateGroup } from './import-item-state-group';
+import { RoutingService } from 'src/app/services/routing.service';
 
 @Component({
   selector: 'app-import',
@@ -40,13 +41,13 @@ export class ImportComponent extends BaseComponent implements OnInit, OnDestroy 
   archiveData?: FileData
   importItemActionLabels: {[key: number]: string} = {}
   importItemTypeLabels: {[key: number]: string} = {}
-  showEncryptionKey = false
 
   constructor(
     private communityService: CommunityService,
     private conformanceService: ConformanceService,
     public dataService: DataService,
-    private popupService: PopupService
+    private popupService: PopupService,
+    private routingService: RoutingService
   ) { super() }
 
   ngOnInit(): void {
@@ -63,7 +64,7 @@ export class ImportComponent extends BaseComponent implements OnInit, OnDestroy 
         this.domains = data
       })
     }
-
+    this.routingService.importBreadcrumbs()
   }
 
   ngOnDestroy(): void {

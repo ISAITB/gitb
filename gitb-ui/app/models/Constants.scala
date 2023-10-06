@@ -11,7 +11,11 @@ object Constants {
 
   // System configuration constants
   val SessionAliveTime = "session_alive_time"
+  val RestApiEnabled = "rest_api_enabled"
+  val SelfRegistrationEnabled = "self_registration_enabled"
   val MasterPassword = "master_password"
+  val DemoAccount = "demo_account"
+  val WelcomeMessage = "welcome"
 
   // env variables
   val EnvironmentTheme = "THEME"
@@ -52,6 +56,9 @@ object Constants {
   val FilterDateFormat = "dd-MM-yyyy HH:mm:ss"
   val AutomationHeader = "ITB_API_KEY"
 
+  val defaultPage = 1L
+  val defaultLimit = 10L
+
   // When ending in "-snapshot", this is considered a non-published release.
-  val VersionNumber = "1.20.1"
+  val VersionNumber = "1.21.0"
 }

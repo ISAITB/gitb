@@ -16,8 +16,8 @@ import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import javax.xml.XMLConstants;
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.JAXBException;
 import javax.xml.namespace.QName;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
@@ -33,10 +33,10 @@ import java.util.function.Consumer;
 
 public class Context {
 
-    private static QName QNAME_TEST_CASE = new QName("http://www.gitb.com/tdl/v1/", "testcase");
-    private static QName QNAME_TEST_SUITE = new QName("http://www.gitb.com/tdl/v1/", "testsuite");
-    private static QName QNAME_SCRIPTLET = new QName("http://www.gitb.com/tdl/v1/", "scriptlet");
-    private static QName QNAME_ID = new QName("http://www.gitb.com/tdl/v1/", "id");
+    private static final QName QNAME_TEST_CASE = new QName("http://www.gitb.com/tdl/v1/", "testcase");
+    private static final QName QNAME_TEST_SUITE = new QName("http://www.gitb.com/tdl/v1/", "testsuite");
+    private static final QName QNAME_SCRIPTLET = new QName("http://www.gitb.com/tdl/v1/", "scriptlet");
+    private static final QName QNAME_ID = new QName("http://www.gitb.com/tdl/v1/", "id");
 
     private JAXBContext jaxbContext;
     private Schema tdlSchema;
@@ -62,6 +62,24 @@ public class Context {
     private final Set<String> customOrganisationPropertiesUsed = new TreeSet<>();
     private final Set<String> customSystemPropertiesUsed = new TreeSet<>();
     private final Set<String> customDomainParametersUsed = new TreeSet<>();
+    private final Set<String> validTestCaseIds = new HashSet<>();
+    private final Set<String> validScriptletIds = new HashSet<>();
+
+    public void addValidTestCaseId(String identifier) {
+        validTestCaseIds.add(identifier);
+    }
+
+    public void addValidScriptletId(String identifier) {
+        validScriptletIds.add(identifier);
+    }
+
+    public boolean isValidTestCaseId(String identifier) {
+        return validTestCaseIds.contains(identifier);
+    }
+
+    public boolean isValidScriptletId(String identifier) {
+        return validScriptletIds.contains(identifier);
+    }
 
     public Set<Path> getReferencedResourcePaths() {
         if (referencedResourcePaths == null) {

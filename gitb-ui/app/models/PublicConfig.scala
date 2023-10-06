@@ -21,7 +21,8 @@ class PublicConfig(
   _moreInfoEnabled: Boolean,
   _moreInfoLink: String,
   _releaseInfoEnabled: Boolean,
-  _releaseInfoLink: String) {
+  _releaseInfoLink: String,
+  _welcomeText: String) {
 
   var ssoEnabled: Boolean = _ssoEnabled
   var logoPath: String = _logoPath
@@ -44,7 +45,8 @@ class PublicConfig(
   var moreInfoLink: String = _moreInfoLink
   var releaseInfoEnabled: Boolean = _releaseInfoEnabled
   var releaseInfoLink: String = _releaseInfoLink
+  var welcomeText: String = _welcomeText
 
   def this(_resourceVersionNumber: String, _cookiePath: String, _contextPath: String) =
-    this(false, null, null, null, _resourceVersionNumber, false, null, false, false, null, false, null, null, _cookiePath, false, false, _contextPath, false, null, false, null)
+    this(false, null, null, null, _resourceVersionNumber, false, null, false, false, null, false, null, null, _cookiePath, false, false, _contextPath, false, null, false, null, null)
 }

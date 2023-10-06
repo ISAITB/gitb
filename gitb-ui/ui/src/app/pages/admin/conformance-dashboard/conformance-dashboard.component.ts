@@ -1,21 +1,21 @@
 import { Component, OnInit } from '@angular/core';
 import { BsModalService } from 'ngx-bootstrap/modal';
-import { mergeMap, Observable, of, share } from 'rxjs';
+import { Observable } from 'rxjs';
 import { Constants } from 'src/app/common/constants';
 import { ConformanceCertificateModalComponent } from 'src/app/modals/conformance-certificate-modal/conformance-certificate-modal.component';
 import { ConformanceService } from 'src/app/services/conformance.service';
 import { DataService } from 'src/app/services/data.service';
-import { ReportService } from 'src/app/services/report.service';
 import { RoutingService } from 'src/app/services/routing.service';
 import { ConformanceCertificateSettings } from 'src/app/types/conformance-certificate-settings';
 import { ConformanceResultFull } from 'src/app/types/conformance-result-full';
 import { ConformanceResultFullList } from 'src/app/types/conformance-result-full-list';
 import { ConformanceResultFullWithTestSuites } from 'src/app/types/conformance-result-full-with-test-suites';
-import { ConformanceResultTestSuite } from 'src/app/types/conformance-result-test-suite';
 import { ConformanceStatusItem } from 'src/app/types/conformance-status-item';
 import { FilterState } from 'src/app/types/filter-state';
 import { TestResultSearchCriteria } from 'src/app/types/test-result-search-criteria';
-import { saveAs } from 'file-saver'
+import { find } from 'lodash';
+import { ConformanceSnapshot } from 'src/app/types/conformance-snapshot';
+import { ConformanceSnapshotsModalComponent } from 'src/app/modals/conformance-snapshots-modal/conformance-snapshots-modal.component';
 
 @Component({
   selector: 'app-conformance-dashboard',
@@ -31,12 +31,12 @@ export class ConformanceDashboardComponent implements OnInit {
     updatePending: false
   }
   communityId?: number
+  selectedCommunityId? :number
   columnCount!: number
   expandedStatements: { [key: string]: any, count: number } = {
     count: 0
   }
   conformanceStatements: ConformanceResultFullWithTestSuites[] = []
-  conformanceStatementsPage: ConformanceResultFullWithTestSuites[] = []
   settings?: Partial<ConformanceCertificateSettings>
   Constants = Constants
 
@@ -47,10 +47,13 @@ export class ConformanceDashboardComponent implements OnInit {
   sortOrder = Constants.ORDER.ASC
   sortColumn = Constants.FILTER_TYPE.COMMUNITY
 
+  latestSnapshotButtonLabel = 'Latest conformance status'
+  snapshotButtonLabel = this.latestSnapshotButtonLabel
+  activeConformanceSnapshot?: ConformanceSnapshot
+
   constructor(
     public dataService: DataService,
     private conformanceService: ConformanceService,
-    private reportService: ReportService,
     private modalService: BsModalService,
     private routingService: RoutingService
   ) { }
@@ -66,6 +69,7 @@ export class ConformanceDashboardComponent implements OnInit {
     } else if (this.dataService.isCommunityAdmin) {
       this.sortColumn = Constants.FILTER_TYPE.ORGANISATION
 			this.communityId = this.dataService.community!.id
+      this.selectedCommunityId = this.communityId
 			if (this.dataService.community!.domain == undefined) {
 				this.columnCount = 10
 				this.filterState.filters.push(Constants.FILTER_TYPE.DOMAIN)
@@ -73,6 +77,7 @@ export class ConformanceDashboardComponent implements OnInit {
 				this.columnCount = 9
       }
     }
+    this.routingService.conformanceDashboardBreadcrumbs()
     this.getConformanceStatements()
   }
 
@@ -80,7 +85,7 @@ export class ConformanceDashboardComponent implements OnInit {
     let searchCriteria: TestResultSearchCriteria = {}
     if (this.dataService.isCommunityAdmin) {
       searchCriteria.communityIds = [this.dataService.community!.id]
-      if (this.dataService.community!.domain !== undefined) {
+      if (this.dataService.community!.domain != undefined) {
         searchCriteria.domainIds = [this.dataService.community!.domain.id]
       }
     }
@@ -90,7 +95,7 @@ export class ConformanceDashboardComponent implements OnInit {
     }
     if (filterData) {
       if (this.dataService.isCommunityAdmin) {
-        if (this.dataService.community!.domain === undefined) {
+        if (this.dataService.community!.domain == undefined) {
           searchCriteria.domainIds = filterData[Constants.FILTER_TYPE.DOMAIN]
         }
       } else {
@@ -108,19 +113,45 @@ export class ConformanceDashboardComponent implements OnInit {
       searchCriteria.organisationProperties = filterData.organisationProperties
       searchCriteria.systemProperties = filterData.systemProperties
     }
+    if (this.communityId == undefined) {
+      if (searchCriteria.communityIds != undefined && searchCriteria.communityIds.length == 1) {
+        const communityIdFromFilters = searchCriteria.communityIds[0]
+        if (communityIdFromFilters != this.selectedCommunityId) {
+          this.snapshotButtonLabel = this.latestSnapshotButtonLabel
+          this.activeConformanceSnapshot = undefined
+          this.selectedCommunityId = communityIdFromFilters
+        }
+      } else {
+        this.snapshotButtonLabel = this.latestSnapshotButtonLabel
+        this.activeConformanceSnapshot = undefined
+        this.selectedCommunityId = undefined
+      }
+    }
 		return searchCriteria
   }
 
 	getConformanceStatementsInternal(fullResults: boolean, forExport: boolean) {
     const result = new Observable<ConformanceResultFullList>((subscriber) => {
       let params = this.getCurrentSearchCriteria()
-      this.conformanceService.getConformanceOverview(params, fullResults, forExport, this.sortColumn, this.sortOrder)
+      let pageToUse = this.currentPage
+      let limitToUse = 10
+      if (forExport) {
+        pageToUse = 1
+        limitToUse = 1000000
+      }
+      this.conformanceService.getConformanceOverview(params, this.activeConformanceSnapshot?.id, fullResults, forExport, this.sortColumn, this.sortOrder, pageToUse, limitToUse)
       .subscribe((data: ConformanceResultFullList) => {
         for (let conformanceStatement of data.data) {
           const completedCount = Number(conformanceStatement.completed)
           const failedCount = Number(conformanceStatement.failed)
           const undefinedCount = Number(conformanceStatement.undefined)
-          conformanceStatement.counters = { completed: completedCount, failed: failedCount, other: undefinedCount}
+          const completedOptionalCount = Number(conformanceStatement.completedOptional)
+          const failedOptionalCount = Number(conformanceStatement.failedOptional)
+          const undefinedOptionalCount = Number(conformanceStatement.undefinedOptional)
+          conformanceStatement.counters = {
+            completed: completedCount, failed: failedCount, other: undefinedCount,
+            completedOptional: completedOptionalCount, failedOptional: failedOptionalCount, otherOptional: undefinedOptionalCount
+          }
           conformanceStatement.overallStatus = this.dataService.conformanceStatusForTests(completedCount, failedCount, undefinedCount)
         }
         subscriber.next(data)
@@ -133,54 +164,17 @@ export class ConformanceDashboardComponent implements OnInit {
   }
 
 	getConformanceStatements() {
-    this.filterState.updatePending = true
-    this.getConformanceStatementsInternal(false, false)
-    .subscribe((data) => {
-			this.conformanceStatements = data.data
-      this.conformanceStatementsTotalCount = this.conformanceStatements.length
-      this.currentPage = 1
-      this.selectPage()
-			this.onCollapseAll()
-    }).add(() => {
-			this.filterState.updatePending = false
-    })
+    this.currentPage = 1
+    this.selectPage()
   }
 
   organiseTestSuites(statement: ConformanceResultFullWithTestSuites) {
-    if (statement.testCases != undefined) {
-      const testSuites: ConformanceResultTestSuite[] = []
-      let testSuite: ConformanceResultTestSuite|undefined
-      for (let item of statement.testCases) {
-        if (testSuite == undefined || testSuite.testSuiteId != item.testSuiteId) {
-          if (testSuite != undefined) {
-            testSuites.push(testSuite)
-          }
-          testSuite = {
-            testSuiteId: item.testSuiteId!,
-            testSuiteName: item.testSuiteName!,
-            expanded: true,
-            result: item.result!,
-            testCases: []
-          }
-        }
-        if (item.result != testSuite.result) {
-          if (item.result == Constants.TEST_CASE_RESULT.FAILURE) {
-            testSuite.result = Constants.TEST_CASE_RESULT.FAILURE
-          } else if (item.result == Constants.TEST_CASE_RESULT.UNDEFINED && testSuite.result == Constants.TEST_CASE_RESULT.SUCCESS) {
-            testSuite.result = Constants.TEST_CASE_RESULT.UNDEFINED
-          }
-        }
-        testSuite.testCases.push(item as ConformanceStatusItem)
+    if (statement.testSuites != undefined) {
+      for (let testSuite of statement.testSuites) {
+        testSuite.hasDisabledTestCases = find(testSuite.testCases, (testCase) => testCase.disabled) != undefined
+        testSuite.hasOptionalTestCases = find(testSuite.testCases, (testCase) => testCase.optional) != undefined
+        testSuite.expanded = true
       }
-      if (testSuite != undefined) {
-        testSuites.push(testSuite)
-      }
-      if (testSuites.length > 1) {
-        for (let testSuite of testSuites) {
-          testSuite.expanded = false
-        }
-      }
-      statement.testSuites = testSuites
     }
   }
 
@@ -189,28 +183,17 @@ export class ConformanceDashboardComponent implements OnInit {
 			this.collapse(statement)
     } else {
       this.expand(statement)
-      if (statement.testCases == undefined) {
-        statement.testCasesLoaded = false
-        this.conformanceService.getConformanceStatus(statement.actorId, statement.systemId)
+      if (statement.testSuites == undefined) {
+        statement.testSuitesLoaded = false
+        this.conformanceService.getConformanceStatus(statement.actorId, statement.systemId, this.activeConformanceSnapshot?.id)
         .subscribe((data) => {
-          const testCases: Partial<ConformanceStatusItem>[] = []
-          for (let result of data.items) {
-            testCases.push({
-              id: result.testCaseId,
-              sessionId: result.sessionId,
-              testSuiteId: result.testSuiteId,
-              testSuiteName: result.testSuiteName,
-              testCaseId: result.testCaseId,
-              testCaseName: result.testCaseName,
-              result: result.result,
-              outputMessage: result.outputMessage,
-              sessionTime: result.sessionTime
-            })
+          if (data) {
+            statement.hasBadge = data.summary.hasBadge
+            statement.testSuites = data.testSuites
+            this.organiseTestSuites(statement)
           }
-          statement.testCases = testCases
-          this.organiseTestSuites(statement)
         }).add(() => {
-          statement.testCasesLoaded = true
+          statement.testSuitesLoaded = true
         })
       }
     }
@@ -280,34 +263,6 @@ export class ConformanceDashboardComponent implements OnInit {
     })
   }
 
-	onExportTestCaseXml(testCase: Partial<ConformanceStatusItem>) {
-    testCase.actionPending = true
-    this.onExportTestCase(testCase, 'application/xml', 'test_case_report.xml')
-    .subscribe(() => {
-      testCase.actionPending = false
-    })
-  }
-  
-	onExportTestCasePdf(testCase: Partial<ConformanceStatusItem>) {
-    testCase.exportPending = true
-    this.onExportTestCase(testCase, 'application/pdf', 'test_case_report.pdf')
-    .subscribe(() => {
-      testCase.exportPending = false
-    })
-  }
-
-	onExportTestCase(testCase: Partial<ConformanceStatusItem>, contentType: string, fileName: string) {
-    return this.reportService.exportTestCaseReport(testCase.sessionId!, testCase.id!, contentType)
-    .pipe(
-      mergeMap((data) => {
-        const blobData = new Blob([data], {type: contentType});
-        saveAs(blobData, fileName);
-        return of(data)
-      }),
-      share()
-    )
-  }
-
 	onExportConformanceStatement(statement?: ConformanceResultFull) {
 		let statementToProcess: ConformanceResultFull
 		if (statement == undefined) {
@@ -334,13 +289,18 @@ export class ConformanceDashboardComponent implements OnInit {
   }
 
   private showSettingsPopup(statement: ConformanceResultFull) {
-    const modalRef = this.modalService.show(ConformanceCertificateModalComponent, {
+    this.modalService.show(ConformanceCertificateModalComponent, {
       class: 'modal-lg',
       initialState: {
         settings: JSON.parse(JSON.stringify(this.settings)),
-        conformanceStatement: statement
+        conformanceStatement: statement,
+        snapshotId: this.activeConformanceSnapshot?.id
       }
     })
+  }
+
+  toCommunity(statement: ConformanceResultFull) {
+    this.routingService.toCommunity(statement.communityId)
   }
 
   toOrganisation(statement: ConformanceResultFull) {
@@ -352,20 +312,60 @@ export class ConformanceDashboardComponent implements OnInit {
     }
   }
 
+  showToOrganisation(statement: ConformanceResultFull) {
+    return statement.organizationId != undefined && statement.organizationId >= 0
+  }
+
   toSystem(statement: ConformanceResultFull) {
-    this.routingService.toSystems(statement.organizationId, statement.systemId)
+    if (statement.organizationId == this.dataService.vendor!.id) {
+      this.routingService.toOwnSystemDetails(statement.systemId)
+    } else {
+      this.routingService.toSystemDetails(statement.communityId, statement.organizationId, statement.systemId)
+    }
+  }
+
+  showToSystem(statement: ConformanceResultFull) {
+    return this.showToOrganisation(statement) && statement.systemId != undefined && statement.systemId >= 0
   }
 
   toStatement(statement: ConformanceResultFull) {
-    this.routingService.toConformanceStatement(statement.organizationId, statement.systemId, statement.actorId, statement.specId)
+    if (statement.organizationId == this.dataService.vendor?.id) {
+      this.routingService.toOwnConformanceStatement(statement.organizationId, statement.systemId, statement.actorId)
+    } else {
+      this.routingService.toConformanceStatement(statement.organizationId, statement.systemId, statement.actorId, statement.communityId)
+    }
+  }
+
+  showToStatement(statement: ConformanceResultFull) {
+    return this.showToSystem(statement) && statement.actorId != undefined && statement.actorId >= 0
+  }
+
+  toDomain(statement: ConformanceResultFull) {
+    this.routingService.toDomain(statement.domainId)
+  }
+
+  showToDomain(statement: ConformanceResultFull) {
+    return statement.domainId != undefined && statement.domainId >= 0 && (
+      this.dataService.isSystemAdmin || (
+        this.dataService.isCommunityAdmin && this.dataService.community?.domain != undefined
+      )
+    )
   }
 
   toSpecification(statement: ConformanceResultFull) {
     this.routingService.toSpecification(statement.domainId, statement.specId)
   }
 
+  showToSpecification(statement: ConformanceResultFull) {
+    return this.showToDomain(statement) && statement.specId != undefined && statement.specId >= 0
+  }
+
   toActor(statement: ConformanceResultFull) {
     this.routingService.toActor(statement.domainId, statement.specId, statement.actorId)
+  }
+
+  showToActor(statement: ConformanceResultFull) {
+    return this.showToSpecification(statement) && statement.actorId != undefined && statement.actorId >= 0
   }
 
   toTestSession(sessionId: string) {
@@ -401,10 +401,16 @@ export class ConformanceDashboardComponent implements OnInit {
   }
 
   selectPage() {
-    const startIndex = (this.currentPage - 1) * Constants.TABLE_PAGE_SIZE
-    const endIndex = startIndex + Constants.TABLE_PAGE_SIZE
-    this.conformanceStatementsPage = this.conformanceStatements.slice(startIndex, endIndex)
-    this.updatePagination()
+    this.filterState.updatePending = true
+    this.getConformanceStatementsInternal(false, false)
+    .subscribe((data) => {
+			this.conformanceStatements = data.data
+      this.conformanceStatementsTotalCount = data.count
+      this.updatePagination()
+			this.onCollapseAll()
+    }).add(() => {
+			this.filterState.updatePending = false
+    })
   }
 
   updatePagination() {
@@ -432,6 +438,38 @@ export class ConformanceDashboardComponent implements OnInit {
       this.sortOrder = Constants.ORDER.DESC
     }
     this.getConformanceStatements()
+  }
+
+  manageConformanceSnapshots() {
+    if (this.selectedCommunityId) {
+      const modalRef = this.modalService.show(ConformanceSnapshotsModalComponent, {
+        class: 'modal-lg',
+        initialState: {
+          communityId: this.selectedCommunityId!,
+          currentlySelectedSnapshot: this.activeConformanceSnapshot?.id
+        }
+      })
+      modalRef.content!.select.subscribe((selectedSnapshot) => {
+        if (selectedSnapshot) {
+          this.snapshotButtonLabel = selectedSnapshot.label + " ("+selectedSnapshot.snapshotTime+")"
+          if (this.activeConformanceSnapshot == undefined || this.activeConformanceSnapshot.id != selectedSnapshot.id) {
+            this.activeConformanceSnapshot = selectedSnapshot
+            this.getConformanceStatements()
+          }
+          this.activeConformanceSnapshot = selectedSnapshot
+        } else {
+          this.viewLatestConformanceSnapshot()
+        }
+      })
+    }
+  }
+
+  viewLatestConformanceSnapshot() {
+    if (this.activeConformanceSnapshot != undefined) {
+      this.activeConformanceSnapshot = undefined
+      this.getConformanceStatements()
+    }
+    this.snapshotButtonLabel = this.latestSnapshotButtonLabel
   }
 
 }

@@ -2,7 +2,7 @@ import { AfterViewInit, Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { filter, find } from 'lodash';
 import { BsModalService } from 'ngx-bootstrap/modal';
-import { mergeMap, of, share } from 'rxjs';
+import { forkJoin, map, mergeMap, of, share } from 'rxjs';
 import { Constants } from 'src/app/common/constants';
 import { LinkSharedTestSuiteModalComponent } from 'src/app/modals/link-shared-test-suite-modal/link-shared-test-suite-modal.component';
 import { TestSuiteUploadModalComponent } from 'src/app/modals/test-suite-upload-modal/test-suite-upload-modal.component';
@@ -16,14 +16,14 @@ import { PopupService } from 'src/app/services/popup.service';
 import { RoutingService } from 'src/app/services/routing.service';
 import { SpecificationService } from 'src/app/services/specification.service';
 import { Actor } from 'src/app/types/actor';
+import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
 import { Specification } from 'src/app/types/specification';
 import { TableColumnDefinition } from 'src/app/types/table-column-definition.type';
 import { TestSuite } from 'src/app/types/test-suite';
 
 @Component({
   selector: 'app-specification-details',
-  templateUrl: './specification-details.component.html',
-  styleUrls: [ './specification-details.component.less' ]
+  templateUrl: './specification-details.component.html'
 })
 export class SpecificationDetailsComponent extends BaseTabbedComponent implements OnInit, AfterViewInit {
 
@@ -84,16 +84,45 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
   }
 
   ngOnInit(): void {
-    this.domainId = Number(this.route.snapshot.paramMap.get('id'))
-    this.specificationId = Number(this.route.snapshot.paramMap.get('spec_id'))
-		this.conformanceService.getSpecificationsWithIds([this.specificationId], undefined, undefined, true, false)
-		.subscribe((data) => {
-      this.specification = data[0]
-      if (!this.specification.group) {
-        // Set to undefined to make sure the "undefined" option in the group select is pre-selected.
-        this.specification.group = undefined
-      }
+    this.domainId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID))
+    this.specificationId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.SPECIFICATION_ID))
+    const groupObservable = this.specificationService.getSpecificationGroups(this.domainId)
+    .pipe(
+      mergeMap((data) => {
+        return of(data)
+      }),
+      share()
+    )
+		const specObservable = this.conformanceService.getSpecification(this.specificationId)
+    .pipe(
+      map((data) => {
+        this.specification = data
+        if (!this.specification.group) {
+          // Set to undefined to make sure the "undefined" option in the group select is pre-selected.
+          this.specification.group = undefined
+        }
+        if (this.specification.badges) {
+          this.specification.badges.specificationId = this.specificationId
+          this.specification.badges.enabled = this.specification.badges.success != undefined && this.specification.badges.success.enabled!
+          this.specification.badges.initiallyEnabled = this.specification.badges.enabled
+          this.specification.badges.failureBadgeActive = this.specification.badges.failure != undefined && this.specification.badges.failure.enabled!
+        }
+      }),
+      share()
+    )
+    forkJoin([groupObservable, specObservable]).subscribe((data) => {
+      this.specification.groups = data[0]
+      this.routingService.specificationBreadcrumbs(this.domainId, this.specificationId, this.breadcrumbLabel())
     })
+  }
+
+  private breadcrumbLabel() {
+    let label = ''
+    if (this.specification.group != undefined) {
+      label += find(this.specification.groups, (group) => group.id == this.specification.group)?.sname + " - "
+    }
+    label += this.specification.sname!
+    return label
   }
 
   loadActors(forceLoad?: boolean) {
@@ -236,7 +265,7 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
   }
 
 	deleteSpecification() {
-		this.confirmationDialogService.confirmed("Confirm delete", "Are you sure you want to delete this "+this.dataService.labelSpecificationLower()+"?", "Yes", "No")
+		this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this "+this.dataService.labelSpecificationLower()+"?", "Delete", "Cancel")
 		.subscribe(() => {
       this.deletePending = true
       this.specificationService.deleteSpecification(this.specificationId)
@@ -251,16 +280,31 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
 
 	saveSpecificationChanges() {
     this.savePending = true
-		this.specificationService.updateSpecification(this.specificationId, this.specification.sname!, this.specification.fname!, this.specification.description, this.specification.hidden, this.specification.group)
+		this.specificationService.updateSpecification(this.specificationId, this.specification.sname!, this.specification.fname!, this.specification.description, this.specification.hidden, this.specification.group, this.specification.badges!)
 		.subscribe(() => {
 			this.popupService.success(this.dataService.labelSpecification()+' updated.')
+      this.dataService.breadcrumbUpdate({id: this.specificationId, type: BreadcrumbType.specification, label: this.breadcrumbLabel()})
     }).add(() => {
       this.savePending = false
     })
   }
 
 	saveDisabled() {
-    return !(this.textProvided(this.specification?.sname) && this.textProvided(this.specification?.fname))
+    return !(
+      this.textProvided(this.specification?.sname) && 
+      this.textProvided(this.specification?.fname) &&
+      (
+        !this.specification.badges!.enabled || 
+        (
+          this.specification.badges!.success.enabled && 
+          this.specification.badges!.other.enabled && 
+          (
+            !this.specification.badges!.failureBadgeActive ||
+            this.specification.badges!.failure.enabled
+          )
+        )
+      )
+    )
   }
 
 	back() {

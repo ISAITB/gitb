@@ -11,18 +11,21 @@
                     </div>
                 </div>
             </div>
-            <div class="panel-footer">
+            <div class="panel-footer button-container">
                 <div class="btn-toolbar">
                     <button type="submit" (click)="saveDomainChanges()" class="btn btn-default" [disable]="deletePending || saveDisabled()" [pending]="savePending">Save changes</button>
-                    <button type="button" *ngIf="dataService.isSystemAdmin" (click)="deleteDomain()" class="btn btn-default" [disable]="savePending" [pending]="deletePending">Delete</button>
                     <button type="button" *ngIf="dataService.isSystemAdmin || (dataService.isCommunityAdmin && !dataService.community!.domainId)" (click)="back()" class="btn btn-default">Back</button>
+                </div>
+                <div class="btn-toolbar btn-toolbar-delete" *ngIf="dataService.isSystemAdmin">
+                    <button type="button" (click)="deleteDomain()" class="btn btn-default btn-delete" [disable]="savePending" [pending]="deletePending">Delete</button>
                 </div>
             </div>
         </form>
     </div>
     <div>
         <tabset #tabs>
-            <tab heading="{{dataService.labelSpecifications()}}" (selectTab)="loadSpecifications()">
+            <tab (selectTab)="loadSpecifications()" customClass="tabClass">
+                <ng-template tabHeading><app-tab-title icon="fa-solid fa-list-check" [text]="dataService.labelSpecifications()"></app-tab-title></ng-template>
                 <div class="tabPanel">
                     <div class="tabControls">
                         <div class="btn-toolbar">
@@ -38,7 +41,7 @@
                                 </ul>
                             </div>
                             <div class="btn-group" dropdown *ngIf="specificationGroups.length > 0">
-                                <button id="button-option-visibility" (click)="$event.stopPropagation()" dropdownToggle type="button" class="btn btn-default dropdown-toggle" aria-controls="dropdown-option-visibility">View {{dataService.labelSpecificationInGroupsLower()}}<span class="caret"></span></button>
+                                <button id="button-option-visibility" (click)="$event.stopPropagation()" dropdownToggle type="button" class="btn btn-default dropdown-toggle" aria-controls="dropdown-option-visibility">View {{dataService.labelSpecificationInGroupsLower()}}<span class="caret withMargin"></span></button>
                                 <ul id="dropdown-option-visibility" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-option-visibility">
                                     <li role="menuitem"><a class="dropdown-item" href (click)="toggleSpecificationGroupCollapse(false);$event.preventDefault();">Show {{dataService.labelSpecificationInGroupsLower()}}</a></li>
                                     <li role="menuitem"><a class="dropdown-item" href (click)="toggleSpecificationGroupCollapse(true);$event.preventDefault();">Hide {{dataService.labelSpecificationInGroupsLower()}}</a></li>
@@ -56,96 +59,45 @@
                             </div>
                         </div>
                     </div>
-                    <div class="panel panel-default">
-                        <table class="table table-directive">
-                            <thead>
-                                <tr>
-                                    <th *ngIf="specificationGroups.length > 0" class="th-min-centered"></th>
-                                    <th>{{dataService.labelSpecification()}}</th>
-                                    <th>Description</th>
-                                    <th class="th-min-centered"></th>
-                                    <th class="th-min"></th>
-                                </tr>
-                            </thead>
-                            <tbody [class.disable-events]="specificationStatus && specificationStatus.status != Constants.STATUS.FINISHED">
-                                <ng-container [ngSwitch]="specificationStatus && specificationStatus.status != Constants.STATUS.FINISHED">
-                                    <ng-container *ngSwitchCase="true">
-                                        <tr>
-                                            <td [attr.colspan]="(specificationGroups.length > 0)?5:4" class="td-data-loading"><app-pending-block></app-pending-block></td>
-                                        </tr>
-                                    </ng-container>
-                                    <ng-container *ngSwitchDefault [ngSwitch]="domainSpecifications.length == 0">
-                                        <ng-container *ngSwitchCase="true">
-                                            <tr>
-                                                <td [attr.colspan]="(specificationGroups.length > 0)?5:3" class="td-no-data"><span>No {{dataService.labelSpecificationsLower()}} found</span></td>
-                                            </tr>
-                                        </ng-container>
-                                        <ng-container *ngSwitchDefault>
-                                            <ng-container *ngFor="let spec of domainSpecifications; let firstGroup = first; let lastGroup = last">
-                                                <tr app-domain-specification-table-row
-                                                    class="group"
-                                                    [spec]="spec"
-                                                    [first]="firstGroup"
-                                                    [last]="lastGroup"
-                                                    [groups]="specificationGroups"
-                                                    (removeSpec)="removeSpecificationFromGroup($event[0], $event[1])"
-                                                    (moveSpec)="moveSpecificationToGroup($event[0], $event[1], $event[2])"
-                                                    (copySpec)="copySpecificationToGroup($event[0], $event[1], $event[2])"
-                                                    (moveUp)="moveSpecificationUp($event)"
-                                                    (moveDown)="moveSpecificationDown($event)"
-                                                    (click)="onSpecificationGroupSelect(spec)"
-                                                ></tr>
-                                                <tr class="group-options" *ngIf="spec.group && spec.options != undefined">
-                                                    <td colspan="5" class="spec-group-options-td">
-                                                        <div [collapse]="spec.collapsed" [isAnimated]="true">
-                                                            <div class="panel panel-default spec-group-options">
-                                                                <table class="table table-directive">
-                                                                    <thead>
-                                                                        <tr>
-                                                                            <th>{{dataService.labelSpecificationInGroup()}}</th>
-                                                                            <th>Description</th>
-                                                                            <th class="th-min-centered"></th>
-                                                                            <th class="th-min"></th>
-                                                                        </tr>
-                                                                    </thead>
-                                                                    <tbody [ngSwitch]="spec.options.length == 0">
-                                                                        <tr *ngSwitchCase="true">
-                                                                            <td colspan="4" class="td-no-data"><span>No {{dataService.labelSpecificationInGroupsLower()}} found.</span></td>
-                                                                        </tr>
-                                                                        <ng-container *ngSwitchDefault>
-                                                                            <ng-container *ngFor="let option of spec.options; let firstOption = first; let lastOption = last">
-                                                                                <tr app-domain-specification-table-row
-                                                                                    class="selectable"
-                                                                                    [spec]="option"
-                                                                                    [first]="firstOption"
-                                                                                    [last]="lastOption"
-                                                                                    [groups]="specificationGroups"
-                                                                                    (removeSpec)="removeSpecificationFromGroup($event[0], $event[1])"
-                                                                                    (moveSpec)="moveSpecificationToGroup($event[0], $event[1], $event[2])"
-                                                                                    (copySpec)="copySpecificationToGroup($event[0], $event[1], $event[2])"
-                                                                                    (moveUp)="moveSpecificationUp($event)"
-                                                                                    (moveDown)="moveSpecificationDown($event)"
-                                                                                    (click)="onSpecificationSelect(option)"
-                                                                                ></tr>
-                                                                            </ng-container>
-                                                                        </ng-container>
-                                                                    </tbody>
-                                                                </table>
-                                                            </div>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            </ng-container>
-                                        </ng-container>
+                    <div>
+                        <ng-container [ngSwitch]="specificationStatus && specificationStatus.status != Constants.STATUS.FINISHED">
+                            <ng-container *ngSwitchCase="true">
+                                <div class="spec-message-div">
+                                    <div class="pending-icon"><app-pending-block [pending]="true"></app-pending-block></div>
+                                    <div class="pending-message">Loading {{dataService.labelSpecificationsLower()}}...</div>
+                                </div>
+                            </ng-container>
+                            <ng-container *ngSwitchDefault [ngSwitch]="domainSpecifications.length == 0">
+                                <ng-container *ngSwitchCase="true">
+                                    <div class="spec-message-div" *ngSwitchCase="true">
+                                        <span>No {{dataService.labelSpecificationsLower()}} found.</span>
+                                    </div>
+                                </ng-container>
+                                <ng-container *ngSwitchDefault>
+                                    <ng-container *ngFor="let spec of domainSpecifications; let firstGroup = first; let lastGroup = last">
+                                        <app-domain-specification-display
+                                            [spec]="spec"
+                                            [first]="firstGroup"
+                                            [last]="lastGroup"
+                                            [groups]="specificationGroups"
+                                            (removeSpec)="removeSpecificationFromGroup($event[0], $event[1])"
+                                            (moveSpec)="moveSpecificationToGroup($event[0], $event[1], $event[2])"
+                                            (copySpec)="copySpecificationToGroup($event[0], $event[1], $event[2])"
+                                            (moveUp)="moveSpecificationUp($event)"
+                                            (moveDown)="moveSpecificationDown($event)"
+                                            (selectSpec)="onSpecificationSelect($event)"
+                                            (click)="onSpecificationGroupSelect(spec)"
+                                        ></app-domain-specification-display>
                                     </ng-container>
                                 </ng-container>
-                            </tbody>
-                        </table>
+                            </ng-container>
+                        </ng-container>
                     </div>
                 </div>
             </tab>
 
-            <tab heading="Shared test suites" (selectTab)="loadSharedTestSuites()">
+            <tab (selectTab)="loadSharedTestSuites()" customClass="tabClass">
+                <ng-template tabHeading><app-tab-title icon="fa-solid fa-box-archive" text="Shared test suites"></app-tab-title></ng-template>
                 <div class="tabPanel">
                     <div class="tabControls">
                         <div class="btn-toolbar">
@@ -165,7 +117,8 @@
                 </div>
             </tab>
 
-            <tab heading="Parameters" (selectTab)="loadDomainParameters()">
+            <tab (selectTab)="loadDomainParameters()" customClass="tabClass">
+                <ng-template tabHeading><app-tab-title icon="fa-solid fa-sliders" text="Parameters"></app-tab-title></ng-template>
                 <div class="tabPanel">
                     <div class="tabControls">
                         <button type="button" class="btn btn-default" (click)="createDomainParameter()">Create parameter</button>
@@ -198,7 +151,7 @@
                                     </ng-container>
                                     <ng-container *ngSwitchDefault>
                                         <tr>
-                                            <td colspan="4" class="td-data-loading"><span><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span></td>
+                                            <td colspan="4" class="td-data-loading"><span><i class="fa-solid fa-spinner fa-spin-override fa-lg"></i></span></td>
                                         </tr>
                                     </ng-container>
                                 </ng-container>

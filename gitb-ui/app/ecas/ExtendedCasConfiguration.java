@@ -1,7 +1,7 @@
 package ecas;
 
-import org.jasig.cas.client.validation.Cas20ServiceTicketValidator;
-import org.jasig.cas.client.validation.TicketValidator;
+import org.apereo.cas.client.validation.Cas20ServiceTicketValidator;
+import org.apereo.cas.client.validation.TicketValidator;
 import org.pac4j.cas.config.CasConfiguration;
 import org.pac4j.cas.store.ProxyGrantingTicketStore;
 import org.pac4j.core.context.WebContext;

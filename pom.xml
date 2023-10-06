@@ -7,7 +7,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>2.7.11</version>
+        <version>3.1.4</version>
     </parent>
     <groupId>com.gitb</groupId>
     <artifactId>GITB</artifactId>
@@ -18,70 +18,61 @@
     <properties>
         <!-- General properties -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
         <maven.build.timestamp.format>yyyy-MM-dd HH:mm:ss</maven.build.timestamp.format>
         <!--
              Library versions. Check for updates using:
              mvn versions:display-dependency-updates -N -N
         -->
         <!-- Plugin versions -->
-        <version.plugin.dependency-check-maven>8.2.1</version.plugin.dependency-check-maven>
-        <version.plugin.maven-deploy-plugin>3.0.0-M2</version.plugin.maven-deploy-plugin>
-        <version.plugin.maven-compiler-plugin>3.10.1</version.plugin.maven-compiler-plugin>
+        <version.plugin.dependency-check-maven>8.4.0</version.plugin.dependency-check-maven>
+        <version.plugin.maven-deploy-plugin>3.1.1</version.plugin.maven-deploy-plugin>
+        <version.plugin.maven-compiler-plugin>3.11.0</version.plugin.maven-compiler-plugin>
+        <version.jaxb2-maven-plugin>3.1.0</version.jaxb2-maven-plugin>
         <!-- Dependency versions -->
-        <version.springBoot>2.7.11</version.springBoot>
-        <version.gitbTypes>1.20.1</version.gitbTypes>
+        <version.springBoot>3.1.4</version.springBoot>
+        <version.gitbTypes>1.21.0</version.gitbTypes>
         <version.bouncycastle>1.70</version.bouncycastle>
-        <version.helgerSchematron>6.3.4</version.helgerSchematron>
+        <version.helgerSchematron>7.1.0</version.helgerSchematron>
         <version.metaInfServices>1.9</version.metaInfServices>
-        <version.cxf>3.5.5</version.cxf>
+        <version.cxf>4.0.3</version.cxf>
         <version.httpComponents>4.5.13</version.httpComponents>
         <version.commonsCodec>1.15</version.commonsCodec>
         <version.reflections>0.10.2</version.reflections>
         <version.commonsIo>2.11.0</version.commonsIo>
         <version.commonsLang3>3.12.0</version.commonsLang3>
-        <version.tika>2.7.0</version.tika>
+        <version.tika>2.8.0</version.tika>
         <version.xerces>2.12.2</version.xerces>
-        <version.jaxbApi>2.3.1</version.jaxbApi>
-        <version.jaxbRuntime>2.3.3</version.jaxbRuntime>
-        <version.saxon>11.4</version.saxon>
-        <version.jaxwsApi>2.3.1</version.jaxwsApi>
-        <version.jwsApi>1.1</version.jwsApi>
-        <version.activation>1.1.1</version.activation>
+        <version.jaxbApi>4.0.0</version.jaxbApi>
+        <version.jaxbRuntime>4.0.1</version.jaxbRuntime>
+        <version.saxon>12.2</version.saxon>
+        <version.jaxwsApi>4.0.0</version.jaxwsApi>
+        <version.jwsApi>3.0.0</version.jwsApi>
+        <version.activation>2.1.2</version.activation>
         <version.xmlResolver>20050927</version.xmlResolver>
-        <version.xmlStreamBuffer>1.5.9</version.xmlStreamBuffer>
-        <version.xmlWsPolicy>2.7.10</version.xmlWsPolicy>
-        <version.xmlWsRuntime>2.3.3</version.xmlWsRuntime>
+        <version.xmlStreamBuffer>2.1.0</version.xmlStreamBuffer>
+        <version.xmlWsPolicy>4.0.1</version.xmlWsPolicy>
         <version.gmbalApi>4.0.3</version.gmbalApi>
-        <version.jaxpRi>1.4</version.jaxpRi>
-        <version.commonsConfiguration>2.8.0</version.commonsConfiguration>
-        <version.akka>2.6.20</version.akka>
-        <version.guava>31.1-jre</version.guava>
+        <version.commonsConfiguration>2.9.0</version.commonsConfiguration>
+        <version.commonsText>1.10.0</version.commonsText>
+        <version.akka>2.6.21</version.akka>
         <version.rgxgen>1.4</version.rgxgen>
-        <version.saajApi>1.3.5</version.saajApi>
-        <version.saajImpl>1.5.2</version.saajImpl>
-        <version.helgerAs2>4.10.1</version.helgerAs2>
-        <version.helgerCommons>10.1.6</version.helgerCommons>
-        <version.helgerPeppol>8.7.4</version.helgerPeppol>
-        <version.helgerUbl>6.7.0</version.helgerUbl>
+        <version.saajImpl>3.0.2</version.saajImpl>
+        <version.helgerCommons>11.0.5</version.helgerCommons>
         <version.dnsJava>3.5.2</version.dnsJava>
         <version.commonsFileUpload>1.5</version.commonsFileUpload>
         <version.commonsCollections>4.4</version.commonsCollections>
-        <version.servletApi>2.5</version.servletApi>
         <version.xmlUnit>2.9.1</version.xmlUnit>
         <version.jerseyClient>1.19.4</version.jerseyClient>
         <version.beanUtils>1.9.4</version.beanUtils>
-        <version.freeMarker>2.3.31</version.freeMarker>
+        <version.freeMarker>2.3.32</version.freeMarker>
         <version.com.openhtmltopdf>1.0.10</version.com.openhtmltopdf>
         <version.org.jsoup>1.15.4</version.org.jsoup>
         <!-- Version overrides in Spring Boot - START -->
         <snakeyaml.version>1.33</snakeyaml.version> <!-- Spring Boot override to resolve CVE-2022-25857 -->
         <!-- Version overrides in Spring Boot - END -->
         <!-- Other version overrides - START -->
-        <version.commonsText>1.10.0</version.commonsText> <!-- Apache Commons Configuration override to resolve CVE-2022-42889 -->
-        <version.woodstox>6.4.0</version.woodstox> <!-- Woodstox version to resolve CVE-2022-40152. This needs to match the version included in CXF core (currently at 3.5.5). -->
-        <version.pdfbox>2.0.27</version.pdfbox>
+        <version.woodstox>6.5.1</version.woodstox> <!-- Woodstox version to resolve CVE-2022-40152. This needs to match the version included in CXF core (currently at 4.0.2). -->
+        <version.pdfbox>2.0.28</version.pdfbox>
         <!-- Other version overrides - END -->
         <!-- Properties used for filtering replacements -->
         <timestamp>${maven.build.timestamp}</timestamp>
@@ -114,11 +105,21 @@
         <pluginManagement>
             <plugins>
                 <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>${version.plugin.maven-compiler-plugin}</version>
+                    <configuration>
+                        <release>17</release>
+                        <forceJavacCompilerUse>true</forceJavacCompilerUse>
+                    </configuration>
+                </plugin>
+                <plugin>
                     <groupId>org.owasp</groupId>
                     <artifactId>dependency-check-maven</artifactId>
                     <version>${version.plugin.dependency-check-maven}</version>
                     <configuration>
                         <failBuildOnCVSS>0</failBuildOnCVSS>
+                        <ossIndexWarnOnlyOnRemoteErrors>true</ossIndexWarnOnlyOnRemoteErrors>
                         <suppressionFile>etc/owasp-suppressions.xml</suppressionFile>
                         <excludes>
                             <exclude>eu.europa.ec.itb.*:*</exclude>
@@ -136,35 +137,25 @@
                     <artifactId>maven-deploy-plugin</artifactId>
                     <version>${version.plugin.maven-deploy-plugin}</version>
                 </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>jaxb2-maven-plugin</artifactId>
+                    <version>${version.jaxb2-maven-plugin}</version>
+                </plugin>
             </plugins>
         </pluginManagement>
         <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>${version.plugin.maven-compiler-plugin}</version>
-                <configuration>
-                    <release>11</release>
-                    <forceJavacCompilerUse>true</forceJavacCompilerUse>
-                </configuration>
-            </plugin>
             <plugin>
                 <groupId>org.owasp</groupId>
                 <artifactId>dependency-check-maven</artifactId>
             </plugin>
         </plugins>
     </build>
-    <dependencies>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-logging</artifactId>
-        </dependency>
-    </dependencies>
     <dependencyManagement>
         <dependencies>
             <dependency>
                 <groupId>eu.europa.ec.itb</groupId>
-                <artifactId>gitb-types</artifactId>
+                <artifactId>gitb-types-jakarta</artifactId>
                 <version>${version.gitbTypes}</version>
             </dependency>
             <dependency>
@@ -240,6 +231,11 @@
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
+                <artifactId>commons-text</artifactId>
+                <version>${version.commonsText}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
                 <artifactId>commons-lang3</artifactId>
                 <version>${version.commonsLang3}</version>
             </dependency>
@@ -253,17 +249,14 @@
                 <artifactId>xercesImpl</artifactId>
                 <version>${version.xerces}</version>
             </dependency>
-            <!-- TODO check if needed -->
             <dependency>
-                <groupId>javax.xml.bind</groupId>
-                <artifactId>jaxb-api</artifactId>
+                <groupId>jakarta.xml.bind</groupId>
+                <artifactId>jakarta.xml.bind-api</artifactId>
                 <version>${version.jaxbApi}</version>
             </dependency>
-            <!-- TODO check if needed -->
             <dependency>
-                <groupId>org.glassfish.jaxb</groupId>
-                <artifactId>jaxb-runtime</artifactId>
-                <!-- Version must match the 2.3.* API -->
+                <groupId>com.sun.xml.bind</groupId>
+                <artifactId>jaxb-impl</artifactId>
                 <version>${version.jaxbRuntime}</version>
             </dependency>
             <dependency>
@@ -271,22 +264,19 @@
                 <artifactId>Saxon-HE</artifactId>
                 <version>${version.saxon}</version>
             </dependency>
-            <!-- TODO check if needed -->
             <dependency>
-                <groupId>javax.xml.ws</groupId>
-                <artifactId>jaxws-api</artifactId>
+                <groupId>jakarta.xml.ws</groupId>
+                <artifactId>jakarta.xml.ws-api</artifactId>
                 <version>${version.jaxwsApi}</version>
             </dependency>
-            <!-- TODO check if needed -->
             <dependency>
-                <groupId>javax.jws</groupId>
-                <artifactId>javax.jws-api</artifactId>
+                <groupId>jakarta.jws</groupId>
+                <artifactId>jakarta.jws-api</artifactId>
                 <version>${version.jwsApi}</version>
             </dependency>
-            <!-- TODO check if needed -->
             <dependency>
-                <groupId>javax.activation</groupId>
-                <artifactId>activation</artifactId>
+                <groupId>jakarta.activation</groupId>
+                <artifactId>jakarta.activation-api</artifactId>
                 <version>${version.activation}</version>
             </dependency>
             <!-- TODO check if needed -->
@@ -295,13 +285,11 @@
                 <artifactId>resolver</artifactId>
                 <version>${version.xmlResolver}</version>
             </dependency>
-            <!-- TODO check if needed -->
             <dependency>
                 <groupId>com.sun.xml.stream.buffer</groupId>
                 <artifactId>streambuffer</artifactId>
                 <version>${version.xmlStreamBuffer}</version>
             </dependency>
-            <!-- TODO check if needed -->
             <dependency>
                 <groupId>com.sun.xml.ws</groupId>
                 <artifactId>policy</artifactId>
@@ -309,21 +297,9 @@
             </dependency>
             <!-- TODO check if needed -->
             <dependency>
-                <groupId>com.sun.xml.ws</groupId>
-                <artifactId>jaxws-rt</artifactId>
-                <version>${version.xmlWsRuntime}</version>
-            </dependency>
-            <!-- TODO check if needed -->
-            <dependency>
                 <groupId>org.glassfish.gmbal</groupId>
                 <artifactId>gmbal-api-only</artifactId>
                 <version>${version.gmbalApi}</version>
-            </dependency>
-            <!-- TODO check if needed -->
-            <dependency>
-                <groupId>com.sun.org.apache</groupId>
-                <artifactId>jaxp-ri</artifactId>
-                <version>${version.jaxpRi}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
@@ -336,55 +312,15 @@
                 <version>${version.akka}</version>
             </dependency>
             <dependency>
-                <groupId>com.google.guava</groupId>
-                <artifactId>guava</artifactId>
-                <version>${version.guava}</version>
-            </dependency>
-            <dependency>
                 <groupId>com.github.curious-odd-man</groupId>
                 <artifactId>rgxgen</artifactId>
                 <version>${version.rgxgen}</version>
             </dependency>
-            <!-- TODO check if needed -->
-            <dependency>
-                <groupId>javax.xml.soap</groupId>
-                <artifactId>saaj-api</artifactId>
-                <version>${version.saajApi}</version>
-            </dependency>
-            <!-- TODO check if needed -->
             <dependency>
                 <groupId>com.sun.xml.messaging.saaj</groupId>
                 <artifactId>saaj-impl</artifactId>
-                <!-- Do not update version -->
                 <version>${version.saajImpl}</version>
             </dependency>
-            <!-- TODO decouple AS2 - START -->
-            <dependency>
-                <groupId>com.helger.as2</groupId>
-                <artifactId>as2-lib</artifactId>
-                <version>${version.helgerAs2}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.helger.commons</groupId>
-                <artifactId>ph-datetime</artifactId>
-                <version>${version.helgerCommons}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.helger.peppol</groupId>
-                <artifactId>peppol-sbdh</artifactId>
-                <version>${version.helgerPeppol}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.helger.peppol</groupId>
-                <artifactId>peppol-commons</artifactId>
-                <version>${version.helgerPeppol}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.helger.ubl</groupId>
-                <artifactId>ph-ubl21</artifactId>
-                <version>${version.helgerUbl}</version>
-            </dependency>
-            <!-- TODO decouple AS2 - END -->
             <dependency>
                 <groupId>dnsjava</groupId>
                 <artifactId>dnsjava</artifactId>
@@ -414,13 +350,6 @@
                 <groupId>org.bouncycastle</groupId>
                 <artifactId>bcpkix-jdk15on</artifactId>
                 <version>${version.bouncycastle}</version>
-            </dependency>
-            <!-- TODO check if needed -->
-            <dependency>
-                <groupId>javax.servlet</groupId>
-                <artifactId>servlet-api</artifactId>
-                <version>${version.servletApi}</version>
-                <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>com.helger.schematron</groupId>
@@ -483,22 +412,10 @@
                 <artifactId>pdfbox</artifactId>
                 <version>${version.pdfbox}</version>
             </dependency>
-            <!-- TODO check if needed -->
-            <dependency>
-                <groupId>com.sun.jersey</groupId>
-                <artifactId>jersey-client</artifactId>
-                <version>${version.jerseyClient}</version>
-            </dependency>
             <dependency>
                 <groupId>org.freemarker</groupId>
                 <artifactId>freemarker</artifactId>
                 <version>${version.freeMarker}</version>
-            </dependency>
-            <!-- Apache Commons Configuration override -->
-            <dependency>
-                <groupId>org.apache.commons</groupId>
-                <artifactId>commons-text</artifactId>
-                <version>${version.commonsText}</version>
             </dependency>
             <!-- Woodstox override -->
             <dependency>

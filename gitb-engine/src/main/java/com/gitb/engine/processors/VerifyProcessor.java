@@ -7,6 +7,7 @@ import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.remote.validation.RemoteValidationModuleClient;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.engine.utils.TestCaseUtils;
+import com.gitb.engine.validation.handlers.xmlunit.XmlMatchValidator;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.tdl.Binding;
 import com.gitb.tdl.ErrorLevel;
@@ -23,7 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MarkerFactory;
 
-import javax.xml.bind.JAXBElement;
+import jakarta.xml.bind.JAXBElement;
 import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -116,7 +117,7 @@ public class VerifyProcessor implements IProcessor {
 		// Add validator-specific inputs
 		if (validator instanceof AbstractValidator) {
 			inputs.put(AbstractValidator.TEST_CASE_ID_INPUT, new StringType(scope.getContext().getTestCase().getId()));
-			if (validator instanceof XPathValidator) {
+			if (validator instanceof XPathValidator || validator instanceof XmlMatchValidator) {
 				inputs.put(XPathValidator.NAMESPACE_MAP_INPUT, MapType.fromMap(scope.getNamespaceDefinitions()));
 			}
 		}

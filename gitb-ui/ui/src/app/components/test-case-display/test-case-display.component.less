@@ -1,0 +1,69 @@
+@import '../../../styles/less/_common.less';
+
+.testCaseContainer {
+    padding: 0px 15px 10px 15px;
+    .mainLine {
+        display: flex;
+        align-items: center;        
+        width: 100%;
+    }
+    .testCase {
+        display: flex;
+        flex-wrap: wrap;
+        background: @gray-light-1;
+        border: 1px solid @gray-dark-1;
+        align-items: center;
+        padding: 10px;
+        border-radius: 4px;
+        &.padded {
+            margin-top: 5px;
+        }
+        &.last {
+            margin-bottom: 5px;
+        }
+        &.disabled {
+            .testCaseName, .testCaseDescription {
+                opacity: 0.4;
+            }
+        }
+        &.hasDescription {
+            &:hover {
+                cursor: pointer;
+                background: @gray-highlight;
+            }
+        }
+    }
+    .collapseIconContainer {
+        min-width: 25px;
+    }
+    .testCasePrescription {
+        margin-right: 10px;
+    }
+    .testCaseName {
+        font-weight: bold;
+    }
+    .testCaseDescription {
+        width: 100%;
+        margin-top: 10px;
+    }
+    .testCaseExecution {
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        &> .btn-toolbar {
+            margin-left: 20px;
+            display: flex;
+        }
+        .testCaseStatus {
+            margin-left: 38px;
+            display: flex;
+            align-items: center;
+        }
+        .testCaseTagsContainer {
+            margin-left: 20px;
+        }
+        .testCaseUpdateTimeContainer {
+            margin-left: 20px;
+        }
+    }
+}

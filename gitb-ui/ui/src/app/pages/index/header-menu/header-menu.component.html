@@ -1,0 +1,21 @@
+<div class="root-container">
+    <div class="header-profile-user" *ngIf="userLoaded()" [class.expanded]="expanded" (mouseenter)="overHeader()" (mouseleave)="leftHeader()">
+      <span class="user-icon"><i class="fa-solid fa-user"></i></span><span class="header-user-name"> {{dataService.user?.name}}</span><span class="user-icon-expand"><i class="fa-solid" [ngClass]="{'fa-angle-right': !expanded, 'fa-angle-down': expanded}"></i></span>
+    </div>
+    <div class="header-popup" *ngIf="expanded" (mouseenter)="overPopup()" (mouseleave)="leftPopup()">
+        <div class="header-popup-spacing">
+            <div class="header-popup-spacing-inner">
+                <div class="header-popup-user">
+                  <div class="user-name">{{dataService.user?.name}}</div>
+                  <div class="user-description" *ngIf="userFullyLoaded()">{{dataService.getRoleDescription(false)}}</div>
+                </div>
+                <div class="header-popup-options" *ngIf="!logoutInProgress">
+                  <div class="profile-option" *ngIf="!dataService.isDemoAccount() && (dataService.configuration.ssoEnabled || !dataService.user?.onetime) && isAuthenticated()" (click)="routingService.toProfile(); expanded = false"><span class="icon"><i class="fa-solid fa-user-pen"></i></span><span>My profile</span></div>
+                  <div class="profile-option" *ngIf="dataService.configuration.ssoEnabled && isAuthenticated()" (click)="switchAccount(); expanded = false"><span class="icon"><i class="fa-solid fa-arrows-rotate"></i></span><span>Switch role</span></div>
+                  <div class="profile-option" *ngIf="!dataService.isDemoAccount() && !dataService.configuration.ssoEnabled" (click)="routingService.toChangePassword(); expanded = false"><span class="icon"><i class="fa-solid fa-key"></i></span><span>Change password</span></div>
+                  <div class="profile-option" (click)="logout(); expanded = false"><span class="icon"><i class="fa-solid fa-power-off"></i></span><span>Logout</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+  </div>

@@ -120,7 +120,7 @@ public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorAct
 					}
 				}
 				MessagingModule moduleDefinition = messagingHandler.getModuleDefinition();
-				if (moduleDefinition.getReceiveConfigs() != null) {
+				if (moduleDefinition != null && moduleDefinition.getReceiveConfigs() != null) {
 					checkRequiredConfigsAndSetDefaultValues(moduleDefinition.getReceiveConfigs().getParam(), step.getConfig());
 				}
 				Message inputMessage = getMessageFromBindings(step.getInput());

@@ -2,7 +2,7 @@ package com.gitb.processing;
 
 import com.gitb.tr.TAR;
 
-public final class ProcessingReport {
+public class ProcessingReport {
 
     private final TAR report;
     private final ProcessingData data;
