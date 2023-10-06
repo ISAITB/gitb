@@ -1,6 +1,6 @@
 <div class="root-container" [class.not-first]="!first" [class.top-level]="spec.group || spec.groupId == undefined">
     <div class="spec-container">
-        <app-collapsing-icon [hidden]="!spec.group" [padded]="false" [isCollapsed]="spec.collapsed"></app-collapsing-icon>
+        <app-collapsing-icon [hidden]="!spec.group" [padded]="false" [isCollapsed]="spec.collapsed" [asDiv]="true"></app-collapsing-icon>
         <div class="spec-name" [class.left-margin]="spec.group">{{spec.fname}}</div>
         <div class="spec-description" *ngIf="spec.description != undefined && spec.description != ''">{{spec.description}}</div>
         <div class="right-container">

@@ -1,6 +1,6 @@
 <div class="rootContainer" [class.hovering]="hovering">
     <div class="titleContainer" (click)="headerClicked()" (mouseover)="hovering = true" (mouseout)="hovering = false">
-        <div class="configCollapse"><app-collapsing-icon [isCollapsed]="status.collapsed"></app-collapsing-icon></div>
+        <div class="configCollapse"><app-collapsing-icon [isCollapsed]="status.collapsed" [asDiv]="true"></app-collapsing-icon></div>
         <div class="configTitle">{{configTitle}}</div>
         <div *ngIf="configDescription" class="configDescription">{{configDescription}}</div>
         <div [class.active]="status.enabled" class="configStatus">

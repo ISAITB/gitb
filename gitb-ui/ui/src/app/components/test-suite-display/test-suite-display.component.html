@@ -1,7 +1,7 @@
 <div class="testSuiteContainer">
     <div class="testSuite" [class.hovering]="hovering[testSuite.id]" *ngFor="let testSuite of testSuites">
         <div class="testSuiteInfo" (mouseenter)="hovering[testSuite.id] = true" (mouseleave)="hovering[testSuite.id] = false" (click)="onExpand(testSuite)">
-            <div><app-collapsing-icon [isCollapsed]="!testSuite.expanded"></app-collapsing-icon></div>
+            <div><app-collapsing-icon [isCollapsed]="!testSuite.expanded" [asDiv]="true"></app-collapsing-icon></div>
             <div class="testSuiteName">{{testSuite.sname}}</div>
             <div *ngIf="testSuite.description != undefined && testSuite.description.trim() != ''" class="testSuiteDescription">{{testSuite.description}}</div>
             <div class="testSuiteExecution">
