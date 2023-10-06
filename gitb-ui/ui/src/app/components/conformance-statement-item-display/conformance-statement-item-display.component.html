@@ -7,7 +7,7 @@
             <div class="item-container" [class.shade]="shade">
                 <div class="item-header" (click)="clickHeader();$event.stopPropagation()" [class.actionable]="expandable || withCheck" [class.wrapDescriptions]="wrapDescriptions">
                     <div class="item-header-title">
-                        <div class="item-icon" *ngIf="expandable && hasChildren && !allChildrenHidden"><app-collapsing-icon [isCollapsed]="item.collapsed!"></app-collapsing-icon></div>
+                        <div class="item-icon" *ngIf="expandable && hasChildren && !allChildrenHidden"><app-collapsing-icon [isCollapsed]="item.collapsed!" [asDiv]="true"></app-collapsing-icon></div>
                         <div class="item-check" *ngIf="showCheck"><input type="checkbox" name="itemCheck" [(ngModel)]="item.checked" (ngModelChange)="updateChecked()"></div>
                         <div class="item-name">{{item.name}}</div>
                     </div>

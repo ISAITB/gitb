@@ -11,6 +11,7 @@ export class CollapsingIconComponent implements OnInit {
   @Input() isCollapsed = false
   @Input() hidden = false
   @Input() padded = true
+  @Input() asDiv = false
 
   constructor() { }
 
