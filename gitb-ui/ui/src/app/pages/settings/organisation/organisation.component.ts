@@ -65,7 +65,7 @@ export class OrganisationComponent extends OrganisationDetailsComponent implemen
   }
 
   override isShowUsersTab() {
-    return this.dataService.isVendorAdmin || this.dataService.isVendorUser
+    return (this.dataService.isVendorAdmin || this.dataService.isVendorUser) && !this.dataService.isDemoAccount()
   }
 
   override isApiInfoVisible() {
