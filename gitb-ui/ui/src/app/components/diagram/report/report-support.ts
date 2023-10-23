@@ -6,34 +6,46 @@ import { Indicator } from "../../code-editor-modal/indicator"
 import { ReportService } from "src/app/services/report.service"
 import { AnyContent } from "../any-content"
 import { mergeMap, Observable, of } from "rxjs"
+import { HtmlService } from "src/app/services/html.service"
+import { DataService } from "src/app/services/data.service"
 
 export abstract class ReportSupport {
 
     constructor(
         private modalService: BsModalService,
-        private reportService: ReportService
+        private reportService: ReportService,
+        private htmlService: HtmlService,
+        protected dataService: DataService
     ) {}
 
     private loadedReferences: {[key: string]: {data: ArrayBuffer, mimeType: string|undefined}} = {}
 
     openEditorWindow(name?: string, value?: string, assertionReports?: AssertionReport[], lineNumber?: number, mimeType?: string) {
-        const indicators = this.extractRelatedIndicators(name, assertionReports)
-        this.modalService.show(CodeEditorModalComponent, {
-            class: 'modal-lg',
-            initialState: {
-                documentName: name,
-                indicators: indicators,
-                lineNumber: lineNumber,
-                editorOptions: {
-                    value: value,
-                    readOnly: true,
-                    lineNumbers: true,
-                    smartIndent: false,
-                    electricChars: false,
-                    mode: (mimeType == undefined)?'application/xml':mimeType
+        if (value != undefined && mimeType != undefined && this.dataService.isImageType(mimeType)) {
+            this.htmlService.showHtml(
+                name == undefined ? "Image preview" : name,
+                "<div class='report-image-container'><img src='"+this.dataService.dataUrlFromBase64(value!, mimeType!)+"'></div>",
+                "modal-lg"
+            )
+        } else {
+            const indicators = this.extractRelatedIndicators(name, assertionReports)
+            this.modalService.show(CodeEditorModalComponent, {
+                class: 'modal-lg',
+                initialState: {
+                    documentName: name,
+                    indicators: indicators,
+                    lineNumber: lineNumber,
+                    editorOptions: {
+                        value: value,
+                        readOnly: true,
+                        lineNumbers: true,
+                        smartIndent: false,
+                        electricChars: false,
+                        mode: (mimeType == undefined)?'application/xml':mimeType
+                    }
                 }
-            }
-        })
+            })
+        }
     }
 
     private extractRelatedIndicators(name?: string, assertionReports?: AssertionReport[]) {
@@ -59,11 +71,11 @@ export abstract class ReportSupport {
     isFileReference(item: AnyContent) {
         return item?.valueToUse != undefined && item.valueToUse.startsWith('___[[') && item.valueToUse.endsWith(']]___')
     }
-    
+
     getFileReference(item: AnyContent): string {
         return item.valueToUse!.slice(5, item.valueToUse!.length - 5)
     }
-    
+
     downloadFileReference(sessionId: string, anyContent: AnyContent): Observable<{data: ArrayBuffer, mimeType: string|undefined}> {
         const dataId = this.getFileReference(anyContent)
         if (this.loadedReferences[dataId] == undefined) {

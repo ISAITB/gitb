@@ -498,6 +498,10 @@ export class DataService {
     }
   }
 
+  dataUrlFromBase64(base64: string, mimeType: string) {
+    return "data:"+mimeType+";base64,"+base64
+  }
+
   base64FromDataURL(dataURL: string) {
     // DEPRECATED - To be removed
     return dataURL.substring(dataURL.indexOf(',')+1)
@@ -508,56 +512,73 @@ export class DataService {
     return dataURL.substring(dataURL.indexOf(':')+1, dataURL.indexOf(';'))
   }
 
-  extensionFromMimeType(mimeType: string|undefined) {
+  isImageType(mimeTypeToCheck: string|undefined) {
+    if (mimeTypeToCheck != undefined) {
+      const mimeType = mimeTypeToCheck.toLowerCase()
+      if (mimeType == "image/png" ||
+          mimeType == "image/gif" ||
+          mimeType == "image/jpeg" ||
+          mimeType == "image/svg+xml") {
+        return true
+      }
+    }
+    return false
+  }
+
+  extensionFromMimeType(mimeTypeToCheck: string|undefined) {
     let result = ""
-    if (mimeType == "text/xml" || mimeType == "application/xml") {
-      result = ".xml"
-    } else if (mimeType == "application/zip" || mimeType == "application/x-zip-compressed") {
-      result = ".zip"
-    } else if (mimeType == "application/pkix-cert") {
-      result = ".cer"
-    } else if (mimeType == "application/pdf") {
-      result = ".pdf"
-    } else if (mimeType == "application/json") {
-      result = ".json"
-    } else if (mimeType == "text/plain") {
-      result = ".txt"
-    } else if (mimeType == "image/png") {
-      result = ".png"
-    } else if (mimeType == "image/gif") {
-      result = ".gif"
-    } else if (mimeType == "image/jpeg") {
-      result = ".jpeg"
-    } else if (mimeType == "image/svg+xml") {
-      result = ".svg"
+    if (mimeTypeToCheck != undefined) {
+      const mimeType = mimeTypeToCheck.toLowerCase()
+      if (mimeType == "text/xml" || mimeType == "application/xml") {
+        result = ".xml"
+      } else if (mimeType == "application/zip" || mimeType == "application/x-zip-compressed") {
+        result = ".zip"
+      } else if (mimeType == "application/pkix-cert") {
+        result = ".cer"
+      } else if (mimeType == "application/pdf") {
+        result = ".pdf"
+      } else if (mimeType == "application/json") {
+        result = ".json"
+      } else if (mimeType == "text/plain") {
+        result = ".txt"
+      } else if (mimeType == "image/png") {
+        result = ".png"
+      } else if (mimeType == "image/gif") {
+        result = ".gif"
+      } else if (mimeType == "image/jpeg") {
+        result = ".jpeg"
+      } else if (mimeType == "image/svg+xml") {
+        result = ".svg"
+      }
     }
     return result
   }
 
-  mimeTypeFromExtension(extension: string|undefined) {
-    let result: string
-    if (extension == ".xml") {
-      result = "application/xml"
-    } else if (extension == ".zip") {
-      result = "application/zip"
-    } else if (extension == ".cer") {
-      result = "application/pkix-cert"
-    } else if (extension == ".pdf") {
-      result = "application/pdf"
-    } else if (extension == ".json") {
-      result = "application/json"
-    } else if (extension == ".txt") {
-      result = "text/plain"
-    } else if (extension == ".png") {
-      result = "image/png"
-    } else if (extension == ".gif") {
-      result = "image/gif"
-    } else if (extension == ".jpeg" || extension == ".jpg") {
-      result = "image/jpeg"
-    } else if (extension == ".svg") {
-      result = "image/svg+xml"
-    } else {
-      result = "application/octet-stream"
+  mimeTypeFromExtension(extensionToCheck: string|undefined) {
+    let result = "application/octet-stream"
+    if (extensionToCheck != undefined) {
+      const extension = extensionToCheck.toLowerCase()
+      if (extension == ".xml") {
+        result = "application/xml"
+      } else if (extension == ".zip") {
+        result = "application/zip"
+      } else if (extension == ".cer") {
+        result = "application/pkix-cert"
+      } else if (extension == ".pdf") {
+        result = "application/pdf"
+      } else if (extension == ".json") {
+        result = "application/json"
+      } else if (extension == ".txt") {
+        result = "text/plain"
+      } else if (extension == ".png") {
+        result = "image/png"
+      } else if (extension == ".gif") {
+        result = "image/gif"
+      } else if (extension == ".jpeg" || extension == ".jpg") {
+        result = "image/jpeg"
+      } else if (extension == ".svg") {
+        result = "image/svg+xml"
+      }
     }
     return result
   }

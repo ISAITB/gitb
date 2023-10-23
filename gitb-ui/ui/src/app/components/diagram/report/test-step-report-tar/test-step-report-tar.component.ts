@@ -7,6 +7,8 @@ import { AnyContent } from '../../any-content';
 import { AssertionReport } from '../../assertion-report';
 import { ReportSupport } from '../report-support';
 import { StepReport } from '../step-report';
+import { HtmlService } from 'src/app/services/html.service';
+import { DataService } from 'src/app/services/data.service';
 
 @Component({
   selector: 'app-test-step-report-tar',
@@ -22,8 +24,10 @@ export class TestStepReportTARComponent extends ReportSupport implements OnInit 
 
   constructor(
     modalService: BsModalService,
-    reportService: ReportService
-  ) { super(modalService, reportService) }
+    reportService: ReportService,
+    htmlService: HtmlService,
+    dataService: DataService
+  ) { super(modalService, reportService, htmlService, dataService) }
 
   ngOnInit(): void {
     // Calculate the value of each item in the report context

@@ -205,7 +205,7 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
         instruction.setId(stepId);
         instruction.setName(instructionCommand.getName());
         instruction.setEncoding(instructionCommand.getEncoding());
-        instruction.setMimeType(instructionCommand.getMimeType());
+        instruction.setMimeType(fixedValueOrVariable(instructionCommand.getMimeType(), variableResolver, null));
         instruction.setForceDisplay(instructionCommand.isForceDisplay());
 
         ExpressionHandler exprHandler = new ExpressionHandler(this.scope);
@@ -234,7 +234,7 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
         inputRequest.setEncoding(instructionCommand.getEncoding());
         inputRequest.setId(stepId);
         inputRequest.setInputType(instructionCommand.getInputType());
-        inputRequest.setMimeType(instructionCommand.getMimeType());
+        inputRequest.setMimeType(fixedValueOrVariable(instructionCommand.getMimeType(), variableResolver, null));
         // Handle text inputs.
         if (instructionCommand.getInputType() != InputRequestInputType.UPLOAD) {
             // Select options.

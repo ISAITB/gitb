@@ -10,6 +10,7 @@ import { AnyContent } from '../../any-content';
 import { ReportSupport } from '../report-support';
 import { StepReport } from '../step-report';
 import { saveAs } from 'file-saver'
+import { HtmlService } from 'src/app/services/html.service';
 
 @Component({
   selector: 'app-any-content-view',
@@ -40,11 +41,12 @@ export class AnyContentViewComponent extends ReportSupport implements OnInit {
   constructor(
     private testService: TestService,
     reportService: ReportService,
-    private dataService: DataService,
+    dataService: DataService,
     modalService: BsModalService,
     private popupService: PopupService,
-    private confirmationDialogService: ConfirmationDialogService
-  ) { super(modalService, reportService) }
+    private confirmationDialogService: ConfirmationDialogService,
+    htmlService: HtmlService
+  ) { super(modalService, reportService, htmlService, dataService) }
 
   ngOnInit(): void {
     this.value = this.context.valueToUse

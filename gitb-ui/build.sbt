@@ -14,7 +14,7 @@ val cxfVersion = "4.0.3"
 val guiceVersion = "5.1.0" // Keep the 5.1.0 version as for Play 2.8.19 we need to base injection on javax.injection annotations and not jakarta.injection annotations.
 val commonsTextVersion = "1.10.0"
 val jjwtVersion = "0.11.5"
-val gitbTypesVersion = "1.21.0"
+val gitbTypesVersion = "1.22.0-SNAPSHOT"
 
 useCoursier := false
 
