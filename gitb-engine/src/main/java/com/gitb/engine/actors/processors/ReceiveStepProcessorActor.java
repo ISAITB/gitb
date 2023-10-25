@@ -176,7 +176,6 @@ public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorAct
 				signalStepStatus(handleMessagingResult(((NotificationReceived) message).getReport()));
 			} else if (message instanceof TimeoutExpired) {
 				if (!receivedResponse) {
-					logger.debug(addMarker(), "Timeout expired while waiting to receive message");
 					VariableResolver resolver = new VariableResolver(scope);
 					String flagName = null;
 					if (!StringUtils.isBlank(step.getTimeoutFlag())) {
@@ -193,6 +192,11 @@ public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorAct
 						} else {
 							errorIfTimeout = Boolean.parseBoolean(step.getTimeoutIsError());
 						}
+					}
+					if (errorIfTimeout) {
+						logger.error(addMarker(), "Timeout expired while waiting to receive message");
+					} else {
+						logger.debug(addMarker(), "Timeout expired while waiting to receive message");
 					}
 					signalStepStatus(handleMessagingResult(MessagingHandlerUtils.getMessagingReportForTimeout(flagName, errorIfTimeout)));
 				}
