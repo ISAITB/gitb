@@ -243,4 +243,11 @@
         <packageUrl regex="true">^pkg:maven/com\.fasterxml\.jackson\.core/jackson\-databind@.*$</packageUrl>
         <cve>CVE-2023-35116</cve>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: akka-actor_2.13-2.6.21.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.typesafe\.akka/akka\-actor_2\.13@.*$</packageUrl>
+        <vulnerabilityName>CVE-2023-45865</vulnerabilityName>
+    </suppress>
 </suppressions>
