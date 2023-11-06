@@ -7,7 +7,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.1.4</version>
+        <version>3.1.5</version>
     </parent>
     <groupId>com.gitb</groupId>
     <artifactId>GITB</artifactId>
@@ -24,13 +24,13 @@
              mvn versions:display-dependency-updates -N -N
         -->
         <!-- Plugin versions -->
-        <version.plugin.dependency-check-maven>8.4.0</version.plugin.dependency-check-maven>
+        <version.plugin.dependency-check-maven>8.4.2</version.plugin.dependency-check-maven>
         <version.plugin.maven-deploy-plugin>3.1.1</version.plugin.maven-deploy-plugin>
         <version.plugin.maven-compiler-plugin>3.11.0</version.plugin.maven-compiler-plugin>
         <version.jaxb2-maven-plugin>3.1.0</version.jaxb2-maven-plugin>
         <!-- Dependency versions -->
-        <version.springBoot>3.1.4</version.springBoot>
-        <version.gitbTypes>1.21.0</version.gitbTypes>
+        <version.springBoot>3.1.5</version.springBoot>
+        <version.gitbTypes>1.21.1</version.gitbTypes>
         <version.bouncycastle>1.70</version.bouncycastle>
         <version.helgerSchematron>7.1.0</version.helgerSchematron>
         <version.metaInfServices>1.9</version.metaInfServices>
