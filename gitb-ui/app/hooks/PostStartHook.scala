@@ -324,7 +324,7 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext, actorSystem: Actor
         Files.createDirectories(apiDocsFile.getParentFile.toPath)
         Files.writeString(apiDocsFile.toPath, template, StandardCharsets.UTF_8)
       }
-      logger.info("Prepared REST API documentation at path [{}]", apiDocsFile.toPath.toString)
+      logger.info("Prepared REST API documentation")
     } catch {
         case e: Exception =>
           logger.error("Failed to generate REST API documentation", e)
