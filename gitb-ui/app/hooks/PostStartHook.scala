@@ -3,10 +3,12 @@ package hooks
 import akka.actor.ActorSystem
 import config.Configurations
 import config.Configurations.BUILD_TIMESTAMP
+import jakarta.xml.ws.Endpoint
 import jaxws.TestbedService
 import managers._
 import managers.export.ImportCompleteManager
 import models.Constants
+import models.Enums.UserRole
 import org.apache.commons.io.FileUtils
 import org.apache.commons.lang3.{RandomStringUtils, StringUtils}
 import org.mindrot.jbcrypt.BCrypt
@@ -20,9 +22,6 @@ import java.nio.file.{Files, Path}
 import java.time.LocalDate
 import java.util.Properties
 import javax.inject.{Inject, Singleton}
-import jakarta.xml.ws.Endpoint
-import models.Enums.UserRole
-
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.DurationInt
 import scala.util.Using
@@ -315,15 +314,22 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext, actorSystem: Actor
       }
       apiUrl += Configurations.API_ROOT+"/rest"
     }
-    Using (Thread.currentThread().getContextClassLoader.getResourceAsStream("api/openapi.json")) { stream =>
-      var template = new String(stream.readAllBytes(), StandardCharsets.UTF_8)
-      template = StringUtils.replaceEach(template,
-        Array("${version}", "${contactEmail}", "${userGuideAddress}", "${apiUrl}"),
-        Array(Constants.VersionNumber, Configurations.EMAIL_TO.headOption.getOrElse("-"), Configurations.USERGUIDE_OU, apiUrl)
-      )
-      FileUtils.writeStringToFile(apiDocsFile, template, StandardCharsets.UTF_8)
+    try {
+      Using(Thread.currentThread().getContextClassLoader.getResourceAsStream("api/openapi.json")) { stream =>
+        var template = new String(stream.readAllBytes(), StandardCharsets.UTF_8)
+        template = StringUtils.replaceEach(template,
+          Array("${version}", "${contactEmail}", "${userGuideAddress}", "${apiUrl}"),
+          Array(Constants.VersionNumber, Configurations.EMAIL_TO.getOrElse(Array.empty).headOption.getOrElse("-"), Configurations.USERGUIDE_OU, apiUrl)
+        )
+        Files.createDirectories(apiDocsFile.getParentFile.toPath)
+        Files.writeString(apiDocsFile.toPath, template, StandardCharsets.UTF_8)
+      }
+      logger.info("Prepared REST API documentation")
+    } catch {
+        case e: Exception =>
+          logger.error("Failed to generate REST API documentation", e)
+          throw e
     }
-    logger.info("Prepared REST API documentation")
   }
 
   private def isNumeric(name: String): Boolean = {

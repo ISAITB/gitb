@@ -240,7 +240,7 @@ class AccountManager @Inject()(dbConfigProvider: DatabaseConfigProvider, landing
   def submitFeedback(userId: Option[Long], userEmail: String, messageTypeId: String, messageTypeDescription: String, messageContent: String, attachments: Array[AttachmentType]): Unit = {
     val subject = "Test Bed feedback form submission"
     var content = "<h2>Message information</h2>"
-    var toAddresses: Array[String] = Configurations.EMAIL_TO
+    var toAddresses: Array[String] = Configurations.EMAIL_TO.get
     var ccAddresses: Array[String] = null
     if (userId.isDefined) {
       val user = getUserProfile(userId.get)
@@ -256,7 +256,7 @@ class AccountManager @Inject()(dbConfigProvider: DatabaseConfigProvider, landing
         content += s"<b>Community:</b> ${community.fullname}<br/>"
         if (community.supportEmail.isDefined) {
           toAddresses = Array[String](community.supportEmail.get)
-          ccAddresses = Configurations.EMAIL_TO
+          ccAddresses = Configurations.EMAIL_TO.get
         }
       }
     } else {
