@@ -14,7 +14,8 @@ val cxfVersion = "4.0.3"
 val guiceVersion = "5.1.0" // Keep the 5.1.0 version as for Play 2.8.19 we need to base injection on javax.injection annotations and not jakarta.injection annotations.
 val commonsTextVersion = "1.10.0"
 val jjwtVersion = "0.11.5"
-val gitbTypesVersion = "1.21.0"
+val gitbTypesVersion = "1.21.1"
+val jettyVersion = "11.0.18"
 
 useCoursier := false
 
@@ -35,7 +36,15 @@ libraryDependencies ++= Seq(
   "com.gitb" % "gitb-reports" % "1.0-SNAPSHOT",
   "com.gitb" % "gitb-validator-tdl" % "1.0-SNAPSHOT",
   "com.gitb" % "gitb-xml-resources" % "1.0-SNAPSHOT",
-  "com.mysql" % "mysql-connector-j" % "8.0.33" exclude("com.google.protobuf", "protobuf-java"), // Exclude protobuf as we don't need the X DevAPI.
+  "com.mysql" % "mysql-connector-j" % "8.2.0" exclude("com.google.protobuf", "protobuf-java"), // Exclude protobuf as we don't need the X DevAPI.
+  // Setting the Jetty version explicitly to v11.0.18 to resolve CVE-2023-44487. Once
+  // org.apache.cxf:cxf-rt-transports-http-jetty is updated to a non-vulnerable version of Jetty this block can be removed. START ...
+  "org.eclipse.jetty" % "jetty-http" % jettyVersion,
+  "org.eclipse.jetty" % "jetty-io" % jettyVersion,
+  "org.eclipse.jetty" % "jetty-security" % jettyVersion,
+  "org.eclipse.jetty" % "jetty-server" % jettyVersion,
+  "org.eclipse.jetty" % "jetty-util" % jettyVersion,
+  // ... END.
   "com.typesafe.akka" %% "akka-actor" % akkaVersion,
   "com.typesafe.akka" %% "akka-actor-typed" % akkaVersion,
   "com.typesafe.akka" %% "akka-remote" % akkaVersion,

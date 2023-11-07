@@ -177,6 +177,7 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
         }
         this.welcomePageStatus.fromEnv = welcomeMessageConfig != undefined && welcomeMessageConfig.environment
         this.welcomePageStatus.fromDefault = welcomeMessageConfig != undefined && welcomeMessageConfig.default
+        this.welcomePageStatus.enabled = !this.welcomePageStatus.fromDefault
         // Demo account.
         const demoAccountConfig = find(data, (configItem) => configItem.name == Constants.SYSTEM_CONFIG.DEMO_ACCOUNT)
         if (demoAccountConfig) {
