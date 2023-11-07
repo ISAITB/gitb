@@ -56,7 +56,7 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 	private final val STATUS_UPDATES_PATH: String = "status-updates"
 
 	def getFilesRootFolder(): File = {
-		Paths.get(Configurations.TEST_CASE_REPOSITORY_PATH, FILES_PATH).toFile
+		new File(getRepositoryPath(), FILES_PATH)
 	}
 
 	def getConformanceBadge(specificationId: Long, actorId: Option[Long], snapshotId: Option[Long], status: String, exactMatch: Boolean): Option[File] = {
@@ -339,12 +339,16 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 		}
 	}
 
+	private def getRepositoryPath(): File = {
+		new File(Configurations.TEST_CASE_REPOSITORY_PATH)
+	}
+
 	def getStatusUpdatesFolder(): File = {
-		new File(Configurations.TEST_CASE_REPOSITORY_PATH, STATUS_UPDATES_PATH)
+		new File(getRepositoryPath(), STATUS_UPDATES_PATH)
 	}
 
 	def getTempFolder(): File = {
-		new File("/tmp")
+		new File(getRepositoryPath(), "tmp")
 	}
 
 	def getTempReportFolder(): File = {
@@ -368,10 +372,7 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 	}
 
 	def getDataRootFolder(): File = {
-		val path = Paths.get(
-			Configurations.TEST_CASE_REPOSITORY_PATH, DATA_PATH
-		)
-		path.toFile
+		new File(getRepositoryPath(), DATA_PATH)
 	}
 
 	def createDataLockFile(): Boolean = {
@@ -397,11 +398,7 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 	}
 
 	private def getTestSuitesRootFolder(): File = {
-		val path = Paths.get(
-			Configurations.TEST_CASE_REPOSITORY_PATH,
-			TestSuiteManager.TEST_SUITES_PATH
-		)
-		path.toFile
+		new File(getRepositoryPath(), TestSuiteManager.TEST_SUITES_PATH)
 	}
 
 	def getDomainTestSuitesPath(domainId: Long): File = {
