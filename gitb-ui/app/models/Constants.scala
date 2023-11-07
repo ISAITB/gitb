@@ -60,5 +60,5 @@ object Constants {
   val defaultLimit = 10L
 
   // When ending in "-snapshot", this is considered a non-published release.
-  val VersionNumber = "1.21.0"
+  val VersionNumber = "1.21.1"
 }
