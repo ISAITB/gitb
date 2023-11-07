@@ -37,7 +37,7 @@ object Configurations {
 
   var EMAIL_ENABLED = false
   var EMAIL_FROM = ""
-  var EMAIL_TO: Array[String] = _
+  var EMAIL_TO: Option[Array[String]] = None
   var EMAIL_SMTP_HOST = ""
   var EMAIL_SMTP_PORT: Int = -1
   var EMAIL_SMTP_SSL_ENABLED = false
@@ -177,7 +177,7 @@ object Configurations {
       EMAIL_ENABLED = fromEnv("EMAIL_ENABLED", conf.getString("email.enabled")).toBoolean
       if (EMAIL_ENABLED) {
         EMAIL_FROM = fromEnv("EMAIL_FROM", conf.getString("email.from"))
-        EMAIL_TO = fromEnv("EMAIL_TO", conf.getString("email.to")).split(",")
+        EMAIL_TO = Some(fromEnv("EMAIL_TO", conf.getString("email.to")).split(","))
         EMAIL_SMTP_HOST = fromEnv("EMAIL_SMTP_HOST", conf.getString("email.smtp.host"))
         EMAIL_SMTP_PORT = fromEnv("EMAIL_SMTP_PORT", conf.getString("email.smtp.port")).toInt
         EMAIL_SMTP_AUTH_ENABLED = fromEnv("EMAIL_SMTP_AUTH_ENABLED", conf.getString("email.smtp.auth.enabled")).toBoolean
