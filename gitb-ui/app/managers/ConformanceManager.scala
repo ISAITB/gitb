@@ -654,9 +654,11 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils, systemManag
 			}
 			actorIdsToDisplay <- {
 				PersistenceSchema.testCaseHasActors
-					.filter(_.specification inSet statements.map(_.specificationId))
-					.filter(_.sut === true)
-					.map(x => (x.specification, x.actor))
+					.join(PersistenceSchema.actors).on(_.actor === _.id)
+					.filter(_._1.specification inSet statements.map(_.specificationId))
+					.filter(_._1.sut === true)
+					.filter(_._2.hidden === false)
+					.map(x => (x._1.specification, x._1.actor))
 					.distinct
 					.result
 					.map { actorResults =>
