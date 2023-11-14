@@ -116,6 +116,7 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils, systemManag
 				.filter(_.systemId === systemId)
 				.map(_.actorId)
 				.result
+				.map(_.toSet)
 			// Load the relevant domains.
 			domains <- PersistenceSchema.domains
 				.filterOpt(domainId)((q, id) => q.id === id)
@@ -135,11 +136,10 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils, systemManag
 				.map(x => (x.id, x.fullname, x.description, x.group, x.domain, x.displayOrder))
 				.sortBy(_._2.asc)
 				.result
-			// Load the relevant actors (excluding ones with existing statements).
+			// Load the domain's relevant actors.
 			actors <- PersistenceSchema.actors
 				.join(PersistenceSchema.specificationHasActors).on(_.id === _.actorId)
 				.filter(_._1.hidden === false)
-				.filterNot(_._1.id inSet actorIdsInExistingStatements)
 				.filterOpt(domainId)((q, id) => q._1.domain === id)
 				.map(x => (x._1.id, x._1.name, x._1.desc, x._2.specId, x._1.default))
 				.sortBy(_._2.asc)
@@ -153,13 +153,27 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils, systemManag
 				.result
 				.map(_.toSet)
 			results <- {
+				val specificationToVisibleSutActorMap = new mutable.HashMap[Long, mutable.HashSet[Long]]() // Specification ID to actor map (actors that are SUTs and are not set as hidden.
+				// Map specifications to actors that are non-visible and SUTs.
+				actors.foreach(x => {
+					if (actorsWithTestCases.contains(x._1)) {
+						var entry = specificationToVisibleSutActorMap.get(x._4)
+						if (entry.isEmpty) {
+							entry = Some(new mutable.HashSet[Long]())
+							specificationToVisibleSutActorMap += (x._4 -> entry.get)
+						}
+						entry.get += x._1
+					}
+				})
 				val actorMap = new mutable.HashMap[Long, ListBuffer[ConformanceStatementItem]]() // Specification ID to Actor data
 				val defaultActorMap = new mutable.HashMap[Long, ConformanceStatementItem]() // Specification ID to default Actor data
 				// Map actors using specification ID.
 				actors.foreach(x => {
-					if (actorsWithTestCases.contains(x._1)) {
-						// Only keep the actors that have test cases in which they are the SUT.
-						val item = ConformanceStatementItem(x._1, x._2, x._3, ConformanceStatementItemType.ACTOR, None, 0)
+					if (actorsWithTestCases.contains(x._1) && !actorIdsInExistingStatements.contains(x._1)) {
+						// Only keep the actors that have test cases in which they are the SUT and for which we don't already have a statement defined.
+						// The actor will be shown if there are other SUT actors available for the same specification.
+						val showActor = specificationToVisibleSutActorMap(x._4).size > 1
+						val item = ConformanceStatementItem(x._1, x._2, x._3, ConformanceStatementItemType.ACTOR, None, 0, None, showActor)
 						actorMap.getOrElseUpdate(x._4, new ListBuffer[ConformanceStatementItem]).append(item)
 						if (x._5.getOrElse(false)) {
 							defaultActorMap.put(x._4, item)

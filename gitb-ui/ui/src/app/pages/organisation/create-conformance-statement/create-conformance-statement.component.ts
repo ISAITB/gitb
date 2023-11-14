@@ -150,7 +150,7 @@ export class CreateConformanceStatementComponent implements OnInit {
       for (let specification of specifications) {
         // If we have a specification with a single actor don't show the actor.
         if (specification.itemType == Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.SPECIFICATION
-          && specification.items != undefined && specification.items.length == 1 && specification.items[0].itemType == Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.ACTOR) {
+          && specification.items != undefined && specification.items.length == 1 && specification.items[0].itemType == Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.ACTOR && specification.items[0].hidden) {
             // The specification will be an alias for the actor.
             specification.id = specification.items[0].id
             specification.checked = specification.items[0].checked
