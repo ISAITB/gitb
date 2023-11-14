@@ -1,18 +1,18 @@
 <div class="page domains detail options create-option">
-	<div class="panel panel-default no-bottom-margin">
-		<div class="panel-heading">
+	<div class="card no-bottom-margin">
+		<div class="card-header">
 			<h4 class="title">Create {{dataService.labelEndpointLower()}}</h4>
 		</div>
-		<form class="form-horizontal">
-			<div class="panel-body">
-				<div class="col-md-10 col-md-offset-1">
+		<form>
+			<div class="card-body">
+				<div class="col-10 offset-1">
                     <app-endpoint-form [endpoint]="endpoint"></app-endpoint-form>
                 </div>
 			</div>
-			<div class="panel-footer">
+			<div class="card-footer">
 				<div class="btn-toolbar">
-					<button class="btn btn-default" type="submit" (click)="createEndpoint()" [disable]="saveDisabled()" [pending]="pending">Save</button>
-					<button class="btn btn-default" type="button" (click)="cancel()">Cancel</button>
+					<button class="btn btn-secondary" type="submit" (click)="createEndpoint()" [disable]="saveDisabled()" [pending]="pending">Save</button>
+					<button class="btn btn-secondary" type="button" (click)="cancel()">Cancel</button>
 				</div>
 			</div>
 		</form>

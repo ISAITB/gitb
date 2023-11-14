@@ -1,35 +1,35 @@
 <div class="page domains detail detail-testsuite">
-	<div class="panel panel-default">
-		<div class="panel-heading">
+	<div class="card panel-default">
+		<div class="card-header">
 			<h4 class="title">Test suite details</h4>
 		</div>
-		<form class="form-horizontal">
-			<div class="panel-body">
-                <div class="bg-info div-rounded div-padded bottom-margin" *ngIf="testSuite.shared">
+		<form>
+			<div class="card-body">
+                <div class="alert-info rounded div-padded bottom-margin" *ngIf="testSuite.shared">
                     <span>This test suite is designed to be shared across multiple {{dataService.labelSpecificationsLower()}}. Any changes made will apply to all its linked {{dataService.labelSpecificationsLower()}}.</span>
                 </div>
 				<div class="row">
-                    <div class="col-xs-10 col-xs-offset-1">
-						<div class="form-group">
-							<label class="col-xs-3 control-label" for="identifier">ID:</label>
-							<div class="col-xs-7">
+                    <div class="col-10 offset-1">
+						<div class="form-group row">
+							<label class="col-3 col-form-label text-right" for="identifier">ID:</label>
+							<div class="col-7">
 								<app-api-key-text id="identifier" name="identifier" [key]="testSuite.identifier!"></app-api-key-text>
 							</div>
 							<app-tooltip [tbTooltip]="'The unique identifier of the test suite within the '+dataService.labelSpecificationLower()+'. This is not presented to users but is used internally to match uploaded test suites to existing ones.'"></app-tooltip>
 						</div>
-						<div class="form-group">
-							<label class="col-xs-3 control-label" for="name">* Name:</label>
-							<div class="col-xs-7"><input id="name" name="name" [(ngModel)]="testSuite.sname" class="form-control" type="text"></div>
+						<div class="form-group row">
+							<label class="col-3 col-form-label text-right" for="name">* Name:</label>
+							<div class="col-7"><input id="name" name="name" [(ngModel)]="testSuite.sname" class="form-control" type="text"></div>
 							<app-tooltip tbTooltip="A short and descriptive identifier for the test suite. This is used for filtering purposes and also to distinguish the test suite in conformance statements where multiple test suites are defined."></app-tooltip>
 						</div>
-						<div class="form-group">
-							<label class="col-xs-3 control-label" for="version">* Version:</label>
-							<div class="col-xs-7"><input id="version" name="version" [(ngModel)]="testSuite.version" class="form-control" type="text"></div>
+						<div class="form-group row">
+							<label class="col-3 col-form-label text-right" for="version">* Version:</label>
+							<div class="col-7"><input id="version" name="version" [(ngModel)]="testSuite.version" class="form-control" type="text"></div>
 							<app-tooltip tbTooltip="A version number for this test suite. This is only visible to administrators."></app-tooltip>
 						</div>
-						<div class="form-group">
-							<label class="col-xs-3 control-label" for="description">Description:</label>
-							<div class="col-xs-7">
+						<div class="form-group row">
+							<label class="col-3 col-form-label text-right" for="description">Description:</label>
+							<div class="col-7">
 								<textarea id="description" name="description" [(ngModel)]="testSuite.description" class="form-control"></textarea>
 							</div>
 							<app-tooltip tbTooltip="A description for the test suite presented to users when viewing a conformance statement with multiple test suites. This should be informative enough for users to understand the purpose of the test suite. Where extended information is needed consider complementing the description with the test suite's documentation."></app-tooltip>
@@ -37,7 +37,7 @@
 					</div>
 				</div>
 				<div class="row">
-					<div class="col-xs-12">
+					<div class="col-12">
 						<div class="form-separator expandable" (click)="showDocumentation = !showDocumentation">
 							<div><h4 class="title"><app-collapsing-icon [isCollapsed]="!showDocumentation"></app-collapsing-icon>Documentation</h4></div>
 						</div>
@@ -45,7 +45,7 @@
 				</div>
 				<div [collapse]="!showDocumentation" [isAnimated]="true">
 					<div class="row form-group">
-						<div class="col-xs-offset-1 col-xs-10">
+						<div class="offset-1 col-10">
 							<div class="div-padded-bottom" *ngIf="dataService.isCommunityAdmin">
 								<app-placeholder-selector [resources]="true" [community]="dataService.vendor?.community"></app-placeholder-selector>
 							</div>
@@ -56,23 +56,23 @@
 						</div>
 					</div>
 					<div class="row form-group">
-						<div class="col-xs-offset-1 col-xs-10">
+						<div class="offset-1 col-10">
 							<div class="btn-toolbar">
-								<button (click)="previewDocumentation()" type="button" class="btn btn-default" [disabled]="this.testSuite.documentation == undefined || this.testSuite.documentation.length == 0">Preview documentation</button>
-								<button (click)="copyDocumentation()" type="button" class="btn btn-default" [disabled]="this.testSuite.documentation == undefined || this.testSuite.documentation.length == 0">Copy to clipboard</button>
+								<button (click)="previewDocumentation()" type="button" class="btn btn-secondary" [disabled]="this.testSuite.documentation == undefined || this.testSuite.documentation.length == 0">Preview documentation</button>
+								<button (click)="copyDocumentation()" type="button" class="btn btn-secondary" [disabled]="this.testSuite.documentation == undefined || this.testSuite.documentation.length == 0">Copy to clipboard</button>
 							</div>
 						</div>
 					</div>
 				</div>
 			</div>
-			<div class="panel-footer button-container">
+			<div class="card-footer button-container">
 				<div class="btn-toolbar">
-					<button (click)="saveChanges()" type="submit" class="btn btn-default" [disable]="downloadPending || deletePending || saveDisabled()" [pending]="savePending">Save changes</button>
-					<button (click)="download()" type="button" class="btn btn-default" [disable]="savePending || deletePending" [pending]="downloadPending">Download</button>
-					<button (click)="back()" type="button" class="btn btn-default">Back</button>
+					<button (click)="saveChanges()" type="submit" class="btn btn-secondary" [disable]="downloadPending || deletePending || saveDisabled()" [pending]="savePending">Save changes</button>
+					<button (click)="download()" type="button" class="btn btn-secondary" [disable]="savePending || deletePending" [pending]="downloadPending">Download</button>
+					<button (click)="back()" type="button" class="btn btn-secondary">Back</button>
 				</div>
 				<div class="btn-toolbar btn-toolbar-delete">
-					<button (click)="delete()" type="button" class="btn btn-default btn-delete" [disable]="savePending || downloadPending" [pending]="deletePending">Delete</button>
+					<button (click)="delete()" type="button" class="btn btn-outline-danger" [disable]="savePending || downloadPending" [pending]="deletePending">Delete</button>
 				</div>
 			</div>
 		</form>
@@ -82,7 +82,7 @@
 			<tab (selectTab)="loadTestCases()" customClass="tabClass">
                 <ng-template tabHeading><app-tab-title icon="fa-solid fa-file-code" text="Test cases"></app-tab-title></ng-template>
 				<div class="tabPanel">
-					<div class="panel panel-default">
+					<div class="card panel-default">
 						<div table-directive
 							[columns]="testCaseTableColumns"
 							[data]="testSuite.testCases"
@@ -99,13 +99,13 @@
 				<div class="tabPanel">
                     <div class="tabControls">
 						<div class="btn-toolbar">
-							<button type="button" class="btn btn-default" (click)="linkSpecifications()" [disable]="unlinkedSpecifications.length == 0 || selectingForUnlink" [pending]="linkPending">Link to specifications</button>
-							<button type="button" class="btn btn-default" (click)="selectUnlinkSpecifications()" *ngIf="!selectingForUnlink" [disable]="linkedSpecifications.length == 0" [pending]="unlinkPending">Unlink from specifications...</button>
-							<button type="button" class="btn btn-default" (click)="confirmUnlinkSpecifications()" *ngIf="selectingForUnlink" [disable]="!specificationsChecked()" [pending]="unlinkPending">Confirm</button>
-							<button type="button" class="btn btn-default" (click)="cancelUnlinkSpecifications()" *ngIf="selectingForUnlink" [disabled]="unlinkPending">Cancel</button>
+							<button type="button" class="btn btn-secondary" (click)="linkSpecifications()" [disable]="unlinkedSpecifications.length == 0 || selectingForUnlink" [pending]="linkPending">Link to specifications</button>
+							<button type="button" class="btn btn-secondary" (click)="selectUnlinkSpecifications()" *ngIf="!selectingForUnlink" [disable]="linkedSpecifications.length == 0" [pending]="unlinkPending">Unlink from specifications...</button>
+							<button type="button" class="btn btn-secondary" (click)="confirmUnlinkSpecifications()" *ngIf="selectingForUnlink" [disable]="!specificationsChecked()" [pending]="unlinkPending">Confirm</button>
+							<button type="button" class="btn btn-secondary" (click)="cancelUnlinkSpecifications()" *ngIf="selectingForUnlink" [disabled]="unlinkPending">Cancel</button>
 						</div>
 					</div>
-					<div class="panel panel-default">
+					<div class="card panel-default">
 						<div table-directive
 							[columns]="specificationTableColumns"
 							[data]="linkedSpecifications"

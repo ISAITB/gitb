@@ -2,7 +2,7 @@
     <div *ngIf="(placeholders && placeholders.length > 0) || (parameterPlaceholders && parameterPlaceholders.length > 0)" class="buttonContainer">
         <div class="button">
             <div class="btn-group" dropdown>
-                <button id="button-placeholder" dropdownToggle type="button" class="btn btn-default dropdown-toggle" aria-controls="dropdown-placeholder">Copy placeholder text<span class="caret withMargin"></span></button>
+                <button id="button-placeholder" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-placeholder">Copy placeholder text<span class="caret withMargin"></span></button>
                 <ul id="dropdown-placeholder" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-placeholder">
                     <li *ngFor="let placeholder of placeholders" role="menuitem"><a class="dropdown-item" href (click)="selected(placeholder); $event.preventDefault()"><b>{{placeholder.key}}{{placeholder.value != ''?':':''}}</b> {{placeholder.value}}</a></li>
                     <ng-container *ngIf="parameterPlaceholders && parameterPlaceholders.length > 0">

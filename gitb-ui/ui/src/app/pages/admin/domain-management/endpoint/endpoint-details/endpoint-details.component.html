@@ -1,23 +1,23 @@
 <div class="page endpoint detail detail-actor">
-	<div class="panel panel-default">
-		<div class="panel-heading">
+	<div class="card panel-default">
+		<div class="card-header">
 			<h4 class="title">{{dataService.labelEndpoint()}} details</h4>
 		</div>
-		<form class="form-horizontal">
-			<div class="panel-body">
+		<form>
+			<div class="card-body">
 				<div class="row">
-					<div class="col-md-10 col-md-offset-1">
+					<div class="col-10 offset-1">
                         <app-endpoint-form [endpoint]="endpoint"></app-endpoint-form>
                     </div>
 				</div>
 			</div>
-			<div class="panel-footer button-container">
+			<div class="card-footer button-container">
 				<div class="btn-toolbar">
-					<button (click)="saveChanges()" type="submit" class="btn btn-default" [disable]="deletePending || saveDisabled()" [pending]="savePending">Save changes</button>
-					<button (click)="back()" type="button" class="btn btn-default">Back</button>
+					<button (click)="saveChanges()" type="submit" class="btn btn-secondary" [disable]="deletePending || saveDisabled()" [pending]="savePending">Save changes</button>
+					<button (click)="back()" type="button" class="btn btn-secondary">Back</button>
 				</div>
 				<div class="btn-toolbar btn-toolbar-delete">
-					<button (click)="delete()" type="button" class="btn btn-default btn-delete" [pending]="deletePending" [disable]="savePending">Delete</button>
+					<button (click)="delete()" type="button" class="btn btn-outline-danger" [pending]="deletePending" [disable]="savePending">Delete</button>
 				</div>
 			</div>
 		</form>
@@ -29,11 +29,11 @@
 				<div class="tabPanel">
 					<div class="tabControls">
 						<div class="btn-toolbar">
-							<button type="button" class="btn btn-default" [disable]="orderParametersDisabled" [pending]="orderPending" (click)="orderParameters()">Save parameter order</button>
-							<button type="button" class="btn btn-default" (click)="addParameter()">Create parameter</button>
+							<button type="button" class="btn btn-secondary" [disable]="orderParametersDisabled" [pending]="orderPending" (click)="orderParameters()">Save parameter order</button>
+							<button type="button" class="btn btn-secondary" (click)="addParameter()">Create parameter</button>
 						</div>
 					</div>
-					<div class="panel panel-default table-container">
+					<div class="card table-container">
 						<table class="table table-directive thick">
 							<thead>
 								<tr>
@@ -64,8 +64,8 @@
 									<td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': parameter.hidden, 'fa-times': !parameter.hidden}"></i></span></div></td>
 									<td class="btn-stacked-container" (click)="$event.stopPropagation();">
 										<div class="btn-toolbar btn-stacked">
-											<button *ngIf="!first" class="btn btn-xs btn-default" type="button" (click)="moveParameterUp(index)" containerClass="shortTooltip" tooltip="Move up" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-chevron-up"></i></button>
-											<button *ngIf="!last" class="btn btn-xs btn-default" type="button" (click)="moveParameterDown(index)" containerClass="shortTooltip" tooltip="Move down" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-chevron-down"></i></button>
+											<button *ngIf="!first" class="btn btn-xs btn-secondary" type="button" (click)="moveParameterUp(index)" containerClass="shortTooltip" tooltip="Move up" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-chevron-up"></i></button>
+											<button *ngIf="!last" class="btn btn-xs btn-secondary" type="button" (click)="moveParameterDown(index)" containerClass="shortTooltip" tooltip="Move down" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-chevron-down"></i></button>
 										</div>
 									</td>
 								</tr>

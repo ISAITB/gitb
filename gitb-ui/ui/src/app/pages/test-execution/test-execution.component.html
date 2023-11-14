@@ -1,10 +1,10 @@
 <div class="page">
-    <div class="panel panel-default test-case-list-table no-bottom-margin">
-        <div class="panel-heading">
+    <div class="card test-case-list-table no-bottom-margin">
+        <div class="card-header">
             <h4 class="title">Test execution</h4>
             <div class="sessionButtonDiv">
                 <div class="backDiv">
-                    <button type="button" class="btn btn-default" (click)="back()">Go to conformance statement</button>
+                    <button type="button" class="btn btn-secondary" (click)="back()">Go to conformance statement</button>
                 </div>
                 <ng-container *ngIf="testsToExecute.length > 0">
                     <div *ngIf="testsToExecute.length > 1" class="optionsDiv btn-toolbar">
@@ -13,15 +13,15 @@
                     <div class="btn-toolbar actionButtonDiv">
                         <ng-container *ngIf="testsToExecute.length > 1">
                             <div class="btn-group" dropdown [isDisabled]="!firstTestStarted || reload">
-                                <button id="button-stop" dropdownToggle type="button" class="btn btn-default dropdown-toggle" aria-controls="dropdown-stop">Stop<span class="caret withMargin"></span></button>
+                                <button id="button-stop" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-stop">Stop<span class="caret withMargin"></span></button>
                                 <ul id="dropdown-stopType" *dropdownMenu class="dropdown-menu dropdown-menu" role="menu" aria-labelledby="button-stop">
                                     <li role="menuitem" [class.disabled]="!started || stopped"><a class="dropdown-item" href (click)="stop(session!); $event.preventDefault()">Stop current test</a></li>
                                     <li role="menuitem"><a class="dropdown-item" href (click)="stopAll(); $event.preventDefault()">Stop all tests</a></li>
                                 </ul>
                             </div>
                         </ng-container>
-                        <button *ngIf="testsToExecute.length == 1" type="button" class="btn btn-default" [disabled]="!firstTestStarted || stopped || reload" (click)="stop(session!)">Stop</button>
-                        <button type="button" class="btn btn-default" [disabled]="!firstTestStarted" (click)="reinitialise()">Reset</button>
+                        <button *ngIf="testsToExecute.length == 1" type="button" class="btn btn-secondary" [disabled]="!firstTestStarted || stopped || reload" (click)="stop(session!)">Stop</button>
+                        <button type="button" class="btn btn-secondary" [disabled]="!firstTestStarted" (click)="reinitialise()">Reset</button>
                         <button type="button" class="btn btn-primary" [disabled]="!nextWaitingToStart" (click)="start(session!)">Start</button>
                     </div>
                 </ng-container>
@@ -64,7 +64,7 @@
                                     </td>
                                     <td><div class="testCaseName" [class.padded]="documentationExists">{{testCase.sname}}</div></td>
                                     <td>{{testCase.description}}</td>
-                                    <td class="td-doc" *ngIf="documentationExists"><button *ngIf="testCase.hasDocumentation" type="button" class="btn btn-default" (click)="showTestCaseDocumentation(testCase.id); $event.stopPropagation()" containerClass="shortTooltip" tooltip="Documentation" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-info-circle"></i></button></td>
+                                    <td class="td-doc" *ngIf="documentationExists"><button *ngIf="testCase.hasDocumentation" type="button" class="btn btn-secondary" (click)="showTestCaseDocumentation(testCase.id); $event.stopPropagation()" containerClass="shortTooltip" tooltip="Documentation" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-info-circle"></i></button></td>
                                     <td class="td-centered"><i class="fa-solid testsuite-progress-icon" style="vertical-align:middle" [ngClass]="progressIcon(testCase.id)"></i></td>
                                 </tr>
                                 <tr class="expandable-table-row-expanded" [class.no-display]="!testCaseVisible[testCase.id]">
@@ -74,8 +74,8 @@
                                                 <td>
                                                     <div [collapse]="!testCaseExpanded[testCase.id]" [isAnimated]="true">
                                                         <div class="collapsing-div">
-                                                            <div class="panel panel-default">
-                                                                <div class="panel-heading no-top-bottom-padding">
+                                                            <div class="card panel-default">
+                                                                <div class="card-header no-top-bottom-padding">
                                                                     <div class="session-execution-info">
                                                                         <div class="session-table-title">
                                                                             <div class="session-table-title-part" *ngIf="testsToExecute.length > 1">
@@ -94,8 +94,8 @@
                                                                         </div>
                                                                         <div class="session-table-operations btn-toolbar" *ngIf="stepsOfTests[testCase.id] != undefined">
                                                                             <div class="btn-group export-group" dropdown [isDisabled]="!exportEnabled(testCase) || exportPdfPending[testCase.id] || exportXmlPending[testCase.id]">
-                                                                                <button type="button" [disable]="!exportEnabled(testCase) || exportPdfPending[testCase.id] || exportXmlPending[testCase.id]" [pending]="exportPdfPending[testCase.id] || exportXmlPending[testCase.id]" class="btn btn-default" (click)="exportPdf(testCase)">Export report as PDF</button>
-                                                                                <button id="button-export" type="button" dropdownToggle class="btn btn-default dropdown-toggle dropdown-toggle-split">
+                                                                                <button type="button" [disable]="!exportEnabled(testCase) || exportPdfPending[testCase.id] || exportXmlPending[testCase.id]" [pending]="exportPdfPending[testCase.id] || exportXmlPending[testCase.id]" class="btn btn-secondary" (click)="exportPdf(testCase)">Export report as PDF</button>
+                                                                                <button id="button-export" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
                                                                                     <span class="caret"></span>
                                                                                     <span class="sr-only visually-hidden">Export report as PDF</span>
                                                                                 </button>
@@ -104,7 +104,7 @@
                                                                                 </ul>
                                                                             </div>                                                                                
                                                                             <div class="viewLogButton">
-                                                                                <button type="button" class="btn btn-default" (click)="viewLog(testCase)">View log</button>
+                                                                                <button type="button" class="btn btn-secondary" (click)="viewLog(testCase)">View log</button>
                                                                                 <div class="unreadBadge" 
                                                                                     [class.badgeLogErrors]="unreadLogErrors[testCase.id]" 
                                                                                     [class.badgeLogWarnings]="unreadLogWarnings[testCase.id] && !unreadLogErrors[testCase.id]" 
@@ -115,7 +115,7 @@
                                                                         </div>
                                                                     </div>
                                                                 </div>
-                                                                <div class="panel-body" style="overflow-x: auto; overflow-y: hidden;" [ngSwitch]="stepsOfTests[testCase.id] == undefined">
+                                                                <div class="card-body" style="overflow-x: auto; overflow-y: hidden;" [ngSwitch]="stepsOfTests[testCase.id] == undefined">
                                                                     <app-pending-block *ngSwitchCase="true"></app-pending-block>
                                                                     <div *ngSwitchDefault class="sessionDiagramDiv">
                                                                         <app-sequence-diagram 

@@ -1,9 +1,9 @@
 <div class="page domains">
-	<div class="panel panel-default no-bottom-margin">
-		<div class="panel-heading">
+	<div class="card no-bottom-margin">
+		<div class="card-header">
 			<h4 class="title">{{dataService.labelDomains()}}</h4>
 			<div class="btn-toolbar" *ngIf="dataService.isSystemAdmin">
-				<button type="button" class="btn btn-default" (click)="create()">Create {{dataService.labelDomainLower()}}</button>
+				<button type="button" class="btn btn-secondary" (click)="create()">Create {{dataService.labelDomainLower()}}</button>
 			</div>
 		</div>
 		<div table-directive 

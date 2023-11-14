@@ -4,8 +4,8 @@
 <form>
 	<div class="modal-body provide-input-body" style="overflow-x: auto; overflow-y: hidden;">
 		<div *ngFor="let interaction of interactions; let index = index">
-			<div class="form-group">
-				<div class="col-md-12 col-centered" >
+			<div class="form-group row">
+				<div class="col-12 col-centered" >
 					<!-- request interaction: server asks operator to send inputs -->
 					<div *ngIf="interaction.type == 'request'">
 						<label>{{interaction.desc}}</label>
@@ -44,8 +44,8 @@
 		</div>
 	</div>
 	<div class="modal-footer">
-		<button type="button" *ngIf="!needsInput" (click)="hideInput()" class="btn btn-default">Close</button>
-		<button type="button" *ngIf="needsInput" (click)="reset()" class="btn btn-default">Reset</button>
-		<button type="submit" *ngIf="needsInput" (click)="hideInput()" class="btn btn-default">Submit</button>
+		<button type="button" *ngIf="!needsInput" (click)="hideInput()" class="btn btn-secondary">Close</button>
+		<button type="button" *ngIf="needsInput" (click)="reset()" class="btn btn-secondary">Reset</button>
+		<button type="submit" *ngIf="needsInput" (click)="hideInput()" class="btn btn-secondary">Submit</button>
 	</div>
 </form>

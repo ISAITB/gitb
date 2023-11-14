@@ -1,16 +1,16 @@
 <div class="page domains create">
-	<div class="panel panel-default no-bottom-margin">
-		<div class="panel-heading">
+	<div class="card no-bottom-margin">
+		<div class="card-header">
 			<h4 class="title">Create {{dataService.labelActorLower()}}</h4>
 		</div>
-		<form class="form-horizontal">
-			<div class="panel-body">
+		<form>
+			<div class="card-body">
 				<app-actor-form [actor]="actor"></app-actor-form>
 			</div>
-			<div class="panel-footer">
+			<div class="card-footer">
 				<div class="btn-toolbar">
-					<button class="btn btn-default" type="submit" (click)="createActor()" [disable]="saveDisabled()" [pending]="savePending">Save</button>
-					<button class="btn btn-default" type="button" (click)="cancel()">Cancel</button>
+					<button class="btn btn-secondary" type="submit" (click)="createActor()" [disable]="saveDisabled()" [pending]="savePending">Save</button>
+					<button class="btn btn-secondary" type="button" (click)="cancel()">Cancel</button>
 				</div>
 			</div>
 		</form>

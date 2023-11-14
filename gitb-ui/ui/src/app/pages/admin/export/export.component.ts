@@ -14,8 +14,7 @@ import { RoutingService } from 'src/app/services/routing.service';
 @Component({
   selector: 'app-export',
   templateUrl: './export.component.html',
-  styles: [
-  ]
+  styleUrls: [ './export.component.less' ]
 })
 export class ExportComponent extends BaseComponent implements OnInit {
 

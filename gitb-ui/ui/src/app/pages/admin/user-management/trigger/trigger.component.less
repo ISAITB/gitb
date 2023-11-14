@@ -1,3 +1,22 @@
+@import '../../../../../styles/less/_common.less';
+
 th.checkColumn {
     width: 1px;
+}
+.trigger-data-properties-container {
+	border: 1px solid @gray-dark-1;
+	border-radius: 5px;
+	margin-bottom: 10px;
+
+	.table {
+		margin-bottom:0px;
+		tbody > tr:hover {
+			cursor: pointer;
+			background-color: fade(@gray-light, 50%);
+		}
+	}
+}
+
+.trigger-data-checks {
+	padding-bottom: 8px;
 }

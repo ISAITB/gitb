@@ -1,11 +1,11 @@
 <div class="page users create">
-    <div class="panel panel-default no-bottom-margin">
-        <div class="panel-heading">
+    <div class="card no-bottom-margin">
+        <div class="card-header">
             <h4 class="title">Custom community labels</h4>
         </div>
         <form>
-            <div class="panel-body">
-                <div class="bg-info div-rounded div-padded bottom-margin">
+            <div class="card-body">
+                <div class="alert-info rounded div-padded bottom-margin">
                     <span>Override the default labels of Test Bed concepts to align them with your community. The labels you provide will be used in all screens, reports and exports.</span>
                 </div>
                 <table id="labelTable" class="table">
@@ -42,10 +42,10 @@
                     </tbody>
                 </table>
             </div>
-            <div class="panel-footer">
+            <div class="card-footer">
                 <div class="btn-toolbar">
-                    <button class="btn btn-default" type="submit" (click)="save()" [disable]="saveDisabled()" [pending]="busy">Save</button>
-                    <button class="btn btn-default" type="button" (click)="cancel()">Back</button>
+                    <button class="btn btn-secondary" type="submit" (click)="save()" [disable]="saveDisabled()" [pending]="busy">Save</button>
+                    <button class="btn btn-secondary" type="button" (click)="cancel()">Back</button>
                 </div>
             </div>
         </form>

@@ -1,12 +1,12 @@
 <div class="page users detail">
-    <div class="panel panel-default">
-        <div class="panel-heading">
+    <div class="card panel-default">
+        <div class="card-header">
             <h4 class="title">{{dataService.labelOrganisation()}} details</h4>
         </div>
-        <form class="form-horizontal">
-            <div class="panel-body">
+        <form>
+            <div class="card-body">
                 <div class="row">
-                    <app-alert-display [alerts]="alerts" innerClass="col-md-10 col-md-offset-1"></app-alert-display>
+                    <app-alert-display [alerts]="alerts" innerClass="col-10 offset-1"></app-alert-display>
                 </div>
                 <app-organisation-form
                     [organisation]="organisation"
@@ -17,16 +17,16 @@
                     [readonly]="readonly"
                 ></app-organisation-form>
             </div>
-            <div class="panel-footer button-container">
+            <div class="card-footer button-container">
                 <div class="btn-toolbar">
-                    <button class="btn btn-default" *ngIf="!readonly" type="submit" (click)="updateOrganisation()" [disable]="deletePending || saveDisabled()" [pending]="savePending">Update</button>
-                    <button class="btn btn-default" type="button" (click)="manageOrganisationTests()">Manage tests</button>
+                    <button class="btn btn-secondary" *ngIf="!readonly" type="submit" (click)="updateOrganisation()" [disable]="deletePending || saveDisabled()" [pending]="savePending">Update</button>
+                    <button class="btn btn-secondary" type="button" (click)="manageOrganisationTests()">Manage tests</button>
                     <ng-container *ngIf="showAdminInfo">
-                        <button class="btn btn-default" type="button" (click)="cancelDetailOrganisation()">Back</button>
+                        <button class="btn btn-secondary" type="button" (click)="cancelDetailOrganisation()">Back</button>
                     </ng-container>
                 </div>
                 <div class="btn-toolbar btn-toolbar-delete" *ngIf="showAdminInfo">
-                    <button class="btn btn-default btn-delete" type="button" (click)="deleteOrganisation()" [disable]="savePending" [pending]="deletePending">Delete</button>
+                    <button class="btn btn-outline-danger" type="button" (click)="deleteOrganisation()" [disable]="savePending" [pending]="deletePending">Delete</button>
                 </div>
             </div>
         </form>
@@ -37,9 +37,9 @@
                 <ng-template tabHeading><app-tab-title icon="fa-solid fa-cube" [text]="dataService.labelSystems()"></app-tab-title></ng-template>
                 <div class="tabPanel">
                     <div class="tabControls" *ngIf="showCreateSystem">
-                        <button type="button" class="btn btn-default" (click)="createSystem()">Create {{dataService.labelSystemLower()}}</button>
+                        <button type="button" class="btn btn-secondary" (click)="createSystem()">Create {{dataService.labelSystemLower()}}</button>
                     </div>
-                    <div class="panel panel-default">
+                    <div class="card panel-default">
                         <div table-directive 
                             [columns]="systemColumns" 
                             [data]="systems"
@@ -55,9 +55,9 @@
                 <ng-template tabHeading><app-tab-title icon="fa-solid fa-user" text="Users"></app-tab-title></ng-template>
                 <div class="tabPanel">
                     <div class="tabControls" *ngIf="showCreateUser">
-                        <button type="button" class="btn btn-default" (click)="createUser()">Create user</button>
+                        <button type="button" class="btn btn-secondary" (click)="createUser()">Create user</button>
                     </div>
-                    <div class="panel panel-default">
+                    <div class="card panel-default">
                         <div table-directive 
                             [columns]="userColumns" 
                             [data]="users"

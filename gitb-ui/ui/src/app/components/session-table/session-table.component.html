@@ -63,17 +63,17 @@
                                         <div class="collapsing-div">
                                             <div class="sessionControls">
                                                 <div class="btn-toolbar">
-                                                    <button *ngIf="supportRefresh" type="button" class="btn btn-default" (click)="refresh(row)" [pending]="sessionBeingRefreshed?.session == row.session" [disable]="row.endTime != undefined">Refresh</button>
-                                                    <button type="button" class="btn btn-default" (click)="showTestSessionLog(row)" [pending]="viewLogPending[row.session]">View log</button>
+                                                    <button *ngIf="supportRefresh" type="button" class="btn btn-secondary" (click)="refresh(row)" [pending]="sessionBeingRefreshed?.session == row.session" [disable]="row.endTime != undefined">Refresh</button>
+                                                    <button type="button" class="btn btn-secondary" (click)="showTestSessionLog(row)" [pending]="viewLogPending[row.session]">View log</button>
                                                     <!-- View statement -->
-                                                    <button *ngIf="showToStatement(row)" type="button" class="btn btn-default" (click)="toStatement(row)">View statement</button>
+                                                    <button *ngIf="showToStatement(row)" type="button" class="btn btn-secondary" (click)="toStatement(row)">View statement</button>
                                                     <!-- View party -->
                                                     <ng-container *ngIf="showPartyNavigation(row)">
                                                         <ng-container [ngSwitch]="showToSystem(row)">
                                                             <ng-container *ngSwitchCase="true">
                                                                 <div class="btn-group" dropdown>
-                                                                    <button type="button" class="btn btn-default" (click)="toSystem(row)">View {{dataService.labelSystemLower()}}</button>
-                                                                    <button id="button-system" type="button" dropdownToggle class="btn btn-default dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
+                                                                    <button type="button" class="btn btn-secondary" (click)="toSystem(row)">View {{dataService.labelSystemLower()}}</button>
+                                                                    <button id="button-system" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
                                                                     <ul id="dropdown-system" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-system">
                                                                         <li role="menuitem"><a class="dropdown-item" href (click)="toCommunity(row);$event.preventDefault();">View community</a></li>
                                                                         <li role="menuitem"><a class="dropdown-item" href (click)="toOrganisation(row); $event.preventDefault();">View {{dataService.labelOrganisationLower()}}</a></li>
@@ -83,15 +83,15 @@
                                                             <ng-container *ngSwitchDefault [ngSwitch]="showToOrganisation(row)">
                                                                 <ng-container *ngSwitchCase="true">
                                                                     <div class="btn-group" dropdown>
-                                                                        <button type="button" class="btn btn-default" (click)="toOrganisation(row)">View {{dataService.labelOrganisationLower()}}</button>
-                                                                        <button id="button-system" type="button" dropdownToggle class="btn btn-default dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
+                                                                        <button type="button" class="btn btn-secondary" (click)="toOrganisation(row)">View {{dataService.labelOrganisationLower()}}</button>
+                                                                        <button id="button-system" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
                                                                         <ul id="dropdown-system" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-system">
                                                                             <li role="menuitem"><a class="dropdown-item" href (click)="toCommunity(row);$event.preventDefault();">View community</a></li>
                                                                         </ul>
                                                                     </div>
                                                                 </ng-container>
                                                                 <ng-container *ngSwitchDefault>
-                                                                    <button type="button" class="btn btn-default" (click)="toCommunity(row)">View community</button>
+                                                                    <button type="button" class="btn btn-secondary" (click)="toCommunity(row)">View community</button>
                                                                 </ng-container>
                                                             </ng-container>
                                                         </ng-container>
@@ -101,8 +101,8 @@
                                                         <ng-container [ngSwitch]="showToSpecification(row)">
                                                             <ng-container *ngSwitchCase="true">
                                                                 <div class="btn-group" dropdown>
-                                                                    <button type="button" class="btn btn-default" (click)="toSpecification(row)">View {{dataService.labelSpecificationLower()}}</button>
-                                                                    <button id="button-spec" type="button" dropdownToggle class="btn btn-default dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
+                                                                    <button type="button" class="btn btn-secondary" (click)="toSpecification(row)">View {{dataService.labelSpecificationLower()}}</button>
+                                                                    <button id="button-spec" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
                                                                     <ul id="dropdown-spec" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-spec">
                                                                         <li role="menuitem"><a class="dropdown-item" href (click)="toDomain(row);$event.preventDefault();">View {{dataService.labelDomainLower()}}</a></li>
                                                                         <li *ngIf="showToActor(row)" role="menuitem"><a class="dropdown-item" href (click)="toActor(row); $event.preventDefault();">View {{dataService.labelActorLower()}}</a></li>
@@ -112,15 +112,15 @@
                                                             <ng-container *ngSwitchDefault [ngSwitch]="showToActor(row)">
                                                                 <ng-container *ngSwitchCase="true">
                                                                     <div class="btn-group" dropdown>
-                                                                        <button type="button" class="btn btn-default" (click)="toActor(row)">View {{dataService.labelActorLower()}}</button>
-                                                                        <button id="button-spec" type="button" dropdownToggle class="btn btn-default dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
+                                                                        <button type="button" class="btn btn-secondary" (click)="toActor(row)">View {{dataService.labelActorLower()}}</button>
+                                                                        <button id="button-spec" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
                                                                         <ul id="dropdown-spec" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-spec">
                                                                             <li role="menuitem"><a class="dropdown-item" href (click)="toDomain(row);$event.preventDefault();">View {{dataService.labelDomainLower()}}</a></li>
                                                                         </ul>
                                                                     </div>
                                                                 </ng-container>
                                                                 <ng-container *ngSwitchDefault>
-                                                                    <button type="button" class="btn btn-default" (click)="toDomain(row)">View {{dataService.labelDomainLower()}}</button>
+                                                                    <button type="button" class="btn btn-secondary" (click)="toDomain(row)">View {{dataService.labelDomainLower()}}</button>
                                                                 </ng-container>
                                                             </ng-container>
                                                         </ng-container>
@@ -130,22 +130,22 @@
                                                         <ng-container [ngSwitch]="showToTestCase(row)">
                                                             <ng-container *ngSwitchCase="true">
                                                                 <div class="btn-group" dropdown>
-                                                                    <button type="button" class="btn btn-default" (click)="toTestCase(row)">View test case</button>
-                                                                    <button id="button-testcase" type="button" dropdownToggle class="btn btn-default dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
+                                                                    <button type="button" class="btn btn-secondary" (click)="toTestCase(row)">View test case</button>
+                                                                    <button id="button-testcase" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
                                                                     <ul id="dropdown-testcase" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-testcase">
                                                                         <li role="menuitem"><a class="dropdown-item" href (click)="toTestSuite(row);$event.preventDefault();">View test suite</a></li>
                                                                     </ul>
                                                                 </div>
                                                             </ng-container>
                                                             <ng-container *ngSwitchDefault>
-                                                                <button type="button" class="btn btn-default" (click)="toTestSuite(row)">View test suite</button>
+                                                                <button type="button" class="btn btn-secondary" (click)="toTestSuite(row)">View test suite</button>
                                                             </ng-container>
                                                         </ng-container>
                                                     </ng-container>
                                                 </div>
                                             </div>
-                                            <div class="panel panel-default">
-                                                <div class="panel-heading session-table-title clickable" (click)="diagramCollapsed[row.session] = !diagramCollapsed[row.session]">
+                                            <div class="card panel-default">
+                                                <div class="card-header session-table-title clickable" (click)="diagramCollapsed[row.session] = !diagramCollapsed[row.session]">
                                                     <div class="session-table-title-part">
                                                         <div class="session-table-title-label"><app-collapsing-icon [isCollapsed]="diagramCollapsed[row.session]"></app-collapsing-icon>Test suite</div>
                                                         <div class="session-table-title-value">{{row.testSuite}}</div>
@@ -160,7 +160,7 @@
                                                     </div>
                                                 </div>
                                                 <div [collapse]="diagramCollapsed[row.session]" [isAnimated]="true">
-                                                    <div class="panel-body" [class.disable-events]="sessionBeingRefreshed?.session == row.session" style="overflow-x: auto; overflow-y: hidden;">
+                                                    <div class="card-body" [class.disable-events]="sessionBeingRefreshed?.session == row.session" style="overflow-x: auto; overflow-y: hidden;">
                                                         <div *ngIf="!row.hideLoadingIcon"><span><i class="fa-solid fa-spinner fa-spin-override fa-lg"></i></span></div>
                                                         <div [collapse]="!row.diagramExpanded" [isAnimated]="true">
                                                             <div class="no-margin">

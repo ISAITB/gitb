@@ -62,9 +62,9 @@ export class ConformanceCertificateModalComponent implements OnInit {
     return message
   }
 
-  certificateChoice() {
+  certificateChoicesVisible() {
     if (this.settings.includeTitle) {
-        this.dataService.focus('title', 200)
+      this.dataService.focus('title')
     }
   }
 

@@ -2,11 +2,11 @@
 	<h4>Test suite upload</h4>
 </div>
 <div class="modal-body">
-	<form class="form-horizontal" [ngSwitch]="step">
+	<form [ngSwitch]="step">
 		<div *ngSwitchCase="'initial'">
-			<div class="form-group" *ngIf="!sharedTestSuite">
-				<label class="col-xs-3 control-label" for="specification">* Target {{dataService.labelSpecificationLower()}}:</label>
-				<div class="col-xs-8">
+			<div class="form-group row" *ngIf="!sharedTestSuite">
+				<label class="col-3 col-form-label text-right" for="specification">* Target {{dataService.labelSpecificationLower()}}:</label>
+				<div class="col-8">
 					<input *ngIf="availableSpecifications.length == 1" class="form-control" id="specification" name="specification" [(ngModel)]="specifications[0].fname" readonly="readonly"/>
 					<select *ngIf="availableSpecifications.length > 1" [attr.size]="(availableSpecifications.length > 30)?30:availableSpecifications.length" multiple="multiple" class="form-control" id="specification" name="specification" [(ngModel)]="specifications">
                         <option *ngFor="let specification of availableSpecifications" [ngValue]="specification">{{specification.fname}}</option>
@@ -14,9 +14,9 @@
 				</div>
 				<app-tooltip [tbTooltip]="'The '+dataService.labelSpecificationLower()+' for which the test suite will be uploaded.'"></app-tooltip>
 			</div>
-			<div class="form-group">
-				<label class="col-xs-3 control-label">* Test suite:</label>
-				<div class="col-xs-8">
+			<div class="form-group row">
+				<label class="col-3 col-form-label text-right">* Test suite:</label>
+				<div class="col-8">
 					<app-file-select placeholder="Select test suite archive ..."
 						[fileName]="file?.name"
 						[accepts]="['application/zip']"
@@ -30,7 +30,7 @@
 		<div *ngSwitchCase="'validation'">
 			<div class="container-fluid">
 				<div class="row">
-					<div class="bg-info div-rounded div-padded" [ngSwitch]="hasValidationErrors || hasValidationWarnings">
+					<div class="alert-info rounded div-padded" [ngSwitch]="hasValidationErrors || hasValidationWarnings">
 						<div *ngSwitchCase="true">
 							The provided test suite completed validation with <strong *ngIf="hasValidationErrors">{{report!.counters.errors}} error(s)</strong><span *ngIf="hasValidationErrors && hasValidationWarnings"> and </span><strong *ngIf="hasValidationWarnings">{{report!.counters.warnings}} warning(s)</strong>.
 						</div>
@@ -42,7 +42,7 @@
 			</div>
 			<div class="row test-step-report ts-upload-validation-report">
 				<div class="step-report test-assertion-step-report">
-					<div class="col-xs-12 test-assertion-group-report" *ngIf="report?.reports != undefined">
+					<div class="col-12 test-assertion-group-report" *ngIf="report?.reports != undefined">
 						<div class="report-details">
 							<div class="report-details-title" (click)="reportItemsCollapsed = !reportItemsCollapsed"><app-collapsing-icon [isCollapsed]="reportItemsCollapsed"></app-collapsing-icon>Details</div>
 							<div class="report-details-items" [collapse]="reportItemsCollapsed" [isAnimated]="true">
@@ -58,41 +58,41 @@
 			</div>
 		</div>
 		<div *ngSwitchCase="'replace'">
-			<div class="container-fluid">
-				<div class="row">
-					<div class="bg-info div-rounded div-padded" [ngSwitch]="sharedTestSuite">
-						<ng-container *ngSwitchCase="true">
-							<ng-container [ngSwitch]="specificationChoices && specificationChoices.length > 0">
-								<span *ngSwitchCase="true">A matching test suite was found with already linked {{dataService.labelSpecificationsLower()}}. Select how the update should take place.</span>
-								<span *ngSwitchDefault>A matching test suite was found. Select how the update should take place.</span>
-							</ng-container>
-						</ng-container>
-						<ng-container *ngSwitchDefault>
-							<span *ngIf="!hasMultipleChoices && hasMatchingTestSuite">A selected {{dataService.labelSpecificationLower()}} already contains this test suite and its data. Select how the update should take place.</span>
-							<span *ngIf="!hasMultipleChoices && !hasMatchingTestSuite">A selected {{dataService.labelSpecificationLower()}} defines matching data. Select how the update should take place.</span>
-							<span *ngIf="hasMultipleChoices && hasMatchingTestSuite">Selected {{dataService.labelSpecificationsLower()}} already contain this test suite and its data. Select how the update should take place.</span>
-							<span *ngIf="hasMultipleChoices && !hasMatchingTestSuite">Selected {{dataService.labelSpecificationsLower()}} define matching data. Select how the update should take place.</span>
-						</ng-container>
-					</div>
-				</div>
+			<div class="alert-info rounded div-padded" [ngSwitch]="sharedTestSuite">
+				<ng-container *ngSwitchCase="true">
+					<ng-container [ngSwitch]="specificationChoices && specificationChoices.length > 0">
+						<span *ngSwitchCase="true">A matching test suite was found with already linked {{dataService.labelSpecificationsLower()}}. Select how the update should take place.</span>
+						<span *ngSwitchDefault>A matching test suite was found. Select how the update should take place.</span>
+					</ng-container>
+				</ng-container>
+				<ng-container *ngSwitchDefault>
+					<span *ngIf="!hasMultipleChoices && hasMatchingTestSuite">A selected {{dataService.labelSpecificationLower()}} already contains this test suite and its data. Select how the update should take place.</span>
+					<span *ngIf="!hasMultipleChoices && !hasMatchingTestSuite">A selected {{dataService.labelSpecificationLower()}} defines matching data. Select how the update should take place.</span>
+					<span *ngIf="hasMultipleChoices && hasMatchingTestSuite">Selected {{dataService.labelSpecificationsLower()}} already contain this test suite and its data. Select how the update should take place.</span>
+					<span *ngIf="hasMultipleChoices && !hasMatchingTestSuite">Selected {{dataService.labelSpecificationsLower()}} define matching data. Select how the update should take place.</span>
+				</ng-container>
 			</div>
 			<ng-container [ngSwitch]="sharedTestSuite">
 				<ng-container *ngSwitchCase="true">
 					<div class="container-fluid">
 						<div class="row section-choice-container">
-							<div class="col-xs-12 section-choice-title">Test suite definition</div>
-							<div class="section-choice-actions col-xs-12">
-								<div class="form-group">
-									<label class="col-xs-3 control-label" for="choice_metadata_skip">* Test suite metadata:</label>
-									<div class="col-xs-9">
-										<label class="radio-inline">
-											<input type="radio" name="choice_metadata_skip" [(ngModel)]="updateTestSuiteMetadata" id="choice_metadata_skip" [value]="false">Keep existing values
-											<app-tooltip [inline]="true" inlineType="checkLabel" tbTooltip="Keep the metadata of the existing test suite unchanged."></app-tooltip>
-										</label>
-										<label class="radio-inline">
-											<input type="radio" name="choice_metadata_update" [(ngModel)]="updateTestSuiteMetadata" id="choice_metadata_update" [value]="true">Update to match the uploaded archive
-											<app-tooltip [inline]="true" inlineType="checkLabel" tbTooltip="Update the metadata of the existing test suite (its name, description and documentation) to match the information contained in the provided archive. Note that test cases are always processed regardless of this option."></app-tooltip>
-										</label>
+							<div class="col-12 section-choice-title">Test suite definition</div>
+							<div class="section-choice-actions col-12">
+								<div class="form-group row mt-2">
+									<legend class="col-3 col-form-label text-right pt-0">* Test suite metadata:</legend>
+									<div class="col-9">
+										<div class="form-check-inline">
+											<input class="form-check-input" type="radio" id="choice_metadata_skip" name="choice_metadata_skip" [(ngModel)]="updateTestSuiteMetadata" id="choice_metadata_skip" [value]="false">
+											<label class="form-check-label" for="choice_metadata_skip">Keep existing values
+												<app-tooltip [inline]="true" inlineType="checkLabel" tbTooltip="Keep the metadata of the existing test suite unchanged."></app-tooltip>
+											</label>
+										</div>
+										<div class="form-check-inline">
+											<input class="form-check-input" type="radio" id="choice_metadata_update" name="choice_metadata_update" [(ngModel)]="updateTestSuiteMetadata" id="choice_metadata_update" [value]="true">
+											<label class="form-check-label" for="choice_metadata_update">Update to match the uploaded archive
+												<app-tooltip [inline]="true" inlineType="checkLabel" tbTooltip="Update the metadata of the existing test suite (its name, description and documentation) to match the information contained in the provided archive. Note that test cases are always processed regardless of this option."></app-tooltip>
+											</label>
+										</div>
 									</div>
 								</div>
 								<!-- Test cases to update -->
@@ -147,6 +147,6 @@
 	</form>
 </div>
 <div class="modal-footer">
-	<button type="button" class="btn btn-default" (click)="close()" [disabled]="actionPending">{{step == 'results'?'Close':'Cancel'}}</button>
-    <button *ngIf="proceedVisible()" type="button" class="btn btn-default" (click)="proceed()" [disable]="proceedDisabled()" [pending]="actionProceedPending">Proceed</button>
+	<button type="button" class="btn btn-secondary" (click)="close()" [disabled]="actionPending">{{step == 'results'?'Close':'Cancel'}}</button>
+    <button *ngIf="proceedVisible()" type="button" class="btn btn-secondary" (click)="proceed()" [disable]="proceedDisabled()" [pending]="actionProceedPending">Proceed</button>
 </div>

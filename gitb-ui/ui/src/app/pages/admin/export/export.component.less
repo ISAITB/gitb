@@ -1,0 +1,27 @@
+@import '../../../../styles/less/_common.less';
+
+#exportSettingsTable {
+	border: 1px solid @gray-dark-1;
+	margin-top: 2px;
+	th {
+		background: @gray-light-1;
+		vertical-align: middle;
+        & > div {
+            display: flex;
+            white-space: nowrap;
+        }
+	}
+	td {
+		border-right: 1px solid @gray-dark-1;
+		&.row-header {
+			background: @gray-light-1;
+            & > div {
+                display: flex;
+                white-space: nowrap;
+            }
+		}
+		&:last-child {
+			border-right: 0px;
+		}
+	}
+}

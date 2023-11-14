@@ -6,16 +6,16 @@
                 <ng-container [ngSwitch]="showUpdateDefinition && showResetTestHistory">
                     <ng-container *ngSwitchCase="true">
                         <div class="btn-group" dropdown [isDisabled]="hasAllTestCaseDataChoice(true) && hasAllTestCaseHistoryChoice(true)">
-                            <button type="button" class="btn btn-default btn-sm" (click)="toggleTestCaseChoices(true)" [disabled]="hasAllTestCaseDataChoice(true) && hasAllTestCaseHistoryChoice(true)">Select all options</button>
-                            <button id="button-all" dropdownToggle type="button" class="btn btn-default btn-sm dropdown-toggle" aria-controls="dropdown-all"><span class="caret"></span></button>
+                            <button type="button" class="btn btn-secondary btn-sm" (click)="toggleTestCaseChoices(true)" [disabled]="hasAllTestCaseDataChoice(true) && hasAllTestCaseHistoryChoice(true)">Select all options</button>
+                            <button id="button-all" dropdownToggle type="button" class="btn btn-secondary btn-sm dropdown-toggle dropdown-toggle-split" aria-controls="dropdown-all"><span class="caret"></span></button>
                             <ul id="dropdownType-all" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-all">
                                 <li role="menuitem" [class.disabled]="hasAllTestCaseDataChoice(true)"><a class="dropdown-item" href (click)="toggleTestCaseDataChoice(true); $event.preventDefault()">Select all metadata update options</a></li>
                                 <li role="menuitem" [class.disabled]="hasAllTestCaseHistoryChoice(true)"><a class="dropdown-item" href (click)="toggleTestCaseHistoryChoice(true); $event.preventDefault()">Select all history reset options</a></li>
                             </ul>
                         </div>
                         <div class="btn-group" dropdown [isDisabled]="hasAllTestCaseDataChoice(false) && hasAllTestCaseHistoryChoice(false)">
-                            <button type="button" class="btn btn-default btn-sm" (click)="toggleTestCaseChoices(false)" [disabled]="hasAllTestCaseDataChoice(false) && hasAllTestCaseHistoryChoice(false)">Clear all options</button>
-                            <button id="button-none" dropdownToggle type="button" class="btn btn-default btn-sm dropdown-toggle" aria-controls="dropdown-all"><span class="caret"></span></button>
+                            <button type="button" class="btn btn-secondary btn-sm" (click)="toggleTestCaseChoices(false)" [disabled]="hasAllTestCaseDataChoice(false) && hasAllTestCaseHistoryChoice(false)">Clear all options</button>
+                            <button id="button-none" dropdownToggle type="button" class="btn btn-secondary btn-sm dropdown-toggle dropdown-toggle-split" aria-controls="dropdown-all"><span class="caret"></span></button>
                             <ul id="dropdownType-none" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-none">
                                 <li role="menuitem" [class.disabled]="hasAllTestCaseDataChoice(false)"><a class="dropdown-item" href (click)="toggleTestCaseDataChoice(false); $event.preventDefault()">Clear all metadata update options</a></li>
                                 <li role="menuitem" [class.disabled]="hasAllTestCaseHistoryChoice(false)"><a class="dropdown-item" href (click)="toggleTestCaseHistoryChoice(false); $event.preventDefault()">Clear all history reset options</a></li>
@@ -23,10 +23,10 @@
                         </div>
                     </ng-container>
                     <ng-container *ngSwitchDefault>
-                        <button *ngIf="showUpdateDefinition" type="button" class="btn btn-default btn-sm" (click)="toggleTestCaseDataChoice(true)" [disabled]="hasAllTestCaseDataChoice(true)">Select all</button>
-                        <button *ngIf="showUpdateDefinition" type="button" class="btn btn-default btn-sm" (click)="toggleTestCaseDataChoice(false)" [disabled]="hasAllTestCaseDataChoice(false)">Clear all</button>
-                        <button *ngIf="showResetTestHistory" type="button" class="btn btn-default btn-sm" (click)="toggleTestCaseHistoryChoice(true)" [disabled]="hasAllTestCaseHistoryChoice(true)">Select all</button>
-                        <button *ngIf="showResetTestHistory" type="button" class="btn btn-default btn-sm" (click)="toggleTestCaseHistoryChoice(false)" [disabled]="hasAllTestCaseHistoryChoice(false)">Clear all</button>
+                        <button *ngIf="showUpdateDefinition" type="button" class="btn btn-secondary btn-sm" (click)="toggleTestCaseDataChoice(true)" [disabled]="hasAllTestCaseDataChoice(true)">Select all</button>
+                        <button *ngIf="showUpdateDefinition" type="button" class="btn btn-secondary btn-sm" (click)="toggleTestCaseDataChoice(false)" [disabled]="hasAllTestCaseDataChoice(false)">Clear all</button>
+                        <button *ngIf="showResetTestHistory" type="button" class="btn btn-secondary btn-sm" (click)="toggleTestCaseHistoryChoice(true)" [disabled]="hasAllTestCaseHistoryChoice(true)">Select all</button>
+                        <button *ngIf="showResetTestHistory" type="button" class="btn btn-secondary btn-sm" (click)="toggleTestCaseHistoryChoice(false)" [disabled]="hasAllTestCaseHistoryChoice(false)">Clear all</button>
                     </ng-container>
                 </ng-container>
             </div>

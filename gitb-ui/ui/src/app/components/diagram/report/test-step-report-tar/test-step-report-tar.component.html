@@ -1,9 +1,9 @@
 <div class="step-report test-assertion-step-report">
-    <div class="col-md-12" *ngIf="hasContextItems">
+    <div class="col-12" *ngIf="hasContextItems">
       <app-any-content-view [context]="report.context!" [report]="report" [sessionId]="sessionId" [noBorder]="true"></app-any-content-view>
     </div>
     <div *ngIf="report.reports != null && report.reports.assertionReports != null && report.reports.assertionReports.length > 0">
-      <div class="col-md-12 countersDiv" *ngIf="report.counters != null && (report.counters.nrOfErrors > 0 || report.counters.nrOfWarnings > 0 || report.counters.nrOfAssertions > 0)">
+      <div class="col-12 countersDiv" *ngIf="report.counters != null && (report.counters.nrOfErrors > 0 || report.counters.nrOfWarnings > 0 || report.counters.nrOfAssertions > 0)">
         <div class="itemsDiv">
           <div class="summary" (click)="collapsed = !collapsed">
             <div class="summary-cell summary-cell-title"><app-collapsing-icon [isCollapsed]="collapsed"></app-collapsing-icon>Details</div>

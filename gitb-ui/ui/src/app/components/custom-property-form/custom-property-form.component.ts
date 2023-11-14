@@ -6,6 +6,7 @@ import { saveAs } from 'file-saver'
 import { OrganisationService } from 'src/app/services/organisation.service';
 import { SystemService } from 'src/app/services/system.service';
 import { Observable } from 'rxjs';
+import { Constants } from 'src/app/common/constants';
 
 @Component({
   selector: 'app-custom-property-form',
@@ -33,6 +34,7 @@ export class CustomPropertyFormComponent implements OnInit {
   @Input() refresh?: EventEmitter<{props?: CustomProperty[], asterisks: boolean}>
   @Output() collapseChange = new EventEmitter<boolean>()
 
+  Constants = Constants
   isAdmin = false
   isReadonly = true
   innerDivStyle = ''
@@ -70,7 +72,7 @@ export class CustomPropertyFormComponent implements OnInit {
       }
     }
     if (this.tbFormPadded) {
-      this.innerDivStyle = 'col-xs-'+(11-this.tbColOffset)+' col-xs-offset-'+this.tbColOffset
+      this.innerDivStyle = 'col-'+(11-this.tbColOffset)+' offset-'+this.tbColOffset
     }
     if (this.tbSetDefaults && this.tbProperties != undefined) {
       for (let prop of this.tbProperties) {
@@ -147,17 +149,18 @@ export class CustomPropertyFormComponent implements OnInit {
   }
 
   editSecret(property: CustomProperty): void {
-    if (property.changeValue) {
-      property.value = ''
-      property.showValue = false
-      this.dataService.focus('prop-'+property.id)
-    } else {
-      if (property.configured) {
-        property.value = '*****'
-      } else {
-        property.value = ''
-      }
-    }
+    // if (property.changeValue) {
+    //   property.value = ''
+    //   // property.showValue = false
+    //   // this.dataService.focus('prop-'+property.id)
+    // } else {
+    //   // property.showValue = true
+    //   if (property.configured) {
+    //     property.value = '*****'
+    //   } else {
+    //     property.value = ''
+    //   }
+    // }
   }
 
   removeFile(property: CustomProperty)  {
@@ -225,9 +228,7 @@ export class CustomPropertyFormComponent implements OnInit {
         } else {
           property.prerequisiteOk = true
         }
-        if (property.kind == 'SECRET' && property.configured) {
-          property.value = '*****'
-        } else if (property.kind == 'SIMPLE') {
+        if (property.kind == 'SIMPLE') {
           property.hasPresetValues = false
           if (property.allowedValues !== undefined) {
             property.presetValues = JSON.parse(property.allowedValues)

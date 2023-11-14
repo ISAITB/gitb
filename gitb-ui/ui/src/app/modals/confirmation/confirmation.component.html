@@ -1,8 +1,8 @@
 <div class="modal-header">
     <h4>{{headerText}}</h4>
 </div>
-<div class="modal-body">
-    <p>{{bodyText}}</p>
+<div class="modal-body pt-4 pb-4">
+    {{bodyText}}
 </div>
 <div class="modal-footer">
     <button [ngClass]="cancelClass()" type="button" (click)="cancel()" *ngIf="!oneButton">{{closeButtonText}}</button>

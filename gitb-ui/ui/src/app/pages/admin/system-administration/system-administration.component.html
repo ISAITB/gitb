@@ -1,6 +1,6 @@
 <div class="page">
-    <div class="panel panel-default">
-        <div class="panel-heading clickable" (click)="configsCollapsed = !configsCollapsed">
+    <div class="card panel-default">
+        <div class="card-header clickable" (click)="configsCollapsed = !configsCollapsed">
             <h4 class="title">System configuration</h4>
         </div>
         <div [collapse]="configsCollapsed" [isAnimated]="true">
@@ -20,21 +20,21 @@
                             [(status)]="ttlStatus"
                         >
                             <form class="form-inline">
-                                <div class="form-group">
+                                <div class="form-group row">
                                     <div class="checkbox">
                                         <label>
                                             <input type="checkbox" name="ttlEnabled" (change)="ttlCheckChanged()" [(ngModel)]="ttlEnabled"> Enabled?
                                         </label>
                                     </div>
                                 </div>
-                                <div class="form-group">
+                                <div class="form-group row">
                                     <label class="sr-only" for="ttlValue">Seconds before terminating sessions:</label>
                                     <div class="input-group">
                                         <input type="number" min="1" class="form-control" id="ttlValue" name="ttlValue" placeholder="Timeout" [disabled]="!ttlEnabled" [(ngModel)]="ttlValue">
                                         <div class="input-group-addon">seconds</div>
                                     </div>
                                 </div>
-                                <button type="submit" class="btn btn-default" [disable]="ttlEnabled && ttlValue == undefined" [pending]="ttlStatus.pending" (click)="saveTTL()">Save</button>
+                                <button type="submit" class="btn btn-secondary" [disable]="ttlEnabled && ttlValue == undefined" [pending]="ttlStatus.pending" (click)="saveTTL()">Save</button>
                             </form>
                         </app-configuration-entry>
                     </div>
@@ -46,14 +46,14 @@
                             [(status)]="selfRegistrationStatus"
                         >
                             <form class="form-inline">
-                                <div class="form-group">
+                                <div class="form-group row">
                                     <div class="checkbox">
                                         <label>
                                             <input type="checkbox" name="selfRegistrationEnabled" [(ngModel)]="selfRegistrationEnabled"> Enabled?
                                         </label>
                                     </div>
                                 </div>
-                                <button type="submit" class="btn btn-default" [pending]="selfRegistrationStatus.pending" (click)="saveSelfRegistration()">Save</button>
+                                <button type="submit" class="btn btn-secondary" [pending]="selfRegistrationStatus.pending" (click)="saveSelfRegistration()">Save</button>
                             </form>
                         </app-configuration-entry>
                     </div>
@@ -65,14 +65,14 @@
                             [(status)]="demoAccountStatus"
                         >
                             <form class="form-inline">
-                                <div class="form-group">
+                                <div class="form-group row">
                                     <div class="checkbox">
                                         <label>
                                             <input type="checkbox" name="demoAccountEnabled" [(ngModel)]="demoAccountEnabled"> Enabled?
                                         </label>
                                     </div>
                                 </div>
-                                <div class="form-group" [ngSwitch]="loadCommunitiesPending">
+                                <div class="form-group row" [ngSwitch]="loadCommunitiesPending">
                                     <app-pending-block *ngSwitchCase="true"></app-pending-block>
                                     <ng-container *ngSwitchDefault [ngSwitch]="communities.length == 0">
                                         <div *ngSwitchCase="true" class="no-data-container">No communities available</div>
@@ -81,7 +81,7 @@
                                         </select>
                                     </ng-container>
                                 </div>
-                                <div class="form-group" *ngIf="selectedCommunity && !loadCommunitiesPending" [ngSwitch]="loadOrganisationsPending">
+                                <div class="form-group row" *ngIf="selectedCommunity && !loadCommunitiesPending" [ngSwitch]="loadOrganisationsPending">
                                     <app-pending-block *ngSwitchCase="true"></app-pending-block>
                                     <ng-container *ngSwitchDefault [ngSwitch]="organisations.length == 0">
                                         <div *ngSwitchCase="true" class="no-data-container">No organisations available</div>
@@ -90,7 +90,7 @@
                                         </select>
                                     </ng-container>
                                 </div>
-                                <div class="form-group" *ngIf="selectedOrganisation && !loadCommunitiesPending && !loadOrganisationsPending" [ngSwitch]="loadUsersPending">
+                                <div class="form-group row" *ngIf="selectedOrganisation && !loadCommunitiesPending && !loadOrganisationsPending" [ngSwitch]="loadUsersPending">
                                     <app-pending-block *ngSwitchCase="true"></app-pending-block>
                                     <ng-container *ngSwitchDefault [ngSwitch]="users.length == 0">
                                         <div *ngSwitchCase="true" class="no-data-container">No non-administrator users available</div>
@@ -99,7 +99,7 @@
                                         </select>
                                     </ng-container>
                                 </div>
-                                <button type="submit" class="btn btn-default" [disable]="demoAccountEnabled && demoAccount == undefined" [pending]="demoAccountStatus.pending" (click)="saveDemoAccount()">Save</button>
+                                <button type="submit" class="btn btn-secondary" [disable]="demoAccountEnabled && demoAccount == undefined" [pending]="demoAccountStatus.pending" (click)="saveDemoAccount()">Save</button>
                             </form>
                         </app-configuration-entry>
                     </div>            
@@ -111,14 +111,14 @@
                             [(status)]="restApiStatus"
                         >
                             <form class="form-inline">
-                                <div class="form-group">
+                                <div class="form-group row">
                                     <div class="checkbox">
                                         <label>
                                             <input type="checkbox" name="restApiEnabled" [(ngModel)]="restApiEnabled"> Enabled?
                                         </label>
                                     </div>
                                 </div>
-                                <button type="submit" class="btn btn-default" [pending]="restApiStatus.pending" (click)="saveRestApi()">Save</button>
+                                <button type="submit" class="btn btn-secondary" [pending]="restApiStatus.pending" (click)="saveRestApi()">Save</button>
                             </form>
                         </app-configuration-entry>
                     </div>
@@ -132,8 +132,8 @@
                             <form class="form-inline">
                                 <app-editor id="welcomePageMessage" name="welcomePageMessage" [(ngModel)]="welcomePageMessage" type="normal" [height]="200"></app-editor>
                                 <div class="btn-toolbar topMargin">
-                                    <button type="submit" class="btn btn-default" [disable]="welcomePageResetPending || !textProvided(welcomePageMessage)" [pending]="welcomePageStatus.pending" (click)="saveWelcomePage()">Save</button>
-                                    <button type="button" class="btn btn-default" [disable]="welcomePageStatus.fromDefault || welcomePageStatus.fromEnv || welcomePageStatus.pending" [pending]="welcomePageResetPending" (click)="resetWelcomePage()">Reset to default</button>
+                                    <button type="submit" class="btn btn-secondary" [disable]="welcomePageResetPending || !textProvided(welcomePageMessage)" [pending]="welcomePageStatus.pending" (click)="saveWelcomePage()">Save</button>
+                                    <button type="button" class="btn btn-secondary" [disable]="welcomePageStatus.fromDefault || welcomePageStatus.fromEnv || welcomePageStatus.pending" [pending]="welcomePageResetPending" (click)="resetWelcomePage()">Reset to default</button>
                                 </div>
                             </form>
                         </app-configuration-entry>
@@ -149,9 +149,9 @@
                 <!-- Administrators -->
                 <div class="tabPanel">
                     <div class="tabControls">
-                        <button type="button" class="btn btn-default" (click)="createAdmin()">Create system administrator</button>
+                        <button type="button" class="btn btn-secondary" (click)="createAdmin()">Create system administrator</button>
                     </div>
-                    <div class="panel panel-default">
+                    <div class="card panel-default">
                         <div table-directive
                             [columns]="adminColumns"
                             [data]="admins"
@@ -169,10 +169,10 @@
                 <div class="tabPanel">
                     <div class="tabControls">
                         <div class="btn-toolbar">
-                            <button type="button" class="btn btn-default" (click)="createLandingPage()">Create landing page</button>
+                            <button type="button" class="btn btn-secondary" (click)="createLandingPage()">Create landing page</button>
                         </div>
                     </div>
-                    <div class="panel panel-default">
+                    <div class="card panel-default">
                         <div table-directive
                             [columns]="landingPagesColumns"
                             [data]="landingPages"
@@ -190,10 +190,10 @@
                 <div class="tabPanel">
                     <div class="tabControls">
                         <div class="btn-toolbar">
-                            <button type="button" class="btn btn-default" (click)="createLegalNotice()">Create legal notice</button>
+                            <button type="button" class="btn btn-secondary" (click)="createLegalNotice()">Create legal notice</button>
                         </div>
                     </div>
-                    <div class="panel panel-default">
+                    <div class="card panel-default">
                         <div table-directive
                             [columns]="legalNoticesColumns"
                             [data]="legalNotices"
@@ -211,10 +211,10 @@
                 <div class="tabPanel">
                     <div class="tabControls">
                         <div class="btn-toolbar">
-                            <button type="button" class="btn btn-default" (click)="createErrorTemplate()">Create error template</button>
+                            <button type="button" class="btn btn-secondary" (click)="createErrorTemplate()">Create error template</button>
                         </div>
                     </div>
-                    <div class="panel panel-default">
+                    <div class="card panel-default">
                         <div table-directive
                             [columns]="errorTemplatesColumns"
                             [data]="errorTemplates"

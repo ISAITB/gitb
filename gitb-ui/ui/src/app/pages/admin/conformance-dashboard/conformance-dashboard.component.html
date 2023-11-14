@@ -1,19 +1,19 @@
 <div id="conformanceDashboardPage" class="page conformancedashboard">
     <app-test-filter [filterState]="filterState" [communityId]="communityId" (onApply)="getConformanceStatements()"></app-test-filter>
-	<div id="conformanceDashboardPageTable" class="panel panel-default no-bottom-margin">
-		<div class="panel-heading">
+	<div id="conformanceDashboardPageTable" class="card no-bottom-margin">
+		<div class="card-header">
 			<h4 id="conformance-statements-title" class="title">Conformance statements</h4>
 			<div class="btn-toolbar allStatementControls" [class.disable-events]="filterState.updatePending">
                 <div class="btn-group" dropdown [isDisabled]="selectedCommunityId == undefined">
-                    <button id="button-snapshot" dropdownToggle type="button" class="btn btn-default dropdown-toggle" aria-controls="dropdown-snapshot">{{snapshotButtonLabel}}<span class="caret withMargin"></span></button>
+                    <button id="button-snapshot" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-snapshot">{{snapshotButtonLabel}}<span class="caret withMargin"></span></button>
                     <ul id="dropdown-snapshot" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-snapshot">
                       <li role="menuitem"><a class="dropdown-item" href (click)="viewLatestConformanceSnapshot();$event.preventDefault()">{{latestSnapshotButtonLabel}}</a></li>
                       <li class="divider dropdown-divider"></li>
                       <li role="menuitem"><a class="dropdown-item" href (click)="manageConformanceSnapshots();$event.preventDefault()">Manage conformance snapshots</a></li>
                     </ul>
                 </div>
-				<button type="button" class="btn btn-default" *ngIf="conformanceStatements.length > 0" (click)="onExportConformanceStatementsAsCsv()" [disable]="conformanceStatements.length == 0" [pending]="exportPending">Export CSV</button>
-				<button type="button" class="btn btn-default" *ngIf="showCollapseAll()" (click)="onCollapseAll()">Collapse all</button>
+				<button type="button" class="btn btn-secondary" *ngIf="conformanceStatements.length > 0" (click)="onExportConformanceStatementsAsCsv()" [disable]="conformanceStatements.length == 0" [pending]="exportPending">Export CSV</button>
+				<button type="button" class="btn btn-secondary" *ngIf="showCollapseAll()" (click)="onCollapseAll()">Collapse all</button>
 			</div>
 		</div>
         <div class="table-container">
@@ -54,7 +54,7 @@
                             <td class="td-min-centered"><app-test-status-icons [counters]="statement.counters!" [asLine]="true"></app-test-status-icons></td>
                             <td class="td-min-centered"><span><i containerClass="shortTooltip" [tooltip]="dataService.tooltipForTestResult(statement.overallStatus)" [ngClass]="dataService.iconForTestResult(statement.overallStatus)"></i></span></td>
                             <td class="td-min-centered">
-                                <button class="btn btn-default" (click)="onExportConformanceStatement(statement); $event.stopPropagation();" [pending]="statement.exportPending" [icon]="true"  containerClass="shortTooltip" tooltip="Export" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-regular fa-file-pdf"></i></button>
+                                <button class="btn btn-secondary" (click)="onExportConformanceStatement(statement); $event.stopPropagation();" [pending]="statement.exportPending" [icon]="true"  containerClass="shortTooltip" tooltip="Export" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-regular fa-file-pdf"></i></button>
                             </td>
                         </tr>
                         <tr class="expandable-table-row-expanded">
@@ -64,13 +64,13 @@
                                         <div class="statementControls">
                                             <div class="statementButtons btn-toolbar" *ngIf="showToOrganisation(statement) || showToSystem(statement) || showToStatement(statement) || showToDomain(statement) || showToSpecification(statement) || showToActor(statement)">
                                                 <!-- View statement -->
-                                                <button *ngIf="showToStatement(statement)" type="button" class="btn btn-default" (click)="toStatement(statement)">View statement</button>
+                                                <button *ngIf="showToStatement(statement)" type="button" class="btn btn-secondary" (click)="toStatement(statement)">View statement</button>
                                                 <!-- View party -->
                                                 <ng-container [ngSwitch]="showToSystem(statement)">
                                                     <ng-container *ngSwitchCase="true">
                                                         <div class="btn-group" dropdown>
-                                                            <button type="button" class="btn btn-default" (click)="toSystem(statement)">View {{dataService.labelSystemLower()}}</button>
-                                                            <button id="button-system" type="button" dropdownToggle class="btn btn-default dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
+                                                            <button type="button" class="btn btn-secondary" (click)="toSystem(statement)">View {{dataService.labelSystemLower()}}</button>
+                                                            <button id="button-system" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
                                                             <ul id="dropdown-system" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-system">
                                                                 <li role="menuitem"><a class="dropdown-item" href (click)="toCommunity(statement);$event.preventDefault();">View community</a></li>
                                                                 <li role="menuitem"><a class="dropdown-item" href (click)="toOrganisation(statement); $event.preventDefault();">View {{dataService.labelOrganisationLower()}}</a></li>
@@ -80,15 +80,15 @@
                                                     <ng-container *ngSwitchDefault [ngSwitch]="showToOrganisation(statement)">
                                                         <ng-container *ngSwitchCase="true">
                                                             <div class="btn-group" dropdown>
-                                                                <button type="button" class="btn btn-default" (click)="toOrganisation(statement)">View {{dataService.labelOrganisationLower()}}</button>
-                                                                <button id="button-system" type="button" dropdownToggle class="btn btn-default dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
+                                                                <button type="button" class="btn btn-secondary" (click)="toOrganisation(statement)">View {{dataService.labelOrganisationLower()}}</button>
+                                                                <button id="button-system" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
                                                                 <ul id="dropdown-system" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-system">
                                                                     <li role="menuitem"><a class="dropdown-item" href (click)="toCommunity(statement);$event.preventDefault();">View community</a></li>
                                                                 </ul>
                                                             </div>
                                                         </ng-container>
                                                         <ng-container *ngSwitchDefault>
-                                                            <button type="button" class="btn btn-default" (click)="toCommunity(statement)">View community</button>
+                                                            <button type="button" class="btn btn-secondary" (click)="toCommunity(statement)">View community</button>
                                                         </ng-container>
                                                     </ng-container>
                                                 </ng-container>
@@ -97,8 +97,8 @@
                                                     <ng-container [ngSwitch]="showToSpecification(statement)">
                                                         <ng-container *ngSwitchCase="true">
                                                             <div class="btn-group" dropdown>
-                                                                <button type="button" class="btn btn-default" (click)="toSpecification(statement)">View {{dataService.labelSpecificationLower()}}</button>
-                                                                <button id="button-spec" type="button" dropdownToggle class="btn btn-default dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
+                                                                <button type="button" class="btn btn-secondary" (click)="toSpecification(statement)">View {{dataService.labelSpecificationLower()}}</button>
+                                                                <button id="button-spec" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
                                                                 <ul id="dropdown-spec" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-spec">
                                                                     <li role="menuitem"><a class="dropdown-item" href (click)="toDomain(statement);$event.preventDefault();">View {{dataService.labelDomainLower()}}</a></li>
                                                                     <li *ngIf="showToActor(statement)" role="menuitem"><a class="dropdown-item" href (click)="toActor(statement); $event.preventDefault();">View {{dataService.labelActorLower()}}</a></li>
@@ -108,15 +108,15 @@
                                                         <ng-container *ngSwitchDefault [ngSwitch]="showToActor(statement)">
                                                             <ng-container *ngSwitchCase="true">
                                                                 <div class="btn-group" dropdown>
-                                                                    <button type="button" class="btn btn-default" (click)="toActor(statement)">View {{dataService.labelActorLower()}}</button>
-                                                                    <button id="button-spec" type="button" dropdownToggle class="btn btn-default dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
+                                                                    <button type="button" class="btn btn-secondary" (click)="toActor(statement)">View {{dataService.labelActorLower()}}</button>
+                                                                    <button id="button-spec" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
                                                                     <ul id="dropdown-spec" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-spec">
                                                                         <li role="menuitem"><a class="dropdown-item" href (click)="toDomain(statement);$event.preventDefault();">View {{dataService.labelDomainLower()}}</a></li>
                                                                     </ul>
                                                                 </div>
                                                             </ng-container>
                                                             <ng-container *ngSwitchDefault>
-                                                                <button type="button" class="btn btn-default" (click)="toDomain(statement)">View {{dataService.labelDomainLower()}}</button>
+                                                                <button type="button" class="btn btn-secondary" (click)="toDomain(statement)">View {{dataService.labelDomainLower()}}</button>
                                                             </ng-container>
                                                         </ng-container>
                                                     </ng-container>

@@ -1,12 +1,15 @@
 <div class="rootDiv">
-    <button id="button-options" type="button" [class.open]="open" class="btn btn-default" (click)="buttonClicked()">{{label}}<span class="caret withMargin"></span></button>
+    <button id="button-options" type="button" [class.open]="open" class="btn btn-secondary" (click)="buttonClicked()">{{label}}<span class="caret withMargin"></span></button>
     <div *ngIf="optionFormVisible" class="optionForm">
         <div class="container-fluid">
-            <div class="row" *ngFor="let optionSet of options; let last = last;">
-                <div class="col-xs-12" *ngFor="let option of optionSet">
-                    <label class="checkbox-inline disable-select" (click)="$event.stopPropagation()">
-                        <input type="checkbox" [(ngModel)]="currentState[option.key]" (ngModelChange)="updated.emit(currentState)"><span class="optionLabel"><ng-container *ngIf="option.iconClass"><i class="optionIcon" [ngClass]="option.iconClass!"></i> </ng-container>{{option.label}}</span>
-                    </label>
+            <div class="row" *ngFor="let optionSet of options; let last = last; let index1 = index;">
+                <div class="col-12 itemContainer" *ngFor="let option of optionSet; let index2 = index;">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" [attr.id]="'option-'+index1+'-'+index2" [attr.name]="'option-'+index1+'-'+index2" [(ngModel)]="currentState[option.key]" (ngModelChange)="updated.emit(currentState)">
+                        <label class="form-check-label disable-select" [attr.for]="'option-'+index1+'-'+index2" (click)="$event.stopPropagation()">
+                            <span class="optionLabel"><ng-container *ngIf="option.iconClass"><i class="optionIcon" [ngClass]="option.iconClass!"></i> </ng-container>{{option.label}}</span>
+                        </label>
+                    </div>
                 </div>
                 <div class="separator" *ngIf="!last"></div>
             </div>

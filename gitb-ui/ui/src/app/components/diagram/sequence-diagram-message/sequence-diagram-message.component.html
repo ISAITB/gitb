@@ -3,7 +3,7 @@
     <div class="message-type" [class.hovering]="hoveringTitle">
       <div class="message-title" (click)="titleClick()" (mouseover)="hoveringTitle = true" (mouseout)="hoveringTitle = false"><app-collapsing-icon [isCollapsed]="!expanded"></app-collapsing-icon>{{message.title}}</div>
       <div *ngIf="message.type == 'loop' && message.sequences != null && message.sequences.length > 0" class="btn-group iterations" dropdown>
-        <button id="button-iterations" dropdownToggle type="button" class="btn btn-default dropdown-toggle" aria-controls="dropdown-iterations">Iteration {{currentIterationIndex+1}} of {{message.sequences.length}}</button>
+        <button id="button-iterations" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-iterations">Iteration {{currentIterationIndex+1}} of {{message.sequences.length}}</button>
         <ul id="dropdown-iterations" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-iterations">
           <ng-container *ngFor="let iteration of message.sequences; let i = index">
               <li *ngIf="iteration != null" role="menuitem">

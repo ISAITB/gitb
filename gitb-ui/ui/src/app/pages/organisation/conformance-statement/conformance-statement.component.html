@@ -1,10 +1,10 @@
 <div id="conformanceDetailPage" class="page conformance">
-	<div class="panel panel-default">
-		<div class="panel-heading clickable" (click)="collapsedDetails = !collapsedDetails">
+	<div class="card panel-default">
+		<div class="card-header clickable" (click)="collapsedDetails = !collapsedDetails">
 			<h4 class="title"><app-collapsing-icon [isCollapsed]="collapsedDetails"></app-collapsing-icon>Conformance statement details</h4>
 		</div>
 		<div [collapse]="collapsedDetails" [isAnimated]="true">
-			<div class="panel-body detailsPanel" [ngSwitch]="statement != undefined">
+			<div class="card-body detailsPanel" [ngSwitch]="statement != undefined">
 				<div class="statementDetails" *ngSwitchCase="true">
 					<div class="partyContainer">
 						<div class="organisationContainer">
@@ -54,12 +54,12 @@
 					<div class="pending-message">Loading conformance statement details...</div>
 				</div>
 			</div>
-			<div class="panel-footer button-container">
+			<div class="card-footer button-container">
 				<div class="btn-toolbar">
 					<ng-container [ngSwitch]="canExportConformanceCertificate()">
 						<div *ngSwitchCase="true" class="btn-group export-group" dropdown [isDisabled]="exportCertificatePending || exportPending">
-							<button type="button" [disable]="exportCertificatePending || exportPending" [pending]="exportCertificatePending || exportPending" class="btn btn-default" (click)="onExportConformanceStatement()">Download report</button>
-							<button id="button-export" type="button" dropdownToggle class="btn btn-default dropdown-toggle dropdown-toggle-split">
+							<button type="button" [disable]="exportCertificatePending || exportPending" [pending]="exportCertificatePending || exportPending" class="btn btn-secondary" (click)="onExportConformanceStatement()">Download report</button>
+							<button id="button-export" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
 								<span class="caret"></span>
 								<span class="sr-only visually-hidden">Download report</span>
 							</button>
@@ -67,13 +67,13 @@
 								<li role="menuitem"><a class="dropdown-item" href (click)="onExportConformanceCertificate();$event.preventDefault();">Download conformance certificate</a></li>
 							</ul>
 						</div>
-						<button *ngSwitchDefault type="button" class="btn btn-default" (click)="onExportConformanceStatement()" [pending]="exportPending">Download report</button>
+						<button *ngSwitchDefault type="button" class="btn btn-secondary" (click)="onExportConformanceStatement()" [pending]="exportPending">Download report</button>
 					</ng-container>
 					<app-view-badge-button *ngIf="hasBadge" [systemId]="systemId" [actorId]="actorId" [leftMargin]="true"></app-view-badge-button>
 					<!-- View party -->
 					<div class="btn-group" dropdown>
-						<button type="button" class="btn btn-default" (click)="toSystem()">View {{dataService.labelSystemLower()}}</button>
-						<button id="button-system" type="button" dropdownToggle class="btn btn-default dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
+						<button type="button" class="btn btn-secondary" (click)="toSystem()">View {{dataService.labelSystemLower()}}</button>
+						<button id="button-system" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
 						<ul id="dropdown-system" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-system">
 							<li *ngIf="showToCommunity()" role="menuitem"><a class="dropdown-item" href (click)="toCommunity();$event.preventDefault();">View community</a></li>
 							<li role="menuitem"><a class="dropdown-item" href (click)="toOrganisation(); $event.preventDefault();">View {{dataService.labelOrganisationLower()}}</a></li>
@@ -84,8 +84,8 @@
 						<ng-container [ngSwitch]="showToSpecification()">
 							<ng-container *ngSwitchCase="true">
 								<div class="btn-group" dropdown>
-									<button type="button" class="btn btn-default" (click)="toSpecification()">View {{dataService.labelSpecificationLower()}}</button>
-									<button id="button-spec" type="button" dropdownToggle class="btn btn-default dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
+									<button type="button" class="btn btn-secondary" (click)="toSpecification()">View {{dataService.labelSpecificationLower()}}</button>
+									<button id="button-spec" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
 									<ul id="dropdown-spec" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-spec">
 										<li role="menuitem"><a class="dropdown-item" href (click)="toDomain();$event.preventDefault();">View {{dataService.labelDomainLower()}}</a></li>
 										<li *ngIf="showToActor()" role="menuitem"><a class="dropdown-item" href (click)="toActor(); $event.preventDefault();">View {{dataService.labelActorLower()}}</a></li>
@@ -95,23 +95,23 @@
 							<ng-container *ngSwitchDefault [ngSwitch]="showToActor()">
 								<ng-container *ngSwitchCase="true">
 									<div class="btn-group" dropdown>
-										<button type="button" class="btn btn-default" (click)="toActor()">View {{dataService.labelActorLower()}}</button>
-										<button id="button-spec" type="button" dropdownToggle class="btn btn-default dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
+										<button type="button" class="btn btn-secondary" (click)="toActor()">View {{dataService.labelActorLower()}}</button>
+										<button id="button-spec" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
 										<ul id="dropdown-spec" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-spec">
 											<li role="menuitem"><a class="dropdown-item" href (click)="toDomain();$event.preventDefault();">View {{dataService.labelDomainLower()}}</a></li>
 										</ul>
 									</div>
 								</ng-container>
 								<ng-container *ngSwitchDefault>
-									<button type="button" class="btn btn-default" (click)="toDomain()">View {{dataService.labelDomainLower()}}</button>
+									<button type="button" class="btn btn-secondary" (click)="toDomain()">View {{dataService.labelDomainLower()}}</button>
 								</ng-container>
 							</ng-container>
 						</ng-container>
 					</ng-container>
-					<button type="button" class="btn btn-default" (click)="back()">Back</button>
+					<button type="button" class="btn btn-secondary" (click)="back()">Back</button>
 				</div>
 				<div class="btn-toolbar btn-toolbar-delete" *ngIf="canDelete()">
-					<button type="button" class="btn btn-default btn-delete" (click)="deleteConformanceStatement()" [pending]="deletePending">Delete statement</button>
+					<button type="button" class="btn btn-outline-danger" (click)="deleteConformanceStatement()" [pending]="deletePending">Delete statement</button>
 				</div>
 			</div>
 		</div>
@@ -133,7 +133,7 @@
 					</div>
 					<div class="testSettings">
 						<div class="btn-group" dropdown>
-							<button id="button-executionType" dropdownToggle type="button" class="btn btn-default dropdown-toggle" aria-controls="dropdown-executionType">{{executionModeButton}}<span class="caret withMargin"></span></button>
+							<button id="button-executionType" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-executionType">{{executionModeButton}}<span class="caret withMargin"></span></button>
 							<ul id="dropdown-executionType" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-executionType">
 							  <li role="menuitem"><a class="dropdown-item" href (click)="executionMode = executionModeInteractive; executionModeButton = executionModeLabelInteractive; $event.preventDefault()">{{executionModeLabelInteractive}}</a></li>
 							  <li class="divider dropdown-divider"></li>
@@ -146,7 +146,7 @@
 				<ng-container [ngSwitch]="loadingTests">
 					<app-pending-block *ngSwitchCase="true"></app-pending-block>
 					<ng-container *ngSwitchDefault [ngSwitch]="displayedTestSuites.length">
-						<div class="panel panel-default panel-body noTestCasesDiv" *ngSwitchCase="0" [ngSwitch]="testSuites.length">
+						<div class="card card-body noTestCasesDiv" *ngSwitchCase="0" [ngSwitch]="testSuites.length">
 							<span *ngSwitchCase="0">No test cases are defined in this conformance statement.</span>
 							<span *ngSwitchDefault>No test cases were found matching your search criteria.</span>
 						</div>
@@ -167,11 +167,11 @@
 			<div class="tabPanel" [ngSwitch]="loadingConfiguration.status != Constants.STATUS.FINISHED">
 				<app-pending-block *ngSwitchCase="true"></app-pending-block>
 				<ng-container *ngSwitchDefault [ngSwitch]="endpointRepresentations.length">
-					<div class="panel panel-default panel-body noConfigurationDiv" *ngSwitchCase="0">
+					<div class="card card-body noConfigurationDiv" *ngSwitchCase="0">
 						<span>No configuration parameters are foreseen for this conformance statement.</span>
 					</div>
 					<div *ngSwitchDefault class="endpointPanelContainer" [ngClass]="{'list-group': hasMultipleEndpoints}">
-						<div class="endpoint" class="panel panel-default endpointPanel" [ngClass]="{'list-group-item': hasMultipleEndpoints}" *ngFor="let endpoint of endpointRepresentations">
+						<div class="card endpoint endpointPanel" [ngClass]="{'list-group-item': hasMultipleEndpoints}" *ngFor="let endpoint of endpointRepresentations">
 							<app-endpoint-display
 								[endpoint]="endpoint"
 								[hideEndpointInfo]="!hasMultipleEndpoints"

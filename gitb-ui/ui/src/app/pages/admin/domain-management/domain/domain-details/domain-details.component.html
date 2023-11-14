@@ -1,23 +1,23 @@
 <div class="page domains detail">
-    <div class="panel panel-default">
-        <div class="panel-heading">
+    <div class="card panel-default">
+        <div class="card-header">
             <h4 class="title">{{dataService.labelDomain()}} details</h4>
         </div>
-        <form class="form-horizontal">
-            <div class="panel-body">
+        <form>
+            <div class="card-body">
                 <div class="row">
-                    <div class="col-md-10 col-md-offset-1">
+                    <div class="col-10 offset-1">
                         <app-domain-form *ngIf="domain" [domain]="domain"></app-domain-form>
                     </div>
                 </div>
             </div>
-            <div class="panel-footer button-container">
+            <div class="card-footer button-container">
                 <div class="btn-toolbar">
-                    <button type="submit" (click)="saveDomainChanges()" class="btn btn-default" [disable]="deletePending || saveDisabled()" [pending]="savePending">Save changes</button>
-                    <button type="button" *ngIf="dataService.isSystemAdmin || (dataService.isCommunityAdmin && !dataService.community!.domainId)" (click)="back()" class="btn btn-default">Back</button>
+                    <button type="submit" (click)="saveDomainChanges()" class="btn btn-secondary" [disable]="deletePending || saveDisabled()" [pending]="savePending">Save changes</button>
+                    <button type="button" *ngIf="dataService.isSystemAdmin || (dataService.isCommunityAdmin && !dataService.community!.domainId)" (click)="back()" class="btn btn-secondary">Back</button>
                 </div>
                 <div class="btn-toolbar btn-toolbar-delete" *ngIf="dataService.isSystemAdmin">
-                    <button type="button" (click)="deleteDomain()" class="btn btn-default btn-delete" [disable]="savePending" [pending]="deletePending">Delete</button>
+                    <button type="button" (click)="deleteDomain()" class="btn btn-outline-danger" [disable]="savePending" [pending]="deletePending">Delete</button>
                 </div>
             </div>
         </form>
@@ -29,10 +29,10 @@
                 <div class="tabPanel">
                     <div class="tabControls">
                         <div class="btn-toolbar">
-                            <button *ngIf="specifications.length > 0" type="button" class="btn btn-default" (click)="uploadTestSuite()">Upload test suite</button>
+                            <button *ngIf="specifications.length > 0" type="button" class="btn btn-secondary" (click)="uploadTestSuite()">Upload test suite</button>
                             <div class="btn-group" dropdown>
-                                <button type="button" class="btn btn-default" (click)="createSpecification()">Create {{dataService.labelSpecificationLower()}}</button>
-                                <button id="button-create-spec" type="button" dropdownToggle class="btn btn-default dropdown-toggle dropdown-toggle-split">
+                                <button type="button" class="btn btn-secondary" (click)="createSpecification()">Create {{dataService.labelSpecificationLower()}}</button>
+                                <button id="button-create-spec" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
                                     <span class="caret"></span>
                                     <span class="sr-only visually-hidden">Create {{dataService.labelSpecificationLower()}}</span>
                                 </button>
@@ -41,15 +41,15 @@
                                 </ul>
                             </div>
                             <div class="btn-group" dropdown *ngIf="specificationGroups.length > 0">
-                                <button id="button-option-visibility" (click)="$event.stopPropagation()" dropdownToggle type="button" class="btn btn-default dropdown-toggle" aria-controls="dropdown-option-visibility">View {{dataService.labelSpecificationInGroupsLower()}}<span class="caret withMargin"></span></button>
+                                <button id="button-option-visibility" (click)="$event.stopPropagation()" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-option-visibility">View {{dataService.labelSpecificationInGroupsLower()}}<span class="caret withMargin"></span></button>
                                 <ul id="dropdown-option-visibility" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-option-visibility">
                                     <li role="menuitem"><a class="dropdown-item" href (click)="toggleSpecificationGroupCollapse(false);$event.preventDefault();">Show {{dataService.labelSpecificationInGroupsLower()}}</a></li>
                                     <li role="menuitem"><a class="dropdown-item" href (click)="toggleSpecificationGroupCollapse(true);$event.preventDefault();">Hide {{dataService.labelSpecificationInGroupsLower()}}</a></li>
                                 </ul>
                             </div>
                             <div class="btn-group" dropdown *ngIf="specifications.length > 1">
-                                <button [pending]="saveOrderPending" type="button" class="btn btn-default" (click)="saveOrdering()">Save {{dataService.labelSpecificationLower()}} order</button>
-                                <button id="button-order" type="button" dropdownToggle class="btn btn-default dropdown-toggle dropdown-toggle-split">
+                                <button [pending]="saveOrderPending" type="button" class="btn btn-secondary" (click)="saveOrdering()">Save {{dataService.labelSpecificationLower()}} order</button>
+                                <button id="button-order" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
                                     <span class="caret"></span>
                                     <span class="sr-only visually-hidden">Reset {{dataService.labelSpecificationLower()}} order</span>
                                 </button>
@@ -101,10 +101,10 @@
                 <div class="tabPanel">
                     <div class="tabControls">
                         <div class="btn-toolbar">
-                            <button type="button" class="btn btn-default" (click)="uploadSharedTestSuite()">Upload shared test suite</button>
+                            <button type="button" class="btn btn-secondary" (click)="uploadSharedTestSuite()">Upload shared test suite</button>
                         </div>
                     </div>
-                    <div class="panel panel-default">
+                    <div class="card panel-default">
                         <div table-directive
                             [columns]="sharedTestSuiteTableColumns"
                             [data]="sharedTestSuites"
@@ -121,9 +121,9 @@
                 <ng-template tabHeading><app-tab-title icon="fa-solid fa-sliders" text="Parameters"></app-tab-title></ng-template>
                 <div class="tabPanel">
                     <div class="tabControls">
-                        <button type="button" class="btn btn-default" (click)="createDomainParameter()">Create parameter</button>
+                        <button type="button" class="btn btn-secondary" (click)="createDomainParameter()">Create parameter</button>
                     </div>
-                    <div class="panel panel-default table-container">
+                    <div class="card table-container">
                         <table class="table table-directive">
                             <thead>
                                 <tr>

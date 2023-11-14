@@ -4,41 +4,49 @@
             <div class="ts-upload-result-spec-name" [ngClass]="{'ts-upload-skipped': choice.skipUpdate}">{{choice.name}}</div>
             <div class="ts-upload-result-spec-controls" *ngIf="hasMultipleChoicesWithOptions && !((!sharedTestSuite && choice.sharedTestSuite) || (sharedTestSuite && !choice.sharedTestSuite))">
                 <div class="btn-toolbar">
-                    <button *ngIf="!choice.skipUpdate" class="btn btn-default btn-sm" type="button" (click)="applyChoiceToAll(choice)">Apply to all</button>
-                    <button *ngIf="!choice.skipUpdate && !sharedTestSuite" class="btn btn-default btn-sm" type="button" (click)="skipUpdate(choice)">Skip</button>
-                    <button *ngIf="choice.skipUpdate && !sharedTestSuite" class="btn btn-default btn-sm" type="button" (click)="processUpdate(choice)">Process</button>
+                    <button *ngIf="!choice.skipUpdate" class="btn btn-secondary btn-sm" type="button" (click)="applyChoiceToAll(choice)">Apply to all</button>
+                    <button *ngIf="!choice.skipUpdate && !sharedTestSuite" class="btn btn-secondary btn-sm" type="button" (click)="skipUpdate(choice)">Skip</button>
+                    <button *ngIf="choice.skipUpdate && !sharedTestSuite" class="btn btn-secondary btn-sm" type="button" (click)="processUpdate(choice)">Process</button>
                 </div>
             </div>
         </div>
-        <div [collapse]="choice.skipUpdate" [isAnimated]="true" class="ts-upload-result-actions col-xs-12">
+        <div [collapse]="choice.skipUpdate" [isAnimated]="true" class="ts-upload-result-actions col-12">
             <ng-container [ngSwitch]="(!sharedTestSuite && choice.sharedTestSuite) || (sharedTestSuite && !choice.sharedTestSuite)">
                 <ng-container *ngSwitchCase="true">
-                    <div *ngIf="!sharedTestSuite && choice.sharedTestSuite" class="bg-info div-rounded div-padded internal-warning">The {{dataService.labelSpecificationLower()}} contains a shared test suite with the same identifier. Upload will be skipped.</div>
-                    <div *ngIf="sharedTestSuite && !choice.sharedTestSuite" class="bg-info div-rounded div-padded internal-warning">The {{dataService.labelSpecificationLower()}} contains a different test suite with the same identifier. Linking will be skipped.</div>
+                    <div *ngIf="!sharedTestSuite && choice.sharedTestSuite" class="alert-info rounded div-padded internal-warning">The {{dataService.labelSpecificationLower()}} contains a shared test suite with the same identifier. Upload will be skipped.</div>
+                    <div *ngIf="sharedTestSuite && !choice.sharedTestSuite" class="alert-info rounded div-padded internal-warning">The {{dataService.labelSpecificationLower()}} contains a different test suite with the same identifier. Linking will be skipped.</div>
                 </ng-container>
                 <ng-container *ngSwitchDefault>
-                    <div class="form-group">
-                        <label class="col-xs-3 control-label" [attr.for]="'choice_metadata_skip_'+choice.specification">* {{dataService.labelSpecification()}} data:</label>
-                        <div class="col-xs-9" [ngSwitch]="sharedTestSuite">
+                    <div class="form-group row mt-2">
+                        <legend class="col-3 col-form-label text-right pt-0">* {{dataService.labelSpecification()}} data:</legend>
+                        <div class="col-9" [ngSwitch]="sharedTestSuite">
                             <ng-container *ngSwitchCase="true">
-                                <label class="radio-inline">
-                                    <input type="radio" [name]="'choice_metadata_skip_'+choice.specification" [(ngModel)]="choice.updateActors" [attr.id]="'choice_metadata_skip_'+choice.specification" [value]="false">Keep existing values
-                                    <app-tooltip [inline]="true" inlineType="checkLabel" [tbTooltip]="'Keep the current '+dataService.labelActorLower()+' definitions (including configuration parameters) when the test suite contains matching definitions.'"></app-tooltip>
-                                </label>
-                                <label class="radio-inline">
-                                    <input type="radio" [name]="'choice_metadata_update_'+choice.specification" [(ngModel)]="choice.updateActors" [attr.id]="'choice_metadata_update_'+choice.specification" [value]="true">Update existing data using test suite definitions
-                                    <app-tooltip [inline]="true" inlineType="checkLabel" [tbTooltip]="'Update any existing '+dataService.labelActorLower()+' definitions (including configuration parameters) to match the information contained in the test suite definition. Only '+dataService.labelActorsLower()+' matching those contained in the test suite will be updated.'"></app-tooltip>
-                                </label>
+                                <div class="form-check-inline">
+                                    <input class="form-check-input" type="radio" [attr.id]="'choice_metadata_skip_'+choice.specification" [name]="'choice_metadata_skip_'+choice.specification" [(ngModel)]="choice.updateActors" [attr.id]="'choice_metadata_skip_'+choice.specification" [value]="false">
+                                    <label class="form-check-label" [attr.for]="'choice_metadata_skip_'+choice.specification">Keep existing values
+                                        <app-tooltip [inline]="true" inlineType="checkLabel" [tbTooltip]="'Keep the current '+dataService.labelActorLower()+' definitions (including configuration parameters) when the test suite contains matching definitions.'"></app-tooltip>
+                                    </label>
+                                </div>
+                                <div class="form-check-inline">
+                                    <input class="form-check-input" type="radio" [attr.id]="'choice_metadata_update_'+choice.specification" [name]="'choice_metadata_update_'+choice.specification" [(ngModel)]="choice.updateActors" [attr.id]="'choice_metadata_update_'+choice.specification" [value]="true">
+                                    <label class="form-check-label" [attr.for]="'choice_metadata_update_'+choice.specification">Update using test suite definitions
+                                        <app-tooltip [inline]="true" inlineType="checkLabel" [tbTooltip]="'Update any existing '+dataService.labelActorLower()+' definitions (including configuration parameters) to match the information contained in the test suite definition. Only '+dataService.labelActorsLower()+' matching those contained in the test suite will be updated.'"></app-tooltip>
+                                    </label>
+                                </div>
                             </ng-container>
                             <ng-container *ngSwitchDefault>
-                                <label class="checkbox-inline">
-                                    <input type="checkbox" [name]="'choice_metadata_actors_'+choice.specification" [(ngModel)]="choice.updateActors">Update {{dataService.labelActorLower()}} definitions?
-                                    <app-tooltip [inline]="true" inlineType="checkLabel" [tbTooltip]="'Update any existing '+dataService.labelActorLower()+' definitions (including configuration parameters) to match the information contained in the provided archive. Only '+dataService.labelActorsLower()+' matching those contained in the archive will be updated.'"></app-tooltip>
-                                </label>
-                                <label class="checkbox-inline" *ngIf="choice.testSuiteExists">
-                                    <input type="checkbox" [name]="'choice_metadata_test_suite_'+choice.specification" [(ngModel)]="choice.updateTestSuite">Update test suite metadata?
-                                    <app-tooltip [inline]="true" inlineType="checkLabel" tbTooltip="Update the metadata of the existing test suite (its name, description and documentation) to match the information contained in the provided archive. Note that test cases are always processed regardless of this option."></app-tooltip>
-                                </label>
+                                <div class="form-check-inline">
+                                    <input class="form-check-input" type="checkbox" [attr.id]="'choice_metadata_actors_'+choice.specification" [name]="'choice_metadata_actors_'+choice.specification" [(ngModel)]="choice.updateActors">
+                                    <label class="form-check-label" [attr.for]="'choice_metadata_actors_'+choice.specification">Update {{dataService.labelActorLower()}} definitions?
+                                        <app-tooltip [inline]="true" inlineType="checkLabel" [tbTooltip]="'Update any existing '+dataService.labelActorLower()+' definitions (including configuration parameters) to match the information contained in the provided archive. Only '+dataService.labelActorsLower()+' matching those contained in the archive will be updated.'"></app-tooltip>
+                                    </label>
+                                </div>
+                                <div class="form-check-inline" *ngIf="choice.testSuiteExists">
+                                    <input class="form-check-input" type="checkbox" [attr.id]="'choice_metadata_test_suite_'+choice.specification" [name]="'choice_metadata_test_suite_'+choice.specification" [(ngModel)]="choice.updateTestSuite">
+                                    <label class="form-check-label" [attr.for]="'choice_metadata_test_suite_'+choice.specification">Update test suite metadata?
+                                        <app-tooltip [inline]="true" inlineType="checkLabel" tbTooltip="Update the metadata of the existing test suite (its name, description and documentation) to match the information contained in the provided archive. Note that test cases are always processed regardless of this option."></app-tooltip>
+                                    </label>
+                                </div>
                             </ng-container>
                         </div>
                     </div>

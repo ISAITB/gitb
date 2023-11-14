@@ -1,8 +1,8 @@
 <div class="row" *ngIf="badges">
-    <div class="col-xs-10 col-xs-offset-1">
-        <div class="form-group">
-            <label class="col-xs-3 control-label" for="badgesEnabled">Badges enabled:</label>
-            <div class="col-xs-8">
+    <div class="col-10 offset-1">
+        <div class="form-group row">
+            <label class="col-3 col-form-label text-right" for="badgesEnabled">Badges enabled:</label>
+            <div class="col-8">
                 <input id="badgesEnabled" name="badgesEnabled" [(ngModel)]="badges.enabled" type="checkbox" class="form-check">
                 <app-tooltip tbTooltip="Check to define conformance badges as visual indications of a conformance statement's status." [inline]="true"></app-tooltip>
             </div>
@@ -11,7 +11,7 @@
 </div>
 <div *ngIf="badges?.enabled != undefined" [collapse]="!badges.enabled" [isAnimated]="true">
     <div class="row">
-        <div class="col-xs-12">
+        <div class="col-12">
             <div class="form-separator expandable" (click)="badgesCollapsed = !badgesCollapsed">
                 <div><h4 class="title"><app-collapsing-icon [isCollapsed]="formCollapsed()"></app-collapsing-icon>Conformance badges</h4></div>
             </div>
@@ -19,10 +19,10 @@
     </div>
     <div [collapse]="formCollapsed()" [isAnimated]="badges.enabled != undefined && badges.enabled">
         <div class="row">
-            <div class="col-xs-10 col-xs-offset-1">
-                <div class="form-group">
-                    <label class="col-xs-3 control-label">* Success badge:</label>
-                    <div class="col-xs-7">
+            <div class="col-10 offset-1">
+                <div class="form-group row">
+                    <label class="col-3 col-form-label text-right">* Success badge:</label>
+                    <div class="col-7">
                         <app-manage-badge
                             [badge]="badges.success"
                             [badgeType]="Constants.TEST_CASE_RESULT.SUCCESS"
@@ -32,9 +32,9 @@
                     </div>
                     <app-tooltip tbTooltip="The badge image to display for a successful conformance statement."></app-tooltip>
                 </div>
-                <div class="form-group">
-                    <label class="col-xs-3 control-label">* Other badge:</label>
-                    <div class="col-xs-7">
+                <div class="form-group row">
+                    <label class="col-3 col-form-label text-right">* Other badge:</label>
+                    <div class="col-7">
                         <app-manage-badge
                             [badge]="badges.other"
                             [badgeType]="Constants.TEST_CASE_RESULT.UNDEFINED"
@@ -44,8 +44,8 @@
                     </div>
                     <app-tooltip tbTooltip="The badge image to display for a non-successful conformance statement."></app-tooltip>
                 </div>
-                <div class="form-group">
-                    <div class="col-xs-7 col-xs-offset-3">
+                <div class="form-group row">
+                    <div class="col-7 offset-3">
                         <div class="checkbox">
                             <label>
                                 <input type="checkbox" name="badgeEnabled" [(ngModel)]="badges.failureBadgeActive"> Use distinct badge for failed statements?
@@ -54,9 +54,9 @@
                     </div>
                 </div>
                 <div [collapse]="!badges.failureBadgeActive" [isAnimated]="true">
-                    <div class="form-group">
-                        <label class="col-xs-3 control-label">* Failure badge:</label>
-                        <div class="col-xs-7">
+                    <div class="form-group row">
+                        <label class="col-3 col-form-label text-right">* Failure badge:</label>
+                        <div class="col-7">
                             <app-manage-badge
                                 [badge]="badges.failure"
                                 [badgeType]="Constants.TEST_CASE_RESULT.FAILURE"

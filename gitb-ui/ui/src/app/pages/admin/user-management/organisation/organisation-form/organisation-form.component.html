@@ -1,30 +1,30 @@
 <ng-container>
     <div class="row" [ngSwitch]="readonly">
-        <div class="col-md-10 col-md-offset-1" *ngSwitchCase="true">
-            <div class="form-group">
-                <label class="col-sm-3 control-label">Short name:</label>
-                <div class="col-sm-8"><p class="form-control-static">{{organisation.sname}}</p></div>
+        <div class="col-10 offset-1" *ngSwitchCase="true">
+            <div class="form-group row">
+                <label class="col-3 col-form-label text-right">Short name:</label>
+                <div class="col-8"><p class="form-control-plaintext">{{organisation.sname}}</p></div>
             </div>
-            <div class="form-group">
-                <label class="col-sm-3 control-label">Full name:</label>
-                <div class="col-sm-8"><p class="form-control-static">{{organisation.fname}}</p></div>
+            <div class="form-group row">
+                <label class="col-3 col-form-label text-right">Full name:</label>
+                <div class="col-8"><p class="form-control-plaintext">{{organisation.fname}}</p></div>
             </div>
         </div>
-        <div class="col-md-10 col-md-offset-1" *ngSwitchDefault>
-            <div class="form-group">
-                <label class="col-xs-3 control-label" for="sname">* Short name:</label>
-                <div class="col-xs-7"><input id="sname" name="sname" [(ngModel)]="organisation.sname" class="form-control" type="text"></div>
+        <div class="col-10 offset-1" *ngSwitchDefault>
+            <div class="form-group row">
+                <label class="col-3 col-form-label text-right" for="sname">* Short name:</label>
+                <div class="col-7"><input id="sname" name="sname" [(ngModel)]="organisation.sname" class="form-control" type="text"></div>
                 <app-tooltip [tbTooltip]="'A short name to refer to the '+dataService.labelOrganisationLower()+' used in selection lists and tabular displays where space is limited.'"></app-tooltip>
             </div>
-            <div class="form-group">
-                <label class="col-xs-3 control-label" for="fname">* Full name:</label>
-                <div class="col-xs-7"><input id="fname" name="fname" [(ngModel)]="organisation.fname" class="form-control" type="text"></div>
+            <div class="form-group row">
+                <label class="col-3 col-form-label text-right" for="fname">* Full name:</label>
+                <div class="col-7"><input id="fname" name="fname" [(ngModel)]="organisation.fname" class="form-control" type="text"></div>
                 <app-tooltip [tbTooltip]="'The full name of the '+dataService.labelOrganisationLower()+' used in reports and detail screens.'"></app-tooltip>
             </div>
             <ng-container *ngIf="showAdminInfo || showLandingPage">
-                <div *ngIf="showAdminInfo || showLandingPage" class="form-group">
-                    <label class="col-xs-3 control-label" for="landingPage">Landing page:</label>
-                    <div class="col-xs-7">
+                <div *ngIf="showAdminInfo || showLandingPage" class="form-group row">
+                    <label class="col-3 col-form-label text-right" for="landingPage">Landing page:</label>
+                    <div class="col-7">
                         <select id="landingPage" class="form-control" name="landingPage" [(ngModel)]="organisation.landingPage">
                             <option [ngValue]="undefined">--Default Page--</option>
                             <option *ngFor="let page of landingPages" [ngValue]="page.id">{{page.name}}</option>
@@ -33,9 +33,9 @@
                     <app-tooltip [tbTooltip]="'You can provide a specific landing page for the '+dataService.labelOrganisationLower()+' with custom information. If unspecified the community default applies.'"></app-tooltip>
                 </div>
                 <ng-container *ngIf="showAdminInfo">
-                    <div class="form-group">
-                        <label class="col-xs-3 control-label" for="legalNotice">Legal notice:</label>
-                        <div class="col-xs-7">
+                    <div class="form-group row">
+                        <label class="col-3 col-form-label text-right" for="legalNotice">Legal notice:</label>
+                        <div class="col-7">
                             <select id="legalNotice" class="form-control" name="legalNotice" [(ngModel)]="organisation.legalNotice">
                                 <option [ngValue]="undefined">--Default Legal Notice--</option>
                                 <option *ngFor="let notice of legalNotices" [ngValue]="notice.id">{{notice.name}}</option>
@@ -43,9 +43,9 @@
                         </div>
                         <app-tooltip [tbTooltip]="'You can provide a specific legal notice for the '+dataService.labelOrganisationLower()+' with custom information. If unspecified the community default applies.'"></app-tooltip>
                     </div>
-                    <div class="form-group">
-                        <label class="col-xs-3 control-label" for="template">Error template:</label>
-                        <div class="col-xs-7">
+                    <div class="form-group row">
+                        <label class="col-3 col-form-label text-right" for="template">Error template:</label>
+                        <div class="col-7">
                             <select class="form-control" name="errorTemplate" [(ngModel)]="organisation.errorTemplate">
                                 <option [ngValue]="undefined">--Default Error Template--</option>
                                 <option *ngFor="let template of errorTemplates" [ngValue]="template.id">{{template.name}}</option>
@@ -53,9 +53,9 @@
                         </div>
                         <app-tooltip [tbTooltip]="'You can provide a specific error template for the '+dataService.labelOrganisationLower()+' with custom information. If unspecified the community default applies.'"></app-tooltip>
                     </div>
-                    <div class="form-group" *ngIf="otherOrganisations.length">
-                        <label class="col-xs-3 control-label" for="otherOrganisation">Copy test setup from:</label>
-                        <div class="col-xs-7">
+                    <div class="form-group row" *ngIf="otherOrganisations.length">
+                        <label class="col-3 col-form-label text-right" for="otherOrganisation">Copy test setup from:</label>
+                        <div class="col-7">
                             <select id="otherOrganisation" (change)="copyChanged()" class="form-control" name="otherOrganisation" [(ngModel)]="organisation.otherOrganisations">
                                 <option [ngValue]="undefined"></option>
                                 <option *ngFor="let organisation of otherOrganisations" [ngValue]="organisation.id">{{organisation.sname}}</option>
@@ -64,33 +64,38 @@
                         <app-tooltip [tbTooltip]="'Select another '+dataService.labelOrganisationLower()+' to serve as a template for this one. The configuration from the selected '+dataService.labelOrganisationLower()+' will be copied to the current one.'"></app-tooltip>
                     </div>
                     <div [collapse]="!organisation.otherOrganisations" [isAnimated]="true">
-                        <div class="form-group">
-                            <label class="col-xs-3 control-label">Copy also:</label>
-                            <div class="col-xs-8">
-                                <label class="checkbox-inline">
-                                    <input type="checkbox" (change)="copyChanged()" name="copyOrgParams" [(ngModel)]="organisation.copyOrganisationParameters">{{dataService.labelOrganisation()}} properties
-                                </label>
-                                <label class="checkbox-inline">
-                                    <input type="checkbox" (change)="copyChanged()" name="copySysParams" [(ngModel)]="organisation.copySystemParameters">{{dataService.labelSystem()}} properties
-                                </label>
-                                <label class="checkbox-inline">
-                                    <input type="checkbox" (change)="copyChanged()" name="copyStmtParams" [(ngModel)]="organisation.copyStatementParameters">Conformance statement configurations
-                                </label>
+                        <div class="form-group row pt-1">
+                            <legend class="col-3 col-form-label text-right pt-0">Copy also:</legend>
+                            <div class="col-8">
+                                <div class="form-check-inline">
+                                    <input class="form-check-input" type="checkbox" (change)="copyChanged()" id="copyOrgParams" name="copyOrgParams" [(ngModel)]="organisation.copyOrganisationParameters">
+                                    <label class="form-check-label" for="copyOrgParams">{{dataService.labelOrganisation()}} properties</label>
+                                </div>
+                                <div class="form-check-inline">
+                                    <input class="form-check-input" type="checkbox" (change)="copyChanged()" id="copySysParams" name="copySysParams" [(ngModel)]="organisation.copySystemParameters">
+                                    <label class="form-check-label" for="copySysParams">{{dataService.labelSystem()}} properties</label>
+                                </div>
+                                <div class="form-check-inline">
+                                    <input class="form-check-input" type="checkbox" (change)="copyChanged()" id="copyStmtParams" name="copyStmtParams" [(ngModel)]="organisation.copyStatementParameters">
+                                    <label class="form-check-label" for="copyStmtParams">Conformance statement configurations</label>
+                                </div>
                             </div>
                         </div>
                     </div>
                     <div *ngIf="selfRegEnabled">
-                        <div class="form-group">
-                            <label class="col-xs-3 control-label" for="template">Publish as template:</label>
-                            <div class="col-xs-7">
-                                <input id="template" name="asTemplate" [(ngModel)]="organisation.template" type="checkbox" class="form-check" (change)="templateChoiceChanged()">
-                                <app-tooltip [inline]="true" [tbTooltip]="'You can define the configuration of this '+dataService.labelOrganisationLower()+' as a template that will be presented to users self-registering for the community (if self-registration is enabled). Do this to offer new users preconfigured '+dataService.labelSystemsLower()+' and conformance statements.'"></app-tooltip>
+                        <div class="form-group row pt-1">
+                            <label class="col-3 col-form-label text-right pt-0" for="asTemplate">Publish as template:</label>
+                            <div class="col-7">
+                                <div class="form-check">
+                                    <input class="form-check-input" id="template" id="asTemplate" name="asTemplate" [(ngModel)]="organisation.template" type="checkbox" (change)="templateChoiceChanged()">
+                                    <app-tooltip [inline]="true" [tbTooltip]="'You can define the configuration of this '+dataService.labelOrganisationLower()+' as a template that will be presented to users self-registering for the community (if self-registration is enabled). Do this to offer new users preconfigured '+dataService.labelSystemsLower()+' and conformance statements.'"></app-tooltip>
+                                </div>                            
                             </div>
                         </div>
                         <div [collapse]="!organisation.template" [isAnimated]="true">
-                            <div class="form-group">
-                                <label class="col-xs-3 control-label" for="templateName">* Template name:</label>
-                                <div class="col-xs-7"><input id="templateName" name="templateName" [(ngModel)]="organisation.templateName" class="form-control" type="text"></div>
+                            <div class="form-group row">
+                                <label class="col-3 col-form-label text-right" for="templateName">* Template name:</label>
+                                <div class="col-7"><input id="templateName" name="templateName" [(ngModel)]="organisation.templateName" class="form-control" type="text"></div>
                                 <app-tooltip tbTooltip="The name to display in the self-registration screen for this template configuration."></app-tooltip>
                             </div>
                         </div>

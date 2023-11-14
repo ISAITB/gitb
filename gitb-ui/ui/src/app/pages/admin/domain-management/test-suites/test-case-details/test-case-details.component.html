@@ -1,48 +1,48 @@
 <div class="page domains detail detail-testcase">
-	<div class="panel panel-default">
-		<div class="panel-heading">
+	<div class="card panel-default">
+		<div class="card-header">
 			<h4 class="title">Test case details</h4>
 		</div>
-		<form class="form-horizontal">
-			<div class="panel-body">
+		<form>
+			<div class="card-body">
 				<div class="row">
-         			<div class="col-xs-10 col-xs-offset-1">
-						<div class="form-group">
-							<label class="col-xs-3 control-label" for="identifier">ID:</label>
-							<div class="col-xs-7">
+         			<div class="col-10 offset-1">
+						<div class="form-group row">
+							<label class="col-3 col-form-label text-right" for="identifier">ID:</label>
+							<div class="col-7">
 								<app-api-key-text id="identifier" name="identifier" [key]="testCase.identifier!"></app-api-key-text>
 							</div>
 							<app-tooltip tbTooltip="The unique identifier of the test case within the test suite. This is not presented to users but is used internally to match uploaded test cases to existing ones."></app-tooltip>
 						</div>
-						<div class="form-group">
-							<label class="col-xs-3 control-label" for="name">* Name:</label>
-							<div class="col-xs-7"><input id="name" name="name" [(ngModel)]="testCase.sname" class="form-control" type="text"></div>
+						<div class="form-group row">
+							<label class="col-3 col-form-label text-right" for="name">* Name:</label>
+							<div class="col-7"><input id="name" name="name" [(ngModel)]="testCase.sname" class="form-control" type="text"></div>
 							<app-tooltip tbTooltip="A short and descriptive identifier for the test case. This is used for filtering purposes and also to distinguish the test case within its test suite."></app-tooltip>
 						</div>
-						<div class="form-group">
-							<label class="col-xs-3 control-label" for="description">Description:</label>
-							<div class="col-xs-7">
+						<div class="form-group row">
+							<label class="col-3 col-form-label text-right" for="description">Description:</label>
+							<div class="col-7">
 								<textarea id="description" name="description" [(ngModel)]="testCase.description" class="form-control"></textarea>
 							</div>
 							<app-tooltip tbTooltip="A description for the test case presented to users when viewing a conformance statement. This should be informative enough for users to understand the purpose of the test case. Where extended information is needed consider complementing the description with the test case's documentation."></app-tooltip>
 						</div>
-            <div class="form-group">
-              <label class="col-xs-3 control-label" for="optional">Optional:</label>
-              <div class="col-xs-7">
+            <div class="form-group row">
+              <label class="col-3 col-form-label text-right" for="optional">Optional:</label>
+              <div class="col-7">
                 <input id="optional" name="optional" [(ngModel)]="testCase.optional" type="checkbox" class="form-check">
                 <app-tooltip [inline]="true" tbTooltip="Optional test case sessions are not counted towards conformance statement results."></app-tooltip>
               </div>
             </div>
-            <div class="form-group">
-              <label class="col-xs-3 control-label" for="disabled">Disabled:</label>
-              <div class="col-xs-7">
+            <div class="form-group row">
+              <label class="col-3 col-form-label text-right" for="disabled">Disabled:</label>
+              <div class="col-7">
                 <input id="disabled" name="disabled" [(ngModel)]="testCase.disabled" type="checkbox" class="form-check">
                 <app-tooltip [inline]="true" tbTooltip="Disabled test cases cannot be executed and any existing test sessions are not counted towards conformance statement results."></app-tooltip>
               </div>
             </div>
-            <div class="form-group">
-              <label class="col-xs-3 control-label">Tags:</label>
-              <div class="col-xs-7">
+            <div class="form-group row">
+              <label class="col-3 col-form-label text-right">Tags:</label>
+              <div class="col-7">
                 <div class="tag-container">
                   <app-tags-display
                     [tags]="testCase.parsedTags"
@@ -57,7 +57,7 @@
 					</div>
 				</div>
 				<div class="row">
-					<div class="col-xs-12">
+					<div class="col-12">
 						<div class="form-separator expandable" (click)="showDocumentation = !showDocumentation">
 							<div><h4 class="title"><app-collapsing-icon [isCollapsed]="!showDocumentation"></app-collapsing-icon>Documentation</h4></div>
 						</div>
@@ -65,7 +65,7 @@
 				</div>
 				<div [collapse]="!showDocumentation" [isAnimated]="true">
 					<div class="row form-group">
-						<div class="col-xs-offset-1 col-xs-10">
+						<div class="offset-1 col-10">
 							<div class="div-padded-bottom" *ngIf="dataService.isCommunityAdmin">
 								<app-placeholder-selector [resources]="true" [community]="dataService.vendor?.community"></app-placeholder-selector>
 							</div>
@@ -76,11 +76,11 @@
 						</div>
 					</div>
 					<div class="row form-group">
-						<div class="col-xs-offset-1 col-xs-10">
+						<div class="offset-1 col-10">
 							<div class="btn-toolbar">
 								<div class="btn-group" dropdown>
-									<button type="button" [disable]="this.testCase.documentation == undefined || this.testCase.documentation.length == 0" [pending]="previewPending" id="button-preview" class="btn btn-default" (click)="previewDocumentationPopup()">Preview documentation</button>
-									<button id="button-preview-pdf" [disabled]="previewPending || this.testCase.documentation == undefined || this.testCase.documentation.length == 0" type="button" dropdownToggle class="btn btn-default dropdown-toggle dropdown-toggle-split">
+									<button type="button" [disable]="this.testCase.documentation == undefined || this.testCase.documentation.length == 0" [pending]="previewPending" id="button-preview" class="btn btn-secondary" (click)="previewDocumentationPopup()">Preview documentation</button>
+									<button id="button-preview-pdf" [disabled]="previewPending || this.testCase.documentation == undefined || this.testCase.documentation.length == 0" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
 										<span class="caret"></span>
 										<span class="sr-only visually-hidden">Preview documentation in PDF report</span>
 									</button>
@@ -88,25 +88,25 @@
 										<li role="menuitem"><a class="dropdown-item" href (click)="previewDocumentationPdf();$event.preventDefault();">Preview documentation in PDF report</a></li>
 									</ul>
 								</div>
-								<button (click)="copyDocumentation()" type="button" class="btn btn-default" [disabled]="this.testCase.documentation == undefined || this.testCase.documentation.length == 0">Copy to clipboard</button>
+								<button (click)="copyDocumentation()" type="button" class="btn btn-secondary" [disabled]="this.testCase.documentation == undefined || this.testCase.documentation.length == 0">Copy to clipboard</button>
 							</div>
 						</div>
 					</div>
 				</div>
 			</div>
-			<div class="panel-footer">
+			<div class="card-footer">
 				<div class="btn-toolbar">
-					<button (click)="saveChanges()" type="submit" class="btn btn-default" [disable]="saveDisabled()" [pending]="pending">Save changes</button>
-					<button (click)="back()" type="button" class="btn btn-default">Back</button>
+					<button (click)="saveChanges()" type="submit" class="btn btn-secondary" [disable]="saveDisabled()" [pending]="pending">Save changes</button>
+					<button (click)="back()" type="button" class="btn btn-secondary">Back</button>
 				</div>
 			</div>
 		</form>
 	</div>
-	<div class="panel panel-default no-bottom-margin">
-		<div class="panel-heading">
+	<div class="card no-bottom-margin">
+		<div class="card-header">
 			<h4 class="title">Test case preview</h4>
 		</div>
-        <div class="panel-body" style="overflow-x: auto; overflow-y: hidden;">
+        <div class="card-body" style="overflow-x: auto; overflow-y: hidden;">
             <ng-container [ngSwitch]="diagramLoaded">
                 <ng-container *ngSwitchCase="true">
                     <div class="diagramContainer" *ngIf="diagramLoaded">
