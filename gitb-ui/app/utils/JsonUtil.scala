@@ -2413,7 +2413,7 @@ object JsonUtil {
       "specGroupName"    -> (if(item.specificationGroupName.isDefined) item.specificationGroupName.get else JsNull),
       "specGroupOptionName"    -> item.specificationGroupOptionName,
       "actorId"    -> item.actorId,
-      "actorName"    -> item.actorName,
+      "actorName"    -> item.actorFull,
       "testSuiteName" -> item.testSuiteName,
       "testCaseName" -> item.testCaseName,
       "testCaseDescription" -> item.testCaseDescription,

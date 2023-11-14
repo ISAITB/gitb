@@ -688,7 +688,7 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils, systemManag
 			} else {
 				None
 			}
-			val actorItem = ConformanceStatementItem(statement.actorId, statement.actorName, statement.actorDescription, ConformanceStatementItemType.ACTOR, None, 0,
+			val actorItem = ConformanceStatementItem(statement.actorId, statement.actorFull, statement.actorDescription, ConformanceStatementItemType.ACTOR, None, 0,
 				actorResults, results._2.contains(statement.actorId)
 			)
 			if (!domainMap.contains(statement.domainId)) {
