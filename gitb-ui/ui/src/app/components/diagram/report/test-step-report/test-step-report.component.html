@@ -1,4 +1,4 @@
-<div [ngClass]="classValue">
+<div class="row">
     <div class="col-12">
         <div class="result-container">
             <div class="result-label">Result</div>
@@ -7,7 +7,7 @@
             <div class="result-value">{{report.date}}</div>
         </div>
     </div>
-    <app-test-step-report-sr *ngIf="report.type == 'SR'" [report]="report"></app-test-step-report-sr>
-    <app-test-step-report-dr *ngIf="report.type == 'DR'" [report]="report"></app-test-step-report-dr>
-    <app-test-step-report-tar *ngIf="report.type == 'TAR'" [report]="report" [sessionId]="sessionId"></app-test-step-report-tar>
 </div>
+<div class="row" app-test-step-report-tar *ngIf="report.type == 'TAR'" [report]="report" [sessionId]="sessionId"></div>
+<div class="row" app-test-step-report-dr *ngIf="report.type == 'DR'" [report]="report"></div>
+<div class="row" app-test-step-report-sr *ngIf="report.type == 'SR'" [report]="report"></div>

@@ -13,12 +13,9 @@ export class TestStepReportComponent implements OnInit {
   @Input() report!: StepReport
   @Input() sessionId!: string
 
-  classValue!: string
-
   constructor() { }
 
   ngOnInit(): void {
-    this.classValue = 'row test-step-report '+this.step.type+'-type'
   }
 
 }
