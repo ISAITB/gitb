@@ -55,6 +55,7 @@ button.btn {
 .nav-tabs > li.active > a {
 	background-color: @gray-light-1 !important;
 	color: @blueHeading !important;
+	border-bottom-color: @gray-light-1 !important;
 }
 
 .tabPanel {
@@ -68,7 +69,7 @@ button.btn {
 	.tabControls {
 		margin-bottom: 10px;
 	}
-	div.panel:last-child {
+	div.card:last-child {
 		margin-bottom: 0px;
 	}
 }
@@ -144,7 +145,7 @@ tr.test-result-obsolete {
 }
 
 .select-execution {
-	div.panel-body > div {
+	div.card-body > div {
 		min-height: 160px;
 		margin-bottom: 20px;
 	}
@@ -191,7 +192,7 @@ tr.test-result-obsolete {
     margin-top: 5px;
 }
 .form-check {
-	margin-top:11px !important;
+	// margin-top:11px !important;
 }
 .form-separator {
 	border-bottom: 1px solid @gray-light; margin-bottom: 20px;
@@ -247,35 +248,6 @@ tr.test-result-obsolete {
 	margin-bottom: 15px;
 }
 
-#exportSettingsTable {
-	border: 1px solid @gray-dark-1;
-	margin-top: 2px;
-	th {
-		background: @gray-light-1;
-		vertical-align: middle;
-		span.withMargin {
-			margin-left: 10px;
-			margin-right: 10px;
-		}
-	}
-	td {
-		border-right: 1px solid @gray-dark-1;
-		&.row-header {
-			background: @gray-light-1;
-			font-weight: bold;
-			padding-top: 15px;
-		}
-		&:last-child {
-			border-right: 0px;
-		}
-		table {
-			margin-left: 10px;
-			margin-right: 10px;
-			margin-bottom: 5px;
-		}
-	}
-}
-
 div.inline-checkbox-container {
 	display: flex;
 }
@@ -300,7 +272,7 @@ li.menu-section-start {
 .clickable {
 	&:hover {
 		cursor: pointer;
-		&.panel-heading {
+		&.card-header {
 			background-color: @gray-highlight;
 		}
 	}
@@ -497,25 +469,6 @@ div.import-item-root {
 	margin: 0px !important;
 }
 
-.trigger-data-properties-container {
-	border: 1px solid @gray-dark-1;
-	border-radius: 5px;
-	margin-top: 10px;
-	margin-bottom: 5px;
-
-	.table {
-		margin-bottom:0px;
-		tbody > tr:hover {
-			cursor: pointer;
-			background-color: fade(@gray-light, 50%);
-		}
-	}
-}
-
-.trigger-data-checks {
-	padding-bottom: 8px;
-}
-
 .status-display {
     font-weight: bold;
 	border-radius: 5px;
@@ -569,7 +522,7 @@ table.table {
 	}
 }
 
-.no-bottom-margin, .panel.no-bottom-margin {
+.no-bottom-margin, .card.no-bottom-margin {
 	margin-bottom: 0px;
 }
 
@@ -699,7 +652,7 @@ table.table {
 	padding-bottom: 20px;
 }
 
-.panel-heading {
+.card-header {
 	display: flex;
 	align-items: center;
 	.btn-toolbar {
