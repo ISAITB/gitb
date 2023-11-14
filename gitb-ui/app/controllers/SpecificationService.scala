@@ -104,7 +104,7 @@ class SpecificationService @Inject() (implicit ec: ExecutionContext, authorizedA
 
   def getSpecificationGroups() = authorizedAction { request =>
     val domainId = ParameterExtractor.requiredQueryParameter(request, Parameters.DOMAIN_ID).toLong
-    authorizationManager.canManageDomain(request, domainId)
+    authorizationManager.canViewDomains(request, Some(List(domainId)))
     val groups = specificationManager.getSpecificationGroups(domainId)
     ResponseConstructor.constructJsonResponse(JsonUtil.jsSpecificationGroups(groups).toString())
   }
