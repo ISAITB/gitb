@@ -1,10 +1,12 @@
 <div class="row" *ngIf="badges">
     <div class="col-10 offset-1">
-        <div class="form-group row">
-            <label class="col-3 col-form-label text-right" for="badgesEnabled">Badges enabled:</label>
+        <div class="form-group row pt-1">
+            <label class="col-3 col-form-label text-right pt-0" for="badgesEnabled">Badges enabled:</label>
             <div class="col-8">
-                <input id="badgesEnabled" name="badgesEnabled" [(ngModel)]="badges.enabled" type="checkbox" class="form-check">
-                <app-tooltip tbTooltip="Check to define conformance badges as visual indications of a conformance statement's status." [inline]="true"></app-tooltip>
+                <div class="form-check">
+                    <input class="form-check-input" id="badgesEnabled" name="badgesEnabled" [(ngModel)]="badges.enabled" type="checkbox">
+                    <app-tooltip tbTooltip="Check to define conformance badges as visual indications of a conformance statement's status." [inline]="true"></app-tooltip>
+                </div>
             </div>
         </div>
     </div>
@@ -46,10 +48,9 @@
                 </div>
                 <div class="form-group row">
                     <div class="col-7 offset-3">
-                        <div class="checkbox">
-                            <label>
-                                <input type="checkbox" name="badgeEnabled" [(ngModel)]="badges.failureBadgeActive"> Use distinct badge for failed statements?
-                            </label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="distinctFailureBadge" name="distinctFailureBadge" [(ngModel)]="badges.failureBadgeActive">
+                            <label for="distinctFailureBadge">Use distinct badge for failed statements?</label>
                         </div>
                     </div>
                 </div>

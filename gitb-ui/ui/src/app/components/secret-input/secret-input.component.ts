@@ -1,4 +1,4 @@
-import { Component, forwardRef, Input, OnInit } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, forwardRef, Input, OnInit, ViewChild } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 @Component({
@@ -13,16 +13,30 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
   ],
   styles: ['button {box-shadow: none;outline: none !important;}']
 })
-export class SecretInputComponent implements OnInit, ControlValueAccessor {
+export class SecretInputComponent implements OnInit, AfterViewInit,  ControlValueAccessor {
 
   @Input() id!: string
   @Input() name!: string
+  @Input() autoFocus = false
+  @Input() passwordTabIndex = 0
+  @ViewChild("passwordField") passwordField?: ElementRef;
+  @ViewChild("displayButton") displayButton?: ElementRef;
   _value?: string
   display = false
   onChange = (_: any) => {}
   onTouched = () => {}
 
   constructor() { }
+
+  ngAfterViewInit(): void {
+    if (this.autoFocus) {
+      if (this.passwordField != undefined) {
+        setTimeout(() => {
+          this.passwordField?.nativeElement.focus()
+        }, 1)
+      }
+    }
+  }
 
   set value(v: string|undefined) {
     this._value = v
@@ -49,6 +63,16 @@ export class SecretInputComponent implements OnInit, ControlValueAccessor {
   }
 
   ngOnInit(): void {
+  }
+
+  viewButtonOff() {
+    if (this.display) {
+      this.display = false
+      this.displayButton?.nativeElement.blur();
+      setTimeout(() => {
+        this.passwordField?.nativeElement.focus()
+      }, 1)
+    }
   }
 
 }

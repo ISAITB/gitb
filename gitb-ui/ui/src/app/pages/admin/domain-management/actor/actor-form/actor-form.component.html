@@ -22,18 +22,22 @@
             <div class="col-1"><input id="displayOrder" name="displayOrder" [(ngModel)]="actor.displayOrder" class="form-control" type="text"></div>
             <app-tooltip [tbTooltip]="'A number to be considered in relation to other '+dataService.labelActorsLower()+' that is used to determine the display positioning in test execution diagrams. If unspecified a default positioning is applied based on the test case\'s steps.'"></app-tooltip>
         </div>
-        <div class="form-group row">
-            <label class="col-3 col-form-label text-right" for="default">Specification default:</label>
+        <div class="form-group row pt-1">
+            <label class="col-3 col-form-label text-right pt-0" for="default">Specification default:</label>
             <div class="col-7">
-                <input id="default" name="default" [(ngModel)]="actor.default" type="checkbox" class="form-check">
-                <app-tooltip [inline]="true" [tbTooltip]="'The default '+dataService.labelActorLower()+' of the '+dataService.labelSpecificationLower()+' will be automatically selected when defining new conformance statements. Other '+dataService.labelActorsLower()+' will not be presented as available options.'"></app-tooltip>
+                <div class="form-check">
+                    <input class="form-check-input" id="default" name="default" [(ngModel)]="actor.default" type="checkbox">
+                    <app-tooltip [inline]="true" [tbTooltip]="'The default '+dataService.labelActorLower()+' of the '+dataService.labelSpecificationLower()+' will be automatically selected when defining new conformance statements. Other '+dataService.labelActorsLower()+' will not be presented as available options.'"></app-tooltip>
+                </div>
             </div>
         </div>
-        <div class="form-group row">
-            <label class="col-3 col-form-label text-right" for="hidden">Hidden:</label>
+        <div class="form-group row pt-1">
+            <label class="col-3 col-form-label text-right pt-0" for="hidden">Hidden:</label>
             <div class="col-7">
-                <input id="hidden" name="hidden" [(ngModel)]="actor.hidden" type="checkbox" class="form-check">
-                <app-tooltip [inline]="true" [tbTooltip]="'Check this to remove this '+dataService.labelActorLower()+' as an available option when defining new conformance statements. This can be used to hide simulated '+dataService.labelActorsLower()+' when there is no clear default '+dataService.labelActorLower()+' or to deprecate an '+dataService.labelActorLower()+' that should not be used anymore. In any case checking this has no effect on the existing testing history.'"></app-tooltip>
+                <div class="form-check">
+                    <input class="form-check-input" id="hidden" name="hidden" [(ngModel)]="actor.hidden" type="checkbox">
+                    <app-tooltip [inline]="true" [tbTooltip]="'Check this to remove this '+dataService.labelActorLower()+' as an available option when defining new conformance statements. This can be used to hide simulated '+dataService.labelActorsLower()+' when there is no clear default '+dataService.labelActorLower()+' or to deprecate an '+dataService.labelActorLower()+' that should not be used anymore. In any case checking this has no effect on the existing testing history.'"></app-tooltip>
+                </div>
             </div>
         </div>
         <div class="form-group row" *ngIf="dataService.configuration.automationApiEnabled && actor.id != undefined">

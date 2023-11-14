@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { Constants } from 'src/app/common/constants';
 import { PasswordChangeData } from 'src/app/components/change-password-form/password-change-data.type';
@@ -13,7 +13,7 @@ import { RoutingService } from 'src/app/services/routing.service';
   selector: 'app-password',
   templateUrl: './password.component.html'
 })
-export class PasswordComponent extends BaseComponent implements OnInit, AfterViewInit {
+export class PasswordComponent extends BaseComponent implements OnInit {
 
   passwordChangeData: PasswordChangeData = {}
   spinner = false
@@ -30,14 +30,9 @@ export class PasswordComponent extends BaseComponent implements OnInit, AfterVie
     this.routingService.changePasswordBreadcrumbs()
   }
 
-  ngAfterViewInit(): void {
-    this.dataService.focus('current')
-  }
-
   saveDisabled() {
     return !this.textProvided(this.passwordChangeData.currentPassword)
-      || !this.textProvided(this.passwordChangeData.password1)
-      || !this.textProvided(this.passwordChangeData.password2)
+      || !this.textProvided(this.passwordChangeData.newPassword)
   }
 
   handleUpdateError(data: any): Observable<any> {
@@ -52,20 +47,19 @@ export class PasswordComponent extends BaseComponent implements OnInit, AfterVie
   replacePassword() {
     if (!this.saveDisabled()) {
       this.clearAlerts()
-      const sameCheck = this.requireDifferent(this.passwordChangeData.currentPassword, this.passwordChangeData.password1, 'The password you provided is the same as the current one.')
-      const noConfirmCheck = this.requireSame(this.passwordChangeData.password1, this.passwordChangeData.password2, 'The new password does not match the confirmation.')
-      const complexCheck = this.requireComplexPassword(this.passwordChangeData.password1, 'The new password does not match required complexity rules. It must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one digit and one symbol.')
-      if (sameCheck && noConfirmCheck && complexCheck) {
+      const sameCheck = this.requireDifferent(this.passwordChangeData.currentPassword, this.passwordChangeData.newPassword, 'The password you provided is the same as the current one.')
+      const complexCheck = this.requireComplexPassword(this.passwordChangeData.newPassword, 'The new password does not match required complexity rules. It must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one digit and one symbol.')
+      if (sameCheck && complexCheck) {
         // Proceed.
         this.spinner = true
         this.accountService.updatePassword(
-          this.passwordChangeData.password1!, 
+          this.passwordChangeData.newPassword!, 
           this.passwordChangeData.currentPassword!, 
           this.handleUpdateError.bind(this)
         ).subscribe(() => {
           this.popupService.success('Your password has been updated.')
           this.passwordChangeData = {}
-          this.dataService.focus('current')
+          this.dataService.focus('currentPassword')
         }).add(() => {
           this.spinner = false
         })
