@@ -8,6 +8,7 @@ import models.{Constants, TestCaseDeploymentAction}
 import models.automation.TestSuiteDeployRequest
 import org.apache.commons.io.FileUtils
 import org.apache.commons.lang3.{RandomStringUtils, StringUtils}
+import org.slf4j.LoggerFactory
 import play.api.mvc._
 import utils.{ClamAVClient, JsonUtil, RepositoryUtils}
 
@@ -20,6 +21,8 @@ import scala.util.Using
 
 @Singleton
 class TestSuiteAutomationService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerComponents, authorizationManager: AuthorizationManager, repositoryUtils: RepositoryUtils, specificationManager: SpecificationManager, testSuiteManager: TestSuiteManager) extends BaseAutomationService(cc) {
+
+  private val LOG = LoggerFactory.getLogger(this.getClass)
 
   private def deployInternal(input: TestSuiteDeployRequest, testSuiteArchive: File, request: Request[AnyContent]) = {
     var response: Result = null
@@ -128,8 +131,10 @@ class TestSuiteAutomationService @Inject() (authorizedAction: AuthorizedAction, 
       response
     } catch {
       case e: InvalidRequestException =>
+        LOG.warn("Caught invalid request error from test suite API")
         ResponseConstructor.constructBadRequestResponse(e.getError, e.getMessage)
       case e: Exception =>
+        LOG.warn("Caught general error from test suite API", e)
         ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_REQUEST, e.getMessage)
     } finally {
       FileUtils.deleteQuietly(testSuiteArchive)
