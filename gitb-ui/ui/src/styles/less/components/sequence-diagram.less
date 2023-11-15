@@ -20,13 +20,13 @@
 }
 
 .generate-padding-offsets(@width, @n, @i: 0) when (@i =< @n) {
-  &.offset-@{i} {
+  &.msg-offset-@{i} {
     padding-left: ((@i * @width) - @i);
   }
   .generate-padding-offsets(@width, @n, (@i + 1));
 }
 .remove-padding-offsets(@n, @i: 0) when (@i =< @n) {
-  &.offset-@{i} {
+  &.msg-offset-@{i} {
     padding-left: 0;
   }
   .remove-padding-offsets(@n, (@i + 1));
