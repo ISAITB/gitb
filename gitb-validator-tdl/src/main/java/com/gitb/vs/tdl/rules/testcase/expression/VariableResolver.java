@@ -36,28 +36,90 @@ public class VariableResolver implements XPathVariableResolver {
         checkVariables(getVariablesInToken(token));
     }
 
+    private void detectVariables(String token, Map<String, VariableData> variableNames) {
+        char[] tokenChars = token.toCharArray();
+        if (tokenChars.length > 0 && tokenChars[0] == '$' && hasNoneOrValidBrackets(tokenChars)) {
+            int index = 0;
+            StringBuilder variableName = new StringBuilder();
+            while (index < tokenChars.length) {
+                char nextChar = tokenChars[index];
+                if (nextChar == '{') {
+                    // Container expression - find matching closing bracket.
+                    String containerExpression = getContainerExpression(tokenChars, index);
+                    if (containerExpression != null) {
+                        if (variableName.length() > 1) {
+                            variableNames.put(variableName.substring(1), new VariableData(true, containerExpression));
+                            variableName.delete(0, variableName.length());
+                        }
+                        detectVariables(containerExpression, variableNames);
+                        // Skip container expression plus opening and closing brackets.
+                        index += containerExpression.length() + 2;
+                    } else {
+                        // Invalid container expression.
+                        return;
+                    }
+                } else {
+                    variableName.append(nextChar);
+                    index += 1;
+                }
+            }
+            if (variableName.length() > 1) {
+                variableNames.put(variableName.substring(1), new VariableData(false, null));
+            }
+        }
+    }
+
     private Map<String, VariableData> getVariablesInToken(String token) {
         // $a
         // $aa{aa}
+        // $aa{$aa}{$aa}
         // $aa{$aa{$aa}}
+        // $aa{$aa{$aa}}{aa}
+        // $aa{$aa{$aa}{aa}}{aa}
         Map<String, VariableData> variableNames = new LinkedHashMap<>();
-        StringBuilder str = new StringBuilder(token);
-        while (str.indexOf("$") == 0) {
-            str.deleteCharAt(0);
-            int containedIndexStart = str.indexOf("{");
-            String variableName;
-            if (containedIndexStart != -1) {
-                variableName = str.substring(0, containedIndexStart);
-                str.delete(0, containedIndexStart + 1);
-                int containedIndexEnd = str.lastIndexOf("}");
-                str.delete(containedIndexEnd, str.length());
-            } else {
-                variableName = str.toString();
-                str.delete(0, str.length());
-            }
-            variableNames.put(variableName, new VariableData(containedIndexStart != -1, str.toString()));
-        }
+        detectVariables(token, variableNames);
         return variableNames;
+    }
+
+    private String getContainerExpression(char[] tokenChars, int openBracketIndex) {
+        int innerIndex = openBracketIndex+1;
+        int openBrackets = 0;
+        StringBuilder containerExpression = new StringBuilder();
+        while (innerIndex < tokenChars.length) {
+            char nextInnerChar = tokenChars[innerIndex];
+            if (nextInnerChar == '{') {
+                openBrackets += 1;
+                containerExpression.append(nextInnerChar);
+            } else if (nextInnerChar == '}') {
+                if (openBrackets == 0) {
+                    // Found the matching closing bracket.
+                    return containerExpression.toString();
+                } else {
+                    openBrackets -= 1;
+                    containerExpression.append(nextInnerChar);
+                }
+            } else {
+                containerExpression.append(nextInnerChar);
+            }
+            innerIndex += 1;
+        }
+        return null;
+    }
+
+    private boolean hasNoneOrValidBrackets(char[] tokenChars) {
+        int unmatchedOpenCount = 0;
+        for (var character: tokenChars) {
+            if (character == '{') {
+                unmatchedOpenCount += 1;
+            } else if (character == '}') {
+                if (unmatchedOpenCount > 0) {
+                    unmatchedOpenCount -= 1;
+                } else {
+                    return false;
+                }
+            }
+        }
+        return unmatchedOpenCount == 0;
     }
 
     private void checkVariables(Map<String, VariableData> variableNames) {
