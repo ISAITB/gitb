@@ -41,9 +41,13 @@
     <app-tooltip [tbTooltip]="'The '+dataService.labelOrganisationLower()+' this user is a member of.'"></app-tooltip>
 </div>
 <ng-container *ngIf="showChangePassword">
-    <div class="form-group row" *ngIf="!new && !sso">
-        <label class="col-4 col-form-label text-right" for="changePassword">Set one-time password?</label>
-        <div class="col-6"><input id="changePassword" name="changePassword" [(ngModel)]="changePassword" class="form-check" type="checkbox" class="form-check" (change)="setPasswordClicked()"></div>
+    <div class="form-group row pt-1" *ngIf="!new && !sso">
+        <label class="col-4 col-form-label text-right pt-0" for="changePassword">Set one-time password?</label>
+        <div class="col-6">
+            <div class="form-check">
+                <input class="form-check-input" id="changePassword" name="changePassword" [(ngModel)]="changePassword" type="checkbox" (change)="setPasswordClicked()">
+            </div>
+        </div>
     </div>
     <div *ngIf="!sso" [collapse]="!new && !changePassword" [isAnimated]="true">
         <div class="form-group row">

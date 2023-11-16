@@ -6,9 +6,7 @@
         <form>
             <div class="card-body">
                 <!-- Error messages -->
-                <div class="row">
-                    <app-alert-display [alerts]="alerts" innerClass="col-10 offset-1"></app-alert-display>
-                </div>
+                <app-alert-display [alerts]="alerts" innerClass="col-10 offset-1"></app-alert-display>
                 <app-community-form [community]="community" [admin]="true" [domains]="domains"></app-community-form>
             </div>
             <div class="card-footer">

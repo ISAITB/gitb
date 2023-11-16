@@ -5,9 +5,7 @@
         </div>
         <form>
             <div class="card-body">
-                <div class="row">
-                    <app-alert-display [alerts]="alerts" innerClass="col-10 offset-1"></app-alert-display>
-                </div>
+                <app-alert-display [alerts]="alerts" innerClass="col-10 offset-1"></app-alert-display>
                 <app-organisation-form
                     [organisation]="organisation"
                     [communityId]="communityId"

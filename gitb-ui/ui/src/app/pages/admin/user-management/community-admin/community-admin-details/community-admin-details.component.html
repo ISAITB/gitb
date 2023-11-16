@@ -6,9 +6,7 @@
         <form>
             <div class="card-body">
                 <!-- Error messages -->
-                <div class="row">
-                    <app-alert-display [alerts]="alerts" innerClass="col-10 offset-1"></app-alert-display>
-                </div>
+                <app-alert-display [alerts]="alerts" innerClass="col-10 offset-1"></app-alert-display>
                 <div class="row">
                     <div class="col-11">
                         <app-user-form [user]="user" [new]="false" [admin]="true" [sso]="dataService.configuration.ssoEnabled" (passwordChanged)="changePassword = $event"></app-user-form>

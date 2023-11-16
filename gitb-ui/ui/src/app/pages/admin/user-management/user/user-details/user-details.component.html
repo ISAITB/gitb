@@ -6,11 +6,7 @@
         <form>
             <div class="card-body">
                 <!-- Error messages -->
-                <div class="row">
-                    <div class="col-10 offset-1">
-                        <app-alert-display [alerts]="alerts" innerClass="col-10 offset-1"></app-alert-display>
-                    </div>
-                </div>
+                <app-alert-display [alerts]="alerts" innerClass="col-10 offset-1"></app-alert-display>
                 <div class="row">
                     <div class="col-11">
                         <app-user-form 
