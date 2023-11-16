@@ -96,6 +96,25 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
     }
   }
 
+  def getTestStepReportDataAsDataUrl(sessionId: String, dataId: String): Action[AnyContent] = authorizedAction { request =>
+    authorizationManager.canViewTestResultForSession(request, sessionId)
+    val sessionFolderInfo = repositoryUtils.getPathForTestSession(sessionId, isExpected = true)
+    val sessionDataFolder = repositoryUtils.getPathForTestSessionData(sessionFolderInfo)
+    val dataFile = Path.of(sessionDataFolder.toString, dataId)
+    if (!Files.exists(dataFile)) {
+      NotFound
+    } else {
+      val requestedMimeType = request.headers.get(ACCEPT)
+      val mimeTypeToUse = if (requestedMimeType.isEmpty || requestedMimeType.get.contains("*")) {
+        Option(MimeUtil.getMimeType(dataFile)).getOrElse("application/octet-stream")
+      } else {
+        requestedMimeType.getOrElse("application/octet-stream")
+      }
+      val dataUrl = MimeUtil.getFileAsDataURL(dataFile.toFile, mimeTypeToUse)
+      ResponseConstructor.constructJsonResponse(JsonUtil.jsFileReference(dataUrl, mimeTypeToUse).toString())
+    }
+  }
+
   def getTestStepReportData(sessionId: String, dataId: String): Action[AnyContent] = authorizedAction { request =>
     authorizationManager.canViewTestResultForSession(request, sessionId)
     val sessionFolderInfo = repositoryUtils.getPathForTestSession(sessionId, isExpected = true)

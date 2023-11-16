@@ -1,6 +1,5 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { BsModalService } from 'ngx-bootstrap/modal';
-import { mergeMap, Observable, of } from 'rxjs';
 import { Constants } from 'src/app/common/constants';
 import { ReportService } from 'src/app/services/report.service';
 import { AnyContent } from '../../any-content';
@@ -57,7 +56,7 @@ export class TestStepReportTARComponent extends ReportSupport implements OnInit 
   private base64ToString(base64: string) {
     return atob(base64)
   }
-  
+
   private findContextEntryByName(context: AnyContent, nameToFind: string): AnyContent|undefined {
     if (context.name != undefined && context.name.toLocaleLowerCase() == nameToFind) {
       return context
@@ -78,25 +77,7 @@ export class TestStepReportTARComponent extends ReportSupport implements OnInit 
       // Find the relevant value to display
       const relevantContextItem = this.findContextEntryByName(this.report.context, location.name.toLocaleLowerCase())
       if (relevantContextItem != undefined) {
-        let valueObservable: Observable<string>
-        if (this.isFileReference(relevantContextItem)) {
-          valueObservable = this.downloadFileReference(this.sessionId, relevantContextItem).pipe(
-            mergeMap((data) => {
-              return of(new TextDecoder("utf-8").decode(data.data))
-            })
-          )
-        } else {
-          valueObservable = of(relevantContextItem.valueToUse!)
-        }
-        valueObservable.subscribe((valueToUse) => {
-          this.openEditorWindow(
-            relevantContextItem.name, 
-            valueToUse,
-            this.report.reports?.assertionReports,
-            location?.line,
-            relevantContextItem.mimeType
-          )
-        })
+        this.commonOpen(relevantContextItem, this.sessionId, this.report.reports?.assertionReports, location?.line)
       }
     }
   }
