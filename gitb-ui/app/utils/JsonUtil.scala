@@ -784,6 +784,13 @@ object JsonUtil {
     json
   }
 
+  def jsFileReference(dataURL: String, mimeType: String): JsObject = {
+    Json.obj(
+      "dataAsDataURL" -> dataURL,
+      "mimeType" -> mimeType
+    )
+  }
+
   /**
    * Converts a Specification object into Play!'s JSON notation.
    * @param spec Specification object to be converted

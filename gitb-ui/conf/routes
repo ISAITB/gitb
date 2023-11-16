@@ -314,6 +314,7 @@ GET     /api/conformancecertificate/download    @controllers.ConformanceService.
 GET     /api/repository/tests/:test_id/definition               @controllers.RepositoryService.getTestCaseDefinition(test_id:String)
 GET     /api/repository/reports/teststep/:session_id/*file      @controllers.RepositoryService.getTestStepReport(session_id: String, file)
 GET     /api/repository/reports/testdata/:session_id/:data_id   @controllers.RepositoryService.getTestStepReportData(session_id: String, data_id: String)
+GET     /api/repository/reports/testdataurl/:session_id/:data_id @controllers.RepositoryService.getTestStepReportDataAsDataUrl(session_id: String, data_id: String)
 GET     /api/repository/reports/logs/:session_id                @controllers.RepositoryService.getTestSessionLog(session_id: String)
 GET     /api/repository/export/testcase                         @controllers.RepositoryService.exportTestCaseReport()
 GET     /api/repository/export/teststep/:session_id/*path       @controllers.RepositoryService.exportTestStepReport(session_id: String, path)

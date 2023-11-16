@@ -9,6 +9,7 @@ import { TestResultReport } from '../types/test-result-report';
 import { TestResultSearchCriteria } from '../types/test-result-search-criteria';
 import { TestStepResult } from '../types/test-step-result';
 import { RestService } from './rest.service';
+import { FileReference } from '../types/file-reference';
 
 @Injectable({
   providedIn: 'root'
@@ -28,7 +29,7 @@ export class ReportService {
 		}
 		if (specificationGroupIds != undefined && specificationGroupIds.length > 0) {
 			data['group_ids'] = specificationGroupIds.join(',')
-		}    
+		}
 		if (actorIds && actorIds.length > 0) {
 			data["actor_ids"] = actorIds.join(',')
 		}
@@ -52,7 +53,7 @@ export class ReportService {
 		}
 		if (specificationGroupIds != undefined && specificationGroupIds.length > 0) {
 			data['group_ids'] = specificationGroupIds.join(',')
-		}    
+		}
 		if (actorIds && actorIds.length > 0) {
 			data["actor_ids"] = actorIds.join(',')
 		}
@@ -216,7 +217,7 @@ export class ReportService {
     let params:any = {
       actor_id: actorId,
       system_id: systemId,
-      tests: includeTests 
+      tests: includeTests
     }
     if (snapshotId != undefined) {
       params.snapshot = snapshotId
@@ -269,7 +270,14 @@ export class ReportService {
     })
   }
 
-  getTestStepReportData(sessionId: string, dataId: string, mimeType?: string) {
+  getTestStepReportDataAsDataUrl(sessionId: string, dataId: string) {
+    return this.restService.get<FileReference>({
+      path: ROUTES.controllers.RepositoryService.getTestStepReportDataAsDataUrl(sessionId, dataId).url,
+      authenticate: true
+    })
+  }
+
+  getTestStepReportData(sessionId: string, dataId: string, mimeType: string|undefined) {
     return this.restService.get<HttpResponse<ArrayBuffer>>({
       path: ROUTES.controllers.RepositoryService.getTestStepReportData(sessionId, dataId).url,
       authenticate: true,

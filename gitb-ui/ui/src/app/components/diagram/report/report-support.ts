@@ -5,9 +5,12 @@ import { AssertionReport } from "../assertion-report"
 import { Indicator } from "../../code-editor-modal/indicator"
 import { ReportService } from "src/app/services/report.service"
 import { AnyContent } from "../any-content"
-import { mergeMap, Observable, of } from "rxjs"
+import { mergeMap, Observable, of, map as rxMap, share } from "rxjs"
 import { HtmlService } from "src/app/services/html.service"
 import { DataService } from "src/app/services/data.service"
+import { FileReference } from "src/app/types/file-reference"
+import { ValueType } from "src/app/types/value-type"
+import { ValueWithMetadata } from "src/app/types/value-with-metadata"
 
 export abstract class ReportSupport {
 
@@ -18,16 +21,73 @@ export abstract class ReportSupport {
         protected dataService: DataService
     ) {}
 
-    private loadedReferences: {[key: string]: {data: ArrayBuffer, mimeType: string|undefined}} = {}
+    private loadedDataUrlReferences: {[key: string]: FileReference} = {}
+    private loadedArrayBufferReferences: {[key: string]: FileReference} = {}
 
-    openEditorWindow(name?: string, value?: string, assertionReports?: AssertionReport[], lineNumber?: number, mimeType?: string) {
-        if (value != undefined && mimeType != undefined && this.dataService.isImageType(mimeType)) {
+    commonOpen(content: AnyContent, sessionId: string, assertionReports?: AssertionReport[], lineNumber?: number) {
+        let valueObservable: Observable<ValueWithMetadata>
+        if (this.isFileReference(content)) {
+          valueObservable = this.downloadFileReference(sessionId, content, true).pipe(
+            mergeMap((data) => {
+              if (data.dataAsDataURL) {
+                return of({ value: data.dataAsDataURL, valueType: ValueType.dataURL, mimeType: data.mimeType})
+              } else { // Should normally never happen.
+                return of({ value: new TextDecoder("utf-8").decode(data.dataAsBytes), valueType: ValueType.string, mimeType: data.mimeType})
+              }
+            })
+          )
+        } else {
+          let valueToShow = content.valueToUse!
+          let valueType = ValueType.string
+          let mimeType = undefined
+          if (content.embeddingMethod == 'BASE64') {
+            if (this.dataService.isDataURL(valueToShow)) {
+              mimeType = this.dataService.mimeTypeFromDataURL(valueToShow)
+              valueType = ValueType.dataURL
+            } else {
+              valueType = ValueType.base64
+            }
+          }
+          valueObservable = of({value: valueToShow, valueType: valueType, mimeType: mimeType})
+        }
+        return valueObservable.pipe(
+            rxMap((valueInfo) => {
+                if (content.mimeType != undefined) {
+                    valueInfo.mimeType = content.mimeType
+                }
+                this.openEditorWindow(
+                    content.name == undefined?"":content.name,
+                    valueInfo,
+                    assertionReports,
+                    lineNumber
+                )
+            }),
+            share()
+        )
+    }
+
+    private openEditorWindow(name: string, value: ValueWithMetadata, assertionReports?: AssertionReport[], lineNumber?: number) {
+        if (value.value != undefined && value.valueType != ValueType.string && value.mimeType != undefined && this.dataService.isImageType(value.mimeType)) {
+            let valueToUse = value.value // Keep as-is if data URL
+            if (value.valueType == ValueType.base64) {
+                valueToUse = this.dataService.dataUrlFromBase64(value.value, value.mimeType)
+            }
             this.htmlService.showHtml(
                 name == undefined ? "Image preview" : name,
-                "<div class='report-image-container'><img src='"+this.dataService.dataUrlFromBase64(value!, mimeType!)+"'></div>",
+                "<div class='report-image-container'><img src='"+valueToUse+"'></div>",
                 "modal-lg"
             )
         } else {
+            let valueToUse = value.value // Keep as-is if string
+            if (value != undefined) {
+                if (value.valueType == ValueType.base64) {
+                    valueToUse = atob(value.value)
+                } else if (value.valueType == ValueType.dataURL) {
+                    valueToUse = atob(this.dataService.base64FromDataURL(value.value))
+                }
+            } else {
+                valueToUse = ""
+            }
             const indicators = this.extractRelatedIndicators(name, assertionReports)
             this.modalService.show(CodeEditorModalComponent, {
                 class: 'modal-lg',
@@ -36,12 +96,12 @@ export abstract class ReportSupport {
                     indicators: indicators,
                     lineNumber: lineNumber,
                     editorOptions: {
-                        value: value,
+                        value: valueToUse,
                         readOnly: true,
                         lineNumbers: true,
                         smartIndent: false,
                         electricChars: false,
-                        mode: (mimeType == undefined)?'application/xml':mimeType
+                        mode: (value.mimeType == undefined)?'application/xml':value.mimeType
                     }
                 }
             })
@@ -76,25 +136,38 @@ export abstract class ReportSupport {
         return item.valueToUse!.slice(5, item.valueToUse!.length - 5)
     }
 
-    downloadFileReference(sessionId: string, anyContent: AnyContent): Observable<{data: ArrayBuffer, mimeType: string|undefined}> {
+    downloadFileReference(sessionId: string, anyContent: AnyContent, asDataURL: boolean): Observable<FileReference> {
         const dataId = this.getFileReference(anyContent)
-        if (this.loadedReferences[dataId] == undefined) {
-            return this.reportService.getTestStepReportData(sessionId, dataId, anyContent.mimeType).pipe(
-                mergeMap((response) => {
-                    let mimeType: string|undefined
-                    if (response.headers.has('Content-Type')) {
-                        mimeType = response.headers.get('Content-Type') as string
-                    }
-                    const result = {
-                        data: response.body as ArrayBuffer,
-                        mimeType: mimeType
-                    }
-                    this.loadedReferences[dataId] = result
-                    return of(result)
-                })
-            )
+        if (asDataURL) {
+            if (this.loadedDataUrlReferences[dataId] == undefined) {
+                return this.reportService.getTestStepReportDataAsDataUrl(sessionId, dataId).pipe(
+                    mergeMap((response) => {
+                        this.loadedDataUrlReferences[dataId] = response
+                        return of(response)
+                    })
+                )
+            } else {
+                return of(this.loadedDataUrlReferences[dataId])
+            }
         } else {
-            return of(this.loadedReferences[dataId])
+            if (this.loadedArrayBufferReferences[dataId] == undefined) {
+                return this.reportService.getTestStepReportData(sessionId, dataId, anyContent.mimeType).pipe(
+                    mergeMap((response) => {
+                        let mimeType: string|undefined
+                        if (response.headers.has('Content-Type')) {
+                            mimeType = response.headers.get('Content-Type') as string
+                        }
+                        const result: FileReference = {
+                            dataAsBytes: response.body as ArrayBuffer,
+                            mimeType: mimeType
+                        }
+                        this.loadedArrayBufferReferences[dataId] = result
+                        return of(result)
+                    })
+                )
+            } else {
+                return of(this.loadedArrayBufferReferences[dataId])
+            }
         }
     }
 
