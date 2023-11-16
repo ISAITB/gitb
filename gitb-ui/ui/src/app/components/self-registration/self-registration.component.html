@@ -103,16 +103,9 @@
           <div class="form-group row">
               <label class="col-3 col-form-label text-right" for="adminPassword">* Password:</label>
               <div class="col-7">
-                  <input id="adminPassword" [(ngModel)]="model.adminPassword" class="form-control" type="password"/>
+                  <app-secret-input id="adminPassword" name="adminPassword" [(ngModel)]="model.adminPassword"></app-secret-input>
               </div>
               <app-tooltip tbTooltip="The account's password, to be provided with the username when logging in."></app-tooltip>
-          </div>
-          <div class="form-group row">
-              <label class="col-3 col-form-label text-right" for="adminPasswordConfirm">* Confirm password:</label>
-              <div class="col-7">
-                  <input id="adminPasswordConfirm" [(ngModel)]="model.adminPasswordConfirm" class="form-control" type="password"/>
-              </div>
-              <app-tooltip tbTooltip="Provide again the account's password to ensure it is correct."></app-tooltip>
           </div>
         </div>
       </div>

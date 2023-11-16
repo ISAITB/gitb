@@ -60,7 +60,7 @@ export class CreateUserComponent extends BaseComponent implements OnInit, AfterV
     if (this.dataService.configuration.ssoEnabled) {
       return !(this.textProvided(this.user.email) && this.user.role != undefined)
     } else {
-      return !(this.textProvided(this.user.name) && this.textProvided(this.user.password) && this.textProvided(this.user.passwordConfirmation) && this.textProvided(this.user.email) && this.user.role != undefined)
+      return !(this.textProvided(this.user.name) && this.textProvided(this.user.password) && this.textProvided(this.user.email) && this.user.role != undefined)
     }
   }
 
@@ -76,7 +76,6 @@ export class CreateUserComponent extends BaseComponent implements OnInit, AfterV
         emailCheckResult = this.authService.checkEmailOfOrganisationMember(this.user.email!, this.user.role!)
       }
     } else {
-      ok = this.requireSame(this.user.password, this.user.passwordConfirmation, "Please enter equal passwords.")
       emailCheckResult = this.authService.checkEmail(this.user.email!)
     }
     if (ok) {

@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, ElementRef, forwardRef, Input, OnInit, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, EventEmitter, forwardRef, Input, OnInit, ViewChild } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 @Component({
@@ -19,6 +19,7 @@ export class SecretInputComponent implements OnInit, AfterViewInit,  ControlValu
   @Input() name!: string
   @Input() autoFocus = false
   @Input() passwordTabIndex = 0
+  @Input() focusChange?: EventEmitter<boolean>
   @ViewChild("passwordField") passwordField?: ElementRef;
   @ViewChild("displayButton") displayButton?: ElementRef;
   _value?: string
@@ -63,6 +64,19 @@ export class SecretInputComponent implements OnInit, AfterViewInit,  ControlValu
   }
 
   ngOnInit(): void {
+    if (this.focusChange) {
+      this.focusChange.subscribe((focus) => {
+        if (this.passwordField != undefined) {
+          setTimeout(() => {
+            if (focus) {
+              this.passwordField?.nativeElement.focus()
+            } else {
+              this.passwordField?.nativeElement.blur()
+            }
+          }, 1)
+        }        
+      })
+    }
   }
 
   viewButtonOff() {

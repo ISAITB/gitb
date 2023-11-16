@@ -236,7 +236,7 @@ export class LoginComponent extends BaseComponent implements OnInit, AfterViewIn
 			(!this.selfRegData.selfRegOption.forceRequiredProperties || this.dataService.customPropertiesValid(this.selfRegData.selfRegOption.organisationProperties, true)) &&
 			this.textProvided(this.selfRegData.orgShortName) && this.textProvided(this.selfRegData.orgFullName) &&
 			this.textProvided(this.selfRegData.adminName) && this.textProvided(this.selfRegData.adminEmail) && 
-			this.textProvided(this.selfRegData.adminPassword) && this.textProvided(this.selfRegData.adminPasswordConfirm)
+			this.textProvided(this.selfRegData.adminPassword)
 		)
   }
 
@@ -278,9 +278,7 @@ export class LoginComponent extends BaseComponent implements OnInit, AfterViewIn
 
 	checkRegisterForm() {
     this.clearAlerts()
-    const checkPasswordConfirmed = this.requireSame(this.selfRegData.adminPassword, this.selfRegData.adminPasswordConfirm, 'Your password was not correctly confirmed.')
-    const checkPasswordComplex = this.requireComplexPassword(this.selfRegData.adminPassword, 'Your password does not match required complexity rules. It must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one digit and one symbol.')
-		return checkPasswordConfirmed && checkPasswordComplex
+		return this.requireComplexPassword(this.selfRegData.adminPassword, 'Your password does not match required complexity rules. It must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one digit and one symbol.')
   }
 
   replaceDisabled() {

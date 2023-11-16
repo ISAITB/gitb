@@ -49,16 +49,13 @@
             </div>
         </div>
     </div>
-    <div *ngIf="!sso" [collapse]="!new && !changePassword" [isAnimated]="true">
+    <div *ngIf="!sso" [collapse]="!new && !changePassword" [isAnimated]="true" (expanded)="passwordExpanded()" (collapsed)="passwordCollapsed()">
         <div class="form-group row">
           <label class="col-4 col-form-label text-right" for="password">* One-time password:</label>
-          <div class="col-6"><input id="password" name="password" [(ngModel)]="user.password" class="form-control" type="password"></div>
+          <div class="col-6">
+            <app-secret-input id="password" name="password" [(ngModel)]="user.password" [focusChange]="passwordFocus"></app-secret-input>
+          </div>
           <app-tooltip tbTooltip="This password can only be used once at first login and will then need to be changed."></app-tooltip>
-        </div>
-        <div class="form-group row">
-          <label class="col-4 col-form-label text-right" for="passwordConfirmation">* Confirm one-time password:</label>
-          <div class="col-6"><input id="passwordConfirmation" name="passwordConfirmation" [(ngModel)]="user.passwordConfirmation" class="form-control" type="password"></div>
-          <app-tooltip tbTooltip="Repeat the password to ensure it is correctly provided."></app-tooltip>
         </div>
     </div>
 </ng-container>

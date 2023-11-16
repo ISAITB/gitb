@@ -83,7 +83,7 @@ export class UserDetailsComponent extends BaseComponent implements OnInit, After
     if (this.dataService.configuration.ssoEnabled) {
       return !(this.user.role != undefined)
     } else {
-      return !(this.textProvided(this.user.name) && (!this.changePassword || (this.textProvided(this.user.password) && this.textProvided(this.user.passwordConfirmation)))  && this.user.role != undefined)
+      return !(this.textProvided(this.user.name) && (!this.changePassword || this.textProvided(this.user.password))  && this.user.role != undefined)
     }
   }
 
@@ -107,8 +107,6 @@ export class UserDetailsComponent extends BaseComponent implements OnInit, After
           emailCheckResult = this.authService.checkEmailOfOrganisationMember(this.user.email!, this.user.role!)
         }
       }
-    } else {
-      ok = this.requireSame(this.user.password, this.user.passwordConfirmation, "Passwords do not match.")
     }
     if (ok) {
       this.savePending = true

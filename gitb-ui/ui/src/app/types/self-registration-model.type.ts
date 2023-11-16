@@ -11,6 +11,5 @@ export interface SelfRegistrationModel {
     adminName?: string,
     adminEmail?: string,
     adminPassword?: string,
-    adminPasswordConfirm?: string
 
 }

@@ -54,7 +54,9 @@
 			</div>
 			<div class="form-group row">
 				<label class="col-3 col-form-label text-right" for="password">* Password:</label>
-				<div class="col-7"><input id="password" name="password" [(ngModel)]="password" class="form-control" type="password"></div>
+				<div class="col-7">
+					<app-secret-input id="password" name="password" [(ngModel)]="password"></app-secret-input>
+				</div>
 				<app-tooltip tbTooltip="The password you have been using up to now."></app-tooltip>
 			</div>
 		</div>
