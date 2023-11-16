@@ -80,26 +80,28 @@
                                                 </div>
                                             </ng-container>
                                         </ng-container>
-                                        <div class="row">
-                                            <div class="col-10 offset-1">
-                                                <div class="alert-info rounded div-padded">
-                                                    <span *ngIf="!onetimePassword && !weakPassword"><b>Privacy note:</b> By clicking 'Log in' you consent to the use of cookies to manage your session. Please refer to the legal notice (link available in the screen's footer) for more information.</span>
-                                                    <span *ngIf="onetimePassword">The password you used is a one-time password that needs to be changed upon your first login.</span>
-                                                    <div *ngIf="weakPassword">
-                                                        <span>The password you used is not complex enough and needs to be replaced. Your password must:</span>
-                                                        <ul class="no-bottom-margin">
-                                                            <li>Contain at least one uppercase letter, one lowercase letter, one digit and one symbol.</li>
-                                                            <li>Be at least eight characters long.</li>
-                                                        </ul>
+                                        <ng-container [ngSwitch]="loginOption == Constants.LOGIN_OPTION.REGISTER && dataService.configuration.registrationEnabled">
+                                            <div class="row" *ngSwitchCase="false">
+                                                <div class="col-10 offset-1">
+                                                    <div class="alert-info rounded div-padded">
+                                                        <span *ngIf="!onetimePassword && !weakPassword"><b>Privacy note:</b> By clicking 'Log in' you consent to the use of cookies to manage your session. Please refer to the legal notice (link available in the screen's footer) for more information.</span>
+                                                        <span *ngIf="onetimePassword">The password you used is a one-time password that needs to be changed upon your first login.</span>
+                                                        <div *ngIf="weakPassword">
+                                                            <span>The password you used is not complex enough and needs to be replaced. Your password must:</span>
+                                                            <ul class="no-bottom-margin">
+                                                                <li>Contain at least one uppercase letter, one lowercase letter, one digit and one symbol.</li>
+                                                                <li>Be at least eight characters long.</li>
+                                                            </ul>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                        <div class="row" *ngIf="loginOption == Constants.LOGIN_OPTION.REGISTER && dataService.configuration.registrationEnabled">
-                                            <div class="col-12">
-                                                <app-self-registration [model]="selfRegData"></app-self-registration>
+                                            <div class="row" *ngSwitchDefault>
+                                                <div class="col-12">
+                                                    <app-self-registration [model]="selfRegData"></app-self-registration>
+                                                </div>
                                             </div>
-                                        </div>
+                                        </ng-container>
                                     </div>
                                     <div class="card-footer">
                                         <div class="btn-toolbar">
