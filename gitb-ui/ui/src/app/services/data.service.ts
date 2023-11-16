@@ -610,6 +610,8 @@ export class DataService {
       icon = "fa-solid testsuite-progress-icon fa-check-circle test-case-success"
     } else if (result == Constants.TEST_CASE_RESULT.FAILURE) {
       icon = "fa-solid testsuite-progress-icon fa-times-circle test-case-error"
+    } else if (result == Constants.TEST_CASE_RESULT.WARNING) {
+      icon = "fa-solid testsuite-progress-icon fa-exclamation test-case-warning"
     } else {
       icon = "fa-solid testsuite-progress-icon fa-ban test-case-undefined"
     }
@@ -622,6 +624,8 @@ export class DataService {
       text = "Success"
     } else if (result == Constants.TEST_CASE_RESULT.FAILURE) {
       text = "Failure"
+    } else if (result == Constants.TEST_CASE_RESULT.WARNING) {
+      text = "Warning"
     } else {
       text = "Incomplete"
     }

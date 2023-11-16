@@ -161,7 +161,8 @@ export class Constants {
 	public static TEST_CASE_RESULT = {
 		SUCCESS : "SUCCESS",
 		FAILURE : "FAILURE",
-		UNDEFINED : "UNDEFINED"
+		UNDEFINED : "UNDEFINED",
+		WARNING : "WARNING"
 	}
 
 	public static STATUS = {
