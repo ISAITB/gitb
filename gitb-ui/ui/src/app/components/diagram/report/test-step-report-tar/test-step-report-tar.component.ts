@@ -77,7 +77,7 @@ export class TestStepReportTARComponent extends ReportSupport implements OnInit 
       // Find the relevant value to display
       const relevantContextItem = this.findContextEntryByName(this.report.context, location.name.toLocaleLowerCase())
       if (relevantContextItem != undefined) {
-        this.commonOpen(relevantContextItem, this.sessionId, this.report.reports?.assertionReports, location?.line)
+        this.commonOpen(relevantContextItem, this.sessionId, this.report.reports?.assertionReports, location?.line).subscribe()
       }
     }
   }
