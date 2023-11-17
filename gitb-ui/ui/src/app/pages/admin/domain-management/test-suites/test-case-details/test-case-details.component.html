@@ -26,18 +26,22 @@
 							</div>
 							<app-tooltip tbTooltip="A description for the test case presented to users when viewing a conformance statement. This should be informative enough for users to understand the purpose of the test case. Where extended information is needed consider complementing the description with the test case's documentation."></app-tooltip>
 						</div>
-            <div class="form-group row">
-              <label class="col-3 col-form-label text-right" for="optional">Optional:</label>
+            <div class="form-group row pt-1">
+              <label class="col-3 col-form-label text-right pt-0" for="optional">Optional:</label>
               <div class="col-7">
-                <input id="optional" name="optional" [(ngModel)]="testCase.optional" type="checkbox" class="form-check">
-                <app-tooltip [inline]="true" tbTooltip="Optional test case sessions are not counted towards conformance statement results."></app-tooltip>
+				<div class="form-check">
+					<input class="form-check-input" id="optional" name="optional" [(ngModel)]="testCase.optional" type="checkbox">
+					<app-tooltip [inline]="true" tbTooltip="Optional test case sessions are not counted towards conformance statement results."></app-tooltip>
+				</div>
               </div>
             </div>
-            <div class="form-group row">
-              <label class="col-3 col-form-label text-right" for="disabled">Disabled:</label>
+            <div class="form-group row pt-1">
+              <label class="col-3 col-form-label text-right pt-0" for="disabled">Disabled:</label>
               <div class="col-7">
-                <input id="disabled" name="disabled" [(ngModel)]="testCase.disabled" type="checkbox" class="form-check">
-                <app-tooltip [inline]="true" tbTooltip="Disabled test cases cannot be executed and any existing test sessions are not counted towards conformance statement results."></app-tooltip>
+				<div class="form-check">
+					<input class="form-check-input" id="disabled" name="disabled" [(ngModel)]="testCase.disabled" type="checkbox">
+					<app-tooltip [inline]="true" tbTooltip="Disabled test cases cannot be executed and any existing test sessions are not counted towards conformance statement results."></app-tooltip>
+				</div>
               </div>
             </div>
             <div class="form-group row">
