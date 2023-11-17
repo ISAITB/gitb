@@ -10,8 +10,13 @@ import com.gitb.processing.ProcessingData;
 import com.gitb.processing.ProcessingReport;
 import com.gitb.ps.ProcessingModule;
 import com.gitb.tr.TestResultType;
+import com.gitb.types.DataType;
 import com.gitb.types.MapType;
+import com.gitb.types.StringType;
 import com.gitb.utils.DataTypeUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MarkerFactory;
 
 import java.util.Collections;
 import java.util.List;
@@ -19,9 +24,11 @@ import java.util.List;
 @ProcessingHandler(name="DisplayProcessor")
 public class DisplayProcessor extends AbstractProcessingHandler {
 
+    private static final Logger LOG = LoggerFactory.getLogger(DisplayProcessor.class);
     private static final String OPERATION__DISPLAY = "display";
     private static final String INPUT__PARAMETERS = "parameters";
     private static final String INPUT__CONTENT_TYPES = "contentTypes";
+    private static final String INPUT__RESULT = "result";
 
     @Override
     public ProcessingModule getModuleDefinition() {
@@ -33,6 +40,7 @@ public class DisplayProcessor extends AbstractProcessingHandler {
         module.setConfigs(new ConfigurationParameters());
         module.getOperation().add(createProcessingOperation(OPERATION__DISPLAY,
                 List.of(
+                        createParameter(INPUT__RESULT, "string", UsageEnumeration.O, ConfigurationType.SIMPLE, String.format("The result of the step. On of '%s', '%s' or '%s'. If not specified the default considered is '%s'.", TestResultType.SUCCESS, TestResultType.WARNING, TestResultType.WARNING, TestResultType.SUCCESS)),
                         createParameter(INPUT__PARAMETERS, "map", UsageEnumeration.O, ConfigurationType.SIMPLE, "The map of input parameters to display."),
                         createParameter(INPUT__CONTENT_TYPES, "map", UsageEnumeration.O, ConfigurationType.SIMPLE, "The map of content types to apply for the display of matching input parameters.")
                 ),
@@ -43,11 +51,20 @@ public class DisplayProcessor extends AbstractProcessingHandler {
 
     @Override
     public ProcessingReport process(String session, String operation, ProcessingData input) {
+        var result = TestResultType.SUCCESS;
+        var resultInput = getInputForName(input, INPUT__RESULT, StringType.class);
+        if (resultInput != null) {
+            try {
+                result = TestResultType.valueOf((String)(resultInput.convertTo(DataType.STRING_DATA_TYPE).getValue()));
+            } catch (IllegalArgumentException | NullPointerException e) {
+                LOG.warn(MarkerFactory.getDetachedMarker(session), String.format("Invalid value for input '%s'. Considering '%s' by default.", INPUT__RESULT, TestResultType.SUCCESS));
+            }
+        }
         var parameters = getInputForName(input, INPUT__PARAMETERS, MapType.class);
         if (parameters == null) {
             parameters = getDefaultInput(input, MapType.class);
         }
-        var report = createReport(TestResultType.SUCCESS);
+        var report = createReport(result);
         if (parameters != null) {
             parameters.getItems().forEach((key, value) -> {
                 var item = DataTypeUtils.convertDataTypeToAnyContent(key, value);
