@@ -50,12 +50,18 @@ export class ParameterFormComponent implements OnInit, AfterViewInit {
     this.parameter.presetValues!.splice(index, 1)
   }
 
-  movePresetUp(index: number) {
+  movePresetUp(index: number, event: UIEvent) {
+    if (event.currentTarget && (event.currentTarget as any).blur) {
+      (event.currentTarget as any).blur()
+    }
     const item = this.parameter.presetValues!.splice(index, 1)[0]
     this.parameter.presetValues!.splice(index-1, 0, item)
   }
 
-  movePresetDown(index: number) {
+  movePresetDown(index: number, event: UIEvent) {
+    if (event.currentTarget && (event.currentTarget as any).blur) {
+      (event.currentTarget as any).blur()
+    }
     const item = this.parameter.presetValues!.splice(index, 1)[0]
     this.parameter.presetValues!.splice(index+1, 0, item)
   }

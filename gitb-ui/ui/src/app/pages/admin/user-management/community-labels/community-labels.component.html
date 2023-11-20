@@ -20,24 +20,27 @@
                     </thead>
                     <tbody>
                         <tr *ngFor="let label of labels; let index = index">
-                            <td style="padding-top:14px">
-                                <span>{{labelTypeLabel(label.labelType)}}</span>
-                                <span class="spaced-left" [tooltip]="labelTypeDescription[label.labelType]"><i class="fa-solid fa-question-circle"></i></span>
-                            </td>
-                            <td><input type="checkbox" [name]="'custom'+index" [(ngModel)]="label.custom" class="form-check" (change)="customChecked($event, label)"/></td>
                             <td>
-                                <div *ngIf="label.custom"><input [attr.id]="'label-singular-'+label.labelType" type="text" [name]="'singular'+index" [(ngModel)]="label.singularForm" class="form-control"/></div>
-                                <div *ngIf="!label.custom"><input type="text" [value]="Constants.LABEL_DEFAULT[label.labelType].singularForm" class="form-control" readonly="true"/></div>
+                                <div>
+                                    <span>{{labelTypeLabel(label.labelType)}}</span>
+                                    <span class="spaced-left" [tooltip]="labelTypeDescription[label.labelType]"><i class="fa-solid fa-question-circle"></i></span>
+                                </div>
                             </td>
                             <td>
-                                <div *ngIf="label.custom"><input type="text" [name]="'pluralForm'+index" [(ngModel)]="label.pluralForm" class="form-control"/></div>
-                                <div *ngIf="!label.custom"><input type="text" [value]="Constants.LABEL_DEFAULT[label.labelType].pluralForm" class="form-control" readonly="true"/></div>
+                                <input type="checkbox" [name]="'custom'+index" [(ngModel)]="label.custom" (change)="customChecked($event, label)"/>
                             </td>
-                            <td>
-                                <div *ngIf="label.custom"><input type="checkbox" [name]="'fixedCase'+index" [(ngModel)]="label.fixedCase" class="form-check"/></div>
-                                <div *ngIf="!label.custom"><input type="checkbox" [checked]="Constants.LABEL_DEFAULT[label.labelType].fixedCase" class="form-check" [disabled]="true"/></div>
+                            <td [ngSwitch]="label.custom">
+                                <div *ngSwitchCase="true"><input [attr.id]="'label-singular-'+label.labelType" type="text" [name]="'singular'+index" [(ngModel)]="label.singularForm" class="form-control"/></div>
+                                <div *ngSwitchDefault><input type="text" [value]="Constants.LABEL_DEFAULT[label.labelType].singularForm" class="form-control" readonly="true"/></div>
                             </td>
-                            <td></td>
+                            <td [ngSwitch]="label.custom">
+                                <div *ngSwitchCase="true"><input type="text" [name]="'pluralForm'+index" [(ngModel)]="label.pluralForm" class="form-control"/></div>
+                                <div *ngSwitchDefault><input type="text" [value]="Constants.LABEL_DEFAULT[label.labelType].pluralForm" class="form-control" readonly="true"/></div>
+                            </td>
+                            <td [ngSwitch]="label.custom">
+                                <div *ngSwitchCase="true"><input type="checkbox" [name]="'fixedCase'+index" [(ngModel)]="label.fixedCase"/></div>
+                                <div *ngSwitchDefault><input type="checkbox" [checked]="Constants.LABEL_DEFAULT[label.labelType].fixedCase" [disabled]="true"/></div>
+                            </td>
                         </tr>
                     </tbody>
                 </table>

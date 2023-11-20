@@ -64,8 +64,8 @@
 									<td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': parameter.hidden, 'fa-times': !parameter.hidden}"></i></span></div></td>
 									<td class="btn-stacked-container" (click)="$event.stopPropagation();">
 										<div class="btn-toolbar btn-stacked">
-											<button *ngIf="!first" class="btn btn-xs btn-secondary" type="button" (click)="moveParameterUp(index)" containerClass="shortTooltip" tooltip="Move up" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-chevron-up"></i></button>
-											<button *ngIf="!last" class="btn btn-xs btn-secondary" type="button" (click)="moveParameterDown(index)" containerClass="shortTooltip" tooltip="Move down" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-chevron-down"></i></button>
+											<button *ngIf="!first" class="btn btn-xs btn-secondary" type="button" (click)="moveParameterUp(index, $event)" containerClass="shortTooltip" tooltip="Move up" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-chevron-up"></i></button>
+											<button *ngIf="!last" class="btn btn-xs btn-secondary" type="button" (click)="moveParameterDown(index, $event)" containerClass="shortTooltip" tooltip="Move down" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-chevron-down"></i></button>
 										</div>
 									</td>
 								</tr>

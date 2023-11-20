@@ -3,9 +3,11 @@
 </div>
 <form>
     <div class="modal-body" [ngSwitch]="editMode">
-        <div *ngSwitchCase="true">
+        <div class="form-group row" *ngSwitchCase="true">
             <label class="col-3 col-form-label text-right" for="label">Snapshot label:</label>
-            <div class="col-8"><input id="label" name="label" [(ngModel)]="snapshotToEdit!.label" class="form-control" type="text"></div>
+            <div class="col-8">
+                <input id="label" name="label" [(ngModel)]="snapshotToEdit!.label" class="form-control" type="text">
+            </div>
             <app-tooltip tbTooltip="A label to help in distinguishing and referring to the snapshot."></app-tooltip>
         </div>
         <ng-container *ngSwitchDefault>

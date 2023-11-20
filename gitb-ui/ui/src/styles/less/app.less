@@ -6,14 +6,17 @@ html {
 }
 
 body {
-	background-color: #FFF;
-	color: #777;
+	background-color: @white;
+	color: @gray;
 	font-family: "Open Sans", sans-serif;
-	font-size: 14px;
-	line-height: 22px;
+	font-size: 14px; // TODO: see if this can be set via bootstrap customisation
+	line-height: 22px; // TODO: see if this can be set via bootstrap customisation
 	margin: 0;
 	a {
-		color: @blue-link;
+		color: @blue-link; // TODO: see if this can be set via bootstrap customisation
+	}
+	.table td, .table th {
+		padding: 8px;  // TODO: see if this can be set via bootstrap customisation
 	}
 }
 
@@ -22,17 +25,30 @@ body {
 }
 
 .btn, .form-control, .dropdown-menu, .form-control-plaintext {
-	font-size: inherit;
+	font-size: 14px; // TODO: see if this can be set via bootstrap customisation
 }
 
 .table, .form-control-plaintext {
 	color: inherit;
 }
 
-.btn-toolbar>.btn, .btn-toolbar>.btn-group, .btn-toolbar>.input-group {
-    margin-left: 5px;
-	&:first-child {
-		margin-left: 0px;
+.btn-toolbar {
+	&.btn-stacked {
+		&>.btn {
+			&:first-child {
+				&:not(:last-child) {
+					margin-bottom: 2px;
+				}
+			}
+			margin-left: 0px;
+			padding: 2px 12px;
+		}
+	}
+	&>.btn, &>.btn-group, &>.input-group, &.btn-toolbar {
+		margin-left: 5px;
+		&:first-child {
+			margin-left: 0px;
+		}
 	}
 }
 
@@ -41,31 +57,31 @@ body {
 }
 
 .h1,h1 {
-    font-size: 36px;
+    font-size: 36px;// TODO: see if this can be set via bootstrap customisation
 }
 
 .h2,h2 {
-    font-size: 30px;
+    font-size: 30px;// TODO: see if this can be set via bootstrap customisation
 }
 
 .h3,h3 {
-    font-size: 24px;
+    font-size: 24px;// TODO: see if this can be set via bootstrap customisation
 }
 
 .h4,h4 {
-    font-size: 18px;
+    font-size: 18px;// TODO: see if this can be set via bootstrap customisation
 }
 
 .h5,h5 {
-    font-size: 14px;
+    font-size: 14px;// TODO: see if this can be set via bootstrap customisation
 }
 
 .h6,h6 {
-    font-size: 12px;
+    font-size: 12px;// TODO: see if this can be set via bootstrap customisation
 }
 
 h1, h2, h3, h4, h5, h6 {
-	color: @blue
+	color: @blue// TODO: see if this can be set via bootstrap customisation
 }
 
 .h4,.h5,.h6,h4,h5,h6 {
@@ -106,10 +122,10 @@ a.scroll-to-top {
 	-o-transition: all 0.3s;
 	-webkit-border-radius: 7px 7px 0 0;
 	-webkit-transition: all 0.3s;
-	background: #404040;
+	background: @gray-dark;
 	border-radius: 7px 7px 0 0;
 	bottom: 0px;
-	color: #FFF;
+	color: @white;
 	display: block;
 	height: 9px;
 	opacity: 0;
@@ -176,130 +192,58 @@ a.scroll-to-top.visible {
 .div-padded-small {
 	padding: 8px;
 }
-.account-card {
-	&:extend(.rounded);
-	cursor: pointer;
-    -moz-box-shadow: 3px 3px 5px 0px #ccc;
-    -webkit-box-shadow: 3px 3px 5px 0px #ccc;
-    box-shadow: 3px 3px 5px 0px #ccc;
-}
-
-.account-card-oa {
-	&:extend(.account-card);
-	background-color: #555;
-}
-
-.account-card-ou {
-	&:extend(.account-card);
-	background-color: #adadad;
-}
-
-.account-card-ta {
-	&:extend(.account-card);
-	background-color: #0065A2;
-}
-
-.account-card-ca {
-	&:extend(.account-card);
-	background-color: #a94442;
-}
-
-.account-card-internal {
-	margin-left: 15px;
-    border-top-right-radius: 4px;
-	border-bottom-right-radius: 4px;
-	background-color: #eaeaea;
-	&:hover {
-		background-color: #cecece;
-	}
-}
-
-.account-card-selected {
-	background-color: #cecece;
-}
-
-.account-card-text {
-	padding: 20px 30px 20px 30px;
-	font-weight: bold;
-}
-
-.account-list-new {
-	padding-top: 15px;
-    margin-top: 30px;
-    color: #0088cc;
-    font-size: 18px;
-}
-
-.role-description {
-	font-size: 0.9em;
-    padding-top: 5px;
-}
-
-.link-account-separator {
-	margin-left: 40px;
-	margin-right: 40px;
-	margin-top:15px;
-	margin-bottom:15px;
-	padding-top:15px;
-	border-top:1px solid #e5e5e5;
-}
 
 .bottom-margin {
 	margin-bottom:15px;
 }
 
-.login-option {
-	display: inline-block;
-	padding: 20px;
+.link-account-separator {
+	margin-top:15px;
+	margin-bottom:15px;
+	padding-top:15px;
+	border-top:1px solid @gray-light;
 }
 
 .table-paging-controls {
 	border-top: 2px solid @gray-dark-1;
 	display: flex;
 	justify-content: center;
-	.pagination {
-		margin: 10px 0px;
-	}
 }
 
 table.expandable-table {
-	border-collapse: separate;
-	table.expandable-table {
-		border-collapse: collapse;
-	}
 	th {
-		background-color: #FFFFFF;
+		background-color: @white;
 	}
 	tr {
-		background-color: #F5F5F5;
+		background-color: @gray-light-1;
 	}
 	.card {
 		margin-bottom: 0px;
 		.card-header {
-			background-color: white;
-    		color: #777;
+			background-color: @white;
+    		color: @gray;
 			&.session-table-title.clickable:hover {
 				cursor: pointer;
 				background-color: @white-hover;
 			}
 		}
 		.card-footer {
-			background-color: white;
+			background-color: @white;
 		}
 	}
 }
 
 .card-header > .session-table-title {
-	color: #777;
+	color: @gray;
 }
 
 .session-table-title {
 	padding: 0px 15px;
 	display: flex;
-	color: #777;
+	color: @gray;
 	.session-table-title-part {
 		display: inline-flex;
-		border-left: 1px solid #ddd;
+		border-left: 1px solid @gray-dark-1;
 		padding-left: 10px;
 		padding-right: 10px;
 		padding-top: 10px;
@@ -327,12 +271,6 @@ table tbody tr.expandable-table-row-collapsed {
 		background-color: @gray-highlight;
 		+ .expandable-table-row-expanded > td.expandable-table-expandable-cell {
 			background-color: @gray-highlight;
-		}
-		+ .expandable-table-row-expanded > td.expandable-table-expandable-cell-no-spacings {
-			background-color: @gray-highlight;
-			.tr-expandable-inner {
-				background-color: @gray-highlight;
-			}
 		}
 	}
 	td {
@@ -373,8 +311,9 @@ table.table-directive {
 	vertical-align: middle;
 	text-align: center;
 }
-.th-min-centered {
+.table .th-min-centered, .th-min-centered {
 	width: 1px;
+	vertical-align: middle;
 	text-align: center;
 	white-space: nowrap;
 }
@@ -428,11 +367,8 @@ table tbody tr.expandable-table-row-expanded {
 			}
 		}
 	}
-	& >td.expandable-table-expandable-cell-no-spacings {
-		padding:0px;
-	}
 	& >td {
-		border-top: 0px solid #ddd;
+		border-top: 0px solid @gray-dark-1;
 	}
 }
 div.collapsing-div {
@@ -441,46 +377,41 @@ div.collapsing-div {
 
 tr.expandable-table-row-expanded table.expandable-table {
 	tr:first-child {
-		border-top: 1px solid #ddd;
+		border-top: 1px solid @gray-dark-1;
 	}
 	tr:last-child {
-		border-bottom: 1px solid #ddd;
+		border-bottom: 1px solid @gray-dark-1;
 	}
 	th {
-		background-color: #FFFFFF;
+		background-color: @white;
 		padding: 8px;
 	}
 	th:first-child {
-		border-left: 1px solid #ddd;
+		border-left: 1px solid @gray-dark-1;
 	}
 	th:last-child {
-		border-right: 1px solid #ddd;
+		border-right: 1px solid @gray-dark-1;
 	}
 	td {
-		border-top: 1px solid #ddd;
-		background-color: #FFFFFF;
+		border-top: 1px solid @gray-dark-1;
+		background-color: @white;
 		padding-top: 15px;
 		padding-bottom: 15px;
 	}
 	td:first-child {
-		border-left: 1px solid #ddd;
+		border-left: 1px solid @gray-dark-1;
 	}
 	td:last-child {
-		border-right: 1px solid #ddd;
+		border-right: 1px solid @gray-dark-1;
 		padding-top: 8px;
 		padding-bottom: 8px;
 	}
 }
 
 .self-reg-option-table {
-	border:1px solid #e5e5e5;
+	border:1px solid @gray-light;
 	border-radius: 5px;
 	margin-bottom: 20px;
-}
-
-.self-reg-option-table-popup {
-	margin-right: 40px;
-	margin-left: 40px;
 }
 
 .inline-form-text {
@@ -516,7 +447,7 @@ tr.expandable-table-row-expanded table.expandable-table {
 }
 
 .tooltip-inner {
-	min-width: 200px !important;
+	min-width: 250px !important;
 }
 
 .popover.result-message-popover {
@@ -526,30 +457,30 @@ tr.expandable-table-row-expanded table.expandable-table {
 	left: -4px !important;
 	&.success {
 		> .arrow {
-			border-left-color: #d6e9c6;
+			border-left-color: @green-success-border;
 			&:after {
-				border-left-color: #dff0d8;
+				border-left-color: @green-success-background;
 			}
 		}
-		background-color: #dff0d8;
-		border-color: #d6e9c6;
+		background-color: @green-success-background;
+		border-color: @green-success-border;
 		.popover-inner {
-			background-color: #dff0d8;
-			color: #3c763d;
+			background-color: @green-success-background;
+			color: @green-success-content;
 		}
 	}
 	&.failure {
 		> .arrow {
-			border-left-color: #ebccd1;
+			border-left-color: @red-error-border;
 			&:after {
-				border-left-color: #f2dede;
+				border-left-color: @red-error-background;
 			}
 		}
-		background-color: #f2dede;
-		border-color: #ebccd1;
+		background-color: @red-error-background;
+		border-color: @red-error-border;
 		.popover-inner {
-			background-color: #f2dede;
-			color: #a94442;
+			background-color: @red-error-background;
+			color: @red-error-content;
 		}
 	}
 }
@@ -649,7 +580,7 @@ ng-multiselect-dropdown {
 	div.multiselect-dropdown {
 		width: 100px;
 		li.no-data > h5 {
-			color: #777;
+			color: @gray;
 			opacity: 0.5;
 		}
 		div.dropdown-list {
@@ -657,7 +588,7 @@ ng-multiselect-dropdown {
 		}
 		span.dropdown-btn {
 			height: 34px;
-			border: 1px solid #ccc !important;
+			border: 1px solid @gray-button !important;
 			& > span.selected-item {
 				white-space: nowrap;
 				text-overflow: clip;
@@ -670,7 +601,7 @@ ng-multiselect-dropdown {
 					top: 6px;
 					left: 8px;
 					content: '...';
-					color: #777;
+					color: @gray;
 				}
 			}
 			& > span:last-child {
@@ -711,13 +642,13 @@ div.non-padded-alert div.alert {
 .header {
 	clear: both;
 	border-top: 5px solid @gray-light-2;
-	background: #f6f6f6;
-	background: -moz-linear-gradient(top,  #f6f6f6 0%, #ffffff 100%);
-	background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#f6f6f6), color-stop(100%,#ffffff));
-	background: -webkit-linear-gradient(top,  #f6f6f6 0%,#ffffff 100%);
-	background: -o-linear-gradient(top,  #f6f6f6 0%,#ffffff 100%);
-	background: -ms-linear-gradient(top,  #f6f6f6 0%,#ffffff 100%);
-	background: linear-gradient(to bottom,  #f6f6f6 0%,#ffffff 100%);
+	background: @gray-light-1;
+	background: -moz-linear-gradient(top,  @gray-light-1 0%, @white 100%);
+	background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,@gray-light-1), color-stop(100%,@white));
+	background: -webkit-linear-gradient(top,  @gray-light-1 0%,@white 100%);
+	background: -o-linear-gradient(top,  @gray-light-1 0%,@white 100%);
+	background: -ms-linear-gradient(top,  @gray-light-1 0%,@white 100%);
+	background: linear-gradient(to bottom,  @gray-light-1 0%, @white 100%);
 	min-height: 100px;
 	padding: 8px 0;
 	width: 100%;
@@ -786,9 +717,9 @@ div.non-padded-alert div.alert {
             display: flex;
             align-self: center;
             align-content: center;
-            border-color: #faebcc;
-            color: #8A6D3B;
-            background-color: #fcf8e3;
+            border-color: @orange-dark;
+            color: @orange-dark;
+            background-color: @orange-light;
             padding: 5px;
             border-radius: 4px;
             border: 1px solid;
@@ -889,4 +820,109 @@ span.mini-tab{
 		max-width: 500px;
 		max-height: 500px;
 	}
+}
+.pagination {
+	margin: 10px 0px;
+	li {
+		font-size: 12px;
+		border-color: @gray-dark-1;
+		background-color: @white;
+		padding: 4px 10px;
+		color: @blue-link;
+		border-top-style: solid;
+		border-top-width: 1px;
+		border-bottom-style: solid;
+		border-bottom-width: 1px;
+		border-right-style: solid;
+		border-right-width: 1px;
+		&:hover {
+			background-color: @gray-light-1;
+			a {
+				cursor: pointer;
+				text-decoration: none;
+			}
+		}
+		&.disabled {
+			color: @gray;
+			&:hover {
+				background-color: @white;
+				cursor: not-allowed;
+			}
+			a {
+				color: @gray;
+				cursor: not-allowed;
+				text-decoration: none;
+			}
+		}
+	}
+	li:first-child {
+		border-left-style: solid;
+		border-left-width: 1px;
+		border-top-left-radius: 4px;
+		border-bottom-left-radius: 4px;
+	}
+	li:last-child {
+		border-top-right-radius: 4px;
+		border-bottom-right-radius: 4px;
+	}	
+}
+
+.account-card {
+    border-radius: 5px;
+	cursor: pointer;
+    -moz-box-shadow: 3px 3px 5px 0px #ccc;
+    -webkit-box-shadow: 3px 3px 5px 0px #ccc;
+    box-shadow: 3px 3px 5px 0px #ccc;
+}
+
+.account-card-oa {
+	&:extend(.account-card);
+	background-color: #555;
+}
+
+.account-card-ou {
+	&:extend(.account-card);
+	background-color: #adadad;
+}
+
+.account-card-ta {
+	&:extend(.account-card);
+	background-color: #0065A2;
+}
+
+.account-card-ca {
+	&:extend(.account-card);
+	background-color: #a94442;
+}
+
+.account-card-internal {
+	margin-left: 15px;
+    width: 100%;
+    border-top-right-radius: 4px;
+	border-bottom-right-radius: 4px;
+	background-color: #eaeaea;
+	&:hover {
+		background-color: #cecece;
+	}
+}
+
+.account-card-selected {
+	background-color: #cecece;
+}
+
+.account-card-text {
+	padding: 20px 30px 20px 30px;
+	font-weight: bold;
+}
+
+.account-list-new {
+	padding-top: 15px;
+    margin-top: 30px;
+    color: #0088cc;
+    font-size: 18px;
+}
+
+.role-description {
+	font-size: 0.9em;
+    padding-top: 5px;
 }

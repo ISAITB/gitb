@@ -16,8 +16,8 @@
             </div>
         </div>
 		<div *ngSwitchCase="'confirm'">
-			<div class="container-fluid">
-				<div class="row">
+			<div class="row">
+				<div class="col-12">
 					<div class="alert-info rounded div-padded">
 						<span *ngIf="!hasMultipleChoices">A selected {{dataService.labelSpecificationLower()}} defines matching data. Select how the update should take place.</span>
 						<span *ngIf="hasMultipleChoices">A selected {{dataService.labelSpecificationsLower()}} define matching data. Select how the updates should take place.</span>

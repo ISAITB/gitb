@@ -36,10 +36,10 @@
         <table class="table">
             <thead>
                 <tr>
-                    <th>ID</th>
-                    <th>Name</th>
-                    <th *ngIf="showUpdateDefinition" class="th-min-centered">Update metadata?<app-tooltip [inline]="true" boundariesElement="window" tbTooltip="The test cases for which metadata (names, descriptions and documentation) shall be updated based on the information within the provided archive."></app-tooltip></th>
-                    <th *ngIf="showResetTestHistory" class="th-min-centered">Reset test history?<app-tooltip [inline]="true" boundariesElement="window" tbTooltip="The test cases for which the conformance testing status shall be reset and existing results considered obsolete."></app-tooltip></th>
+                    <th class="th-min-centered"><div class="d-flex align-items-center">ID</div></th>
+                    <th class="th-min-centered"><div class="d-flex align-items-center">Name</div></th>
+                    <th *ngIf="showUpdateDefinition" class="th-min-centered"><div class="d-flex align-items-center justify-content-center"><div>Update metadata?</div><div app-tooltip [inline]="true" boundariesElement="window" tbTooltip="The test cases for which metadata (names, descriptions and documentation) shall be updated based on the information within the provided archive."></div></div></th>
+                    <th *ngIf="showResetTestHistory" class="th-min-centered"><div class="d-flex align-items-center justify-content-center"><div>Reset test history?</div><div app-tooltip [inline]="true" boundariesElement="window" tbTooltip="The test cases for which the conformance testing status shall be reset and existing results considered obsolete."></div></div></th>
                 </tr>
             </thead>
             <tbody>

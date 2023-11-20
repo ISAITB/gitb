@@ -10,7 +10,7 @@
 		<link rel="stylesheet" href="api/theme/css">
 		<link rel="stylesheet" href='assets/build/styles.css?v=@config.resourceVersionNumber'>
 		<script type='text/javascript' src='webjars/jquery/3.6.4/jquery.min.js'></script>
-		<script type='text/javascript' src='webjars/bootstrap/4.6.2/js/bootstrap.min.js'></script>
+		<script type='text/javascript' src='webjars/bootstrap/4.6.2/js/bootstrap.bundle.min.js'></script>
 		<script type='text/javascript' src='assets/components/gitb-cookie-cleanup.js?v=@config.resourceVersionNumber'></script>
 		@if(config.initialSandboxRun) {
 		<script type='text/javascript' src='assets/components/gitb-init-sandbox.js?v=@config.resourceVersionNumber'></script>
@@ -32,7 +32,7 @@
 				<section class="page-top">
 					<div class="container">
 						<div class="row">
-							<div class="col-xs-12">
+							<div class="col-12">
 								<h2>Welcome to the Interoperability Test Bed</h2>
 							</div>
 						</div>
@@ -41,7 +41,7 @@
 				<div class="page-with-margins">
 					<div class="container">
 						<div class="row">
-							<div class="col-xs-12">
+							<div class="col-12">
 								<div class="welcome-text">@Html(config.welcomeText)</div>
 								<div style="padding-top:20px">
 									<div style="display:flex; align-items:center;">
@@ -62,7 +62,7 @@
 										</div>
 									</div>
 								</div>
-								<div class="bg-info div-rounded div-spaced div-padded">
+								<div class="alert-info rounded div-spaced div-padded">
 									@if(config.ssoEnabled) {
 									<p>To connect to the Test Bed you need to first authenticate using your EU Login account. If you are new to EU Login follow <a href="@config.euLoginUseGuideLink" target="blank">this tutorial</a> to get started.</p>
 									}
@@ -142,38 +142,44 @@
 						</div>
 						<form id="initForm" enctype="multipart/form-data" class="form-horizontal">
 							<div class="modal-body">
-								<div class="bg-info div-rounded div-padded bottom-margin">
+								<div class="alert-info rounded div-padded bottom-margin">
 									<span>Please provide the data archive and its password to initialise the Test Bed's configuration. If you would prefer to proceed with an empty installation close this dialog and make an initial login.</span>
 								</div>
 								<div id="initFormAlerts"></div>
-								<div class="form-group">
-									<label class="col-xs-3 control-label">* Data archive:</label>
-									<div class="col-xs-7">
+								<div class="form-group row">
+									<label class="col-3 col-form-label text-right">* Data archive:</label>
+									<div class="col-7">
 										<div class="input-group">
-											<div class="input-group-btn">
-												<button id="fileInputButton" class="btn btn-default" type="button"><i class="fa-regular fa-folder-open"></i></button>
-											</div>
 											<input id="fileInputText" type="text" class="form-control clickable" placeholder="Select data archive ..." readonly="readonly"/>
+											<div class="input-group-append">
+												<button id="fileInputButton" class="btn btn-secondary" type="button"><i class="fa-regular fa-folder-open"></i></button>
+											</div>
 										</div>
 										<input id="fileInputControl" name="file" type="file" style="display: none" />
 									</div>
-									<div class="form-control-static"><span data-toggle="tooltip" class="check" title="The archive containing the data to import."><i class="fa-solid fa-question-circle"></i></span></div>
+									<div>
+										<div class="form-control-plaintext"><span data-toggle="tooltip" class="check" title="The archive containing the data to import."><i class="fa-solid fa-question-circle"></i></span></div>
+									</div>
 								</div>
-								<div class="form-group">
-									<label class="col-xs-3 control-label" for="encryptionPassword">* Archive password:</label>
-									<div class="col-xs-6 inline-checkbox-container">
+								<div class="form-group row align-items-center">
+									<label class="col-3 col-form-label text-right" for="encryptionPassword">* Archive password:</label>
+									<div class="col-6 inline-checkbox-container">
 										<input id="encryptionPasswordVisible" name="passwordVisible" type="text" class="form-control"/>
 										<input id="encryptionPassword" name="passwordHidden" type="password" class="form-control"/>
-										<label class="inline-checkbox">
-											<input id="encryptionPasswordCheck" type="checkbox" class="checkinput">Show
-											<div class="inline-tooltip"><div class="check"><span data-toggle="tooltip" class="check" title="Provide the password that was used to encrypt the data archive."><i class="fa-solid fa-question-circle"></i></span></div></div>
-										</label>
+									</div>
+									<div class="col-auto">
+										<div class="form-check">
+											<input class="form-check-input" id="encryptionPasswordCheck" type="checkbox">
+											<label class="form-check-label" for="encryptionPasswordCheck">Show
+												<div class="inline-tooltip"><div class="check"><span data-toggle="tooltip" class="check" title="Provide the password that was used to encrypt the data archive."><i class="fa-solid fa-question-circle"></i></span></div></div>
+											</label>
+										</div>
 									</div>
 								</div>
 							</div>
 							<div class="modal-footer">
-								<button id="buttonImport" type="submit" class="btn btn-default"><span id="initDataSpinner" class="tab"><i class="fa-solid fa-spinner fa-spin-override fa-lg"></i></span>Import archive</button>
-								<button id="buttonNoImport" type="button" class="btn btn-default">Close</button>
+								<button id="buttonNoImport" type="button" class="btn btn-secondary">Close</button>
+								<button id="buttonImport" type="submit" class="btn btn-secondary"><span id="initDataSpinner" class="tab"><i class="fa-solid fa-spinner fa-spin-override fa-lg"></i></span>Import archive</button>
 							</div>
 						</form>
 					</div>

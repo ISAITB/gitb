@@ -53,10 +53,12 @@
             <div class="col-7"><input id="value" name="value" [(ngModel)]="domainParameter.value" class="form-control" type="text" autocomplete="off"/></div>
             <app-tooltip tbTooltip="The value to consider for this parameter."></app-tooltip>
         </div>
-        <div class="form-group row" *ngIf="domainParameter.kind == 'HIDDEN' && formData.showUpdateValue">
-            <label class="col-3 col-form-label text-right" for="domain-parameter-checkbox">Update value?</label>
+        <div class="form-group row pt-1" *ngIf="domainParameter.kind == 'HIDDEN' && formData.showUpdateValue">
+            <label class="col-3 col-form-label text-right pt-0" for="domain-parameter-checkbox">Update value?</label>
             <div class="col-7">
-                <input id="domain-parameter-checkbox" name="updateValue" [(ngModel)]="formData.updateValue" type="checkbox" class="form-check"/>
+                <div class="form-check">
+                    <input class="form-check-input" id="domain-parameter-checkbox" name="updateValue" [(ngModel)]="formData.updateValue" type="checkbox"/>
+                </div>
             </div>
         </div>
         <div class="form-group row" *ngIf="domainParameter.kind == 'HIDDEN' && (!domainParameter.id || formData.updateValue)">

@@ -168,13 +168,19 @@ export class CommunityPropertiesComponent implements OnInit {
     })
   }
 
-  movePropertyUp<T extends CustomProperty>(properties: T[], disabledFlag: {value: boolean}, index: number) {
+  movePropertyUp<T extends CustomProperty>(properties: T[], disabledFlag: {value: boolean}, index: number, event: UIEvent) {
+    if (event.currentTarget && (event.currentTarget as any).blur) {
+      (event.currentTarget as any).blur()
+    }    
     const item = properties.splice(index, 1)[0]
     disabledFlag.value = false
     properties.splice(index-1, 0, item)
   }
 
-  movePropertyDown<T extends CustomProperty>(properties: T[], disabledFlag: {value: boolean}, index: number) {
+  movePropertyDown<T extends CustomProperty>(properties: T[], disabledFlag: {value: boolean}, index: number, event: UIEvent) {
+    if (event.currentTarget && (event.currentTarget as any).blur) {
+      (event.currentTarget as any).blur()
+    }    
     const item = properties.splice(index, 1)[0]
     disabledFlag.value = false
     properties.splice(index+1, 0, item)

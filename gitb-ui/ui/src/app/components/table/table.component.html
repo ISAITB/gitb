@@ -57,7 +57,7 @@
         </tbody>
     </table>
     <div *ngIf="(!prevDisabled || !nextDisabled) && data && data.length > 0" class="text-center table-paging-controls">
-        <ul class="pagination pagination-sm" [class.disable-events]="contentRefreshing">
+        <ul class="pagination" [class.disable-events]="contentRefreshing">
             <li [class.disabled]="prevDisabled"><a href (click)="doFirstPage();$event.preventDefault()">First</a></li>
             <li [class.disabled]="prevDisabled"><a href (click)="doPrevPage();$event.preventDefault()">Previous</a></li>
             <li [class.disabled]="nextDisabled"><a href (click)="doNextPage();$event.preventDefault()">Next</a></li>

@@ -218,9 +218,7 @@ tr.test-result-obsolete {
 .form-separator-popup {
 	border-bottom: 1px solid #e5e5e5;
     margin-bottom: 20px;
-    margin-left: 40px;
     margin-top: 20px;
-	margin-right: 40px;
 
 	&.selfreg {
 		margin-top: 3px;
@@ -490,10 +488,6 @@ div.import-item-root {
 .min-width {
 	width: 1px !important;
 }
-table > tbody > tr > td.btn-stacked-container {
-	vertical-align: middle;
-	width: 1px;
-}
 .btn-stacked {
 	.btn-xs {
 		width: 40px;
@@ -510,8 +504,8 @@ table.table {
 				justify-content: center;
 			}
 			td.btn-stacked-container > div {
-				display: grid;
-				display: -ms-grid;
+				display: flex;
+				align-items: center;
 			}
 			td > div {
 				display: flex;

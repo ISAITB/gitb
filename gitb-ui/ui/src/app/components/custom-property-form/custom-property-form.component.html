@@ -31,7 +31,7 @@
                 </ng-container>
                 <ng-container *ngSwitchCase="'SECRET'">
                   <div [ngClass]="'col-'+(11-tbColLabel-tbColInputLess)" [ngSwitch]="isReadonly || (property.adminOnly && !isAdmin)">
-                    <div *ngSwitchCase="true" class="form-control-plaintext">{{property.configured?'*****':''}}<span *ngIf="property.desc" class="ml-2" [tooltip]="property.desc" [containerClass]="'tooltipContainer'"><i class="fa-solid fa-question-circle"></i></span></div>
+                    <div *ngSwitchCase="true" class="form-control-plaintext">{{property.configured?'*****':''}}<span *ngIf="property.desc" [class.ml-2]="property.configured" [tooltip]="property.desc" [containerClass]="'tooltipContainer'"><i class="fa-solid fa-question-circle"></i></span></div>
                     <div *ngSwitchDefault class="form-inline">
                       <div class="form-check">
                         <input class="form-check-input" type="checkbox" [attr.id]="'update-'+property.id" name="{{'prop-update-'+property.id}}" [(ngModel)]="property.changeValue" (change)="editSecret(property)">

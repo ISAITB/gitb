@@ -71,11 +71,17 @@ export class DomainSpecificationDisplayComponent implements OnInit {
       || (this.spec.copyPending != undefined && this.spec.copyPending)
   }
 
-  doMoveUp() {
+  doMoveUp(event: UIEvent) {
+    if (event.currentTarget && (event.currentTarget as any).blur) {
+      (event.currentTarget as any).blur()
+    }
     this.propagateUp(this.spec)
   }
 
-  doMoveDown() {
+  doMoveDown(event: UIEvent) {
+    if (event.currentTarget && (event.currentTarget as any).blur) {
+      (event.currentTarget as any).blur()
+    }
     this.propagateDown(this.spec)
   }
 

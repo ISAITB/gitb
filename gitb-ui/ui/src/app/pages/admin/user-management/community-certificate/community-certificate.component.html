@@ -116,10 +116,12 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="form-group row" *ngIf="settings.passwordsSet">
-                                <label class="col-3 col-form-label text-right" for="change-passwords">Change passwords?</label>
+                            <div class="form-group row pt-1" *ngIf="settings.passwordsSet">
+                                <label class="col-3 col-form-label text-right pt-0" for="change-passwords">Change passwords?</label>
                                 <div class="col-8">
-                                    <input id="change-passwords" name="changePasswords" [(ngModel)]="updatePasswords" type="checkbox" class="form-check"/>
+                                    <div class="form-check">
+                                        <input class="form-check-input" id="change-passwords" name="changePasswords" [(ngModel)]="updatePasswords" type="checkbox"/>
+                                    </div>
                                 </div>
                             </div>
                             <div [collapse]="!updatePasswords" [isAnimated]="true">

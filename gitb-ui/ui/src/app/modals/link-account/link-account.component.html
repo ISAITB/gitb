@@ -30,7 +30,7 @@
 					<span *ngIf="linkedAccounts.length == 0">There are no unconfirmed roles currently assigned to you.</span>
 				</div>
 			</div>
-			<div class="container-fluid" style="margin-left: 40px;margin-right: 40px;">
+			<div class="container-fluid">
 				<div class="row" [ngClass]="{'div-spaced-small': !first, 'account-card-ou': account.role == Constants.USER_ROLE.VENDOR_USER, 'account-card-oa': account.role == Constants.USER_ROLE.VENDOR_ADMIN, 'account-card-ca': account.role == Constants.USER_ROLE.COMMUNITY_ADMIN, 'account-card-ta': account.role == Constants.USER_ROLE.SYSTEM_ADMIN}" *ngFor="let account of linkedAccounts; let first = first">
 					<div class="account-card-internal" [ngClass]="{'account-card-selected': selectedAccountId == account.id}" (click)="selectAccount(account.id)">
 						<div class="account-card-text">
