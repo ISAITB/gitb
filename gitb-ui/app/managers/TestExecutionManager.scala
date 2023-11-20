@@ -473,7 +473,7 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
         }
       } catch {
         case e: Exception =>
-          if (reportData._2.archived) {
+          if (reportData != null && reportData._2 != null && reportData._2.archived) {
             FileUtils.deleteQuietly(reportData._2.path.toFile)
           }
           throw e
@@ -512,7 +512,7 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
           }
         } catch {
           case e: Exception =>
-            if (reportData._2.archived) {
+            if (reportData != null && reportData._2 != null && reportData._2.archived) {
               FileUtils.deleteQuietly(reportData._2.path.toFile)
             }
             throw e
