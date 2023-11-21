@@ -76,9 +76,7 @@
             <div class="filterValue">
               <div class="input-group">
                 <input class="form-control pointer" bsDaterangepicker [(ngModel)]="startDateModel" [bsConfig]="datePickerSettings" (bsValueChange)="applyTimeFiltering()" readonly="readonly">
-                <div class="input-group-append">
-                  <button class="btn btn-secondary" type="button" (click)="clearStartRange()" [disabled]="startDateModel == undefined" containerClass="shortTooltip" tooltip="Clear" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-times" [ngClass]="{'faded': startDateModel == undefined}"></i></button>
-                </div>
+                <button class="btn btn-secondary" type="button" (click)="clearStartRange()" [disabled]="startDateModel == undefined" containerClass="shortTooltip" tooltip="Clear" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-times" [ngClass]="{'faded': startDateModel == undefined}"></i></button>
               </div>
             </div>
           </div>
@@ -87,9 +85,7 @@
             <div class="filterValue">
               <div class="input-group">
                 <input class="form-control pointer" bsDaterangepicker [(ngModel)]="endDateModel" [bsConfig]="datePickerSettings" (bsValueChange)="applyTimeFiltering()" readonly="readonly">
-                <div class="input-group-append">
-                  <button class="btn btn-secondary" type="button" (click)="clearEndRange()" [disabled]="endDateModel == undefined" containerClass="shortTooltip" tooltip="Clear" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-times" [ngClass]="{'faded': endDateModel == undefined}"></i></button>
-                </div>
+                <button class="btn btn-secondary" type="button" (click)="clearEndRange()" [disabled]="endDateModel == undefined" containerClass="shortTooltip" tooltip="Clear" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-times" [ngClass]="{'faded': endDateModel == undefined}"></i></button>
               </div>
             </div>
           </div>

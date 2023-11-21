@@ -3,8 +3,8 @@
 </div>
 <form>
     <div class="modal-body">
-        <div class="form-group row">
-            <label class="col-3 col-form-label text-right" for="name">* Resource:</label>
+        <div class="row mb-3">
+            <label class="col-3 col-form-label text-end" for="name">* Resource:</label>
             <div class="col-7">
                 <app-file-select id="name" placeholder="Select ZIP archive ..."
                     [fileName]="file?.name"
@@ -13,21 +13,21 @@
                     [maxSize]="-1">
                 </app-file-select>
             </div>
-            <app-tooltip tbTooltip="The ZIP archive containing the resources to make available. The archive should directly contain the resources to upload, without containing or contained directories."></app-tooltip>
+            <div app-tooltip class="col-auto" tbTooltip="The ZIP archive containing the resources to make available. The archive should directly contain the resources to upload, without containing or contained directories."></div>
         </div>
-        <div class="form-group row pt-1">
-            <legend class="col-3 col-form-label text-right pt-0">Update approach:</legend>
+        <div class="row mb-3 pt-1">
+            <legend class="col-3 col-form-label text-end pt-0">Update approach:</legend>
             <div class="col-8">
-                <div class="form-check-inline">
+                <div class="form-check form-check-inline">
                     <input class="form-check-input" type="radio" id="updateMatching" name="updateMatching" [(ngModel)]="updateMatching" id="updateMatching_1" [value]="true">
                     <label class="form-check-label" for="updateMatching">Replace matching resources
-                        <app-tooltip [inline]="true" inlineType="checkLabel" tbTooltip="Uploaded files matching existing resources will update the existing ones."></app-tooltip>
+                        <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" tbTooltip="Uploaded files matching existing resources will update the existing ones."></div>
                     </label>
                 </div>
-                <div class="form-check-inline">
+                <div class="form-check form-check-inline">
                     <input class="form-check-input" type="radio" id="keepMatching" name="keepMatching" [(ngModel)]="updateMatching" id="updateMatching_2" [value]="false">
                     <label class="form-check-label" for="keepMatching">Keep matching resources
-                        <app-tooltip [inline]="true" inlineType="checkLabel" tbTooltip="Uploaded files matching existing resources will be added as new resources, without updating the existing ones."></app-tooltip>
+                        <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" tbTooltip="Uploaded files matching existing resources will be added as new resources, without updating the existing ones."></div>
                     </label>
                 </div>
             </div>

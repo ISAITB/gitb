@@ -12,7 +12,7 @@
           <ng-container *ngSwitchDefault>
             <ng-container [ngSwitch]="items.length == 0">
               <div *ngSwitchCase="true">
-                <div class="alert-info rounded div-padded" [ngSwitch]="hasOtherStatements">
+                <div class="alert alert-info rounded div-padded" [ngSwitch]="hasOtherStatements">
                   <span *ngSwitchCase="true">All available conformance statements are already created.</span>
                   <span *ngSwitchDefault>There are currently no conformance statements available to create.</span>
                 </div>

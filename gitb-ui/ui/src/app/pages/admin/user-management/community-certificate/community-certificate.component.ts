@@ -16,8 +16,7 @@ import { KeyValue } from 'src/app/types/key-value';
 
 @Component({
   selector: 'app-community-certificate',
-  templateUrl: './community-certificate.component.html',
-  styleUrls: [ './community-certificate.component.less' ]
+  templateUrl: './community-certificate.component.html'
 })
 export class CommunityCertificateComponent extends BaseComponent implements OnInit, AfterViewInit {
 

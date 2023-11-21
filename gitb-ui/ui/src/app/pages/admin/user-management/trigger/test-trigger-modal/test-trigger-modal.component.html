@@ -11,7 +11,7 @@
 <div class="modal-body">
     <ng-container [ngSwitch]="editStep">
         <ng-container *ngSwitchCase="true">
-            <div class="alert-info rounded div-padded bottom-margin">
+            <div class="alert alert-info rounded div-padded bottom-margin">
                 <span>This is a sample payload based on the configured input data which you may edit and use to call the service to test its operation. If this call results in the service returning output data, it will be displayed but not used for actual updates.</span>
             </div>
             <div class="editor editor-normal" [class.disable-events]="actionPending">
@@ -21,7 +21,7 @@
         <ng-container *ngSwitchDefault>
             <ng-container [ngSwitch]="responseSuccess">
                 <ng-container *ngSwitchCase="true">
-                    <div class="alert-success rounded div-padded bottom-margin">
+                    <div class="alert alert-success rounded div-padded bottom-margin">
                         <span>The service call succeeded and produced the following output. Any output data returned was not used for actual updates.</span>
                     </div>
                     <div class="editor editor-normal">
@@ -29,7 +29,7 @@
                     </div>
                 </ng-container>
                 <ng-container *ngSwitchDefault>
-                    <div class="alert-danger rounded div-padded bottom-margin">
+                    <div class="alert alert-danger rounded div-padded bottom-margin">
                         <span>The service call failed. The errors raised during the call are listed below.</span>
                     </div>
                     <div class="editor editor-short">

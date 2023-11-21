@@ -20,11 +20,29 @@ body {
 	}
 }
 
+// TODO - to remove once ngx-bootstrap is upgraded - START
+.popover {
+	position: absolute;
+	top: 0;
+	left: 0;
+}
+.popover-arrow {
+	position: absolute;
+}
+.tooltip {
+	position: absolute;
+}
+	
+.tooltip-arrow {
+	position: absolute;
+}
+// TODO - to remove once ngx-bootstrap is upgraded - END
+
 .card {
 	margin-bottom: 20px;
 }
 
-.btn, .form-control, .dropdown-menu, .form-control-plaintext {
+.btn, .form-control, .dropdown-menu, .form-control-plaintext, .input-group-text {
 	font-size: 14px; // TODO: see if this can be set via bootstrap customisation
 }
 
@@ -44,7 +62,7 @@ body {
 			padding: 2px 12px;
 		}
 	}
-	&>.btn, &>.btn-group, &>.input-group, &.btn-toolbar {
+	&>.btn, &>.btn-group, &>.input-group, &>.btn-toolbar {
 		margin-left: 5px;
 		&:first-child {
 			margin-left: 0px;
@@ -205,42 +223,14 @@ a.scroll-to-top.visible {
 }
 
 .table-paging-controls {
-	border-top: 2px solid @gray-dark-1;
+	border-top: 1px solid @gray-dark-1;
 	display: flex;
 	justify-content: center;
-}
-
-table.expandable-table {
-	th {
-		background-color: @white;
-	}
-	tr {
-		background-color: @gray-light-1;
-	}
-	.card {
-		margin-bottom: 0px;
-		.card-header {
-			background-color: @white;
-    		color: @gray;
-			&.session-table-title.clickable:hover {
-				cursor: pointer;
-				background-color: @white-hover;
-			}
-		}
-		.card-footer {
-			background-color: @white;
-		}
-	}
-}
-
-.card-header > .session-table-title {
-	color: @gray;
 }
 
 .session-table-title {
 	padding: 0px 15px;
 	display: flex;
-	color: @gray;
 	.session-table-title-part {
 		display: inline-flex;
 		border-left: 1px solid @gray-dark-1;
@@ -263,22 +253,6 @@ table.expandable-table {
 			display: inline-flex;
 			align-items: center;
 		}
-	}
-}
-
-table tbody tr.expandable-table-row-collapsed {
-	&:hover {
-		background-color: @gray-highlight;
-		+ .expandable-table-row-expanded > td.expandable-table-expandable-cell {
-			background-color: @gray-highlight;
-		}
-	}
-	td {
-		cursor: pointer;
-	}
-	td:last-child {
-		padding-top: 8px;
-		padding-bottom: 8px;
 	}
 }
 
@@ -354,8 +328,60 @@ table.table-directive {
 	}
 }
 
+div.collapsing-div {
+	margin: 8px;
+}
+
+table.table tr th {
+	border-bottom: 2px solid @gray-dark-1;
+}
+
+table.expandable-table {
+	th {
+		background-color: @white;
+	}
+	td {
+		background-color: @gray-light-1;
+	}
+	.card {
+		margin-bottom: 0px;
+		.card-header {
+			background-color: @white;
+			&.session-table-title.clickable:hover {
+				cursor: pointer;
+				background-color: @white-hover;
+			}
+		}
+		.card-footer {
+			background-color: @white;
+		}
+	}
+}
+
+table tbody tr.expandable-table-row-collapsed {
+	&:hover {
+		td {
+			background-color: @gray-highlight;
+		}
+		+ .expandable-table-row-expanded > td.expandable-table-expandable-cell {
+			background-color: @gray-highlight;
+		}
+	}
+	td {
+		border-top-width: 1px;
+		border-bottom-width: 0px;
+		cursor: pointer;
+	}
+	td:last-child {
+		padding-top: 8px;
+		padding-bottom: 8px;
+	}
+}
+
 table tbody tr.expandable-table-row-expanded {
 	& > td {
+		border-top-width: 0px;
+		border-bottom-width: 1px;
 		padding-top: 0px;
 		padding-bottom: 0px;
 		&.expandable-table-expandable-cell {
@@ -367,50 +393,47 @@ table tbody tr.expandable-table-row-expanded {
 			}
 		}
 	}
-	& >td {
+	& > td {
 		border-top: 0px solid @gray-dark-1;
 	}
 }
-div.collapsing-div {
-	margin: 8px;
-}
 
-tr.expandable-table-row-expanded table.expandable-table {
-	tr:first-child {
-		border-top: 1px solid @gray-dark-1;
-	}
-	tr:last-child {
-		border-bottom: 1px solid @gray-dark-1;
-	}
-	th {
-		background-color: @white;
-		padding: 8px;
-	}
-	th:first-child {
-		border-left: 1px solid @gray-dark-1;
-	}
-	th:last-child {
-		border-right: 1px solid @gray-dark-1;
-	}
-	td {
-		border-top: 1px solid @gray-dark-1;
-		background-color: @white;
-		padding-top: 15px;
-		padding-bottom: 15px;
-	}
-	td:first-child {
-		border-left: 1px solid @gray-dark-1;
-	}
-	td:last-child {
-		border-right: 1px solid @gray-dark-1;
-		padding-top: 8px;
-		padding-bottom: 8px;
-	}
+tr.expandable-table-row-expanded {
+	// tr:first-child {
+	// 	border-top: 1px solid @gray-dark-1;
+	// }
+	// tr:last-child {
+	// 	border-bottom: 1px solid @gray-dark-1;
+	// }
+	// th {
+	// 	background-color: @white;
+	// 	padding: 8px;
+	// }
+	// th:first-child {
+	// 	border-left: 1px solid @gray-dark-1;
+	// }
+	// th:last-child {
+	// 	border-right: 1px solid @gray-dark-1;
+	// }
+	// td {
+	// 	border-top: 1px solid @gray-dark-1;
+	// 	background-color: @white;
+	// 	padding-top: 15px;
+	// 	padding-bottom: 15px;
+	// }
+	// td:first-child {
+	// 	border-left: 1px solid @gray-dark-1;
+	// }
+	// td:last-child {
+	// 	border-right: 1px solid @gray-dark-1;
+	// 	padding-top: 8px;
+	// 	padding-bottom: 8px;
+	// }
 }
 
 .self-reg-option-table {
 	border:1px solid @gray-light;
-	border-radius: 5px;
+	border-radius: @border-radius;
 	margin-bottom: 20px;
 }
 
@@ -499,7 +522,7 @@ tr.expandable-table-row-expanded table.expandable-table {
 			&.notification-item {
 				display: flex;
 				border: 1px solid transparent;
-				border-radius: 4px;
+				border-radius: @border-radius;
 				box-shadow: 2px 2px 5px 0px rgba(0,0,0,0.50);
 				-webkit-box-shadow: 2px 2px 5px 0px rgba(0,0,0,0.50);
 				-moz-box-shadow: 2px 2px 5px 0px rgba(0,0,0,0.50);
@@ -721,7 +744,7 @@ div.non-padded-alert div.alert {
             color: @orange-dark;
             background-color: @orange-light;
             padding: 5px;
-            border-radius: 4px;
+            border-radius: @border-radius;
             border: 1px solid;
             font-weight: bold;
             white-space: nowrap;
@@ -736,7 +759,7 @@ div.non-padded-alert div.alert {
 .nav-item.tabClass {
 	&:not(.active) {
 		.nav-link {
-			border-radius: 4px 4px 0px 0px;
+			border-radius: @border-radius @border-radius 0px 0px;
 			border-top: 1px solid @gray-dark-1;
 			border-left: 1px solid @gray-dark-1;
 			border-right: 1px solid @gray-dark-1;
@@ -835,6 +858,9 @@ span.mini-tab{
 		border-bottom-width: 1px;
 		border-right-style: solid;
 		border-right-width: 1px;
+		a {
+			text-decoration: none;
+		}
 		&:hover {
 			background-color: @gray-light-1;
 			a {
@@ -868,7 +894,7 @@ span.mini-tab{
 }
 
 .account-card {
-    border-radius: 5px;
+    border-radius: @border-radius;
 	cursor: pointer;
     -moz-box-shadow: 3px 3px 5px 0px #ccc;
     -webkit-box-shadow: 3px 3px 5px 0px #ccc;

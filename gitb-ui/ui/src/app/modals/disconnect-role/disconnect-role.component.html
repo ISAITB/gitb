@@ -3,35 +3,35 @@
 </div>
 <form>
     <div class="modal-body">
-        <div class="form-group row pt-1">
-            <legend class="col-5 col-form-label text-right pt-0">* Select how to proceed:</legend>
+        <div class="row mb-3 pt-1">
+            <legend class="col-5 col-form-label text-end pt-0">* Select how to proceed:</legend>
             <div class="col-7">
                 <div class="form-check pb-2">
                     <input class="form-check-input" type="radio" [(ngModel)]="choice" name="choice" id="choice_partial" [value]="Constants.DISCONNECT_ROLE_OPTION.CURRENT_PARTIAL">
                     <label class="form-check-label" for="choice_partial">Deactivate current role
-                        <app-tooltip [inline]="true" inlineType="checkLabelText" [tbTooltip]="'The current role will be disconnected from your EU Login account but can be linked to it again if you choose to do so.'"></app-tooltip>
+                        <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" [tbTooltip]="'The current role will be disconnected from your EU Login account but can be linked to it again if you choose to do so.'"></div>
                     </label>
                 </div>
                 <div class="form-check pb-2" *ngIf="!dataService.isSystemAdmin">
                     <input class="form-check-input" type="radio" [(ngModel)]="choice" name="choice" id="choice_full" [value]="Constants.DISCONNECT_ROLE_OPTION.CURRENT_FULL">                    
                     <label class="form-check-label" for="choice_full">Delete current role
-                        <app-tooltip [inline]="true" inlineType="checkLabelText" [tbTooltip]="'The current role will be permanently removed from your EU Login account.'"></app-tooltip>
+                        <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" [tbTooltip]="'The current role will be permanently removed from your EU Login account.'"></div>
                     </label>
                 </div>
                 <div class="form-check pb-2">
                     <input class="form-check-input" type="radio" [(ngModel)]="choice" name="choice" id="choice_all" [value]="Constants.DISCONNECT_ROLE_OPTION.ALL">
                     <ng-container [ngSwitch]="dataService.isSystemAdmin">
                         <label *ngSwitchCase="true" class="form-check-label" for="choice_all">Delete all other roles
-                            <app-tooltip [inline]="true" inlineType="checkLabelText" [tbTooltip]="'All other roles linked to your EU Login account (active and inactive) will be permanently removed.'"></app-tooltip>
+                            <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" [tbTooltip]="'All other roles linked to your EU Login account (active and inactive) will be permanently removed.'"></div>
                         </label>
                         <label *ngSwitchDefault class="form-check-label" for="choice_all">Delete all roles
-                            <app-tooltip [inline]="true" inlineType="checkLabelText" [tbTooltip]="'All Test Bed roles linked to your EU Login account (active and inactive) will be permanently removed.'"></app-tooltip>
+                            <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" [tbTooltip]="'All Test Bed roles linked to your EU Login account (active and inactive) will be permanently removed.'"></div>
                         </label>
                     </ng-container>
                 </div>
             </div>
         </div>
-        <div class="alert-info rounded div-padded">
+        <div class="alert alert-info rounded div-padded">
             <b>Privacy note:</b> Option <i>"Delete all <span *ngIf="dataService.isSystemAdmin">other </span>roles"</i> removes all your recorded information<span *ngIf="dataService.isSystemAdmin"> except for your administrator account</span>. This does not affect or remove your conformance testing history.
         </div>
     </div>

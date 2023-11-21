@@ -21,11 +21,11 @@ table th.sortable {
 	tbody {
 		tr {
 			&.selectable {
-				&:hover {
+				&:hover, &:hover td {
 					cursor: pointer;
 					background-color: @gray-highlight;
 				}
-				&.selected {
+				&.selected, &:hover td {
 					background-color: @gray-highlight;
 				}
 			}
@@ -190,7 +190,7 @@ tr.test-result-obsolete {
 .parameter-div {
 	border: 1px solid;
     border-color: #ddd;
-	border-radius: 3px;
+	border-radius: @border-radius;
     margin-bottom: 5px;
     margin-top: 5px;
 }
@@ -202,7 +202,7 @@ tr.test-result-obsolete {
 	&.expandable {
 		cursor: pointer;
 		display: flex;
-		border-radius: 4px 4px 0px 0px;
+		border-radius: @border-radius @border-radius 0px 0px;
 		&:hover {
 			background-color: @white-hover;
 		}
@@ -227,7 +227,7 @@ tr.test-result-obsolete {
 	&.expandable {
 		cursor: pointer;
 		display: flex;
-		border-radius: 4px 4px 0px 0px;
+		border-radius: @border-radius @border-radius 0px 0px;
 		&:hover {
 			background-color: @white-hover;
 		}
@@ -305,12 +305,11 @@ th.sortableHeader {
 @item-color-hover: @item-color-dark;
 
 div.import-item {
-	// padding-left:15px;
 	display: table;
 	width: 100%;
-	border-radius: 5px;
-    border-bottom-right-radius: 5px;
-    border-top-right-radius: 5px;
+	border-radius: @border-radius;
+    border-bottom-right-radius: @border-radius;
+    border-top-right-radius: @border-radius;
 	&:hover {
 		cursor: default;
 	}
@@ -395,7 +394,7 @@ div.title-action {
 	.control {
 		padding: 6px 12px;
 		border: 1px solid #ccc;
-		border-radius: 4px;
+		border-radius: @border-radius;
 		font-size: 12px;
 		width: 200px;
 	}
@@ -409,11 +408,11 @@ div.import-item-group {
 	div.import-item-group-label {
 		min-height: 50px;
 		padding: 10px;
-		border-radius: 5px;
+		border-radius: @border-radius;
 		border: 1px solid @item-color-border;
 		&.open {
-			border-top-left-radius: 5px;
-			border-top-right-radius: 5px;
+			border-top-left-radius: @border-radius;
+			border-top-right-radius: @border-radius;
 			border-bottom-left-radius: 0px;
 			border-bottom-right-radius: 0px;
 			border-top: 1px solid @item-color-border;
@@ -447,7 +446,7 @@ div.import-item-root {
 		}
 		& > div.import-item-group {
 			padding-bottom: 0px;
-			border-radius: 5px;
+			border-radius: @border-radius;
 		}
 	}
 }
@@ -470,15 +469,9 @@ div.import-item-root {
 	margin: 0px !important;
 }
 
-.status-display {
-    font-weight: bold;
-	border-radius: 5px;
-	text-align: center;
-}
-
 .form-table {
 	border: 1px solid @gray-dark-1;
-	border-radius: 5px;
+	border-radius: @border-radius;
 	margin-bottom: 10px;
 	table.table {
 		margin-bottom: 0px;

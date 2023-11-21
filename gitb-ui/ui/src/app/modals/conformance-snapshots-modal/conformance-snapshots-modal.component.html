@@ -3,15 +3,15 @@
 </div>
 <form>
     <div class="modal-body" [ngSwitch]="editMode">
-        <div class="form-group row" *ngSwitchCase="true">
-            <label class="col-3 col-form-label text-right" for="label">Snapshot label:</label>
+        <div class="row mb-3" *ngSwitchCase="true">
+            <label class="col-3 col-form-label text-end" for="label">Snapshot label:</label>
             <div class="col-8">
                 <input id="label" name="label" [(ngModel)]="snapshotToEdit!.label" class="form-control" type="text">
             </div>
-            <app-tooltip tbTooltip="A label to help in distinguishing and referring to the snapshot."></app-tooltip>
+            <div app-tooltip class="col-auto" tbTooltip="A label to help in distinguishing and referring to the snapshot."></div>
         </div>
         <ng-container *ngSwitchDefault>
-            <div class="alert-info rounded div-padded">
+            <div class="alert alert-info rounded div-padded">
                 <span>Select the snapshot to view in the conformance dashboard.</span>
             </div>
             <div class="searchControls">

@@ -10,22 +10,22 @@
                 <!-- legal notice form -->
                 <div class="row">
                     <div class="col-10 offset-1">
-                        <div class="form-group row">
-                            <label class="col-3 col-form-label text-right" for="name">* Name:</label>
+                        <div class="row mb-3">
+                            <label class="col-3 col-form-label text-end" for="name">* Name:</label>
                             <div class="col-8"><input id="name" name="name" [(ngModel)]="notice.name" class="form-control" type="text"></div>
-                            <app-tooltip tbTooltip="The name of the legal notice that will identify it and be displayed in selection lists."></app-tooltip>
+                            <div app-tooltip class="col-auto" tbTooltip="The name of the legal notice that will identify it and be displayed in selection lists."></div>
                         </div>
-                        <div class="form-group row">
-                            <label class="col-3 col-form-label text-right" for="description">Description:</label>
+                        <div class="row mb-3">
+                            <label class="col-3 col-form-label text-end" for="description">Description:</label>
                             <div class="col-8"><textarea id="description" name="description" [(ngModel)]="notice.description" class="form-control"></textarea></div>
-                            <app-tooltip tbTooltip="A description that will be visible only to administrators to help distinguish this legal notice and summarise its purpose."></app-tooltip>
+                            <div app-tooltip class="col-auto" tbTooltip="A description that will be visible only to administrators to help distinguish this legal notice and summarise its purpose."></div>
                         </div>
-                        <div class="form-group row pt-1">
-                            <label class="col-3 col-form-label text-right pt-0" for="default">Default:</label>
+                        <div class="row mb-3 pt-1">
+                            <label class="col-3 col-form-label text-end pt-0" for="default">Default:</label>
                             <div class="col-8">
                                 <div class="form-check">
                                     <input class="form-check-input" id="default" name="default" [(ngModel)]="notice.default" [disabled]="isDefault" type="checkbox">
-                                    <app-tooltip [inline]="true" [tbTooltip]="tooltipForDefaultCheck"></app-tooltip>
+                                    <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [tbTooltip]="tooltipForDefaultCheck"></div>
                                 </div>
                             </div>
                         </div>

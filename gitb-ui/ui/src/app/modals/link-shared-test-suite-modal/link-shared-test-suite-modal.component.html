@@ -4,21 +4,21 @@
 <div class="modal-body">
 	<form [ngSwitch]="step">
 		<div *ngSwitchCase="'select'">
-            <div class="form-group row" *ngIf="availableSpecifications">
-                <label class="col-3 col-form-label text-right" for="specification">* Target {{dataService.labelSpecificationLower()}}:</label>
+            <div class="row mb-3" *ngIf="availableSpecifications">
+                <label class="col-3 col-form-label text-end" for="specification">* Target {{dataService.labelSpecificationLower()}}:</label>
                 <div class="col-8">
                     <input *ngIf="availableSpecifications.length == 1" class="form-control" id="specification" name="specification" [(ngModel)]="specifications[0].fname" readonly="readonly"/>
-                    <select *ngIf="availableSpecifications.length > 1" [attr.size]="(availableSpecifications.length > 30)?30:availableSpecifications.length" multiple="multiple" class="form-control" id="specification" name="specification" [(ngModel)]="specifications">
+                    <select *ngIf="availableSpecifications.length > 1" [attr.size]="(availableSpecifications.length > 30)?30:availableSpecifications.length" multiple="multiple" class="form-control form-select" id="specification" name="specification" [(ngModel)]="specifications">
                         <option *ngFor="let specification of availableSpecifications" [ngValue]="specification">{{specification.fname}}</option>
                     </select>
                 </div>
-                <app-tooltip [tbTooltip]="'The '+dataService.labelSpecificationLower()+' with which this shared test suite will be linked.'"></app-tooltip>
+                <div app-tooltip class="col-auto" [tbTooltip]="'The '+dataService.labelSpecificationLower()+' with which this shared test suite will be linked.'"></div>
             </div>
         </div>
 		<div *ngSwitchCase="'confirm'">
 			<div class="row">
 				<div class="col-12">
-					<div class="alert-info rounded div-padded">
+					<div class="alert alert-info rounded div-padded">
 						<span *ngIf="!hasMultipleChoices">A selected {{dataService.labelSpecificationLower()}} defines matching data. Select how the update should take place.</span>
 						<span *ngIf="hasMultipleChoices">A selected {{dataService.labelSpecificationsLower()}} define matching data. Select how the updates should take place.</span>
 					</div>

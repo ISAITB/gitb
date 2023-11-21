@@ -11,14 +11,14 @@
       <div [ngClass]="innerDivStyle">
         <form>
           <ng-container *ngFor="let property of tbProperties">
-            <div *ngIf="(isAdmin || !property.hidden) && property.prerequisiteOk" class="form-group row">
-              <label [ngClass]="'col-'+tbColLabel" class="col-form-label text-right" [attr.for]="'prop-'+property.id"><span *ngIf="property.use == 'R' && tbShowRequiredAsterisks">* </span>{{property.name}}:</label>
+            <div *ngIf="(isAdmin || !property.hidden) && property.prerequisiteOk" class="row mb-3">
+              <label [ngClass]="'col-'+tbColLabel" class="col-form-label text-end" [attr.for]="'prop-'+property.id"><span *ngIf="property.use == 'R' && tbShowRequiredAsterisks">* </span>{{property.name}}:</label>
               <ng-container [ngSwitch]="property.kind">
                 <ng-container *ngSwitchCase="'SIMPLE'">
                   <div [ngClass]="'col-'+(11-tbColLabel-tbColInputLess)" [ngSwitch]="property.hasPresetValues">
                     <ng-container *ngSwitchCase="true" [ngSwitch]="isReadonly || (property.adminOnly && !isAdmin)">
                       <p *ngSwitchCase="true" class="form-control-plaintext">{{presetValueLabel(property)}}<span *ngIf="property.desc" [ngStyle]="{'margin-left':(property.value?'10px':'0px')}" [tooltip]="property.desc" [containerClass]="'tooltipContainer'"><i class="fa-solid fa-question-circle"></i></span></p>
-                      <select *ngSwitchDefault (change)="checkPrerequisites(property, true)" [attr.id]="'prop-'+property.id" name="{{'prop-'+property.id}}" [(ngModel)]="property.value" class="form-control">
+                      <select *ngSwitchDefault (change)="checkPrerequisites(property, true)" [attr.id]="'prop-'+property.id" name="{{'prop-'+property.id}}" [(ngModel)]="property.value" class="form-control form-select">
                         <option value=""></option>
                         <option *ngFor="let v of property.presetValues" [ngValue]="v.value">{{v.label}}</option>
                       </select>
@@ -32,12 +32,14 @@
                 <ng-container *ngSwitchCase="'SECRET'">
                   <div [ngClass]="'col-'+(11-tbColLabel-tbColInputLess)" [ngSwitch]="isReadonly || (property.adminOnly && !isAdmin)">
                     <div *ngSwitchCase="true" class="form-control-plaintext">{{property.configured?'*****':''}}<span *ngIf="property.desc" [class.ml-2]="property.configured" [tooltip]="property.desc" [containerClass]="'tooltipContainer'"><i class="fa-solid fa-question-circle"></i></span></div>
-                    <div *ngSwitchDefault class="form-inline">
-                      <div class="form-check">
-                        <input class="form-check-input" type="checkbox" [attr.id]="'update-'+property.id" name="{{'prop-update-'+property.id}}" [(ngModel)]="property.changeValue" (change)="editSecret(property)">
-                        <label class="form-check-input" [attr.for]="'update-'+property.id">Update</label>
+                    <div *ngSwitchDefault class="row row-cols-auto align-items-center">
+                      <div class="col-auto">
+                        <div class="form-check">
+                          <input class="form-check-input" type="checkbox" [attr.id]="'update-'+property.id" name="{{'prop-update-'+property.id}}" [(ngModel)]="property.changeValue" (change)="editSecret(property)">
+                          <label class="form-check-label" [attr.for]="'update-'+property.id">Update</label>
+                        </div>
                       </div>
-                      <div class="secretField" [ngSwitch]="property.changeValue == undefined || !property.changeValue">
+                      <div class="col-auto flex-grow-1" [ngSwitch]="property.changeValue == undefined || !property.changeValue">
                         <ng-container *ngSwitchCase="true" [ngSwitch]="property.configured">
                           <input *ngSwitchCase="true" type="text" [readonly]="true" class="form-control" value="*****">
                           <input *ngSwitchDefault type="text" [readonly]="true" class="form-control">
@@ -62,7 +64,7 @@
                   </div>
                 </ng-container>
               </ng-container>
-              <app-tooltip *ngIf="!isReadonly && (!property.adminOnly || isAdmin) && property.desc" [tbTooltip]="property.desc"></app-tooltip>                  
+              <div app-tooltip class="col-auto" *ngIf="!isReadonly && (!property.adminOnly || isAdmin) && property.desc" [tbTooltip]="property.desc"></div>                  
             </div>
           </ng-container>
         </form>

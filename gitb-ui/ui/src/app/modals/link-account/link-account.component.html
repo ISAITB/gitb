@@ -3,8 +3,8 @@
 </div>
 <form>
 	<div class="modal-body">
-		<div class="form-group row pt-1">
-			<legend class="col-3 col-form-label text-right pt-0">I want to ...</legend>
+		<div class="row mb-3 pt-1">
+			<legend class="col-3 col-form-label text-end pt-0">I want to ...</legend>
 			<div class="col-8">
 				<div class="form-check pb-2">
 					<input class="form-check-input" type="radio" [(ngModel)]="choice" name="choice" id="choice_link" [value]="Constants.CREATE_ACCOUNT_OPTION.LINK" (change)="choiceChanged()">
@@ -22,7 +22,7 @@
 		</div>
 		<div *ngIf="choice == Constants.CREATE_ACCOUNT_OPTION.LINK">
 			<div class="link-account-separator">
-				<div class="alert-info rounded div-padded">
+				<div class="alert alert-info rounded div-padded">
 					<div *ngIf="linkedAccounts.length > 0">
 						<p>The following roles have been assigned to you. Select the one you want to confirm and link to your account.</p>
 						<span><b>Privacy note:</b> By confirming you grant your consent to record your name, email and EU Login user ID.</span>
@@ -42,22 +42,22 @@
 		</div>
 		<div *ngIf="dataService.configuration.ssoInMigration && choice == Constants.CREATE_ACCOUNT_OPTION.MIGRATE">
 			<div class="link-account-separator">
-				<div class="alert-info rounded div-padded">
+				<div class="alert alert-info rounded div-padded">
 					<p>Provide the credentials you have been using to authenticate prior to EU Login.</p>
 					<span><b>Privacy note:</b> By completing this you grant your consent to record your name, email and EU Login user ID.</span>
 				</div>
 			</div>
-			<div class="form-group row">
-				<label class="col-3 col-form-label text-right" for="username">* Username:</label>
+			<div class="row mb-3">
+				<label class="col-3 col-form-label text-end" for="username">* Username:</label>
 				<div class="col-7"><input id="username" name="username" [(ngModel)]="email" class="form-control" type="text"></div>
-				<app-tooltip tbTooltip="The username you have been using up to now to log in."></app-tooltip>
+				<div app-tooltip class="col-auto" tbTooltip="The username you have been using up to now to log in."></div>
 			</div>
-			<div class="form-group row">
-				<label class="col-3 col-form-label text-right" for="password">* Password:</label>
+			<div class="row mb-3">
+				<label class="col-3 col-form-label text-end" for="password">* Password:</label>
 				<div class="col-7">
 					<app-secret-input id="password" name="password" [(ngModel)]="password"></app-secret-input>
 				</div>
-				<app-tooltip tbTooltip="The password you have been using up to now."></app-tooltip>
+				<div app-tooltip class="col-auto" tbTooltip="The password you have been using up to now."></div>
 			</div>
 		</div>
 		<div *ngIf="choice == Constants.CREATE_ACCOUNT_OPTION.SELF_REGISTER">

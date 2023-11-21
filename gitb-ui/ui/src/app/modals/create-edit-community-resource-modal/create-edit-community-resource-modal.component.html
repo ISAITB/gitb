@@ -3,8 +3,8 @@
 </div>
 <form>
     <div class="modal-body">
-        <div class="form-group row">
-            <label class="col-3 col-form-label text-right" for="name">* Resource:</label>
+        <div class="row mb-3">
+            <label class="col-3 col-form-label text-end" for="name">* Resource:</label>
             <div class="col-7">
                 <app-file-select id="name" placeholder="Select file ..."
                     [fileName]="resourceToUse.name"
@@ -12,14 +12,14 @@
                     [maxSize]="-1">
                 </app-file-select>
             </div>
-            <app-tooltip tbTooltip="The file to make available as a community resource."></app-tooltip>
+            <div app-tooltip class="col-auto" tbTooltip="The file to make available as a community resource."></div>
         </div>
-        <div class="form-group row">
-            <label class="col-3 col-form-label text-right" for="description">Description:</label>
+        <div class="row mb-3">
+            <label class="col-3 col-form-label text-end" for="description">Description:</label>
             <div class="col-7">
                 <textarea id="description" name="description" [(ngModel)]="resourceToUse.description" class="form-control"></textarea>
             </div>
-            <app-tooltip tbTooltip="A text describing the purpose of this resource."></app-tooltip>
+            <div app-tooltip class="col-auto" tbTooltip="A text describing the purpose of this resource."></div>
         </div>
     </div>
     <div class="modal-footer button-container">

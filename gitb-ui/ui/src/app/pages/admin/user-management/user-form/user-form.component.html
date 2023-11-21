@@ -1,48 +1,48 @@
-<div class="form-group row" *ngIf="sso && !new">
-    <label class="col-3 col-form-label text-right" for="name">Name:</label>
+<div class="row mb-3" *ngIf="sso && !new">
+    <label class="col-3 col-form-label text-end" for="name">Name:</label>
     <div class="col-6"><input id="name" [readonly]="true" name="name" [(ngModel)]="user.name" class="form-control" type="text"></div>
-    <app-tooltip tbTooltip="The name of the user retrieved from her EU Login account."></app-tooltip>
+    <div app-tooltip class="col-auto" tbTooltip="The name of the user retrieved from her EU Login account."></div>
 </div>
-<div class="form-group row" *ngIf="!sso">
-    <label class="col-4 col-form-label text-right" for="name">* Name:</label>
+<div class="row mb-3" *ngIf="!sso">
+    <label class="col-4 col-form-label text-end" for="name">* Name:</label>
     <div class="col-6"><input id="name" name="name" [(ngModel)]="user.name" class="form-control" type="text"></div>
-    <app-tooltip tbTooltip="The name of the user. This is used for display purposes when listing users."></app-tooltip>
+    <div app-tooltip class="col-auto" tbTooltip="The name of the user. This is used for display purposes when listing users."></div>
 </div>
-<div class="form-group row">
-    <label [ngClass]="{'col-3': sso, 'col-4': !sso}" class="col-form-label text-right" for="email"><span *ngIf="new">* </span>{{sso?'Email:':'Username:'}}</label>
+<div class="row mb-3">
+    <label [ngClass]="{'col-3': sso, 'col-4': !sso}" class="col-form-label text-end" for="email"><span *ngIf="new">* </span>{{sso?'Email:':'Username:'}}</label>
     <div class="col-6"><input id="email" name="email" [(ngModel)]="user.email" class="form-control" type="text" [readonly]="!new"></div>
-    <app-tooltip *ngIf="sso" tbTooltip="The email address linked to the user's EU Login account."></app-tooltip>
-    <app-tooltip *ngIf="!sso" tbTooltip="The username for this user that is used for logging in."></app-tooltip>
+    <div app-tooltip class="col-auto" *ngIf="sso" tbTooltip="The email address linked to the user's EU Login account."></div>
+    <div app-tooltip class="col-auto" *ngIf="!sso" tbTooltip="The username for this user that is used for logging in."></div>
 </div>
 <ng-container *ngIf="!admin || !new" [ngSwitch]="admin || roleReadonly">
-    <div class="form-group row" *ngSwitchCase="true">
-        <label [ngClass]="{'col-3': sso, 'col-4': !sso}" class="col-form-label text-right" for="role"><span *ngIf="new">* </span>Role:</label>
+    <div class="row mb-3" *ngSwitchCase="true">
+        <label [ngClass]="{'col-3': sso, 'col-4': !sso}" class="col-form-label text-end" for="role"><span *ngIf="new">* </span>Role:</label>
         <div class="col-6"><input id="role" name="role" [(ngModel)]="user.roleText" class="form-control" type="text" readonly="!new"></div>
-        <app-tooltip tbTooltip="The user's assigned role."></app-tooltip>
+        <div app-tooltip class="col-auto" tbTooltip="The user's assigned role."></div>
     </div>
-    <div class="form-group row" *ngSwitchDefault>
-        <label [ngClass]="{'col-3': sso, 'col-4': !sso}" class="col-form-label text-right" for="role">* Role:</label>
+    <div class="row mb-3" *ngSwitchDefault>
+        <label [ngClass]="{'col-3': sso, 'col-4': !sso}" class="col-form-label text-end" for="role">* Role:</label>
         <div class="col-6">
-            <select id="role" #role name="role" class="form-control" [(ngModel)]="user.role">
+            <select id="role" #role name="role" class="form-control form-select" [(ngModel)]="user.role">
                 <option *ngFor="let role of roles" [ngValue]="role.id">{{role.label}}</option>
             </select>
         </div>
-        <app-tooltip tbTooltip="The user's assigned role. A 'user' can view information and execute test sessions whereas an 'administrator' can also manage users and edit test configuration."></app-tooltip>
+        <div app-tooltip class="col-auto" tbTooltip="The user's assigned role. A 'user' can view information and execute test sessions whereas an 'administrator' can also manage users and edit test configuration."></div>
     </div>
 </ng-container>
-<div class="form-group row" *ngIf="!new && !this.dataService.isVendorUser">
-    <label [ngClass]="{'col-3': sso, 'col-4': !sso}" class="col-form-label text-right" for="status">Status:</label>
+<div class="row mb-3" *ngIf="!new && !this.dataService.isVendorUser">
+    <label [ngClass]="{'col-3': sso, 'col-4': !sso}" class="col-form-label text-end" for="status">Status:</label>
     <div class="col-6"><input id="status" name="status" [(ngModel)]="user.ssoStatusText" class="form-control" type="text" [readonly]="true"></div>
-    <app-tooltip tbTooltip="The activation status of the user's account."></app-tooltip>
+    <div app-tooltip class="col-auto" tbTooltip="The activation status of the user's account."></div>
 </div>
-<div class="form-group row" *ngIf="!admin && !new && showOrganisation">
-    <label [ngClass]="{'col-3': sso, 'col-4': !sso}" class="col-form-label text-right" for="organization"><span *ngIf="!sso">* </span>{{dataService.labelOrganisation()}}:</label>
+<div class="row mb-3" *ngIf="!admin && !new && showOrganisation">
+    <label [ngClass]="{'col-3': sso, 'col-4': !sso}" class="col-form-label text-end" for="organization"><span *ngIf="!sso">* </span>{{dataService.labelOrganisation()}}:</label>
     <div class="col-6"><input id="organization" name="organization" [value]="user.organization?.fname" class="form-control" type="text" [readonly]="true"></div>
-    <app-tooltip [tbTooltip]="'The '+dataService.labelOrganisationLower()+' this user is a member of.'"></app-tooltip>
+    <div app-tooltip class="col-auto" [tbTooltip]="'The '+dataService.labelOrganisationLower()+' this user is a member of.'"></div>
 </div>
 <ng-container *ngIf="showChangePassword">
-    <div class="form-group row pt-1" *ngIf="!new && !sso">
-        <label class="col-4 col-form-label text-right pt-0" for="changePassword">Set one-time password?</label>
+    <div class="row mb-3 pt-1" *ngIf="!new && !sso">
+        <label class="col-4 col-form-label text-end pt-0" for="changePassword">Set one-time password?</label>
         <div class="col-6">
             <div class="form-check">
                 <input class="form-check-input" id="changePassword" name="changePassword" [(ngModel)]="changePassword" type="checkbox" (change)="setPasswordClicked()">
@@ -50,12 +50,12 @@
         </div>
     </div>
     <div *ngIf="!sso" [collapse]="!new && !changePassword" [isAnimated]="true" (expanded)="passwordExpanded()" (collapsed)="passwordCollapsed()">
-        <div class="form-group row">
-          <label class="col-4 col-form-label text-right" for="password">* One-time password:</label>
+        <div class="row mb-3">
+          <label class="col-4 col-form-label text-end" for="password">* One-time password:</label>
           <div class="col-6">
             <app-secret-input id="password" name="password" [(ngModel)]="user.password" [focusChange]="passwordFocus"></app-secret-input>
           </div>
-          <app-tooltip tbTooltip="This password can only be used once at first login and will then need to be changed."></app-tooltip>
+          <div app-tooltip class="col-auto" tbTooltip="This password can only be used once at first login and will then need to be changed."></div>
         </div>
     </div>
 </ng-container>

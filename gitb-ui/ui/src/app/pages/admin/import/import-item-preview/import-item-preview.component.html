@@ -5,7 +5,7 @@
         <div class="title-text" [ngClass]="{'skip': isSkipped()}">{{itemName()}}</div>
         <div class="title-action">
           <button *ngIf="showExpandAll()" type="button" (click)="expandItem(tbImportItem); $event.stopPropagation();" class="btn btn-primary btn-sm">Expand all</button>
-          <select *ngIf="!tbImportItem.disableProcessChoice && tbImportItem.process != Constants.IMPORT_ITEM_CHOICE.SKIP_DUE_TO_PARENT" [name]="'choice_'+tbImportItem.id" class="control" (click)="$event.stopPropagation();" [(ngModel)]="tbImportItem.selectedProcessOption" (change)="processOptionChanged()">
+          <select *ngIf="!tbImportItem.disableProcessChoice && tbImportItem.process != Constants.IMPORT_ITEM_CHOICE.SKIP_DUE_TO_PARENT" [name]="'choice_'+tbImportItem.id" class="form-control form-select" (click)="$event.stopPropagation();" [(ngModel)]="tbImportItem.selectedProcessOption" (change)="processOptionChanged()">
               <option *ngFor="let option of processOptions" [ngValue]="option.id">{{option.label}}</option>
           </select>
           <input type="text" value="Skip" *ngIf="tbImportItem.disableProcessChoice || tbImportItem.process == Constants.IMPORT_ITEM_CHOICE.SKIP_DUE_TO_PARENT" class="control" (click)="$event.stopPropagation();" disabled="true"/>

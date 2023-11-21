@@ -8,7 +8,7 @@
     </div>
     <div *ngIf="!applied" class="custom-property-filter-container non-applied">
       <div class="property-id">
-        <select name="propInput" (change)="propertyChanged()" [(ngModel)]="propertyInfo.property" class="form-control">
+        <select name="propInput" (change)="propertyChanged()" [(ngModel)]="propertyInfo.property" class="form-control form-select">
             <option *ngFor="let prop of properties" [ngValue]="prop">{{prop.name}}</option>
         </select>
       </div>
@@ -16,7 +16,7 @@
         <input name="valInput" [(ngModel)]="propertyInfo.value" type="text" class="form-control"/>
       </div>
       <div class="property-value" *ngIf="propertyInfo?.property?.presetValues">
-        <select name="valInputChoice" [(ngModel)]="propertyInfo.valueObj" class="form-control">
+        <select name="valInputChoice" [(ngModel)]="propertyInfo.valueObj" class="form-control form-select">
             <option *ngFor="let v of propertyInfo.property!.presetValues" [ngValue]="v">{{v.label}}</option>
         </select>
       </div>

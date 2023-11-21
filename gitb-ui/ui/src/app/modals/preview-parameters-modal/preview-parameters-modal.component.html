@@ -5,23 +5,23 @@
 	<div class="modal-body">
         <div class="row">
             <div class="col-12">
-                <div class="alert-info rounded div-padded bottom-margin">
+                <div class="alert alert-info rounded div-padded bottom-margin">
                     <span>The defined properties generate a form that differs depending on the connected user. Use the preview mode below to ensure this form matches your expectations for each case.</span>
                 </div>
             </div>
         </div>
         <div class="row">
             <div class="col-10 offset-1">
-                <div class="form-group row">
-                    <label class="col-3 col-form-label text-right" for="mode">Preview mode:</label>
+                <div class="row mb-3">
+                    <label class="col-3 col-form-label text-end" for="mode">Preview mode:</label>
                     <div class="col-8">
-                        <select class="form-control" id="mode" name="mode" [(ngModel)]="mode">
+                        <select class="form-control form-select" id="mode" name="mode" [(ngModel)]="mode">
                             <option value="user">{{dataService.labelOrganisation()}} user</option>
                             <option value="registration" *ngIf="hasRegistrationCase">Self-registration screen</option>
                             <option value="admin">Community administrator</option>
                         </select>
                     </div>
-                    <app-tooltip tbTooltip="The mode to consider to generate the preview."></app-tooltip>
+                    <div app-tooltip class="col-auto" tbTooltip="The mode to consider to generate the preview."></div>
                 </div>
             </div>
         </div>
@@ -53,7 +53,7 @@
         <div *ngIf="!hasVisibleProperties()">
             <div class="row">
                 <div class="col-12">
-                    <div class="alert-info rounded div-padded bottom-margin">
+                    <div class="alert alert-info rounded div-padded bottom-margin">
                         <span>The form resulting from the defined properties and selected preview mode is empty.</span>
                     </div>
                 </div>

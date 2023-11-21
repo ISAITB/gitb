@@ -7,9 +7,9 @@
         </div>
         <div class="itemsContainer" *ngIf="!config.singleSelection && selectedItems.length > 0">
             <div *ngFor="let item of selectedItems; let index = index;" class="itemContainer" (click)="selectedItemClicked(item)">
-                <div class="form-check">
+                <div class="d-flex">
                     <input class="form-check-input" type="checkbox" [attr.id]="'item-'+index" [attr.name]="'item-'+index" [(ngModel)]="selectedSelectedItems[item.id].selected" (ngModelChange)="updateCheckFlag()">
-                    <label class="form-check-label disable-select" (click)="$event.stopPropagation()" [attr.for]="'item-'+index">{{item[config.textField]}}</label>
+                    <label class="form-check-label disable-select mx-2" (click)="$event.stopPropagation()" [attr.for]="'item-'+index">{{item[config.textField]}}</label>
                 </div>
             </div>
         </div>
@@ -20,9 +20,9 @@
                 <ng-container *ngSwitchDefault>
                     <div *ngFor="let item of visibleAvailableItems; let index = index;" class="itemContainer" (click)="availableItemClicked(item)" [ngSwitch]="config.singleSelection">
                         <div *ngSwitchCase="true">{{item[config.textField]}}</div>
-                        <div *ngSwitchDefault class="form-check">
+                        <div *ngSwitchDefault class="d-flex">
                             <input class="form-check-input" [attr.id]="'a_item-'+index" [attr.name]="'a_item-'+index" type="checkbox" [(ngModel)]="selectedAvailableItems[item.id].selected" (ngModelChange)="updateCheckFlag()">
-                            <label class="form-check-label disable-select" (click)="$event.stopPropagation()" [attr.for]="'a_item-'+index">{{item[config.textField]}}</label>
+                            <label class="form-check-label disable-select mx-2" (click)="$event.stopPropagation()" [attr.for]="'a_item-'+index">{{item[config.textField]}}</label>
                         </div>
                     </div>
                 </ng-container>

@@ -4,10 +4,8 @@
   </div>
   <div *ngSwitchCase="false" class="input-group">
     <input type="text" autocomplete="off" class="form-control clickable" [value]="(fileName != undefined)?fileName:''" [attr.placeholder]="placeholder" (click)="onButtonClick()" readonly="readonly"/>
-    <div class="input-group-append">
-      <button class="btn btn-secondary" type="button" (click)="onButtonClick()" containerClass="shortTooltip" tooltip="Open" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-regular fa-folder-open"></i></button>
-      <ng-content *ngIf="extraActions"></ng-content>
-    </div>
+    <button class="btn btn-secondary" type="button" (click)="onButtonClick()" containerClass="shortTooltip" tooltip="Open" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-regular fa-folder-open"></i></button>
+    <ng-content *ngIf="extraActions"></ng-content>
   </div>
   <input #fileInput type="file" style="display:none" (change)="onFileChange()" [attr.accept]="acceptString"/>
 </ng-container>

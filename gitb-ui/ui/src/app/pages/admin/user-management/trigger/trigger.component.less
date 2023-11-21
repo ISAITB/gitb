@@ -5,7 +5,7 @@ th.checkColumn {
 }
 .trigger-data-properties-container {
 	border: 1px solid @gray-dark-1;
-	border-radius: 5px;
+	border-radius: @border-radius;
 	margin-bottom: 10px;
 
 	.table {
@@ -15,6 +15,12 @@ th.checkColumn {
 			background-color: fade(@gray-light, 50%);
 		}
 	}
+}
+
+.status-display {
+    font-weight: bold;
+	text-align: center;
+	padding: 6px;
 }
 
 .trigger-data-checks {

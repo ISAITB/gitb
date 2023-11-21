@@ -5,34 +5,34 @@
 		</div>
 		<form>
 			<div class="card-body">
-                <div class="alert-info rounded div-padded bottom-margin" *ngIf="testSuite.shared">
+                <div class="alert alert-info rounded div-padded bottom-margin" *ngIf="testSuite.shared">
                     <span>This test suite is designed to be shared across multiple {{dataService.labelSpecificationsLower()}}. Any changes made will apply to all its linked {{dataService.labelSpecificationsLower()}}.</span>
                 </div>
 				<div class="row">
                     <div class="col-10 offset-1">
-						<div class="form-group row">
-							<label class="col-3 col-form-label text-right" for="identifier">ID:</label>
+						<div class="row mb-3">
+							<label class="col-3 col-form-label text-end" for="identifier">ID:</label>
 							<div class="col-7">
 								<app-api-key-text id="identifier" name="identifier" [key]="testSuite.identifier!"></app-api-key-text>
 							</div>
-							<app-tooltip [tbTooltip]="'The unique identifier of the test suite within the '+dataService.labelSpecificationLower()+'. This is not presented to users but is used internally to match uploaded test suites to existing ones.'"></app-tooltip>
+							<div app-tooltip class="col-auto" [tbTooltip]="'The unique identifier of the test suite within the '+dataService.labelSpecificationLower()+'. This is not presented to users but is used internally to match uploaded test suites to existing ones.'"></div>
 						</div>
-						<div class="form-group row">
-							<label class="col-3 col-form-label text-right" for="name">* Name:</label>
+						<div class="row mb-3">
+							<label class="col-3 col-form-label text-end" for="name">* Name:</label>
 							<div class="col-7"><input id="name" name="name" [(ngModel)]="testSuite.sname" class="form-control" type="text"></div>
-							<app-tooltip tbTooltip="A short and descriptive identifier for the test suite. This is used for filtering purposes and also to distinguish the test suite in conformance statements where multiple test suites are defined."></app-tooltip>
+							<div app-tooltip class="col-auto" tbTooltip="A short and descriptive identifier for the test suite. This is used for filtering purposes and also to distinguish the test suite in conformance statements where multiple test suites are defined."></div>
 						</div>
-						<div class="form-group row">
-							<label class="col-3 col-form-label text-right" for="version">* Version:</label>
+						<div class="row mb-3">
+							<label class="col-3 col-form-label text-end" for="version">* Version:</label>
 							<div class="col-7"><input id="version" name="version" [(ngModel)]="testSuite.version" class="form-control" type="text"></div>
-							<app-tooltip tbTooltip="A version number for this test suite. This is only visible to administrators."></app-tooltip>
+							<div app-tooltip class="col-auto" tbTooltip="A version number for this test suite. This is only visible to administrators."></div>
 						</div>
-						<div class="form-group row">
-							<label class="col-3 col-form-label text-right" for="description">Description:</label>
+						<div class="row mb-3">
+							<label class="col-3 col-form-label text-end" for="description">Description:</label>
 							<div class="col-7">
 								<textarea id="description" name="description" [(ngModel)]="testSuite.description" class="form-control"></textarea>
 							</div>
-							<app-tooltip tbTooltip="A description for the test suite presented to users when viewing a conformance statement with multiple test suites. This should be informative enough for users to understand the purpose of the test suite. Where extended information is needed consider complementing the description with the test suite's documentation."></app-tooltip>
+							<div app-tooltip class="col-auto" tbTooltip="A description for the test suite presented to users when viewing a conformance statement with multiple test suites. This should be informative enough for users to understand the purpose of the test suite. Where extended information is needed consider complementing the description with the test suite's documentation."></div>
 						</div>
 					</div>
 				</div>
@@ -51,7 +51,7 @@
 							</div>
 							<div class="editorContainer">
 								<app-editor id="documentation" name="documentation" [(ngModel)]="testSuite.documentation"></app-editor>
-								<app-tooltip tbTooltip="Extended documentation on the test suite that users can click to view before test execution. Use this to provide detailed information, prerequisites and references to external resources." [withMargin]="true"></app-tooltip>
+								<div app-tooltip class="col-auto" tbTooltip="Extended documentation on the test suite that users can click to view before test execution. Use this to provide detailed information, prerequisites and references to external resources." [withMargin]="true"></div>
 							</div>
 						</div>
 					</div>

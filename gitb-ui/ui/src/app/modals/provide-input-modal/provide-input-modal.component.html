@@ -4,19 +4,19 @@
 <form>
 	<div class="modal-body provide-input-body" style="overflow-x: auto; overflow-y: hidden;">
 		<div *ngFor="let interaction of interactions; let index = index">
-			<div class="form-group row">
+			<div class="row mb-3">
 				<div class="col-12 col-centered" >
 					<!-- request interaction: server asks operator to send inputs -->
 					<div *ngIf="interaction.type == 'request'">
 						<label>{{interaction.desc}}</label>
 						<ng-container [ngSwitch]="interaction.inputType">
 							<!-- Select single. -->
-							<select *ngSwitchCase="'SELECT_SINGLE'" [name]="'input-'+index" [attr.id]="'input-'+index" class="form-control" [(ngModel)]="interaction.selectedOption">
+							<select *ngSwitchCase="'SELECT_SINGLE'" [name]="'input-'+index" [attr.id]="'input-'+index" class="form-control form-select" [(ngModel)]="interaction.selectedOption">
 								<option value=""></option>
 								<option *ngFor="let option of interaction.optionData" [ngValue]="option">{{option.label}}</option>
 							</select>
 							<!-- Select multiple -->
-							<select *ngSwitchCase="'SELECT_MULTIPLE'" [name]="'input-'+index" [attr.id]="'input-'+index" multiple="true" class="form-control" [(ngModel)]="interaction.selectedOption">
+							<select *ngSwitchCase="'SELECT_MULTIPLE'" [name]="'input-'+index" [attr.id]="'input-'+index" multiple="true" class="form-control form-select" [(ngModel)]="interaction.selectedOption">
 								<option *ngFor="let option of interaction.optionData" [ngValue]="option">{{option.label}}</option>
 							</select>
 							<!-- Upload -->

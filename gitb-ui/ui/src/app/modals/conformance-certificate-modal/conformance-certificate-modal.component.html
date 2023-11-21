@@ -3,8 +3,8 @@
 </div>
 <form>
     <div class="modal-body">
-        <div class="form-group row pt-1">
-            <legend class="col-3 col-form-label text-right pt-0">* Report type:</legend>
+        <div class="row mb-3 pt-1">
+            <legend class="col-3 col-form-label text-end pt-0">* Report type:</legend>
             <div class="col-8">
                 <div class="form-check pb-2">
                     <input class="form-check-input" type="radio" [(ngModel)]="choice" name="choice" id="choice_report" [value]="Constants.REPORT_OPTION_CHOICE.REPORT">
@@ -21,49 +21,51 @@
             </div>
         </div>
         <div [collapse]="choice != Constants.REPORT_OPTION_CHOICE.CERTIFICATE" [isAnimated]="true" (expanded)="certificateChoicesVisible()">
-            <div class="form-group row">
-                <label class="col-3 col-form-label text-right">Title:</label>
+            <div class="row mb-3">
+                <label class="col-3 col-form-label text-end">Title:</label>
                 <div class="col-8">
-                    <div class="form-inline">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="includeTitle" name="includeTitle" (change)="includeTitleChanged()" [(ngModel)]="settings.includeTitle">
-                            <label class="form-check-label" for="includeTitle">Included?</label>
+                    <div class="row row-cols-auto align-items-center">
+                        <div class="col-auto">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="includeTitle" name="includeTitle" (change)="includeTitleChanged()" [(ngModel)]="settings.includeTitle">
+                                <label class="form-check-label" for="includeTitle">Included?</label>
+                            </div>
                         </div>
-                        <div class="titleText">
+                        <div class="col-auto flex-grow-1">
                             <input id="title" name="title" [(ngModel)]="settings.title" [readonly]="!settings.includeTitle" class="form-control" type="text">
                         </div>
                     </div>
                 </div>
-                <app-tooltip tbTooltip="Specify a specific title to use to override the default."></app-tooltip>
+                <div app-tooltip class="col-auto" tbTooltip="Specify a specific title to use to override the default."></div>
             </div>
-            <div class="form-group row pt-1">
-                <legend class="col-3 col-form-label text-right pt-0">Included sections:</legend>
+            <div class="row mb-3 pt-1">
+                <legend class="col-3 col-form-label text-end pt-0">Included sections:</legend>
                 <div class="col-8">
-                    <div class="form-check-inline">
+                    <div class="form-check form-check-inline">
                         <input class="form-check-input" type="checkbox" id="details" name="details" [(ngModel)]="settings.includeDetails">
                         <label class="form-check-label" for="details">Details</label>
                     </div>
-                    <div class="form-check-inline">
+                    <div class="form-check form-check-inline">
                         <input class="form-check-input" type="checkbox" id="overview" name="overview" [(ngModel)]="settings.includeTestStatus">
                         <label class="form-check-label" for="overview">Result overview</label>
                     </div>
-                    <div class="form-check-inline">
+                    <div class="form-check form-check-inline">
                         <input class="form-check-input" type="checkbox" id="testCases" name="testCases" [(ngModel)]="settings.includeTestCases">
                         <label class="form-check-label" for="testCases">Test cases</label>
                     </div>
-                    <div class="form-check-inline">
+                    <div class="form-check form-check-inline">
                         <input class="form-check-input" type="checkbox" id="message" name="message" [(ngModel)]="settings.includeMessage">
                         <label class="form-check-label" for="message">Message</label>
                     </div>
-                    <div class="form-check-inline" *ngIf="settings.keystoreDefined">
+                    <div class="form-check form-check-inline" *ngIf="settings.keystoreDefined">
                         <input class="form-check-input" type="checkbox" id="signature" name="signature" [(ngModel)]="settings.includeSignature">
                         <label class="form-check-label" for="signature">Signature</label>
                     </div>
                 </div>
             </div>
             <div [collapse]="!settings.includeMessage" [isAnimated]="true">
-                <div class="form-group row">
-                    <label class="col-3 col-form-label text-right" for="messageContent">Message content:</label>
+                <div class="row mb-3">
+                    <label class="col-3 col-form-label text-end" for="messageContent">Message content:</label>
                     <div class="col-8">
                         <app-editor id="messageContent" name="messageContent" [(ngModel)]="settings.message" [type]="'pdf'" [height]="300"></app-editor>
                     </div>

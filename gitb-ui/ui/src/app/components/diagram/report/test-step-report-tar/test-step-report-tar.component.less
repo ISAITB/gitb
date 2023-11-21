@@ -2,7 +2,6 @@
 
 @color-summary-border: @gray-light;
 @color-summary-title: @gray-light-1;
-@color-summary-labels: white;
 @color-summary-title-hover: fade(@gray-light, 50%);
 @color-summary-labels-hover: @white-hover;
 
@@ -23,8 +22,6 @@
     .summary-labels {
         display: inline-flex;
         flex-grow: 1;
-        background: @color-summary-labels;
-
         & > .summary-cell {
             flex-grow: 0.33;
             justify-content: center;
@@ -71,6 +68,6 @@
 
 .itemsDiv { 
     border: 1px solid @color-summary-border; 
-    border-radius: 3px; 
+    border-radius: @border-radius; 
 }
 

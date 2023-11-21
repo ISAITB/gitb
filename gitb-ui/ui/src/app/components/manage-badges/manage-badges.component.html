@@ -1,11 +1,11 @@
 <div class="row" *ngIf="badges">
     <div class="col-10 offset-1">
-        <div class="form-group row pt-1">
-            <label class="col-3 col-form-label text-right pt-0" for="badgesEnabled">Badges enabled:</label>
+        <div class="row mb-3 pt-1">
+            <label class="col-3 col-form-label text-end pt-0" for="badgesEnabled">Badges enabled:</label>
             <div class="col-8">
                 <div class="form-check">
                     <input class="form-check-input" id="badgesEnabled" name="badgesEnabled" [(ngModel)]="badges.enabled" type="checkbox">
-                    <app-tooltip tbTooltip="Check to define conformance badges as visual indications of a conformance statement's status." [inline]="true"></app-tooltip>
+                    <div app-tooltip class="col-auto d-inline-flex" tbTooltip="Check to define conformance badges as visual indications of a conformance statement's status." [inline]="true"></div>
                 </div>
             </div>
         </div>
@@ -22,8 +22,8 @@
     <div [collapse]="formCollapsed()" [isAnimated]="badges.enabled != undefined && badges.enabled">
         <div class="row">
             <div class="col-10 offset-1">
-                <div class="form-group row">
-                    <label class="col-3 col-form-label text-right">* Success badge:</label>
+                <div class="row mb-3">
+                    <label class="col-3 col-form-label text-end">* Success badge:</label>
                     <div class="col-7">
                         <app-manage-badge
                             [badge]="badges.success"
@@ -32,10 +32,10 @@
                             [actorId]="badges.actorId"
                         ></app-manage-badge>
                     </div>
-                    <app-tooltip tbTooltip="The badge image to display for a successful conformance statement."></app-tooltip>
+                    <div app-tooltip class="col-auto" tbTooltip="The badge image to display for a successful conformance statement."></div>
                 </div>
-                <div class="form-group row">
-                    <label class="col-3 col-form-label text-right">* Other badge:</label>
+                <div class="row mb-3">
+                    <label class="col-3 col-form-label text-end">* Other badge:</label>
                     <div class="col-7">
                         <app-manage-badge
                             [badge]="badges.other"
@@ -44,9 +44,9 @@
                             [actorId]="badges.actorId"
                         ></app-manage-badge>
                     </div>
-                    <app-tooltip tbTooltip="The badge image to display for a non-successful conformance statement."></app-tooltip>
+                    <div app-tooltip class="col-auto" tbTooltip="The badge image to display for a non-successful conformance statement."></div>
                 </div>
-                <div class="form-group row">
+                <div class="row mb-3">
                     <div class="col-7 offset-3">
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" id="distinctFailureBadge" name="distinctFailureBadge" [(ngModel)]="badges.failureBadgeActive">
@@ -55,8 +55,8 @@
                     </div>
                 </div>
                 <div [collapse]="!badges.failureBadgeActive" [isAnimated]="true">
-                    <div class="form-group row">
-                        <label class="col-3 col-form-label text-right">* Failure badge:</label>
+                    <div class="row mb-3">
+                        <label class="col-3 col-form-label text-end">* Failure badge:</label>
                         <div class="col-7">
                             <app-manage-badge
                                 [badge]="badges.failure"
@@ -65,7 +65,7 @@
                                 [actorId]="badges.actorId"
                             ></app-manage-badge>
                         </div>
-                        <app-tooltip tbTooltip="The badge image to display specifically for a failed conformance statement. If this is not provided the 'other' badge will be used instead."></app-tooltip>
+                        <div app-tooltip class="col-auto" tbTooltip="The badge image to display specifically for a failed conformance statement. If this is not provided the 'other' badge will be used instead."></div>
                     </div>
                 </div>
             </div>

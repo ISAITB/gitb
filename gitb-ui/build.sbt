@@ -72,7 +72,7 @@ libraryDependencies ++= Seq(
   "org.apache.tika" % "tika-core" % "2.8.0",
   "org.webjars" %% "webjars-play" % "2.8.18",
   "org.webjars" % "jquery" % "3.6.4",
-  "org.webjars" % "bootstrap" % "4.6.2" exclude("org.webjars", "jquery"),
+  "org.webjars" % "bootstrap" % "5.3.2" exclude("org.webjars", "jquery"),
   "com.sun.mail" % "jakarta.mail" % "2.0.1",
   "jakarta.activation" % "jakarta.activation-api" % "2.1.2",
   "jakarta.xml.ws" % "jakarta.xml.ws-api" % "4.0.0",

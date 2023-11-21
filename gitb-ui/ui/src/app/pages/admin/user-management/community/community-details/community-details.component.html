@@ -29,7 +29,7 @@
                 <ng-template tabHeading><app-tab-title icon="fa-solid fa-building" [text]="dataService.labelOrganisations()"></app-tab-title></ng-template>
                 <!-- Organisations -->
                 <div class="tabPanel">
-                    <div class="tabControls form-inline">
+                    <div class="tabControls">
                         <div class="searchControls btn-toolbar">
                             <app-text-filter name="organisationFilter" [width]="300" [placeholder]="'Search '+dataService.labelOrganisationsLower()+'...'" [(ngModel)]="organisationFilter" (apply)="applyOrganisationFilter()"></app-text-filter>
                             <div class="btn-group" dropdown>
@@ -172,7 +172,7 @@
                 <ng-template tabHeading><app-tab-title icon="fa-solid fa-image" text="Resources"></app-tab-title></ng-template>
                 <!-- Community resources -->
                 <div class="tabPanel">
-                    <div class="tabControls form-inline">
+                    <div class="tabControls">
                         <div class="searchControls btn-toolbar">
                             <app-text-filter name="resourceFilter" [width]="300" [placeholder]="'Search resources...'" [(ngModel)]="resourceFilter" (apply)="applyResourceFilter()"></app-text-filter>
                             <div class="btn-group" dropdown>

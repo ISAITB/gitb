@@ -7,54 +7,56 @@
             <div class="card-body">
                 <div class="row">
                     <div class="col-10 offset-1">
-                        <div class="form-group row">
-                            <label class="col-3 col-form-label text-right">Title:</label>
+                        <div class="row mb-3">
+                            <label class="col-3 col-form-label text-end">Title:</label>
                             <div class="col-7">
-                                <div class="form-inline">
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="includeTitle" name="includeTitle" (change)="includeTitleChanged()" [(ngModel)]="settings.includeTitle">
-                                        <label class="form-check-label" for="includeTitle">Included?</label>
+                                <div class="row row-cols-auto align-items-center">
+                                    <div class="col-auto">
+                                        <div class="form-check mb-0">
+                                            <input class="form-check-input" type="checkbox" id="includeTitle" name="includeTitle" (change)="includeTitleChanged()" [(ngModel)]="settings.includeTitle">
+                                            <label class="form-check-label" for="includeTitle">Included?</label>
+                                        </div>
                                     </div>
-                                    <div class="titleText">
+                                    <div class="col-auto flex-grow-1">
                                         <input id="title" name="title" [(ngModel)]="settings.title" [readonly]="!settings.includeTitle" class="form-control" type="text">
                                     </div>
                                 </div>
                             </div>
-                            <app-tooltip tbTooltip="The title to display for the certificate. If unspecified 'Conformance Certificate' is used."></app-tooltip>
+                            <div app-tooltip class="col-auto" tbTooltip="The title to display for the certificate. If unspecified 'Conformance Certificate' is used."></div>
                         </div>
                     </div>
                     <div class="col-10 offset-1">
-                        <div class="form-group row pt-1">
-                            <legend class="col-3 col-form-label text-right pt-0">Included sections:</legend>
+                        <div class="row mb-3 pt-1">
+                            <legend class="col-3 col-form-label text-end pt-0">Included sections:</legend>
                             <div class="col-8">
-                                <div class="form-check-inline">
+                                <div class="form-check form-check-inline">
                                     <input class="form-check-input" type="checkbox" id="includeDetails" name="includeDetails" [(ngModel)]="settings.includeDetails">
                                     <label class="form-check-label" for="includeDetails">Details
-                                        <app-tooltip [inline]="true" [inlineType]="'checkLabel'" [tbTooltip]="'Add the conformance statement details. These are the information on the '+dataService.labelDomainLower()+', '+dataService.labelSpecificationLower()+', '+dataService.labelActorLower()+', '+dataService.labelOrganisationLower()+' and '+dataService.labelSystemLower()+'.'"></app-tooltip>
+                                        <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" [tbTooltip]="'Add the conformance statement details. These are the information on the '+dataService.labelDomainLower()+', '+dataService.labelSpecificationLower()+', '+dataService.labelActorLower()+', '+dataService.labelOrganisationLower()+' and '+dataService.labelSystemLower()+'.'"></div>
                                     </label>
                                 </div>
-                                <div class="form-check-inline">
+                                <div class="form-check form-check-inline">
                                     <input class="form-check-input" type="checkbox" id="includeTestStatus" name="includeTestStatus" [(ngModel)]="settings.includeTestStatus">
                                     <label class="form-check-label" for="includeTestStatus">Result overview
-                                        <app-tooltip [inline]="true" [inlineType]="'checkLabel'" tbTooltip="Add a summary text on the number of successfully passed and failed test cases."></app-tooltip>
+                                        <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" tbTooltip="Add a summary text on the number of successfully passed and failed test cases."></div>
                                     </label>
                                 </div>
-                                <div class="form-check-inline">
+                                <div class="form-check form-check-inline">
                                     <input class="form-check-input" type="checkbox" id="includeTestCases" name="includeTestCases" [(ngModel)]="settings.includeTestCases">
                                     <label class="form-check-label" for="includeTestCases">Test cases
-                                        <app-tooltip [inline]="true" [inlineType]="'checkLabel'" tbTooltip="Add the individual test cases. Doing so will include a table showing the status for each test case in the conformance statement."></app-tooltip>
+                                        <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" tbTooltip="Add the individual test cases. Doing so will include a table showing the status for each test case in the conformance statement."></div>
                                     </label>
                                 </div>
-                                <div class="form-check-inline">
+                                <div class="form-check form-check-inline">
                                     <input class="form-check-input" type="checkbox" id="includeMessage" name="includeMessage" [(ngModel)]="settings.includeMessage">
                                     <label class="form-check-label" for="includeMessage">Message
-                                        <app-tooltip [inline]="true" [inlineType]="'checkLabel'" tbTooltip="Add a custom rich-text message following the title and before including other details."></app-tooltip>
+                                        <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" tbTooltip="Add a custom rich-text message following the title and before including other details."></div>
                                     </label>
                                 </div>
-                                <div class="form-check-inline">
+                                <div class="form-check form-check-inline">
                                     <input class="form-check-input" type="checkbox" id="includeSignature" name="includeSignature" [(ngModel)]="settings.includeSignature">
                                     <label class="form-check-label" for="includeSignature">Signature
-                                        <app-tooltip [inline]="true" [inlineType]="'checkLabel'" tbTooltip="Add a digital signature and timestamp for proof of authenticity."></app-tooltip>
+                                        <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" tbTooltip="Add a digital signature and timestamp for proof of authenticity."></div>
                                     </label>
                                 </div>
                             </div>
@@ -90,34 +92,34 @@
                     </div>
                     <div class="row">
                         <div class="col-10 offset-1">
-                            <div class="form-group row">
-                                <label class="col-3 col-form-label text-right" for="title">* Keystore:</label>
+                            <div class="row mb-3">
+                                <label class="col-3 col-form-label text-end" for="title">* Keystore:</label>
                                 <div class="col-8">
                                     <app-file-select *ngIf="!settings.keystoreDefined" label="Upload" (onUpload)="attachKeystore($event)"></app-file-select>
                                     <button class="btn btn-secondary" type="button" (click)="downloadKeystore()" *ngIf="settings.keystoreDefined">Download</button>
                                     <button class="btn btn-secondary spaced-left" type="button" (click)="clearKeystore()" *ngIf="settings.keystoreDefined">Remove</button>
-                                    <app-tooltip [inline]="true" [inlineType]="'button'" tbTooltip="The keystore file that includes the keypair (private and public key) that will be used. The keystore should contain a single keypair."></app-tooltip>
+                                    <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'button'" tbTooltip="The keystore file that includes the keypair (private and public key) that will be used. The keystore should contain a single keypair."></div>
                                 </div>
                             </div>
-                            <div class="form-group row pt-1">
-                                <legend class="col-3 col-form-label text-right pt-0">* Keystore type:</legend>
+                            <div class="row mb-3 pt-1">
+                                <legend class="col-3 col-form-label text-end pt-0">* Keystore type:</legend>
                                 <div class="col-8">
-                                    <div class="form-check-inline">
+                                    <div class="form-check form-check-inline">
                                         <input class="form-check-input" type="radio" [(ngModel)]="settings.keystoreType" name="keystoreTypes" id="type_1" [value]="'JCEKS'">
                                         <label class="form-check-label" for="type_1">JCEKS</label>
                                     </div>
-                                    <div class="form-check-inline">
+                                    <div class="form-check form-check-inline">
                                         <input class="form-check-input" type="radio" [(ngModel)]="settings.keystoreType" name="keystoreTypes" id="type_2" [value]="'JKS'">                                        
                                         <label class="form-check-label" for="type_2">JKS</label>
                                     </div>
-                                    <div class="form-check-inline">
+                                    <div class="form-check form-check-inline">
                                         <input class="form-check-input" type="radio" [(ngModel)]="settings.keystoreType" name="keystoreTypes" id="type_3" [value]="'PKCS12'">
                                         <label class="form-check-label" for="type_3">PKCS #12</label>
                                     </div>
                                 </div>
                             </div>
-                            <div class="form-group row pt-1" *ngIf="settings.passwordsSet">
-                                <label class="col-3 col-form-label text-right pt-0" for="change-passwords">Change passwords?</label>
+                            <div class="row mb-3 pt-1" *ngIf="settings.passwordsSet">
+                                <label class="col-3 col-form-label text-end pt-0" for="change-passwords">Change passwords?</label>
                                 <div class="col-8">
                                     <div class="form-check">
                                         <input class="form-check-input" id="change-passwords" name="changePasswords" [(ngModel)]="updatePasswords" type="checkbox"/>
@@ -125,19 +127,19 @@
                                 </div>
                             </div>
                             <div [collapse]="!updatePasswords" [isAnimated]="true">
-                                <div class="form-group row">
-                                    <label class="col-3 col-form-label text-right" for="keystorePassword">* Keystore password:</label>
+                                <div class="row mb-3">
+                                    <label class="col-3 col-form-label text-end" for="keystorePassword">* Keystore password:</label>
                                     <div class="col-3">
                                         <app-secret-input id="keystorePassword" name="keystorePassword" [(ngModel)]="settings.keystorePassword"></app-secret-input>
                                     </div>
-                                    <app-tooltip tbTooltip="The password to open the keystore."></app-tooltip>
+                                    <div app-tooltip class="col-auto" tbTooltip="The password to open the keystore."></div>
                                 </div>
-                                <div class="form-group row">
-                                    <label class="col-3 col-form-label text-right" for="keyPassword">* Key password:</label>
+                                <div class="row mb-3">
+                                    <label class="col-3 col-form-label text-end" for="keyPassword">* Key password:</label>
                                     <div class="col-3">
                                         <app-secret-input id="keyPassword" name="keyPassword" [(ngModel)]="settings.keyPassword"></app-secret-input>
                                     </div>
-                                    <app-tooltip tbTooltip="The password to unlock the key used for signing."></app-tooltip>
+                                    <div app-tooltip class="col-auto" tbTooltip="The password to unlock the key used for signing."></div>
                                 </div>
                             </div>
                         </div>

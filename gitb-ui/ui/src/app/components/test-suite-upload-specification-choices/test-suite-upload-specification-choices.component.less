@@ -3,7 +3,7 @@
 .ts-upload-result-container {
 	border: 1px solid @gray-dark-1;
 	background: @gray-light-1;
-	border-radius: 5px;
+	border-radius: @border-radius;
 	.ts-upload-result-spec {
 		width: 100%;
 		display: flex;
@@ -32,7 +32,7 @@
 		}
 	}
 	.ts-upload-result-actions {
-		background: white;
+		background: @white;
 		.form-group:first-child {
 			padding-top: 10px;
 		}
@@ -43,8 +43,8 @@
 		}
 	}
 	.ts-upload-result-last > .ts-upload-result-actions{
-		border-bottom-left-radius: 5px;
-		border-bottom-right-radius: 5px;
+		border-bottom-left-radius: @border-radius;
+		border-bottom-right-radius: @border-radius;
 	}
 }
 

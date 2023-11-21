@@ -12,15 +12,14 @@
 }
 .optionForm {
     margin-top: 2px;
-    border-radius: 4px;
+    border-radius: @border-radius;
     box-shadow: 0 1px 5px #959595;
     position: absolute;
     top: 100%;
     left: 0;
     border: 1px solid rgba(0,0,0,.15);
-    border-radius: 4px;
     box-shadow: 0 6px 12px rgb(0 0 0 / 18%);
-    background-color: #fff;
+    background-color: @white;
     background-clip: padding-box;    
     z-index: 1000;
     padding: 5px 0;
@@ -32,11 +31,6 @@
 }
 .rootDiv {
     position: relative;
-    .btn {
-        &.open {
-            box-shadow: 0 0 0 0.2rem rgba(130,138,145,.5);            
-        }
-    }
 }
 label {
     white-space: nowrap;

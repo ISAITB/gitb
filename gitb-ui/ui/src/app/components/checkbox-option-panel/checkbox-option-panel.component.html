@@ -4,7 +4,7 @@
         <div class="container-fluid">
             <div class="row" *ngFor="let optionSet of options; let last = last; let index1 = index;">
                 <div class="col-12 itemContainer" *ngFor="let option of optionSet; let index2 = index;">
-                    <div class="form-check">
+                    <div class="d-flex">
                         <input class="form-check-input" type="checkbox" [attr.id]="'option-'+index1+'-'+index2" [attr.name]="'option-'+index1+'-'+index2" [(ngModel)]="currentState[option.key]" (ngModelChange)="updated.emit(currentState)">
                         <label class="form-check-label disable-select" [attr.for]="'option-'+index1+'-'+index2" (click)="$event.stopPropagation()">
                             <span class="optionLabel"><ng-container *ngIf="option.iconClass"><i class="optionIcon" [ngClass]="option.iconClass!"></i> </ng-container>{{option.label}}</span>

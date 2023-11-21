@@ -4,56 +4,56 @@
 <form>
     <div class="modal-body">
         <app-alert-display [alerts]="alerts" innerClass="col-10 offset-1"></app-alert-display>
-        <div class="form-group row">
-            <label class="col-3 col-form-label text-right">* Contact email:</label>
+        <div class="row mb-3">
+            <label class="col-3 col-form-label text-end">* Contact email:</label>
             <div class="col-7">
                 <input id="contact" name="contact" [(ngModel)]="contactAddress" class="form-control" type="text">
             </div>
-            <app-tooltip tbTooltip="Specify the email at which you would like to receive feedback regarding your request."></app-tooltip>
+            <div app-tooltip class="col-auto" tbTooltip="Specify the email at which you would like to receive feedback regarding your request."></div>
         </div>
-        <div class="form-group row">
-            <label class="col-3 col-form-label text-right">* Feedback type:</label>
+        <div class="row mb-3">
+            <label class="col-3 col-form-label text-end">* Feedback type:</label>
             <div class="col-7">
-                <select class="form-control" name="feedback" [(ngModel)]="feedback">
+                <select class="form-control form-select" name="feedback" [(ngModel)]="feedback">
                     <option *ngFor="let feedbackType of feedbackTypes" [ngValue]="feedbackType">{{feedbackType.description}}</option>
                 </select>
             </div>
-            <app-tooltip tbTooltip="Select the nature of your request to facilitate its processing by support staff."></app-tooltip>
+            <div app-tooltip class="col-auto" tbTooltip="Select the nature of your request to facilitate its processing by support staff."></div>
         </div>
-        <div class="form-group row">
-            <label class="col-3 col-form-label text-right">* Message:</label>
+        <div class="row mb-3">
+            <label class="col-3 col-form-label text-end">* Message:</label>
             <div class="col-7">
                 <app-editor name="contentMessage" [(ngModel)]="contentMessage" [type]="'minimal'" [height]="300"></app-editor>
             </div>
         </div>
-        <div class="form-group row" *ngIf="showUpload() && attachments.length == 0">
-            <label class="col-3 col-form-label text-right">Attachment(s):</label>
+        <div class="row mb-3" *ngIf="showUpload() && attachments.length == 0">
+            <label class="col-3 col-form-label text-end">Attachment(s):</label>
             <div class="col-8">
                 <app-file-select label="Select file" (onUpload)="attachFile($event)"></app-file-select>
             </div>
         </div>
-        <div class="form-group row" *ngFor="let attachment of attachments; let first = first; let index = index"> 
-            <label class="col-3 col-form-label text-right" *ngIf="first">Attachment(s):</label>
+        <div class="row mb-3" *ngFor="let attachment of attachments; let first = first; let index = index"> 
+            <label class="col-3 col-form-label text-end" *ngIf="first">Attachment(s):</label>
             <div class="col-8" [ngClass]="{'offset-3': !first}">
                 <span>{{attachment.name}} ({{attachment.size}} bytes)</span>
                 <button type="button" class="btn btn-secondary" style="margin-left:5px;" (click)="removeAttachment(index)" containerClass="shortTooltip" tooltip="Remove" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-times"></i></button>
             </div>
         </div>
-        <div class="form-group row" *ngIf="attachments.length > 0">
+        <div class="row mb-3" *ngIf="attachments.length > 0">
             <div class="col-8 offset-3">
                 <app-file-select *ngIf="maximumAttachments > attachments.length" label="Select file" (onUpload)="attachFile($event)"></app-file-select>
             </div>
         </div>
-        <div class="form-group row" *ngIf="showSurveyLink()">
+        <div class="row mb-3" *ngIf="showSurveyLink()">
             <div class="col-12">
-                <div class="alert-info rounded div-padded">
+                <div class="alert alert-info rounded div-padded">
                     <p class="form-control-plaintext">If you have 10 minutes to spare we would much appreciate if you would complete our feedback survey. Click <a [href]="surveyAddress" target="blank">here</a> to open the survey in a separate window and start.</p>
                 </div>
             </div>
         </div>
-        <div class="form-group row">
+        <div class="row mb-3">
             <div class="col-12">
-                <div class="alert-info rounded div-padded">
+                <div class="alert alert-info rounded div-padded">
                     <p class="form-control-plaintext"><b>Privacy note:</b> The information you provide is treated by the test bed support team and is never shared to other parties. The 'Contact email' you provide is used only to receive a response from the support team. Please refer to the legal notice (link available in the screen's footer) for more information.</p>
                 </div>
             </div>

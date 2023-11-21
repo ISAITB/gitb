@@ -1,19 +1,19 @@
 <div class="panel-configuration">
 	<!-- Nothing is visible -->
 	<div *ngIf="!somethingIsVisible">
-		<div class="alert-info rounded div-padded">
+		<div class="alert alert-info rounded div-padded">
 			<span>Certain configuration must be completed for you by an administrator before you can proceed with testing.</span>
 		</div>                    
 	</div>
 	<!-- Something is visible -->
 	<div *ngIf="somethingIsVisible">
 		<!-- Something is not visible -->
-		<div class="alert-info rounded div-padded bottom-margin" *ngIf="requiredPropertiesAreHidden">
+		<div class="alert alert-info rounded div-padded bottom-margin" *ngIf="requiredPropertiesAreHidden">
 			<p>Required information is needed before tests can be launched. Please review this below and complete it accordingly.</p>
 			<span><b>Note: </b></span><span>Certain additional configuration must be completed for you by an administrator before you can proceed with testing.</span>
 		</div>
 		<!-- Everything is visible -->
-		<div class="alert-info rounded div-padded bottom-margin" *ngIf="!requiredPropertiesAreHidden">
+		<div class="alert alert-info rounded div-padded bottom-margin" *ngIf="!requiredPropertiesAreHidden">
 			<span>Required information is needed before tests can be launched. Please review this below and complete it accordingly.</span>
 		</div>
 		<div class="card panel-default" *ngIf="showOrganisationProperties">
