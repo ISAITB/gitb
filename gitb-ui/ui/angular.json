@@ -160,5 +160,7 @@
       }
     }
   },
-  "defaultProject": "ui"
+  "cli": {
+    "analytics": false
+  }
 }

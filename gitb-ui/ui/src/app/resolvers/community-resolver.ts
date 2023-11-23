@@ -1,12 +1,12 @@
 import { Injectable } from "@angular/core";
-import { ActivatedRouteSnapshot, Resolve, RouterStateSnapshot } from "@angular/router";
+import { ActivatedRouteSnapshot, RouterStateSnapshot } from "@angular/router";
 import { CommunityService } from "../services/community.service";
 import { Constants } from "../common/constants";
 
 @Injectable({
     providedIn: "root"
 })
-export class CommunityResolver implements Resolve<any> {
+export class CommunityResolver  {
 
     constructor(
         private communityService: CommunityService

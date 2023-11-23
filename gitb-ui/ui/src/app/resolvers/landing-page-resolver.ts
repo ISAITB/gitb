@@ -1,5 +1,5 @@
 import { Injectable } from "@angular/core";
-import { ActivatedRouteSnapshot, Resolve, RouterStateSnapshot } from "@angular/router";
+import { ActivatedRouteSnapshot, RouterStateSnapshot } from "@angular/router";
 import { Observable, Subscriber } from "rxjs";
 import { mergeMap } from "rxjs/operators";
 import { Constants } from "../common/constants";
@@ -9,7 +9,7 @@ import { LandingPage } from "../types/landing-page";
 @Injectable({
     providedIn: "root"
 })
-export class LandingPageResolver implements Resolve<any> {
+export class LandingPageResolver  {
 
     constructor(
         private landingPageService: LandingPageService
