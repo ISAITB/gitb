@@ -4,7 +4,7 @@
 <div class="modal-body">
 	<form [ngSwitch]="step">
 		<div *ngSwitchCase="'select'">
-            <div class="row mb-3" *ngIf="availableSpecifications">
+            <div class="row" *ngIf="availableSpecifications">
                 <label class="col-3 col-form-label text-end" for="specification">* Target {{dataService.labelSpecificationLower()}}:</label>
                 <div class="col-8">
                     <input *ngIf="availableSpecifications.length == 1" class="form-control" id="specification" name="specification" [(ngModel)]="specifications[0].fname" readonly="readonly"/>
@@ -18,9 +18,9 @@
 		<div *ngSwitchCase="'confirm'">
 			<div class="row">
 				<div class="col-12">
-					<div class="alert alert-info rounded div-padded">
+					<div class="alert alert-info rounded mb-0">
 						<span *ngIf="!hasMultipleChoices">A selected {{dataService.labelSpecificationLower()}} defines matching data. Select how the update should take place.</span>
-						<span *ngIf="hasMultipleChoices">A selected {{dataService.labelSpecificationsLower()}} define matching data. Select how the updates should take place.</span>
+						<span *ngIf="hasMultipleChoices">Selected {{dataService.labelSpecificationsLower()}} define matching data. Select how the updates should take place.</span>
 					</div>
 				</div>
 			</div>

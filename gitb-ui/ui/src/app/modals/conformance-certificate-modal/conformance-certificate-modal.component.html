@@ -3,7 +3,7 @@
 </div>
 <form>
     <div class="modal-body">
-        <div class="row mb-3 pt-1">
+        <div class="row pt-1">
             <legend class="col-3 col-form-label text-end pt-0">* Report type:</legend>
             <div class="col-8">
                 <div class="form-check pb-2">
@@ -21,7 +21,7 @@
             </div>
         </div>
         <div [collapse]="choice != Constants.REPORT_OPTION_CHOICE.CERTIFICATE" [isAnimated]="true" (expanded)="certificateChoicesVisible()">
-            <div class="row mb-3">
+            <div class="row my-3">
                 <label class="col-3 col-form-label text-end">Title:</label>
                 <div class="col-8">
                     <div class="row row-cols-auto align-items-center">
@@ -38,7 +38,7 @@
                 </div>
                 <div app-tooltip class="col-auto" tbTooltip="Specify a specific title to use to override the default."></div>
             </div>
-            <div class="row mb-3 pt-1">
+            <div class="row pt-1">
                 <legend class="col-3 col-form-label text-end pt-0">Included sections:</legend>
                 <div class="col-8">
                     <div class="form-check form-check-inline">
@@ -64,7 +64,7 @@
                 </div>
             </div>
             <div [collapse]="!settings.includeMessage" [isAnimated]="true">
-                <div class="row mb-3">
+                <div class="row mt-3">
                     <label class="col-3 col-form-label text-end" for="messageContent">Message content:</label>
                     <div class="col-8">
                         <app-editor id="messageContent" name="messageContent" [(ngModel)]="settings.message" [type]="'pdf'" [height]="300"></app-editor>

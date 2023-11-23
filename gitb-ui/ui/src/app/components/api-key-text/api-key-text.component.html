@@ -1,5 +1,5 @@
 <div class="input-group">
-    <input [name]="name" [attr.id]="id" [(ngModel)]="key" class="form-control" readonly="true">
+    <input [name]="name" [attr.id]="idName" [(ngModel)]="key" class="form-control" readonly="true">
     <button *ngIf="supportUpdate" class="btn btn-secondary" type="button" (click)="doUpdate()" [disabled]="updatePending || deletePending" containerClass="shortTooltip" tooltip="Reset" [delay]="Constants.TOOLTIP_DELAY">
         <i class="fa-solid fa-refresh" aria-hidden="true"></i>
     </button>

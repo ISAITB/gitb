@@ -10,11 +10,7 @@
 		<link rel="stylesheet" href="api/theme/css">
 		<link rel="stylesheet" href='assets/build/styles.css?v=@config.resourceVersionNumber'>
 		<script type='text/javascript' src='webjars/jquery/3.6.4/jquery.min.js'></script>
-		<script type='text/javascript' src='webjars/bootstrap/5.3.2/js/bootstrap.bundle.min.js'></script>
 		<script type='text/javascript' src='assets/components/gitb-cookie-cleanup.js?v=@config.resourceVersionNumber'></script>
-		@if(config.initialSandboxRun) {
-		<script type='text/javascript' src='assets/components/gitb-init-sandbox.js?v=@config.resourceVersionNumber'></script>
-		}
 	</head>
 	<body>
 		<div id="cp-div" style="display:none">@config.cookiePath</div>
@@ -62,7 +58,7 @@
 										</div>
 									</div>
 								</div>
-								<div class="alert-info rounded div-spaced div-padded">
+								<div class="alert alert-info rounded div-spaced padded mb-0">
 									@if(config.ssoEnabled) {
 									<p>To connect to the Test Bed you need to first authenticate using your EU Login account. If you are new to EU Login follow <a href="@config.euLoginUseGuideLink" target="blank">this tutorial</a> to get started.</p>
 									}
@@ -140,30 +136,28 @@
 						<div class="modal-header">
 							<h4>Initial setup</h4>
 						</div>
-						<form id="initForm" enctype="multipart/form-data" class="form-horizontal">
+						<form id="initForm" enctype="multipart/form-data">
 							<div class="modal-body">
-								<div class="alert-info rounded div-padded bottom-margin">
+								<div class="alert alert-info rounded div-padded">
 									<span>Please provide the data archive and its password to initialise the Test Bed's configuration. If you would prefer to proceed with an empty installation close this dialog and make an initial login.</span>
 								</div>
 								<div id="initFormAlerts"></div>
-								<div class="form-group row">
-									<label class="col-3 col-form-label text-right">* Data archive:</label>
+								<div class="row mb-3">
+									<label class="col-3 col-form-label d-flex justify-content-end">* Data archive:</label>
 									<div class="col-7">
 										<div class="input-group">
 											<input id="fileInputText" type="text" class="form-control clickable" placeholder="Select data archive ..." readonly="readonly"/>
-											<div class="input-group-append">
-												<button id="fileInputButton" class="btn btn-secondary" type="button"><i class="fa-regular fa-folder-open"></i></button>
-											</div>
+											<button id="fileInputButton" class="btn btn-secondary" type="button"><i class="fa-regular fa-folder-open"></i></button>
 										</div>
 										<input id="fileInputControl" name="file" type="file" style="display: none" />
 									</div>
-									<div>
+									<div class="col-auto">
 										<div class="form-control-plaintext"><span data-toggle="tooltip" class="check" title="The archive containing the data to import."><i class="fa-solid fa-question-circle"></i></span></div>
 									</div>
 								</div>
-								<div class="form-group row align-items-center">
-									<label class="col-3 col-form-label text-right" for="encryptionPassword">* Archive password:</label>
-									<div class="col-6 inline-checkbox-container">
+								<div class="row mb-3 align-items-center">
+									<label class="col-3 col-form-label d-flex justify-content-end" for="encryptionPassword">* Archive password:</label>
+									<div class="col-5">
 										<input id="encryptionPasswordVisible" name="passwordVisible" type="text" class="form-control"/>
 										<input id="encryptionPassword" name="passwordHidden" type="password" class="form-control"/>
 									</div>
@@ -185,6 +179,10 @@
 					</div>
 				</div>
 			</div>
+		}
+		@if(config.initialSandboxRun) {
+		<script type='text/javascript' src='webjars/bootstrap/5.3.2/js/bootstrap.bundle.min.js'></script>
+		<script type='text/javascript' src='assets/components/gitb-init-sandbox.js?v=@config.resourceVersionNumber'></script>
 		}
 	</body>
 </html>

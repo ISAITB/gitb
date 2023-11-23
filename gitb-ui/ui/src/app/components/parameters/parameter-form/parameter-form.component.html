@@ -1,15 +1,15 @@
-<div class="row mb-3">
+<div class="row">
     <label class="col-3 col-form-label text-end" for="parameterName">* {{nameLabel}}:</label>
     <div class="col-7"><input id="parameterName" name="parameterName" [(ngModel)]="parameter.name" class="form-control" type="text"></div>
     <div app-tooltip class="col-auto" *ngIf="hasKey" tbTooltip="This will be displayed as a label for the property in data collection forms."></div>
     <div app-tooltip class="col-auto" *ngIf="!hasKey" [tbTooltip]="'An identifier for the parameter within the current '+dataService.labelEndpointLower()+'. This is displayed to users in the conformance statement detail screen and used within test cases to refer to the parameter.'"></div>
 </div>
-<div class="row mb-3" *ngIf="hasKey">
+<div class="row mt-3" *ngIf="hasKey">
     <label class="col-3 col-form-label text-end" for="parameterKey">* Key:</label>
     <div class="col-7"><input id="parameterKey" name="parameterKey" [(ngModel)]="parameter.testKey" class="form-control" type="text"></div>
     <div app-tooltip class="col-auto" tbTooltip="An identifier used to distinguish this property and refer to it from within test cases (if included in tests)."></div>
 </div>
-<div class="row mb-3">
+<div class="row mt-3">
     <label class="col-3 col-form-label text-end" for="parameterDescription">Description:</label>
     <div class="col-7">
         <textarea id="parameterDescription" name="parameterDescription" [(ngModel)]="parameter.desc" class="form-control"></textarea>
@@ -17,7 +17,7 @@
     <div app-tooltip class="col-auto" *ngIf="hasKey" tbTooltip="This text will be included in a tooltip displayed for this property in data collection forms to explain its purpose."></div>
     <div app-tooltip class="col-auto" *ngIf="!hasKey" tbTooltip="This is presented to users when requesting a value for this parameter to explain its purpose."></div>
 </div>
-<div class="row mb-3 pt-1">
+<div class="row mt-3 pt-1">
     <legend class="col-3 col-form-label text-end pt-0">* Value type:</legend>
     <div class="col-7">
         <div class="form-check form-check-inline">
@@ -40,7 +40,7 @@
         </div>
     </div>
 </div>
-<div class="row mb-3 pt-1">
+<div class="row mt-3 pt-1">
     <legend class="col-3 col-form-label text-end pt-0">* Properties:</legend>
     <div class="col-8">
         <div class="form-check form-check-inline">
@@ -69,7 +69,7 @@
         </div>
     </div>
 </div>
-<div class="row mb-3" *ngIf="dependsOnTargets.length > 0">
+<div class="row mt-3" *ngIf="dependsOnTargets.length > 0">
     <label class="col-3 col-form-label text-end" for="depends">Depends on:</label>
     <div class="col-3">
         <select id="depends" name="depends" class="form-control form-select" [(ngModel)]="parameter.dependsOn" (change)="dependsOnChanged()">
@@ -95,7 +95,7 @@
     <div app-tooltip class="col-auto" tbTooltip="Define another simple property as a prerequisite. To do so select another property and define the value that is must have. If the prerequisite property's value does not match the provided value, then the current property is hidden and never considered as required."></div>
 </div>
 <div [collapse]="parameter.kind != 'SIMPLE'" [isAnimated]="true">
-    <div class="row mb-3 pt-1">
+    <div class="row mt-3 pt-1">
         <label class="col-3 col-form-label text-end pt-0" for="hasPresetValues">Preset values:</label>
         <div class="col-8">
             <div class="form-check">
@@ -105,9 +105,9 @@
         </div>
     </div>
     <div [collapse]="!parameter.hasPresetValues" [isAnimated]="true">
-        <div class="row mb-3">
+        <div class="row mt-3">
             <div class="col-8 offset-3">
-                <div class="form-table table-container" *ngIf="parameter.presetValues!.length > 0">
+                <div class="form-table table-container rounded" *ngIf="parameter.presetValues!.length > 0">
                     <table class="table table-directive thick">
                         <thead>
                             <tr>
@@ -123,8 +123,8 @@
                                 <td><input class="form-control" type="text" [name]="'presetValueLabel-'+index" [(ngModel)]="presetValue.label"/></td>
                                 <td class="btn-stacked-container">
                                     <div class="btn-toolbar btn-stacked">
-                                        <button *ngIf="!first" class="btn btn-xs btn-secondary" type="button" (click)="movePresetUp(index, $event)" containerClass="shortTooltip" tooltip="Move up" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-chevron-up"></i></button>
-                                        <button *ngIf="!last" class="btn btn-xs btn-secondary" type="button" (click)="movePresetDown(index, $event)" containerClass="shortTooltip" tooltip="Move down" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-chevron-down"></i></button>
+                                        <button *ngIf="!first" [class.top]="!first && !last" class="btn btn-xs btn-secondary" type="button" (click)="movePresetUp(index, $event)" containerClass="shortTooltip" tooltip="Move up" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-chevron-up"></i></button>
+                                        <button *ngIf="!last" [class.bottom]="!first && !last" class="btn btn-xs btn-secondary" type="button" (click)="movePresetDown(index, $event)" containerClass="shortTooltip" tooltip="Move down" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-chevron-down"></i></button>
                                     </div>
                                 </td>
                                 <td><button class="btn btn-secondary" type="button" (click)="removePresetValue(index)" containerClass="shortTooltip" tooltip="Delete" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-trash"></i></button></td>
@@ -138,7 +138,7 @@
             </div>
         </div>
     </div>
-    <div class="row mb-3">
+    <div class="row mt-3">
         <label class="col-3 col-form-label text-end" for="defaultValue">Default value:</label>
         <div class="col-7">
             <input *ngIf="!parameter.hasPresetValues" id="defaultValue" name="defaultValue" [(ngModel)]="parameter.defaultValue" class="form-control" type="text">

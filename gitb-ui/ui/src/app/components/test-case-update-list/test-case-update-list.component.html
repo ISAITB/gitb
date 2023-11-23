@@ -1,4 +1,4 @@
-<div class="form-table table-container testcase-table">
+<div class="form-table table-container rounded testcase-table">
     <div class="testcase-table-title expandable" (click)="show = !show">
         <div class="testcase-table-title-label"><app-collapsing-icon [isCollapsed]="!show"></app-collapsing-icon>{{title}}<span *ngIf="titleTooltip" class="inline-tooltip" boundariesElement="window" [tooltip]="titleTooltip"><i class="fa-solid fa-question-circle"></i></span></div>
         <div class="testcase-table-title-controls" *ngIf="showUpdateDefinition || showResetTestHistory">
@@ -46,8 +46,8 @@
                 <tr *ngFor="let testCase of testCases">
                     <td>{{testCase.identifier}}</td>
                     <td>{{testCase.name}}</td>
-                    <td *ngIf="showUpdateDefinition" class="centered"><input type="checkbox" [(ngModel)]="testCase.updateDefinition" [name]="'choice_data_'+testCase.identifier"></td>
-                    <td *ngIf="showResetTestHistory" class="centered"><input type="checkbox" [(ngModel)]="testCase.resetTestHistory" [name]="'choice_history_'+testCase.identifier"></td>
+                    <td *ngIf="showUpdateDefinition" class="centered"><input class="form-check-input" type="checkbox" [(ngModel)]="testCase.updateDefinition" [name]="'choice_data_'+testCase.identifier"></td>
+                    <td *ngIf="showResetTestHistory" class="centered"><input class="form-check-input" type="checkbox" [(ngModel)]="testCase.resetTestHistory" [name]="'choice_history_'+testCase.identifier"></td>
                 </tr>
             </tbody>
         </table>

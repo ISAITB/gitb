@@ -16,22 +16,30 @@
                                     <h4 *ngIf="dataService.actualUser.accounts.length == 0" style="padding-bottom: 10px;">No roles are currently linked to your account</h4>
                                 </div>
                                 <div class="row" *ngIf="dataService.actualUser.accounts.length == 0">
-                                    <div class="alert alert-info rounded div-padded">
-                                        <span>To use the Test Bed you need to first be assigned a role in one or more communities. To link such a role to your account click the button below to view available options.</span>
-                                    </div>                        
+                                    <div class="col-12">
+                                        <div class="alert alert-info rounded mb-0">
+                                            <span>To use the Test Bed you need to first be assigned a role in one or more communities. To link such a role to your account click the button below to view available options.</span>
+                                        </div>                        
+                                    </div>
                                 </div>
-                                <div class="row" [ngClass]="{'div-spaced-small': i > 0, 'account-card-ou': account.role == Constants.USER_ROLE.VENDOR_USER, 'account-card-oa': account.role == Constants.USER_ROLE.VENDOR_ADMIN, 'account-card-ca': account.role == Constants.USER_ROLE.COMMUNITY_ADMIN, 'account-card-ta': account.role == Constants.USER_ROLE.SYSTEM_ADMIN}" *ngFor="let account of dataService.actualUser.accounts; let i=index">
-                                    <div class="account-card-internal" (click)="loginViaSelection(account.id)">
-                                        <div class="account-card-text">
-                                            {{dataService.getRoleDescription(true, account)}}
+                                <div class="row" *ngFor="let account of dataService.actualUser.accounts; let i=index">
+                                    <div class="col-12">
+                                        <div [ngClass]="{'div-spaced-small': i > 0, 'account-card-ou': account.role == Constants.USER_ROLE.VENDOR_USER, 'account-card-oa': account.role == Constants.USER_ROLE.VENDOR_ADMIN, 'account-card-ca': account.role == Constants.USER_ROLE.COMMUNITY_ADMIN, 'account-card-ta': account.role == Constants.USER_ROLE.SYSTEM_ADMIN}">
+                                            <div class="account-card-internal" (click)="loginViaSelection(account.id)">
+                                                <div class="account-card-text">
+                                                    {{dataService.getRoleDescription(true, account)}}
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                                <div class="row account-list-new" *ngIf="dataService.actualUser != undefined">
-                                    <button type="button" class="btn btn-primary" (click)="createAccount()" [pending]="createPending">
-                                        <span *ngIf="dataService.actualUser.accounts.length > 0">Link another role to your account</span>
-                                        <span *ngIf="dataService.actualUser.accounts.length == 0">Link a role to your account</span>
-                                    </button>
+                                <div class="row mt-4" *ngIf="dataService.actualUser != undefined">
+                                    <div class="col-auto">
+                                        <button type="button" class="btn btn-primary" (click)="createAccount()" [pending]="createPending" [ngSwitch]="dataService.actualUser.accounts.length > 0">
+                                            <span *ngSwitchCase="true">Link another role to your account</span>
+                                            <span *ngSwitchDefault>Link a role to your account</span>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -43,7 +51,7 @@
                     <div class="row">
                         <div class="offset-1 col-10">
                             <form>
-                                <div class="card no-bottom-margin">
+                                <div class="card mb-0">
                                     <div class="card-header">
                                         <h4>{{loginOption == Constants.LOGIN_OPTION.REGISTER && dataService.configuration.registrationEnabled?'Registration':(onetimePassword?'Change password':'Login')}}</h4>
                                     </div>
@@ -81,12 +89,12 @@
                                         <ng-container [ngSwitch]="loginOption == Constants.LOGIN_OPTION.REGISTER && dataService.configuration.registrationEnabled">
                                             <div class="row" *ngSwitchCase="false">
                                                 <div class="col-10 offset-1">
-                                                    <div class="alert alert-info rounded div-padded">
+                                                    <div class="alert alert-info rounded mb-0">
                                                         <span *ngIf="!onetimePassword && !weakPassword"><b>Privacy note:</b> By clicking 'Log in' you consent to the use of cookies to manage your session. Please refer to the legal notice (link available in the screen's footer) for more information.</span>
                                                         <span *ngIf="onetimePassword">The password you used is a one-time password that needs to be changed upon your first login.</span>
                                                         <div *ngIf="weakPassword">
                                                             <span>The password you used is not complex enough and needs to be replaced. Your password must:</span>
-                                                            <ul class="no-bottom-margin">
+                                                            <ul class="mb-0">
                                                                 <li>Contain at least one uppercase letter, one lowercase letter, one digit and one symbol.</li>
                                                                 <li>Be at least eight characters long.</li>
                                                             </ul>

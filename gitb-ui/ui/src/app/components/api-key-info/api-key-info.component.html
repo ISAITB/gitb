@@ -1,4 +1,4 @@
-<div class="card table-container">
+<div class="card table-container rounded">
     <table class="table table-directive">
         <thead>
             <tr>
@@ -18,7 +18,7 @@
                         <input type="text" name="organisationName" [(ngModel)]="organisationName" readonly="readonly" class="form-control"/>
                     </td>
                     <td class="typeKey">
-                        <app-api-key-text *ngIf="apiInfo.organisation != undefined" id="organisation" name="organisation"
+                        <app-api-key-text *ngIf="apiInfo.organisation != undefined" idName="organisation" name="organisation"
                             [key]="apiInfo.organisation" 
                             [supportUpdate]="canUpdate"
                             [supportDelete]="canUpdate"
@@ -38,7 +38,7 @@
                         </select>                        
                     </td>
                     <td class="typeKey">
-                        <app-api-key-text *ngIf="selectedSystem.key != undefined" id="system" name="system"
+                        <app-api-key-text *ngIf="selectedSystem.key != undefined" idName="system" name="system"
                         [key]="selectedSystem.key"
                         [supportUpdate]="canUpdate"
                         [supportDelete]="canUpdate"
@@ -71,7 +71,7 @@
                         </select>                        
                     </td>
                     <td class="typeKey">
-                        <app-api-key-text [key]="selectedActor.key" id="actor" name="actor"></app-api-key-text>
+                        <app-api-key-text [key]="selectedActor.key" idName="actor" name="actor"></app-api-key-text>
                     </td>
                 </tr>
                 <tr *ngIf="selectedSpecification && selectedTestSuite">
@@ -83,7 +83,7 @@
                         </select>
                     </td>
                     <td class="typeKey">
-                        <app-api-key-text [key]="selectedTestSuite.key" id="testSuite" name="testSuite"></app-api-key-text>
+                        <app-api-key-text [key]="selectedTestSuite.key" idName="testSuite" name="testSuite"></app-api-key-text>
                     </td>
                 </tr>
                 <tr *ngIf="selectedTestSuite && selectedTestCase">
@@ -95,7 +95,7 @@
                         </select>
                     </td>
                     <td class="typeKey">
-                        <app-api-key-text [key]="selectedTestCase.key" id="testCase" name="testCase"></app-api-key-text>
+                        <app-api-key-text [key]="selectedTestCase.key" idName="testCase" name="testCase"></app-api-key-text>
                     </td>
                 </tr>
             </ng-container>

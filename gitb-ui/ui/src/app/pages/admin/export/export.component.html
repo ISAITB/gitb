@@ -1,5 +1,5 @@
 <div class="page">
-	<div class="card no-bottom-margin">
+	<div class="card mb-0">
         <div class="card-header">
 			<h4 class="title">Data export</h4>
 		</div>
@@ -75,14 +75,12 @@
 									<tr *ngIf="exportType == 'community'">
 										<td class="row-header">
 											<div>
-												<div class="col-form-label pt-0">Community data</div>
+												<div class="fw-bold pt-0">Community data</div>
 												<div app-tooltip class="col-auto d-inline-flex" [inline]="true" tbTooltip="Data linked to the community and its members."></div>
 											</div>
 										</td>
 										<td class="td-centered">
-											<div class="form-check">
-												<input class="form-check-input position-static" type="checkbox" name="allCommunityData" [(ngModel)]="allCommunityData" (change)="allCommunityDataChanged()"/>
-											</div>
+											<input class="form-check-input position-static" type="checkbox" name="allCommunityData" [(ngModel)]="allCommunityData" (change)="allCommunityDataChanged()"/>
 										</td>
 										<td colspan="2">
 											<div class="form-check form-check-inline" *ngIf="!dataService.configuration.ssoEnabled">
@@ -126,14 +124,12 @@
 									<tr *ngIf="showDomainOption">
 										<td class="row-header">
 											<div>
-												<div class="col-form-label pt-0">{{dataService.labelDomain()}} data</div>
+												<div class="fw-bold pt-0">{{dataService.labelDomain()}} data</div>
 												<div app-tooltip class="col-auto d-inline-flex" [inline]="true" [tbTooltip]="'Data linked to '+dataService.labelSpecificationsLower()+' and the test suites available for testing.'"></div>
 											</div>
 										</td>
 										<td class="td-centered">
-											<div class="form-check">
-												<input class="form-check-input position-static" type="checkbox" name="allDomainData" [(ngModel)]="allDomainData" (change)="allDomainDataChanged()"/>
-											</div>
+											<input class="form-check-input position-static" type="checkbox" name="allDomainData" [(ngModel)]="allDomainData" (change)="allDomainDataChanged()"/>
 										</td>
 										<td colspan="2">
 											<div class="form-check form-check-inline" *ngIf="exportType == 'community'">
@@ -165,14 +161,12 @@
 									<tr *ngIf="exportType == 'community'">
 										<td class="row-header">
 											<div>
-												<div class="col-form-label pt-0">{{dataService.labelOrganisation()}} data</div>
+												<div class="fw-bold pt-0">{{dataService.labelOrganisation()}} data</div>
 												<div app-tooltip class="col-auto d-inline-flex" [inline]="true" [tbTooltip]="'Data linked to the community\'s '+dataService.labelOrganisationsLower()+' and their test configuration.'"></div>
 											</div>
 										</td>
 										<td class="td-centered">
-											<div class="form-check">
-												<input class="form-check-input position-static" type="checkbox" name="allOrganisationData" [(ngModel)]="allOrganisationData" (change)="allOrganisationDataChanged()"/>
-											</div>
+											<input class="form-check-input position-static" type="checkbox" name="allOrganisationData" [(ngModel)]="allOrganisationData" (change)="allOrganisationDataChanged()"/>
 										</td>
 										<td colspan="2">
 											<div class="form-check form-check-inline">

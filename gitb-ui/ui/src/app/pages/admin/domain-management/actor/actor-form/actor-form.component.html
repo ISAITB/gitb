@@ -43,7 +43,7 @@
         <div class="row mb-3" *ngIf="dataService.configuration.automationApiEnabled && actor.id != undefined">
             <label class="col-3 col-form-label text-end" for="hidden">API key:</label>
             <div class="col-7">
-                <app-api-key-text id="apiKey" name="apiKey" [key]="actor.apiKey!"></app-api-key-text>
+                <app-api-key-text idName="apiKey" name="apiKey" [key]="actor.apiKey!"></app-api-key-text>
             </div>    
             <div app-tooltip class="col-auto" [tbTooltip]="'The key to use when calling the Test Bed\'s REST API to identify the '+dataService.labelActorLower()+'.'"></div>
         </div>

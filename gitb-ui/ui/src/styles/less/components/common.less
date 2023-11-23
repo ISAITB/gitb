@@ -1,11 +1,5 @@
 @import "../_common.less";
 
-@processing-color: #03A9F4;
-@error-color: #D32F2F;
-@completed-color: #4CAF50;
-@basic-color: #777;
-@light-blue: #D9EDF7;
-
 textarea {
 	resize: vertical;
 	min-height: 34px;
@@ -54,7 +48,7 @@ button.btn {
 
 .nav-tabs > li.active > a {
 	background-color: @gray-light-1 !important;
-	color: @blueHeading !important;
+	color: var(--bs-nav-link-color) !important;
 	border-bottom-color: @gray-light-1 !important;
 }
 
@@ -141,10 +135,10 @@ tr.test-result-obsolete {
 	color: @completed-color;
 }
 .test-case-warning {
-	color: @warning-yellow;
+	color: @orange-warning;
 }
 .test-case-undefined {
-	color: @gray;
+	color: @gray-incomplete;
 }
 
 .select-execution {
@@ -189,16 +183,18 @@ tr.test-result-obsolete {
 }
 .parameter-div {
 	border: 1px solid;
-    border-color: #ddd;
+    border-color: @gray-dark-1;
 	border-radius: @border-radius;
     margin-bottom: 5px;
     margin-top: 5px;
 }
-.form-check {
-	// margin-top:11px !important;
-}
+
 .form-separator {
-	border-bottom: 1px solid @gray-light; margin-bottom: 20px;
+	border-bottom: 1px solid @gray-light;
+	margin-bottom: 20px;
+	&.no-margin {
+		margin-bottom: 0px;
+	}
 	&.expandable {
 		cursor: pointer;
 		display: flex;
@@ -216,10 +212,13 @@ tr.test-result-obsolete {
 	}
 }
 .form-separator-popup {
-	border-bottom: 1px solid #e5e5e5;
+	border-bottom: 1px solid @gray-light;
     margin-bottom: 20px;
     margin-top: 20px;
-
+	&.no-margin {
+		margin-top: 0px;
+		margin-bottom: 0px;
+	}
 	&.selfreg {
 		margin-top: 3px;
 	}
@@ -292,21 +291,17 @@ th.sortableHeader {
 	}
 }
 
-@item-add: @green-light;
-@item-add-dark: @success-green;
-@item-delete: @orange-light;
-@item-delete-dark: @warning-yellow;
-@item-update: @blue-light;
-@item-update-dark: @blue;
+@item-add-dark: @green-success;
+@item-delete-dark: @orange-warning;
+@item-update-dark: @blue-info;
 
-@item-color: #F5F5F5;
-@item-color-border: #ddd;
+@item-color: @gray-light-1;
+@item-color-border: @gray-dark-1;
 @item-color-dark: darken(@item-color, 10%);
 @item-color-hover: @item-color-dark;
 
 div.import-item {
-	display: table;
-	width: 100%;
+	display: flex;
 	border-radius: @border-radius;
     border-bottom-right-radius: @border-radius;
     border-top-right-radius: @border-radius;
@@ -323,14 +318,13 @@ div.import-item {
 		background-color: @item-delete-dark;
 	}
 	div.import-item-icon {
-		display: table-cell;
-		width: 1%;
-		padding: 10px;
-		color: white;
+		display: flex;
+		padding: 15px 10px 10px 10px;
+		color: @white;
+		align-items: flex-start;
 	}
 	div.import-item-container {
-		margin-left: 15px;
-		display: table-cell;
+		flex-grow: 1;
 		border-bottom-right-radius: 5px;
 		border-top-right-radius: 5px;
 		background-color: @item-color;
@@ -342,6 +336,7 @@ div.import-item {
 			border-top-right-radius: 5px;
 			border-bottom-right-radius: 5px;
 			padding: 10px;
+			align-items: center;			
 			&.with-groups {
 				&:hover {
 					cursor: pointer;
@@ -369,12 +364,10 @@ div.import-item {
 	}
 }
 div.title-holder {
-	display: table;
-	width: 100%;
+	display: flex;
 }
 div.title-text {
-	display: table-cell;
-	vertical-align: middle;
+	display: flex;
 	&.highlight {
 		font-weight: bold;
 	}
@@ -384,16 +377,17 @@ div.title-text {
 	}
 }
 div.title-icon {
-	display: table-cell;
-	text-align: right;
-	width: 25px;
+	display: flex;
+	width: 50px;
+	margin-right: 5px;
+	justify-content: flex-end;
 }
 div.title-action {
-	display: table-cell;
-	text-align: right;
+	display: flex;
+    margin-left: auto;	
 	.control {
 		padding: 6px 12px;
-		border: 1px solid #ccc;
+		border: 1px solid @gray-button;
 		border-radius: @border-radius;
 		font-size: 12px;
 		width: 200px;
@@ -404,12 +398,14 @@ div.title-action {
 }
 div.import-item-group {
 	background-color: @item-color;
+	align-items: center;	
 	padding-bottom: 10px;
 	div.import-item-group-label {
 		min-height: 50px;
 		padding: 10px;
 		border-radius: @border-radius;
 		border: 1px solid @item-color-border;
+		align-items: center;
 		&.open {
 			border-top-left-radius: @border-radius;
 			border-top-right-radius: @border-radius;
@@ -475,6 +471,9 @@ div.import-item-root {
 	margin-bottom: 10px;
 	table.table {
 		margin-bottom: 0px;
+		tbody tr:last-child td {
+			border-bottom-style: hidden;
+		}
 	}
 }
 
@@ -510,10 +509,6 @@ table.table {
 			}
 		}
 	}
-}
-
-.no-bottom-margin, .card.no-bottom-margin {
-	margin-bottom: 0px;
 }
 
 table.table {
@@ -591,9 +586,9 @@ table.table {
 				&.applied {
 					.property-id {
 						padding: 6px 12px;
-						border: 1px solid #ccc;
-						border-top-left-radius: 4px;
-						border-bottom-left-radius: 4px;
+						border: 1px solid @gray-button;
+						border-top-left-radius: @border-radius;
+						border-bottom-left-radius: @border-radius;
 						text-align: center;
 						font-weight: bold;
 						white-space: nowrap;
@@ -601,12 +596,11 @@ table.table {
 					}
 					.property-value {
 						padding: 6px 12px;
-						border: 1px solid #ccc;
+						border: 1px solid @gray-button;
 						border-left: 0px;
 						border-right: 0px;
 						text-align: center;
-						background-color: #eee;
-						color: #555;
+						background-color: @gray-light-1;
 						white-space: nowrap;
 						height: 36px;
 					}
@@ -678,6 +672,9 @@ table.table {
 }
 div.table-container {
 	overflow: auto;
+	table tbody tr:last-child td {
+		border-bottom-style: hidden;
+	}
 }
 .collapsible-icon {
 	margin-right: 10px;

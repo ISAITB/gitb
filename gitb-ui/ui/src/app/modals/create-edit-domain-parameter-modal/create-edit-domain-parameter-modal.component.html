@@ -39,7 +39,7 @@
                 </div>
             </div>
         </div>
-        <div class="row mb-3 pt-1">
+        <div class="row pt-1">
             <label class="col-3 col-form-label text-end pt-0" for="hidden">Included in tests:</label>
             <div class="col-7">
                 <div class="form-check">
@@ -48,12 +48,12 @@
                 </div>
             </div>
         </div>
-        <div class="row mb-3" *ngIf="domainParameter.kind == 'SIMPLE'">
+        <div class="row mt-3" *ngIf="domainParameter.kind == 'SIMPLE'">
             <label class="col-3 col-form-label text-end" for="value">* Value:</label>
             <div class="col-7"><input id="value" name="value" [(ngModel)]="domainParameter.value" class="form-control" type="text" autocomplete="off"/></div>
             <div app-tooltip class="col-auto" tbTooltip="The value to consider for this parameter."></div>
         </div>
-        <div class="row mb-3 pt-1" *ngIf="domainParameter.kind == 'HIDDEN' && formData.showUpdateValue">
+        <div class="row mt-3 pt-1" *ngIf="domainParameter.kind == 'HIDDEN' && formData.showUpdateValue">
             <label class="col-3 col-form-label text-end pt-0" for="domain-parameter-checkbox">Update value?</label>
             <div class="col-7">
                 <div class="form-check">
@@ -61,14 +61,14 @@
                 </div>
             </div>
         </div>
-        <div class="row mb-3" *ngIf="domainParameter.kind == 'HIDDEN' && (!domainParameter.id || formData.updateValue)">
+        <div class="row mt-3" *ngIf="domainParameter.kind == 'HIDDEN' && (!domainParameter.id || formData.updateValue)">
             <label class="col-3 col-form-label text-end" for="value">* Value:</label>
             <div class="col-7">
                 <app-secret-input id="value" name="value" [(ngModel)]="formData.hiddenValue"></app-secret-input>
             </div>
             <div app-tooltip class="col-auto" tbTooltip="The value to consider for this parameter."></div>
         </div>
-        <div class="row mb-3" *ngIf="domainParameter.kind == 'BINARY'">
+        <div class="row mt-3" *ngIf="domainParameter.kind == 'BINARY'">
             <label class="col-3 col-form-label text-end" for="value">* Value:</label>
             <div class="col-7">
                 <a class="form-control-plaintext" href *ngIf="showFileName()" (click)="download();$event.preventDefault()" style="padding-right:10px;">{{getFileName()}}</a>

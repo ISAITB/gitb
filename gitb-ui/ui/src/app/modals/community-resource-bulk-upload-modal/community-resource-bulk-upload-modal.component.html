@@ -1,4 +1,4 @@
-<div class="modal-header">
+    <div class="modal-header">
     <h4>Community resource bulk upload</h4>
 </div>
 <form>
@@ -15,17 +15,17 @@
             </div>
             <div app-tooltip class="col-auto" tbTooltip="The ZIP archive containing the resources to make available. The archive should directly contain the resources to upload, without containing or contained directories."></div>
         </div>
-        <div class="row mb-3 pt-1">
+        <div class="row pt-1">
             <legend class="col-3 col-form-label text-end pt-0">Update approach:</legend>
             <div class="col-8">
                 <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="radio" id="updateMatching" name="updateMatching" [(ngModel)]="updateMatching" id="updateMatching_1" [value]="true">
+                    <input class="form-check-input" type="radio" id="updateMatching" name="updateMatching" [(ngModel)]="updateMatching" [value]="true">
                     <label class="form-check-label" for="updateMatching">Replace matching resources
                         <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" tbTooltip="Uploaded files matching existing resources will update the existing ones."></div>
                     </label>
                 </div>
                 <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="radio" id="keepMatching" name="keepMatching" [(ngModel)]="updateMatching" id="updateMatching_2" [value]="false">
+                    <input class="form-check-input" type="radio" id="keepMatching" name="keepMatching" [(ngModel)]="updateMatching" [value]="false">
                     <label class="form-check-label" for="keepMatching">Keep matching resources
                         <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" tbTooltip="Uploaded files matching existing resources will be added as new resources, without updating the existing ones."></div>
                     </label>

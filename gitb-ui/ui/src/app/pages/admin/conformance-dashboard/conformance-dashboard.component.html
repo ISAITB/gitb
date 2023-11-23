@@ -1,6 +1,6 @@
 <div id="conformanceDashboardPage" class="page conformancedashboard">
     <app-test-filter [filterState]="filterState" [communityId]="communityId" (onApply)="getConformanceStatements()"></app-test-filter>
-	<div id="conformanceDashboardPageTable" class="card no-bottom-margin">
+	<div id="conformanceDashboardPageTable" class="card mb-0">
 		<div class="card-header">
 			<h4 id="conformance-statements-title" class="title">Conformance statements</h4>
 			<div class="btn-toolbar allStatementControls" [class.disable-events]="filterState.updatePending">
@@ -16,7 +16,7 @@
 				<button type="button" class="btn btn-secondary" *ngIf="showCollapseAll()" (click)="onCollapseAll()">Collapse all</button>
 			</div>
 		</div>
-        <div class="table-container">
+        <div class="table-container rounded">
             <table class="table table-directive expandable-table">
                 <thead>
                     <tr>
@@ -40,7 +40,7 @@
                     <tr><td [attr.colspan]="columnCount" class="td-no-data"><span>No conformance data found</span></td></tr>
                 </tbody>
                 <tbody *ngIf="conformanceStatements.length > 0" [class.disable-events]="filterState.updatePending">
-                    <ng-container *ngFor="let statement of conformanceStatements; let first = first;">
+                    <ng-container *ngFor="let statement of conformanceStatements">
                         <tr (click)="onExpand(statement)"
                             class="table-row-directive expandable-table-row-collapsed">
                             <td class="td-min-centered"><app-collapsing-icon [padded]="false" [isCollapsed]="!isExpanded(statement)"></app-collapsing-icon></td>
@@ -51,7 +51,7 @@
                             <td>{{statement.specName}}</td>
                             <td>{{statement.actorName}}</td>
                             <td class="td-min">{{statement.updateTime}}</td>
-                            <td class="td-min-centered"><app-test-status-icons [counters]="statement.counters!" [asLine]="true" [tooltipOnLeft]="first"></app-test-status-icons></td>
+                            <td class="td-min-centered"><app-test-status-icons [counters]="statement.counters!" [asLine]="true"></app-test-status-icons></td>
                             <td class="td-min-centered"><span><i containerClass="shortTooltip" [tooltip]="dataService.tooltipForTestResult(statement.overallStatus)" [ngClass]="dataService.iconForTestResult(statement.overallStatus)"></i></span></td>
                             <td class="td-min-centered">
                                 <button class="btn btn-secondary" (click)="onExportConformanceStatement(statement); $event.stopPropagation();" [pending]="statement.exportPending" [icon]="true"  containerClass="shortTooltip" tooltip="Export" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-regular fa-file-pdf"></i></button>
@@ -143,14 +143,14 @@
                     </ng-container>
                 </tbody>
             </table>
-        </div>
-        <div *ngIf="(!prevDisabled || !nextDisabled) && conformanceStatements && conformanceStatements.length > 0" class="text-center table-paging-controls">
-            <ul class="pagination" [class.disable-events]="filterState.updatePending">
-                <li [class.disabled]="prevDisabled"><a href (click)="doFirstPage(); $event.preventDefault()">First</a></li>
-                <li [class.disabled]="prevDisabled"><a href (click)="doPrevPage(); $event.preventDefault()">Previous</a></li>
-                <li [class.disabled]="nextDisabled"><a href (click)="doNextPage(); $event.preventDefault()">Next</a></li>
-                <li [class.disabled]="nextDisabled"><a href (click)="doLastPage(); $event.preventDefault()">Last</a></li>
-            </ul>
+            <div *ngIf="(!prevDisabled || !nextDisabled) && conformanceStatements && conformanceStatements.length > 0" class="text-center table-paging-controls">
+                <div class="btn-group" role="group" [class.disable-events]="filterState.updatePending">
+                    <button type="button" class="btn btn-sm btn-secondary" [disabled]="prevDisabled" (click)="doFirstPage()">First</button>
+                    <button type="button" class="btn btn-sm btn-secondary" [disabled]="prevDisabled" (click)="doPrevPage()">Previous</button>
+                    <button type="button" class="btn btn-sm btn-secondary" [disabled]="nextDisabled" (click)="doNextPage()">Next</button>
+                    <button type="button" class="btn btn-sm btn-secondary" [disabled]="nextDisabled" (click)="doLastPage()">Last</button>
+                </div>
+            </div>
         </div>
 	</div>
 </div>

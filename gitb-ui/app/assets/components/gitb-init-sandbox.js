@@ -24,7 +24,7 @@ $(document).ready(function() {
                 cache: false,
                 success: function (e) {
                     importFinished = true
-                    $("#initFormAlerts").html("<div class='alert alert-success' role='alert'>Archive successfully imported. Close this dialog to proceed.</div>")
+                    $("#initFormAlerts").html("<div class='alert alert-success fade show alert-dismissible' role='alert'><span>Archive successfully imported. Close this dialog to proceed.</span><button type='button' class='btn-close' data-bs-dismiss='alert' aria-label='Close'></button></div>")
                     $("#initDataSpinner").hide()
                     $("#buttonNoImport").prop("disabled", false)
                 },
@@ -33,7 +33,7 @@ $(document).ready(function() {
                     if (e && e.responseJSON && e.responseJSON.error_description) {
                         message = e.responseJSON.error_description
                     }
-                    $("#initFormAlerts").html("<div class='alert alert-danger' role='alert'>"+message+"</div>")
+                    $("#initFormAlerts").html("<div class='alert alert-danger fade show alert-dismissible' role='alert'><span>"+message+"</span><button type='button' class='btn-close' data-bs-dismiss='alert' aria-label='Close'></button></div>")
                     $("#initDataSpinner").hide()
                     $("#buttonImport").prop("disabled", false)
                     $("#buttonNoImport").prop("disabled", false)
@@ -91,8 +91,12 @@ $(document).ready(function() {
     $("#buttonNoImport").on("click", function() {
         $("#sandboxModal").modal("hide")
     })
+    const sandboxModal = new bootstrap.Modal('#sandboxModal', {
+        backdrop: 'static',
+        keyboard: false
+    })
     // Initialisation of modal content.
-    $('#sandboxModal').on('show.bs.modal', function (e) {
+    document.getElementById('sandboxModal').addEventListener('show.bs.modal', event => {
         importFinished = false
         $("[data-toggle='tooltip']").tooltip()
         $("#initDataSpinner").hide()
@@ -102,8 +106,5 @@ $(document).ready(function() {
         checkFormValid()
     })
     // Activation of modal.
-    $("#sandboxModal").modal({
-        backdrop: 'static',
-        keyboard: false
-    })
+    sandboxModal.show()
 })

@@ -87,12 +87,12 @@
                             <label class="col-3 col-form-label text-end pt-0" for="asTemplate">Publish as template:</label>
                             <div class="col-7">
                                 <div class="form-check">
-                                    <input class="form-check-input" id="template" id="asTemplate" name="asTemplate" [(ngModel)]="organisation.template" type="checkbox" (change)="templateChoiceChanged()">
+                                    <input class="form-check-input" id="template" id="asTemplate" name="asTemplate" [(ngModel)]="organisation.template" type="checkbox">
                                     <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [tbTooltip]="'You can define the configuration of this '+dataService.labelOrganisationLower()+' as a template that will be presented to users self-registering for the community (if self-registration is enabled). Do this to offer new users preconfigured '+dataService.labelSystemsLower()+' and conformance statements.'"></div>
                                 </div>                            
                             </div>
                         </div>
-                        <div [collapse]="!organisation.template" [isAnimated]="true">
+                        <div [collapse]="!organisation.template" [isAnimated]="true" (expanded)="templateChoiceChanged()">
                             <div class="row mb-3">
                                 <label class="col-3 col-form-label text-end" for="templateName">* Template name:</label>
                                 <div class="col-7"><input id="templateName" name="templateName" [(ngModel)]="organisation.templateName" class="form-control" type="text"></div>

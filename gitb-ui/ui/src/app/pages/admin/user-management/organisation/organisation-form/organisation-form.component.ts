@@ -103,7 +103,7 @@ export class OrganisationFormComponent implements OnInit, AfterViewInit {
 
   templateChoiceChanged() {
     if (this.organisation.template) {
-      this.dataService.focus('templateName', 200)
+      this.dataService.focus('templateName')
     }
   }
 

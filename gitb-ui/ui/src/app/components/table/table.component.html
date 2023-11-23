@@ -1,4 +1,4 @@
-<div class="table-container">
+<div class="table-container rounded">
     <table class="table table-directive">
         <caption *ngIf="tableCaptionVisible">{{tableCaption}}</caption>
         <thead>
@@ -57,11 +57,11 @@
         </tbody>
     </table>
     <div *ngIf="(!prevDisabled || !nextDisabled) && data && data.length > 0" class="text-center table-paging-controls">
-        <ul class="pagination" [class.disable-events]="contentRefreshing">
-            <li [class.disabled]="prevDisabled"><a href (click)="doFirstPage();$event.preventDefault()">First</a></li>
-            <li [class.disabled]="prevDisabled"><a href (click)="doPrevPage();$event.preventDefault()">Previous</a></li>
-            <li [class.disabled]="nextDisabled"><a href (click)="doNextPage();$event.preventDefault()">Next</a></li>
-            <li [class.disabled]="nextDisabled"><a href (click)="doLastPage();$event.preventDefault()">Last</a></li>
-        </ul>
+        <div class="btn-group" role="group" [class.disable-events]="contentRefreshing">
+            <button type="button" class="btn btn-sm btn-secondary" [disabled]="prevDisabled" (click)="doFirstPage()">First</button>
+            <button type="button" class="btn btn-sm btn-secondary" [disabled]="prevDisabled" (click)="doPrevPage()">Previous</button>
+            <button type="button" class="btn btn-sm btn-secondary" [disabled]="nextDisabled" (click)="doNextPage()">Next</button>
+            <button type="button" class="btn btn-sm btn-secondary" [disabled]="nextDisabled" (click)="doLastPage()">Last</button>
+        </div>
     </div>
 </div>

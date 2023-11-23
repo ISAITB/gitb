@@ -32,8 +32,8 @@
                     </ng-container>
                 </ng-container>
                 <div class="btn-toolbar btn-stacked" *ngIf="!first || !last">
-                    <button *ngIf="!first" (click)="doMoveUp($event);$event.preventDefault();$event.stopPropagation()" class="btn btn-xs btn-secondary" type="button" containerClass="shortTooltip" tooltip="Move up" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-chevron-up"></i></button>
-                    <button *ngIf="!last" (click)="doMoveDown($event);$event.preventDefault();$event.stopPropagation()" class="btn btn-xs btn-secondary" type="button" containerClass="shortTooltip" tooltip="Move down" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-chevron-down"></i></button>
+                    <button *ngIf="!first" [class.top]="!first && !last" (click)="doMoveUp($event);$event.preventDefault();$event.stopPropagation()" class="btn btn-xs btn-secondary" type="button" containerClass="shortTooltip" tooltip="Move up" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-chevron-up"></i></button>
+                    <button *ngIf="!last" [class.bottom]="!first && !last" (click)="doMoveDown($event);$event.preventDefault();$event.stopPropagation()" class="btn btn-xs btn-secondary" type="button" containerClass="shortTooltip" tooltip="Move down" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-chevron-down"></i></button>
                 </div>
             </div>
         </div>

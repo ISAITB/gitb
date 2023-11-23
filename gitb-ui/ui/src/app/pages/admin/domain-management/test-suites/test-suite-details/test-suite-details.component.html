@@ -5,7 +5,7 @@
 		</div>
 		<form>
 			<div class="card-body">
-                <div class="alert alert-info rounded div-padded bottom-margin" *ngIf="testSuite.shared">
+                <div class="alert alert-info rounded" *ngIf="testSuite.shared">
                     <span>This test suite is designed to be shared across multiple {{dataService.labelSpecificationsLower()}}. Any changes made will apply to all its linked {{dataService.labelSpecificationsLower()}}.</span>
                 </div>
 				<div class="row">
@@ -13,7 +13,7 @@
 						<div class="row mb-3">
 							<label class="col-3 col-form-label text-end" for="identifier">ID:</label>
 							<div class="col-7">
-								<app-api-key-text id="identifier" name="identifier" [key]="testSuite.identifier!"></app-api-key-text>
+								<app-api-key-text idName="identifier" name="identifier" [key]="testSuite.identifier!"></app-api-key-text>
 							</div>
 							<div app-tooltip class="col-auto" [tbTooltip]="'The unique identifier of the test suite within the '+dataService.labelSpecificationLower()+'. This is not presented to users but is used internally to match uploaded test suites to existing ones.'"></div>
 						</div>
@@ -44,9 +44,9 @@
 					</div>
 				</div>
 				<div [collapse]="!showDocumentation" [isAnimated]="true">
-					<div class="row form-group">
+					<div class="row mb-3">
 						<div class="offset-1 col-10">
-							<div class="div-padded-bottom" *ngIf="dataService.isCommunityAdmin">
+							<div class="mb-3" *ngIf="dataService.isCommunityAdmin">
 								<app-placeholder-selector [resources]="true" [community]="dataService.vendor?.community"></app-placeholder-selector>
 							</div>
 							<div class="editorContainer">

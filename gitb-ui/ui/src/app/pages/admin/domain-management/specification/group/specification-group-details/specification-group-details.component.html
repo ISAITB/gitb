@@ -1,5 +1,5 @@
 <div class="page domains detail detail-spec">
-	<div class="card no-bottom-margin">
+	<div class="card mb-0">
 		<div class="card-header">
 			<h4 class="title">{{dataService.labelSpecificationGroup()}} details</h4>
 		</div>
@@ -17,7 +17,7 @@
 					<button (click)="back()" type="button" class="btn btn-secondary">Back</button>
 				</div>
 				<div class="btn-toolbar btn-toolbar-delete">
-                    <div class="btn-group" dropdown>
+                    <div class="btn-group" dropdown [isDisabled]="savePending">
                         <button id="button-delete" [disable]="savePending" [pending]="deletePending" dropdownToggle type="button" class="btn btn-outline-danger dropdown-toggle" aria-controls="dropdown-delete">Delete<span class="caret withMargin"></span></button>
                         <ul id="dropdown-delete" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-result">
                             <li role="menuitem"><a class="dropdown-item" href (click)="deleteGroup(false);$event.preventDefault()">Delete this {{dataService.labelSpecificationGroupLower()}} but keep its {{dataService.labelSpecificationInGroupsLower()}}</a></li>

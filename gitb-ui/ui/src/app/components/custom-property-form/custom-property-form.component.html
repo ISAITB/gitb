@@ -1,7 +1,7 @@
 <div *ngIf="hasVisibleProperties()">
   <div class="row" *ngIf="tbShowFormHeader">
     <div class="col-12">
-      <div [ngClass]="{'form-separator': !tbPopup, 'form-separator-popup': tbPopup}" [class.expandable]="tbExpandable" (click)="checkToExpand()">
+      <div class="no-margin" [ngClass]="{'form-separator': !tbPopup, 'form-separator-popup': tbPopup}" [class.expandable]="tbExpandable" (click)="checkToExpand()">
         <div><h4 class="title"><app-collapsing-icon *ngIf="tbExpandable" [isCollapsed]="tbCollapsed!"></app-collapsing-icon>Additional properties <span [tooltip]="'Properties specific to the community. Required properties will need to be completed before executing tests.'" [containerClass]="'tooltipContainerBig'"><i class="fa-solid fa-question-circle"></i></span></h4></div>
       </div>
     </div>
@@ -11,7 +11,7 @@
       <div [ngClass]="innerDivStyle">
         <form>
           <ng-container *ngFor="let property of tbProperties">
-            <div *ngIf="(isAdmin || !property.hidden) && property.prerequisiteOk" class="row mb-3">
+            <div *ngIf="(isAdmin || !property.hidden) && property.prerequisiteOk" class="row mt-3">
               <label [ngClass]="'col-'+tbColLabel" class="col-form-label text-end" [attr.for]="'prop-'+property.id"><span *ngIf="property.use == 'R' && tbShowRequiredAsterisks">* </span>{{property.name}}:</label>
               <ng-container [ngSwitch]="property.kind">
                 <ng-container *ngSwitchCase="'SIMPLE'">

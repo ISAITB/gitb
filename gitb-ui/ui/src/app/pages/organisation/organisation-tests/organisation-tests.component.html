@@ -28,7 +28,7 @@
             </div>
         </div>
     </div>
-    <div class="card no-bottom-margin">
+    <div class="card mb-0">
         <div class="card-header clickable" (click)="completedSessionsCollapsed = !completedSessionsCollapsed">
             <h4 class="title"><app-collapsing-icon [isCollapsed]="completedSessionsCollapsed"></app-collapsing-icon>Completed test sessions</h4>
             <div class="btn-toolbar" [class.disable-events]="filterState.updatePending">

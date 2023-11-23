@@ -1,10 +1,10 @@
 <div class="page memberProperties">
-    <div class="card no-bottom-margin">
+    <div class="card mb-0">
         <div class="card-header">
             <h4 class="title">Custom properties for community members</h4>
         </div>
         <div class="card-body">
-            <div class="alert alert-info rounded div-padded bottom-margin">
+            <div class="alert alert-info rounded">
                 <span>The following custom properties will be presented to your community members for completion and, if configured, will also be made available as test session variables. Required properties must be provided before executing test sessions.</span>
             </div>
             <div class="card panel-default">
@@ -16,7 +16,7 @@
                         <button type="button" class="btn btn-secondary" (click)="addOrganisationParameter()">Create property</button>
                     </div>
                 </div>
-                <div class="table-container">
+                <div class="table-container rounded">
                     <table class="table table-directive thick">
                         <thead>
                             <tr>
@@ -51,8 +51,8 @@
                                 <td class="centered" *ngIf="dataService.configuration.registrationEnabled"><div><span><i class="fa" [ngClass]="{'fa-check': parameter.inSelfRegistration, 'fa-times': !parameter.inSelfRegistration}"></i></span></div></td>
                                 <td class="btn-stacked-container" (click)="$event.stopPropagation();">
                                     <div class="btn-toolbar btn-stacked">
-                                        <button *ngIf="!first" class="btn btn-xs btn-secondary" type="button" (click)="movePropertyUp(organisationParameters, orderOrganisationParametersDisabled, index, $event)" containerClass="shortTooltip" tooltip="Move up" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-chevron-up"></i></button>
-                                        <button *ngIf="!last" class="btn btn-xs btn-secondary" type="button" (click)="movePropertyDown(organisationParameters, orderOrganisationParametersDisabled, index, $event)" containerClass="shortTooltip" tooltip="Move down" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-chevron-down"></i></button>
+                                        <button *ngIf="!first" [class.top]="!first && !last" class="btn btn-xs btn-secondary" type="button" (click)="movePropertyUp(organisationParameters, orderOrganisationParametersDisabled, index, $event)" containerClass="shortTooltip" tooltip="Move up" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-chevron-up"></i></button>
+                                        <button *ngIf="!last" [class.bottom]="!first && !last" class="btn btn-xs btn-secondary" type="button" (click)="movePropertyDown(organisationParameters, orderOrganisationParametersDisabled, index, $event)" containerClass="shortTooltip" tooltip="Move down" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-chevron-down"></i></button>
                                     </div>
                                 </td>
                             </tr>
@@ -60,7 +60,7 @@
                     </table>
                 </div>
             </div>
-            <div class="card no-bottom-margin">
+            <div class="card mb-0">
                 <div class="card-header">
                     <h5 class="title">{{dataService.labelSystem()}} level properties</h5>
                     <div class="btn-toolbar">
@@ -69,7 +69,7 @@
                         <button type="button" class="btn btn-secondary" (click)="addSystemParameter()">Create property</button>
                     </div>
                 </div>
-                <div class="table-container">
+                <div class="table-container rounded">
                     <table class="table table-directive thick">
                         <thead>
                             <tr>
@@ -102,8 +102,8 @@
                                 <td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': parameter.hidden, 'fa-times': !parameter.hidden}"></i></span></div></td>
                                 <td class="btn-stacked-container" (click)="$event.stopPropagation();">
                                     <div class="btn-toolbar btn-stacked">
-                                        <button *ngIf="!first" class="btn btn-xs btn-secondary" type="button" (click)="movePropertyUp(systemParameters, orderSystemParametersDisabled, index, $event)" containerClass="shortTooltip" tooltip="Move up" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-chevron-up"></i></button>
-                                        <button *ngIf="!last" class="btn btn-xs btn-secondary" type="button" (click)="movePropertyDown(systemParameters, orderSystemParametersDisabled, index, $event)" containerClass="shortTooltip" tooltip="Move down" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-chevron-down"></i></button>
+                                        <button *ngIf="!first" [class.top]="!first && !last" class="btn btn-xs btn-secondary" type="button" (click)="movePropertyUp(systemParameters, orderSystemParametersDisabled, index, $event)" containerClass="shortTooltip" tooltip="Move up" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-chevron-up"></i></button>
+                                        <button *ngIf="!last" [class.bottom]="!first && !last" class="btn btn-xs btn-secondary" type="button" (click)="movePropertyDown(systemParameters, orderSystemParametersDisabled, index, $event)" containerClass="shortTooltip" tooltip="Move down" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-chevron-down"></i></button>
                                     </div>
                                 </td>
                             </tr>

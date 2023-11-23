@@ -3,7 +3,7 @@
 </div>
 <form>
     <div class="modal-body" [ngSwitch]="editMode">
-        <div class="row mb-3" *ngSwitchCase="true">
+        <div class="row" *ngSwitchCase="true">
             <label class="col-3 col-form-label text-end" for="label">Snapshot label:</label>
             <div class="col-8">
                 <input id="label" name="label" [(ngModel)]="snapshotToEdit!.label" class="form-control" type="text">
@@ -11,13 +11,13 @@
             <div app-tooltip class="col-auto" tbTooltip="A label to help in distinguishing and referring to the snapshot."></div>
         </div>
         <ng-container *ngSwitchDefault>
-            <div class="alert alert-info rounded div-padded">
+            <div class="alert alert-info rounded">
                 <span>Select the snapshot to view in the conformance dashboard.</span>
             </div>
             <div class="searchControls">
                 <app-text-filter name="organisationFilter" [width]="300" [placeholder]="'Search snapshots...'" [(ngModel)]="snapshotFilter" (apply)="applySnapshotFilter()"></app-text-filter>
             </div>
-            <div class="card no-bottom-margin">
+            <div class="card mb-0">
                 <div table-directive
                     [columns]="snapshotColumns"
                     [classes]="{'snapshotTime': 'td-min padding-right-large'}"

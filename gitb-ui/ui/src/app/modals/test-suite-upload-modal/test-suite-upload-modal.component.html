@@ -14,7 +14,7 @@
 				</div>
 				<div app-tooltip class="col-auto" [tbTooltip]="'The '+dataService.labelSpecificationLower()+' for which the test suite will be uploaded.'"></div>
 			</div>
-			<div class="row mb-3">
+			<div class="row">
 				<label class="col-3 col-form-label text-end">* Test suite:</label>
 				<div class="col-8">
 					<app-file-select placeholder="Select test suite archive ..."
@@ -30,7 +30,7 @@
 		<div *ngSwitchCase="'validation'">
 			<div class="row">
 				<div class="col-12">
-					<div class="alert alert-info rounded div-padded" [ngSwitch]="hasValidationErrors || hasValidationWarnings">
+					<div class="alert alert-info rounded mb-0" [ngSwitch]="hasValidationErrors || hasValidationWarnings">
 						<div *ngSwitchCase="true">
 							The provided test suite completed validation with <strong *ngIf="hasValidationErrors">{{report!.counters.errors}} error(s)</strong><span *ngIf="hasValidationErrors && hasValidationWarnings"> and </span><strong *ngIf="hasValidationWarnings">{{report!.counters.warnings}} warning(s)</strong>.
 						</div>
@@ -58,7 +58,7 @@
 			</div>
 		</div>
 		<div *ngSwitchCase="'replace'">
-			<div class="alert alert-info rounded div-padded" [ngSwitch]="sharedTestSuite">
+			<div class="alert alert-info rounded mb-0" [ngSwitch]="sharedTestSuite">
 				<ng-container *ngSwitchCase="true">
 					<ng-container [ngSwitch]="specificationChoices && specificationChoices.length > 0">
 						<span *ngSwitchCase="true">A matching test suite was found with already linked {{dataService.labelSpecificationsLower()}}. Select how the update should take place.</span>
@@ -78,10 +78,10 @@
 						<div class="row section-choice-container">
 							<div class="col-12 section-choice-title">Test suite definition</div>
 							<div class="section-choice-actions col-12">
-								<div class="row mb-3 mt-2">
-									<legend class="col-3 col-form-label text-end pt-0">* Test suite metadata:</legend>
+								<div class="row py-0">
+									<legend class="col-3 col-form-label text-end py-0">* Test suite metadata:</legend>
 									<div class="col-9">
-										<div class="form-check form-check-inline">
+										<div class="form-check form-check-inline my-0">
 											<input class="form-check-input" type="radio" id="choice_metadata_skip" name="choice_metadata_skip" [(ngModel)]="updateTestSuiteMetadata" id="choice_metadata_skip" [value]="false">
 											<label class="form-check-label" for="choice_metadata_skip">Keep existing values
 												<div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" tbTooltip="Keep the metadata of the existing test suite unchanged."></div>

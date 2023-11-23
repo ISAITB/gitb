@@ -3,8 +3,8 @@
 </div>
 <form>
 	<div class="modal-body provide-input-body" style="overflow-x: auto; overflow-y: hidden;">
-		<div *ngFor="let interaction of interactions; let index = index">
-			<div class="row mb-3">
+		<div *ngFor="let interaction of interactions; let index = index; let first = first;">
+			<div class="row" [class.mt-3]="!first">
 				<div class="col-12 col-centered" >
 					<!-- request interaction: server asks operator to send inputs -->
 					<div *ngIf="interaction.type == 'request'">

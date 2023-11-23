@@ -7,7 +7,7 @@
 .popup-panel {
     border: 1px solid @gray-light;
     border-radius: @border-radius;
-    box-shadow: 0 1px 5px #959595;
+    box-shadow: 0 1px 5px @gray-shadow;
     position: absolute;
     background: @white;
     z-index: 1;
@@ -98,13 +98,13 @@
     align-items: center;
     height: 32px;    
     &.completed {
-        background: @success-green;
+        background: @green-success;
     }
     &.failed {
-        background: @error-red;
+        background: @red-error;
     }
     &.other {
-        background: @gray;
+        background: @gray-incomplete;
     }
     &.start {
         border-top-left-radius: @border-radius;

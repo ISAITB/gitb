@@ -8,8 +8,8 @@
     vertical-align: middle;
     border-top: 4px dashed;
     border-top: 4px solid\9;
-    border-right: 4px solid #0000;
-    border-left: 4px solid #0000
+    border-right: 4px solid var(--bs-secondary-color);
+    border-left: 4px solid var(--bs-secondary-color);
 }
 .filterContainer {
     position: relative;
@@ -27,9 +27,9 @@
 .filterForm {
     border-radius: @border-radius;
     width: 400px;
-    box-shadow: 0 1px 5px #959595;
+    box-shadow: 0 1px 5px @gray-shadow;
     position: absolute;
-    top: 42px;
+    top: 36px;
     &.leftForm {
         right: 1px;
     }

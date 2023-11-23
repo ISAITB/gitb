@@ -28,7 +28,7 @@
         <div class="mb-3 row" *ngIf="dataService.configuration.automationApiEnabled && community.id != undefined">
             <label class="col-3 col-form-label text-end" for="apiKey">API key:</label>
             <div class="col-7">
-                <app-api-key-text id="apiKey" name="apiKey" [key]="community.apiKey!"></app-api-key-text>
+                <app-api-key-text idName="apiKey" name="apiKey" [key]="community.apiKey!"></app-api-key-text>
             </div>
              <div class="col-auto" app-tooltip [tbTooltip]="'The key to use when calling the Test Bed\'s REST API to identify the community.'"></div>
         </div>
@@ -102,17 +102,17 @@
                      <div class="col-auto" app-tooltip tbTooltip="Use this option to restrict multiple registrations to the community. Restrictions are applied considering the email address of the user that is in the process of self-registering."></div>
                 </div>
                 <div class="mb-3 row">
-                    <legend class="col-3 col-form-label text-end pt-0" for="selfRegForceTemplateSelection">Require from users:</legend>
+                    <legend class="col-3 col-form-label text-end pt-0">Require from users:</legend>
                     <div class="col-7">
                         <div class="form-check pb-2">
-                            <input class="form-check-input" type="checkbox" id="selfRegForceTemplateSelection" name="selfRegForceTemplateSelection" [(ngModel)]="community.selfRegForceTemplateSelection">Select one of the defined configuration templates
-                            <label class="form-check-label" for="selfRegForceTemplateSelection">
+                            <input class="form-check-input" type="checkbox" id="forceTemplateSelection" name="selfRegForceTemplateSelection" [(ngModel)]="community.selfRegForceTemplateSelection">
+                            <label class="form-check-label" for="forceTemplateSelection">Select one of the defined configuration templates
                                  <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="Check this to force users to select a configuration template when registering. This option applies only if configuration templates are defined."></div>
                             </label>
                         </div>
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="selfRegForceRequiredProperties" name="selfRegForceRequiredProperties" [(ngModel)]="community.selfRegForceRequiredProperties">Complete custom properties defined as required
-                            <label class="form-check-label" for="selfRegForceRequiredProperties">
+                            <input class="form-check-input" type="checkbox" id="forceRequiredProperties" name="selfRegForceRequiredProperties" [(ngModel)]="community.selfRegForceRequiredProperties">
+                            <label class="form-check-label" for="forceRequiredProperties">Complete custom properties defined as required
                                  <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Check this to force users to complete required custom '+dataService.labelOrganisationLower()+' properties on the self-registration screen. This option applies only if such properties are defined.'"></div>
                             </label>
                         </div>

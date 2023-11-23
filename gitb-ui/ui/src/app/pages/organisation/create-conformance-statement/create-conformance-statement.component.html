@@ -1,5 +1,5 @@
 <div class="page conformance create">
-    <div class="card no-bottom-margin">
+    <div class="card mb-0">
       <div class="card-header">
         <h4>Create conformance statements</h4>
       </div>
@@ -12,7 +12,7 @@
           <ng-container *ngSwitchDefault>
             <ng-container [ngSwitch]="items.length == 0">
               <div *ngSwitchCase="true">
-                <div class="alert alert-info rounded div-padded" [ngSwitch]="hasOtherStatements">
+                <div class="alert alert-info rounded mb-0" [ngSwitch]="hasOtherStatements">
                   <span *ngSwitchCase="true">All available conformance statements are already created.</span>
                   <span *ngSwitchDefault>There are currently no conformance statements available to create.</span>
                 </div>

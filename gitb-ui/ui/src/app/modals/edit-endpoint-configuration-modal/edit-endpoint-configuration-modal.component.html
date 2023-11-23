@@ -11,7 +11,7 @@
 			<label class="col-3 col-form-label text-end">Description:</label>
 			<div class="col-8"><p class="form-control-plaintext">{{parameter.desc}}</p></div>
 		</div>
-		<div class="row mb-3">
+		<div class="row">
 			<label class="col-3 col-form-label text-end" for="value" *ngIf="parameter.use == 'R'" style="font-weight: bold;">{{parameter.kind == 'SECRET'?'* New value:':'* Value:'}}</label>
 			<label class="col-3 col-form-label text-end" for="value" *ngIf="parameter.use != 'R'">{{parameter.kind == 'SECRET'?'New value:':'Value:'}}</label>
 			<div class="col-8">

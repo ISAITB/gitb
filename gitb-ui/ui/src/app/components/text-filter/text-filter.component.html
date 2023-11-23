@@ -1,6 +1,6 @@
 <form>
     <div class="input-group">
-        <input #filterText type="text" [style.width]="width?(width+'px'):null" name="filterValue" [placeholder]="placeholder" class="form-control" (click)="filterClicked()" (blur)="filterBlurred()" [(ngModel)]="value" [readonly]="readonly" [ngClass]="{'clickable': readonly}"/>
+        <input #filterText type="text" [style.width]="width?(width+'px'):null" name="filterValue" [placeholder]="placeholder" class="form-control bg-white" (click)="filterClicked()" (blur)="filterBlurred()" [(ngModel)]="value" [readonly]="readonly" [ngClass]="{'clickable': readonly}"/>
         <ng-container [ngSwitch]="readonly">
             <button *ngSwitchCase="true" #filterButtonClear class="btn btn-secondary" type="submit" (click)="clear()" [disabled]="value == undefined" containerClass="shortTooltip" tooltip="Clear" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-times" [class.faded]="value == undefined"></i></button>
             <button *ngSwitchCase="false" #filterButtonSearch class="btn btn-secondary" type="submit" (click)="search()" [disabled]="value == undefined" containerClass="shortTooltip" tooltip="Search" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-search" [class.faded]="value == undefined"></i></button>
