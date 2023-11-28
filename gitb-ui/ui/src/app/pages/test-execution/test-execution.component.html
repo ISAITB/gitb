@@ -1,7 +1,7 @@
 <div class="page">
     <div class="card test-case-list-table mb-0">
         <div class="card-header">
-            <h4 class="title">Test execution</h4>
+            <div class="card-title">Test execution</div>
             <div class="sessionButtonDiv">
                 <div class="backDiv">
                     <button type="button" class="btn btn-secondary" (click)="back()">Go to conformance statement</button>
@@ -71,8 +71,8 @@
                                     <td [attr.colspan]="columnCount" class="expandable-table-expandable-cell">
                                         <div [collapse]="!testCaseExpanded[testCase.id]" [isAnimated]="true">
                                             <div class="collapsing-div">
-                                                <div class="card panel-default">
-                                                    <div class="card-header no-top-bottom-padding">
+                                                <div class="card">
+                                                    <div class="card-header my-0">
                                                         <div class="session-execution-info">
                                                             <div class="session-table-title">
                                                                 <div class="session-table-title-part" *ngIf="testsToExecute.length > 1">
@@ -101,13 +101,16 @@
                                                                     </ul>
                                                                 </div>                                                                                
                                                                 <div class="viewLogButton">
-                                                                    <button type="button" class="btn btn-secondary" (click)="viewLog(testCase)">View log</button>
-                                                                    <div class="unreadBadge" 
-                                                                        [class.badgeLogErrors]="unreadLogErrors[testCase.id]" 
-                                                                        [class.badgeLogWarnings]="unreadLogWarnings[testCase.id] && !unreadLogErrors[testCase.id]" 
-                                                                        [class.badgeLogMessages]="unreadLogMessages[testCase.id] && !unreadLogWarnings[testCase.id] && !unreadLogErrors[testCase.id]"
-                                                                        [class.hidden]="!unreadLogErrors[testCase.id] && !unreadLogWarnings[testCase.id] && !unreadLogMessages[testCase.id]" 
-                                                                        (click)="viewLog(testCase)"></div>
+                                                                    <button type="button" class="btn btn-secondary position-relative" (click)="viewLog(testCase)">
+                                                                        View log
+                                                                        <span 
+                                                                            [class.badgeLogErrors]="unreadLogErrors[testCase.id]" 
+                                                                            [class.badgeLogWarnings]="unreadLogWarnings[testCase.id] && !unreadLogErrors[testCase.id]"                                                                             
+                                                                            [class.badgeLogMessages]="unreadLogMessages[testCase.id] && !unreadLogWarnings[testCase.id] && !unreadLogErrors[testCase.id]"
+                                                                            [class.hidden]="!unreadLogErrors[testCase.id] && !unreadLogWarnings[testCase.id] && !unreadLogMessages[testCase.id]" 
+                                                                            class="buttonBadge position-absolute top-0 start-100 translate-middle border border-light rounded-circle">
+                                                                        </span>                                                                        
+                                                                    </button>
                                                                 </div>
                                                             </div>
                                                         </div>

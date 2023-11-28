@@ -1,7 +1,7 @@
 <div class="page conformance">
 	<div class="card mb-0">
 		<div class="card-header">
-			<h4 class="title">Conformance statements</h4>
+			<div class="card-title">Conformance statements</div>
 			<div class="btn-toolbar" *ngIf="showCreate">
 				<button (click)="createStatement()" [disabled]="system == undefined" class="btn btn-secondary">Create statements</button>
 			</div>
@@ -44,17 +44,17 @@
 						</div>
 						<ng-container [ngSwitch]="system != undefined">
 							<ng-container *ngSwitchCase="true" [ngSwitch]="dataStatus.status">
-								<div class="pending-container" *ngSwitchDefault>
+								<div class="pending-container top-margin" *ngSwitchDefault>
 									<div class="pending-icon"><app-pending-block [pending]="true"></app-pending-block></div>
 									<div class="pending-message">Loading conformance statements for {{system!.fname}}...</div>
 								</div>
 								<ng-container *ngSwitchCase="Constants.STATUS.FINISHED" [ngSwitch]="statements.length == 0">
-									<div class="alert alert-info rounded mb-0" *ngSwitchCase="true">
+									<div class="alert alert-info rounded mb-0 top-margin" *ngSwitchCase="true">
 										<span>No conformance statements defined.</span>
 									</div>
 									<ng-container *ngSwitchDefault>
 										<div class="statement-container" [ngSwitch]="visibleItemCount">
-											<div *ngSwitchCase="0" class="alert alert-info rounded mb-0">
+											<div *ngSwitchCase="0" class="alert alert-info rounded mb-0 top-margin">
 												<span>No conformance statements match your search criteria.</span>
 											</div>
 											<app-conformance-statement-items-display *ngSwitchDefault [items]="statements" [animated]="animated" [withCheck]="false" [withResults]="true" (selectionChanged)="onStatementSelect($event)"></app-conformance-statement-items-display>
@@ -62,7 +62,7 @@
 									</ng-container>
 								</ng-container>
 							</ng-container>
-							<div class="alert alert-info rounded mb-0" *ngSwitchDefault>
+							<div class="alert alert-info rounded mb-0 top-margin" *ngSwitchDefault>
 								<span>Select a {{dataService.labelSystemLower()}} to view its conformance statements.</span>
 							</div>
 						</ng-container>

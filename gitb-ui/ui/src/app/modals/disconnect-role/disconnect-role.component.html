@@ -1,5 +1,5 @@
 <div class="modal-header">
-    <h4>Role removal options</h4>
+    <div class="modal-title">Role removal options</div>
 </div>
 <form>
     <div class="modal-body">
@@ -36,7 +36,9 @@
         </div>
     </div>
     <div class="modal-footer">
-        <button class="btn btn-secondary" type="button" (click)="cancel()">Cancel</button>
-        <button class="btn btn-secondary" type="submit" (click)="disconnect()" [pending]="disconnectPending">Proceed</button>
+        <div class="btn-toolbar">
+            <button class="btn btn-secondary" type="button" (click)="cancel()">Cancel</button>
+            <button class="btn btn-secondary" type="submit" (click)="disconnect()" [pending]="disconnectPending">Proceed</button>
+        </div>
     </div>    
 </form>

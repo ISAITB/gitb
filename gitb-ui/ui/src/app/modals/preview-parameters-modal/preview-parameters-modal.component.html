@@ -1,5 +1,5 @@
 <div class="modal-header">
-	<h4>{{modalTitle}}</h4>
+    <div class="modal-title">{{modalTitle}}</div>
 </div>
 <form>
 	<div class="modal-body">
@@ -27,8 +27,8 @@
         </div>
         <div class="row">
             <div class="col-12">
-                <div class="form-separator no-margin">
-                    <h4 class="title">Property form</h4>
+                <div class="form-separator mb-0">
+                    <div class="separator-title">Property form</div>
                 </div>
             </div>
         </div>
@@ -61,6 +61,8 @@
         </div>
 	</div>
 	<div class="modal-footer">
-        <button class="btn btn-secondary" type="button" (click)="close()">Close</button>
+        <div class="btn-toolbar">
+            <button class="btn btn-secondary" type="button" (click)="close()">Close</button>
+        </div>
 	</div>
 </form>

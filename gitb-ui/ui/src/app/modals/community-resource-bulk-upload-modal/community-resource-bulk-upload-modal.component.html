@@ -1,5 +1,5 @@
-    <div class="modal-header">
-    <h4>Community resource bulk upload</h4>
+<div class="modal-header">
+    <div class="modal-title">Community resource bulk upload</div>
 </div>
 <form>
     <div class="modal-body">
@@ -34,7 +34,9 @@
         </div>
     </div>
     <div class="modal-footer">
-        <button class="btn btn-secondary" type="button" (click)="cancel()" [disabled]="uploadPending">Cancel</button>
-        <button class="btn btn-secondary" type="submit" (click)="upload()" [disable]="!uploadEnabled()" [pending]="uploadPending">Upload</button>
+        <div class="btn-toolbar">
+            <button class="btn btn-secondary" type="button" (click)="cancel()" [disabled]="uploadPending">Cancel</button>
+            <button class="btn btn-secondary" type="submit" (click)="upload()" [disable]="!uploadEnabled()" [pending]="uploadPending">Upload</button>
+        </div>
     </div>
 </form>

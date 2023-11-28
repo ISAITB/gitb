@@ -1,5 +1,5 @@
 <div class="modal-header">
-    <h4>Conformance snapshots</h4>
+    <div class="modal-title">Conformance snapshots</div>
 </div>
 <form>
     <div class="modal-body" [ngSwitch]="editMode">
@@ -36,14 +36,16 @@
             </div>
         </ng-container>
     </div>
-    <div class="modal-footer" [ngSwitch]="editMode">
-        <ng-container *ngSwitchCase="true">
-            <button class="btn btn-secondary" type="button" (click)="cancel()">Cancel</button>
-            <button type="submit" class="btn btn-secondary" [disable]="saveDisabled()" [pending]="savePending" (click)="saveSnapshot()">Save</button>
-        </ng-container>
-        <ng-container *ngSwitchDefault>
-            <button class="btn btn-secondary" type="button" (click)="close()">Close</button>
-            <button type="button" class="btn btn-secondary" (click)="createSnapshot()">Create snapshot</button>
-        </ng-container>
+    <div class="modal-footer">
+        <div class="btn-toolbar" [ngSwitch]="editMode">
+            <ng-container *ngSwitchCase="true">
+                <button class="btn btn-secondary" type="button" (click)="cancel()">Cancel</button>
+                <button type="submit" class="btn btn-secondary" [disable]="saveDisabled()" [pending]="savePending" (click)="saveSnapshot()">Save</button>
+            </ng-container>
+            <ng-container *ngSwitchDefault>
+                <button class="btn btn-secondary" type="button" (click)="close()">Close</button>
+                <button type="button" class="btn btn-secondary" (click)="createSnapshot()">Create snapshot</button>
+            </ng-container>
+        </div>
     </div>
 </form>

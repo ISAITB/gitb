@@ -1,27 +1,56 @@
 @import '../../../../styles/less/_common.less';
 
-#exportSettingsTable {
-	border: 1px solid @gray-dark-1;
-	margin-top: 2px;
-	th {
-		background: @gray-light-1;
-		vertical-align: middle;
-        & > div {
-            display: flex;
-            white-space: nowrap;
-        }
-	}
-	td {
-		border-right: 1px solid @gray-dark-1;
-		&.row-header {
-			background: @gray-light-1;
-            & > div {
-                display: flex;
-                white-space: nowrap;
-            }
+.table-container {
+	overflow: inherit;
+	table {
+		thead {
+			tr:first-child {
+				th:first-child {
+					border-top-left-radius: @border-radius;
+				}
+				th:last-child {
+					border-top-right-radius: @border-radius;
+				}
+			}
+			th {
+				background: @gray-light-1;
+				vertical-align: middle;
+				& > div {
+					display: flex;
+					white-space: nowrap;
+				}
+				&.first-column {
+					border-right-width: 1px;
+				}
+				&.second-column {
+					padding-left: 20px;
+					padding-right: 20px;
+					border-right-width: 1px;
+				}
+			}
 		}
-		&:last-child {
-			border-right: 0px;
+		tbody {
+			tr:last-child {
+				td:first-child {
+					border-bottom-left-radius: @border-radius;
+				}
+				td:last-child {
+					border-bottom-right-radius: @border-radius;
+				}
+			}
+			td {
+				&.row-header {
+					border-right-width: 1px;
+					background: @gray-light-1;
+					& > div {
+						display: flex;
+						white-space: nowrap;
+					}
+				}
+				&.second-column {
+					border-right-width: 1px;
+				}
+			}
 		}
 	}
 }

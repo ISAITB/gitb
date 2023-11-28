@@ -1,6 +1,6 @@
-<div class="card panel-default">
+<div class="card">
     <div class="card-header clickable" (click)="clickedHeader()">
-        <h4 class="title"><app-collapsing-icon [isCollapsed]="!showFiltering"></app-collapsing-icon>Filters</h4>
+        <div class="card-title"><app-collapsing-icon [isCollapsed]="!showFiltering"></app-collapsing-icon>Filters</div>
         <div class="btn-toolbar">
             <button type="button" class="btn btn-secondary" (click)="applyFilters(); $event.stopPropagation()" [pending]="filterState.updatePending">Refresh</button>
             <button type="button" class="btn btn-secondary" (click)="clearFilters(); $event.stopPropagation()" [disabled]="filterState.updatePending">Clear filters</button>

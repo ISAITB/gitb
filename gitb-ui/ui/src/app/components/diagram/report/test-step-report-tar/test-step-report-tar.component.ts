@@ -18,7 +18,6 @@ export class TestStepReportTARComponent extends ReportSupport implements OnInit 
 
   @Input() report!: StepReport
   @Input() sessionId!: string
-  collapsed = false
   hasContextItems = false
 
   constructor(

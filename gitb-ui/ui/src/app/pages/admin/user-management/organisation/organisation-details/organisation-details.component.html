@@ -1,7 +1,7 @@
 <div class="page users detail">
-    <div class="card panel-default">
+    <div class="card">
         <div class="card-header">
-            <h4 class="title">{{dataService.labelOrganisation()}} details</h4>
+            <div class="card-title">{{dataService.labelOrganisation()}} details</div>
         </div>
         <form>
             <div class="card-body">
@@ -37,7 +37,7 @@
                     <div class="tabControls" *ngIf="showCreateSystem">
                         <button type="button" class="btn btn-secondary" (click)="createSystem()">Create {{dataService.labelSystemLower()}}</button>
                     </div>
-                    <div class="card panel-default">
+                    <div class="card">
                         <div table-directive 
                             [columns]="systemColumns" 
                             [data]="systems"
@@ -55,7 +55,7 @@
                     <div class="tabControls" *ngIf="showCreateUser">
                         <button type="button" class="btn btn-secondary" (click)="createUser()">Create user</button>
                     </div>
-                    <div class="card panel-default">
+                    <div class="card">
                         <div table-directive 
                             [columns]="userColumns" 
                             [data]="users"

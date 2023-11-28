@@ -1,7 +1,7 @@
 <div class="page domains detail detail-spec">
-	<div class="card panel-default">
+	<div class="card">
 		<div class="card-header">
-			<h4 class="title">{{dataService.labelSpecification()}} details</h4>
+			<div class="card-title">{{dataService.labelSpecification()}} details</div>
 		</div>
 		<form>
 			<div class="card-body">
@@ -56,7 +56,7 @@
 							</div>
 						</div>
 					</div>
-					<div class="card panel-default">
+					<div class="card">
 						<div table-directive id="test-suites-table" 
 							[columns]="testSuiteTableColumns" 
 							[data]="testSuites"
@@ -74,7 +74,7 @@
 					<div class="tabControls">
 						<button class="btn btn-secondary" type="button" (click)="createActor()">Create {{dataService.labelActorLower()}}</button>
 					</div>
-					<div class="card panel-default">
+					<div class="card">
 						<div table-directive
 							[columns]="actorTableColumns"
 							[data]="actors"

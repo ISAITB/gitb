@@ -1,7 +1,7 @@
 <div class="page users create">
     <div class="card mb-0">
         <div class="card-header">
-            <h4 class="title">{{ (update?'Update':'Create') + ' trigger' }}</h4>
+            <div class="card-title">{{ (update?'Update':'Create') + ' trigger' }}</div>
         </div>
         <form>
             <div class="card-body">
@@ -12,17 +12,17 @@
                     <div class="col-10 offset-1">
                         <div class="row mb-3">
                             <label class="col-3 col-form-label text-end" for="name">* Name:</label>
-                            <div class="col-8"><input id="name" name="name" [(ngModel)]="trigger.name" class="form-control" type="text"></div>
+                            <div class="col-7"><input id="name" name="name" [(ngModel)]="trigger.name" class="form-control" type="text"></div>
                             <div app-tooltip class="col-auto" tbTooltip="The name of the trigger that will identify it and be displayed in selection lists."></div>
                         </div>
                         <div class="row mb-3">
                             <label class="col-3 col-form-label text-end" for="description">Description:</label>
-                            <div class="col-8"><textarea id="description" name="description" [(ngModel)]="trigger.description" class="form-control"></textarea></div>
+                            <div class="col-7"><textarea id="description" name="description" [(ngModel)]="trigger.description" class="form-control"></textarea></div>
                             <div app-tooltip class="col-auto" tbTooltip="A description to help distinguish this trigger and summarise its purpose."></div>
                         </div>
                         <div class="row mb-3">
                             <label class="col-3 col-form-label text-end" for="event">* Event type:</label>
-                            <div class="col-8">
+                            <div class="col-7">
                                 <select id="event" name="event" (change)="eventTypeChanged()" [(ngModel)]="trigger.eventType" class="form-control form-select">
                                     <optgroup label="{{dataService.labelOrganisation() + ' events'}}">
                                         <option [ngValue]="Constants.TRIGGER_EVENT_TYPE.ORGANISATION_CREATED">{{dataService.triggerEventTypeLabel(Constants.TRIGGER_EVENT_TYPE.ORGANISATION_CREATED)}}</option>
@@ -48,7 +48,7 @@
                         </div>
                         <div class="row mb-3 pt-2">
                             <label class="col-3 col-form-label text-end pt-0" for="active">Active:</label>
-                            <div class="col-8">
+                            <div class="col-7">
                                 <div class="form-check">
                                     <input id="active" name="active" [(ngModel)]="trigger.active" type="checkbox" class="form-check-input">
                                     <div app-tooltip class="col-auto d-inline-flex" [inline]="true" tbTooltip="Check this to activate this trigger and have it fire when the defined event occurs. An inactive trigger is effectively disabled."></div>
@@ -60,7 +60,7 @@
                 <div class="row">
                     <div class="col-12">
                         <div class="form-separator">
-                            <h4 class="title">Web service details <span [tooltip]="'When the trigger\'s event occurs a call will be made to the web service configured below. This service is expected to implement the GITB processing service API. For information on how to implement this service check the Test Bed\'s user guide (link in the screen\'s footer).'" [containerClass]="'tooltipContainerBig'"><i class="fa-solid fa-question-circle"></i></span></h4>
+                            <div class="separator-title">Web service details <span [tooltip]="'When the trigger\'s event occurs a call will be made to the web service configured below. This service is expected to implement the GITB processing service API. For information on how to implement this service check the Test Bed\'s user guide (link in the screen\'s footer).'" [containerClass]="'tooltipContainerBig'"><i class="fa-solid fa-question-circle"></i></span></div>
                         </div>
                     </div>
                 </div>
@@ -85,7 +85,7 @@
                         </div>
                         <div class="row mb-3">
                             <label class="col-3 col-form-label text-end" for="url">* Endpoint URL:</label>
-                            <div class="col-8">
+                            <div class="col-7">
                                 <div class="input-group">
                                     <input id="url" name="url" [(ngModel)]="trigger.url" class="form-control" type="text">
                                     <button class="btn btn-secondary" type="button" (click)="testEndpoint()" [pending]="testPending" [disable]="!trigger.url">Test</button>
@@ -98,7 +98,7 @@
                         </div>
                         <div class="row mb-3">
                             <label class="col-3 col-form-label text-end" for="operation">Operation:</label>
-                            <div class="col-8"><input id="operation" name="operation" [(ngModel)]="trigger.operation" class="form-control" type="text"></div>
+                            <div class="col-7"><input id="operation" name="operation" [(ngModel)]="trigger.operation" class="form-control" type="text"></div>
                             <ng-container [ngSwitch]="trigger.serviceType">
                                 <div app-tooltip class="col-auto" *ngSwitchCase="Constants.TRIGGER_SERVICE_TYPE.GITB" tbTooltip="An optional operation identifier to pass to the service. As a GITB processing service may define multiple operations this identifier can be used to determine the one intended by this trigger."></div>
                                 <div app-tooltip class="col-auto" *ngSwitchDefault tbTooltip="An optional operation identifier to pass to the service. This could be used to identify the trigger's type in case the service is used in multiple scenarios."></div>
@@ -106,7 +106,7 @@
                         </div>
                         <div class="row mb-3 pt-1">
                             <legend class="col-3 col-form-label text-end pt-0">Input data:</legend>
-                            <div class="col-8 trigger-data-checks">
+                            <div class="col-7 trigger-data-checks">
                                 <div class="form-check form-check-inline" *ngIf="triggerData.community.visible">
                                     <input class="form-check-input" type="checkbox" id="communityData" name="communityData" [(ngModel)]="triggerData.community.selected">
                                     <label class="form-check-label" for="communityData">{{dataTypeMap[triggerData.community.dataType]}}</label>
@@ -138,13 +138,13 @@
                             </div>
                             <div app-tooltip class="col-auto" [withTopMargin]="false" tbTooltip="Optional data that will be provided as input to the service when it is called. The type of data available depends on the trigger's event type."></div>
                             <ng-container *ngIf="triggerData.domainParameter.visible">
-                                <div class="offset-3 col-8 trigger-data-checks" *ngIf="triggerData.domainParameter.visible">
+                                <div class="offset-3 col-7 trigger-data-checks" *ngIf="triggerData.domainParameter.visible">
                                     <div class="form-check form-check-inline">
                                         <input class="form-check-input" type="checkbox" id="domainParameterData" name="domainParameterData" [(ngModel)]="triggerData.domainParameter.selected">
                                         <label class="form-check-label" for="domainParameterData">{{dataTypeMap[triggerData.domainParameter.dataType]}}</label>
                                     </div>
                                 </div>
-                                <div class="offset-3 col-8" [collapse]="!triggerData.domainParameter.selected" [isAnimated]="true">
+                                <div class="offset-3 col-7" [collapse]="!triggerData.domainParameter.selected" [isAnimated]="true">
                                     <div class="trigger-data-properties-container table-container rounded">
                                         <table class="table">
                                             <thead>
@@ -166,13 +166,13 @@
                                 </div>
                             </ng-container>
                             <ng-container *ngIf="triggerData.organisationParameter.visible">
-                                <div class="offset-3 col-8 trigger-data-checks" *ngIf="triggerData.organisationParameter.visible">
+                                <div class="offset-3 col-7 trigger-data-checks" *ngIf="triggerData.organisationParameter.visible">
                                     <div class="form-check form-check-inline">
                                         <input class="form-check-input" type="checkbox" id="organisationParameterData" name="organisationParameterData" [(ngModel)]="triggerData.organisationParameter.selected">
                                         <label class="form-check-label" for="organisationParameterData">{{dataTypeMap[triggerData.organisationParameter.dataType]}}</label>
                                     </div>
                                 </div>
-                                <div class="offset-3 col-8" [collapse]="!triggerData.organisationParameter.selected" [isAnimated]="true">
+                                <div class="offset-3 col-7" [collapse]="!triggerData.organisationParameter.selected" [isAnimated]="true">
                                     <div class="trigger-data-properties-container table-container rounded">
                                         <table class="table">
                                             <thead>
@@ -196,13 +196,13 @@
                                 </div>
                             </ng-container>
                             <ng-container *ngIf="triggerData.systemParameter.visible">
-                                <div class="offset-3 col-8 trigger-data-checks">
+                                <div class="offset-3 col-7 trigger-data-checks">
                                     <div class="form-check form-check-inline">
                                         <input class="form-check-input" type="checkbox" id="sysParameterData" name="sysParameterData" [(ngModel)]="triggerData.systemParameter.selected">
                                         <label class="form-check-label" for="sysParameterData">{{dataTypeMap[triggerData.systemParameter.dataType]}}</label>
                                     </div>
                                 </div>
-                                <div class="offset-3 col-8" [collapse]="!triggerData.systemParameter.selected" [isAnimated]="true">
+                                <div class="offset-3 col-7" [collapse]="!triggerData.systemParameter.selected" [isAnimated]="true">
                                     <div class="trigger-data-properties-container table-container">
                                         <table class="table">
                                             <thead>
@@ -226,13 +226,13 @@
                                 </div>
                             </ng-container>
                             <ng-container *ngIf="triggerData.statementParameter.visible">
-                                <div class="offset-3 col-8 trigger-data-checks">
+                                <div class="offset-3 col-7 trigger-data-checks">
                                     <div class="form-check form-check-inline">
                                         <input class="form-check-input" type="checkbox" id="stmtParameterData" name="stmtParameterData" [(ngModel)]="triggerData.statementParameter.selected">
                                         <label class="form-check-label" for="stmtParameterData">{{dataTypeMap[triggerData.statementParameter.dataType]}}</label>
                                     </div>
                                 </div>
-                                <div class="offset-3 col-8" [collapse]="!triggerData.statementParameter.selected" [isAnimated]="true">
+                                <div class="offset-3 col-7" [collapse]="!triggerData.statementParameter.selected" [isAnimated]="true">
                                     <div class="trigger-data-properties-container table-container rounded">
                                         <table class="table">
                                             <thead>
@@ -262,7 +262,7 @@
                     <div class="row">
                         <div class="col-12">
                             <div class="form-separator">
-                                <h4 class="title">Trigger status <span [tooltip]="'The presented result is the trigger\'s latest outcome from calling the configured web service. In case of failure you can also view the incremental error messages that were reported when the service call was attempted.'" [containerClass]="'tooltipContainerBig'"><i class="fa-solid fa-question-circle"></i></span></h4>
+                                <div class="separator-title">Trigger status <span [tooltip]="'The presented result is the trigger\'s latest outcome from calling the configured web service. In case of failure you can also view the incremental error messages that were reported when the service call was attempted.'" [containerClass]="'tooltipContainerBig'"><i class="fa-solid fa-question-circle"></i></span></div>
                             </div>
                         </div>
                     </div>
@@ -271,7 +271,7 @@
                             <div class="row mb-3">
                                 <label class="col-3 col-form-label text-end" for="url">Latest result:</label>
                                 <div class="col-2">
-                                    <p class="form-control-plaintext rounded status-display alert" [ngClass]="{'alert-info': trigger.status == statusTextUnknown.id,'alert-success': trigger.status == statusTextOk.id,'alert-danger': trigger.status == statusTextError.id}">
+                                    <p class="rounded status-display alert" [ngClass]="{'alert-info': trigger.status == statusTextUnknown.id,'alert-success': trigger.status == statusTextOk.id,'alert-danger': trigger.status == statusTextError.id}">
                                         {{trigger.statusText}}
                                     </p>
                                 </div>

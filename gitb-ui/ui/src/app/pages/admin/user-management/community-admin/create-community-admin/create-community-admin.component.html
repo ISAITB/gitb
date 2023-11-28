@@ -1,7 +1,7 @@
 <div class="page users create">
     <div class="card mb-0">
         <div class="card-header">
-            <h4 class="title">Create community administrator</h4>
+            <div class="card-title">Create community administrator</div>
         </div>
         <form>
             <div class="card-body">
@@ -14,7 +14,7 @@
                 </div>
                 <div class="row">
                     <div class="col-10 col-centered">
-                        <div class="alert alert-info form-control-plaintext rounded mb-0">
+                        <div class="alert alert-info rounded mb-0">
                             <p *ngIf="dataService.configuration.ssoEnabled">The user's new role assignment will need to be confirmed by the user upon login.</p>
                             <p class="mb-0"><b>Privacy note:</b> By clicking 'Save' you grant the user's consent on his/her behalf to record the provided information. This is used only for internal identification purposes and is never shared with other parties. <span *ngIf="!dataService.configuration.ssoEnabled">Alternatively you may also complete this form with information that is not personally identifiable. </span>Please refer to the legal notice (link available in the screen's footer) for more information.</p>
                         </div>

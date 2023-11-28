@@ -1,7 +1,7 @@
 <div class="page users detail">
-    <div class="card panel-default">
+    <div class="card">
         <div class="card-header">
-            <h4 class="title">Community details</h4>
+            <div class="card-title">Community details</div>
         </div>
         <form>
             <div class="card-body">
@@ -44,7 +44,7 @@
                             <button type="button" class="btn btn-secondary" (click)="createOrganisation()">Create {{dataService.labelOrganisationLower()}}</button>
                         </div>
                     </div>
-                    <div class="card panel-default">
+                    <div class="card">
                         <div table-directive
                             [columns]="organizationColumns"
                             [data]="organizations"
@@ -71,7 +71,7 @@
                     <div class="tabControls">
                         <button type="button" class="btn btn-secondary" (click)="createAdmin()">Create community administrator</button>
                     </div>
-                    <div class="card panel-default">
+                    <div class="card">
                         <div table-directive
                             [columns]="adminColumns"
                             [data]="admins"
@@ -93,7 +93,7 @@
                             <button type="button" class="btn btn-secondary" (click)="createLandingPage(false)">Create landing page</button>
                         </div>
                     </div>
-                    <div class="card panel-default">
+                    <div class="card">
                         <div table-directive
                             [columns]="landingPagesColumns"
                             [data]="landingPages"
@@ -115,7 +115,7 @@
                             <button type="button" class="btn btn-secondary" (click)="createLegalNotice(false)">Create legal notice</button>
                         </div>
                     </div>
-                    <div class="card panel-default">
+                    <div class="card">
                         <div table-directive
                             [columns]="legalNoticesColumns"
                             [data]="legalNotices"
@@ -137,7 +137,7 @@
                             <button type="button" class="btn btn-secondary" (click)="createErrorTemplate(false)">Create error template</button>
                         </div>
                     </div>
-                    <div class="card panel-default">
+                    <div class="card">
                         <div table-directive
                             [columns]="errorTemplatesColumns"
                             [data]="errorTemplates"
@@ -156,7 +156,7 @@
                     <div class="tabControls">
                         <button type="button" class="btn btn-secondary" (click)="createTrigger()">Create trigger</button>
                     </div>
-                    <div class="card panel-default">
+                    <div class="card">
                         <div table-directive
                             [columns]="triggerColumns"
                             [data]="triggers"
@@ -191,7 +191,7 @@
                             <button type="button" class="btn btn-outline-danger" (click)="confirmDeleteResources()" *ngIf="selectingForDeleteResources" [disable]="!resourcesChecked()" [pending]="deleteResourcesPending">Confirm</button>
                         </div>
                     </div>
-                    <div class="card panel-default">
+                    <div class="card">
                         <div table-directive
                             [columns]="resourceColumns"
                             [data]="resources"

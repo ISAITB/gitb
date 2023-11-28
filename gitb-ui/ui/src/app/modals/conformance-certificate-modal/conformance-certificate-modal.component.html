@@ -1,5 +1,5 @@
 <div class="modal-header">
-    <h4>Report generation options</h4>
+    <div class="modal-title">Report generation options</div>
 </div>
 <form>
     <div class="modal-body">
@@ -74,7 +74,9 @@
         </div>
     </div>
     <div class="modal-footer">
-        <button class="btn btn-secondary" type="button" (click)="cancel()">Cancel</button>
-        <button class="btn btn-secondary" type="submit" (click)="generate()" [pending]="exportPending">Generate report</button>
+        <div class="btn-toolbar">
+            <button class="btn btn-secondary" type="button" (click)="cancel()">Cancel</button>
+            <button class="btn btn-secondary" type="submit" (click)="generate()" [pending]="exportPending">Generate report</button>
+        </div>
     </div>
 </form>

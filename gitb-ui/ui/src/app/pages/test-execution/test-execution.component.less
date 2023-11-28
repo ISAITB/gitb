@@ -24,7 +24,8 @@
 .viewLogButton {
     position: relative;
     margin-left: 5px;
-    .unreadBadge {
+    .buttonBadge {
+        padding: 6px;
         &.badgeLogErrors {
             background-color: @red-error;
         }
@@ -34,13 +35,6 @@
         &.badgeLogMessages {
             background-color: @gray-button;
         }
-        position: absolute;
-        height: 7px;
-        width: 7px;
-        border-radius: 50%;
-        right: 3px;
-        top: 3px;
-        cursor: pointer;
         &.hidden {
             display: none;
         }

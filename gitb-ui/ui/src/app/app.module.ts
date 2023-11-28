@@ -177,6 +177,7 @@ import { ViewBadgeButtonComponent } from './components/view-badge-button/view-ba
 import { ResultLabelComponent } from './components/result-label/result-label.component';
 import { PreviewLandingPageComponent } from './pages/admin/user-management/landing-page/preview-landing-page/preview-landing-page.component';
 import { BreadcrumbComponent } from './components/breadcrumb/breadcrumb.component';
+import { TarReportComponent } from './components/tar-report/tar-report.component';
 
 @NgModule({
   providers: [ 
@@ -343,7 +344,8 @@ import { BreadcrumbComponent } from './components/breadcrumb/breadcrumb.componen
     ViewBadgeButtonComponent,
     ResultLabelComponent,
     PreviewLandingPageComponent,
-    BreadcrumbComponent
+    BreadcrumbComponent,
+    TarReportComponent
   ],
   imports: [
     ColorPickerModule,

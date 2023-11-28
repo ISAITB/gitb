@@ -122,7 +122,11 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
   @HostListener('document:keyup.escape', ['$event'])  
   escapeRegistered(event: KeyboardEvent) {
     if (this.formVisible && this.typeahead) {
-      this.textValue = ''
+      if (this.textValue == '') {
+        this.close()
+      } else {
+        this.textValue = ''
+      }
       this.searchApplied()
     }
   }

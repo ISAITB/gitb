@@ -18,9 +18,9 @@
 				<span>Required information is needed before tests can be launched. Please review this below and complete it accordingly.</span>
 			</div>
 		</ng-container>
-		<div class="card panel-default" *ngIf="showOrganisationProperties">
+		<div class="card" *ngIf="showOrganisationProperties">
 			<div class="card-header">
-				<h5 class="title">Organisation properties</h5>
+				<div class="table-title">Organisation properties</div>
 				<div class="btn-toolbar">
 					<button type="button" class="btn btn-secondary" (click)="toOrganisationProperties()">View</button>
 				</div>
@@ -32,9 +32,9 @@
                 [editable]="false"
                 [parameterLabel]="'Property'"></app-parameter-display>
 		</div>
-		<div class="card panel-default" *ngIf="showSystemProperties">
+		<div class="card" *ngIf="showSystemProperties">
 			<div class="card-header">
-				<h5 class="title">System properties</h5>
+				<div class="table-title">System properties</div>
 				<div class="btn-toolbar">
 					<button type="button" class="btn btn-secondary" (click)="toSystemProperties()">View</button>
 				</div>
@@ -46,9 +46,9 @@
                 [editable]="false"
                 [parameterLabel]="'Property'"></app-parameter-display>
 		</div>
-		<div class="card panel-default" *ngIf="showStatementProperties">
+		<div class="card" *ngIf="showStatementProperties">
 			<div class="card-header">
-				<h5 class="title">Conformance statement parameters</h5>
+				<div class="table-title">Conformance statement parameters</div>
 				<div class="btn-toolbar">
 					<button type="button" class="btn btn-secondary" (click)="toConfigurationProperties()">View</button>
 				</div>

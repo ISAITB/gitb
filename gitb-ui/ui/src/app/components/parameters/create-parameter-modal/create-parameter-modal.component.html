@@ -1,5 +1,5 @@
 <div class="modal-header">
-	<h4>{{modalTitle}}</h4>
+	<div class="modal-title">{{modalTitle}}</div>
 </div>
 <form>
     <div class="modal-body">
@@ -12,7 +12,9 @@
             [existingValues]="existingValues"></app-parameter-form>
     </div>
     <div class="modal-footer">
-        <button class="btn btn-secondary" type="button" (click)="cancel()">Cancel</button>
-        <button class="btn btn-secondary" type="submit" (click)="createParameter()" [disabled]="saveDisabled()">Save</button>
+        <div class="btn-toolbar">
+            <button class="btn btn-secondary" type="button" (click)="cancel()">Cancel</button>
+            <button class="btn btn-secondary" type="submit" (click)="createParameter()" [disabled]="saveDisabled()">Save</button>
+        </div>
     </div>
 </form>		

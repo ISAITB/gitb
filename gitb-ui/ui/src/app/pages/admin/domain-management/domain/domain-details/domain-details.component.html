@@ -1,7 +1,7 @@
 <div class="page domains detail">
-    <div class="card panel-default">
+    <div class="card">
         <div class="card-header">
-            <h4 class="title">{{dataService.labelDomain()}} details</h4>
+            <div class="card-title">{{dataService.labelDomain()}} details</div>
         </div>
         <form>
             <div class="card-body">
@@ -104,7 +104,7 @@
                             <button type="button" class="btn btn-secondary" (click)="uploadSharedTestSuite()">Upload shared test suite</button>
                         </div>
                     </div>
-                    <div class="card panel-default">
+                    <div class="card">
                         <div table-directive
                             [columns]="sharedTestSuiteTableColumns"
                             [data]="sharedTestSuites"

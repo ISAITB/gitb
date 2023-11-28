@@ -1,7 +1,7 @@
 <div class="page domains detail detail-testcase">
-	<div class="card panel-default">
+	<div class="card">
 		<div class="card-header">
-			<h4 class="title">Test case details</h4>
+			<div class="card-title">Test case details</div>
 		</div>
 		<form>
 			<div class="card-body">
@@ -63,7 +63,7 @@
 				<div class="row">
 					<div class="col-12">
 						<div class="form-separator expandable" (click)="showDocumentation = !showDocumentation">
-							<div><h4 class="title"><app-collapsing-icon [isCollapsed]="!showDocumentation"></app-collapsing-icon>Documentation</h4></div>
+							<div class="separator-title"><app-collapsing-icon [isCollapsed]="!showDocumentation"></app-collapsing-icon>Documentation</div>
 						</div>
 					</div>
 				</div>
@@ -108,7 +108,7 @@
 	</div>
 	<div class="card mb-0">
 		<div class="card-header">
-			<h4 class="title">Test case preview</h4>
+			<div class="card-title">Test case preview</div>
 		</div>
         <div class="card-body" style="overflow-x: auto; overflow-y: hidden;">
             <ng-container [ngSwitch]="diagramLoaded">

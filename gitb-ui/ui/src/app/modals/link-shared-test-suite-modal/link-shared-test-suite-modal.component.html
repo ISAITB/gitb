@@ -1,5 +1,5 @@
 <div class="modal-header">
-	<h4>Link shared test suite</h4>
+    <div class="modal-title">Link shared test suite</div>
 </div>
 <div class="modal-body">
 	<form [ngSwitch]="step">
@@ -34,6 +34,8 @@
     </form>
 </div>
 <div class="modal-footer">
-	<button type="button" class="btn btn-secondary" (click)="close()" [disabled]="actionPending">{{step == 'results'?'Close':'Cancel'}}</button>
-	<button *ngIf="step != 'results'" type="button" class="btn btn-secondary" (click)="proceed()" [disable]="proceedDisabled()" [pending]="actionPending">Proceed</button>
+	<div class="btn-toolbar">
+		<button type="button" class="btn btn-secondary" (click)="close()" [disabled]="actionPending">{{step == 'results'?'Close':'Cancel'}}</button>
+		<button *ngIf="step != 'results'" type="button" class="btn btn-secondary" (click)="proceed()" [disable]="proceedDisabled()" [pending]="actionPending">Proceed</button>
+	</div>
 </div>

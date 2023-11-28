@@ -15,7 +15,7 @@
           </div>
       </div>
       <div [ngClass]="{'form-separator-popup': sso, 'form-separator form-separator-top-padding': !sso}">
-          <h4 class="title">Community</h4>
+          <div class="separator-title">Community</div>
       </div>
       <div table-directive
         class="self-reg-option-table"
@@ -40,7 +40,7 @@
           </div>
         </div>
         <div [ngClass]="{'form-separator-popup': sso, 'form-separator': !sso}" class="form-separator-top-padding mt-3">
-            <h4 class="title">{{dataService.labelOrganisation()}} details <span [tooltip]="'This information defines the member of the selected community through which will you be testing for conformance.'" [containerClass]="'tooltipContainerBig'"><i class="fa-solid fa-question-circle"></i></span></h4>
+            <div class="separator-title">{{dataService.labelOrganisation()}} details <span [tooltip]="'This information defines the member of the selected community through which will you be testing for conformance.'" [containerClass]="'tooltipContainerBig'"><i class="fa-solid fa-question-circle"></i></span></div>
         </div>
         <div class="row">
             <label class="col-3 col-form-label text-end" for="orgShortName">* Short name:</label>
@@ -68,7 +68,7 @@
         </div>
         <div class="row" *ngIf="model.selfRegOption?.organisationProperties && model.selfRegOption!.organisationProperties!.length > 0">
           <div class="col-12">
-            <div [ngClass]="{'form-separator-popup selfreg': sso, 'form-separator': !sso}" class="my-3"></div>
+            <div [ngClass]="{'form-separator-popup mb-0': sso, 'form-separator': !sso}" class="mt-3"></div>
           </div>
         </div>
         <app-custom-property-form *ngIf="model.selfRegOption"
@@ -83,7 +83,7 @@
             [tbPropertyType]="'organisation'"></app-custom-property-form>
         <div *ngIf="!sso">
           <div class="form-separator form-separator-top-padding mt-3">
-              <h4 class="title">Administrator account details <span [tooltip]="'Through your administrator account you can manage your ' + dataService.labelOrganisationLower() + ' users, configure your conformance statements and execute tests.'" [containerClass]="'tooltipContainerBig'"><i class="fa-solid fa-question-circle"></i></span></h4>
+              <div class="separator-title">Administrator account details <span [tooltip]="'Through your administrator account you can manage your ' + dataService.labelOrganisationLower() + ' users, configure your conformance statements and execute tests.'" [containerClass]="'tooltipContainerBig'"><i class="fa-solid fa-question-circle"></i></span></div>
           </div>
           <div class="row mb-3">
               <label class="col-3 col-form-label text-end" for="adminName">* Name:</label>

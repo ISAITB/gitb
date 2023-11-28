@@ -1,9 +1,11 @@
 <div class="modal-header" *ngIf="headerText">
-    <h4>{{headerText}}</h4>
+    <div class="modal-title">{{headerText}}</div>
 </div>
 <div class="modal-body html-modal">
     <div id="content" [innerHtml]="html | sanitizeHtml"></div>
 </div>
 <div class="modal-footer html-modal">
-    <button type="button" class="btn btn-secondary" (click)="close()">Close</button>
+    <div class="btn-toolbar">
+        <button type="button" class="btn btn-secondary" (click)="close()">Close</button>
+    </div>
 </div>

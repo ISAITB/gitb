@@ -1,7 +1,7 @@
 <div class="page users create">
     <div class="card mb-0">
         <div class="card-header">
-            <h4 class="title">Create legal notice</h4>
+            <div class="card-title">Create legal notice</div>
         </div>
         <form>
             <div class="card-body">
@@ -12,17 +12,17 @@
                     <div class="col-10 offset-1">
                         <div class="row mb-3">
                             <label class="col-3 col-form-label text-end" for="name">* Name:</label>
-                            <div class="col-8"><input id="name" name="name" [(ngModel)]="notice.name" class="form-control" type="text"></div>
+                            <div class="col-7"><input id="name" name="name" [(ngModel)]="notice.name" class="form-control" type="text"></div>
                             <div app-tooltip class="col-auto" tbTooltip="The name of the legal notice that will identify it and be displayed in selection lists."></div>
                         </div>
                         <div class="row mb-3">
                             <label class="col-3 col-form-label text-end" for="description">Description:</label>
-                            <div class="col-8"><textarea id="description" name="description" [(ngModel)]="notice.description" class="form-control"></textarea></div>
+                            <div class="col-7"><textarea id="description" name="description" [(ngModel)]="notice.description" class="form-control"></textarea></div>
                             <div app-tooltip class="col-auto" tbTooltip="A description that will be visible only to administrators to help distinguish this legal notice and summarise its purpose."></div>
                         </div>
                         <div class="row mb-3 pt-1">
                             <label class="col-3 col-form-label text-end pt-0" for="default">Default:</label>
-                            <div class="col-8">
+                            <div class="col-7">
                                 <div class="form-check">
                                     <input class="form-check-input" id="default" name="default" [(ngModel)]="notice.default" type="checkbox">
                                     <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [tbTooltip]="tooltipForDefaultCheck"></div>
@@ -34,7 +34,7 @@
 				<div class="row">
 					<div class="col-12">
 						<div class="form-separator expandable" (click)="showContent = !showContent">
-							<div><h4 class="title"><app-collapsing-icon [isCollapsed]="!showContent"></app-collapsing-icon>Content</h4></div>
+							<div class="separator-title"><app-collapsing-icon [isCollapsed]="!showContent"></app-collapsing-icon>Content</div>
 						</div>
 					</div>
 				</div>

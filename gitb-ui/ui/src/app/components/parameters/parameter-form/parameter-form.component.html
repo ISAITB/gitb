@@ -77,7 +77,7 @@
             <option *ngFor="let v of dependsOnTargets" [value]="v.key">{{v.name}}</option>
         </select>
     </div>
-    <div class="col-4 no-left-padding">
+    <div class="col-4 ps-0">
         <div *ngIf="parameter.dependsOn && parameter.dependsOn != ''">
             <div *ngIf="!dependsOnTargetsMap[parameter.dependsOn].hasPresetValues">
                 <input type="text" class="form-control" name="dependsOnValue" [(ngModel)]="parameter.dependsOnValue" placeholder="Property value"/>

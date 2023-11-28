@@ -1,8 +1,8 @@
 <div class="page tests">
     <app-test-filter [filterState]="filterState" [organisationId]="organisationId" (onApply)="goFirstPage()"></app-test-filter>
-    <div class="card panel-default">
+    <div class="card">
         <div class="card-header clickable" (click)="activeSessionsCollapsed = !activeSessionsCollapsed">
-            <h4 class="title"><app-collapsing-icon [isCollapsed]="activeSessionsCollapsed"></app-collapsing-icon>Active test sessions</h4>
+            <div class="card-title"><app-collapsing-icon [isCollapsed]="activeSessionsCollapsed"></app-collapsing-icon>Active test sessions</div>
             <div class="btn-toolbar" [class.disable-events]="filterState.updatePending">
                 <button type="button" class="btn btn-secondary" *ngIf="showTerminateAll" (click)="stopAll();$event.stopPropagation()" [pending]="stopAllPending" [disable]="activeTests.length == 0 || exportActivePending">Terminate all</button>
                 <button type="button" class="btn btn-secondary" (click)="exportActiveSessionsToCsv();$event.stopPropagation()" [pending]="exportActivePending" [disable]="activeTests.length == 0 || stopAllPending">Export CSV</button>
@@ -30,7 +30,7 @@
     </div>
     <div class="card mb-0">
         <div class="card-header clickable" (click)="completedSessionsCollapsed = !completedSessionsCollapsed">
-            <h4 class="title"><app-collapsing-icon [isCollapsed]="completedSessionsCollapsed"></app-collapsing-icon>Completed test sessions</h4>
+            <div class="card-title"><app-collapsing-icon [isCollapsed]="completedSessionsCollapsed"></app-collapsing-icon>Completed test sessions</div>
             <div class="btn-toolbar" [class.disable-events]="filterState.updatePending">
                 <button type="button" class="btn btn-secondary" *ngIf="canDelete()" [pending]="deletePending" [disable]="completedTests.length == 0" (click)="deleteObsolete();$event.stopPropagation()">Delete obsolete sessions</button>
                 <button type="button" class="btn btn-secondary" (click)="exportCompletedSessionsToCsv();$event.stopPropagation()" [disable]="completedTests.length == 0" [pending]="exportCompletedPending">Export CSV</button>

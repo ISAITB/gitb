@@ -48,7 +48,7 @@ button.btn {
 
 .nav-tabs > li.active > a {
 	background-color: @gray-light-1 !important;
-	color: var(--bs-nav-link-color) !important;
+	color: var(--itb-tab-link-color) !important;
 	border-bottom-color: @gray-light-1 !important;
 }
 
@@ -192,9 +192,6 @@ tr.test-result-obsolete {
 .form-separator {
 	border-bottom: 1px solid @gray-light;
 	margin-bottom: 20px;
-	&.no-margin {
-		margin-bottom: 0px;
-	}
 	&.expandable {
 		cursor: pointer;
 		display: flex;
@@ -215,14 +212,6 @@ tr.test-result-obsolete {
 	border-bottom: 1px solid @gray-light;
     margin-bottom: 20px;
     margin-top: 20px;
-	&.no-margin {
-		margin-top: 0px;
-		margin-bottom: 0px;
-	}
-	&.selfreg {
-		margin-top: 3px;
-	}
-
 	&.expandable {
 		cursor: pointer;
 		display: flex;
@@ -447,24 +436,6 @@ div.import-item-root {
 	}
 }
 
-.no-left-padding {
-	padding-left: 0px !important;
-}
-
-.no-top-bottom-padding {
-	padding-top: 0px !important;
-	padding-bottom: 0px !important;
-}
-
-.no-side-padding {
-	padding-left: 0px !important;
-	padding-right: 0px !important;
-}
-
-.no-margin {
-	margin: 0px !important;
-}
-
 .form-table {
 	border: 1px solid @gray-dark-1;
 	border-radius: @border-radius;
@@ -647,17 +618,6 @@ table.table {
 	}
 }
 
-.modal-header {
-	display: flex;
-	align-items: center;
-	.btn-toolbar {
-		display: flex;
-		flex-grow: 1;
-		justify-content: right;
-		flex-wrap: wrap;
-	}
-}
-
 .disable-select {
     user-select: none; /* supported by Chrome and Opera */
    -webkit-user-select: none; /* Safari */
@@ -678,4 +638,10 @@ div.table-container {
 }
 .collapsible-icon {
 	margin-right: 10px;
+}
+.pending-container {
+    display: flex;
+    .pending-message {
+        opacity: 0.5;
+    }
 }

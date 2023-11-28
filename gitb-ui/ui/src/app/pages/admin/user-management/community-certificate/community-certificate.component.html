@@ -1,7 +1,7 @@
 <div class="page users create">
     <div class="card mb-0">
         <div class="card-header">
-            <h4 class="title">Conformance certificate settings</h4>
+            <div class="card-title">Conformance certificate settings</div>
         </div>
         <form>
             <div class="card-body">
@@ -28,7 +28,7 @@
                     <div class="col-10 offset-1">
                         <div class="row mb-3 pt-1">
                             <legend class="col-3 col-form-label text-end pt-0">Included sections:</legend>
-                            <div class="col-8">
+                            <div class="col-7">
                                 <div class="form-check form-check-inline">
                                     <input class="form-check-input" type="checkbox" id="includeDetails" name="includeDetails" [(ngModel)]="settings.includeDetails">
                                     <label class="form-check-label" for="includeDetails">Details
@@ -67,7 +67,7 @@
                     <div class="row">
                         <div class="col-12">
                             <div class="form-separator">
-                                <h4 class="title">Message configuration</h4>
+                                <div class="separator-title">Message configuration</div>
                             </div>
                         </div>
                     </div>
@@ -86,7 +86,7 @@
                     <div class="row pt-3">
                         <div class="col-12">
                             <div class="form-separator">
-                                <h4 class="title">Signature configuration</h4>
+                                <div class="separator-title">Signature configuration</div>
                             </div>
                         </div>
                     </div>
@@ -94,7 +94,7 @@
                         <div class="col-10 offset-1">
                             <div class="row mb-3">
                                 <label class="col-3 col-form-label text-end" for="title">* Keystore:</label>
-                                <div class="col-8">
+                                <div class="col-7">
                                     <app-file-select *ngIf="!settings.keystoreDefined" label="Upload" (onUpload)="attachKeystore($event)"></app-file-select>
                                     <button class="btn btn-secondary" type="button" (click)="downloadKeystore()" *ngIf="settings.keystoreDefined">Download</button>
                                     <button class="btn btn-secondary spaced-left" type="button" (click)="clearKeystore()" *ngIf="settings.keystoreDefined">Remove</button>
@@ -103,7 +103,7 @@
                             </div>
                             <div class="row mb-3 pt-1">
                                 <legend class="col-3 col-form-label text-end pt-0">* Keystore type:</legend>
-                                <div class="col-8">
+                                <div class="col-7">
                                     <div class="form-check form-check-inline">
                                         <input class="form-check-input" type="radio" [(ngModel)]="settings.keystoreType" name="keystoreTypes" id="type_1" [value]="'JCEKS'">
                                         <label class="form-check-label" for="type_1">JCEKS</label>
@@ -120,7 +120,7 @@
                             </div>
                             <div class="row mb-3 pt-1" *ngIf="settings.passwordsSet">
                                 <label class="col-3 col-form-label text-end pt-0" for="change-passwords">Change passwords?</label>
-                                <div class="col-8">
+                                <div class="col-7">
                                     <div class="form-check">
                                         <input class="form-check-input" id="change-passwords" name="changePasswords" [(ngModel)]="updatePasswords" type="checkbox"/>
                                     </div>

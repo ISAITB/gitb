@@ -1,12 +1,5 @@
 <div class="modal-header">
-	<h5>Preview and test service call</h5>
-    <div class="btn-toolbar">
-        <button type="button" *ngIf="editStep" class="btn btn-secondary" (click)="callService()" [pending]="actionPending">Call service</button>
-        <button type="button" *ngIf="editStep && request != initialRequest" class="btn btn-secondary" (click)="reset()" [disabled]="actionPending">Reset sample payload</button>
-        <button type="button" *ngIf="!editStep" class="btn btn-secondary" (click)="back()">Back</button>
-        <button type="button" class="btn btn-secondary" (click)="copyToClipboard()" [disabled]="actionPending">Copy to clipboard</button>
-        <button type="button" class="btn btn-secondary" (click)="close()">{{actionPending?'Cancel':'Close'}}</button>
-    </div>
+	<div class="modal-title">Preview and test service call</div>
 </div>
 <div class="modal-body">
     <ng-container [ngSwitch]="editStep">
@@ -39,4 +32,13 @@
             </ng-container>
         </ng-container>
     </ng-container>
+</div>
+<div class="modal-footer">
+    <div class="btn-toolbar">
+        <button type="button" class="btn btn-secondary" (click)="close()">{{actionPending?'Cancel':'Close'}}</button>
+        <button type="button" *ngIf="editStep" class="btn btn-secondary" (click)="callService()" [pending]="actionPending">Call service</button>
+        <button type="button" *ngIf="editStep && request != initialRequest" class="btn btn-secondary" (click)="reset()" [disabled]="actionPending">Reset sample payload</button>
+        <button type="button" *ngIf="!editStep" class="btn btn-secondary" (click)="back()">Back</button>
+        <button type="button" class="btn btn-secondary" (click)="copyToClipboard()" [disabled]="actionPending">Copy to clipboard</button>
+    </div>
 </div>

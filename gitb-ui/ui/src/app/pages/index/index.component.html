@@ -3,7 +3,7 @@
     <div class="container">
       <div class="header-container">
         <div class="header-logo-container">
-          <img [src]="logo" class="logo"/>
+          <img class="logo"/>
         </div>
         <div class="header-menu-container">
           <app-header-menu [logoutInProgress]="logoutInProgress"></app-header-menu>
@@ -17,7 +17,7 @@
           <div class="container">
               <div class="row">
                   <div class="col-12">
-                      <h2>{{pageTitle}}</h2>
+                      <div class="page-title">{{pageTitle}}</div>
                   </div>
               </div>
           </div>
@@ -55,7 +55,7 @@
   <div class="footer-bar">
     <div class="container">
       <div class="footer-logo">
-        <img [src]="footer"/>
+        <img />
       </div>
       <div class="footer-devmode-container" *ngIf="dataService.isDevelopmentMode()">
         <div class="footer-devmode"><span><i class="fa-solid fa-exclamation-circle" aria-hidden="true"></i></span><span>Development mode</span></div>

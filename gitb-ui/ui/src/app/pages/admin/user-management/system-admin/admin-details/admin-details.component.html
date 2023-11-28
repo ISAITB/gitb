@@ -1,7 +1,7 @@
 <div class="page users detail">
     <div class="card mb-0">
         <div class="card-header">
-            <h4 class="title">Administrator details</h4>
+            <div class="card-title">Administrator details</div>
         </div>
         <form>
             <div class="card-body">
@@ -14,9 +14,7 @@
                 </div>
                 <div class="row" *ngIf="!dataService.configuration.ssoEnabled">
                     <div class="col-10 col-centered">
-                        <div class="alert alert-info form-control-plaintext rounded mb-0">
-                            <p class="mb-0"><b>Privacy note:</b> By clicking 'Update' you grant the user's consent on his/her behalf to record the provided information. This is used only for internal identification purposes and is never shared with other parties. Alternatively you may also complete this form with information that is not personally identifiable. Please refer to the legal notice (link available in the screen's footer) for more information.</p>
-                        </div>
+                        <div class="alert alert-info rounded mb-0"><b>Privacy note:</b> By clicking 'Update' you grant the user's consent on his/her behalf to record the provided information. This is used only for internal identification purposes and is never shared with other parties. Alternatively you may also complete this form with information that is not personally identifiable. Please refer to the legal notice (link available in the screen's footer) for more information.</div>
                     </div>
                 </div>
             </div>

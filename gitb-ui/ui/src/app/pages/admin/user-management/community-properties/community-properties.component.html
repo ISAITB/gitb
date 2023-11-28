@@ -1,15 +1,15 @@
 <div class="page memberProperties">
     <div class="card mb-0">
         <div class="card-header">
-            <h4 class="title">Custom properties for community members</h4>
+            <div class="card-title">Custom properties for community members</div>
         </div>
         <div class="card-body">
             <div class="alert alert-info rounded">
                 <span>The following custom properties will be presented to your community members for completion and, if configured, will also be made available as test session variables. Required properties must be provided before executing test sessions.</span>
             </div>
-            <div class="card panel-default">
+            <div class="card">
                 <div class="card-header">
-                    <h5 class="title">{{dataService.labelOrganisation()}} level properties</h5>
+                    <div class="table-title">{{dataService.labelOrganisation()}} level properties</div>
                     <div class="btn-toolbar">
                         <button type="button" class="btn btn-secondary" (click)="previewOrganisationParameters()">Preview</button>
                         <button type="button" class="btn btn-secondary" [disabled]="orderOrganisationParametersDisabled.value" (click)="orderOrganisationParameters()">Save property order</button>
@@ -62,7 +62,7 @@
             </div>
             <div class="card mb-0">
                 <div class="card-header">
-                    <h5 class="title">{{dataService.labelSystem()}} level properties</h5>
+                    <div class="table-title">{{dataService.labelSystem()}} level properties</div>
                     <div class="btn-toolbar">
                         <button type="button" class="btn btn-secondary" (click)="previewSystemParameters()">Preview</button>
                         <button type="button" class="btn btn-secondary" [disable]="orderSystemParametersDisabled.value" [pending]="orderPending" (click)="orderSystemParameters()">Save property order</button>

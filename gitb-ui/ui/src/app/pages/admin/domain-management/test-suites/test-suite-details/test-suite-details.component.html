@@ -1,7 +1,7 @@
 <div class="page domains detail detail-testsuite">
-	<div class="card panel-default">
+	<div class="card">
 		<div class="card-header">
-			<h4 class="title">Test suite details</h4>
+			<div class="card-title">Test suite details</div>
 		</div>
 		<form>
 			<div class="card-body">
@@ -39,7 +39,7 @@
 				<div class="row">
 					<div class="col-12">
 						<div class="form-separator expandable" (click)="showDocumentation = !showDocumentation">
-							<div><h4 class="title"><app-collapsing-icon [isCollapsed]="!showDocumentation"></app-collapsing-icon>Documentation</h4></div>
+							<div class="separator-title"><app-collapsing-icon [isCollapsed]="!showDocumentation"></app-collapsing-icon>Documentation</div>
 						</div>
 					</div>
 				</div>
@@ -82,7 +82,7 @@
 			<tab (selectTab)="loadTestCases()" customClass="tabClass">
                 <ng-template tabHeading><app-tab-title icon="fa-solid fa-file-code" text="Test cases"></app-tab-title></ng-template>
 				<div class="tabPanel">
-					<div class="card panel-default">
+					<div class="card">
 						<div table-directive
 							[columns]="testCaseTableColumns"
 							[data]="testSuite.testCases"
@@ -105,7 +105,7 @@
 							<button type="button" class="btn btn-secondary" (click)="cancelUnlinkSpecifications()" *ngIf="selectingForUnlink" [disabled]="unlinkPending">Cancel</button>
 						</div>
 					</div>
-					<div class="card panel-default">
+					<div class="card">
 						<div table-directive
 							[columns]="specificationTableColumns"
 							[data]="linkedSpecifications"

@@ -1,5 +1,5 @@
 <div class="modal-header">
-    <h4>Provide feedback</h4>
+    <div class="modal-title">Provide feedback</div>
 </div>
 <form>
     <div class="modal-body">
@@ -46,21 +46,19 @@
         </div>
         <div class="row mb-3" *ngIf="showSurveyLink()">
             <div class="col-12">
-                <div class="alert alert-info rounded mb-0">
-                    <p class="form-control-plaintext">If you have 10 minutes to spare we would much appreciate if you would complete our feedback survey. Click <a [href]="surveyAddress" target="blank">here</a> to open the survey in a separate window and start.</p>
-                </div>
+                <div class="alert alert-info rounded mb-0">If you have 10 minutes to spare we would much appreciate if you would complete our feedback survey. Click <a [href]="surveyAddress" target="blank">here</a> to open the survey in a separate window and start.</div>
             </div>
         </div>
         <div class="row">
             <div class="col-12">
-                <div class="alert alert-info rounded mb-0">
-                    <p class="form-control-plaintext"><b>Privacy note:</b> The information you provide is treated by the test bed support team and is never shared to other parties. The 'Contact email' you provide is used only to receive a response from the support team. Please refer to the legal notice (link available in the screen's footer) for more information.</p>
-                </div>
+                <div class="alert alert-info rounded mb-0"><b>Privacy note:</b> The information you provide is treated by the test bed support team and is never shared to other parties. The 'Contact email' you provide is used only to receive a response from the support team. Please refer to the legal notice (link available in the screen's footer) for more information.</div>
             </div>
         </div>
     </div>
     <div class="modal-footer">
-        <button class="btn btn-secondary" type="button" (click)="cancel()">Close</button>
-        <button class="btn btn-secondary" type="submit" (click)="send()" [disable]="sendDisabled()"[pending]="sendPending">Send feedback</button>
+        <div class="btn-toolbar">
+            <button class="btn btn-secondary" type="button" (click)="cancel()">Close</button>
+            <button class="btn btn-secondary" type="submit" (click)="send()" [disable]="sendDisabled()"[pending]="sendPending">Send feedback</button>
+        </div>
     </div>
 </form>

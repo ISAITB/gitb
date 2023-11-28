@@ -1,7 +1,7 @@
 <div class="page domains">
 	<div class="card mb-0">
 		<div class="card-header">
-			<h4 class="title">{{dataService.labelDomains()}}</h4>
+			<div class="card-title">{{dataService.labelDomains()}}</div>
 			<div class="btn-toolbar" *ngIf="dataService.isSystemAdmin">
 				<button type="button" class="btn btn-secondary" (click)="create()">Create {{dataService.labelDomainLower()}}</button>
 			</div>

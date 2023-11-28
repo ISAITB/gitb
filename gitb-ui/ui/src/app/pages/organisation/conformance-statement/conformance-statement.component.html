@@ -1,7 +1,7 @@
 <div id="conformanceDetailPage" class="page conformance">
-	<div class="card panel-default">
+	<div class="card">
 		<div class="card-header clickable" (click)="collapsedDetails = !collapsedDetails">
-			<h4 class="title"><app-collapsing-icon [isCollapsed]="collapsedDetails"></app-collapsing-icon>Conformance statement details</h4>
+			<div class="card-title"><app-collapsing-icon [isCollapsed]="collapsedDetails"></app-collapsing-icon>Conformance statement details</div>
 		</div>
 		<div [collapse]="collapsedDetails" [isAnimated]="true">
 			<div class="card-body detailsPanel" [ngSwitch]="statement != undefined">

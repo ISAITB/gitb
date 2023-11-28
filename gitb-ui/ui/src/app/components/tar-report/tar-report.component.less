@@ -1,0 +1,67 @@
+@import '../../../styles/less/_common.less';
+
+@color-summary-title: @gray-light-1;
+@color-summary-title-hover: fade(@gray-light, 50%);
+
+.root-container {
+    border: 1px solid @gray-light; 
+    border-radius: @border-radius;     
+}
+.summary {
+    display: flex;
+    border-top-left-radius: @border-radius;     
+    border-top-right-radius: @border-radius;
+    border-bottom-width: 1px;
+    border-bottom-style: solid;
+    border-bottom-color: @gray-light;
+    &.hide-border {
+        border-bottom-width: 0px;
+    }
+    cursor: pointer;
+    align-items: center;    
+    background-color: @color-summary-title;
+    padding: 8px 10px 8px 14px;
+    &:hover {
+        background: @color-summary-title-hover;
+    }
+    .summary-labels {
+        flex-grow: 1;
+        display: flex;
+        justify-content: right;
+        .tag-container {
+            margin-left: 10px;
+        }
+        ::ng-deep {
+            .summaryErrors {
+                color: @red-error-text;
+                background-color: @red-error-background;
+                border-color: @red-error-border;
+                .tag-label-icon {
+                    color: @red-error-content;
+                }
+            }
+            .summaryWarnings {
+                color: @orange-warning-text;
+                background-color: @orange-warning-background;
+                border-color: @orange-warning-border;
+                .tag-label-icon {
+                    color: @orange-warning-content;
+                }
+            }
+            .summaryMessages {
+                color: @blue-info-text;
+                background-color: @blue-info-background;
+                border-color: @blue-info-border;
+                .tag-label-icon {
+                    color: @blue-info-content;
+                }
+            }
+        }
+    }
+    .summary-title {
+        font-weight: bold;
+    }
+}
+.details {
+    padding: 10px 10px 0px 10px;
+}

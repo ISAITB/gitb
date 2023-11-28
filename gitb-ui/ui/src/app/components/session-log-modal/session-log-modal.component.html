@@ -1,6 +1,14 @@
 <div class="modal-header">
-	<h5>Test session log</h5>
+	<div class="modal-title">Test session log</div>	
+</div>
+<div class="modal-body">
+	<div class="editor editor-normal">
+		<ngx-codemirror #codeEditor *ngIf="editorOptions" [(ngModel)]="content" [options]="editorOptions"></ngx-codemirror>
+	</div>
+</div>
+<div class="modal-footer">
 	<div class="btn-toolbar">
+		<button type="button" class="btn btn-secondary" (click)="close()">Close</button>
 		<div class="btn-group" dropdown *ngIf="messageEmitter != undefined">
 			<button id="button-tail" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-tail">{{tailLabel}}<span class="caret withMargin"></span></button>
 			<ul id="dropdown-tail" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-tail">
@@ -20,11 +28,5 @@
 		</div>
 		<button type="button" class="btn btn-secondary" (click)="copyToClipboard()">Copy to clipboard</button>
 		<button type="button" class="btn btn-secondary" (click)="download()">Download</button>
-		<button type="button" class="btn btn-secondary" (click)="close()">Close</button>
-	</div>
-</div>
-<div class="modal-body">
-	<div class="editor editor-normal">
-		<ngx-codemirror #codeEditor *ngIf="editorOptions" [(ngModel)]="content" [options]="editorOptions"></ngx-codemirror>
 	</div>
 </div>

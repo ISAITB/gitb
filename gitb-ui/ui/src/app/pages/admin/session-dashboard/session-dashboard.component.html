@@ -1,8 +1,10 @@
 <div class="page dashboard">
     <app-test-filter [filterState]="filterState" [communityId]="communityId" (onApply)="applyFilters()"></app-test-filter>
-    <div class="card panel-default">
+    <div class="card">
         <div class="card-header clickable" (click)="activeSessionsCollapsed = !activeSessionsCollapsed">
-            <h4 class="title"><app-collapsing-icon [isCollapsed]="activeSessionsCollapsed"></app-collapsing-icon>Active test sessions</h4>
+            <div class="card-title">
+                <app-collapsing-icon [isCollapsed]="activeSessionsCollapsed"></app-collapsing-icon>Active test sessions
+            </div>
             <div class="btn-toolbar" [class.disable-events]="filterState.updatePending">
                 <button type="button" class="btn btn-secondary" (click)="stopAll();$event.stopPropagation()" [pending]="stopAllPending" [disable]="activeTests.length == 0 || exportActivePending">Terminate all</button>
                 <button type="button" class="btn btn-secondary" (click)="exportActiveSessionsToCsv();$event.stopPropagation()" [pending]="exportActivePending" [disable]="activeTests.length == 0 || stopAllPending">Export CSV</button>
@@ -31,7 +33,7 @@
     <!-- completed sessions -->
     <div class="card mb-0">
         <div class="card-header clickable" (click)="completedSessionsCollapsed = !completedSessionsCollapsed">
-            <h4 class="title"><app-collapsing-icon [isCollapsed]="completedSessionsCollapsed"></app-collapsing-icon>Completed test sessions</h4>
+            <div class="card-title"><app-collapsing-icon [isCollapsed]="completedSessionsCollapsed"></app-collapsing-icon>Completed test sessions</div>
             <div class="btn-toolbar" [class.disable-events]="filterState.updatePending">
                 <button type="button" class="btn btn-secondary" (click)="selectDeleteSessions();$event.stopPropagation()" *ngIf="!selectingForDelete" [disable]="completedTests.length == 0 || deletePending" [pending]="deleteSessionsPending">Delete sessions...</button>
                 <button type="button" class="btn btn-outline-danger" (click)="confirmDeleteSessions();$event.stopPropagation()" *ngIf="selectingForDelete" [disable]="!testsChecked()" [pending]="deleteSessionsPending">Confirm</button>

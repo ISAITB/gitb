@@ -1,5 +1,5 @@
 <div class="modal-header">
-    <h4>{{title}}</h4>
+    <div class="modal-title">{{title}}</div>
 </div>
 <div class="modal-body">
     <div>
@@ -7,6 +7,8 @@
     </div>
 </div>
 <div class="modal-footer">
-    <button type="button" class="btn btn-secondary" (click)="close()">Close</button>
-    <button type="button" class="btn btn-secondary" (click)="retry()" *ngIf="withRetry">Retry</button>
+    <div class="btn-toolbar">
+        <button type="button" class="btn btn-secondary" (click)="close()">Close</button>
+        <button type="button" class="btn btn-secondary" (click)="retry()" *ngIf="withRetry">Retry</button>
+    </div>
 </div>

@@ -23,6 +23,31 @@ input, textarea {
 	margin-bottom: 10px;
 }
 
+.card-title {
+    color: var(--itb-card-title-color);
+    font-size: 1.125rem;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    font-weight: 500;
+    line-height: 1.2;
+}
+.separator-title {
+    color: var(--itb-card-title-color);
+    font-size: 1.125rem;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    font-weight: 500;
+    line-height: 1.2;
+}
+.table-title {
+    margin-top: 10px;
+    margin-bottom: 10px;
+	font-size: var(--bs-body-font-size);
+    font-weight: 500;
+    line-height: 1.2;
+    color: var(--itb-table-title-color);	
+}
+
 .btn-toolbar {
 	&.btn-stacked {
 		&>.btn {
@@ -51,29 +76,26 @@ input, textarea {
 	font-weight: bold;
 }
 
-.h4,.h5,.h6,h4,h5,h6 {
-    margin-top: 10px;
-    margin-bottom: 10px
-}
-
 .nav-link {
 	margin-right: 2px;
 }
 
 section.page-top {
+    background-color: var(--itb-header-background-color);
+    border-bottom-color: var(--itb-header-border-color);	
     height: @page-header-height * 1px;
     position: relative;
     align-items: center;
     display: flex;
 	border-bottom-width: 5px;
 	border-bottom-style: solid;
-	h2 {
-		display: inline-block;
-		font-weight: 200;
-		margin: 0px;
-		padding: 0px;
-		position: relative;
-	}
+}
+
+.page-title {
+    color: var(--itb-page-title-color);
+    font-weight: 200;
+    line-height: 1.2;
+    font-size: 1.875rem;
 }
 
 footer {
@@ -128,13 +150,6 @@ a.scroll-to-top.visible {
 
 .page-with-margins {
     margin: @page-content-margin;
-}
-
-.welcome-text {
-	line-height: 30px;
-	& > h1, h2, h3, h4, div, p, span {
-		line-height: 30px;
-	}
 }
 
 .div-spaced {
@@ -381,6 +396,24 @@ bs-tooltip-container {
 	}
 }
 
+.modal-header {
+	.modal-title {
+		font-size: 1.125rem;
+		font-weight: 500;
+		margin: 4px 0px;
+		color: var(--itb-modal-title-color);
+	}
+}
+
+/* Definitions to display a progressive backdrop for nested modals - START */
+.modal.fade {
+	background: rgba(0, 0, 0, 0.5);
+}
+.modal-backdrop.fade {
+	opacity: 0;
+}
+/* END */
+
 .tooltip-inner {
 	min-width: 250px !important;
 }
@@ -563,9 +596,23 @@ ng-multiselect-dropdown {
 	}
 }
 
-.h1, .h2, .h3, h1, h2, h3 {
-	margin-top: 24px;
-    margin-bottom: 24px;
+body {
+	.welcome-text {
+		line-height: 30px;
+		& > h1, h2, h3, h4, div, p, span {
+			line-height: 30px;
+		}
+	}	
+	h1, .h1, h2, .h2, h3, .h3 {
+		margin-top: 24px;
+		margin-bottom: 24px;
+		color: var(--itb-heading-color);
+	}
+	h4, .h4, h5, .h5, h6, .h6 {
+		margin-top: 10px;
+		margin-bottom: 10px;
+		color: var(--itb-heading-color);
+	}
 }
 
 .spaced-left {
@@ -611,11 +658,14 @@ div.non-padded-alert div.alert {
         margin-bottom: 3px;
         .logo {
             height: 48px;
+			content: var(--itb-header-logo-path);
         }
     }
 }
 
 .footer-bar {
+    background-color: var(--itb-header-background-color);
+    border-top-color: var(--itb-header-border-color);	
     font-size: 0.9em;
     min-height: 60px;
 	display: flex;
@@ -628,6 +678,8 @@ div.non-padded-alert div.alert {
     }
     .footer-logo img {
         height: 50px;
+		display: var(--itb-footer-logo-display);
+		content: var(--itb-footer-logo-path);
     }
     .version-div {
         display: flex;
@@ -639,14 +691,14 @@ div.non-padded-alert div.alert {
         margin-left: 10px;
         .footer-link {
             &:not(:first-child) {
-                border-left: 1px solid @white;
+                border-left: 1px solid var(--itb-footer-text-color);
                 padding-left: 5px;
             }
             display: inline-flex;
             margin: 5px 0px 5px 5px;
             span, a, a:visited {
                 text-decoration: underline;
-                color: @white;
+                color: var(--itb-footer-text-color);
             }
         }
     }
@@ -675,6 +727,9 @@ div.non-padded-alert div.alert {
 }
 
 .nav-item.tabClass {
+	.nav-link {
+		color: var(--itb-tab-link-color) !important;
+	}
 	&:not(.active) {
 		.nav-link {
 			border-radius: @border-radius @border-radius 0px 0px;

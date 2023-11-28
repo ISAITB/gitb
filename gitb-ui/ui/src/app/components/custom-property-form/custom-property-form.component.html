@@ -1,8 +1,8 @@
 <div *ngIf="hasVisibleProperties()">
   <div class="row" *ngIf="tbShowFormHeader">
     <div class="col-12">
-      <div class="no-margin" [ngClass]="{'form-separator': !tbPopup, 'form-separator-popup': tbPopup}" [class.expandable]="tbExpandable" (click)="checkToExpand()">
-        <div><h4 class="title"><app-collapsing-icon *ngIf="tbExpandable" [isCollapsed]="tbCollapsed!"></app-collapsing-icon>Additional properties <span [tooltip]="'Properties specific to the community. Required properties will need to be completed before executing tests.'" [containerClass]="'tooltipContainerBig'"><i class="fa-solid fa-question-circle"></i></span></h4></div>
+      <div class="mb-0" [ngClass]="{'form-separator': !tbPopup, 'form-separator-popup': tbPopup}" [class.expandable]="tbExpandable" (click)="checkToExpand()">
+        <div class="separator-title"><app-collapsing-icon *ngIf="tbExpandable" [isCollapsed]="tbCollapsed!"></app-collapsing-icon>Additional properties <span [tooltip]="'Properties specific to the community. Required properties will need to be completed before executing tests.'" [containerClass]="'tooltipContainerBig'"><i class="fa-solid fa-question-circle"></i></span></div>
       </div>
     </div>
   </div>

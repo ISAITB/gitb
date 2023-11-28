@@ -29,7 +29,7 @@
         </div>
         <div class="row mb-3 pt-1">
             <label class="col-3 col-form-label text-end pt-0" for="hidden">Hidden:</label>
-            <div class="col-8">
+            <div class="col-7">
                 <div class="form-check">
                     <input class="form-check-input" id="hidden" name="hidden" [(ngModel)]="specification.hidden" type="checkbox">
                     <div app-tooltip class="col-auto d-inline-flex" [tbTooltip]="'Check this to hide the '+dataService.labelSpecificationLower()+' as an available option for new conformance statements. Doing so effectively deprecates the '+dataService.labelSpecificationLower()+' but keeps testing history intact.'" [inline]="true"></div>

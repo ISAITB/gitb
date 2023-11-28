@@ -1,5 +1,5 @@
 <div class="modal-header">
-	<h4 class="modal-title" id="myModalLabel">{{inputTitle}}</h4>
+    <div class="modal-title" id="myModalLabel">{{inputTitle}}</div>
 </div>
 <form>
 	<div class="modal-body provide-input-body" style="overflow-x: auto; overflow-y: hidden;">
@@ -44,8 +44,10 @@
 		</div>
 	</div>
 	<div class="modal-footer">
-		<button type="button" *ngIf="!needsInput" (click)="hideInput()" class="btn btn-secondary">Close</button>
-		<button type="button" *ngIf="needsInput" (click)="reset()" class="btn btn-secondary">Reset</button>
-		<button type="submit" *ngIf="needsInput" (click)="hideInput()" class="btn btn-secondary">Submit</button>
+		<div class="btn-toolbar">
+			<button type="button" *ngIf="!needsInput" (click)="hideInput()" class="btn btn-secondary">Close</button>
+			<button type="button" *ngIf="needsInput" (click)="reset()" class="btn btn-secondary">Reset</button>
+			<button type="submit" *ngIf="needsInput" (click)="hideInput()" class="btn btn-secondary">Submit</button>
+		</div>
 	</div>
 </form>

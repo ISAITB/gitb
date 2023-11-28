@@ -2,7 +2,7 @@
     <app-test-filter [filterState]="filterState" [communityId]="communityId" (onApply)="getConformanceStatements()"></app-test-filter>
 	<div id="conformanceDashboardPageTable" class="card mb-0">
 		<div class="card-header">
-			<h4 id="conformance-statements-title" class="title">Conformance statements</h4>
+			<div id="conformance-statements-title" class="card-title">Conformance statements</div>
 			<div class="btn-toolbar allStatementControls" [class.disable-events]="filterState.updatePending">
                 <div class="btn-group" dropdown [isDisabled]="selectedCommunityId == undefined">
                     <button id="button-snapshot" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-snapshot">{{snapshotButtonLabel}}<span class="caret withMargin"></span></button>

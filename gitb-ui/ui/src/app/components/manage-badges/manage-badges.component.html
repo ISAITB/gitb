@@ -2,7 +2,7 @@
     <div class="col-10 offset-1">
         <div class="row mb-3 pt-1">
             <label class="col-3 col-form-label text-end pt-0" for="badgesEnabled">Badges enabled:</label>
-            <div class="col-8">
+            <div class="col-7">
                 <div class="form-check">
                     <input class="form-check-input" id="badgesEnabled" name="badgesEnabled" [(ngModel)]="badges.enabled" type="checkbox">
                     <div app-tooltip class="col-auto d-inline-flex" tbTooltip="Check to define conformance badges as visual indications of a conformance statement's status." [inline]="true"></div>
@@ -15,7 +15,7 @@
     <div class="row">
         <div class="col-12">
             <div class="form-separator expandable" (click)="badgesCollapsed = !badgesCollapsed">
-                <div><h4 class="title"><app-collapsing-icon [isCollapsed]="formCollapsed()"></app-collapsing-icon>Conformance badges</h4></div>
+                <div class="separator-title"><app-collapsing-icon [isCollapsed]="formCollapsed()"></app-collapsing-icon>Conformance badges</div>
             </div>
         </div>
     </div>

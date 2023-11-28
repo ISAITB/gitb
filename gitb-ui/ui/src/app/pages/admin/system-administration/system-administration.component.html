@@ -1,12 +1,12 @@
 <div class="page">
-    <div class="card panel-default">
+    <div class="card">
         <div class="card-header clickable" (click)="configsCollapsed = !configsCollapsed">
-            <h4 class="title">System configuration</h4>
+            <div class="card-title">System configuration</div>
         </div>
         <div [collapse]="configsCollapsed" [isAnimated]="true">
             <div class="configsContainer" [ngSwitch]="configValuesPending">
                 <ng-container *ngSwitchCase="true">
-                    <div class="pending-container">
+                    <div class="pending-container my-3">
                         <div class="pending-icon"><app-pending-block [pending]="true"></app-pending-block></div>
                         <div class="pending-message">Loading system configuration properties...</div>
                     </div>
@@ -22,10 +22,9 @@
                             <form>
                                 <div class="row row-cols-auto align-items-center gx-3">
                                     <div class="col-auto">
-                                        <div class="checkbox">
-                                            <label>
-                                                <input type="checkbox" name="ttlEnabled" (change)="ttlCheckChanged()" [(ngModel)]="ttlEnabled"> Enabled?
-                                            </label>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="ttlEnabled" name="ttlEnabled" (change)="ttlCheckChanged()" [(ngModel)]="ttlEnabled">
+                                            <label class="form-check-label" for="ttlEnabled">Enabled?</label>
                                         </div>
                                     </div>
                                     <div class="col-auto">
@@ -52,10 +51,9 @@
                             <form>
                                 <div class="row row-cols-auto align-items-center gx-3">
                                     <div class="col-auto">
-                                        <div class="checkbox">
-                                            <label>
-                                                <input type="checkbox" name="selfRegistrationEnabled" [(ngModel)]="selfRegistrationEnabled"> Enabled?
-                                            </label>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="selfRegistrationEnabled" name="selfRegistrationEnabled" [(ngModel)]="selfRegistrationEnabled">
+                                            <label class="form-check-label" for="selfRegistrationEnabled">Enabled?</label>
                                         </div>
                                     </div>
                                     <div class="col-auto">
@@ -75,10 +73,9 @@
                             <form>
                                 <div class="row row-cols-auto align-items-center gx-3">
                                     <div class="col-auto">
-                                        <div class="checkbox">
-                                            <label>
-                                                <input type="checkbox" name="demoAccountEnabled" [(ngModel)]="demoAccountEnabled"> Enabled?
-                                            </label>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="demoAccountEnabled" name="demoAccountEnabled" [(ngModel)]="demoAccountEnabled">
+                                            <label class="form-check-label" for="demoAccountEnabled">Enabled?</label>
                                         </div>
                                     </div>
                                     <div class="col-auto" [ngSwitch]="loadCommunitiesPending">
@@ -166,7 +163,7 @@
                     <div class="tabControls">
                         <button type="button" class="btn btn-secondary" (click)="createAdmin()">Create system administrator</button>
                     </div>
-                    <div class="card panel-default">
+                    <div class="card">
                         <div table-directive
                             [columns]="adminColumns"
                             [data]="admins"
@@ -187,7 +184,7 @@
                             <button type="button" class="btn btn-secondary" (click)="createLandingPage()">Create landing page</button>
                         </div>
                     </div>
-                    <div class="card panel-default">
+                    <div class="card">
                         <div table-directive
                             [columns]="landingPagesColumns"
                             [data]="landingPages"
@@ -208,7 +205,7 @@
                             <button type="button" class="btn btn-secondary" (click)="createLegalNotice()">Create legal notice</button>
                         </div>
                     </div>
-                    <div class="card panel-default">
+                    <div class="card">
                         <div table-directive
                             [columns]="legalNoticesColumns"
                             [data]="legalNotices"
@@ -229,7 +226,7 @@
                             <button type="button" class="btn btn-secondary" (click)="createErrorTemplate()">Create error template</button>
                         </div>
                     </div>
-                    <div class="card panel-default">
+                    <div class="card">
                         <div table-directive
                             [columns]="errorTemplatesColumns"
                             [data]="errorTemplates"

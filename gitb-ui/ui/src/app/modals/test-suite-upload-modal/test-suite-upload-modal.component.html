@@ -1,5 +1,5 @@
 <div class="modal-header">
-	<h4>Test suite upload</h4>
+	<div class="modal-title">Test suite upload</div>
 </div>
 <div class="modal-body">
 	<form [ngSwitch]="step">
@@ -31,29 +31,19 @@
 			<div class="row">
 				<div class="col-12">
 					<div class="alert alert-info rounded mb-0" [ngSwitch]="hasValidationErrors || hasValidationWarnings">
-						<div *ngSwitchCase="true">
-							The provided test suite completed validation with <strong *ngIf="hasValidationErrors">{{report!.counters.errors}} error(s)</strong><span *ngIf="hasValidationErrors && hasValidationWarnings"> and </span><strong *ngIf="hasValidationWarnings">{{report!.counters.warnings}} warning(s)</strong>.
-						</div>
-						<div *ngSwitchCase="false">
-							The provided test suite was successfully validated.
-						</div>
+						<ng-container *ngSwitchCase="true" [ngSwitch]="hasValidationErrors">
+							<span *ngSwitchCase="true">The provided test suite completed validation with errors.</span>		
+							<span *ngSwitchDefault>The provided test suite completed validation with warnings.</span> 
+						</ng-container>
+						<ng-container *ngSwitchDefault>
+							<span>The provided test suite was successfully validated.</span>		
+						</ng-container>
 					</div>
 				</div>
 			</div>
-			<div class="row test-step-report ts-upload-validation-report">
-				<div class="col-12 step-report test-assertion-step-report">
-					<div class="test-assertion-group-report" *ngIf="report?.reports != undefined">
-						<div class="report-details">
-							<div class="report-details-title" (click)="reportItemsCollapsed = !reportItemsCollapsed"><app-collapsing-icon [isCollapsed]="reportItemsCollapsed"></app-collapsing-icon>Details</div>
-							<div class="report-details-items" [collapse]="reportItemsCollapsed" [isAnimated]="true">
-								<div class="report-details-items-inner">
-									<div *ngFor="let reportItem of report!.reports!">
-										<app-test-assertion-report [assertionReport]="toAssertionReport(reportItem)"></app-test-assertion-report>
-									</div>
-								</div>
-							</div>
-						</div>
-					</div>
+			<div class="row ts-upload-validation-report" *ngIf="validationReportItems != undefined && validationReportItems.length > 0">
+				<div class="col-12">
+					<app-tar-report [reports]="validationReportItems"></app-tar-report>
 				</div>
 			</div>
 		</div>
@@ -147,6 +137,8 @@
 	</form>
 </div>
 <div class="modal-footer">
-	<button type="button" class="btn btn-secondary" (click)="close()" [disabled]="actionPending">{{step == 'results'?'Close':'Cancel'}}</button>
-    <button *ngIf="proceedVisible()" type="button" class="btn btn-secondary" (click)="proceed()" [disable]="proceedDisabled()" [pending]="actionProceedPending">Proceed</button>
+	<div class="btn-toolbar">
+		<button type="button" class="btn btn-secondary" (click)="close()" [disabled]="actionPending">{{step == 'results'?'Close':'Cancel'}}</button>
+		<button *ngIf="proceedVisible()" type="button" class="btn btn-secondary" (click)="proceed()" [disable]="proceedDisabled()" [pending]="actionProceedPending">Proceed</button>
+	</div>
 </div>

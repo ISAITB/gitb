@@ -1,7 +1,7 @@
 <div class="page settings">
 	<div class="card mb-0">
 		<div class="card-header">
-			<h4 class="title">Profile</h4>
+			<div class="card-title">Profile</div>
         </div>
         <form #profileForm="ngForm">
             <div class="card-body">
@@ -10,7 +10,7 @@
                     <div class="col-10 offset-1">
                         <div class="row mb-3">
                             <label class="col-2 col-form-label text-end" for="shortName"><span *ngIf="!dataService.configuration.ssoEnabled">* </span>Name:</label>
-                            <div class="col-8">
+                            <div class="col-7">
                                 <p *ngIf="dataService.configuration.ssoEnabled" class="form-control-plaintext">{{data.name}}</p>
                                 <input *ngIf="!dataService.configuration.ssoEnabled" id="name" name="name" type="text" class="form-control" [(ngModel)]="data.name">
                             </div>
@@ -18,13 +18,13 @@
                         </div>
                         <div class="row mb-3">
                             <label class="col-2 col-form-label text-end" for="fullName">{{dataService.configuration.ssoEnabled?'Email:':'Username:'}}</label>
-                            <div class="col-8">
+                            <div class="col-7">
                                 <p class="form-control-plaintext">{{data.email}}</p>
                             </div>
                         </div>
                         <div class="row mb-3">
                             <label class="col-2 col-form-label text-end" for="fullName">Role:</label>
-                            <div class="col-8">
+                            <div class="col-7">
                                 <p class="form-control-plaintext">{{data.role}}</p>
                             </div>
                         </div>

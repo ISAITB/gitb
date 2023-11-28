@@ -7,8 +7,8 @@
 		<title>Interoperability Test Bed</title>
 		<meta name="description" content="">
 		<meta name="viewport" content="width=device-width">
-		<link rel="stylesheet" href="api/theme/css">
 		<link rel="stylesheet" href='assets/build/styles.css?v=@config.resourceVersionNumber'>
+		<link rel="stylesheet" href="api/theme/css">
 		<script type='text/javascript' src='webjars/jquery/3.6.4/jquery.min.js'></script>
 		<script type='text/javascript' src='assets/components/gitb-cookie-cleanup.js?v=@config.resourceVersionNumber'></script>
 	</head>
@@ -19,7 +19,7 @@
 				<div class="container">
 					<div class="header-container">
 						<div class="header-logo-container">
-							<img src='@config.logoPath' class="logo"/>
+							<img class="logo"/>
 						</div>
 					</div>
 				</div>
@@ -29,7 +29,7 @@
 					<div class="container">
 						<div class="row">
 							<div class="col-12">
-								<h2>Welcome to the Interoperability Test Bed</h2>
+								<div class="page-title">Welcome to the Interoperability Test Bed</div>
 							</div>
 						</div>
 					</div>
@@ -80,7 +80,7 @@
 			<div class="footer-bar">
 				<div class="container">
 					<div class="footer-logo">
-						<img src="@config.footerLogoPath"/>
+						<img/>
 					</div>
 					@if(config.developmentMode) {
 					<div class="footer-devmode-container">
@@ -113,7 +113,7 @@
 					<!-- Modal content-->
 					<div class="modal-content">
 						<div class="modal-header">
-							<h4>Legal Notice</h4>
+							<div class="modal-title">Legal Notice</div>
 						</div>
 						<div class="modal-body html-modal">
 							<div id="content">
@@ -121,7 +121,9 @@
 							</div>
 						</div>
 						<div class="modal-footer">
-							<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+							<div class="btn-toolbar">
+								<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+							</div>
 						</div>
 					</div>
 				</div>
@@ -134,7 +136,7 @@
 					<!-- Modal content-->
 					<div class="modal-content">
 						<div class="modal-header">
-							<h4>Initial setup</h4>
+							<div class="modal-title">Initial setup</div>
 						</div>
 						<form id="initForm" enctype="multipart/form-data">
 							<div class="modal-body">
@@ -155,7 +157,7 @@
 										<div class="form-control-plaintext"><span data-toggle="tooltip" class="check" title="The archive containing the data to import."><i class="fa-solid fa-question-circle"></i></span></div>
 									</div>
 								</div>
-								<div class="row mb-3 align-items-center">
+								<div class="row align-items-center">
 									<label class="col-3 col-form-label d-flex justify-content-end" for="encryptionPassword">* Archive password:</label>
 									<div class="col-5">
 										<input id="encryptionPasswordVisible" name="passwordVisible" type="text" class="form-control"/>
@@ -172,16 +174,18 @@
 								</div>
 							</div>
 							<div class="modal-footer">
-								<button id="buttonNoImport" type="button" class="btn btn-secondary">Close</button>
-								<button id="buttonImport" type="submit" class="btn btn-secondary"><span id="initDataSpinner" class="tab"><i class="fa-solid fa-spinner fa-spin-override fa-lg"></i></span>Import archive</button>
+								<div class="btn-toolbar">
+									<button id="buttonNoImport" type="button" class="btn btn-secondary">Close</button>
+									<button id="buttonImport" type="submit" class="btn btn-secondary"><span id="initDataSpinner" class="tab"><i class="fa-solid fa-spinner fa-spin-override fa-lg"></i></span>Import archive</button>
+								</div>
 							</div>
 						</form>
 					</div>
 				</div>
 			</div>
 		}
-		@if(config.initialSandboxRun) {
 		<script type='text/javascript' src='webjars/bootstrap/5.3.2/js/bootstrap.bundle.min.js'></script>
+		@if(config.initialSandboxRun) {
 		<script type='text/javascript' src='assets/components/gitb-init-sandbox.js?v=@config.resourceVersionNumber'></script>
 		}
 	</body>

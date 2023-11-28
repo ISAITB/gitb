@@ -1,5 +1,5 @@
 <div class="modal-header">
-	<h4>Link a new role to your account</h4>
+    <div class="modal-title">Link a new role to your account</div>
 </div>
 <form>
 	<div class="modal-body">
@@ -67,7 +67,9 @@
 		</div>
 	</div>
 	<div class="modal-footer">
-		<button class="btn btn-secondary" type="button" (click)="cancel()">Cancel</button>
-		<button class="btn btn-secondary" type="submit" (click)="create()" [disable]="!createEnabled()" [pending]="createPending">Complete</button>
+		<div class="btn-toolbar">
+			<button class="btn btn-secondary" type="button" (click)="cancel()">Cancel</button>
+			<button class="btn btn-secondary" type="submit" (click)="create()" [disable]="!createEnabled()" [pending]="createPending">Complete</button>
+		</div>
 	</div>
 </form>
