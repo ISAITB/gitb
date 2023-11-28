@@ -64,6 +64,13 @@ public abstract class AbstractMessagingHandler implements IMessagingHandler {
         }
     }
 
+    /**
+     * @return Whether the messaging handler needs to be assigned a worker thread.
+     */
+    public boolean needsMessagingServerWorker() {
+        return true;
+    }
+
     @Override
     public void beginTransaction(String sessionId, String transactionId, String stepId, String from, String to, List<Configuration> configurations) {
         try {
@@ -317,9 +324,11 @@ public abstract class AbstractMessagingHandler implements IMessagingHandler {
 
 	protected void validateActorConfigurations(List<ActorConfiguration> actorConfigurations) {
 		MessagingModule module = getModuleDefinition();
-        if (module != null) {
+        if (module != null && actorConfigurations != null) {
             for (ActorConfiguration actorConfiguration : actorConfigurations) {
-                checkRequiredParameters(module.getActorConfigs().getParam(), actorConfiguration.getConfig());
+                if (module.getActorConfigs() != null && actorConfiguration.getConfig() != null) {
+                    checkRequiredParameters(module.getActorConfigs().getParam(), actorConfiguration.getConfig());
+                }
             }
         }
 	}
