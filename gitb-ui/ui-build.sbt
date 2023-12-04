@@ -35,8 +35,11 @@ def executeProdBuild(implicit dir: File): Int = {
 lazy val `ui-prod-build` = taskKey[Unit]("Run UI build when packaging the application.")
 
 `ui-prod-build` := {
-  implicit val userInterfaceRoot: File = baseDirectory.value / "ui"
-  if (executeProdBuild != Success) throw new Exception("Oops! UI Build crashed.")
+  val skipFrontend = sys.props.get("skipFrontend").getOrElse("false").toBoolean
+  if (!skipFrontend) {
+    implicit val userInterfaceRoot: File = baseDirectory.value / "ui"
+    if (executeProdBuild != Success) throw new Exception("Oops! UI Build crashed.")
+  }
 }
 
 // Execute frontend prod build task prior to play dist execution.
