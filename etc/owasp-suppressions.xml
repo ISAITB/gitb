@@ -56,4 +56,11 @@
         <packageUrl regex="true">^pkg:maven/ch\.qos\.logback/logback\-core@.*$</packageUrl>
         <vulnerabilityName>CVE-2023-6378</vulnerabilityName>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+        file name: logback-classic-1.4.11.jar
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/ch\.qos\.logback/logback\-classic@.*$</packageUrl>
+        <vulnerabilityName>CVE-2023-6378</vulnerabilityName>
+    </suppress>    
 </suppressions>
