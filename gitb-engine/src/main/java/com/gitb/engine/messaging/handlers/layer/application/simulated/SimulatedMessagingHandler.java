@@ -121,6 +121,12 @@ public class SimulatedMessagingHandler extends AbstractMessagingHandler {
     }
 
     @Override
+    public boolean needsMessagingServerWorker() {
+        // Messaging is simulated so no need for a worker thread.
+        return false;
+    }
+
+    @Override
     public InitiateResponse initiate(List<ActorConfiguration> actorConfigurations) {
         return new InitiateResponse();
     }
