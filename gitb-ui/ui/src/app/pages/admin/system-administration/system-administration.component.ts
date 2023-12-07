@@ -26,6 +26,7 @@ import { EntityWithId } from 'src/app/types/entity-with-id';
 import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
 import { ConfigStatus } from './config-status';
 import { forkJoin, map, mergeMap, of, share } from 'rxjs';
+import { Theme } from 'src/app/types/theme';
 
 @Component({
   selector: 'app-system-administration',
@@ -38,6 +39,7 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
   landingPageStatus = {status: Constants.STATUS.NONE}
   errorTemplateStatus = {status: Constants.STATUS.NONE}
   legalNoticeStatus = {status: Constants.STATUS.NONE}
+  themeStatus = {status: Constants.STATUS.NONE}
 
   tabToShow = SystemAdministrationTab.administrators
   tabTriggers!: Record<SystemAdministrationTab, {index: number, loader: () => any}>
@@ -59,11 +61,17 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
     { field: 'description', title: 'Description' },
     { field: 'default', title: 'Default' }
   ]
+  themeColumns: TableColumnDefinition[] = [
+    { field: 'key', title: 'Key' },
+    { field: 'description', title: 'Description' },
+    { field: 'active', title: 'Active' }
+  ]
 
   admins: User[] = []
   landingPages: LandingPage[] = []
   legalNotices: LegalNotice[] = []
   errorTemplates: ErrorTemplate[] = []
+  themes: Theme[] = []
 
   configValuesPending = true
   configsCollapsed = false
@@ -96,7 +104,7 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
 
   // Welcome page
   welcomePageStatus: ConfigStatus = { pending: false, collapsed: true, enabled: false, fromDefault: false, fromEnv: false}
-  welcomePageResetPending = false  
+  welcomePageResetPending = false
   welcomePageMessage?: string
 
   constructor(
@@ -118,7 +126,7 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
     const tabParam = router.getCurrentNavigation()?.extras?.state?.tab
     if (tabParam != undefined) {
       this.tabToShow = SystemAdministrationTab[tabParam as keyof typeof SystemAdministrationTab]
-    }    
+    }
   }
 
   ngAfterViewInit(): void {
@@ -290,6 +298,7 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
     temp[SystemAdministrationTab.landingPages] = {index: 1, loader: () => {this.showLandingPages()}}
     temp[SystemAdministrationTab.legalNotices] = {index: 2, loader: () => {this.showLegalNotices()}}
     temp[SystemAdministrationTab.errorTemplates] = {index: 3, loader: () => {this.showErrorTemplates()}}
+    temp[SystemAdministrationTab.themes] = {index: 4, loader: () => {this.showThemes()}}
     this.tabTriggers = temp as Record<SystemAdministrationTab, {index: number, loader: () => any}>
   }
 
@@ -352,6 +361,18 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
     }
   }
 
+  showThemes() {
+    if (this.themeStatus.status == Constants.STATUS.NONE) {
+      this.themeStatus.status = Constants.STATUS.PENDING
+      this.systemConfigurationService.getThemes()
+      .subscribe((data) => {
+        this.themes = data
+      }).add(() => {
+        this.themeStatus.status = Constants.STATUS.FINISHED
+      })
+    }
+  }
+
   createLandingPage() {
     this.routingService.toCreateLandingPage()
   }
@@ -374,6 +395,17 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
 
   errorTemplateSelect(errorTemplate: ErrorTemplate) {
     this.routingService.toErrorTemplate(undefined, errorTemplate.id)
+  }
+
+  createTheme() {
+    const activeTheme = find(this.themes, (theme) => theme.active)
+    if (activeTheme) {
+      this.routingService.toCreateTheme(activeTheme.id)
+    }
+  }
+
+  themeSelect(theme: Theme) {
+    this.routingService.toTheme(theme.id)
   }
 
   ttlCheckChanged() {

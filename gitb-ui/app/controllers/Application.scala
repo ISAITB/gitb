@@ -29,8 +29,6 @@ class Application @Inject() (implicit ec: ExecutionContext, cc: ControllerCompon
     Ok(views.html.index(
       new PublicConfig(
       Configurations.AUTHENTICATION_SSO_ENABLED,
-      systemConfigurationManager.getLogoPath(),
-      systemConfigurationManager.getFooterLogoPath(),
       versionInfo(),
       resourceVersionToUse(),
       hasDefaultLegalNotice,

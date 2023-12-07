@@ -8,7 +8,8 @@
     <meta name="description" content="">
     <meta name="viewport" content="width=device-width">
     <link rel="stylesheet" href='assets/build/styles.css?v=@config.resourceVersionNumber'>
-    <link rel="stylesheet" href="api/theme/css">
+    <link id="themeCssLink" rel="stylesheet" href="api/theme/css">
+    <link id="themeFaviconLink" rel="icon" href="favicon.ico">
 </head>
 <body>
 <div class="page index">
@@ -49,19 +50,11 @@
             <div class="footer-logo">
                 <img/>
             </div>
-            @if(config.developmentMode) {
-            <div class="footer-devmode-container">
-                <div class="footer-devmode"><span><i class="fa-solid fa-exclamation-circle" aria-hidden="true"></i></span><span>Development mode</span></div>
-            </div>
-            }
             <div class="version-div">
                 <div class="footer-links">
                     <div class="footer-link"><a href="@config.userGuideLink">User guide</a></div>
                     @if(config.hasDefaultLegalNotice) {
                     <div class="footer-link"><a href="#" data-toggle="modal" data-target="#legalModal">Legal notice</a></div>
-                    }
-                    @if(config.moreInfoEnabled) {
-                    <div class="footer-link"><a href="@config.moreInfoLink" target="blank">Find out more</a></div>
                     }
                     @if(config.releaseInfoEnabled) {
                     <div class="footer-link"><a href="@config.releaseInfoLink" target="blank">@config.versionNumber</a></div>

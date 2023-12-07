@@ -111,7 +111,7 @@
                                 </div>
                             </form>
                         </app-configuration-entry>
-                    </div>            
+                    </div>
                     <!-- REST API. -->
                     <div class="configContainer">
                         <app-configuration-entry
@@ -234,6 +234,27 @@
                             [loadingStatus]="errorTemplateStatus"
                             [allowSelect]="true"
                             (onSelect)="errorTemplateSelect($event)">
+                        </div>
+                    </div>
+                </div>
+            </tab>
+            <tab (selectTab)="showThemes()" customClass="tabClass">
+                <ng-template tabHeading><app-tab-title icon="fa-solid fa-palette" text="Themes"></app-tab-title></ng-template>
+                <!-- Themes -->
+                <div class="tabPanel">
+                    <div class="tabControls">
+                        <div class="btn-toolbar">
+                            <button type="button" class="btn btn-secondary" (click)="createTheme()">Create theme</button>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div table-directive
+                            [columns]="themeColumns"
+                            [data]="themes"
+                            noDataMessage="No themes found"
+                            [loadingStatus]="themeStatus"
+                            [allowSelect]="true"
+                            (onSelect)="themeSelect($event)">
                         </div>
                     </div>
                 </div>

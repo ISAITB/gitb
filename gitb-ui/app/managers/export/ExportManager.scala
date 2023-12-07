@@ -19,7 +19,7 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 @Singleton
-class ExportManager @Inject() (repositoryUtils: RepositoryUtils, domainManager: DomainManager, domainParameterManager: DomainParameterManager, communityResourceManager: CommunityResourceManager, triggerManager: TriggerManager, communityManager: CommunityManager, conformanceManager: ConformanceManager, testSuiteManager: TestSuiteManager, landingPageManager: LandingPageManager, legalNoticeManager: LegalNoticeManager, errorTemplateManager: ErrorTemplateManager, specificationManager: SpecificationManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class ExportManager @Inject() (repositoryUtils: RepositoryUtils, systemConfigurationManager: SystemConfigurationManager, domainManager: DomainManager, domainParameterManager: DomainParameterManager, communityResourceManager: CommunityResourceManager, triggerManager: TriggerManager, communityManager: CommunityManager, conformanceManager: ConformanceManager, testSuiteManager: TestSuiteManager, landingPageManager: LandingPageManager, legalNoticeManager: LegalNoticeManager, errorTemplateManager: ErrorTemplateManager, specificationManager: SpecificationManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   private final val logger: Logger = LoggerFactory.getLogger(classOf[ExportManager])
   private final val DEFAULT_CONTENT_TYPE = "application/octet-stream"
@@ -68,6 +68,13 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, domainManager: 
     exec(PersistenceSchema.testSuites
       .filter(_.domain === domainId)
       .filter(_.shared)
+      .result
+    )
+  }
+
+  private[export] def loadThemes(): Seq[models.theme.Theme] = {
+    exec(PersistenceSchema.themes
+      .filter(_.custom === true)
       .result
     )
   }
@@ -597,6 +604,59 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, domainManager: 
     exportedTestSuite
   }
 
+  def exportSystemSettings(exportSettings: ExportSettings): com.gitb.xml.export.Export = {
+    val exportData = new Export
+    exportData.setSettings(exportSystemSettingsInternal(exportSettings, None).exportedSettings)
+    exportData
+  }
+
+  private def exportSystemSettingsInternal(exportSettings: ExportSettings, latestSequenceId: Option[Int]): SystemSettingsExportInfo = {
+    val sequence = new IdGenerator(latestSequenceId.getOrElse(0))
+    val exportedSettings = new com.gitb.xml.export.Settings
+    // Themes
+    if (exportSettings.themes) {
+      val themes = loadThemes()
+      if (themes.nonEmpty) {
+        val exportedThemes = new com.gitb.xml.export.Themes
+        themes.foreach { theme =>
+          val exportedTheme = new com.gitb.xml.export.Theme
+          exportedTheme.setId(toId(sequence.next()))
+          exportedTheme.setKey(theme.key)
+          exportedTheme.setDescription(theme.description.orNull)
+          exportedTheme.setSeparatorTitleColor(theme.separatorTitleColor)
+          exportedTheme.setModalTitleColor(theme.modalTitleColor)
+          exportedTheme.setTableTitleColor(theme.tableTitleColor)
+          exportedTheme.setCardTitleColor(theme.cardTitleColor)
+          exportedTheme.setPageTitleColor(theme.pageTitleColor)
+          exportedTheme.setHeadingColor(theme.headingColor)
+          exportedTheme.setTabLinkColor(theme.tabLinkColor)
+          exportedTheme.setFooterTextColor(theme.footerTextColor)
+          exportedTheme.setHeaderBackgroundColor(theme.headerBackgroundColor)
+          exportedTheme.setHeaderBorderColor(theme.headerBorderColor)
+          exportedTheme.setHeaderSeparatorColor(theme.headerSeparatorColor)
+          exportedTheme.setHeaderLogoPath(theme.headerLogoPath)
+          if (!systemConfigurationManager.isBuiltInThemeResource(theme.headerLogoPath)) {
+            exportedTheme.setHeaderLogoContent(MimeUtil.getFileAsDataURL(repositoryUtils.getThemeResource(theme.id, theme.headerLogoPath).get, DEFAULT_CONTENT_TYPE))
+          }
+          exportedTheme.setFooterBackgroundColor(theme.footerBackgroundColor)
+          exportedTheme.setFooterBorderColor(theme.footerBorderColor)
+          exportedTheme.setFooterLogoPath(theme.footerLogoPath)
+          if (!systemConfigurationManager.isBuiltInThemeResource(theme.footerLogoPath)) {
+            exportedTheme.setFooterLogoContent(MimeUtil.getFileAsDataURL(repositoryUtils.getThemeResource(theme.id, theme.footerLogoPath).get, DEFAULT_CONTENT_TYPE))
+          }
+          exportedTheme.setFooterLogoDisplay(theme.footerLogoDisplay)
+          exportedTheme.setFaviconPath(theme.faviconPath)
+          if (!systemConfigurationManager.isBuiltInThemeResource(theme.faviconPath)) {
+            exportedTheme.setFaviconContent(MimeUtil.getFileAsDataURL(repositoryUtils.getThemeResource(theme.id, theme.faviconPath).get, DEFAULT_CONTENT_TYPE))
+          }
+          exportedThemes.getTheme.add(exportedTheme)
+        }
+        exportedSettings.setThemes(exportedThemes)
+      }
+    }
+    SystemSettingsExportInfo(sequence.current(), exportedSettings)
+  }
+
   def exportCommunity(communityId: Long, exportSettings: ExportSettings): com.gitb.xml.export.Export = {
     require(communityId != Constants.DefaultCommunityId, "The default community cannot be exported")
     val community = communityManager.getById(communityId)
@@ -618,11 +678,19 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, domainManager: 
     var domainExportInfo: DomainExportInfo = null
     var idSequence: Int = 0
     if (community.get.domain.isDefined && exportSettings.domain) {
-      domainExportInfo = exportDomainInternal(community.get.domain.get, exportSettings)
+      // Add domain data as part of the community export.
+      domainExportInfo = exportDomainInternal(community.get.domain.get, exportSettings.withoutSystemSettings())
       idSequence = domainExportInfo.latestSequenceId
       exportData.setDomains(new Domains)
       exportData.getDomains.getDomain.add(domainExportInfo.exportedDomain)
       communityData.setDomain(domainExportInfo.exportedDomain)
+    }
+    var systemSettingsExportInfo: SystemSettingsExportInfo = null
+    if (exportSettings.themes) {
+      // Add system settings as part of the community export.
+      systemSettingsExportInfo = exportSystemSettingsInternal(exportSettings, Some(idSequence + 1))
+      idSequence = systemSettingsExportInfo.latestSequenceId
+      exportData.setSettings(systemSettingsExportInfo.exportedSettings)
     }
     exportData.setCommunities(new com.gitb.xml.export.Communities)
     exportData.getCommunities.getCommunity.add(communityData)

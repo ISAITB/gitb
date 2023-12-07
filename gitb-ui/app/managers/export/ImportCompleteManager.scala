@@ -7,7 +7,8 @@ import managers.testsuite.TestSuitePaths
 import models.Enums.ImportItemType.ImportItemType
 import models.Enums.TestSuiteReplacementChoice.PROCEED
 import models.Enums._
-import models.{BadgeFile, Badges, Enums, TestCaseDeploymentAction, TestCases, TestSuiteDeploymentAction}
+import models.theme.ThemeFiles
+import models.{Badges, Enums, NamedFile, TestCaseDeploymentAction, TestCases, TestSuiteDeploymentAction}
 import org.apache.commons.codec.binary.Base64
 import org.apache.commons.io.{FileUtils, FilenameUtils}
 import org.apache.commons.lang3.StringUtils
@@ -25,7 +26,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.Using
 
 @Singleton
-class ImportCompleteManager @Inject()(domainParameterManager: DomainParameterManager, communityResourceManager: CommunityResourceManager, domainManager: DomainManager, triggerManager: TriggerManager, exportManager: ExportManager, communityManager: CommunityManager, conformanceManager: ConformanceManager, specificationManager: SpecificationManager, actorManager: ActorManager, endpointManager: EndPointManager, parameterManager: ParameterManager, testSuiteManager: TestSuiteManager, landingPageManager: LandingPageManager, legalNoticeManager: LegalNoticeManager, errorTemplateManager: ErrorTemplateManager, organisationManager: OrganizationManager, systemManager: SystemManager, importPreviewManager: ImportPreviewManager, repositoryUtils: RepositoryUtils, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigurationManager, domainParameterManager: DomainParameterManager, communityResourceManager: CommunityResourceManager, domainManager: DomainManager, triggerManager: TriggerManager, exportManager: ExportManager, communityManager: CommunityManager, conformanceManager: ConformanceManager, specificationManager: SpecificationManager, actorManager: ActorManager, endpointManager: EndPointManager, parameterManager: ParameterManager, testSuiteManager: TestSuiteManager, landingPageManager: LandingPageManager, legalNoticeManager: LegalNoticeManager, errorTemplateManager: ErrorTemplateManager, organisationManager: OrganizationManager, systemManager: SystemManager, importPreviewManager: ImportPreviewManager, repositoryUtils: RepositoryUtils, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   private def logger = LoggerFactory.getLogger("ImportCompleteManager")
 
@@ -47,6 +48,22 @@ class ImportCompleteManager @Inject()(domainParameterManager: DomainParameterMan
       mutable.ListBuffer[() => _]()
     )
     exec(completeFileSystemFinalisation(ctx, completeDomainImportInternal(exportedDomain, targetDomainId, ctx, canAddOrDeleteDomain)).transactionally)
+  }
+
+  def completeSystemSettingsImport(exportedSettings: com.gitb.xml.export.Settings, importSettings: ImportSettings, importItems: List[ImportItem], canManageSettings: Boolean): Unit = {
+    // Load context
+    val ctx = ImportContext(
+      importSettings,
+      toImportItemMaps(importItems, ImportItemType.Settings),
+      ExistingIds.init(),
+      ImportTargets.fromImportItems(importItems),
+      mutable.Map[ImportItemType, mutable.Map[String, String]](),
+      mutable.Map[Long, mutable.Map[String, Long]](),
+      mutable.Map[Long, (Option[List[TestCases]], Map[String, (Long, Boolean)])](),
+      mutable.ListBuffer[() => _](),
+      mutable.ListBuffer[() => _]()
+    )
+    exec(completeFileSystemFinalisation(ctx, completeSystemSettingsImportInternal(exportedSettings, ctx, canManageSettings)).transactionally)
   }
 
   private def toImportItemMaps(importItems: List[ImportItem], itemType: ImportItemType): ImportItemMaps = {
@@ -99,6 +116,9 @@ class ImportCompleteManager @Inject()(domainParameterManager: DomainParameterMan
         } else {
           false
         }
+      } else if (importItem.parentItem.get.itemType.id == ImportItemType.Settings.id) {
+        // The parent is not expected to be in the DB.
+        true
       } else {
         // No source key for the parent. We should normally never reach this point.
         logger.warn("Item ["+importItem.sourceKey.get+"]["+importItem.itemType+"] being checked for processing of which the parent source is not available")
@@ -373,6 +393,45 @@ class ImportCompleteManager @Inject()(domainParameterManager: DomainParameterMan
       propertyTypeToKind(data.getType), !data.isEditable, !data.isInTests, data.isInExports, data.isHidden, Option(data.getAllowedValues),
       displayOrder, Option(data.getDependsOn), Option(data.getDependsOnValue), Option(data.getDefaultValue), communityId
     )
+  }
+
+  private def toModelTheme(idToUse: Option[Long], data: com.gitb.xml.export.Theme): models.theme.Theme = {
+    models.theme.Theme(idToUse.getOrElse(0L), data.getKey, Option(data.getDescription), data.isActive, custom = true,
+      data.getSeparatorTitleColor, data.getModalTitleColor, data.getTableTitleColor, data.getCardTitleColor,
+      data.getPageTitleColor, data.getHeadingColor, data.getTabLinkColor, data.getFooterTextColor,
+      data.getHeaderBackgroundColor, data.getHeaderBorderColor, data.getHeaderSeparatorColor, data.getHeaderLogoPath,
+      data.getFooterBackgroundColor, data.getFooterBorderColor, data.getFooterLogoPath, data.getFooterLogoDisplay,
+      data.getFaviconPath
+    )
+  }
+
+  private def toModelThemeFiles(data: com.gitb.xml.export.Theme, ctx: ImportContext): models.theme.ThemeFiles = {
+    // Header logo.
+    var headerFile: Option[NamedFile] = None
+    if (!systemConfigurationManager.isBuiltInThemeResource(data.getHeaderLogoPath)) {
+      val fileToStore = dataUrlToTempFile(data.getHeaderLogoContent)
+      ctx.onFailureCalls += (() => if (fileToStore.exists()) { FileUtils.deleteQuietly(fileToStore) })
+      headerFile = Some(NamedFile(fileToStore, data.getHeaderLogoPath))
+    }
+    // Footer logo.
+    var footerFile: Option[NamedFile] = None
+    if (!systemConfigurationManager.isBuiltInThemeResource(data.getFooterLogoPath)) {
+      val fileToStore = dataUrlToTempFile(data.getFooterLogoContent)
+      ctx.onFailureCalls += (() => if (fileToStore.exists()) {
+        FileUtils.deleteQuietly(fileToStore)
+      })
+      footerFile = Some(NamedFile(fileToStore, data.getFooterLogoPath))
+    }
+    // Favicon.
+    var faviconFile: Option[NamedFile] = None
+    if (!systemConfigurationManager.isBuiltInThemeResource(data.getFaviconPath)) {
+      val fileToStore = dataUrlToTempFile(data.getFaviconContent)
+      ctx.onFailureCalls += (() => if (fileToStore.exists()) {
+        FileUtils.deleteQuietly(fileToStore)
+      })
+      faviconFile = Some(NamedFile(fileToStore, data.getFaviconPath))
+    }
+    ThemeFiles(headerFile, footerFile, faviconFile)
   }
 
   private def toModelLandingPage(data: com.gitb.xml.export.LandingPage, communityId: Long): models.LandingPages = {
@@ -690,6 +749,47 @@ class ImportCompleteManager @Inject()(domainParameterManager: DomainParameterMan
       })
       DBIO.successful(())
     })
+  }
+
+  private def completeSystemSettingsImportInternal(exportedSettings: com.gitb.xml.export.Settings, ctx: ImportContext, canManageSettings: Boolean): DBIO[_] = {
+    if (canManageSettings) {
+      // Load existing values.
+      if (ctx.importTargets.hasThemes) {
+        exportManager.loadThemes().foreach { theme =>
+          ctx.existingIds.map(ImportItemType.Theme) += theme.id.toString
+        }
+      }
+      for {
+        _ <- {
+          // Themes
+          val dbActions = ListBuffer[DBIO[_]]()
+          if (exportedSettings.getThemes != null) {
+            exportedSettings.getThemes.getTheme.asScala.foreach { theme =>
+              dbActions += processFromArchive(ImportItemType.Theme, theme, theme.getId, ctx,
+                ImportCallbacks.set(
+                  (data: com.gitb.xml.export.Theme, item: ImportItem) => {
+                    systemConfigurationManager.createThemeInternal(None, toModelTheme(None, data), toModelThemeFiles(data, ctx), ctx.onSuccessCalls)
+                  },
+                  (data: com.gitb.xml.export.Theme, targetKey: String, item: ImportItem) => {
+                    systemConfigurationManager.updateThemeInternal(toModelTheme(Some(targetKey.toLong), data), toModelThemeFiles(data, ctx), ctx.onSuccessCalls)
+                  }
+                )
+              )
+            }
+          }
+          toDBIO(dbActions)
+        }
+        _ <- {
+          processRemaining(ImportItemType.Theme, ctx,
+            (targetKey: String, item: ImportItem) => {
+              systemConfigurationManager.deleteThemeInternal(targetKey.toLong, ctx.onSuccessCalls)
+            }
+          )
+        }
+      } yield ()
+    } else {
+      DBIO.successful(())
+    }
   }
 
   private def completeDomainImportInternal(exportedDomain: com.gitb.xml.export.Domain, targetDomainId: Option[Long], ctx: ImportContext, canAddOrDeleteDomain: Boolean): DBIO[_] = {
@@ -1159,7 +1259,7 @@ class ImportCompleteManager @Inject()(domainParameterManager: DomainParameterMan
     })
   }
 
-  private def toModelBadgeFile(exportBadge: ConformanceBadge, ctx: ImportContext): Option[BadgeFile] = {
+  private def toModelBadgeFile(exportBadge: ConformanceBadge, ctx: ImportContext): Option[NamedFile] = {
     if (exportBadge != null) {
       val extension = FilenameUtils.getExtension(exportBadge.getName)
       val extensionToUse = if (extension.isBlank) {
@@ -1171,7 +1271,7 @@ class ImportCompleteManager @Inject()(domainParameterManager: DomainParameterMan
       ctx.onFailureCalls += (() => if (fileToStore.exists()) {
         FileUtils.deleteQuietly(fileToStore)
       })
-      Some(BadgeFile(fileToStore, fileToStore.getName))
+      Some(NamedFile(fileToStore, fileToStore.getName))
     } else {
       None
     }
@@ -1207,7 +1307,7 @@ class ImportCompleteManager @Inject()(domainParameterManager: DomainParameterMan
     }
   }
 
-  def completeCommunityImport(exportedCommunity: com.gitb.xml.export.Community, importSettings: ImportSettings, importItems: List[ImportItem], targetCommunityId: Option[Long], canAddOrDeleteDomain: Boolean, ownUserId: Option[Long]): Unit = {
+  def completeCommunityImport(exportedData: com.gitb.xml.export.Export, importSettings: ImportSettings, importItems: List[ImportItem], targetCommunityId: Option[Long], canDoAdminOperations: Boolean, ownUserId: Option[Long]): Unit = {
     val ctx = ImportContext(
       importSettings,
       toImportItemMaps(importItems, ImportItemType.Community),
@@ -1219,6 +1319,7 @@ class ImportCompleteManager @Inject()(domainParameterManager: DomainParameterMan
       mutable.ListBuffer[() => _](),
       mutable.ListBuffer[() => _]()
     )
+    val exportedCommunity = exportedData.getCommunities.getCommunity.asScala.head
     // Load values pertinent to domain to ensure we are modifying items within (for security purposes).
     var targetCommunity: Option[models.Communities] = None
     var communityAdminOrganisationId: Option[Long] = None
@@ -1340,7 +1441,16 @@ class ImportCompleteManager @Inject()(domainParameterManager: DomainParameterMan
             targetDomainId = targetCommunity.get.domain
           }
           mergeImportItemMaps(ctx.importItemMaps, toImportItemMaps(importItems, ImportItemType.Domain))
-          completeDomainImportInternal(exportedCommunity.getDomain, targetDomainId, ctx, canAddOrDeleteDomain)
+          completeDomainImportInternal(exportedCommunity.getDomain, targetDomainId, ctx, canDoAdminOperations)
+        } else {
+          DBIO.successful(())
+        }
+      }
+      // Settings
+      _ <- {
+        if (canDoAdminOperations && exportedData.getSettings != null) {
+          mergeImportItemMaps(ctx.importItemMaps, toImportItemMaps(importItems, ImportItemType.Settings))
+          completeSystemSettingsImportInternal(exportedData.getSettings, ctx, canDoAdminOperations)
         } else {
           DBIO.successful(())
         }
@@ -2110,7 +2220,7 @@ class ImportCompleteManager @Inject()(domainParameterManager: DomainParameterMan
     logger.info("Processing data archive ["+archive.getName+"]")
     val importSettings = new ImportSettings()
     importSettings.encryptionKey = Some(archiveKey)
-    val preparationResult = importPreviewManager.prepareImportPreview(archive, importSettings, requireDomain = false, requireCommunity = false)
+    val preparationResult = importPreviewManager.prepareImportPreview(archive, importSettings, requireDomain = false, requireCommunity = false, requireSettings = false)
     try {
       if (preparationResult._1.isDefined) {
         errorMessage = Some(preparationResult._1.get._2)
@@ -2118,10 +2228,10 @@ class ImportCompleteManager @Inject()(domainParameterManager: DomainParameterMan
       } else {
         if (preparationResult._2.get.getCommunities != null && !preparationResult._2.get.getCommunities.getCommunity.isEmpty) {
           // Community import.
-          val exportedCommunity = preparationResult._2.get.getCommunities.getCommunity.get(0)
+          val exportData = preparationResult._2.get
           // Step 1 - prepare import.
           var importItems: List[ImportItem] = null
-          val previewResult = importPreviewManager.previewCommunityImport(exportedCommunity, None)
+          val previewResult = importPreviewManager.previewCommunityImport(exportData, None)
           if (previewResult._2.isDefined) {
             importItems = List(previewResult._2.get, previewResult._1)
           } else {
@@ -2131,7 +2241,7 @@ class ImportCompleteManager @Inject()(domainParameterManager: DomainParameterMan
           approveImportItems(importItems)
           // Step 2 - Import.
           importSettings.dataFilePath = Some(importPreviewManager.getPendingImportFile(preparationResult._4.get, preparationResult._3.get).get.toPath)
-          completeCommunityImport(exportedCommunity, importSettings, importItems, None, canAddOrDeleteDomain = true, None)
+          completeCommunityImport(exportData, importSettings, importItems, None, canDoAdminOperations = true, None)
           // Avoid processing this archive again.
           processingComplete = true
         } else if (preparationResult._2.get.getDomains != null && !preparationResult._2.get.getDomains.getDomain.isEmpty) {
@@ -2144,6 +2254,18 @@ class ImportCompleteManager @Inject()(domainParameterManager: DomainParameterMan
           // Step 2 - Import.
           importSettings.dataFilePath = Some(importPreviewManager.getPendingImportFile(preparationResult._4.get, preparationResult._3.get).get.toPath)
           completeDomainImport(exportedDomain, importSettings, importItems, None, canAddOrDeleteDomain = true)
+          // Avoid processing this archive again.
+          processingComplete = true
+        } else if (preparationResult._2.get.getSettings != null) {
+          // System settings import.
+          val exportedSettings = preparationResult._2.get.getSettings
+          // Step 1 - prepare import.
+          val importItems = List(importPreviewManager.previewSystemSettingsImport(exportedSettings))
+          // Set all import items to proceed.
+          approveImportItems(importItems)
+          // Step 2 - Import.
+          importSettings.dataFilePath = Some(importPreviewManager.getPendingImportFile(preparationResult._4.get, preparationResult._3.get).get.toPath)
+          completeSystemSettingsImport(exportedSettings, importSettings, importItems, canManageSettings = true)
           // Avoid processing this archive again.
           processingComplete = true
         } else {

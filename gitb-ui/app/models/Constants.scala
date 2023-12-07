@@ -20,12 +20,6 @@ object Constants {
   // env variables
   val EnvironmentTheme = "THEME"
   val DefaultTheme = "gitb"
-  val EcTheme = "ec"
-  val ImagePath = "assets/images/"
-  val EcLogo: String = ImagePath + "ec.png"
-  val GitbLogo: String = ImagePath + "gitb.png"
-  val EcFavicon = "public/images/favicon-ec.gif"
-  val GitbFavicon = "public/images/favicon.png"
 
   val domainTestVariable = "DOMAIN"
   val organisationTestVariable = "ORGANISATION"

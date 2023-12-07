@@ -6,6 +6,7 @@
             <xsd:element name="description" type="xsd:string" minOccurs="0"/>
             <xsd:element name="domains" type="Domains" minOccurs="0"/>
             <xsd:element name="communities" type="Communities" minOccurs="0"/>
+            <xsd:element name="settings" type="Settings" minOccurs="0"/>
         </xsd:sequence>
         <xsd:attribute name="version" type="xsd:string" use="required"/>
         <xsd:attribute name="timestamp" type="xsd:dateTime" use="required"/>
@@ -679,6 +680,47 @@
             <xsd:extension base="ExportType">
                 <xsd:attribute name="actor" use="required" type="xsd:IDREF"/>
                 <xsd:attribute name="sut" use="required" type="xsd:boolean"/>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+    <xsd:complexType name="Settings">
+        <xsd:sequence>
+            <xsd:element name="themes" type="Themes" minOccurs="0"/>
+        </xsd:sequence>
+    </xsd:complexType>
+    <xsd:complexType name="Themes">
+        <xsd:sequence>
+            <xsd:element name="theme" type="Theme" maxOccurs="unbounded"/>
+        </xsd:sequence>
+    </xsd:complexType>
+    <xsd:complexType name="Theme">
+        <xsd:complexContent>
+            <xsd:extension base="ExportType">
+                <xsd:sequence>
+                    <xsd:element name="key" type="xsd:string"/>
+                    <xsd:element name="description" type="xsd:string" minOccurs="0"/>
+                    <xsd:element name="separatorTitleColor" type="xsd:string"/>
+                    <xsd:element name="modalTitleColor" type="xsd:string"/>
+                    <xsd:element name="tableTitleColor" type="xsd:string"/>
+                    <xsd:element name="cardTitleColor" type="xsd:string"/>
+                    <xsd:element name="pageTitleColor" type="xsd:string"/>
+                    <xsd:element name="headingColor" type="xsd:string"/>
+                    <xsd:element name="tabLinkColor" type="xsd:string"/>
+                    <xsd:element name="footerTextColor" type="xsd:string"/>
+                    <xsd:element name="headerBackgroundColor" type="xsd:string"/>
+                    <xsd:element name="headerBorderColor" type="xsd:string"/>
+                    <xsd:element name="headerSeparatorColor" type="xsd:string"/>
+                    <xsd:element name="headerLogoPath" type="xsd:string"/>
+                    <xsd:element name="headerLogoContent" type="xsd:string" minOccurs="0"/>
+                    <xsd:element name="footerBackgroundColor" type="xsd:string"/>
+                    <xsd:element name="footerBorderColor" type="xsd:string"/>
+                    <xsd:element name="footerLogoPath" type="xsd:string"/>
+                    <xsd:element name="footerLogoContent" type="xsd:string" minOccurs="0"/>
+                    <xsd:element name="footerLogoDisplay" type="xsd:string"/>
+                    <xsd:element name="faviconPath" type="xsd:string"/>
+                    <xsd:element name="faviconContent" type="xsd:string" minOccurs="0"/>
+                </xsd:sequence>
+                <xsd:attribute name="active" type="xsd:boolean" default="false"/>
             </xsd:extension>
         </xsd:complexContent>
     </xsd:complexType>

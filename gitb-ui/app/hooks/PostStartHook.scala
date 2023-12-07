@@ -46,6 +46,7 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext, actorSystem: Actor
     loadDataExports()
     archiveOldTestSessions()
     prepareRestApiDocumentation()
+    prepareTheme()
     logger.info("Application has started in "+Configurations.TESTBED_MODE+" mode - release "+Constants.VersionNumber + " built at "+Configurations.BUILD_TIMESTAMP)
   }
 
@@ -340,6 +341,11 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext, actorSystem: Actor
       case _: NumberFormatException =>
         false
     }
+  }
+
+  private def prepareTheme(): Unit = {
+    // Calling this method will parse and cache the active theme.
+    systemConfigurationManager.getCssForActiveTheme()
   }
 
 }

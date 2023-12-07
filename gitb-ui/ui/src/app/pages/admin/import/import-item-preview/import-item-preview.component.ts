@@ -16,6 +16,8 @@ export class ImportItemPreviewComponent implements OnInit {
   Constants = Constants
   iconTooltip!: string
   processOptions: IdLabel[] = []
+  collapsed = true
+  skipGroupDisplay = false
 
   constructor() { }
 
@@ -26,6 +28,9 @@ export class ImportItemPreviewComponent implements OnInit {
       this.iconTooltip = "Existing data that was matched by relevant data from the provided archive."
     } else {
       this.iconTooltip = "Existing data for which no match could be found in the provided archive."
+    }
+    if (this.tbImportItem.type == Constants.IMPORT_ITEM_TYPE.SYSTEM_SETTINGS) {
+      this.skipGroupDisplay = true
     }
     if (this.tbImportItem.match == Constants.IMPORT_ITEM_MATCH.ARCHIVE_ONLY) {
       this.processOptions.push({id: Constants.IMPORT_ITEM_CHOICE.PROCEED, label: "Create"})
@@ -80,6 +85,18 @@ export class ImportItemPreviewComponent implements OnInit {
         }
       }
     }
+  }
+
+  childrenCollapsed() {
+    setTimeout(() => {
+      this.collapsed = true      
+    }, 1)
+  }
+
+  childrenExpanding() {
+    setTimeout(() => {
+      this.collapsed = false
+    }, 1)
   }
 
   applyProcessOption(item: ImportItemState, newOption: number, force: boolean) {

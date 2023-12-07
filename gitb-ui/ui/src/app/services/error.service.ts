@@ -159,9 +159,9 @@ export class ErrorService {
         if (error.error && error.error.error_id) {
           error.template = 
             '<p>'+Constants.PLACEHOLDER__ERROR_DESCRIPTION+'</p>' +
-            '<p><b>Error reference: </b>'+Constants.PLACEHOLDER__ERROR_ID+'</p>'
+            '<span><b>Error reference: </b>'+Constants.PLACEHOLDER__ERROR_ID+'</span>'
         } else {
-          error.template = '<p>'+Constants.PLACEHOLDER__ERROR_DESCRIPTION+'</p>'
+          error.template = '<span>'+Constants.PLACEHOLDER__ERROR_DESCRIPTION+'</span>'
         }
       }
       const modal = this.modalService.show(ErrorComponent, {

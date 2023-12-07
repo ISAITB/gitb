@@ -10,8 +10,8 @@
         </div>
         <div class="row mb-3">
             <label class="col-3 col-form-label text-end" for="background">Background colour:</label>
-            <div class="col-7">
-                <input id="background" name="background" class="colour-holder" readonly="readonly"
+            <div class="col-7 d-flex">
+                <input id="background" name="background" class="form-control colour-holder" readonly="readonly"
                     [style.background]="tagToUse.background"
                     [colorPicker]="tagToUse.background!"
                     [cpOutputFormat]="'hex'"
@@ -21,8 +21,8 @@
         </div>
         <div class="row mb-3">
             <label class="col-3 col-form-label text-end" for="foreground">Text colour:</label>
-            <div class="col-7">
-                <input id="foreground" name="foreground" class="colour-holder" readonly="readonly"
+            <div class="col-7 d-flex">
+                <input id="foreground" name="foreground" class="form-control colour-holder" readonly="readonly"
                     [style.background]="tagToUse.foreground"
                     [colorPicker]="tagToUse.foreground!"
                     [cpOutputFormat]="'hex'"

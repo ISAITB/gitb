@@ -1,0 +1,210 @@
+<div class="row">
+    <div class="col-10 offset-1">
+        <div class="row">
+            <label class="col-3 col-form-label text-end" for="key">* Theme key:</label>
+            <div class="col-7"><input #themeKey id="key" name="key" [(ngModel)]="theme.key" class="form-control" type="text" [readonly]="readonly"></div>
+            <div class="col-auto" app-tooltip tbTooltip="A unique key used to identify the theme and refer to it when specified as an environment variable."></div>
+        </div>
+        <div class="row mt-3">
+            <label class="col-3 col-form-label text-end" for="description">Description:</label>
+            <div class="col-7"><textarea id="description" name="description" [(ngModel)]="theme.description" class="form-control" [readonly]="readonly"></textarea></div>
+            <div app-tooltip class="col-auto" tbTooltip="A description to explain the purpose and concept of this theme."></div>
+        </div>
+        <div class="row mt-3">
+            <label class="col-3 col-form-label text-end pt-0" for="active">Active:</label>
+            <div class="col-7">
+                <div class="form-check">
+                    <input class="form-check-input" id="active" name="active" [(ngModel)]="theme.active" type="checkbox" [disabled]="readonly">
+                    <div app-tooltip class="col-auto d-inline-flex" [inline]="true" tbTooltip="The active theme is the one used to style the Test Bed's interface."></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col-12">
+        <div class="form-separator">
+            <div class="separator-title">Theme colours</div>
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col-10 offset-2">
+        <div class="row mb-3">
+            <div class="col-10">
+                <div class="row gy-2 gx-3 align-items-center">
+                    <div class="col-auto">
+                        <app-color-picker 
+                            label="Header background"
+                            tooltipText="The background colour for the header displayed on the top of each page."
+                            [(ngModel)]="theme.headerBackgroundColor"
+                            [readonly]="readonly"
+                        ></app-color-picker>
+                    </div>
+                    <div class="col-auto">
+                        <app-color-picker 
+                            label="Header border"
+                            tooltipText="The colour of the border appearing at the bottom of the header."
+                            [(ngModel)]="theme.headerBorderColor"
+                            [readonly]="readonly"
+                        ></app-color-picker>
+                    </div>
+                    <div class="col-auto">
+                        <app-color-picker
+                            label="Header separator"
+                            tooltipText="The colour of the separator just above the header, between the header and the logo."
+                            [(ngModel)]="theme.headerSeparatorColor"
+                            [readonly]="readonly"
+                        ></app-color-picker>
+                    </div>
+                    <div class="col-auto">
+                        <app-color-picker
+                            label="Page titles"
+                            tooltipText="The colour for the title of each page displayed on the header."
+                            [(ngModel)]="theme.pageTitleColor"
+                            [readonly]="readonly"
+                        ></app-color-picker>
+                    </div>
+                    <div class="col-auto">
+                        <app-color-picker
+                            label="Footer background"
+                            tooltipText="The background colour for the footer displayed on the bottom of each page."
+                            [(ngModel)]="theme.footerBackgroundColor"
+                            [readonly]="readonly"
+                        ></app-color-picker>
+                    </div>
+                    <div class="col-auto">
+                        <app-color-picker
+                            label="Footer border"
+                            tooltipText="The colour of the border appearing at the top of the footer."
+                            [(ngModel)]="theme.footerBorderColor"
+                            [readonly]="readonly"
+                        ></app-color-picker>
+                    </div>
+                    <div class="col-auto">
+                        <app-color-picker
+                            label="Footer text"
+                            tooltipText="The colour for the text appearing in the footer."
+                            [(ngModel)]="theme.footerTextColor"
+                            [readonly]="readonly"
+                        ></app-color-picker>
+                    </div>
+                    <div class="col-auto">
+                        <app-color-picker
+                            label="Card titles"
+                            tooltipText="The colour for the title texts of all cards used to visually group forms and panels."
+                            [(ngModel)]="theme.cardTitleColor"
+                            [readonly]="readonly"
+                        ></app-color-picker>
+                    </div>
+                    <div class="col-auto">
+                        <app-color-picker
+                            label="Popup titles"
+                            tooltipText="The colour for popup dialog title texts."
+                            [(ngModel)]="theme.modalTitleColor"
+                            [readonly]="readonly"
+                        ></app-color-picker>
+                    </div>
+                    <div class="col-auto">
+                        <app-color-picker
+                            label="Table titles"
+                            tooltipText="The colour for table title texts. These are titles appearing as headings above certain tables."
+                            [(ngModel)]="theme.tableTitleColor"
+                            [readonly]="readonly"
+                        ></app-color-picker>
+                    </div>
+                    <div class="col-auto">
+                        <app-color-picker
+                            label="Tab titles"
+                            tooltipText="The colour for tab titles in all pages using tabs."
+                            [(ngModel)]="theme.tabLinkColor"
+                            [readonly]="readonly"
+                        ></app-color-picker>
+                    </div>
+                    <div class="col-auto">
+                        <app-color-picker
+                            label="Form separators"
+                            tooltipText="The colour for separators defining form sections."
+                            [(ngModel)]="theme.separatorTitleColor"
+                            [readonly]="readonly"
+                        ></app-color-picker>
+                    </div>
+                    <div class="col-auto">
+                        <app-color-picker
+                            label="Headings"
+                            tooltipText="The colour for headings appearing in custom rich content such as landing pages."
+                            [(ngModel)]="theme.headingColor"
+                            [readonly]="readonly"
+                        ></app-color-picker>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col-12">
+        <div class="form-separator">
+            <div class="separator-title">Theme images</div>
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col-10 offset-1">
+        <div class="row">
+            <label class="col-3 col-form-label text-end">* Favicon:</label>
+            <div class="col-7" [ngSwitch]="readonly">
+                <div *ngSwitchCase="true" class="input-group">
+                    <input type="text" class="form-control" readonly="readonly" [value]="faviconNameToShow">
+                    <button type="button" class="btn btn-secondary" [pending]="faviconDownloadPending" [icon]="true" (click)="downloadFavicon()" containerClass="shortTooltip" tooltip="Download" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-download"></i></button>
+                    <button type="button" class="btn btn-secondary" (click)="previewThemeResource(theme.faviconFile, theme.faviconPath, 'Favicon preview')" containerClass="shortTooltip" tooltip="Preview" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-magnifying-glass"></i></button>
+                </div>                
+                <app-file-select *ngSwitchDefault [fileName]="faviconNameToShow" (onUpload)="selectFavicon($event)" [accepts]="acceptedFileTypes" [extraActions]="true">
+                    <button type="button" class="btn btn-secondary" [pending]="faviconDownloadPending" [icon]="true" (click)="downloadFavicon()" containerClass="shortTooltip" tooltip="Download" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-download"></i></button>
+                    <button type="button" class="btn btn-secondary" (click)="previewThemeResource(theme.faviconFile, theme.faviconPath, 'Favicon preview')" containerClass="shortTooltip" tooltip="Preview" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-magnifying-glass"></i></button>
+                </app-file-select>
+            </div>
+            <div class="col-auto" app-tooltip tbTooltip="The favicon to use."></div>
+        </div>
+        <div class="row mt-3">
+            <label class="col-3 col-form-label text-end">* Header logo:</label>
+            <div class="col-7" [ngSwitch]="readonly">
+                <div *ngSwitchCase="true" class="input-group">
+                    <input type="text" class="form-control" readonly="readonly" [value]="headerLogoNameToShow">
+                    <button type="button" class="btn btn-secondary" [pending]="headerDownloadPending" [icon]="true" (click)="downloadHeaderLogo()" containerClass="shortTooltip" tooltip="Download" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-download"></i></button>
+                    <button type="button" class="btn btn-secondary" (click)="previewThemeResource(theme.headerLogoFile, theme.headerLogoPath, 'Header logo preview')" containerClass="shortTooltip" tooltip="Preview" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-magnifying-glass"></i></button>
+                </div>                
+                <app-file-select *ngSwitchDefault [fileName]="headerLogoNameToShow" (onUpload)="selectHeaderLogo($event)" [accepts]="acceptedFileTypes" [extraActions]="true">
+                    <button type="button" class="btn btn-secondary" [pending]="headerDownloadPending" [icon]="true" (click)="downloadHeaderLogo()" containerClass="shortTooltip" tooltip="Download" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-download"></i></button>
+                    <button type="button" class="btn btn-secondary" (click)="previewThemeResource(theme.headerLogoFile, theme.headerLogoPath, 'Header logo preview')" containerClass="shortTooltip" tooltip="Preview" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-magnifying-glass"></i></button>
+                </app-file-select>
+            </div>
+            <div class="col-auto" app-tooltip tbTooltip="The image to display as a logo at the top of the page above the header."></div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-7 offset-3">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="hasFooterLogo" name="hasFooterLogo" [ngModel]="theme.footerLogoDisplay != 'none'" (ngModelChange)="theme.footerLogoDisplay=($event?'inherit':'none')" [disabled]="readonly">
+                    <label for="hasFooterLogo">Show footer logo?</label>
+                </div>
+            </div>
+        </div>
+        <div [collapse]="theme.footerLogoDisplay == 'none'" [isAnimated]="true">
+            <div class="row mt-3">
+                <label class="col-3 col-form-label text-end">* Footer logo:</label>
+                <div class="col-7" [ngSwitch]="readonly">
+                    <div *ngSwitchCase="true" class="input-group">
+                        <input type="text" class="form-control" readonly="readonly" [value]="footerLogoNameToShow">
+                        <button type="button" class="btn btn-secondary" [pending]="footerDownloadPending" [icon]="true" (click)="downloadFooterLogo()" containerClass="shortTooltip" tooltip="Download" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-download"></i></button>
+                        <button type="button" class="btn btn-secondary" (click)="previewThemeResource(theme.footerLogoFile, theme.footerLogoPath, 'Footer logo preview')" containerClass="shortTooltip" tooltip="Preview" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-magnifying-glass"></i></button>
+                    </div>
+                    <app-file-select *ngSwitchDefault [fileName]="footerLogoNameToShow" (onUpload)="selectFooterLogo($event)" [accepts]="acceptedFileTypes" [extraActions]="true">
+                        <button type="button" class="btn btn-secondary" [pending]="footerDownloadPending" [icon]="true" (click)="downloadFooterLogo()" containerClass="shortTooltip" tooltip="Download" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-download"></i></button>
+                        <button type="button" class="btn btn-secondary" (click)="previewThemeResource(theme.footerLogoFile, theme.footerLogoPath, 'Footer logo preview')" containerClass="shortTooltip" tooltip="Preview" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-magnifying-glass"></i></button>
+                    </app-file-select>
+                </div>
+                <div class="col-auto" app-tooltip tbTooltip="The image to display in the footer."></div>
+            </div>
+        </div>
+    </div>
+</div>

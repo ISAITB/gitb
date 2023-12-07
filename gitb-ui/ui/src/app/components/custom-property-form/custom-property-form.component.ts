@@ -148,21 +148,6 @@ export class CustomPropertyFormComponent implements OnInit {
     return result
   }
 
-  editSecret(property: CustomProperty): void {
-    // if (property.changeValue) {
-    //   property.value = ''
-    //   // property.showValue = false
-    //   // this.dataService.focus('prop-'+property.id)
-    // } else {
-    //   // property.showValue = true
-    //   if (property.configured) {
-    //     property.value = '*****'
-    //   } else {
-    //     property.value = ''
-    //   }
-    // }
-  }
-
   removeFile(property: CustomProperty)  {
     delete property.value
     delete property.file

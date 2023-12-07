@@ -178,9 +178,13 @@ import { ResultLabelComponent } from './components/result-label/result-label.com
 import { PreviewLandingPageComponent } from './pages/admin/user-management/landing-page/preview-landing-page/preview-landing-page.component';
 import { BreadcrumbComponent } from './components/breadcrumb/breadcrumb.component';
 import { TarReportComponent } from './components/tar-report/tar-report.component';
+import { CreateThemeComponent } from './pages/admin/system-administration/create-theme/create-theme.component';
+import { ThemeDetailsComponent } from './pages/admin/system-administration/theme-details/theme-details.component';
+import { ThemeFormComponent } from './pages/admin/system-administration/theme-form/theme-form.component';
+import { ColorPickerComponent } from './components/color-picker/color-picker.component';
 
 @NgModule({
-  providers: [ 
+  providers: [
     CookieService,
     { provide: TINYMCE_SCRIPT_SRC, useValue: 'tinymce/tinymce.min.js' }
   ],
@@ -345,7 +349,11 @@ import { TarReportComponent } from './components/tar-report/tar-report.component
     ResultLabelComponent,
     PreviewLandingPageComponent,
     BreadcrumbComponent,
-    TarReportComponent
+    TarReportComponent,
+    CreateThemeComponent,
+    ThemeDetailsComponent,
+    ThemeFormComponent,
+    ColorPickerComponent
   ],
   imports: [
     ColorPickerModule,

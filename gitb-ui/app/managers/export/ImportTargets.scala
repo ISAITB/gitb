@@ -117,6 +117,8 @@ object ImportTargets {
         case ImportItemType.SystemPropertyValue => targets.hasSystemPropertyValues = true
         case ImportItemType.Statement => targets.hasStatements = true
         case ImportItemType.StatementConfiguration => targets.hasStatementConfigurations = true
+        case ImportItemType.Settings => targets.hasSettings = true
+        case ImportItemType.Theme => targets.hasThemes = true
       }
       updateForImportItemList(targets, item.childrenItems)
     }
@@ -169,6 +171,21 @@ object ImportTargets {
     result
   }
 
+  def fromSettings(settings: com.gitb.xml.export.Settings): ImportTargets = {
+    val result = new ImportTargets()
+    updateForSettings(settings, result)
+    result
+  }
+
+  private def updateForSettings(settings: com.gitb.xml.export.Settings, result: ImportTargets):Unit = {
+    if (settings != null) {
+      result.hasSettings = true
+      if (settings.getThemes != null && !settings.getThemes.getTheme.isEmpty) {
+        result.hasThemes = true
+      }
+    }
+  }
+
 }
 
 class ImportTargets {
@@ -198,5 +215,8 @@ class ImportTargets {
   var hasSystemPropertyValues: Boolean = false
   var hasStatements: Boolean = false
   var hasStatementConfigurations: Boolean = false
+
+  var hasSettings: Boolean = false
+  var hasThemes: Boolean = false
 
 }

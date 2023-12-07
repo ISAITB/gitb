@@ -6,7 +6,7 @@
 		<form>
             <div class="card-body">
 				<div *ngIf="importStep1">
-					<div class="row pt-2" *ngIf="showDomainOption" [class.mb-3]="exportType != undefined">
+					<div class="row pt-2" [class.mb-3]="exportType != undefined">
 						<legend class="col-3 col-form-label text-end pt-0">* Data to import:</legend>
 						<div class="col-7">
                             <div class="form-check form-check-inline">
@@ -19,6 +19,12 @@
                                 <input class="form-check-input" type="radio" [(ngModel)]="exportType" name="choice" id="choice_community" [value]="'community'" (change)="resetSettings()">
                                 <label class="form-check-label" for="choice_community">Community configuration
                                     <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" [tbTooltip]="'Import data linked to a community. This may also include the community\'s '+dataService.labelDomainLower()+' configuration.'"></div>
+                                </label>
+                            </div>
+                            <div class="form-check form-check-inline" *ngIf="dataService.isSystemAdmin">
+                                <input class="form-check-input" type="radio" [(ngModel)]="exportType" name="choice" id="choice_system" [value]="'settings'" (change)="resetSettings()">
+                                <label class="form-check-label" for="choice_system">System settings
+                                    <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" [tbTooltip]="'Import system settings to apply for the entire Test Bed instance.'"></div>
                                 </label>
                             </div>
 						</div>

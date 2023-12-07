@@ -3,9 +3,9 @@ import { PreviewByIds } from './preview-by-ids';
 import { PreviewByFile } from './preview-by-file';
 import { PreviewForStatus } from './preview-for-status';
 import { ConformanceService } from 'src/app/services/conformance.service';
-import { Observable, mergeMap, of } from 'rxjs';
-import { HttpResponse } from '@angular/common/http';
+import { Observable, of } from 'rxjs';
 import { BsModalRef } from 'ngx-bootstrap/modal';
+import { DataService } from 'src/app/services/data.service';
 
 @Component({
   selector: 'app-preview-badge-modal',
@@ -21,7 +21,8 @@ export class PreviewBadgeModalComponent implements OnInit {
   
   constructor(
     private conformanceService: ConformanceService,
-    private modalRef: BsModalRef
+    private modalRef: BsModalRef,
+    private dataService: DataService
   ) { }
 
   ngOnInit(): void {
@@ -55,35 +56,10 @@ export class PreviewBadgeModalComponent implements OnInit {
     if (this.isPreviewByFile(this.config)) {
       return of(this.config.badgeFile.file?.file!)
     } else if (this.isPreviewForStatus(this.config)) {
-      return this.processBinaryResponse(this.conformanceService.getBadgeForStatus(this.config.specificationId, this.config.actorId, this.config.status))
+      return this.dataService.binaryResponseToBlob(this.conformanceService.getBadgeForStatus(this.config.specificationId, this.config.actorId, this.config.status))
     } else { // PreviewByIds
-      return this.processBinaryResponse(this.conformanceService.conformanceBadgeByIds(this.config.systemId, this.config.actorId, this.config.snapshotId))
+      return this.dataService.binaryResponseToBlob(this.conformanceService.conformanceBadgeByIds(this.config.systemId, this.config.actorId, this.config.snapshotId))
     }
-  }
-
-  private processBinaryResponse(response: Observable<HttpResponse<ArrayBuffer>>): Observable<Blob|undefined> {
-    return response.pipe(
-      mergeMap((data) => {
-        if (data.body) {
-          let mimeType: string|undefined = undefined
-          if (data.headers.has('Content-Type')) {
-            const contentType = data.headers.get('Content-Type')
-            if (contentType) {
-              mimeType = contentType
-            }
-          }
-          let blobData: Blob
-          if (mimeType) {
-            blobData = new Blob([data.body], { type: mimeType });
-          } else {
-            blobData = new Blob([data.body]);
-          }
-          return of(blobData)
-        } else {
-          return of(undefined)
-        }
-      })
-    )
   }
 
 }

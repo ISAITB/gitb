@@ -23,6 +23,7 @@ import java.nio.file.{Files, Path, Paths}
 import javax.inject.Inject
 import javax.xml.namespace.QName
 import javax.xml.transform.stream.StreamSource
+import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 
@@ -481,21 +482,42 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
 
   def exportDomain(domainId: Long): Action[AnyContent] = authorizedAction { request =>
     authorizationManager.canManageDomain(request, domainId)
-    exportInternal(request, (exportSettings: ExportSettings) => {
+    exportInternal(request, includeSettings = false, (exportSettings: ExportSettings) => {
+      exportManager.exportDomain(domainId, exportSettings)
+    })
+  }
+
+  def exportDomainAndSettings(domainId: Long): Action[AnyContent] = authorizedAction { request =>
+    authorizationManager.canManageSystemSettings(request)
+    exportInternal(request, includeSettings = true, (exportSettings: ExportSettings) => {
       exportManager.exportDomain(domainId, exportSettings)
     })
   }
 
   def exportCommunity(communityId: Long): Action[AnyContent] = authorizedAction { request =>
     authorizationManager.canManageCommunity(request, communityId)
-    exportInternal(request, (exportSettings: ExportSettings) => {
+    exportInternal(request, includeSettings = false, (exportSettings: ExportSettings) => {
       exportManager.exportCommunity(communityId, exportSettings)
     })
   }
 
-  private def exportInternal(request: Request[AnyContent], fnExportData: ExportSettings => Export) = {
+  def exportCommunityAndSettings(communityId: Long): Action[AnyContent] = authorizedAction { request =>
+    authorizationManager.canManageSystemSettings(request)
+    exportInternal(request, includeSettings = true, (exportSettings: ExportSettings) => {
+      exportManager.exportCommunity(communityId, exportSettings)
+    })
+  }
+
+  def exportSystemSettings(): Action[AnyContent] = authorizedAction { request =>
+    authorizationManager.canViewSystemConfigurationValues(request)
+    exportInternal(request, includeSettings = true, (exportSettings: ExportSettings) => {
+      exportManager.exportSystemSettings(exportSettings)
+    })
+  }
+
+  private def exportInternal(request: Request[AnyContent], includeSettings: Boolean, fnExportData: ExportSettings => Export) = {
     // Get export settings to apply.
-    val exportSettings = JsonUtil.parseJsExportSettings(requiredBodyParameter(request, Parameters.VALUES))
+    val exportSettings = JsonUtil.parseJsExportSettings(requiredBodyParameter(request, Parameters.VALUES), includeSettings)
     val exportData = fnExportData.apply(exportSettings)
     exportData.setVersion(Configurations.mainVersionNumber())
     exportData.setTimestamp(XMLDateTimeUtils.getXMLGregorianCalendarDateTime)
@@ -535,13 +557,13 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
     }
   }
 
-  private def processImport(request: Request[AnyContent], isDomain: Boolean, fnImportData: (Export, ImportSettings) => List[ImportItem]) = {
+  private def processImport(request: Request[AnyContent], requireDomain: Boolean, requireCommunity: Boolean, requireSettings: Boolean, fnImportData: (Export, ImportSettings) => List[ImportItem]) = {
     // Get import settings.
     val paramMap = ParameterExtractor.paramMap(request)
     val files = ParameterExtractor.extractFiles(request)
     val importSettings = JsonUtil.parseJsImportSettings(ParameterExtractor.requiredBodyParameter(paramMap, Parameters.SETTINGS))
     if (files.contains(Parameters.FILE)) {
-      val result = importPreviewManager.prepareImportPreview(files(Parameters.FILE).file, importSettings, requireDomain = isDomain, requireCommunity = !isDomain)
+      val result = importPreviewManager.prepareImportPreview(files(Parameters.FILE).file, importSettings, requireDomain, requireCommunity, requireSettings)
       if (result._1.isDefined) {
         // We have an error.
         ResponseConstructor.constructBadRequestResponse(result._1.get._1, result._1.get._2)
@@ -566,16 +588,35 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
     }
   }
 
+  def uploadSystemSettingsExport(): Action[AnyContent] = authorizedAction { request =>
+    try {
+      authorizationManager.canManageSystemSettings(request)
+      processImport(request, requireDomain = false, requireCommunity = false, requireSettings = true, (exportData: Export, settings: ImportSettings) => {
+        val result = importPreviewManager.previewSystemSettingsImport(exportData.getSettings)
+        List(result)
+      })
+    } finally {
+      if (request.body.asMultipartFormData.isDefined) request.body.asMultipartFormData.get.files.foreach { file => FileUtils.deleteQuietly(file.ref) }
+    }
+  }
+
   def uploadCommunityExport(communityId: Long): Action[AnyContent] = authorizedAction { request =>
     try {
       authorizationManager.canManageCommunity(request, communityId)
-      processImport(request, isDomain = false, (exportData: Export, settings: ImportSettings) => {
-        val result = importPreviewManager.previewCommunityImport(exportData.getCommunities.getCommunity.get(0), Some(communityId))
+      processImport(request, requireDomain = false, requireCommunity = true, requireSettings = false, (exportData: Export, settings: ImportSettings) => {
+        val result = importPreviewManager.previewCommunityImport(exportData, Some(communityId))
+        val items = new ListBuffer[ImportItem]()
+        // First add domain.
         if (result._2.isDefined) {
-          List(result._2.get, result._1)
-        } else {
-          List(result._1)
+          items += result._2.get
         }
+        // Next add community.
+        items += result._1
+        // Finally add system settings.
+        if (result._3.isDefined) {
+          items += result._3.get
+        }
+        items.toList
       })
     } finally {
       if (request.body.asMultipartFormData.isDefined) request.body.asMultipartFormData.get.files.foreach { file => FileUtils.deleteQuietly(file.ref) }
@@ -585,7 +626,7 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
   def uploadDomainExport(domainId: Long): Action[AnyContent] = authorizedAction { request =>
     try {
       authorizationManager.canManageDomain(request, domainId)
-      processImport(request, isDomain = true, (exportData: Export, settings: ImportSettings) => {
+      processImport(request, requireDomain = true, requireCommunity = false, requireSettings = false, (exportData: Export, settings: ImportSettings) => {
         val result = importPreviewManager.previewDomainImport(exportData.getDomains.getDomain.get(0), Some(domainId))
         List(result)
       })
@@ -604,6 +645,11 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
 
   def cancelDomainImport(domainId: Long): Action[AnyContent] = authorizedAction { request =>
     authorizationManager.canManageDomain(request, domainId)
+    cancelImportInternal(request)
+  }
+
+  def cancelSystemSettingsImport(): Action[AnyContent] = authorizedAction { request =>
+    authorizationManager.canManageSystemSettings(request)
     cancelImportInternal(request)
   }
 
@@ -640,9 +686,9 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
     })
   }
 
-  private def confirmCommunityImportInternal(request: Request[AnyContent], communityId: Long, canAddOrDeleteDomain: Boolean) = {
+  private def confirmCommunityImportInternal(request: Request[AnyContent], communityId: Long, canDoAdminOperations: Boolean) = {
     confirmImportInternal(request, (export: Export, importSettings: ImportSettings, importItems: List[ImportItem]) => {
-      importCompleteManager.completeCommunityImport(export.getCommunities.getCommunity.asScala.head, importSettings, importItems, Some(communityId), canAddOrDeleteDomain, Some(ParameterExtractor.extractUserId(request)))
+      importCompleteManager.completeCommunityImport(export, importSettings, importItems, Some(communityId), canDoAdminOperations, Some(ParameterExtractor.extractUserId(request)))
     })
   }
 
@@ -658,12 +704,23 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
 
   def confirmCommunityImportTestBedAdmin(communityId: Long): Action[AnyContent] = authorizedAction { request =>
     authorizationManager.canCreateCommunity(request)
-    confirmCommunityImportInternal(request, communityId, canAddOrDeleteDomain = true)
+    confirmCommunityImportInternal(request, communityId, canDoAdminOperations = true)
   }
 
   def confirmCommunityImportCommunityAdmin(communityId: Long): Action[AnyContent] = authorizedAction { request =>
     authorizationManager.canManageCommunity(request, communityId)
-    confirmCommunityImportInternal(request, communityId, canAddOrDeleteDomain = false)
+    confirmCommunityImportInternal(request, communityId, canDoAdminOperations = false)
+  }
+
+  def confirmSystemSettingsImport: Action[AnyContent] = authorizedAction { request =>
+    authorizationManager.canManageSystemSettings(request)
+    confirmSystemSettingsImportInternal(request, canManageSettings = true)
+  }
+
+  private def confirmSystemSettingsImportInternal(request: Request[AnyContent], canManageSettings: Boolean) = {
+    confirmImportInternal(request, (export: Export, importSettings: ImportSettings, importItems: List[ImportItem]) => {
+      importCompleteManager.completeSystemSettingsImport(export.getSettings, importSettings, importItems, canManageSettings)
+    })
   }
 
   def applySandboxData() = authorizedAction(parse.multipartFormData) { request =>

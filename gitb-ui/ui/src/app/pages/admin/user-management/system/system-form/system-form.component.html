@@ -3,20 +3,20 @@
         <div class="col-10 offset-1" *ngSwitchCase="true">
             <div class="row mb-3">
                 <label class="col-3 col-form-label text-end">Short name:</label>
-                <div class="col-8"><p class="form-control-plaintext">{{system.sname}}</p></div>
+                <div class="col-7"><p class="form-control-plaintext">{{system.sname}}</p></div>
             </div>
             <div class="row mb-3">
                 <label class="col-3 col-form-label text-end">Full name:</label>
-                <div class="col-8"><p class="form-control-plaintext">{{system.fname}}</p></div>
-            </div>            
+                <div class="col-7"><p class="form-control-plaintext">{{system.fname}}</p></div>
+            </div>
             <div class="row mb-3">
                 <label class="col-3 col-form-label text-end">Description:</label>
-                <div class="col-8"><p class="form-control-plaintext">{{system.description}}</p></div>
-            </div>            
+                <div class="col-7"><p class="form-control-plaintext">{{system.description}}</p></div>
+            </div>
             <div class="row mb-3">
                 <label class="col-3 col-form-label text-end">Version:</label>
-                <div class="col-8"><p class="form-control-plaintext">{{system.version}}</p></div>
-            </div>            
+                <div class="col-7"><p class="form-control-plaintext">{{system.version}}</p></div>
+            </div>
         </div>
         <div class="col-10 offset-1" *ngSwitchDefault>
             <div class="row mb-3">
@@ -55,7 +55,7 @@
                 <div [collapse]="!system.otherSystems" [isAnimated]="true">
                     <div class="row mb-3 pt-1">
                         <legend class="col-3 col-form-label text-end pt-0">Copy also:</legend>
-                        <div class="col-8">
+                        <div class="col-7">
                             <div class="form-check form-check-inline">
                                 <input class="form-check-input" type="checkbox" id="copySystemParameters" name="copySystemParameters" (change)="copyChanged()" [(ngModel)]="system.copySystemParameters">
                                 <label class="form-check-label" for="copySystemParameters">{{dataService.labelSystem()}} properties</label>

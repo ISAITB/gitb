@@ -9,7 +9,7 @@ export class TooltipComponent implements OnInit {
 
   @Input() tbTooltip = ''
   @Input() inline = false
-  @Input() inlineType = 'check'
+  @Input() inlineType = ''
   @Input() boundariesElement: 'viewport' | 'scrollParent' | 'window' = 'scrollParent'
   @Input() withMargin = false
   @Input() withTopMargin = true

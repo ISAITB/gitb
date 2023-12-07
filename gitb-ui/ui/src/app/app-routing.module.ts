@@ -1,5 +1,5 @@
-import { NgModule } from '@angular/core';
-import { Routes, RouterModule } from '@angular/router';
+import { NgModule, inject } from '@angular/core';
+import { Routes, RouterModule, ResolveFn, ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 import { ConformanceDashboardComponent } from './pages/admin/conformance-dashboard/conformance-dashboard.component';
 import { ActorDetailsComponent } from './pages/admin/domain-management/actor/actor-details/actor-details.component';
 import { CreateActorComponent } from './pages/admin/domain-management/actor/create-actor/create-actor.component';
@@ -61,10 +61,18 @@ import { OrganisationTestsComponent } from './pages/organisation/organisation-te
 import { Constants } from './common/constants';
 import { SystemAdministrationComponent } from './pages/admin/system-administration/system-administration.component';
 import { EditOwnSystemResolver } from './resolvers/edit-own-system-resolver';
+import { CreateThemeComponent } from './pages/admin/system-administration/create-theme/create-theme.component';
+import { ThemeDetailsComponent } from './pages/admin/system-administration/theme-details/theme-details.component';
+import { Theme } from './types/theme';
+import { SystemConfigurationService } from './services/system-configuration.service';
+
+const themeResolver: ResolveFn<Theme> = (route: ActivatedRouteSnapshot, state: RouterStateSnapshot) => {
+  return inject(SystemConfigurationService).getTheme(Number(route.paramMap.get(Constants.NAVIGATION_PATH_PARAM.THEME_ID)!))
+}
 
 const routes: Routes = [
-  { path: '', redirectTo: '/home', pathMatch: 'full' },  
-  { 
+  { path: '', redirectTo: '/home', pathMatch: 'full' },
+  {
     path: '',
     component: IndexComponent,
     resolve: {
@@ -138,7 +146,8 @@ const routes: Routes = [
       { path: 'admin/system/notices/:'+Constants.NAVIGATION_PATH_PARAM.LEGAL_NOTICE_ID, component: LegalNoticeDetailsComponent },
       { path: 'admin/system/errortemplates/create', component: CreateErrorTemplateComponent, resolve: { base: ErrorTemplateResolver } },
       { path: 'admin/system/errortemplates/:'+Constants.NAVIGATION_PATH_PARAM.ERROR_TEMPLATE_ID, component: ErrorTemplateDetailsComponent },
-
+      { path: 'admin/system/themes/create/:'+Constants.NAVIGATION_PATH_PARAM.THEME_ID, component: CreateThemeComponent, resolve: { theme: themeResolver } },
+      { path: 'admin/system/themes/:'+Constants.NAVIGATION_PATH_PARAM.THEME_ID, component: ThemeDetailsComponent, resolve: { theme: themeResolver } },
       // My organisation
       { path: 'organisation/conformance/:'+Constants.NAVIGATION_PATH_PARAM.ORGANISATION_ID, component: ConformanceStatementsComponent },
       { path: 'organisation/conformance/:'+Constants.NAVIGATION_PATH_PARAM.ORGANISATION_ID+'/system/:'+Constants.NAVIGATION_PATH_PARAM.SYSTEM_ID+'/create', component: CreateConformanceStatementComponent },

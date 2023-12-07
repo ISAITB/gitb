@@ -20,6 +20,12 @@
 								<div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" tbTooltip="Export the data linked to the community. As part of a community's data you may also select to export the data linked to its conformance testing scenarios. Select this to obtain a complete export of all information linked to a community's testing setup."></div>
 							</label>
 						</div>
+						<div class="form-check form-check-inline" *ngIf="dataService.isSystemAdmin">
+							<input class="form-check-input" type="radio" [(ngModel)]="exportType" name="choice" id="choice_system" [value]="'settings'" (change)="resetSettings()">
+							<label class="form-check-label" for="choice_system">System settings
+								<div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" tbTooltip="Export the settings linked to the entire Test Bed instance."></div>
+							</label>
+						</div>
 					</div>
 				</div>
 				<div [collapse]="exportType == undefined" [isAnimated]="true">
@@ -122,7 +128,7 @@
 												</div>
 											</td>
 										</tr>
-										<tr *ngIf="showDomainOption">
+										<tr *ngIf="showDomainOption && (exportType == 'community' || exportType == 'domain')">
 											<td class="row-header">
 												<div>
 													<div class="fw-bold pt-0">{{dataService.labelDomain()}} data</div>
@@ -200,6 +206,23 @@
 														<label class="form-check-label" for="settingsStatementConfigurations">Conformance statement property configurations</label>
 													</div>
 												</ng-container>
+											</td>
+										</tr>
+										<tr *ngIf="showSystemSettingsOption && (exportType == 'community' || exportType == 'settings')">
+											<td class="row-header">
+												<div>
+													<div class="fw-bold pt-0">System settings</div>
+													<div app-tooltip class="col-auto d-inline-flex" [inline]="true" [tbTooltip]="'System settings for the overall Test Bed instance.'"></div>
+												</div>
+											</td>
+											<td class="td-centered second-column">
+												<input class="form-check-input position-static" type="checkbox" name="allSystemSettingData" [(ngModel)]="allSystemSettingData" (change)="allSystemSettingDataChanged()"/>
+											</td>
+											<td colspan="2">
+												<div class="form-check form-check-inline">
+													<input class="form-check-input" type="checkbox" id="settingsThemes" name="settingsThemes" [(ngModel)]="settings.themes" [disabled]="allSystemSettingData">
+													<label class="form-check-label" for="settingsThemes">Themes</label>
+												</div>
 											</td>
 										</tr>
 									</tbody>

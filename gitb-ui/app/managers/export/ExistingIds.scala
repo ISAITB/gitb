@@ -33,6 +33,7 @@ object ExistingIds {
     map += (ImportItemType.SystemPropertyValue -> mutable.Set[String]())
     map += (ImportItemType.Statement -> mutable.Set[String]())
     map += (ImportItemType.StatementConfiguration -> mutable.Set[String]())
+    map += (ImportItemType.Theme -> mutable.Set[String]())
     ExistingIds(map.toMap)
   }
 }
