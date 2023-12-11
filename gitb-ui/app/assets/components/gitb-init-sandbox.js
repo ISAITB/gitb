@@ -15,7 +15,7 @@ $(document).ready(function() {
             $("#buttonImport").prop("disabled", true)
             $("#buttonNoImport").prop("disabled", true)
             $.ajax({
-                url: "/initdata",
+                url: "/api/initdata",
                 type: "POST",
                 data: dataToSend,
                 enctype: 'multipart/form-data',

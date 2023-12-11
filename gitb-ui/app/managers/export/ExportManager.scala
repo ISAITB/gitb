@@ -623,6 +623,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, systemConfigura
           exportedTheme.setId(toId(sequence.next()))
           exportedTheme.setKey(theme.key)
           exportedTheme.setDescription(theme.description.orNull)
+          exportedTheme.setActive(theme.active)
           exportedTheme.setSeparatorTitleColor(theme.separatorTitleColor)
           exportedTheme.setModalTitleColor(theme.modalTitleColor)
           exportedTheme.setTableTitleColor(theme.tableTitleColor)

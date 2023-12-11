@@ -84,7 +84,7 @@ class SystemConfigurationManager @Inject() (repositoryUtils: RepositoryUtils, db
     } yield (activeTheme, environmentTheme, defaultTheme)
   }
 
-  private def reloadThemeCss(): Unit = {
+  def reloadThemeCss(): Unit = {
     val themeData = exec(getOrSetActiveTheme().transactionally)
     val themeToUse = if (themeData._1.isDefined) {
       logger.info(s"Loaded theme [${themeData._1.get.key}] marked as active.")

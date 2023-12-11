@@ -2232,11 +2232,18 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
           // Step 1 - prepare import.
           var importItems: List[ImportItem] = null
           val previewResult = importPreviewManager.previewCommunityImport(exportData, None)
+          val items = new ListBuffer[ImportItem]()
+          // First add domain.
           if (previewResult._2.isDefined) {
-            importItems = List(previewResult._2.get, previewResult._1)
-          } else {
-            importItems = List(previewResult._1)
+            items += previewResult._2.get
           }
+          // Next add community.
+          items += previewResult._1
+          // Finally add system settings.
+          if (previewResult._3.isDefined) {
+            items += previewResult._3.get
+          }
+          importItems = items.toList
           // Set all import items to proceed.
           approveImportItems(importItems)
           // Step 2 - Import.
