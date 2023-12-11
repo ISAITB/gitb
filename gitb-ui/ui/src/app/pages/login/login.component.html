@@ -40,7 +40,7 @@
                                 </div>
                                 <div class="row mt-4" *ngIf="dataService.actualUser != undefined">
                                     <div class="col-auto">
-                                        <button type="button" class="btn btn-primary" (click)="createAccount()" [pending]="createPending" [ngSwitch]="dataService.actualUser.accounts.length > 0">
+                                        <button type="button" class="btn btn-secondary" (click)="createAccount()" [pending]="createPending" [ngSwitch]="dataService.actualUser.accounts.length > 0">
                                             <span *ngSwitchCase="true">Link another role to your account</span>
                                             <span *ngSwitchDefault>Link a role to your account</span>
                                         </button>
