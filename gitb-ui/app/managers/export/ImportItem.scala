@@ -9,7 +9,7 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 class ImportItem(_itemName: Option[String], _itemType: ImportItemType, _itemMatch: ImportItemMatch, _targetKey: Option[String], _sourceKey: Option[String]) {
-  require(_targetKey.isDefined || _sourceKey.isDefined, "Either the target or the source must be defined for an import item")
+  require(_itemType == ImportItemType.Settings || _targetKey.isDefined || _sourceKey.isDefined, "Either the target or the source must be defined for an import item")
   var itemName: Option[String] = _itemName
   var itemType: ImportItemType = _itemType
   var itemMatch: ImportItemMatch = _itemMatch

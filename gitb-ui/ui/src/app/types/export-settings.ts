@@ -22,6 +22,7 @@ export interface ExportSettings {
     testSuites: boolean
     communityAdministrators: boolean
     organisationUsers: boolean
+    themes: boolean
     encryptionKey?: string
 
 }

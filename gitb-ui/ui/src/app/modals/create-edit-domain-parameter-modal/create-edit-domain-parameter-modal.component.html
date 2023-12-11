@@ -1,76 +1,89 @@
 <div class="modal-header">
-    <h4>{{title}}</h4>
+    <div class="modal-title">{{title}}</div>
 </div>
-<form class="form-horizontal">
+<form>
     <div class="modal-body">
-        <app-alert-display [alerts]="alerts" innerClass="col-xs-10 col-xs-offset-1"></app-alert-display>
-        <div class="form-group">
-            <label class="col-xs-3 control-label" for="name">* Name:</label>
-            <div class="col-xs-7"><input id="name" name="name" [(ngModel)]="domainParameter.name" class="form-control" type="text"></div>
-            <app-tooltip tbTooltip="An identifier for the parameter used to refer to it from within test cases."></app-tooltip>
+        <app-alert-display [alerts]="alerts" innerClass="col-10 offset-1"></app-alert-display>
+        <div class="row mb-3">
+            <label class="col-3 col-form-label text-end" for="name">* Name:</label>
+            <div class="col-7"><input id="name" name="name" [(ngModel)]="domainParameter.name" class="form-control" type="text"></div>
+            <div app-tooltip class="col-auto" tbTooltip="An identifier for the parameter used to refer to it from within test cases."></div>
         </div>
-        <div class="form-group">
-            <label class="col-xs-3 control-label" for="description">Description:</label>
-            <div class="col-xs-7">
+        <div class="row mb-3">
+            <label class="col-3 col-form-label text-end" for="description">Description:</label>
+            <div class="col-7">
                 <textarea id="description" name="description" [(ngModel)]="domainParameter.description" class="form-control"></textarea>
             </div>
-            <app-tooltip tbTooltip="A text describing the purpose of this parameter."></app-tooltip>
+            <div app-tooltip class="col-auto" tbTooltip="A text describing the purpose of this parameter."></div>
         </div>
-        <div class="form-group">
-            <label class="col-xs-3 control-label" for="kind_1">* Kind:</label>
-            <div class="col-xs-7">
-                <label class="radio-inline"><input type="radio" [(ngModel)]="domainParameter.kind" name="kinds" id="kind_1" value="SIMPLE">Simple
-                    <app-tooltip [inline]="true" inlineType="checkLabel" tbTooltip="A plain text value."></app-tooltip>
-                </label>
-                <label class="radio-inline"><input type="radio" [(ngModel)]="domainParameter.kind" name="kinds" id="kind_2" value="BINARY">Binary
-                    <app-tooltip [inline]="true" inlineType="checkLabel" tbTooltip="A file."></app-tooltip>
-                </label>
-                <label class="radio-inline"><input type="radio" [(ngModel)]="domainParameter.kind" name="kinds" id="kind_3" value="HIDDEN">Secret
-                    <app-tooltip [inline]="true" inlineType="checkLabel" tbTooltip="A secret text value such as a password."></app-tooltip>
-                </label>
+        <div class="row mb-3 pt-1">
+            <legend class="col-3 col-form-label text-end pt-0">* Kind:</legend>
+            <div class="col-7">
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" [(ngModel)]="domainParameter.kind" name="kinds" id="kind_1" value="SIMPLE">
+                    <label class="form-check-label" for="kind_1">Simple
+                        <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" tbTooltip="A plain text value."></div>
+                    </label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" [(ngModel)]="domainParameter.kind" name="kinds" id="kind_2" value="BINARY">
+                    <label class="form-check-label" for="kind_2">Binary
+                        <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" tbTooltip="A file."></div>
+                    </label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" [(ngModel)]="domainParameter.kind" name="kinds" id="kind_3" value="HIDDEN">
+                    <label class="form-check-label" for="kind_3">Secret
+                        <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" tbTooltip="A secret text value such as a password."></div>
+                    </label>
+                </div>
             </div>
         </div>
-        <div class="form-group">
-            <label class="col-xs-3 control-label" for="hidden">Included in tests:</label>
-            <div class="col-xs-7">
-                <input id="hidden" name="hidden" [(ngModel)]="domainParameter.inTests" type="checkbox" class="form-check">
-                <app-tooltip tbTooltip="Whether or not this parameter will be included in test sessions." [inline]="true"></app-tooltip>
+        <div class="row pt-1">
+            <label class="col-3 col-form-label text-end pt-0" for="hidden">Included in tests:</label>
+            <div class="col-7">
+                <div class="form-check">
+                    <input id="hidden" name="hidden" [(ngModel)]="domainParameter.inTests" type="checkbox" class="form-check-input">
+                    <div app-tooltip class="col-auto d-inline-flex" tbTooltip="Whether or not this parameter will be included in test sessions." [inline]="true"></div>
+                </div>
             </div>
         </div>
-        <div class="form-group" *ngIf="domainParameter.kind == 'SIMPLE'">
-            <label class="col-xs-3 control-label" for="value">* Value:</label>
-            <div class="col-xs-7"><input id="value" name="value" [(ngModel)]="domainParameter.value" class="form-control" type="text" autocomplete="off"/></div>
-            <app-tooltip tbTooltip="The value to consider for this parameter."></app-tooltip>
+        <div class="row mt-3" *ngIf="domainParameter.kind == 'SIMPLE'">
+            <label class="col-3 col-form-label text-end" for="value">* Value:</label>
+            <div class="col-7"><input id="value" name="value" [(ngModel)]="domainParameter.value" class="form-control" type="text" autocomplete="off"/></div>
+            <div app-tooltip class="col-auto" tbTooltip="The value to consider for this parameter."></div>
         </div>
-        <div class="form-group" *ngIf="domainParameter.kind == 'HIDDEN' && formData.showUpdateValue">
-            <label class="col-xs-3 control-label" for="domain-parameter-checkbox">Update value?</label>
-            <div class="col-xs-7">
-                <input id="domain-parameter-checkbox" name="updateValue" [(ngModel)]="formData.updateValue" type="checkbox" class="form-check"/>
+        <div class="row mt-3 pt-1" *ngIf="domainParameter.kind == 'HIDDEN' && formData.showUpdateValue">
+            <label class="col-3 col-form-label text-end pt-0" for="domain-parameter-checkbox">Update value?</label>
+            <div class="col-7">
+                <div class="form-check">
+                    <input class="form-check-input" id="domain-parameter-checkbox" name="updateValue" [(ngModel)]="formData.updateValue" type="checkbox"/>
+                </div>
             </div>
         </div>
-        <div class="form-group" *ngIf="domainParameter.kind == 'HIDDEN' && (!domainParameter.id || formData.updateValue)">
-            <label class="col-xs-3 control-label" for="value">* Value:</label>
-            <div class="col-xs-7">
+        <div class="row mt-3" *ngIf="domainParameter.kind == 'HIDDEN' && (!domainParameter.id || formData.updateValue)">
+            <label class="col-3 col-form-label text-end" for="value">* Value:</label>
+            <div class="col-7">
                 <app-secret-input id="value" name="value" [(ngModel)]="formData.hiddenValue"></app-secret-input>
             </div>
-            <app-tooltip tbTooltip="The value to consider for this parameter."></app-tooltip>
+            <div app-tooltip class="col-auto" tbTooltip="The value to consider for this parameter."></div>
         </div>
-        <div class="form-group" *ngIf="domainParameter.kind == 'BINARY'">
-            <label class="col-xs-3 control-label" for="value">* Value:</label>
-            <div class="col-xs-7">
-                <a class="form-control-static" href *ngIf="showFileName()" (click)="download();$event.preventDefault()" style="padding-right:10px;">{{getFileName()}}</a>
+        <div class="row mt-3" *ngIf="domainParameter.kind == 'BINARY'">
+            <label class="col-3 col-form-label text-end" for="value">* Value:</label>
+            <div class="col-7">
+                <a class="form-control-plaintext" href *ngIf="showFileName()" (click)="download();$event.preventDefault()" style="padding-right:10px;">{{getFileName()}}</a>
                 <app-file-select label="Upload" (onUpload)="onFileSelect($event)"></app-file-select>
-                <app-tooltip [inline]="true" tbTooltip="The file to consider as this parameter's value."></app-tooltip>
+                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" tbTooltip="The file to consider as this parameter's value."></div>
             </div>
         </div>
     </div>
     <div class="modal-footer button-container">
         <div class="btn-toolbar btn-toolbar-delete" *ngIf="domainParameter.id">
-            <button class="btn btn-default btn-delete" type="button" (click)="delete()" [disable]="pending" [pending]="deletePending">Delete</button>
+            <button class="btn btn-outline-danger" type="button" (click)="delete()" [disable]="pending" [pending]="deletePending">Delete</button>
         </div>
         <div class="btn-toolbar">
-            <button class="btn btn-default" type="button" (click)="cancel()" [disabled]="pending">Cancel</button>
-            <button class="btn btn-default" type="submit" (click)="save()" [disable]="!saveAllowed()" [pending]="savePending">Save</button>
+            <button class="btn btn-secondary" type="button" (click)="cancel()" [disabled]="pending">Cancel</button>
+            <button class="btn btn-secondary" type="submit" (click)="save()" [disable]="!saveAllowed()" [pending]="savePending">Save</button>
         </div>
     </div>
 </form>

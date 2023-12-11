@@ -1,0 +1,25 @@
+<div class="input-group colour-input-group">
+    <div class="input-group-text">
+        <div>{{label}}</div>
+        <div *ngIf="tooltipText != undefined" app-tooltip [inline]="true" [tbTooltip]="tooltipText"></div>
+    </div>
+    <ng-container [ngSwitch]="readonly">
+        <input *ngSwitchCase="true" 
+            type="text"
+            class="form-control colour-holder-readonly"
+            readonly="readonly"
+            [tooltip]="value"
+            containerClass="shortTooltip"
+            [delay]="Constants.TOOLTIP_DELAY"
+            [style.background]="value"
+            (click)="copyColor()">
+        <input *ngSwitchDefault
+            type="text"
+            class="form-control colour-holder"
+            readonly="readonly"
+            [style.background]="value"
+            [colorPicker]="value!"
+            [cpOutputFormat]="'hex'"
+            (colorPickerChange)="value = $event">    
+    </ng-container>
+</div>

@@ -35,29 +35,32 @@ class ErrorHandler @Inject() (systemConfigurationManager: SystemConfigurationMan
       Future.successful(result)
     } else {
       var legalNoticeContent = ""
+      var hasDefaultLegalNotice = false
       try {
         val legalNotice = legalNoticeManager.getCommunityDefaultLegalNotice(Constants.DefaultCommunityId)
-        if (legalNotice.isDefined) {
+        if (legalNotice.isDefined && !StringUtils.isBlank(legalNotice.get.content)) {
+          hasDefaultLegalNotice = true
           legalNoticeContent = legalNotice.get.content
         }
       } catch {
-        case e:Exception => {
+        case e:Exception =>
           logger.error("Error while creating error page content", e)
-        }
       }
       val versionInfo = Configurations.versionInfo()
       Future.successful(BadRequest(views.html.error(
         new ErrorPageData(
-          systemConfigurationManager.getLogoPath(),
-          systemConfigurationManager.getFooterLogoPath(),
           versionInfo,
           versionInfo.replace(' ', '_'),
+          hasDefaultLegalNotice,
           legalNoticeContent,
           Configurations.USERGUIDE_OU,
           errorIdentifier,
-          Configurations.TESTBED_HOME_LINK
+          Configurations.TESTBED_HOME_LINK,
+          Configurations.RELEASE_INFO_ENABLED,
+          Configurations.RELEASE_INFO_ADDRESS
         )))
       )
     }
   }
+
 }

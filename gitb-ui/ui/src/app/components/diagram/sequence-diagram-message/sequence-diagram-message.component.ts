@@ -41,7 +41,7 @@ export class SequenceDiagramMessageComponent implements OnInit, OnDestroy {
     this.depth = this.calculateDepth(this.message)
     this.expanded = this.message.collapsed == undefined || !this.message.collapsed
     this.classForMessageFixed = this.calculateFixedMessageClass()
-    this.classForWrapper = 'message-wrapper offset-'+this.message.fromIndex+' '+this.message.type+'-type'
+    this.classForWrapper = 'message-wrapper msg-offset-'+this.message.fromIndex+' '+this.message.type+'-type'
     this.classForReverseOffset = 'reverse-offset-'+this.message.fromIndex
     if (this.message.type == 'loop') {
       this.onSequenceChange(false)

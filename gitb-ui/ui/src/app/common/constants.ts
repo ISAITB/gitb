@@ -3,6 +3,9 @@ import { LabelConfig } from '../types/label-config.type'
 
 export class Constants {
 
+	public static THEME_CSS_LINK_ID = "themeCssLink"
+	public static THEME_FAVICON_LINK_ID = "themeFaviconLink"
+
     public static TABLE_PAGE_SIZE = 10
     public static DEFAULT_LOGO = '/assets/images/gitb.png'
 	public static DEFAULT_COMMUNITY_ID = 0
@@ -250,7 +253,9 @@ export class Constants {
 		STATEMENT_CONFIGURATION: 22,
 		TRIGGER: 23,
 		RESOURCE: 24,
-		SPECIFICATION_GROUP: 25
+		SPECIFICATION_GROUP: 25,
+		SYSTEM_SETTINGS: 26,
+		THEME: 27,
 	}
 
 	public static IMPORT_ITEM_MATCH = {
@@ -330,6 +335,7 @@ export class Constants {
 		LEGAL_NOTICE_ID: 'notice_id',
 		ERROR_TEMPLATE_ID: 'template_id',
 		TRIGGER_ID: 'trigger_id',
+		THEME_ID: 'theme_id'
 	}
 
 	public static SYSTEM_CONFIG = {

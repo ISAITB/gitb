@@ -55,7 +55,7 @@ export class ConfirmationDialogService {
         closeButtonText: closeButtonText,
         sameStyles: sameStyles,
         oneButton: false,
-        actionClass: dangerous?'btn btn-danger':'btn btn-default'
+        actionClass: dangerous?'btn btn-danger':'btn btn-secondary'
       }
     })
     return modal.content!.result

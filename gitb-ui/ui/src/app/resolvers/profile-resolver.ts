@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Resolve, ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router'
+import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router'
 import { Observable, forkJoin, of } from 'rxjs';
 import { map, mergeMap, share } from 'rxjs/operators'
 import { AuthProviderService } from '../services/auth-provider.service'
@@ -12,7 +12,7 @@ import { AuthService } from '../services/auth.service'
 @Injectable({
     providedIn: "root"
 })
-export class ProfileResolver implements Resolve<any> {
+export class ProfileResolver  {
 
     constructor(
         private authProviderService: AuthProviderService, 

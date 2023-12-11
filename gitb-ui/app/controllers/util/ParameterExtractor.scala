@@ -4,7 +4,8 @@ import config.Configurations
 import exceptions.{ErrorCodes, InvalidRequestException}
 import models.Enums._
 import controllers.util.Parameters
-import models.{Actor, BadgeFile, Badges, Communities, CommunityResources, Domain, Endpoints, ErrorTemplates, FileInfo, LandingPages, LegalNotices, Options, OrganisationParameterValues, Organizations, SpecificationGroups, Specifications, SystemParameterValues, Systems, Trigger, TriggerData, Triggers, Users}
+import models.theme.{Theme, ThemeFiles}
+import models.{Actor, Badges, Communities, CommunityResources, Domain, Endpoints, ErrorTemplates, FileInfo, LandingPages, LegalNotices, NamedFile, Options, OrganisationParameterValues, Organizations, SpecificationGroups, Specifications, SystemParameterValues, Systems, Trigger, TriggerData, Triggers, Users}
 import org.apache.commons.lang3.StringUtils
 import org.mindrot.jbcrypt.BCrypt
 import play.api.mvc._
@@ -746,26 +747,88 @@ object ParameterExtractor {
     listStr.split(",").map(_.toLong).toList
   }
 
+  def extractTheme(request: Request[AnyContent], paramMap: Option[Map[String, Seq[String]]], themeIdToUse: Option[Long] = None): (Option[Theme], Option[ThemeFiles], Option[Result]) = {
+    val files = ParameterExtractor.extractFiles(request)
+    var resultToReturn: Option[Result] = None
+    var theme: Option[Theme] = None
+    var themeFiles: Option[ThemeFiles] = None
+    var headerLogoFile: Option[NamedFile] = None
+    var footerLogoFile: Option[NamedFile] = None
+    var faviconFile: Option[NamedFile] = None
+    val filesToScan = new ListBuffer[NamedFile]
+    if (files.contains(Parameters.HEADER_LOGO_FILE)) {
+      headerLogoFile = Some(NamedFile(files(Parameters.HEADER_LOGO_FILE).file, files(Parameters.HEADER_LOGO_FILE).name))
+      filesToScan += headerLogoFile.get
+    }
+    if (files.contains(Parameters.FOOTER_LOGO_FILE)) {
+      footerLogoFile = Some(NamedFile(files(Parameters.FOOTER_LOGO_FILE).file, files(Parameters.FOOTER_LOGO_FILE).name))
+      filesToScan += footerLogoFile.get
+    }
+    if (files.contains(Parameters.FAVICON_FILE)) {
+      faviconFile = Some(NamedFile(files(Parameters.FAVICON_FILE).file, files(Parameters.FAVICON_FILE).name))
+      filesToScan += faviconFile.get
+    }
+    if (filesToScan.nonEmpty) {
+      if (Configurations.ANTIVIRUS_SERVER_ENABLED && ParameterExtractor.virusPresentInFiles(filesToScan.toList.map(_.file))) {
+        resultToReturn = Some(ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "Files failed virus scan."))
+      }
+    }
+    if (resultToReturn.isEmpty) {
+      themeFiles = Some(ThemeFiles(headerLogoFile, footerLogoFile, faviconFile))
+      theme = Some(Theme(
+        themeIdToUse.getOrElse(0L),
+        ParameterExtractor.requiredBodyParameter(paramMap, Parameters.KEY),
+        ParameterExtractor.optionalBodyParameter(paramMap, Parameters.DESCRIPTION),
+        ParameterExtractor.requiredBodyParameter(paramMap, Parameters.ACTIVE).toBoolean,
+        custom = true,
+        ParameterExtractor.requiredBodyParameter(paramMap, Parameters.SEPARATOR_TITLE_COLOR),
+        ParameterExtractor.requiredBodyParameter(paramMap, Parameters.MODAL_TITLE_COLOR),
+        ParameterExtractor.requiredBodyParameter(paramMap, Parameters.TABLE_TITLE_COLOR),
+        ParameterExtractor.requiredBodyParameter(paramMap, Parameters.CARD_TILE_COLOR),
+        ParameterExtractor.requiredBodyParameter(paramMap, Parameters.PAGE_TITLE_COLOR),
+        ParameterExtractor.requiredBodyParameter(paramMap, Parameters.HEADING_COLOR),
+        ParameterExtractor.requiredBodyParameter(paramMap, Parameters.TAB_LINK_COLOR),
+        ParameterExtractor.requiredBodyParameter(paramMap, Parameters.FOOTER_TEXT_COLOR),
+        ParameterExtractor.requiredBodyParameter(paramMap, Parameters.HEADER_BACKGROUND_COLOR),
+        ParameterExtractor.requiredBodyParameter(paramMap, Parameters.HEADER_BORDER_COLOR),
+        ParameterExtractor.requiredBodyParameter(paramMap, Parameters.HEADER_SEPARATOR_COLOR),
+        ParameterExtractor.optionalBodyParameter(paramMap, Parameters.HEADER_LOGO_PATH)
+          .getOrElse(themeFiles.flatMap(_.headerLogo).map(_.name).getOrElse(throw new IllegalStateException("Missing header logo"))),
+        ParameterExtractor.requiredBodyParameter(paramMap, Parameters.FOOTER_BACKGROUND_COLOR),
+        ParameterExtractor.requiredBodyParameter(paramMap, Parameters.FOOTER_BORDER_COLOR),
+        ParameterExtractor.optionalBodyParameter(paramMap, Parameters.FOOTER_LOGO_PATH)
+          .getOrElse(themeFiles.flatMap(_.footerLogo).map(_.name).getOrElse(throw new IllegalStateException("Missing footer logo"))),
+        ParameterExtractor.requiredBodyParameter(paramMap, Parameters.FOOTER_LOGO_DISPLAY),
+        ParameterExtractor.optionalBodyParameter(paramMap, Parameters.FAVICON_PATH)
+          .getOrElse(themeFiles.flatMap(_.faviconFile).map(_.name).getOrElse(throw new IllegalStateException("Missing favicon")))
+      ))
+      if (!theme.get.footerLogoDisplay.equals("inherit") && !theme.get.footerLogoDisplay.equals("none")) {
+        resultToReturn = Some(ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_PARAM, "Unexpected value for footer logo display."))
+      }
+    }
+    (theme, themeFiles, resultToReturn)
+  }
+
   def extractBadges(request: Request[AnyContent], paramMap: Option[Map[String, Seq[String]]]): (Option[Badges], Option[Result]) = {
     val files = ParameterExtractor.extractFiles(request)
     var resultToReturn: Option[Result] = None
     val hasSuccess = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.SUCCESS_BADGE_ENABLED).toBoolean
     val hasFailure = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.FAILURE_BADGE_ENABLED).toBoolean
     val hasOther = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.OTHER_BADGE_ENABLED).toBoolean
-    var successBadgeToStore: Option[BadgeFile] = None
-    var failureBadgeToStore: Option[BadgeFile] = None
-    var otherBadgeToStore: Option[BadgeFile] = None
-    val filesToScan = new ListBuffer[BadgeFile]
+    var successBadgeToStore: Option[NamedFile] = None
+    var failureBadgeToStore: Option[NamedFile] = None
+    var otherBadgeToStore: Option[NamedFile] = None
+    val filesToScan = new ListBuffer[NamedFile]
     if (hasSuccess && files.contains(Parameters.SUCCESS_BADGE)) {
-      successBadgeToStore = Some(BadgeFile(files(Parameters.SUCCESS_BADGE).file, files(Parameters.SUCCESS_BADGE).name))
+      successBadgeToStore = Some(NamedFile(files(Parameters.SUCCESS_BADGE).file, files(Parameters.SUCCESS_BADGE).name))
       filesToScan += successBadgeToStore.get
     }
     if (files.contains(Parameters.FAILURE_BADGE)) {
-      failureBadgeToStore = Some(BadgeFile(files(Parameters.FAILURE_BADGE).file, files(Parameters.FAILURE_BADGE).name))
+      failureBadgeToStore = Some(NamedFile(files(Parameters.FAILURE_BADGE).file, files(Parameters.FAILURE_BADGE).name))
       filesToScan += failureBadgeToStore.get
     }
     if (files.contains(Parameters.OTHER_BADGE)) {
-      otherBadgeToStore = Some(BadgeFile(files(Parameters.OTHER_BADGE).file, files(Parameters.OTHER_BADGE).name))
+      otherBadgeToStore = Some(NamedFile(files(Parameters.OTHER_BADGE).file, files(Parameters.OTHER_BADGE).name))
       filesToScan += otherBadgeToStore.get
     }
     if (Configurations.ANTIVIRUS_SERVER_ENABLED && filesToScan.nonEmpty && ParameterExtractor.virusPresentInFiles(filesToScan.toList.map(_.file))) {

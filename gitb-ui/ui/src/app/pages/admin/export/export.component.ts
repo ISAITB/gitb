@@ -14,12 +14,12 @@ import { RoutingService } from 'src/app/services/routing.service';
 @Component({
   selector: 'app-export',
   templateUrl: './export.component.html',
-  styles: [
-  ]
+  styleUrls: [ './export.component.less' ]
 })
 export class ExportComponent extends BaseComponent implements OnInit {
 
   showDomainOption = true
+  showSystemSettingsOption = true
   pending = false
   community?: Community
   domain?: Domain
@@ -29,6 +29,7 @@ export class ExportComponent extends BaseComponent implements OnInit {
   allCommunityData = false
   allDomainData = false
   allOrganisationData = false
+  allSystemSettingData = false
   settings: ExportSettings = {
     landingPages: false,
     errorTemplates: false,
@@ -51,7 +52,8 @@ export class ExportComponent extends BaseComponent implements OnInit {
     endpoints: false,
     testSuites: false,
     communityAdministrators: false,
-    organisationUsers: false    
+    organisationUsers: false,
+    themes: false
   }
 
   constructor(
@@ -83,6 +85,7 @@ export class ExportComponent extends BaseComponent implements OnInit {
     this.allCommunityData = false
     this.allDomainData = false
     this.allOrganisationData = false
+    this.allSystemSettingData = false
     this.settings = {
       encryptionKey: this.settings.encryptionKey,
       landingPages: false,
@@ -106,7 +109,8 @@ export class ExportComponent extends BaseComponent implements OnInit {
       endpoints: false,
       testSuites: false,
       communityAdministrators: false,
-      organisationUsers: false    
+      organisationUsers: false,
+      themes: false
     }
   }
 
@@ -116,7 +120,10 @@ export class ExportComponent extends BaseComponent implements OnInit {
     if (this.dataService.isSystemAdmin) { 
       this.domain = undefined
       this.community = undefined
-    }    
+      this.showSystemSettingsOption = true
+    } else {
+      this.showSystemSettingsOption = false
+    }
     if (full) {
       if (this.dataService.isCommunityAdmin) {
         this.community = this.dataService.community
@@ -173,6 +180,12 @@ export class ExportComponent extends BaseComponent implements OnInit {
       this.settings.endpoints = this.allDomainData
       this.settings.testSuites = this.allDomainData
       this.settings.domainParameters = this.allDomainData
+    }
+  }
+
+  allSystemSettingDataChanged() {
+    if (this.allSystemSettingData && this.showSystemSettingsOption) {
+      this.settings.themes = this.allSystemSettingData
     }
   }
 
@@ -298,13 +311,17 @@ export class ExportComponent extends BaseComponent implements OnInit {
       this.allDomainData = true
       this.allDomainDataChanged()
     }
+    if (this.showSystemSettingsOption) {
+      this.allSystemSettingData = true
+      this.allSystemSettingDataChanged()
+    }
   }
 
   disableAllIncludes() {
     if (this.exportType == 'community') {
-      return this.allCommunityData && this.allOrganisationData && (!this.showDomainOption || this.allDomainData)
+      return this.allCommunityData && this.allOrganisationData && (!this.showDomainOption || this.allDomainData) && (!this.showDomainOption || this.allSystemSettingData)
     } else {
-      return this.allDomainData
+      return this.allDomainData && (!this.showDomainOption || this.allSystemSettingData)
     }
   }
 
@@ -333,11 +350,13 @@ export class ExportComponent extends BaseComponent implements OnInit {
       this.settings.endpoints ||
       this.settings.testSuites ||
       this.settings.communityAdministrators ||
-      this.settings.organisationUsers)
+      this.settings.organisationUsers ||
+      this.settings.themes
+    )
   }
 
   exportDisabled() {
-    return !((this.exportType == 'domain' && this.domain != undefined || this.exportType == 'community' && this.community != undefined) && this.textProvided(this.settings.encryptionKey))
+    return !((this.exportType == 'domain' && this.domain != undefined || this.exportType == 'community' && this.community != undefined || this.exportType == 'settings') && this.textProvided(this.settings.encryptionKey))
   }
 
   export() {
@@ -345,8 +364,10 @@ export class ExportComponent extends BaseComponent implements OnInit {
     let exportResult: Observable<ArrayBuffer>
     if (this.exportType == 'domain') {
       exportResult = this.conformanceService.exportDomain(this.domain!.id, this.settings)
-    } else {
+    } else if (this.exportType == 'community') {
       exportResult = this.communityService.exportCommunity(this.community!.id, this.settings)
+    } else {
+      exportResult = this.communityService.exportSystemSettings(this.settings)
     }
     exportResult.subscribe((data) => {
       this.popupService.success('Export successful.')

@@ -21,6 +21,7 @@ export class UserFormComponent implements OnInit {
   @Input() roleReadonly = false
   @Output() passwordChanged = new EventEmitter<boolean>()
   changePassword = false
+  passwordFocus = new EventEmitter<boolean>()
 
   constructor(
     public dataService: DataService
@@ -29,10 +30,15 @@ export class UserFormComponent implements OnInit {
   ngOnInit(): void {
   }
 
+  passwordExpanded() {
+    this.passwordFocus.emit(true)
+  }
+
+  passwordCollapsed() {
+    this.passwordFocus.emit(false)    
+  }
+
   setPasswordClicked() {
-    if (this.changePassword) {
-      this.dataService.focus('password', 200)
-    }
     this.passwordChanged.emit(this.changePassword)
   }
 

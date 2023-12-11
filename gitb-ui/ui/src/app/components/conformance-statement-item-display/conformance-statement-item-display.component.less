@@ -1,14 +1,14 @@
 @import '../../../styles/less/_common.less';
 
 .item-container {
-    border-radius: 4px;
+    border-radius: @border-radius;
     border: 1px solid @gray-dark-1;
     margin-top: 10px;
     background-color: @gray-light-1;
     &.shade {
         background-color: @white;
         & > .item-header {
-            border-radius: 4px;
+            border-radius: @border-radius;
             &.actionable:hover {
                 background-color: @white-hover;
                 +.item-content {

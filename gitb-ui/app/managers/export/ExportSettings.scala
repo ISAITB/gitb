@@ -24,6 +24,39 @@ class ExportSettings {
   var actors: Boolean = false
   var endpoints: Boolean = false
   var testSuites: Boolean = true
+  var themes: Boolean = false
   var encryptionKey: Option[String] = None
 
+  def withoutSystemSettings(): ExportSettings = {
+    if (this.themes) {
+      val copy = new ExportSettings
+      copy.communityAdministrators = this.communityAdministrators
+      copy.landingPages = this.landingPages
+      copy.legalNotices = this.legalNotices
+      copy.errorTemplates = this.errorTemplates
+      copy.triggers = this.triggers
+      copy.resources = this.resources
+      copy.certificateSettings = this.certificateSettings
+      copy.customLabels = this.customLabels
+      copy.customProperties = this.customProperties
+      copy.organisations = this.organisations
+      copy.organisationUsers = this.organisationUsers
+      copy.organisationPropertyValues = this.organisationPropertyValues
+      copy.systems = this.systems
+      copy.systemPropertyValues = this.systemPropertyValues
+      copy.statements = this.statements
+      copy.statementConfigurations = this.statementConfigurations
+      copy.domain = this.domain
+      copy.domainParameters = this.domainParameters
+      copy.specifications = this.specifications
+      copy.actors = this.actors
+      copy.endpoints = this.endpoints
+      copy.testSuites = this.testSuites
+      copy.themes = false
+      copy.encryptionKey = this.encryptionKey
+      copy
+    } else {
+      this
+    }
+  }
 }

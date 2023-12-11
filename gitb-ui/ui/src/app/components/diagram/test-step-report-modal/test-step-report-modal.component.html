@@ -1,15 +1,15 @@
 <div class="modal-header">
-	<h4>Step report</h4>
+	<div class="modal-title">Step report</div>
 </div>
 <div class="modal-body">
 	<app-test-step-report id="report" [step]="step" [report]="report" [sessionId]="sessionId"></app-test-step-report>
 </div>
 <div class="modal-footer button-container">
 	<div class="btn-toolbar">
-		<button type="button" class="btn btn-default" (click)="close()">Close</button>
+		<button type="button" class="btn btn-secondary" (click)="close()">Close</button>
 		<div class="btn-group" dropdown [isDisabled]="exportPdfPending || exportXmlPending">
-			<button type="button" [pending]="exportPdfPending || exportXmlPending" class="btn btn-default" (click)="exportPdf()">Export report as PDF</button>
-			<button id="button-export" type="button" dropdownToggle class="btn btn-default dropdown-toggle dropdown-toggle-split">
+			<button type="button" [pending]="exportPdfPending || exportXmlPending" class="btn btn-secondary" (click)="exportPdf()">Export report as PDF</button>
+			<button id="button-export" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
 				<span class="caret"></span>
 				<span class="sr-only visually-hidden">Export report as PDF</span>
 			</button>

@@ -7,7 +7,9 @@
 	opacity: 0.5;
 }
 :host-context(.btn-toolbar)> :host > form > .input-group {
-    margin-left: 5px;
+	&:not(:first-child) {
+		margin-left: 5px;
+	}
 }
 .input-group-btn > button {
     width: 40px;

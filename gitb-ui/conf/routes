@@ -16,9 +16,8 @@ OPTIONS /*all                               @controllers.Application.preFlight(a
 GET     /assets/javascripts/routes          @controllers.Application.javascriptRoutes()
 
 # Theme API
-GET     /api/theme/css                          @controllers.SystemConfigurationService.getCssForTheme()
-GET     /api/theme/logo                         @controllers.SystemConfigurationService.getLogo()
-GET     /api/theme/footer                       @controllers.SystemConfigurationService.getFooterLogo()
+GET     /api/theme/css                             @controllers.SystemConfigurationService.getCssForTheme()
+GET     /api/theme/resource/:themeId/:resourceName @controllers.SystemConfigurationService.getThemeResource(themeId: Long, resourceName: String)
 
 # Authentication management API
 POST    /api/oauth/access_token                 @controllers.AuthenticationService.access_token()
@@ -169,6 +168,10 @@ POST    /api/dashboard/finished                 @controllers.ReportService.getFi
 
 GET     /api/system/configs                     @controllers.SystemConfigurationService.getConfigurationValues()
 POST    /api/system/configs                     @controllers.SystemConfigurationService.updateConfigurationValue()
+POST    /api/system/export                      @controllers.RepositoryService.exportSystemSettings()
+POST    /api/system/import/preview              @controllers.RepositoryService.uploadSystemSettingsExport()
+POST    /api/system/import/confirm              @controllers.RepositoryService.confirmSystemSettingsImport()
+POST    /api/system/import/cancel               @controllers.RepositoryService.cancelSystemSettingsImport()
 
 POST    /api/dashboard/suites/search            @controllers.TestSuiteService.searchTestSuites()
 POST    /api/dashboard/suites/searchInDomain    @controllers.TestSuiteService.searchTestSuitesInDomain()
@@ -325,11 +328,13 @@ POST    /api/repository/exportOwn/certificate                   @controllers.Rep
 GET     /api/repository/resource/:test_id/*file                 @controllers.RepositoryService.getTestSuiteResource(test_id: String, file: String)
 
 POST    /api/communities/export/:id                             @controllers.RepositoryService.exportCommunity(id: Long)
+POST    /api/communities/exportadmin/:id                        @controllers.RepositoryService.exportCommunityAndSettings(id: Long)
 POST    /api/communities/import/preview/:id                     @controllers.RepositoryService.uploadCommunityExport(id: Long)
 POST    /api/communities/import/cancel/:id                      @controllers.RepositoryService.cancelCommunityImport(id: Long)
 POST    /api/communities/import/confirm/:id                     @controllers.RepositoryService.confirmCommunityImportCommunityAdmin(id: Long)
 POST    /api/communities/import/confirm/admin/:id               @controllers.RepositoryService.confirmCommunityImportTestBedAdmin(id: Long)
 POST    /api/domains/export/:id                                 @controllers.RepositoryService.exportDomain(id: Long)
+POST    /api/domains/exportadmin/:id                            @controllers.RepositoryService.exportDomainAndSettings(id: Long)
 POST    /api/domains/import/preview/:id                         @controllers.RepositoryService.uploadDomainExport(id: Long)
 POST    /api/domains/import/cancel/:id                          @controllers.RepositoryService.cancelDomainImport(id: Long)
 POST    /api/domains/import/confirm/:id                         @controllers.RepositoryService.confirmDomainImportCommunityAdmin(id: Long)
@@ -359,6 +364,14 @@ GET     /api/badge/spec/:spec_id/badge/:status                   @controllers.Sp
 GET     /api/badge/spec/:spec_id/actor/:actor_id/badge/:status   @controllers.ActorService.getBadgeForStatus(spec_id: Long, actor_id: Long, status: String)
 GET     /api/badgeurl/system/:systemId/actor/:actorId            @controllers.ConformanceService.conformanceBadgeUrl(systemId: Long, actorId: Long)
 GET     /api/badge/system/:systemId/actor/:actorId               @controllers.ConformanceService.conformanceBadgeByIds(systemId: Long, actorId: Long)
+
+GET     /api/themes                                              @controllers.SystemConfigurationService.getThemes()
+POST    /api/themes                                              @controllers.SystemConfigurationService.createTheme()
+GET     /api/themes/:themeId                                     @controllers.SystemConfigurationService.getTheme(themeId: Long)
+POST    /api/themes/:themeId                                     @controllers.SystemConfigurationService.updateTheme(themeId: Long)
+DELETE  /api/themes/:themeId                                     @controllers.SystemConfigurationService.deleteTheme(themeId: Long)
+POST    /api/themes/:themeId/activate                            @controllers.SystemConfigurationService.activateTheme(themeId: Long)
+GET     /api/themes/resource/preview                             @controllers.SystemConfigurationService.previewThemeResource()
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)

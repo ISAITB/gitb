@@ -46,6 +46,7 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 	private final val FILES_SP_PATH: String = "sp"
 	private final val FILES_EP_PATH: String = "ep"
 	private final val FILES_CR_PATH: String = "cr"
+	private final val FILES_THEMES_PATH: String = "themes"
 	private final val FILES_BADGES_PATH: String = "badges"
 	private final val FILES_BADGES_LATEST_PATH: String = "latest"
 	private final val FILES_BADGES_SNAPSHOT_PATH: String = "snapshot"
@@ -57,6 +58,37 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 
 	def getFilesRootFolder(): File = {
 		new File(getRepositoryPath(), FILES_PATH)
+	}
+
+	private def isChildPath(expectedParent: Path, expectedChild: Path): Boolean = {
+		expectedChild.normalize().toAbsolutePath.startsWith(expectedParent.normalize().toAbsolutePath)
+	}
+
+	def getThemeResource(themeId: Long, name: String): Option[File] = {
+		val resourceFolder = Path.of(Configurations.TEST_CASE_REPOSITORY_PATH, FILES_PATH, FILES_THEMES_PATH, themeId.toString)
+		val resourcePath = resourceFolder.resolve(name)
+		if (Files.exists(resourcePath) && isChildPath(resourceFolder, resourcePath)) {
+			Some(resourcePath.toFile)
+		} else {
+			None
+		}
+	}
+
+	def deleteThemeResource(themeId: Long, name: String): Unit = {
+		FileUtils.deleteQuietly(Path.of(Configurations.TEST_CASE_REPOSITORY_PATH, FILES_PATH, FILES_THEMES_PATH, themeId.toString, name).toFile)
+	}
+
+	def deleteThemeResources(themeId: Long): Unit = {
+		FileUtils.deleteQuietly(Path.of(Configurations.TEST_CASE_REPOSITORY_PATH, FILES_PATH, FILES_THEMES_PATH, themeId.toString).toFile)
+	}
+
+	def saveThemeResource(themeId: Long, targetName: String, source: File): File = {
+		val themeFolder = Path.of(Configurations.TEST_CASE_REPOSITORY_PATH, FILES_PATH, FILES_THEMES_PATH, themeId.toString)
+		if (Files.notExists(themeFolder)) {
+			Files.createDirectories(themeFolder)
+		}
+		val targetPath = themeFolder.resolve(Path.of(targetName))
+		Files.copy(source.toPath, targetPath, StandardCopyOption.REPLACE_EXISTING).toFile
 	}
 
 	def getConformanceBadge(specificationId: Long, actorId: Option[Long], snapshotId: Option[Long], status: String, exactMatch: Boolean): Option[File] = {
@@ -127,7 +159,7 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 		}
 	}
 
-	private def badgeFileName(baseName: String, reference: BadgeFile): String = {
+	private def badgeFileName(baseName: String, reference: NamedFile): String = {
 		val extension = FilenameUtils.getExtension(reference.name)
 		if (StringUtils.isBlank(extension)) {
 			baseName
@@ -136,7 +168,7 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 		}
 	}
 
-	def setSpecificationBadge(specificationId: Long, badge: BadgeFile, status: String): Unit = {
+	def setSpecificationBadge(specificationId: Long, badge: NamedFile, status: String): Unit = {
 		val specificationFolder = Paths.get(Configurations.TEST_CASE_REPOSITORY_PATH, FILES_PATH, FILES_BADGES_PATH, FILES_BADGES_LATEST_PATH, specificationId.toString)
 		if (Files.notExists(specificationFolder)) {
 			Files.createDirectories(specificationFolder)
@@ -144,7 +176,7 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 		_setFile(specificationFolder.resolve(badgeFileName(status, badge)).toFile, badge.file, copy = false)
 	}
 
-	def setActorBadge(specificationId: Long, actorId: Long, badge: BadgeFile, status: String): Unit = {
+	def setActorBadge(specificationId: Long, actorId: Long, badge: NamedFile, status: String): Unit = {
 		val actorFolder = Paths.get(Configurations.TEST_CASE_REPOSITORY_PATH, FILES_PATH, FILES_BADGES_PATH, FILES_BADGES_LATEST_PATH, specificationId.toString, actorId.toString)
 		if (Files.notExists(actorFolder)) {
 			Files.createDirectories(actorFolder)

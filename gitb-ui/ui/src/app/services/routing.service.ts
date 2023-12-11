@@ -20,7 +20,7 @@ export class RoutingService {
   constructor(
     private router: Router,
     private dataService: DataService
-  ) { 
+  ) {
     this.initialise()
   }
 
@@ -370,7 +370,7 @@ export class RoutingService {
       return this.navigate(MenuItem.systemAdministration, ['admin', 'system', 'pages', 'create'], this.addCommunityContentExtras(undefined, copySource))
     } else {
       return this.navigate(MenuItem.communityManagement, ['admin', 'users', 'community', communityId, 'pages', 'create'], this.addCommunityContentExtras(addCopyTestBedDefault, copySource))
-    }    
+    }
   }
 
   toLandingPage(communityId: number|undefined, pageId: number) {
@@ -425,6 +425,14 @@ export class RoutingService {
     }
   }
 
+  toCreateTheme(referenceThemeId: number) {
+    return this.navigate(MenuItem.systemAdministration, [ 'admin', 'system', 'themes', 'create', referenceThemeId ])
+  }
+
+  toTheme(themeId: number) {
+    return this.navigate(MenuItem.systemAdministration, [ 'admin', 'system', 'themes', themeId ])
+  }
+
   private addTabExtras(tabIndex?: number) {
     let extras: NavigationExtras|undefined = undefined
     if (tabIndex != undefined) {
@@ -446,7 +454,7 @@ export class RoutingService {
       }
     }
     return extras
-  }  
+  }
 
   private createQueryParams(name: string, value: any) {
     let params: {[key: string]: any} = {}
@@ -456,7 +464,7 @@ export class RoutingService {
 
   private navigate(menuItem: MenuItem, commands: any[], extras?: NavigationExtras|undefined) {
     this.dataService.changePage({ menuItem: menuItem })
-    this.navigationMethodExecuted = true    
+    this.navigationMethodExecuted = true
     return this.router.navigate(commands, extras)
   }
 
@@ -477,7 +485,7 @@ export class RoutingService {
     crumbs.push({ type: BreadcrumbType.specification, typeId: specificationId, label: label, action: (() => this.toSpecification(domainId, specificationId)).bind(this)})
     if (label) this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
     return crumbs
-  }  
+  }
 
   specificationGroupBreadcrumbs(domainId: number, groupId: number, label?: string): BreadcrumbItem[] {
     const crumbs = this.domainBreadcrumbs(domainId)
@@ -512,7 +520,7 @@ export class RoutingService {
     crumbs.push({ type: BreadcrumbType.testCase, typeId: testCaseId, label: label, action: (() => this.toTestCase(domainId, specificationId, testSuiteId, testCaseId)).bind(this)})
     if (label) this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
     return crumbs
-  }  
+  }
 
   sharedTestSuiteBreadcrumbs(domainId: number, testSuiteId: number, label?: string): BreadcrumbItem[] {
     const crumbs = this.domainBreadcrumbs(domainId)
@@ -573,28 +581,28 @@ export class RoutingService {
     crumbs.push({ type: BreadcrumbType.landingPage, typeId: pageId, label: label, action: (() => this.toLandingPage(communityId, pageId)).bind(this) })
     if (label) this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
     return crumbs
-  }  
+  }
 
   errorTemplateBreadcrumbs(communityId: number, templateId: number, label?: string): BreadcrumbItem[] {
     const crumbs = this.communityBreadcrumbs(communityId)
     crumbs.push({ type: BreadcrumbType.errorTemplate, typeId: templateId, label: label, action: (() => this.toErrorTemplate(communityId, templateId)).bind(this) })
     if (label) this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
     return crumbs
-  }  
+  }
 
   legalNoticeBreadcrumbs(communityId: number, noticeId: number, label?: string): BreadcrumbItem[] {
     const crumbs = this.communityBreadcrumbs(communityId)
     crumbs.push({ type: BreadcrumbType.legalNotice, typeId: noticeId, label: label, action: (() => this.toLegalNotice(communityId, noticeId)).bind(this) })
     if (label) this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
     return crumbs
-  }  
+  }
 
   triggerBreadcrumbs(communityId: number, triggerId: number, label?: string): BreadcrumbItem[] {
     const crumbs = this.communityBreadcrumbs(communityId)
     crumbs.push({ type: BreadcrumbType.trigger, typeId: triggerId, label: label, action: (() => this.toTrigger(communityId, triggerId)).bind(this) })
     if (label) this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
     return crumbs
-  }  
+  }
 
   conformanceStatementsBreadcrumbs(communityId: number, organisationId: number, systemId?: number, systemLabel?: string, skipUpdate?: boolean): BreadcrumbItem[] {
     let crumbs: BreadcrumbItem[]
@@ -722,6 +730,13 @@ export class RoutingService {
     return crumbs
   }
 
+  systemThemeBreadcrumbs(themeId: number, label?: string): BreadcrumbItem[] {
+    const crumbs = this.systemConfigurationBreadcrumbs(true)
+    crumbs.push({ type: BreadcrumbType.theme, typeId: themeId, label: label, action: (() => this.toTheme(themeId)).bind(this) })
+    if (label) this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
+    return crumbs
+  }
+
   communityLabelsBreadcrumbs(communityId: number): BreadcrumbItem[] {
     const crumbs = this.communityBreadcrumbs(communityId)
     crumbs.push({ type: BreadcrumbType.communityLabels, label: 'Labels', action: (() => this.toCommunityLabels(communityId)).bind(this) })
@@ -747,12 +762,12 @@ export class RoutingService {
     const crumbs = [{ type: BreadcrumbType.profile, label: 'Profile', action: (() => this.toProfile()).bind(this) }]
     this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
     return crumbs
-  }  
+  }
 
   changePasswordBreadcrumbs(): BreadcrumbItem[] {
     const crumbs = [{ type: BreadcrumbType.changePassword, label: 'Change password', action: (() => this.toChangePassword()).bind(this) }]
     this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
     return crumbs
-  }  
+  }
 
 }

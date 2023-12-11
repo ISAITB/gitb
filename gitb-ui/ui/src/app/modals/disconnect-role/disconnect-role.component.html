@@ -1,23 +1,44 @@
 <div class="modal-header">
-    <h4>Role removal options</h4>
+    <div class="modal-title">Role removal options</div>
 </div>
-<form class="form-horizontal">
+<form>
     <div class="modal-body">
-        <div class="form-group">
-            <label class="col-sm-5 control-label" for="choice_partial">* Select how to proceed:</label>
-            <div class="col-sm-7">
-                <label style="padding-right:10px" class="radio-inline"><input type="radio" [(ngModel)]="choice" name="choice" id="choice_partial" [value]="Constants.DISCONNECT_ROLE_OPTION.CURRENT_PARTIAL">Deactivate current role</label><span class="tooltip-for-radio-label" [tooltip]="'The current role will be disconnected from your EU Login account but can be linked to it again if you choose to do so.'" [containerClass]="'tooltipContainer'"><i class="fa-solid fa-question-circle"></i></span><br/>
-                <label *ngIf="!dataService.isSystemAdmin" style="padding-right:10px" class="radio-inline"><input type="radio" [(ngModel)]="choice" name="choice" id="choice_full" [value]="Constants.DISCONNECT_ROLE_OPTION.CURRENT_FULL">Delete current role</label><span *ngIf="!dataService.isSystemAdmin" class="tooltip-for-radio-label" [tooltip]="'The current role will be permanently removed from your EU Login account.'" [containerClass]="'tooltipContainer'"><i class="fa-solid fa-question-circle"></i></span><br *ngIf="!dataService.isSystemAdmin"/>
-                <label *ngIf="dataService.isSystemAdmin" style="padding-right:10px" class="radio-inline"><input type="radio" [(ngModel)]="choice" name="choice" id="choice_all" [value]="Constants.DISCONNECT_ROLE_OPTION.ALL">Delete all other roles</label><span *ngIf="dataService.isSystemAdmin" class="tooltip-for-radio-label" [tooltip]="'All other roles linked to your EU Login account (active and inactive) will be permanently removed.'" [containerClass]="'tooltipContainer'"><i class="fa-solid fa-question-circle"></i></span>
-                <label *ngIf="!dataService.isSystemAdmin" style="padding-right:10px" class="radio-inline"><input type="radio" [(ngModel)]="choice" name="choice" id="choice_all" [value]="Constants.DISCONNECT_ROLE_OPTION.ALL">Delete all roles</label><span *ngIf="!dataService.isSystemAdmin" class="tooltip-for-radio-label" [tooltip]="'All Test Bed roles linked to your EU Login account (active and inactive) will be permanently removed.'" [containerClass]="'tooltipContainer'"><i class="fa-solid fa-question-circle"></i></span>
+        <div class="row mb-3 pt-1">
+            <legend class="col-5 col-form-label text-end pt-0">* Select how to proceed:</legend>
+            <div class="col-7">
+                <div class="form-check pb-2">
+                    <input class="form-check-input" type="radio" [(ngModel)]="choice" name="choice" id="choice_partial" [value]="Constants.DISCONNECT_ROLE_OPTION.CURRENT_PARTIAL">
+                    <label class="form-check-label" for="choice_partial">Deactivate current role
+                        <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" [tbTooltip]="'The current role will be disconnected from your EU Login account but can be linked to it again if you choose to do so.'"></div>
+                    </label>
+                </div>
+                <div class="form-check pb-2" *ngIf="!dataService.isSystemAdmin">
+                    <input class="form-check-input" type="radio" [(ngModel)]="choice" name="choice" id="choice_full" [value]="Constants.DISCONNECT_ROLE_OPTION.CURRENT_FULL">                    
+                    <label class="form-check-label" for="choice_full">Delete current role
+                        <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" [tbTooltip]="'The current role will be permanently removed from your EU Login account.'"></div>
+                    </label>
+                </div>
+                <div class="form-check pb-2">
+                    <input class="form-check-input" type="radio" [(ngModel)]="choice" name="choice" id="choice_all" [value]="Constants.DISCONNECT_ROLE_OPTION.ALL">
+                    <ng-container [ngSwitch]="dataService.isSystemAdmin">
+                        <label *ngSwitchCase="true" class="form-check-label" for="choice_all">Delete all other roles
+                            <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" [tbTooltip]="'All other roles linked to your EU Login account (active and inactive) will be permanently removed.'"></div>
+                        </label>
+                        <label *ngSwitchDefault class="form-check-label" for="choice_all">Delete all roles
+                            <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabelText" [tbTooltip]="'All Test Bed roles linked to your EU Login account (active and inactive) will be permanently removed.'"></div>
+                        </label>
+                    </ng-container>
+                </div>
             </div>
         </div>
-        <div class="bg-info div-rounded div-padded">
+        <div class="alert alert-info rounded mb-0">
             <b>Privacy note:</b> Option <i>"Delete all <span *ngIf="dataService.isSystemAdmin">other </span>roles"</i> removes all your recorded information<span *ngIf="dataService.isSystemAdmin"> except for your administrator account</span>. This does not affect or remove your conformance testing history.
         </div>
     </div>
     <div class="modal-footer">
-        <button class="btn btn-default" type="button" (click)="cancel()">Cancel</button>
-        <button class="btn btn-default" type="submit" (click)="disconnect()" [pending]="disconnectPending">Proceed</button>
+        <div class="btn-toolbar">
+            <button class="btn btn-secondary" type="button" (click)="cancel()">Cancel</button>
+            <button class="btn btn-secondary" type="submit" (click)="disconnect()" [pending]="disconnectPending">Proceed</button>
+        </div>
     </div>    
 </form>

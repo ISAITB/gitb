@@ -1,5 +1,6 @@
-@navigation-height: 64px;
-
+/*
+ * Colours.
+ */
 @gray-dark: #555555;
 @gray: #777777;
 @gray-light: #e5e5e5;
@@ -8,36 +9,70 @@
 @gray-dark-1: #ddd;
 @gray-button: #ccc;
 @gray-highlight: #efefef;
-@gray-button-text: #333;
-
-@success-green: #5cb85c;
-@warning-yellow: #f0ad4e;
-@info-blue: #3D8BE9;
-@error-red: #c9302c;
-@blue: #428bca;
-@blueHeading: #0088CC;
-
-@green-light: fade(@success-green, 50%);
-@orange-light: #fcf8e3;
-@orange-light-hover: #f3eed1;
-@orange-dark: #a57735;
-@blue-light: #D9EDF7;
-@blue-dark: #074a8b;
-@red-light: #f2dede;
-@red-light-hover: #efd1d1;
 @gray-light-2: #EDEDED;
 
-@white: #fff;
+@blue: #428bca;
+
+@disabled-color: #F5F5F5; // From Bootstrap (default #e9ecef)
+@readonly-color: @disabled-color;
+
+@gray-shadow: #959595;
+@black: #000000;
+@white: #ffffff;
 @white-shaded: #fcfcfc;
 @white-hover: fade(@gray-light-1, 50%);
 
-@green-success-content: #3c763d;
-@green-success-background: #dff0d8;
-@green-success-border: #d6e9c6;
+@gray-incomplete: var(--bs-gray-800);
 
+@green-success: #5cb85c;
+@green-success-content: var(--bs-success-text-emphasis);
+@green-success-text: var(--bs-success-text-emphasis);
+@green-success-background: var(--bs-success-bg-subtle);
+@green-success-border: var(--bs-success-border-subtle);
+@green-success-hover: var(--bs-success-border-subtle);
+
+@red-error: #c9302c;
 @red-error-content: #a94442;
-@red-error-background: #f2dede;
-@red-error-border: #ebccd1;
+@red-error-text: var(--bs-danger-text-emphasis);
+@red-error-background: var(--bs-danger-bg-subtle);
+@red-error-border: var(--bs-danger-border-subtle);
+@red-error-hover: #f1cbce;
+
+@orange-warning: #f0ad4e;
+@orange-warning-content: #a57735;
+@orange-warning-text: var(--bs-warning-text-emphasis);
+@orange-warning-background: var(--bs-warning-bg-subtle);
+@orange-warning-border: var(--bs-warning-border-subtle);
+@orange-warning-hover: #fcf1cf;
+
+@blue-info: #3D8BE9;
+@blue-info-content: #074a8b;
+@blue-info-text: var(--bs-info-text-emphasis);
+@blue-info-background: var(--bs-info-bg-subtle);
+@blue-info-border: var(--bs-info-border-subtle);
+@blue-info-hover: #cee7f4;
+
+@account-card-oa: #555;
+@account-card-ou: #adadad;
+@account-card-ta: #0065A2;
+@account-card-ca: #a94442;
+@account-card-internal: #eaeaea;
+@account-card-internal-highlight: #cecece;
+
+@processing-color: #03a9f4;
+@waiting-color: darken(@processing-color, 20%);
+@error-color: @red-error;
+@warning-color: @orange-warning;
+@completed-color: @green-success;
+@basic-color: @gray;
+
+@bs-background-highlight: #f8f9fa;
+@bs-input-focus-highlight: #99bddb;
+
+/*
+ * Other.
+ */
+@navigation-height: 64px;
 
 @page-content-margin-under-root: 15px -10px 15px -10px;
 @page-content-margin: 35px 0px 50px 0px;
@@ -47,3 +82,27 @@
 @page-header-bar-border-width: 5;
 @page-header-bar-height: 59;
 @breadcrumb-height: 33;
+
+@border-radius: 0.375rem;
+
+/*
+ * CSS variable definitions.
+ */
+ :root {
+     --itb-separator-title-color: var(--bs-heading-color);
+     --itb-modal-title-color: var(--bs-heading-color);
+     --itb-card-title-color: var(--bs-heading-color);
+     --itb-table-title-color: var(--bs-heading-color);
+     --itb-page-title-color: @white;
+     --itb-heading-color: var(--bs-heading-color);
+     --itb-tab-link-color: var(--bs-link-color);
+     --itb-footer-text-color: @white;
+     --itb-header-background-color: #0065a2;
+     --itb-header-border-color: #074A8B;
+     --itb-header-separator-color: #FFF;
+     --itb-footer-background-color: var(--itb-header-background-color);
+     --itb-footer-border-color: var(--itb-header-border-color);
+     --itb-header-logo-path: url("http://localhost:9000/assets/images/ec.png");
+     --itb-footer-logo-display: inherit;
+     --itb-footer-logo-path: var("http://localhost:9000/assets/images/gitb.png");
+ }

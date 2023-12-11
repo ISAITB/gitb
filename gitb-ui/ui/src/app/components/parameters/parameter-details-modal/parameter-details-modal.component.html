@@ -1,7 +1,7 @@
 <div class="modal-header">
-	<h4>{{modalTitle}}</h4>
+    <div class="modal-title">{{modalTitle}}</div>    
 </div>
-<form class="form-horizontal">
+<form>
 	<div class="modal-body">
         <app-parameter-form 
             [nameLabel]="nameLabel"
@@ -13,11 +13,11 @@
     </div>
     <div class="modal-footer button-container">
         <div class="btn-toolbar btn-toolbar-delete">
-            <button type="button" class="btn btn-default btn-delete" (click)="deleteParameter()">Delete</button>
+            <button type="button" class="btn btn-outline-danger" (click)="deleteParameter()">Delete</button>
         </div>
         <div class="btn-toolbar">
-            <button type="button" class="btn btn-default" (click)="cancel()">Cancel</button>
-            <button type="submit" class="btn btn-default" (click)="updateParameter()" [disabled]="saveDisabled()">Save</button>
+            <button type="button" class="btn btn-secondary" (click)="cancel()">Cancel</button>
+            <button type="submit" class="btn btn-secondary" (click)="updateParameter()" [disabled]="saveDisabled()">Save</button>
         </div>
     </div>
 </form>

@@ -1,10 +1,12 @@
 <div class="modal-header">
-    <h4>{{headerText}}</h4>
+    <div class="modal-title">{{headerText}}</div>
 </div>
-<div class="modal-body">
-    <p>{{bodyText}}</p>
+<div class="modal-body py-4">
+    {{bodyText}}
 </div>
 <div class="modal-footer">
-    <button [ngClass]="cancelClass()" type="button" (click)="cancel()" *ngIf="!oneButton">{{closeButtonText}}</button>
-    <button [ngClass]="actionClass" type="button" (click)="ok()">{{actionButtonText}}</button>
+    <div class="btn-toolbar">
+        <button [ngClass]="cancelClass()" type="button" (click)="cancel()" *ngIf="!oneButton">{{closeButtonText}}</button>
+        <button [ngClass]="actionClass" type="button" (click)="ok()">{{actionButtonText}}</button>
+    </div>
 </div>

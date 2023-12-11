@@ -1,12 +1,5 @@
 @import '../../../../styles/less/_common.less';
 
-.pending-container {
-    display: flex;
-    .pending-message {
-        opacity: 0.5;
-    }
-}
-
 .tabPanel {
     & > div:last-child {
         margin-bottom: 0px;
@@ -19,7 +12,7 @@
 }
 
 .endpointPanel {
-    &.panel.panel-default {
+    &.card {
         margin-bottom: 5px;
     }
 }
@@ -38,7 +31,7 @@
 }
 
 .resultFilterDiv {
-    margin-left: 4px;
+    margin-left: 5px;
 }
 .noTestCasesDiv, .noConfigurationDiv {
     span {
@@ -58,7 +51,7 @@
 .statementStatus {
     display: flex;
     align-items: center;
-    border-radius: 4px;
+    border-radius: @border-radius;
     border: 1px solid @gray-dark-1;
     background-color: @gray-light-1;
     margin-top: 10px;
@@ -98,7 +91,7 @@
 
 .partyContainer {
     display: flex;
-    border-radius: 4px;
+    border-radius: @border-radius;
     border: 1px solid @gray-dark-1;
     background-color: @gray-light-1;
     margin-top: 10px;

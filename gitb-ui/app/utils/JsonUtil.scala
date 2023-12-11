@@ -13,6 +13,7 @@ import models.Enums.TestSuiteReplacementChoice.TestSuiteReplacementChoice
 import models.Enums._
 import models._
 import models.automation._
+import models.theme.Theme
 import org.apache.commons.codec.binary.Base64
 import play.api.libs.json.{JsObject, Json, _}
 
@@ -22,6 +23,41 @@ import scala.collection.{immutable, mutable}
 import scala.jdk.CollectionConverters.{CollectionHasAsScala, IterableHasAsJava}
 
 object JsonUtil {
+
+  def jsThemes(themes: List[Theme]): JsArray = {
+    var json = Json.arr()
+    themes.foreach { theme =>
+      json = json.append(jsTheme(theme))
+    }
+    json
+  }
+
+  def jsTheme(theme: Theme): JsObject = {
+    Json.obj(
+      "id" -> theme.id,
+      "key" -> theme.key,
+      "description" -> (if (theme.description.isDefined) theme.description.get else JsNull),
+      "active" -> JsBoolean(theme.active),
+      "custom" -> JsBoolean(theme.custom),
+      "separatorTitleColor" -> theme.separatorTitleColor,
+      "modalTitleColor" -> theme.modalTitleColor,
+      "tableTitleColor" -> theme.tableTitleColor,
+      "cardTitleColor" -> theme.cardTitleColor,
+      "pageTitleColor" -> theme.pageTitleColor,
+      "headingColor" -> theme.headingColor,
+      "tabLinkColor" -> theme.tabLinkColor,
+      "footerTextColor" -> theme.footerTextColor,
+      "headerBackgroundColor" -> theme.headerBackgroundColor,
+      "headerBorderColor" -> theme.headerBorderColor,
+      "headerSeparatorColor" -> theme.headerSeparatorColor,
+      "headerLogoPath" -> theme.headerLogoPath,
+      "footerBackgroundColor" -> theme.footerBackgroundColor,
+      "footerBorderColor" -> theme.footerBorderColor,
+      "footerLogoPath" -> theme.footerLogoPath,
+      "footerLogoDisplay" -> theme.footerLogoDisplay,
+      "faviconPath" -> theme.faviconPath
+    )
+  }
 
   def jsTextArray(texts: List[String]): JsObject = {
     var textArray = Json.arr()
@@ -1282,7 +1318,7 @@ object JsonUtil {
     result
   }
 
-  def parseJsExportSettings(json:String):ExportSettings = {
+  def parseJsExportSettings(json:String, includeSettings: Boolean):ExportSettings = {
     val jsonConfig = Json.parse(json).as[JsObject]
     val settings = new ExportSettings()
     settings.communityAdministrators = (jsonConfig \ "communityAdministrators").as[Boolean]
@@ -1307,6 +1343,11 @@ object JsonUtil {
     settings.actors = (jsonConfig \ "actors").as[Boolean]
     settings.endpoints = (jsonConfig \ "endpoints").as[Boolean]
     settings.testSuites = (jsonConfig \ "testSuites").as[Boolean]
+    if (includeSettings) {
+      settings.themes = (jsonConfig \ "themes").as[Boolean]
+    } else {
+      settings.themes = false
+    }
     settings.encryptionKey = (jsonConfig \ "encryptionKey").asOpt[String]
     settings
   }

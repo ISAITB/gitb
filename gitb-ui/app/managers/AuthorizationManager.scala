@@ -681,16 +681,20 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     canUpdateSystem(request, systemId, isDelete = true)
   }
 
+  def canManageThemes(request: RequestWithAttributes[_]): Boolean = {
+    checkTestBedAdmin(request)
+  }
+
   def canAccessThemeData(request: RequestWithAttributes[_]):Boolean = {
     val ok = true
     setAuthResult(request, ok, "User cannot access theme")
   }
 
-  def canEditTheSessionAliveTime(request: RequestWithAttributes[_]):Boolean = {
+  def canUpdateSystemConfigurationValues(request: RequestWithAttributes[_]): Boolean = {
     checkTestBedAdmin(request)
   }
 
-  def canUpdateSystemConfigurationValues(request: RequestWithAttributes[_]): Boolean = {
+  def canManageSystemSettings(request: RequestWithAttributes[_]): Boolean = {
     checkTestBedAdmin(request)
   }
 

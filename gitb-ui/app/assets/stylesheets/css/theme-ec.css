@@ -1,13 +1,16 @@
-section.page-top {
-    background-color: #0065a2;
-    border-bottom-color: #074A8B;
-}
-
-section.page-top h2 {
-    color: #FFF;
-}
-
-.footer-bar {
-    background-color: #0065a2;
-    border-top-color: #074A8B;
+:root {
+     --itb-modal-title-color: #337ab7;
+     --itb-table-title-color: #337ab7;
+     --itb-card-title-color: #337ab7;
+     --itb-page-title-color: #FFF;
+     --itb-heading-color: #337ab7;
+     --itb-tab-link-color: #337ab7;
+     --itb-footer-text-color: #FFF;
+     --itb-header-background-color: #0065a2;
+     --itb-header-border-color: #074a8b;
+     --itb-header-logo-path: url("http://localhost:9000/assets/images/ec.png");
+     --itb-footer-background-color: var(--itb-header-background-color);
+     --itb-footer-border-color: var(--itb-header-border-color);
+     --itb-footer-logo-path: url("http://localhost:9000/assets/images/gitb.png");
+     --itb-footer-logo-display: inherit;
 }

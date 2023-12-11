@@ -142,25 +142,25 @@
         background-color: #f0ad4e;
     }
     .background-UNDEFINED {
-        background-color: #7c7c7c;
+        background-color: #343a40;
     }
     .background-strong-error {
-        background-color: #c9302c;
+        background-color: #f1aeb5;
     }
     .background-strong-warning {
-        background-color: #f0ad4e;
+        background-color: #fbebb9;
     }
     .background-strong-info {
-        background-color: #3D8BE9;
+        background-color: #bddded;
     }
     .background-error {
-        background-color: #f2dede;
+        background-color: #f8d7da;
     }
     .background-warning {
-        background-color: #fcf8e3;
+        background-color: #fdf5dc;
     }
     .background-info {
-        background-color: #ededed;
+        background-color: #d9edf7;
     }
     .background-normal {
         background: #ededed;
@@ -169,13 +169,13 @@
         border: 1px solid #000000;
     }
     .border-error {
-        border: 1px solid #c9302c;
+        border: 1px solid #f1aeb5;
     }
     .border-warning {
-        border: 1px solid #f0ad4e;
+        border: 1px solid #fbebb9;
     }
     .border-info {
-        border: 1px solid #3D8BE9;
+        border: 1px solid #bddded;
     }
 </#macro>
 <#macro testResult>
@@ -194,12 +194,12 @@
         page-break-inside: avoid;
     }
     .output-message.FAILURE {
-        background: #f2dede;
-        border: 1px solid #c9302c;
+        background: #f8d7da;
+        border: 1px solid #f1aeb5;
     }
     .output-message.SUCCESS {
-        background: #dff0d8;
-        border: 1px solid #5cb85c;
+        background: #def1de;
+        border: 1px solid #bee3be;
     }
     .output-message.UNDEFINED {
         background: #ededed;
@@ -255,6 +255,6 @@
     }
     .coverage-undefined {
         color: #ffffff;
-        background: #7c7c7c;
+        background: #343a40;
     }
 </#macro>

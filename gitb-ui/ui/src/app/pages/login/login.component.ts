@@ -166,7 +166,6 @@ export class LoginComponent extends BaseComponent implements OnInit, AfterViewIn
         // Correct authentication but we need to replace the password to complete the login.
         this.onetimePassword = result.body.onetime != undefined && result.body.onetime
         this.weakPassword = result.body.weakPassword != undefined && result.body.weakPassword
-        this.dataService.focus('current')
       } else if (this.isLoginOk(result.body)) {
         this.completeLogin(result)
       } else {
@@ -237,7 +236,7 @@ export class LoginComponent extends BaseComponent implements OnInit, AfterViewIn
 			(!this.selfRegData.selfRegOption.forceRequiredProperties || this.dataService.customPropertiesValid(this.selfRegData.selfRegOption.organisationProperties, true)) &&
 			this.textProvided(this.selfRegData.orgShortName) && this.textProvided(this.selfRegData.orgFullName) &&
 			this.textProvided(this.selfRegData.adminName) && this.textProvided(this.selfRegData.adminEmail) && 
-			this.textProvided(this.selfRegData.adminPassword) && this.textProvided(this.selfRegData.adminPasswordConfirm)
+			this.textProvided(this.selfRegData.adminPassword)
 		)
   }
 
@@ -279,15 +278,12 @@ export class LoginComponent extends BaseComponent implements OnInit, AfterViewIn
 
 	checkRegisterForm() {
     this.clearAlerts()
-    const checkPasswordConfirmed = this.requireSame(this.selfRegData.adminPassword, this.selfRegData.adminPasswordConfirm, 'Your password was not correctly confirmed.')
-    const checkPasswordComplex = this.requireComplexPassword(this.selfRegData.adminPassword, 'Your password does not match required complexity rules. It must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one digit and one symbol.')
-		return checkPasswordConfirmed && checkPasswordComplex
+		return this.requireComplexPassword(this.selfRegData.adminPassword, 'Your password does not match required complexity rules. It must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one digit and one symbol.')
   }
 
   replaceDisabled() {
     return !this.textProvided(this.passwordChangeData.currentPassword)
-      || !this.textProvided(this.passwordChangeData.password1)
-      || !this.textProvided(this.passwordChangeData.password2)
+      || !this.textProvided(this.passwordChangeData.newPassword)
   }
 
   private getPasswordComplexityAlertMessage() {
@@ -301,15 +297,14 @@ export class LoginComponent extends BaseComponent implements OnInit, AfterViewIn
   replacePassword() {
     if (!this.replaceDisabled()) {
       this.clearAlerts()
-      const sameCheck = this.requireDifferent(this.passwordChangeData.currentPassword, this.passwordChangeData.password1, 'The password you provided is the same as the current one.')
-      const noConfirmCheck = this.requireSame(this.passwordChangeData.password1, this.passwordChangeData.password2, 'The new password does not match the confirmation.')
-      const complexCheck = this.requireComplexPassword(this.passwordChangeData.password1, this.getPasswordComplexityAlertMessage())
-      if (sameCheck && noConfirmCheck && complexCheck) {
+      const sameCheck = this.requireDifferent(this.passwordChangeData.currentPassword, this.passwordChangeData.newPassword, 'The password you provided is the same as the current one.')
+      const complexCheck = this.requireComplexPassword(this.passwordChangeData.newPassword, this.getPasswordComplexityAlertMessage())
+      if (sameCheck && complexCheck) {
         // Proceed.
         this.spinner = true
         const data = {
           email: this.email,
-          password: this.passwordChangeData.password1,
+          password: this.passwordChangeData.newPassword,
           old_password: this.passwordChangeData.currentPassword
         }
         this.makeAuthenticationPost(ROUTES.controllers.AuthenticationService.replaceOnetimePassword().url, data).subscribe((result: HttpResponse<any>) => {

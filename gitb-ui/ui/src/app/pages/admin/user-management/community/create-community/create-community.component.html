@@ -1,20 +1,18 @@
 <div class="page users create">
-    <div class="panel panel-default no-bottom-margin">
-        <div class="panel-heading">
-            <h4 class="title">Create community</h4>
+    <div class="card mb-0">
+        <div class="card-header">
+            <div class="card-title">Create community</div>
         </div>
-        <form class="form-horizontal">
-            <div class="panel-body">
+        <form>
+            <div class="card-body">
                 <!-- Error messages -->
-                <div class="row">
-                    <app-alert-display [alerts]="alerts" innerClass="col-xs-10 col-xs-offset-1"></app-alert-display>
-                </div>
+                <app-alert-display [alerts]="alerts" innerClass="col-10 offset-1"></app-alert-display>
                 <app-community-form [community]="community" [admin]="true" [domains]="domains"></app-community-form>
             </div>
-            <div class="panel-footer">
+            <div class="card-footer">
                 <div class="btn-toolbar">
-                    <button class="btn btn-default" type="submit" (click)="createCommunity()" [disable]="saveDisabled()" [pending]="savePending">Save</button>
-                    <button class="btn btn-default" type="button" (click)="cancelCreateCommunity()">Cancel</button>
+                    <button class="btn btn-secondary" type="submit" (click)="createCommunity()" [disable]="saveDisabled()" [pending]="savePending">Save</button>
+                    <button class="btn btn-secondary" type="button" (click)="cancelCreateCommunity()">Cancel</button>
                 </div>
             </div>
         </form>

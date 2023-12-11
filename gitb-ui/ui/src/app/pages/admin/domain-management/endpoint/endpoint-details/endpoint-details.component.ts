@@ -106,13 +106,19 @@ export class EndpointDetailsComponent extends BaseComponent implements OnInit, A
     })
   }
 
-	moveParameterUp(index: number) {
+	moveParameterUp(index: number, event: UIEvent) {
+    if (event.currentTarget && (event.currentTarget as any).blur) {
+      (event.currentTarget as any).blur()
+    }    
 		const item = this.parameters.splice(index, 1)[0]
 		this.orderParametersDisabled = false
 		this.parameters.splice(index-1, 0, item)
   }
 
-	moveParameterDown(index: number) {
+	moveParameterDown(index: number, event: UIEvent) {
+    if (event.currentTarget && (event.currentTarget as any).blur) {
+      (event.currentTarget as any).blur()
+    }    
 		const item = this.parameters.splice(index, 1)[0]
 		this.orderParametersDisabled = false
 		this.parameters.splice(index+1, 0, item)

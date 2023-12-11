@@ -1,19 +1,19 @@
 <div class="page domains detail detail-actor">
-	<div class="panel panel-default">
-		<div class="panel-heading">
-			<h4 class="title">{{dataService.labelActor()}} details</h4>
+	<div class="card">
+		<div class="card-header">
+			<div class="card-title">{{dataService.labelActor()}} details</div>
 		</div>
-		<form class="form-horizontal">
-			<div class="panel-body">
+		<form>
+			<div class="card-body">
 				<app-actor-form [actor]="actor"></app-actor-form>
 			</div>
-			<div class="panel-footer button-container">
+			<div class="card-footer button-container">
 				<div class="btn-toolbar">
-					<button (click)="saveChanges()" type="submit" class="btn btn-default" [disable]="saveDisabled()" [pending]="savePending">Save changes</button>
-					<button (click)="back()" type="button" class="btn btn-default">Back</button>
+					<button (click)="saveChanges()" type="submit" class="btn btn-secondary" [disable]="saveDisabled()" [pending]="savePending">Save changes</button>
+					<button (click)="back()" type="button" class="btn btn-secondary">Back</button>
 				</div>
 				<div class="btn-toolbar btn-toolbar-delete">
-					<button (click)="delete()" type="button" class="btn btn-default btn-delete" [pending]="deletePending">Delete</button>
+					<button (click)="delete()" type="button" class="btn btn-outline-danger" [pending]="deletePending">Delete</button>
 				</div>
 			</div>
 		</form>
@@ -24,9 +24,9 @@
                 <ng-template tabHeading><app-tab-title icon="fa-solid fa-gear" [text]="dataService.labelEndpoints()"></app-tab-title></ng-template>
 				<div class="tabPanel">
 					<div class="tabControls">
-						<button type="button" class="btn btn-default" (click)="createEndpoint()">Create {{dataService.labelEndpointLower()}}</button>
+						<button type="button" class="btn btn-secondary" (click)="createEndpoint()">Create {{dataService.labelEndpointLower()}}</button>
 					</div>
-					<div class="panel panel-default">
+					<div class="card">
 						<div table-directive 
 							[columns]="endpointTableColumns"
 							[data]="endpointRepresentations"

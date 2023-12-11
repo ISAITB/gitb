@@ -24,23 +24,17 @@
 .viewLogButton {
     position: relative;
     margin-left: 5px;
-    .unreadBadge {
+    .buttonBadge {
+        padding: 6px;
         &.badgeLogErrors {
-            background-color: @error-red;
+            background-color: @red-error;
         }
         &.badgeLogWarnings {
-            background-color: @warning-yellow;
+            background-color: @orange-warning;
         }
         &.badgeLogMessages {
             background-color: @gray-button;
         }
-        position: absolute;
-        height: 7px;
-        width: 7px;
-        border-radius: 50%;
-        right: 3px;
-        top: 3px;
-        cursor: pointer;
         &.hidden {
             display: none;
         }
@@ -68,13 +62,13 @@
     justify-content: right;
     & > .optionsDiv {
         flex-grow: 0;
-        border-left: 1px solid #ddd;
+        border-left: 1px solid @gray-dark-1;
         margin-left: 20px;
         padding-left: 20px;
     }
     & > .actionButtonDiv {
         flex-grow: 0;
-        border-left: 1px solid #ddd;
+        border-left: 1px solid @gray-dark-1;
         margin-left: 20px;
         padding-left: 15px;
     }

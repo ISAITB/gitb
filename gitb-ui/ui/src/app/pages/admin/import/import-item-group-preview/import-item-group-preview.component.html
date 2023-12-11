@@ -1,14 +1,14 @@
 <div class="import-item-group">
-    <div (click)="toggleGroup(group); $event.stopPropagation();" class="import-item-group-label title-holder" [ngClass]="{'open': group.open}">
-      <div class="title-text highlight" [class.skip]="skipped">{{group.typeLabel}} ({{group.items.length}})</div>
+    <div (click)="toggleGroup(group); $event.stopPropagation();" class="import-item-group-label title-holder" [ngClass]="{'open': !collapsed}">
+      <div class="title-text highlight" [class.skip]="skipped">{{group.typeLabel}}<span *ngIf="showCount" class="ms-1">({{group.items.length}})</span></div>
       <div class="title-action">
-        <button type="button" *ngIf="showExpandAll" (click)="expandAll(); $event.stopPropagation();" class="btn btn-primary btn-sm">Expand all</button>
-        <button type="button" *ngIf="showSkipAll" (click)="skipAll(); $event.stopPropagation();" class="btn btn-primary btn-sm">Skip all</button>
-        <button type="button" *ngIf="showProceedAll" (click)="proceedAll(); $event.stopPropagation();" class="btn btn-primary btn-sm">Process all</button>
+        <button type="button" *ngIf="showExpandAll" (click)="expandAll(); $event.stopPropagation();" class="btn btn-secondary btn-sm">Expand all</button>
+        <button type="button" *ngIf="showSkipAll" (click)="skipAll(); $event.stopPropagation();" class="btn btn-secondary btn-sm">Skip all</button>
+        <button type="button" *ngIf="showProceedAll" (click)="proceedAll(); $event.stopPropagation();" class="btn btn-secondary btn-sm">Process all</button>
       </div>
       <div class="title-icon"><i class="fa" [ngClass]="{'fa-chevron-circle-down': group.open, 'fa-chevron-circle-right': !group.open}"></i></div>
     </div>
-    <div [collapse]="!group.open" [isAnimated]="true">
+    <div [collapse]="!group.open" [isAnimated]="true" (collapsed)="childrenCollapsed()" (expands)="childrenExpanding()">
         <div class="import-item-group-items">
             <ng-container *ngFor="let groupItem of group.items">
                 <div app-import-item-preview class="import-item-group-item" 

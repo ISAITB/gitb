@@ -1,10 +1,11 @@
 package persistence.db
 
 import models._
+import models.theme.Theme
 import slick.collection.heterogeneous.HNil
+import slick.jdbc.MySQLProfile.api._
 
 import java.sql.Timestamp
-import slick.jdbc.MySQLProfile.api._
 
 object PersistenceSchema {
 
@@ -642,5 +643,34 @@ object PersistenceSchema {
   }
   val conformanceSnapshotResults = TableQuery[ConformanceSnapshotResultsTable]
   val insertConformanceSnapshotResult = conformanceSnapshotResults returning conformanceSnapshotResults.map(_.id)
+
+  class ThemesTable(tag: Tag) extends Table[Theme](tag, "Themes") {
+    def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
+    def key = column[String] ("theme_key")
+    def description = column[Option[String]]("description", O.SqlType("TEXT"))
+    def active = column[Boolean]("active")
+    def custom = column[Boolean]("custom")
+    def separatorTitleColor = column[String] ("separator_title_color")
+    def modalTitleColor = column[String] ("modal_title_color")
+    def tableTitleColor = column[String] ("table_title_color")
+    def cardTitleColor = column[String] ("card_title_color")
+    def pageTitleColor = column[String] ("page_title_color")
+    def headingColor = column[String] ("heading_color")
+    def tabLinkColor = column[String] ("tab_link_color")
+    def footerTextColor = column[String] ("footer_text_color")
+    def headerBackgroundColor = column[String] ("header_background_color")
+    def headerBorderColor = column[String] ("header_border_color")
+    def headerSeparatorColor = column[String] ("header_separator_color")
+    def headerLogoPath = column[String] ("header_logo_path")
+    def footerBackgroundColor = column[String] ("footer_background_color")
+    def footerBorderColor = column[String] ("footer_border_color")
+    def footerLogoPath = column[String] ("footer_logo_path")
+    def footerLogoDisplay = column[String] ("footer_logo_display")
+    def faviconPath = column[String] ("favicon_path")
+    def * = (id :: key :: description :: active :: custom :: separatorTitleColor :: modalTitleColor :: tableTitleColor :: cardTitleColor :: pageTitleColor :: headingColor :: tabLinkColor :: footerTextColor :: headerBackgroundColor :: headerBorderColor :: headerSeparatorColor :: headerLogoPath :: footerBackgroundColor :: footerBorderColor :: footerLogoPath :: footerLogoDisplay :: faviconPath :: HNil).mapTo[Theme]
+  }
+
+  val themes = TableQuery[ThemesTable]
+  val insertTheme = themes returning themes.map(_.id)
 
 }

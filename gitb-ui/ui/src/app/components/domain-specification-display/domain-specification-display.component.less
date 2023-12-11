@@ -3,7 +3,7 @@
 .root-container {
     padding: 10px;
     border: 1px solid @gray-dark-1;
-    border-radius: 5px;
+    border-radius: @border-radius;
     display: flex;
     background-color: @gray-light-1;
     flex-wrap: wrap;
@@ -52,7 +52,6 @@
                 display: flex;
                 flex-flow: column;
                 align-self: center;
-                margin-left: 0px;
             }
         }
         .spec-hidden {
@@ -72,7 +71,7 @@
     .no-options {
         padding: 10px;
         border: 1px solid @gray-dark-1;
-        border-radius: 5px;
+        border-radius: @border-radius;
         background-color: @gray-light-1;
     }
 }

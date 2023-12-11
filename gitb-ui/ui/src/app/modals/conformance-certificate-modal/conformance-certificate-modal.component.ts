@@ -10,8 +10,7 @@ import { saveAs } from 'file-saver'
 
 @Component({
   selector: 'app-conformance-certificate-modal',
-  templateUrl: './conformance-certificate-modal.component.html',
-  styleUrls: [ './conformance-certificate-modal.component.less' ]
+  templateUrl: './conformance-certificate-modal.component.html'
 })
 export class ConformanceCertificateModalComponent implements OnInit {
 
@@ -62,9 +61,9 @@ export class ConformanceCertificateModalComponent implements OnInit {
     return message
   }
 
-  certificateChoice() {
+  certificateChoicesVisible() {
     if (this.settings.includeTitle) {
-        this.dataService.focus('title', 200)
+      this.dataService.focus('title')
     }
   }
 

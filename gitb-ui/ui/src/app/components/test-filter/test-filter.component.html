@@ -1,9 +1,9 @@
-<div class="panel panel-default">
-    <div class="panel-heading clickable" (click)="clickedHeader()">
-        <h4 class="title"><app-collapsing-icon [isCollapsed]="!showFiltering"></app-collapsing-icon>Filters</h4>
+<div class="card">
+    <div class="card-header clickable" (click)="clickedHeader()">
+        <div class="card-title"><app-collapsing-icon [isCollapsed]="!showFiltering"></app-collapsing-icon>Filters</div>
         <div class="btn-toolbar">
-            <button type="button" class="btn btn-default" (click)="applyFilters(); $event.stopPropagation()" [pending]="filterState.updatePending">Refresh</button>
-            <button type="button" class="btn btn-default" (click)="clearFilters(); $event.stopPropagation()" [disabled]="filterState.updatePending">Clear filters</button>
+            <button type="button" class="btn btn-secondary" (click)="applyFilters(); $event.stopPropagation()" [pending]="filterState.updatePending">Refresh</button>
+            <button type="button" class="btn btn-secondary" (click)="clearFilters(); $event.stopPropagation()" [disabled]="filterState.updatePending">Clear filters</button>
         </div>
     </div>
     <div [collapse]="!showFiltering" [isAnimated]="true">
@@ -76,9 +76,7 @@
             <div class="filterValue">
               <div class="input-group">
                 <input class="form-control pointer" bsDaterangepicker [(ngModel)]="startDateModel" [bsConfig]="datePickerSettings" (bsValueChange)="applyTimeFiltering()" readonly="readonly">
-                <div class="input-group-btn">
-                  <button class="btn btn-default" type="button" (click)="clearStartRange()" [disabled]="startDateModel == undefined" containerClass="shortTooltip" tooltip="Clear" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-times" [ngClass]="{'faded': startDateModel == undefined}"></i></button>
-                </div>
+                <button class="btn btn-secondary" type="button" (click)="clearStartRange()" [disabled]="startDateModel == undefined" containerClass="shortTooltip" container="body" tooltip="Clear" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-times" [ngClass]="{'faded': startDateModel == undefined}"></i></button>
               </div>
             </div>
           </div>
@@ -87,9 +85,7 @@
             <div class="filterValue">
               <div class="input-group">
                 <input class="form-control pointer" bsDaterangepicker [(ngModel)]="endDateModel" [bsConfig]="datePickerSettings" (bsValueChange)="applyTimeFiltering()" readonly="readonly">
-                <div class="input-group-btn">
-                  <button class="btn btn-default" type="button" (click)="clearEndRange()" [disabled]="endDateModel == undefined" containerClass="shortTooltip" tooltip="Clear" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-times" [ngClass]="{'faded': endDateModel == undefined}"></i></button>
-                </div>
+                <button class="btn btn-secondary" type="button" (click)="clearEndRange()" [disabled]="endDateModel == undefined" containerClass="shortTooltip" container="body" tooltip="Clear" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-times" [ngClass]="{'faded': endDateModel == undefined}"></i></button>
               </div>
             </div>
           </div>
@@ -115,7 +111,7 @@
                   </app-custom-property-filter>
                 </div>
                 <div class="property-filters-control" [ngClass]="{'padded': organisationProperties && organisationProperties.length > 0}">
-                  <button [disable]="applicableCommunityId == undefined" [pending]="loadingOrganisationProperties" *ngIf="!addingOrganisationProperty || loadingOrganisationProperties" class="btn btn-default" (click)="addOrganisationProperty()">Add</button>
+                  <button [disable]="applicableCommunityId == undefined" [pending]="loadingOrganisationProperties" *ngIf="!addingOrganisationProperty || loadingOrganisationProperties" class="btn btn-secondary" (click)="addOrganisationProperty()">Add</button>
                 </div>
               </div>
             </div>
@@ -136,7 +132,7 @@
                   </app-custom-property-filter>
                 </div>
                 <div class="property-filters-control" [ngClass]="{'padded': systemProperties && systemProperties.length > 0}">
-                  <button [disable]="applicableCommunityId == undefined" [pending]="loadingSystemProperties" *ngIf="!addingSystemProperty || loadingSystemProperties" class="btn btn-default" (click)="addSystemProperty()">Add</button>
+                  <button [disable]="applicableCommunityId == undefined" [pending]="loadingSystemProperties" *ngIf="!addingSystemProperty || loadingSystemProperties" class="btn btn-secondary" (click)="addSystemProperty()">Add</button>
                 </div>
               </div>
             </div>

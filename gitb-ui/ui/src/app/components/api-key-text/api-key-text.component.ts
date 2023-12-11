@@ -10,7 +10,7 @@ import { PopupService } from 'src/app/services/popup.service';
 export class ApiKeyTextComponent implements OnInit {
 
   @Input() key!: string
-  @Input() id!: string
+  @Input() idName!: string
   @Input() name!: string
   @Input() supportUpdate = false
   @Input() supportDelete = false

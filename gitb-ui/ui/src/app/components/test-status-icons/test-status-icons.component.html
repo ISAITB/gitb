@@ -1,6 +1,6 @@
 <div class="rootContainer" (click)="$event.stopPropagation()">
     <div class="statusRootContainer" #containerRoot>
-        <div class="statusContainerGroup" [tooltip]="counters.completed + ' passed, '+counters.failed+' failed, '+counters.other+' incomplete required tests ('+(counters.completed+counters.failed+counters.other)+' in total)'">
+        <div class="statusContainerGroup" [tooltip]="counters.completed + ' passed, '+counters.failed+' failed, '+counters.other+' incomplete required tests ('+(counters.completed+counters.failed+counters.other)+' in total)'" [placement]="tooltipOnLeft?'left':'top'">
             <div class="statusContainer"><div class="statusCount">{{ counters.completed }}</div><div class="statusIcon"><span><i [class]="successIcon"></i></span></div></div>
             <div class="statusContainer"><div class="statusCount">{{ counters.failed }}</div><div class="statusIcon"><span><i [class]="failedIcon"></i></span></div></div>
             <div class="statusContainer"><div class="statusCount">{{ counters.other }}</div><div class="statusIcon"><span><i [class]="otherIcon"></i></span></div></div>
@@ -12,7 +12,7 @@
             <div class="status-containers">
                 <div class="status-container">
                     <div class="status-title">Required</div>
-                    <div class="statusRootContainer" [tooltip]="counters.completed + ' passed, '+counters.failed+' failed, '+counters.other+' incomplete required tests ('+(counters.completed+counters.failed+counters.other)+' in total)'">
+                    <div class="statusRootContainer" [tooltip]="counters.completed + ' passed, '+counters.failed+' failed, '+counters.other+' incomplete required tests ('+(counters.completed+counters.failed+counters.other)+' in total)'" [placement]="tooltipOnLeft?'left':'top'">
                         <div class="statusContainer"><div class="statusCount">{{ counters.completed }}</div><div class="statusIcon"><span><i [class]="successIcon"></i></span></div></div>
                         <div class="statusContainer"><div class="statusCount">{{ counters.failed }}</div><div class="statusIcon"><span><i [class]="failedIcon"></i></span></div></div>
                         <div class="statusContainer"><div class="statusCount">{{ counters.other }}</div><div class="statusIcon"><span><i [class]="otherIcon"></i></span></div></div>
@@ -20,7 +20,7 @@
                 </div>
                 <div class="status-container optional">
                     <div class="status-title optional">Optional</div>
-                    <div class="statusRootContainer" [tooltip]="counters.completedOptional + ' passed, '+counters.failedOptional+' failed, '+counters.otherOptional+' incomplete optional tests ('+(counters.completedOptional+counters.failedOptional+counters.otherOptional)+' in total)'">
+                    <div class="statusRootContainer" [tooltip]="counters.completedOptional + ' passed, '+counters.failedOptional+' failed, '+counters.otherOptional+' incomplete optional tests ('+(counters.completedOptional+counters.failedOptional+counters.otherOptional)+' in total)'" [placement]="tooltipOnLeft?'left':'top'">
                         <div class="statusContainer"><div class="statusCount">{{ counters.completedOptional }}</div><div class="statusIcon"><span><i [class]="successIcon"></i></span></div></div>
                         <div class="statusContainer"><div class="statusCount">{{ counters.failedOptional }}</div><div class="statusIcon"><span><i [class]="failedIcon"></i></span></div></div>
                         <div class="statusContainer"><div class="statusCount">{{ counters.otherOptional }}</div><div class="statusIcon"><span><i [class]="otherIcon"></i></span></div></div>

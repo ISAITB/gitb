@@ -1,23 +1,21 @@
 <div class="page users create">
-    <div class="panel panel-default no-bottom-margin">
-        <div class="panel-heading">
-            <h4 class="title">Create {{dataService.labelOrganisationLower()}}</h4>
+    <div class="card mb-0">
+        <div class="card-header">
+            <div class="card-title">Create {{dataService.labelOrganisationLower()}}</div>
         </div>
-        <form class="form-horizontal">
-            <div class="panel-body">
-                <div class="row">
-                    <app-alert-display [alerts]="alerts" innerClass="col-md-10 col-md-offset-1"></app-alert-display>
-                </div>
+        <form>
+            <div class="card-body">
+                <app-alert-display [alerts]="alerts" innerClass="col-10 offset-1"></app-alert-display>
                 <app-organisation-form
                     [organisation]="organisation"
                     [communityId]="communityId"
                     [propertyData]="propertyData"
                 ></app-organisation-form>
             </div>
-            <div class="panel-footer">
+            <div class="card-footer">
                 <div class="btn-toolbar">
-                    <button class="btn btn-default" type="submit" (click)="createOrganisation()" [disable]="saveDisabled()" [pending]="savePending">Save</button>
-                    <button class="btn btn-default" type="button" (click)="cancelCreateOrganisation()">Cancel</button>
+                    <button class="btn btn-secondary" type="submit" (click)="createOrganisation()" [disable]="saveDisabled()" [pending]="savePending">Save</button>
+                    <button class="btn btn-secondary" type="button" (click)="cancelCreateOrganisation()">Cancel</button>
                 </div>
             </div>
         </form>

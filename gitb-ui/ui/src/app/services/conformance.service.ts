@@ -745,6 +745,12 @@ export class ConformanceService {
   }
 
   exportDomain(domainId: number, settings: ExportSettings) {
+    let path
+    if (settings.themes) {
+      path = ROUTES.controllers.RepositoryService.exportDomainAndSettings(domainId).url
+    } else {
+      path = ROUTES.controllers.RepositoryService.exportDomain(domainId).url
+    }
     return this.restService.post<ArrayBuffer>({
       path: ROUTES.controllers.RepositoryService.exportDomain(domainId).url,
       data: {

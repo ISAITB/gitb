@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { ActivatedRouteSnapshot, Resolve, RouterStateSnapshot } from '@angular/router';
+import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 import { Observable } from 'rxjs';
 import { DataService } from '../services/data.service';
 import { OrganisationService } from '../services/organisation.service';
@@ -7,7 +7,7 @@ import { OrganisationService } from '../services/organisation.service';
 @Injectable({
     providedIn: "root"
 })
-export class EditOwnOrganisationResolver implements Resolve<boolean> {
+export class EditOwnOrganisationResolver  {
 
     constructor(
         private dataService: DataService,

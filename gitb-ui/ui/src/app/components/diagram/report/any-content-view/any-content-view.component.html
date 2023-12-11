@@ -7,11 +7,11 @@
     <div class="any-content-view-controls" *ngIf="value != undefined">
       <div class="btn-toolbar" [ngSwitch]="showValueInline">
         <ng-container *ngSwitchCase="true">
-          <button class="btn btn-default" type="button" (click)="copy()" containerClass="shortTooltip" tooltip="Copy" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-clipboard" aria-hidden="true"></i></button>
+          <button class="btn btn-secondary" type="button" (click)="copy()" containerClass="shortTooltip" tooltip="Copy" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-clipboard" aria-hidden="true"></i></button>
         </ng-container>
         <ng-container *ngSwitchDefault>
-          <button class="btn btn-default" type="button" (click)="download()" [class.pending]="downloadPending" [pending]="downloadPending" [icon]="true" containerClass="shortTooltip" tooltip="Download" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-download" aria-hidden="true"></i></button>
-          <button class="btn btn-default" type="button" (click)="open()" [class.pending]="openPending" [pending]="openPending" [icon]="true" containerClass="shortTooltip" tooltip="View" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-search" aria-hidden="true"></i></button>
+          <button class="btn btn-secondary" type="button" (click)="download()" [class.pending]="downloadPending" [pending]="downloadPending" [icon]="true" containerClass="shortTooltip" tooltip="Download" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-download" aria-hidden="true"></i></button>
+          <button class="btn btn-secondary" type="button" (click)="open()" [class.pending]="openPending" [pending]="openPending" [icon]="true" containerClass="shortTooltip" tooltip="View" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-search" aria-hidden="true"></i></button>
         </ng-container>
       </div>
     </div>

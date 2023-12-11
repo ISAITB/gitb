@@ -1,74 +1,89 @@
-<div class="form-group">
-    <label class="col-xs-3 control-label" for="parameterName">* {{nameLabel}}:</label>
-    <div class="col-xs-7"><input id="parameterName" name="parameterName" [(ngModel)]="parameter.name" class="form-control" type="text"></div>
-    <app-tooltip *ngIf="hasKey" tbTooltip="This will be displayed as a label for the property in data collection forms."></app-tooltip>
-    <app-tooltip *ngIf="!hasKey" [tbTooltip]="'An identifier for the parameter within the current '+dataService.labelEndpointLower()+'. This is displayed to users in the conformance statement detail screen and used within test cases to refer to the parameter.'"></app-tooltip>
+<div class="row">
+    <label class="col-3 col-form-label text-end" for="parameterName">* {{nameLabel}}:</label>
+    <div class="col-7"><input id="parameterName" name="parameterName" [(ngModel)]="parameter.name" class="form-control" type="text"></div>
+    <div app-tooltip class="col-auto" *ngIf="hasKey" tbTooltip="This will be displayed as a label for the property in data collection forms."></div>
+    <div app-tooltip class="col-auto" *ngIf="!hasKey" [tbTooltip]="'An identifier for the parameter within the current '+dataService.labelEndpointLower()+'. This is displayed to users in the conformance statement detail screen and used within test cases to refer to the parameter.'"></div>
 </div>
-<div class="form-group" *ngIf="hasKey">
-    <label class="col-xs-3 control-label" for="parameterKey">* Key:</label>
-    <div class="col-xs-7"><input id="parameterKey" name="parameterKey" [(ngModel)]="parameter.testKey" class="form-control" type="text"></div>
-    <app-tooltip tbTooltip="An identifier used to distinguish this property and refer to it from within test cases (if included in tests)."></app-tooltip>
+<div class="row mt-3" *ngIf="hasKey">
+    <label class="col-3 col-form-label text-end" for="parameterKey">* Key:</label>
+    <div class="col-7"><input id="parameterKey" name="parameterKey" [(ngModel)]="parameter.testKey" class="form-control" type="text"></div>
+    <div app-tooltip class="col-auto" tbTooltip="An identifier used to distinguish this property and refer to it from within test cases (if included in tests)."></div>
 </div>
-<div class="form-group">
-    <label class="col-xs-3 control-label" for="parameterDescription">Description:</label>
-    <div class="col-xs-7">
+<div class="row mt-3">
+    <label class="col-3 col-form-label text-end" for="parameterDescription">Description:</label>
+    <div class="col-7">
         <textarea id="parameterDescription" name="parameterDescription" [(ngModel)]="parameter.desc" class="form-control"></textarea>
     </div>
-    <app-tooltip *ngIf="hasKey" tbTooltip="This text will be included in a tooltip displayed for this property in data collection forms to explain its purpose."></app-tooltip>
-    <app-tooltip *ngIf="!hasKey" tbTooltip="This is presented to users when requesting a value for this parameter to explain its purpose."></app-tooltip>
+    <div app-tooltip class="col-auto" *ngIf="hasKey" tbTooltip="This text will be included in a tooltip displayed for this property in data collection forms to explain its purpose."></div>
+    <div app-tooltip class="col-auto" *ngIf="!hasKey" tbTooltip="This is presented to users when requesting a value for this parameter to explain its purpose."></div>
 </div>
-<div class="form-group">
-    <label class="col-xs-3 control-label" for="kind_1">* Value type:</label>
-    <div class="col-xs-7">
-        <label class="radio-inline"><input type="radio" name="kind" [(ngModel)]="parameter.kind" id="kind_1" value="SIMPLE">Simple
-            <app-tooltip [inline]="true" inlineType="checkLabel" tbTooltip="A plain text value."></app-tooltip>
-        </label>
-        <label class="radio-inline"><input type="radio" name="kind" [(ngModel)]="parameter.kind" id="kind_2" value="BINARY">Binary
-            <app-tooltip [inline]="true" inlineType="checkLabel" tbTooltip="A file."></app-tooltip>
-        </label>
-        <label class="radio-inline"><input type="radio" name="kind" [(ngModel)]="parameter.kind" id="kind_3" value="SECRET">Secret
-            <app-tooltip [inline]="true" inlineType="checkLabel" tbTooltip="A secret text value such as a password."></app-tooltip>
-        </label>
+<div class="row mt-3 pt-1">
+    <legend class="col-3 col-form-label text-end pt-0">* Value type:</legend>
+    <div class="col-7">
+        <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="kind" [(ngModel)]="parameter.kind" id="kind_1" value="SIMPLE">
+            <label class="form-check-label" for="kind_1">Simple
+                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" tbTooltip="A plain text value."></div>
+            </label>
+        </div>
+        <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="kind" [(ngModel)]="parameter.kind" id="kind_2" value="BINARY">
+            <label class="form-check-label" for="kind_2">Binary
+                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" tbTooltip="A file."></div>
+            </label>
+        </div>
+        <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="kind" [(ngModel)]="parameter.kind" id="kind_3" value="SECRET">
+            <label class="form-check-label" for="kind_3">Secret
+                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" tbTooltip="A secret text value such as a password."></div>
+            </label>
+        </div>
     </div>
 </div>
-<div class="form-group">
-    <label class="col-xs-3 control-label">* Properties:</label>
-    <div class="col-xs-8">
-        <label class="checkbox-inline">
-            <input type="checkbox" name="use" [(ngModel)]="parameter.use" appTrueFalseValue [trueValue]="'R'" [falseValue]="'O'">Required
-        </label>
-        <label class="checkbox-inline">
-            <input type="checkbox" name="adminOnly" [(ngModel)]="parameter.adminOnly" appTrueFalseValue [trueValue]="false" [falseValue]="true">Editable by users
-        </label>
-        <label class="checkbox-inline">
-            <input type="checkbox" name="notForTests" [(ngModel)]="parameter.notForTests" appTrueFalseValue [trueValue]="false" [falseValue]="true">Included in tests
-        </label>
-        <label class="checkbox-inline" *ngIf="!hideInExport && parameter.kind == 'SIMPLE'">
-            <input type="checkbox" name="inExports" [(ngModel)]="parameter.inExports">Included in exports
-        </label>
-        <label class="checkbox-inline" *ngIf="parameter.adminOnly">
-            <input type="checkbox" name="hidden" [(ngModel)]="parameter.hidden">Hidden
-        </label>
-        <label class="checkbox-inline" *ngIf="!parameter.adminOnly && !hideInRegistration">
-            <input type="checkbox" name="inSelfRegistration" [(ngModel)]="parameter.inSelfRegistration">Requested in self-registration
-        </label>
+<div class="row mt-3 pt-1">
+    <legend class="col-3 col-form-label text-end pt-0">* Properties:</legend>
+    <div class="col-8">
+        <div class="form-check form-check-inline">
+            <input class="form-check-input" type="checkbox" id="use" name="use" [(ngModel)]="parameter.use" appTrueFalseValue [trueValue]="'R'" [falseValue]="'O'">
+            <label class="form-check-label" for="use">Required</label>
+        </div>
+        <div class="form-check form-check-inline">
+            <input class="form-check-input" type="checkbox" id="adminOnly" name="adminOnly" [(ngModel)]="parameter.adminOnly" appTrueFalseValue [trueValue]="false" [falseValue]="true">
+            <label class="form-check-label" for="adminOnly">Editable by users</label>
+        </div>
+        <div class="form-check form-check-inline">
+            <input class="form-check-input" type="checkbox" id="notForTests" name="notForTests" [(ngModel)]="parameter.notForTests" appTrueFalseValue [trueValue]="false" [falseValue]="true">
+            <label class="form-check-label" for="notForTests">Included in tests</label>
+        </div>
+        <div class="form-check form-check-inline" *ngIf="!hideInExport && parameter.kind == 'SIMPLE'">
+            <input class="form-check-input" type="checkbox" id="inExports" name="inExports" [(ngModel)]="parameter.inExports">
+            <label class="form-check-label" for="inExports">Included in exports</label>
+        </div>
+        <div class="form-check form-check-inline" *ngIf="parameter.adminOnly">
+            <input class="form-check-input" type="checkbox" id="hidden" name="hidden" [(ngModel)]="parameter.hidden">
+            <label class="form-check-label" for="hidden">Hidden</label>
+        </div>
+        <div class="form-check form-check-inline" *ngIf="!parameter.adminOnly && !hideInRegistration">
+            <input class="form-check-input" type="checkbox" id="inSelfRegistration" name="inSelfRegistration" [(ngModel)]="parameter.inSelfRegistration">
+            <label class="form-check-label" for="inSelfRegistration">Requested in self-registration</label>
+        </div>
     </div>
 </div>
-<div class="form-group" *ngIf="dependsOnTargets.length > 0">
-    <label class="col-xs-3 control-label" for="depends">Depends on:</label>
-    <div class="col-xs-3">
-        <select id="depends" name="depends" class="form-control" [(ngModel)]="parameter.dependsOn" (change)="dependsOnChanged()">
+<div class="row mt-3" *ngIf="dependsOnTargets.length > 0">
+    <label class="col-3 col-form-label text-end" for="depends">Depends on:</label>
+    <div class="col-3">
+        <select id="depends" name="depends" class="form-control form-select" [(ngModel)]="parameter.dependsOn" (change)="dependsOnChanged()">
             <option value=""></option>
             <option *ngFor="let v of dependsOnTargets" [value]="v.key">{{v.name}}</option>
         </select>
     </div>
-    <div class="col-xs-4 no-left-padding">
+    <div class="col-4 ps-0">
         <div *ngIf="parameter.dependsOn && parameter.dependsOn != ''">
             <div *ngIf="!dependsOnTargetsMap[parameter.dependsOn].hasPresetValues">
                 <input type="text" class="form-control" name="dependsOnValue" [(ngModel)]="parameter.dependsOnValue" placeholder="Property value"/>
             </div>
             <div *ngIf="dependsOnTargetsMap[parameter.dependsOn].hasPresetValues">
-                <select name="dependsOnValue" [(ngModel)]="parameter.dependsOnValue" class="form-control">
+                <select name="dependsOnValue" [(ngModel)]="parameter.dependsOnValue" class="form-control form-select">
                     <option *ngFor="let v of dependsOnTargetsMap[parameter.dependsOn].presetValues" [value]="v.value">{{v.label}}</option>
                 </select>
             </div>
@@ -77,21 +92,23 @@
             <input type="text" readonly="readonly" class="form-control" placeholder="Property value"/>
         </div>
     </div>
-    <app-tooltip tbTooltip="Define another simple property as a prerequisite. To do so select another property and define the value that is must have. If the prerequisite property's value does not match the provided value, then the current property is hidden and never considered as required."></app-tooltip>
+    <div app-tooltip class="col-auto" tbTooltip="Define another simple property as a prerequisite. To do so select another property and define the value that is must have. If the prerequisite property's value does not match the provided value, then the current property is hidden and never considered as required."></div>
 </div>
 <div [collapse]="parameter.kind != 'SIMPLE'" [isAnimated]="true">
-    <div class="form-group">
-        <label class="col-xs-3 control-label" for="hasPresetValues">Preset values:</label>
-        <div class="col-xs-8">
-            <input id="hasPresetValues" name="hasPresetValues" type="checkbox" class="form-check" [(ngModel)]="parameter.hasPresetValues">
-            <app-tooltip [inline]="true" tbTooltip="Check this to define a set of allowed values for this property. The configured values will be displayed in the defined order as a single-selection dropdown list."></app-tooltip>
+    <div class="row mt-3 pt-1">
+        <label class="col-3 col-form-label text-end pt-0" for="hasPresetValues">Preset values:</label>
+        <div class="col-8">
+            <div class="form-check">
+                <input class="form-check-input" id="hasPresetValues" name="hasPresetValues" type="checkbox" [(ngModel)]="parameter.hasPresetValues">
+                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" tbTooltip="Check this to define a set of allowed values for this property. The configured values will be displayed in the defined order as a single-selection dropdown list."></div>
+            </div>
         </div>
     </div>
     <div [collapse]="!parameter.hasPresetValues" [isAnimated]="true">
-        <div class="form-group">
-            <div class="col-xs-8 col-xs-offset-3">
-                <div class="form-table table-container" *ngIf="parameter.presetValues!.length > 0">
-                    <table class="table">
+        <div class="row mt-3">
+            <div class="col-8 offset-3">
+                <div class="form-table table-container rounded" *ngIf="parameter.presetValues!.length > 0">
+                    <table class="table table-directive thick">
                         <thead>
                             <tr>
                                 <th>* Value</th>
@@ -106,30 +123,30 @@
                                 <td><input class="form-control" type="text" [name]="'presetValueLabel-'+index" [(ngModel)]="presetValue.label"/></td>
                                 <td class="btn-stacked-container">
                                     <div class="btn-toolbar btn-stacked">
-                                        <button *ngIf="!first" class="btn btn-xs btn-default" type="button" (click)="movePresetUp(index)" containerClass="shortTooltip" tooltip="Move up" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-chevron-up"></i></button>
-                                        <button *ngIf="!last" class="btn btn-xs btn-default" type="button" (click)="movePresetDown(index)" containerClass="shortTooltip" tooltip="Move down" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-chevron-down"></i></button>
+                                        <button *ngIf="!first" [class.top]="!first && !last" class="btn btn-xs btn-secondary" type="button" (click)="movePresetUp(index, $event)" containerClass="shortTooltip" tooltip="Move up" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-chevron-up"></i></button>
+                                        <button *ngIf="!last" [class.bottom]="!first && !last" class="btn btn-xs btn-secondary" type="button" (click)="movePresetDown(index, $event)" containerClass="shortTooltip" tooltip="Move down" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-chevron-down"></i></button>
                                     </div>
                                 </td>
-                                <td><button class="btn btn-default" type="button" (click)="removePresetValue(index)" containerClass="shortTooltip" tooltip="Delete" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-trash"></i></button></td>
+                                <td><button class="btn btn-secondary" type="button" (click)="removePresetValue(index)" containerClass="shortTooltip" tooltip="Delete" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-trash"></i></button></td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
             </div>
-            <div class="col-xs-8 col-xs-offset-3">
-                <button class="btn btn-default" type="button" (click)="addPresetValue()" containerClass="shortTooltip" tooltip="Add" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-plus"></i></button>
+            <div class="col-8 offset-3">
+                <button class="btn btn-secondary" type="button" (click)="addPresetValue()" containerClass="shortTooltip" tooltip="Add" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-plus"></i></button>
             </div>
         </div>
     </div>
-    <div class="form-group">
-        <label class="col-xs-3 control-label" for="defaultValue">Default value:</label>
-        <div class="col-xs-7">
+    <div class="row mt-3">
+        <label class="col-3 col-form-label text-end" for="defaultValue">Default value:</label>
+        <div class="col-7">
             <input *ngIf="!parameter.hasPresetValues" id="defaultValue" name="defaultValue" [(ngModel)]="parameter.defaultValue" class="form-control" type="text">
-            <select *ngIf="parameter.hasPresetValues" name="defaultValue" [(ngModel)]="parameter.defaultValue" class="form-control">
+            <select *ngIf="parameter.hasPresetValues" name="defaultValue" [(ngModel)]="parameter.defaultValue" class="form-control form-select">
                 <option></option>
                 <option *ngFor="let v of parameter.presetValues" [value]="v.value">{{v.label}}</option>
             </select>
         </div>
-        <app-tooltip tbTooltip="The default value to assign for this property for new instances if no value is provided."></app-tooltip>
+        <div app-tooltip class="col-auto" tbTooltip="The default value to assign for this property for new instances if no value is provided."></div>
     </div>
 </div>

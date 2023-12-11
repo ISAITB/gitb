@@ -1,9 +1,9 @@
 <div class="modal-body html-modal">
     <div class="previewContainer page-root">
-        <div class="page-with-margins">
+        <div class="page-with-margins mx-0">
             <div class="container">
                 <div class="row">
-                    <div class="col-md-12">
+                    <div class="col-12">
                         <div id="content" *ngIf="previewContent" [innerHtml]="previewContent | sanitizeHtml"></div>
                     </div>
                 </div>
@@ -12,5 +12,5 @@
     </div>
 </div>
 <div class="modal-footer html-modal">
-    <button type="button" class="btn btn-default" (click)="closePreview()">Close</button>
+    <button type="button" class="btn btn-secondary" (click)="closePreview()">Close</button>
 </div>

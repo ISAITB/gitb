@@ -1,17 +1,17 @@
-<div class="form-group">
-    <label class="col-xs-3 control-label" for="shortName">* Short name:</label>
-    <div class="col-xs-7"><input id="shortName" name="shortName" [(ngModel)]="domain.sname" class="form-control" type="text"></div>
-    <app-tooltip [tbTooltip]="'This is used to display the '+dataService.labelDomainLower()+' in selection lists (e.g. search filters) and tables (e.g. conformance statement creation wizard) where space is limited. Ensure this is short but still understandable by users.'"></app-tooltip>
+<div class="row mb-3">
+    <label class="col-3 col-form-label text-end" for="shortName">* Short name:</label>
+    <div class="col-7"><input id="shortName" name="shortName" [(ngModel)]="domain.sname" class="form-control" type="text"></div>
+    <div app-tooltip class="col-auto" [tbTooltip]="'This is used to display the '+dataService.labelDomainLower()+' in selection lists (e.g. search filters) and tables (e.g. conformance statement creation wizard) where space is limited. Ensure this is short but still understandable by users.'"></div>
 </div>
-<div class="form-group">
-    <label class="col-xs-3 control-label" for="fullName">* Full name:</label>
-    <div class="col-xs-7"><input id="fullName" name="fullName" [(ngModel)]="domain.fname" class="form-control" type="text"></div>
-    <app-tooltip [tbTooltip]="'This is used to display the '+dataService.labelDomainLower()+' in detail forms and reports.'"></app-tooltip>
+<div class="row mb-3">
+    <label class="col-3 col-form-label text-end" for="fullName">* Full name:</label>
+    <div class="col-7"><input id="fullName" name="fullName" [(ngModel)]="domain.fname" class="form-control" type="text"></div>
+    <div app-tooltip class="col-auto" [tbTooltip]="'This is used to display the '+dataService.labelDomainLower()+' in detail forms and reports.'"></div>
 </div>
-<div class="form-group">
-    <label class="col-xs-3 control-label" for="description">Description:</label>
-    <div class="col-xs-7">
+<div class="row mb-3">
+    <label class="col-3 col-form-label text-end" for="description">Description:</label>
+    <div class="col-7">
         <textarea id="description" name="description" [(ngModel)]="domain.description" class="form-control"></textarea>
     </div>
-    <app-tooltip [tbTooltip]="'This is used to describe and contextualise the '+dataService.labelSpecificationsLower()+' included in the '+dataService.labelDomainLower()+'. It is visible to users when managing conformance statements and may also be used as a community\'s description during self-registration (if enabled).'"></app-tooltip>
+    <div app-tooltip class="col-auto" [tbTooltip]="'This is used to describe and contextualise the '+dataService.labelSpecificationsLower()+' included in the '+dataService.labelDomainLower()+'. It is visible to users when managing conformance statements and may also be used as a community\'s description during self-registration (if enabled).'"></div>
 </div>

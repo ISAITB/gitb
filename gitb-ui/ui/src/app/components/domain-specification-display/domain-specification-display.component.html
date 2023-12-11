@@ -8,13 +8,13 @@
             <div class="btn-toolbar">
                 <ng-container *ngIf="groups.length > 0" [ngSwitch]="spec.group">
                     <ng-container *ngSwitchCase="true">
-                        <button id="button-edit" class="btn btn-default" (click)="editGroup();$event.stopPropagation();" containerClass="shortTooltip" [tooltip]="'Edit '+dataService.labelSpecificationGroupLower()" [delay]="Constants.TOOLTIP_DELAY"><span><i class="fa-solid fa-pencil"></i></span></button>
-                        <button id="button-add-option" class="btn btn-default" (click)="createOption();$event.stopPropagation();" containerClass="shortTooltip" [tooltip]="'Add '+dataService.labelSpecificationInGroupLower()" [delay]="Constants.TOOLTIP_DELAY"><span><i class="fa-solid fa-plus"></i></span></button>
+                        <button id="button-edit" class="btn btn-secondary" (click)="editGroup();$event.stopPropagation();" containerClass="shortTooltip" [tooltip]="'Edit '+dataService.labelSpecificationGroupLower()" [delay]="Constants.TOOLTIP_DELAY"><span><i class="fa-solid fa-pencil"></i></span></button>
+                        <button id="button-add-option" class="btn btn-secondary" (click)="createOption();$event.stopPropagation();" containerClass="shortTooltip" [tooltip]="'Add '+dataService.labelSpecificationInGroupLower()" [delay]="Constants.TOOLTIP_DELAY"><span><i class="fa-solid fa-plus"></i></span></button>
                     </ng-container>
                     <ng-container *ngSwitchDefault>
-                        <button id="button-remove-option" *ngIf="spec.groupId != undefined" [disable]="isPending()" [pending]="spec.removePending" [icon]="true" class="btn btn-default" (click)="removeFromGroup();$event.stopPropagation();" containerClass="shortTooltip" tooltip="Ungroup" [delay]="Constants.TOOLTIP_DELAY"><span><i class="fa-solid fa-arrow-up-right-from-square"></i></span></button>
+                        <button id="button-remove-option" *ngIf="spec.groupId != undefined" [disable]="isPending()" [pending]="spec.removePending" [icon]="true" class="btn btn-secondary" (click)="removeFromGroup();$event.stopPropagation();" containerClass="shortTooltip" tooltip="Ungroup" [delay]="Constants.TOOLTIP_DELAY"><span><i class="fa-solid fa-arrow-up-right-from-square"></i></span></button>
                         <div class="btn-group" dropdown [isDisabled]="isPending()" *ngIf="(spec.groupId && groups.length > 1) || (!spec.groupId && groups.length > 0)">
-                            <button id="button-copy" (click)="$event.stopPropagation()" [pending]="spec.copyPending" [icon]="true" dropdownToggle type="button" class="btn btn-default dropdown-toggle" aria-controls="dropdown-copy" containerClass="shortTooltip" tooltip="Copy" [delay]="Constants.TOOLTIP_DELAY"><span><i class="fa-solid fa-clone"></i></span><span class="caret withMargin"></span></button>
+                            <button id="button-copy" (click)="$event.stopPropagation()" [pending]="spec.copyPending" [icon]="true" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-copy" containerClass="shortTooltip" tooltip="Copy" [delay]="Constants.TOOLTIP_DELAY"><span><i class="fa-solid fa-clone"></i></span><span class="caret withMargin"></span></button>
                             <ul id="dropdown-copy" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-copy">
                                 <ng-container *ngFor="let group of groups">
                                     <li *ngIf="group.id != spec.groupId" role="menuitem"><a class="dropdown-item" href (click)="copyToGroup(group.id);$event.preventDefault();$event.stopPropagation()">Copy to {{group.sname}}</a></li>
@@ -22,7 +22,7 @@
                             </ul>
                         </div>
                         <div class="btn-group" dropdown [isDisabled]="isPending()" *ngIf="(spec.groupId && groups.length > 1) || (!spec.groupId && groups.length > 0)">
-                            <button id="button-move" (click)="$event.stopPropagation()" [pending]="spec.movePending" [icon]="true" dropdownToggle type="button" class="btn btn-default dropdown-toggle" aria-controls="dropdown-move" containerClass="shortTooltip" tooltip="Move" [delay]="Constants.TOOLTIP_DELAY"><span><i class="fa-solid fa-arrow-right"></i></span><span class="caret withMargin"></span></button>
+                            <button id="button-move" (click)="$event.stopPropagation()" [pending]="spec.movePending" [icon]="true" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-move" containerClass="shortTooltip" tooltip="Move" [delay]="Constants.TOOLTIP_DELAY"><span><i class="fa-solid fa-arrow-right"></i></span><span class="caret withMargin"></span></button>
                             <ul id="dropdown-move" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-move">
                                 <ng-container *ngFor="let group of groups">
                                     <li *ngIf="group.id != spec.groupId" role="menuitem"><a class="dropdown-item" href (click)="moveToGroup(group.id);$event.preventDefault();$event.stopPropagation()">Move to {{group.sname}}</a></li>
@@ -32,8 +32,8 @@
                     </ng-container>
                 </ng-container>
                 <div class="btn-toolbar btn-stacked" *ngIf="!first || !last">
-                    <button *ngIf="!first" (click)="doMoveUp();$event.preventDefault();$event.stopPropagation()" class="btn btn-xs btn-default" type="button" containerClass="shortTooltip" tooltip="Move up" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-chevron-up"></i></button>
-                    <button *ngIf="!last" (click)="doMoveDown();$event.preventDefault();$event.stopPropagation()" class="btn btn-xs btn-default" type="button" containerClass="shortTooltip" tooltip="Move down" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-chevron-down"></i></button>
+                    <button *ngIf="!first" [class.top]="!first && !last" (click)="doMoveUp($event);$event.preventDefault();$event.stopPropagation()" class="btn btn-xs btn-secondary" type="button" containerClass="shortTooltip" tooltip="Move up" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-chevron-up"></i></button>
+                    <button *ngIf="!last" [class.bottom]="!first && !last" (click)="doMoveDown($event);$event.preventDefault();$event.stopPropagation()" class="btn btn-xs btn-secondary" type="button" containerClass="shortTooltip" tooltip="Move down" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-chevron-down"></i></button>
                 </div>
             </div>
         </div>

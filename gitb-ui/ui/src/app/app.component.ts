@@ -18,7 +18,7 @@ export class AppComponent {
   }
 
   constructor() {
-    setTheme('bs3')
+    setTheme('bs5')
   }
 
 }

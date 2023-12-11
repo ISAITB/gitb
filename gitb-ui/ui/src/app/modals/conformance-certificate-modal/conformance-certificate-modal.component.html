@@ -1,57 +1,72 @@
 <div class="modal-header">
-    <h4>Report generation options</h4>
+    <div class="modal-title">Report generation options</div>
 </div>
-<form class="form-horizontal">
+<form>
     <div class="modal-body">
-        <div class="form-group">
-            <label class="col-xs-3 control-label" for="choice_report">* Report type:</label>
-            <div class="col-xs-8">
-                <label class="radio-inline"><input type="radio" [(ngModel)]="choice" name="choice" id="choice_report" [value]="Constants.REPORT_OPTION_CHOICE.REPORT">Conformance statement report</label><br/>
-                <label class="radio-inline"><input type="radio" [(ngModel)]="choice" name="choice" id="choice_detailed" [value]="Constants.REPORT_OPTION_CHOICE.DETAILED_REPORT">Conformance statement report (with test case results)</label><br/>
-                <label class="radio-inline"><input type="radio" [(ngModel)]="choice" (change)="certificateChoice()" name="choice" id="choice_cert" [value]="Constants.REPORT_OPTION_CHOICE.CERTIFICATE">Conformance certificate</label>
+        <div class="row pt-1">
+            <legend class="col-3 col-form-label text-end pt-0">* Report type:</legend>
+            <div class="col-8">
+                <div class="form-check pb-2">
+                    <input class="form-check-input" type="radio" [(ngModel)]="choice" name="choice" id="choice_report" [value]="Constants.REPORT_OPTION_CHOICE.REPORT">
+                    <label class="form-check-label" for="choice_report">Conformance statement report</label>
+                </div>
+                <div class="form-check pb-2">
+                    <input class="form-check-input" type="radio" [(ngModel)]="choice" name="choice" id="choice_detailed" [value]="Constants.REPORT_OPTION_CHOICE.DETAILED_REPORT">
+                    <label class="form-check-label" for="choice_detailed">Conformance statement report (with test case results)</label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" [(ngModel)]="choice" name="choice" id="choice_cert" [value]="Constants.REPORT_OPTION_CHOICE.CERTIFICATE">                    
+                    <label class="form-check-label" for="choice_cert">Conformance certificate</label>
+                </div>
             </div>
         </div>
-        <div [collapse]="choice != Constants.REPORT_OPTION_CHOICE.CERTIFICATE" [isAnimated]="true">
-            <div class="form-group">
-                <label class="col-xs-3 control-label">Title:</label>
-                <div class="col-xs-8">
-                    <div class="titleFormContainer">
-                        <div class="checkbox">
-                            <label>
-                                <input type="checkbox" name="includeTitle" (change)="includeTitleChanged()" [(ngModel)]="settings.includeTitle"> Included?
-                            </label>
+        <div [collapse]="choice != Constants.REPORT_OPTION_CHOICE.CERTIFICATE" [isAnimated]="true" (expanded)="certificateChoicesVisible()">
+            <div class="row my-3">
+                <label class="col-3 col-form-label text-end">Title:</label>
+                <div class="col-8">
+                    <div class="row row-cols-auto align-items-center">
+                        <div class="col-auto">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="includeTitle" name="includeTitle" (change)="includeTitleChanged()" [(ngModel)]="settings.includeTitle">
+                                <label class="form-check-label" for="includeTitle">Included?</label>
+                            </div>
                         </div>
-                        <div class="titleText">
+                        <div class="col-auto flex-grow-1">
                             <input id="title" name="title" [(ngModel)]="settings.title" [readonly]="!settings.includeTitle" class="form-control" type="text">
-                            <app-tooltip tbTooltip="Specify a specific title to use to override the default."></app-tooltip>
                         </div>
                     </div>
                 </div>
+                <div app-tooltip class="col-auto" tbTooltip="Specify a specific title to use to override the default."></div>
             </div>
-            <div class="form-group">
-                <label class="col-xs-3 control-label">Included sections:</label>
-                <div class="col-xs-8">
-                    <label class="checkbox-inline">
-                        <input type="checkbox" name="details" [(ngModel)]="settings.includeDetails">Details
-                    </label>
-                    <label class="checkbox-inline">
-                        <input type="checkbox" name="overview" [(ngModel)]="settings.includeTestStatus">Result overview
-                    </label>
-                    <label class="checkbox-inline">
-                        <input type="checkbox" name="testCases" [(ngModel)]="settings.includeTestCases">Test cases
-                    </label>
-                    <label class="checkbox-inline">
-                        <input type="checkbox" name="message" [(ngModel)]="settings.includeMessage">Message
-                    </label>
-                    <label class="checkbox-inline" *ngIf="settings.keystoreDefined">
-                        <input type="checkbox" name="signature" [(ngModel)]="settings.includeSignature">Signature
-                    </label>
+            <div class="row pt-1">
+                <legend class="col-3 col-form-label text-end pt-0">Included sections:</legend>
+                <div class="col-8">
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="checkbox" id="details" name="details" [(ngModel)]="settings.includeDetails">
+                        <label class="form-check-label" for="details">Details</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="checkbox" id="overview" name="overview" [(ngModel)]="settings.includeTestStatus">
+                        <label class="form-check-label" for="overview">Result overview</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="checkbox" id="testCases" name="testCases" [(ngModel)]="settings.includeTestCases">
+                        <label class="form-check-label" for="testCases">Test cases</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="checkbox" id="message" name="message" [(ngModel)]="settings.includeMessage">
+                        <label class="form-check-label" for="message">Message</label>
+                    </div>
+                    <div class="form-check form-check-inline" *ngIf="settings.keystoreDefined">
+                        <input class="form-check-input" type="checkbox" id="signature" name="signature" [(ngModel)]="settings.includeSignature">
+                        <label class="form-check-label" for="signature">Signature</label>
+                    </div>
                 </div>
             </div>
             <div [collapse]="!settings.includeMessage" [isAnimated]="true">
-                <div class="form-group">
-                    <label class="col-xs-3 control-label" for="messageContent">Message content:</label>
-                    <div class="col-xs-8">
+                <div class="row mt-3">
+                    <label class="col-3 col-form-label text-end" for="messageContent">Message content:</label>
+                    <div class="col-8">
                         <app-editor id="messageContent" name="messageContent" [(ngModel)]="settings.message" [type]="'pdf'" [height]="300"></app-editor>
                     </div>
                 </div>
@@ -59,7 +74,9 @@
         </div>
     </div>
     <div class="modal-footer">
-        <button class="btn btn-default" type="button" (click)="cancel()">Cancel</button>
-        <button class="btn btn-default" type="submit" (click)="generate()" [pending]="exportPending">Generate report</button>
+        <div class="btn-toolbar">
+            <button class="btn btn-secondary" type="button" (click)="cancel()">Cancel</button>
+            <button class="btn btn-secondary" type="submit" (click)="generate()" [pending]="exportPending">Generate report</button>
+        </div>
     </div>
 </form>

@@ -1,5 +1,5 @@
 import { Injectable, Renderer2, RendererFactory2 } from '@angular/core';
-import { Observable, Subject } from 'rxjs';
+import { Observable, Subject, mergeMap, of } from 'rxjs';
 import { Constants } from '../common/constants'
 import { ObjectWithId } from '../components/test-filter/object-with-id';
 import { ConformanceTestCase } from '../pages/organisation/conformance-statement/conformance-test-case';
@@ -29,6 +29,7 @@ import { PageChange } from '../types/page-change';
 import { BadgesInfo } from '../components/manage-badges/badges-info';
 import { BreadcrumbChange } from '../types/breadcrumb-change';
 import { FieldInfo } from '../types/field-info';
+import { HttpResponse } from '@angular/common/http';
 
 @Injectable({
   providedIn: 'root'
@@ -1296,6 +1297,48 @@ export class DataService {
     } else {
       return user.name!
     }
+  }
+
+  private updateThemeLink(linkId: string, token: number) {
+    const linkElement = document.getElementById(linkId)
+    if (linkElement) {
+      const href = linkElement.getAttribute('href')
+      if (href) {
+        let newHref = href.split('?')[0] + '?refresh='+ token
+        linkElement.setAttribute('href', newHref)
+      }
+    }
+  }
+
+  refreshCss() {
+    const token = Date.now()
+    this.updateThemeLink(Constants.THEME_CSS_LINK_ID, token)
+    this.updateThemeLink(Constants.THEME_FAVICON_LINK_ID, token)
+  }
+
+  binaryResponseToBlob(response: Observable<HttpResponse<ArrayBuffer>>): Observable<Blob|undefined> {
+    return response.pipe(
+      mergeMap((data) => {
+        if (data.body) {
+          let mimeType: string|undefined = undefined
+          if (data.headers.has('Content-Type')) {
+            const contentType = data.headers.get('Content-Type')
+            if (contentType) {
+              mimeType = contentType
+            }
+          }
+          let blobData: Blob
+          if (mimeType) {
+            blobData = new Blob([data.body], { type: mimeType });
+          } else {
+            blobData = new Blob([data.body]);
+          }
+          return of(blobData)
+        } else {
+          return of(undefined)
+        }
+      })
+    )
   }
 
 }

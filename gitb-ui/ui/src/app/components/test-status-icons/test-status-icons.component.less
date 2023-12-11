@@ -7,12 +7,16 @@
 .statusRootContainer {
     display: flex;
     flex-wrap: nowrap;
-    border-radius: 5px;
+    border-radius: @border-radius;
     background: @white;
     padding: 4px 8px;
     border: 1px solid @gray-light;
     justify-content: center;
     .statusContainerGroup {
+        margin-top: -4px;
+        margin-left: -8px;
+        padding-top: 4px;
+        padding-left: 8px;
         display: flex;
     }
     .statusContainer {
@@ -42,8 +46,8 @@
 }
 .popup-panel {
     border: 1px solid @gray-light;
-    border-radius: 4px;
-    box-shadow: 0 1px 5px #959595;
+    border-radius: @border-radius;
+    box-shadow: 0 1px 5px @gray-shadow;
     background: @white;
     z-index: 1;
     position: absolute;

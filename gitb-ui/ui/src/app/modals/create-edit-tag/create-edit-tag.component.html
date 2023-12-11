@@ -1,45 +1,47 @@
 <div class="modal-header">
-    <h4>{{title}}</h4>
+    <div class="modal-title">{{title}}</div>
 </div>
-<form class="form-horizontal">
+<form>
     <div class="modal-body">
-        <div class="form-group">
-            <label class="col-xs-3 control-label" for="nameIdentifier">* Name:</label>
-            <div class="col-xs-7"><input id="nameIdentifier" name="name" [(ngModel)]="tagToUse.name" class="form-control" type="text"></div>
-            <app-tooltip tbTooltip="The text to display within the tag."></app-tooltip>
+        <div class="row mb-3">
+            <label class="col-3 col-form-label text-end" for="nameIdentifier">* Name:</label>
+            <div class="col-7"><input id="nameIdentifier" name="name" [(ngModel)]="tagToUse.name" class="form-control" type="text"></div>
+            <div app-tooltip class="col-auto" tbTooltip="The text to display within the tag."></div>
         </div>
-        <div class="form-group">
-            <label class="col-xs-3 control-label" for="background">Background colour:</label>
-            <div class="col-xs-7">
-                <input id="background" name="background" class="colour-holder" readonly="readonly"
+        <div class="row mb-3">
+            <label class="col-3 col-form-label text-end" for="background">Background colour:</label>
+            <div class="col-7 d-flex">
+                <input id="background" name="background" class="form-control colour-holder" readonly="readonly"
                     [style.background]="tagToUse.background"
                     [colorPicker]="tagToUse.background!"
                     [cpOutputFormat]="'hex'"
                     (colorPickerChange)="tagToUse.background = $event">
-                <app-tooltip [inline]="true" inlineType="button" tbTooltip="The colour for the tag's background."></app-tooltip>
+                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="button" tbTooltip="The colour for the tag's background."></div>
             </div>
         </div>
-        <div class="form-group">
-            <label class="col-xs-3 control-label" for="foreground">Text colour:</label>
-            <div class="col-xs-7">
-                <input id="foreground" name="foreground" class="colour-holder" readonly="readonly"
+        <div class="row mb-3">
+            <label class="col-3 col-form-label text-end" for="foreground">Text colour:</label>
+            <div class="col-7 d-flex">
+                <input id="foreground" name="foreground" class="form-control colour-holder" readonly="readonly"
                     [style.background]="tagToUse.foreground"
                     [colorPicker]="tagToUse.foreground!"
                     [cpOutputFormat]="'hex'"
                     (colorPickerChange)="tagToUse.foreground = $event">
-                <app-tooltip [inline]="true" inlineType="button" tbTooltip="The colour for the tag's text."></app-tooltip>
+                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="button" tbTooltip="The colour for the tag's text."></div>
             </div>
         </div>
-        <div class="form-group">
-            <label class="col-xs-3 control-label" for="description">Description:</label>
-            <div class="col-xs-7">
+        <div class="row">
+            <label class="col-3 col-form-label text-end" for="description">Description:</label>
+            <div class="col-7">
                 <textarea id="description" name="description" [(ngModel)]="tagToUse.description" class="form-control"></textarea>
             </div>
-            <app-tooltip tbTooltip="A text describing what this tag means. This will be displayed as a tooltip when hovering over the tag."></app-tooltip>
+            <div app-tooltip class="col-auto" tbTooltip="A text describing what this tag means. This will be displayed as a tooltip when hovering over the tag."></div>
         </div>
     </div>
     <div class="modal-footer">
-        <button class="btn btn-default" type="button" (click)="cancel()">Cancel</button>
-        <button class="btn btn-default" type="submit" (click)="save()" [disabled]="saveDisabled()">Save</button>
+        <div class="btn-toolbar">
+            <button class="btn btn-secondary" type="button" (click)="cancel()">Cancel</button>
+            <button class="btn btn-secondary" type="submit" (click)="save()" [disabled]="saveDisabled()">Save</button>
+        </div>
     </div>
 </form>

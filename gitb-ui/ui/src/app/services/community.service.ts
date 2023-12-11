@@ -377,13 +377,41 @@ export class CommunityService {
   }
 
   exportCommunity(communityId: number, settings: ExportSettings) {
+    let path
+    if (settings.themes) {
+      path = ROUTES.controllers.RepositoryService.exportCommunityAndSettings(communityId).url
+    } else {
+      path = ROUTES.controllers.RepositoryService.exportCommunity(communityId).url
+    }
     return this.restService.post<ArrayBuffer>({
-      path: ROUTES.controllers.RepositoryService.exportCommunity(communityId).url,
+      path: path,
       data: {
         values: JSON.stringify(settings)
       },
       authenticate: true,
       arrayBuffer: true
+    })
+  }
+
+  exportSystemSettings(settings: ExportSettings) {
+    return this.restService.post<ArrayBuffer>({
+      path: ROUTES.controllers.RepositoryService.exportSystemSettings().url,
+      data: {
+        values: JSON.stringify(settings)
+      },
+      authenticate: true,
+      arrayBuffer: true
+    })
+  }
+
+  uploadSystemSettingsExport(settings: ImportSettings, archiveData: FileData) {
+    return this.restService.post<ImportPreview>({
+      path: ROUTES.controllers.RepositoryService.uploadSystemSettingsExport().url,
+      files: [{param: 'file', data: archiveData.file!}],
+      data: {
+        settings: JSON.stringify(settings)
+      },
+      authenticate: true
     })
   }
 
@@ -398,11 +426,33 @@ export class CommunityService {
     })
   }
 
+  cancelSystemSettingsImport(pendingImportId: string) {
+    return this.restService.post<void>({
+      path: ROUTES.controllers.RepositoryService.cancelSystemSettingsImport().url,
+      data: {
+        pending_id: pendingImportId
+      },
+      authenticate: true
+    })
+  }
+
   cancelCommunityImport(communityId: number, pendingImportId: string) {
     return this.restService.post<void>({
       path: ROUTES.controllers.RepositoryService.cancelCommunityImport(communityId).url,
       data: {
         pending_id: pendingImportId
+      },
+      authenticate: true
+    })
+  }
+
+  confirmSystemSettingsImport(pendingImportId: string, settings: ImportSettings, items: ImportItem[]) {
+    return this.restService.post<void>({
+      path: ROUTES.controllers.RepositoryService.confirmSystemSettingsImport().url,
+      data: {
+        settings: JSON.stringify(settings),
+        pending_id: pendingImportId,
+        items: JSON.stringify(items)
       },
       authenticate: true
     })

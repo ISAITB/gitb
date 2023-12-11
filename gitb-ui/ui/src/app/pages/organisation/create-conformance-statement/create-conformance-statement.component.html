@@ -1,9 +1,9 @@
 <div class="page conformance create">
-    <div class="panel panel-default no-bottom-margin">
-      <div class="panel-heading">
-        <h4>Create conformance statements</h4>
+    <div class="card mb-0">
+      <div class="card-header">
+        <div class="card-title">Create conformance statements</div>
       </div>
-      <div class="panel-body">
+      <div class="card-body">
         <div [ngSwitch]="dataStatus.status">
           <div class="pending-container" *ngSwitchCase="Constants.STATUS.PENDING">
             <div class="pending-icon"><app-pending-block [pending]="true"></app-pending-block></div>
@@ -12,7 +12,7 @@
           <ng-container *ngSwitchDefault>
             <ng-container [ngSwitch]="items.length == 0">
               <div *ngSwitchCase="true">
-                <div class="bg-info div-rounded div-padded" [ngSwitch]="hasOtherStatements">
+                <div class="alert alert-info rounded mb-0" [ngSwitch]="hasOtherStatements">
                   <span *ngSwitchCase="true">All available conformance statements are already created.</span>
                   <span *ngSwitchDefault>There are currently no conformance statements available to create.</span>
                 </div>
@@ -22,14 +22,14 @@
                   <app-text-filter name="statementFilter" [width]="350" [placeholder]="'Search conformance statements...'" [(ngModel)]="statementFilter" (apply)="searchStatements()"></app-text-filter>
                   <ng-container *ngIf="items.length > 0">
                     <div class="btn-group" dropdown>
-                      <button id="button-item-select" [disabled]="visibleItemCount == 0" dropdownToggle type="button" class="btn btn-default dropdown-toggle" aria-controls="dropdown-item-select">Select statements<span class="caret withMargin"></span></button>
+                      <button id="button-item-select" [disabled]="visibleItemCount == 0" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-item-select">Select statements<span class="caret withMargin"></span></button>
                       <ul id="dropdown-item-select" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-item-select">
                           <li role="menuitem"><a class="dropdown-item" href (click)="toggleCheck(true);$event.preventDefault();">Select all statements</a></li>
                           <li role="menuitem"><a class="dropdown-item" href (click)="toggleCheck(false);$event.preventDefault();">Unselect all statements</a></li>
                       </ul>
                     </div>
                     <div class="btn-group" dropdown>
-                      <button id="button-item-show" [disabled]="visibleItemCount == 0" dropdownToggle type="button" class="btn btn-default dropdown-toggle" aria-controls="dropdown-item-show">View statements<span class="caret withMargin"></span></button>
+                      <button id="button-item-show" [disabled]="visibleItemCount == 0" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-item-show">View statements<span class="caret withMargin"></span></button>
                       <ul id="dropdown-item-show" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-item-show">
                           <li role="menuitem"><a class="dropdown-item" href (click)="toggleCollapse(false);$event.preventDefault();">Expand all statements</a></li>
                           <li role="menuitem"><a class="dropdown-item" href (click)="toggleCollapse(true);$event.preventDefault();">Collapse all statements</a></li>
@@ -48,10 +48,10 @@
           </ng-container>
         </div>
       </div>
-      <div class="panel-footer">
+      <div class="card-footer">
           <div class="btn-toolbar">
-              <button type="button" class="btn btn-default" (click)="create()" [disable]="createDisabled" [pending]="createPending">Confirm</button>
-              <button type="button" class="btn btn-default" (click)="cancel()" [disabled]="createPending">Cancel</button>
+              <button type="button" class="btn btn-secondary" (click)="create()" [disable]="createDisabled" [pending]="createPending">Confirm</button>
+              <button type="button" class="btn btn-secondary" (click)="cancel()" [disabled]="createPending">Cancel</button>
           </div>
       </div>
     </div>

@@ -1,11 +1,11 @@
 <div *ngIf="!hideEndpointInfo">
     <div class="row endpoint-row">
-        <div class="col-md-1"><strong>{{this.dataService.labelEndpoint()}}</strong></div>
-        <div class="col-md-11">{{endpoint.name}}</div>
+        <div class="col-1"><strong>{{this.dataService.labelEndpoint()}}</strong></div>
+        <div class="col-11">{{endpoint.name}}</div>
     </div>
     <div class="row endpoint-row" *ngIf="endpoint.description && endpoint.description.trim() != ''">
-        <div class="col-md-1"><strong>Description</strong></div>
-        <div class="col-md-11">{{endpoint.description}}</div>
+        <div class="col-1"><strong>Description</strong></div>
+        <div class="col-11">{{endpoint.description}}</div>
     </div>
 </div>
 <div [ngClass]="{'parameter-div': !hideEndpointInfo}">

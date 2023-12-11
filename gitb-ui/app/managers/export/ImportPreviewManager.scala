@@ -81,6 +81,36 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
     }
   }
 
+  private def previewSystemSettingsImportInternal(exportedSettings: com.gitb.xml.export.Settings): ImportItem = {
+    val importTargets = ImportTargets.fromSettings(exportedSettings)
+    val targetThemeMap = mutable.Map[String, models.theme.Theme]()
+    exec(PersistenceSchema.themes
+      .filter(_.custom === true)
+      .result
+    ).foreach(x => {
+      targetThemeMap += (x.key -> x)
+    })
+    val importItemSettings = new ImportItem(Some("System settings"), ImportItemType.Settings, ImportItemMatch.Both, None, None)
+    if (importTargets.hasSettings) {
+      // Themes.
+      if (importTargets.hasThemes) {
+        exportedSettings.getThemes.getTheme.asScala.foreach { exportedTheme =>
+          val targetTheme = targetThemeMap.remove(exportedTheme.getKey)
+          if (targetTheme.isDefined) {
+            new ImportItem(Some(targetTheme.get.key), ImportItemType.Theme, ImportItemMatch.Both, Some(targetTheme.get.id.toString), Some(exportedTheme.getId), importItemSettings)
+          } else {
+            new ImportItem(Some(exportedTheme.getKey), ImportItemType.Theme, ImportItemMatch.ArchiveOnly, None, Some(exportedTheme.getId), importItemSettings)
+          }
+        }
+      }
+    }
+    // Mark items not found for deletion.
+    targetThemeMap.values.foreach { theme =>
+      new ImportItem(Some(theme.key), ImportItemType.Theme, ImportItemMatch.DBOnly, Some(theme.id.toString), None, importItemSettings)
+    }
+    importItemSettings
+  }
+
   private def previewDomainImportInternal(exportedDomain: com.gitb.xml.export.Domain, targetDomainId: Option[Long]): (DomainImportInfo, ImportItem) = {
     var targetDomain: Option[models.Domain] = None
     if (targetDomainId.isDefined) {
@@ -370,11 +400,15 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
     emails
   }
 
+  def previewSystemSettingsImport(exportedSettings: com.gitb.xml.export.Settings): ImportItem = {
+    previewSystemSettingsImportInternal(exportedSettings)
+  }
+
   def previewDomainImport(exportedDomain: com.gitb.xml.export.Domain, targetDomainId: Option[Long]): ImportItem = {
     previewDomainImportInternal(exportedDomain, targetDomainId)._2
   }
 
-  def previewCommunityImport(exportedCommunity: com.gitb.xml.export.Community, targetCommunityId: Option[Long]): (ImportItem, Option[ImportItem]) = {
+  def previewCommunityImport(exportedData: com.gitb.xml.export.Export, targetCommunityId: Option[Long]): (ImportItem, Option[ImportItem], Option[ImportItem]) = {
     var importItemCommunity: ImportItem = null
     var targetCommunity: Option[models.Communities] = None
     if (targetCommunityId.isDefined) {
@@ -384,6 +418,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
         .result
         .headOption)
     }
+    val exportedCommunity = exportedData.getCommunities.getCommunity.get(0)
     val importTargets = ImportTargets.fromCommunity(exportedCommunity)
     // Process first domain and get back reference maps.
     var targetDomainId: Option[Long] = None
@@ -396,6 +431,12 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
     if (domainImportResult._2 != null) {
       importItemDomain = Some(domainImportResult._2)
     }
+    // Process system settings.
+    var importItemSettings: Option[ImportItem] = None
+    if (exportedData.getSettings != null) {
+      importItemSettings = Some(previewSystemSettingsImport(exportedData.getSettings))
+    }
+    // Process community.
     val targetAdministratorsMap = mutable.Map[String, models.Users]()
     val targetOrganisationPropertyMap = mutable.Map[String, models.OrganisationParameters]()
     val targetOrganisationPropertyIdMap = mutable.Map[Long, models.OrganisationParameters]()
@@ -942,7 +983,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
         }
       }
     }
-    (importItemCommunity, importItemDomain)
+    (importItemCommunity, importItemDomain, importItemSettings)
   }
 
   private def getXPathFactory():XPathFactory = {
@@ -1007,7 +1048,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
     Thread.currentThread().getContextClassLoader.getResourceAsStream(xsdPath)
   }
 
-  def prepareImportPreview(tempArchiveFile: File, importSettings: ImportSettings, requireDomain: Boolean, requireCommunity: Boolean): (Option[(Int, String)], Option[Export], Option[String], Option[Path]) = {
+  def prepareImportPreview(tempArchiveFile: File, importSettings: ImportSettings, requireDomain: Boolean, requireCommunity: Boolean, requireSettings: Boolean): (Option[(Int, String)], Option[Export], Option[String], Option[Path]) = {
     var errorInformation: Option[(Int, String)] = None
     var exportData: Option[Export] = None
     var pendingImportId: Option[String] = None
@@ -1091,7 +1132,8 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
                       deleteUploadFolder = true
                       errorInformation = Some(ErrorCodes.INVALID_REQUEST, "The provided archive does not include a domain to process.")
                     }
-                  } else if (requireCommunity) {
+                  }
+                  if (requireCommunity && errorInformation.isEmpty) {
                     if (exportData.get.getCommunities != null && !exportData.get.getCommunities.getCommunity.isEmpty) {
                       if (exportData.get.getCommunities.getCommunity.size() > 1) {
                         deleteUploadFolder = true
@@ -1100,6 +1142,12 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
                     } else {
                       deleteUploadFolder = true
                       errorInformation = Some(ErrorCodes.INVALID_REQUEST, "The provided archive does not include a community to process.")
+                    }
+                  }
+                  if (requireSettings && errorInformation.isEmpty) {
+                    if (exportData.get.getSettings == null) {
+                      deleteUploadFolder = true
+                      errorInformation = Some(ErrorCodes.INVALID_REQUEST, "The provided archive does not include system settings to process.")
                     }
                   }
                 }
