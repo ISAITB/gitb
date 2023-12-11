@@ -50,6 +50,7 @@ export class EditorComponent implements OnInit, ControlValueAccessor {
       menubar: false,
       branding: false,
       base_url: this.dataService.completePath('/assets/build/tinymce'),
+      cache_suffix: this.dataService.configuration.versionNumber,
       content_css: 'assets/build/styles.css,api/theme/css',
       body_class: 'editor-body',
       suffix: '.min'
