@@ -62,5 +62,12 @@
         ]]></notes>
         <packageUrl regex="true">^pkg:maven/ch\.qos\.logback/logback\-classic@.*$</packageUrl>
         <vulnerabilityName>CVE-2023-6378</vulnerabilityName>
-    </suppress>    
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: jackson-databind-2.15.3.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.fasterxml\.jackson\.core/jackson\-databind@.*$</packageUrl>
+        <cve>CVE-2023-35116</cve>
+    </suppress>
 </suppressions>

@@ -73,7 +73,7 @@
         <!-- Other version overrides - START -->
         <version.woodstox>6.5.1</version.woodstox> <!-- Woodstox version to resolve CVE-2022-40152. This needs to match the version included in CXF core (currently at 4.0.2). -->
         <version.pdfbox>2.0.30</version.pdfbox>
-        <version.logback>1.4.13</version.logback> <!-- Logback override to resolve CVE-2023-6378 -->
+        <version.logback>1.4.14</version.logback> <!-- Logback override to resolve CVE-2023-6378 and CVE-2023-6481 -->
         <!-- Other version overrides - END -->
         <!-- Properties used for filtering replacements -->
         <timestamp>${maven.build.timestamp}</timestamp>
