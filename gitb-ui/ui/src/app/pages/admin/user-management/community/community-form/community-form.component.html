@@ -72,7 +72,7 @@
                     <label class="col-3 col-form-label text-end pt-0" for="description">Community description:</label>
                     <div class="col-7">
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" (change)="descriptionCheckChanged()" [disabled]="community.domain == undefined" id="descriptionCheck" name="descriptionCheck" [(ngModel)]="community.sameDescriptionAsDomain">
+                            <input class="form-check-input" type="checkbox" (change)="descriptionCheckChanged()" [disabled]="community.domainId == undefined" id="descriptionCheck" name="descriptionCheck" [(ngModel)]="community.sameDescriptionAsDomain">
                             <label class="form-check-label" for="descriptionCheck">Same as {{dataService.labelDomainLower()}}</label>
                         </div>
                     </div>
