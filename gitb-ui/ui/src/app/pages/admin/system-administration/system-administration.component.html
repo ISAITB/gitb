@@ -1,7 +1,7 @@
 <div class="page">
     <div class="card">
         <div class="card-header clickable" (click)="configsCollapsed = !configsCollapsed">
-            <div class="card-title">System configuration</div>
+            <div class="card-title"><app-collapsing-icon [isCollapsed]="configsCollapsed"></app-collapsing-icon>System configuration</div>
         </div>
         <div [collapse]="configsCollapsed" [isAnimated]="true">
             <div class="configsContainer" [ngSwitch]="configValuesPending">
