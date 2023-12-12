@@ -16,6 +16,7 @@ val commonsTextVersion = "1.11.0"
 val jjwtVersion = "0.11.5"
 val gitbTypesVersion = "1.22.0-SNAPSHOT"
 val jettyVersion = "11.0.18"
+val bouncyCastleVersion = "1.77"
 
 useCoursier := false
 
@@ -54,7 +55,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.play" %% "play-slick" % "5.1.0",
   "com.typesafe.play" %% "play-json" % "2.9.4",
   "org.pac4j" %% "play-pac4j" % "11.1.0-PLAY2.8",
-  "org.pac4j" % "pac4j-cas-clientv4" % "5.7.2",
+  "org.pac4j" % "pac4j-cas-clientv4" % "5.7.2" exclude("org.bouncycastle", "bcpkix-jdk15on"),
   "ch.qos.logback" % "logback-classic" % "1.4.7", // When upgrading to Play 2.9.0 this could be removed (Play 2.9.0 upgrades to 1.4.11).
   "org.apache.commons" % "commons-lang3" % "3.14.0",
   "com.fasterxml.jackson.module" %% "jackson-module-scala" % jacksonVersion,
@@ -85,7 +86,8 @@ libraryDependencies ++= Seq(
   "com.sun.xml.stream.buffer" % "streambuffer" % "2.1.0",
   "com.sun.xml.ws" % "policy" % "4.0.1",
   "org.glassfish.gmbal" % "gmbal-api-only" % "4.0.3",
-  "org.bouncycastle" % "bcmail-jdk18on" % "1.77",
+  "org.bouncycastle" % "bcmail-jdk18on" % bouncyCastleVersion,
+  "org.bouncycastle" % "bcpkix-jdk18on" % bouncyCastleVersion,
   "org.apache.pdfbox" % "pdfbox" % "2.0.30",
   "org.jasypt" % "jasypt" % "1.9.3",
   "org.apache.httpcomponents" % "httpclient" % "4.5.14",

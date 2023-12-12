@@ -250,4 +250,11 @@
         <packageUrl regex="true">^pkg:maven/com\.typesafe\.akka/akka\-actor_2\.13@.*$</packageUrl>
         <vulnerabilityName>CVE-2023-45865</vulnerabilityName>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: ch.qos.logback.logback-core-1.4.7.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/ch\.qos\.logback/logback\-core@.*$</packageUrl>
+        <cve>CVE-2023-6378</cve>
+    </suppress>
 </suppressions>
