@@ -10,7 +10,7 @@ import managers.export.ImportCompleteManager
 import models.Constants
 import models.Enums.UserRole
 import org.apache.commons.io.FileUtils
-import org.apache.commons.lang3.{RandomStringUtils, StringUtils}
+import org.apache.commons.lang3.StringUtils
 import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
 import play.api.Environment
@@ -237,13 +237,7 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext, actorSystem: Actor
         } else {
           containedFiles.foreach { file =>
             if (file.getName.toLowerCase.endsWith(".zip")) {
-              val moveArchive = importCompleteManager.importSandboxData(file, archiveKey)._1
-              if (moveArchive) {
-                // Ensure a unique name in the "processed" folder.
-                val targetFile = repositoryUtils.getDataProcessedFolder().toPath.resolve("export_"+RandomStringUtils.random(10, false, true)+".zip").toFile
-                Files.createDirectories(targetFile.getParentFile.toPath)
-                FileUtils.moveFile(file, targetFile)
-              }
+              importCompleteManager.importSandboxData(file, archiveKey)
             }
           }
         }

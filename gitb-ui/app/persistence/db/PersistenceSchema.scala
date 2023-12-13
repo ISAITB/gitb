@@ -673,4 +673,14 @@ object PersistenceSchema {
   val themes = TableQuery[ThemesTable]
   val insertTheme = themes returning themes.map(_.id)
 
+  class ProcessedArchivesTable(tag: Tag) extends Table[ProcessedArchive](tag, "ProcessedArchives") {
+    def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
+    def hash = column[String] ("archive_hash")
+    def importTime = column[Timestamp]("import_time", O.SqlType("TIMESTAMP"))
+    def * = (id :: hash :: importTime :: HNil).mapTo[ProcessedArchive]
+  }
+
+  val processedArchives = TableQuery[ProcessedArchivesTable]
+  val insertProcessedArchive = processedArchives returning processedArchives.map(_.id)
+
 }

@@ -8,14 +8,15 @@ import models.Enums.ImportItemType.ImportItemType
 import models.Enums.TestSuiteReplacementChoice.PROCEED
 import models.Enums._
 import models.theme.ThemeFiles
-import models.{Badges, Enums, NamedFile, TestCaseDeploymentAction, TestCases, TestSuiteDeploymentAction}
+import models.{Badges, Enums, NamedFile, ProcessedArchive, TestCaseDeploymentAction, TestCases, TestSuiteDeploymentAction}
 import org.apache.commons.codec.binary.Base64
+import org.apache.commons.codec.digest.DigestUtils
 import org.apache.commons.io.{FileUtils, FilenameUtils}
 import org.apache.commons.lang3.StringUtils
 import org.slf4j.LoggerFactory
 import persistence.db._
 import play.api.db.slick.DatabaseConfigProvider
-import utils.{ClamAVClient, CryptoUtil, MimeUtil, RepositoryUtils}
+import utils.{ClamAVClient, CryptoUtil, MimeUtil, RepositoryUtils, TimeUtil}
 
 import java.io.{ByteArrayInputStream, File}
 import java.nio.file.{Files, Paths}
@@ -2214,81 +2215,101 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
     exec(completeFileSystemFinalisation(ctx, dbAction).transactionally)
   }
 
+  private def recordProcessedArchive(archiveHash: String): Unit = {
+    exec(PersistenceSchema.insertProcessedArchive += ProcessedArchive(0L, archiveHash, TimeUtil.getCurrentTimestamp()))
+  }
+
+  private def findProcessedArchive(archiveHash: String): Option[ProcessedArchive] = {
+    exec(PersistenceSchema.processedArchives.filter(_.hash === archiveHash).result.headOption)
+  }
+
   def importSandboxData(archive: File, archiveKey: String): (Boolean, Option[String]) = {
     var processingComplete = false
     var errorMessage: Option[String] = None
-    logger.info("Processing data archive ["+archive.getName+"]")
-    val importSettings = new ImportSettings()
-    importSettings.encryptionKey = Some(archiveKey)
-    val preparationResult = importPreviewManager.prepareImportPreview(archive, importSettings, requireDomain = false, requireCommunity = false, requireSettings = false)
-    try {
-      if (preparationResult._1.isDefined) {
-        errorMessage = Some(preparationResult._1.get._2)
-        logger.warn("Unable to process data archive ["+archive.getName+"]: " + preparationResult._1.get._2)
-      } else {
-        if (preparationResult._2.get.getCommunities != null && !preparationResult._2.get.getCommunities.getCommunity.isEmpty) {
-          // Community import.
-          val exportData = preparationResult._2.get
-          // Step 1 - prepare import.
-          var importItems: List[ImportItem] = null
-          val previewResult = importPreviewManager.previewCommunityImport(exportData, None)
-          val items = new ListBuffer[ImportItem]()
-          // First add domain.
-          if (previewResult._2.isDefined) {
-            items += previewResult._2.get
-          }
-          // Next add community.
-          items += previewResult._1
-          // Finally add system settings.
-          if (previewResult._3.isDefined) {
-            items += previewResult._3.get
-          }
-          importItems = items.toList
-          // Set all import items to proceed.
-          approveImportItems(importItems)
-          // Step 2 - Import.
-          importSettings.dataFilePath = Some(importPreviewManager.getPendingImportFile(preparationResult._4.get, preparationResult._3.get).get.toPath)
-          completeCommunityImport(exportData, importSettings, importItems, None, canDoAdminOperations = true, None)
-          // Avoid processing this archive again.
-          processingComplete = true
-        } else if (preparationResult._2.get.getDomains != null && !preparationResult._2.get.getDomains.getDomain.isEmpty) {
-          // Domain import.
-          val exportedDomain = preparationResult._2.get.getDomains.getDomain.get(0)
-          // Step 1 - prepare import.
-          val importItems = List(importPreviewManager.previewDomainImport(exportedDomain, None))
-          // Set all import items to proceed.
-          approveImportItems(importItems)
-          // Step 2 - Import.
-          importSettings.dataFilePath = Some(importPreviewManager.getPendingImportFile(preparationResult._4.get, preparationResult._3.get).get.toPath)
-          completeDomainImport(exportedDomain, importSettings, importItems, None, canAddOrDeleteDomain = true)
-          // Avoid processing this archive again.
-          processingComplete = true
-        } else if (preparationResult._2.get.getSettings != null) {
-          // System settings import.
-          val exportedSettings = preparationResult._2.get.getSettings
-          // Step 1 - prepare import.
-          val importItems = List(importPreviewManager.previewSystemSettingsImport(exportedSettings))
-          // Set all import items to proceed.
-          approveImportItems(importItems)
-          // Step 2 - Import.
-          importSettings.dataFilePath = Some(importPreviewManager.getPendingImportFile(preparationResult._4.get, preparationResult._3.get).get.toPath)
-          completeSystemSettingsImport(exportedSettings, importSettings, importItems, canManageSettings = true)
-          // Avoid processing this archive again.
-          processingComplete = true
+    var archiveHash: Option[String] = None
+    Using(Files.newInputStream(archive.toPath)) { inputStream =>
+      archiveHash = Some(DigestUtils.sha256Hex(inputStream))
+    }
+    val processedArchive = findProcessedArchive(archiveHash.get)
+    if (processedArchive.isDefined) {
+      logger.info("Skipping data archive ["+archive.getName+"] as it has already been processed on ["+TimeUtil.serializeTimestamp(processedArchive.get.processTime)+"]")
+    } else {
+      logger.info("Processing data archive ["+archive.getName+"]")
+      val importSettings = new ImportSettings()
+      importSettings.encryptionKey = Some(archiveKey)
+      val preparationResult = importPreviewManager.prepareImportPreview(archive, importSettings, requireDomain = false, requireCommunity = false, requireSettings = false)
+      try {
+        if (preparationResult._1.isDefined) {
+          errorMessage = Some(preparationResult._1.get._2)
+          logger.warn("Unable to process data archive ["+archive.getName+"]: " + preparationResult._1.get._2)
         } else {
-          errorMessage = Some("Provided data archive is empty")
-          logger.warn(errorMessage.get)
+          if (preparationResult._2.get.getCommunities != null && !preparationResult._2.get.getCommunities.getCommunity.isEmpty) {
+            // Community import.
+            val exportData = preparationResult._2.get
+            // Step 1 - prepare import.
+            var importItems: List[ImportItem] = null
+            val previewResult = importPreviewManager.previewCommunityImport(exportData, None)
+            val items = new ListBuffer[ImportItem]()
+            // First add domain.
+            if (previewResult._2.isDefined) {
+              items += previewResult._2.get
+            }
+            // Next add community.
+            items += previewResult._1
+            // Finally add system settings.
+            if (previewResult._3.isDefined) {
+              items += previewResult._3.get
+            }
+            importItems = items.toList
+            // Set all import items to proceed.
+            approveImportItems(importItems)
+            // Step 2 - Import.
+            importSettings.dataFilePath = Some(importPreviewManager.getPendingImportFile(preparationResult._4.get, preparationResult._3.get).get.toPath)
+            completeCommunityImport(exportData, importSettings, importItems, None, canDoAdminOperations = true, None)
+            // Avoid processing this archive again.
+            processingComplete = true
+          } else if (preparationResult._2.get.getDomains != null && !preparationResult._2.get.getDomains.getDomain.isEmpty) {
+            // Domain import.
+            val exportedDomain = preparationResult._2.get.getDomains.getDomain.get(0)
+            // Step 1 - prepare import.
+            val importItems = List(importPreviewManager.previewDomainImport(exportedDomain, None))
+            // Set all import items to proceed.
+            approveImportItems(importItems)
+            // Step 2 - Import.
+            importSettings.dataFilePath = Some(importPreviewManager.getPendingImportFile(preparationResult._4.get, preparationResult._3.get).get.toPath)
+            completeDomainImport(exportedDomain, importSettings, importItems, None, canAddOrDeleteDomain = true)
+            // Avoid processing this archive again.
+            processingComplete = true
+          } else if (preparationResult._2.get.getSettings != null) {
+            // System settings import.
+            val exportedSettings = preparationResult._2.get.getSettings
+            // Step 1 - prepare import.
+            val importItems = List(importPreviewManager.previewSystemSettingsImport(exportedSettings))
+            // Set all import items to proceed.
+            approveImportItems(importItems)
+            // Step 2 - Import.
+            importSettings.dataFilePath = Some(importPreviewManager.getPendingImportFile(preparationResult._4.get, preparationResult._3.get).get.toPath)
+            completeSystemSettingsImport(exportedSettings, importSettings, importItems, canManageSettings = true)
+            // Avoid processing this archive again.
+            processingComplete = true
+          } else {
+            errorMessage = Some("Provided data archive is empty")
+            logger.warn(errorMessage.get)
+          }
+        }
+      } catch {
+        case e:Exception =>
+          logger.warn("Unexpected exception while processing data archive ["+archive.getName+"]", e)
+      } finally {
+        if (preparationResult._4.isDefined) {
+          FileUtils.deleteQuietly(preparationResult._4.get.toFile)
         }
       }
-    } catch {
-      case e:Exception =>
-        logger.warn("Unexpected exception while processing data archive ["+archive.getName+"]", e)
-    } finally {
-      if (preparationResult._4.isDefined) {
-        FileUtils.deleteQuietly(preparationResult._4.get.toFile)
+      if (processingComplete) {
+        recordProcessedArchive(archiveHash.get)
       }
+      logger.info("Finished processing data archive ["+archive.getName+"]")
     }
-    logger.info("Finished processing data archive ["+archive.getName+"]")
     (processingComplete, errorMessage)
   }
 
