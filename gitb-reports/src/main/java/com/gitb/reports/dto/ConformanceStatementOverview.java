@@ -19,6 +19,7 @@ public class ConformanceStatementOverview {
     private Boolean includeDetails = Boolean.TRUE;
     private Boolean includeMessage = Boolean.FALSE;
     private Boolean includeTestStatus = Boolean.TRUE;
+    private Boolean includePageNumbers = Boolean.TRUE;
     private String message;
     private String labelDomain;
     private String labelSpecification;
@@ -173,6 +174,14 @@ public class ConformanceStatementOverview {
 
     public void setIncludeTestStatus(Boolean includeTestStatus) {
         this.includeTestStatus = includeTestStatus;
+    }
+
+    public Boolean getIncludePageNumbers() {
+        return includePageNumbers;
+    }
+
+    public void setIncludePageNumbers(Boolean includePageNumbers) {
+        this.includePageNumbers = includePageNumbers;
     }
 
     public String getMessage() {

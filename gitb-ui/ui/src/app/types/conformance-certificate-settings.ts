@@ -9,6 +9,7 @@ export interface ConformanceCertificateSettings {
     includeTestCases: boolean
     includeDetails: boolean
     includeSignature: boolean
+    includePageNumbers: boolean
     keystoreFile?: File
     keystoreType?: string
     passwordsSet: boolean

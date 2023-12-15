@@ -1532,7 +1532,8 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                   0L, Option(exportedCommunity.getConformanceCertificateSettings.getTitle), Option(exportedCommunity.getConformanceCertificateSettings.getMessage),
                   exportedCommunity.getConformanceCertificateSettings.isAddTitle, exportedCommunity.getConformanceCertificateSettings.isAddMessage, exportedCommunity.getConformanceCertificateSettings.isAddResultOverview,
                   exportedCommunity.getConformanceCertificateSettings.isAddTestCases, exportedCommunity.getConformanceCertificateSettings.isAddDetails,
-                  exportedCommunity.getConformanceCertificateSettings.isAddSignature, keystoreFile, keystoreType, keystorePassword, keyPassword,
+                  exportedCommunity.getConformanceCertificateSettings.isAddSignature, exportedCommunity.getConformanceCertificateSettings.isAddPageNumbers,
+                  keystoreFile, keystoreType, keystorePassword, keyPassword,
                   communityId.get
                 )
               , updatePasswords =true, removeKeystore =false

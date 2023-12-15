@@ -3,7 +3,7 @@
 <html>
 	<head>
 	    <style>
-	        <@commonStyles.basic />
+	        <@commonStyles.basic includePageNumbers/>
 	        <@commonStyles.testResult />
 	        <@commonStyles.testCoverage />
             .column.left {

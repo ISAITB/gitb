@@ -751,7 +751,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityRes
   def getConformanceCertificateSettingsWrapper(communityId: Long, defaultIfMissing: Boolean): Option[ConformanceCertificates] = {
     var settings = exec(getConformanceCertificateSettings(communityId))
     if (settings.isEmpty && defaultIfMissing) {
-      settings = Some(ConformanceCertificates(0L, Some("Conformance Certificate"), None, includeTitle = true, includeMessage = false, includeTestStatus = true, includeTestCases = true, includeDetails = true, includeSignature = false, None, None, None, None, communityId))
+      settings = Some(ConformanceCertificates(0L, Some("Conformance Certificate"), None, includeTitle = true, includeMessage = false, includeTestStatus = true, includeTestCases = true, includeDetails = true, includeSignature = false, includePageNumbers = true, None, None, None, None, communityId))
     }
     settings
   }
@@ -769,7 +769,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityRes
           if (removeKeystore) {
             val q = for {c <- PersistenceSchema.conformanceCertificates if c.id === existingSettings.get.id} yield (
               c.message, c.title, c.includeTitle, c.includeMessage, c.includeTestStatus, c.includeTestCases, c.includeDetails,
-              c.includeSignature, c.keystoreFile, c.keystoreType, c.keystorePassword, c.keyPassword
+              c.includeSignature, c.includePageNumbers, c.keystoreFile, c.keystoreType, c.keystorePassword, c.keyPassword
             )
             actions += q.update(
               conformanceCertificate.message,
@@ -780,6 +780,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityRes
               conformanceCertificate.includeTestCases,
               conformanceCertificate.includeDetails,
               conformanceCertificate.includeSignature,
+              conformanceCertificate.includePageNumbers,
               None,
               None,
               None,
@@ -793,7 +794,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityRes
             if (updatePasswords) {
               val q = for {c <- PersistenceSchema.conformanceCertificates if c.id === existingSettings.get.id} yield (
                 c.message, c.title, c.includeTitle, c.includeMessage, c.includeTestStatus, c.includeTestCases, c.includeDetails,
-                c.includeSignature, c.keystoreType, c.keystorePassword, c.keyPassword
+                c.includeSignature, c.includePageNumbers, c.keystoreType, c.keystorePassword, c.keyPassword
               )
               var keystorePasswordToUpdate = conformanceCertificate.keystorePassword
               if (keystorePasswordToUpdate.isDefined) {
@@ -812,6 +813,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityRes
                 conformanceCertificate.includeTestCases,
                 conformanceCertificate.includeDetails,
                 conformanceCertificate.includeSignature,
+                conformanceCertificate.includePageNumbers,
                 conformanceCertificate.keystoreType,
                 keystorePasswordToUpdate,
                 keyPasswordToUpdate
@@ -819,7 +821,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityRes
             } else {
               val q = for {c <- PersistenceSchema.conformanceCertificates if c.id === existingSettings.get.id} yield (
                 c.message, c.title, c.includeTitle, c.includeMessage, c.includeTestStatus, c.includeTestCases, c.includeDetails,
-                c.includeSignature, c.keystoreType
+                c.includeSignature, c.includePageNumbers, c.keystoreType
               )
               actions += q.update(
                 conformanceCertificate.message,
@@ -830,6 +832,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityRes
                 conformanceCertificate.includeTestCases,
                 conformanceCertificate.includeDetails,
                 conformanceCertificate.includeSignature,
+                conformanceCertificate.includePageNumbers,
                 conformanceCertificate.keystoreType
               )
             }

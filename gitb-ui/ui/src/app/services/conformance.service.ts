@@ -321,6 +321,7 @@ export class ConformanceService {
       data.includeTestCases = settings.includeTestCases != undefined && settings.includeTestCases
       data.includeDetails = settings.includeDetails != undefined && settings.includeDetails
       data.includeSignature = settings.includeSignature != undefined && settings.includeSignature
+      data.includePageNumbers = settings.includePageNumbers != undefined && settings.includePageNumbers
       data.keystoreType = settings.keystoreType
       data.keystorePassword = settings.keystorePassword
       data.keyPassword = settings.keyPassword
@@ -374,6 +375,7 @@ export class ConformanceService {
       data.includeTestCases = settings.includeTestCases != undefined && settings.includeTestCases
       data.includeDetails = settings.includeDetails != undefined && settings.includeDetails
       data.includeSignature = settings.includeSignature != undefined && settings.includeSignature
+      data.includePageNumbers = settings.includePageNumbers != undefined && settings.includePageNumbers
       if (data.includeMessage) {
         data.message = settings.message
       }
@@ -419,6 +421,7 @@ export class ConformanceService {
       settingsData.includeTestCases = settings.includeTestCases != undefined && settings.includeTestCases
       settingsData.includeDetails = settings.includeDetails != undefined && settings.includeDetails
       settingsData.includeSignature = settings.includeSignature != undefined && settings.includeSignature
+      settingsData.includePageNumbers = settings.includePageNumbers != undefined && settings.includePageNumbers
       if (settingsData.includeMessage) {
         settingsData.message = settings.message
       }

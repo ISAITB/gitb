@@ -1,12 +1,14 @@
-<#macro basic>
+<#macro basic pageCounter=true>
     @page {
         size: a4 landscape;
         margin: 50px;
-        @bottom-right {
-            font-family: "FreeSans";
-            font-size: 10px;
-            content: 'Page '+counter(page)+' of '+counter(pages);
-        }
+        <#if pageCounter>
+            @bottom-right {
+                font-family: "FreeSans";
+                font-size: 10px;
+                content: 'Page '+counter(page)+' of '+counter(pages);
+            }
+        </#if>
     }
     page-before {
       display: block;

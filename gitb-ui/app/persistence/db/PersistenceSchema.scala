@@ -460,12 +460,13 @@ object PersistenceSchema {
     def includeTestCases = column[Boolean]("include_test_cases")
     def includeDetails = column[Boolean]("include_details")
     def includeSignature = column[Boolean]("include_signature")
+    def includePageNumbers = column[Boolean]("include_page_numbers")
     def keystoreFile = column[Option[String]]("keystore_file", O.SqlType("MEDIUMBLOB"))
     def keystoreType = column[Option[String]]("keystore_type", O.SqlType("TEXT"))
     def keystorePassword = column[Option[String]]("keystore_pass", O.SqlType("TEXT"))
     def keyPassword = column[Option[String]]("key_pass", O.SqlType("TEXT"))
     def community = column[Long]("community")
-    def * = (id, title, message, includeTitle, includeMessage, includeTestStatus, includeTestCases, includeDetails, includeSignature, keystoreFile, keystoreType, keystorePassword, keyPassword, community) <> (ConformanceCertificates.tupled, ConformanceCertificates.unapply)
+    def * = (id, title, message, includeTitle, includeMessage, includeTestStatus, includeTestCases, includeDetails, includeSignature, includePageNumbers, keystoreFile, keystoreType, keystorePassword, keyPassword, community) <> (ConformanceCertificates.tupled, ConformanceCertificates.unapply)
   }
   val conformanceCertificates = TableQuery[ConformanceCertificatesTable]
   val insertConformanceCertificate = conformanceCertificates returning conformanceCertificates.map(_.id)

@@ -423,6 +423,7 @@ public class ReportGenerator {
             }
             parameters.put("includeTestStatus", overview.getIncludeTestStatus());
             parameters.put("includeDetails", overview.getIncludeDetails());
+            parameters.put("includePageNumbers", overview.getIncludePageNumbers());
             parameters.put("labelDomain", overview.getLabelDomain());
             parameters.put("labelSpecification", overview.getLabelSpecification());
             parameters.put("labelActor", overview.getLabelActor());

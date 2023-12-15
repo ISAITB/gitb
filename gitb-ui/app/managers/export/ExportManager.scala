@@ -756,6 +756,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, systemConfigura
         communityData.getConformanceCertificateSettings.setAddTestCases(certificateSettings.get.includeTestCases)
         communityData.getConformanceCertificateSettings.setAddResultOverview(certificateSettings.get.includeTestStatus)
         communityData.getConformanceCertificateSettings.setAddSignature(certificateSettings.get.includeSignature)
+        communityData.getConformanceCertificateSettings.setAddPageNumbers(certificateSettings.get.includePageNumbers)
         communityData.getConformanceCertificateSettings.setMessage(certificateSettings.get.message.orNull)
         communityData.getConformanceCertificateSettings.setTitle(certificateSettings.get.title.orNull)
         // Keystore settings.

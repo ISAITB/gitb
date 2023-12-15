@@ -59,6 +59,7 @@
         <xsd:attribute name="addTestCases" type="xsd:boolean" default="false"/>
         <xsd:attribute name="addMessage" type="xsd:boolean" default="false"/>
         <xsd:attribute name="addSignature" type="xsd:boolean" default="false"/>
+        <xsd:attribute name="addPageNumbers" type="xsd:boolean" default="true"/>
     </xsd:complexType>
     <xsd:complexType name="SelfRegistrationSettings">
         <xsd:sequence>
