@@ -5,17 +5,19 @@ import exceptions.{ErrorCodes, InvalidRequestException}
 import models.Enums._
 import controllers.util.Parameters
 import models.theme.{Theme, ThemeFiles}
-import models.{Actor, Badges, Communities, CommunityResources, Domain, Endpoints, ErrorTemplates, FileInfo, LandingPages, LegalNotices, NamedFile, Options, OrganisationParameterValues, Organizations, SpecificationGroups, Specifications, SystemParameterValues, Systems, Trigger, TriggerData, Triggers, Users}
+import models.{Actor, Badges, Communities, CommunityResources, Domain, Endpoints, ErrorTemplates, FileInfo, LandingPages, LegalNotices, NamedFile, OrganisationParameterValues, Organizations, SpecificationGroups, Specifications, SystemParameterValues, Systems, Trigger, TriggerData, Triggers, Users}
 import org.apache.commons.lang3.StringUtils
 import org.mindrot.jbcrypt.BCrypt
 import play.api.mvc._
-import utils.{ClamAVClient, CryptoUtil, HtmlUtil, JsonUtil}
+import utils.{ClamAVClient, CryptoUtil, HtmlUtil, JsonUtil, MimeUtil}
 
 import java.io.File
 import java.util.concurrent.ThreadLocalRandom
 import scala.collection.mutable.ListBuffer
 
 object ParameterExtractor {
+
+  private final val imageMimeTypes = Set("image/png", "image/x-png", "image/jpeg", "image/gif", "image/svg+xml", "image/vnd.microsoft.icon", "image/x-icon")
 
   def paramMap(request: Request[AnyContent]): Option[Map[String, Seq[String]]] = {
     var paramMap: Option[Map[String, Seq[String]]] = None
@@ -772,6 +774,9 @@ object ParameterExtractor {
       if (Configurations.ANTIVIRUS_SERVER_ENABLED && ParameterExtractor.virusPresentInFiles(filesToScan.toList.map(_.file))) {
         resultToReturn = Some(ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "Files failed virus scan."))
       }
+      if (resultToReturn.isEmpty && filesToScan.exists(p => !imageMimeTypes.contains(MimeUtil.getMimeType(p.file.toPath)))) {
+        resultToReturn = Some(ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_REQUEST, "Only image files are allowed."))
+      }
     }
     if (resultToReturn.isEmpty) {
       themeFiles = Some(ThemeFiles(headerLogoFile, footerLogoFile, faviconFile))
@@ -831,8 +836,13 @@ object ParameterExtractor {
       otherBadgeToStore = Some(NamedFile(files(Parameters.OTHER_BADGE).file, files(Parameters.OTHER_BADGE).name))
       filesToScan += otherBadgeToStore.get
     }
-    if (Configurations.ANTIVIRUS_SERVER_ENABLED && filesToScan.nonEmpty && ParameterExtractor.virusPresentInFiles(filesToScan.toList.map(_.file))) {
-      resultToReturn = Some(ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "Files failed virus scan."))
+    if (filesToScan.nonEmpty) {
+      if (Configurations.ANTIVIRUS_SERVER_ENABLED && ParameterExtractor.virusPresentInFiles(filesToScan.toList.map(_.file))) {
+        resultToReturn = Some(ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "Files failed virus scan."))
+      }
+      if (resultToReturn.isEmpty && filesToScan.exists(p => !imageMimeTypes.contains(MimeUtil.getMimeType(p.file.toPath)))) {
+        resultToReturn = Some(ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_REQUEST, "Only image files are allowed."))
+      }
     }
     (Some(Badges(hasSuccess, hasFailure, hasOther, successBadgeToStore, failureBadgeToStore, otherBadgeToStore)), resultToReturn)
   }
