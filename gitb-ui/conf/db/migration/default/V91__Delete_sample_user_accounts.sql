@@ -1,0 +1,2 @@
+DELETE FROM `users` WHERE `organization` = 1 and `email` = 'admin@test.com' and `onetime_password` = 1 and `password` = '$2a$04$FqO8.xUGvC7yF7P2mHS9XeypSBuHqs20ob6F6junA5NKEXbVSZwS6';
+UPDATE `users` SET `email` = 'admin@itb' WHERE `organization` = 0 and `email` = 'test@test.com' and `onetime_password` = 1 and `password` = '$2a$04$FqO8.xUGvC7yF7P2mHS9XeypSBuHqs20ob6F6junA5NKEXbVSZwS6';

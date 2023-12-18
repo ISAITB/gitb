@@ -27,7 +27,7 @@ import scala.concurrent.duration.DurationInt
 import scala.util.Using
 
 @Singleton
-class PostStartHook @Inject() (implicit ec: ExecutionContext, actorSystem: ActorSystem, systemConfigurationManager: SystemConfigurationManager, testResultManager: TestResultManager, testExecutionManager: TestExecutionManager, importCompleteManager: ImportCompleteManager, repositoryUtils: RepositoryUtils, environment: Environment, userManager: UserManager) {
+class PostStartHook @Inject() (implicit ec: ExecutionContext, authenticationManager: AuthenticationManager, actorSystem: ActorSystem, systemConfigurationManager: SystemConfigurationManager, testResultManager: TestResultManager, testExecutionManager: TestExecutionManager, importCompleteManager: ImportCompleteManager, repositoryUtils: RepositoryUtils, environment: Environment, userManager: UserManager) {
 
   private def logger = LoggerFactory.getLogger(this.getClass)
 
@@ -40,6 +40,7 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext, actorSystem: Actor
     initialiseTestbedClient()
     adaptSystemConfiguration()
     checkMasterPassword()
+    setupAdministratorOneTimePassword()
     destroyIdleSessions()
     cleanupPendingTestSuiteUploads()
     cleanupTempFiles()
@@ -165,6 +166,20 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext, actorSystem: Actor
             "values.")
         }
       }
+    }
+  }
+
+  private def setupAdministratorOneTimePassword(): Unit = {
+    val defaultUsername = "admin@itb"
+    val newDefaultAdminAccountPassword = authenticationManager.replaceDefaultAdminPasswordIfNeeded(defaultUsername)
+    if (newDefaultAdminAccountPassword.isDefined) {
+      logger.info(
+        "The default administrator account has a onetime password to be replaced on first login.\n\n\n" +
+        "###############################################################################\n\n" +
+        s"The one-time password for the default administrator account [$defaultUsername] is:\n\n"+
+        s"${newDefaultAdminAccountPassword.get}\n\n"+
+        "###############################################################################\n\n"
+      )
     }
   }
 
