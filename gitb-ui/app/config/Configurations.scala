@@ -261,8 +261,8 @@ object Configurations {
       }
 
       // Configure HMAC processing
-      val hmacKey = System.getenv.getOrDefault("HMAC_KEY", "devKey")
-      val hmacKeyWindow = System.getenv.getOrDefault("HMAC_WINDOW", "10000")
+      val hmacKey = fromEnv("HMAC_KEY", "devKey")
+      val hmacKeyWindow = fromEnv("HMAC_WINDOW", "10000")
       HmacUtils.configure(hmacKey, hmacKeyWindow.toLong)
 
       AUTHENTICATION_COOKIE_PATH = fromEnv("AUTHENTICATION_COOKIE_PATH", conf.getString("authentication.cookie.path"))
@@ -326,30 +326,6 @@ object Configurations {
 
       DATA_ARCHIVE_KEY = fromEnv("DATA_ARCHIVE_KEY", "")
       DATA_WEB_INIT_ENABLED = fromEnv("DATA_WEB_INIT_ENABLED", "false").toBoolean
-
-      // Mode - START
-      /*
-        Use of default values for secrets should only be allowed for a development instance.
-       */
-      if (DATA_ARCHIVE_KEY.nonEmpty || DATA_WEB_INIT_ENABLED) {
-        TESTBED_MODE = Constants.SandboxMode
-      } else {
-        TESTBED_MODE = fromEnv("TESTBED_MODE", Constants.DevelopmentMode)
-        // Test that no default values are being used.
-        if (TESTBED_MODE == Constants.ProductionMode) {
-          val appSecret = fromEnv("APPLICATION_SECRET", "value_used_during_development_to_be_replaced_in_production")
-          val dbPassword = fromEnv("DB_DEFAULT_PASSWORD", "gitb")
-          val masterPassword = String.valueOf(MASTER_PASSWORD)
-          if (appSecret == "value_used_during_development_to_be_replaced_in_production" || appSecret == "CHANGE_ME" ||
-            masterPassword == "value_used_during_development_to_be_replaced_in_production" || masterPassword == "CHANGE_ME" ||
-            dbPassword == "gitb" || dbPassword == "CHANGE_ME" ||
-            hmacKey == "devKey" || hmacKey == "CHANGE_ME"
-          ) {
-            throw new IllegalStateException("Your application is running in production mode with default values set for sensitive configuration properties. Switch to development mode by setting on gitb-ui the TESTBED_MODE environment variable to \""+Constants.DevelopmentMode+"\" or replace these settings accordingly. For more details refer to the test bed's production installation guide.")
-          }
-        }
-      }
-      // Mode - END
       TEST_SESSION_ARCHIVE_THRESHOLD = fromEnv("TEST_SESSION_ARCHIVE_THRESHOLD", conf.getString("testsession.archive.threshold")).toInt
       TEST_SESSION_EMBEDDED_REPORT_DATA_THRESHOLD = fromEnv("TEST_SESSION_EMBEDDED_REPORT_DATA_THRESHOLD", conf.getString("testsession.embeddedReportData.threshold")).toLong
       API_ROOT = conf.getString("apiPrefix")

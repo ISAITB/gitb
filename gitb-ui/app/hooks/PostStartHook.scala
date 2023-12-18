@@ -2,7 +2,7 @@ package hooks
 
 import akka.actor.ActorSystem
 import config.Configurations
-import config.Configurations.BUILD_TIMESTAMP
+import config.Configurations.{BUILD_TIMESTAMP, MASTER_PASSWORD}
 import jakarta.xml.ws.Endpoint
 import jaxws.TestbedService
 import managers._
@@ -37,6 +37,7 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext, authenticationMana
     logger.info("Starting Application")
     System.setProperty("java.io.tmpdir", System.getProperty("user.dir"))
     BUILD_TIMESTAMP = getBuildTimestamp()
+    checkOperationMode()
     initialiseTestbedClient()
     adaptSystemConfiguration()
     checkMasterPassword()
@@ -49,6 +50,43 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext, authenticationMana
     prepareRestApiDocumentation()
     prepareTheme()
     logger.info("Application has started in "+Configurations.TESTBED_MODE+" mode - release "+Constants.VersionNumber + " built at "+Configurations.BUILD_TIMESTAMP)
+  }
+
+  private def checkOperationMode(): Unit = {
+    val modeSetting = sys.env.get("TESTBED_MODE")
+    if (modeSetting.isDefined && modeSetting.get == Constants.DevelopmentMode) {
+      // Explicitly set to development mode.
+      Configurations.TESTBED_MODE = Constants.DevelopmentMode
+    } else {
+      val secretsNotForProduction = secretsSetForDevelopment()
+      if (modeSetting.isDefined && modeSetting.get == Constants.ProductionMode) {
+        if (secretsNotForProduction) {
+          // Production mode with dev-level secrets - Fail the start-up.
+          throw new IllegalStateException("Your application is running in production mode with default values set for sensitive configuration properties. Switch to development mode by setting on gitb-ui the TESTBED_MODE environment variable to \""+Constants.DevelopmentMode+"\" or replace these settings accordingly. For more details refer to the test bed's production installation guide.")
+        } else {
+          // All ok.
+          Configurations.TESTBED_MODE = Constants.ProductionMode
+        }
+      } else {
+        // Sandbox or other non-production mode.
+        Configurations.TESTBED_MODE = Constants.DevelopmentMode
+        if (secretsNotForProduction) {
+          // Log a warning.
+          logger.warn("Your application is running with default values set for sensitive configuration properties. Replace these settings accordingly and switch to production mode by setting on gitb-ui the TESTBED_MODE environment variable to \""+Constants.ProductionMode+"\". For more details refer to the test bed's production installation guide.")
+        }
+      }
+    }
+  }
+
+  private def secretsSetForDevelopment(): Boolean = {
+    val appSecret = sys.env.getOrElse("APPLICATION_SECRET", "value_used_during_development_to_be_replaced_in_production")
+    val dbPassword = sys.env.getOrElse("DB_DEFAULT_PASSWORD", "gitb")
+    val hmacKey = sys.env.getOrElse("HMAC_KEY", "devKey")
+    val masterPassword = String.valueOf(MASTER_PASSWORD)
+    appSecret == "value_used_during_development_to_be_replaced_in_production" || appSecret == "CHANGE_ME" ||
+      masterPassword == "value_used_during_development_to_be_replaced_in_production" || masterPassword == "CHANGE_ME" ||
+      dbPassword == "gitb" || dbPassword == "CHANGE_ME" ||
+      hmacKey == "devKey" || hmacKey == "CHANGE_ME"
   }
 
   private def adaptSystemConfiguration(): Unit = {
