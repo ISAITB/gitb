@@ -8,7 +8,7 @@ lazy val root = (project in file(".")).enablePlugins(PlayScala, SbtWeb)
   .settings(dependencyCheckSuppressionFile := Some(file("project/owasp-suppressions.xml")))
 
 scalaVersion := "2.13.12"
-val akkaVersion = "2.6.21" // Keep to the 2.6.* version for the Apache 2.0 Licence (also, this needs to match the version in Play).
+val pekkoVersion = "1.0.2"
 val jacksonVersion = "2.15.3"
 val cxfVersion = "4.0.3"
 val commonsTextVersion = "1.11.0"
@@ -42,14 +42,14 @@ libraryDependencies ++= Seq(
   "org.eclipse.jetty" % "jetty-server" % jettyVersion,
   "org.eclipse.jetty" % "jetty-util" % jettyVersion,
   // ... END.
-  "com.typesafe.akka" %% "akka-actor" % akkaVersion,
-  "com.typesafe.akka" %% "akka-actor-typed" % akkaVersion,
-  "com.typesafe.akka" %% "akka-remote" % akkaVersion,
-  "com.typesafe.akka" %% "akka-stream" % akkaVersion,
-  "com.typesafe.akka" %% "akka-slf4j" % akkaVersion,
-  "com.typesafe.akka" %% "akka-serialization-jackson" % akkaVersion,
-  "com.typesafe.play" %% "play-slick" % "5.2.0",
-  "org.pac4j" %% "play-pac4j" % "12.0.0-PLAY2.9",
+  "org.apache.pekko" %% "pekko-actor" % pekkoVersion,
+  "org.apache.pekko" %% "pekko-actor-typed" % pekkoVersion,
+  "org.apache.pekko" %% "pekko-remote" % pekkoVersion,
+  "org.apache.pekko" %% "pekko-stream" % pekkoVersion,
+  "org.apache.pekko" %% "pekko-slf4j" % pekkoVersion,
+  "org.apache.pekko" %% "pekko-serialization-jackson" % pekkoVersion,
+  "org.playframework" %% "play-slick" % "6.0.0",
+  "org.pac4j" %% "play-pac4j" % "12.0.0-PLAY3.0",
   "org.pac4j" % "pac4j-cas" % "6.0.0" exclude("org.bouncycastle", "bcpkix-jdk15on"),
   "org.apache.commons" % "commons-lang3" % "3.14.0",
   "com.fasterxml.jackson.module" %% "jackson-module-scala" % jacksonVersion,

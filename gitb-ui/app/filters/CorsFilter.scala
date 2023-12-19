@@ -1,6 +1,6 @@
 package filters
 
-import akka.stream.Materializer
+import org.apache.pekko.stream.Materializer
 import org.slf4j.{Logger, LoggerFactory}
 import play.api.http.HeaderNames._
 import play.api.mvc._

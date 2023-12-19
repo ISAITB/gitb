@@ -1,10 +1,11 @@
 package actors
 
 import actors.events.TriggerEvent
-import akka.actor._
-import javax.inject.Inject
 import managers.TriggerManager
+import org.apache.pekko.actor._
 import org.slf4j.LoggerFactory
+
+import javax.inject.Inject
 
 object TriggerActor {
   val actorName = "trigger-actor"

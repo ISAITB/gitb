@@ -1,9 +1,9 @@
 package com.gitb.engine.actors.processors;
 
-import akka.actor.ActorRef;
-import akka.dispatch.Futures;
-import akka.dispatch.OnFailure;
-import akka.dispatch.OnSuccess;
+import org.apache.pekko.actor.ActorRef;
+import org.apache.pekko.dispatch.Futures;
+import org.apache.pekko.dispatch.OnFailure;
+import org.apache.pekko.dispatch.OnSuccess;
 import com.gitb.core.AnyContent;
 import com.gitb.core.ErrorCode;
 import com.gitb.core.StepStatus;
@@ -113,16 +113,16 @@ public class ProcessStepProcessorActor extends AbstractProcessingStepProcessorAc
             return taskPromise.future();
         }, getContext().dispatcher());
 
-        future.onSuccess(new OnSuccess<>() {
+        future.foreach(new OnSuccess<>() {
             @Override
             public void onSuccess(Future<TestStepReportType> reportFuture) {
-                reportFuture.onSuccess(new OnSuccess<>() {
+                reportFuture.foreach(new OnSuccess<>() {
                     @Override
                     public void onSuccess(TestStepReportType report) {
                         promise.trySuccess(report);
                     }
                 }, getContext().dispatcher());
-                reportFuture.onFailure(new OnFailure() {
+                reportFuture.failed().foreach(new OnFailure() {
                     @Override
                     public void onFailure(Throwable failure) {
                         promise.tryFailure(failure);

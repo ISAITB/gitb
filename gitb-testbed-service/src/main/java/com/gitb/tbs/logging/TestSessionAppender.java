@@ -1,6 +1,6 @@
 package com.gitb.tbs.logging;
 
-import akka.actor.ActorRef;
+import org.apache.pekko.actor.ActorRef;
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
 import ch.qos.logback.classic.spi.ILoggingEvent;

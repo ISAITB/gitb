@@ -1,7 +1,7 @@
 package managers
 
 import actors.events.{ConformanceStatementCreatedEvent, OrganisationCreatedEvent, SystemCreatedEvent, TriggerEvent}
-import akka.actor.ActorSystem
+import org.apache.pekko.actor.ActorSystem
 import javax.inject.{Inject, Singleton}
 import models.{OrganisationCreationDbInfo, SystemCreationDbInfo}
 

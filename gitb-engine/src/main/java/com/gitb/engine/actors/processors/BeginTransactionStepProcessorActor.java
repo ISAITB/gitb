@@ -1,13 +1,12 @@
 package com.gitb.engine.actors.processors;
 
-import akka.actor.ActorContext;
-import akka.actor.ActorRef;
 import com.gitb.core.Configuration;
 import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.messaging.MessagingContext;
 import com.gitb.engine.messaging.TransactionContext;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.tdl.BeginTransaction;
+import org.apache.pekko.actor.ActorRef;
 
 /**
  * Created by serbay on 9/29/14.

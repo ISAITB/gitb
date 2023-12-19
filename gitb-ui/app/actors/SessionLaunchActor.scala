@@ -2,7 +2,7 @@ package actors
 
 import actors.events.TestSessionStartedEvent
 import actors.events.sessions.{PrepareTestSessionsEvent, SessionLaunchState, StartNextTestSessionEvent, TerminateAllSessionsEvent, TestSessionCompletedEvent, TestSessionConfiguredEvent}
-import akka.actor.{Actor, PoisonPill}
+import org.apache.pekko.actor.{Actor, PoisonPill}
 import com.gitb.core.AnyContent
 import com.gitb.tpl.TestCase
 import managers.{ReportManager, TestbedBackendClient, TriggerHelper}

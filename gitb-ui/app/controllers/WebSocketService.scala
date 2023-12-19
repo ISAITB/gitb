@@ -1,8 +1,8 @@
 package controllers
 
 import actors.WebSocketActor
-import akka.actor.ActorSystem
-import akka.stream.Materializer
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.stream.Materializer
 import javax.inject.Inject
 import play.api.libs.json.JsValue
 import play.api.libs.streams.ActorFlow

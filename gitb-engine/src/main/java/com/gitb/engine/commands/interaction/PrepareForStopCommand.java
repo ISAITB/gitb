@@ -1,6 +1,6 @@
 package com.gitb.engine.commands.interaction;
 
-import akka.actor.ActorRef;
+import org.apache.pekko.actor.ActorRef;
 import com.gitb.engine.commands.common.SessionCommand;
 
 /**

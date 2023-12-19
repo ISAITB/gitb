@@ -1,6 +1,6 @@
 package hooks
 
-import akka.actor.ActorSystem
+import org.apache.pekko.actor.ActorSystem
 import jaxws.TestbedService
 import org.slf4j.LoggerFactory
 import play.api.inject.ApplicationLifecycle

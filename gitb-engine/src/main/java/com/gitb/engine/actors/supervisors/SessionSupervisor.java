@@ -1,9 +1,9 @@
 package com.gitb.engine.actors.supervisors;
 
-import akka.actor.ActorRef;
-import akka.actor.ActorSystem;
-import akka.actor.PoisonPill;
-import akka.actor.Props;
+import org.apache.pekko.actor.ActorRef;
+import org.apache.pekko.actor.ActorSystem;
+import org.apache.pekko.actor.PoisonPill;
+import org.apache.pekko.actor.Props;
 import com.gitb.engine.actors.SessionActor;
 import com.gitb.engine.commands.session.CreateCommand;
 import com.gitb.engine.commands.session.DestroyCommand;

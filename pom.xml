@@ -54,7 +54,7 @@
         <version.gmbalApi>4.0.3</version.gmbalApi>
         <version.commonsConfiguration>2.9.0</version.commonsConfiguration>
         <version.commonsText>1.11.0</version.commonsText>
-        <version.akka>2.6.21</version.akka>
+        <version.pekko>1.0.2</version.pekko>
         <version.rgxgen>1.4</version.rgxgen>
         <version.saajImpl>3.0.2</version.saajImpl>
         <version.helgerCommons>11.1.3</version.helgerCommons>
@@ -306,9 +306,9 @@
                 <version>${version.commonsConfiguration}</version>
             </dependency>
             <dependency>
-                <groupId>com.typesafe.akka</groupId>
-                <artifactId>akka-actor_2.12</artifactId>
-                <version>${version.akka}</version>
+                <groupId>org.apache.pekko</groupId>
+                <artifactId>pekko-actor_2.13</artifactId>
+                <version>${version.pekko}</version>
             </dependency>
             <dependency>
                 <groupId>com.github.curious-odd-man</groupId>

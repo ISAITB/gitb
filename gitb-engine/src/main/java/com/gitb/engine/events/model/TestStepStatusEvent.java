@@ -1,6 +1,6 @@
 package com.gitb.engine.events.model;
 
-import akka.actor.ActorRef;
+import org.apache.pekko.actor.ActorRef;
 import com.gitb.core.StepStatus;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.tr.TestStepReportType;

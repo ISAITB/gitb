@@ -1,6 +1,6 @@
 package hooks
 
-import akka.actor.ActorSystem
+import org.apache.pekko.actor.ActorSystem
 import config.Configurations
 import config.Configurations.{BUILD_TIMESTAMP, MASTER_PASSWORD}
 import jakarta.xml.ws.Endpoint

@@ -1,7 +1,7 @@
 package actors
 
 import actors.events.sessions.TestSessionCompletedEvent
-import akka.actor.{Actor, PoisonPill}
+import org.apache.pekko.actor.{Actor, PoisonPill}
 import com.gitb.core.ValueEmbeddingEnumeration
 import com.gitb.tbs.{Instruction, InteractWithUsersRequest, TestStepStatus}
 import com.gitb.tr.TAR
