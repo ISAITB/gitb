@@ -264,4 +264,18 @@
         <packageUrl regex="true">^pkg:maven/ch\.qos\.logback/logback\-classic@.*$</packageUrl>
         <cve>CVE-2023-6378</cve>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: com.typesafe.play.shaded-asynchttpclient-2.2.4.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.typesafe\.play/shaded\-asynchttpclient@.*$</packageUrl>
+        <cve>CVE-2014-3630</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: com.typesafe.play.shaded-asynchttpclient-2.2.4.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.typesafe\.play/shaded\-asynchttpclient@.*$</packageUrl>
+        <cve>CVE-2015-2156</cve>
+    </suppress>
 </suppressions>

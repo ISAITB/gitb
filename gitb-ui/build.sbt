@@ -50,7 +50,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-serialization-jackson" % akkaVersion,
   "com.typesafe.play" %% "play-slick" % "5.2.0",
   "org.pac4j" %% "play-pac4j" % "12.0.0-PLAY2.9",
-  "org.pac4j" % "pac4j-cas" % "6.0.0",
+  "org.pac4j" % "pac4j-cas" % "6.0.0" exclude("org.bouncycastle", "bcpkix-jdk15on"),
   "org.apache.commons" % "commons-lang3" % "3.14.0",
   "com.fasterxml.jackson.module" %% "jackson-module-scala" % jacksonVersion,
   "com.fasterxml.jackson.core" % "jackson-databind" % jacksonVersion,
