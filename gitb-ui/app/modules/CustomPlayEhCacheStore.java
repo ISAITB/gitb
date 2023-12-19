@@ -2,7 +2,6 @@ package modules;
 
 import com.google.inject.Provider;
 import net.sf.ehcache.Element;
-import org.pac4j.core.util.CommonHelper;
 import org.pac4j.play.store.PlayEhCacheStore;
 import play.cache.SyncCacheApi;
 
@@ -35,10 +34,7 @@ public class CustomPlayEhCacheStore<K, O> extends PlayEhCacheStore<K, O> {
 
     @Override
     public String toString() {
-        return CommonHelper.toNiceString(this.getClass(), "cache", getCache(),
-                "idleTimeout", getTimeout(),
-                "maxTimeout", getMaxTimeout(),
-                "ehcache", getEhcache());
+        return "CustomPlayEhCacheStore(cache=" + getCache() + ", idleTimeout=" + getTimeout() + ", maxTimeout=" + getMaxTimeout() + ", ehcache=getEhcache()";
     }
 
     public int getMaxTimeout() {

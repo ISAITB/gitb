@@ -11,6 +11,7 @@ import org.pac4j.core.authorization.authorizer.IsAuthenticatedAuthorizer
 import org.pac4j.core.client.Clients
 import org.pac4j.core.client.direct.AnonymousClient
 import org.pac4j.core.config.Config
+import org.pac4j.core.context.FrameworkParameters
 import org.pac4j.core.context.session.SessionStore
 import org.pac4j.core.http.ajax.DefaultAjaxRequestResolver
 import org.pac4j.core.http.callback.QueryParameterCallbackUrlResolver
@@ -47,7 +48,6 @@ class SecurityModule extends AbstractModule {
     // callback
     val callbackController = new CallbackController()
     callbackController.setDefaultUrl(buildDefaultCallbackUrl())
-    callbackController.setCallbackLogic(new CustomCallbackLogic)
     bind(classOf[CallbackController]).toInstance(callbackController)
 
     // logout
@@ -92,7 +92,7 @@ class SecurityModule extends AbstractModule {
   }
 
   @Provides
-  def provideConfig(casClient: CasClient, casProxyReceptor: CasProxyReceptor, callbackUrlResolver: QueryParameterCallbackUrlResolver): Config = {
+  def provideConfig(casClient: CasClient, casProxyReceptor: CasProxyReceptor, callbackUrlResolver: QueryParameterCallbackUrlResolver, sessionStore: SessionStore): Config = {
     var clients: Clients = null
     if (Configurations.AUTHENTICATION_SSO_ENABLED) {
       clients = new Clients(Configurations.AUTHENTICATION_SSO_CALLBACK_URL, casClient, casProxyReceptor)
@@ -108,6 +108,8 @@ class SecurityModule extends AbstractModule {
     } else {
       config.addAuthorizer("_authenticated_", new BasicAuthorizer)
     }
+    config.setCallbackLogic(new CustomCallbackLogic)
+    config.setSessionStoreFactory((_: FrameworkParameters) => sessionStore);
     config.setHttpActionAdapter(new PlayHttpActionAdapter())
     config.addMatcher("excludedPath", new PathMatcher()
       .excludePath("/")

@@ -10,7 +10,7 @@
 		<link rel="stylesheet" href='assets/build/styles.css?v=@config.resourceVersionNumber'>
 		<link id="themeFaviconLink" rel="icon" href="favicon.ico">
 		<link id="themeCssLink" rel="stylesheet" href="api/theme/css">
-		<script type='text/javascript' src='webjars/jquery/3.6.4/jquery.min.js'></script>
+		<script type='text/javascript' src='webjars/jquery/3.7.1/jquery.min.js'></script>
 		<script type='text/javascript' src='assets/components/gitb-cookie-cleanup.js?v=@config.resourceVersionNumber'></script>
 	</head>
 	<body>
@@ -45,31 +45,31 @@
 										<div>
 											<button id="loginOption" type="button" class="btn btn-primary" style="padding:20px">Click to log in</button>
 										</div>
-										<div style="margin-left:20px;">
+										<div class="ms-4">
 											@if(config.ssoEnabled) {
-											<p><b style="margin-right:10px;">Assigned a new role by an administrator?</b><a id="linkOption" href="#">Confirm your new role</a>.</p>
+											<p class="mb-0"><b class="me-2">Assigned a new role by an administrator?</b><a id="linkOption" href="#">Confirm your new role</a>.</p>
 											}
 											@if(config.demosEnabled && config.registrationEnabled) {
-											<span><b style="margin-right:10px;">New to the Test Bed?</b><a id="registerOption" href="#">Register in a public community</a> or <a id="demoOption" href="#">try out our demos</a></span>.
+											<p class="mt-2 mb-0"><b class="me-2">New to the Test Bed?</b><a id="registerOption" href="#">Register in a public community</a> or <a id="demoOption" href="#">try out our demos</a>.</p>
 											} else {@if(config.demosEnabled && !config.registrationEnabled) {
-											<span><b style="margin-right:10px;">New to the Test Bed?</b><a id="demoOption" href="#">Try out our demos</a>.</span>
+											<p class="mt-2 mb-0"><b class="me-2">New to the Test Bed?</b><a id="demoOption" href="#">Try out our demos</a>.</p>
 											} else {@if(!config.demosEnabled && config.registrationEnabled) {
-											<span><b style="margin-right:10px;">New to the Test Bed?</b><a id="registerOption" href="#">Register in a public community</a>.</span>
+											<p class="mt-2 mb-0"><b class="me-2">New to the Test Bed?</b><a id="registerOption" href="#">Register in a public community</a>.</p>
 											}}}
 										</div>
 									</div>
 								</div>
-								<div class="alert alert-info rounded div-spaced padded mb-0">
+								<div class="alert alert-info rounded padded mt-3 mb-0">
 									@if(config.ssoEnabled) {
-									<p>To connect to the Test Bed you need to first authenticate using your EU Login account. If you are new to EU Login follow <a href="@config.euLoginUseGuideLink" target="blank">this tutorial</a> to get started.</p>
+									<p class="mb-0">To connect to the Test Bed you need to first authenticate using your EU Login account. If you are new to EU Login follow <a href="@config.euLoginUseGuideLink" target="blank">this tutorial</a> to get started.</p>
 									}
-									<p style="margin-bottom: 0px"><b>Privacy note:</b> By connecting you consent to the use of cookies to manage your session.
+									<p class="mt-2 mb-0"><b>Privacy note:</b> By connecting you consent to the use of cookies to manage your session.
 										@if(config.hasDefaultLegalNotice) {
 										<span>Please refer to our <a href="#" data-toggle="modal" data-target="#legalModal">legal notice</a> for more information.</span>
 										}
 									</p>
 									@if(config.ssoEnabled && config.inMigrationPeriod) {
-									<p style="margin-top: 10px; margin-bottom: 0px"><b>Migration note:</b> If you have been using a functional account to log in click <a id="migrateOption" href="#">here</a> to migrate it to EU Login. Step-by-step instructions are available in <a href="@config.euLoginMigrationGuideLink" target="blank">this guide</a>.</p>
+									<p class="mt-2 mb-0"><b>Migration note:</b> If you have been using a functional account to log in click <a id="migrateOption" href="#">here</a> to migrate it to EU Login. Step-by-step instructions are available in <a href="@config.euLoginMigrationGuideLink" target="blank">this guide</a>.</p>
 									}
 								</div>
 							</div>
