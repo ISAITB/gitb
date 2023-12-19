@@ -2,7 +2,7 @@ package managers
 
 import actors.SessionManagerActor
 import actors.events.sessions.PrepareTestSessionsEvent
-import akka.actor.{ActorRef, ActorSystem}
+import org.apache.pekko.actor.{ActorRef, ActorSystem}
 import com.gitb.core.{ActorConfiguration, AnyContent, Configuration, ValueEmbeddingEnumeration}
 import exceptions.{AutomationApiException, ErrorCodes, MissingRequiredParameterException}
 import models.Enums.InputMappingMatchType

@@ -1,6 +1,6 @@
 package com.gitb.engine;
 
-import akka.actor.ActorRef;
+import org.apache.pekko.actor.ActorRef;
 import com.gitb.core.ActorConfiguration;
 import com.gitb.core.AnyContent;
 import com.gitb.core.ErrorCode;

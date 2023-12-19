@@ -1,7 +1,7 @@
 package com.gitb.engine.events;
 
-import akka.actor.ActorRef;
-import akka.event.japi.LookupEventBus;
+import org.apache.pekko.actor.ActorRef;
+import org.apache.pekko.event.japi.LookupEventBus;
 import com.gitb.engine.events.model.InputEvent;
 
 /**

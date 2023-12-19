@@ -1,6 +1,6 @@
 package filters
 
-import akka.stream.Materializer
+import org.apache.pekko.stream.Materializer
 import com.gitb.utils.HmacUtils
 import config.Configurations
 import config.Configurations.API_ROOT

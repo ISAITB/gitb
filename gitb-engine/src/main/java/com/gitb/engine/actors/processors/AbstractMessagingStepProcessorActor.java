@@ -1,7 +1,7 @@
 package com.gitb.engine.actors.processors;
 
-import akka.dispatch.OnFailure;
-import akka.dispatch.OnSuccess;
+import org.apache.pekko.dispatch.OnFailure;
+import org.apache.pekko.dispatch.OnSuccess;
 import com.gitb.core.*;
 import com.gitb.engine.expr.ExpressionHandler;
 import com.gitb.engine.expr.resolvers.VariableResolver;

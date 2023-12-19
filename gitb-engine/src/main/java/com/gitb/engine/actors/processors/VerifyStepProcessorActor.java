@@ -1,12 +1,11 @@
 package com.gitb.engine.actors.processors;
 
-import akka.actor.ActorContext;
-import akka.actor.ActorRef;
 import com.gitb.engine.actors.ActorSystem;
 import com.gitb.engine.processors.IProcessor;
 import com.gitb.engine.processors.VerifyProcessor;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.tdl.Verify;
+import org.apache.pekko.actor.ActorRef;
 
 /**
  * Created by serbay on 9/10/14.

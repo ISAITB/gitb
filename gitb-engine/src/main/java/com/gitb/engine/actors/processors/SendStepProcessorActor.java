@@ -1,9 +1,9 @@
 package com.gitb.engine.actors.processors;
 
-import akka.actor.ActorRef;
-import akka.dispatch.Futures;
-import akka.dispatch.OnFailure;
-import akka.dispatch.OnSuccess;
+import org.apache.pekko.actor.ActorRef;
+import org.apache.pekko.dispatch.Futures;
+import org.apache.pekko.dispatch.OnFailure;
+import org.apache.pekko.dispatch.OnSuccess;
 import com.gitb.core.Configuration;
 import com.gitb.core.ErrorCode;
 import com.gitb.core.StepStatus;

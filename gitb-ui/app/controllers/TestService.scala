@@ -2,7 +2,7 @@ package controllers
 
 import actors.events.TestSessionStartedEvent
 import actors.events.sessions.TerminateAllSessionsEvent
-import akka.actor.ActorSystem
+import org.apache.pekko.actor.ActorSystem
 import com.gitb.tbs._
 import config.Configurations
 import controllers.util._

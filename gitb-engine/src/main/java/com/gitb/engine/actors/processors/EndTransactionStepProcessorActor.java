@@ -1,6 +1,6 @@
 package com.gitb.engine.actors.processors;
 
-import akka.actor.ActorRef;
+import org.apache.pekko.actor.ActorRef;
 import com.gitb.engine.messaging.MessagingContext;
 import com.gitb.engine.testcase.TestCaseContext;
 import com.gitb.engine.testcase.TestCaseScope;

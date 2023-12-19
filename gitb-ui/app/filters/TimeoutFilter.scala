@@ -8,7 +8,7 @@ import scala.concurrent.duration.FiniteDuration
 import config.Configurations
 import java.util.concurrent.TimeUnit
 
-import akka.stream.Materializer
+import org.apache.pekko.stream.Materializer
 import javax.inject.Inject
 import org.slf4j.{Logger, LoggerFactory}
 

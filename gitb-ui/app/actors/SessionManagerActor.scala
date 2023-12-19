@@ -1,7 +1,7 @@
 package actors
 
 import actors.events.sessions.{PrepareTestSessionsEvent, TestSessionConfiguredEvent}
-import akka.actor.{Actor, ActorContext, ActorRef}
+import org.apache.pekko.actor.{Actor, ActorContext, ActorRef}
 import com.gitb.tbs.{ConfigurationCompleteRequest, InteractWithUsersRequest, TestStepStatus}
 import org.slf4j.LoggerFactory
 import play.api.libs.concurrent.InjectedActorSupport

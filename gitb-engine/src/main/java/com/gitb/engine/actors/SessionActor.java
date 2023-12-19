@@ -1,10 +1,10 @@
 package com.gitb.engine.actors;
 
-import akka.actor.AbstractActor;
-import akka.actor.ActorRef;
-import akka.actor.PoisonPill;
-import akka.actor.Props;
-import akka.dispatch.Futures;
+import org.apache.pekko.actor.AbstractActor;
+import org.apache.pekko.actor.ActorRef;
+import org.apache.pekko.actor.PoisonPill;
+import org.apache.pekko.actor.Props;
+import org.apache.pekko.dispatch.Futures;
 import com.gitb.core.AnyContent;
 import com.gitb.core.LogLevel;
 import com.gitb.core.StepStatus;

@@ -3,9 +3,9 @@ package modules
 import actors.{SessionLaunchActor, SessionManagerActor, SessionUpdateActor, TriggerActor}
 import com.google.inject.AbstractModule
 import hooks.{BeforeStartHook, OnStopHook, PostStartHook}
-import play.api.libs.concurrent.AkkaGuiceSupport
+import play.api.libs.concurrent.PekkoGuiceSupport
 
-class Module extends AbstractModule with AkkaGuiceSupport {
+class Module extends AbstractModule with PekkoGuiceSupport {
 
   override def configure() = {
     bind(classOf[BeforeStartHook]).asEagerSingleton()
