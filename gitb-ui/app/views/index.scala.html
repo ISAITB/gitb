@@ -47,23 +47,27 @@
 										</div>
 										<div class="ms-4">
 											@if(config.ssoEnabled) {
+											   @if(config.demosEnabled || config.registrationEnabled) {
+											<p><b class="me-2">Assigned a new role by an administrator?</b><a id="linkOption" href="#">Confirm your new role</a>.</p>
+											   } else {
 											<p class="mb-0"><b class="me-2">Assigned a new role by an administrator?</b><a id="linkOption" href="#">Confirm your new role</a>.</p>
+											   }
 											}
 											@if(config.demosEnabled && config.registrationEnabled) {
-											<p class="mt-2 mb-0"><b class="me-2">New to the Test Bed?</b><a id="registerOption" href="#">Register in a public community</a> or <a id="demoOption" href="#">try out our demos</a>.</p>
+											<p class="mb-0"><b class="me-2">New to the Test Bed?</b><a id="registerOption" href="#">Register in a public community</a> or <a id="demoOption" href="#">try out our demos</a>.</p>
 											} else {@if(config.demosEnabled && !config.registrationEnabled) {
-											<p class="mt-2 mb-0"><b class="me-2">New to the Test Bed?</b><a id="demoOption" href="#">Try out our demos</a>.</p>
+											<p class="mb-0"><b class="me-2">New to the Test Bed?</b><a id="demoOption" href="#">Try out our demos</a>.</p>
 											} else {@if(!config.demosEnabled && config.registrationEnabled) {
-											<p class="mt-2 mb-0"><b class="me-2">New to the Test Bed?</b><a id="registerOption" href="#">Register in a public community</a>.</p>
+											<p class="mb-0"><b class="me-2">New to the Test Bed?</b><a id="registerOption" href="#">Register in a public community</a>.</p>
 											}}}
 										</div>
 									</div>
 								</div>
 								<div class="alert alert-info rounded padded mt-3 mb-0">
 									@if(config.ssoEnabled) {
-									<p class="mb-0">To connect to the Test Bed you need to first authenticate using your EU Login account. If you are new to EU Login follow <a href="@config.euLoginUseGuideLink" target="blank">this tutorial</a> to get started.</p>
+									<p class="mb-2">To connect to the Test Bed you need to first authenticate using your EU Login account. If you are new to EU Login follow <a href="@config.euLoginUseGuideLink" target="blank">this tutorial</a> to get started.</p>
 									}
-									<p class="mt-2 mb-0"><b>Privacy note:</b> By connecting you consent to the use of cookies to manage your session.
+									<p class="mb-0"><b>Privacy note:</b> By connecting you consent to the use of cookies to manage your session.
 										@if(config.hasDefaultLegalNotice) {
 										<span>Please refer to our <a href="#" data-toggle="modal" data-target="#legalModal">legal notice</a> for more information.</span>
 										}
