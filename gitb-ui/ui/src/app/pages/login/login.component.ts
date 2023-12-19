@@ -2,7 +2,7 @@ import { HttpClient, HttpResponse } from '@angular/common/http';
 import { AfterViewInit, Component, OnInit } from '@angular/core';
 import { BsModalService } from 'ngx-bootstrap/modal';
 import { CookieService } from 'ngx-cookie-service';
-import { forkJoin, Observable, throwError } from 'rxjs';
+import { forkJoin, Observable, of, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { Constants } from 'src/app/common/constants';
 import { ROUTES } from 'src/app/common/global';
@@ -23,6 +23,7 @@ import { LoginResultActionNeeded } from 'src/app/types/login-result-action-neede
 import { LoginResultOk } from 'src/app/types/login-result-ok';
 import { SelfRegistrationModel } from 'src/app/types/self-registration-model.type';
 import { BaseComponent } from '../base-component.component';
+import { SelfRegistrationOption } from 'src/app/types/self-registration-option.type';
 
 @Component({
   selector: 'app-login',
@@ -102,10 +103,16 @@ export class LoginComponent extends BaseComponent implements OnInit, AfterViewIn
 		if (loginOption == undefined) {
       loginOption = Constants.LOGIN_OPTION.NONE
     }
+    let selfRegistrationOptionObservable: Observable<SelfRegistrationOption[]>
+    if (this.dataService.configuration.registrationEnabled) {
+      selfRegistrationOptionObservable = this.communityService.getSelfRegistrationOptions()
+    } else {
+      selfRegistrationOptionObservable = of([])
+    }
     this.createPending = true
     forkJoin([
       this.authService.getUserUnlinkedFunctionalAccounts(),
-      this.communityService.getSelfRegistrationOptions()
+      selfRegistrationOptionObservable
     ]).subscribe((data) => {
       const modalRef = this.modalService.show(LinkAccountComponent, {
         class: 'modal-lg',
