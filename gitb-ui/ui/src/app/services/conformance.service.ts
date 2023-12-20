@@ -765,8 +765,14 @@ export class ConformanceService {
   }
 
   uploadDomainExport(domainId: number, settings: ImportSettings, archiveData: FileData) {
+    let pathToUse
+    if (this.dataService.isSystemAdmin) {
+      pathToUse = ROUTES.controllers.RepositoryService.uploadDomainExportTestBedAdmin(domainId).url
+    } else {
+      pathToUse = ROUTES.controllers.RepositoryService.uploadDomainExportCommunityAdmin(domainId).url
+    }    
     return this.restService.post<ImportPreview>({
-      path: ROUTES.controllers.RepositoryService.uploadDomainExport(domainId).url,
+      path: pathToUse,
       files: [{param: 'file', data: archiveData.file!}],
       data: {
         settings: JSON.stringify(settings)

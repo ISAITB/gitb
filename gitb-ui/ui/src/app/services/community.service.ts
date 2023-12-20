@@ -416,8 +416,14 @@ export class CommunityService {
   }
 
   uploadCommunityExport(communityId: number, settings: ImportSettings, archiveData: FileData) {
+    let pathToUse
+    if (this.dataService.isSystemAdmin) {
+      pathToUse = ROUTES.controllers.RepositoryService.uploadCommunityExportTestBedAdmin(communityId).url
+    } else {
+      pathToUse = ROUTES.controllers.RepositoryService.uploadCommunityExportCommunityAdmin(communityId).url
+    }
     return this.restService.post<ImportPreview>({
-      path: ROUTES.controllers.RepositoryService.uploadCommunityExport(communityId).url,
+      path: pathToUse,
       files: [{param: 'file', data: archiveData.file!}],
       data: {
         settings: JSON.stringify(settings)
