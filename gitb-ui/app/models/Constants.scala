@@ -16,6 +16,7 @@ object Constants {
   val MasterPassword = "master_password"
   val DemoAccount = "demo_account"
   val WelcomeMessage = "welcome"
+  val AccountRetentionPeriod = "account_retention_period"
 
   // env variables
   val EnvironmentTheme = "THEME"

@@ -12,53 +12,47 @@
                     </div>
                 </ng-container>
                 <ng-container *ngSwitchDefault>
-                    <!-- Idle session timeout. -->
+                    <!-- Inactive account retention period. -->
                     <div class="configContainer" >
                         <app-configuration-entry
-                            configTitle="Test session timeout"
-                            configDescription="Terminate test sessions exceeding a maximum duration."
-                            [(status)]="ttlStatus"
+                            configTitle="Inactive account retention period"
+                            configDescription="Delete user accounts for organisations that have been inactive above a maximum retention period."
+                            [(status)]="accountRetentionPeriodStatus"
                         >
                             <form>
                                 <div class="row row-cols-auto align-items-center gx-3">
                                     <div class="col-auto">
                                         <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" id="ttlEnabled" name="ttlEnabled" (change)="ttlCheckChanged()" [(ngModel)]="ttlEnabled">
-                                            <label class="form-check-label" for="ttlEnabled">Enabled?</label>
+                                            <input class="form-check-input" type="checkbox" id="accountRetentionPeriodEnabled" name="accountRetentionPeriodEnabled" (change)="accountRetentionPeriodCheckChanged()" [(ngModel)]="accountRetentionPeriodEnabled">
+                                            <label class="form-check-label" for="accountRetentionPeriodEnabled">Enabled?</label>
                                         </div>
                                     </div>
                                     <div class="col-auto">
-                                        <label class="sr-only" for="ttlValue">Seconds before terminating sessions:</label>
+                                        <label class="sr-only" for="ttlValue">Inactive days before deleting accounts:</label>
                                         <div class="input-group">
-                                            <input type="number" min="1" class="form-control" id="ttlValue" name="ttlValue" placeholder="Timeout" [disabled]="!ttlEnabled" [(ngModel)]="ttlValue">
-                                            <div class="input-group-text">seconds</div>
+                                            <input type="number" min="1" class="form-control" id="accountRetentionPeriodValue" name="accountRetentionPeriodValue" placeholder="Retention period" [disabled]="!accountRetentionPeriodEnabled" [(ngModel)]="accountRetentionPeriodValue">
+                                            <div class="input-group-text">days</div>
                                         </div>
                                     </div>
                                     <div class="col-auto">
-                                        <button type="submit" class="btn btn-secondary" [disable]="ttlEnabled && ttlValue == undefined" [pending]="ttlStatus.pending" (click)="saveTTL()">Save</button>
+                                        <button type="submit" class="btn btn-secondary" [disable]="accountRetentionPeriodEnabled && accountRetentionPeriodValue == undefined" [pending]="accountRetentionPeriodStatus.pending" (click)="saveAccountRetentionPeriod()">Save</button>
                                     </div>
                                 </div>
                             </form>
                         </app-configuration-entry>
                     </div>
-                    <!-- Self-registration. -->
+                    <!-- Welcome page. -->
                     <div class="configContainer">
                         <app-configuration-entry
-                            configTitle="Self-registration"
-                            configDescription="Enable user self-registration for hosted communities."
-                            [(status)]="selfRegistrationStatus"
+                            configTitle="Custom welcome page message"
+                            configDescription="Display a custom message on the Test Bed's welcome page."
+                            [(status)]="welcomePageStatus"
                         >
                             <form>
-                                <div class="row row-cols-auto align-items-center gx-3">
-                                    <div class="col-auto">
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" id="selfRegistrationEnabled" name="selfRegistrationEnabled" [(ngModel)]="selfRegistrationEnabled">
-                                            <label class="form-check-label" for="selfRegistrationEnabled">Enabled?</label>
-                                        </div>
-                                    </div>
-                                    <div class="col-auto">
-                                        <button type="submit" class="btn btn-secondary" [pending]="selfRegistrationStatus.pending" (click)="saveSelfRegistration()">Save</button>
-                                    </div>
+                                <app-editor id="welcomePageMessage" name="welcomePageMessage" [(ngModel)]="welcomePageMessage" type="normal" [height]="200"></app-editor>
+                                <div class="btn-toolbar mt-3">
+                                    <button type="submit" class="btn btn-secondary" [disable]="welcomePageResetPending || !textProvided(welcomePageMessage)" [pending]="welcomePageStatus.pending" (click)="saveWelcomePage()">Save</button>
+                                    <button type="button" class="btn btn-secondary" [disable]="welcomePageStatus.fromDefault || welcomePageStatus.fromEnv || welcomePageStatus.pending" [pending]="welcomePageResetPending" (click)="resetWelcomePage()">Reset to default</button>
                                 </div>
                             </form>
                         </app-configuration-entry>
@@ -134,18 +128,53 @@
                             </form>
                         </app-configuration-entry>
                     </div>
-                    <!-- Welcome page. -->
+                    <!-- Self-registration. -->
                     <div class="configContainer">
                         <app-configuration-entry
-                            configTitle="Custom welcome page message"
-                            configDescription="Display a custom message on the Test Bed's welcome page."
-                            [(status)]="welcomePageStatus"
+                            configTitle="Self-registration"
+                            configDescription="Enable user self-registration for hosted communities."
+                            [(status)]="selfRegistrationStatus"
                         >
                             <form>
-                                <app-editor id="welcomePageMessage" name="welcomePageMessage" [(ngModel)]="welcomePageMessage" type="normal" [height]="200"></app-editor>
-                                <div class="btn-toolbar mt-3">
-                                    <button type="submit" class="btn btn-secondary" [disable]="welcomePageResetPending || !textProvided(welcomePageMessage)" [pending]="welcomePageStatus.pending" (click)="saveWelcomePage()">Save</button>
-                                    <button type="button" class="btn btn-secondary" [disable]="welcomePageStatus.fromDefault || welcomePageStatus.fromEnv || welcomePageStatus.pending" [pending]="welcomePageResetPending" (click)="resetWelcomePage()">Reset to default</button>
+                                <div class="row row-cols-auto align-items-center gx-3">
+                                    <div class="col-auto">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="selfRegistrationEnabled" name="selfRegistrationEnabled" [(ngModel)]="selfRegistrationEnabled">
+                                            <label class="form-check-label" for="selfRegistrationEnabled">Enabled?</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <button type="submit" class="btn btn-secondary" [pending]="selfRegistrationStatus.pending" (click)="saveSelfRegistration()">Save</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </app-configuration-entry>
+                    </div>
+                    <!-- Idle session timeout. -->
+                    <div class="configContainer" >
+                        <app-configuration-entry
+                            configTitle="Test session timeout"
+                            configDescription="Terminate test sessions exceeding a maximum duration."
+                            [(status)]="ttlStatus"
+                        >
+                            <form>
+                                <div class="row row-cols-auto align-items-center gx-3">
+                                    <div class="col-auto">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="ttlEnabled" name="ttlEnabled" (change)="ttlCheckChanged()" [(ngModel)]="ttlEnabled">
+                                            <label class="form-check-label" for="ttlEnabled">Enabled?</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <label class="sr-only" for="ttlValue">Seconds before terminating sessions:</label>
+                                        <div class="input-group">
+                                            <input type="number" min="1" class="form-control" id="ttlValue" name="ttlValue" placeholder="Timeout" [disabled]="!ttlEnabled" [(ngModel)]="ttlValue">
+                                            <div class="input-group-text">seconds</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <button type="submit" class="btn btn-secondary" [disable]="ttlEnabled && ttlValue == undefined" [pending]="ttlStatus.pending" (click)="saveTTL()">Save</button>
+                                    </div>
                                 </div>
                             </form>
                         </app-configuration-entry>

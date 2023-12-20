@@ -43,6 +43,7 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext, authenticationMana
     checkMasterPassword()
     setupAdministratorOneTimePassword()
     destroyIdleSessions()
+    deleteInactiveUserAccounts()
     cleanupPendingTestSuiteUploads()
     cleanupTempFiles()
     loadDataExports()
@@ -242,6 +243,22 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext, authenticationMana
               logger.info("Terminated idle session [" + sessionId + "]")
             }
           }
+        }
+      }
+    }
+  }
+
+  /**
+   * Scheduled job that deletes inactive user accounts.
+   */
+  private def deleteInactiveUserAccounts() = {
+    actorSystem.scheduler.scheduleWithFixedDelay(5.minutes, 1.day) {
+      () => {
+        val deletedAccounts = systemConfigurationManager.deleteInactiveUserAccounts()
+        if (deletedAccounts.isDefined) {
+          logger.info("Deleted {} inactive user account(s)", deletedAccounts.get)
+        } else {
+          logger.debug("Skipped the deletion of inactive user accounts")
         }
       }
     }

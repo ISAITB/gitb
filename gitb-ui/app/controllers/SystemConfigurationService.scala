@@ -25,15 +25,19 @@ class SystemConfigurationService @Inject()(implicit ec: ExecutionContext, author
     authorizationManager.canUpdateSystemConfigurationValues(request)
     val name = ParameterExtractor.requiredBodyParameter(request, Parameters.NAME)
     var value = ParameterExtractor.optionalBodyParameter(request, Parameters.PARAMETER)
-    if (name == Constants.WelcomeMessage && value.isDefined) {
-      value = Some(HtmlUtil.sanitizeEditorContent(value.get))
-      if (value.get.isBlank) {
-        value = None
+    if (systemConfigurationManager.isEditableSystemParameter(name)) {
+      if (name == Constants.WelcomeMessage && value.isDefined) {
+        value = Some(HtmlUtil.sanitizeEditorContent(value.get))
+        if (value.get.isBlank) {
+          value = None
+        }
       }
-    }
-    val resultToReport = systemConfigurationManager.updateSystemParameter(name, value)
-    if (resultToReport.isDefined) {
-      ResponseConstructor.constructJsonResponse(JsString(resultToReport.get).toString)
+      val resultToReport = systemConfigurationManager.updateSystemParameter(name, value)
+      if (resultToReport.isDefined) {
+        ResponseConstructor.constructJsonResponse(JsString(resultToReport.get).toString)
+      } else {
+        ResponseConstructor.constructEmptyResponse
+      }
     } else {
       ResponseConstructor.constructEmptyResponse
     }

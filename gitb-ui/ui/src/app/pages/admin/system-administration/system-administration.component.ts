@@ -76,6 +76,11 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
   configValuesPending = true
   configsCollapsed = false
 
+  // Account retention period
+  accountRetentionPeriodStatus: ConfigStatus = { pending: false, collapsed: true, enabled: false, fromDefault: false, fromEnv: false}
+  accountRetentionPeriodEnabled = false
+  accountRetentionPeriodValue?: number
+
   // TTL
   ttlStatus: ConfigStatus = { pending: false, collapsed: true, enabled: false, fromDefault: false, fromEnv: false}
   ttlEnabled = false
@@ -154,6 +159,18 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
     const configObs = this.systemConfigurationService.getConfigurationValues()
     .pipe(
       mergeMap((data) => {
+        // Account retention period.
+        const accountRetentionPeriodConfig = find(data, (configItem) => configItem.name == Constants.SYSTEM_CONFIG.ACCOUNT_RETENTION_PERIOD)
+        if (accountRetentionPeriodConfig && accountRetentionPeriodConfig.parameter != undefined) {
+          this.accountRetentionPeriodEnabled = true
+          this.accountRetentionPeriodValue = Number(accountRetentionPeriodConfig.parameter)
+        } else {
+          this.accountRetentionPeriodEnabled = false
+          this.accountRetentionPeriodValue = undefined
+        }
+        this.accountRetentionPeriodStatus.enabled = this.accountRetentionPeriodEnabled
+        this.accountRetentionPeriodStatus.fromEnv = accountRetentionPeriodConfig != undefined && accountRetentionPeriodConfig.environment
+        this.accountRetentionPeriodStatus.fromDefault = accountRetentionPeriodConfig != undefined && accountRetentionPeriodConfig.default
         // TTL.
         const ttlConfig = find(data, (configItem) => configItem.name == Constants.SYSTEM_CONFIG.SESSION_ALIVE_TIME)
         if (ttlConfig && ttlConfig.parameter != undefined) {
@@ -414,6 +431,12 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
     }
   }
 
+  accountRetentionPeriodCheckChanged() {
+    if (!this.accountRetentionPeriodEnabled) {
+      this.accountRetentionPeriodValue = undefined
+    }
+  }  
+
   saveTTL() {
     this.ttlStatus.pending = true
     if (this.ttlEnabled && this.ttlValue != undefined) {
@@ -433,6 +456,33 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
         this.popupService.success('Disabled automatic session termination.')
       }).add(() => {
         this.ttlStatus.pending = false
+      })
+    }
+  }
+
+  saveAccountRetentionPeriod() {
+    if (this.accountRetentionPeriodEnabled && this.accountRetentionPeriodValue != undefined) {
+      this.confirmationDialogService.confirmedDangerous("Delete inactive accounts", "User accounts outside the active retention period will be immediately deleted. Are you sure you want to proceed?", "Enable and delete accounts", "Cancel")
+      .subscribe(() => {
+        this.accountRetentionPeriodStatus.pending = true
+        this.systemConfigurationService.updateConfigurationValue(Constants.SYSTEM_CONFIG.ACCOUNT_RETENTION_PERIOD, this.accountRetentionPeriodValue!.toString())
+        .subscribe(() => {
+          this.accountRetentionPeriodStatus.collapsed = true
+          this.accountRetentionPeriodStatus.enabled = true
+          this.popupService.success('Updated inactive account retention period.')
+        }).add(() => {
+          this.accountRetentionPeriodStatus.pending = false
+        })
+      })
+    } else {
+      this.accountRetentionPeriodStatus.pending = true
+      this.systemConfigurationService.updateConfigurationValue(Constants.SYSTEM_CONFIG.ACCOUNT_RETENTION_PERIOD)
+      .subscribe(() => {
+        this.accountRetentionPeriodStatus.collapsed = true
+        this.accountRetentionPeriodStatus.enabled = false
+        this.popupService.success('Disabled inactive account retention period.')
+      }).add(() => {
+        this.accountRetentionPeriodStatus.pending = false
       })
     }
   }

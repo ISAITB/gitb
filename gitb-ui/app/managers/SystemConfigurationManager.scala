@@ -1,6 +1,7 @@
 package managers
 
 import config.Configurations
+import models.Enums.UserRole
 import models.theme.{Theme, ThemeFiles}
 import models.{Constants, NamedFile, SystemConfigurations, SystemConfigurationsWithEnvironment}
 import org.apache.commons.io.FilenameUtils
@@ -12,7 +13,8 @@ import play.api.db.slick.DatabaseConfigProvider
 import utils.{MimeUtil, RepositoryUtils}
 
 import java.io.File
-import java.util.UUID
+import java.sql.Timestamp
+import java.util.{Calendar, UUID}
 import javax.inject.{Inject, Singleton}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
@@ -24,6 +26,10 @@ class SystemConfigurationManager @Inject() (repositoryUtils: RepositoryUtils, db
   import dbConfig.profile.api._
 
   private final val logger: Logger = LoggerFactory.getLogger(classOf[SystemConfigurationManager])
+  private final val editableSystemConfigurationTypes = Set(
+    Constants.SessionAliveTime, Constants.RestApiEnabled, Constants.SelfRegistrationEnabled,
+    Constants.DemoAccount, Constants.WelcomeMessage, Constants.AccountRetentionPeriod
+  )
 
   private var activeThemeId: Option[Long] = None
   private var activeThemeCss: Option[String] = None
@@ -150,13 +156,7 @@ class SystemConfigurationManager @Inject() (repositoryUtils: RepositoryUtils, db
   def getEditableSystemConfigurationValues(onlyPersisted: Boolean = false): List[SystemConfigurationsWithEnvironment] = {
     var persistedConfigs = exec(
       PersistenceSchema.systemConfigurations
-        .filter(_.name inSet Set(
-          Constants.RestApiEnabled,
-          Constants.SessionAliveTime,
-          Constants.SelfRegistrationEnabled,
-          Constants.DemoAccount,
-          Constants.WelcomeMessage)
-        )
+        .filter(_.name inSet editableSystemConfigurationTypes)
         .map(x => (x.name, x.parameter))
         .result
     ).map(x => SystemConfigurationsWithEnvironment(SystemConfigurations(x._1, x._2, None), defaultSetting = false, environmentSetting = false)).toList
@@ -187,6 +187,10 @@ class SystemConfigurationManager @Inject() (repositoryUtils: RepositoryUtils, db
       }
     }
     persistedConfigs
+  }
+
+  def isEditableSystemParameter(name: String): Boolean = {
+    editableSystemConfigurationTypes.contains(name)
   }
 
   /**
@@ -224,6 +228,10 @@ class SystemConfigurationManager @Inject() (repositoryUtils: RepositoryUtils, db
         } else {
           Configurations.WELCOME_MESSAGE = Configurations.WELCOME_MESSAGE_DEFAULT
           returnValue = Some(Configurations.WELCOME_MESSAGE_DEFAULT)
+        }
+      case Constants.AccountRetentionPeriod =>
+        if (value.isDefined) {
+          deleteInactiveUserAccounts()
         }
       case _ => // No action needed.
     }
@@ -561,6 +569,42 @@ class SystemConfigurationManager @Inject() (repositoryUtils: RepositoryUtils, db
         DBIO.successful(())
       }
     } yield (existingThemeInfo.isDefined, reloadNeeded)
+  }
+
+  def deleteInactiveUserAccounts(): Option[Int] = {
+    exec(for {
+      retentionPeriod <- PersistenceSchema.systemConfigurations.filter(_.name === Constants.AccountRetentionPeriod).map(_.parameter).result.headOption
+      usersDeleted <- {
+        if (retentionPeriod.isDefined && retentionPeriod.get.isDefined) {
+          // Calculate threshold date.
+          val now = Calendar.getInstance()
+          now.add(Calendar.DAY_OF_YEAR, -1 * Integer.parseInt(retentionPeriod.get.get))
+          val minimumStartTime = new Timestamp(now.getTimeInMillis)
+          // We must keep users of organisation without with recent tests.
+          val organisationsWithRecentTests = PersistenceSchema.testResults
+            .filter(_.organizationId.isDefined)
+            .filter(_.startTime > minimumStartTime)
+            .map(_.organizationId)
+            .distinct
+          // We must keep users of organisation without any tests.
+          val organisationsWithoutAnyTests = PersistenceSchema.organizations
+            .filterNot(_.id in PersistenceSchema.testResults.filter(_.organizationId.isDefined).map(_.organizationId).distinct)
+            .map(_.id)
+          // Delete the matching users.
+          PersistenceSchema.users
+            .filterNot(_.organization in organisationsWithoutAnyTests)
+            .filterNot(_.organization in organisationsWithRecentTests)
+            .filter(_.id =!= Configurations.DEMOS_ACCOUNT)
+            .filter(_.role inSet Set(UserRole.VendorUser.id.toShort, UserRole.VendorAdmin.id.toShort))
+            .delete
+            .flatMap(deletedCount => {
+              DBIO.successful(Some(deletedCount))
+            })
+        } else {
+          DBIO.successful(None)
+        }
+      }
+    } yield usersDeleted)
   }
 
 }

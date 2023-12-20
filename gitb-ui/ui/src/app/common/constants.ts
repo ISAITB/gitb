@@ -343,7 +343,8 @@ export class Constants {
 		REST_API_ENABLED: 'rest_api_enabled',
 		SELF_REGISTRATION_ENABLED: 'self_registration_enabled',
 		DEMO_ACCOUNT: 'demo_account',
-		WELCOME_MESSAGE: 'welcome'
+		WELCOME_MESSAGE: 'welcome',
+		ACCOUNT_RETENTION_PERIOD: 'account_retention_period'
 	}
 
 	public static USER_SSO_STATUS = {
