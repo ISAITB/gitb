@@ -220,6 +220,26 @@
 											</td>
 											<td colspan="2">
 												<div class="form-check form-check-inline">
+													<input class="form-check-input" type="checkbox" id="settingsSystemConfigurations" name="settingsSystemConfigurations" [(ngModel)]="settings.systemConfigurations" [disabled]="allSystemSettingData">
+													<label class="form-check-label" for="settingsSystemConfigurations">Configuration settings</label>
+												</div>
+												<div class="form-check form-check-inline" *ngIf="!dataService.configuration.ssoEnabled">
+													<input class="form-check-input" type="checkbox" id="settingsSystemAdministrators" name="settingsSystemAdministrators" [(ngModel)]="settings.systemAdministrators" [disabled]="allSystemSettingData">
+													<label class="form-check-label" for="settingsSystemAdministrators">Administrators</label>
+												</div>
+												<div class="form-check form-check-inline">
+													<input class="form-check-input" type="checkbox" id="settingsDefaultLandingPages" name="settingsDefaultLandingPages" [(ngModel)]="settings.defaultLandingPages" [disabled]="allSystemSettingData">
+													<label class="form-check-label" for="settingsDefaultLandingPages">Default landing pages</label>
+												</div>
+												<div class="form-check form-check-inline">
+													<input class="form-check-input" type="checkbox" id="settingsDefaultLegalNotices" name="settingsDefaultLegalNotices" [(ngModel)]="settings.defaultLegalNotices" [disabled]="allSystemSettingData">
+													<label class="form-check-label" for="settingsDefaultLegalNotices">Default legal notices</label>
+												</div>
+												<div class="form-check form-check-inline">
+													<input class="form-check-input" type="checkbox" id="settingsDefaultErrorTemplates" name="settingsDefaultErrorTemplates" [(ngModel)]="settings.defaultErrorTemplates" [disabled]="allSystemSettingData">
+													<label class="form-check-label" for="settingsDefaultErrorTemplates">Default error templates</label>
+												</div>
+												<div class="form-check form-check-inline">
 													<input class="form-check-input" type="checkbox" id="settingsThemes" name="settingsThemes" [(ngModel)]="settings.themes" [disabled]="allSystemSettingData">
 													<label class="form-check-label" for="settingsThemes">Themes</label>
 												</div>

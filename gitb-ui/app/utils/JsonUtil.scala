@@ -1345,8 +1345,18 @@ object JsonUtil {
     settings.testSuites = (jsonConfig \ "testSuites").as[Boolean]
     if (includeSettings) {
       settings.themes = (jsonConfig \ "themes").as[Boolean]
+      settings.systemAdministrators = (jsonConfig \ "systemAdministrators").as[Boolean]
+      settings.defaultLandingPages = (jsonConfig \ "defaultLandingPages").as[Boolean]
+      settings.defaultLegalNotices = (jsonConfig \ "defaultLegalNotices").as[Boolean]
+      settings.defaultErrorTemplates = (jsonConfig \ "defaultErrorTemplates").as[Boolean]
+      settings.systemConfigurations = (jsonConfig \ "systemConfigurations").as[Boolean]
     } else {
       settings.themes = false
+      settings.systemAdministrators = false
+      settings.defaultLandingPages = false
+      settings.defaultLegalNotices = false
+      settings.defaultErrorTemplates = false
+      settings.systemConfigurations = false
     }
     settings.encryptionKey = (jsonConfig \ "encryptionKey").asOpt[String]
     settings

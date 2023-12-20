@@ -25,6 +25,11 @@ class ExportSettings {
   var endpoints: Boolean = false
   var testSuites: Boolean = true
   var themes: Boolean = false
+  var systemAdministrators: Boolean = false
+  var defaultLandingPages: Boolean = false
+  var defaultLegalNotices: Boolean = false
+  var defaultErrorTemplates: Boolean = false
+  var systemConfigurations: Boolean = false
   var encryptionKey: Option[String] = None
 
   def withoutSystemSettings(): ExportSettings = {
@@ -53,6 +58,11 @@ class ExportSettings {
       copy.endpoints = this.endpoints
       copy.testSuites = this.testSuites
       copy.themes = false
+      copy.systemAdministrators = false
+      copy.defaultLandingPages = false
+      copy.defaultLegalNotices = false
+      copy.defaultErrorTemplates = false
+      copy.systemConfigurations = false
       copy.encryptionKey = this.encryptionKey
       copy
     } else {

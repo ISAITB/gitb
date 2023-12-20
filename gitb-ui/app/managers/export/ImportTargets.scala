@@ -119,6 +119,11 @@ object ImportTargets {
         case ImportItemType.StatementConfiguration => targets.hasStatementConfigurations = true
         case ImportItemType.Settings => targets.hasSettings = true
         case ImportItemType.Theme => targets.hasThemes = true
+        case ImportItemType.DefaultLandingPage => targets.hasDefaultLandingPages = true
+        case ImportItemType.DefaultLegalNotice => targets.hasDefaultLegalNotices = true
+        case ImportItemType.DefaultErrorTemplate => targets.hasDefaultErrorTemplates = true
+        case ImportItemType.SystemAdministrator => targets.hasSystemAdministrators = true
+        case ImportItemType.SystemConfiguration => targets.hasSystemConfigurations = true
       }
       updateForImportItemList(targets, item.childrenItems)
     }
@@ -183,6 +188,21 @@ object ImportTargets {
       if (settings.getThemes != null && !settings.getThemes.getTheme.isEmpty) {
         result.hasThemes = true
       }
+      if (settings.getLandingPages != null && !settings.getLandingPages.getLandingPage.isEmpty) {
+        result.hasDefaultLandingPages = true
+      }
+      if (settings.getLegalNotices != null && !settings.getLegalNotices.getLegalNotice.isEmpty) {
+        result.hasDefaultLegalNotices = true
+      }
+      if (settings.getErrorTemplates != null && !settings.getErrorTemplates.getErrorTemplate.isEmpty) {
+        result.hasDefaultErrorTemplates = true
+      }
+      if (settings.getAdministrators != null && !settings.getAdministrators.getAdministrator.isEmpty) {
+        result.hasSystemAdministrators = true
+      }
+      if (settings.getSystemConfigurations != null && !settings.getSystemConfigurations.getConfig.isEmpty) {
+        result.hasSystemConfigurations = true
+      }
     }
   }
 
@@ -218,5 +238,10 @@ class ImportTargets {
 
   var hasSettings: Boolean = false
   var hasThemes: Boolean = false
+  var hasDefaultLandingPages: Boolean = false
+  var hasDefaultLegalNotices: Boolean = false
+  var hasDefaultErrorTemplates: Boolean = false
+  var hasSystemAdministrators: Boolean = false
+  var hasSystemConfigurations: Boolean = false
 
 }

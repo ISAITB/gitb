@@ -139,13 +139,20 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, systemConfigura
     exec(PersistenceSchema.organizations.filter(_.community === communityId).filter(_.adminOrganization === false).result)
   }
 
-  private[export] def loadAdministrators(communityId: Long): Seq[models.Users] = {
+  private[export] def loadCommunityAdministrators(communityId: Long): Seq[models.Users] = {
     exec(PersistenceSchema.users
       .join(PersistenceSchema.organizations).on(_.organization === _.id)
       .filter(_._2.community === communityId)
       .filter(_._2.adminOrganization === true)
       .filter(_._1.role === UserRole.CommunityAdmin.id.toShort)
       .map(x => x._1)
+      .result
+    )
+  }
+
+  private[export] def loadSystemAdministrators(): Seq[models.Users] = {
+    exec(PersistenceSchema.users
+      .filter(_.role === UserRole.SystemAdmin.id.toShort)
       .result
     )
   }
@@ -606,11 +613,11 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, systemConfigura
 
   def exportSystemSettings(exportSettings: ExportSettings): com.gitb.xml.export.Export = {
     val exportData = new Export
-    exportData.setSettings(exportSystemSettingsInternal(exportSettings, None).exportedSettings)
+    exportData.setSettings(exportSystemSettingsInternal(exportSettings, None, None).exportedSettings)
     exportData
   }
 
-  private def exportSystemSettingsInternal(exportSettings: ExportSettings, latestSequenceId: Option[Int]): SystemSettingsExportInfo = {
+  private def exportSystemSettingsInternal(exportSettings: ExportSettings, exportedUserMap: Option[mutable.HashMap[Long, String]], latestSequenceId: Option[Int]): SystemSettingsExportInfo = {
     val sequence = new IdGenerator(latestSequenceId.getOrElse(0))
     val exportedSettings = new com.gitb.xml.export.Settings
     // Themes
@@ -655,7 +662,116 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, systemConfigura
         exportedSettings.setThemes(exportedThemes)
       }
     }
+    // Default landing pages
+    if (exportSettings.defaultLandingPages) {
+      val richContents = landingPageManager.getLandingPagesByCommunity(Constants.DefaultCommunityId)
+      if (richContents.nonEmpty) {
+        exportedSettings.setLandingPages(new com.gitb.xml.export.LandingPages)
+        richContents.foreach { content =>
+          val exportedContent = toExportedLandingPage(sequence.next(), content)
+          exportedSettings.getLandingPages.getLandingPage.add(exportedContent)
+        }
+      }
+    }
+    // Default legal notices
+    if (exportSettings.defaultLegalNotices) {
+      val richContents = legalNoticeManager.getLegalNoticesByCommunity(Constants.DefaultCommunityId)
+      if (richContents.nonEmpty) {
+        exportedSettings.setLegalNotices(new com.gitb.xml.export.LegalNotices)
+        richContents.foreach { content =>
+          val exportedContent = toExportedLegalNotice(sequence.next(), content)
+          exportedSettings.getLegalNotices.getLegalNotice.add(exportedContent)
+        }
+      }
+    }
+    // Default error templates
+    if (exportSettings.defaultErrorTemplates) {
+      val richContents = errorTemplateManager.getErrorTemplatesByCommunity(Constants.DefaultCommunityId)
+      if (richContents.nonEmpty) {
+        exportedSettings.setErrorTemplates(new com.gitb.xml.export.ErrorTemplates)
+        richContents.foreach { content =>
+          val exportedContent = toExportedErrorTemplate(sequence.next(), content)
+          exportedSettings.getErrorTemplates.getErrorTemplate.add(exportedContent)
+        }
+      }
+    }
+    // System administrators
+    if (exportSettings.systemAdministrators) {
+      val administrators = loadSystemAdministrators()
+      if (administrators.nonEmpty) {
+        exportedSettings.setAdministrators(new SystemAdministrators)
+        administrators.foreach { user =>
+          val exportedAdmin = new SystemAdministrator
+          populateExportedUser(sequence.next(), user, exportedAdmin, exportSettings.encryptionKey)
+          exportedSettings.getAdministrators.getAdministrator.add(exportedAdmin)
+        }
+      }
+    }
+    // System configurations
+    if (exportSettings.systemConfigurations) {
+      val systemConfigurations = systemConfigurationManager.getEditableSystemConfigurationValues(onlyPersisted = true)
+      if (systemConfigurations.nonEmpty) {
+        exportedSettings.setSystemConfigurations(new com.gitb.xml.export.SystemConfigurations)
+        systemConfigurations.foreach { config =>
+          var valueToSet = config.config.parameter
+          if (valueToSet.isDefined && config.config.name == Constants.DemoAccount) {
+            // Set the export ID for the demo account user.
+            if (exportedUserMap.isDefined) {
+              valueToSet = exportedUserMap.get.get(config.config.parameter.get.toLong)
+            } else {
+              valueToSet = None
+            }
+          }
+          if (valueToSet.isDefined) {
+            val exportedConfig = new SystemConfiguration
+            exportedConfig.setId(toId(sequence.next()))
+            exportedConfig.setName(config.config.name)
+            exportedConfig.setValue(valueToSet.get)
+            exportedSettings.getSystemConfigurations.getConfig.add(exportedConfig)
+          }
+        }
+      }
+    }
+    // Return results.
     SystemSettingsExportInfo(sequence.current(), exportedSettings)
+  }
+
+  private def toExportedLandingPage(idToUse: Int, content: models.LandingPages): com.gitb.xml.export.LandingPage = {
+    val exportedContent = new com.gitb.xml.export.LandingPage
+    exportedContent.setId(toId(idToUse))
+    exportedContent.setName(content.name)
+    exportedContent.setDescription(content.description.orNull)
+    exportedContent.setContent(content.content)
+    exportedContent.setDefault(content.default)
+    exportedContent
+  }
+
+  private def toExportedLegalNotice(idToUse: Int, content: models.LegalNotices): com.gitb.xml.export.LegalNotice = {
+    val exportedContent = new com.gitb.xml.export.LegalNotice
+    exportedContent.setId(toId(idToUse))
+    exportedContent.setName(content.name)
+    exportedContent.setDescription(content.description.orNull)
+    exportedContent.setContent(content.content)
+    exportedContent.setDefault(content.default)
+    exportedContent
+  }
+
+  private def toExportedErrorTemplate(idToUse: Int, content: models.ErrorTemplates): com.gitb.xml.export.ErrorTemplate = {
+    val exportedContent = new com.gitb.xml.export.ErrorTemplate
+    exportedContent.setId(toId(idToUse))
+    exportedContent.setName(content.name)
+    exportedContent.setDescription(content.description.orNull)
+    exportedContent.setContent(content.content)
+    exportedContent.setDefault(content.default)
+    exportedContent
+  }
+
+  private def populateExportedUser(idToUse: Int, user: models.Users, exportedUser: com.gitb.xml.export.User, encryptionKey: Option[String]): Unit = {
+    exportedUser.setId(toId(idToUse))
+    exportedUser.setName(user.name)
+    exportedUser.setEmail(user.email)
+    exportedUser.setPassword(encryptText(Some(user.password), encryptionKey))
+    exportedUser.setOnetimePassword(user.onetimePassword)
   }
 
   def exportCommunity(communityId: Long, exportSettings: ExportSettings): com.gitb.xml.export.Export = {
@@ -677,27 +793,20 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, systemConfigura
     val exportData = new Export
     val communityData = new com.gitb.xml.export.Community
     var domainExportInfo: DomainExportInfo = null
-    var idSequence: Int = 0
+    val exportedUserMap = new mutable.HashMap[Long, String]() // Map of DB user ID to XML user ID
+    val idSequence = new IdGenerator()
     if (community.get.domain.isDefined && exportSettings.domain) {
       // Add domain data as part of the community export.
       domainExportInfo = exportDomainInternal(community.get.domain.get, exportSettings.withoutSystemSettings())
-      idSequence = domainExportInfo.latestSequenceId
+      idSequence.reset(domainExportInfo.latestSequenceId)
       exportData.setDomains(new Domains)
       exportData.getDomains.getDomain.add(domainExportInfo.exportedDomain)
       communityData.setDomain(domainExportInfo.exportedDomain)
     }
-    var systemSettingsExportInfo: SystemSettingsExportInfo = null
-    if (exportSettings.themes) {
-      // Add system settings as part of the community export.
-      systemSettingsExportInfo = exportSystemSettingsInternal(exportSettings, Some(idSequence + 1))
-      idSequence = systemSettingsExportInfo.latestSequenceId
-      exportData.setSettings(systemSettingsExportInfo.exportedSettings)
-    }
     exportData.setCommunities(new com.gitb.xml.export.Communities)
     exportData.getCommunities.getCommunity.add(communityData)
     // Community basic info.
-    idSequence += 1
-    communityData.setId(toId(idSequence))
+    communityData.setId(toId(idSequence.next()))
     communityData.setShortName(community.get.shortname)
     communityData.setFullName(community.get.fullname)
     communityData.setSupportEmail(community.get.supportEmail.orNull)
@@ -730,18 +839,14 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, systemConfigura
     communityData.getSelfRegistrationSettings.setForceRequiredProperties(community.get.selfRegForceRequiredProperties)
     // Administrators.
     if (exportSettings.communityAdministrators) {
-      val administrators = loadAdministrators(communityId)
+      val administrators = loadCommunityAdministrators(communityId)
       if (administrators.nonEmpty) {
         communityData.setAdministrators(new CommunityAdministrators)
         administrators.foreach { user =>
           val exportedAdmin = new CommunityAdministrator
-          idSequence += 1
-          exportedAdmin.setId(toId(idSequence))
-          exportedAdmin.setName(user.name)
-          exportedAdmin.setEmail(user.email)
-          exportedAdmin.setPassword(encryptText(Some(user.password), exportSettings.encryptionKey))
-          exportedAdmin.setOnetimePassword(user.onetimePassword)
+          populateExportedUser(idSequence.next(), user, exportedAdmin, exportSettings.encryptionKey)
           communityData.getAdministrators.getAdministrator.add(exportedAdmin)
+          exportedUserMap += (user.id -> exportedAdmin.getId)
         }
       }
     }
@@ -786,8 +891,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, systemConfigura
         communityData.setOrganisationProperties(new OrganisationProperties)
         organisationProperties.foreach { property =>
           val exportedProperty = new OrganisationProperty()
-          idSequence += 1
-          exportedProperty.setId(toId(idSequence))
+          exportedProperty.setId(toId(idSequence.next()))
           exportedProperty.setLabel(property.name)
           exportedProperty.setName(property.testKey)
           exportedProperty.setDescription(property.description.orNull)
@@ -812,8 +916,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, systemConfigura
         communityData.setSystemProperties(new SystemProperties)
         systemProperties.foreach { property =>
           val exportedProperty = new SystemProperty()
-          idSequence += 1
-          exportedProperty.setId(toId(idSequence))
+          exportedProperty.setId(toId(idSequence.next()))
           exportedProperty.setLabel(property.name)
           exportedProperty.setName(property.testKey)
           exportedProperty.setDescription(property.description.orNull)
@@ -850,8 +953,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, systemConfigura
             case LabelType.SpecificationInGroup => exportedLabel.setLabelType(CustomLabelType.SPECIFICATION_IN_GROUP)
             case LabelType.SpecificationGroup => exportedLabel.setLabelType(CustomLabelType.SPECIFICATION_GROUP)
           }
-          idSequence += 1
-          exportedLabel.setId(toId(idSequence))
+          exportedLabel.setId(toId(idSequence.next()))
           exportedLabel.setFixedCasing(label.fixedCase)
           exportedLabel.setSingularForm(label.singularForm)
           exportedLabel.setPluralForm(label.pluralForm)
@@ -866,13 +968,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, systemConfigura
       if (richContents.nonEmpty) {
         communityData.setLandingPages(new com.gitb.xml.export.LandingPages)
         richContents.foreach { content =>
-          val exportedContent = new com.gitb.xml.export.LandingPage
-          idSequence += 1
-          exportedContent.setId(toId(idSequence))
-          exportedContent.setName(content.name)
-          exportedContent.setDescription(content.description.orNull)
-          exportedContent.setContent(content.content)
-          exportedContent.setDefault(content.default)
+          val exportedContent = toExportedLandingPage(idSequence.next(), content)
           communityData.getLandingPages.getLandingPage.add(exportedContent)
           exportedLandingPageMap += (content.id -> exportedContent)
         }
@@ -885,13 +981,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, systemConfigura
       if (richContents.nonEmpty) {
         communityData.setLegalNotices(new com.gitb.xml.export.LegalNotices)
         richContents.foreach { content =>
-          val exportedContent = new com.gitb.xml.export.LegalNotice
-          idSequence += 1
-          exportedContent.setId(toId(idSequence))
-          exportedContent.setName(content.name)
-          exportedContent.setDescription(content.description.orNull)
-          exportedContent.setContent(content.content)
-          exportedContent.setDefault(content.default)
+          val exportedContent = toExportedLegalNotice(idSequence.next(), content)
           communityData.getLegalNotices.getLegalNotice.add(exportedContent)
           exportedLegalNoticeMap += (content.id -> exportedContent)
         }
@@ -904,13 +994,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, systemConfigura
       if (richContents.nonEmpty) {
         communityData.setErrorTemplates(new com.gitb.xml.export.ErrorTemplates)
         richContents.foreach { content =>
-          val exportedContent = new com.gitb.xml.export.ErrorTemplate
-          idSequence += 1
-          exportedContent.setId(toId(idSequence))
-          exportedContent.setName(content.name)
-          exportedContent.setDescription(content.description.orNull)
-          exportedContent.setContent(content.content)
-          exportedContent.setDefault(content.default)
+          val exportedContent = toExportedErrorTemplate(idSequence.next(), content)
           communityData.getErrorTemplates.getErrorTemplate.add(exportedContent)
           exportedErrorTemplateMap += (content.id -> exportedContent)
         }
@@ -923,8 +1007,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, systemConfigura
         communityData.setTriggers(new com.gitb.xml.export.Triggers)
         triggers.foreach { trigger =>
           val exportedTrigger = new com.gitb.xml.export.Trigger
-          idSequence += 1
-          exportedTrigger.setId(toId(idSequence))
+          exportedTrigger.setId(toId(idSequence.next()))
           exportedTrigger.setName(trigger.trigger.name)
           exportedTrigger.setDescription(trigger.trigger.description.orNull)
           exportedTrigger.setActive(trigger.trigger.active)
@@ -957,8 +1040,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, systemConfigura
                   (dataType == models.Enums.TriggerDataType.StatementParameter && exportSettings.endpoints)
               ) {
                 val exportedDataItem = new TriggerDataItem
-                idSequence += 1
-                exportedDataItem.setId(toId(idSequence))
+                exportedDataItem.setId(toId(idSequence.next()))
                 dataType match {
                   case models.Enums.TriggerDataType.Community => exportedDataItem.setDataType(TriggerDataType.COMMUNITY)
                   case models.Enums.TriggerDataType.Organisation => exportedDataItem.setDataType(TriggerDataType.ORGANISATION)
@@ -998,8 +1080,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, systemConfigura
         communityData.setResources(new com.gitb.xml.export.CommunityResources)
         resources.foreach { resource =>
           val exportedResource = new CommunityResource
-          idSequence += 1
-          exportedResource.setId(toId(idSequence))
+          exportedResource.setId(toId(idSequence.next()))
           exportedResource.setName(resource.name)
           exportedResource.setDescription(resource.description.orNull)
           exportedResource.setContent(MimeUtil.getFileAsDataURL(repositoryUtils.getCommunityResource(communityId, resource.id), DEFAULT_CONTENT_TYPE))
@@ -1043,8 +1124,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, systemConfigura
         communityData.setOrganisations(new Organisations)
         organisations.foreach { organisation =>
           val exportedOrganisation = new Organisation
-          idSequence += 1
-          exportedOrganisation.setId(toId(idSequence))
+          exportedOrganisation.setId(toId(idSequence.next()))
           require(!organisation.adminOrganization, "The community's admin organisation should not be exportable")
           exportedOrganisation.setAdmin(organisation.adminOrganization)
           exportedOrganisation.setShortName(organisation.shortname)
@@ -1056,12 +1136,8 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, systemConfigura
             exportedOrganisation.setUsers(new com.gitb.xml.export.Users)
             organisationUserMap(organisation.id).foreach { user =>
               val exportedUser = new OrganisationUser
-              idSequence += 1
-              exportedUser.setId(toId(idSequence))
-              exportedUser.setName(user.name)
-              exportedUser.setEmail(user.email)
-              exportedUser.setPassword(encryptText(Some(user.password), exportSettings.encryptionKey))
-              exportedUser.setOnetimePassword(user.onetimePassword)
+              populateExportedUser(idSequence.next(), user, exportedUser, exportSettings.encryptionKey)
+              exportedUserMap += (user.id -> exportedUser.getId)
               UserRole.apply(user.role) match {
                 case UserRole.VendorAdmin => exportedUser.setRole(OrganisationRoleType.ORGANISATION_ADMIN)
                 case _ => exportedUser.setRole(OrganisationRoleType.ORGANISATION_USER)
@@ -1083,8 +1159,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, systemConfigura
             exportedOrganisation.setPropertyValues(new OrganisationPropertyValues)
             organisationParameterValueMap(organisation.id).foreach { parameter =>
               val exportedProperty = new OrganisationPropertyValue
-              idSequence += 1
-              exportedProperty.setId(toId(idSequence))
+              exportedProperty.setId(toId(idSequence.next()))
               exportedProperty.setProperty(exportedOrganisationPropertyMap(parameter.parameter))
               if (exportedProperty.getProperty.getType == PropertyType.SECRET) {
                 exportedProperty.setValue(encryptText(Some(parameter.value), isAlreadyEncrypted = true, exportSettings.encryptionKey))
@@ -1101,8 +1176,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, systemConfigura
             exportedOrganisation.setSystems(new com.gitb.xml.export.Systems)
             organisationSystemMap(organisation.id).foreach { system =>
               val exportedSystem = new com.gitb.xml.export.System
-              idSequence += 1
-              exportedSystem.setId(toId(idSequence))
+              exportedSystem.setId(toId(idSequence.next()))
               exportedSystem.setShortName(system.shortname)
               exportedSystem.setFullName(system.fullname)
               exportedSystem.setDescription(system.description.orNull)
@@ -1114,8 +1188,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, systemConfigura
                 exportedSystem.setPropertyValues(new SystemPropertyValues)
                 systemParameterValueMap(system.id).foreach { parameter =>
                   val exportedProperty = new SystemPropertyValue
-                  idSequence += 1
-                  exportedProperty.setId(toId(idSequence))
+                  exportedProperty.setId(toId(idSequence.next()))
                   exportedProperty.setProperty(exportedSystemPropertyMap(parameter.parameter))
                   if (exportedProperty.getProperty.getType == PropertyType.SECRET) {
                     exportedProperty.setValue(encryptText(Some(parameter.value), isAlreadyEncrypted = true, exportSettings.encryptionKey))
@@ -1132,8 +1205,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, systemConfigura
                 exportedSystem.setStatements(new ConformanceStatements)
                 systemStatementsMap(system.id).foreach { x =>
                   val exportedStatement = new com.gitb.xml.export.ConformanceStatement
-                  idSequence += 1
-                  exportedStatement.setId(toId(idSequence))
+                  exportedStatement.setId(toId(idSequence.next()))
                   exportedStatement.setActor(domainExportInfo.exportedActorMap(x._2.id))
                   if (exportSettings.statementConfigurations) {
                     // From the statement's actor get its endpoints.
@@ -1150,8 +1222,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, systemConfigura
                               }
                               systemConfigurationsMap(key).foreach { config =>
                                 val exportedConfiguration = new com.gitb.xml.export.Configuration
-                                idSequence += 1
-                                exportedConfiguration.setId(toId(idSequence))
+                                exportedConfiguration.setId(toId(idSequence.next()))
                                 exportedConfiguration.setParameter(domainExportInfo.exportedEndpointParameterMap(config.parameter))
                                 if (exportedConfiguration.getParameter.getType == PropertyType.SECRET) {
                                   exportedConfiguration.setValue(encryptText(Some(config.value), isAlreadyEncrypted = true, exportSettings.encryptionKey))
@@ -1178,6 +1249,9 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, systemConfigura
         }
       }
     }
+    // Add system settings as part of the community export.
+    val systemSettingsExportInfo = exportSystemSettingsInternal(exportSettings, Some(exportedUserMap), Some(idSequence.next()))
+    exportData.setSettings(systemSettingsExportInfo.exportedSettings)
     exportData
   }
 

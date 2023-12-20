@@ -23,6 +23,11 @@ export interface ExportSettings {
     communityAdministrators: boolean
     organisationUsers: boolean
     themes: boolean
+    defaultLandingPages: boolean
+    defaultLegalNotices: boolean
+    defaultErrorTemplates: boolean
+    systemAdministrators: boolean
+    systemConfigurations: boolean
     encryptionKey?: string
 
 }

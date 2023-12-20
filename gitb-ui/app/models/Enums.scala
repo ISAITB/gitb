@@ -63,7 +63,8 @@ object Enums {
     val Domain, DomainParameter, Specification, Actor, Endpoint, EndpointParameter, TestSuite,
     Community, Administrator, CustomLabel, OrganisationProperty, SystemProperty, LandingPage, LegalNotice, ErrorTemplate,
     Organisation, OrganisationUser, OrganisationPropertyValue, System, SystemPropertyValue,
-    Statement, StatementConfiguration, Trigger, CommunityResource, SpecificationGroup, Settings, Theme = Value
+    Statement, StatementConfiguration, Trigger, CommunityResource, SpecificationGroup, Settings, Theme,
+    DefaultLandingPage, DefaultLegalNotice, DefaultErrorTemplate, SystemAdministrator, SystemConfiguration = Value
   }
 
   object ImportItemMatch extends Enumeration(1) {

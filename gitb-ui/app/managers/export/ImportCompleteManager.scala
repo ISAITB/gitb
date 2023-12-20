@@ -8,7 +8,7 @@ import models.Enums.ImportItemType.ImportItemType
 import models.Enums.TestSuiteReplacementChoice.PROCEED
 import models.Enums._
 import models.theme.ThemeFiles
-import models.{Badges, Enums, NamedFile, ProcessedArchive, TestCaseDeploymentAction, TestCases, TestSuiteDeploymentAction}
+import models.{Badges, Constants, Enums, NamedFile, ProcessedArchive, TestCaseDeploymentAction, TestCases, TestSuiteDeploymentAction}
 import org.apache.commons.codec.binary.Base64
 import org.apache.commons.codec.digest.DigestUtils
 import org.apache.commons.io.{FileUtils, FilenameUtils}
@@ -51,7 +51,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
     exec(completeFileSystemFinalisation(ctx, completeDomainImportInternal(exportedDomain, targetDomainId, ctx, canAddOrDeleteDomain)).transactionally)
   }
 
-  def completeSystemSettingsImport(exportedSettings: com.gitb.xml.export.Settings, importSettings: ImportSettings, importItems: List[ImportItem], canManageSettings: Boolean): Unit = {
+  def completeSystemSettingsImport(exportedSettings: com.gitb.xml.export.Settings, importSettings: ImportSettings, importItems: List[ImportItem], canManageSettings: Boolean, ownUserId: Option[Long]): Unit = {
     // Load context
     val ctx = ImportContext(
       importSettings,
@@ -64,7 +64,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
       mutable.ListBuffer[() => _](),
       mutable.ListBuffer[() => _]()
     )
-    exec(completeFileSystemFinalisation(ctx, completeSystemSettingsImportInternal(exportedSettings, ctx, canManageSettings)).transactionally)
+    exec(completeFileSystemFinalisation(ctx, completeSystemSettingsImportInternal(exportedSettings, ctx, canManageSettings, ownUserId, new mutable.HashSet[String]())).transactionally)
   }
 
   private def toImportItemMaps(importItems: List[ImportItem], itemType: ImportItemType): ImportItemMaps = {
@@ -525,6 +525,10 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
     models.CommunityResources(0L, data.getName, Option(data.getDescription), communityId)
   }
 
+  private def toModelSystemAdministrator(data: com.gitb.xml.export.SystemAdministrator, userId: Option[Long], organisationId: Long, importSettings: ImportSettings): models.Users = {
+    toModelUser(data, userId, Enums.UserRole.SystemAdmin.id.toShort, organisationId, importSettings)
+  }
+
   private def toModelAdministrator(data: com.gitb.xml.export.CommunityAdministrator, userId: Option[Long], organisationId: Long, importSettings: ImportSettings): models.Users = {
     toModelUser(data, userId, Enums.UserRole.CommunityAdmin.id.toShort, organisationId, importSettings)
   }
@@ -752,17 +756,40 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
     })
   }
 
-  private def completeSystemSettingsImportInternal(exportedSettings: com.gitb.xml.export.Settings, ctx: ImportContext, canManageSettings: Boolean): DBIO[_] = {
+  private def completeSystemSettingsImportInternal(exportedSettings: com.gitb.xml.export.Settings, ctx: ImportContext, canManageSettings: Boolean, ownUserId: Option[Long], referenceUserEmails: mutable.Set[String]): DBIO[_] = {
     if (canManageSettings) {
       // Load existing values.
+      var systemAdminOrganisationId: Option[Long] = None
       if (ctx.importTargets.hasThemes) {
         exportManager.loadThemes().foreach { theme =>
           ctx.existingIds.map(ImportItemType.Theme) += theme.id.toString
         }
       }
+      if (ctx.importTargets.hasDefaultLandingPages) {
+        exec(PersistenceSchema.landingPages.filter(_.community === Constants.DefaultCommunityId).map(x => x.id).result).foreach(x => ctx.existingIds.map(ImportItemType.DefaultLandingPage) += x.toString)
+      }
+      if (ctx.importTargets.hasDefaultLegalNotices) {
+        exec(PersistenceSchema.legalNotices.filter(_.community === Constants.DefaultCommunityId).map(x => x.id).result).foreach(x => ctx.existingIds.map(ImportItemType.DefaultLegalNotice) += x.toString)
+      }
+      if (ctx.importTargets.hasDefaultErrorTemplates) {
+        exec(PersistenceSchema.errorTemplates.filter(_.community === Constants.DefaultCommunityId).map(x => x.id).result).foreach(x => ctx.existingIds.map(ImportItemType.DefaultErrorTemplate) += x.toString)
+      }
+      if (!Configurations.AUTHENTICATION_SSO_ENABLED && ctx.importTargets.hasSystemAdministrators) {
+        exportManager.loadSystemAdministrators().foreach { x =>
+          ctx.existingIds.map(ImportItemType.SystemAdministrator) += x.id.toString
+          if (systemAdminOrganisationId.isEmpty) {
+            systemAdminOrganisationId = Some(x.organization)
+          }
+        }
+      }
+      if (ctx.importTargets.hasSystemConfigurations) {
+        systemConfigurationManager.getEditableSystemConfigurationValues(onlyPersisted = true).foreach { x =>
+          ctx.existingIds.map(ImportItemType.SystemConfiguration) += x.config.name
+        }
+      }
       for {
+        // Themes
         _ <- {
-          // Themes
           val dbActions = ListBuffer[DBIO[_]]()
           if (exportedSettings.getThemes != null) {
             exportedSettings.getThemes.getTheme.asScala.foreach { theme =>
@@ -784,6 +811,181 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
           processRemaining(ImportItemType.Theme, ctx,
             (targetKey: String, item: ImportItem) => {
               systemConfigurationManager.deleteThemeInternal(targetKey.toLong, ctx.onSuccessCalls)
+            }
+          )
+        }
+        // Landing pages
+        _ <- {
+          val dbActions = ListBuffer[DBIO[_]]()
+          if (exportedSettings.getLandingPages != null) {
+            exportedSettings.getLandingPages.getLandingPage.asScala.foreach { exportedContent =>
+              dbActions += processFromArchive(ImportItemType.DefaultLandingPage, exportedContent, exportedContent.getId, ctx,
+                ImportCallbacks.set(
+                  (data: com.gitb.xml.export.LandingPage, item: ImportItem) => {
+                    landingPageManager.createLandingPageInternal(toModelLandingPage(data, Constants.DefaultCommunityId))
+                  },
+                  (data: com.gitb.xml.export.LandingPage, targetKey: String, item: ImportItem) => {
+                    landingPageManager.updateLandingPageInternal(targetKey.toLong, data.getName, Option(data.getDescription), data.getContent, data.isDefault, Constants.DefaultCommunityId)
+                  }
+                )
+              )
+            }
+          }
+          toDBIO(dbActions)
+        }
+        _ <- {
+          processRemaining(ImportItemType.DefaultLandingPage, ctx,
+            (targetKey: String, item: ImportItem) => {
+              landingPageManager.deleteLandingPageInternal(targetKey.toLong)
+            }
+          )
+        }
+        // Legal notices
+        _ <- {
+          val dbActions = ListBuffer[DBIO[_]]()
+          if (exportedSettings.getLegalNotices != null) {
+            exportedSettings.getLegalNotices.getLegalNotice.asScala.foreach { exportedContent =>
+              dbActions += processFromArchive(ImportItemType.DefaultLegalNotice, exportedContent, exportedContent.getId, ctx,
+                ImportCallbacks.set(
+                  (data: com.gitb.xml.export.LegalNotice, item: ImportItem) => {
+                    legalNoticeManager.createLegalNoticeInternal(toModelLegalNotice(data, Constants.DefaultCommunityId))
+                  },
+                  (data: com.gitb.xml.export.LegalNotice, targetKey: String, item: ImportItem) => {
+                    legalNoticeManager.updateLegalNoticeInternal(targetKey.toLong, data.getName, Option(data.getDescription), data.getContent, data.isDefault, Constants.DefaultCommunityId)
+                  }
+                )
+              )
+            }
+          }
+          toDBIO(dbActions)
+        }
+        _ <- {
+          processRemaining(ImportItemType.DefaultLegalNotice, ctx,
+            (targetKey: String, item: ImportItem) => {
+              legalNoticeManager.deleteLegalNoticeInternal(targetKey.toLong)
+            }
+          )
+        }
+        // Error templates
+        _ <- {
+          val dbActions = ListBuffer[DBIO[_]]()
+          if (exportedSettings.getErrorTemplates != null) {
+            exportedSettings.getErrorTemplates.getErrorTemplate.asScala.foreach { exportedContent =>
+              dbActions += processFromArchive(ImportItemType.DefaultErrorTemplate, exportedContent, exportedContent.getId, ctx,
+                ImportCallbacks.set(
+                  (data: com.gitb.xml.export.ErrorTemplate, item: ImportItem) => {
+                    errorTemplateManager.createErrorTemplateInternal(toModelErrorTemplate(data, Constants.DefaultCommunityId))
+                  },
+                  (data: com.gitb.xml.export.ErrorTemplate, targetKey: String, item: ImportItem) => {
+                    errorTemplateManager.updateErrorTemplateInternal(targetKey.toLong, data.getName, Option(data.getDescription), data.getContent, data.isDefault, Constants.DefaultCommunityId)
+                  }
+                )
+              )
+            }
+          }
+          toDBIO(dbActions)
+        }
+        _ <- {
+          processRemaining(ImportItemType.DefaultErrorTemplate, ctx,
+            (targetKey: String, item: ImportItem) => {
+              errorTemplateManager.deleteErrorTemplateInternal(targetKey.toLong)
+            }
+          )
+        }
+        // Administrators
+        _ <- {
+          val dbActions = ListBuffer[DBIO[_]]()
+          if (!Configurations.AUTHENTICATION_SSO_ENABLED && exportedSettings.getAdministrators != null) {
+            exportedSettings.getAdministrators.getAdministrator.asScala.foreach { exportedUser =>
+              dbActions += processFromArchive(ImportItemType.SystemAdministrator, exportedUser, exportedUser.getId, ctx,
+                ImportCallbacks.set(
+                  (data: com.gitb.xml.export.SystemAdministrator, item: ImportItem) => {
+                    if (!referenceUserEmails.contains(exportedUser.getEmail.toLowerCase) && systemAdminOrganisationId.isDefined) {
+                      referenceUserEmails += exportedUser.getEmail.toLowerCase
+                      PersistenceSchema.insertUser += toModelSystemAdministrator(data, None, systemAdminOrganisationId.get, ctx.importSettings)
+                    } else {
+                      DBIO.successful(())
+                    }
+                  },
+                  (data: com.gitb.xml.export.SystemAdministrator, targetKey: String, item: ImportItem) => {
+                    /*
+                      We don't update the email as this must anyway be already matching (this was how the user was found
+                      to be existing. Not updating the email avoids the need to check that the email is unique with respect
+                      to other users.
+                     */
+                    val query = for {
+                      user <- PersistenceSchema.users.filter(_.id === targetKey.toLong)
+                    } yield (user.name, user.password, user.onetimePassword)
+                    query.update(data.getName, decrypt(ctx.importSettings, data.getPassword), data.isOnetimePassword)
+                  }
+                )
+              )
+            }
+          }
+          toDBIO(dbActions)
+        }
+        _ <- {
+          if (!Configurations.AUTHENTICATION_SSO_ENABLED) {
+            processRemaining(ImportItemType.SystemAdministrator, ctx,
+              (targetKey: String, item: ImportItem) => {
+                val userId = targetKey.toLong
+                if (ownUserId.isDefined && ownUserId.get.longValue() != userId) {
+                  // Avoid deleting self
+                  PersistenceSchema.users.filter(_.id === userId).delete
+                } else {
+                  DBIO.successful(())
+                }
+              }
+            )
+          } else {
+            DBIO.successful(())
+          }
+        }
+        // System configurations
+        _ <- {
+          val dbActions = ListBuffer[DBIO[_]]()
+          if (exportedSettings.getSystemConfigurations != null) {
+            exportedSettings.getSystemConfigurations.getConfig.asScala.foreach { config =>
+              dbActions += processFromArchive(ImportItemType.SystemConfiguration, config, config.getName, ctx,
+                ImportCallbacks.set(
+                  (data: com.gitb.xml.export.SystemConfiguration, item: ImportItem) => {
+                    if (systemConfigurationManager.isEditableSystemParameter(data.getName)) {
+                      var valueToSet = Option(data.getValue)
+                      if (data.getName == Constants.DemoAccount && valueToSet.isDefined) {
+                        // Make sure the demo account ID matches the after-import result for the demo user account.
+                        valueToSet = ctx.processedIdMap.get(ImportItemType.OrganisationUser).flatMap(_.get(valueToSet.get))
+                      }
+                      systemConfigurationManager.updateSystemParameterInternal(data.getName, valueToSet, applySetting = true)
+                    } else {
+                      DBIO.successful(())
+                    }
+                  },
+                  (data: com.gitb.xml.export.SystemConfiguration, targetKey: String, item: ImportItem) => {
+                    if (systemConfigurationManager.isEditableSystemParameter(data.getName)) {
+                      var valueToSet = Option(data.getValue)
+                      if (data.getName == Constants.DemoAccount && valueToSet.isDefined) {
+                        // Make sure the demo account ID matches the after-import result for the demo user account.
+                        valueToSet = ctx.processedIdMap.get(ImportItemType.OrganisationUser).flatMap(_.get(valueToSet.get))
+                      }
+                      systemConfigurationManager.updateSystemParameterInternal(data.getName, valueToSet, applySetting = true)
+                    } else {
+                      DBIO.successful(())
+                    }
+                  }
+                )
+              )
+            }
+          }
+          toDBIO(dbActions)
+        }
+        _ <- {
+          processRemaining(ImportItemType.SystemConfiguration, ctx,
+            (targetKey: String, item: ImportItem) => {
+              if (systemConfigurationManager.isEditableSystemParameter(targetKey)) {
+                systemConfigurationManager.updateSystemParameterInternal(targetKey, None, applySetting = true)
+              } else {
+                DBIO.successful(())
+              }
             }
           )
         }
@@ -1370,7 +1572,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
       }
       // Administrators
       if (!Configurations.AUTHENTICATION_SSO_ENABLED && ctx.importTargets.hasAdministrators) {
-        exportManager.loadAdministrators(targetCommunityId.get).foreach { x =>
+        exportManager.loadCommunityAdministrators(targetCommunityId.get).foreach { x =>
           ctx.existingIds.map(ImportItemType.Administrator) += x.id.toString
         }
       }
@@ -1441,17 +1643,17 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
           if (targetCommunity.isDefined && targetCommunity.get.domain.isDefined) {
             targetDomainId = targetCommunity.get.domain
           }
-          mergeImportItemMaps(ctx.importItemMaps, toImportItemMaps(importItems, ImportItemType.Domain))
-          completeDomainImportInternal(exportedCommunity.getDomain, targetDomainId, ctx, canDoAdminOperations)
-        } else {
-          DBIO.successful(())
-        }
-      }
-      // Settings
-      _ <- {
-        if (canDoAdminOperations && exportedData.getSettings != null) {
-          mergeImportItemMaps(ctx.importItemMaps, toImportItemMaps(importItems, ImportItemType.Settings))
-          completeSystemSettingsImportInternal(exportedData.getSettings, ctx, canDoAdminOperations)
+          if (targetDomainId.isDefined || canDoAdminOperations) {
+            /*
+             * We only allow a domain import to proceed if the user is a Test Bed administrator or
+             * if the target community also has a domain (i.e. this is an update). A community
+             * administrator can never add or delete domains, only update the community's (existing) domain.
+             */
+            mergeImportItemMaps(ctx.importItemMaps, toImportItemMaps(importItems, ImportItemType.Domain))
+            completeDomainImportInternal(exportedCommunity.getDomain, targetDomainId, ctx, canDoAdminOperations)
+          } else {
+            DBIO.successful(())
+          }
         } else {
           DBIO.successful(())
         }
@@ -2212,6 +2414,16 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
           }
         )
       }
+      // Settings
+      // We process this here to allow a possible demo account setting to match a previously imported user.
+      _ <- {
+        if (canDoAdminOperations && exportedData.getSettings != null) {
+          mergeImportItemMaps(ctx.importItemMaps, toImportItemMaps(importItems, ImportItemType.Settings))
+          completeSystemSettingsImportInternal(exportedData.getSettings, ctx, canDoAdminOperations, ownUserId, referenceUserEmails)
+        } else {
+          DBIO.successful(())
+        }
+      }
     } yield ()
     exec(completeFileSystemFinalisation(ctx, dbAction).transactionally)
   }
@@ -2249,7 +2461,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
             val exportData = preparationResult._2.get
             // Step 1 - prepare import.
             var importItems: List[ImportItem] = null
-            val previewResult = importPreviewManager.previewCommunityImport(exportData, None)
+            val previewResult = importPreviewManager.previewCommunityImport(exportData, None, canDoAdminOperations = true)
             val items = new ListBuffer[ImportItem]()
             // First add domain.
             if (previewResult._2.isDefined) {
@@ -2273,7 +2485,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
             // Domain import.
             val exportedDomain = preparationResult._2.get.getDomains.getDomain.get(0)
             // Step 1 - prepare import.
-            val importItems = List(importPreviewManager.previewDomainImport(exportedDomain, None))
+            val importItems = List(importPreviewManager.previewDomainImport(exportedDomain, None, canDoAdminOperations = true))
             // Set all import items to proceed.
             approveImportItems(importItems)
             // Step 2 - Import.
@@ -2290,7 +2502,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
             approveImportItems(importItems)
             // Step 2 - Import.
             importSettings.dataFilePath = Some(importPreviewManager.getPendingImportFile(preparationResult._4.get, preparationResult._3.get).get.toPath)
-            completeSystemSettingsImport(exportedSettings, importSettings, importItems, canManageSettings = true)
+            completeSystemSettingsImport(exportedSettings, importSettings, importItems, canManageSettings = true, None)
             // Avoid processing this archive again.
             processingComplete = true
           } else {

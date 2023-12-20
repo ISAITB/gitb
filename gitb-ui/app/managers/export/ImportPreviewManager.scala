@@ -28,7 +28,7 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 @Singleton
-class ImportPreviewManager @Inject()(exportManager: ExportManager, communityManager: CommunityManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class ImportPreviewManager @Inject()(exportManager: ExportManager, systemConfigurationManager: SystemConfigurationManager, communityManager: CommunityManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
 
@@ -81,37 +81,187 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
     }
   }
 
-  private def previewSystemSettingsImportInternal(exportedSettings: com.gitb.xml.export.Settings): ImportItem = {
+  private def previewSystemSettingsImportInternal(exportedSettings: com.gitb.xml.export.Settings, referenceUserEmails: mutable.Set[String]): ImportItem = {
     val importTargets = ImportTargets.fromSettings(exportedSettings)
-    val targetThemeMap = mutable.Map[String, models.theme.Theme]()
-    exec(PersistenceSchema.themes
-      .filter(_.custom === true)
-      .result
-    ).foreach(x => {
-      targetThemeMap += (x.key -> x)
-    })
+    val targetThemeMap = mutable.Map[String, ListBuffer[Long]]()
+    exec(PersistenceSchema.themes.filter(_.custom === true).result).foreach { x =>
+        if (!targetThemeMap.contains(x.key)) {
+          targetThemeMap += (x.key -> new ListBuffer[Long]())
+        }
+      targetThemeMap(x.key) += x.id
+    }
+    val targetAdministratorsMap = mutable.Map[String, models.Users]()
+    exportManager.loadSystemAdministrators().foreach { x =>
+      targetAdministratorsMap += (x.email -> x)
+    }
+    val targetLandingPageMap = mutable.Map[String, ListBuffer[Long]]()
+    exec(PersistenceSchema.landingPages.filter(_.community === Constants.DefaultCommunityId).map(x => (x.name, x.id)).result).foreach { x =>
+      if (!targetLandingPageMap.contains(x._1)) {
+        targetLandingPageMap += (x._1 -> new ListBuffer[Long]())
+      }
+      targetLandingPageMap(x._1) += x._2
+    }
+    val targetLegalNoticeMap = mutable.Map[String, ListBuffer[Long]]()
+    exec(PersistenceSchema.legalNotices.filter(_.community === Constants.DefaultCommunityId).map(x => (x.name, x.id)).result).foreach { x =>
+      if (!targetLegalNoticeMap.contains(x._1)) {
+        targetLegalNoticeMap += (x._1 -> new ListBuffer[Long]())
+      }
+      targetLegalNoticeMap(x._1) += x._2
+    }
+    val targetErrorTemplateMap = mutable.Map[String, ListBuffer[Long]]()
+    exec(PersistenceSchema.errorTemplates.filter(_.community === Constants.DefaultCommunityId).map(x => (x.name, x.id)).result).foreach { x =>
+      if (!targetLegalNoticeMap.contains(x._1)) {
+        targetErrorTemplateMap += (x._1 -> new ListBuffer[Long]())
+      }
+      targetErrorTemplateMap(x._1) += x._2
+    }
+    val targetSystemSettingsMap = mutable.HashSet[String]()
+    systemConfigurationManager.getEditableSystemConfigurationValues(onlyPersisted = true).foreach { x =>
+      targetSystemSettingsMap += x.config.name
+    }
     val importItemSettings = new ImportItem(Some("System settings"), ImportItemType.Settings, ImportItemMatch.Both, None, None)
     if (importTargets.hasSettings) {
       // Themes.
       if (importTargets.hasThemes) {
         exportedSettings.getThemes.getTheme.asScala.foreach { exportedTheme =>
-          val targetTheme = targetThemeMap.remove(exportedTheme.getKey)
+          var targetTheme: Option[Long] = None
+          val foundContent = targetThemeMap.get(exportedTheme.getKey)
+          if (foundContent.isDefined && foundContent.get.nonEmpty) {
+            targetTheme = Some(foundContent.get.remove(0))
+            if (foundContent.get.isEmpty) {
+              targetThemeMap.remove(exportedTheme.getKey)
+            }
+          }
           if (targetTheme.isDefined) {
-            new ImportItem(Some(targetTheme.get.key), ImportItemType.Theme, ImportItemMatch.Both, Some(targetTheme.get.id.toString), Some(exportedTheme.getId), importItemSettings)
+            new ImportItem(Some(exportedTheme.getKey), ImportItemType.Theme, ImportItemMatch.Both, Some(targetTheme.get.toString), Some(exportedTheme.getId), importItemSettings)
           } else {
             new ImportItem(Some(exportedTheme.getKey), ImportItemType.Theme, ImportItemMatch.ArchiveOnly, None, Some(exportedTheme.getId), importItemSettings)
           }
         }
       }
+      // Landing pages.
+      if (importTargets.hasDefaultLandingPages) {
+        exportedSettings.getLandingPages.getLandingPage.asScala.foreach { exportedLandingPage =>
+          var targetLandingPage: Option[Long] = None
+          val foundContent = targetLandingPageMap.get(exportedLandingPage.getName)
+          if (foundContent.isDefined && foundContent.get.nonEmpty) {
+            targetLandingPage = Some(foundContent.get.remove(0))
+            if (foundContent.get.isEmpty) {
+              targetLandingPageMap.remove(exportedLandingPage.getName)
+            }
+          }
+          if (targetLandingPage.isDefined) {
+            new ImportItem(Some(exportedLandingPage.getName), ImportItemType.DefaultLandingPage, ImportItemMatch.Both, Some(targetLandingPage.get.toString), Some(exportedLandingPage.getId), importItemSettings)
+          } else {
+            new ImportItem(Some(exportedLandingPage.getName), ImportItemType.DefaultLandingPage, ImportItemMatch.ArchiveOnly, None, Some(exportedLandingPage.getId), importItemSettings)
+          }
+        }
+      }
+      // Legal notices.
+      if (importTargets.hasDefaultLegalNotices) {
+        exportedSettings.getLegalNotices.getLegalNotice.asScala.foreach { exportedLegalNotice =>
+          var targetLegalNotice: Option[Long] = None
+          val foundContent = targetLegalNoticeMap.get(exportedLegalNotice.getName)
+          if (foundContent.isDefined && foundContent.get.nonEmpty) {
+            targetLegalNotice = Some(foundContent.get.remove(0))
+            if (foundContent.get.isEmpty) {
+              targetLegalNoticeMap.remove(exportedLegalNotice.getName)
+            }
+          }
+          if (targetLegalNotice.isDefined) {
+            new ImportItem(Some(exportedLegalNotice.getName), ImportItemType.DefaultLegalNotice, ImportItemMatch.Both, Some(targetLegalNotice.get.toString), Some(exportedLegalNotice.getId), importItemSettings)
+          } else {
+            new ImportItem(Some(exportedLegalNotice.getName), ImportItemType.DefaultLegalNotice, ImportItemMatch.ArchiveOnly, None, Some(exportedLegalNotice.getId), importItemSettings)
+          }
+        }
+      }
+      // Error templates.
+      if (importTargets.hasDefaultErrorTemplates) {
+        exportedSettings.getErrorTemplates.getErrorTemplate.asScala.foreach { exportedErrorTemplate =>
+          var targetErrorTemplate: Option[Long] = None
+          val foundContent = targetErrorTemplateMap.get(exportedErrorTemplate.getName)
+          if (foundContent.isDefined && foundContent.get.nonEmpty) {
+            targetErrorTemplate = Some(foundContent.get.remove(0))
+            if (foundContent.get.isEmpty) {
+              targetErrorTemplateMap.remove(exportedErrorTemplate.getName)
+            }
+          }
+          if (targetErrorTemplate.isDefined) {
+            new ImportItem(Some(exportedErrorTemplate.getName), ImportItemType.DefaultErrorTemplate, ImportItemMatch.Both, Some(targetErrorTemplate.get.toString), Some(exportedErrorTemplate.getId), importItemSettings)
+          } else {
+            new ImportItem(Some(exportedErrorTemplate.getName), ImportItemType.DefaultErrorTemplate, ImportItemMatch.ArchiveOnly, None, Some(exportedErrorTemplate.getId), importItemSettings)
+          }
+        }
+      }
+      // System administrators.
+      if (importTargets.hasSystemAdministrators && !Configurations.AUTHENTICATION_SSO_ENABLED) {
+        exportedSettings.getAdministrators.getAdministrator.asScala.foreach { exportedAdministrator =>
+          val targetAdministrator = targetAdministratorsMap.remove(exportedAdministrator.getEmail)
+          if (targetAdministrator.isDefined) {
+            new ImportItem(Some(targetAdministrator.get.name), ImportItemType.SystemAdministrator, ImportItemMatch.Both, Some(targetAdministrator.get.id.toString), Some(exportedAdministrator.getId), importItemSettings)
+          } else {
+            if (!referenceUserEmails.contains(exportedAdministrator.getEmail.toLowerCase)) {
+              new ImportItem(Some(exportedAdministrator.getName), ImportItemType.SystemAdministrator, ImportItemMatch.ArchiveOnly, None, Some(exportedAdministrator.getId), importItemSettings)
+              referenceUserEmails += exportedAdministrator.getEmail.toLowerCase
+            }
+          }
+        }
+      }
+      // System configurations.
+      if (importTargets.hasSystemConfigurations) {
+        exportedSettings.getSystemConfigurations.getConfig.asScala.foreach { exportedConfig =>
+          if (targetSystemSettingsMap.contains(exportedConfig.getName)) {
+            targetSystemSettingsMap.remove(exportedConfig.getName)
+            new ImportItem(Some(nameForSystemConfiguration(exportedConfig.getName)), ImportItemType.SystemConfiguration, ImportItemMatch.Both, Some(exportedConfig.getName), Some(exportedConfig.getName), importItemSettings)
+          } else {
+            new ImportItem(Some(nameForSystemConfiguration(exportedConfig.getName)), ImportItemType.SystemConfiguration, ImportItemMatch.ArchiveOnly, None, Some(exportedConfig.getName), importItemSettings)
+          }
+        }
+      }
     }
     // Mark items not found for deletion.
-    targetThemeMap.values.foreach { theme =>
-      new ImportItem(Some(theme.key), ImportItemType.Theme, ImportItemMatch.DBOnly, Some(theme.id.toString), None, importItemSettings)
+    targetThemeMap.foreach { entry =>
+      entry._2.foreach { id =>
+        new ImportItem(Some(entry._1), ImportItemType.Theme, ImportItemMatch.DBOnly, Some(id.toString), None, importItemSettings)
+      }
+    }
+    targetLandingPageMap.foreach { entry =>
+      entry._2.foreach { x =>
+        new ImportItem(Some(entry._1), ImportItemType.DefaultLandingPage, ImportItemMatch.DBOnly, Some(x.toString), None, importItemSettings)
+      }
+    }
+    targetLegalNoticeMap.foreach { entry =>
+      entry._2.foreach { x =>
+        new ImportItem(Some(entry._1), ImportItemType.DefaultLegalNotice, ImportItemMatch.DBOnly, Some(x.toString), None, importItemSettings)
+      }
+    }
+    targetErrorTemplateMap.foreach { entry =>
+      entry._2.foreach { x =>
+        new ImportItem(Some(entry._1), ImportItemType.DefaultErrorTemplate, ImportItemMatch.DBOnly, Some(x.toString), None, importItemSettings)
+      }
+    }
+    targetAdministratorsMap.values.foreach { user =>
+      new ImportItem(Some(user.name), ImportItemType.SystemAdministrator, ImportItemMatch.DBOnly, Some(user.id.toString), None, importItemSettings)
+    }
+    targetSystemSettingsMap.foreach { name =>
+      new ImportItem(Some(nameForSystemConfiguration(name)), ImportItemType.SystemConfiguration, ImportItemMatch.DBOnly, Some(name), None, importItemSettings)
     }
     importItemSettings
   }
 
-  private def previewDomainImportInternal(exportedDomain: com.gitb.xml.export.Domain, targetDomainId: Option[Long]): (DomainImportInfo, ImportItem) = {
+  private def nameForSystemConfiguration(setting: String): String = {
+    setting match {
+      case Constants.SessionAliveTime => "Test session timeout"
+      case Constants.RestApiEnabled => "REST API"
+      case Constants.SelfRegistrationEnabled => "Self-registration"
+      case Constants.DemoAccount => "Demo account"
+      case Constants.WelcomeMessage => "Custom welcome page message"
+      case Constants.AccountRetentionPeriod => "Inactive account retention period"
+      case _ => setting
+    }
+  }
+
+  private def previewDomainImportInternal(exportedDomain: com.gitb.xml.export.Domain, targetDomainId: Option[Long], canDoAdminOperations: Boolean): (DomainImportInfo, ImportItem) = {
     var targetDomain: Option[models.Domain] = None
     if (targetDomainId.isDefined) {
       targetDomain = exec(PersistenceSchema.domains
@@ -149,58 +299,6 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
     val actorXmlIdToImportItemMap = mutable.Map[String, ImportItem]()
 
     var importItemDomain: ImportItem = null
-    if (targetDomain.isDefined) {
-      // Load data.
-      exec(PersistenceSchema.specificationGroups
-        .filter(_.domain === targetDomain.get.id)
-        .result
-      ).foreach(x => {
-        targetSpecificationGroupMap += (x.shortname -> x)
-      })
-      exec(PersistenceSchema.specifications
-        .joinLeft(PersistenceSchema.specificationGroups).on(_.group === _.id)
-        .filter(_._1.domain === targetDomain.get.id)
-        .result
-      ).foreach(x => {
-        targetSpecificationMap += (specificationKey(x._1.shortname, x._2.map(_.shortname)) -> x._1)
-        targetSpecificationIdMap += (x._1.id -> x._1)
-      })
-      if (targetSpecificationMap.nonEmpty) {
-        exportManager.loadSpecificationTestSuiteMap(targetDomain.get.id).foreach { x =>
-          targetSpecificationTestSuiteMap += (x._1 -> listBufferToNameMap(x._2, { t => t.identifier }))
-        }
-        exportManager.loadSpecificationActorMap(targetDomain.get.id).foreach { x =>
-          targetSpecificationActorMap += (x._1 -> listBufferToNameMap(x._2, { a => a.actorId }))
-          x._2.foreach { a =>
-            referenceActorToSpecificationMap += (a.id -> targetSpecificationIdMap(x._1))
-          }
-        }
-        if (targetSpecificationActorMap.nonEmpty) {
-          exportManager.loadActorEndpointMap(targetDomain.get.id).foreach { x =>
-            targetActorEndpointMap += (x._1 -> listBufferToNameMap(x._2, { e => e.name }))
-            referenceActorEndpointMap += (x._1 -> listBufferToNameMap(x._2, { e => e.name }))
-          }
-          if (targetActorEndpointMap.nonEmpty) {
-            exportManager.loadEndpointParameterMap(targetDomain.get.id).foreach { x =>
-              targetEndpointParameterMap += (x._1 -> listBufferToNameMap(x._2, { p => p.testKey }))
-              referenceEndpointParameterMap += (x._1 -> listBufferToNameMap(x._2, { p => p.testKey }))
-              x._2.foreach { p =>
-                referenceEndpointParameterIdMap += (p.id -> p)
-              }
-            }
-          }
-        }
-      }
-      exec(PersistenceSchema.testSuites
-        .filter(_.domain === targetDomain.get.id)
-        .filter(_.shared)
-        .result
-      ).foreach(x => targetDomainTestSuiteMap += (x.identifier -> x))
-      exec(PersistenceSchema.domainParameters
-        .filter(_.domain === targetDomain.get.id)
-        .result
-      ).foreach(x => targetDomainParametersMap += (x.name -> x))
-    }
     if (targetDomain.isDefined && importTargets.hasDomain) {
       importItemDomain = new ImportItem(Some(targetDomain.get.fullname), ImportItemType.Domain, ImportItemMatch.Both, Some(targetDomain.get.id.toString), Some(exportedDomain.getId))
     } else if (targetDomain.isDefined && !importTargets.hasDomain) {
@@ -208,139 +306,194 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
     } else if (targetDomain.isEmpty && importTargets.hasDomain) {
       importItemDomain = new ImportItem(Some(exportedDomain.getFullName), ImportItemType.Domain, ImportItemMatch.ArchiveOnly, None, Some(exportedDomain.getId))
     }
-    // Domain parameters.
-    if (importTargets.hasDomainParameters) {
-      exportedDomain.getParameters.getParameter.asScala.foreach { exportedDomainParameter =>
-        var targetParameter: Option[models.DomainParameter] = None
-        if (targetDomain.isDefined) {
-          targetParameter = targetDomainParametersMap.remove(exportedDomainParameter.getName)
+    if (canDoAdminOperations || (importItemDomain != null && importItemDomain.itemMatch == ImportItemMatch.Both)) {
+      // If the user isn't a Test Bed admin don't show the deletion or creation of a domain as this will anyway be skip when completing the import.
+      if (targetDomain.isDefined) {
+        // Load data.
+        exec(PersistenceSchema.specificationGroups
+          .filter(_.domain === targetDomain.get.id)
+          .result
+        ).foreach(x => {
+          targetSpecificationGroupMap += (x.shortname -> x)
+        })
+        exec(PersistenceSchema.specifications
+          .joinLeft(PersistenceSchema.specificationGroups).on(_.group === _.id)
+          .filter(_._1.domain === targetDomain.get.id)
+          .result
+        ).foreach(x => {
+          targetSpecificationMap += (specificationKey(x._1.shortname, x._2.map(_.shortname)) -> x._1)
+          targetSpecificationIdMap += (x._1.id -> x._1)
+        })
+        if (targetSpecificationMap.nonEmpty) {
+          exportManager.loadSpecificationTestSuiteMap(targetDomain.get.id).foreach { x =>
+            targetSpecificationTestSuiteMap += (x._1 -> listBufferToNameMap(x._2, { t => t.identifier }))
+          }
+          exportManager.loadSpecificationActorMap(targetDomain.get.id).foreach { x =>
+            targetSpecificationActorMap += (x._1 -> listBufferToNameMap(x._2, { a => a.actorId }))
+            x._2.foreach { a =>
+              referenceActorToSpecificationMap += (a.id -> targetSpecificationIdMap(x._1))
+            }
+          }
+          if (targetSpecificationActorMap.nonEmpty) {
+            exportManager.loadActorEndpointMap(targetDomain.get.id).foreach { x =>
+              targetActorEndpointMap += (x._1 -> listBufferToNameMap(x._2, { e => e.name }))
+              referenceActorEndpointMap += (x._1 -> listBufferToNameMap(x._2, { e => e.name }))
+            }
+            if (targetActorEndpointMap.nonEmpty) {
+              exportManager.loadEndpointParameterMap(targetDomain.get.id).foreach { x =>
+                targetEndpointParameterMap += (x._1 -> listBufferToNameMap(x._2, { p => p.testKey }))
+                referenceEndpointParameterMap += (x._1 -> listBufferToNameMap(x._2, { p => p.testKey }))
+                x._2.foreach { p =>
+                  referenceEndpointParameterIdMap += (p.id -> p)
+                }
+              }
+            }
+          }
         }
-        if (targetParameter.isDefined) {
-          new ImportItem(Some(targetParameter.get.name), ImportItemType.DomainParameter, ImportItemMatch.Both, Some(targetParameter.get.id.toString), Some(exportedDomainParameter.getId), importItemDomain)
-        } else {
-          new ImportItem(Some(exportedDomainParameter.getName), ImportItemType.DomainParameter, ImportItemMatch.ArchiveOnly, None, Some(exportedDomainParameter.getId), importItemDomain)
-        }
+        exec(PersistenceSchema.testSuites
+          .filter(_.domain === targetDomain.get.id)
+          .filter(_.shared)
+          .result
+        ).foreach(x => targetDomainTestSuiteMap += (x.identifier -> x))
+        exec(PersistenceSchema.domainParameters
+          .filter(_.domain === targetDomain.get.id)
+          .result
+        ).foreach(x => targetDomainParametersMap += (x.name -> x))
       }
-    }
-    // Shared test suites.
-    if (importTargets.hasTestSuites && exportedDomain.getSharedTestSuites != null) {
-      exportedDomain.getSharedTestSuites.getTestSuite.asScala.foreach { exportedTestSuite =>
-        val targetTestSuite: Option[models.TestSuites] = targetDomainTestSuiteMap.remove(exportedTestSuite.getIdentifier)
-        if (targetTestSuite.isDefined) {
-          new ImportItem(Some(targetTestSuite.get.fullname), ImportItemType.TestSuite, ImportItemMatch.Both, Some(targetTestSuite.get.id.toString), Some(exportedTestSuite.getId), importItemDomain)
-        } else {
-          new ImportItem(Some(exportedTestSuite.getShortName), ImportItemType.TestSuite, ImportItemMatch.ArchiveOnly, None, Some(exportedTestSuite.getId), importItemDomain)
-        }
-      }
-    }
-    // Specifications.
-    if (importTargets.hasSpecifications) {
-      val groupImportItemMap = new mutable.HashMap[String, ImportItem]()
-      // Groups.
-      if (exportedDomain.getSpecificationGroups != null) {
-        exportedDomain.getSpecificationGroups.getGroup.asScala.foreach { exportedGroup =>
-          var targetGroup: Option[models.SpecificationGroups] = None
-          var importItemGroup: ImportItem = null
+      // Domain parameters.
+      if (importTargets.hasDomainParameters) {
+        exportedDomain.getParameters.getParameter.asScala.foreach { exportedDomainParameter =>
+          var targetParameter: Option[models.DomainParameter] = None
           if (targetDomain.isDefined) {
-            targetGroup = targetSpecificationGroupMap.remove(exportedGroup.getShortName)
+            targetParameter = targetDomainParametersMap.remove(exportedDomainParameter.getName)
           }
-          if (targetGroup.isDefined) {
-            importItemGroup = new ImportItem(Some(targetGroup.get.fullname), ImportItemType.SpecificationGroup, ImportItemMatch.Both, Some(targetGroup.get.id.toString), Some(exportedGroup.getId), importItemDomain)
+          if (targetParameter.isDefined) {
+            new ImportItem(Some(targetParameter.get.name), ImportItemType.DomainParameter, ImportItemMatch.Both, Some(targetParameter.get.id.toString), Some(exportedDomainParameter.getId), importItemDomain)
           } else {
-            importItemGroup = new ImportItem(Some(exportedGroup.getFullName), ImportItemType.SpecificationGroup, ImportItemMatch.ArchiveOnly, None, Some(exportedGroup.getId), importItemDomain)
+            new ImportItem(Some(exportedDomainParameter.getName), ImportItemType.DomainParameter, ImportItemMatch.ArchiveOnly, None, Some(exportedDomainParameter.getId), importItemDomain)
           }
-          groupImportItemMap += (exportedGroup.getId -> importItemGroup)
+        }
+      }
+      // Shared test suites.
+      if (importTargets.hasTestSuites && exportedDomain.getSharedTestSuites != null) {
+        exportedDomain.getSharedTestSuites.getTestSuite.asScala.foreach { exportedTestSuite =>
+          val targetTestSuite: Option[models.TestSuites] = targetDomainTestSuiteMap.remove(exportedTestSuite.getIdentifier)
+          if (targetTestSuite.isDefined) {
+            new ImportItem(Some(targetTestSuite.get.fullname), ImportItemType.TestSuite, ImportItemMatch.Both, Some(targetTestSuite.get.id.toString), Some(exportedTestSuite.getId), importItemDomain)
+          } else {
+            new ImportItem(Some(exportedTestSuite.getShortName), ImportItemType.TestSuite, ImportItemMatch.ArchiveOnly, None, Some(exportedTestSuite.getId), importItemDomain)
+          }
         }
       }
       // Specifications.
-      if (exportedDomain.getSpecifications != null) {
-        exportedDomain.getSpecifications.getSpecification.asScala.foreach { exportedSpecification =>
-          var targetSpecification: Option[models.Specifications] = None
-          var importItemSpecification: ImportItem = null
-          if (targetDomain.isDefined) {
-            val key = specificationKey(exportedSpecification.getShortName, Option(exportedSpecification.getGroup).map(_.getShortName))
-            targetSpecification = targetSpecificationMap.remove(key)
+      if (importTargets.hasSpecifications) {
+        val groupImportItemMap = new mutable.HashMap[String, ImportItem]()
+        // Groups.
+        if (exportedDomain.getSpecificationGroups != null) {
+          exportedDomain.getSpecificationGroups.getGroup.asScala.foreach { exportedGroup =>
+            var targetGroup: Option[models.SpecificationGroups] = None
+            var importItemGroup: ImportItem = null
+            if (targetDomain.isDefined) {
+              targetGroup = targetSpecificationGroupMap.remove(exportedGroup.getShortName)
+            }
+            if (targetGroup.isDefined) {
+              importItemGroup = new ImportItem(Some(targetGroup.get.fullname), ImportItemType.SpecificationGroup, ImportItemMatch.Both, Some(targetGroup.get.id.toString), Some(exportedGroup.getId), importItemDomain)
+            } else {
+              importItemGroup = new ImportItem(Some(exportedGroup.getFullName), ImportItemType.SpecificationGroup, ImportItemMatch.ArchiveOnly, None, Some(exportedGroup.getId), importItemDomain)
+            }
+            groupImportItemMap += (exportedGroup.getId -> importItemGroup)
           }
-          var parentItem = importItemDomain
-          if (exportedSpecification.getGroup != null) {
-            parentItem = groupImportItemMap(exportedSpecification.getGroup.getId)
-          }
-          if (targetSpecification.isDefined) {
-            importItemSpecification = new ImportItem(Some(targetSpecification.get.fullname), ImportItemType.Specification, ImportItemMatch.Both, Some(targetSpecification.get.id.toString), Some(exportedSpecification.getId), parentItem)
-            importItemMapSpecification += (targetSpecification.get.id.toString -> importItemSpecification)
-          } else {
-            importItemSpecification = new ImportItem(Some(exportedSpecification.getFullName), ImportItemType.Specification, ImportItemMatch.ArchiveOnly, None, Some(exportedSpecification.getId), parentItem)
-          }
-          // Test suites.
-          if (exportedSpecification.getTestSuites != null) {
-            exportedSpecification.getTestSuites.getTestSuite.asScala.foreach { exportedTestSuite =>
-              var targetTestSuite: Option[models.TestSuites] = None
-              if (targetSpecification.isDefined && targetSpecificationTestSuiteMap.contains(targetSpecification.get.id)) {
-                targetTestSuite = targetSpecificationTestSuiteMap(targetSpecification.get.id).remove(exportedTestSuite.getIdentifier)
-              }
-              if (targetTestSuite.isDefined) {
-                new ImportItem(Some(targetTestSuite.get.fullname), ImportItemType.TestSuite, ImportItemMatch.Both, Some(targetTestSuite.get.id.toString), Some(exportedTestSuite.getId), importItemSpecification)
-              } else {
-                new ImportItem(Some(exportedTestSuite.getShortName), ImportItemType.TestSuite, ImportItemMatch.ArchiveOnly, None, Some(exportedTestSuite.getId), importItemSpecification)
+        }
+        // Specifications.
+        if (exportedDomain.getSpecifications != null) {
+          exportedDomain.getSpecifications.getSpecification.asScala.foreach { exportedSpecification =>
+            var targetSpecification: Option[models.Specifications] = None
+            var importItemSpecification: ImportItem = null
+            if (targetDomain.isDefined) {
+              val key = specificationKey(exportedSpecification.getShortName, Option(exportedSpecification.getGroup).map(_.getShortName))
+              targetSpecification = targetSpecificationMap.remove(key)
+            }
+            var parentItem = importItemDomain
+            if (exportedSpecification.getGroup != null) {
+              parentItem = groupImportItemMap(exportedSpecification.getGroup.getId)
+            }
+            if (targetSpecification.isDefined) {
+              importItemSpecification = new ImportItem(Some(targetSpecification.get.fullname), ImportItemType.Specification, ImportItemMatch.Both, Some(targetSpecification.get.id.toString), Some(exportedSpecification.getId), parentItem)
+              importItemMapSpecification += (targetSpecification.get.id.toString -> importItemSpecification)
+            } else {
+              importItemSpecification = new ImportItem(Some(exportedSpecification.getFullName), ImportItemType.Specification, ImportItemMatch.ArchiveOnly, None, Some(exportedSpecification.getId), parentItem)
+            }
+            // Test suites.
+            if (exportedSpecification.getTestSuites != null) {
+              exportedSpecification.getTestSuites.getTestSuite.asScala.foreach { exportedTestSuite =>
+                var targetTestSuite: Option[models.TestSuites] = None
+                if (targetSpecification.isDefined && targetSpecificationTestSuiteMap.contains(targetSpecification.get.id)) {
+                  targetTestSuite = targetSpecificationTestSuiteMap(targetSpecification.get.id).remove(exportedTestSuite.getIdentifier)
+                }
+                if (targetTestSuite.isDefined) {
+                  new ImportItem(Some(targetTestSuite.get.fullname), ImportItemType.TestSuite, ImportItemMatch.Both, Some(targetTestSuite.get.id.toString), Some(exportedTestSuite.getId), importItemSpecification)
+                } else {
+                  new ImportItem(Some(exportedTestSuite.getShortName), ImportItemType.TestSuite, ImportItemMatch.ArchiveOnly, None, Some(exportedTestSuite.getId), importItemSpecification)
+                }
               }
             }
-          }
-          // Shared test suites.
-          if (exportedSpecification.getSharedTestSuites != null) {
-            exportedSpecification.getSharedTestSuites.asScala.foreach { exportedTestSuite =>
-              var targetTestSuite: Option[models.TestSuites] = None
-              if (targetSpecification.isDefined && targetSpecificationTestSuiteMap.contains(targetSpecification.get.id)) {
-                targetTestSuite = targetSpecificationTestSuiteMap(targetSpecification.get.id).remove(exportedTestSuite.getIdentifier)
-              }
-              val sourceId = importItemSpecification.sourceKey.get + "|" + exportedTestSuite.getId
-              if (targetTestSuite.isDefined) {
-                val targetId = importItemSpecification.targetKey.get + "|" + targetTestSuite.get.id
-                new ImportItem(Some(targetTestSuite.get.fullname), ImportItemType.TestSuite, ImportItemMatch.Both, Some(targetId), Some(sourceId), importItemSpecification)
-              } else {
-                new ImportItem(Some(exportedTestSuite.getShortName), ImportItemType.TestSuite, ImportItemMatch.ArchiveOnly, None, Some(sourceId), importItemSpecification)
+            // Shared test suites.
+            if (exportedSpecification.getSharedTestSuites != null) {
+              exportedSpecification.getSharedTestSuites.asScala.foreach { exportedTestSuite =>
+                var targetTestSuite: Option[models.TestSuites] = None
+                if (targetSpecification.isDefined && targetSpecificationTestSuiteMap.contains(targetSpecification.get.id)) {
+                  targetTestSuite = targetSpecificationTestSuiteMap(targetSpecification.get.id).remove(exportedTestSuite.getIdentifier)
+                }
+                val sourceId = importItemSpecification.sourceKey.get + "|" + exportedTestSuite.getId
+                if (targetTestSuite.isDefined) {
+                  val targetId = importItemSpecification.targetKey.get + "|" + targetTestSuite.get.id
+                  new ImportItem(Some(targetTestSuite.get.fullname), ImportItemType.TestSuite, ImportItemMatch.Both, Some(targetId), Some(sourceId), importItemSpecification)
+                } else {
+                  new ImportItem(Some(exportedTestSuite.getShortName), ImportItemType.TestSuite, ImportItemMatch.ArchiveOnly, None, Some(sourceId), importItemSpecification)
+                }
               }
             }
-          }
-          // Actors
-          if (exportedSpecification.getActors != null) {
-            exportedSpecification.getActors.getActor.asScala.foreach { exportedActor =>
-              var targetActor: Option[models.Actors] = None
-              var importItemActor: ImportItem = null
-              if (targetSpecification.isDefined && targetSpecificationActorMap.contains(targetSpecification.get.id)) {
-                targetActor = targetSpecificationActorMap(targetSpecification.get.id).remove(exportedActor.getActorId)
-              }
-              if (targetActor.isDefined) {
-                importItemActor = new ImportItem(Some(targetActor.get.name), ImportItemType.Actor, ImportItemMatch.Both, Some(targetActor.get.id.toString), Some(exportedActor.getId), importItemSpecification)
-                importItemMapActor += (targetActor.get.id.toString -> importItemActor)
-              } else {
-                importItemActor = new ImportItem(Some(exportedActor.getName), ImportItemType.Actor, ImportItemMatch.ArchiveOnly, None, Some(exportedActor.getId), importItemSpecification)
-              }
-              actorXmlIdToImportItemMap += (exportedActor.getId -> importItemActor)
-              // Endpoints
-              if (exportedActor.getEndpoints != null) {
-                exportedActor.getEndpoints.getEndpoint.asScala.foreach { exportedEndpoint =>
-                  var targetEndpoint: Option[models.Endpoints] = None
-                  var importItemEndpoint: ImportItem = null
-                  if (targetActor.isDefined && targetActorEndpointMap.contains(targetActor.get.id)) {
-                    targetEndpoint = targetActorEndpointMap(targetActor.get.id).remove(exportedEndpoint.getName)
-                  }
-                  if (targetEndpoint.isDefined) {
-                    importItemEndpoint = new ImportItem(Some(targetEndpoint.get.name), ImportItemType.Endpoint, ImportItemMatch.Both, Some(targetEndpoint.get.id.toString), Some(exportedEndpoint.getId), importItemActor)
-                    importItemMapEndpoint += (targetEndpoint.get.id.toString -> importItemEndpoint)
-                  } else {
-                    importItemEndpoint = new ImportItem(Some(exportedEndpoint.getName), ImportItemType.Endpoint, ImportItemMatch.ArchiveOnly, None, Some(exportedEndpoint.getId), importItemActor)
-                  }
-                  // Endpoint parameters
-                  if (exportedEndpoint.getParameters != null) {
-                    exportedEndpoint.getParameters.getParameter.asScala.foreach { exportedEndpointParameter =>
-                      var targetEndpointParameter: Option[models.Parameters] = None
-                      if (targetEndpoint.isDefined && targetEndpointParameterMap.contains(targetEndpoint.get.id)) {
-                        targetEndpointParameter = targetEndpointParameterMap(targetEndpoint.get.id).remove(exportedEndpointParameter.getName)
-                      }
-                      if (targetEndpointParameter.isDefined) {
-                        new ImportItem(Some(targetEndpointParameter.get.name), ImportItemType.EndpointParameter, ImportItemMatch.Both, Some(targetEndpointParameter.get.id.toString), Some(exportedEndpointParameter.getId), importItemEndpoint)
-                      } else {
-                        new ImportItem(Some(exportedEndpointParameter.getName), ImportItemType.EndpointParameter, ImportItemMatch.ArchiveOnly, None, Some(exportedEndpointParameter.getId), importItemEndpoint)
+            // Actors
+            if (exportedSpecification.getActors != null) {
+              exportedSpecification.getActors.getActor.asScala.foreach { exportedActor =>
+                var targetActor: Option[models.Actors] = None
+                var importItemActor: ImportItem = null
+                if (targetSpecification.isDefined && targetSpecificationActorMap.contains(targetSpecification.get.id)) {
+                  targetActor = targetSpecificationActorMap(targetSpecification.get.id).remove(exportedActor.getActorId)
+                }
+                if (targetActor.isDefined) {
+                  importItemActor = new ImportItem(Some(targetActor.get.name), ImportItemType.Actor, ImportItemMatch.Both, Some(targetActor.get.id.toString), Some(exportedActor.getId), importItemSpecification)
+                  importItemMapActor += (targetActor.get.id.toString -> importItemActor)
+                } else {
+                  importItemActor = new ImportItem(Some(exportedActor.getName), ImportItemType.Actor, ImportItemMatch.ArchiveOnly, None, Some(exportedActor.getId), importItemSpecification)
+                }
+                actorXmlIdToImportItemMap += (exportedActor.getId -> importItemActor)
+                // Endpoints
+                if (exportedActor.getEndpoints != null) {
+                  exportedActor.getEndpoints.getEndpoint.asScala.foreach { exportedEndpoint =>
+                    var targetEndpoint: Option[models.Endpoints] = None
+                    var importItemEndpoint: ImportItem = null
+                    if (targetActor.isDefined && targetActorEndpointMap.contains(targetActor.get.id)) {
+                      targetEndpoint = targetActorEndpointMap(targetActor.get.id).remove(exportedEndpoint.getName)
+                    }
+                    if (targetEndpoint.isDefined) {
+                      importItemEndpoint = new ImportItem(Some(targetEndpoint.get.name), ImportItemType.Endpoint, ImportItemMatch.Both, Some(targetEndpoint.get.id.toString), Some(exportedEndpoint.getId), importItemActor)
+                      importItemMapEndpoint += (targetEndpoint.get.id.toString -> importItemEndpoint)
+                    } else {
+                      importItemEndpoint = new ImportItem(Some(exportedEndpoint.getName), ImportItemType.Endpoint, ImportItemMatch.ArchiveOnly, None, Some(exportedEndpoint.getId), importItemActor)
+                    }
+                    // Endpoint parameters
+                    if (exportedEndpoint.getParameters != null) {
+                      exportedEndpoint.getParameters.getParameter.asScala.foreach { exportedEndpointParameter =>
+                        var targetEndpointParameter: Option[models.Parameters] = None
+                        if (targetEndpoint.isDefined && targetEndpointParameterMap.contains(targetEndpoint.get.id)) {
+                          targetEndpointParameter = targetEndpointParameterMap(targetEndpoint.get.id).remove(exportedEndpointParameter.getName)
+                        }
+                        if (targetEndpointParameter.isDefined) {
+                          new ImportItem(Some(targetEndpointParameter.get.name), ImportItemType.EndpointParameter, ImportItemMatch.Both, Some(targetEndpointParameter.get.id.toString), Some(exportedEndpointParameter.getId), importItemEndpoint)
+                        } else {
+                          new ImportItem(Some(exportedEndpointParameter.getName), ImportItemType.EndpointParameter, ImportItemMatch.ArchiveOnly, None, Some(exportedEndpointParameter.getId), importItemEndpoint)
+                        }
                       }
                     }
                   }
@@ -350,42 +503,44 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
           }
         }
       }
-    }
-    // Mark items not found for deletion.
-    targetDomainParametersMap.values.foreach { parameter =>
-      new ImportItem(Some(parameter.name), ImportItemType.DomainParameter, ImportItemMatch.DBOnly, Some(parameter.id.toString), None, importItemDomain)
-    }
-    targetDomainTestSuiteMap.values.foreach { testSuite =>
-      new ImportItem(Some(testSuite.fullname), ImportItemType.TestSuite, ImportItemMatch.DBOnly, Some(testSuite.id.toString), None, importItemDomain)
-    }
-    targetSpecificationGroupMap.values.foreach { group =>
-      new ImportItem(Some(group.fullname), ImportItemType.SpecificationGroup, ImportItemMatch.DBOnly, Some(group.id.toString), None, importItemDomain)
-    }
-    targetSpecificationMap.values.foreach { specification =>
-      val item = new ImportItem(Some(specification.fullname), ImportItemType.Specification, ImportItemMatch.DBOnly, Some(specification.id.toString), None, importItemDomain)
-      importItemMapSpecification += (specification.id.toString -> item)
-    }
-    targetSpecificationTestSuiteMap.foreach { x =>
-      x._2.values.foreach { testSuite =>
-        new ImportItem(Some(testSuite.fullname), ImportItemType.TestSuite, ImportItemMatch.DBOnly, Some(testSuite.id.toString), None, importItemMapSpecification(x._1.toString))
+      // Mark items not found for deletion.
+      targetDomainParametersMap.values.foreach { parameter =>
+        new ImportItem(Some(parameter.name), ImportItemType.DomainParameter, ImportItemMatch.DBOnly, Some(parameter.id.toString), None, importItemDomain)
       }
-    }
-    targetSpecificationActorMap.foreach { entry =>
-      entry._2.values.foreach { actor =>
-        val item = new ImportItem(Some(actor.name), ImportItemType.Actor, ImportItemMatch.DBOnly, Some(actor.id.toString), None, importItemMapSpecification(entry._1.toString))
-        importItemMapActor += (actor.id.toString -> item)
+      targetDomainTestSuiteMap.values.foreach { testSuite =>
+        new ImportItem(Some(testSuite.fullname), ImportItemType.TestSuite, ImportItemMatch.DBOnly, Some(testSuite.id.toString), None, importItemDomain)
       }
-    }
-    targetActorEndpointMap.values.foreach { x =>
-      x.values.foreach { endpoint =>
-        val item = new ImportItem(Some(endpoint.name), ImportItemType.Endpoint, ImportItemMatch.DBOnly, Some(endpoint.id.toString), None, importItemMapActor(endpoint.actor.toString))
-        importItemMapEndpoint += (endpoint.id.toString -> item)
+      targetSpecificationGroupMap.values.foreach { group =>
+        new ImportItem(Some(group.fullname), ImportItemType.SpecificationGroup, ImportItemMatch.DBOnly, Some(group.id.toString), None, importItemDomain)
       }
-    }
-    targetEndpointParameterMap.values.foreach { x =>
-      x.values.foreach { parameter =>
-        new ImportItem(Some(parameter.name), ImportItemType.EndpointParameter, ImportItemMatch.DBOnly, Some(parameter.id.toString), None, importItemMapEndpoint(parameter.endpoint.toString))
+      targetSpecificationMap.values.foreach { specification =>
+        val item = new ImportItem(Some(specification.fullname), ImportItemType.Specification, ImportItemMatch.DBOnly, Some(specification.id.toString), None, importItemDomain)
+        importItemMapSpecification += (specification.id.toString -> item)
       }
+      targetSpecificationTestSuiteMap.foreach { x =>
+        x._2.values.foreach { testSuite =>
+          new ImportItem(Some(testSuite.fullname), ImportItemType.TestSuite, ImportItemMatch.DBOnly, Some(testSuite.id.toString), None, importItemMapSpecification(x._1.toString))
+        }
+      }
+      targetSpecificationActorMap.foreach { entry =>
+        entry._2.values.foreach { actor =>
+          val item = new ImportItem(Some(actor.name), ImportItemType.Actor, ImportItemMatch.DBOnly, Some(actor.id.toString), None, importItemMapSpecification(entry._1.toString))
+          importItemMapActor += (actor.id.toString -> item)
+        }
+      }
+      targetActorEndpointMap.values.foreach { x =>
+        x.values.foreach { endpoint =>
+          val item = new ImportItem(Some(endpoint.name), ImportItemType.Endpoint, ImportItemMatch.DBOnly, Some(endpoint.id.toString), None, importItemMapActor(endpoint.actor.toString))
+          importItemMapEndpoint += (endpoint.id.toString -> item)
+        }
+      }
+      targetEndpointParameterMap.values.foreach { x =>
+        x.values.foreach { parameter =>
+          new ImportItem(Some(parameter.name), ImportItemType.EndpointParameter, ImportItemMatch.DBOnly, Some(parameter.id.toString), None, importItemMapEndpoint(parameter.endpoint.toString))
+        }
+      }
+    } else {
+      importItemDomain = null
     }
     (DomainImportInfo(referenceActorEndpointMap, referenceEndpointParameterMap, referenceActorToSpecificationMap, referenceEndpointParameterIdMap, actorXmlIdToImportItemMap), importItemDomain)
   }
@@ -401,14 +556,14 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
   }
 
   def previewSystemSettingsImport(exportedSettings: com.gitb.xml.export.Settings): ImportItem = {
-    previewSystemSettingsImportInternal(exportedSettings)
+    previewSystemSettingsImportInternal(exportedSettings, new mutable.HashSet[String]())
   }
 
-  def previewDomainImport(exportedDomain: com.gitb.xml.export.Domain, targetDomainId: Option[Long]): ImportItem = {
-    previewDomainImportInternal(exportedDomain, targetDomainId)._2
+  def previewDomainImport(exportedDomain: com.gitb.xml.export.Domain, targetDomainId: Option[Long], canDoAdminOperations: Boolean): ImportItem = {
+    previewDomainImportInternal(exportedDomain, targetDomainId, canDoAdminOperations)._2
   }
 
-  def previewCommunityImport(exportedData: com.gitb.xml.export.Export, targetCommunityId: Option[Long]): (ImportItem, Option[ImportItem], Option[ImportItem]) = {
+  def previewCommunityImport(exportedData: com.gitb.xml.export.Export, targetCommunityId: Option[Long], canDoAdminOperations: Boolean): (ImportItem, Option[ImportItem], Option[ImportItem]) = {
     var importItemCommunity: ImportItem = null
     var targetCommunity: Option[models.Communities] = None
     if (targetCommunityId.isDefined) {
@@ -425,16 +580,11 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
     if (targetCommunity.isDefined) {
       targetDomainId = targetCommunity.get.domain
     }
-    val domainImportResult = previewDomainImportInternal(exportedCommunity.getDomain, targetDomainId)
+    val domainImportResult = previewDomainImportInternal(exportedCommunity.getDomain, targetDomainId, canDoAdminOperations)
     val domainImportInfo = domainImportResult._1
     var importItemDomain: Option[ImportItem] = None
     if (domainImportResult._2 != null) {
       importItemDomain = Some(domainImportResult._2)
-    }
-    // Process system settings.
-    var importItemSettings: Option[ImportItem] = None
-    if (exportedData.getSettings != null) {
-      importItemSettings = Some(previewSystemSettingsImport(exportedData.getSettings))
     }
     // Process community.
     val targetAdministratorsMap = mutable.Map[String, models.Users]()
@@ -461,14 +611,20 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
     val importItemMapStatement = mutable.Map[String, ImportItem]()
     var referenceUserEmails = mutable.Set[String]()
     // Load user emails for uniqueness checks.
-    if (!Configurations.AUTHENTICATION_SSO_ENABLED && (importTargets.hasAdministrators || importTargets.hasOrganisationUsers)) {
+    if (!Configurations.AUTHENTICATION_SSO_ENABLED && (importTargets.hasAdministrators || importTargets.hasOrganisationUsers || importTargets.hasSystemAdministrators)) {
       referenceUserEmails = loadUserEmailSet()
+    }
+    // Process system settings. Do this here to use the loaded reference user emails.
+    var importItemSettings: Option[ImportItem] = None
+    if (canDoAdminOperations && exportedData.getSettings != null) {
+      // Only a Test Bed administrator can process system settings. We will not show these as options tot he user.
+      importItemSettings = Some(previewSystemSettingsImportInternal(exportedData.getSettings, referenceUserEmails))
     }
     if (targetCommunity.isDefined) {
       importItemCommunity = new ImportItem(Some(targetCommunity.get.fullname), ImportItemType.Community, ImportItemMatch.Both, Some(targetCommunity.get.id.toString), Some(exportedCommunity.getId))
       // Load data.
       // Administrators.
-      exportManager.loadAdministrators(targetCommunity.get.id).map { x =>
+      exportManager.loadCommunityAdministrators(targetCommunity.get.id).map { x =>
         targetAdministratorsMap += (x.email -> x)
       }
       // Organisation properties.

@@ -544,12 +544,22 @@
             <xsd:element name="administrator" type="CommunityAdministrator" maxOccurs="unbounded"/>
         </xsd:sequence>
     </xsd:complexType>
+    <xsd:complexType name="SystemAdministrators">
+        <xsd:sequence>
+            <xsd:element name="administrator" type="SystemAdministrator" maxOccurs="unbounded"/>
+        </xsd:sequence>
+    </xsd:complexType>
     <xsd:complexType name="Users">
         <xsd:sequence>
             <xsd:element name="user" type="OrganisationUser" maxOccurs="unbounded"/>
         </xsd:sequence>
     </xsd:complexType>
     <xsd:complexType name="CommunityAdministrator">
+        <xsd:complexContent>
+            <xsd:extension base="User"/>
+        </xsd:complexContent>
+    </xsd:complexType>
+    <xsd:complexType name="SystemAdministrator">
         <xsd:complexContent>
             <xsd:extension base="User"/>
         </xsd:complexContent>
@@ -687,6 +697,11 @@
     <xsd:complexType name="Settings">
         <xsd:sequence>
             <xsd:element name="themes" type="Themes" minOccurs="0"/>
+            <xsd:element name="systemConfigurations" type="SystemConfigurations" minOccurs="0"/>
+            <xsd:element name="landingPages" type="LandingPages" minOccurs="0"/>
+            <xsd:element name="legalNotices" type="LegalNotices" minOccurs="0"/>
+            <xsd:element name="errorTemplates" type="ErrorTemplates" minOccurs="0"/>
+            <xsd:element name="administrators" type="SystemAdministrators" minOccurs="0"/>
         </xsd:sequence>
     </xsd:complexType>
     <xsd:complexType name="Themes">
@@ -722,6 +737,21 @@
                     <xsd:element name="faviconContent" type="xsd:string" minOccurs="0"/>
                 </xsd:sequence>
                 <xsd:attribute name="active" type="xsd:boolean" default="false"/>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+    <xsd:complexType name="SystemConfigurations">
+        <xsd:sequence>
+            <xsd:element name="config" type="SystemConfiguration" maxOccurs="unbounded"/>
+        </xsd:sequence>
+    </xsd:complexType>
+    <xsd:complexType name="SystemConfiguration">
+        <xsd:complexContent>
+            <xsd:extension base="ExportType">
+                <xsd:sequence>
+                    <xsd:element name="value" type="xsd:string" minOccurs="0"/>
+                </xsd:sequence>
+                <xsd:attribute name="name" type="xsd:string" use="required"/>
             </xsd:extension>
         </xsd:complexContent>
     </xsd:complexType>

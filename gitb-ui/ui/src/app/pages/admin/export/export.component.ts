@@ -53,7 +53,12 @@ export class ExportComponent extends BaseComponent implements OnInit {
     testSuites: false,
     communityAdministrators: false,
     organisationUsers: false,
-    themes: false
+    themes: false,
+    defaultLandingPages: false,
+    defaultLegalNotices: false,
+    defaultErrorTemplates: false,
+    systemAdministrators: false,
+    systemConfigurations: false
   }
 
   constructor(
@@ -110,7 +115,12 @@ export class ExportComponent extends BaseComponent implements OnInit {
       testSuites: false,
       communityAdministrators: false,
       organisationUsers: false,
-      themes: false
+      themes: false,
+      defaultLandingPages: false,
+      defaultLegalNotices: false,
+      defaultErrorTemplates: false,
+      systemAdministrators: false,
+      systemConfigurations: false
     }
   }
 
@@ -186,6 +196,11 @@ export class ExportComponent extends BaseComponent implements OnInit {
   allSystemSettingDataChanged() {
     if (this.allSystemSettingData && this.showSystemSettingsOption) {
       this.settings.themes = this.allSystemSettingData
+      this.settings.defaultLandingPages = this.allSystemSettingData
+      this.settings.defaultLegalNotices = this.allSystemSettingData
+      this.settings.defaultErrorTemplates = this.allSystemSettingData
+      this.settings.systemAdministrators = this.allSystemSettingData
+      this.settings.systemConfigurations = this.allSystemSettingData
     }
   }
 
@@ -351,7 +366,12 @@ export class ExportComponent extends BaseComponent implements OnInit {
       this.settings.testSuites ||
       this.settings.communityAdministrators ||
       this.settings.organisationUsers ||
-      this.settings.themes
+      this.settings.themes ||
+      this.settings.defaultLandingPages ||
+      this.settings.defaultLegalNotices ||
+      this.settings.defaultErrorTemplates ||
+      this.settings.systemAdministrators ||
+      this.settings.systemConfigurations
     )
   }
 

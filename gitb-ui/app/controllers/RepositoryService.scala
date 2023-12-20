@@ -600,11 +600,20 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
     }
   }
 
-  def uploadCommunityExport(communityId: Long): Action[AnyContent] = authorizedAction { request =>
+  def uploadCommunityExportTestBedAdmin(communityId: Long): Action[AnyContent] = authorizedAction { request =>
+    authorizationManager.canCreateCommunity(request)
+    uploadCommunityExportInternal(request, communityId, canDoAdminOperations = true)
+  }
+
+  def uploadCommunityExportCommunityAdmin(communityId: Long): Action[AnyContent] = authorizedAction { request =>
+    authorizationManager.canManageCommunity(request, communityId)
+    uploadCommunityExportInternal(request, communityId, canDoAdminOperations = false)
+  }
+
+  private def uploadCommunityExportInternal(request: Request[AnyContent], communityId: Long, canDoAdminOperations: Boolean) = {
     try {
-      authorizationManager.canManageCommunity(request, communityId)
       processImport(request, requireDomain = false, requireCommunity = true, requireSettings = false, (exportData: Export, settings: ImportSettings) => {
-        val result = importPreviewManager.previewCommunityImport(exportData, Some(communityId))
+        val result = importPreviewManager.previewCommunityImport(exportData, Some(communityId), canDoAdminOperations)
         val items = new ListBuffer[ImportItem]()
         // First add domain.
         if (result._2.isDefined) {
@@ -623,11 +632,20 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
     }
   }
 
-  def uploadDomainExport(domainId: Long): Action[AnyContent] = authorizedAction { request =>
+  def uploadDomainExportTestBedAdmin(domainId: Long): Action[AnyContent] = authorizedAction { request =>
+    authorizationManager.canCreateDomain(request)
+    uploadDomainExportInternal(request, domainId, canDoAdminOperations = true)
+  }
+
+  def uploadDomainExportCommunityAdmin(domainId: Long): Action[AnyContent] = authorizedAction { request =>
+    authorizationManager.canManageDomain(request, domainId)
+    uploadDomainExportInternal(request, domainId, canDoAdminOperations = false)
+  }
+
+  private def uploadDomainExportInternal(request: Request[AnyContent], domainId: Long, canDoAdminOperations: Boolean): Result = {
     try {
-      authorizationManager.canManageDomain(request, domainId)
       processImport(request, requireDomain = true, requireCommunity = false, requireSettings = false, (exportData: Export, settings: ImportSettings) => {
-        val result = importPreviewManager.previewDomainImport(exportData.getDomains.getDomain.get(0), Some(domainId))
+        val result = importPreviewManager.previewDomainImport(exportData.getDomains.getDomain.get(0), Some(domainId), canDoAdminOperations)
         List(result)
       })
     } finally {
@@ -714,12 +732,8 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
 
   def confirmSystemSettingsImport: Action[AnyContent] = authorizedAction { request =>
     authorizationManager.canManageSystemSettings(request)
-    confirmSystemSettingsImportInternal(request, canManageSettings = true)
-  }
-
-  private def confirmSystemSettingsImportInternal(request: Request[AnyContent], canManageSettings: Boolean) = {
     confirmImportInternal(request, (export: Export, importSettings: ImportSettings, importItems: List[ImportItem]) => {
-      importCompleteManager.completeSystemSettingsImport(export.getSettings, importSettings, importItems, canManageSettings)
+      importCompleteManager.completeSystemSettingsImport(export.getSettings, importSettings, importItems, canManageSettings = true, Some(ParameterExtractor.extractUserId(request)))
     })
   }
 

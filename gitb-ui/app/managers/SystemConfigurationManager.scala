@@ -197,62 +197,71 @@ class SystemConfigurationManager @Inject() (repositoryUtils: RepositoryUtils, db
    * Set system parameter
    */
   def updateSystemParameter(name: String, value: Option[String] = None): Option[String] = {
-    // Persist in the DB.
-    if (name == Constants.WelcomeMessage && value.isEmpty) {
-      exec(PersistenceSchema.systemConfigurations.filter(_.name === name).delete.transactionally)
-    } else {
-      exec(updateSystemParameterInternal(name, value).transactionally)
-    }
-    var returnValue: Option[String] = None
-    // Now apply also to the current instance.
-    name match {
-      case Constants.RestApiEnabled =>
-        if (value.isDefined) {
-          Configurations.AUTOMATION_API_ENABLED = value.get.toBoolean
-        }
-      case Constants.SelfRegistrationEnabled =>
-        if (value.isDefined) {
-          Configurations.REGISTRATION_ENABLED = value.get.toBoolean
-        }
-      case Constants.DemoAccount =>
-        if (value.isDefined) {
-          Configurations.DEMOS_ENABLED = true
-          Configurations.DEMOS_ACCOUNT = value.get.toLong
-        } else {
-          Configurations.DEMOS_ENABLED = false
-          Configurations.DEMOS_ACCOUNT = -1
-        }
-      case Constants.WelcomeMessage =>
-        if (value.isDefined) {
-          Configurations.WELCOME_MESSAGE = value.get
-        } else {
-          Configurations.WELCOME_MESSAGE = Configurations.WELCOME_MESSAGE_DEFAULT
-          returnValue = Some(Configurations.WELCOME_MESSAGE_DEFAULT)
-        }
-      case Constants.AccountRetentionPeriod =>
-        if (value.isDefined) {
-          deleteInactiveUserAccounts()
-        }
-      case _ => // No action needed.
-    }
-    returnValue
+    exec(updateSystemParameterInternal(name, value, applySetting = true).transactionally)
   }
 
-  private def updateSystemParameterInternal(name: String, value: Option[String] = None): DBIO[_] = {
+  def updateSystemParameterInternal(name: String, value: Option[String] = None, applySetting: Boolean): DBIO[Option[String]] = {
     for {
       exists <- PersistenceSchema.systemConfigurations.filter(_.name === name).exists.result
-      _ <- if (exists) {
-        PersistenceSchema.systemConfigurations.filter(_.name === name).map(_.parameter).update(value)
-      } else {
-        PersistenceSchema.systemConfigurations += SystemConfigurations(name, value, None)
+      _ <- {
+        if (exists) {
+          if (name == Constants.WelcomeMessage && value.isEmpty) {
+            PersistenceSchema.systemConfigurations.filter(_.name === name).delete
+          } else {
+            PersistenceSchema.systemConfigurations.filter(_.name === name).map(_.parameter).update(value)
+          }
+        } else {
+          PersistenceSchema.systemConfigurations += SystemConfigurations(name, value, None)
+        }
       }
-    } yield ()
+      returnValue <- if (applySetting) {
+        // Now apply also to the current instance.
+        name match {
+          case Constants.RestApiEnabled =>
+            if (value.isDefined) {
+              Configurations.AUTOMATION_API_ENABLED = value.get.toBoolean
+            }
+            DBIO.successful(None)
+          case Constants.SelfRegistrationEnabled =>
+            if (value.isDefined) {
+              Configurations.REGISTRATION_ENABLED = value.get.toBoolean
+            }
+            DBIO.successful(None)
+          case Constants.DemoAccount =>
+            if (value.isDefined) {
+              Configurations.DEMOS_ENABLED = true
+              Configurations.DEMOS_ACCOUNT = value.get.toLong
+            } else {
+              Configurations.DEMOS_ENABLED = false
+              Configurations.DEMOS_ACCOUNT = -1
+            }
+            DBIO.successful(None)
+          case Constants.WelcomeMessage =>
+            if (value.isDefined) {
+              Configurations.WELCOME_MESSAGE = value.get
+              DBIO.successful(None)
+            } else {
+              Configurations.WELCOME_MESSAGE = Configurations.WELCOME_MESSAGE_DEFAULT
+              DBIO.successful(Some(Configurations.WELCOME_MESSAGE_DEFAULT))
+            }
+          case Constants.AccountRetentionPeriod =>
+            if (value.isDefined) {
+              deleteInactiveUserAccountsInternal() andThen DBIO.successful(None)
+            } else {
+              DBIO.successful(None)
+            }
+          case _ => DBIO.successful(None)
+        }
+      } else {
+        DBIO.successful(None)
+      }
+    } yield returnValue
   }
 
   def updateMasterPassword(previousPassword: Array[Char], newPassword: Array[Char]): Unit = {
     val dbAction: DBIO[_] = for {
       // Update the hashed stored value
-      _ <- updateSystemParameterInternal(Constants.MasterPassword, Some(BCrypt.hashpw(String.valueOf(newPassword), BCrypt.gensalt())))
+      _ <- updateSystemParameterInternal(Constants.MasterPassword, Some(BCrypt.hashpw(String.valueOf(newPassword), BCrypt.gensalt())), applySetting = false)
       // Update domain parameters
       domainParams <- PersistenceSchema.domainParameters.filter(_.kind === "HIDDEN").filter(_.value.isDefined).map(x => (x.id, x.value)).result
       _ <- {
@@ -571,8 +580,8 @@ class SystemConfigurationManager @Inject() (repositoryUtils: RepositoryUtils, db
     } yield (existingThemeInfo.isDefined, reloadNeeded)
   }
 
-  def deleteInactiveUserAccounts(): Option[Int] = {
-    exec(for {
+  private def deleteInactiveUserAccountsInternal(): DBIO[Option[Int]] = {
+    for {
       retentionPeriod <- PersistenceSchema.systemConfigurations.filter(_.name === Constants.AccountRetentionPeriod).map(_.parameter).result.headOption
       usersDeleted <- {
         if (retentionPeriod.isDefined && retentionPeriod.get.isDefined) {
@@ -604,7 +613,11 @@ class SystemConfigurationManager @Inject() (repositoryUtils: RepositoryUtils, db
           DBIO.successful(None)
         }
       }
-    } yield usersDeleted)
+    } yield usersDeleted
+  }
+
+  def deleteInactiveUserAccounts(): Option[Int] = {
+    exec(deleteInactiveUserAccountsInternal().transactionally)
   }
 
 }

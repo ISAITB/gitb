@@ -34,6 +34,11 @@ object ExistingIds {
     map += (ImportItemType.Statement -> mutable.Set[String]())
     map += (ImportItemType.StatementConfiguration -> mutable.Set[String]())
     map += (ImportItemType.Theme -> mutable.Set[String]())
+    map += (ImportItemType.DefaultLandingPage -> mutable.Set[String]())
+    map += (ImportItemType.DefaultLegalNotice -> mutable.Set[String]())
+    map += (ImportItemType.DefaultErrorTemplate -> mutable.Set[String]())
+    map += (ImportItemType.SystemAdministrator -> mutable.Set[String]())
+    map += (ImportItemType.SystemConfiguration -> mutable.Set[String]())
     ExistingIds(map.toMap)
   }
 }

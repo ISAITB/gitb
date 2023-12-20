@@ -33,6 +33,7 @@ export class ImportComponent extends BaseComponent implements OnInit, OnDestroy 
   communities: Community[] = []
   domains: Domain[] = []
   pendingImportId?: string
+  showDomainOption = true
   importStep1 = true
   importStep2 = false
   settings: ImportSettings = {}
@@ -97,6 +98,7 @@ export class ImportComponent extends BaseComponent implements OnInit, OnDestroy 
             this.exportType = undefined
         } else {
             this.exportType = 'community'
+            this.showDomainOption = false
         }
       } else if (this.dataService.isSystemAdmin) {
         this.exportType = undefined
@@ -141,6 +143,11 @@ export class ImportComponent extends BaseComponent implements OnInit, OnDestroy 
     this.importItemTypeLabels[Constants.IMPORT_ITEM_TYPE.STATEMENT_CONFIGURATION] = 'Conformance statement configurations'
     this.importItemTypeLabels[Constants.IMPORT_ITEM_TYPE.SYSTEM_SETTINGS] = 'System settings'
     this.importItemTypeLabels[Constants.IMPORT_ITEM_TYPE.THEME] = 'Themes'
+    this.importItemTypeLabels[Constants.IMPORT_ITEM_TYPE.DEFAULT_LANDING_PAGE] = 'Default landing pages'
+    this.importItemTypeLabels[Constants.IMPORT_ITEM_TYPE.DEFAULT_LEGAL_NOTICE] = 'Default legal notices'
+    this.importItemTypeLabels[Constants.IMPORT_ITEM_TYPE.DEFAULT_ERROR_TEMPLATE] = 'Error templates'
+    this.importItemTypeLabels[Constants.IMPORT_ITEM_TYPE.SYSTEM_ADMINISTRATOR] = 'Administrators'
+    this.importItemTypeLabels[Constants.IMPORT_ITEM_TYPE.SYSTEM_CONFIGURATION] = 'Configuration settings'
   }
 
   typeDescription(type: number) {
