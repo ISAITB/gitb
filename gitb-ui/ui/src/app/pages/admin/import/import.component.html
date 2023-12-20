@@ -6,10 +6,10 @@
 		<form>
             <div class="card-body">
 				<div *ngIf="importStep1">
-					<div class="row pt-2" [class.mb-3]="exportType != undefined">
+					<div class="row pt-2" [class.mb-3]="exportType != undefined" *ngIf="showDomainOption || dataService.isSystemAdmin">
 						<legend class="col-3 col-form-label text-end pt-0">* Data to import:</legend>
 						<div class="col-7">
-                            <div class="form-check form-check-inline">
+                            <div class="form-check form-check-inline" *ngIf="showDomainOption">
                                 <input class="form-check-input" type="radio" [(ngModel)]="exportType" name="choice" id="choice_domain" [value]="'domain'" (change)="resetSettings()">
                                 <label class="form-check-label" for="choice_domain">{{dataService.labelDomain()}} configuration
                                     <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" [tbTooltip]="'Import data linked to conformance testing scenarios, including '+dataService.labelSpecificationsLower()+' and configured test suites.'"></div>
