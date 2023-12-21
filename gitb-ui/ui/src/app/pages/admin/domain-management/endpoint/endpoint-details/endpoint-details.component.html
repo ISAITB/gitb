@@ -47,26 +47,31 @@
 									<th class="min-width"></th>
 								</tr>
 							</thead>
-							<tbody>
+							<tbody class="parametersTable" cdkDropList cdkDropListLockAxis="y" (cdkDropListDropped)="dropParameter($event)">
 								<tr *ngIf="dataStatus.status != Constants.STATUS.FINISHED">
 									<td colspan="8" class="td-data-loading"><span><i class="fa-solid fa-spinner fa-spin-override fa-lg"></i></span></td>
 								</tr>
 								<tr *ngIf="dataStatus.status == Constants.STATUS.FINISHED && parameters.length == 0">
 									<td colspan="8" class="td-no-data"><span>No parameters found</span></td>
 								</tr>
-								<tr class="table-row-directive selectable" *ngFor="let parameter of parameters; let index = index; let first = first; let last = last" (click)="onParameterSelect(parameter)">
-									<td><div><span>{{parameter.name}}</span></div></td>
+								<tr class="table-row-directive selectable drag-table-row" 
+									*ngFor="let parameter of parameters"
+									cdkDrag
+									(cdkDragStarted)="draggingParameter = true"
+									(cdkDragEnded)="draggingParameter = false"
+									cdkDragPreviewContainer="parent"
+									(click)="onParameterSelect(parameter)"
+									[class.selectable]="!draggingParameter"
+								>
+									<td class="drag-preview"><div><span>{{parameter.name}}</span></div></td>
 									<td><div><span>{{parameter.testKey}}</span></div></td>
 									<td><div><span>{{parameter.kindLabel}}</span></div></td>
 									<td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': parameter.useLabel, 'fa-times': !parameter.useLabel}"></i></span></div></td>
 									<td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': parameter.adminOnlyLabel, 'fa-times': !parameter.adminOnlyLabel}"></i></span></div></td>
 									<td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': parameter.notForTestsLabel, 'fa-times': !parameter.notForTestsLabel}"></i></span></div></td>
 									<td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': parameter.hidden, 'fa-times': !parameter.hidden}"></i></span></div></td>
-									<td class="btn-stacked-container" (click)="$event.stopPropagation();">
-										<div class="btn-toolbar btn-stacked">
-											<button *ngIf="!first" [class.top]="!first && !last" class="btn btn-xs btn-secondary" type="button" (click)="moveParameterUp(index, $event)" containerClass="shortTooltip" tooltip="Move up" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-chevron-up"></i></button>
-											<button *ngIf="!last" [class.bottom]="!first && !last" class="btn btn-xs btn-secondary" type="button" (click)="moveParameterDown(index, $event)" containerClass="shortTooltip" tooltip="Move down" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-chevron-down"></i></button>
-										</div>
+									<td class="drag-handle" (click)="$event.stopPropagation();">
+										<button cdkDragHandle *ngIf="parameters.length > 1" #pop="bs-tooltip" (mousedown)="pop.hide()" class="btn btn-secondary" type="button" containerClass="shortTooltip" container="body" tooltip="Reorder" [delay]="Constants.TOOLTIP_DELAY"><span><i class="fa-solid fa-arrows-up-down"></i></span></button>
 									</td>
 								</tr>
 							</tbody>

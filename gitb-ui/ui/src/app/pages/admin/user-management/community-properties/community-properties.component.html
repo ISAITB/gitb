@@ -12,7 +12,7 @@
                     <div class="table-title">{{dataService.labelOrganisation()}} level properties</div>
                     <div class="btn-toolbar">
                         <button type="button" class="btn btn-secondary" (click)="previewOrganisationParameters()">Preview</button>
-                        <button type="button" class="btn btn-secondary" [disabled]="orderOrganisationParametersDisabled.value" (click)="orderOrganisationParameters()">Save property order</button>
+                        <button type="button" class="btn btn-secondary" [disable]="orderOrganisationParametersDisabled" [pending]="orderOrganisationParametersPending" (click)="orderOrganisationParameters()">Save property order</button>
                         <button type="button" class="btn btn-secondary" (click)="addOrganisationParameter()">Create property</button>
                     </div>
                 </div>
@@ -32,15 +32,23 @@
                                 <th class="min-width"></th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody class="organisationParametersTable" cdkDropList cdkDropListLockAxis="y" (cdkDropListDropped)="dropOrganisationParameter($event)">
                             <tr *ngIf="organisationParameterStatus.status != Constants.STATUS.FINISHED">
                                 <td colspan="10" class="td-data-loading"><span><i class="fa-solid fa-spinner fa-spin-override fa-lg"></i></span></td>
                             </tr>
                             <tr *ngIf="organisationParameterStatus.status == Constants.STATUS.FINISHED && organisationParameters.length == 0">
                                 <td colspan="10" class="td-no-data"><span>No properties found</span></td>
                             </tr>
-                            <tr class="table-row-directive selectable" *ngFor="let parameter of organisationParameters; let first = first; let last = last; let index = index" (click)="onOrganisationParameterSelect(parameter)">
-                                <td><div><span>{{parameter.name}}</span></div></td>
+                            <tr class="table-row-directive drag-table-row" 
+                                *ngFor="let parameter of organisationParameters"
+                                cdkDrag
+                                (cdkDragStarted)="draggingOrganisationParameter = true"
+                                (cdkDragEnded)="draggingOrganisationParameter = false"
+                                cdkDragPreviewContainer="parent"
+                                (click)="onOrganisationParameterSelect(parameter)"
+                                [class.selectable]="!draggingOrganisationParameter && !draggingSystemParameter"
+                            >                            
+                                <td class="drag-preview"><div><span>{{parameter.name}}</span></div></td>
                                 <td><div><span>{{parameter.testKey}}</span></div></td>
                                 <td><div><span>{{kindLabel(parameter)}}</span></div></td>
                                 <td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': parameter.use == 'R', 'fa-times': parameter.use != 'R'}"></i></span></div></td>
@@ -49,11 +57,8 @@
                                 <td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': parameter.inExports, 'fa-times': !parameter.inExports}"></i></span></div></td>
                                 <td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': parameter.hidden, 'fa-times': !parameter.hidden}"></i></span></div></td>
                                 <td class="centered" *ngIf="dataService.configuration.registrationEnabled"><div><span><i class="fa" [ngClass]="{'fa-check': parameter.inSelfRegistration, 'fa-times': !parameter.inSelfRegistration}"></i></span></div></td>
-                                <td class="btn-stacked-container" (click)="$event.stopPropagation();">
-                                    <div class="btn-toolbar btn-stacked">
-                                        <button *ngIf="!first" [class.top]="!first && !last" class="btn btn-xs btn-secondary" type="button" (click)="movePropertyUp(organisationParameters, orderOrganisationParametersDisabled, index, $event)" containerClass="shortTooltip" tooltip="Move up" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-chevron-up"></i></button>
-                                        <button *ngIf="!last" [class.bottom]="!first && !last" class="btn btn-xs btn-secondary" type="button" (click)="movePropertyDown(organisationParameters, orderOrganisationParametersDisabled, index, $event)" containerClass="shortTooltip" tooltip="Move down" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-chevron-down"></i></button>
-                                    </div>
+                                <td class="drag-handle" (click)="$event.stopPropagation();">
+                                    <button cdkDragHandle *ngIf="organisationParameters.length > 1" #pop="bs-tooltip" (mousedown)="pop.hide()" class="btn btn-secondary" type="button" containerClass="shortTooltip" container="body" tooltip="Reorder" [delay]="Constants.TOOLTIP_DELAY"><span><i class="fa-solid fa-arrows-up-down"></i></span></button>
                                 </td>
                             </tr>
                         </tbody>
@@ -65,7 +70,7 @@
                     <div class="table-title">{{dataService.labelSystem()}} level properties</div>
                     <div class="btn-toolbar">
                         <button type="button" class="btn btn-secondary" (click)="previewSystemParameters()">Preview</button>
-                        <button type="button" class="btn btn-secondary" [disable]="orderSystemParametersDisabled.value" [pending]="orderPending" (click)="orderSystemParameters()">Save property order</button>
+                        <button type="button" class="btn btn-secondary" [disable]="orderSystemParametersDisabled" [pending]="orderSystemParametersPending" (click)="orderSystemParameters()">Save property order</button>
                         <button type="button" class="btn btn-secondary" (click)="addSystemParameter()">Create property</button>
                     </div>
                 </div>
@@ -84,15 +89,23 @@
                                 <th class="min-width"></th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody class="systemParametersTable" cdkDropList cdkDropListLockAxis="y" (cdkDropListDropped)="dropSystemParameter($event)">
                             <tr *ngIf="systemParameterStatus.status != Constants.STATUS.FINISHED">
                                 <td colspan="10" class="td-data-loading"><span><i class="fa-solid fa-spinner fa-spin-override fa-lg"></i></span></td>
                             </tr>
                             <tr *ngIf="systemParameterStatus.status == Constants.STATUS.FINISHED && systemParameters.length == 0">
                                 <td colspan="10" class="td-no-data"><span>No properties found</span></td>
                             </tr>
-                            <tr class="table-row-directive selectable" *ngFor="let parameter of systemParameters; let first = first; let last = last; let index = index" (click)="onSystemParameterSelect(parameter)">
-                                <td><div><span>{{parameter.name}}</span></div></td>
+                            <tr class="table-row-directive drag-table-row" 
+                                *ngFor="let parameter of systemParameters"
+                                cdkDrag
+                                (cdkDragStarted)="draggingSystemParameter = true"
+                                (cdkDragEnded)="draggingSystemParameter = false"
+                                cdkDragPreviewContainer="parent"
+                                (click)="onSystemParameterSelect(parameter)"
+                                [class.selectable]="!draggingSystemParameter && !draggingOrganisationParameter"
+                            >
+                                <td class="drag-preview"><div><span>{{parameter.name}}</span></div></td>
                                 <td><div><span>{{parameter.testKey}}</span></div></td>
                                 <td><div><span>{{kindLabel(parameter)}}</span></div></td>
                                 <td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': parameter.use == 'R', 'fa-times': parameter.use != 'R'}"></i></span></div></td>
@@ -100,11 +113,8 @@
                                 <td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': !parameter.notForTests, 'fa-times': parameter.notForTests}"></i></span></div></td>
                                 <td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': parameter.inExports, 'fa-times': !parameter.inExports}"></i></span></div></td>
                                 <td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': parameter.hidden, 'fa-times': !parameter.hidden}"></i></span></div></td>
-                                <td class="btn-stacked-container" (click)="$event.stopPropagation();">
-                                    <div class="btn-toolbar btn-stacked">
-                                        <button *ngIf="!first" [class.top]="!first && !last" class="btn btn-xs btn-secondary" type="button" (click)="movePropertyUp(systemParameters, orderSystemParametersDisabled, index, $event)" containerClass="shortTooltip" tooltip="Move up" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-chevron-up"></i></button>
-                                        <button *ngIf="!last" [class.bottom]="!first && !last" class="btn btn-xs btn-secondary" type="button" (click)="movePropertyDown(systemParameters, orderSystemParametersDisabled, index, $event)" containerClass="shortTooltip" tooltip="Move down" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-chevron-down"></i></button>
-                                    </div>
+                                <td class="drag-handle" (click)="$event.stopPropagation();">
+                                    <button cdkDragHandle *ngIf="systemParameters.length > 1" #pop="bs-tooltip" (mousedown)="pop.hide()" class="btn btn-secondary" type="button" containerClass="shortTooltip" container="body" tooltip="Reorder" [delay]="Constants.TOOLTIP_DELAY"><span><i class="fa-solid fa-arrows-up-down"></i></span></button>
                                 </td>
                             </tr>
                         </tbody>

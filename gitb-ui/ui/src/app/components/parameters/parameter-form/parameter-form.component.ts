@@ -1,3 +1,4 @@
+import { CdkDragDrop } from '@angular/cdk/drag-drop';
 import { AfterViewInit, Component, Input, OnInit } from '@angular/core';
 import { Constants } from 'src/app/common/constants';
 import { DataService } from 'src/app/services/data.service';
@@ -23,6 +24,7 @@ export class ParameterFormComponent implements OnInit, AfterViewInit {
 
   dependsOnTargets: ParameterReference[] = []
   dependsOnTargetsMap: {[key: string]: ParameterReference} = {}
+  draggingPreset = false
 
   constructor(
     public dataService: DataService
@@ -50,26 +52,15 @@ export class ParameterFormComponent implements OnInit, AfterViewInit {
     this.parameter.presetValues!.splice(index, 1)
   }
 
-  movePresetUp(index: number, event: UIEvent) {
-    if (event.currentTarget && (event.currentTarget as any).blur) {
-      (event.currentTarget as any).blur()
-    }
-    const item = this.parameter.presetValues!.splice(index, 1)[0]
-    this.parameter.presetValues!.splice(index-1, 0, item)
-  }
-
-  movePresetDown(index: number, event: UIEvent) {
-    if (event.currentTarget && (event.currentTarget as any).blur) {
-      (event.currentTarget as any).blur()
-    }
-    const item = this.parameter.presetValues!.splice(index, 1)[0]
-    this.parameter.presetValues!.splice(index+1, 0, item)
-  }
-  
   dependsOnChanged() {
     if (this.parameter.dependsOn == undefined || this.parameter.dependsOn == '') {
       delete this.parameter.dependsOnValue
     }
   }
 
+  dropPreset(event: CdkDragDrop<any>) {
+    if (event.currentIndex != event.previousIndex && this.parameter.presetValues) {
+      this.parameter.presetValues.splice(event.currentIndex, 0, this.parameter.presetValues.splice(event.previousIndex, 1)[0]);
+    }
+  }  
 }

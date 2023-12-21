@@ -59,7 +59,7 @@
                             </div>
                         </div>
                     </div>
-                    <div>
+                    <div class="option-container" cdkDropList cdkDropListLockAxis="y" (cdkDropListDropped)="dropSpecification($event)" >
                         <ng-container [ngSwitch]="specificationStatus && specificationStatus.status != Constants.STATUS.FINISHED">
                             <ng-container *ngSwitchCase="true">
                                 <div class="spec-message-div">
@@ -74,21 +74,20 @@
                                     </div>
                                 </ng-container>
                                 <ng-container *ngSwitchDefault>
-                                    <ng-container *ngFor="let spec of domainSpecifications; let firstGroup = first; let lastGroup = last">
-                                        <app-domain-specification-display
-                                            [spec]="spec"
-                                            [first]="firstGroup"
-                                            [last]="lastGroup"
-                                            [groups]="specificationGroups"
-                                            (removeSpec)="removeSpecificationFromGroup($event[0], $event[1])"
-                                            (moveSpec)="moveSpecificationToGroup($event[0], $event[1], $event[2])"
-                                            (copySpec)="copySpecificationToGroup($event[0], $event[1], $event[2])"
-                                            (moveUp)="moveSpecificationUp($event)"
-                                            (moveDown)="moveSpecificationDown($event)"
-                                            (selectSpec)="onSpecificationSelect($event)"
-                                            (click)="onSpecificationGroupSelect(spec)"
-                                        ></app-domain-specification-display>
-                                    </ng-container>
+                                    <app-domain-specification-display
+                                        *ngFor="let spec of domainSpecifications; let firstGroup = first; let lastGroup = last"
+                                        [spec]="spec"
+                                        [first]="firstGroup"
+                                        [last]="lastGroup"
+                                        [groups]="specificationGroups"
+                                        [dragOngoing]="dragOngoing"
+                                        (removeSpec)="removeSpecificationFromGroup($event[0], $event[1])"
+                                        (moveSpec)="moveSpecificationToGroup($event[0], $event[1], $event[2])"
+                                        (copySpec)="copySpecificationToGroup($event[0], $event[1], $event[2])"
+                                        (selectSpec)="onSpecificationSelect($event)"
+                                        (dragging)="dragOngoing = $event"
+                                        (click)="onSpecificationGroupSelect(spec)"
+                                    ></app-domain-specification-display>
                                 </ng-container>
                             </ng-container>
                         </ng-container>

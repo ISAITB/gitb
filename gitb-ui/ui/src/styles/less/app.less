@@ -49,21 +49,6 @@ input, textarea {
 }
 
 .btn-toolbar {
-	&.btn-stacked {
-		&>.btn {
-			&.top {
-				border-bottom-right-radius: 0px;
-				border-bottom-left-radius: 0px;
-				margin-bottom: 0px;
-			}
-			&.bottom {
-				border-top-right-radius: 0px;
-				border-top-left-radius: 0px;
-			}
-			margin-left: 0px;
-			padding: 1px 12px;
-		}
-	}
 	&>.btn, &>.btn-group, &>.input-group, &>.btn-toolbar {
 		margin-left: 5px;
 		&:first-child {
@@ -896,3 +881,80 @@ span.mini-tab{
 		max-height: 350px;
 	}
 }
+
+/* Drag and drop related styles - START */
+.cdk-drag-preview {
+    box-shadow: 0 5px 5px -3px rgba(0, 0, 0, 0.2),
+                0 8px 10px 1px rgba(0, 0, 0, 0.14),
+                0 3px 14px 2px rgba(0, 0, 0, 0.12);
+}
+.cdk-drop-list-dragging .cdk-drag {
+    transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+}
+.cdk-drag-placeholder {
+	background-color: transparent !important;
+	color: transparent !important;
+	& * {
+		background-color: transparent !important;
+		color: transparent !important;
+	}
+	&.drag-div {
+		border-color: transparent !important;
+		& * {
+			border-color: transparent !important;
+		}
+	}
+	&.drag-table-row {
+		& * {
+			&.btn, &.form-control {
+				border-color: transparent !important;
+			}
+		}
+	}
+}
+.cdk-drag-preview {
+	&.drag-div {
+		.drag-hide {
+			display: none !important;
+		}
+		.drag-div {
+			.drag-handle {
+				display: none !important;
+			}
+		}
+	}
+	&.drag-table-row {
+		background-color: @white;
+		& > td, & > div {
+			border-bottom: 1px solid @gray-dark-1;
+			border-top: 1px solid @gray-dark-1;
+			&:first-child {
+				border-left: 1px solid @gray-dark-1;
+			}
+			&:last-child {
+				border-right: 1px solid @gray-dark-1;
+			}
+		}
+		.drag-preview {
+			font-weight: bold;
+			width: 100%;
+		}
+		input.form-control {
+			border-style: none;
+			background-color: @white;
+			font-weight: bold;
+		}
+		& > td:not(.drag-preview), & > div:not(.drag-preview) {
+			&:not(.drag-handle) {
+				display: none;
+			}
+		}
+	}
+}
+.drag-handle {
+    cursor: default !important;    
+    .btn {
+        cursor: move !important;
+    }
+}
+/* Drag and drop related styles - END */
