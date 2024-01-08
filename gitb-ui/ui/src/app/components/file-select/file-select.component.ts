@@ -14,7 +14,6 @@ export class FileSelectComponent implements OnInit {
 
   @Input() fileName?: string
   @Input() placeholder = 'Drop or browse for file ...'
-  @Input() label?: string
   @Input() accepts?: string[]
   @Input() acceptsDrop?: string[]
   @Input() maxSize!: number
@@ -25,7 +24,6 @@ export class FileSelectComponent implements OnInit {
 
   Constants = Constants
   
-  isButton = false
   maxSizeKbs?: number
   acceptString?: string
   dragActive = false
@@ -38,7 +36,6 @@ export class FileSelectComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
-    this.isButton = this.label != undefined
     if (this.accepts != undefined && this.accepts.length > 0) {
       this.acceptString = this.accepts.join(',')
     }
