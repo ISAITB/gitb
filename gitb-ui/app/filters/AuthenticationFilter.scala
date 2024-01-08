@@ -160,6 +160,7 @@ class AuthenticationFilter @Inject() (implicit ec: ExecutionContext, implicit va
       request.path.startsWith("/"+API_ROOT+"/oauth/") ||
       request.path.startsWith("/"+API_ROOT+"/theme/") ||
       request.path.equals("/"+API_ROOT+"/initdata") ||
+      request.path.equals("/"+API_ROOT+"/healthcheck") ||
       request.path.startsWith("/badge/") ||
       //public assets
       request.path.startsWith("/assets/") ||

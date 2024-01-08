@@ -77,6 +77,10 @@ class Application @Inject() (implicit ec: ExecutionContext, cc: ControllerCompon
     )
   }
 
+  def healthcheck = defaultAction {
+    Ok
+  }
+
   def restApiInfo = defaultAction {
     if (Configurations.AUTOMATION_API_ENABLED) {
       Ok.sendFile(

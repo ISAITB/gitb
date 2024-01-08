@@ -123,6 +123,7 @@ class SecurityModule extends AbstractModule {
       .excludeBranch("/"+API_ROOT+"/repository/tests")
       .excludeBranch("/"+API_ROOT+"/repository/resource")
       .excludeBranch("/"+API_ROOT+"/rest")
+      .excludePath("/"+API_ROOT+"/healthcheck")
       .excludeBranch("/badge")
     )
     config

@@ -343,6 +343,8 @@ POST    /api/domains/import/confirm/:id                         @controllers.Rep
 POST    /api/domains/import/confirm/admin/:id                   @controllers.RepositoryService.confirmDomainImportTestBedAdmin(id: Long)
 POST    /api/initdata                                           @controllers.RepositoryService.applySandboxData()
 
+GET     /api/healthcheck                                         @controllers.Application.healthcheck()
+
 GET     /api/rest                                                @controllers.Application.restApiInfo()
 POST    /api/rest/tests/start                                    @controllers.TestAutomationService.start()
 POST    /api/rest/tests/stop                                     @controllers.TestAutomationService.stop()
