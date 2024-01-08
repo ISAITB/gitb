@@ -15,7 +15,7 @@ import { UserInteractionInput } from 'src/app/types/user-interaction-input';
 export class ProvideInputModalComponent implements OnInit, AfterViewInit {
 
   @Input() interactions!: UserInteraction[]
-  @Input() inputTitle = 'Server interaction'
+  @Input() inputTitle = 'User interaction'
   @Input() sessionId!: string
   @Output() result = new EventEmitter<UserInteractionInput[]>()
   @ViewChildren(CodemirrorComponent) codeMirrors?: QueryList<CodemirrorComponent>

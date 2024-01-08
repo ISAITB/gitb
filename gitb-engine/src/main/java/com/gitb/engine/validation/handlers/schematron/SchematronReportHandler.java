@@ -14,6 +14,7 @@ import com.helger.schematron.svrl.SVRLHelper;
 import com.helger.schematron.svrl.jaxb.SchematronOutputType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.MediaType;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -64,7 +65,7 @@ public class SchematronReportHandler extends AbstractReportHandler {
 
 	    AnyContent xmlAttachment = new AnyContent();
 	    xmlAttachment.setName(XML_ITEM_NAME);
-	    xmlAttachment.setType(DataType.OBJECT_DATA_TYPE);
+        xmlAttachment.setMimeType(MediaType.APPLICATION_XML_VALUE);
 	    xmlAttachment.setEmbeddingMethod(ValueEmbeddingEnumeration.STRING);
 	    xmlAttachment.setValue(new String(xml.serializeByDefaultEncoding()));
 	    attachment.getItem().add(xmlAttachment);
@@ -73,6 +74,7 @@ public class SchematronReportHandler extends AbstractReportHandler {
             AnyContent schemaAttachment = new AnyContent();
             schemaAttachment.setName(SCH_ITEM_NAME);
             schemaAttachment.setType(DataType.SCHEMA_DATA_TYPE);
+            schemaAttachment.setMimeType(MediaType.APPLICATION_XML_VALUE);
             schemaAttachment.setEmbeddingMethod(ValueEmbeddingEnumeration.STRING);
             schemaAttachment.setValue(new String(sch.serializeByDefaultEncoding()));
             attachment.getItem().add(schemaAttachment);

@@ -11,6 +11,7 @@ import com.gitb.utils.XMLDateTimeUtils;
 import com.gitb.utils.XMLUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.MediaType;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
@@ -193,6 +194,7 @@ public class XmlMatchValidator extends AbstractValidator {
         AnyContent xmlContent = new AnyContent();
         xmlContent.setName("xml");
         xmlContent.setType("string");
+        xmlContent.setMimeType(MediaType.APPLICATION_XML_VALUE);
         xmlContent.setValue(new String(new ObjectType(xml).serializeByDefaultEncoding()));
         xmlContent.setEmbeddingMethod(ValueEmbeddingEnumeration.STRING);
         AnyContent templateContent = new AnyContent();

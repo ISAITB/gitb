@@ -7,6 +7,7 @@ import com.gitb.tr.*;
 import com.gitb.types.DataType;
 import com.gitb.types.ObjectType;
 import com.gitb.types.SchemaType;
+import org.springframework.http.MediaType;
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.SAXParseException;
 
@@ -28,6 +29,7 @@ public class XSDReportHandler extends AbstractReportHandler implements ErrorHand
 
 	    AnyContent xmlAttachment = new AnyContent();
 	    xmlAttachment.setName(XML_ITEM_NAME);
+        xmlAttachment.setMimeType(MediaType.APPLICATION_XML_VALUE);
 	    xmlAttachment.setEmbeddingMethod(ValueEmbeddingEnumeration.STRING);
 	    xmlAttachment.setType(DataType.OBJECT_DATA_TYPE);
 	    xmlAttachment.setValue(new String(xml.serializeByDefaultEncoding()));
@@ -36,7 +38,8 @@ public class XSDReportHandler extends AbstractReportHandler implements ErrorHand
         if (xsd != null) {
             AnyContent xsdAttachment = new AnyContent();
             xsdAttachment.setName(XSD_ITEM_NAME);
-            xmlAttachment.setType(DataType.SCHEMA_DATA_TYPE);
+            xsdAttachment.setType(DataType.SCHEMA_DATA_TYPE);
+            xsdAttachment.setMimeType(MediaType.APPLICATION_XML_VALUE);
             xsdAttachment.setEmbeddingMethod(ValueEmbeddingEnumeration.STRING);
             xsdAttachment.setValue(new String(xsd.serializeByDefaultEncoding()));
             attachment.getItem().add(xsdAttachment);

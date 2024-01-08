@@ -112,7 +112,7 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
                 int childStepId = 1;
                 // Prepare the message to send to the frontend.
                 UserInteractionRequest userInteractionRequest = new UserInteractionRequest();
-                userInteractionRequest.setInputTitle(fixedValueOrVariable(step.getInputTitle(), variableResolver, "Server interaction"));
+                userInteractionRequest.setInputTitle(fixedValueOrVariable(step.getInputTitle(), variableResolver, "User interaction"));
                 userInteractionRequest.setWith(withValue);
                 for (InstructionOrRequest instructionOrRequest : instructionAndRequests) {
                     // Set the type in case this is missing.
