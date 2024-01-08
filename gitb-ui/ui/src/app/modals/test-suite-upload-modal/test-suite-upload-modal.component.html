@@ -1,7 +1,7 @@
 <div class="modal-header">
 	<div class="modal-title">Test suite upload</div>
 </div>
-<div class="modal-body">
+<div class="modal-body" appFileDropTarget>
 	<form [ngSwitch]="step">
 		<div *ngSwitchCase="'initial'">
 			<div class="row mb-3" *ngIf="!sharedTestSuite">
@@ -17,9 +17,10 @@
 			<div class="row">
 				<label class="col-3 col-form-label text-end">* Test suite:</label>
 				<div class="col-8">
-					<app-file-select placeholder="Select test suite archive ..."
+					<app-file-select placeholder="Drop or browse for test suite archive ..."
 						[fileName]="file?.name"
 						[accepts]="['application/zip']"
+						[acceptsDrop]="['application/zip', 'application/x-zip-compressed']" 
 						(onUpload)="selectArchive($event)"
 						[maxSize]="-1">
 					</app-file-select>

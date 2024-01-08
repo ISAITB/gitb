@@ -2,10 +2,20 @@
   <div *ngSwitchCase="true" style="display:inline-block">
     <button type="button" class="btn btn-secondary" (click)="onButtonClick()">{{label}}</button>
   </div>
-  <div *ngSwitchCase="false" class="input-group">
-    <input type="text" autocomplete="off" class="form-control clickable" [value]="(fileName != undefined)?fileName:''" [attr.placeholder]="placeholder" (click)="onButtonClick()" readonly="readonly"/>
-    <button class="btn btn-secondary" type="button" (click)="onButtonClick()" containerClass="shortTooltip" container="body" tooltip="Open" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-regular fa-folder-open"></i></button>
-    <ng-content *ngIf="extraActions"></ng-content>
-  </div>
+  <ng-container *ngSwitchDefault [ngSwitch]="dragActive">
+    <ng-container *ngSwitchCase="true">
+      <div class="drag-active form-control" [class.drop-active]="dropActive">
+        <span class="drop-icon"><i class="fa-solid fa-upload"></i></span>
+        <span>Drop file here</span>
+      </div>
+    </ng-container>
+    <ng-container *ngSwitchDefault>
+      <div class="input-group">
+        <input type="text" autocomplete="off" class="form-control clickable" [value]="(fileName != undefined)?fileName:''" [attr.placeholder]="placeholder" (click)="onButtonClick()" readonly="readonly"/>
+        <button class="btn btn-secondary" type="button" (click)="onButtonClick()" containerClass="shortTooltip" container="body" tooltip="Open" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-regular fa-folder-open"></i></button>
+        <ng-content *ngIf="extraActions"></ng-content>
+      </div>
+    </ng-container>
+  </ng-container>
   <input #fileInput type="file" style="display:none" (change)="onFileChange()" [attr.accept]="acceptString"/>
 </ng-container>

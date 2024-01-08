@@ -33,7 +33,7 @@
                         <div>
                             <div class="row mb-3" *ngIf="exportType == 'domain'">
                                 <label class="col-3 col-form-label text-end" for="domain">* Target {{dataService.labelDomainLower()}}:</label>
-                                <div class="col-7">
+                                <div class="col-6">
                                     <select *ngIf="dataService.isSystemAdmin" class="form-control form-select" id="domain" name="domain" [(ngModel)]="domain">
                                         <option *ngFor="let domain of domains" [ngValue]="domain">{{domain.fname}}</option>
                                     </select>
@@ -43,7 +43,7 @@
                             </div>
                             <div class="row mb-3" *ngIf="exportType == 'community'">
                                 <label class="col-3 col-form-label text-end" for="community">* Target community:</label>
-                                <div class="col-7">
+                                <div class="col-6">
                                     <select *ngIf="dataService.isSystemAdmin" class="form-control form-select" id="community" name="community" [(ngModel)]="community">
                                         <option *ngFor="let c of communities" [ngValue]="c">{{c.fname}}</option>
                                     </select>
@@ -53,11 +53,12 @@
                             </div>
                             <div class="row mb-3">
                                 <label class="col-3 col-form-label text-end">* Data archive:</label>
-                                <div class="col-7">
+                                <div class="col-6">
                                     <app-file-select 
                                         (onUpload)="uploadArchive($event)"
                                         [accepts]="['application/zip']" 
-                                        [placeholder]="'Select data archive ...'"
+                                        [acceptsDrop]="['application/zip', 'application/x-zip-compressed']" 
+                                        [placeholder]="'Drop or browse for data archive ...'"
                                         [fileName]="archiveData?.name"
                                         [maxSize]="52428800"></app-file-select>
                                 </div>
