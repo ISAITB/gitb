@@ -60,6 +60,7 @@
 									(cdkDragStarted)="draggingParameter = true"
 									(cdkDragEnded)="draggingParameter = false"
 									cdkDragPreviewContainer="parent"
+									[cdkDragDisabled]="parameters.length == 1"
 									(click)="onParameterSelect(parameter)"
 									[class.selectable]="!draggingParameter"
 								>

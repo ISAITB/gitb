@@ -45,6 +45,7 @@
                                 (cdkDragStarted)="draggingOrganisationParameter = true"
                                 (cdkDragEnded)="draggingOrganisationParameter = false"
                                 cdkDragPreviewContainer="parent"
+                                [cdkDragDisabled]="organisationParameters.length == 1"
                                 (click)="onOrganisationParameterSelect(parameter)"
                                 [class.selectable]="!draggingOrganisationParameter && !draggingSystemParameter"
                             >                            
@@ -102,6 +103,7 @@
                                 (cdkDragStarted)="draggingSystemParameter = true"
                                 (cdkDragEnded)="draggingSystemParameter = false"
                                 cdkDragPreviewContainer="parent"
+                                [cdkDragDisabled]="systemParameters.length == 1"
                                 (click)="onSystemParameterSelect(parameter)"
                                 [class.selectable]="!draggingSystemParameter && !draggingOrganisationParameter"
                             >

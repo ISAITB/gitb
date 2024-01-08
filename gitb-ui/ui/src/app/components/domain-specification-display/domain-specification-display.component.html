@@ -6,6 +6,7 @@
     (cdkDragStarted)="startDrag()"
     (cdkDragEnded)="endDrag()"
     cdkDragPreviewContainer="parent"
+    [cdkDragDisabled]="first && last"
     >
     <div class="spec-container">
         <app-collapsing-icon [hidden]="!spec.group" [padded]="false" [isCollapsed]="spec.collapsed" [asDiv]="true"></app-collapsing-icon>
