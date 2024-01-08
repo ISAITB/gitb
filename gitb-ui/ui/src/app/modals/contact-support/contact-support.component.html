@@ -2,7 +2,7 @@
     <div class="modal-title">Provide feedback</div>
 </div>
 <form>
-    <div class="modal-body">
+    <div class="modal-body" appFileDropTarget>
         <app-alert-display [alerts]="alerts" innerClass="col-10 offset-1"></app-alert-display>
         <div class="row mb-3">
             <label class="col-3 col-form-label text-end">* Contact email:</label>
@@ -28,20 +28,21 @@
         </div>
         <div class="row mb-3" *ngIf="showUpload() && attachments.length == 0">
             <label class="col-3 col-form-label text-end">Attachment(s):</label>
-            <div class="col-8">
-                <app-file-select label="Select file" (onUpload)="attachFile($event)"></app-file-select>
+            <div class="col-7">
+                <app-file-select (onUpload)="attachFile($event)"></app-file-select>
             </div>
         </div>
         <div class="row mb-3" *ngFor="let attachment of attachments; let first = first; let index = index"> 
             <label class="col-3 col-form-label text-end" *ngIf="first">Attachment(s):</label>
-            <div class="col-8" [ngClass]="{'offset-3': !first}">
-                <span>{{attachment.name}} ({{attachment.size}} bytes)</span>
-                <button type="button" class="btn btn-secondary" style="margin-left:5px;" (click)="removeAttachment(index)" containerClass="shortTooltip" tooltip="Remove" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-times"></i></button>
+            <div class="col-7" [ngClass]="{'offset-3': !first}">
+                <app-file-select [fileName]="attachment.name" [extraActions]="true" [disableUpload]="true">
+                    <button type="button" class="btn btn-secondary" (click)="removeAttachment(index)" container="body" containerClass="shortTooltip" tooltip="Remove" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-trash"></i></button>
+                </app-file-select>
             </div>
         </div>
-        <div class="row mb-3" *ngIf="attachments.length > 0">
-            <div class="col-8 offset-3">
-                <app-file-select *ngIf="maximumAttachments > attachments.length" label="Select file" (onUpload)="attachFile($event)"></app-file-select>
+        <div class="row mb-3" *ngIf="attachments.length > 0 && maximumAttachments > attachments.length">
+            <div class="col-7 offset-3">
+                <app-file-select (onUpload)="attachFile($event)"></app-file-select>
             </div>
         </div>
         <div class="row mb-3" *ngIf="showSurveyLink()">

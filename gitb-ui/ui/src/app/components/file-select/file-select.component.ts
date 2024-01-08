@@ -2,7 +2,6 @@ import { Component, ElementRef, EventEmitter, HostListener, Input, OnInit, Outpu
 import { Constants } from 'src/app/common/constants';
 import { DataService } from 'src/app/services/data.service';
 import { DragSupportService } from 'src/app/services/drag-support.service';
-import { ErrorService } from 'src/app/services/error.service';
 import { PopupService } from 'src/app/services/popup.service';
 import { FileData } from 'src/app/types/file-data.type';
 
@@ -20,6 +19,7 @@ export class FileSelectComponent implements OnInit {
   @Input() acceptsDrop?: string[]
   @Input() maxSize!: number
   @Input() extraActions = false
+  @Input() disableUpload = false
   @Output() onUpload: EventEmitter<FileData> = new EventEmitter()
   @ViewChild('fileInput') fileInput?: ElementRef
 
@@ -34,7 +34,6 @@ export class FileSelectComponent implements OnInit {
   constructor(
     private dataService: DataService,
     private dragSupport: DragSupportService,
-    private errorService: ErrorService,
     private popupService: PopupService
   ) { }
 
@@ -51,13 +50,19 @@ export class FileSelectComponent implements OnInit {
       this.maxSize = Number(this.dataService.configuration.savedFileMaxSize) * 1024
     }
     this.dragSupport.onDragStartChange$.subscribe(() => {
-      this.dragActive = true
+      if (!this.disableUpload) {
+        this.dragActive = true
+      }
     })
     this.dragSupport.onDragLeaveChange$.subscribe(() => {
-      this.dragActive = false
+      if (!this.disableUpload) {
+        this.dragActive = false
+      }
     })
     this.dragSupport.onDragDropChange$.subscribe(() => {
-      this.dragActive = false
+      if (!this.disableUpload) {
+        this.dragActive = false
+      }
     })    
   }
 
@@ -69,7 +74,7 @@ export class FileSelectComponent implements OnInit {
   private selectFile(file: File) {
     if (file != undefined) {
       if (this.maxSize > 0 && file.size >= this.maxSize) {
-        this.errorService.showSimpleErrorMessage('File upload problem', 'The maximum allowed size for files is '+this.maxSizeKbs+' KBs.')
+        this.popupService.warning('The maximum allowed size for files is '+this.maxSizeKbs+' KBs.')
       } else {
         this.onUpload.emit({
           name: file.name,
@@ -82,44 +87,52 @@ export class FileSelectComponent implements OnInit {
   }
 
   onButtonClick(): void {
-    this.fileInput!.nativeElement.click()
+    if (!this.disableUpload) {
+      this.fileInput!.nativeElement.click()
+    }
   }
 
   @HostListener('dragover', ['$event'])
   onDragOver(event: DragEvent) {
-    event.preventDefault()
-    this.dropActive = true
+    if (!this.disableUpload) {
+      event.preventDefault()
+      this.dropActive = true
+    }
   }
 
   @HostListener('dragleave', ['$event'])
   onDragLeave(event: DragEvent) {
-    event.preventDefault()
-    this.dropActive = false
+    if (!this.disableUpload) {
+      event.preventDefault()
+      this.dropActive = false
+    }
   }
 
   @HostListener('drop', ['$event'])
   onDrop(event: DragEvent) {
-    event.preventDefault()
-    event.stopPropagation()
-    this.dropActive = false
-    this.dragSupport.dragDrop()
-    if (event.dataTransfer && event.dataTransfer.files) {
-      if (event.dataTransfer.files.length > 0) {
-        if (event.dataTransfer.files.length == 1) {
-          const file = event.dataTransfer.files.item(0)
-          if (file) {
-            if (this.acceptsDrop && this.acceptsDrop.length > 0) {
-              if (this.acceptsDrop.includes(file.type)) {
-                this.selectFile(file)
+    if (!this.disableUpload) {
+      event.preventDefault()
+      event.stopPropagation()
+      this.dropActive = false
+      this.dragSupport.dragDrop()
+      if (event.dataTransfer && event.dataTransfer.files) {
+        if (event.dataTransfer.files.length > 0) {
+          if (event.dataTransfer.files.length == 1) {
+            const file = event.dataTransfer.files.item(0)
+            if (file) {
+              if (this.acceptsDrop && this.acceptsDrop.length > 0) {
+                if (this.acceptsDrop.includes(file.type)) {
+                  this.selectFile(file)
+                } else {
+                  this.popupService.warning("File is not of the expected type.")
+                }
               } else {
-                this.popupService.warning("File is not of the expected type.")
+                this.selectFile(file)
               }
-            } else {
-              this.selectFile(file)
             }
+          } else {
+            this.popupService.warning("Only a single file can be selected.")
           }
-        } else {
-          this.popupService.warning("Only a single file can be selected.")
         }
       }
     }

@@ -94,23 +94,34 @@ export class CommunityCertificateComponent extends BaseComponent implements OnIn
     }
   }
 
+  getKeystoreName() {
+    if (this.settings.keystoreFile != undefined) {
+      return this.settings.keystoreFile.name
+    } else if (this.settings.keystoreDefined) {
+      let fileName = 'keystore'
+      if (this.settings.keystoreType == 'JKS') {
+        fileName += '.jks'
+      } else if (this.settings.keystoreType == 'JCEKS') {
+        fileName += '.jceks'
+      } else if (this.settings.keystoreType == 'PKCS12') {
+        fileName += '.p12'
+      }
+      return fileName
+    } else {
+      return undefined
+    }
+  }
+
   downloadKeystore() {
+    const fileName = this.getKeystoreName()
     if (this.settings.keystoreFile != undefined) {
       // Uploaded now.
-      saveAs(this.settings.keystoreFile, this.settings.keystoreFile.name)  
+      saveAs(this.settings.keystoreFile, fileName)  
     } else {
       // Download from server.
       this.conformanceService.downloadConformanceCertificateKeystore(this.communityId)
       .subscribe((data) => {
         const blobData = new Blob([data], {type: 'application/octet-stream'})
-        let fileName = 'keystore'
-        if (this.settings.keystoreType == 'JKS') {
-          fileName += '.jks'
-        } else if (this.settings.keystoreType == 'JCEKS') {
-          fileName += '.jceks'
-        } else if (this.settings.keystoreType == 'PKCS12') {
-          fileName += '.p12'
-        }        
         saveAs(blobData, fileName)
       })
     }

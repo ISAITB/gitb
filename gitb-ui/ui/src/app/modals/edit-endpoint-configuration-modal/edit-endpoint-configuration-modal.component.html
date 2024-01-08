@@ -2,7 +2,7 @@
     <div class="modal-title">Edit parameter</div>
 </div>
 <form>
-	<div class="modal-body">
+	<div class="modal-body" appFileDropTarget>
 		<div class="row mb-3">
 			<label class="col-3 col-form-label text-end">Name:</label>
 			<div class="col-8"><p class="form-control-plaintext">{{parameter.name}}</p></div>
@@ -30,12 +30,15 @@
 					<app-secret-input id="value" name="value" [(ngModel)]="configuration.value"></app-secret-input>
                 </div>
 				<div *ngIf="parameter.kind == 'BINARY'">
-                    <a class="form-control-plaintext" href *ngIf="showFileName()" (click)="download();$event.preventDefault();" style="padding-right:10px;">{{fileName()}}</a>
-                    <app-file-select label="Upload" (onUpload)="onFileSelect($event)"></app-file-select>
-                    <div app-tooltip class="col-auto d-inline-flex" [tbTooltip]="'The file to set as the parameter value.'" [inline]="true"></div>
+                    <app-file-select [fileName]="fileName()" (onUpload)="onFileSelect($event)" [extraActions]="true">
+						<button type="button" class="btn btn-secondary" *ngIf="showFileName()" (click)="download()" containerClass="shortTooltip" tooltip="Download" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-download"></i></button>
+					</app-file-select>
 				</div>
 			</div>
-            <div app-tooltip class="col-auto" *ngIf="parameter.kind != 'BINARY'" [tbTooltip]="'The value to set for the parameter.'"></div>
+			<ng-container [ngSwitch]="parameter.kind == 'BINARY'">
+				<div app-tooltip class="col-auto" *ngSwitchCase="true" [tbTooltip]="'The file to set as the parameter value.'"></div>
+				<div app-tooltip class="col-auto" *ngSwitchDefault [tbTooltip]="'The value to set for the parameter.'"></div>
+			</ng-container>
 		</div>
 	</div>
 	<div class="modal-footer button-container">

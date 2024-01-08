@@ -11,8 +11,8 @@
     </ng-container>
     <ng-container *ngSwitchDefault>
       <div class="input-group">
-        <input type="text" autocomplete="off" class="form-control clickable" [value]="(fileName != undefined)?fileName:''" [attr.placeholder]="placeholder" (click)="onButtonClick()" readonly="readonly"/>
-        <button class="btn btn-secondary" type="button" (click)="onButtonClick()" containerClass="shortTooltip" container="body" tooltip="Open" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-regular fa-folder-open"></i></button>
+        <input type="text" autocomplete="off" class="form-control" [class.clickable]="!disableUpload" [value]="(fileName != undefined)?fileName:''" [attr.placeholder]="placeholder" (click)="onButtonClick()" readonly="readonly"/>
+        <button *ngIf="!disableUpload" class="btn btn-secondary" type="button" (click)="onButtonClick()" containerClass="shortTooltip" container="body" tooltip="Open" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-regular fa-folder-open"></i></button>
         <ng-content *ngIf="extraActions"></ng-content>
       </div>
     </ng-container>

@@ -2,7 +2,7 @@
     <div class="modal-title">{{title}}</div>
 </div>
 <form>
-    <div class="modal-body">
+    <div class="modal-body" appFileDropTarget>
         <app-alert-display [alerts]="alerts" innerClass="col-10 offset-1"></app-alert-display>
         <div class="row mb-3">
             <label class="col-3 col-form-label text-end" for="name">* Name:</label>
@@ -71,10 +71,11 @@
         <div class="row mt-3" *ngIf="domainParameter.kind == 'BINARY'">
             <label class="col-3 col-form-label text-end" for="value">* Value:</label>
             <div class="col-7">
-                <a class="form-control-plaintext" href *ngIf="showFileName()" (click)="download();$event.preventDefault()" style="padding-right:10px;">{{getFileName()}}</a>
-                <app-file-select label="Upload" (onUpload)="onFileSelect($event)"></app-file-select>
-                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" tbTooltip="The file to consider as this parameter's value."></div>
+                <app-file-select [fileName]="getFileName()" (onUpload)="onFileSelect($event)" [extraActions]="true">
+                    <button type="button" class="btn btn-secondary" *ngIf="showFileName()" (click)="download()" containerClass="shortTooltip" tooltip="Download" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-download"></i></button>
+                </app-file-select>
             </div>
+            <div app-tooltip class="col-auto" tbTooltip="The file to consider as this parameter's value."></div>
         </div>
     </div>
     <div class="modal-footer button-container">

@@ -101,11 +101,12 @@
                             <div class="row mb-3">
                                 <label class="col-3 col-form-label text-end" for="title">* Keystore:</label>
                                 <div class="col-7">
-                                    <app-file-select *ngIf="!settings.keystoreDefined" label="Upload" (onUpload)="attachKeystore($event)"></app-file-select>
-                                    <button class="btn btn-secondary" type="button" (click)="downloadKeystore()" *ngIf="settings.keystoreDefined">Download</button>
-                                    <button class="btn btn-secondary spaced-left" type="button" (click)="clearKeystore()" *ngIf="settings.keystoreDefined">Remove</button>
-                                    <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'button'" tbTooltip="The keystore file that includes the keypair (private and public key) that will be used. The keystore should contain a single keypair."></div>
+                                    <app-file-select [fileName]="getKeystoreName()" (onUpload)="attachKeystore($event)" placeholder="Drop or browse for keystore ..." [extraActions]="settings.keystoreDefined != undefined && settings.keystoreDefined">
+                                        <button class="btn btn-secondary" type="button" (click)="downloadKeystore()" *ngIf="settings.keystoreDefined" containerClass="shortTooltip" tooltip="Download" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-download"></i></button>
+                                        <button class="btn btn-secondary" type="button" (click)="clearKeystore()" *ngIf="settings.keystoreDefined" containerClass="shortTooltip" tooltip="Remove" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-trash"></i></button>
+                                    </app-file-select>
                                 </div>
+                                <div app-tooltip class="col-auto" tbTooltip="The keystore file that includes the keypair (private and public key) that will be used. The keystore should contain a single keypair."></div>
                             </div>
                             <div class="row mb-3 pt-1">
                                 <legend class="col-3 col-form-label text-end pt-0">* Keystore type:</legend>
