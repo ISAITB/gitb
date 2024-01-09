@@ -52,6 +52,7 @@ object PersistenceSchema {
     def template = column[Boolean]("template")
     def templateName = column[Option[String]]("template_name")
     def apiKey = column[Option[String]]("api_key")
+    def updateTime = column[Timestamp]("updated_on", O.SqlType("TIMESTAMP"))
     def community = column[Long] ("community")
     def * = (id, shortname, fullname, organizationType, adminOrganization, landingPage, legalNotice, errorTemplate, template, templateName, apiKey, community) <> (Organizations.tupled, Organizations.unapply)
   }

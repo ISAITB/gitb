@@ -595,13 +595,14 @@ class SystemConfigurationManager @Inject() (repositoryUtils: RepositoryUtils, db
             .filter(_.startTime > minimumStartTime)
             .map(_.organizationId)
             .distinct
-          // We must keep users of organisation without any tests.
-          val organisationsWithoutAnyTests = PersistenceSchema.organizations
+          // We must keep users of organisation without any tests that have been recently updated.
+          val organisationsWithoutAnyTestsButWithRecentUpdates = PersistenceSchema.organizations
             .filterNot(_.id in PersistenceSchema.testResults.filter(_.organizationId.isDefined).map(_.organizationId).distinct)
+            .filter(_.updateTime > minimumStartTime)
             .map(_.id)
           // Delete the matching users.
           PersistenceSchema.users
-            .filterNot(_.organization in organisationsWithoutAnyTests)
+            .filterNot(_.organization in organisationsWithoutAnyTestsButWithRecentUpdates)
             .filterNot(_.organization in organisationsWithRecentTests)
             .filter(_.id =!= Configurations.DEMOS_ACCOUNT)
             .filter(_.role inSet Set(UserRole.VendorUser.id.toShort, UserRole.VendorAdmin.id.toShort))
