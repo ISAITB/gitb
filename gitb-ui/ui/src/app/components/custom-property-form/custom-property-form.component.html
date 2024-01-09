@@ -57,7 +57,7 @@
                       <p class="form-control-plaintext"><a *ngIf="property.value != undefined" href (click)="downloadProperty(property);$event.preventDefault()" style="padding-right:10px;">{{fileName(property)}}</a><span *ngIf="property.desc" [ngStyle]="{'margin-left':(property.value?'10px':'0px')}" [tooltip]="property.desc" [containerClass]="'tooltipContainer'"><i class="fa-solid fa-question-circle"></i></span></p>
                     </div>
                     <ng-container *ngSwitchDefault>
-                      <app-file-select [fileName]="fileName(property)" (onUpload)="onFileSelect(property, $event)" placeholder="Select file ..." [extraActions]="true">
+                      <app-file-select [fileName]="fileName(property)" (onUpload)="onFileSelect(property, $event)" placeholder="Drop or browse for file ..." [extraActions]="true">
                         <button type="button" class="btn btn-secondary" (click)="removeFile(property)" containerClass="shortTooltip" tooltip="Remove" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-trash"></i></button>
                       </app-file-select>
                     </ng-container>
