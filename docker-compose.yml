@@ -6,7 +6,7 @@ volumes:
 
 services:
    gitb-redis:
-      image: redis:6.2.12
+      image: redis:7.0.11
       restart: unless-stopped
    gitb-mysql:
       build:
@@ -35,8 +35,6 @@ services:
       restart: unless-stopped
       ports:
        - "9000:9000"
-      environment:
-       - THEME=ec
       volumes:
        - gitb-repo:/gitb-repository
       depends_on:
