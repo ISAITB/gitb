@@ -114,6 +114,8 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
                 UserInteractionRequest userInteractionRequest = new UserInteractionRequest();
                 userInteractionRequest.setInputTitle(fixedValueOrVariable(step.getInputTitle(), variableResolver, "User interaction"));
                 userInteractionRequest.setWith(withValue);
+                userInteractionRequest.setAdmin(step.isAdmin());
+                userInteractionRequest.setDesc(step.getDesc());
                 for (InstructionOrRequest instructionOrRequest : instructionAndRequests) {
                     // Set the type in case this is missing.
                     if (StringUtils.isBlank(instructionOrRequest.getType())) {
@@ -312,81 +314,87 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
     @Override
     protected void handleInputEvent(InputEvent event) {
         processing();
-        logger.debug(MarkerFactory.getDetachedMarker(scope.getContext().getSessionId()), String.format("Handling user-provided inputs - step [%s] - ID [%s]", TestCaseUtils.extractStepDescription(step, scope), stepId));
-        List<UserInput> userInputs = event.getUserInputs();
-        TestCaseScope.ScopedVariable scopedVariable;
-        DataTypeFactory dataTypeFactory = DataTypeFactory.getInstance();
-        //Create the Variable for Interaction Result if an id is given for the Interaction
-        MapType interactionResult = (MapType) dataTypeFactory.create(DataType.MAP_DATA_TYPE);
-        if (step.getId() != null && (!userInputs.isEmpty() || !scope.getVariable(step.getId()).isDefined())) {
-            // We may want to skip creating a map in the scope in case this is a headless session (in which case no inputs
-            // are provided) but we already have a variable in the session matching the step ID. This can be the case if
-            // The test has started via REST call and the relevant map is provided as input.
-            scopedVariable = scope.createVariable(step.getId());
-            scopedVariable.setValue(interactionResult);
-        }
-        TAR report = new TAR();
-        report.setResult(TestResultType.SUCCESS);
-        try {
-            report.setDate(XMLDateTimeUtils.getXMLGregorianCalendarDateTime());
-        } catch (DatatypeConfigurationException e) {
-            throw new IllegalStateException(e);
-        }
-        if (!userInputs.isEmpty()) {
-            report.setContext(new AnyContent());
-            report.getContext().setType("list");
-            //Assign the content for each input to either given variable or to the Interaction Map (with the given name as key)
-            for (UserInput userInput : userInputs) {
-                int stepIndex = Integer.parseInt(userInput.getId());
-                InstructionOrRequest targetRequest = step.getInstructOrRequest().get(stepIndex - 1);
-                if (targetRequest instanceof UserRequest requestInfo && userInput.getValue() != null && !userInput.getValue().isEmpty()) {
-                    // Construct the value to return for the step's report.
-                    var reportItem = new AnyContent();
-                    if (requestInfo.getInputType() == InputRequestInputType.SECRET) {
-                        reportItem.setValue("**********");
+        if (step.isAdmin() && !event.isAdmin()) {
+            // This was an administrator-level interaction for which we received input from a non-administrator.
+            // This is not normal and should be logged and recorded as an error.
+            throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_SESSION, String.format("User-provided inputs were expected to be received by an administrator - step [%s] - ID [%s]", TestCaseUtils.extractStepDescription(step, scope), stepId)));
+        } else {
+            logger.debug(MarkerFactory.getDetachedMarker(scope.getContext().getSessionId()), String.format("Handling user-provided inputs - step [%s] - ID [%s]", TestCaseUtils.extractStepDescription(step, scope), stepId));
+            List<UserInput> userInputs = event.getUserInputs();
+            TestCaseScope.ScopedVariable scopedVariable;
+            DataTypeFactory dataTypeFactory = DataTypeFactory.getInstance();
+            //Create the Variable for Interaction Result if an id is given for the Interaction
+            MapType interactionResult = (MapType) dataTypeFactory.create(DataType.MAP_DATA_TYPE);
+            if (step.getId() != null && (!userInputs.isEmpty() || !scope.getVariable(step.getId()).isDefined())) {
+                // We may want to skip creating a map in the scope in case this is a headless session (in which case no inputs
+                // are provided) but we already have a variable in the session matching the step ID. This can be the case if
+                // The test has started via REST call and the relevant map is provided as input.
+                scopedVariable = scope.createVariable(step.getId());
+                scopedVariable.setValue(interactionResult);
+            }
+            TAR report = new TAR();
+            report.setResult(TestResultType.SUCCESS);
+            try {
+                report.setDate(XMLDateTimeUtils.getXMLGregorianCalendarDateTime());
+            } catch (DatatypeConfigurationException e) {
+                throw new IllegalStateException(e);
+            }
+            if (!userInputs.isEmpty()) {
+                report.setContext(new AnyContent());
+                report.getContext().setType("list");
+                //Assign the content for each input to either given variable or to the Interaction Map (with the given name as key)
+                for (UserInput userInput : userInputs) {
+                    int stepIndex = Integer.parseInt(userInput.getId());
+                    InstructionOrRequest targetRequest = step.getInstructOrRequest().get(stepIndex - 1);
+                    if (targetRequest instanceof UserRequest requestInfo && userInput.getValue() != null && !userInput.getValue().isEmpty()) {
+                        // Construct the value to return for the step's report.
+                        var reportItem = new AnyContent();
+                        if (requestInfo.getInputType() == InputRequestInputType.SECRET) {
+                            reportItem.setValue("**********");
+                        } else {
+                            reportItem.setValue(userInput.getValue());
+                        }
+                        reportItem.setName(requestInfo.getDesc());
+                        if (reportItem.getName() == null) {
+                            reportItem.setName(requestInfo.getName());
+                        }
+                        reportItem.setEmbeddingMethod(userInput.getEmbeddingMethod());
+                        reportItem.setMimeType(requestInfo.getMimeType());
+                        report.getContext().getItem().add(reportItem);
+                    }
+                    if (StringUtils.isNotBlank(targetRequest.getValue())) {
+                        //Find the variable that the given input content is assigned(bound) to
+                        String assignedVariableExpression = targetRequest.getValue();
+                        VariableResolver variableResolver = new VariableResolver(scope);
+                        DataType assignedVariable = variableResolver.resolveVariable(assignedVariableExpression);
+                        if (targetRequest.isAsTemplate()) {
+                            DataTypeUtils.setDataTypeValueWithAnyContent(assignedVariable, userInput, (dataType) -> {
+                                DataType dataTypeAfterAppliedTemplate = TemplateUtils.generateDataTypeFromTemplate(scope, dataType, dataType.getType());
+                                dataType.copyFrom(dataTypeAfterAppliedTemplate);
+                            });
+                        } else {
+                            DataTypeUtils.setDataTypeValueWithAnyContent(assignedVariable, userInput);
+                        }
                     } else {
-                        reportItem.setValue(userInput.getValue());
-                    }
-                    reportItem.setName(requestInfo.getDesc());
-                    if (reportItem.getName() == null) {
-                        reportItem.setName(requestInfo.getName());
-                    }
-                    reportItem.setEmbeddingMethod(userInput.getEmbeddingMethod());
-                    reportItem.setMimeType(requestInfo.getMimeType());
-                    report.getContext().getItem().add(reportItem);
-                }
-                if (StringUtils.isNotBlank(targetRequest.getValue())) {
-                    //Find the variable that the given input content is assigned(bound) to
-                    String assignedVariableExpression = targetRequest.getValue();
-                    VariableResolver variableResolver = new VariableResolver(scope);
-                    DataType assignedVariable = variableResolver.resolveVariable(assignedVariableExpression);
-                    if (targetRequest.isAsTemplate()) {
-                        DataTypeUtils.setDataTypeValueWithAnyContent(assignedVariable, userInput, (dataType) -> {
-                            DataType dataTypeAfterAppliedTemplate = TemplateUtils.generateDataTypeFromTemplate(scope, dataType, dataType.getType());
-                            dataType.copyFrom(dataTypeAfterAppliedTemplate);
-                        });
-                    } else {
-                        DataTypeUtils.setDataTypeValueWithAnyContent(assignedVariable, userInput);
-                    }
-                } else {
-                    //Create an empty value
-                    DataType assignedValue = dataTypeFactory.create(targetRequest.getType());
-                    if (targetRequest.isAsTemplate()) {
-                        DataTypeUtils.setDataTypeValueWithAnyContent(assignedValue, userInput, (dataType) -> {
-                            DataType dataTypeAfterAppliedTemplate = TemplateUtils.generateDataTypeFromTemplate(scope, dataType, dataType.getType());
-                            dataType.copyFrom(dataTypeAfterAppliedTemplate);
-                        });
-                    } else {
-                        DataTypeUtils.setDataTypeValueWithAnyContent(assignedValue, userInput);
-                    }
-                    //Put it to the Interaction Result map
-                    if (targetRequest.getName() != null) {
-                        interactionResult.addItem(targetRequest.getName(), assignedValue);
+                        //Create an empty value
+                        DataType assignedValue = dataTypeFactory.create(targetRequest.getType());
+                        if (targetRequest.isAsTemplate()) {
+                            DataTypeUtils.setDataTypeValueWithAnyContent(assignedValue, userInput, (dataType) -> {
+                                DataType dataTypeAfterAppliedTemplate = TemplateUtils.generateDataTypeFromTemplate(scope, dataType, dataType.getType());
+                                dataType.copyFrom(dataTypeAfterAppliedTemplate);
+                            });
+                        } else {
+                            DataTypeUtils.setDataTypeValueWithAnyContent(assignedValue, userInput);
+                        }
+                        //Put it to the Interaction Result map
+                        if (targetRequest.getName() != null) {
+                            interactionResult.addItem(targetRequest.getName(), assignedValue);
+                        }
                     }
                 }
             }
+            completed(report);
         }
-        completed(report);
     }
 
 

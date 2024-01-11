@@ -73,10 +73,11 @@ class TestbedBackendClient {
     service().start(bRequest)
   }
 
-  def provideInput(sessionId: String, stepId: String, userInputs: Option[List[UserInput]]): Unit = {
+  def provideInput(sessionId: String, stepId: String, userInputs: Option[List[UserInput]], isAdmin: Boolean): Unit = {
     val pRequest: ProvideInputRequest = new ProvideInputRequest
     pRequest.setTcInstanceId(sessionId)
     pRequest.setStepId(stepId)
+    pRequest.setAdmin(isAdmin)
     if (userInputs.nonEmpty) {
       // User inputs are empty when this is a headless session
       import scala.jdk.CollectionConverters._

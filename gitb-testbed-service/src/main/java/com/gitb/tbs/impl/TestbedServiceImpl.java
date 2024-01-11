@@ -114,7 +114,7 @@ public class TestbedServiceImpl implements TestbedService {
             String interactionStepId = parameters.getStepId();
             List<UserInput> userInputs= parameters.getInput();
             //Call the real TestbedService
-            com.gitb.engine.TestbedService.provideInput(sessionId, interactionStepId, userInputs);
+            com.gitb.engine.TestbedService.provideInput(sessionId, interactionStepId, userInputs, parameters.isAdmin());
             return new Void();
         } catch (GITBEngineInternalError e) {
             logger.error(MarkerFactory.getDetachedMarker(sessionId), "An error occurred", e);

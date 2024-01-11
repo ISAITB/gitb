@@ -60,8 +60,36 @@
                             <div class="collapsing-div">
                                 <div class="sessionControls">
                                     <div class="btn-toolbar">
-                                        <button *ngIf="supportRefresh" type="button" class="btn btn-secondary" (click)="refresh(row)" [pending]="sessionBeingRefreshed?.session == row.session" [disable]="row.endTime != undefined">Refresh</button>
-                                        <button type="button" class="btn btn-secondary" (click)="showTestSessionLog(row)" [pending]="viewLogPending[row.session]">View log</button>
+                                        <ng-container *ngIf="supportRefresh">
+                                            <button type="button" class="btn btn-secondary" (click)="refresh(row)" [pending]="sessionBeingRefreshed?.session == row.session" [disable]="row.endTime != undefined">Refresh</button>
+                                        </ng-container>
+                                        <!-- View log button - we need the switches because the [pending] directive doesn't allow it to update dynamically. -->
+                                        <ng-container [ngSwitch]="supportRefresh">
+                                            <button *ngSwitchCase="true" type="button" [disabled]="sessionBeingRefreshed?.session == row.session || row.diagramState?.logs == undefined" class="btn btn-secondary position-relative" (click)="showTestSessionLog(row)">
+                                                View log
+                                                <span 
+                                                    [class.badgeLogErrors]="row.hasUnreadErrorLogs"
+                                                    [class.badgeLogWarnings]="row.hasUnreadWarningLogs && !row.hasUnreadErrorLogs"
+                                                    [class.badgeLogMessages]="row.hasUnreadMessageLogs && !row.hasUnreadErrorLogs && !row.hasUnreadWarningLogs"
+                                                    [class.hidden]="!row.hasUnreadErrorLogs && !row.hasUnreadWarningLogs && !row.hasUnreadMessageLogs" 
+                                                    class="buttonBadge position-absolute top-0 start-100 translate-middle border border-light rounded-circle">
+                                                </span>                                                   
+                                            </button>
+                                            <button *ngSwitchDefault type="button" [disable]="!row.diagramLoaded" class="btn btn-secondary position-relative" (click)="showTestSessionLog(row)" [pending]="viewLogPending[row.session]">View log</button>
+                                        </ng-container>
+                                        <ng-container *ngIf="supportRefresh && row.diagramState?.interactions?.length > 0" [ngSwitch]="row.diagramState.interactions.length">
+                                            <button *ngSwitchCase="1" type="button" [disabled]="sessionBeingRefreshed?.session == row.session" class="btn btn-secondary" (click)="displayPendingInteraction(row)">View pending interaction</button>
+                                            <div *ngSwitchDefault class="btn-group" dropdown>
+                                                <button id="button-interactions" dropdownToggle class="btn btn-secondary dropdown-toggle" type="button" aria-controls="dropdown-interactions">View pending interaction<span class="caret withMargin"></span></button>
+                                                <ul id="dropdown-interactions" *dropdownMenu class="dropdown-menu" aria-labelledby="button-interactions">
+                                                    <li *ngFor="let interaction of row.diagramState.interactions">
+                                                        <a class="dropdown-item" href (click)="displayPendingInteraction(row, interaction.stepId);$event.preventDefault();">{{labelForPendingInteraction(row, interaction)}}</a>
+                                                    </li>
+                                                </ul>                                                                        
+                                            </div>
+                                        </ng-container>
+                                    </div>
+                                    <div class="btn-toolbar goto-controls">
                                         <!-- View statement -->
                                         <button *ngIf="showToStatement(row)" type="button" class="btn btn-secondary" (click)="toStatement(row)">View statement</button>
                                         <!-- View party -->

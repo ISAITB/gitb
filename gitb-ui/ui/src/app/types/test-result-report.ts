@@ -1,3 +1,4 @@
+import { TestInteractionData } from "./test-interaction-data";
 import { TestResult } from "./test-result";
 
 export interface TestResultReport {
@@ -37,6 +38,8 @@ export interface TestResultReport {
         id?: number,
         sname?: string,
         specification?: number
-    }
+    },
+    logs?: string[]
+    interactions?: TestInteractionData[]
 
 }

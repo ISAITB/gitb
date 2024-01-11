@@ -57,7 +57,7 @@ export class OrganisationTestsComponent implements OnInit {
   deletePending = false
   stopAllPending = false
   sessionIdToShow?: string
-  sessionRefreshCompleteEmitter = new EventEmitter<void>()
+  sessionRefreshCompleteEmitter = new EventEmitter<TestResultReport|undefined>()
   activeSessionsCollapsed = false
   completedSessionsCollapsed = false
   showTerminateAll = false
@@ -447,7 +447,7 @@ export class OrganisationTestsComponent implements OnInit {
         // Session was deleted
         this.popupService.warning("The test session has been deleted by an administrator.")
         this.goFirstPage()
-        this.sessionRefreshCompleteEmitter.emit()
+        this.sessionRefreshCompleteEmitter.emit(result)
       } else {
         this.diagramLoaderService.loadTestStepResults(session.session)
         .subscribe((data) => {
@@ -459,7 +459,7 @@ export class OrganisationTestsComponent implements OnInit {
           }
           this.diagramLoaderService.updateStatusOfSteps(session, currentState.stepsOfTests[session.session], data)
         }).add(() => {
-          this.sessionRefreshCompleteEmitter.emit()
+          this.sessionRefreshCompleteEmitter.emit(result)
         })
       }
     })

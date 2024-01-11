@@ -266,7 +266,8 @@ POST    /api/communities/:communityId/resources/archive @controllers.CommunitySe
 
 # Test Result management API
 POST    /api/tests/binaryMetadata               @controllers.TestResultService.getBinaryMetadata()
-GET     /api/tests/result/:sessionId            @controllers.ReportService.getTestResult(sessionId: String)
+GET     /api/tests/result/:sessionId            @controllers.RepositoryService.getTestResult(sessionId: String)
+GET     /api/tests/resultadmin/:sessionId       @controllers.RepositoryService.getTestResultAdmin(sessionId: String)
 
 # Test management API
 GET	    /api/tests/:test_id/definition          @controllers.TestService.getTestCaseDefinition(test_id : String)
@@ -274,6 +275,7 @@ GET	    /api/actordefinitions                   @controllers.TestService.getActo
 POST	/api/tests/:test_id/initiate            @controllers.TestService.initiate(test_id:String)
 POST	/api/tests/:session_id/configure        @controllers.TestService.configure(session_id:String)
 POST	/api/tests/:session_id/provide          @controllers.TestService.provideInput(session_id:String)
+POST	/api/tests/:session_id/provideadmin     @controllers.TestService.provideInputAdmin(session_id:String)
 POST	/api/tests/:session_id/preliminary      @controllers.TestService.initiatePreliminary(session_id:String)
 POST	/api/tests/:session_id/start            @controllers.TestService.start(session_id:String)
 POST	/api/tests/:session_id/stop             @controllers.TestService.stop(session_id:String)
@@ -319,6 +321,8 @@ GET     /api/repository/reports/teststep/:session_id/*file      @controllers.Rep
 GET     /api/repository/reports/testdata/:session_id/:data_id   @controllers.RepositoryService.getTestStepReportData(session_id: String, data_id: String)
 GET     /api/repository/reports/testdataurl/:session_id/:data_id @controllers.RepositoryService.getTestStepReportDataAsDataUrl(session_id: String, data_id: String)
 GET     /api/repository/reports/logs/:session_id                @controllers.RepositoryService.getTestSessionLog(session_id: String)
+GET     /api/repository/tests/:session_id/interactions          @controllers.RepositoryService.getPendingTestSessionInteractions(session_id: String)
+GET     /api/repository/tests/:session_id/admininteractions     @controllers.RepositoryService.getPendingTestSessionInteractionsAdmin(session_id: String)
 GET     /api/repository/export/testcase                         @controllers.RepositoryService.exportTestCaseReport()
 GET     /api/repository/export/teststep/:session_id/*path       @controllers.RepositoryService.exportTestStepReport(session_id: String, path)
 GET     /api/repository/export/conformance                      @controllers.RepositoryService.exportConformanceStatementReport()

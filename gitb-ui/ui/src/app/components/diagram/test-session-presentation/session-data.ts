@@ -13,4 +13,9 @@ export interface SessionData {
     testCase: string
     diagramState?: SessionPresentationData
 
+    hasUnreadErrorLogs?: boolean
+    hasUnreadWarningLogs?: boolean
+    hasUnreadMessageLogs?: boolean
+    reviewedLogLines?: number
+
 }

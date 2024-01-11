@@ -9,6 +9,13 @@ import { BaseTableComponent } from '../base-table/base-table.component';
 import { SessionData } from '../diagram/test-session-presentation/session-data';
 import { SessionPresentationData } from '../diagram/test-session-presentation/session-presentation-data';
 import { SessionLogModalComponent } from '../session-log-modal/session-log-modal.component';
+import { Observable, mergeMap, of } from 'rxjs';
+import { ProvideInputModalComponent } from 'src/app/modals/provide-input-modal/provide-input-modal.component';
+import { TestService } from 'src/app/services/test.service';
+import { TestResultReport } from 'src/app/types/test-result-report';
+import { LogLevel } from 'src/app/types/log-level';
+import { TestInteractionData } from 'src/app/types/test-interaction-data';
+import { filter, find, findIndex } from 'lodash';
 
 @Component({
   selector: '[app-session-table]',
@@ -20,7 +27,7 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
   @Input() sessionTableId = 'session-table'
   @Input() expandedCounter?: { count: number }
   @Input() supportRefresh = false
-  @Input() refreshComplete?: EventEmitter<void>
+  @Input() refreshComplete?: EventEmitter<TestResultReport|undefined>
   @Input() showCheckbox?: EventEmitter<boolean>
   @Output() onRefresh = new EventEmitter<TestResultForDisplay>()
 
@@ -36,6 +43,7 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
     private reportService: ReportService,
     private modalService: BsModalService,
     private routingService: RoutingService,
+    private testService: TestService,
     public dataService: DataService
   ) { super() }
 
@@ -58,8 +66,8 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
       }
     }
     if (this.refreshComplete) {
-      this.refreshComplete.subscribe(() => {
-        this.sessionBeingRefreshed = undefined
+      this.refreshComplete.subscribe((report) => {
+        this.refreshTestSession(report)
       })
     }
     if (this.showCheckbox) {
@@ -80,10 +88,14 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
   }
 
   diagramReady(test: SessionData) {
-    test.diagramLoaded = true;
+    if (test.diagramState?.interactions) {
+      test.diagramState.interactions = this.extractApplicableInteractions(test.diagramState.interactions)
+    }
+    test.diagramLoaded = true
+    this.updateButtonBadges(test)
     setTimeout(() => {
-      test.hideLoadingIcon = true;
-      test.diagramExpanded = true;
+      test.hideLoadingIcon = true
+      test.diagramExpanded = true
     }, 200)
   }
 
@@ -112,20 +124,124 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
     return rowClass
   }
 
-  showTestSessionLog(row: TestResultForDisplay) {
-    const sessionId = row.session
-    this.viewLogPending[sessionId] = true
-    this.reportService.getTestSessionLog(sessionId)
-    .subscribe((logs: string[]) => {
-      this.modalService.show(SessionLogModalComponent, {
-        class: 'modal-lg',
-        initialState: {
-          messages: logs
+  private updateButtonBadges(sessionData: SessionData) {
+    if (sessionData.diagramState) {
+      if (sessionData.diagramState.logs) {
+        let previousLogs = (sessionData.reviewedLogLines != undefined)?sessionData.reviewedLogLines:0
+        let hasErrors = false
+        let hasWarnings = false
+        let hasMessages = false
+        for (let i = previousLogs; i < sessionData.diagramState.logs.length; i++) {
+          const logLevel = this.dataService.logMessageLevel(sessionData.diagramState.logs[i], LogLevel.DEBUG)
+          if (logLevel == LogLevel.ERROR) {
+            hasErrors = true
+          } else if (logLevel == LogLevel.WARN) {
+            hasWarnings = true
+          } else {
+            hasMessages = true            
+          }
+          if (hasErrors) break;
         }
+        sessionData.hasUnreadErrorLogs = hasErrors
+        sessionData.hasUnreadWarningLogs = hasWarnings
+        sessionData.hasUnreadMessageLogs = hasMessages
+      }
+    }
+  }
+
+  labelForPendingInteraction(session: TestResultForDisplay, step: TestInteractionData) {
+    if (step?.desc) {
+      return step.desc
+    } else {
+      const index = findIndex(session.diagramState?.interactions, (step) => step.stepId == step.stepId)
+      if (index != undefined) {
+        return "Interaction " + (index + 1)
+      } else {
+        return "Interaction"
+      }
+    }    
+  }
+
+  private extractApplicableInteractions(interactions: TestInteractionData[]) {
+    return filter(interactions, (interaction) => !interaction.admin || this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin)
+  }
+
+  private refreshTestSession(testReport: TestResultReport|undefined) {
+    if (testReport && this.sessionBeingRefreshed?.diagramState) {
+      this.sessionBeingRefreshed.diagramState.logs = testReport.logs
+      if (testReport.interactions) {
+        this.sessionBeingRefreshed.diagramState.interactions = this.extractApplicableInteractions(testReport.interactions)
+      }
+      this.updateButtonBadges(this.sessionBeingRefreshed)
+    }
+    this.sessionBeingRefreshed = undefined
+  }
+
+  displayPendingInteraction(row: TestResultForDisplay, stepId?: string) {
+    if (row.diagramState?.interactions) {
+      const interactionCount = row.diagramState?.interactions.length
+      if (interactionCount > 0) {
+        let interactionData: TestInteractionData|undefined
+        if (stepId == undefined) {
+          interactionData = row.diagramState.interactions[0]
+        } else {
+          interactionData = find(row.diagramState.interactions, (interaction) => interaction.stepId == stepId)
+        }
+        if (interactionData) {
+          const modalRef = this.modalService.show(ProvideInputModalComponent, {
+            backdrop: 'static',
+            keyboard: false,
+            initialState: {
+              interactions: interactionData.interactions,
+              inputTitle: interactionData.inputTitle,
+              sessionId: row.session
+            }
+          })
+          modalRef.content!.result.subscribe((result) => {
+            if (result != undefined) {
+              this.testService.provideInput(row.session, interactionData!.stepId, result, interactionData!.admin)
+              .subscribe(() => {
+                this.refresh(row)
+              })
+            }
+          })
+        }
+      }
+    }
+  }
+
+  showTestSessionLog(row: TestResultForDisplay) {
+    if (row.diagramState) {
+      const sessionId = row.session
+      row.hasUnreadErrorLogs = false
+      row.hasUnreadWarningLogs = false
+      row.hasUnreadMessageLogs = false
+      row.reviewedLogLines = row.diagramState.logs?.length
+      let logsObservable: Observable<string[]>
+      if (row.diagramState.logs != undefined) {
+        logsObservable = of(row.diagramState.logs)
+      } else {
+        this.viewLogPending[sessionId] = true
+        logsObservable = this.reportService.getTestSessionLog(sessionId)
+        .pipe(
+          mergeMap((logs) => {
+            if (row.diagramState) {
+              row.diagramState.logs = logs
+            }
+            this.viewLogPending[sessionId] = false
+            return of(logs)
+          })
+        )
+      }
+      logsObservable.subscribe((logs) => {
+        this.modalService.show(SessionLogModalComponent, {
+          class: 'modal-lg',
+          initialState: {
+            messages: logs
+          }
+        })
       })
-    }).add(() => {
-      delete this.viewLogPending[sessionId]
-    })
+    }
   }
 
   toSystem(row: TestResultForDisplay) {

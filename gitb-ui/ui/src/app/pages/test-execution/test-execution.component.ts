@@ -1,6 +1,6 @@
 import { Component, EventEmitter, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { BsModalService } from 'ngx-bootstrap/modal';
+import { BsModalRef, BsModalService } from 'ngx-bootstrap/modal';
 import { forkJoin, Observable, timer, of, Subscription } from 'rxjs';
 import { map, mergeMap, share } from 'rxjs/operators';
 import { WebSocketSubject } from 'rxjs/webSocket';
@@ -26,10 +26,9 @@ import { SystemConfigurationParameter } from 'src/app/types/system-configuration
 import { SystemParameterWithValue } from 'src/app/types/system-parameter-with-value';
 import { WebSocketMessage } from 'src/app/types/web-socket-message';
 import { ConformanceTestCase } from '../organisation/conformance-statement/conformance-test-case';
-import { cloneDeep, filter, map as lmap } from 'lodash'
+import { cloneDeep, filter, find, findIndex, map as lmap, remove } from 'lodash'
 import { DiagramEvents } from 'src/app/components/diagram/diagram-events';
 import { UserInteraction } from 'src/app/types/user-interaction';
-import { UserInteractionInput } from 'src/app/types/user-interaction-input';
 import { RoutingService } from 'src/app/services/routing.service';
 import { ConformanceStatementTab } from '../organisation/conformance-statement/conformance-statement-tab';
 import { MissingConfigurationAction } from 'src/app/components/missing-configuration-display/missing-configuration-action';
@@ -41,6 +40,7 @@ import { CheckboxOption } from 'src/app/components/checkbox-option-panel/checkbo
 import { CheckboxOptionState } from 'src/app/components/checkbox-option-panel/checkbox-option-state';
 import { SpecificationService } from 'src/app/services/specification.service';
 import { saveAs } from 'file-saver'
+import { TestInteractionData } from 'src/app/types/test-interaction-data';
 
 @Component({
   selector: 'app-test-execution',
@@ -80,6 +80,7 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
   testCaseCounter: {[key: number]: number} = {}
   stepsOfTests: {[key: number]: StepData[]} = {}
   actorInfoOfTests: {[key: string]: ActorInfo[]} = {}
+  interactionStepsOfTests: {[key: number]: TestInteractionData[]} = {}
   logMessages: {[key: number]: string[]} = {}
   logMessageEventEmitters: {[key: number]: EventEmitter<string>} = {}
   unreadLogMessages: {[key: number]: boolean} = {}
@@ -106,6 +107,8 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
   messagesToProcess?: WebSocketMessage[]
   testEvents: {[key: number]: DiagramEvents} = {}
   columnCount = 4
+  currentInteractionStepId?: string
+  currentInteractionModal?: BsModalRef<ProvideInputModalComponent>
 
   private ws?: WebSocketSubject<any>
   private heartbeat?: Subscription
@@ -220,6 +223,7 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
     this.testCaseVisible = {}
     this.testCaseCounter = {}
     this.stepsOfTests = {}
+    this.interactionStepsOfTests = {}
     this.actorInfoOfTests = {}
     this.actor = undefined
     this.session = undefined
@@ -545,18 +549,91 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
     }
   }
 
+  private recordInteraction(stepId: string, interactions: UserInteraction[], inputTitle: string|undefined) {
+    if (this.interactionStepsOfTests[this.currentTest!.id] == undefined) {
+      this.interactionStepsOfTests[this.currentTest!.id] = []
+    }
+    if (!find(this.interactionStepsOfTests[this.currentTest!.id], (interaction) => interaction.stepId == stepId)) {
+      this.interactionStepsOfTests[this.currentTest!.id].push({
+        stepId: stepId,
+        interactions: interactions,
+        inputTitle: inputTitle
+      })
+    }
+  }
+
+  private removeInteraction(stepId: string) {
+    remove(this.interactionStepsOfTests[this.currentTest!.id], (step) => step.stepId == stepId)
+  }
+
+  labelForPendingInteraction(step: TestInteractionData) {
+    const stepDefinition = this.findNodeWithStepId(this.stepsOfTests[this.currentTest!.id], step.stepId)
+    if (stepDefinition?.desc) {
+      return stepDefinition.desc
+    } else {
+      const index = findIndex(this.interactionStepsOfTests[this.currentTest!.id], (pendingStep) => pendingStep.stepId == step.stepId)
+      if (index != undefined) {
+        return "Interaction " + (index + 1)
+      } else {
+        return "Interaction"
+      }
+    }
+  }
+
+  displayPendingInteraction(stepId?: string) {
+    const testInteractions = this.interactionStepsOfTests[this.currentTest!.id]
+    let interaction: TestInteractionData|undefined
+    if (testInteractions) {
+      if (stepId == undefined) {
+        if (testInteractions.length > 0) {
+          interaction = testInteractions[0]
+        }
+      } else {
+        interaction = find(testInteractions, (step) => step.stepId == stepId)
+      }
+      if (interaction) {
+        this.interact(interaction.interactions, interaction.inputTitle, interaction.stepId)
+      }
+    }
+  }
+
+  private handleInteractions(response: WebSocketMessage) {
+    const isInteraction = response.interactions != undefined
+    if (isInteraction) {
+      // Prompt for an interaction.
+      if (this.currentInteractionModal) {
+        // We already have an interaction open - park the new one.
+        if (!response.admin || this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin) {
+          this.recordInteraction(response.stepId, response.interactions!, response.inputTitle)
+        }
+      } else {
+        this.interact(response.interactions!, response.inputTitle, response.stepId, response.admin)
+      }
+    } else {
+      // Status update.
+      if (response.status == Constants.TEST_STATUS.COMPLETED || response.status == Constants.TEST_STATUS.ERROR || response.status == Constants.TEST_STATUS.WARNING || response.status == Constants.TEST_STATUS.SKIPPED) {
+        this.removeInteraction(response.stepId)
+        if (this.currentInteractionModal && this.currentInteractionStepId == response.stepId) {
+          this.popupService.closeAll()        
+          this.popupService.warning("The interaction step was completed by another user or process.", true)
+          this.currentInteractionModal.hide()
+          this.currentInteractionModal = undefined
+          this.currentInteractionStepId = undefined
+        }
+      }
+    }
+  }
+
   processMessage(response: WebSocketMessage) {
     const stepId = response.stepId
     if (response.interactions != undefined) { // interactWithUsers
-      this.interact(response.interactions, response.inputTitle, stepId)
+      this.handleInteractions(response)
     } else if (response.notify != undefined) {
       if (response.notify.simulatedConfigs != undefined) {
         this.simulatedConfigs = response.notify.simulatedConfigs
       }
     } else { // updateStatus
       if (stepId == Constants.END_OF_TEST_STEP || stepId == Constants.END_OF_TEST_STEP_EXTERNAL) {
-        this.started = false
-        this.testCaseFinished(response.status, response?.outputMessage)
         if (stepId == Constants.END_OF_TEST_STEP_EXTERNAL && !this.stopped && !this.allStopped) {
           // Stopped by other user or API call.
           this.popupService.closeAll()
@@ -566,7 +643,10 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
             this.popupService.warning('The test session was terminated by another user.', true)
           }
         }
+        this.started = false
+        this.testCaseFinished(response.status, response?.outputMessage)
       } else {
+        this.handleInteractions(response)
         if (response.stepHistory != undefined) {
           this.updateStepHistory(response.tcInstanceId, stepId, response.stepHistory)
         }
@@ -849,21 +929,34 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
     return text.replace(/\./g, "\\.").replace(/\[/g, "\\[").replace(/\]/g, "\\]")
   }
 
-  interact(interactions: UserInteraction[], inputTitle: string|undefined, stepId: string) {
-    const modalRef = this.modalService.show(ProvideInputModalComponent, {
-      backdrop: 'static',
-      keyboard: false,
-      initialState: {
-        interactions: interactions,
-        inputTitle: inputTitle,
-        sessionId: this.session!
-      }
-    })
-    modalRef.content!.result.subscribe((result: UserInteractionInput[]) => {
-      this.testService.provideInput(this.session!, stepId, result).subscribe(() => {
-        // Do nothing.
+  private interact(interactions: UserInteraction[], inputTitle: string|undefined, stepId: string, admin?: boolean) {
+    if (!admin || this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin) {
+      this.currentInteractionStepId = stepId
+      this.currentInteractionModal = this.modalService.show(ProvideInputModalComponent, {
+        backdrop: 'static',
+        keyboard: false,
+        initialState: {
+          interactions: interactions,
+          inputTitle: inputTitle,
+          sessionId: this.session!
+        }
       })
-    })
+      this.currentInteractionModal.content!.result.subscribe((result) => {
+        this.currentInteractionStepId = undefined
+        this.currentInteractionModal = undefined      
+        if (result == undefined) {
+          this.recordInteraction(stepId, interactions, inputTitle)
+        } else {
+          this.testService.provideInput(this.session!, stepId, result, admin)
+          .subscribe(() => {
+            this.removeInteraction(stepId)
+          })
+        }
+      }).add(() => {
+        this.currentInteractionStepId = undefined
+        this.currentInteractionModal = undefined      
+      })
+    }
   }
 
   initiatePreliminary(session: string): Observable<void> {
@@ -900,6 +993,12 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
       this.testCaseOutput[this.currentTest!.id] = outputMessage
     }
     // Make sure steps still marked as pending or in progress are set as skipped.
+    this.interactionStepsOfTests = {}
+    if (this.currentInteractionModal) {
+      this.currentInteractionModal.hide()
+    }
+    this.currentInteractionModal = undefined
+    this.currentInteractionStepId = undefined
     this.setPendingStepsToSkipped()
     this.closeWebSocket()
     if (!this.allStopped && this.currentTestIndex + 1 < this.testsToExecute.length) {

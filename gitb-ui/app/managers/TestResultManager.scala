@@ -325,6 +325,8 @@ class TestResultManager @Inject() (repositoryUtils: RepositoryUtils, dbConfigPro
       _ <- PersistenceSchema.testResultDefinitions.filter(_.testSessionId === testSession.sessionId).delete
       // Delete test step reports
       _ <- PersistenceSchema.testStepReports.filter(_.testSessionId === testSession.sessionId).delete
+      // Delete test interactions
+      _ <- deleteTestInteractions(testSession.sessionId, None)
       // Delete test result
       _ <- PersistenceSchema.testResults.filter(_.testSessionId === testSession.sessionId).delete
     } yield ()
@@ -484,6 +486,30 @@ class TestResultManager @Inject() (repositoryUtils: RepositoryUtils, dbConfigPro
       import scala.jdk.CollectionConverters._
       Files.write(logFilePath.toPath, messages.asJava, StandardOpenOption.APPEND)
     }
+  }
+
+  def saveTestInteraction(interaction: TestInteraction): Unit = {
+    exec((PersistenceSchema.testInteractions += interaction).transactionally)
+  }
+
+  def getTestInteractions(sessionId: String, adminInteractions: Option[Boolean]): List[TestInteraction] = {
+    exec(
+      PersistenceSchema.testInteractions
+      .filter(_.testSessionId === sessionId)
+      .filterOpt(adminInteractions)((q, flag) => q.admin === flag)
+      .result
+    ).toList
+  }
+
+  def deleteTestInteractionsWrapper(sessionId: String, stepId: Option[String]): Unit = {
+    exec(deleteTestInteractions(sessionId, stepId).transactionally)
+  }
+
+  def deleteTestInteractions(sessionId: String, stepId: Option[String]): DBIO[_] = {
+    PersistenceSchema.testInteractions
+      .filter(_.testSessionId === sessionId)
+      .filterOpt(stepId)((q, id) => q.testStepId === id)
+      .delete
   }
 
 }

@@ -5,7 +5,7 @@ import com.gitb.utils.{XMLDateTimeUtils, XMLUtils}
 import com.gitb.xml.export.Export
 import config.Configurations
 import controllers.util.ParameterExtractor.requiredBodyParameter
-import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, ResponseConstructor}
+import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, RequestWithAttributes, ResponseConstructor}
 import exceptions.ErrorCodes
 import jakarta.xml.bind.JAXBElement
 import managers._
@@ -86,6 +86,44 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
       }
     }
 	}
+
+  def getTestResult(sessionId: String) = authorizedAction { request =>
+    authorizationManager.canManageTestSession(request, sessionId, requireAdmin = false)
+    getTestResultInternal(sessionId, isAdmin = false, request)
+  }
+
+  def getTestResultAdmin(sessionId: String) = authorizedAction { request =>
+    authorizationManager.canManageTestSession(request, sessionId, requireAdmin = true)
+    getTestResultInternal(sessionId, isAdmin = true, request)
+  }
+
+  private def getTestResultInternal(sessionId: String, isAdmin: Boolean, request: RequestWithAttributes[AnyContent]): Result = {
+    val result = this.reportManager.getTestResult(sessionId)
+    if (result.isDefined) {
+      // Load also logs.
+      val logContents = testResultManager.getTestSessionLog(sessionId, isExpected = true)
+      // Load also pending interactions.
+      val adminInteractions = if (isAdmin) None else Some(false)
+      val pendingInteractions = testResultManager.getTestInteractions(sessionId, adminInteractions)
+      // Serialise.
+      val json = JsonUtil.jsTestResultReport(result.get, None, None, None, None, withOutputMessage = true, logContents, Some(pendingInteractions)).toString()
+      ResponseConstructor.constructJsonResponse(json)
+    } else {
+      ResponseConstructor.constructEmptyResponse
+    }
+  }
+
+  def getPendingTestSessionInteractionsAdmin(session: String): Action[AnyContent] = authorizedAction { request =>
+    authorizationManager.canManageTestSession(request, session, requireAdmin = true)
+    val results = testResultManager.getTestInteractions(session, None)
+    ResponseConstructor.constructJsonResponse(JsonUtil.jsTestInteractions(results).toString())
+  }
+
+  def getPendingTestSessionInteractions(session: String): Action[AnyContent] = authorizedAction { request =>
+    authorizationManager.canManageTestSession(request, session, requireAdmin = false)
+    val results = testResultManager.getTestInteractions(session, Some(false))
+    ResponseConstructor.constructJsonResponse(JsonUtil.jsTestInteractions(results).toString())
+  }
 
   def getTestSessionLog(sessionId: String): Action[AnyContent] = authorizedAction { request =>
     authorizationManager.canViewTestResultForSession(request, sessionId)

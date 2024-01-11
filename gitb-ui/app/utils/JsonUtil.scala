@@ -1691,8 +1691,16 @@ object JsonUtil {
     json
   }
 
-  def jsTestResultReport(result: TestResult, orgParameterDefinitions: Option[List[OrganisationParameters]], orgParameterValues: Option[scala.collection.mutable.Map[Long, scala.collection.mutable.Map[Long, String]]], sysParameterDefinitions: Option[List[SystemParameters]], sysParameterValues: Option[scala.collection.mutable.Map[Long, scala.collection.mutable.Map[Long, String]]], withOutputMessage: Boolean = false): JsObject = {
-    val json = Json.obj(
+  def jsTestResultReport(result: TestResult,
+                         orgParameterDefinitions: Option[List[OrganisationParameters]],
+                         orgParameterValues: Option[scala.collection.mutable.Map[Long, scala.collection.mutable.Map[Long, String]]],
+                         sysParameterDefinitions: Option[List[SystemParameters]],
+                         sysParameterValues: Option[scala.collection.mutable.Map[Long, scala.collection.mutable.Map[Long, String]]],
+                         withOutputMessage: Boolean = false,
+                         logEntries: Option[List[String]] = None,
+                         pendingInteractions: Option[List[TestInteraction]] = None
+                        ): JsObject = {
+    var json = Json.obj(
       "result" -> jsTestResult(result, None, withOutputMessage),
       "test" ->  {
         Json.obj(
@@ -1744,7 +1752,21 @@ object JsonUtil {
         )
       }
     )
+    if (logEntries.isDefined) {
+      json = json + ("logs", jsStringArray(logEntries.get))
+    }
+    if (pendingInteractions.isDefined) {
+      json = json + ("interactions", jsTestInteractions(pendingInteractions.get))
+    }
     json
+  }
+
+  def jsTestInteractions(interactions: List[TestInteraction]): JsArray = {
+    var array = Json.arr()
+    interactions.foreach{ interaction =>
+      array = array.append(Json.parse(interaction.tpl))
+    }
+    array
   }
 
   /**

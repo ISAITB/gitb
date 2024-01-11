@@ -11,11 +11,13 @@ public class InputEvent {
     private final String sessionId;
     private final String stepId;
     private final List<UserInput> userInputs;
+    private final boolean admin;
 
-    public InputEvent(String sessionId, String stepId, List<UserInput> userInputs) {
+    public InputEvent(String sessionId, String stepId, List<UserInput> userInputs, boolean admin) {
         this.sessionId = sessionId;
         this.stepId = stepId;
         this.userInputs = userInputs;
+        this.admin = admin;
     }
 
     public String getSessionId() {
@@ -28,5 +30,9 @@ public class InputEvent {
 
     public List<UserInput> getUserInputs() {
         return userInputs;
+    }
+
+    public boolean isAdmin() {
+        return admin;
     }
 }

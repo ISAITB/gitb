@@ -298,6 +298,8 @@ class ReportManager @Inject() (domainParameterManager: DomainParameterManager, r
             .filter(_.testSessionId === sessionId)
             .map(x => (x.result, x.endTime, x.outputMessage))
             .update(status.value(), now, outputMessage)
+          // Delete any pending test interactions
+          _ <- testResultManager.deleteTestInteractions(sessionId, None)
           // Update also the conformance results for the system
           _ <- PersistenceSchema.conformanceResults
             .filter(_.testsession === sessionId)

@@ -312,6 +312,16 @@ object PersistenceSchema {
 	}
 	val testStepReports = TableQuery[TestStepReports]
 
+  class TestInteractionsTable(tag: Tag) extends Table[TestInteraction](tag, "TestInteractions") {
+    def testSessionId = column[String]("test_session_id")
+    def testStepId = column[String]("test_step_id")
+    def admin = column[Boolean]("is_admin")
+    def tpl = column[String]("tpl", O.SqlType("TEXT"))
+    def * = (testSessionId, testStepId, admin, tpl) <> (TestInteraction.tupled, TestInteraction.unapply)
+    def pk = primaryKey("ti_pk", (testSessionId, testStepId))
+  }
+  val testInteractions = TableQuery[TestInteractionsTable]
+
   /*************************
    *** Relational Tables ***
    *************************/

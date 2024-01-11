@@ -10,6 +10,7 @@ import { SessionData } from './session-data';
 import { SessionPresentationData } from './session-presentation-data';
 import { TestStepResult } from 'src/app/types/test-step-result';
 import { DiagramEvents } from '../diagram-events';
+import { TestInteractionData } from 'src/app/types/test-interaction-data';
 
 @Injectable({
   providedIn: 'root'
@@ -116,8 +117,14 @@ export class DiagramLoaderService {
   loadTestSessionData(session: SessionData): Observable<SessionPresentationData> {
     // Load test step results
     const obs1 = this.loadTestStepResults(session.session)
+    // Load log entries (only for an active test session).
+    let obs2: Observable<string[]|undefined> = of(undefined)
+    if (session.endTime == undefined) obs2 = this.reportService.getTestSessionLog(session.session)
+    // Load pending interactions (only for an active test session).
+    let obs3: Observable<TestInteractionData[]|undefined> = of(undefined)
+    if (session.endTime == undefined) obs3 = this.reportService.getPendingTestSessionInteractions(session.session)
     // Load test result details
-    const obs2 = this.reportService.getTestResultOfSession(session.session)
+    const obs4 = this.reportService.getTestResultOfSession(session.session)
     .pipe(
       mergeMap((result) => {
         let testcase = JSON.parse(result.tpl!) as TestCaseDefinition
@@ -139,16 +146,18 @@ export class DiagramLoaderService {
       share() // We return a shared observable here otherwise the requests are repeated
     )
     // Process once both requests are complete
-    return forkJoin([obs1, obs2]).pipe(
+    return forkJoin([obs1, obs2, obs3, obs4]).pipe(
       mergeMap((result) => {
-        this.updateStatusOfSteps(session, result[1].stepsOfTests[session.session], result[0])
+        this.updateStatusOfSteps(session, result[3].stepsOfTests[session.session], result[0])
         const state: SessionPresentationData = {
-          stepsOfTests: result[1].stepsOfTests,
-          actorInfoOfTests: result[1].actorInfoOfTests,
-          outputMessage: result[1].outputMessage,
-          outputMessageType: result[1].outputMessageType,
+          stepsOfTests: result[3].stepsOfTests,
+          actorInfoOfTests: result[3].actorInfoOfTests,
+          outputMessage: result[3].outputMessage,
+          outputMessageType: result[3].outputMessageType,
           events: new DiagramEvents(),
-          testResultFlat: result[0]
+          testResultFlat: result[0],
+          logs: result[1],
+          interactions: result[2]
         }
         return of(state)
       })

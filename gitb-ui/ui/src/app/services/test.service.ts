@@ -132,7 +132,7 @@ export class TestService {
     })
   }
 
-  provideInput(session: string, step: string, inputs: UserInteractionInput[]) {
+  provideInput(session: string, step: string, inputs: UserInteractionInput[], admin?: boolean) {
     const inputsToSend: any[] = []
     let files: FileParam[] = []
     for (let input of inputs) {
@@ -149,8 +149,14 @@ export class TestService {
       }
       inputsToSend.push(inputToSend)
     }
+    let path: string
+    if (admin) {
+      path = ROUTES.controllers.TestService.provideInputAdmin(session).url
+    } else {
+      path = ROUTES.controllers.TestService.provideInput(session).url
+    }
     return this.restService.post<void>({
-        path: ROUTES.controllers.TestService.provideInput(session).url,
+        path: path,
         data: {
             teststep: step,
             inputs: JSON.stringify(inputsToSend)

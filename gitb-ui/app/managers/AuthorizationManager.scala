@@ -395,8 +395,8 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     canManageTestSuite(request, testSuiteId)
   }
 
-  def canExecuteTestSession(request: RequestWithAttributes[_], session_id: String):Boolean = {
-    canManageTestSession(request, session_id)
+  def canExecuteTestSession(request: RequestWithAttributes[_], sessionId: String, requireAdmin: Boolean = false):Boolean = {
+    canManageTestSession(request, sessionId, requireAdmin)
   }
 
   def canExecuteTestCase(request: RequestWithAttributes[_], test_id: String):Boolean = {
@@ -806,7 +806,7 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     }
   }
 
-  def canManageTestSession(request: RequestWithAttributes[_], sessionId: String): Boolean = {
+  def canManageTestSession(request: RequestWithAttributes[_], sessionId: String, requireAdmin: Boolean): Boolean = {
     var ok = false
     val userInfo = getUser(getRequestUserId(request))
     if (isTestBedAdmin(userInfo)) {
@@ -834,28 +834,32 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
       }
     } else {
       // Own test session.
-      val result = testResultManager.getOrganisationIdForTestSession(sessionId)
-      if (result.isDefined) {
-        if (result.get._2.isDefined) {
-          // There is an organisation ID defined. This needs to match the user's organisation ID.
-          ok = userInfo.organization.isDefined && result.get._2.get == userInfo.organization.get.id
-        } else {
-          // No organisation ID. This is an obsolete session no longer visible to the user.
-          ok = false
-        }
+      if (requireAdmin) {
+        ok = false
       } else {
-        /*
-        There is no test session recorded for this session ID. This could be because the test session is currently
-        being configured.
-         */
-        ok = true
+        val result = testResultManager.getOrganisationIdForTestSession(sessionId)
+        if (result.isDefined) {
+          if (result.get._2.isDefined) {
+            // There is an organisation ID defined. This needs to match the user's organisation ID.
+            ok = userInfo.organization.isDefined && result.get._2.get == userInfo.organization.get.id
+          } else {
+            // No organisation ID. This is an obsolete session no longer visible to the user.
+            ok = false
+          }
+        } else {
+          /*
+          There is no test session recorded for this session ID. This could be because the test session is currently
+          being configured.
+           */
+          ok = true
+        }
       }
     }
     setAuthResult(request, ok, "User cannot manage requested session")
   }
 
   def canViewTestResultForSession(request: RequestWithAttributes[_], sessionId: String):Boolean = {
-    canManageTestSession(request, sessionId)
+    canManageTestSession(request, sessionId, requireAdmin = false)
   }
 
   def canViewTestResultsForCommunity(request: RequestWithAttributes[_], communityIds: Option[List[Long]]):Boolean = {

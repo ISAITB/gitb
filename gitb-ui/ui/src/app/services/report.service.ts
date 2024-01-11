@@ -10,6 +10,8 @@ import { TestResultSearchCriteria } from '../types/test-result-search-criteria';
 import { TestStepResult } from '../types/test-step-result';
 import { RestService } from './rest.service';
 import { FileReference } from '../types/file-reference';
+import { DataService } from './data.service';
+import { TestInteractionData } from '../types/test-interaction-data';
 
 @Injectable({
   providedIn: 'root'
@@ -17,7 +19,8 @@ import { FileReference } from '../types/file-reference';
 export class ReportService {
 
   constructor(
-    private restService: RestService
+    private restService: RestService,
+    private dataService: DataService
   ) { }
 
   searchTestCasesInDomain(domainId: number, specificationIds: number[]|undefined, specificationGroupIds: number[]|undefined, actorIds: number[]|undefined, testSuiteIds: number[]|undefined) {
@@ -154,8 +157,14 @@ export class ReportService {
   }
 
   getTestResult(sessionId: string) {
+    let path: string
+    if (this.dataService.isCommunityAdmin || this.dataService.isSystemAdmin) {
+      path = ROUTES.controllers.RepositoryService.getTestResultAdmin(sessionId).url
+    } else {
+      path = ROUTES.controllers.RepositoryService.getTestResult(sessionId).url
+    }
     return this.restService.get<TestResultReport|undefined>({
-      path: ROUTES.controllers.ReportService.getTestResult(sessionId).url,
+      path: path,
       authenticate: true
     })
   }
@@ -314,6 +323,19 @@ export class ReportService {
       path: ROUTES.controllers.RepositoryService.getTestSessionLog(session).url,
       authenticate: true
     })
+  }
+
+  getPendingTestSessionInteractions(session: string) {
+    let path: string
+    if (this.dataService.isCommunityAdmin || this.dataService.isSystemAdmin) {
+      path = ROUTES.controllers.RepositoryService.getPendingTestSessionInteractionsAdmin(session).url
+    } else {
+      path = ROUTES.controllers.RepositoryService.getPendingTestSessionInteractions(session).url
+    }
+    return this.restService.get<TestInteractionData[]>({
+      path: path,
+      authenticate: true
+    })    
   }
 
 }

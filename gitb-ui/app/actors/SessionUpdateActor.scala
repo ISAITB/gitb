@@ -6,7 +6,7 @@ import com.gitb.core.ValueEmbeddingEnumeration
 import com.gitb.tbs.{Instruction, InteractWithUsersRequest, TestStepStatus}
 import com.gitb.tr.TAR
 import managers.{ReportManager, TestResultManager, TestbedBackendClient}
-import models.TestStepResultInfo
+import models.{TestInteraction, TestStepResultInfo}
 import org.apache.commons.lang3.StringUtils
 import org.slf4j.LoggerFactory
 import utils.{JacksonUtil, JsonUtil, MimeUtil}
@@ -102,18 +102,24 @@ class SessionUpdateActor @Inject() (reportManager: ReportManager, testResultMana
             if (extension != null) instruction.setName(s"file$extension")
           case _ => // Ignoring requests.
         }
-      }
-      if (WebSocketActor.webSockets.contains(session)) {
-        val actor = interactWithUsersRequest.getInteraction.getWith
         val request = JacksonUtil.serializeInteractionRequest(interactWithUsersRequest)
-        if (actor == null) { // if actor not specified, send the request to all actors. Let client side handle this.
-          webSocketActor.broadcast(session, request)
-        } else { //send the request only to the given actor
-          webSocketActor.push(session, actor, request)
+        testResultManager.saveTestInteraction(TestInteraction(interactWithUsersRequest.getTcInstanceid, interactWithUsersRequest.getStepId, interactWithUsersRequest.getInteraction.isAdmin, request))
+        if (WebSocketActor.webSockets.contains(session)) {
+          val actor = interactWithUsersRequest.getInteraction.getWith
+          if (actor == null) { // if actor not specified, send the request to all actors. Let client side handle this.
+            webSocketActor.broadcast(session, request)
+          } else { //send the request only to the given actor
+            webSocketActor.push(session, actor, request)
+          }
+        } else { // This is a headless session - automatically dismiss or complete with an empty request.
+          // TODO handle this case and admin flag.
+          LOGGER.warn(s"Headless session [$session] expected interaction for step [${interactWithUsersRequest.getStepId}]. Completed automatically with empty result.")
+          testbedBackendClient.provideInput(session, interactWithUsersRequest.getStepId, None, isAdmin = false)
         }
-      } else { // This is a headless session - automatically dismiss or complete with an empty request.
-        LOGGER.warn(s"Headless session [$session] expected interaction for step [${interactWithUsersRequest.getStepId}]. Completed automatically with empty result.")
-        testbedBackendClient.provideInput(session, interactWithUsersRequest.getStepId, None)
+      } else {
+        LOGGER.warn(s"Session [$session] received empty interaction for step [${interactWithUsersRequest.getStepId}].")
+        // TODO handle admin flag.
+        testbedBackendClient.provideInput(session, interactWithUsersRequest.getStepId, None, isAdmin = false)
       }
     } catch {
       case e: Exception =>
