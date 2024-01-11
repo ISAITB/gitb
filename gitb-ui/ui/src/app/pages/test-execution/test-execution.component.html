@@ -90,13 +90,13 @@
                                                                 </div>
                                                             </div>
                                                             <div class="session-table-operations btn-toolbar" *ngIf="stepsOfTests[testCase.id] != undefined">
-                                                                <ng-container *ngIf="interactionStepsOfTests[testCase.id] != undefined" [ngSwitch]="interactionStepsOfTests[testCase.id].length">
-                                                                    <button *ngSwitchCase="1" type="button" class="btn btn-secondary" (click)="displayPendingInteraction()">View pending interaction</button>
+                                                                <ng-container *ngIf="interactionStepsOfTests[testCase.id] != undefined && interactionStepsOfTests[testCase.id].length > 0" [ngSwitch]="interactionStepsOfTests[testCase.id].length == 1">
+                                                                    <button *ngSwitchCase="true" type="button" class="btn btn-secondary" (click)="displayPendingInteraction()">View pending interaction</button>
                                                                     <div *ngSwitchDefault class="btn-group" dropdown>
                                                                         <button id="button-interactions" dropdownToggle class="btn btn-secondary dropdown-toggle" type="button" aria-controls="dropdown-interactions">View pending interaction<span class="caret withMargin"></span></button>
                                                                         <ul id="dropdown-interactions" *dropdownMenu class="dropdown-menu" aria-labelledby="button-interactions">
-                                                                            <li *ngFor="let interaction of interactionStepsOfTests[testCase.id]">
-                                                                                <a class="dropdown-item" href (click)="displayPendingInteraction(interaction.stepId);$event.preventDefault();">{{labelForPendingInteraction(interaction)}}</a>
+                                                                            <li *ngFor="let interaction of interactionStepsOfTests[testCase.id]; let index = index">
+                                                                                <a class="dropdown-item" href (click)="displayPendingInteraction(interaction.stepId);$event.preventDefault();">{{labelForPendingInteraction(interaction, index)}}</a>
                                                                             </li>
                                                                         </ul>                                                                        
                                                                     </div>

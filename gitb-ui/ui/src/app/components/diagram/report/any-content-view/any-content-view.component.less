@@ -2,6 +2,7 @@
 
 .any-content-view-container { 
     display: flex;
+    min-height: 50px;
 }
 .any-content-view-texts { 
     display: inline-flex; 
@@ -43,7 +44,10 @@
     }
     background-color: @white;
     padding: 0 15px;
-    margin: 8px 0;
+    margin: 8px 0px;
+    &.no-margin {
+        margin: 0px;        
+    }
     border: 1px solid @gray-light;
     border-radius: @border-radius;
 }

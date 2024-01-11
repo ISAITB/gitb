@@ -9,8 +9,9 @@ import managers.{ReportManager, TestResultManager, TestbedBackendClient}
 import models.{TestInteraction, TestStepResultInfo}
 import org.apache.commons.lang3.StringUtils
 import org.slf4j.LoggerFactory
-import utils.{JacksonUtil, JsonUtil, MimeUtil}
+import utils.{JacksonUtil, JsonUtil, MimeUtil, RepositoryUtils}
 
+import java.nio.file.Files
 import javax.inject.Inject
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 
@@ -20,7 +21,7 @@ object SessionUpdateActor {
   }
 }
 
-class SessionUpdateActor @Inject() (reportManager: ReportManager, testResultManager: TestResultManager, webSocketActor: WebSocketActor, testbedBackendClient: TestbedBackendClient) extends Actor {
+class SessionUpdateActor @Inject() (repositoryUtils: RepositoryUtils, reportManager: ReportManager, testResultManager: TestResultManager, webSocketActor: WebSocketActor, testbedBackendClient: TestbedBackendClient) extends Actor {
 
   private val LOGGER = LoggerFactory.getLogger(classOf[SessionUpdateActor])
   private val END_STEP_ID = "-1"
@@ -95,11 +96,18 @@ class SessionUpdateActor @Inject() (reportManager: ReportManager, testResultMana
     val session = interactWithUsersRequest.getTcInstanceid
     try {
       if (interactWithUsersRequest.getInteraction != null) {
+        val sessionFolder = repositoryUtils.getPathForTestSession(interactWithUsersRequest.getTcInstanceid, isExpected = false).path
+        Files.createDirectories(sessionFolder)
         interactWithUsersRequest.getInteraction.getInstructionOrRequest.asScala.foreach {
           case instruction: Instruction if !StringUtils.isBlank(instruction.getValue) && instruction.getEmbeddingMethod == ValueEmbeddingEnumeration.BASE_64 && StringUtils.isBlank(instruction.getName) => // Determine the file name from the BASE64 content.
             val mimeType = MimeUtil.getMimeType(instruction.getValue, false)
             val extension = MimeUtil.getExtensionFromMimeType(mimeType)
-            if (extension != null) instruction.setName(s"file$extension")
+            // Determine name.
+            if (extension != null) {
+              instruction.setName(s"file$extension")
+            }
+            // Decouple large content if needed into file references.
+            repositoryUtils.decoupleLargeData(instruction, sessionFolder, isTempData = true)
           case _ => // Ignoring requests.
         }
         val request = JacksonUtil.serializeInteractionRequest(interactWithUsersRequest)
@@ -111,15 +119,19 @@ class SessionUpdateActor @Inject() (reportManager: ReportManager, testResultMana
           } else { //send the request only to the given actor
             webSocketActor.push(session, actor, request)
           }
-        } else { // This is a headless session - automatically dismiss or complete with an empty request.
-          // TODO handle this case and admin flag.
-          LOGGER.warn(s"Headless session [$session] expected interaction for step [${interactWithUsersRequest.getStepId}]. Completed automatically with empty result.")
-          testbedBackendClient.provideInput(session, interactWithUsersRequest.getStepId, None, isAdmin = false)
+        } else {
+          // This is a headless session.
+          if (!interactWithUsersRequest.getInteraction.isAdmin && !interactWithUsersRequest.getInteraction.isHasTimeout) {
+            // This is a non-admin interaction for which we don't have a timeout defined - resolve the step immediately with empty inputs.
+            // Admin interactions are not force-completed like this because they will normally always be done asynchronously.
+            // They remain active indefinitely or until a configured timeout expires (handled via gitb-srv).
+            LOGGER.warn(s"Headless session [$session] expected interaction for step [${interactWithUsersRequest.getStepId}]. Completed automatically with empty result.")
+            testbedBackendClient.provideInput(session, interactWithUsersRequest.getStepId, None, interactWithUsersRequest.getInteraction.isAdmin)
+          }
         }
       } else {
         LOGGER.warn(s"Session [$session] received empty interaction for step [${interactWithUsersRequest.getStepId}].")
-        // TODO handle admin flag.
-        testbedBackendClient.provideInput(session, interactWithUsersRequest.getStepId, None, isAdmin = false)
+        testbedBackendClient.provideInput(session, interactWithUsersRequest.getStepId, None, interactWithUsersRequest.getInteraction.isAdmin)
       }
     } catch {
       case e: Exception =>

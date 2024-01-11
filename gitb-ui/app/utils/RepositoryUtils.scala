@@ -7,6 +7,7 @@ import config.Configurations
 import managers.{BaseManager, TestSuiteManager}
 import models.Enums.TestResultStatus
 import models._
+import org.apache.commons.codec.binary.Base64
 import org.apache.commons.io.{FileUtils, FilenameUtils, IOUtils}
 import org.apache.commons.lang3.{RandomStringUtils, StringUtils}
 import org.slf4j.LoggerFactory
@@ -19,6 +20,7 @@ import java.nio.file._
 import java.nio.file.attribute.BasicFileAttributes
 import java.sql.Timestamp
 import java.time.LocalDateTime
+import java.util.UUID
 import java.util.zip.{ZipEntry, ZipFile}
 import javax.inject.{Inject, Singleton}
 import javax.xml.transform.stream.StreamSource
@@ -872,12 +874,16 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 		result
 	}
 
-	def getPathForTestSessionData(folderInfo: SessionFolderInfo): Path = {
-		getPathForTestSessionData(folderInfo.path)
+	def getPathForTestSessionData(folderInfo: SessionFolderInfo, tempData: Boolean): Path = {
+		getPathForTestSessionData(folderInfo.path, tempData)
 	}
 
-	def getPathForTestSessionData(sessionFolder: Path): Path = {
-		Path.of(sessionFolder.toString, "data")
+	def getPathForTestSessionData(sessionFolder: Path, tempData: Boolean): Path = {
+		if (tempData) {
+			Path.of(sessionFolder.toString, "data_temp")
+		} else {
+			Path.of(sessionFolder.toString, "data")
+		}
 	}
 
 	def getPathForTestSessionWrapper(sessionId: String, isExpected: Boolean): SessionFolderInfo = {
@@ -952,6 +958,36 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 		} else {
 			SessionFolderInfo(path, archived = false)
 		}
+	}
+
+	def decoupleLargeData(item: AnyContent, sessionFolder: Path, isTempData: Boolean): Unit = {
+		if (item != null) {
+			// We check first the length of the string as for large content this will already be over the threshold.
+			if (item.getValue != null && (item.getValue.length > Configurations.TEST_SESSION_EMBEDDED_REPORT_DATA_THRESHOLD || item.getValue.getBytes.length > Configurations.TEST_SESSION_EMBEDDED_REPORT_DATA_THRESHOLD)) {
+				if (item.getEmbeddingMethod == ValueEmbeddingEnumeration.BASE_64) {
+					if (MimeUtil.isDataURL(item.getValue)) {
+						writeValueToFile(item, isTempData, sessionFolder, file => { Files.write(file, Base64.decodeBase64(MimeUtil.getBase64FromDataURL(item.getValue))) })
+					} else {
+						writeValueToFile(item, isTempData, sessionFolder, file => { Files.write(file, Base64.decodeBase64(item.getValue)) })
+					}
+				} else {
+					writeValueToFile(item, isTempData, sessionFolder, file => { Files.writeString(file, item.getValue) })
+				}
+			}
+			// Check children.
+			item.getItem.forEach { child =>
+				decoupleLargeData(child, sessionFolder, isTempData)
+			}
+		}
+	}
+
+	private def writeValueToFile(item: AnyContent, isTempData: Boolean, sessionFolder: Path, writeFn: Path => Unit): Unit = {
+		val dataFolder = getPathForTestSessionData(sessionFolder, isTempData)
+		Files.createDirectories(dataFolder)
+		val fileUuid = UUID.randomUUID().toString
+		val dataFile = Path.of(dataFolder.toString, fileUuid)
+		writeFn.apply(dataFile)
+		item.setValue(s"___[[$fileUuid]]___")
 	}
 
 }

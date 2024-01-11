@@ -21,5 +21,6 @@ export interface WebSocketMessage {
     errorCode?: string
     errorDescription?: string
     admin?: boolean
+    desc?: string
 
 }

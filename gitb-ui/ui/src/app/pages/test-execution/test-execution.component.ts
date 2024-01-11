@@ -26,7 +26,7 @@ import { SystemConfigurationParameter } from 'src/app/types/system-configuration
 import { SystemParameterWithValue } from 'src/app/types/system-parameter-with-value';
 import { WebSocketMessage } from 'src/app/types/web-socket-message';
 import { ConformanceTestCase } from '../organisation/conformance-statement/conformance-test-case';
-import { cloneDeep, filter, find, findIndex, map as lmap, remove } from 'lodash'
+import { cloneDeep, filter, find, map as lmap, remove } from 'lodash'
 import { DiagramEvents } from 'src/app/components/diagram/diagram-events';
 import { UserInteraction } from 'src/app/types/user-interaction';
 import { RoutingService } from 'src/app/services/routing.service';
@@ -549,7 +549,7 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
     }
   }
 
-  private recordInteraction(stepId: string, interactions: UserInteraction[], inputTitle: string|undefined) {
+  private recordInteraction(stepId: string, interactions: UserInteraction[], inputTitle: string|undefined, admin: boolean|undefined, desc: string|undefined) {
     if (this.interactionStepsOfTests[this.currentTest!.id] == undefined) {
       this.interactionStepsOfTests[this.currentTest!.id] = []
     }
@@ -557,7 +557,9 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
       this.interactionStepsOfTests[this.currentTest!.id].push({
         stepId: stepId,
         interactions: interactions,
-        inputTitle: inputTitle
+        inputTitle: inputTitle,
+        admin: admin,
+        desc: desc
       })
     }
   }
@@ -566,17 +568,11 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
     remove(this.interactionStepsOfTests[this.currentTest!.id], (step) => step.stepId == stepId)
   }
 
-  labelForPendingInteraction(step: TestInteractionData) {
-    const stepDefinition = this.findNodeWithStepId(this.stepsOfTests[this.currentTest!.id], step.stepId)
-    if (stepDefinition?.desc) {
-      return stepDefinition.desc
+  labelForPendingInteraction(step: TestInteractionData, index: number) {
+    if (step?.desc) {
+      return step.desc
     } else {
-      const index = findIndex(this.interactionStepsOfTests[this.currentTest!.id], (pendingStep) => pendingStep.stepId == step.stepId)
-      if (index != undefined) {
-        return "Interaction " + (index + 1)
-      } else {
-        return "Interaction"
-      }
+      return "Interaction " + (index + 1)
     }
   }
 
@@ -592,7 +588,7 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
         interaction = find(testInteractions, (step) => step.stepId == stepId)
       }
       if (interaction) {
-        this.interact(interaction.interactions, interaction.inputTitle, interaction.stepId)
+        this.interact(interaction.interactions, interaction.inputTitle, interaction.stepId, interaction.admin, interaction.desc)
       }
     }
   }
@@ -604,17 +600,17 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
       if (this.currentInteractionModal) {
         // We already have an interaction open - park the new one.
         if (!response.admin || this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin) {
-          this.recordInteraction(response.stepId, response.interactions!, response.inputTitle)
+          this.recordInteraction(response.stepId, response.interactions!, response.inputTitle, response.admin, response.desc)
         }
       } else {
-        this.interact(response.interactions!, response.inputTitle, response.stepId, response.admin)
+        this.interact(response.interactions!, response.inputTitle, response.stepId, response.admin, response.desc)
       }
     } else {
       // Status update.
       if (response.status == Constants.TEST_STATUS.COMPLETED || response.status == Constants.TEST_STATUS.ERROR || response.status == Constants.TEST_STATUS.WARNING || response.status == Constants.TEST_STATUS.SKIPPED) {
         this.removeInteraction(response.stepId)
         if (this.currentInteractionModal && this.currentInteractionStepId == response.stepId) {
-          this.popupService.closeAll()        
+          this.popupService.closeAll()
           this.popupService.warning("The interaction step was completed by another user or process.", true)
           this.currentInteractionModal.hide()
           this.currentInteractionModal = undefined
@@ -929,23 +925,28 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
     return text.replace(/\./g, "\\.").replace(/\[/g, "\\[").replace(/\]/g, "\\]")
   }
 
-  private interact(interactions: UserInteraction[], inputTitle: string|undefined, stepId: string, admin?: boolean) {
+  private interact(interactions: UserInteraction[], inputTitle: string|undefined, stepId: string, admin: boolean|undefined, desc: string|undefined) {
     if (!admin || this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin) {
       this.currentInteractionStepId = stepId
       this.currentInteractionModal = this.modalService.show(ProvideInputModalComponent, {
-        backdrop: 'static',
-        keyboard: false,
+        class: 'modal-lg',
         initialState: {
           interactions: interactions,
           inputTitle: inputTitle,
           sessionId: this.session!
         }
       })
+      this.currentInteractionModal.onHide?.subscribe((dismissReason) => {
+        // Make sure that we treat ESC or backdrop click as a "minimise" click.
+        if (dismissReason == "backdrop-click" || dismissReason == "esc") {
+          this.recordInteraction(stepId, interactions, inputTitle, admin, desc)
+        }
+      })
       this.currentInteractionModal.content!.result.subscribe((result) => {
         this.currentInteractionStepId = undefined
-        this.currentInteractionModal = undefined      
+        this.currentInteractionModal = undefined
         if (result == undefined) {
-          this.recordInteraction(stepId, interactions, inputTitle)
+          this.recordInteraction(stepId, interactions, inputTitle, admin, desc)
         } else {
           this.testService.provideInput(this.session!, stepId, result, admin)
           .subscribe(() => {
@@ -954,7 +955,7 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
         }
       }).add(() => {
         this.currentInteractionStepId = undefined
-        this.currentInteractionModal = undefined      
+        this.currentInteractionModal = undefined
       })
     }
   }
@@ -1246,10 +1247,10 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
   }
 
   exportEnabled(testCase: ConformanceTestCase) {
-    return this.testCaseStatus[testCase.id] == Constants.TEST_CASE_STATUS.ERROR 
+    return this.testCaseStatus[testCase.id] == Constants.TEST_CASE_STATUS.ERROR
       || this.testCaseStatus[testCase.id] == Constants.TEST_CASE_STATUS.COMPLETED
       || this.testCaseStatus[testCase.id] == Constants.TEST_CASE_STATUS.STOPPED
-  }    
+  }
 
   exportPdf(testCase: ConformanceTestCase) {
     this.exportPdfPending[testCase.id] = true

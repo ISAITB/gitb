@@ -25,6 +25,7 @@ export class AnyContentViewComponent extends ReportSupport implements OnInit {
   @Input() report?: StepReport
   @Input() sessionId?: string
   @Input() noBorder = false
+  @Input() noMargin = false
   @Input() root = false
   @Input() forceDisplay = false
 

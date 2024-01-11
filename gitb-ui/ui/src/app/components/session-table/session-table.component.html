@@ -77,13 +77,13 @@
                                             </button>
                                             <button *ngSwitchDefault type="button" [disable]="!row.diagramLoaded" class="btn btn-secondary position-relative" (click)="showTestSessionLog(row)" [pending]="viewLogPending[row.session]">View log</button>
                                         </ng-container>
-                                        <ng-container *ngIf="supportRefresh && row.diagramState?.interactions?.length > 0" [ngSwitch]="row.diagramState.interactions.length">
-                                            <button *ngSwitchCase="1" type="button" [disabled]="sessionBeingRefreshed?.session == row.session" class="btn btn-secondary" (click)="displayPendingInteraction(row)">View pending interaction</button>
+                                        <ng-container *ngIf="supportRefresh && row.diagramState?.interactions != undefined && row.diagramState.interactions.length > 0" [ngSwitch]="row.diagramState.interactions.length == 1">
+                                            <button *ngSwitchCase="true" type="button" [disabled]="sessionBeingRefreshed?.session == row.session" class="btn btn-secondary" (click)="displayPendingInteraction(row)">View pending interaction</button>
                                             <div *ngSwitchDefault class="btn-group" dropdown>
                                                 <button id="button-interactions" dropdownToggle class="btn btn-secondary dropdown-toggle" type="button" aria-controls="dropdown-interactions">View pending interaction<span class="caret withMargin"></span></button>
                                                 <ul id="dropdown-interactions" *dropdownMenu class="dropdown-menu" aria-labelledby="button-interactions">
-                                                    <li *ngFor="let interaction of row.diagramState.interactions">
-                                                        <a class="dropdown-item" href (click)="displayPendingInteraction(row, interaction.stepId);$event.preventDefault();">{{labelForPendingInteraction(row, interaction)}}</a>
+                                                    <li *ngFor="let interaction of row.diagramState.interactions; let index = index">
+                                                        <a class="dropdown-item" href (click)="displayPendingInteraction(row, interaction.stepId);$event.preventDefault();">{{labelForPendingInteraction(interaction, index)}}</a>
                                                     </li>
                                                 </ul>                                                                        
                                             </div>

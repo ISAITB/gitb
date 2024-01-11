@@ -15,7 +15,7 @@ import { TestService } from 'src/app/services/test.service';
 import { TestResultReport } from 'src/app/types/test-result-report';
 import { LogLevel } from 'src/app/types/log-level';
 import { TestInteractionData } from 'src/app/types/test-interaction-data';
-import { filter, find, findIndex } from 'lodash';
+import { filter, find } from 'lodash';
 
 @Component({
   selector: '[app-session-table]',
@@ -138,7 +138,7 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
           } else if (logLevel == LogLevel.WARN) {
             hasWarnings = true
           } else {
-            hasMessages = true            
+            hasMessages = true
           }
           if (hasErrors) break;
         }
@@ -149,17 +149,12 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
     }
   }
 
-  labelForPendingInteraction(session: TestResultForDisplay, step: TestInteractionData) {
+  labelForPendingInteraction(step: TestInteractionData, index: number) {
     if (step?.desc) {
       return step.desc
     } else {
-      const index = findIndex(session.diagramState?.interactions, (step) => step.stepId == step.stepId)
-      if (index != undefined) {
-        return "Interaction " + (index + 1)
-      } else {
-        return "Interaction"
-      }
-    }    
+      return "Interaction " + (index + 1)
+    }
   }
 
   private extractApplicableInteractions(interactions: TestInteractionData[]) {
@@ -189,8 +184,7 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
         }
         if (interactionData) {
           const modalRef = this.modalService.show(ProvideInputModalComponent, {
-            backdrop: 'static',
-            keyboard: false,
+            class: 'modal-lg',
             initialState: {
               interactions: interactionData.interactions,
               inputTitle: interactionData.inputTitle,

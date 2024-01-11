@@ -125,6 +125,22 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
     ResponseConstructor.constructJsonResponse(JsonUtil.jsTestInteractions(results).toString())
   }
 
+  private def getTestSessionData(sessionFolderInfo: SessionFolderInfo, dataId: String): Option[Path] = {
+    var sessionDataFolder = repositoryUtils.getPathForTestSessionData(sessionFolderInfo, tempData = false)
+    var dataFile = Path.of(sessionDataFolder.toString, dataId)
+    if (!Files.exists(dataFile)) {
+      sessionDataFolder = repositoryUtils.getPathForTestSessionData(sessionFolderInfo, tempData = true)
+      dataFile = Path.of(sessionDataFolder.toString, dataId)
+      if (!Files.exists(dataFile)) {
+        None
+      } else {
+        Some(dataFile)
+      }
+    } else {
+      Some(dataFile)
+    }
+  }
+
   def getTestSessionLog(sessionId: String): Action[AnyContent] = authorizedAction { request =>
     authorizationManager.canViewTestResultForSession(request, sessionId)
     val logContents = testResultManager.getTestSessionLog(sessionId, isExpected = true)
@@ -138,37 +154,41 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
   def getTestStepReportDataAsDataUrl(sessionId: String, dataId: String): Action[AnyContent] = authorizedAction { request =>
     authorizationManager.canViewTestResultForSession(request, sessionId)
     val sessionFolderInfo = repositoryUtils.getPathForTestSession(sessionId, isExpected = true)
-    val sessionDataFolder = repositoryUtils.getPathForTestSessionData(sessionFolderInfo)
-    val dataFile = Path.of(sessionDataFolder.toString, dataId)
-    if (!Files.exists(dataFile)) {
-      NotFound
-    } else {
-      val requestedMimeType = request.headers.get(ACCEPT)
-      val mimeTypeToUse = if (requestedMimeType.isEmpty || requestedMimeType.get.contains("*")) {
-        Option(MimeUtil.getMimeType(dataFile)).getOrElse("application/octet-stream")
+    try {
+      val dataFile = getTestSessionData(sessionFolderInfo, dataId)
+      if (dataFile.isEmpty) {
+        NotFound
       } else {
-        requestedMimeType.getOrElse("application/octet-stream")
+        val requestedMimeType = request.headers.get(ACCEPT)
+        val mimeTypeToUse = if (requestedMimeType.isEmpty || requestedMimeType.get.contains("*")) {
+          Option(MimeUtil.getMimeType(dataFile.get)).getOrElse("application/octet-stream")
+        } else {
+          requestedMimeType.getOrElse("application/octet-stream")
+        }
+        val dataUrl = MimeUtil.getFileAsDataURL(dataFile.get.toFile, mimeTypeToUse)
+        ResponseConstructor.constructJsonResponse(JsonUtil.jsFileReference(dataUrl, mimeTypeToUse).toString())
       }
-      val dataUrl = MimeUtil.getFileAsDataURL(dataFile.toFile, mimeTypeToUse)
-      ResponseConstructor.constructJsonResponse(JsonUtil.jsFileReference(dataUrl, mimeTypeToUse).toString())
+    } finally {
+      if (sessionFolderInfo.archived) {
+        FileUtils.deleteQuietly(sessionFolderInfo.path.toFile)
+      }
     }
   }
 
   def getTestStepReportData(sessionId: String, dataId: String): Action[AnyContent] = authorizedAction { request =>
     authorizationManager.canViewTestResultForSession(request, sessionId)
     val sessionFolderInfo = repositoryUtils.getPathForTestSession(sessionId, isExpected = true)
-    val sessionDataFolder = repositoryUtils.getPathForTestSessionData(sessionFolderInfo)
-    val dataFile = Path.of(sessionDataFolder.toString, dataId)
-    if (!Files.exists(dataFile)) {
+    val dataFile = getTestSessionData(sessionFolderInfo, dataId)
+    if (dataFile.isEmpty) {
       NotFound
     } else {
       var mimeTypeToUse = request.headers.get(ACCEPT)
       if (mimeTypeToUse.isEmpty || mimeTypeToUse.get.contains("*")) {
-        mimeTypeToUse = Option(MimeUtil.getMimeType(dataFile))
+        mimeTypeToUse = Option(MimeUtil.getMimeType(dataFile.get))
       }
       val extension = MimeUtil.getExtensionFromMimeType(mimeTypeToUse.orNull)
       Ok.sendFile(
-        content = dataFile.toFile,
+        content = dataFile.get.toFile,
         fileName = _ => Some(dataId+extension),
         onClose = () => {
           if (sessionFolderInfo.archived) {

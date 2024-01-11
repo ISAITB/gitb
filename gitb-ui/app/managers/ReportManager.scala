@@ -1,7 +1,7 @@
 package managers
 
 import actors.events.{ConformanceStatementSucceededEvent, TestSessionFailedEvent, TestSessionSucceededEvent}
-import com.gitb.core.{AnyContent, StepStatus, ValueEmbeddingEnumeration}
+import com.gitb.core.StepStatus
 import com.gitb.reports.ReportGenerator
 import com.gitb.reports.dto.{ConformanceStatementOverview, TestCaseOverview, TestSuiteOverview}
 import com.gitb.tbs.{ObjectFactory, TestStepStatus}
@@ -16,14 +16,14 @@ import org.apache.commons.io.FileUtils
 import org.apache.commons.lang3.StringUtils
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
-import utils.signature.{CreateSignature, SigUtils}
 import utils._
+import utils.signature.{CreateSignature, SigUtils}
 
 import java.io.{File, FileOutputStream, StringReader}
 import java.nio.file.{Files, Path}
 import java.text.SimpleDateFormat
 import java.util
-import java.util.{Date, UUID}
+import java.util.Date
 import javax.inject.{Inject, Singleton}
 import javax.xml.transform.stream.StreamSource
 import scala.collection.mutable
@@ -292,22 +292,31 @@ class ReportManager @Inject() (domainParameterManager: DomainParameterManager, r
 
   def finishTestReport(sessionId: String, status: TestResultType, outputMessage: Option[String]): Unit = {
     val now = Some(TimeUtil.getCurrentTimestamp())
-    exec(
-      (for {
-          _ <- PersistenceSchema.testResults
-            .filter(_.testSessionId === sessionId)
-            .map(x => (x.result, x.endTime, x.outputMessage))
-            .update(status.value(), now, outputMessage)
-          // Delete any pending test interactions
-          _ <- testResultManager.deleteTestInteractions(sessionId, None)
-          // Update also the conformance results for the system
-          _ <- PersistenceSchema.conformanceResults
-            .filter(_.testsession === sessionId)
-            .map(x => (x.result, x.outputMessage, x.updateTime))
-            .update(status.value(), outputMessage, now)
-        } yield ()
-      ).transactionally
-    )
+    val onSuccessCalls = mutable.ListBuffer[() => _]()
+    val dbAction = for {
+      startTime <- PersistenceSchema.testResults.filter(_.testSessionId === sessionId).map(_.startTime).result.head
+      _ <- PersistenceSchema.testResults
+        .filter(_.testSessionId === sessionId)
+        .map(x => (x.result, x.endTime, x.outputMessage))
+        .update(status.value(), now, outputMessage)
+      // Delete any pending test interactions
+      _ <- testResultManager.deleteTestInteractions(sessionId, None)
+      // Update also the conformance results for the system
+      _ <- PersistenceSchema.conformanceResults
+        .filter(_.testsession === sessionId)
+        .map(x => (x.result, x.outputMessage, x.updateTime))
+        .update(status.value(), outputMessage, now)
+      // Delete temporary test session data (used for user interactions).
+      _ <- {
+        onSuccessCalls += (() => {
+          val sessionFolderInfo = repositoryUtils.getPathForTestSessionObj(sessionId, Some(startTime), isExpected = true)
+          val tempDataFolder = repositoryUtils.getPathForTestSessionData(sessionFolderInfo, tempData = true)
+          FileUtils.deleteQuietly(tempDataFolder.toFile)
+        })
+        DBIO.successful(())
+      }
+    } yield ()
+    exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
     // Triggers linked to test sessions: (communityID, systemID, actorID)
     val sessionIds: Option[(Option[Long], Option[Long], Option[Long])] = exec(
       PersistenceSchema.testResults
@@ -353,36 +362,6 @@ class ReportManager @Inject() (domainParameterManager: DomainParameterManager, r
     )
   }
 
-  private def writeValueToFile(item: AnyContent, sessionFolder: Path, writeFn: Path => Unit): Unit = {
-    val dataFolder = repositoryUtils.getPathForTestSessionData(sessionFolder)
-    Files.createDirectories(dataFolder)
-    val fileUuid = UUID.randomUUID().toString
-    val dataFile = Path.of(dataFolder.toString, fileUuid)
-    writeFn.apply(dataFile)
-    item.setValue(s"___[[$fileUuid]]___")
-  }
-
-  private def decoupleLargeData(item: AnyContent, sessionFolder: Path): Unit = {
-    if (item != null) {
-      // We check first the length of the string as for large content this will already be over the threshold.
-      if (item.getValue != null && (item.getValue.length > Configurations.TEST_SESSION_EMBEDDED_REPORT_DATA_THRESHOLD || item.getValue.getBytes.length > Configurations.TEST_SESSION_EMBEDDED_REPORT_DATA_THRESHOLD)) {
-        if (item.getEmbeddingMethod == ValueEmbeddingEnumeration.BASE_64) {
-          if (MimeUtil.isDataURL(item.getValue)) {
-            writeValueToFile(item, sessionFolder, file => { Files.write(file, Base64.decodeBase64(MimeUtil.getBase64FromDataURL(item.getValue))) })
-          } else {
-            writeValueToFile(item, sessionFolder, file => { Files.write(file, Base64.decodeBase64(item.getValue)) })
-          }
-        } else {
-          writeValueToFile(item, sessionFolder, file => { Files.writeString(file, item.getValue) })
-        }
-      }
-      // Check children.
-      item.getItem.forEach { child =>
-        decoupleLargeData(child, sessionFolder)
-      }
-    }
-  }
-
   def createTestStepReport(sessionId: String, step: TestStepStatus): Option[String] = {
     var savedPath: Option[String] = None
     //save status reports only when step is concluded with either COMPLETED or ERROR state
@@ -403,7 +382,7 @@ class ReportManager @Inject() (domainParameterManager: DomainParameterManager, r
         if (step.getReport != null) {
           step.getReport match {
             case tar: TAR =>
-              decoupleLargeData(tar.getContext, sessionFolder)
+              repositoryUtils.decoupleLargeData(tar.getContext, sessionFolder, isTempData = false)
             case _ =>
           }
           val file = new File(sessionFolder.toFile, testStepReportPath)

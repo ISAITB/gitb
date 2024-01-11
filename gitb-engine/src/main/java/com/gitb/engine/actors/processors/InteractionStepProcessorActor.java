@@ -1,15 +1,11 @@
 package com.gitb.engine.actors.processors;
 
-import org.apache.pekko.actor.ActorRef;
-import org.apache.pekko.dispatch.Futures;
-import org.apache.pekko.dispatch.OnFailure;
-import org.apache.pekko.dispatch.OnSuccess;
 import com.gitb.core.AnyContent;
 import com.gitb.core.ErrorCode;
 import com.gitb.core.InputRequestInputType;
 import com.gitb.core.ValueEmbeddingEnumeration;
 import com.gitb.engine.TestbedService;
-import com.gitb.engine.actors.ActorSystem;
+import com.gitb.engine.commands.messaging.TimeoutExpired;
 import com.gitb.engine.events.TestStepInputEventBus;
 import com.gitb.engine.events.model.ErrorStatusEvent;
 import com.gitb.engine.events.model.InputEvent;
@@ -36,6 +32,10 @@ import com.gitb.utils.DataTypeUtils;
 import com.gitb.utils.ErrorUtils;
 import com.gitb.utils.XMLDateTimeUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.pekko.actor.ActorRef;
+import org.apache.pekko.dispatch.Futures;
+import org.apache.pekko.dispatch.OnFailure;
+import org.apache.pekko.dispatch.OnSuccess;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MarkerFactory;
@@ -43,7 +43,9 @@ import scala.concurrent.Future;
 import scala.concurrent.Promise;
 
 import javax.xml.datatype.DatatypeConfigurationException;
+import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by tuncay on 9/24/14.
@@ -55,11 +57,24 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
     public static final String NAME = "interaction-p";
 
     private static final Logger logger = LoggerFactory.getLogger(InteractionStepProcessorActor.class);
-
+    private boolean receivedInput = false;
     private Promise<TestStepReportType> promise;
 
     public InteractionStepProcessorActor(UserInteraction step, TestCaseScope scope, String stepId) {
         super(step, scope, stepId);
+    }
+
+    @Override
+    public void onReceive(Object message) {
+        if (message instanceof TimeoutExpired) {
+            if (!receivedInput) {
+                logger.debug(addMarker(), "Timeout expired while waiting to receive input");
+                var inputEvent = new InputEvent(scope.getContext().getSessionId(), step.getId(), Collections.emptyList(), step.isAdmin());
+                this.handleInputEvent(inputEvent);
+            }
+        } else {
+            super.onReceive(message);
+        }
     }
 
     @Override
@@ -102,11 +117,31 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
         // Set the default content type based on the type.
         //If it is an instruction
         // If no expression is specified consider it an empty expression.
+        VariableResolver variableResolver = new VariableResolver(scope);
+        final ActorContext context = getContext();
         //If it is a request
         Future<TestStepReportType> future = Futures.future(() -> {
-            //Process the instructions and request the interaction from TestbedClient
+            // Add a timeout if this is configured for the step.
+            long timeout = 0;
+            if (!StringUtils.isBlank(step.getTimeout())) {
+                if (VariableResolver.isVariableReference(step.getTimeout())) {
+                    timeout = variableResolver.resolveVariableAsNumber(step.getTimeout()).longValue();
+                } else {
+                    timeout = Double.valueOf(step.getTimeout()).longValue();
+                }
+                if (timeout > 0) {
+                    context.system().scheduler().scheduleOnce(
+                            scala.concurrent.duration.Duration.apply(timeout, TimeUnit.MILLISECONDS), () -> {
+                                if (!self().isTerminated()) {
+                                    self().tell(new TimeoutExpired(), self());
+                                }
+                            },
+                            context.dispatcher()
+                    );
+                }
+            }
+            // Process the instructions and request the interaction from TestbedClient
             try {
-                VariableResolver variableResolver = new VariableResolver(scope);
                 List<InstructionOrRequest> instructionAndRequests = step.getInstructOrRequest();
                 var withValue = fixedValueOrVariable(step.getWith(), variableResolver, getSUTActor().getId());
                 int childStepId = 1;
@@ -116,6 +151,7 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
                 userInteractionRequest.setWith(withValue);
                 userInteractionRequest.setAdmin(step.isAdmin());
                 userInteractionRequest.setDesc(step.getDesc());
+                userInteractionRequest.setHasTimeout(timeout > 0);
                 for (InstructionOrRequest instructionOrRequest : instructionAndRequests) {
                     // Set the type in case this is missing.
                     if (StringUtils.isBlank(instructionOrRequest.getType())) {
@@ -175,7 +211,7 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
                 logger.error(addMarker(), "Error in interaction step", e);
                 throw new GITBEngineInternalError(e);
             }
-        }, getContext().system().dispatchers().lookup(ActorSystem.BLOCKING_DISPATCHER));
+        }, context.dispatcher());
 
         future.foreach(new OnSuccess<>() {
 
@@ -183,13 +219,13 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
             public void onSuccess(TestStepReportType result) {
                 promise.trySuccess(result);
             }
-        }, getContext().dispatcher());
+        }, context.dispatcher());
 
         future.failed().foreach(new OnFailure() {
             @Override
             public void onFailure(Throwable failure) { promise.tryFailure(failure);
             }
-        }, getContext().dispatcher());
+        }, context.dispatcher());
         waiting();
     }
 
@@ -313,6 +349,7 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
 
     @Override
     protected void handleInputEvent(InputEvent event) {
+        receivedInput = true;
         processing();
         if (step.isAdmin() && !event.isAdmin()) {
             // This was an administrator-level interaction for which we received input from a non-administrator.
@@ -321,17 +358,9 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
         } else {
             logger.debug(MarkerFactory.getDetachedMarker(scope.getContext().getSessionId()), String.format("Handling user-provided inputs - step [%s] - ID [%s]", TestCaseUtils.extractStepDescription(step, scope), stepId));
             List<UserInput> userInputs = event.getUserInputs();
-            TestCaseScope.ScopedVariable scopedVariable;
             DataTypeFactory dataTypeFactory = DataTypeFactory.getInstance();
             //Create the Variable for Interaction Result if an id is given for the Interaction
             MapType interactionResult = (MapType) dataTypeFactory.create(DataType.MAP_DATA_TYPE);
-            if (step.getId() != null && (!userInputs.isEmpty() || !scope.getVariable(step.getId()).isDefined())) {
-                // We may want to skip creating a map in the scope in case this is a headless session (in which case no inputs
-                // are provided) but we already have a variable in the session matching the step ID. This can be the case if
-                // The test has started via REST call and the relevant map is provided as input.
-                scopedVariable = scope.createVariable(step.getId());
-                scopedVariable.setValue(interactionResult);
-            }
             TAR report = new TAR();
             report.setResult(TestResultType.SUCCESS);
             try {
@@ -392,6 +421,13 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
                         }
                     }
                 }
+            }
+            if (step.getId() != null && (!userInputs.isEmpty() || !scope.getVariable(step.getId()).isDefined())) {
+                // We may want to skip creating a map in the scope in case this is a headless session (in which case no inputs
+                // are provided) but we already have a variable in the session matching the step ID. This can be the case if
+                // The test has started via REST call and the relevant map is provided as input.
+                TestCaseScope.ScopedVariable scopedVariable = scope.createVariable(step.getId());
+                scopedVariable.setValue(interactionResult);
             }
             completed(report);
         }
