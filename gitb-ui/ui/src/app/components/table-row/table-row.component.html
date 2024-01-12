@@ -9,13 +9,13 @@
 </td>
 <td class="td-min-centered" *ngIf="actionVisible || operationsVisible || exportVisible">
     <div class="btn-toolbar">
-        <button type="button" *ngIf="actionVisible && (!actionVisibleForRow || actionVisibleForRow(data))" [ngClass]="{'pending': data[actionPendingProperty]}" [pending]="data[actionPendingProperty]" [icon]="true" class="btn btn-secondary" (click)="action(); $event.stopPropagation();" containerClass="shortTooltip" [tooltip]="actionTooltip" [delay]="Constants.TOOLTIP_DELAY">
+        <button type="button" *ngIf="actionVisible && (!actionVisibleForRow || actionVisibleForRow(data))" [ngClass]="{'pending': data[actionPendingProperty]}" [pending]="data[actionPendingProperty]" [icon]="true" class="btn btn-secondary" (click)="action(); $event.stopPropagation();" containerClass="shortTooltip" [tooltip]="actionTooltip" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'">
             <i [ngClass]="actionIcon"></i>
         </button>
-        <button type="button" *ngIf="operationsVisible && (!deleteVisibleForRow || deleteVisibleForRow(data))" [ngClass]="{'pending': data[deletePendingProperty]}" [pending]="data[deletePendingProperty]" [icon]="true" class="btn btn-secondary" (click)="delete(); $event.stopPropagation();" containerClass="shortTooltip" [tooltip]="deleteTooltip" [delay]="Constants.TOOLTIP_DELAY">
+        <button type="button" *ngIf="operationsVisible && (!deleteVisibleForRow || deleteVisibleForRow(data))" [ngClass]="{'pending': data[deletePendingProperty]}" [pending]="data[deletePendingProperty]" [icon]="true" class="btn btn-secondary" (click)="delete(); $event.stopPropagation();" containerClass="shortTooltip" [tooltip]="deleteTooltip" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'">
             <i [ngClass]="deleteIcon"></i>
         </button>
-        <button type="button" *ngIf="exportVisible && (!exportVisibleForRow || exportVisibleForRow(data))" [ngClass]="{'pending': data[exportPendingProperty]}" [pending]="data[exportPendingProperty]" [icon]="true" class="btn btn-secondary" (click)="export(); $event.stopPropagation();" containerClass="shortTooltip" [tooltip]="exportTooltip" [delay]="Constants.TOOLTIP_DELAY">
+        <button type="button" *ngIf="exportVisible && (!exportVisibleForRow || exportVisibleForRow(data))" [ngClass]="{'pending': data[exportPendingProperty]}" [pending]="data[exportPendingProperty]" [icon]="true" class="btn btn-secondary" (click)="export(); $event.stopPropagation();" containerClass="shortTooltip" [tooltip]="exportTooltip" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'">
             <i [ngClass]="exportIcon"></i>
         </button>
     </div>

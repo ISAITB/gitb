@@ -10,7 +10,7 @@
             readonly="readonly"
             [tooltip]="value"
             containerClass="shortTooltip"
-            [delay]="Constants.TOOLTIP_DELAY"
+            [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"
             [style.background]="value"
             (click)="copyColor()">
         <input *ngSwitchDefault

@@ -72,7 +72,7 @@
 									<td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': parameter.notForTestsLabel, 'fa-times': !parameter.notForTestsLabel}"></i></span></div></td>
 									<td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': parameter.hidden, 'fa-times': !parameter.hidden}"></i></span></div></td>
 									<td class="drag-handle" (click)="$event.stopPropagation();">
-										<button cdkDragHandle *ngIf="parameters.length > 1" #pop="bs-tooltip" (mousedown)="pop.hide()" class="btn btn-secondary" type="button" containerClass="shortTooltip" container="body" tooltip="Reorder" [delay]="Constants.TOOLTIP_DELAY"><span><i class="fa-solid fa-arrows-up-down"></i></span></button>
+										<button cdkDragHandle *ngIf="parameters.length > 1" #pop="bs-tooltip" (mousedown)="pop.hide()" class="btn btn-secondary" type="button" containerClass="shortTooltip" container="body" tooltip="Reorder" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i class="fa-solid fa-arrows-up-down"></i></span></button>
 									</td>
 								</tr>
 							</tbody>

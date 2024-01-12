@@ -31,7 +31,7 @@
                 </div>
 				<div *ngIf="parameter.kind == 'BINARY'">
                     <app-file-select [fileName]="fileName()" (onUpload)="onFileSelect($event)" [extraActions]="true">
-						<button type="button" class="btn btn-secondary" *ngIf="showFileName()" (click)="download()" containerClass="shortTooltip" tooltip="Download" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-download"></i></button>
+						<button type="button" class="btn btn-secondary" *ngIf="showFileName()" (click)="download()" containerClass="shortTooltip" tooltip="Download" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-download"></i></button>
 					</app-file-select>
 				</div>
 			</div>

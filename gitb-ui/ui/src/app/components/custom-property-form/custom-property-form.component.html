@@ -58,7 +58,7 @@
                     </div>
                     <ng-container *ngSwitchDefault>
                       <app-file-select [fileName]="fileName(property)" (onUpload)="onFileSelect(property, $event)" placeholder="Drop or browse for file ..." [extraActions]="true">
-                        <button type="button" class="btn btn-secondary" (click)="removeFile(property)" containerClass="shortTooltip" tooltip="Remove" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-trash"></i></button>
+                        <button type="button" class="btn btn-secondary" (click)="removeFile(property)" containerClass="shortTooltip" tooltip="Remove" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-trash"></i></button>
                       </app-file-select>
                     </ng-container>
                   </div>

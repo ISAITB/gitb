@@ -72,7 +72,7 @@
             <label class="col-3 col-form-label text-end" for="value">* Value:</label>
             <div class="col-7">
                 <app-file-select [fileName]="getFileName()" (onUpload)="onFileSelect($event)" [extraActions]="true">
-                    <button type="button" class="btn btn-secondary" *ngIf="showFileName()" (click)="download()" containerClass="shortTooltip" tooltip="Download" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-download"></i></button>
+                    <button type="button" class="btn btn-secondary" *ngIf="showFileName()" (click)="download()" containerClass="shortTooltip" tooltip="Download" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-download"></i></button>
                 </app-file-select>
             </div>
             <div app-tooltip class="col-auto" tbTooltip="The file to consider as this parameter's value."></div>

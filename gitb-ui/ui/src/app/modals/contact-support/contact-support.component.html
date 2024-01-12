@@ -36,7 +36,7 @@
             <label class="col-3 col-form-label text-end" *ngIf="first">Attachment(s):</label>
             <div class="col-7" [ngClass]="{'offset-3': !first}">
                 <app-file-select [fileName]="attachment.name" [extraActions]="true" [disableUpload]="true">
-                    <button type="button" class="btn btn-secondary" (click)="removeAttachment(index)" container="body" containerClass="shortTooltip" tooltip="Remove" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-trash"></i></button>
+                    <button type="button" class="btn btn-secondary" (click)="removeAttachment(index)" container="body" containerClass="shortTooltip" tooltip="Remove" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-trash"></i></button>
                 </app-file-select>
             </div>
         </div>

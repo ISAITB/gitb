@@ -76,7 +76,7 @@
             <div class="filterValue">
               <div class="input-group">
                 <input class="form-control pointer" bsDaterangepicker [(ngModel)]="startDateModel" [bsConfig]="datePickerSettings" (bsValueChange)="applyTimeFiltering()" readonly="readonly">
-                <button class="btn btn-secondary" type="button" (click)="clearStartRange()" [disabled]="startDateModel == undefined" containerClass="shortTooltip" container="body" tooltip="Clear" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-times" [ngClass]="{'faded': startDateModel == undefined}"></i></button>
+                <button class="btn btn-secondary" type="button" (click)="clearStartRange()" [disabled]="startDateModel == undefined" containerClass="shortTooltip" container="body" tooltip="Clear" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-times" [ngClass]="{'faded': startDateModel == undefined}"></i></button>
               </div>
             </div>
           </div>
@@ -85,7 +85,7 @@
             <div class="filterValue">
               <div class="input-group">
                 <input class="form-control pointer" bsDaterangepicker [(ngModel)]="endDateModel" [bsConfig]="datePickerSettings" (bsValueChange)="applyTimeFiltering()" readonly="readonly">
-                <button class="btn btn-secondary" type="button" (click)="clearEndRange()" [disabled]="endDateModel == undefined" containerClass="shortTooltip" container="body" tooltip="Clear" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-times" [ngClass]="{'faded': endDateModel == undefined}"></i></button>
+                <button class="btn btn-secondary" type="button" (click)="clearEndRange()" [disabled]="endDateModel == undefined" containerClass="shortTooltip" container="body" tooltip="Clear" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-times" [ngClass]="{'faded': endDateModel == undefined}"></i></button>
               </div>
             </div>
           </div>
