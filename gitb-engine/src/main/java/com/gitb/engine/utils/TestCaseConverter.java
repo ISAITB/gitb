@@ -368,6 +368,7 @@ public class TestCaseConverter {
         interactionStep.setHidden(hiddenValueToUse(description.getHidden(), false));
         interactionStep.setCollapsed(description.isCollapsed());
         interactionStep.setWith(description.getWith());
+        interactionStep.setAdmin(description.isAdmin());
 
         int childIndex = 1;
 

@@ -17,8 +17,10 @@ export class Constants {
 
 	public static TEST_ENGINE_ACTOR_ID = 'com.gitb.TestEngine'
 	public static TESTER_ACTOR_ID = 'com.gitb.Operator'
+	public static ADMINISTRATOR_ACTOR_ID = 'com.gitb.Administrator'
 	public static TEST_ENGINE_ACTOR_NAME = 'Test Engine'
 	public static TESTER_ACTOR_NAME = 'Operator'
+	public static ADMINISTRATOR_ACTOR_NAME = 'Administrator'
 
 	public static EMBEDDING_METHOD = {
 		BASE64: 'BASE64',

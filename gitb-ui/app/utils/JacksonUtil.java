@@ -354,6 +354,7 @@ public class JacksonUtil {
                     jsonGenerator.writeStringField("type", "interact");
                     jsonGenerator.writeStringField("title", ((UserInteractionStep) step).getTitle());
                     jsonGenerator.writeBooleanField("collapsed", ((UserInteractionStep) step).isCollapsed());
+                    jsonGenerator.writeBooleanField("admin", ((UserInteractionStep) step).isAdmin());
                     jsonGenerator.writeArrayFieldStart("interactions");
                     for(InstructionOrRequest ior : ((UserInteractionStep) step).getInstructOrRequest()){
                         jsonGenerator.writeStartObject();
