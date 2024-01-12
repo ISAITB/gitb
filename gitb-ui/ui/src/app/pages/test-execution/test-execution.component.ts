@@ -1,8 +1,8 @@
 import { Component, EventEmitter, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { BsModalRef, BsModalService } from 'ngx-bootstrap/modal';
-import { forkJoin, Observable, timer, of, Subscription } from 'rxjs';
-import { map, mergeMap, share } from 'rxjs/operators';
+import { forkJoin, Observable, timer, of, Subscription, throwError } from 'rxjs';
+import { catchError, map, mergeMap, share } from 'rxjs/operators';
 import { WebSocketSubject } from 'rxjs/webSocket';
 import { Constants } from 'src/app/common/constants';
 import { ActorInfo } from 'src/app/components/diagram/actor-info';
@@ -383,8 +383,17 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
         this.testCaseExpanded[previousTestId] = false
         this.testCaseVisible[previousTestId] = this.showCompleted
       }
-      this.getTestCaseDefinition(this.currentTest.id)
-      .subscribe(() => {
+      this.getTestCaseDefinition(this.currentTest.id).pipe(
+        catchError((error: Error) => {
+          // Stop pending state of controls.
+          if (this.currentTest) {
+            this.currentTest.sessionId = ''
+            this.stepsOfTests[this.currentTest.id] = []
+            this.updateTestCaseStatus(this.currentTest.id, Constants.TEST_CASE_STATUS.STOPPED)
+          }
+          return throwError(() => error)
+        })
+      ).subscribe(() => {
         this.startAfterConfigurationComplete = start
         this.initiate(this.currentTest!.id)
       })
