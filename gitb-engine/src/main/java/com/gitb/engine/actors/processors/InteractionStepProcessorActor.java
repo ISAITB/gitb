@@ -375,7 +375,7 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
                 for (UserInput userInput : userInputs) {
                     int stepIndex = Integer.parseInt(userInput.getId());
                     InstructionOrRequest targetRequest = step.getInstructOrRequest().get(stepIndex - 1);
-                    if (targetRequest instanceof UserRequest requestInfo && userInput.getValue() != null && !userInput.getValue().isEmpty()) {
+                    if (targetRequest instanceof UserRequest requestInfo && userInput.getValue() != null && !userInput.getValue().isEmpty() && requestInfo.isReport()) {
                         // Construct the value to return for the step's report.
                         var reportItem = new AnyContent();
                         if (requestInfo.getInputType() == InputRequestInputType.SECRET) {
