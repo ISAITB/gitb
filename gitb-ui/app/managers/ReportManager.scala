@@ -294,26 +294,36 @@ class ReportManager @Inject() (domainParameterManager: DomainParameterManager, r
     val now = Some(TimeUtil.getCurrentTimestamp())
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction = for {
-      startTime <- PersistenceSchema.testResults.filter(_.testSessionId === sessionId).map(_.startTime).result.head
-      _ <- PersistenceSchema.testResults
-        .filter(_.testSessionId === sessionId)
-        .map(x => (x.result, x.endTime, x.outputMessage))
-        .update(status.value(), now, outputMessage)
-      // Delete any pending test interactions
-      _ <- testResultManager.deleteTestInteractions(sessionId, None)
-      // Update also the conformance results for the system
-      _ <- PersistenceSchema.conformanceResults
-        .filter(_.testsession === sessionId)
-        .map(x => (x.result, x.outputMessage, x.updateTime))
-        .update(status.value(), outputMessage, now)
-      // Delete temporary test session data (used for user interactions).
+      startTime <- PersistenceSchema.testResults.filter(_.testSessionId === sessionId).map(_.startTime).result.headOption
       _ <- {
-        onSuccessCalls += (() => {
-          val sessionFolderInfo = repositoryUtils.getPathForTestSessionObj(sessionId, Some(startTime), isExpected = true)
-          val tempDataFolder = repositoryUtils.getPathForTestSessionData(sessionFolderInfo, tempData = true)
-          FileUtils.deleteQuietly(tempDataFolder.toFile)
-        })
-        DBIO.successful(())
+        if (startTime.isDefined) {
+          // Test session finalisation and cleanup actions.
+          for {
+            _ <- PersistenceSchema.testResults
+              .filter(_.testSessionId === sessionId)
+              .map(x => (x.result, x.endTime, x.outputMessage))
+              .update(status.value(), now, outputMessage)
+            // Delete any pending test interactions
+            _ <- testResultManager.deleteTestInteractions(sessionId, None)
+            // Update also the conformance results for the system
+            _ <- PersistenceSchema.conformanceResults
+              .filter(_.testsession === sessionId)
+              .map(x => (x.result, x.outputMessage, x.updateTime))
+              .update(status.value(), outputMessage, now)
+            // Delete temporary test session data (used for user interactions).
+            _ <- {
+              onSuccessCalls += (() => {
+                val sessionFolderInfo = repositoryUtils.getPathForTestSessionObj(sessionId, startTime, isExpected = true)
+                val tempDataFolder = repositoryUtils.getPathForTestSessionData(sessionFolderInfo, tempData = true)
+                FileUtils.deleteQuietly(tempDataFolder.toFile)
+              })
+              DBIO.successful(())
+            }
+          } yield ()
+        } else {
+          // The test session was not recorded - nothing to do.
+          DBIO.successful(())
+        }
       }
     } yield ()
     exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
