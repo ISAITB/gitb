@@ -70,7 +70,7 @@ object JsonUtil {
     json
   }
 
-  def jsStringArray(texts: List[String]): JsValue = {
+  def jsStringArray(texts: Seq[String]): JsValue = {
     var textArray = Json.arr()
     texts.foreach { text =>
       textArray = textArray.append(JsString(text))

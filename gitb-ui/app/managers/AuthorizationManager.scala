@@ -1243,6 +1243,14 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     canManageCommunity(request, communityId)
   }
 
+  def canCheckPendingTestSessionInteractions(request: RequestWithAttributes[_], communityId: Option[Long]): Boolean = {
+    if (communityId.isEmpty) {
+      checkTestBedAdmin(request)
+    } else {
+      canManageCommunity(request, communityId.get)
+    }
+  }
+
   def canManageCommunity(request: RequestWithAttributes[_], userInfo: User, communityId: Long): Boolean = {
     var ok = false
     if (isTestBedAdmin(userInfo)) {

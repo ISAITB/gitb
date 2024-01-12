@@ -6,6 +6,13 @@
                 <app-collapsing-icon [isCollapsed]="activeSessionsCollapsed"></app-collapsing-icon>Active test sessions
             </div>
             <div class="btn-toolbar" [class.disable-events]="filterState.updatePending">
+                <div class="btn input-switch" (click)="$event.stopPropagation()">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" role="switch" id="pendingAdminInteractionSwitch" [(ngModel)]="pendingAdminInteraction" (change)="togglePendingAdminInteraction()">
+                        <label class="form-check-label" for="pendingAdminInteractionSwitch">Pending administrator interaction</label>
+                    </div>
+                    <app-pending-block *ngIf="interactionLoadPending" class="ms-3"></app-pending-block>
+                </div>
                 <button type="button" class="btn btn-secondary" (click)="stopAll();$event.stopPropagation()" [pending]="stopAllPending" [disable]="activeTests.length == 0 || exportActivePending">Terminate all</button>
                 <button type="button" class="btn btn-secondary" (click)="exportActiveSessionsToCsv();$event.stopPropagation()" [pending]="exportActivePending" [disable]="activeTests.length == 0 || stopAllPending">Export CSV</button>
                 <button type="button" class="btn btn-secondary" *ngIf="showCollapseAllActive()" (click)="onCollapseAllActive();$event.stopPropagation()">Collapse all</button>
@@ -16,7 +23,7 @@
                 [sessionTableId]="'dashboard-table-active'"
                 [expandedCounter]="activeExpandedCounter"
                 [columns]="activeTestsColumns"
-                [data]="activeTests"
+                [data]="activeTestsToDisplay"
                 [noDataMessage]="'No sessions found'"
                 [loadingStatus]="activeStatus"
                 [operationsVisible]="true"

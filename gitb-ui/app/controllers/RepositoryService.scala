@@ -113,6 +113,13 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
     }
   }
 
+  def getPendingTestSessionsForAdminInteraction(): Action[AnyContent] = authorizedAction { request =>
+    val communityId = ParameterExtractor.optionalLongQueryParameter(request, Parameters.COMMUNITY_ID)
+    authorizationManager.canCheckPendingTestSessionInteractions(request, communityId)
+    val results = testResultManager.getPendingTestSessionsForAdminInteraction(communityId)
+    ResponseConstructor.constructJsonResponse(JsonUtil.jsStringArray(results).toString())
+  }
+
   def getPendingTestSessionInteractionsAdmin(session: String): Action[AnyContent] = authorizedAction { request =>
     authorizationManager.canManageTestSession(request, session, requireAdmin = true)
     val results = testResultManager.getTestInteractions(session, None)

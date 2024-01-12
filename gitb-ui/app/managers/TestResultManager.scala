@@ -492,6 +492,28 @@ class TestResultManager @Inject() (repositoryUtils: RepositoryUtils, dbConfigPro
     exec((PersistenceSchema.testInteractions += interaction).transactionally)
   }
 
+  def getPendingTestSessionsForAdminInteraction(communityId: Option[Long]): Seq[String] = {
+    if (communityId.isEmpty) {
+      exec(
+        PersistenceSchema.testInteractions
+          .filter(_.admin === true)
+          .map(_.testSessionId)
+          .distinct
+          .result
+      )
+    } else {
+      exec(
+        PersistenceSchema.testInteractions
+          .join(PersistenceSchema.testResults).on(_.testSessionId === _.testSessionId)
+          .filter(_._1.admin === true)
+          .filter(_._2.communityId === communityId)
+          .map(_._1.testSessionId)
+          .distinct
+          .result
+      )
+    }
+  }
+
   def getTestInteractions(sessionId: String, adminInteractions: Option[Boolean]): List[TestInteraction] = {
     exec(
       PersistenceSchema.testInteractions

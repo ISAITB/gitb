@@ -325,6 +325,20 @@ export class ReportService {
     })
   }
 
+  getPendingTestSessionsForAdminInteraction(communityId: number|undefined) {
+    let params: any
+    if (communityId != undefined) {
+      params = {
+        community_id: communityId
+      }
+    }
+    return this.restService.get<string[]>({
+      path: ROUTES.controllers.RepositoryService.getPendingTestSessionsForAdminInteraction().url,
+      authenticate: true,
+      params: params
+    })    
+  }
+
   getPendingTestSessionInteractions(session: string) {
     let path: string
     if (this.dataService.isCommunityAdmin || this.dataService.isSystemAdmin) {
