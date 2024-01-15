@@ -12,35 +12,6 @@
                     </div>
                 </ng-container>
                 <ng-container *ngSwitchDefault>
-                    <!-- Inactive account retention period. -->
-                    <div class="configContainer" >
-                        <app-configuration-entry
-                            configTitle="Inactive account retention period"
-                            configDescription="Delete user accounts for organisations that have been inactive above a maximum retention period."
-                            [(status)]="accountRetentionPeriodStatus"
-                        >
-                            <form>
-                                <div class="row row-cols-auto align-items-center gx-3">
-                                    <div class="col-auto">
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" id="accountRetentionPeriodEnabled" name="accountRetentionPeriodEnabled" (change)="accountRetentionPeriodCheckChanged()" [(ngModel)]="accountRetentionPeriodEnabled">
-                                            <label class="form-check-label" for="accountRetentionPeriodEnabled">Enabled?</label>
-                                        </div>
-                                    </div>
-                                    <div class="col-auto">
-                                        <label class="sr-only" for="ttlValue">Inactive days before deleting accounts:</label>
-                                        <div class="input-group">
-                                            <input type="number" min="1" class="form-control" id="accountRetentionPeriodValue" name="accountRetentionPeriodValue" placeholder="Retention period" [disabled]="!accountRetentionPeriodEnabled" [(ngModel)]="accountRetentionPeriodValue">
-                                            <div class="input-group-text">days</div>
-                                        </div>
-                                    </div>
-                                    <div class="col-auto">
-                                        <button type="submit" class="btn btn-secondary" [disable]="accountRetentionPeriodEnabled && accountRetentionPeriodValue == undefined" [pending]="accountRetentionPeriodStatus.pending" (click)="saveAccountRetentionPeriod()">Save</button>
-                                    </div>
-                                </div>
-                            </form>
-                        </app-configuration-entry>
-                    </div>
                     <!-- Welcome page. -->
                     <div class="configContainer">
                         <app-configuration-entry
@@ -101,6 +72,35 @@
                                     </div>
                                     <div class="col-auto">
                                         <button type="submit" class="btn btn-secondary" [disable]="demoAccountEnabled && demoAccount == undefined" [pending]="demoAccountStatus.pending" (click)="saveDemoAccount()">Save</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </app-configuration-entry>
+                    </div>
+                    <!-- Inactive account retention period. -->
+                    <div class="configContainer" >
+                        <app-configuration-entry
+                            configTitle="Inactive account retention period"
+                            configDescription="Delete user accounts for organisations that have been inactive above a maximum retention period."
+                            [(status)]="accountRetentionPeriodStatus"
+                        >
+                            <form>
+                                <div class="row row-cols-auto align-items-center gx-3">
+                                    <div class="col-auto">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="accountRetentionPeriodEnabled" name="accountRetentionPeriodEnabled" (change)="accountRetentionPeriodCheckChanged()" [(ngModel)]="accountRetentionPeriodEnabled">
+                                            <label class="form-check-label" for="accountRetentionPeriodEnabled">Enabled?</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <label class="sr-only" for="ttlValue">Inactive days before deleting accounts:</label>
+                                        <div class="input-group">
+                                            <input type="number" min="1" class="form-control" id="accountRetentionPeriodValue" name="accountRetentionPeriodValue" placeholder="Retention period" [disabled]="!accountRetentionPeriodEnabled" [(ngModel)]="accountRetentionPeriodValue">
+                                            <div class="input-group-text">days</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <button type="submit" class="btn btn-secondary" [disable]="accountRetentionPeriodEnabled && accountRetentionPeriodValue == undefined" [pending]="accountRetentionPeriodStatus.pending" (click)="saveAccountRetentionPeriod()">Save</button>
                                     </div>
                                 </div>
                             </form>
