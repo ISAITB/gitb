@@ -20,7 +20,7 @@
     "@angular/platform-browser-dynamic": "^16.2.12",
     "@angular/router": "^16.2.12",
     "@ctrl/ngx-codemirror": "^7.0.0",
-    "@fortawesome/fontawesome-free": "^6.4.2",
+    "@fortawesome/fontawesome-free": "6.5.1",
     "@tinymce/tinymce-angular": "^7.0.0",
     "@types/file-saver": "^2.0.5",
     "angular2-notifications": "^16.0.1",
@@ -33,7 +33,7 @@
     "ngx-cookie-service": "^16.1.0",
     "rxjs": "^7.4.0",
     "tinymce": "^6.8.0",
-    "zone.js": "~0.13.3"
+    "zone.js": "0.14.3"
   },
   "devDependencies": {
     "@angular-devkit/build-angular": "^16.2.10",
