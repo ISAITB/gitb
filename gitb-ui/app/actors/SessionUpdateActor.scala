@@ -1,15 +1,15 @@
 package actors
 
 import actors.events.sessions.TestSessionCompletedEvent
-import org.apache.pekko.actor.{Actor, PoisonPill}
 import com.gitb.core.ValueEmbeddingEnumeration
 import com.gitb.tbs.{Instruction, InteractWithUsersRequest, TestStepStatus}
 import com.gitb.tr.TAR
 import managers.{ReportManager, TestResultManager, TestbedBackendClient}
 import models.{TestInteraction, TestStepResultInfo}
 import org.apache.commons.lang3.StringUtils
+import org.apache.pekko.actor.{Actor, PoisonPill}
 import org.slf4j.LoggerFactory
-import utils.{JacksonUtil, JsonUtil, MimeUtil, RepositoryUtils}
+import utils._
 
 import java.nio.file.Files
 import javax.inject.Inject
@@ -111,7 +111,7 @@ class SessionUpdateActor @Inject() (repositoryUtils: RepositoryUtils, reportMana
           case _ => // Ignoring requests.
         }
         val request = JacksonUtil.serializeInteractionRequest(interactWithUsersRequest)
-        testResultManager.saveTestInteraction(TestInteraction(interactWithUsersRequest.getTcInstanceid, interactWithUsersRequest.getStepId, interactWithUsersRequest.getInteraction.isAdmin, request))
+        testResultManager.saveTestInteraction(TestInteraction(interactWithUsersRequest.getTcInstanceid, interactWithUsersRequest.getStepId, interactWithUsersRequest.getInteraction.isAdmin, TimeUtil.getCurrentTimestamp(), request))
         if (WebSocketActor.webSockets.contains(session)) {
           val actor = interactWithUsersRequest.getInteraction.getWith
           if (actor == null) { // if actor not specified, send the request to all actors. Let client side handle this.

@@ -1,0 +1,2 @@
+ALTER TABLE `communities` ADD COLUMN `interaction_notification` TINYINT DEFAULT 0 NOT NULL;
+ALTER TABLE `testinteractions` ADD COLUMN `created_on` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP;

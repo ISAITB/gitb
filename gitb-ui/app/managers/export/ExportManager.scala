@@ -819,6 +819,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, systemConfigura
     communityData.setAllowPostTestSystemUpdates(community.get.allowPostTestSystemUpdates)
     communityData.setAllowPostTestStatementUpdates(community.get.allowPostTestStatementUpdates)
     communityData.setAllowAutomationApi(community.get.allowAutomationApi)
+    communityData.setInteractionNotification(community.get.interactionNotification)
     // Self registration information.
     communityData.setSelfRegistrationSettings(new SelfRegistrationSettings)
     SelfRegistrationType.apply(community.get.selfRegType) match {
@@ -827,7 +828,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, systemConfigura
       case SelfRegistrationType.PublicListingWithToken => communityData.getSelfRegistrationSettings.setMethod(SelfRegistrationMethod.PUBLIC_WITH_TOKEN)
       case SelfRegistrationType.Token => communityData.getSelfRegistrationSettings.setMethod(SelfRegistrationMethod.TOKEN)
     }
-    communityData.getSelfRegistrationSettings.setNotifications(community.get.selfregNotification)
+    communityData.getSelfRegistrationSettings.setNotifications(community.get.selfRegNotification)
     communityData.getSelfRegistrationSettings.setToken(community.get.selfRegToken.orNull)
     communityData.getSelfRegistrationSettings.setTokenHelpText(community.get.selfRegTokenHelpText.orNull)
     SelfRegistrationRestriction.apply(community.get.selfRegRestriction) match {

@@ -12,6 +12,7 @@ export interface Community extends EntityWithId {
     selfRegToken?: string
     selfRegTokenHelpText?: string
     selfRegNotification: boolean
+    interactionNotification: boolean
     selfRegForceTemplateSelection?: boolean    
     selfRegForceRequiredProperties?: boolean
     email?: string

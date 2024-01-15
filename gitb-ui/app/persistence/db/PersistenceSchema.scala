@@ -21,7 +21,8 @@ object PersistenceSchema {
     def selfRegType = column[Short]("selfreg_type")
     def selfRegToken = column[Option[String]] ("selfreg_token")
     def selfRegTokenHelpText = column[Option[String]]("selfreg_token_help_text", O.SqlType("TEXT"))
-    def selfregNotification = column[Boolean]("selfreg_notification")
+    def selfRegNotification = column[Boolean]("selfreg_notification")
+    def interactionNotification = column[Boolean]("interaction_notification")
     def selfRegRestriction = column[Short]("selfreg_restriction")
     def description = column[Option[String]]("description", O.SqlType("TEXT"))
     def selfRegForceTemplateSelection = column[Boolean]("selfreg_force_template")
@@ -35,7 +36,7 @@ object PersistenceSchema {
     def allowAutomationApi = column[Boolean]("allow_automation_api")
     def apiKey = column[String]("api_key")
     def domain = column[Option[Long]] ("domain")
-    def * = (id, shortname, fullname, supportEmail, selfRegType, selfRegToken, selfRegTokenHelpText, selfregNotification, description, selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties, allowCertificateDownload, allowStatementManagement, allowSystemManagement, allowPostTestOrganisationUpdates, allowPostTestSystemUpdates, allowPostTestStatementUpdates, allowAutomationApi, apiKey, domain) <> (Communities.tupled, Communities.unapply)
+    def * = (id, shortname, fullname, supportEmail, selfRegType, selfRegToken, selfRegTokenHelpText, selfRegNotification, interactionNotification, description, selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties, allowCertificateDownload, allowStatementManagement, allowSystemManagement, allowPostTestOrganisationUpdates, allowPostTestSystemUpdates, allowPostTestStatementUpdates, allowAutomationApi, apiKey, domain) <> (Communities.tupled, Communities.unapply)
   }
   val communities = TableQuery[CommunitiesTable]
   val insertCommunity = communities returning communities.map(_.id)
@@ -316,8 +317,9 @@ object PersistenceSchema {
     def testSessionId = column[String]("test_session_id")
     def testStepId = column[String]("test_step_id")
     def admin = column[Boolean]("is_admin")
+    def createTime = column[Timestamp]("created_on", O.SqlType("TIMESTAMP"))
     def tpl = column[String]("tpl", O.SqlType("TEXT"))
-    def * = (testSessionId, testStepId, admin, tpl) <> (TestInteraction.tupled, TestInteraction.unapply)
+    def * = (testSessionId, testStepId, admin, createTime, tpl) <> (TestInteraction.tupled, TestInteraction.unapply)
     def pk = primaryKey("ti_pk", (testSessionId, testStepId))
   }
   val testInteractions = TableQuery[TestInteractionsTable]

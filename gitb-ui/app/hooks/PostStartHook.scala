@@ -20,7 +20,7 @@ import java.io.{File, FileFilter}
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 import java.time.LocalDate
-import java.util.Properties
+import java.util.{Calendar, Properties}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.DurationInt
@@ -50,6 +50,7 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext, authenticationMana
     prepareRestApiDocumentation()
     prepareTheme()
     setupAdministratorOneTimePassword()
+    setupInteractionNotifications()
     logger.info("Application has started in "+Configurations.TESTBED_MODE+" mode - release "+Constants.VersionNumber + " built at "+Configurations.BUILD_TIMESTAMP)
   }
 
@@ -219,6 +220,21 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext, authenticationMana
         s"${newDefaultAdminAccountPassword.get}\n\n"+
         "###############################################################################\n\n"
       )
+    }
+  }
+
+  private def setupInteractionNotifications(): Unit = {
+    val windowMinutes = Configurations.PENDING_INTERACTION_NOTIFICATION_INTERVAL_MINUTES
+    actorSystem.scheduler.scheduleWithFixedDelay(5.minutes, windowMinutes.minutes) {
+      () => {
+        if (Configurations.EMAIL_ENABLED) {
+          logger.debug("Checking to send pending test interaction notifications.")
+          // Set the start time to 30 minutes before the current time.
+          val cal = Calendar.getInstance()
+          cal.add(Calendar.MINUTE, windowMinutes * -1)
+          testResultManager.notifyForPendingTestInteractions(cal)
+        }
+      }
     }
   }
 

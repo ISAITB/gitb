@@ -81,6 +81,7 @@ class CommunityService @Inject() (implicit ec: ExecutionContext, authorizedActio
     if (Configurations.AUTOMATION_API_ENABLED) {
       allowAutomationApi = Some(requiredBodyParameter(request, Parameters.ALLOW_AUTOMATION_API).toBoolean)
     }
+    val interactionNotification = requiredBodyParameter(request, Parameters.COMMUNITY_INTERACTION_NOTIFICATION).toBoolean
     var selfRegType: Short = SelfRegistrationType.NotSupported.id.toShort
     var selfRegRestriction: Short = SelfRegistrationRestriction.NoRestriction.id.toShort
     var selfRegToken: Option[String] = None
@@ -120,7 +121,7 @@ class CommunityService @Inject() (implicit ec: ExecutionContext, authorizedActio
     val domainId: Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, Parameters.DOMAIN_ID)
     communityManager.updateCommunity(
       communityId, shortName, fullName, email, selfRegType, selfRegToken, selfRegTokenHelpText, selfRegNotification,
-      description, selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties,
+      interactionNotification, description, selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties,
       allowCertificateDownload, allowStatementManagement, allowSystemManagement,
       allowPostTestOrganisationUpdate, allowPostTestSystemUpdate, allowPostTestStatementUpdate, allowAutomationApi,
       domainId
@@ -204,7 +205,7 @@ class CommunityService @Inject() (implicit ec: ExecutionContext, authorizedActio
                 response = ResponseConstructor.constructJsonResponse(JsonUtil.jsId(userId).toString)
               }
               // Self registration successful - notify support email if configured to do so.
-              if (Configurations.EMAIL_ENABLED && community.get.selfregNotification) {
+              if (Configurations.EMAIL_ENABLED && community.get.selfRegNotification) {
                 notifyForSelfRegistration(community.get, organisation)
               }
             }
@@ -223,7 +224,7 @@ class CommunityService @Inject() (implicit ec: ExecutionContext, authorizedActio
   }
 
   private def notifyForSelfRegistration(community: Communities, organisation: Organizations) = {
-    if (Configurations.EMAIL_ENABLED && community.selfregNotification && community.supportEmail.isDefined) {
+    if (Configurations.EMAIL_ENABLED && community.selfRegNotification && community.supportEmail.isDefined) {
       implicit val executionContext: ExecutionContextExecutor = ExecutionContext.global
       scala.concurrent.Future {
         val subject = "Test Bed self-registration notification"

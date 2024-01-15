@@ -1,22 +1,25 @@
 package managers
 
 import com.gitb.core.StepStatus
+import config.Configurations
 import models.Enums.TestResultStatus
 import models._
 import org.apache.commons.io.FileUtils
 import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
-import utils.RepositoryUtils
+import utils.{EmailUtil, RepositoryUtils}
 
 import java.io.File
 import java.nio.file.{Files, Paths, StandardOpenOption}
 import java.sql.Timestamp
+import java.util.Calendar
 import javax.inject.{Inject, Singleton}
 import scala.collection.concurrent.TrieMap
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 
 @Singleton
@@ -519,6 +522,7 @@ class TestResultManager @Inject() (repositoryUtils: RepositoryUtils, dbConfigPro
       PersistenceSchema.testInteractions
       .filter(_.testSessionId === sessionId)
       .filterOpt(adminInteractions)((q, flag) => q.admin === flag)
+      .sortBy(_.createTime.desc)
       .result
     ).toList
   }
@@ -534,4 +538,58 @@ class TestResultManager @Inject() (repositoryUtils: RepositoryUtils, dbConfigPro
       .delete
   }
 
+  def notifyForPendingTestInteractions(notificationWindowStart: Calendar): Unit = {
+    val windowStart = new Timestamp(notificationWindowStart.getTimeInMillis)
+    if (Configurations.EMAIL_ENABLED) {
+      val query = for {
+        communitiesSupportingNotifications <- PersistenceSchema.communities
+          .filter(_.supportEmail.isDefined)
+          .filter(_.interactionNotification)
+          .map(x => (x.id, x.fullname, x.supportEmail.get))
+          .result
+        communityIdsToNotify <- {
+          if (communitiesSupportingNotifications.nonEmpty) {
+            PersistenceSchema.testInteractions
+              .join(PersistenceSchema.testResults).on(_.testSessionId === _.testSessionId)
+              .filter(_._2.communityId.isDefined)
+              .filter(_._2.communityId inSet communitiesSupportingNotifications.map(_._1))
+              .filter(_._1.admin)
+              .filter(_._1.createTime >= windowStart)
+              .map(_._2.communityId)
+              .distinct
+              .result
+          } else {
+            DBIO.successful(Seq.empty)
+          }
+        }
+      } yield (communityIdsToNotify, communitiesSupportingNotifications)
+      val result = exec(query)
+      if (result._1.nonEmpty) {
+        val idSet = result._1.flatten.toSet
+        logger.debug("Sending {} pending test interaction notifications.", idSet.size)
+        result._2.foreach { communityData =>
+          if (idSet.contains(communityData._1)) {
+            sendInteractionNotification(communityData._1, communityData._2, communityData._3)
+          }
+        }
+      }
+    }
+  }
+
+  private def sendInteractionNotification(communityId: Long, communityName: String, supportEmail: String): Unit = {
+    implicit val executionContext: ExecutionContextExecutor = ExecutionContext.global
+    scala.concurrent.Future {
+      val subject = "Test Bed pending test interactions"
+      var content = "<h2>You have pending test interactions</h2>"
+      content +=
+        "Test sessions are waiting for new administrator interactions ("+communityName+")." +
+          "<br/><br/>Click <a href=\""+Configurations.TESTBED_HOME_LINK+"\">here</a> to connect and view the pending test sessions."
+      try {
+        EmailUtil.sendEmail(Configurations.EMAIL_FROM, Array[String](supportEmail), null, subject, content, null)
+      } catch {
+        case e:Exception =>
+          logger.error("Error while sending pending interaction notification for community ["+communityId+"]", e)
+      }
+    }
+  }
 }

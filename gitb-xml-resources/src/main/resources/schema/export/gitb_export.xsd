@@ -44,6 +44,7 @@
                 <xsd:attribute name="allowPostTestSystemUpdates" type="xsd:boolean" default="true"/>
                 <xsd:attribute name="allowPostTestStatementUpdates" type="xsd:boolean" default="true"/>
                 <xsd:attribute name="allowAutomationApi" type="xsd:boolean" default="false"/>
+                <xsd:attribute name="interactionNotification" type="xsd:boolean" default="false"/>
             </xsd:extension>
         </xsd:complexContent>
     </xsd:complexType>

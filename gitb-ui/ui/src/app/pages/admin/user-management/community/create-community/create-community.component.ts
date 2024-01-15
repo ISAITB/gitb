@@ -26,7 +26,8 @@ export class CreateCommunityComponent extends BaseComponent implements OnInit, A
     allowPostTestOrganisationUpdates: true,
     allowPostTestSystemUpdates: true,
     allowPostTestStatementUpdates: true,
-    allowAutomationApi: false
+    allowAutomationApi: false,
+    interactionNotification: false
   }
   domains: Domain[] = []
   savePending = false
@@ -59,7 +60,8 @@ export class CreateCommunityComponent extends BaseComponent implements OnInit, A
             (!this.dataService.configuration.emailEnabled || (!this.community.selfRegNotification || this.textProvided(this.community.email)))
           )
         )
-      )
+      ) &&
+      (!this.dataService.configuration.emailEnabled || (!this.community.interactionNotification || this.textProvided(this.community.email)))
     )
   }
 
@@ -73,7 +75,7 @@ export class CreateCommunityComponent extends BaseComponent implements OnInit, A
         descriptionToUse = this.community.activeDescription
       }
       this.savePending = true
-      this.communityService.createCommunity(this.community.sname!, this.community.fname!, this.community.email, this.community.selfRegType!, this.community.selfRegRestriction!, this.community.selfRegToken, this.community.selfRegTokenHelpText, this.community.selfRegNotification, descriptionToUse, this.community.selfRegForceTemplateSelection, this.community.selfRegForceRequiredProperties, this.community.allowCertificateDownload!, this.community.allowStatementManagement!, this.community.allowSystemManagement!, this.community.allowPostTestOrganisationUpdates!, this.community.allowPostTestSystemUpdates!, this.community.allowPostTestStatementUpdates!, this.community.allowAutomationApi, this.community.domainId)
+      this.communityService.createCommunity(this.community.sname!, this.community.fname!, this.community.email, this.community.selfRegType!, this.community.selfRegRestriction!, this.community.selfRegToken, this.community.selfRegTokenHelpText, this.community.selfRegNotification, this.community.interactionNotification!, descriptionToUse, this.community.selfRegForceTemplateSelection, this.community.selfRegForceRequiredProperties, this.community.allowCertificateDownload!, this.community.allowStatementManagement!, this.community.allowSystemManagement!, this.community.allowPostTestOrganisationUpdates!, this.community.allowPostTestSystemUpdates!, this.community.allowPostTestStatementUpdates!, this.community.allowAutomationApi, this.community.domainId)
       .subscribe(() => {
         this.cancelCreateCommunity()
         this.popupService.success('Community created.')

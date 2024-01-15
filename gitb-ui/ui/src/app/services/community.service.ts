@@ -124,7 +124,7 @@ export class CommunityService {
 
   createCommunity(shortName: string, fullName: string, email: string|undefined,
     selfRegType: number, selfRegRestriction: number, selfRegToken: string|undefined, selfRegTokenHelpText: string|undefined, selfRegNotification: boolean|undefined,
-    description: string|undefined, selfRegForceTemplate: boolean|undefined, selfRegForceProperties: boolean|undefined,
+    interactionNotification: boolean, description: string|undefined, selfRegForceTemplate: boolean|undefined, selfRegForceProperties: boolean|undefined,
     allowCertificateDownload: boolean, allowStatementManagement: boolean, allowSystemManagement: boolean, allowPostTestOrganisationUpdate: boolean,
     allowPostTestSystemUpdate: boolean, allowPostTestStatementUpdate: boolean, allowAutomationApi: boolean|undefined,
     domainId: number|undefined) {
@@ -138,7 +138,8 @@ export class CommunityService {
       allow_system_management: allowSystemManagement,
       allow_post_test_org_update: allowPostTestOrganisationUpdate,
       allow_post_test_sys_update: allowPostTestSystemUpdate,
-      allow_post_test_stm_update: allowPostTestStatementUpdate
+      allow_post_test_stm_update: allowPostTestStatementUpdate,
+      interaction_notification: interactionNotification
     }
     if (this.dataService.configuration.registrationEnabled) {
       if (selfRegNotification == undefined) selfRegNotification = false
@@ -168,7 +169,7 @@ export class CommunityService {
 
   updateCommunity(communityId: number, shortName: string, fullName: string, email: string|undefined,
     selfRegType: number, selfRegRestriction: number, selfRegToken: string|undefined, selfRegTokenHelpText: string|undefined, selfRegNotification: boolean|undefined,
-    description: string|undefined, selfRegForceTemplate: boolean|undefined, selfRegForceProperties: boolean|undefined,
+    interactionNotification: boolean, description: string|undefined, selfRegForceTemplate: boolean|undefined, selfRegForceProperties: boolean|undefined,
     allowCertificateDownload: boolean, allowStatementManagement: boolean, allowSystemManagement: boolean, allowPostTestOrganisationUpdate: boolean,
     allowPostTestSystemUpdate: boolean, allowPostTestStatementUpdate: boolean, allowAutomationApi: boolean|undefined,
     domainId: number|undefined) {
@@ -182,7 +183,8 @@ export class CommunityService {
       allow_system_management: allowSystemManagement,
       allow_post_test_org_update: allowPostTestOrganisationUpdate,
       allow_post_test_sys_update: allowPostTestSystemUpdate,
-      allow_post_test_stm_update: allowPostTestStatementUpdate
+      allow_post_test_stm_update: allowPostTestStatementUpdate,
+      interaction_notification: interactionNotification
     }
     if (this.dataService.configuration.registrationEnabled) {
       if (selfRegNotification == undefined) selfRegNotification = false

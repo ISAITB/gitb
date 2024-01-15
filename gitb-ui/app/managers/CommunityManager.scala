@@ -258,7 +258,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityRes
   }
 
   private[managers] def updateCommunityInternal(community: Communities, shortName: String, fullName: String, supportEmail: Option[String],
-                                                selfRegType: Short, selfRegToken: Option[String], selfRegTokenHelpText: Option[String], selfRegNotification: Boolean,
+                                                selfRegType: Short, selfRegToken: Option[String], selfRegTokenHelpText: Option[String], selfRegNotification: Boolean, interactionNotification: Boolean,
                                                 description: Option[String], selfRegRestriction: Short, selfRegForceTemplateSelection: Boolean, selfRegForceRequiredProperties: Boolean,
                                                 allowCertificateDownload: Boolean, allowStatementManagement: Boolean, allowSystemManagement: Boolean,
                                                 allowPostTestOrganisationUpdates: Boolean, allowPostTestSystemUpdates: Boolean, allowPostTestStatementUpdates: Boolean, allowAutomationApi: Option[Boolean],
@@ -288,10 +288,10 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityRes
         .filter(_.id === community.id)
         .map(c => (
           c.supportEmail, c.domain, c.description, c.allowCertificateDownload, c.allowStatementManagement, c.allowSystemManagement,
-          c.allowPostTestOrganisationUpdates, c.allowPostTestSystemUpdates, c.allowPostTestStatementUpdates
+          c.allowPostTestOrganisationUpdates, c.allowPostTestSystemUpdates, c.allowPostTestStatementUpdates, c.interactionNotification
         ))
         .update(supportEmail, domainId, description, allowCertificateDownload, allowStatementManagement, allowSystemManagement,
-          allowPostTestOrganisationUpdates, allowPostTestSystemUpdates, allowPostTestStatementUpdates
+          allowPostTestOrganisationUpdates, allowPostTestSystemUpdates, allowPostTestStatementUpdates, interactionNotification
         )
       // Update self-registration properties.
       _ <- {
@@ -299,7 +299,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityRes
           PersistenceSchema.communities
             .filter(_.id === community.id)
             .map(c => (
-              c.selfRegType, c.selfRegToken, c.selfRegTokenHelpText, c.selfregNotification,
+              c.selfRegType, c.selfRegToken, c.selfRegTokenHelpText, c.selfRegNotification,
               c.selfRegRestriction, c.selfRegForceTemplateSelection, c.selfRegForceRequiredProperties
             ))
             .update(selfRegType, selfRegToken, selfRegTokenHelpText, selfRegNotification,
@@ -343,7 +343,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityRes
     */
   def updateCommunity(communityId: Long, shortName: String, fullName: String, supportEmail: Option[String],
                       selfRegType: Short, selfRegToken: Option[String], selfRegTokenHelpText: Option[String],
-                      selfRegNotification: Boolean, description: Option[String], selfRegRestriction: Short,
+                      selfRegNotification: Boolean, interactionNotification: Boolean, description: Option[String], selfRegRestriction: Short,
                       selfRegForceTemplateSelection: Boolean, selfRegForceRequiredProperties: Boolean,
                       allowCertificateDownload: Boolean, allowStatementManagement: Boolean, allowSystemManagement: Boolean,
                       allowPostTestOrganisationUpdates: Boolean, allowPostTestSystemUpdates: Boolean,
@@ -357,7 +357,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityRes
         if (community.isDefined) {
           updateCommunityInternal(
             community.get, shortName, fullName, supportEmail, selfRegType, selfRegToken, selfRegTokenHelpText,
-            selfRegNotification, description, selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties,
+            selfRegNotification, interactionNotification, description, selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties,
             allowCertificateDownload, allowStatementManagement, allowSystemManagement,
             allowPostTestOrganisationUpdates, allowPostTestSystemUpdates, allowPostTestStatementUpdates, allowAutomationApi, None,
             domainId, checkApiKeyUniqueness = false, onSuccess

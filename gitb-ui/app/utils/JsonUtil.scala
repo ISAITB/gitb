@@ -743,10 +743,11 @@ object JsonUtil {
       json = json.+("selfRegRestriction" -> JsNumber(community.selfRegRestriction))
       json = json.+("selfRegToken" -> (if(community.selfRegToken.isDefined) JsString(community.selfRegToken.get) else JsNull))
       json = json.+("selfRegTokenHelpText" -> (if(community.selfRegTokenHelpText.isDefined) JsString(community.selfRegTokenHelpText.get) else JsNull))
-      json = json.+("selfRegNotification" -> JsBoolean(community.selfregNotification))
+      json = json.+("selfRegNotification" -> JsBoolean(community.selfRegNotification))
       json = json.+("selfRegForceTemplateSelection" -> JsBoolean(community.selfRegForceTemplateSelection))
       json = json.+("selfRegForceRequiredProperties" -> JsBoolean(community.selfRegForceRequiredProperties))
       json = json.+("description" -> (if(community.description.isDefined) JsString(community.description.get) else JsNull))
+      json = json.+("interactionNotification" -> JsBoolean(community.interactionNotification))
       if (Configurations.AUTOMATION_API_ENABLED) {
         json = json.+("apiKey" -> JsString(community.apiKey))
       }

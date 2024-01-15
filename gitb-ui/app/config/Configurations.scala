@@ -135,6 +135,8 @@ object Configurations {
   val WELCOME_MESSAGE_DEFAULT = "<h4>The Interoperability Test Bed is a platform for self-service conformance testing against semantic and technical specifications.</h4>"
   var WELCOME_MESSAGE: String = WELCOME_MESSAGE_DEFAULT
 
+  var PENDING_INTERACTION_NOTIFICATION_INTERVAL_MINUTES = 30
+
   def versionInfo(): String = {
     if (Constants.VersionNumber.toLowerCase.endsWith("snapshot")) {
       Constants.VersionNumber + " (" + Configurations.BUILD_TIMESTAMP + ")"
@@ -331,6 +333,7 @@ object Configurations {
       API_ROOT = conf.getString("apiPrefix")
       PASSWORD_COMPLEXITY_RULE_REGEX = new Regex(conf.getString("passwordComplexityRule"))
       AUTOMATION_API_ENABLED = fromEnv("AUTOMATION_API_ENABLED", "false").toBoolean
+      PENDING_INTERACTION_NOTIFICATION_INTERVAL_MINUTES = fromEnv("PENDING_INTERACTION_NOTIFICATION_INTERVAL_MINUTES", "30").toInt
       _IS_LOADED = true
     }
   }

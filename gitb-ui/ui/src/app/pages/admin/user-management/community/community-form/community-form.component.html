@@ -25,6 +25,22 @@
             <div class="col-7"><input id="email" name="email" [(ngModel)]="community.email" class="form-control" type="text"></div>
              <div class="col-auto" app-tooltip tbTooltip="This email address is used to receive contact form submissions (if supported) from community members and other notifications."></div>
         </div>
+        <div class="mb-3 row pt-0" *ngIf="emailEnabled">
+            <div class="col-7 offset-3">
+                <div class="form-check form-check-inline" *ngIf="selfRegOptionsVisible">
+                    <input class="form-check-input" type="checkbox" id="selfRegNotification" name="selfRegNotification" [(ngModel)]="community.selfRegNotification">
+                    <label class="form-check-label" for="selfRegNotification">Notify for self-registrations
+                        <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="Check this to receive email notifications in the support mailbox for new self-registrations."></div>
+                    </label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="checkbox" id="interactionNotification" name="interactionNotification" [(ngModel)]="community.interactionNotification">
+                    <label class="form-check-label" for="interactionNotification">Notify for pending test interactions
+                        <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="Check this to receive email notifications in the support mailbox for new test sessions pending administrator interaction."></div>
+                    </label>
+                </div>
+            </div>
+        </div>
         <div class="mb-3 row" *ngIf="dataService.configuration.automationApiEnabled && community.id != undefined">
             <label class="col-3 col-form-label text-end" for="apiKey">API key:</label>
             <div class="col-7">
@@ -82,15 +98,6 @@
                         <textarea id="description" name="description" [(ngModel)]="community.activeDescription" class="form-control" [readonly]="community.sameDescriptionAsDomain" (blur)="setSameDescription()"></textarea>
                     </div>
                      <div class="col-auto" app-tooltip tbTooltip="This description will be displayed in the self-registration screen to explain to prospective members the community's context and purpose."></div>
-                </div>
-                <div class="mb-3 row" *ngIf="emailEnabled">
-                    <label class="col-3 col-form-label text-end pt-0" for="selfRegNotification">Self-registration notifications:</label>
-                    <div class="col-7">
-                        <div class="form-check">
-                            <input class="form-check-input" id="selfRegNotification" name="selfRegNotification" [(ngModel)]="community.selfRegNotification" type="checkbox">
-                            <div class="col-auto d-inline-flex" app-tooltip [inline]="true" tbTooltip="Check this if you want new self-registrations to send a notification email to the configured support mailbox."></div>
-                        </div>
-                    </div>
                 </div>
                 <div class="mb-3 row" *ngIf="ssoEnabled">
                     <label class="col-3 col-form-label text-end" for="selfRegRestriction">* Self-registration restrictions:</label>
