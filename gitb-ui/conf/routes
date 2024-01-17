@@ -381,6 +381,7 @@ POST    /api/themes/:themeId                                     @controllers.Sy
 DELETE  /api/themes/:themeId                                     @controllers.SystemConfigurationService.deleteTheme(themeId: Long)
 POST    /api/themes/:themeId/activate                            @controllers.SystemConfigurationService.activateTheme(themeId: Long)
 GET     /api/themes/resource/preview                             @controllers.SystemConfigurationService.previewThemeResource()
+POST    /api/system/configs/testEmail                            @controllers.SystemConfigurationService.testEmailSettings()
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)

@@ -1,0 +1,10 @@
+<div class="row">
+    <div class="col-12">
+        <div class="form-separator expandable" [class.mb-0]="!marginBottom" [class.mt-0]="!marginTop" (click)="collapsed = !collapsed">
+            <div class="section-title"><app-collapsing-icon [isCollapsed]="collapsed"></app-collapsing-icon>{{sectionTitle}}</div>
+        </div>
+    </div>
+</div>
+<div [collapse]="collapsed" [isAnimated]="true">
+    <ng-content></ng-content>
+</div>

@@ -1526,7 +1526,7 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     canManageDomain(request, domainId)
   }
 
-  private def checkTestBedAdmin(request: RequestWithAttributes[_]): Boolean = {
+  def checkTestBedAdmin(request: RequestWithAttributes[_]): Boolean = {
     val ok = isTestBedAdmin(getRequestUserId(request))
     setAuthResult(request, ok, "Only test bed administrators can perform this operation")
   }

@@ -11,8 +11,20 @@ export abstract class BaseComponent {
         return value == undefined || !isNaN(value)
     }
 
+    numberProvided(value: any, minimum?: number): boolean {
+        return value != undefined && !isNaN(value) && (minimum == undefined || minimum <= value)
+    }
+
     textProvided(value: string|undefined): boolean {
         return value != undefined && value!.trim().length > 0
+    }
+
+    isValidEmail(email: string|undefined): boolean {
+        let valid = true
+        if (email === undefined || !Constants.EMAIL_REGEX.test(email)) {
+            valid = false
+        }
+        return valid
     }
 
     requireText(value: string|undefined, message?: string): boolean {
@@ -60,12 +72,9 @@ export abstract class BaseComponent {
     }
 
     requireValidEmail(email: string|undefined, message?: string): boolean {
-        let valid = true
-        if (email === undefined || !Constants.EMAIL_REGEX.test(email)) {
-            valid = false
-            if (message !== undefined) {
-               this.addAlertError(message)
-            }
+        let valid = this.isValidEmail(email)
+        if (!valid && message !== undefined) {
+            this.addAlertError(message)
         }
         return valid
     }

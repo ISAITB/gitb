@@ -5,13 +5,13 @@ import com.typesafe.config.{Config, ConfigFactory}
 import models.Constants
 import org.apache.commons.lang3.StringUtils
 
-import java.util.{Locale, Properties}
+import java.util.Locale
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 import scala.util.matching.Regex
 
 object Configurations {
 
-  var _IS_LOADED = false
+  private var _IS_LOADED = false
 
   // Database parameters
   var DB_DRIVER_CLASS:String = ""
@@ -36,16 +36,23 @@ object Configurations {
 	var TEST_CASE_REPOSITORY_PATH = ""
 
   var EMAIL_ENABLED = false
-  var EMAIL_FROM = ""
+  var EMAIL_FROM: Option[String] = None
   var EMAIL_TO: Option[Array[String]] = None
-  var EMAIL_SMTP_HOST = ""
-  var EMAIL_SMTP_PORT: Int = -1
-  var EMAIL_SMTP_SSL_ENABLED = false
-  var EMAIL_SMTP_SSL_PROTOCOLS: Option[String] = None
-  var EMAIL_SMTP_STARTTLS_ENABLED = false
-  var EMAIL_SMTP_AUTH_ENABLED = true
-  var EMAIL_SMTP_AUTH_USERNAME = ""
-  var EMAIL_SMTP_AUTH_PASSWORD = ""
+  var EMAIL_SMTP_HOST: Option[String] = None
+  var EMAIL_SMTP_PORT: Option[Int] = None
+  var EMAIL_SMTP_SSL_ENABLED: Option[Boolean] = None
+  var EMAIL_SMTP_SSL_PROTOCOLS: Option[Array[String]] = None
+  var EMAIL_SMTP_STARTTLS_ENABLED: Option[Boolean] = None
+  var EMAIL_CONTACT_FORM_ENABLED: Option[Boolean] = None
+  var EMAIL_CONTACT_FORM_COPY_DEFAULT_MAILBOX: Option[Boolean] = None
+  var EMAIL_SMTP_AUTH_ENABLED: Option[Boolean] = None
+  var EMAIL_SMTP_AUTH_USERNAME: Option[String] = None
+  var EMAIL_SMTP_AUTH_PASSWORD: Option[String] = None
+  var EMAIL_ATTACHMENTS_MAX_SIZE: Int = -1
+  var EMAIL_ATTACHMENTS_MAX_COUNT: Int = -1
+  var EMAIL_ATTACHMENTS_ALLOWED_TYPES: Set[String] = _
+  var EMAIL_NOTIFICATION_TEST_INTERACTION_REMINDER: Int = -1
+
   var SURVEY_ENABLED = false
   var SURVEY_ADDRESS = ""
   var MORE_INFO_ENABLED = false
@@ -60,11 +67,6 @@ object Configurations {
 
   var GUIDES_EULOGIN_USE = ""
   var GUIDES_EULOGIN_MIGRATION = ""
-
-  var EMAIL_ATTACHMENTS_MAX_SIZE: Int = -1
-  var EMAIL_ATTACHMENTS_MAX_COUNT: Int = -1
-  var EMAIL_ATTACHMENTS_ALLOWED_TYPES_STR = ""
-  var EMAIL_ATTACHMENTS_ALLOWED_TYPES: Set[String] = _
 
   var ANTIVIRUS_SERVER_ENABLED = false
   var ANTIVIRUS_SERVER_HOST = ""
@@ -109,8 +111,6 @@ object Configurations {
   // 5120 KB default (5 MBs)
   var SAVED_FILE_MAX_SIZE: Long = 5120
 
-  var SMTP_PROPERTIES = new Properties()
-
   var INPUT_SANITIZER__ENABLED = true
   var INPUT_SANITIZER__METHODS_TO_CHECK_STR:String = _
   var INPUT_SANITIZER__METHODS_TO_CHECK:Set[String] = _
@@ -134,8 +134,6 @@ object Configurations {
 
   val WELCOME_MESSAGE_DEFAULT = "<h4>The Interoperability Test Bed is a platform for self-service conformance testing against semantic and technical specifications.</h4>"
   var WELCOME_MESSAGE: String = WELCOME_MESSAGE_DEFAULT
-
-  var PENDING_INTERACTION_NOTIFICATION_INTERVAL_MINUTES = 30
 
   def versionInfo(): String = {
     if (Constants.VersionNumber.toLowerCase.endsWith("snapshot")) {
@@ -177,34 +175,31 @@ object Configurations {
       TEST_CASE_REPOSITORY_PATH = conf.getString("testcase.repository.path")
 
       EMAIL_ENABLED = fromEnv("EMAIL_ENABLED", conf.getString("email.enabled")).toBoolean
-      if (EMAIL_ENABLED) {
-        EMAIL_FROM = fromEnv("EMAIL_FROM", conf.getString("email.from"))
-        EMAIL_TO = Some(fromEnv("EMAIL_TO", conf.getString("email.to")).split(","))
-        EMAIL_SMTP_HOST = fromEnv("EMAIL_SMTP_HOST", conf.getString("email.smtp.host"))
-        EMAIL_SMTP_PORT = fromEnv("EMAIL_SMTP_PORT", conf.getString("email.smtp.port")).toInt
-        EMAIL_SMTP_AUTH_ENABLED = fromEnv("EMAIL_SMTP_AUTH_ENABLED", conf.getString("email.smtp.auth.enabled")).toBoolean
-        EMAIL_SMTP_AUTH_USERNAME = fromEnv("EMAIL_SMTP_AUTH_USERNAME", conf.getString("email.smtp.auth.username"))
-        EMAIL_SMTP_AUTH_PASSWORD = fromEnv("EMAIL_SMTP_AUTH_PASSWORD", conf.getString("email.smtp.auth.password"))
-        // Collect as Properties object
-        if (EMAIL_SMTP_AUTH_ENABLED) {
-          SMTP_PROPERTIES.setProperty("mail.smtp.auth", "true")
-        }
-        EMAIL_SMTP_SSL_ENABLED = fromEnv("EMAIL_SMTP_SSL_ENABLED", conf.getString("email.smtp.ssl.enabled")).toBoolean
-        if (EMAIL_SMTP_SSL_ENABLED) {
-          SMTP_PROPERTIES.setProperty("mail.smtp.ssl.enable", "true")
-          val sslProtocolsValue = fromEnv("EMAIL_SMTP_SSL_PROTOCOLS", conf.getString("email.smtp.ssl.protocols"))
-          if (!sslProtocolsValue.isBlank) {
-            EMAIL_SMTP_SSL_PROTOCOLS = Some(sslProtocolsValue.trim)
-            SMTP_PROPERTIES.setProperty("mail.smtp.ssl.protocols", EMAIL_SMTP_SSL_PROTOCOLS.get)
-          }
-        }
-        EMAIL_SMTP_STARTTLS_ENABLED = fromEnv("EMAIL_SMTP_STARTTLS_ENABLED", conf.getString("email.smtp.starttls.enabled")).toBoolean
-        if (EMAIL_SMTP_STARTTLS_ENABLED) {
-          SMTP_PROPERTIES.setProperty("mail.smtp.starttls.enable", "true")
-        }
-        SMTP_PROPERTIES.setProperty("mail.smtp.host", EMAIL_SMTP_HOST)
-        SMTP_PROPERTIES.setProperty("mail.smtp.port", EMAIL_SMTP_PORT.toString)
+      EMAIL_FROM = Option(fromEnv("EMAIL_FROM", null))
+      EMAIL_TO = Option(fromEnv("EMAIL_TO", null)).map(_.split(","))
+      EMAIL_SMTP_HOST = Option(fromEnv("EMAIL_SMTP_HOST", null))
+      EMAIL_SMTP_PORT = Option(fromEnv("EMAIL_SMTP_PORT", null)).map(_.toInt)
+      EMAIL_SMTP_AUTH_ENABLED = Option(fromEnv("EMAIL_SMTP_AUTH_ENABLED", conf.getString("email.smtp.auth.enabled")).toBoolean)
+      EMAIL_SMTP_AUTH_USERNAME = Option(fromEnv("EMAIL_SMTP_AUTH_USERNAME", null))
+      EMAIL_SMTP_AUTH_PASSWORD = Option(fromEnv("EMAIL_SMTP_AUTH_PASSWORD", null))
+      // Collect as Properties object
+      EMAIL_SMTP_SSL_ENABLED = Option(fromEnv("EMAIL_SMTP_SSL_ENABLED", conf.getString("email.smtp.ssl.enabled")).toBoolean)
+      val sslProtocolsValue = fromEnv("EMAIL_SMTP_SSL_PROTOCOLS", conf.getString("email.smtp.ssl.protocols")).split(",")
+      if (sslProtocolsValue.nonEmpty) {
+        EMAIL_SMTP_SSL_PROTOCOLS = Some(sslProtocolsValue)
       }
+      EMAIL_SMTP_STARTTLS_ENABLED = Option(fromEnv("EMAIL_SMTP_STARTTLS_ENABLED", conf.getString("email.smtp.starttls.enabled")).toBoolean)
+      EMAIL_CONTACT_FORM_ENABLED = Some(fromEnv("EMAIL_CONTACT_FORM_ENABLED", "true").toBoolean)
+      EMAIL_CONTACT_FORM_COPY_DEFAULT_MAILBOX = Some(fromEnv("EMAIL_CONTACT_FORM_COPY_DEFAULT_MAILBOX", "true").toBoolean)
+      EMAIL_ATTACHMENTS_MAX_SIZE = fromEnv("EMAIL_ATTACHMENTS_MAX_SIZE", conf.getString("email.attachments.maxSize")).toInt
+      EMAIL_ATTACHMENTS_MAX_COUNT = fromEnv("EMAIL_ATTACHMENTS_MAX_COUNT", conf.getString("email.attachments.maxCount")).toInt
+      val typesStr = fromEnv("EMAIL_ATTACHMENTS_ALLOWED_TYPES", conf.getString("email.attachments.allowedTypes"))
+      var tempSet = new scala.collection.mutable.HashSet[String]()
+      typesStr.split(",").map(_.trim).foreach{ mimeType =>
+        tempSet += mimeType
+      }
+      EMAIL_ATTACHMENTS_ALLOWED_TYPES = tempSet.toSet
+      EMAIL_NOTIFICATION_TEST_INTERACTION_REMINDER = fromEnv("EMAIL_NOTIFICATION_TEST_INTERACTION_REMINDER", "30").toInt
 
       SURVEY_ENABLED = fromEnv("SURVEY_ENABLED", conf.getString("survey.enabled")).toBoolean
       SURVEY_ADDRESS = fromEnv("SURVEY_ADDRESS", conf.getString("survey.address"))
@@ -217,15 +212,6 @@ object Configurations {
       USERGUIDE_OA = fromEnv("USERGUIDE_OA", conf.getString("userguide.oa"))
       USERGUIDE_CA = fromEnv("USERGUIDE_CA", conf.getString("userguide.ca"))
       USERGUIDE_TA = fromEnv("USERGUIDE_TA", conf.getString("userguide.ta"))
-
-      EMAIL_ATTACHMENTS_MAX_SIZE = fromEnv("EMAIL_ATTACHMENTS_MAX_SIZE", conf.getString("email.attachments.maxSize")).toInt
-      EMAIL_ATTACHMENTS_MAX_COUNT = fromEnv("EMAIL_ATTACHMENTS_MAX_COUNT", conf.getString("email.attachments.maxCount")).toInt
-      EMAIL_ATTACHMENTS_ALLOWED_TYPES_STR = fromEnv("EMAIL_ATTACHMENTS_ALLOWED_TYPES", conf.getString("email.attachments.allowedTypes"))
-      var tempSet = new scala.collection.mutable.HashSet[String]()
-      EMAIL_ATTACHMENTS_ALLOWED_TYPES_STR.split(",").map(_.trim).foreach{ mimeType =>
-        tempSet += mimeType
-      }
-      EMAIL_ATTACHMENTS_ALLOWED_TYPES = tempSet.toSet
 
       ANTIVIRUS_SERVER_ENABLED = fromEnv("ANTIVIRUS_SERVER_ENABLED", conf.getString("antivirus.enabled")).toBoolean
       if (ANTIVIRUS_SERVER_ENABLED) {
@@ -333,7 +319,6 @@ object Configurations {
       API_ROOT = conf.getString("apiPrefix")
       PASSWORD_COMPLEXITY_RULE_REGEX = new Regex(conf.getString("passwordComplexityRule"))
       AUTOMATION_API_ENABLED = fromEnv("AUTOMATION_API_ENABLED", "false").toBoolean
-      PENDING_INTERACTION_NOTIFICATION_INTERVAL_MINUTES = fromEnv("PENDING_INTERACTION_NOTIFICATION_INTERVAL_MINUTES", "30").toInt
       _IS_LOADED = true
     }
   }

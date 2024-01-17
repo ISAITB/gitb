@@ -3,6 +3,7 @@ package managers
 import com.gitb.core.{AnyContent, ValueEmbeddingEnumeration}
 import com.gitb.ps._
 import com.gitb.utils.{ClasspathResourceResolver, XMLUtils}
+import jakarta.xml.bind.JAXBElement
 import models.Enums.TriggerDataType.TriggerDataType
 import models.Enums.TriggerEventType._
 import models.Enums.TriggerServiceType.TriggerServiceType
@@ -22,10 +23,8 @@ import java.nio.charset.{Charset, StandardCharsets}
 import java.nio.file.Files
 import java.util.Base64
 import javax.inject.{Inject, Singleton}
-import jakarta.xml.bind.JAXBElement
 import javax.xml.namespace.QName
 import javax.xml.transform.stream.StreamSource
-import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -922,19 +921,4 @@ class TriggerManager @Inject()(env: Environment, ws: WSClient, repositoryUtils: 
     q.update(Some(success), message)
   }
 
-  private def extractFailureDetails(error: Throwable): List[String] = {
-    val messages = new ListBuffer[Option[String]]()
-    val handledErrors = new ListBuffer[Throwable]()
-    extractFailureDetailsInternal(error, handledErrors, messages)
-    messages.filter(_.isDefined).toList.map(_.get)
-  }
-
-  @tailrec
-  private def extractFailureDetailsInternal(error: Throwable, handledErrors: ListBuffer[Throwable], messages: ListBuffer[Option[String]]): Unit = {
-    if (error != null && !handledErrors.contains(error)) {
-      handledErrors += error
-      messages += Option(error.getMessage)
-      extractFailureDetailsInternal(error.getCause, handledErrors, messages)
-    }
-  }
 }

@@ -236,7 +236,7 @@ class CommunityService @Inject() (implicit ec: ExecutionContext, authorizedActio
           "<br/><b>Community:</b> "+community.fullname +
           "<br/><br/>Click <a href=\""+Configurations.TESTBED_HOME_LINK+"\">here</a> to connect and view the update on the Test Bed."
         try {
-          EmailUtil.sendEmail(Configurations.EMAIL_FROM, Array[String](community.supportEmail.get), null, subject, content, null)
+          EmailUtil.sendEmail(Array[String](community.supportEmail.get), null, subject, content, null)
         } catch {
           case e:Exception => {
             logger.error("Error while sending self registration notification for community ["+community.id+"]", e)

@@ -351,7 +351,8 @@ export class Constants {
 		SELF_REGISTRATION_ENABLED: 'self_registration_enabled',
 		DEMO_ACCOUNT: 'demo_account',
 		WELCOME_MESSAGE: 'welcome',
-		ACCOUNT_RETENTION_PERIOD: 'account_retention_period'
+		ACCOUNT_RETENTION_PERIOD: 'account_retention_period',
+		EMAIL_SETTINGS: 'email_settings',
 	}
 
 	public static USER_SSO_STATUS = {

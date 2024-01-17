@@ -5,6 +5,7 @@ import config.Configurations
 import models.Enums.TestResultStatus
 import models._
 import org.apache.commons.io.FileUtils
+import org.apache.pekko.actor.{ActorSystem, Cancellable}
 import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
@@ -19,12 +20,15 @@ import scala.collection.concurrent.TrieMap
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 
 @Singleton
-class TestResultManager @Inject() (repositoryUtils: RepositoryUtils, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class TestResultManager @Inject() (actorSystem: ActorSystem, repositoryUtils: RepositoryUtils, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+
   private def logger = LoggerFactory.getLogger("TestResultManager")
+  private var interactionNotificationFuture: Option[Cancellable] = None
 
   import dbConfig.profile.api._
 
@@ -538,7 +542,35 @@ class TestResultManager @Inject() (repositoryUtils: RepositoryUtils, dbConfigPro
       .delete
   }
 
-  def notifyForPendingTestInteractions(notificationWindowStart: Calendar): Unit = {
+  def schedulePendingTestInteractionNotifications(): Unit = {
+    if (Configurations.EMAIL_ENABLED) {
+      val windowMinutes = Configurations.EMAIL_NOTIFICATION_TEST_INTERACTION_REMINDER
+      if (interactionNotificationFuture.isDefined && !interactionNotificationFuture.get.isCancelled) {
+        logger.info("Pending test interaction notification check reset.")
+        interactionNotificationFuture.get.cancel()
+      } else {
+        logger.info("Pending test interaction notification check set up.")
+      }
+      interactionNotificationFuture = Some(actorSystem.scheduler.scheduleWithFixedDelay(5.minutes, windowMinutes.minutes) {
+        () => {
+          if (Configurations.EMAIL_ENABLED) {
+            logger.debug("Checking to send pending test interaction notifications.")
+            // Set the start time to 30 minutes before the current time.
+            val cal = Calendar.getInstance()
+            cal.add(Calendar.MINUTE, windowMinutes * -1)
+            notifyForPendingTestInteractions(cal)
+          }
+        }
+      })
+    } else {
+      if (interactionNotificationFuture.isDefined && !interactionNotificationFuture.get.isCancelled) {
+        logger.info("Pending test interaction notification check stopped.")
+        interactionNotificationFuture.get.cancel()
+      }
+    }
+  }
+
+  private def notifyForPendingTestInteractions(notificationWindowStart: Calendar): Unit = {
     val windowStart = new Timestamp(notificationWindowStart.getTimeInMillis)
     if (Configurations.EMAIL_ENABLED) {
       val query = for {
@@ -585,7 +617,7 @@ class TestResultManager @Inject() (repositoryUtils: RepositoryUtils, dbConfigPro
         "Test sessions are waiting for new administrator interactions ("+communityName+")." +
           "<br/><br/>Click <a href=\""+Configurations.TESTBED_HOME_LINK+"\">here</a> to connect and view the pending test sessions."
       try {
-        EmailUtil.sendEmail(Configurations.EMAIL_FROM, Array[String](supportEmail), null, subject, content, null)
+        EmailUtil.sendEmail(Array[String](supportEmail), null, subject, content, null)
       } catch {
         case e:Exception =>
           logger.error("Error while sending pending interaction notification for community ["+communityId+"]", e)

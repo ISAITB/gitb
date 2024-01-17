@@ -257,6 +257,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, systemConfigu
       case Constants.DemoAccount => "Demo account"
       case Constants.WelcomeMessage => "Custom welcome page message"
       case Constants.AccountRetentionPeriod => "Inactive account retention period"
+      case Constants.EmailSettings => "Email settings"
       case _ => setting
     }
   }

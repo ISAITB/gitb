@@ -16,7 +16,7 @@ import org.apache.commons.lang3.StringUtils
 import org.slf4j.LoggerFactory
 import persistence.db._
 import play.api.db.slick.DatabaseConfigProvider
-import utils.{ClamAVClient, CryptoUtil, MimeUtil, RepositoryUtils, TimeUtil}
+import utils.{ClamAVClient, CryptoUtil, JsonUtil, MimeUtil, RepositoryUtils, TimeUtil}
 
 import java.io.{ByteArrayInputStream, File}
 import java.nio.file.{Files, Paths}
@@ -951,9 +951,14 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                   (data: com.gitb.xml.export.SystemConfiguration, item: ImportItem) => {
                     if (systemConfigurationManager.isEditableSystemParameter(data.getName)) {
                       var valueToSet = Option(data.getValue)
-                      if (data.getName == Constants.DemoAccount && valueToSet.isDefined) {
-                        // Make sure the demo account ID matches the after-import result for the demo user account.
-                        valueToSet = ctx.processedIdMap.get(ImportItemType.OrganisationUser).flatMap(_.get(valueToSet.get))
+                      if (valueToSet.isDefined) {
+                        if (data.getName == Constants.DemoAccount) {
+                          // Make sure the demo account ID matches the after-import result for the demo user account.
+                          valueToSet = ctx.processedIdMap.get(ImportItemType.OrganisationUser).flatMap(_.get(valueToSet.get))
+                        } else if (data.getName == Constants.EmailSettings) {
+                          // Make sure SMTP password is encrypted with target master key.
+                          valueToSet = prepareSmtpSettings(valueToSet, ctx.importSettings)
+                        }
                       }
                       systemConfigurationManager.updateSystemParameterInternal(data.getName, valueToSet, applySetting = true)
                     } else {
@@ -963,9 +968,14 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                   (data: com.gitb.xml.export.SystemConfiguration, targetKey: String, item: ImportItem) => {
                     if (systemConfigurationManager.isEditableSystemParameter(data.getName)) {
                       var valueToSet = Option(data.getValue)
-                      if (data.getName == Constants.DemoAccount && valueToSet.isDefined) {
-                        // Make sure the demo account ID matches the after-import result for the demo user account.
-                        valueToSet = ctx.processedIdMap.get(ImportItemType.OrganisationUser).flatMap(_.get(valueToSet.get))
+                      if (valueToSet.isDefined) {
+                        if (data.getName == Constants.DemoAccount) {
+                          // Make sure the demo account ID matches the after-import result for the demo user account.
+                          valueToSet = ctx.processedIdMap.get(ImportItemType.OrganisationUser).flatMap(_.get(valueToSet.get))
+                        } else if (data.getName == Constants.EmailSettings) {
+                          // Make sure SMTP password is encrypted with target master key.
+                          valueToSet = prepareSmtpSettings(valueToSet, ctx.importSettings)
+                        }
                       }
                       systemConfigurationManager.updateSystemParameterInternal(data.getName, valueToSet, applySetting = true)
                     } else {
@@ -1507,6 +1517,21 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
       Some(MimeUtil.encryptString(decrypt(importSettings, archiveValue)))
     } else {
       None
+    }
+  }
+
+  private def prepareSmtpSettings(value: Option[String], importSettings: ImportSettings): Option[String] = {
+    if (value.isDefined) {
+      val emailSettings = JsonUtil.parseJsEmailSettings(value.get)
+      if (emailSettings.authPassword.isDefined) {
+        // We decrypt and set the password in clear because the update service will later encrypt it.
+        val newPassword = decrypt(importSettings, emailSettings.authPassword.get)
+        Some(JsonUtil.jsEmailSettings(emailSettings.withPassword(newPassword), maskPassword = false).toString())
+      } else {
+        value
+      }
+    } else {
+      value
     }
   }
 

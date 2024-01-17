@@ -210,5 +210,5 @@ object Parameters {
   val FOOTER_LOGO_DISPLAY = "footerLogoDisplay"
   val FAVICON_PATH = "faviconPath"
   val REFERENCE = "reference"
-
+  val TO = "to"
 }

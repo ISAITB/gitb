@@ -8,7 +8,9 @@
       "schematics": {
         "@schematics/angular:component": {
           "skipTests": true,
-          "inlineStyle": true
+          "inlineStyle": false,
+          "style": "less",
+          "standalone": false
         },
         "@schematics/angular:service": {
           "skipTests": true,

@@ -1,18 +1,34 @@
 package controllers
 
-import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, ResponseConstructor}
+import controllers.util._
 import exceptions.ErrorCodes
 import managers.{AuthorizationManager, SystemConfigurationManager}
 import models.Constants
 import org.apache.commons.io.FileUtils
-import play.api.libs.json.JsString
-import play.api.mvc.{AbstractController, ControllerComponents, Result}
+import play.api.libs.json.{JsBoolean, Json}
+import play.api.mvc._
 import utils.{HtmlUtil, JsonUtil, RepositoryUtils}
 
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 
 class SystemConfigurationService @Inject()(implicit ec: ExecutionContext, authorizedAction: AuthorizedAction, cc: ControllerComponents, repositoryUtils: RepositoryUtils, systemConfigurationManager: SystemConfigurationManager, environment: play.api.Environment, authorizationManager: AuthorizationManager) extends AbstractController(cc) {
+
+  def testEmailSettings(): Action[AnyContent] = Action.async { request =>
+    authorizedAction.wrap(request, (request: RequestWithAttributes[AnyContent]) => {
+      authorizationManager.checkTestBedAdmin(request)
+      val toAddress = ParameterExtractor.requiredBodyParameter(request, Parameters.TO)
+      val settingsJson = ParameterExtractor.requiredBodyParameter(request, Parameters.SETTINGS)
+      val emailSettings = JsonUtil.parseJsEmailSettings(settingsJson)
+      systemConfigurationManager.testEmailSettings(emailSettings, toAddress).map { errors =>
+        var json = Json.obj("success" -> JsBoolean(errors.isEmpty))
+        if (errors.isDefined) {
+          json = json + ("messages" -> JsonUtil.jsStringArray(errors.get))
+        }
+        ResponseConstructor.constructJsonResponse(json.toString())
+      }
+    })
+  }
 
   def getConfigurationValues() = authorizedAction { request =>
     authorizationManager.canViewSystemConfigurationValues(request)
@@ -34,7 +50,7 @@ class SystemConfigurationService @Inject()(implicit ec: ExecutionContext, author
       }
       val resultToReport = systemConfigurationManager.updateSystemParameter(name, value)
       if (resultToReport.isDefined) {
-        ResponseConstructor.constructJsonResponse(JsString(resultToReport.get).toString)
+        ResponseConstructor.constructJsonResponse(JsonUtil.jsSystemConfiguration(resultToReport.get).toString)
       } else {
         ResponseConstructor.constructEmptyResponse
       }

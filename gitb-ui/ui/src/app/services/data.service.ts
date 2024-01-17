@@ -91,6 +91,7 @@ export class DataService {
     this.configurationLoaded = false
     return {
       emailEnabled: (this.configuration?.emailEnabled != undefined)?this.configuration!.emailEnabled:false,
+      emailContactFormEnabled: (this.configuration?.emailContactFormEnabled != undefined)?this.configuration!.emailContactFormEnabled:false,
       emailAttachmentsMaxCount: (this.configuration?.emailAttachmentsMaxCount != undefined)?this.configuration!.emailAttachmentsMaxCount:5,
       emailAttachmentsMaxSize: (this.configuration?.emailAttachmentsMaxSize != undefined)?this.configuration!.emailAttachmentsMaxSize:5,
       emailAttachmentsAllowedTypes: (this.configuration?.emailAttachmentsAllowedTypes != undefined)?this.configuration!.emailAttachmentsAllowedTypes:'',
@@ -148,9 +149,11 @@ export class DataService {
   setConfiguration(config: AppConfigurationProperties) {
     this.configuration = config
     this.acceptedEmailAttachmentTypes = {}
-    let acceptedTypes = config.emailAttachmentsAllowedTypes.split(',')
-    for (let acceptedType of acceptedTypes) {
-      this.acceptedEmailAttachmentTypes[acceptedType] = true
+    if (config.emailAttachmentsAllowedTypes) {
+      let acceptedTypes = config.emailAttachmentsAllowedTypes.split(',')
+      for (let acceptedType of acceptedTypes) {
+        this.acceptedEmailAttachmentTypes[acceptedType] = true
+      }
     }
     this.configurationLoaded = true
   }

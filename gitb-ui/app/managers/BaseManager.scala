@@ -5,6 +5,7 @@ import play.api.db.slick.DatabaseConfigProvider
 import slick.dbio.DBIO
 import slick.jdbc.JdbcProfile
 
+import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.Await
@@ -52,6 +53,22 @@ abstract class BaseManager @Inject() (dbConfigProvider: DatabaseConfigProvider) 
 				DBIO.successful(())
 			}
 		})
+	}
+
+	protected def extractFailureDetails(error: Throwable): List[String] = {
+		val messages = new ListBuffer[Option[String]]()
+		val handledErrors = new ListBuffer[Throwable]()
+		extractFailureDetailsInternal(error, handledErrors, messages)
+		messages.filter(_.isDefined).toList.map(_.get)
+	}
+
+	@tailrec
+	private def extractFailureDetailsInternal(error: Throwable, handledErrors: ListBuffer[Throwable], messages: ListBuffer[Option[String]]): Unit = {
+		if (error != null && !handledErrors.contains(error)) {
+			handledErrors += error
+			messages += Option(error.getMessage)
+			extractFailureDetailsInternal(error.getCause, handledErrors, messages)
+		}
 	}
 
 }

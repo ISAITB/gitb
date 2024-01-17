@@ -6,6 +6,7 @@ import { ErrorDescription } from '../types/error-description';
 import { Theme } from '../types/theme';
 import { FileParam } from '../types/file-param.type';
 import { HttpResponse } from '@angular/common/http';
+import { EmailSettings } from '../types/email-settings';
 
 @Injectable({
   providedIn: 'root'
@@ -29,7 +30,7 @@ export class SystemConfigurationService {
     if (value !== undefined) {
       data.parameter = value
     }
-    return this.restService.post<string|undefined>({
+    return this.restService.post<SystemConfiguration|undefined>({
       path: ROUTES.controllers.SystemConfigurationService.updateConfigurationValue().url,
       data: data,
       authenticate: true
@@ -147,6 +148,18 @@ export class SystemConfigurationService {
       data: themeData.data,
       files: themeData.files
     })    
+  }
+
+  testEmailSettings(settings: EmailSettings, to: string) {
+    const data = {
+      settings: JSON.stringify(settings),
+      to: to
+    }
+    return this.restService.post<{ success: boolean, messages?: string[] }>({
+      path: ROUTES.controllers.SystemConfigurationService.testEmailSettings().url,
+      authenticate: true,
+      data: data
+    })
   }
 
 }

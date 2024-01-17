@@ -1,6 +1,5 @@
 package hooks
 
-import org.apache.pekko.actor.ActorSystem
 import config.Configurations
 import config.Configurations.{BUILD_TIMESTAMP, MASTER_PASSWORD}
 import jakarta.xml.ws.Endpoint
@@ -11,16 +10,17 @@ import models.Constants
 import models.Enums.UserRole
 import org.apache.commons.io.FileUtils
 import org.apache.commons.lang3.StringUtils
+import org.apache.pekko.actor.ActorSystem
 import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
 import play.api.Environment
-import utils.{RepositoryUtils, TimeUtil, ZipArchiver}
+import utils.{JsonUtil, RepositoryUtils, TimeUtil, ZipArchiver}
 
 import java.io.{File, FileFilter}
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 import java.time.LocalDate
-import java.util.{Calendar, Properties}
+import java.util.Properties
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.DurationInt
@@ -92,6 +92,8 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext, authenticationMana
   }
 
   private def adaptSystemConfiguration(): Unit = {
+    // Record the default settings (from the config, fixed values and the environment).
+    val defaultEmailSettings = systemConfigurationManager.recordDefaultEmailSettings()
     // Load persisted configuration parameters.
     val persistedConfigs = systemConfigurationManager.getEditableSystemConfigurationValues(onlyPersisted = true)
     // Check against environment settings.
@@ -128,6 +130,11 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext, authenticationMana
       Configurations.WELCOME_MESSAGE = welcomeMessageConfig.get.parameter.get
     } else {
       Configurations.WELCOME_MESSAGE = Configurations.WELCOME_MESSAGE_DEFAULT
+    }
+    // Email settings.
+    val emailSettings = persistedConfigs.find(config => config.config.name == Constants.EmailSettings).map(_.config)
+    if (emailSettings.nonEmpty && emailSettings.get.parameter.nonEmpty) {
+      JsonUtil.parseJsEmailSettings(emailSettings.get.parameter.get).toEnvironment(Some(defaultEmailSettings))
     }
   }
 
@@ -224,18 +231,7 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext, authenticationMana
   }
 
   private def setupInteractionNotifications(): Unit = {
-    val windowMinutes = Configurations.PENDING_INTERACTION_NOTIFICATION_INTERVAL_MINUTES
-    actorSystem.scheduler.scheduleWithFixedDelay(5.minutes, windowMinutes.minutes) {
-      () => {
-        if (Configurations.EMAIL_ENABLED) {
-          logger.debug("Checking to send pending test interaction notifications.")
-          // Set the start time to 30 minutes before the current time.
-          val cal = Calendar.getInstance()
-          cal.add(Calendar.MINUTE, windowMinutes * -1)
-          testResultManager.notifyForPendingTestInteractions(cal)
-        }
-      }
-    }
+    testResultManager.schedulePendingTestInteractionNotifications()
   }
 
   private def initialiseTestbedClient(): Unit = {

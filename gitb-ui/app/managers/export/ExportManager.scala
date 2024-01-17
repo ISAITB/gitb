@@ -10,7 +10,7 @@ import org.apache.commons.io.{FileUtils, IOUtils}
 import org.slf4j.{Logger, LoggerFactory}
 import persistence.db._
 import play.api.db.slick.DatabaseConfigProvider
-import utils.{MimeUtil, RepositoryUtils}
+import utils.{JsonUtil, MimeUtil, RepositoryUtils}
 
 import java.io.File
 import java.nio.file.Files
@@ -714,20 +714,29 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, systemConfigura
         exportedSettings.setSystemConfigurations(new com.gitb.xml.export.SystemConfigurations)
         systemConfigurations.foreach { config =>
           var valueToSet = config.config.parameter
-          if (valueToSet.isDefined && config.config.name == Constants.DemoAccount) {
-            // Set the export ID for the demo account user.
-            if (exportedUserMap.isDefined) {
-              valueToSet = exportedUserMap.get.get(config.config.parameter.get.toLong)
-            } else {
-              valueToSet = None
-            }
-          }
           if (valueToSet.isDefined) {
-            val exportedConfig = new SystemConfiguration
-            exportedConfig.setId(toId(sequence.next()))
-            exportedConfig.setName(config.config.name)
-            exportedConfig.setValue(valueToSet.get)
-            exportedSettings.getSystemConfigurations.getConfig.add(exportedConfig)
+            if (config.config.name == Constants.DemoAccount) {
+              // Set the export ID for the demo account user.
+              if (exportedUserMap.isDefined) {
+                valueToSet = exportedUserMap.get.get(config.config.parameter.get.toLong)
+              } else {
+                valueToSet = None
+              }
+            } else if (config.config.name == Constants.EmailSettings) {
+              // Encrypt the SMTP password (if defined).
+              var emailSettings = JsonUtil.parseJsEmailSettings(valueToSet.get)
+              if (emailSettings.authPassword.isDefined) {
+                emailSettings = emailSettings.withPassword(encryptText(emailSettings.authPassword, isAlreadyEncrypted = true, exportSettings.encryptionKey))
+                valueToSet = Some(JsonUtil.jsEmailSettings(emailSettings, maskPassword = false).toString())
+              }
+            }
+            if (valueToSet.isDefined) {
+              val exportedConfig = new SystemConfiguration
+              exportedConfig.setId(toId(sequence.next()))
+              exportedConfig.setName(config.config.name)
+              exportedConfig.setValue(valueToSet.get)
+              exportedSettings.getSystemConfigurations.getConfig.add(exportedConfig)
+            }
           }
         }
       }

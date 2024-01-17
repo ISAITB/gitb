@@ -183,7 +183,8 @@ import { ThemeDetailsComponent } from './pages/admin/system-administration/theme
 import { ThemeFormComponent } from './pages/admin/system-administration/theme-form/theme-form.component';
 import { ColorPickerComponent } from './components/color-picker/color-picker.component';
 import { DragDropModule } from '@angular/cdk/drag-drop';
-import { FileDropTargetDirective } from './directives/file-drop-target.directive';    
+import { FileDropTargetDirective } from './directives/file-drop-target.directive';
+import { FormSectionComponent } from './components/form-section/form-section.component';    
 
 @NgModule({
   providers: [
@@ -356,7 +357,8 @@ import { FileDropTargetDirective } from './directives/file-drop-target.directive
     ThemeDetailsComponent,
     ThemeFormComponent,
     ColorPickerComponent,
-    FileDropTargetDirective
+    FileDropTargetDirective,
+    FormSectionComponent
   ],
   imports: [
     ColorPickerModule,

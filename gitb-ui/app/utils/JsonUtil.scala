@@ -70,7 +70,7 @@ object JsonUtil {
     json
   }
 
-  def jsStringArray(texts: Seq[String]): JsValue = {
+  def jsStringArray(texts: Iterable[String]): JsValue = {
     var textArray = Json.arr()
     texts.foreach { text =>
       textArray = textArray.append(JsString(text))
@@ -564,7 +564,14 @@ object JsonUtil {
       "default" -> config.defaultSetting,
       "environment" -> config.environmentSetting
     )
-    if (config.config.parameter.isDefined) json = json + ("parameter" -> JsString(config.config.parameter.get))
+    if (config.config.parameter.isDefined) {
+      if (config.config.name == Constants.EmailSettings) {
+        // Make sure the SMTP password is not included.
+        json = json + ("parameter" -> JsString(jsEmailSettings(parseJsEmailSettings(config.config.parameter.get)).toString()))
+      } else {
+        json = json + ("parameter" -> JsString(config.config.parameter.get))
+      }
+    }
     json
   }
 
@@ -1910,6 +1917,7 @@ object JsonUtil {
   def serializeConfigurationProperties(config: util.HashMap[String, String]):JsObject = {
     val json = Json.obj(
       "emailEnabled" -> config.get("email.enabled").toBoolean,
+      "emailContactFormEnabled" -> config.get("email.contactFormEnabled").toBoolean,
       "emailAttachmentsMaxCount" -> config.get("email.attachments.maxCount").toInt,
       "emailAttachmentsMaxSize" -> config.get("email.attachments.maxSize").toLong,
       "emailAttachmentsAllowedTypes" -> config.get("email.attachments.allowedTypes"),
@@ -2677,6 +2685,52 @@ object JsonUtil {
       json = json + ("item" -> children)
     }
     json
+  }
+
+  def jsEmailSettings(settings: EmailSettings, maskPassword: Boolean = true): JsObject = {
+    var json = Json.obj("enabled" -> JsBoolean(settings.enabled))
+    if (settings.from.isDefined) json = json + ("from" -> JsString(settings.from.get))
+    if (settings.to.isDefined && settings.to.get.nonEmpty) json = json + ("to" -> jsStringArray(settings.to.get))
+    if (settings.smtpHost.isDefined) json = json + ("host" -> JsString(settings.smtpHost.get))
+    if (settings.smtpPort.isDefined) json = json + ("port" -> JsNumber(settings.smtpPort.get))
+    if (settings.authEnabled.isDefined) {
+      json = json + ("authenticate" -> JsBoolean(settings.authEnabled.get))
+      if (settings.authUsername.isDefined) json = json + ("username" -> JsString(settings.authUsername.get))
+      if (settings.authPassword.isDefined) json = json + ("password" -> JsString(if (maskPassword) "*****" else settings.authPassword.get))
+    }
+    if (settings.sslEnabled.isDefined) json = json + ("sslEnabled" -> JsBoolean(settings.sslEnabled.get))
+    if (settings.sslProtocols.isDefined && settings.sslProtocols.get.nonEmpty) json = json + ("sslProtocols" -> jsStringArray(settings.sslProtocols.get))
+    if (settings.startTlsEnabled.isDefined) json = json + ("startTlsEnabled" -> JsBoolean(settings.startTlsEnabled.get))
+    if (settings.maximumAttachments.isDefined) json = json + ("maxAttachmentCount" -> JsNumber(settings.maximumAttachments.get))
+    if (settings.maximumAttachmentSize.isDefined) json = json + ("maxAttachmentSize" -> JsNumber(settings.maximumAttachmentSize.get))
+    if (settings.allowedAttachmentTypes.isDefined && settings.allowedAttachmentTypes.get.nonEmpty) json = json + ("allowedAttachmentTypes" -> jsStringArray(settings.allowedAttachmentTypes.get))
+    if (settings.testInteractionReminder.isDefined) json = json + ("testInteractionReminder" -> JsNumber(settings.testInteractionReminder.get))
+    if (settings.contactFormEnabled.isDefined) json = json + ("contactFormEnabled" -> JsBoolean(settings.contactFormEnabled.get))
+    if (settings.contactFormCopyDefaultMailbox.isDefined) json = json + ("contactFormCopyDefaultMailbox" -> JsBoolean(settings.contactFormCopyDefaultMailbox.get))
+    json
+  }
+
+  def parseJsEmailSettings(jsonString: String): EmailSettings = {
+    val json = Json.parse(jsonString)
+    EmailSettings(
+      enabled = (json \ "enabled").as[Boolean],
+      from = (json \ "from").asOpt[String],
+      to = (json \ "to").asOpt[JsArray].map(_.value.map(_.as[String]).toArray),
+      smtpHost = (json \ "host").asOpt[String],
+      smtpPort = (json \ "port").asOpt[Int],
+      authEnabled = (json \ "authenticate").asOpt[Boolean],
+      authUsername = (json \ "username").asOpt[String],
+      authPassword = (json \ "password").asOpt[String],
+      sslEnabled = (json \ "sslEnabled").asOpt[Boolean],
+      startTlsEnabled = (json \ "startTlsEnabled").asOpt[Boolean],
+      sslProtocols = (json \ "sslProtocols").asOpt[JsArray].map(_.value.map(_.as[String]).toArray),
+      maximumAttachments = (json \ "maxAttachmentCount").asOpt[Int],
+      maximumAttachmentSize = (json \ "maxAttachmentSize").asOpt[Int],
+      allowedAttachmentTypes = (json \ "allowedAttachmentTypes").asOpt[JsArray].map(_.value.map(_.as[String]).toSet),
+      testInteractionReminder = (json \ "testInteractionReminder").asOpt[Int],
+      contactFormEnabled = (json \ "contactFormEnabled").asOpt[Boolean],
+      contactFormCopyDefaultMailbox = (json \ "contactFormCopyDefaultMailbox").asOpt[Boolean]
+    )
   }
 
   def validatorForAnyContent(): Reads[AnyContent] = {

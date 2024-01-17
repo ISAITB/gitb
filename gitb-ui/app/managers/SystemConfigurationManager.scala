@@ -2,15 +2,15 @@ package managers
 
 import config.Configurations
 import models.Enums.UserRole
+import models._
 import models.theme.{Theme, ThemeFiles}
-import models.{Constants, NamedFile, SystemConfigurations, SystemConfigurationsWithEnvironment}
 import org.apache.commons.io.FilenameUtils
 import org.apache.commons.lang3.StringUtils
 import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.{Logger, LoggerFactory}
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
-import utils.{MimeUtil, RepositoryUtils}
+import utils.{EmailUtil, JsonUtil, MimeUtil, RepositoryUtils}
 
 import java.io.File
 import java.sql.Timestamp
@@ -19,21 +19,25 @@ import javax.inject.{Inject, Singleton}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future, Promise}
+import scala.util.{Failure, Success}
 
 @Singleton
-class SystemConfigurationManager @Inject() (repositoryUtils: RepositoryUtils, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class SystemConfigurationManager @Inject() (testResultManager: TestResultManager, repositoryUtils: RepositoryUtils, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
 
   private final val logger: Logger = LoggerFactory.getLogger(classOf[SystemConfigurationManager])
   private final val editableSystemConfigurationTypes = Set(
     Constants.SessionAliveTime, Constants.RestApiEnabled, Constants.SelfRegistrationEnabled,
-    Constants.DemoAccount, Constants.WelcomeMessage, Constants.AccountRetentionPeriod
+    Constants.DemoAccount, Constants.WelcomeMessage, Constants.AccountRetentionPeriod,
+    Constants.EmailSettings
   )
 
   private var activeThemeId: Option[Long] = None
   private var activeThemeCss: Option[String] = None
   private var activeThemeFavicon: Option[String] = None
+  private var defaultEmailSettings: EmailSettings = _
 
   private def constructLogoPath(themeId: Long, partialLogoPath: String): String = {
     // We go up two levels as URLs are relative to the CSS defining them which here is under "/api/theme/
@@ -165,6 +169,7 @@ class SystemConfigurationManager @Inject() (repositoryUtils: RepositoryUtils, db
       val demoAccountConfig = persistedConfigs.find(config => config.config.name == Constants.DemoAccount)
       val selfRegistrationConfig = persistedConfigs.find(config => config.config.name == Constants.SelfRegistrationEnabled)
       val welcomeMessageConfig = persistedConfigs.find(config => config.config.name == Constants.WelcomeMessage)
+      val emailSettingsConfig = persistedConfigs.find(config => config.config.name == Constants.EmailSettings)
       if (restApiEnabledConfig.isEmpty) {
         persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.RestApiEnabled, Some(Configurations.AUTOMATION_API_ENABLED.toString), None), defaultSetting = true, environmentSetting = sys.env.contains("AUTOMATION_API_ENABLED"))
       }
@@ -185,6 +190,9 @@ class SystemConfigurationManager @Inject() (repositoryUtils: RepositoryUtils, db
       if (welcomeMessageConfig.isEmpty) {
         persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.WelcomeMessage, Some(Configurations.WELCOME_MESSAGE), None), defaultSetting = true, environmentSetting = false)
       }
+      if (emailSettingsConfig.isEmpty) {
+        persistedConfigs = persistedConfigs :+ SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.EmailSettings, Some(JsonUtil.jsEmailSettings(EmailSettings.fromEnvironment()).toString()), None), defaultSetting = true, environmentSetting = sys.env.contains("EMAIL_ENABLED"))
+      }
     }
     persistedConfigs
   }
@@ -196,16 +204,39 @@ class SystemConfigurationManager @Inject() (repositoryUtils: RepositoryUtils, db
   /**
    * Set system parameter
    */
-  def updateSystemParameter(name: String, value: Option[String] = None): Option[String] = {
+  def updateSystemParameter(name: String, value: Option[String] = None): Option[SystemConfigurationsWithEnvironment] = {
     exec(updateSystemParameterInternal(name, value, applySetting = true).transactionally)
   }
 
-  def updateSystemParameterInternal(name: String, value: Option[String] = None, applySetting: Boolean): DBIO[Option[String]] = {
+  private def processReceivedEmailSettings(jsonString: String): EmailSettings = {
+    var settings = JsonUtil.parseJsEmailSettings(jsonString)
+    if (settings.authEnabled.isDefined && settings.authEnabled.get) {
+      // We have authentication.
+      if (settings.authPassword.isDefined) {
+        // Encrypt the SMTP password at rest.
+        settings = settings.withPassword(MimeUtil.encryptString(settings.authPassword.get))
+      } else if (Configurations.EMAIL_SMTP_AUTH_PASSWORD.isDefined) {
+        // A password was not submitted. This means we keep the existing value.
+        settings = settings.withPassword(MimeUtil.encryptString(Configurations.EMAIL_SMTP_AUTH_PASSWORD.get))
+      }
+    }
+    settings
+  }
+
+  def updateSystemParameterInternal(name: String, providedValue: Option[String] = None, applySetting: Boolean): DBIO[Option[SystemConfigurationsWithEnvironment]] = {
+    // Do any pre-processing as needed.
+    var parsedEmailSettings: Option[EmailSettings] = None
+    val value = if (name == Constants.EmailSettings && providedValue.isDefined) {
+      Some(JsonUtil.jsEmailSettings(processReceivedEmailSettings(providedValue.get), maskPassword = false).toString())
+    } else {
+      providedValue
+    }
+    // Store in the DB.
     for {
       exists <- PersistenceSchema.systemConfigurations.filter(_.name === name).exists.result
       _ <- {
         if (exists) {
-          if (name == Constants.WelcomeMessage && value.isEmpty) {
+          if ((name == Constants.WelcomeMessage || name == Constants.EmailSettings || name == Constants.AccountRetentionPeriod) && value.isEmpty) {
             PersistenceSchema.systemConfigurations.filter(_.name === name).delete
           } else {
             PersistenceSchema.systemConfigurations.filter(_.name === name).map(_.parameter).update(value)
@@ -242,13 +273,32 @@ class SystemConfigurationManager @Inject() (repositoryUtils: RepositoryUtils, db
               DBIO.successful(None)
             } else {
               Configurations.WELCOME_MESSAGE = Configurations.WELCOME_MESSAGE_DEFAULT
-              DBIO.successful(Some(Configurations.WELCOME_MESSAGE_DEFAULT))
+              DBIO.successful(Some(
+                SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.WelcomeMessage, Some(Configurations.WELCOME_MESSAGE), None), defaultSetting = true, environmentSetting = false)
+              ))
             }
           case Constants.AccountRetentionPeriod =>
             if (value.isDefined) {
               deleteInactiveUserAccountsInternal() andThen DBIO.successful(None)
             } else {
               DBIO.successful(None)
+            }
+          case Constants.EmailSettings =>
+            if (value.isDefined) {
+              if (parsedEmailSettings.isEmpty) {
+                parsedEmailSettings = Some(JsonUtil.parseJsEmailSettings(value.get))
+              }
+              parsedEmailSettings.get.toEnvironment()
+              testResultManager.schedulePendingTestInteractionNotifications()
+              DBIO.successful(Some(
+                SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.EmailSettings, Some(JsonUtil.jsEmailSettings(EmailSettings.fromEnvironment()).toString()), None), defaultSetting = false, environmentSetting = false)
+              ))
+            } else {
+              defaultEmailSettings.toEnvironment()
+              testResultManager.schedulePendingTestInteractionNotifications()
+              DBIO.successful(Some(
+                SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.EmailSettings, Some(JsonUtil.jsEmailSettings(EmailSettings.fromEnvironment()).toString()), None), defaultSetting = true, environmentSetting = sys.env.contains("EMAIL_ENABLED"))
+              ))
             }
           case _ => DBIO.successful(None)
         }
@@ -333,6 +383,22 @@ class SystemConfigurationManager @Inject() (repositoryUtils: RepositoryUtils, db
           }
         }
         toDBIO(actions)
+      }
+      // Update stored SMTP settings
+      emailSettings <- PersistenceSchema.systemConfigurations.filter(_.name === Constants.EmailSettings).result.headOption
+      _ <- {
+        if (emailSettings.isDefined && emailSettings.get.parameter.isDefined) {
+          val existingSettings = JsonUtil.parseJsEmailSettings(emailSettings.get.parameter.get)
+          if (existingSettings.authPassword.isDefined) {
+            val newEncryptedSmtpPassword = MimeUtil.encryptString(MimeUtil.decryptString(existingSettings.authPassword.get, previousPassword), newPassword)
+            val newEmailSettingsToStore = JsonUtil.jsEmailSettings(existingSettings.withPassword(newEncryptedSmtpPassword), maskPassword = false)
+            PersistenceSchema.systemConfigurations.filter(_.name === Constants.EmailSettings).map(_.parameter).update(Some(newEmailSettingsToStore.toString()))
+          } else {
+            DBIO.successful(())
+          }
+        } else {
+          DBIO.successful(())
+        }
       }
     } yield ()
     exec(dbAction.transactionally)
@@ -619,6 +685,35 @@ class SystemConfigurationManager @Inject() (repositoryUtils: RepositoryUtils, db
 
   def deleteInactiveUserAccounts(): Option[Int] = {
     exec(deleteInactiveUserAccountsInternal().transactionally)
+  }
+
+  def testEmailSettings(settings: EmailSettings, toAddress: String): Future[Option[List[String]]] = {
+    val settingsToUse = if (settings.authEnabled.isDefined && settings.authEnabled.get && settings.authPassword.isEmpty && Configurations.EMAIL_SMTP_AUTH_PASSWORD.isDefined) {
+      // No password was received. This means that the existing one should be reuse.
+      settings.withPassword(Configurations.EMAIL_SMTP_AUTH_PASSWORD.get)
+    } else {
+      settings
+    }
+    implicit val executionContext: ExecutionContextExecutor = ExecutionContext.global
+    val promise = Promise[Option[List[String]]]()
+    val future = scala.concurrent.Future {
+      val subject = "Test Bed test email"
+      var content = "<h2>Test Bed email settings verification</h2>"
+      content += "Receiving this email confirms that your Test Bed instance's email settings are correctly configured."
+      EmailUtil.sendEmail(settingsToUse, Array[String](toAddress), null, subject, content, null)
+      None
+    }
+    future.onComplete {
+      case Success(result) => promise.success(result)
+      case Failure(exception) => promise.success(Some(extractFailureDetails(exception)))
+    }
+    promise.future
+  }
+
+  def recordDefaultEmailSettings(): EmailSettings = {
+    // This is called before we adapt the settings based on stored values.
+    defaultEmailSettings = EmailSettings.fromEnvironment()
+    defaultEmailSettings
   }
 
 }
