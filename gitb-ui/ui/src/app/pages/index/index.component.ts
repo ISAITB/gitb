@@ -78,7 +78,7 @@ export class IndexComponent implements OnInit, OnDestroy {
   }
 
   showContactUs(): boolean {
-    return this.dataService.configuration && this.dataService.configuration.emailEnabled
+    return this.dataService.configuration && this.dataService.configuration.emailEnabled && this.dataService.configuration.emailContactFormEnabled
   }
 
   showMoreInfo(): boolean {
