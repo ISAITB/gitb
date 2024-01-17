@@ -16,7 +16,6 @@ import { Constants } from 'src/app/common/constants';
 export class CustomPropertyFormComponent implements OnInit {
 
   @Input() tbProperties?:CustomProperty[]
-  @Input() tbPopup = false
   @Input() tbColLabel = 3
   @Input() tbColOffset = 1
   @Input() tbColInputLess = 0

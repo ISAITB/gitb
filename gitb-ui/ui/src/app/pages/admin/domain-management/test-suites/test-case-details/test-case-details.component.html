@@ -60,15 +60,8 @@
             </div>
 					</div>
 				</div>
-				<div class="row">
-					<div class="col-12">
-						<div class="form-separator expandable" (click)="showDocumentation = !showDocumentation">
-							<div class="separator-title"><app-collapsing-icon [isCollapsed]="!showDocumentation"></app-collapsing-icon>Documentation</div>
-						</div>
-					</div>
-				</div>
-				<div [collapse]="!showDocumentation" [isAnimated]="true">
-					<div class="row mb-3">
+                <app-form-section sectionTitle="Documentation">
+					<div class="row mb-3 mt-3">
 						<div class="offset-1 col-10">
 							<div class="mb-3" *ngIf="dataService.isCommunityAdmin">
 								<app-placeholder-selector [resources]="true" [community]="dataService.vendor?.community"></app-placeholder-selector>
@@ -79,7 +72,7 @@
 							</div>
 						</div>
 					</div>
-					<div class="row mb-3">
+					<div class="row">
 						<div class="offset-1 col-10">
 							<div class="btn-toolbar">
 								<div class="btn-group" dropdown [isDisabled]="previewPending || this.testCase.documentation == undefined || this.testCase.documentation.length == 0">
@@ -96,7 +89,7 @@
 							</div>
 						</div>
 					</div>
-				</div>
+				</app-form-section>
 			</div>
 			<div class="card-footer">
 				<div class="btn-toolbar">

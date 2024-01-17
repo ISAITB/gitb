@@ -33,7 +33,6 @@ export class TestCaseDetailsComponent extends BaseComponent implements OnInit, A
   specificationId?:number
   testSuiteId!:number
   testCaseId!:number
-  showDocumentation = false
   pending = false
   diagramLoaded = false
   steps: {[key: string]: StepData[]} = {}

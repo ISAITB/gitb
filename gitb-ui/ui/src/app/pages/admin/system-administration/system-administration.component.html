@@ -98,7 +98,7 @@
                                     <app-form-section sectionTitle="Basic settings">
                                         <div class="row">
                                             <div class="offset-1 col-10">
-                                                <div class="row gx-3">
+                                                <div class="row mt-3 gx-3">
                                                     <label class="col-3 col-form-label text-end" for="smtpHost">* SMTP server:</label>
                                                     <div class="col-3"><input type="text" class="form-control" placeholder="Host" id="smtpHost" name="smtpHost" [(ngModel)]="emailSettings.host"></div>
                                                     <div class="col-1"><input type="number" class="form-control" placeholder="Port" id="emailPort" name="emailPort" [(ngModel)]="emailSettings.port"></div>
@@ -178,7 +178,7 @@
                                                     <div class="col-4"><input id="emailFrom" name="emailFrom" [(ngModel)]="emailSettings.from" class="form-control" type="text"></div>
                                                     <div class="col-auto" app-tooltip tbTooltip="The email address to use as the sender for outgoing emails. You may also use the format 'NAME &lt;EMAIL&gt;' to include a user-friendly name."></div>
                                                 </div>
-                                                <div class="row my-3">
+                                                <div class="row mt-3">
                                                     <div class="offset-3 col-4">
                                                         <div class="form-check">
                                                             <input class="form-check-input" type="checkbox" id="emailTestActive" name="emailTestActive" [(ngModel)]="emailTestActive">
@@ -189,7 +189,7 @@
                                                     </div>
                                                 </div>
                                                 <div [collapse]="!emailTestActive" [isAnimated]="true">
-                                                    <div class="row mb-3 gx-3">
+                                                    <div class="row mt-3 gx-3">
                                                         <div class="offset-3 col-4">
                                                             <div class="input-group">
                                                                 <input id="emailTestToAddress" placeholder="Recipient address" name="emailTestToAddress" [(ngModel)]="emailTestToAddress" class="form-control">
@@ -201,10 +201,10 @@
                                             </div>
                                         </div>
                                     </app-form-section>
-                                    <app-form-section sectionTitle="Contact form settings">
+                                    <app-form-section sectionTitle="Contact form settings" [marginBefore]="true">
                                         <div class="row">
                                             <div class="offset-1 col-10">
-                                                <div class="row">
+                                                <div class="mt-3 row">
                                                     <label class="col-3 col-form-label text-end pt-0" for="contactFormEnabled">Enable contact form:</label>
                                                     <div class="col-7">
                                                         <div class="form-check">
@@ -244,7 +244,7 @@
                                                         </div>
                                                         <div class="col-auto" app-tooltip tbTooltip="The maximum allowed combined size (in megabytes) of all support request attachments."></div>
                                                     </div>
-                                                    <div class="row my-3">
+                                                    <div class="row mt-3">
                                                         <label class="col-3 col-form-label text-end" for="emailAllowedAttachmentTypes">Allowed attachment types:</label>
                                                         <div class="col-4">
                                                             <select id="emailAllowedAttachmentTypes" size="7" name="emailAllowedAttachmentTypes" class="form-control form-select" multiple="true" [(ngModel)]="emailSettings.allowedAttachmentTypes">
@@ -263,7 +263,7 @@
                                             </div>
                                         </div>
                                     </app-form-section>
-                                    <app-form-section sectionTitle="Notification settings" [marginBottom]="false">
+                                    <app-form-section sectionTitle="Notification settings" [marginBefore]="true">
                                         <div class="row">
                                             <div class="offset-1 col-10">
                                                 <div class="row mt-3">

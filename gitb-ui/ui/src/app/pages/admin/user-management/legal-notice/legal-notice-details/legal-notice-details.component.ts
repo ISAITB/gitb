@@ -28,7 +28,6 @@ export class LegalNoticeDetailsComponent extends BaseComponent implements OnInit
   savePending = false
   copyPending = false
   deletePending = false
-  showContent = true
   tooltipForDefaultCheck!: string
 
   constructor(

@@ -18,7 +18,6 @@ import { BsModalService } from 'ngx-bootstrap/modal';
 import { LinkSharedTestSuiteModalComponent } from 'src/app/modals/link-shared-test-suite-modal/link-shared-test-suite-modal.component';
 import { filter, find } from 'lodash';
 import { forkJoin } from 'rxjs';
-import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
 
 @Component({
   selector: 'app-test-suite-details',
@@ -33,7 +32,6 @@ export class TestSuiteDetailsComponent extends BaseComponent implements OnInit, 
   testSuiteId!: number
   dataStatus = {status: Constants.STATUS.NONE}
   specificationStatus = {status: Constants.STATUS.NONE}
-  showDocumentation = false
   testCaseTableColumns: TableColumnDefinition[] = [
     { field: 'identifier', title: 'ID' },
     { field: 'sname', title: 'Name' },

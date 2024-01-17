@@ -12,17 +12,10 @@
     </div>
 </div>
 <div *ngIf="badges?.enabled != undefined" [collapse]="!badges.enabled" [isAnimated]="true">
-    <div class="row">
-        <div class="col-12">
-            <div class="form-separator expandable" (click)="badgesCollapsed = !badgesCollapsed">
-                <div class="separator-title"><app-collapsing-icon [isCollapsed]="formCollapsed()"></app-collapsing-icon>Conformance badges</div>
-            </div>
-        </div>
-    </div>
-    <div [collapse]="formCollapsed()" [isAnimated]="badges.enabled != undefined && badges.enabled">
+    <app-form-section sectionTitle="Conformance badges" [collapsed]="badgesCollapsed">
         <div class="row">
             <div class="col-10 offset-1">
-                <div class="row mb-3">
+                <div class="row mt-3">
                     <label class="col-3 col-form-label text-end">* Success badge:</label>
                     <div class="col-7">
                         <app-manage-badge
@@ -34,7 +27,7 @@
                     </div>
                     <div app-tooltip class="col-auto" tbTooltip="The badge image to display for a successful conformance statement."></div>
                 </div>
-                <div class="row mb-3">
+                <div class="row mt-3">
                     <label class="col-3 col-form-label text-end">* Other badge:</label>
                     <div class="col-7">
                         <app-manage-badge
@@ -46,7 +39,7 @@
                     </div>
                     <div app-tooltip class="col-auto" tbTooltip="The badge image to display for a non-successful conformance statement."></div>
                 </div>
-                <div class="row mb-3">
+                <div class="row mt-3">
                     <div class="col-7 offset-3">
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" id="distinctFailureBadge" name="distinctFailureBadge" [(ngModel)]="badges.failureBadgeActive">
@@ -55,7 +48,7 @@
                     </div>
                 </div>
                 <div [collapse]="!badges.failureBadgeActive" [isAnimated]="true">
-                    <div class="row mb-3">
+                    <div class="row mt-3">
                         <label class="col-3 col-form-label text-end">* Failure badge:</label>
                         <div class="col-7">
                             <app-manage-badge
@@ -70,5 +63,5 @@
                 </div>
             </div>
         </div>
-    </div>
+    </app-form-section>
 </div>

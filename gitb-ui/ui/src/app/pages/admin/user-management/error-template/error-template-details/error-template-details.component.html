@@ -31,25 +31,16 @@
                         </div>
                     </div>
                 </div>
-				<div class="row">
-					<div class="col-12">
-						<div class="form-separator expandable" (click)="showContent = !showContent">
-							<div class="separator-title"><app-collapsing-icon [isCollapsed]="!showContent"></app-collapsing-icon>Content</div>
-						</div>
-					</div>
-				</div>
-				<div [collapse]="!showContent" [isAnimated]="true">
-					<div class="row">
+                <app-form-section sectionTitle="Content">
+					<div class="row mt-3">
                         <div class="col-12">
-                            <div class="mb-3">
+							<div class="mb-3">
                                 <app-placeholder-selector [placeholders]="placeholders" [resources]="dataService.isCommunityAdmin" [community]="communityId"></app-placeholder-selector>
-                            </div>
-                            <div>
-                                <app-editor id="content" name="content" [(ngModel)]="template.content"></app-editor>
-                            </div>
+							</div>
+                            <app-editor id="content" name="content" [(ngModel)]="template.content"></app-editor>
 						</div>
                     </div>
-                </div>
+                </app-form-section>
             </div>
             <div class="card-footer button-container">
                 <div class="btn-toolbar">

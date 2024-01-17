@@ -9,7 +9,6 @@ import { OptionalCustomPropertyFormData } from './optional-custom-property-form-
 export class OptionalCustomPropertyFormComponent implements OnInit {
 
   @Input() tbPropertyData!: OptionalCustomPropertyFormData
-  @Input() tbPopup = false
   @Input() tbColLabel = 3
   @Input() tbColOffset = 1
   @Input() tbColInputLess = 0

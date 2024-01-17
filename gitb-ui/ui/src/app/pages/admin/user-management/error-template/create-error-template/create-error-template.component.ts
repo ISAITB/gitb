@@ -28,7 +28,6 @@ export class CreateErrorTemplateComponent extends BaseComponent implements OnIni
   }
   placeholders: KeyValue[] = []
   savePending = false
-  showContent = true
   tooltipForDefaultCheck!: string
 
   constructor(

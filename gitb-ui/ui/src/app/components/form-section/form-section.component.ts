@@ -1,15 +1,23 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core';
 
 @Component({
   selector: 'app-form-section',
   templateUrl: './form-section.component.html',
   styleUrl: './form-section.component.less'
 })
-export class FormSectionComponent {
+export class FormSectionComponent implements OnInit {
 
   @Input() sectionTitle!: string
-  @Input() marginTop = true
-  @Input() marginBottom = true
-  collapsed = false
+  @Input() marginBefore = false
+  @Input() marginAfter = false
+  @Input() titleTooltip?: string
+  @Input() collapsed? = false
+
+
+  ngOnInit(): void {
+    if (this.collapsed == undefined) {
+      this.collapsed = false
+    }
+  }
 
 }

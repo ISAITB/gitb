@@ -7,7 +7,7 @@
             <div class="card-body">
                 <div class="row">
                     <div class="col-10 offset-1">
-                        <div class="row mb-3">
+                        <div class="row">
                             <label class="col-3 col-form-label text-end">Title:</label>
                             <div class="col-7">
                                 <div class="row row-cols-auto align-items-center">
@@ -26,7 +26,7 @@
                         </div>
                     </div>
                     <div class="col-10 offset-1">
-                        <div class="row mb-3 pt-1">
+                        <div class="row mt-3 pt-1">
                             <legend class="col-3 col-form-label text-end pt-0">Included sections:</legend>
                             <div class="col-8">
                                 <div class="form-check form-check-inline">
@@ -70,87 +70,77 @@
                     </div>
                 </div>
                 <div [collapse]="loading ||!settings.includeMessage" [isAnimated]="true">
-                    <div class="row">
-                        <div class="col-12">
-                            <div class="form-separator">
-                                <div class="separator-title">Message configuration</div>
+                    <app-form-section sectionTitle="Message configuration" [marginBefore]="true">
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <div>
+                                    <app-placeholder-selector [placeholders]="placeholders" [domainParameters]="true" [resources]="true" [community]="communityId"></app-placeholder-selector>
+                                </div>
+                                <div class="mt-3">
+                                    <app-editor name="message" [(ngModel)]="settings.message" [type]="'pdf'"></app-editor>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-12">
-                            <div class="mb-3">
-                                <app-placeholder-selector [placeholders]="placeholders" [domainParameters]="true" [resources]="true" [community]="communityId"></app-placeholder-selector>
-                            </div>
-                            <div>
-                                <app-editor name="message" [(ngModel)]="settings.message" [type]="'pdf'"></app-editor>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                    </app-form-section>
+                </div>                
                 <div [collapse]="loading || !settings.includeSignature" [isAnimated]="true">
-                    <div class="row pt-3">
-                        <div class="col-12">
-                            <div class="form-separator">
-                                <div class="separator-title">Signature configuration</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-10 offset-1">
-                            <div class="row mb-3">
-                                <label class="col-3 col-form-label text-end" for="title">* Keystore:</label>
-                                <div class="col-7">
-                                    <app-file-select [fileName]="getKeystoreName()" (onUpload)="attachKeystore($event)" placeholder="Drop or browse for keystore ..." [extraActions]="settings.keystoreDefined != undefined && settings.keystoreDefined">
-                                        <button class="btn btn-secondary" type="button" (click)="downloadKeystore()" *ngIf="settings.keystoreDefined" containerClass="shortTooltip" tooltip="Download" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-download"></i></button>
-                                        <button class="btn btn-secondary" type="button" (click)="clearKeystore()" *ngIf="settings.keystoreDefined" containerClass="shortTooltip" tooltip="Remove" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-trash"></i></button>
-                                    </app-file-select>
+                    <app-form-section sectionTitle="Signature configuration" [marginBefore]="true">
+                        <div class="row mt-3">
+                            <div class="col-10 offset-1">
+                                <div class="row">
+                                    <label class="col-3 col-form-label text-end" for="title">* Keystore:</label>
+                                    <div class="col-7">
+                                        <app-file-select [fileName]="getKeystoreName()" (onUpload)="attachKeystore($event)" placeholder="Drop or browse for keystore ..." [extraActions]="settings.keystoreDefined != undefined && settings.keystoreDefined">
+                                            <button class="btn btn-secondary" type="button" (click)="downloadKeystore()" *ngIf="settings.keystoreDefined" containerClass="shortTooltip" tooltip="Download" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-download"></i></button>
+                                            <button class="btn btn-secondary" type="button" (click)="clearKeystore()" *ngIf="settings.keystoreDefined" containerClass="shortTooltip" tooltip="Remove" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-trash"></i></button>
+                                        </app-file-select>
+                                    </div>
+                                    <div app-tooltip class="col-auto" tbTooltip="The keystore file that includes the keypair (private and public key) that will be used. The keystore should contain a single keypair."></div>
                                 </div>
-                                <div app-tooltip class="col-auto" tbTooltip="The keystore file that includes the keypair (private and public key) that will be used. The keystore should contain a single keypair."></div>
-                            </div>
-                            <div class="row mb-3 pt-1">
-                                <legend class="col-3 col-form-label text-end pt-0">* Keystore type:</legend>
-                                <div class="col-7">
-                                    <div class="form-check form-check-inline">
-                                        <input class="form-check-input" type="radio" [(ngModel)]="settings.keystoreType" name="keystoreTypes" id="type_1" [value]="'JCEKS'">
-                                        <label class="form-check-label" for="type_1">JCEKS</label>
-                                    </div>
-                                    <div class="form-check form-check-inline">
-                                        <input class="form-check-input" type="radio" [(ngModel)]="settings.keystoreType" name="keystoreTypes" id="type_2" [value]="'JKS'">                                        
-                                        <label class="form-check-label" for="type_2">JKS</label>
-                                    </div>
-                                    <div class="form-check form-check-inline">
-                                        <input class="form-check-input" type="radio" [(ngModel)]="settings.keystoreType" name="keystoreTypes" id="type_3" [value]="'PKCS12'">
-                                        <label class="form-check-label" for="type_3">PKCS #12</label>
+                                <div class="row mt-3">
+                                    <legend class="col-3 col-form-label text-end pt-0">* Keystore type:</legend>
+                                    <div class="col-7">
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="radio" [(ngModel)]="settings.keystoreType" name="keystoreTypes" id="type_1" [value]="'JCEKS'">
+                                            <label class="form-check-label" for="type_1">JCEKS</label>
+                                        </div>
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="radio" [(ngModel)]="settings.keystoreType" name="keystoreTypes" id="type_2" [value]="'JKS'">                                        
+                                            <label class="form-check-label" for="type_2">JKS</label>
+                                        </div>
+                                        <div class="form-check form-check-inline">
+                                            <input class="form-check-input" type="radio" [(ngModel)]="settings.keystoreType" name="keystoreTypes" id="type_3" [value]="'PKCS12'">
+                                            <label class="form-check-label" for="type_3">PKCS #12</label>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                            <div class="row mb-3 pt-1" *ngIf="settings.passwordsSet">
-                                <label class="col-3 col-form-label text-end pt-0" for="change-passwords">Change passwords?</label>
-                                <div class="col-7">
-                                    <div class="form-check">
-                                        <input class="form-check-input" id="change-passwords" name="changePasswords" [(ngModel)]="updatePasswords" type="checkbox"/>
+                                <div class="row mt-3" *ngIf="settings.passwordsSet">
+                                    <label class="col-3 col-form-label text-end pt-0" for="change-passwords">Change passwords?</label>
+                                    <div class="col-7">
+                                        <div class="form-check">
+                                            <input class="form-check-input" id="change-passwords" name="changePasswords" [(ngModel)]="updatePasswords" type="checkbox"/>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                            <div [collapse]="!updatePasswords" [isAnimated]="true">
-                                <div class="row mb-3">
-                                    <label class="col-3 col-form-label text-end" for="keystorePassword">* Keystore password:</label>
-                                    <div class="col-3">
-                                        <app-secret-input id="keystorePassword" name="keystorePassword" [(ngModel)]="settings.keystorePassword"></app-secret-input>
+                                <div [collapse]="!updatePasswords" [isAnimated]="true">
+                                    <div class="row mt-3">
+                                        <label class="col-3 col-form-label text-end" for="keystorePassword">* Keystore password:</label>
+                                        <div class="col-3">
+                                            <app-secret-input id="keystorePassword" name="keystorePassword" [(ngModel)]="settings.keystorePassword"></app-secret-input>
+                                        </div>
+                                        <div app-tooltip class="col-auto" tbTooltip="The password to open the keystore."></div>
                                     </div>
-                                    <div app-tooltip class="col-auto" tbTooltip="The password to open the keystore."></div>
-                                </div>
-                                <div class="row mb-3">
-                                    <label class="col-3 col-form-label text-end" for="keyPassword">* Key password:</label>
-                                    <div class="col-3">
-                                        <app-secret-input id="keyPassword" name="keyPassword" [(ngModel)]="settings.keyPassword"></app-secret-input>
+                                    <div class="row mt-3">
+                                        <label class="col-3 col-form-label text-end" for="keyPassword">* Key password:</label>
+                                        <div class="col-3">
+                                            <app-secret-input id="keyPassword" name="keyPassword" [(ngModel)]="settings.keyPassword"></app-secret-input>
+                                        </div>
+                                        <div app-tooltip class="col-auto" tbTooltip="The password to unlock the key used for signing."></div>
                                     </div>
-                                    <div app-tooltip class="col-auto" tbTooltip="The password to unlock the key used for signing."></div>
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    </app-form-section>
                 </div>
             </div>
             <div class="card-footer">
