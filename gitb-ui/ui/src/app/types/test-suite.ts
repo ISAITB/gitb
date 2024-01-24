@@ -1,6 +1,7 @@
 import { EntityWithId } from "./entity-with-id"
+import { SpecificationReferenceInfo } from "./specification-reference-info"
 
-export interface TestSuite extends EntityWithId {
+export interface TestSuite extends EntityWithId, SpecificationReferenceInfo {
 
     identifier: string
     sname: string

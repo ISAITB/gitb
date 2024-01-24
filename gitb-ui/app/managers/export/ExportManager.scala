@@ -564,6 +564,9 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, systemConfigura
     exportedTestSuite.setModificationDate(testSuite.modificationDate.orNull)
     exportedTestSuite.setOriginalDate(testSuite.originalDate.orNull)
     exportedTestSuite.setSpecification(specificationToSet.orNull)
+    exportedTestSuite.setSpecReference(testSuite.specReference.orNull)
+    exportedTestSuite.setSpecDescription(testSuite.specReference.orNull)
+    exportedTestSuite.setSpecReference(testSuite.specReference.orNull)
     // Zip the test suite's resources to a temporary archive and convert it to a BASE64 string.
     val testTestSuitePath = testSuiteManager.extractTestSuite(testSuite, None)
     try {
@@ -598,6 +601,9 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, systemConfigura
         exportedTestCase.setOptional(testCase.isOptional)
         exportedTestCase.setDisabled(testCase.isDisabled)
         exportedTestCase.setTags(testCase.tags.orNull)
+        exportedTestCase.setSpecReference(testCase.specReference.orNull)
+        exportedTestCase.setSpecDescription(testCase.specReference.orNull)
+        exportedTestCase.setSpecReference(testCase.specReference.orNull)
         // Test case path - remove first part which represents the test suite
         val firstPathSeparatorIndex = testCase.path.indexOf('/')
         if (firstPathSeparatorIndex != -1) {

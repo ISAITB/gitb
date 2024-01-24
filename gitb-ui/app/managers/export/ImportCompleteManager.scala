@@ -337,7 +337,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
         Option(exportedTestCase.getTargetActors), None, exportedTestCase.getTestSuiteOrder, exportedTestCase.isHasDocumentation,
         Option(exportedTestCase.getDocumentation), exportedTestCase.getIdentifier,
         Option(exportedTestCase.isOptional).exists(_.booleanValue()), Option(exportedTestCase.isDisabled).exists(_.booleanValue()),
-        Option(exportedTestCase.getTags)
+        Option(exportedTestCase.getTags), Option(exportedTestCase.getSpecReference), Option(exportedTestCase.getSpecDescription), Option(exportedTestCase.getSpecLink)
       )
     }
     testCases.toList
@@ -365,7 +365,9 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
   private def toModelTestSuite(data: com.gitb.xml.export.TestSuite, domainId: Long, testSuiteFileName: String, hasTestCases: Boolean, testSuiteDefinitionPath: Option[String], shared: Boolean): models.TestSuites = {
     models.TestSuites(0L, data.getShortName, data.getFullName, data.getVersion, Option(data.getAuthors),
       Option(data.getOriginalDate), Option(data.getModificationDate), Option(data.getDescription), Option(data.getKeywords),
-      testSuiteFileName, data.isHasDocumentation, Option(data.getDocumentation), data.getIdentifier, !hasTestCases, shared, domainId, testSuiteDefinitionPath)
+      testSuiteFileName, data.isHasDocumentation, Option(data.getDocumentation), data.getIdentifier, !hasTestCases, shared, domainId, testSuiteDefinitionPath,
+      Option(data.getSpecReference), Option(data.getSpecDescription), Option(data.getSpecLink)
+    )
   }
 
   private def toModelCustomLabel(data: com.gitb.xml.export.CustomLabel, communityId: Long): models.CommunityLabels = {

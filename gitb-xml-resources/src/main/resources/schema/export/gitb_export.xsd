@@ -641,6 +641,9 @@
                     <xsd:element name="hasDocumentation" type="xsd:boolean"/>
                     <xsd:element name="documentation" type="xsd:string" minOccurs="0"/>
                     <xsd:element name="data" type="xsd:string"/>
+                    <xsd:element name="specReference" type="xsd:string" minOccurs="0"/>
+                    <xsd:element name="specDescription" type="xsd:string" minOccurs="0"/>
+                    <xsd:element name="specLink" type="xsd:string" minOccurs="0"/>
                     <xsd:element name="testCases" type="TestCases" minOccurs="0"/>
                 </xsd:sequence>
                 <xsd:attribute name="specification" type="xsd:IDREF"/>
@@ -676,6 +679,9 @@
                     <xsd:element name="optional" type="xsd:boolean" minOccurs="0"/>
                     <xsd:element name="disabled" type="xsd:boolean" minOccurs="0"/>
                     <xsd:element name="tags" type="xsd:string" minOccurs="0"/>
+                    <xsd:element name="specReference" type="xsd:string" minOccurs="0"/>
+                    <xsd:element name="specDescription" type="xsd:string" minOccurs="0"/>
+                    <xsd:element name="specLink" type="xsd:string" minOccurs="0"/>
                 </xsd:sequence>
                 <xsd:attribute name="testSuite" use="required" type="xsd:IDREF"/>
                 <xsd:attribute name="specification" type="xsd:IDREF"/>

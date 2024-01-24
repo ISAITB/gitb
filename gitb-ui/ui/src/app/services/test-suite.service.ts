@@ -85,7 +85,7 @@ export class TestSuiteService {
 		})
 	}
 
-	updateTestCaseMetadata(testCaseId: number, name: string, description?: string, documentation?: string, optional?:boolean, disabled?:boolean, tags?: string) {
+	updateTestCaseMetadata(testCaseId: number, name: string, description?: string, documentation?: string, optional?:boolean, disabled?:boolean, tags?: string, specReference?: string, specDescription?: string, specLink?:string) {
 		return this.restService.post<void>({
 			path: ROUTES.controllers.TestSuiteService.updateTestCaseMetadata(testCaseId).url,
 			data: {
@@ -94,20 +94,26 @@ export class TestSuiteService {
 				documentation: documentation,
 				optional: optional,
 				disabled: disabled,
-				tags: tags
+				tags: tags,
+				specReference: specReference,
+				specDescription: specDescription,
+				specLink: specLink
 			},
 			authenticate: true
 		})
 	}
 
-	updateTestSuiteMetadata(testSuiteId: number, name: string, description: string|undefined, documentation:string|undefined, version: string) {
+	updateTestSuiteMetadata(testSuiteId: number, name: string, description: string|undefined, documentation:string|undefined, version: string, specReference?: string, specDescription?: string, specLink?:string) {
 		return this.restService.post<void>({
 			path: ROUTES.controllers.TestSuiteService.updateTestSuiteMetadata(testSuiteId).url,
 			data: {
 				name: name,
 				description: description,
 				documentation: documentation,
-				version: version
+				version: version,
+				specReference: specReference,
+				specDescription: specDescription,
+				specLink: specLink
 			},
 			authenticate: true
 		})

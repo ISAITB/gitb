@@ -31,7 +31,6 @@ import { saveAs } from 'file-saver'
 import { CheckboxOption } from 'src/app/components/checkbox-option-panel/checkbox-option';
 import { CheckboxOptionState } from 'src/app/components/checkbox-option-panel/checkbox-option-state';
 import { ConformanceStatementItem } from 'src/app/types/conformance-statement-item';
-import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
 
 @Component({
   selector: 'app-conformance-statement',
@@ -180,10 +179,6 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
     }).add(() => {
       this.loadingTests = false
     })
-  }
-
-  private breadcrumbId(): string {
-    return this.systemId + '|' + this.actorId
   }
 
   private appendToLabel(label: string, newPart: ConformanceStatementItem|undefined): string {
@@ -430,7 +425,10 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
           description: testSuite.description,
           hasOptionalTestCases: testSuite.hasOptionalTestCases && this.showOptional,
           hasDisabledTestCases: testSuite.hasDisabledTestCases && this.showDisabled,
-          testCases: testCases
+          testCases: testCases,
+          specReference: testSuite.specReference,
+          specDescription: testSuite.specDescription,
+          specLink: testSuite.specLink
         })
       }
     }

@@ -1,0 +1,22 @@
+@if (reference.specReference || reference.specDescription || reference.specLink) {
+    <div class="ref-container" [class.with-border]="withBorder">
+        @if (reference.specLink || reference.specReference) {
+            <span [class.me-2]="reference.specDescription">
+            @if (reference.specLink) {
+                <a [href]="reference.specLink" target="_blank" (click)="$event.stopPropagation();">
+                    @if (reference.specReference) {
+                        <span class="ref-reference" containerClass="shortTooltip" container="body" tooltip="Visit" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'">{{reference.specReference}}</span>
+                    } @else {
+                        <span class="ref-reference" containerClass="shortTooltip" container="body" tooltip="Visit" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-up-right-from-square"></i></span>
+                    }
+                </a>
+            } @else if (reference.specReference) {
+                <span class="ref-reference">{{reference.specReference}}</span>
+            }
+            </span>
+        }
+        @if (reference.specDescription) {
+            <span class="ref-description">{{reference.specDescription}}</span>
+        }
+    </div>
+}

@@ -1,7 +1,8 @@
+import { SpecificationReferenceInfo } from "src/app/types/specification-reference-info";
 import { TestCaseTag } from "src/app/types/test-case-tag";
 import { UserInteraction } from "src/app/types/user-interaction";
 
-export interface ConformanceTestCase {
+export interface ConformanceTestCase extends SpecificationReferenceInfo {
 
     id: number
     sname: string

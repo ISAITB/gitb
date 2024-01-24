@@ -27,8 +27,10 @@
                 </div>
             </div>
         </div>
-        <div *ngIf="hasDescription[testCase.id]" [collapse]="!descriptionVisible[testCase.id]" [isAnimated]="true">
+        <div *ngIf="hasDescription[testCase.id]" [collapse]="!descriptionVisible[testCase.id]" [isAnimated]="true" class="testCaseDescriptionContainer">
             <div class="testCaseDescription">{{testCase.description}}</div>
+            <app-specification-reference-display [reference]="testCase"></app-specification-reference-display>
         </div>
     </div>
+    <app-specification-reference-display *ngIf="testSuiteSpecificationReference" [reference]="testSuiteSpecificationReference" [withBorder]="false"></app-specification-reference-display>
 </div>

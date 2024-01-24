@@ -667,11 +667,15 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 						val tdlTestCaseEntries = tdlTestSuite.getTestcase.asScala
 						val folderName = generateTestSuiteFileName()
 						var documentation: Option[String] = None
+						val specificationInfo = Option(tdlTestSuite.getMetadata.getSpecification)
 						if (completeParse && tdlTestSuite.getMetadata.getDocumentation != null) {
 							documentation = getDocumentation(tdlTestSuite.getId, tdlTestSuite.getMetadata.getDocumentation, zip, specificationId, domainId)
 						}
 						val caseObject = TestSuites(0L, name, name, version, Option(authors), Option(originalDate), Option(modificationDate), Option(description), None,
-							folderName, documentation.isDefined, documentation, identifier, tdlTestCaseEntries.isEmpty, shared = false, domainId, None
+							folderName, documentation.isDefined, documentation, identifier, tdlTestCaseEntries.isEmpty, shared = false, domainId, None,
+							specificationInfo.flatMap(x => Option(x.getReference)),
+							specificationInfo.flatMap(x => Option(x.getDescription)),
+							specificationInfo.flatMap(x => Option(x.getLink))
 						)
 
 						var testCases: Option[List[TestCases]] = None
@@ -704,12 +708,16 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 									if (tdlTestCase.getMetadata.getUpdate != null) {
 										testCaseUpdateApproachTemp += (tdlTestCase.getId -> tdlTestCase.getMetadata.getUpdate)
 									}
+									val testCaseSpecificationInfo = Option(tdlTestCase.getMetadata.getSpecification)
 									TestCases(
 										0L, tdlTestCase.getMetadata.getName, tdlTestCase.getMetadata.getName, tdlTestCase.getMetadata.getVersion,
 										Option(tdlTestCase.getMetadata.getAuthors), Option(tdlTestCase.getMetadata.getPublished),
 										Option(tdlTestCase.getMetadata.getLastModified), Option(tdlTestCase.getMetadata.getDescription),
 										None, testCaseType.ordinal().toShort, null, Some(actorString.toString()), None,
-										testCaseCounter.toShort, documentation.isDefined, documentation, tdlTestCase.getId, tdlTestCase.isOptional, tdlTestCase.isDisabled, getTagsStr(tdlTestCase)
+										testCaseCounter.toShort, documentation.isDefined, documentation, tdlTestCase.getId, tdlTestCase.isOptional, tdlTestCase.isDisabled, getTagsStr(tdlTestCase),
+										testCaseSpecificationInfo.flatMap(x => Option(x.getReference)),
+										testCaseSpecificationInfo.flatMap(x => Option(x.getDescription)),
+										testCaseSpecificationInfo.flatMap(x => Option(x.getLink))
 									)
 							}.toList)
 							testCaseUpdateApproach = Some(testCaseUpdateApproachTemp.toMap)

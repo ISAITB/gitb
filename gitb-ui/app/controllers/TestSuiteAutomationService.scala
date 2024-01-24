@@ -103,7 +103,7 @@ class TestSuiteAutomationService @Inject() (authorizedAction: AuthorizedAction, 
           ParameterExtractor.optionalBodyParameter(params, "ignoreWarnings").getOrElse("false").toBoolean,
           defaultReplaceTestHistory,
           defaultUpdateSpecification,
-          testCaseActions.toMap,
+          testCaseActions,
           sharedTestSuite
         )
         val uploadedFile = request.body.asMultipartFormData.get.file("testSuite")

@@ -457,7 +457,9 @@ class ReportManager @Inject() (domainParameterManager: DomainParameterManager, r
       0L, "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Specification), "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Specification),
       Some("Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.SpecificationGroup)), Some("Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.SpecificationGroup)),
       "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.SpecificationInGroup), "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.SpecificationInGroup),
-      Some(index), Some("Sample Test Suite "+index), Some("Description for Sample Test Suite "+index), Some(index), Some("Sample Test Case "+index), Some("Description for Sample Test Case "+index), Some(false), Some(false), None,  None, "SUCCESS", Some("An output message for the test session"),
+      Some(index), Some("Sample Test Suite "+index), Some("Description for Sample Test Suite "+index), None, None, None,
+      Some(index), Some("Sample Test Case "+index), Some("Description for Sample Test Case "+index), Some(false), Some(false), None,  None, None, None, None,
+      "SUCCESS", Some("An output message for the test session"),
       None, None, 0L, 0L, 0L, 0L, 0L, 0L)
   }
 

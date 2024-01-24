@@ -242,7 +242,10 @@ object PersistenceSchema {
     def isOptional = column[Boolean]("is_optional")
     def isDisabled = column[Boolean]("is_disabled")
     def tags = column[Option[String]]("tags", O.SqlType("TEXT"))
-	  def * = (id, shortname, fullname, version, authors, originalDate, modificationDate, description, keywords, testCaseType, path, targetActors, targetOptions, testSuiteOrder, hasDocumentation, documentation, identifier, isOptional, isDisabled, tags) <> (TestCases.tupled, TestCases.unapply)
+    def specReference = column[Option[String]]("spec_reference")
+    def specDescription = column[Option[String]]("spec_description", O.SqlType("TEXT"))
+    def specLink = column[Option[String]]("spec_link")
+    def * = (id :: shortname :: fullname :: version :: authors :: originalDate :: modificationDate :: description :: keywords :: testCaseType :: path :: targetActors :: targetOptions :: testSuiteOrder :: hasDocumentation :: documentation :: identifier :: isOptional :: isDisabled :: tags :: specReference :: specDescription :: specLink :: HNil).mapTo[TestCases]
   }
   val testCases = TableQuery[TestCasesTable]
 
@@ -264,7 +267,10 @@ object PersistenceSchema {
     def hidden = column[Boolean]("is_hidden")
     def shared = column[Boolean]("is_shared")
     def domain = column[Long]("domain")
-		def * = (id, shortname, fullname, version, authors, originalDate, modificationDate, description, keywords, filename, hasDocumentation, documentation, identifier, hidden, shared, domain,definitionPath) <> (TestSuites.tupled, TestSuites.unapply)
+    def specReference = column[Option[String]]("spec_reference")
+    def specDescription = column[Option[String]]("spec_description", O.SqlType("TEXT"))
+    def specLink = column[Option[String]]("spec_link")
+    def * = (id :: shortname :: fullname :: version :: authors :: originalDate :: modificationDate :: description :: keywords :: filename :: hasDocumentation :: documentation :: identifier :: hidden :: shared :: domain :: definitionPath :: specReference :: specDescription :: specLink :: HNil).mapTo[TestSuites]
 	}
 	val testSuites = TableQuery[TestSuitesTable]
 
@@ -641,6 +647,9 @@ object PersistenceSchema {
     def testSuiteId = column[Long]("test_suite_id")
     def testSuite = column[String]("test_suite")
     def testSuiteDescription = column[Option[String]]("test_suite_description", O.SqlType("TEXT"))
+    def testSuiteSpecReference = column[Option[String]]("test_suite_spec_reference")
+    def testSuiteSpecDescription = column[Option[String]]("test_suite_spec_description", O.SqlType("TEXT"))
+    def testSuiteSpecLink = column[Option[String]]("test_suite_spec_link")
     def testCaseId = column[Long]("test_case_id")
     def testCase = column[String]("test_case")
     def testCaseDescription = column[Option[String]]("test_case_description", O.SqlType("TEXT"))
@@ -648,12 +657,15 @@ object PersistenceSchema {
     def testCaseIsOptional = column[Boolean]("test_case_optional")
     def testCaseIsDisabled = column[Boolean]("test_case_disabled")
     def testCaseTags = column[Option[String]]("test_case_tags", O.SqlType("TEXT"))
+    def testCaseSpecReference = column[Option[String]]("test_case_spec_reference")
+    def testCaseSpecDescription = column[Option[String]]("test_case_spec_description", O.SqlType("TEXT"))
+    def testCaseSpecLink = column[Option[String]]("test_case_spec_link")
     def testSessionId = column[Option[String]]("test_session_id")
     def result = column[String]("result")
     def outputMessage = column[Option[String]]("output_message", O.SqlType("TEXT"))
     def updateTime = column[Option[Timestamp]]("update_time", O.SqlType("TIMESTAMP"))
     def snapshotId = column[Long]("snapshot_id")
-    def * = (id :: snapshotId :: organisationId :: organisation :: systemId :: system :: systemBadgeKey :: domainId :: domain :: specificationGroupId :: specificationGroup :: specificationGroupDisplayOrder :: specificationId :: specification :: specificationDisplayOrder :: actorId :: actor :: actorApiKey :: testSuiteId :: testSuite :: testSuiteDescription :: testCaseId :: testCase :: testCaseDescription :: testCaseOrder:: testCaseIsOptional :: testCaseIsDisabled :: testCaseTags :: testSessionId :: result :: outputMessage :: updateTime :: HNil).mapTo[ConformanceSnapshotResult]
+    def * = (id :: snapshotId :: organisationId :: organisation :: systemId :: system :: systemBadgeKey :: domainId :: domain :: specificationGroupId :: specificationGroup :: specificationGroupDisplayOrder :: specificationId :: specification :: specificationDisplayOrder :: actorId :: actor :: actorApiKey :: testSuiteId :: testSuite :: testSuiteDescription :: testSuiteSpecReference :: testSuiteSpecDescription :: testSuiteSpecLink :: testCaseId :: testCase :: testCaseDescription :: testCaseOrder:: testCaseIsOptional :: testCaseIsDisabled :: testCaseTags :: testCaseSpecReference :: testCaseSpecDescription :: testCaseSpecLink :: testSessionId :: result :: outputMessage :: updateTime :: HNil).mapTo[ConformanceSnapshotResult]
   }
   val conformanceSnapshotResults = TableQuery[ConformanceSnapshotResultsTable]
   val insertConformanceSnapshotResult = conformanceSnapshotResults returning conformanceSnapshotResults.map(_.id)

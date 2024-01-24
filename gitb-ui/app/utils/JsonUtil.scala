@@ -301,8 +301,8 @@ object JsonUtil {
     "resources/" + resource.name
   }
 
-  def jsTestSuite(suite: TestSuites, specificationIds: Option[List[Long]], withDocumentation: Boolean): JsObject = {
-    val json = Json.obj(
+  def jsTestSuite(suite: TestSuites, specificationIds: Option[List[Long]], withDocumentation: Boolean, withSpecReference: Boolean): JsObject = {
+    var json = Json.obj(
       "id"                -> suite.id,
       "identifier"        -> suite.identifier,
       "sname"             -> suite.shortname,
@@ -318,6 +318,11 @@ object JsonUtil {
       "shared"            -> suite.shared,
       "documentation"     -> (if(withDocumentation && suite.documentation.isDefined) suite.documentation else JsNull),
     )
+    if (withSpecReference) {
+      if (suite.specReference.isDefined) json = json + ("specReference" -> JsString(suite.specReference.get))
+      if (suite.specDescription.isDefined) json = json + ("specDescription" -> JsString(suite.specDescription.get))
+      if (suite.specLink.isDefined) json = json + ("specLink" -> JsString(suite.specLink.get))
+    }
     json
   }
 
@@ -368,13 +373,13 @@ object JsonUtil {
   def jsTestSuitesList(list: List[TestSuites]): JsArray = {
     var json = Json.arr()
     list.foreach { testSuite =>
-      json = json.append(jsTestSuite(testSuite, None, withDocumentation = false))
+      json = json.append(jsTestSuite(testSuite, None, withDocumentation = false, withSpecReference = false))
     }
     json
   }
 
-  def jsTestSuite(testSuite: TestSuite, withDocumentation: Boolean): JsObject = {
-    var jTestSuite: JsObject = jsTestSuite(testSuite.toCaseObject, testSuite.specifications, withDocumentation)
+  def jsTestSuite(testSuite: TestSuite, withDocumentation: Boolean, withSpecReference: Boolean): JsObject = {
+    var jTestSuite: JsObject = jsTestSuite(testSuite.toCaseObject, testSuite.specifications, withDocumentation, withSpecReference)
     if (testSuite.testCases.isDefined) {
       jTestSuite = jTestSuite ++ Json.obj("testCases" -> jsTestCasesList(testSuite.testCases.get))
     } else {
@@ -386,7 +391,7 @@ object JsonUtil {
   def jsTestSuiteList(testSuites: Iterable[TestSuite]): JsArray = {
     var json = Json.arr()
     testSuites.foreach { testSuite =>
-      json = json.append(jsTestSuite(testSuite, withDocumentation = false))
+      json = json.append(jsTestSuite(testSuite, withDocumentation = false, withSpecReference = false))
     }
     json
   }
@@ -1082,7 +1087,7 @@ object JsonUtil {
     testCaseActions.foreach { action =>
       testCaseMap.put(action.identifier, action)
     }
-    (TestSuiteDeployRequest(specification, ignoreWarnings, replaceTestHistory, updateSpecification, testCaseMap.toMap, sharedTestSuite), testSuite)
+    (TestSuiteDeployRequest(specification, ignoreWarnings, replaceTestHistory, updateSpecification, testCaseMap, sharedTestSuite), testSuite)
   }
 
   def parseJsTestSuiteUndeployRequest(jsonConfig: JsValue, sharedTestSuite: Boolean): TestSuiteUndeployRequest = {
@@ -1515,7 +1520,7 @@ object JsonUtil {
    * @param testCase TestCase object to be converted
    * @return JsObject
    */
-  def jsTestCases(testCase:TestCases, withDocumentation: Boolean, withTags: Boolean) : JsObject = {
+  def jsTestCases(testCase:TestCases, withDocumentation: Boolean, withTags: Boolean, withSpecReference: Boolean) : JsObject = {
     var json = Json.obj(
       "id"      -> testCase.id,
       "identifier"    -> testCase.identifier,
@@ -1535,6 +1540,11 @@ object JsonUtil {
     )
     if (withDocumentation && testCase.documentation.isDefined) json = json + ("documentation" -> JsString(testCase.documentation.get))
     if (withTags && testCase.tags.isDefined) json = json + ("tags" -> JsString(testCase.tags.get))
+    if (withSpecReference) {
+      if (testCase.specReference.isDefined) json = json + ("specReference" -> JsString(testCase.specReference.get))
+      if (testCase.specDescription.isDefined) json = json + ("specDescription" -> JsString(testCase.specDescription.get))
+      if (testCase.specLink.isDefined) json = json + ("specLink" -> JsString(testCase.specLink.get))
+    }
     json
   }
 
@@ -1572,7 +1582,7 @@ object JsonUtil {
   def jsTestCasesList(list:List[TestCases]):JsArray = {
     var json = Json.arr()
     list.foreach{ testCase =>
-      json = json.append(jsTestCases(testCase, withDocumentation = false, withTags = false))
+      json = json.append(jsTestCases(testCase, withDocumentation = false, withTags = false, withSpecReference = false))
     }
     json
   }
@@ -2399,7 +2409,10 @@ object JsonUtil {
         "optional" -> testCase.optional,
         "disabled" -> testCase.disabled,
         "result" -> testCase.result.value(),
-        "tags" -> (if (testCase.tags.isDefined) testCase.tags.get else JsNull)
+        "tags" -> (if (testCase.tags.isDefined) testCase.tags.get else JsNull),
+        "specReference" -> (if (testCase.specReference.isDefined) testCase.specReference.get else JsNull),
+        "specDescription" -> (if (testCase.specDescription.isDefined) testCase.specDescription.get else JsNull),
+        "specLink" -> (if (testCase.specLink.isDefined) testCase.specLink.get else JsNull)
       ))
     }
     json
@@ -2413,6 +2426,9 @@ object JsonUtil {
         "sname" -> testSuite.name,
         "description" -> (if (testSuite.description.isDefined) testSuite.description.get else JsNull),
         "hasDocumentation" -> testSuite.hasDocumentation,
+        "specReference" -> (if (testSuite.specReference.isDefined) testSuite.specReference.get else JsNull),
+        "specDescription" -> (if (testSuite.specDescription.isDefined) testSuite.specDescription.get else JsNull),
+        "specLink" -> (if (testSuite.specLink.isDefined) testSuite.specLink.get else JsNull),
         "result" -> testSuite.result.value(),
         "testCases" -> jsConformanceTestCases(testSuite.testCases)
       ))

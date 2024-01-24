@@ -18,6 +18,7 @@
             <div class="collapsibleTestCaseDiv">
                 <app-test-case-display 
                     [testCases]="testSuite.testCases"
+                    [testSuiteSpecificationReference]="testSuite"
                     [hasOptional]="testSuite.hasOptionalTestCases"
                     [hasDisabled]="testSuite.hasDisabledTestCases"
                     [showExecute]="showExecute"

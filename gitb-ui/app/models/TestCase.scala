@@ -20,12 +20,16 @@ case class TestCases(
 											identifier: String,
 											isOptional: Boolean,
 											isDisabled: Boolean,
-											tags: Option[String] = None
+											tags: Option[String] = None,
+											specReference: Option[String] = None,
+											specDescription: Option[String] = None,
+											specLink: Option[String] = None
 	                    ) {
 
 	def withPath(path: String): TestCases = {
 		TestCases(this.id, this.shortname, this.fullname, this.version, this.authors, this.originalDate,
-			this.modificationDate, this.description, this.keywords, this.testCaseType, path, this.targetActors, this.targetOptions, this.testSuiteOrder, this.hasDocumentation, this.documentation, this.identifier, this.isOptional, this.isDisabled, this.tags)
+			this.modificationDate, this.description, this.keywords, this.testCaseType, path, this.targetActors, this.targetOptions, this.testSuiteOrder, this.hasDocumentation, this.documentation, this.identifier, this.isOptional, this.isDisabled, this.tags,
+			this.specReference, this.specDescription, this.specLink)
 	}
 
 }
@@ -50,8 +54,11 @@ class TestCase(
 							  _documentation: Option[String],
 								_identifier: String,
 								_isOptional: Boolean,
-								_isDisabled: Boolean
-	              ) {
+								_isDisabled: Boolean,
+								_specReference: Option[String],
+								_specDescription: Option[String],
+								_specLink: Option[String]
+) {
 	var id: Long = _id
 	var shortname: String = _sname
 	var fullname: String = _fname
@@ -71,6 +78,9 @@ class TestCase(
 	var identifier: String = _identifier
 	var isOptional: Boolean = _isOptional
 	var isDisabled: Boolean = _isDisabled
+	var specReference: Option[String] = _specReference
+	var specDescription: Option[String] = _specDescription
+	var specLink: Option[String] = _specLink
 
 	def this(_case: TestCases, targetActors: Option[List[Actors]], targetOptions: Option[List[models.Options]]) = {
 		this(_case.id, _case.shortname, _case.fullname, _case.version,
@@ -78,7 +88,7 @@ class TestCase(
 			_case.originalDate, _case.modificationDate, _case.description,
 			if (_case.keywords.isDefined) Some(_case.keywords.get.split(",").toList) else None,
 			_case.testCaseType, _case.path, targetActors, targetOptions, _case.testSuiteOrder, _case.hasDocumentation, _case.documentation, _case.identifier,
-			_case.isOptional, _case.isDisabled)
+			_case.isOptional, _case.isDisabled, _case.specReference, _case.specDescription, _case.specLink)
 	}
 
 	def this(_case: TestCases) = {

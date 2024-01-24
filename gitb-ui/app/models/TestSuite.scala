@@ -22,22 +22,31 @@ case class TestSuites(
 	hidden: Boolean,
 	shared: Boolean,
 	domain: Long,
-	definitionPath: Option[String]
+	definitionPath: Option[String],
+	specReference: Option[String],
+	specDescription: Option[String],
+	specLink: Option[String]
 ) {
 
 	def withId(id: Long): TestSuites = {
 		TestSuites(id, this.shortname, this.fullname, this.version, this.authors, this.originalDate, this.modificationDate,
-			this.description, this.keywords, this.filename, this.hasDocumentation, this.documentation, this.identifier, this.hidden, this.shared, this.domain, this.definitionPath)
+			this.description, this.keywords, this.filename, this.hasDocumentation, this.documentation, this.identifier, this.hidden, this.shared, this.domain, this.definitionPath,
+			this.specReference, this.specDescription, this.specLink
+		)
 	}
 
 	def withFileName(filename: String): TestSuites = {
 		TestSuites(this.id, this.shortname, this.fullname, this.version, this.authors, this.originalDate, this.modificationDate,
-			this.description, this.keywords, filename, this.hasDocumentation, this.documentation, this.identifier, this.hidden, this.shared, this.domain, this.definitionPath)
+			this.description, this.keywords, filename, this.hasDocumentation, this.documentation, this.identifier, this.hidden, this.shared, this.domain, this.definitionPath,
+			this.specReference, this.specDescription, this.specLink
+		)
 	}
 
 	def withDefinitionPath(definitionPath: Option[String]): TestSuites = {
 		TestSuites(this.id, this.shortname, this.fullname, this.version, this.authors, this.originalDate, this.modificationDate,
-			this.description, this.keywords, this.filename, this.hasDocumentation, this.documentation, this.identifier, this.hidden, this.shared, this.domain, definitionPath)
+			this.description, this.keywords, this.filename, this.hasDocumentation, this.documentation, this.identifier, this.hidden, this.shared, this.domain, definitionPath,
+			this.specReference, this.specDescription, this.specLink
+		)
 	}
 }
 
@@ -63,8 +72,11 @@ class TestSuite(
 							 	_domain: Long,
 							  _specifications: Option[List[Long]] = None,
 							  _definitionPath: Option[String],
-							 	_updateApproach: Option[Update]
-							 ) {
+							 	_updateApproach: Option[Update],
+								_specReference: Option[String],
+								_specDescription: Option[String],
+								_specLink: Option[String]
+) {
 	var id: Long = _id
 	var shortname: String = _shortname
 	var fullname: String = _fullname
@@ -87,6 +99,9 @@ class TestSuite(
 	var specifications: Option[List[Long]] = _specifications
 	var definitionPath: Option[String] = _definitionPath
 	var updateApproach: Option[Update] = _updateApproach
+	var specReference: Option[String] = _specReference
+	var specDescription: Option[String] = _specDescription
+	var specLink: Option[String] = _specLink
 
 	def this(testSuite: TestSuites, actors: Option[List[Actor]], testCases: Option[List[TestCases]]) = {
 		this(testSuite.id, testSuite.shortname, testSuite.fullname, testSuite.version,
@@ -94,7 +109,7 @@ class TestSuite(
 			testSuite.originalDate,	testSuite.modificationDate, testSuite.description,
 			if(testSuite.keywords.isDefined) Some(testSuite.keywords.get.split(",").toList) else None,
 			actors, testCases, None, testSuite.filename, testSuite.hasDocumentation, testSuite.documentation, testSuite.identifier, testSuite.hidden, testSuite.shared, testSuite.domain, None, testSuite.definitionPath,
-			None
+			None, testSuite.specReference, testSuite.specDescription, testSuite.specLink
 		)
 	}
 
@@ -112,7 +127,8 @@ class TestSuite(
 			if(this.authors.isDefined) Some(this.authors.get.mkString(",")) else None,
 			this.originalDate, this.modificationDate, this.description,
 			if(this.keywords.isDefined) Some(this.keywords.get.mkString(",")) else None,
-			this.filename, this.hasDocumentation, this.documentation, this.identifier, this.hidden, this.shared, this.domain, this.definitionPath
+			this.filename, this.hasDocumentation, this.documentation, this.identifier, this.hidden, this.shared, this.domain, this.definitionPath,
+			this.specReference, this.specDescription, this.specLink
 		)
 	}
 }

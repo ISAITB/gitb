@@ -60,7 +60,8 @@
             </div>
 					</div>
 				</div>
-                <app-form-section sectionTitle="Documentation">
+				<app-specification-reference-form [reference]="testCase"></app-specification-reference-form>
+                <app-form-section sectionTitle="Documentation" [marginBefore]="true">
 					<div class="row mb-3 mt-3">
 						<div class="offset-1 col-10">
 							<div class="mb-3" *ngIf="dataService.isCommunityAdmin">
