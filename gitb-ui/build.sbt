@@ -33,7 +33,7 @@ libraryDependencies ++= Seq(
   "com.gitb" % "gitb-reports" % "1.0-SNAPSHOT",
   "com.gitb" % "gitb-validator-tdl" % "1.0-SNAPSHOT",
   "com.gitb" % "gitb-xml-resources" % "1.0-SNAPSHOT",
-  "com.mysql" % "mysql-connector-j" % "8.2.0" exclude("com.google.protobuf", "protobuf-java"), // Exclude protobuf as we don't need the X DevAPI.
+  "com.mysql" % "mysql-connector-j" % "8.3.0" exclude("com.google.protobuf", "protobuf-java"), // Exclude protobuf as we don't need the X DevAPI.
   // Setting the Jetty version explicitly to v11.0.18 to resolve CVE-2023-44487. Once
   // org.apache.cxf:cxf-rt-transports-http-jetty is updated to a non-vulnerable version of Jetty this block can be removed. START ...
   "org.eclipse.jetty" % "jetty-http" % jettyVersion,
@@ -65,17 +65,17 @@ libraryDependencies ++= Seq(
   "org.apache.cxf" % "cxf-rt-transports-http-jetty" % cxfVersion,
   // ---
   "org.apache.tika" % "tika-core" % "2.9.1",
-  "org.webjars" %% "webjars-play" % "2.9.0",
+  "org.webjars" %% "webjars-play" % "3.0.1",
   "org.webjars" % "jquery" % "3.7.1",
   "org.webjars" % "bootstrap" % "5.3.2",
   "com.sun.mail" % "jakarta.mail" % "2.0.1",
   "jakarta.activation" % "jakarta.activation-api" % "2.1.2",
-  "jakarta.xml.ws" % "jakarta.xml.ws-api" % "4.0.0",
+  "jakarta.xml.ws" % "jakarta.xml.ws-api" % "4.0.1",
   "jakarta.jws" % "jakarta.jws-api" % "3.0.0",
-  "jakarta.xml.bind" % "jakarta.xml.bind-api" % "4.0.0",
-  "com.sun.xml.bind" % "jaxb-impl" % "4.0.2",
-  "jakarta.xml.soap" % "jakarta.xml.soap-api" % "3.0.0",
-  "com.sun.xml.messaging.saaj" % "saaj-impl" % "3.0.2",
+  "jakarta.xml.bind" % "jakarta.xml.bind-api" % "4.0.1",
+  "com.sun.xml.bind" % "jaxb-impl" % "4.0.4",
+  "jakarta.xml.soap" % "jakarta.xml.soap-api" % "3.0.1",
+  "com.sun.xml.messaging.saaj" % "saaj-impl" % "3.0.3",
   "com.sun.org.apache.xml.internal" % "resolver" % "20050927",
   "com.sun.xml.stream.buffer" % "streambuffer" % "2.1.0",
   "com.sun.xml.ws" % "policy" % "4.0.1",
@@ -85,7 +85,7 @@ libraryDependencies ++= Seq(
   "org.apache.pdfbox" % "pdfbox" % "2.0.30",
   "org.jasypt" % "jasypt" % "1.9.3",
   "org.apache.httpcomponents" % "httpclient" % "4.5.14",
-  "org.flywaydb" %% "flyway-play" % "8.0.1",
+  "org.flywaydb" %% "flyway-play" % "9.0.0",
   "org.flywaydb" % "flyway-mysql" % "9.16.0",
   "com.googlecode.owasp-java-html-sanitizer" % "owasp-java-html-sanitizer" % "20220608.1",
   "net.lingala.zip4j" % "zip4j" % "2.11.5",
