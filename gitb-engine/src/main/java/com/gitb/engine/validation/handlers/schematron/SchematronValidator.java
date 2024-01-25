@@ -69,7 +69,7 @@ public class SchematronValidator extends AbstractValidator {
         try {
             inputDocument = XMLUtils.readXMLWithLineNumbers(new ByteArrayInputStream(xml.serializeByDefaultEncoding()));
         } catch (Exception e) {
-            throw new GITBEngineInternalError("Unable to read input as XML document.");
+            throw new GITBEngineInternalError("Unable to read input as XML document.", e);
         }
         Document resultDocument;
         try {
