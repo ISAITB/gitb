@@ -11,12 +11,6 @@
             .party-metadata {
                 margin-top:20px;
             }
-            .column.left {
-                width: 39%;
-            }
-            .column.right {
-                width: 60%;
-            }
             .log-content {
                 font-family: "FreeMono";
                 font-size: 12px;
@@ -99,6 +93,23 @@
                         </div>
                     </div>
                 </div>
+
+                <#if specReference?? || specDescription?? || specLink??>
+                    <div class="separator"></div>
+                    <div class="spec-info">
+                        <div class="columns">
+                            <div class="column single">
+                                <table>
+                                    <tr>
+                                        <td class="cell-label">Reference:</td>
+                                        <td class="cell-value"><@common.specificationInfo specReference specDescription specLink/>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </#if>
+
                 <div class="separator"></div>
                 <div class="session-result">
                     <div class="columns">
@@ -144,8 +155,7 @@
                             <td class="cell-value">
                                 <div class="value-inline">
                                     <#if documentation??><a class="page-link" href="#annex-documentation">Test case documentation</a></#if>
-                                    <#if documentation?? && logMessages??> | </#if>
-                                    <#if logMessages??><a class="page-link" href="#annex-log">Test session log</a></#if>
+                                    <#if documentation?? && logMessages??><span class="inline-text-separator">|</span></#if><#if logMessages??><a class="page-link" href="#annex-log">Test session log</a></#if>
                                 </div>
                             </td>
                         </tr>

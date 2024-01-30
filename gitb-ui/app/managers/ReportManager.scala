@@ -625,6 +625,9 @@ class ReportManager @Inject() (domainParameterManager: DomainParameterManager, r
         } else {
           testCaseOverview.setTestDescription("-")
         }
+        testCaseOverview.setSpecReference(info.testCaseSpecReference.orNull)
+        testCaseOverview.setSpecDescription(info.testCaseSpecDescription.orNull)
+        testCaseOverview.setSpecLink(info.testCaseSpecLink.orNull)
         testCaseOverview.setReportResult(info.result)
         testCaseOverview.setOutputMessage(info.outputMessage.orNull)
         testCaseOverview.setOptional(info.testCaseOptional.get)
@@ -671,6 +674,9 @@ class ReportManager @Inject() (domainParameterManager: DomainParameterManager, r
           val testSuite = new TestSuiteOverview
           testSuite.setTestSuiteName(info.testSuiteName.get)
           testSuite.setTestSuiteDescription(info.testSuiteDescription.orNull)
+          testSuite.setSpecReference(info.testSuiteSpecReference.orNull)
+          testSuite.setSpecDescription(info.testSuiteSpecDescription.orNull)
+          testSuite.setSpecLink(info.testSuiteSpecLink.orNull)
           testSuite.setOverallStatus("UNDEFINED")
           testSuite.setTestCases(new util.ArrayList[TestCaseOverview]())
           (testSuite, new Counters(0, 0, 0))

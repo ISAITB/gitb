@@ -31,8 +31,35 @@ public class TestCaseOverview {
     private boolean optional;
     private boolean disabled;
     private List<Tag> tags;
+    private String specReference;
+    private String specDescription;
+    private String specLink;
 
     private List<Report> steps = new ArrayList<>();
+
+    public String getSpecReference() {
+        return specReference;
+    }
+
+    public void setSpecReference(String specReference) {
+        this.specReference = specReference;
+    }
+
+    public String getSpecDescription() {
+        return specDescription;
+    }
+
+    public void setSpecDescription(String specDescription) {
+        this.specDescription = specDescription;
+    }
+
+    public String getSpecLink() {
+        return specLink;
+    }
+
+    public void setSpecLink(String specLink) {
+        this.specLink = specLink;
+    }
 
     public String getOutputMessage() {
         return outputMessage;

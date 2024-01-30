@@ -174,6 +174,9 @@ class TestCaseReportProducer @Inject() (reportHelper: ReportHelper, testResultMa
           overview.setLogMessages(logContents.get.asJava)
         }
       }
+      overview.setSpecReference(testCase.get.specReference.orNull)
+      overview.setSpecDescription(testCase.get.specDescription.orNull)
+      overview.setSpecLink(testCase.get.specLink.orNull)
     } else {
       // This is a deleted test case - get data as possible from TestResult
       overview.setTestDescription("-")

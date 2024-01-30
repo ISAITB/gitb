@@ -477,6 +477,9 @@ public class ReportGenerator {
             parameters.put("endTime", testCaseOverview.getEndTime());
             parameters.put("testName", testCaseOverview.getTestName());
             parameters.put("testDescription", testCaseOverview.getTestDescription());
+            parameters.put("specReference", testCaseOverview.getSpecReference());
+            parameters.put("specDescription", testCaseOverview.getSpecDescription());
+            parameters.put("specLink", testCaseOverview.getSpecLink());
             if (specs.isIncludeTestSteps()) {
                 parameters.put("steps", testCaseOverview.getSteps());
             }

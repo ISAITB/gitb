@@ -50,6 +50,9 @@ public class ReportGeneratorTest {
         data.setOverallStatus("SUCCESS");
         data.setTestSuiteName(name);
         data.setTestSuiteDescription(description);
+        data.setSpecReference("Chapter 1.1");
+        data.setSpecDescription("Specification reference with further details online.");
+        data.setSpecLink("https://joinup.ec.europa.eu/");
         data.setTestCases(List.of(
                 getTestCaseOverview("Test Case Report #1", specs),
                 getTestCaseOverview("Test Case Report #2", specs, true, false, List.of(new TestCaseOverview.Tag("security", "Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. Test case relevant to security issues. ", "#FFFFFF", "#ff3c33"), new TestCaseOverview.Tag("performance", "Test case relevant to performance issues.", "#FFFFFF", "#000000"))),
@@ -86,7 +89,11 @@ public class ReportGeneratorTest {
 //        data.setTestName("Test case 1 Test case 1 Test case 1 Test case 1 Test case 1 Test case 1 Test case 1 Test case 1 Test case 1 Test case 1 Test case 1 Test case 1 Test case 1 Test case 1 Test case 1 Test case 1 Test case 1 Test case 1 Test case 1 Test case 1 Test case 1 ");
         data.setTestDescription("Description for test case 1");
 //        data.setTestDescription("");
-//        data.setTestDescription("Description for test case 1. Description for test case 1. Description for test case 1. Description for test case 1. Description for test case 1. Description for test case 1. Description for test case 1. Description for test case 1. Description for test case 1. ");
+        data.setTestDescription("Description for test case 1. Description for test case 1. Description for test case 1. Description for test case 1. Description for test case 1. Description for test case 1. Description for test case 1. Description for test case 1. Description for test case 1. ");
+        data.setSpecReference("Chapter 1.1");
+//        data.setSpecDescription("Specification reference with further details online.");
+        data.setSpecDescription("Specification reference with further details online. Specification reference with further details online. Specification reference with further details online. Specification reference with further details online. Specification reference with further details online. Specification reference with further details online.");
+        data.setSpecLink("https://joinup.ec.europa.eu/");
         data.setReportResult(TestResultType.SUCCESS.value());
         data.setStartTime("06/04/2023 10:21:43");
         data.setEndTime("06/04/2023 10:21:44");
@@ -229,7 +236,7 @@ public class ReportGeneratorTest {
         data.setIncludeDetails(true);
         data.setIncludeMessage(true);
         data.setIncludeTestStatus(true);
-        data.setIncludeTestCases(false);
+        data.setIncludeTestCases(true);
         data.setMessage("<strong>This is the result.</strong>");
 
         data.setOverallStatus("SUCCESS");

@@ -6,12 +6,6 @@
 	        <@commonStyles.basic includePageNumbers/>
 	        <@commonStyles.testResult />
 	        <@commonStyles.testCoverage />
-            .column.left {
-                width: 39%;
-            }
-            .column.right {
-                width: 60%;
-            }
             .test-suite-container {
                 border: 1px solid #000000;
                 margin-top: 10px;
@@ -19,19 +13,27 @@
                 padding: 10px;
                 background: #ffffff;
             }
+            .test-suite-spec-info {
+                margin-top: 10px;
+            }
+            .test-suite-test-case-spec-info {
+                padding-top: 5px;
+                border-top: 1px solid #c4c4c4;
+                margin-left: 5px;
+            }
             .test-suite-content {
                 margin-top: 10px;
             }
             .test-suite-header {
                 display: block;
             }
-            .test-case-container.disabled .test-case-first-line .test-case-name > a {
+            .test-case-container.disabled .test-case-first-line .test-case-name > a,
+            .test-case-container.disabled .spec-reference-container a {
                 color: #847ef0;
             }
-            .test-case-container.disabled .test-case-first-line .test-case-name {
-                color: #B4B4B4;
-            }
-            .test-case-container.disabled .test-case-description {
+            .test-case-container.disabled .test-case-first-line .test-case-name,
+            .test-case-container.disabled .test-case-description,
+            .test-case-container.disabled .spec-reference-container {
                 color: #B4B4B4;
             }
             .test-case-prescription-level {
@@ -284,9 +286,17 @@
                                         <#if testCase.testDescription?? && testCase.testDescription != "">
                                             <div class="test-case-description"><div>${escape(testCase.testDescription)}</div></div>
                                         </#if>
+                                        <#if testCase.specReference?? || testCase.specDescription?? || testCase.specLink??>
+                                            <div class="test-suite-test-case-spec-info"><div class="spec-reference-container"><@common.specificationInfo testCase.specReference testCase.specDescription testCase.specLink/></div></div>
+                                        </#if>
                                     </div>
                                 </#list>
                             </div>
+                            <#if testSuite.specReference?? || testSuite.specDescription?? || testSuite.specLink??>
+                                <div class="test-suite-spec-info">
+                                    <@common.specificationInfo testSuite.specReference testSuite.specDescription testSuite.specLink/>
+                                </div>
+                            </#if>
                         </div>
                     </#list>
                     <#if hasOptionalTests || hasDisabledTests || distinctTags??>
@@ -364,12 +374,29 @@
                                             </div>
                                         </div>
                                         <#if testCase.testDescription??>
-                                            <table>
-                                                <tr>
-                                                    <td class="cell-label">Description:</td>
-                                                    <td class="cell-value">${escape(testCase.testDescription)}</td>
-                                                </tr>
-                                            </table>
+                                           <div class="columns">
+                                               <div class="column single">
+                                                    <table>
+                                                        <tr>
+                                                            <td class="cell-label">Description:</td>
+                                                            <td class="cell-value">${escape(testCase.testDescription)}</td>
+                                                        </tr>
+                                                    </table>
+                                               </div>
+                                           </div>
+                                        </#if>
+                                        <#if testCase.specReference?? || testCase.specDescription?? || testCase.specLink??>
+                                            <div class="separator"></div>
+                                            <div class="columns">
+                                                <div class="column single">
+                                                    <table>
+                                                        <tr>
+                                                            <td class="cell-label">Reference:</td>
+                                                            <td class="cell-value"><@common.specificationInfo testCase.specReference testCase.specDescription testCase.specLink/>
+                                                        </tr>
+                                                    </table>
+                                                </div>
+                                            </div>
                                         </#if>
                                         <div class="separator"></div>
                                         <div class="session-result">

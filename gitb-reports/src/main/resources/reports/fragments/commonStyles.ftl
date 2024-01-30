@@ -84,6 +84,15 @@
         display: inline-block;
         vertical-align: top;
     }
+    .column.single {
+        width: 99%;
+    }
+    .column.left {
+        width: 39%;
+    }
+    .column.right {
+        width: 60%;
+    }
     .value {
         display: inline-block;
         vertical-align: top;
@@ -178,6 +187,10 @@
     }
     .border-info {
         border: 1px solid #bddded;
+    }
+    .inline-text-separator {
+        margin-left: 10px;
+        margin-right: 10px;
     }
 </#macro>
 <#macro testResult>

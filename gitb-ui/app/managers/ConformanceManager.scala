@@ -440,7 +440,7 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils, systemManag
 					(x._1._1._1._1._1._1._1._1._1.result, x._1._1._1._1._1._1._1._1._1.testsession, x._1._1._1._1._1._1._1._1._1.updateTime, x._1._1._1._1._1._1._1._1._1.outputMessage), // 7.1: Result, 7.2: Session ID, 7.3: Update time, 7.4: Output message
 					(x._1._1._1._1._1._1._1._2.map(_.shortname), x._1._1._1._1._1._1._1._2.map(_.fullname)), // 8.1: Specification group shortname, 8.2: Specification group fullname,
 					(x._2.id, x._2.shortname, x._2.description, x._2.isOptional, x._2.isDisabled, x._2.tags, x._2.testSuiteOrder, x._2.specReference, x._2.specDescription, x._2.specLink), // 9.1: Test case ID, 9.2: Test case shortname, 9.3: Test case description, 9.4: Test case optional, 9.5: Test case disabled, 9.6: Test case tags, 9.7: Test case order
-					(x._1._2.id, x._1._2.shortname, x._1._2.description, x._1._2.specReference, x._1._2.specDescription, x._1._2.specLink) // 10.1: Test suite ID, 10.2: Test suite shortname, 10.3: Test suite description
+					(x._1._2.id, x._1._2.shortname, x._1._2.description, x._1._2.specReference, x._1._2.specDescription, x._1._2.specLink) // 10.1: Test suite ID, 10.2: Test suite shortname, 10.3: Test suite description, 10.4: Test suite spec reference, 10.5: Test suite spec description, 10.6: Test suite spec link
 				))
 		}
 		val sortColumnToApply = sortColumn.getOrElse("community")
@@ -484,7 +484,7 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils, systemManag
 				actorId = result._5._1, actorName = result._5._2, actorFull = result._5._3, actorApiKey = result._5._4,
 				specificationId = result._6._1, specificationName = specName, specificationNameFull = specNameFull,
 				specificationGroupName = result._8._1, specificationGroupNameFull = result._8._1, specificationGroupOptionName = result._6._2, specificationGroupOptionNameFull = result._6._3,
-				testSuiteId = Some(result._10._1), testSuiteName = Some(result._10._2), testSuiteDescription = result._10._3, testSuiteSpecReference = result._10._4, testSuiteSpecDescription = result._10._4, testSuiteSpecLink = result._10._4,
+				testSuiteId = Some(result._10._1), testSuiteName = Some(result._10._2), testSuiteDescription = result._10._3, testSuiteSpecReference = result._10._4, testSuiteSpecDescription = result._10._5, testSuiteSpecLink = result._10._6,
 				testCaseId = Some(result._9._1), testCaseName = Some(result._9._2), testCaseDescription = result._9._3,
 				testCaseOptional = Some(result._9._4), testCaseDisabled = Some(result._9._5), testCaseTags = result._9._6, testCaseOrder = Some(result._9._7), testCaseSpecReference = result._9._8, testCaseSpecDescription = result._9._9, testCaseSpecLink = result._9._10,
 				result = result._7._1, outputMessage = result._7._4, sessionId = result._7._2, updateTime = result._7._3,
