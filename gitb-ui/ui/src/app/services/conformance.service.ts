@@ -31,6 +31,7 @@ import { HtmlService } from './html.service';
 import { HttpResponse } from '@angular/common/http';
 import { ConformanceStatementItem } from '../types/conformance-statement-item';
 import { ConformanceStatementWithResults } from '../types/conformance-statement-with-results';
+import { ConformanceSnapshotList } from '../types/conformance-snapshot-list';
 
 @Injectable({
   providedIn: 'root'
@@ -399,13 +400,17 @@ export class ConformanceService {
     })
   }
 
-  exportOwnConformanceCertificateReport(actorId: number, systemId: number) {
+  exportOwnConformanceCertificateReport(actorId: number, systemId: number, snapshotId?: number) {
+    let data: any = {
+      actor_id: actorId,
+      system_id: systemId
+    }
+    if (snapshotId != undefined) {
+      data.snapshot = snapshotId
+    }
     return this.restService.post<ArrayBuffer>({
       path: ROUTES.controllers.RepositoryService.exportOwnConformanceCertificateReport().url,
-      data: {
-        actor_id: actorId,
-        system_id: systemId
-      },
+      data: data,
       authenticate: true,
       arrayBuffer: true
     })
@@ -918,34 +923,67 @@ export class ConformanceService {
     })
   }
 
-  createConformanceSnapshot(communityId: number, label: string) {
+  createConformanceSnapshot(communityId: number, label: string, publicLabel: string|undefined, isPublic: boolean) {
+    const data: any = {
+      label: label,
+      public: isPublic,
+      community_id: communityId
+    }
+    if (publicLabel != undefined) {
+      data.publicLabel = publicLabel
+    }
     return this.restService.post<void>({
       path: ROUTES.controllers.ConformanceService.createConformanceSnapshot().url,
       authenticate: true,
-      data: {
-        community_id: communityId,
-        label: label
-      }
+      data: data
     })
   }
 
   getConformanceSnapshots(communityId: number) {
-    return this.restService.get<ConformanceSnapshot[]>({
+    return this.restService.get<ConformanceSnapshotList>({
       path: ROUTES.controllers.ConformanceService.getConformanceSnapshots().url,
       authenticate: true,
       params: {
-        community_id: communityId
+        community_id: communityId,
+        public: !this.dataService.isSystemAdmin && !this.dataService.isCommunityAdmin
       }
     })
   }
 
-  editConformanceSnapshot(snapshotId: number, label: string) {
+  getConformanceSnapshot(snapshotId: number) {
+    return this.restService.get<ConformanceSnapshot>({
+      path: ROUTES.controllers.ConformanceService.getConformanceSnapshot(snapshotId).url,
+      authenticate: true,
+      params: {
+        public: !this.dataService.isSystemAdmin && !this.dataService.isCommunityAdmin
+      }
+    })
+  }
+
+  setLatestConformanceStatusLabel(communityId: number, label: string|undefined) {
+    const data: any = {}
+    if (label != undefined) {
+      data.label = label
+    }
+    return this.restService.post<void>({
+      path: ROUTES.controllers.ConformanceService.setLatestConformanceStatusLabel(communityId).url,
+      authenticate: true,
+      data: data
+    })
+  }
+
+  editConformanceSnapshot(snapshotId: number, label: string, publicLabel: string|undefined, isPublic: boolean) {
+    const data: any = {
+      label: label,
+      public: isPublic
+    }
+    if (publicLabel != undefined) {
+      data.publicLabel = publicLabel
+    }
     return this.restService.post<void>({
       path: ROUTES.controllers.ConformanceService.editConformanceSnapshot(snapshotId).url,
       authenticate: true,
-      data: {
-        label: label
-      }
+      data: data
     })
   }
 
@@ -1002,17 +1040,31 @@ export class ConformanceService {
     })
   }
 
-  getConformanceStatementsForSystem(system: number) {
+  getConformanceStatementsForSystem(system: number, snapshotId?: number) {
+    let params: any = undefined
+    if (snapshotId != undefined) {
+      params = {
+        snapshot: snapshotId
+      }
+    }
     return this.restService.get<ConformanceStatementItem[]>({
       path: ROUTES.controllers.ConformanceService.getConformanceStatementsForSystem(system).url,
-      authenticate: true
+      authenticate: true,
+      params: params
     })
   }
 
-  getConformanceStatement(system: number, actor: number) {
+  getConformanceStatement(system: number, actor: number, snapshotId?: number) {
+    let params: any = undefined
+    if (snapshotId != undefined) {
+      params = {
+        snapshot: snapshotId
+      }
+    }    
     return this.restService.get<ConformanceStatementWithResults>({
       path: ROUTES.controllers.ConformanceService.getConformanceStatement(system, actor).url,
-      authenticate: true
+      authenticate: true,
+      params: params
     })
   }
 

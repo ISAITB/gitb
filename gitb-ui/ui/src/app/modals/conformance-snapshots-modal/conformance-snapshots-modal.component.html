@@ -2,20 +2,56 @@
     <div class="modal-title">Conformance snapshots</div>
 </div>
 <form>
-    <div class="modal-body" [ngSwitch]="editMode">
-        <div class="row" *ngSwitchCase="true">
-            <label class="col-3 col-form-label text-end" for="label">Snapshot label:</label>
-            <div class="col-8">
-                <input id="label" name="label" [(ngModel)]="snapshotToEdit!.label" class="form-control" type="text">
+    <div class="modal-body">
+        @if (editMode && snapshotToEdit != undefined) {
+            <div class="row">
+                <label class="col-3 col-form-label text-end" for="label">Label:</label>
+                <div class="col-8">
+                    <input id="label" name="label" [(ngModel)]="snapshotToEdit.label" class="form-control" type="text" [readonly]="snapshotToEdit.latest">
+                </div>
+                <div app-tooltip class="col-auto" [tbTooltip]="snapshotToEdit.latest?'The label used to distinguish and refer to the latest conformance status.':'The label used to distinguish and refer to the snapshot.'"></div>
             </div>
-            <div app-tooltip class="col-auto" tbTooltip="A label to help in distinguishing and referring to the snapshot."></div>
-        </div>
-        <ng-container *ngSwitchDefault>
+            <div class="row mt-3">
+                @if (!snapshotToEdit.latest) {
+                    <div class="offset-3 col-auto">
+                        <div class="form-check">
+                            <input class="form-check-input" id="hidden" name="hidden" [(ngModel)]="snapshotToEdit.hidden" type="checkbox" appTrueFalseValue [trueValue]="false" [falseValue]="true">
+                            <label class="form-check-label" for="hidden">Visible to users?
+                                <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="Conformance snapshots are by default only visible to community administrators. Check this to also make this snapshot visible to community users."></div>
+                            </label>
+                        </div>
+                    </div>
+                }
+                @if (!snapshotToEdit.hidden) {
+                    <div class="col-auto" [class.offset-3]="snapshotToEdit.latest">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="sameLabel" name="sameLabel" [(ngModel)]="snapshotToEdit.sameLabel">
+                            <label class="form-check-label" for="sameLabel">Same label for users?
+                                <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" [tbTooltip]="snapshotToEdit.latest?'You can use the same label to present the latest conformance status to community users or specify a different one.':'You can use the same label to present this snapshot to community users or specify a different one.'"></div>
+                            </label>
+                        </div>
+                    </div>                                        
+                }
+            </div>
+            <div [collapse]="snapshotToEdit.hidden === true || snapshotToEdit.sameLabel === true" [isAnimated]="true">
+                <div class="row mt-3">
+                    <label class="col-3 col-form-label text-end" for="publicLabel">Public label:</label>
+                    <div class="col-8">
+                        <input id="publicLabel" name="publicLabel" [(ngModel)]="snapshotToEdit.publicLabel" class="form-control" type="text">
+                    </div>
+                    <div app-tooltip class="col-auto" [tbTooltip]="snapshotToEdit.latest?'The alternate label of the latest conformance testing status used to present it to the community users.':'The alternate label of the snapshot used to present it to the community users.'"></div>
+                </div>
+            </div>
+        } @else {
             <div class="alert alert-info rounded">
                 <span>Select the snapshot to view in the conformance dashboard.</span>
             </div>
             <div class="searchControls">
                 <app-text-filter name="organisationFilter" [width]="300" [placeholder]="'Search snapshots...'" [(ngModel)]="snapshotFilter" (apply)="applySnapshotFilter()"></app-text-filter>
+                <div class="form-check form-switch ms-3">
+                    <input class="form-check-input" type="checkbox" role="switch" id="publicView" name="publicView" [(ngModel)]="publicView" (change)="togglePublicView()">
+                    <label class="form-check-label" for="publicView">Show public labels</label>
+                </div>                
             </div>
             <div class="card mb-0">
                 <div table-directive
@@ -25,27 +61,28 @@
                     noDataMessage="No snapshots found"
                     [loadingStatus]="snapshotsStatus"
                     actionIcon="fa-solid fa-pencil"
-                    actionTooltip="Edit label"
+                    actionTooltip="Edit"
                     [allowSelect]="true"
                     [actionVisible]="true"
                     [operationsVisible]="true"
+                    [deleteVisibleForRow]="deleteVisibleForSnapshot"
+                    [refreshRows]="refreshSnapshots"
                     (onSelect)="selectSnapshot($event)"
                     (onAction)="editSnapshot($event)"
                     (onDelete)="deleteSnapshot($event)"
                 ></div>
             </div>
-        </ng-container>
+        }
     </div>
     <div class="modal-footer">
-        <div class="btn-toolbar" [ngSwitch]="editMode">
-            <ng-container *ngSwitchCase="true">
+        <div class="btn-toolbar">
+            @if (editMode) {
                 <button class="btn btn-secondary" type="button" (click)="cancel()">Cancel</button>
                 <button type="submit" class="btn btn-secondary" [disable]="saveDisabled()" [pending]="savePending" (click)="saveSnapshot()">Save</button>
-            </ng-container>
-            <ng-container *ngSwitchDefault>
+            } @else {
                 <button class="btn btn-secondary" type="button" (click)="close()">Close</button>
                 <button type="button" class="btn btn-secondary" (click)="createSnapshot()">Create snapshot</button>
-            </ng-container>
+            }
         </div>
     </div>
 </form>

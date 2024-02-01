@@ -53,7 +53,8 @@
                 [actionTooltip]="actionTooltip"
                 [deleteTooltip]="deleteTooltip"
                 [exportTooltip]="exportTooltip"
-                [expandableRowProperty]="expandableRowProperty"></tr>
+                [expandableRowProperty]="expandableRowProperty"
+                [refresh]="refreshRows"></tr>
         </tbody>
     </table>
     <div *ngIf="(!prevDisabled || !nextDisabled) && data && data.length > 0" class="text-center table-paging-controls">

@@ -35,8 +35,9 @@ object PersistenceSchema {
     def allowPostTestStatementUpdates = column[Boolean]("allow_post_test_stm_updates")
     def allowAutomationApi = column[Boolean]("allow_automation_api")
     def apiKey = column[String]("api_key")
+    def latestStatusLabel = column[Option[String]]("latest_status_label")
     def domain = column[Option[Long]] ("domain")
-    def * = (id, shortname, fullname, supportEmail, selfRegType, selfRegToken, selfRegTokenHelpText, selfRegNotification, interactionNotification, description, selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties, allowCertificateDownload, allowStatementManagement, allowSystemManagement, allowPostTestOrganisationUpdates, allowPostTestSystemUpdates, allowPostTestStatementUpdates, allowAutomationApi, apiKey, domain) <> (Communities.tupled, Communities.unapply)
+    def * = (id :: shortname :: fullname :: supportEmail :: selfRegType :: selfRegToken :: selfRegTokenHelpText :: selfRegNotification :: interactionNotification :: description :: selfRegRestriction :: selfRegForceTemplateSelection :: selfRegForceRequiredProperties :: allowCertificateDownload :: allowStatementManagement :: allowSystemManagement :: allowPostTestOrganisationUpdates :: allowPostTestSystemUpdates :: allowPostTestStatementUpdates :: allowAutomationApi :: apiKey :: latestStatusLabel :: domain :: HNil).mapTo[Communities]
   }
   val communities = TableQuery[CommunitiesTable]
   val insertCommunity = communities returning communities.map(_.id)
@@ -618,10 +619,12 @@ object PersistenceSchema {
   class ConformanceSnapshotsTable(tag: Tag) extends Table[ConformanceSnapshot](tag, "ConformanceSnapshots") {
     def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
     def label = column[String]("label")
+    def publicLabel = column[Option[String]]("public_label")
     def snapshotTime = column[Timestamp]("snapshot_time", O.SqlType("TIMESTAMP"))
     def apiKey = column[String]("api_key")
+    def isPublic = column[Boolean]("is_public")
     def community = column[Long]("community")
-    def * = (id, label, snapshotTime, apiKey, community) <> (ConformanceSnapshot.tupled, ConformanceSnapshot.unapply)
+    def * = (id, label, publicLabel, snapshotTime, apiKey, isPublic, community) <> (ConformanceSnapshot.tupled, ConformanceSnapshot.unapply)
   }
   val conformanceSnapshots = TableQuery[ConformanceSnapshotsTable]
   val insertConformanceSnapshot = conformanceSnapshots returning conformanceSnapshots.map(_.id)

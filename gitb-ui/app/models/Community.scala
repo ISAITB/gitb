@@ -22,6 +22,7 @@ case class Communities(
                         allowPostTestStatementUpdates : Boolean,
                         allowAutomationApi : Boolean,
                         apiKey: String,
+                        latestStatusLabel: Option[String],
                         domain: Option[Long]) {
 
   def withApiKey(apiKey: String): Communities = {
@@ -30,7 +31,7 @@ case class Communities(
       this.selfRegForceTemplateSelection, this.selfRegForceRequiredProperties, this.allowCertificateDownload,
       this.allowStatementManagement, this.allowSystemManagement, this.allowPostTestOrganisationUpdates,
       this.allowPostTestSystemUpdates, this.allowPostTestStatementUpdates, this.allowAutomationApi,
-      apiKey, this.domain)
+      apiKey, this.latestStatusLabel, this.domain)
   }
 
 }
@@ -134,6 +135,7 @@ class Community(
       allowPostTestStatementUpdates,
       allowAutomationApi,
       apiKey,
+      None,
       d
     )
   }

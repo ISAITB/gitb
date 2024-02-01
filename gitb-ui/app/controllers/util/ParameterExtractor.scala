@@ -351,7 +351,7 @@ object ParameterExtractor {
       selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties,
       allowCertificateDownload, allowStatementManagement, allowSystemManagement,
       allowPostTestOrganisationUpdate, allowPostTestSystemUpdate, allowPostTestStatementUpdate, allowAutomationApi,
-      CryptoUtil.generateApiKey(), domainId
+      CryptoUtil.generateApiKey(), None, domainId
     )
   }
 

@@ -2237,21 +2237,39 @@ object JsonUtil {
     json
   }
 
-  def jsConformanceSnapshots(snapshots: Iterable[ConformanceSnapshot]): JsArray = {
+  def jsConformanceSnapshotList(latestLabel: Option[String], snapshots: Iterable[ConformanceSnapshot], public: Boolean): JsObject = {
+    var json = Json.obj(
+      "snapshots" -> jsConformanceSnapshots(snapshots, public)
+    )
+    if (latestLabel.isDefined) {
+      json += ("latest" -> JsString(latestLabel.get))
+    }
+    json
+  }
+
+  private def jsConformanceSnapshots(snapshots: Iterable[ConformanceSnapshot], public: Boolean): JsArray = {
     var array = Json.arr()
     snapshots.foreach { snapshot =>
-      array = array.append(jsConformanceSnapshot(snapshot))
+      array = array.append(jsConformanceSnapshot(snapshot, public))
     }
     array
   }
 
-  def jsConformanceSnapshot(snapshot: ConformanceSnapshot):JsObject = {
-    Json.obj(
+  def jsConformanceSnapshot(snapshot: ConformanceSnapshot, public: Boolean):JsObject = {
+    var json = Json.obj(
       "id" -> snapshot.id,
-      "label" -> snapshot.label,
-      "snapshotTime" -> TimeUtil.serializeTimestamp(snapshot.snapshotTime),
-      "community" -> snapshot.community
+      "snapshotTime" -> TimeUtil.serializeTimestamp(snapshot.snapshotTime)
     )
+    if (public) {
+      json += ("label" -> JsString(snapshot.publicLabel.getOrElse(snapshot.label)))
+    } else {
+      json += ("label" -> JsString(snapshot.label))
+      if (snapshot.publicLabel.isDefined) {
+        json += ("publicLabel" -> JsString(snapshot.publicLabel.get))
+      }
+      json += ("hidden" -> JsBoolean(!snapshot.isPublic))
+    }
+    json
   }
 
   def jsTestSuiteUploadResult(result: TestSuiteUploadResult):JsObject = {

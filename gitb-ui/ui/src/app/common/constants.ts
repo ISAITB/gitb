@@ -22,6 +22,8 @@ export class Constants {
 	public static TESTER_ACTOR_NAME = 'Operator'
 	public static ADMINISTRATOR_ACTOR_NAME = 'Administrator'
 
+	public static LATEST_CONFORMANCE_STATUS_LABEL = 'Latest conformance status'
+
 	public static EMBEDDING_METHOD = {
 		BASE64: 'BASE64',
 		STRING: 'STRING',
@@ -324,6 +326,7 @@ export class Constants {
 		TEST_SUITE_ID: 'ts',
 		COPY: 'copy',
 		COPY_DEFAULT: 'copyDefault',
+		SNAPSHOT_ID: 'snapshot'
 	}
 
 	public static NAVIGATION_PATH_PARAM = {
@@ -342,7 +345,10 @@ export class Constants {
 		LEGAL_NOTICE_ID: 'notice_id',
 		ERROR_TEMPLATE_ID: 'template_id',
 		TRIGGER_ID: 'trigger_id',
-		THEME_ID: 'theme_id'
+		THEME_ID: 'theme_id',
+		SNAPSHOT_ID: 'snapshot_id',
+		SNAPSHOT_LABEL: 'snapshot_label',
+		TAB: 'snapshot_id'
 	}
 
 	public static SYSTEM_CONFIG = {

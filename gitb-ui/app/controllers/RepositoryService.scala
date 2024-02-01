@@ -401,9 +401,10 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
   }
 
   def exportOwnConformanceCertificateReport(): Action[AnyContent] = authorizedAction { request =>
+    val snapshotId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.SNAPSHOT)
     val systemId = ParameterExtractor.requiredBodyParameter(request, Parameters.SYSTEM_ID).toLong
     val actorId = ParameterExtractor.requiredBodyParameter(request, Parameters.ACTOR_ID).toLong
-    authorizationManager.canViewOwnConformanceCertificateReport(request, systemId)
+    authorizationManager.canViewOwnConformanceCertificateReport(request, systemId, snapshotId)
     val communityId = systemManager.getCommunityIdOfSystem(systemId)
     var settingsToUse = communityManager.getConformanceCertificateSettingsWrapper(communityId, defaultIfMissing = true).get
     val completeSettings = new ConformanceCertificate(settingsToUse)
@@ -416,7 +417,7 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
     } else {
       settingsToUse = settingsToUse
     }
-    exportConformanceCertificateInternal(settingsToUse, communityId, systemId, actorId, None)
+    exportConformanceCertificateInternal(settingsToUse, communityId, systemId, actorId, snapshotId)
   }
 
   def exportConformanceCertificateReport(): Action[AnyContent] = authorizedAction { request =>

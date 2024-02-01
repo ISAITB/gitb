@@ -25,14 +25,17 @@ export class ConformanceSnapshotsModalComponent extends BaseComponent implements
   snapshots?: ConformanceSnapshot[]
   visibleSnapshots?: ConformanceSnapshot[]
   snapshotColumns: TableColumnDefinition[] = [
+    { field: 'labelToDisplay', title: 'Label' },
     { field: 'snapshotTime', title: 'Snapshot time', headerClass: 'th-min padding-right-large', order:'desc' },
-    { field: 'label', title: 'Snapshot label' }
+    { field: 'hidden', title: '', atEnd: false, isHiddenFlag: true, headerClass: 'th-min-centered' }
   ]
   snapshotsStatus = {status: Constants.STATUS.NONE}
   snapshotToEdit?: Partial<ConformanceSnapshot>
   savePending = false
   editMode = false
+  publicView = false
   snapshotFilter?: string
+  refreshSnapshots = new EventEmitter<void>()
 
   constructor(
     private modalInstance: BsModalRef,
@@ -53,7 +56,16 @@ export class ConformanceSnapshotsModalComponent extends BaseComponent implements
     this.snapshotsStatus.status = Constants.STATUS.PENDING
     this.conformanceService.getConformanceSnapshots(this.communityId)
     .subscribe((data) => {
-      this.snapshots = data
+      this.snapshots = data.snapshots
+      this.snapshots.unshift({
+        id: -1,
+        label: Constants.LATEST_CONFORMANCE_STATUS_LABEL,
+        publicLabel: data.latest,
+        hidden: false,
+        snapshotTime: '-',
+        latest: true
+      })
+      this.togglePublicView()
       this.visibleSnapshots = this.snapshots
     }).add(() => {
       this.snapshotsStatus.status = Constants.STATUS.FINISHED
@@ -61,18 +73,36 @@ export class ConformanceSnapshotsModalComponent extends BaseComponent implements
   }
 
   selectSnapshot(snapshot: ConformanceSnapshot) {
-    this.select.emit(snapshot)
+    if (snapshot.latest) {
+      this.select.emit()
+    } else {
+      this.select.emit(snapshot)
+    }
     this.close()
   }
 
   editSnapshot(snapshot: Partial<ConformanceSnapshot>) {
-    this.snapshotToEdit = snapshot
+    this.snapshotToEdit = {
+      id: snapshot.id,
+      label: snapshot.label,
+      publicLabel: snapshot.publicLabel,
+      snapshotTime: snapshot.snapshotTime,
+      hidden: snapshot.hidden,
+      sameLabel: snapshot.hidden || snapshot.publicLabel == undefined,
+      latest: snapshot.latest
+    }
     this.editMode = true
-    this.dataService.focus("label")
+    if (!snapshot.latest) {
+      this.dataService.focus("label")
+    } else if (!snapshot.sameLabel) {
+      this.dataService.focus("publicLabel")
+    }
   }
 
   createSnapshot() {
-    this.editSnapshot({})
+    this.editSnapshot({
+      hidden: true
+    })
   }
 
   deleteSnapshot(snapshot: ConformanceSnapshot) {
@@ -93,7 +123,10 @@ export class ConformanceSnapshotsModalComponent extends BaseComponent implements
   }
 
   saveDisabled() {
-    return !this.textProvided(this.snapshotToEdit?.label)
+    return !(
+      this.textProvided(this.snapshotToEdit?.label) &&
+      (this.snapshotToEdit?.hidden || this.snapshotToEdit?.sameLabel || this.textProvided(this.snapshotToEdit?.publicLabel))
+    )
   }
 
   saveSnapshot() {
@@ -102,11 +135,22 @@ export class ConformanceSnapshotsModalComponent extends BaseComponent implements
       let successMessage: string
       if (this.snapshotToEdit?.id != undefined) {
         // Edit case.
-        action = this.conformanceService.editConformanceSnapshot(this.snapshotToEdit!.id!, this.snapshotToEdit!.label!)
-        successMessage = 'Snapshot updated.'
+        if (this.snapshotToEdit.latest) {
+          // Latest status.
+          let labelToSet: string|undefined
+          if (!this.snapshotToEdit.sameLabel) {
+            labelToSet = this.snapshotToEdit.publicLabel
+          }
+          action = this.conformanceService.setLatestConformanceStatusLabel(this.communityId, labelToSet)
+          successMessage = 'Label updated.'
+        } else {
+          // Snapshot.
+          action = this.conformanceService.editConformanceSnapshot(this.snapshotToEdit!.id!, this.snapshotToEdit!.label!, this.snapshotToEdit.publicLabel, !this.snapshotToEdit!.hidden!)
+          successMessage = 'Snapshot updated.'
+        }
       } else {
         // Create case.
-        action = this.conformanceService.createConformanceSnapshot(this.communityId, this.snapshotToEdit!.label!)
+        action = this.conformanceService.createConformanceSnapshot(this.communityId, this.snapshotToEdit!.label!, this.snapshotToEdit!.publicLabel, !this.snapshotToEdit!.hidden!)
         successMessage = 'Snapshot created.'
       }
       this.savePending = true
@@ -139,8 +183,24 @@ export class ConformanceSnapshotsModalComponent extends BaseComponent implements
     } else {
       const filterToApply = this.snapshotFilter.toLowerCase()
       this.visibleSnapshots = filter(this.snapshots, (snapshot) => {
-        return snapshot.label.toLowerCase().includes(filterToApply)
+        return snapshot.label.toLowerCase().includes(filterToApply) || (!snapshot.hidden && snapshot.publicLabel != undefined && snapshot.publicLabel.toLowerCase().includes(filterToApply))
       })
+    }
+  }
+
+  deleteVisibleForSnapshot(snapshot: ConformanceSnapshot) {
+    return !snapshot.latest
+  }
+
+  togglePublicView() {
+    if (this.snapshots) {
+      for (let snapshot of this.snapshots) {
+        snapshot.labelToDisplay = snapshot.label
+        if (this.publicView && !snapshot.hidden && snapshot.publicLabel != undefined) {
+          snapshot.labelToDisplay = snapshot.publicLabel
+        }
+      }
+      this.refreshSnapshots.emit()
     }
   }
 

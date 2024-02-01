@@ -366,9 +366,20 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils, testResultManag
     ).map(x => x.get).toSet
   }
 
-  def getSystemsByOrganization(orgId: Long): List[Systems] = {
-    val systems = exec(getSystemsByOrganizationInternal(orgId))
-    systems
+  def getSystemsByOrganization(orgId: Long, snapshotId: Option[Long]): List[Systems] = {
+    if (snapshotId.isEmpty) {
+      exec(getSystemsByOrganizationInternal(orgId))
+    } else {
+      exec(PersistenceSchema.conformanceSnapshotResults
+        .filter(_.snapshotId === snapshotId.get)
+        .filter(_.organisationId === orgId)
+        .map(x => (x.systemId, x.system, x.systemBadgeKey))
+        .distinct
+        .sortBy(_._2.asc)
+        .result
+      ).map(x => Systems(id = x._1, shortname = x._2, fullname = x._2, description = None, version = None, apiKey = None, badgeKey = x._3, owner = orgId))
+        .toList
+    }
   }
 
   def getSystemsByOrganizationInternal(orgId: Long): DBIO[List[Systems]] = {

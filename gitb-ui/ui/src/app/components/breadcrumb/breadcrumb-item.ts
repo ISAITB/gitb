@@ -2,8 +2,8 @@ import { BreadcrumbType } from "src/app/types/breadcrumb-type"
 
 export interface BreadcrumbItem {
 
-    action: () => any
     type: BreadcrumbType
+    action?: Function
     
     label?: string
     typeId?: number|string

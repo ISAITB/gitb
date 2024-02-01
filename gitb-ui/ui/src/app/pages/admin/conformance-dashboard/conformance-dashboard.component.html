@@ -62,9 +62,9 @@
                                 <div [collapse]="!isExpanded(statement)" [isAnimated]="true">
                                     <div class="collapsing-div">
                                         <div class="statementControls">
-                                            <div class="statementButtons btn-toolbar" *ngIf="showToOrganisation(statement) || showToSystem(statement) || showToStatement(statement) || showToDomain(statement) || showToSpecification(statement) || showToActor(statement)">
+                                            <div class="statementButtons btn-toolbar">
                                                 <!-- View statement -->
-                                                <button *ngIf="showToStatement(statement)" type="button" class="btn btn-secondary" (click)="toStatement(statement)">View statement</button>
+                                                <button type="button" class="btn btn-secondary" (click)="toStatement(statement)">View statement</button>
                                                 <!-- View party -->
                                                 <ng-container [ngSwitch]="showToSystem(statement)">
                                                     <ng-container *ngSwitchCase="true">

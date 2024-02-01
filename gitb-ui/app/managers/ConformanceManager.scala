@@ -2,16 +2,16 @@ package managers
 
 import com.gitb.tr.TestResultType
 import config.Configurations
-import managers.ConformanceManager.{ConformanceResultDbQuery, ConformanceResultFullDbQuery, ConformanceStatementDbQuery, ConformanceStatementTuple, ConformanceStatusDbQuery}
-import models.Enums.ConformanceStatementItemType
+import managers.ConformanceManager._
+import models.Enums.{ConformanceStatementItemType, OrganizationType}
 import models._
 import models.statement.ConformanceStatementResults
 import org.apache.commons.lang3.StringUtils
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
 import slick.lifted.{Query, Rep}
-import utils.{CryptoUtil, RepositoryUtils, TimeUtil}
 import utils.TimeUtil.dateFromFilterString
+import utils.{CryptoUtil, RepositoryUtils, TimeUtil}
 
 import java.io.File
 import java.sql.Timestamp
@@ -87,7 +87,7 @@ object ConformanceManager {
 	private type ConformanceStatementDbTuple = (
 			(Rep[Long], Rep[String], Rep[Option[String]]), // Domain
 			(Rep[Long], Rep[String], Rep[Short], Rep[Option[String]]), // Specification
-			(Rep[Option[Long]], Rep[Option[String]], Rep[Option[Short]], Rep[Option[Option[String]]]), // Specification group
+			(Rep[Option[Long]], Rep[Option[String]], Rep[Option[Short]], Rep[Option[String]]), // Specification group
 			(Rep[Long], Rep[String], Rep[String], Rep[Option[String]]),  // Actor
 			(Rep[String], Rep[Option[Timestamp]]), // Result
 			(Rep[Boolean], Rep[Boolean]) // Test case
@@ -95,7 +95,7 @@ object ConformanceManager {
 	private type ConformanceStatementTuple = (
 			(Long, String, Option[String]), // Domain
 			(Long, String, Short, Option[String]), // Specification
-			(Option[Long], Option[String], Option[Short], Option[Option[String]]), // Specification group
+			(Option[Long], Option[String], Option[Short], Option[String]), // Specification group
 			(Long, String, String, Option[String]), // Actor
 			(String, Option[Timestamp]), // Result
 			(Boolean, Boolean) // Test case
@@ -625,30 +625,65 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils, systemManag
 				systemId, result._5._1, result._5._2,
 				0L, 0L, 0L,
 				0L, 0L, 0L,
-				result._3._1, result._3._2, descriptionOrNone(result._3._4.flatten, withDescriptions),
+				result._3._1, result._3._2, descriptionOrNone(result._3._4, withDescriptions),
 				result._2._3, result._3._3
 			)
 	}
 
-	def getConformanceStatementsForSystem(systemId: Long, actorId: Option[Long] = None, withDescriptions: Boolean = false, withResults: Boolean = true): Iterable[ConformanceStatementItem] = {
-		val results = exec(for {
+	def getSystemInfoFromConformanceSnapshot(systemId: Long, snapshotId: Long): System = {
+		val result = exec(
+			PersistenceSchema.conformanceSnapshotResults
+				.join(PersistenceSchema.conformanceSnapshots).on(_.snapshotId === _.id)
+				.filter(_._1.snapshotId === snapshotId)
+				.filter(_._1.systemId === systemId)
+			.map(x => (
+				(x._1.systemId, x._1.system, x._1.systemBadgeKey),
+				(x._1.organisationId, x._1.organisation, x._2.community))
+			).result
+			.head
+		)
+		new System(result._1._1, result._1._2, result._1._2, None, None, None, result._1._3,
+			Some(Organizations(result._2._1, result._2._2, result._2._2, OrganizationType.Vendor.id.toShort, adminOrganization = false, None, None, None, template = false, None, None, result._2._3)),
+			None
+		)
+	}
+
+	def getConformanceStatementsForSystem(systemId: Long, actorId: Option[Long] = None, snapshotId: Option[Long] = None, withDescriptions: Boolean = false, withResults: Boolean = true): Iterable[ConformanceStatementItem] = {
+		val results =
+			exec(for {
 			statements <- {
-				var query: ConformanceStatementDbQuery = PersistenceSchema.conformanceResults
-					.join(PersistenceSchema.specifications).on(_.spec === _.id)
-					.join(PersistenceSchema.actors).on(_._1.actor === _.id)
-					.join(PersistenceSchema.domains).on(_._1._2.domain === _.id)
-					.join(PersistenceSchema.testCases).on(_._1._1._1.testcase === _.id)
-					.joinLeft(PersistenceSchema.specificationGroups).on(_._1._1._1._2.group === _.id)
-					.filter(_._1._1._1._1._1.sut === systemId)
-					.filterOpt(actorId)((q, id) => q._1._1._1._1._1.actor === id)
-					.map(x => (
-						(x._1._1._2.id, x._1._1._2.fullname, x._1._1._2.description), // 1.1: Domain ID, 1.2: Domain name, 1.3: Description
-						(x._1._1._1._1._2.id, x._1._1._1._1._2.fullname, x._1._1._1._1._2.displayOrder, x._1._1._1._1._2.description), // 2.1: Specification ID, 2.2: Specification name, 2.3: Specification display order, 2.4: Specification description
-						(x._1._1._1._1._2.group, x._2.map(_.fullname), x._2.map(_.displayOrder), x._2.map(_.description)), // 3.1: Specification group ID, 3.2: Specification group name, 3.3: Specification group display order, 3.4: Specification group description
-						(x._1._1._1._2.id, x._1._1._1._2.actorId, x._1._1._1._2.name, x._1._1._1._2.desc), // 4.1: Actor ID, 4.2: Actor identifier, 4.3: Actor name, 4.4: Actor description
-						(x._1._1._1._1._1.result, x._1._1._1._1._1.updateTime), // 5.1: Result, 5.2: Update time
-						(x._1._2.isOptional, x._1._2.isDisabled) // 6.1: Optional test case, 6.2: Disabled test case
-					))
+				var query: ConformanceStatementDbQuery = if (snapshotId.isEmpty) {
+					// Latest status.
+					PersistenceSchema.conformanceResults
+						.join(PersistenceSchema.specifications).on(_.spec === _.id)
+						.join(PersistenceSchema.actors).on(_._1.actor === _.id)
+						.join(PersistenceSchema.domains).on(_._1._2.domain === _.id)
+						.join(PersistenceSchema.testCases).on(_._1._1._1.testcase === _.id)
+						.joinLeft(PersistenceSchema.specificationGroups).on(_._1._1._1._2.group === _.id)
+						.filter(_._1._1._1._1._1.sut === systemId)
+						.filterOpt(actorId)((q, id) => q._1._1._1._1._1.actor === id)
+						.map(x => (
+							(x._1._1._2.id, x._1._1._2.fullname, x._1._1._2.description), // 1.1: Domain ID, 1.2: Domain name, 1.3: Description
+							(x._1._1._1._1._2.id, x._1._1._1._1._2.fullname, x._1._1._1._1._2.displayOrder, x._1._1._1._1._2.description), // 2.1: Specification ID, 2.2: Specification name, 2.3: Specification display order, 2.4: Specification description
+							(x._1._1._1._1._2.group, x._2.map(_.fullname), x._2.map(_.displayOrder), x._2.map(_.description).flatten), // 3.1: Specification group ID, 3.2: Specification group name, 3.3: Specification group display order, 3.4: Specification group description
+							(x._1._1._1._2.id, x._1._1._1._2.actorId, x._1._1._1._2.name, x._1._1._1._2.desc), // 4.1: Actor ID, 4.2: Actor identifier, 4.3: Actor name, 4.4: Actor description
+							(x._1._1._1._1._1.result, x._1._1._1._1._1.updateTime), // 5.1: Result, 5.2: Update time
+							(x._1._2.isOptional, x._1._2.isDisabled) // 6.1: Optional test case, 6.2: Disabled test case
+						))
+				} else {
+					PersistenceSchema.conformanceSnapshotResults
+						.filter(_.snapshotId === snapshotId.get)
+						.filter(_.systemId === systemId)
+						.filterOpt(actorId)((q, id) => q.actorId === id)
+						.map(x => (
+							(x.domainId, x.domain, slick.lifted.Rep.None[String]), // 1.1: Domain ID, 1.2: Domain name, 1.3: Description
+							(x.specificationId, x.specification, x.specificationDisplayOrder, slick.lifted.Rep.None[String]), // 2.1: Specification ID, 2.2: Specification name, 2.3: Specification display order, 2.4: Specification description
+							(x.specificationGroupId, x.specificationGroup, x.specificationGroupDisplayOrder, slick.lifted.Rep.None[String]), // 3.1: Specification group ID, 3.2: Specification group name, 3.3: Specification group display order, 3.4: Specification group description
+							(x.actorId, x.actor, x.actor, slick.lifted.Rep.None[String]), // 4.1: Actor ID, 4.2: Actor identifier, 4.3: Actor name, 4.4: Actor description
+							(x.result, x.updateTime), // 5.1: Result, 5.2: Update time
+							(x.testCaseIsOptional, x.testCaseIsDisabled), // 6.1: Optional test case, 6.2: Disabled test case
+						))
+				}
 				if (!withResults) {
 					query = query.take(1)
 				}
@@ -893,14 +928,14 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils, systemManag
 		parametersToUse.toList
 	}
 
-	def createConformanceSnapshot(communityId: Long, label: String): ConformanceSnapshot = {
+	def createConformanceSnapshot(communityId: Long, label: String, publicLabel: Option[String], isPublic: Boolean): ConformanceSnapshot = {
 		val snapshotTime = TimeUtil.getCurrentTimestamp()
 		val communityResults = getConformanceStatementsFull(None, None, None, None, Some(List(communityId)), None, None, None, None, None, None, None, None, None, None)
 		val apiKey = CryptoUtil.generateApiKey()
 		val onSuccessCalls = mutable.ListBuffer[() => _]()
 		val dbAction = for {
 			// Create snapshot
-			snapshotId <- PersistenceSchema.insertConformanceSnapshot += ConformanceSnapshot(0L, label, snapshotTime, apiKey, communityId)
+			snapshotId <- PersistenceSchema.insertConformanceSnapshot += ConformanceSnapshot(0L, label, publicLabel, snapshotTime, apiKey, isPublic, communityId)
 			// Populate snapshot
 			_ <- {
 				val dbActions = new ListBuffer[DBIO[_]]
@@ -931,12 +966,21 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils, systemManag
 			}
 		} yield snapshotId
 		val snapshotId = exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
-		ConformanceSnapshot(snapshotId, label, snapshotTime, apiKey, communityId)
+		ConformanceSnapshot(snapshotId, label, publicLabel, snapshotTime, apiKey, isPublic, communityId)
 	}
 
-	def getConformanceSnapshots(community: Long): List[ConformanceSnapshot] = {
+	def getLatestConformanceStatusLabel(communityId: Long): Option[String] = {
+		exec(PersistenceSchema.communities.filter(_.id === communityId).map(_.latestStatusLabel).result.head)
+	}
+
+	def setLatestConformanceStatusLabel(communityId: Long, label: Option[String]): Unit = {
+		exec(PersistenceSchema.communities.filter(_.id === communityId).map(_.latestStatusLabel).update(label).transactionally)
+	}
+
+	def getConformanceSnapshots(community: Long, onlyPublic: Boolean): List[ConformanceSnapshot] = {
 		exec(PersistenceSchema.conformanceSnapshots
 			.filter(_.community === community)
+			.filterIf(onlyPublic)(_.isPublic === true)
 			.sortBy(_.snapshotTime.desc)
 			.result).toList
 	}
@@ -948,11 +992,21 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils, systemManag
 			.head)
 	}
 
-	def editConformanceSnapshot(snapshot: Long, label: String): Unit = {
+	def existsInConformanceSnapshot(snapshot: Long, systemId: Long, organisationId: Long): Boolean = {
+		exec(PersistenceSchema
+			.conformanceSnapshotResults
+			.filter(_.snapshotId === snapshot)
+			.filter(_.systemId === systemId)
+			.filter(_.organisationId === organisationId)
+			.exists
+			.result)
+	}
+
+	def editConformanceSnapshot(snapshot: Long, label: String, publicLabel: Option[String], isPublic: Boolean): Unit = {
 		exec(PersistenceSchema.conformanceSnapshots
 			.filter(_.id === snapshot)
-			.map(_.label)
-			.update(label)
+			.map(x => (x.label, x.publicLabel, x.isPublic))
+			.update((label, publicLabel, isPublic))
 			.transactionally)
 	}
 

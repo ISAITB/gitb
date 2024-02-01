@@ -105,37 +105,71 @@ export class RoutingService {
     }
   }
 
-  toOwnConformanceStatement(organisationId: number, systemId: number, actorId: number, tab?: ConformanceStatementTab) {
+  toOwnConformanceStatement(organisationId: number, systemId: number, actorId: number, snapshotId?: number, snapshotLabel?: string, tab?: ConformanceStatementTab) {
     const pathParts = ['organisation', 'conformance', organisationId, 'system', systemId, 'actor', actorId]
-    if (tab != undefined) {
-      return this.navigate(MenuItem.myConformanceStatements, pathParts, { state: { tab: ConformanceStatementTab[tab] } })
-    } else {
-      return this.navigate(MenuItem.myConformanceStatements, pathParts)
+    if (snapshotId != undefined) {
+      pathParts.push('snapshot', snapshotId)
     }
+    return this.navigate(MenuItem.myConformanceStatements, pathParts, this.addConformanceStatementExtras(tab, snapshotLabel))
   }
 
-  toConformanceStatement(organisationId: number, systemId: number, actorId: number, communityId: number, tab?: ConformanceStatementTab) {
+  toConformanceStatement(organisationId: number, systemId: number, actorId: number, communityId: number, snapshotId?: number, snapshotLabel?: string, tab?: ConformanceStatementTab) {
     const pathParts = ['admin', 'users', 'community', communityId, 'organisation', organisationId, 'conformance', 'system', systemId, 'actor', actorId]
-    if (tab != undefined) {
-      return this.navigate(MenuItem.communityManagement, pathParts, { state: { tab: ConformanceStatementTab[tab] } })
+    if (snapshotId != undefined) {
+      pathParts.push('snapshot', snapshotId)
+    }    
+    return this.navigate(MenuItem.communityManagement, pathParts, this.addConformanceStatementExtras(tab, snapshotLabel))
+  }
+
+  private addConformanceStatementExtras(tab?: ConformanceStatementTab, snapshotLabel?: string) {
+    let extras: NavigationExtras|undefined = undefined
+    if (tab != undefined || snapshotLabel != undefined) {
+      extras = {}
+      extras.state = {}
+      if (tab != undefined) {
+        extras.state[Constants.NAVIGATION_PATH_PARAM.TAB] = ConformanceStatementTab[tab]
+      }
+      if (snapshotLabel != undefined) {
+        extras.state[Constants.NAVIGATION_PATH_PARAM.SNAPSHOT_LABEL] = snapshotLabel
+      }
+    }
+    return extras
+  }
+
+  toConformanceStatements(communityId: number, organisationId: number, systemId?: number, snapshotId?: number, replaceUrl?: boolean) {
+    // The replaceUrl flag causes the route path to be loaded but reusing the current controller (i.e. only the path gets updated), to retain state after refresh.
+    if (systemId != undefined) {
+      return this.navigate(MenuItem.communityManagement, ['admin', 'users', 'community', communityId, 'organisation', organisationId, 'conformance'], {
+        queryParams: this.createMultipleQueryParams([ 
+          {name: Constants.NAVIGATION_QUERY_PARAM.SYSTEM_ID, value: systemId},
+          {name: Constants.NAVIGATION_QUERY_PARAM.SNAPSHOT_ID, value: snapshotId}
+        ]),
+        replaceUrl: replaceUrl
+      })
     } else {
-      return this.navigate(MenuItem.communityManagement, pathParts)
+      return this.navigate(MenuItem.communityManagement, ['admin', 'users', 'community', communityId, 'organisation', organisationId, 'conformance'], { 
+        queryParams: this.createQueryParams(Constants.NAVIGATION_QUERY_PARAM.SNAPSHOT_ID, snapshotId),
+        replaceUrl: replaceUrl
+      })
     }
   }
 
-  toConformanceStatements(communityId: number, organisationId: number, systemId?: number) {
+  toOwnConformanceStatements(organisationId: number, systemId?: number, snapshotId?: number, replaceUrl?: boolean) {
+    // The replaceUrl flag causes the route path to be loaded but reusing the current controller (i.e. only the path gets updated), to retain state after refresh.
     if (systemId != undefined) {
-      return this.navigate(MenuItem.communityManagement, ['admin', 'users', 'community', communityId, 'organisation', organisationId, 'conformance'], { queryParams: this.createQueryParams(Constants.NAVIGATION_QUERY_PARAM.SYSTEM_ID, systemId) })
+      return this.navigate(MenuItem.myConformanceStatements, ['organisation', 'conformance', organisationId], { 
+        queryParams: this.createMultipleQueryParams([ 
+          {name: Constants.NAVIGATION_QUERY_PARAM.SYSTEM_ID, value: systemId},
+          {name: Constants.NAVIGATION_QUERY_PARAM.SNAPSHOT_ID, value: snapshotId}
+        ]),
+        replaceUrl: replaceUrl
+      }
+    )
     } else {
-      return this.navigate(MenuItem.communityManagement, ['admin', 'users', 'community', communityId, 'organisation', organisationId, 'conformance'])
-    }
-  }
-
-  toOwnConformanceStatements(organisationId: number, systemId?: number) {
-    if (systemId != undefined) {
-      return this.navigate(MenuItem.myConformanceStatements, ['organisation', 'conformance', organisationId], { queryParams: this.createQueryParams(Constants.NAVIGATION_QUERY_PARAM.SYSTEM_ID, systemId) })
-    } else {
-      return this.navigate(MenuItem.myConformanceStatements, ['organisation', 'conformance', organisationId])
+      return this.navigate(MenuItem.myConformanceStatements, ['organisation', 'conformance', organisationId], { 
+        queryParams: this.createQueryParams(Constants.NAVIGATION_QUERY_PARAM.SNAPSHOT_ID, snapshotId),
+        replaceUrl: replaceUrl
+      })
     }
   }
 
@@ -457,8 +491,16 @@ export class RoutingService {
   }
 
   private createQueryParams(name: string, value: any) {
+    return this.createMultipleQueryParams([{name: name, value: value}])
+  }
+
+  private createMultipleQueryParams(parameters: {name: string, value: any}[]) {
     let params: {[key: string]: any} = {}
-    params[name] = value
+    for (let p of parameters) {
+      if (p.value !== undefined) {
+        params[p.name] = p.value
+      }
+    }
     return params
   }
 
@@ -550,14 +592,22 @@ export class RoutingService {
 
   organisationBreadcrumbs(communityId: number, organisationId: number, label?: string): BreadcrumbItem[] {
     const crumbs = this.communityBreadcrumbs(communityId)
-    crumbs.push({ type: BreadcrumbType.organisation, typeId: organisationId, label: label, action: (() => this.toOrganisationDetails(communityId, organisationId)).bind(this) })
+    let action: Function|undefined
+    if (organisationId >= 0) {
+      action = (() => this.toOrganisationDetails(communityId, organisationId)).bind(this)
+    }
+    crumbs.push({ type: BreadcrumbType.organisation, typeId: organisationId, label: label, action: action })
     if (label) this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
     return crumbs
   }
 
-  systemBreadcrumbs(communityId: number, organisationId: number, systemId: number, label?: string, skipUpdate?: boolean): BreadcrumbItem[] {
-    const crumbs = this.organisationBreadcrumbs(communityId, organisationId)
-    crumbs.push({ type: BreadcrumbType.system, typeId: systemId, label: label, action: (() => this.toSystemDetails(communityId, organisationId, systemId)).bind(this) })
+  systemBreadcrumbs(communityId: number, organisationId: number, organisationLabel: string|undefined, systemId: number, label?: string, skipUpdate?: boolean): BreadcrumbItem[] {
+    const crumbs = this.organisationBreadcrumbs(communityId, organisationId, organisationLabel)
+    let action: Function|undefined
+    if (systemId >= 0) {
+      action = (() => this.toSystemDetails(communityId, organisationId, systemId)).bind(this)
+    }
+    crumbs.push({ type: BreadcrumbType.system, typeId: systemId, label: label, action: action })
     if (label && !skipUpdate) this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
     return crumbs
   }
@@ -604,39 +654,45 @@ export class RoutingService {
     return crumbs
   }
 
-  conformanceStatementsBreadcrumbs(communityId: number, organisationId: number, systemId?: number, systemLabel?: string, skipUpdate?: boolean): BreadcrumbItem[] {
+  conformanceStatementsBreadcrumbs(communityId: number, organisationId: number, organisationLabel?: string, systemId?: number, systemLabel?: string, snapshotId?:number, snapshotLabel?: string, skipUpdate?: boolean): BreadcrumbItem[] {
     let crumbs: BreadcrumbItem[]
     if (systemId == undefined) {
-      crumbs = this.organisationBreadcrumbs(communityId, organisationId)
+      crumbs = this.organisationBreadcrumbs(communityId, organisationId, organisationLabel)
     } else {
-      crumbs = this.systemBreadcrumbs(communityId, organisationId, systemId, systemLabel, true)
+      crumbs = this.systemBreadcrumbs(communityId, organisationId, organisationLabel, systemId, systemLabel, true)
     }
-    crumbs.push({ type: BreadcrumbType.statements, label: 'Conformance statements', action: (() => this.toConformanceStatements(communityId, organisationId, systemId)).bind(this) })
+    crumbs.push({ type: BreadcrumbType.statements, label: 'Conformance statements', action: (() => this.toConformanceStatements(communityId, organisationId, systemId, snapshotId)).bind(this) })
+    if (snapshotLabel) {
+      crumbs.push({ type: BreadcrumbType.conformanceSnapshot, label: snapshotLabel })
+    }
     if (!skipUpdate) this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
     return crumbs
   }
 
-  conformanceStatementBreadcrumbs(organisationId: number, systemId: number, actorId: number, communityId: number|undefined, label?: string): BreadcrumbItem[] {
+  conformanceStatementBreadcrumbs(organisationId: number, systemId: number, actorId: number, communityId: number|undefined, statementLabel: string, organisationLabel?: string, systemLabel?: string, snapshotId?: number, snapshotLabel?: string): BreadcrumbItem[] {
     let crumbs: BreadcrumbItem[]
     if (communityId) {
-      crumbs = this.conformanceStatementsBreadcrumbs(communityId, organisationId, systemId, undefined, true)
-      crumbs.push({ type: BreadcrumbType.statement, typeId: systemId+'|'+actorId, label: label, action: (() => this.toConformanceStatement(organisationId, systemId, actorId, communityId)).bind(this) })
+      crumbs = this.conformanceStatementsBreadcrumbs(communityId, organisationId, organisationLabel, systemId, systemLabel, snapshotId, snapshotLabel, true)
+      crumbs.push({ type: BreadcrumbType.statement, typeId: systemId+'|'+actorId, label: statementLabel, action: (() => this.toConformanceStatement(organisationId, systemId, actorId, communityId, snapshotId, snapshotLabel)).bind(this) })
     } else {
-      crumbs = this.ownConformanceStatementsBreadcrumbs(organisationId, systemId, undefined, true)
-      crumbs.push({ type: BreadcrumbType.statement, typeId: systemId+'|'+actorId, label: label, action: (() => this.toOwnConformanceStatement(organisationId, systemId, actorId)).bind(this) })
+      crumbs = this.ownConformanceStatementsBreadcrumbs(organisationId, systemId, systemLabel, snapshotId, snapshotLabel, true)
+      crumbs.push({ type: BreadcrumbType.statement, typeId: systemId+'|'+actorId, label: statementLabel, action: (() => this.toOwnConformanceStatement(organisationId, systemId, actorId, snapshotId, snapshotLabel)).bind(this) })
     }
-    if (label) this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
+    if (statementLabel) this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
     return crumbs
   }
 
-  ownConformanceStatementsBreadcrumbs(organisationId: number, systemId?: number, systemLabel?: string, skipUpdate?: boolean): BreadcrumbItem[] {
+  ownConformanceStatementsBreadcrumbs(organisationId: number, systemId?: number, systemLabel?: string, snapshotId?: number, snapshotLabel?: string, skipUpdate?: boolean): BreadcrumbItem[] {
     let crumbs: BreadcrumbItem[]
     if (systemId == undefined) {
       crumbs = this.ownOrganisationBreadcrumbs()
     } else {
       crumbs = this.ownSystemBreadcrumbs(systemId, systemLabel, true)
     }
-    crumbs.push({ type: BreadcrumbType.ownStatements, label: 'Conformance statements', action: (() => this.toOwnConformanceStatements(organisationId, systemId)).bind(this) })
+    crumbs.push({ type: BreadcrumbType.ownStatements, label: 'Conformance statements', action: (() => this.toOwnConformanceStatements(organisationId, systemId, snapshotId)).bind(this) })
+    if (snapshotLabel) {
+      crumbs.push({ type: BreadcrumbType.conformanceSnapshot, label: snapshotLabel })
+    }
     if (!skipUpdate) this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
     return crumbs
   }
@@ -649,7 +705,11 @@ export class RoutingService {
 
   ownSystemBreadcrumbs(systemId: number, label?: string, skipUpdate?: boolean): BreadcrumbItem[] {
     const crumbs = this.ownOrganisationBreadcrumbs(true)
-    crumbs.push({ type: BreadcrumbType.ownSystem, typeId: systemId, label: label, action: (() => this.toOwnSystemDetails(systemId)).bind(this) })
+    let action: Function|undefined
+    if (systemId >= 0) {
+      action = (() => this.toOwnSystemDetails(systemId)).bind(this)
+    }
+    crumbs.push({ type: BreadcrumbType.ownSystem, typeId: systemId, label: label, action: action })
     if (label && !skipUpdate) this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
     return crumbs
   }

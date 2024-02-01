@@ -19,9 +19,12 @@ export class SystemService {
     private dataService: DataService
   ) { }
 
-  getSystemsByOrganisation(orgId: number, checkIfHasTests?: boolean) {
+  getSystemsByOrganisation(orgId: number, snapshotId?: number, checkIfHasTests?: boolean) {
     let params: any = {
       organization_id: orgId
+    }
+    if (snapshotId !== undefined) {
+      params.snapshot = snapshotId
     }
     if (checkIfHasTests !== undefined) {
       params.check_has_tests = checkIfHasTests

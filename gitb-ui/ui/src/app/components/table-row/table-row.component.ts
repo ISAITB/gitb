@@ -31,6 +31,7 @@ export class TableRowComponent implements OnInit {
   @Input() deleteTooltip = 'Delete'
   @Input() exportTooltip = 'Export'
   @Input() expandableRowProperty?: string
+  @Input() refresh?: EventEmitter<void>
 
   @Output() onAction: EventEmitter<any> = new EventEmitter()
   @Output() onExport: EventEmitter<any> = new EventEmitter()
@@ -45,6 +46,17 @@ export class TableRowComponent implements OnInit {
   constructor() { }
 
   ngOnInit(): void {
+    this.refreshData()
+    if (this.refresh) {
+      this.refresh.subscribe(() => {
+        this.refreshData()
+      })
+    }
+  }
+
+  private refreshData() {
+    this.columnDataItemsAtLeft = []
+    this.columnDataItemsAtRight = []
     for (let column of this.columns) {
       let columnDataItem: TableColumnData = {
         data: this.data[column.field],

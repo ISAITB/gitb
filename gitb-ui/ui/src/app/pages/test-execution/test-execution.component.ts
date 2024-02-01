@@ -1158,9 +1158,9 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
       }
     } else { // viewStatement
       if (this.communityId == undefined) {
-        this.routingService.toOwnConformanceStatement(this.organisationId, this.systemId, this.actorId, ConformanceStatementTab.configuration)
+        this.routingService.toOwnConformanceStatement(this.organisationId, this.systemId, this.actorId, undefined, undefined, ConformanceStatementTab.configuration)
       } else {
-        this.routingService.toConformanceStatement(this.organisationId, this.systemId, this.actorId, this.communityId, ConformanceStatementTab.configuration)
+        this.routingService.toConformanceStatement(this.organisationId, this.systemId, this.actorId, this.communityId, undefined, undefined, ConformanceStatementTab.configuration)
       }
     }
   }

@@ -6,7 +6,9 @@ object Parameters {
   val ID      = "id"
   val ADMIN   = "admin"
   val LABEL   = "label"
+  val PUBLIC_LABEL   = "publicLabel"
   val SNAPSHOT  = "snapshot"
+  val PUBLIC  = "public"
 
   //Dashboard filter parameters
   val COMMUNITY_IDS = "community_ids"

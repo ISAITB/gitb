@@ -330,14 +330,10 @@ export class ConformanceDashboardComponent implements OnInit {
 
   toStatement(statement: ConformanceResultFull) {
     if (statement.organizationId == this.dataService.vendor?.id) {
-      this.routingService.toOwnConformanceStatement(statement.organizationId, statement.systemId, statement.actorId)
+      this.routingService.toOwnConformanceStatement(statement.organizationId, statement.systemId, statement.actorId, this.activeConformanceSnapshot?.id, this.activeConformanceSnapshot?.label)
     } else {
-      this.routingService.toConformanceStatement(statement.organizationId, statement.systemId, statement.actorId, statement.communityId)
+      this.routingService.toConformanceStatement(statement.organizationId, statement.systemId, statement.actorId, statement.communityId, this.activeConformanceSnapshot?.id, this.activeConformanceSnapshot?.label)
     }
-  }
-
-  showToStatement(statement: ConformanceResultFull) {
-    return this.showToSystem(statement) && statement.actorId != undefined && statement.actorId >= 0
   }
 
   toDomain(statement: ConformanceResultFull) {
@@ -451,7 +447,7 @@ export class ConformanceDashboardComponent implements OnInit {
       })
       modalRef.content!.select.subscribe((selectedSnapshot) => {
         if (selectedSnapshot) {
-          this.snapshotButtonLabel = selectedSnapshot.label + " ("+selectedSnapshot.snapshotTime+")"
+          this.snapshotButtonLabel = selectedSnapshot.label
           if (this.activeConformanceSnapshot == undefined || this.activeConformanceSnapshot.id != selectedSnapshot.id) {
             this.activeConformanceSnapshot = selectedSnapshot
             this.getConformanceStatements()

@@ -462,8 +462,15 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     canViewOrganisation(request, userInfo, orgId)
   }
 
-  def canViewSystems(request: RequestWithAttributes[_], orgId: Long):Boolean = {
-    canViewSystems(request, getUser(getRequestUserId(request)), orgId)
+  def canViewSystems(request: RequestWithAttributes[_], orgId: Long, snapshotId: Option[Long] = None):Boolean = {
+    var ok = false
+    if (orgId >= 0) {
+      ok = canViewSystems(request, getUser(getRequestUserId(request)), orgId)
+    } else if (snapshotId.isDefined) {
+      // Deleted organisation present in a snapshot
+      ok = canManageConformanceSnapshot(request, snapshotId.get)
+    }
+    setAuthResult(request, ok, "User cannot view the systems of this organisation")
   }
 
   def canViewEndpointConfigurationsForSystem(request: RequestWithAttributes[_], system: Long):Boolean = {
@@ -555,8 +562,12 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     setAuthResult(request, ok, "User cannot delete the requested statement")
   }
 
-  def canViewConformanceStatements(request: RequestWithAttributes[_], sut_id: Long):Boolean = {
-    canViewSystem(request, sut_id)
+  def canViewConformanceStatements(request: RequestWithAttributes[_], systemId: Long, snapshotId: Option[Long]):Boolean = {
+    if (snapshotId.isEmpty) {
+      canViewSystem(request, systemId)
+    } else {
+      canViewSystemInSnapshot(request, systemId, snapshotId.get)
+    }
   }
 
   def canCreateConformanceStatement(request: RequestWithAttributes[_], sut_id: Long):Boolean = {
@@ -596,6 +607,26 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
       ok = isOwnSystem(userInfo, sut_id)
     }
     setAuthResult(request, ok, "User cannot view the requested system")
+  }
+
+  def canViewSystemInSnapshot(request: RequestWithAttributes[_], systemId: Long, snapshotId: Long): Boolean = {
+    var ok = false
+    val userInfo = getUser(getRequestUserId(request))
+    if (isTestBedAdmin(userInfo)) {
+      ok = true
+    } else {
+      if (userInfo.organization.isDefined) {
+        if (isCommunityAdmin(userInfo)) {
+          // This is a snapshot of the user's own community.
+          val snapshot = conformanceManager.getConformanceSnapshot(snapshotId)
+          ok = snapshot.community == userInfo.organization.get.community
+        } else {
+          // The requested system ID and the user's own organisation ID must exist as results in the specified snapshot.
+          ok = conformanceManager.existsInConformanceSnapshot(snapshotId, systemId, userInfo.organization.get.id)
+        }
+      }
+    }
+    setAuthResult(request, ok, "User cannot view the requested system in the given conformance snapshot")
   }
 
   def canUpdateSystem(request: RequestWithAttributes[_], systemId: Long, isDelete: Boolean = false):Boolean = {
@@ -771,7 +802,7 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     }
   }
 
-  def canViewOwnConformanceCertificateReport(request: RequestWithAttributes[_], systemId: Long):Boolean = {
+  def canViewOwnConformanceCertificateReport(request: RequestWithAttributes[_], systemId: Long, snapshotId: Option[Long] = None):Boolean = {
     var ok = false
     val userInfo = getUser(getRequestUserId(request))
     if (isTestBedAdmin(userInfo)) {
@@ -789,7 +820,12 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
           if (community.isDefined && community.get.allowCertificateDownload) {
             val system = systemManager.getSystemById(systemId)
             if (system.isDefined && userInfo.organization.get.id == system.get.owner) {
-              ok = true
+              if (snapshotId.isDefined) {
+                val snapshot = conformanceManager.getConformanceSnapshot(snapshotId.get)
+                ok = snapshot.community == community.get.id && snapshot.isPublic
+              } else {
+                ok = true
+              }
             }
           }
         }
@@ -1259,6 +1295,22 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
       ok = true
     }
     setAuthResult(request, ok, "User cannot manage the requested community")
+  }
+
+  def canViewConformanceSnapshot(request: RequestWithAttributes[_], snapshotId: Long): Boolean = {
+    var ok = false
+    val userInfo = getUser(getRequestUserId(request))
+    if (isTestBedAdmin(userInfo)) {
+      ok = true
+    } else if (userInfo.organization.isDefined) {
+      val snapshot = conformanceManager.getConformanceSnapshot(snapshotId)
+      if (isCommunityAdmin(userInfo)) {
+        ok = snapshot.community == userInfo.organization.get.community
+      } else {
+        ok = snapshot.community == userInfo.organization.get.community && snapshot.isPublic
+      }
+    }
+    setAuthResult(request, ok, "User cannot view the requested conformance snapshot")
   }
 
   def canManageConformanceSnapshot(request: RequestWithAttributes[_], snapshotId: Long): Boolean = {

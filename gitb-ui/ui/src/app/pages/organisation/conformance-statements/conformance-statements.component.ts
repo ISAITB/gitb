@@ -10,6 +10,8 @@ import { ConformanceStatementItem } from 'src/app/types/conformance-statement-it
 import { CheckboxOptionState } from 'src/app/components/checkbox-option-panel/checkbox-option-state';
 import { CheckboxOption } from 'src/app/components/checkbox-option-panel/checkbox-option';
 import { ConformanceService } from 'src/app/services/conformance.service';
+import { ConformanceSnapshot } from 'src/app/types/conformance-snapshot';
+import { Observable, forkJoin } from 'rxjs';
 
 @Component({
   selector: 'app-conformance-statements',
@@ -20,6 +22,7 @@ export class ConformanceStatementsComponent implements OnInit {
 
   system?: System
   communityId?: number
+  communityIdForSnapshots!: number
   organisationId!: number
   systems!: System[]
   systemStatus = {status: Constants.STATUS.PENDING}
@@ -50,6 +53,10 @@ export class ConformanceStatementsComponent implements OnInit {
     ]
   ]
   showCreateSystem = false
+  latestSnapshotButtonLabel?: string
+  conformanceSnapshots?: ConformanceSnapshot[]
+  snapshotButtonLabel?: string
+  currentlySelectedSnapshot?: ConformanceSnapshot
 
   constructor(
     private systemService: SystemService,
@@ -60,52 +67,86 @@ export class ConformanceStatementsComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
+    this.organisationId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.ORGANISATION_ID))
     if (this.route.snapshot.paramMap.has(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID)) {
       this.communityId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID))
-      this.showBack = true
+      this.communityIdForSnapshots = this.communityId
+      this.showBack = this.organisationId >= 0
+    } else {
+      this.communityIdForSnapshots = this.dataService.vendor!.community
     }
-    this.organisationId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.ORGANISATION_ID))
-    this.systemService.getSystemsByOrganisation(this.organisationId)
-    .subscribe((data) => {
-      this.systems = data
-      if (this.systems.length == 1) {
-        this.system = this.systems[0]
-      } else if (this.route.snapshot.queryParamMap.has(Constants.NAVIGATION_QUERY_PARAM.SYSTEM_ID)) {
-        const systemId = Number(this.route.snapshot.queryParamMap.get(Constants.NAVIGATION_QUERY_PARAM.SYSTEM_ID))
-        this.system = find(this.systems, (sys) => {
-          return sys.id == systemId
-        })
-      }
-      if (this.system) {
-        this.systemChanged()
-      } else {
-        this.updateBreadcrumbs()
-      }
-    }).add(() => {
-      this.systemStatus.status = Constants.STATUS.FINISHED
-    })
+    let snapshotId: number|undefined
+    if (this.route.snapshot.queryParamMap.has(Constants.NAVIGATION_QUERY_PARAM.SNAPSHOT_ID)) {
+      snapshotId = Number(this.route.snapshot.queryParamMap.get(Constants.NAVIGATION_QUERY_PARAM.SNAPSHOT_ID))
+    }
     this.showCreate = this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin || (this.dataService.isVendorAdmin && this.dataService.community!.allowStatementManagement)
     this.showCreateSystem = this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin || this.dataService.isVendorAdmin
     this.showDomain = this.dataService.isSystemAdmin || this.dataService.community?.domainId == undefined
     this.columnCount = this.showDomain?6:5
+    const systemsLoaded = this.systemService.getSystemsByOrganisation(this.organisationId, snapshotId)
+    const snapshotsLoaded = this.conformanceService.getConformanceSnapshots(this.communityIdForSnapshots)
+    forkJoin([systemsLoaded, snapshotsLoaded]).subscribe((results) => {
+      // Snapshots
+      this.conformanceSnapshots = results[1].snapshots
+      this.latestSnapshotButtonLabel = results[1].latest
+      if (this.latestSnapshotButtonLabel == undefined || this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin) {
+        this.latestSnapshotButtonLabel = Constants.LATEST_CONFORMANCE_STATUS_LABEL
+      }
+      if (snapshotId != undefined) {
+        const referencedSnapshot = find(this.conformanceSnapshots, (snapshot) => snapshot.id == snapshotId)
+        if (referencedSnapshot) {
+          this.currentlySelectedSnapshot = referencedSnapshot
+          this.snapshotButtonLabel = this.currentlySelectedSnapshot.label
+        } else {
+          // The snapshot could have been deleted or rendered hidden.
+          this.snapshotButtonLabel = this.latestSnapshotButtonLabel
+        }
+      } else {
+        this.snapshotButtonLabel = this.latestSnapshotButtonLabel
+      }
+      // Systems - this will also load statements and update breadcrumbs.
+      this.systemsLoaded(results[0], false)
+    }).add(() => {
+      this.systemStatus.status = Constants.STATUS.FINISHED
+    })
+  }
+
+  private systemsLoaded(systems: System[], updateRoutePath: boolean) {
+    this.systems = systems
+    if (this.systems.length == 1) {
+      this.system = systems[0]
+    } else if (this.route.snapshot.queryParamMap.has(Constants.NAVIGATION_QUERY_PARAM.SYSTEM_ID)) {
+      const systemId = Number(this.route.snapshot.queryParamMap.get(Constants.NAVIGATION_QUERY_PARAM.SYSTEM_ID))
+      this.system = find(this.systems, (sys) => {
+        return sys.id == systemId
+      })
+    }
+    if (this.system) {
+      this.systemChanged(updateRoutePath)
+    } else {
+      this.updateBreadcrumbs()
+    }
   }
 
   private updateBreadcrumbs() {
     if (this.communityId == undefined) {
-      this.routingService.ownConformanceStatementsBreadcrumbs(this.organisationId, this.system?.id, this.system?.sname)
+      this.routingService.ownConformanceStatementsBreadcrumbs(this.organisationId, this.system?.id, this.system?.sname, this.currentlySelectedSnapshot?.id, this.currentlySelectedSnapshot?.label)
     } else {
-      this.routingService.conformanceStatementsBreadcrumbs(this.communityId, this.organisationId, this.system?.id, this.system?.sname)
+      this.routingService.conformanceStatementsBreadcrumbs(this.communityId, this.organisationId, undefined, this.system?.id, this.system?.sname, this.currentlySelectedSnapshot?.id, this.currentlySelectedSnapshot?.label)
     }
   }
 
-  systemChanged() {
+  systemChanged(updateRoutePath: boolean) {
     this.updateBreadcrumbs()
     this.getConformanceStatements()
+    if (updateRoutePath) {
+      this.updateRouting()
+    }
   }
 
   getConformanceStatements() {
     this.dataStatus.status = Constants.STATUS.PENDING
-    this.conformanceService.getConformanceStatementsForSystem(this.system!.id)
+    this.conformanceService.getConformanceStatementsForSystem(this.system!.id, this.currentlySelectedSnapshot?.id)
     .subscribe((data) => {
       this.itemsByType = this.getItemsByType(data)
       this.statements = this.processItems(data)
@@ -189,9 +230,9 @@ export class ConformanceStatementsComponent implements OnInit {
 
   onStatementSelect(statement: ConformanceStatementItem) {
     if (this.communityId == undefined) {
-      this.routingService.toOwnConformanceStatement(this.organisationId, this.system!.id, statement.id)
+      this.routingService.toOwnConformanceStatement(this.organisationId, this.system!.id, statement.id, this.currentlySelectedSnapshot?.id, this.currentlySelectedSnapshot?.label)
     } else {
-      this.routingService.toConformanceStatement(this.organisationId, this.system!.id, statement.id, this.communityId)
+      this.routingService.toConformanceStatement(this.organisationId, this.system!.id, statement.id, this.communityId, this.currentlySelectedSnapshot?.id, this.currentlySelectedSnapshot?.label)
     }
   }
 
@@ -337,6 +378,37 @@ export class ConformanceStatementsComponent implements OnInit {
       this.routingService.toCreateSystem(this.communityId, this.organisationId)
     } else {
       this.routingService.toCreateOwnSystem()
+    }
+  }
+
+  private updateRouting() {
+    if (this.communityId != undefined) {
+      this.routingService.toConformanceStatements(this.communityId, this.organisationId, this.system?.id, this.currentlySelectedSnapshot?.id, true)
+    } else {
+      this.routingService.toOwnConformanceStatements(this.organisationId, this.system?.id, this.currentlySelectedSnapshot?.id, true)
+    }      
+  }
+
+  snapshotSelected(snapshot?: ConformanceSnapshot) {
+    let systemsLoaded: Observable<System[]>|undefined
+    if (snapshot && snapshot.id != this.currentlySelectedSnapshot?.id) {
+      // Selected a non-latest snapshot that differs from the (possibly) currently selected one.
+      systemsLoaded = this.systemService.getSystemsByOrganisation(this.organisationId, snapshot.id)
+    } else if (snapshot == undefined && this.currentlySelectedSnapshot) {
+      // Latest snapshot selected while a previous non-latest one was selected.
+      systemsLoaded = this.systemService.getSystemsByOrganisation(this.organisationId)
+    }
+    if (systemsLoaded) {
+      this.currentlySelectedSnapshot = snapshot
+      this.snapshotButtonLabel = (snapshot == undefined)?this.latestSnapshotButtonLabel:snapshot.label
+      this.systemStatus.status = Constants.STATUS.PENDING
+      systemsLoaded.subscribe((data) => {
+        this.systemsLoaded(data, false)
+      }).add(() => {
+        // Update the routing path (to avoid loss of state on refresh).
+        this.updateRouting()
+        this.systemStatus.status = Constants.STATUS.FINISHED
+      })
     }
   }
 }

@@ -254,11 +254,12 @@ class SystemService @Inject() (implicit ec: ExecutionContext, repositoryUtils: R
 
   def getSystemsByOrganization() = authorizedAction { request =>
     val orgId = ParameterExtractor.requiredQueryParameter(request, Parameters.ORGANIZATION_ID).toLong
-    authorizationManager.canViewSystems(request, orgId)
+    val snapshotId = ParameterExtractor.optionalLongQueryParameter(request, Parameters.SNAPSHOT)
+    authorizationManager.canViewSystems(request, orgId, snapshotId)
+    val list = systemManager.getSystemsByOrganization(orgId, snapshotId)
     val checkIfHasTests = ParameterExtractor.optionalBooleanQueryParameter(request, Parameters.CHECK_HAS_TESTS)
-    val list = systemManager.getSystemsByOrganization(orgId)
     var systemsWithTests: Option[Set[Long]] = None
-    if (checkIfHasTests.isDefined) {
+    if (checkIfHasTests.isDefined && checkIfHasTests.get) {
       systemsWithTests = Some(systemManager.checkIfSystemsHaveTests(list.map(x => x.id).toSet))
     }
     val json:String = JsonUtil.jsSystems(list, systemsWithTests).toString
