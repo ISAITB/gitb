@@ -186,7 +186,8 @@ import { DragDropModule } from '@angular/cdk/drag-drop';
 import { FileDropTargetDirective } from './directives/file-drop-target.directive';
 import { FormSectionComponent } from './components/form-section/form-section.component';
 import { SpecificationReferenceFormComponent } from './components/specification-reference-form/specification-reference-form.component';
-import { SpecificationReferenceDisplayComponent } from './components/specification-reference-display/specification-reference-display.component';    
+import { SpecificationReferenceDisplayComponent } from './components/specification-reference-display/specification-reference-display.component';
+import { SortIndicatorComponent } from './components/sort-indicator/sort-indicator.component';    
 
 @NgModule({
   providers: [
@@ -362,7 +363,8 @@ import { SpecificationReferenceDisplayComponent } from './components/specificati
     FileDropTargetDirective,
     FormSectionComponent,
     SpecificationReferenceFormComponent,
-    SpecificationReferenceDisplayComponent
+    SpecificationReferenceDisplayComponent,
+    SortIndicatorComponent
   ],
   imports: [
     ColorPickerModule,

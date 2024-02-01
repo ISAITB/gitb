@@ -12,8 +12,12 @@
                       <li role="menuitem"><a class="dropdown-item" href (click)="manageConformanceSnapshots();$event.preventDefault()">Manage conformance snapshots</a></li>
                     </ul>
                 </div>
-				<button type="button" class="btn btn-secondary" *ngIf="conformanceStatements.length > 0" (click)="onExportConformanceStatementsAsCsv()" [disable]="conformanceStatements.length == 0" [pending]="exportPending">Export CSV</button>
-				<button type="button" class="btn btn-secondary" *ngIf="showCollapseAll()" (click)="onCollapseAll()">Collapse all</button>
+                @if (conformanceStatements.length > 0) {
+                    <button type="button" class="btn btn-secondary"  (click)="onExportConformanceStatementsAsCsv()" [disable]="conformanceStatements.length == 0" [pending]="exportPending">Export CSV</button>
+                }
+                @if (showCollapseAll()) {
+                    <button type="button" class="btn btn-secondary" (click)="onCollapseAll()">Collapse all</button>
+                }
 			</div>
 		</div>
         <div class="table-container rounded">
@@ -21,53 +25,63 @@
                 <thead>
                     <tr>
                         <th class="th-min-centered"></th>
-                        <th class="sortableHeader" *ngIf="!dataService.isCommunityAdmin" (click)="sort(Constants.FILTER_TYPE.COMMUNITY)">Community <i *ngIf="sortColumn == Constants.FILTER_TYPE.COMMUNITY" [ngClass]="{'fa-caret-down': sortOrder == Constants.ORDER.DESC, 'fa-caret-up': sortOrder == Constants.ORDER.ASC}" class="fa"></i></th>
-                        <th class="sortableHeader" (click)="sort(Constants.FILTER_TYPE.ORGANISATION)">{{dataService.labelOrganisation()}} <i *ngIf="sortColumn == Constants.FILTER_TYPE.ORGANISATION" [ngClass]="{'fa-caret-down': sortOrder == Constants.ORDER.DESC, 'fa-caret-up': sortOrder == Constants.ORDER.ASC}" class="fa"></i></th>
-                        <th class="sortableHeader" (click)="sort(Constants.FILTER_TYPE.SYSTEM)">{{dataService.labelSystem()}} <i *ngIf="sortColumn == Constants.FILTER_TYPE.SYSTEM" [ngClass]="{'fa-caret-down': sortOrder == Constants.ORDER.DESC, 'fa-caret-up': sortOrder == Constants.ORDER.ASC}" class="fa"></i></th>
-                        <th class="sortableHeader" *ngIf="dataService.isSystemAdmin || (dataService.isCommunityAdmin && dataService.community!.domain == undefined)" (click)="sort(Constants.FILTER_TYPE.DOMAIN)">{{dataService.labelDomain()}} <i *ngIf="sortColumn == Constants.FILTER_TYPE.DOMAIN" [ngClass]="{'fa-caret-down': sortOrder == Constants.ORDER.DESC, 'fa-caret-up': sortOrder == Constants.ORDER.ASC}" class="fa"></i></th>
-                        <th class="sortableHeader" (click)="sort(Constants.FILTER_TYPE.SPECIFICATION)">{{dataService.labelSpecification()}} <i *ngIf="sortColumn == Constants.FILTER_TYPE.SPECIFICATION" [ngClass]="{'fa-caret-down': sortOrder == Constants.ORDER.DESC, 'fa-caret-up': sortOrder == Constants.ORDER.ASC}" class="fa"></i></th>
-                        <th class="sortableHeader" (click)="sort(Constants.FILTER_TYPE.ACTOR)">{{dataService.labelActor()}} <i *ngIf="sortColumn == Constants.FILTER_TYPE.ACTOR" [ngClass]="{'fa-caret-down': sortOrder == Constants.ORDER.DESC, 'fa-caret-up': sortOrder == Constants.ORDER.ASC}" class="fa"></i></th>
+                        @if (!dataService.isCommunityAdmin) {
+                            <th class="sortableHeader" (click)="sort(Constants.FILTER_TYPE.COMMUNITY)">Community<app-sort-indicator [columnType]="Constants.FILTER_TYPE.COMMUNITY" [sortColumn]="sortColumn" [sortOrder]="sortOrder"></app-sort-indicator></th>
+                        }
+                        <th class="sortableHeader" (click)="sort(Constants.FILTER_TYPE.ORGANISATION)">{{dataService.labelOrganisation()}}<app-sort-indicator [columnType]="Constants.FILTER_TYPE.ORGANISATION" [sortColumn]="sortColumn" [sortOrder]="sortOrder"></app-sort-indicator></th>
+                        <th class="sortableHeader" (click)="sort(Constants.FILTER_TYPE.SYSTEM)">{{dataService.labelSystem()}}<app-sort-indicator [columnType]="Constants.FILTER_TYPE.SYSTEM" [sortColumn]="sortColumn" [sortOrder]="sortOrder"></app-sort-indicator></th>
+                        @if (dataService.isSystemAdmin || (dataService.isCommunityAdmin && dataService.community!.domain == undefined)) {
+                            <th class="sortableHeader" (click)="sort(Constants.FILTER_TYPE.DOMAIN)">{{dataService.labelDomain()}}<app-sort-indicator [columnType]="Constants.FILTER_TYPE.DOMAIN" [sortColumn]="sortColumn" [sortOrder]="sortOrder"></app-sort-indicator></th>
+                        }
+                        <th class="sortableHeader" (click)="sort(Constants.FILTER_TYPE.SPECIFICATION)">{{dataService.labelSpecification()}}<app-sort-indicator [columnType]="Constants.FILTER_TYPE.SPECIFICATION" [sortColumn]="sortColumn" [sortOrder]="sortOrder"></app-sort-indicator></th>
+                        <th class="sortableHeader" (click)="sort(Constants.FILTER_TYPE.ACTOR)">{{dataService.labelActor()}}<app-sort-indicator [columnType]="Constants.FILTER_TYPE.ACTOR" [sortColumn]="sortColumn" [sortOrder]="sortOrder"></app-sort-indicator></th>
                         <th class="th-min">Last update</th>
                         <th class="th-min-centered">Test results</th>
                         <th class="th-min-centered">Status</th>
                         <th class="th-min-centered"></th>
                     </tr>
                 </thead>
-                <tbody *ngIf="dataStatus.status != Constants.STATUS.FINISHED">
-                    <tr><td [attr.colspan]="columnCount" class="td-data-loading"><span><i class="fa-solid fa-spinner fa-spin-override fa-lg"></i></span></td></tr>
-                </tbody>
-                <tbody *ngIf="dataStatus.status == Constants.STATUS.FINISHED && conformanceStatements.length == 0">
-                    <tr><td [attr.colspan]="columnCount" class="td-no-data"><span>No conformance data found</span></td></tr>
-                </tbody>
-                <tbody *ngIf="conformanceStatements.length > 0" [class.disable-events]="filterState.updatePending">
-                    <ng-container *ngFor="let statement of conformanceStatements">
-                        <tr (click)="onExpand(statement)"
-                            class="table-row-directive expandable-table-row-collapsed">
-                            <td class="td-min-centered"><app-collapsing-icon [padded]="false" [isCollapsed]="!isExpanded(statement)"></app-collapsing-icon></td>
-                            <td *ngIf="!dataService.isCommunityAdmin">{{statement.communityName}}</td>
-                            <td>{{statement.organizationName}}</td>
-                            <td>{{statement.systemName}}</td>
-                            <td *ngIf="dataService.isSystemAdmin || (dataService.isCommunityAdmin && dataService.community!.domain == undefined)">{{statement.domainName}}</td>
-                            <td>{{statement.specName}}</td>
-                            <td>{{statement.actorName}}</td>
-                            <td class="td-min">{{statement.updateTime}}</td>
-                            <td class="td-min-centered"><app-test-status-icons [counters]="statement.counters!" [asLine]="true"></app-test-status-icons></td>
-                            <td class="td-min-centered"><span><i containerClass="shortTooltip" [tooltip]="dataService.tooltipForTestResult(statement.overallStatus)" [ngClass]="dataService.iconForTestResult(statement.overallStatus)"></i></span></td>
-                            <td class="td-min-centered">
-                                <button class="btn btn-secondary" (click)="onExportConformanceStatement(statement); $event.stopPropagation();" [pending]="statement.exportPending" [icon]="true"  containerClass="shortTooltip" tooltip="Export" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-regular fa-file-pdf"></i></button>
-                            </td>
-                        </tr>
-                        <tr class="expandable-table-row-expanded">
-                            <td [attr.colspan]="columnCount" class="expandable-table-expandable-cell">
-                                <div [collapse]="!isExpanded(statement)" [isAnimated]="true">
-                                    <div class="collapsing-div">
-                                        <div class="statementControls">
-                                            <div class="statementButtons btn-toolbar">
-                                                <!-- View statement -->
-                                                <button type="button" class="btn btn-secondary" (click)="toStatement(statement)">View statement</button>
-                                                <!-- View party -->
-                                                <ng-container [ngSwitch]="showToSystem(statement)">
-                                                    <ng-container *ngSwitchCase="true">
+                @if (dataStatus.status != Constants.STATUS.FINISHED) {
+                    <tbody>
+                        <tr><td [attr.colspan]="columnCount" class="td-data-loading"><span><i class="fa-solid fa-spinner fa-spin-override fa-lg"></i></span></td></tr>
+                    </tbody>
+                } @else if (dataStatus.status == Constants.STATUS.FINISHED && conformanceStatements.length == 0) {
+                    <tbody>
+                        <tr><td [attr.colspan]="columnCount" class="td-no-data"><span>No conformance data found</span></td></tr>
+                    </tbody>
+                } @else if (conformanceStatements.length > 0) {
+                    <tbody [class.disable-events]="filterState.updatePending">
+                        @for (statement of conformanceStatements; track statement) {
+                            <tr (click)="onExpand(statement)"
+                                class="table-row-directive expandable-table-row-collapsed">
+                                <td class="td-min-centered"><app-collapsing-icon [padded]="false" [isCollapsed]="!isExpanded(statement)"></app-collapsing-icon></td>
+                                @if (!dataService.isCommunityAdmin) {
+                                    <td>{{statement.communityName}}</td>
+                                }
+                                <td>{{statement.organizationName}}</td>
+                                <td>{{statement.systemName}}</td>
+                                @if (dataService.isSystemAdmin || (dataService.isCommunityAdmin && dataService.community!.domain == undefined)) {
+                                    <td>{{statement.domainName}}</td>
+                                }
+                                <td>{{statement.specName}}</td>
+                                <td>{{statement.actorName}}</td>
+                                <td class="td-min">{{statement.updateTime}}</td>
+                                <td class="td-min-centered"><app-test-status-icons [counters]="statement.counters!" [asLine]="true"></app-test-status-icons></td>
+                                <td class="td-min-centered"><span><i containerClass="shortTooltip" [tooltip]="dataService.tooltipForTestResult(statement.overallStatus)" [ngClass]="dataService.iconForTestResult(statement.overallStatus)"></i></span></td>
+                                <td class="td-min-centered">
+                                    <button class="btn btn-secondary" (click)="onExportConformanceStatement(statement); $event.stopPropagation();" [pending]="statement.exportPending" [icon]="true"  containerClass="shortTooltip" tooltip="Export" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-regular fa-file-pdf"></i></button>
+                                </td>
+                            </tr>
+                            <tr class="expandable-table-row-expanded">
+                                <td [attr.colspan]="columnCount" class="expandable-table-expandable-cell">
+                                    <div [collapse]="!isExpanded(statement)" [isAnimated]="true">
+                                        <div class="collapsing-div">
+                                            <div class="statementControls">
+                                                <div class="statementButtons btn-toolbar">
+                                                    <!-- View statement -->
+                                                    <button type="button" class="btn btn-secondary" (click)="toStatement(statement)">View statement</button>
+                                                    <!-- View party -->
+                                                    @if (showToSystem(statement)) {
                                                         <div class="btn-group" dropdown>
                                                             <button type="button" class="btn btn-secondary" (click)="toSystem(statement)">View {{dataService.labelSystemLower()}}</button>
                                                             <button id="button-system" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
@@ -76,81 +90,79 @@
                                                                 <li role="menuitem"><a class="dropdown-item" href (click)="toOrganisation(statement); $event.preventDefault();">View {{dataService.labelOrganisationLower()}}</a></li>
                                                             </ul>
                                                         </div>
-                                                    </ng-container>
-                                                    <ng-container *ngSwitchDefault [ngSwitch]="showToOrganisation(statement)">
-                                                        <ng-container *ngSwitchCase="true">
-                                                            <div class="btn-group" dropdown>
-                                                                <button type="button" class="btn btn-secondary" (click)="toOrganisation(statement)">View {{dataService.labelOrganisationLower()}}</button>
-                                                                <button id="button-system" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
-                                                                <ul id="dropdown-system" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-system">
-                                                                    <li role="menuitem"><a class="dropdown-item" href (click)="toCommunity(statement);$event.preventDefault();">View community</a></li>
-                                                                </ul>
-                                                            </div>
-                                                        </ng-container>
-                                                        <ng-container *ngSwitchDefault>
-                                                            <button type="button" class="btn btn-secondary" (click)="toCommunity(statement)">View community</button>
-                                                        </ng-container>
-                                                    </ng-container>
-                                                </ng-container>
-                                                <!-- View specification -->
-                                                <ng-container *ngIf="showToDomain(statement) || showToSpecification(statement) || showToActor(statement)">
-                                                    <ng-container [ngSwitch]="showToSpecification(statement)">
-                                                        <ng-container *ngSwitchCase="true">
+                                                    } @else if (showToOrganisation(statement)) {
+                                                        <div class="btn-group" dropdown>
+                                                            <button type="button" class="btn btn-secondary" (click)="toOrganisation(statement)">View {{dataService.labelOrganisationLower()}}</button>
+                                                            <button id="button-system" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
+                                                            <ul id="dropdown-system" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-system">
+                                                                <li role="menuitem"><a class="dropdown-item" href (click)="toCommunity(statement);$event.preventDefault();">View community</a></li>
+                                                            </ul>
+                                                        </div>
+                                                    } @else {
+                                                        <button type="button" class="btn btn-secondary" (click)="toCommunity(statement)">View community</button>
+                                                    }
+                                                    <!-- View specification -->
+                                                    @if (showToDomain(statement) || showToSpecification(statement) || showToActor(statement)) {
+                                                        @if (showToSpecification(statement)) {
                                                             <div class="btn-group" dropdown>
                                                                 <button type="button" class="btn btn-secondary" (click)="toSpecification(statement)">View {{dataService.labelSpecificationLower()}}</button>
                                                                 <button id="button-spec" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
                                                                 <ul id="dropdown-spec" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-spec">
                                                                     <li role="menuitem"><a class="dropdown-item" href (click)="toDomain(statement);$event.preventDefault();">View {{dataService.labelDomainLower()}}</a></li>
-                                                                    <li *ngIf="showToActor(statement)" role="menuitem"><a class="dropdown-item" href (click)="toActor(statement); $event.preventDefault();">View {{dataService.labelActorLower()}}</a></li>
+                                                                    @if (showToActor(statement)) {
+                                                                        <li role="menuitem"><a class="dropdown-item" href (click)="toActor(statement); $event.preventDefault();">View {{dataService.labelActorLower()}}</a></li>
+                                                                    }
                                                                 </ul>
                                                             </div>
-                                                        </ng-container>
-                                                        <ng-container *ngSwitchDefault [ngSwitch]="showToActor(statement)">
-                                                            <ng-container *ngSwitchCase="true">
-                                                                <div class="btn-group" dropdown>
-                                                                    <button type="button" class="btn btn-secondary" (click)="toActor(statement)">View {{dataService.labelActorLower()}}</button>
-                                                                    <button id="button-spec" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
-                                                                    <ul id="dropdown-spec" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-spec">
-                                                                        <li role="menuitem"><a class="dropdown-item" href (click)="toDomain(statement);$event.preventDefault();">View {{dataService.labelDomainLower()}}</a></li>
-                                                                    </ul>
-                                                                </div>
-                                                            </ng-container>
-                                                            <ng-container *ngSwitchDefault>
-                                                                <button type="button" class="btn btn-secondary" (click)="toDomain(statement)">View {{dataService.labelDomainLower()}}</button>
-                                                            </ng-container>
-                                                        </ng-container>
-                                                    </ng-container>
-                                                </ng-container>
-                                                <app-view-badge-button *ngIf="statement.hasBadge" [systemId]="statement.systemId" [actorId]="statement.actorId" [snapshotId]="activeConformanceSnapshot?.id" [leftMargin]="true"></app-view-badge-button>
+                                                        } @else if (showToActor(statement)) {
+                                                            <div class="btn-group" dropdown>
+                                                                <button type="button" class="btn btn-secondary" (click)="toActor(statement)">View {{dataService.labelActorLower()}}</button>
+                                                                <button id="button-spec" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
+                                                                <ul id="dropdown-spec" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-spec">
+                                                                    <li role="menuitem"><a class="dropdown-item" href (click)="toDomain(statement);$event.preventDefault();">View {{dataService.labelDomainLower()}}</a></li>
+                                                                </ul>
+                                                            </div>
+                                                        } @else {
+                                                            <button type="button" class="btn btn-secondary" (click)="toDomain(statement)">View {{dataService.labelDomainLower()}}</button>
+                                                        }
+                                                    }
+                                                    @if (statement.hasBadge) {
+                                                        <app-view-badge-button [systemId]="statement.systemId" [actorId]="statement.actorId" [snapshotId]="activeConformanceSnapshot?.id" [leftMargin]="true"></app-view-badge-button>
+                                                    }
+                                                </div>
+                                                <div class="statementRatios">
+                                                    <app-test-result-ratio [counters]="statement.counters!" [asLine]="true"></app-test-result-ratio>
+                                                </div>
                                             </div>
-                                            <div class="statementRatios">
-                                                <app-test-result-ratio [counters]="statement.counters!" [asLine]="true"></app-test-result-ratio>
-                                            </div>
+                                            @if (statement.testSuitesLoaded == undefined || !statement.testSuitesLoaded) {
+                                                <div class="spinnerPadded">
+                                                    <app-pending-block></app-pending-block>
+                                                </div>
+                                            }
+                                            <app-test-suite-display
+                                                [testSuites]="statement.testSuites"
+                                                [showExecute]="false"
+                                                [showExport]="true"
+                                                (viewTestSession)="toTestSession($event)"
+                                            ></app-test-suite-display>
                                         </div>
-                                        <div *ngIf="statement.testSuitesLoaded == undefined || !statement.testSuitesLoaded" class="spinnerPadded">
-                                            <app-pending-block></app-pending-block>
-                                        </div>
-                                        <app-test-suite-display
-                                            [testSuites]="statement.testSuites"
-                                            [showExecute]="false"
-                                            [showExport]="true"
-                                            (viewTestSession)="toTestSession($event)"
-                                        ></app-test-suite-display>
                                     </div>
-                                </div>
-                            </td>
-                        </tr>
-                    </ng-container>
-                </tbody>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                }
             </table>
-            <div *ngIf="(!prevDisabled || !nextDisabled) && conformanceStatements && conformanceStatements.length > 0" class="text-center table-paging-controls">
-                <div class="btn-group" role="group" [class.disable-events]="filterState.updatePending">
-                    <button type="button" class="btn btn-sm btn-secondary" [disabled]="prevDisabled" (click)="doFirstPage()">First</button>
-                    <button type="button" class="btn btn-sm btn-secondary" [disabled]="prevDisabled" (click)="doPrevPage()">Previous</button>
-                    <button type="button" class="btn btn-sm btn-secondary" [disabled]="nextDisabled" (click)="doNextPage()">Next</button>
-                    <button type="button" class="btn btn-sm btn-secondary" [disabled]="nextDisabled" (click)="doLastPage()">Last</button>
+            @if ((!prevDisabled || !nextDisabled) && conformanceStatements && conformanceStatements.length > 0) {
+                <div class="text-center table-paging-controls">
+                    <div class="btn-group" role="group" [class.disable-events]="filterState.updatePending">
+                        <button type="button" class="btn btn-sm btn-secondary" [disabled]="prevDisabled" (click)="doFirstPage()">First</button>
+                        <button type="button" class="btn btn-sm btn-secondary" [disabled]="prevDisabled" (click)="doPrevPage()">Previous</button>
+                        <button type="button" class="btn btn-sm btn-secondary" [disabled]="nextDisabled" (click)="doNextPage()">Next</button>
+                        <button type="button" class="btn btn-sm btn-secondary" [disabled]="nextDisabled" (click)="doLastPage()">Last</button>
+                    </div>
                 </div>
-            </div>
+            }
         </div>
 	</div>
 </div>
