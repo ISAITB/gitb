@@ -115,6 +115,7 @@ class TestCaseManager @Inject() (testResultManager: TestResultManager, dbConfigP
 		actions += PersistenceSchema.testCaseCoversOptions.filter(_.testcase === testCaseId).delete
 		actions += PersistenceSchema.testSuiteHasTestCases.filter(_.testcase === testCaseId).delete
 		actions += PersistenceSchema.conformanceSnapshotResults.filter(_.testCaseId === testCaseId).map(_.testCaseId).update(testCaseId * -1)
+		actions += PersistenceSchema.conformanceSnapshotTestCases.filter(_.id === testCaseId).map(_.id).update(testCaseId * -1)
 		actions += PersistenceSchema.conformanceResults.filter(_.testcase === testCaseId).delete
 		actions += PersistenceSchema.testCases.filter(_.id === testCaseId).delete
 		DBIO.seq(actions.toList.map(a => a): _*)

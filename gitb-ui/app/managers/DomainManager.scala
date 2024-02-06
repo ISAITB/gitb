@@ -114,6 +114,7 @@ class DomainManager @Inject() (domainParameterManager: DomainParameterManager, r
       _ <- testResultManager.updateForDeletedDomain(domain)
       _ <- domainParameterManager.deleteDomainParameters(domain, onSuccessCalls)
       _ <- PersistenceSchema.conformanceSnapshotResults.filter(_.domainId === domain).map(_.domainId).update(domain * -1)
+      _ <- PersistenceSchema.conformanceSnapshotDomains.filter(_.id === domain).map(_.id).update(domain * -1)
       _ <- PersistenceSchema.domains.filter(_.id === domain).delete
       _ <- {
         onSuccessCalls += (() => {

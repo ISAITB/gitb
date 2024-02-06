@@ -370,14 +370,16 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils, testResultManag
     if (snapshotId.isEmpty) {
       exec(getSystemsByOrganizationInternal(orgId))
     } else {
-      exec(PersistenceSchema.conformanceSnapshotResults
-        .filter(_.snapshotId === snapshotId.get)
-        .filter(_.organisationId === orgId)
-        .map(x => (x.systemId, x.system, x.systemBadgeKey))
-        .distinct
-        .sortBy(_._2.asc)
-        .result
-      ).map(x => Systems(id = x._1, shortname = x._2, fullname = x._2, description = None, version = None, apiKey = None, badgeKey = x._3, owner = orgId))
+      exec(
+        PersistenceSchema.conformanceSnapshotResults
+          .join(PersistenceSchema.conformanceSnapshotSystems).on((res, sys) => res.snapshotId === sys.snapshotId && res.systemId === sys.id)
+          .filter(_._1.snapshotId === snapshotId.get)
+          .filter(_._1.organisationId === orgId)
+          .map(_._2)
+          .distinct
+          .sortBy(_.shortname.asc)
+          .result
+      ).map(x => Systems(id = x.id, shortname = x.shortname, fullname = x.fullname, description = x.description, version = None, apiKey = x.apiKey, badgeKey = x.badgeKey, owner = orgId))
         .toList
     }
   }
@@ -710,6 +712,7 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils, testResultManag
     PersistenceSchema.systemImplementsOptions.filter(_.systemId === systemId).delete andThen
     PersistenceSchema.conformanceResults.filter(_.sut === systemId).delete andThen
     PersistenceSchema.conformanceSnapshotResults.filter(_.systemId === systemId).map(_.systemId).update(systemId * -1) andThen
+    PersistenceSchema.conformanceSnapshotSystems.filter(_.id === systemId).map(_.id).update(systemId * -1) andThen
     deleteSystemParameterValues(systemId, onSuccess) andThen
     PersistenceSchema.systems.filter(_.id === systemId).delete
   }

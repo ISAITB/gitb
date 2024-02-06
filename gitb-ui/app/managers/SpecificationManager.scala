@@ -48,6 +48,7 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils, testSuit
       _ <- DBIO.seq(testSuiteIds.map(id => testSuiteManager.undeployTestSuite(id, onSuccessCalls)): _*)
       _ <- PersistenceSchema.specificationHasTestSuites.filter(_.specId === specId).delete
       _ <- PersistenceSchema.conformanceSnapshotResults.filter(_.specificationId === specId).map(_.specificationId).update(specId * -1)
+      _ <- PersistenceSchema.conformanceSnapshotSpecifications.filter(_.id === specId).map(_.id).update(specId * -1)
       _ <- PersistenceSchema.conformanceResults.filter(_.spec === specId).delete
       _ <- PersistenceSchema.specifications.filter(_.id === specId).delete
       _ <- {
@@ -214,6 +215,7 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils, testSuit
           actions += PersistenceSchema.specifications.filter(_.group === groupId).map(x => (x.group, x.displayOrder)).update(None, 0)
         }
         actions += PersistenceSchema.conformanceSnapshotResults.filter(_.specificationGroupId === groupId).map(_.specificationGroupId).update(Some(groupId * -1))
+        actions += PersistenceSchema.conformanceSnapshotSpecificationGroups.filter(_.id === groupId).map(_.id).update(groupId * -1)
         actions += PersistenceSchema.specificationGroups.filter(_.id === groupId).delete
         toDBIO(actions)
       }

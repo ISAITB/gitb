@@ -1,6 +1,7 @@
 package persistence.db
 
 import models._
+import models.snapshot.{ConformanceSnapshot, ConformanceSnapshotActor, ConformanceSnapshotDomain, ConformanceSnapshotOrganisation, ConformanceSnapshotResult, ConformanceSnapshotSpecification, ConformanceSnapshotSpecificationGroup, ConformanceSnapshotSystem, ConformanceSnapshotTestCase, ConformanceSnapshotTestSuite}
 import models.theme.Theme
 import slick.collection.heterogeneous.HNil
 import slick.jdbc.MySQLProfile.api._
@@ -97,13 +98,13 @@ object PersistenceSchema {
 	  def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
     def shortname = column[String]("sname")
     def fullname = column[String]("fname")
-	def description = column[Option[String]]("description", O.SqlType("TEXT"))
+  	def description = column[Option[String]]("description", O.SqlType("TEXT"))
     def * = (id, shortname, fullname, description) <> (Domain.tupled, Domain.unapply)
   }
   val domains = TableQuery[DomainsTable]
 
   class SpecificationsTable(tag: Tag) extends Table[Specifications](tag, "Specifications") {
-	def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
+	  def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
     def shortname = column[String]("sname")
     def fullname = column[String]("fname")
     def description = column[Option[String]]("description", O.SqlType("TEXT"))
@@ -632,46 +633,120 @@ object PersistenceSchema {
   class ConformanceSnapshotResultsTable(tag: Tag) extends Table[ConformanceSnapshotResult](tag, "ConformanceSnapshotResults") {
     def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
     def organisationId = column[Long] ("organization_id")
-    def organisation = column[String] ("organization")
     def systemId = column[Long]("sut_id")
-    def system = column[String]("sut")
-    def systemBadgeKey = column[String]("system_badge_key")
     def domainId = column[Long]("domain_id")
-    def domain = column[String]("domain")
     def specificationGroupId = column[Option[Long]]("spec_group_id")
-    def specificationGroup = column[Option[String]]("spec_group")
-    def specificationGroupDisplayOrder = column[Option[Short]]("spec_group_display_order")
     def specificationId = column[Long]("spec_id")
-    def specification = column[String]("spec")
-    def specificationDisplayOrder = column[Short]("spec_display_order")
     def actorId = column[Long]("actor_id")
-    def actor = column[String]("actor")
-    def actorApiKey = column[String]("actor_api_key")
     def testSuiteId = column[Long]("test_suite_id")
-    def testSuite = column[String]("test_suite")
-    def testSuiteDescription = column[Option[String]]("test_suite_description", O.SqlType("TEXT"))
-    def testSuiteSpecReference = column[Option[String]]("test_suite_spec_reference")
-    def testSuiteSpecDescription = column[Option[String]]("test_suite_spec_description", O.SqlType("TEXT"))
-    def testSuiteSpecLink = column[Option[String]]("test_suite_spec_link")
     def testCaseId = column[Long]("test_case_id")
-    def testCase = column[String]("test_case")
-    def testCaseDescription = column[Option[String]]("test_case_description", O.SqlType("TEXT"))
-    def testCaseOrder = column[Short]("test_case_order")
-    def testCaseIsOptional = column[Boolean]("test_case_optional")
-    def testCaseIsDisabled = column[Boolean]("test_case_disabled")
-    def testCaseTags = column[Option[String]]("test_case_tags", O.SqlType("TEXT"))
-    def testCaseSpecReference = column[Option[String]]("test_case_spec_reference")
-    def testCaseSpecDescription = column[Option[String]]("test_case_spec_description", O.SqlType("TEXT"))
-    def testCaseSpecLink = column[Option[String]]("test_case_spec_link")
     def testSessionId = column[Option[String]]("test_session_id")
     def result = column[String]("result")
     def outputMessage = column[Option[String]]("output_message", O.SqlType("TEXT"))
     def updateTime = column[Option[Timestamp]]("update_time", O.SqlType("TIMESTAMP"))
     def snapshotId = column[Long]("snapshot_id")
-    def * = (id :: snapshotId :: organisationId :: organisation :: systemId :: system :: systemBadgeKey :: domainId :: domain :: specificationGroupId :: specificationGroup :: specificationGroupDisplayOrder :: specificationId :: specification :: specificationDisplayOrder :: actorId :: actor :: actorApiKey :: testSuiteId :: testSuite :: testSuiteDescription :: testSuiteSpecReference :: testSuiteSpecDescription :: testSuiteSpecLink :: testCaseId :: testCase :: testCaseDescription :: testCaseOrder:: testCaseIsOptional :: testCaseIsDisabled :: testCaseTags :: testCaseSpecReference :: testCaseSpecDescription :: testCaseSpecLink :: testSessionId :: result :: outputMessage :: updateTime :: HNil).mapTo[ConformanceSnapshotResult]
+    def * = (id :: snapshotId :: organisationId ::  systemId ::  domainId :: specificationGroupId :: specificationId :: actorId :: testSuiteId :: testCaseId :: testSessionId :: result :: outputMessage :: updateTime :: HNil).mapTo[ConformanceSnapshotResult]
   }
   val conformanceSnapshotResults = TableQuery[ConformanceSnapshotResultsTable]
   val insertConformanceSnapshotResult = conformanceSnapshotResults returning conformanceSnapshotResults.map(_.id)
+
+  class ConformanceSnapshotTestCasesTable(tag: Tag) extends Table[ConformanceSnapshotTestCase](tag, "ConformanceSnapshotTestCases") {
+    def id = column[Long]("id")
+    def shortname = column[String]("sname")
+    def fullname = column[String]("fname")
+    def description = column[Option[String]]("description", O.SqlType("TEXT"))
+    def testSuiteOrder = column[Short]("testsuite_order")
+    def identifier = column[String]("identifier")
+    def isOptional = column[Boolean]("is_optional")
+    def isDisabled = column[Boolean]("is_disabled")
+    def tags = column[Option[String]]("tags", O.SqlType("TEXT"))
+    def specReference = column[Option[String]]("spec_reference")
+    def specDescription = column[Option[String]]("spec_description", O.SqlType("TEXT"))
+    def specLink = column[Option[String]]("spec_link")
+    def snapshotId = column[Long]("snapshot_id")
+    def * = (id :: shortname :: fullname :: description :: testSuiteOrder :: identifier :: isOptional :: isDisabled :: tags :: specReference :: specDescription :: specLink :: snapshotId :: HNil).mapTo[ConformanceSnapshotTestCase]
+  }
+  val conformanceSnapshotTestCases = TableQuery[ConformanceSnapshotTestCasesTable]
+
+  class ConformanceSnapshotTestSuitesTable(tag: Tag) extends Table[ConformanceSnapshotTestSuite](tag, "ConformanceSnapshotTestSuites") {
+    def id = column[Long]("id")
+    def shortname = column[String]("sname")
+    def fullname = column[String]("fname")
+    def description = column[Option[String]]("description", O.SqlType("TEXT"))
+    def identifier = column[String]("identifier")
+    def specReference = column[Option[String]]("spec_reference")
+    def specDescription = column[Option[String]]("spec_description", O.SqlType("TEXT"))
+    def specLink = column[Option[String]]("spec_link")
+    def snapshotId = column[Long]("snapshot_id")
+    def * = (id :: shortname :: fullname :: description :: identifier :: specReference :: specDescription :: specLink :: snapshotId :: HNil).mapTo[ConformanceSnapshotTestSuite]
+  }
+  val conformanceSnapshotTestSuites = TableQuery[ConformanceSnapshotTestSuitesTable]
+
+  class ConformanceSnapshotActorsTable(tag: Tag) extends Table[ConformanceSnapshotActor](tag, "ConformanceSnapshotActors") {
+    def id = column[Long]("id")
+    def actorId = column[String]("actorId")
+    def name = column[String]("name")
+    def description = column[Option[String]]("description", O.SqlType("TEXT"))
+    def apiKey = column[String]("api_key")
+    def snapshotId = column[Long]("snapshot_id")
+    def * = (id :: actorId :: name :: description :: apiKey :: snapshotId :: HNil).mapTo[ConformanceSnapshotActor]
+  }
+  val conformanceSnapshotActors = TableQuery[ConformanceSnapshotActorsTable]
+
+  class ConformanceSnapshotSpecificationsTable(tag: Tag) extends Table[ConformanceSnapshotSpecification](tag, "ConformanceSnapshotSpecifications") {
+    def id = column[Long]("id")
+    def shortname = column[String]("sname")
+    def fullname = column[String]("fname")
+    def description = column[Option[String]]("description", O.SqlType("TEXT"))
+    def apiKey = column[String]("api_key")
+    def displayOrder = column[Short]("display_order")
+    def snapshotId = column[Long]("snapshot_id")
+    def * = (id :: shortname :: fullname :: description :: apiKey :: displayOrder :: snapshotId :: HNil).mapTo[ConformanceSnapshotSpecification]
+  }
+  val conformanceSnapshotSpecifications = TableQuery[ConformanceSnapshotSpecificationsTable]
+
+  class ConformanceSnapshotSpecificationGroupsTable(tag: Tag) extends Table[ConformanceSnapshotSpecificationGroup](tag, "ConformanceSnapshotSpecificationGroups") {
+    def id = column[Long]("id")
+    def shortname = column[String]("sname")
+    def fullname = column[String]("fname")
+    def description = column[Option[String]]("description", O.SqlType("TEXT"))
+    def displayOrder = column[Short]("display_order")
+    def snapshotId = column[Long]("snapshot_id")
+    def * = (id :: shortname :: fullname :: description :: displayOrder :: snapshotId :: HNil).mapTo[ConformanceSnapshotSpecificationGroup]
+  }
+  val conformanceSnapshotSpecificationGroups = TableQuery[ConformanceSnapshotSpecificationGroupsTable]
+
+  class ConformanceSnapshotDomainsTable(tag: Tag) extends Table[ConformanceSnapshotDomain](tag, "ConformanceSnapshotDomains") {
+    def id = column[Long]("id")
+    def shortname = column[String]("sname")
+    def fullname = column[String]("fname")
+    def description = column[Option[String]]("description", O.SqlType("TEXT"))
+    def snapshotId = column[Long]("snapshot_id")
+    def * = (id :: shortname :: fullname :: description :: snapshotId :: HNil).mapTo[ConformanceSnapshotDomain]
+  }
+  val conformanceSnapshotDomains = TableQuery[ConformanceSnapshotDomainsTable]
+
+  class ConformanceSnapshotSystemsTable(tag: Tag) extends Table[ConformanceSnapshotSystem](tag, "ConformanceSnapshotSystems") {
+    def id = column[Long]("id")
+    def shortname = column[String]("sname")
+    def fullname = column[String]("fname")
+    def description = column[Option[String]]("description", O.SqlType("TEXT"))
+    def apiKey = column[Option[String]]("api_key")
+    def badgeKey = column[String]("badge_key")
+    def snapshotId = column[Long]("snapshot_id")
+    def * = (id :: shortname :: fullname :: description :: apiKey :: badgeKey :: snapshotId :: HNil).mapTo[ConformanceSnapshotSystem]
+  }
+  val conformanceSnapshotSystems = TableQuery[ConformanceSnapshotSystemsTable]
+
+  class ConformanceSnapshotOrganisationsTable(tag: Tag) extends Table[ConformanceSnapshotOrganisation](tag, "ConformanceSnapshotOrganisations") {
+    def id = column[Long]("id")
+    def shortname = column[String]("sname")
+    def fullname = column[String]("fname")
+    def apiKey = column[Option[String]]("api_key")
+    def snapshotId = column[Long]("snapshot_id")
+    def * = (id :: shortname :: fullname :: apiKey :: snapshotId :: HNil).mapTo[ConformanceSnapshotOrganisation]
+  }
+  val conformanceSnapshotOrganisations = TableQuery[ConformanceSnapshotOrganisationsTable]
 
   class ThemesTable(tag: Tag) extends Table[Theme](tag, "Themes") {
     def id = column[Long]("id", O.PrimaryKey, O.AutoInc)

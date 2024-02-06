@@ -58,6 +58,7 @@ class ActorManager @Inject() (repositoryUtils: RepositoryUtils, testResultManage
           optionManager.deleteOptionByActor(actorId) andThen
           PersistenceSchema.conformanceResults.filter(_.actor === actorId).delete andThen
           PersistenceSchema.conformanceSnapshotResults.filter(_.actorId === actorId).map(_.actorId).update(actorId * -1) andThen
+          PersistenceSchema.conformanceSnapshotActors.filter(_.id === actorId).map(_.id).update(actorId * -1) andThen
           PersistenceSchema.actors.filter(_.id === actorId).delete andThen {
             onSuccessCalls += (() => repositoryUtils.deleteActorBadges(specificationId, actorId))
             DBIO.successful(())

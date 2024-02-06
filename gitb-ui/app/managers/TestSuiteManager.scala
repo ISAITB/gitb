@@ -1691,6 +1691,7 @@ class TestSuiteManager @Inject() (domainParameterManager: DomainParameterManager
 			PersistenceSchema.specificationHasTestSuites.filter(_.testSuiteId === testSuiteId).delete andThen
 			PersistenceSchema.testSuiteHasActors.filter(_.testsuite === testSuiteId).delete andThen
 			PersistenceSchema.conformanceSnapshotResults.filter(_.testSuiteId === testSuiteId).map(_.testSuiteId).update(testSuiteId * -1) andThen
+			PersistenceSchema.conformanceSnapshotTestSuites.filter(_.id === testSuiteId).map(_.id).update(testSuiteId * -1) andThen
 			PersistenceSchema.conformanceResults.filter(_.testsuite === testSuiteId).delete andThen
 			(for {
 				testCases <- PersistenceSchema.testSuiteHasTestCases.filter(_.testsuite === testSuiteId).map(_.testcase).result
@@ -1700,6 +1701,7 @@ class TestSuiteManager @Inject() (domainParameterManager: DomainParameterManager
 						PersistenceSchema.testCaseCoversOptions.filter(_.testcase === testCase).delete andThen
 						PersistenceSchema.testSuiteHasTestCases.filter(_.testcase === testCase).delete andThen
 						PersistenceSchema.conformanceSnapshotResults.filter(_.testCaseId === testCase).map(_.testCaseId).update(testCase * -1) andThen
+						PersistenceSchema.conformanceSnapshotTestCases.filter(_.id === testCase).map(_.id).update(testCase * -1) andThen
 						PersistenceSchema.testCases.filter(_.id === testCase).delete
 				}): _*)
 			} yield ()) andThen
