@@ -16,6 +16,7 @@ export class ThemeFormComponent implements OnInit, AfterViewInit {
 
   @Input() theme!: Theme
   @Input() readonly = false
+  @Input() referenceThemeId?: number
   @ViewChild("themeKey") themeKeyField?: ElementRef;
 
   acceptedFileTypes = ['image/png', 'image/jpeg', 'image/gif', 'image/svg+xml' ]
@@ -65,7 +66,11 @@ export class ThemeFormComponent implements OnInit, AfterViewInit {
     if (file) {
       resourceBlob = of(file.file!)
     } else {
-      resourceBlob = this.dataService.binaryResponseToBlob(this.systemConfigurationService.previewThemeResource(this.theme.id, resourcePath))
+      let idToUse = this.referenceThemeId
+      if (idToUse == undefined) {
+        idToUse = this.theme.id
+      }
+      resourceBlob = this.dataService.binaryResponseToBlob(this.systemConfigurationService.previewThemeResource(idToUse, resourcePath))
     }
     resourceBlob.subscribe((data) => {
       if (data) {
