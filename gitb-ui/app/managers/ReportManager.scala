@@ -11,6 +11,7 @@ import com.gitb.utils.XMLUtils
 import config.Configurations
 import models.Enums.TestResultStatus
 import models._
+import models.statement.BadgePlaceholderInfo
 import org.apache.commons.codec.binary.Base64
 import org.apache.commons.io.FileUtils
 import org.apache.commons.lang3.StringUtils
@@ -472,15 +473,15 @@ class ReportManager @Inject() (domainParameterManager: DomainParameterManager, r
     conformanceInfo += getSampleConformanceStatement(3, labels)
     conformanceInfo += getSampleConformanceStatement(4, labels)
     conformanceInfo += getSampleConformanceStatement(5, labels)
-    generateConformanceCertificate(reportPath, settings, conformanceInfo.toList, communityId)
+    generateConformanceCertificate(reportPath, settings, conformanceInfo.toList, communityId, None, isDemo = true)
   }
 
   def generateConformanceCertificate(reportPath: Path, settings: ConformanceCertificates, actorId: Long, systemId: Long, communityId: Long, snapshotId: Option[Long]): Path = {
     val conformanceInfo = conformanceManager.getConformanceStatementsFull(None, None, None, Some(List(actorId)), None, None, Some(List(systemId)), None, None, None, None, None, None, None, snapshotId)
-    generateConformanceCertificate(reportPath, settings, conformanceInfo, communityId)
+    generateConformanceCertificate(reportPath, settings, conformanceInfo, communityId, snapshotId: Option[Long], isDemo = false)
   }
 
-  private def generateConformanceCertificate(reportPath: Path, settings: ConformanceCertificates, conformanceInfo: List[ConformanceStatementFull], communityId: Long): Path = {
+  private def generateConformanceCertificate(reportPath: Path, settings: ConformanceCertificates, conformanceInfo: List[ConformanceStatementFull], communityId: Long, snapshotId: Option[Long], isDemo: Boolean): Path = {
     var pathToUseForPdf = reportPath
     if (settings.includeSignature) {
       pathToUseForPdf = reportPath.resolveSibling(reportPath.getFileName.toString + ".signed.pdf")
@@ -494,7 +495,10 @@ class ReportManager @Inject() (domainParameterManager: DomainParameterManager, r
       }
     }
     val labels = communityLabelManager.getLabels(settings.community)
-    generateCoreConformanceReport(pathToUseForPdf, addTestCases = false, title, addDetails = settings.includeDetails, addTestCaseResults = settings.includeTestCases, addTestStatus = settings.includeTestStatus, addMessage = settings.includeMessage, addPageNumbers = settings.includePageNumbers, settings.message, conformanceInfo, labels, communityId)
+    generateCoreConformanceReport(pathToUseForPdf, addTestCases = false, title, addDetails = settings.includeDetails, addTestCaseResults = settings.includeTestCases, addTestStatus = settings.includeTestStatus,
+      addMessage = settings.includeMessage, addPageNumbers = settings.includePageNumbers, settings.message,
+      conformanceInfo, labels, communityId, snapshotId, isDemo
+    )
     // Add signature is needed.
     if (settings.includeSignature) {
       val keystore = SigUtils.loadKeystore(
@@ -547,10 +551,10 @@ class ReportManager @Inject() (domainParameterManager: DomainParameterManager, r
 
   private def generateCoreConformanceReport(reportPath: Path, addTestCases: Boolean, message: Option[String], actorId: Long, systemId: Long, labels: Map[Short, CommunityLabels], communityId: Long, snapshotId: Option[Long]): Path = {
     val conformanceInfo = conformanceManager.getConformanceStatementsFull(None, None, None, Some(List(actorId)), None, None, Some(List(systemId)), None, None, None, None, None, None, None, snapshotId)
-    generateCoreConformanceReport(reportPath, addTestCases, Some("Conformance Statement Report"), addDetails = true, addTestCaseResults = true, addTestStatus = true, addMessage = false, addPageNumbers = true, message, conformanceInfo, labels, communityId)
+    generateCoreConformanceReport(reportPath, addTestCases, Some("Conformance Statement Report"), addDetails = true, addTestCaseResults = true, addTestStatus = true, addMessage = false, addPageNumbers = true, message, conformanceInfo, labels, communityId, snapshotId, isDemo = false)
   }
 
-  private def generateCoreConformanceReport(reportPath: Path, addTestCases: Boolean, title: Option[String], addDetails: Boolean, addTestCaseResults: Boolean, addTestStatus: Boolean, addMessage: Boolean, addPageNumbers: Boolean, message: Option[String], conformanceInfo: List[ConformanceStatementFull], labels: Map[Short, CommunityLabels], communityId: Long): Path = {
+  private def generateCoreConformanceReport(reportPath: Path, addTestCases: Boolean, title: Option[String], addDetails: Boolean, addTestCaseResults: Boolean, addTestStatus: Boolean, addMessage: Boolean, addPageNumbers: Boolean, message: Option[String], conformanceInfo: List[ConformanceStatementFull], labels: Map[Short, CommunityLabels], communityId: Long, snapshotId: Option[Long], isDemo: Boolean): Path = {
     val sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss")
     val overview = new ConformanceStatementOverview()
     val specs = reportHelper.createReportSpecs(Some(communityId))
@@ -592,6 +596,26 @@ class ReportManager @Inject() (domainParameterManager: DomainParameterManager, r
       messageToUse = messageToUse.replace(Constants.PlaceholderSpecificationGroup, conformanceData.specificationGroupNameFull.getOrElse(""))
       messageToUse = messageToUse.replace(Constants.PlaceholderSpecification, overview.getTestSpecification)
       messageToUse = messageToUse.replace(Constants.PlaceholderSystem, overview.getSystem)
+      // Badges.
+      val badgePlaceholders = BadgePlaceholderInfo.findBadgeDefinitions(messageToUse)
+      badgePlaceholders.foreach { placeholderInfo =>
+        // We have placeholders for badges.
+        val imagePath = if (isDemo) {
+          Some("classpath:reports/images/demo-badge.png")
+        } else {
+          val badge = repositoryUtils.getConformanceBadge(conformanceData.specificationId, Some(conformanceData.actorId), snapshotId, conformanceData.result, exactMatch = false)
+          badge.map(_.toURI.toString)
+        }
+        if (imagePath.isDefined) {
+          if (placeholderInfo.width.isDefined) {
+            // With specific width.
+            messageToUse = messageToUse.replace(placeholderInfo.placeholder, "<img width=\"%s\" src=\"%s\"/>".formatted(placeholderInfo.width.get, imagePath.get))
+          } else {
+            // With original image width.
+            messageToUse = messageToUse.replace(placeholderInfo.placeholder, "<img src=\"%s\"/>".formatted(imagePath.get))
+          }
+        }
+      }
       overview.setMessage(messageToUse)
     }
 

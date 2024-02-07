@@ -144,6 +144,7 @@ export class Constants {
 	public static PLACEHOLDER__SPECIFICATION_GROUP_OPTION = "$SPECIFICATION_GROUP_OPTION"
 	public static PLACEHOLDER__ACTOR = "$ACTOR"
 	public static PLACEHOLDER__DOMAIN = "$DOMAIN"
+	public static PLACEHOLDER__BADGE = "$BADGE"
 
 	public static TEST_STATUS = {
 		UNKNOWN: null,

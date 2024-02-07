@@ -44,6 +44,7 @@ object Constants {
   val PlaceholderSpecificationGroupOption = "$SPECIFICATION_GROUP_OPTION"
   val PlaceholderActor = "$ACTOR"
   val PlaceholderDomain = "$DOMAIN"
+  val PlaceholderBadge = "$BADGE"
 
   val ProductionMode = "production"
   val DevelopmentMode = "development"

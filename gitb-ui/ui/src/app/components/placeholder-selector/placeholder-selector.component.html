@@ -1,27 +1,35 @@
 <div class="root">
-    <div *ngIf="(placeholders && placeholders.length > 0) || (parameterPlaceholders && parameterPlaceholders.length > 0)" class="buttonContainer">
-        <div class="button">
-            <div class="btn-group" dropdown>
-                <button id="button-placeholder" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-placeholder">Copy placeholder text<span class="caret withMargin"></span></button>
-                <ul id="dropdown-placeholder" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-placeholder">
-                    <li *ngFor="let placeholder of placeholders" role="menuitem"><a class="dropdown-item" href (click)="selected(placeholder); $event.preventDefault()"><b>{{placeholder.key}}{{placeholder.value != ''?':':''}}</b> {{placeholder.value}}</a></li>
-                    <ng-container *ngIf="parameterPlaceholders && parameterPlaceholders.length > 0">
-                        <li class="divider dropdown-divider"></li>
-                        <li *ngFor="let placeholder of parameterPlaceholders" role="menuitem"><a class="dropdown-item" href (click)="selected(placeholder); $event.preventDefault()"><b>{{placeholder.key}}{{placeholder.value != ''?':':''}}</b> {{placeholder.value}}</a></li>
-                    </ng-container>
-                </ul>
+    @if ((placeholders && placeholders.length > 0) || (parameterPlaceholders && parameterPlaceholders.length > 0)) {
+        <div class="buttonContainer">
+            <div class="button">
+                <div class="btn-group" dropdown>
+                    <button id="button-placeholder" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-placeholder">Copy placeholder text<span class="caret withMargin"></span></button>
+                    <ul id="dropdown-placeholder" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-placeholder">
+                        @for (placeholder of placeholders; track placeholder.key) {
+                            <li role="menuitem"><a class="dropdown-item" href (click)="selectedPlaceholder(placeholder); $event.preventDefault()"><b>{{placeholder.key}}{{placeholder.value != ''?':':''}}</b> {{placeholder.value}}</a></li>
+                        }
+                        @if (parameterPlaceholders && parameterPlaceholders.length > 0) {
+                            <li class="divider dropdown-divider"></li>
+                            @for (placeholder of parameterPlaceholders; track placeholder.key) {
+                                <li role="menuitem"><a class="dropdown-item" href (click)="selectedParameter(placeholder); $event.preventDefault()"><b>{{placeholder.key}}{{placeholder.value != ''?':':''}}</b> {{placeholder.value}}</a></li>
+                            }
+                        }
+                    </ul>
+                </div>
+            </div>
+            <div class="help">
+                <div app-tooltip class="col-auto d-inline-flex" tbTooltip="Placeholders are predefined types of values that will be automatically replaced in the resulting content." [inline]="true"></div>
             </div>
         </div>
-        <div class="help">
-            <div app-tooltip class="col-auto d-inline-flex" tbTooltip="Placeholders are predefined types of values that will be automatically replaced in the resulting content." [inline]="true"></div>
-        </div>
-    </div>
-    <div *ngIf="communityResourceConfig" class="buttonContainer">
-        <div class="communityResourceControl">
-            <app-multi-select-filter [config]="communityResourceConfig" (apply)="resourceSelected($event)"></app-multi-select-filter>
-        </div>
-        <div class="help">
-            <div app-tooltip class="col-auto d-inline-flex" tbTooltip="Resources defined for the community can be referenced in the content (for example as image sources)." [inline]="true"></div>
-        </div>    
-    </div>
+        @if (communityResourceConfig) {
+            <div class="buttonContainer">
+                <div class="communityResourceControl">
+                    <app-multi-select-filter [config]="communityResourceConfig" (apply)="resourceSelected($event)"></app-multi-select-filter>
+                </div>
+                <div class="help">
+                    <div app-tooltip class="col-auto d-inline-flex" tbTooltip="Resources defined for the community can be referenced in the content (for example as image sources)." [inline]="true"></div>
+                </div>    
+            </div>
+        }
+    }
 </div>

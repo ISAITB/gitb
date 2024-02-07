@@ -9,6 +9,7 @@ import { DomainParameter } from 'src/app/types/domain-parameter';
 import { KeyValue } from 'src/app/types/key-value';
 import { FilterUpdate } from '../test-filter/filter-update';
 import { MultiSelectConfig } from '../multi-select-filter/multi-select-config';
+import { PlaceholderInfo } from './placeholder-info';
 
 @Component({
   selector: 'app-placeholder-selector',
@@ -17,7 +18,7 @@ import { MultiSelectConfig } from '../multi-select-filter/multi-select-config';
 })
 export class PlaceholderSelectorComponent implements OnInit {
 
-  @Input() placeholders: KeyValue[] = []
+  @Input() placeholders: PlaceholderInfo[] = []
   @Input() domainParameters: boolean = false
   @Input() resources: boolean = false
   @Input() community?: number
@@ -76,17 +77,29 @@ export class PlaceholderSelectorComponent implements OnInit {
     }
   }
 
-  selected(placeholder: KeyValue) {
-    this.dataService.copyToClipboard(placeholder.key).subscribe(() => {
-      this.popupService.success('Placeholder copied to clipboard.')
+  selectedPlaceholder(placeholder: PlaceholderInfo) {
+    let valueToCopy: string
+    if (placeholder.select) {
+      valueToCopy = placeholder.select()
+    } else {
+      valueToCopy = placeholder.key
+    }
+    this.copyValue(valueToCopy, 'Placeholder copied to clipboard.')
+  }
+
+  selectedParameter(placeholder: KeyValue) {
+    this.copyValue(placeholder.key, 'Placeholder copied to clipboard.')
+  }
+
+  private copyValue(value: string, message: string) {
+    this.dataService.copyToClipboard(value).subscribe(() => {
+      this.popupService.success(message)
     })
   }
 
   resourceSelected(update: FilterUpdate<CommunityResource>) {
     if (update.values.active.length > 0) {
-      this.dataService.copyToClipboard(update.values.active[0].reference).subscribe(() => {
-        this.popupService.success('Resource reference copied to clipboard.')
-      })
+      this.copyValue(update.values.active[0].reference, 'Resource reference copied to clipboard.')
     }
   }
 

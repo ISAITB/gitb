@@ -12,7 +12,7 @@ import { RoutingService } from 'src/app/services/routing.service';
 import { ConformanceCertificateSettings } from 'src/app/types/conformance-certificate-settings';
 import { FileData } from 'src/app/types/file-data.type';
 import { saveAs } from 'file-saver'
-import { KeyValue } from 'src/app/types/key-value';
+import { PlaceholderInfo } from 'src/app/components/placeholder-selector/placeholder-info';
 
 @Component({
   selector: 'app-community-certificate',
@@ -23,7 +23,7 @@ export class CommunityCertificateComponent extends BaseComponent implements OnIn
   communityId!: number
   settings: Partial<ConformanceCertificateSettings> = {}
   originalSettings: Partial<ConformanceCertificateSettings>|undefined
-  placeholders: KeyValue[] = []
+  placeholders: PlaceholderInfo[] = []
   updatePasswords = false
   removeKeystore = false
   updatePending = false
@@ -56,7 +56,9 @@ export class CommunityCertificateComponent extends BaseComponent implements OnIn
       { key: Constants.PLACEHOLDER__SPECIFICATION_GROUP_OPTION, value: 'The full name of the ' + this.dataService.labelSpecificationInGroupLower() + '.' },
       { key: Constants.PLACEHOLDER__ACTOR, value: 'The full name of the ' + this.dataService.labelActorLower() + ' linked to the conformance statement.' },
       { key: Constants.PLACEHOLDER__ORGANISATION, value: 'The full name of the ' + this.dataService.labelOrganisationLower() + ' to be granted the certificate.' },
-      { key: Constants.PLACEHOLDER__SYSTEM, value: 'The full name of the ' + this.dataService.labelSystemLower() + ' that was used in the tests.' }
+      { key: Constants.PLACEHOLDER__SYSTEM, value: 'The full name of the ' + this.dataService.labelSystemLower() + ' that was used in the tests.' },
+      { key: Constants.PLACEHOLDER__BADGE, value: 'The badge image corresponding to the current conformance status (original image size).'},
+      { key: Constants.PLACEHOLDER__BADGE+'{width}', value: 'The badge image corresponding to the current conformance status (with fixed width in pixels).', select: () => Constants.PLACEHOLDER__BADGE+'{100}' }
     ]
     this.loading = true
     this.conformanceService.getConformanceCertificateSettings(this.communityId, true)
