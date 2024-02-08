@@ -9,6 +9,7 @@ object Parameters {
   val PUBLIC_LABEL   = "publicLabel"
   val SNAPSHOT  = "snapshot"
   val PUBLIC  = "public"
+  val REPORT = "report"
 
   //Dashboard filter parameters
   val COMMUNITY_IDS = "community_ids"
@@ -189,9 +190,15 @@ object Parameters {
   val SUCCESS_BADGE = "success_badge"
   val FAILURE_BADGE = "failure_badge"
   val OTHER_BADGE = "other_badge"
+  val SUCCESS_BADGE_REPORT = "success_badge_report"
+  val FAILURE_BADGE_REPORT = "failure_badge_report"
+  val OTHER_BADGE_REPORT = "other_badge_report"
   val SUCCESS_BADGE_ENABLED = "success_badge_enabled"
   val FAILURE_BADGE_ENABLED = "failure_badge_enabled"
   val OTHER_BADGE_ENABLED = "other_badge_enabled"
+  val SUCCESS_BADGE_REPORT_ENABLED = "success_badge_report_enabled"
+  val FAILURE_BADGE_REPORT_ENABLED = "failure_badge_report_enabled"
+  val OTHER_BADGE_REPORT_ENABLED = "other_badge_report_enabled"
 
   val HEADER_LOGO_FILE = "headerLogoFile"
   val FOOTER_LOGO_FILE = "footerLogoFile"

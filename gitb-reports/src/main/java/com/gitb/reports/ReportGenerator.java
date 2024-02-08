@@ -145,9 +145,10 @@ public class ReportGenerator {
                     if (uri.startsWith("classpath:")) {
                         // A predefined image.
                         return Objects.requireNonNull(Thread.currentThread().getContextClassLoader().getResource(StringUtils.removeStart(uri, "classpath:"))).toString();
-                    } else if (specsToUse.getResourceResolver() != null && uri.startsWith("resources/")) {
-                        // This is a community-specific resource.
-                        return specsToUse.getResourceResolver().apply(URLDecoder.decode(StringUtils.removeStart(uri, "resources/"), StandardCharsets.UTF_8));
+                    } else if (specsToUse.getResourceResolver() != null) {
+                        // Check if this is a community-specific resource.
+                        String resolvedResource = specsToUse.getResourceResolver().apply(uri);
+                        return Objects.requireNonNullElseGet(resolvedResource, () -> super.resolveURI(baseUri, uri));
                     }
                     return super.resolveURI(baseUri, uri);
                 }

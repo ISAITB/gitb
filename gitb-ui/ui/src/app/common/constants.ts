@@ -376,5 +376,6 @@ export class Constants {
 	public static DATA_URL_REGEX = /^data:.+\/(.+);base64,(.*)$/
 	public static VARIABLE_NAME_REGEX = /^[a-zA-Z][a-zA-Z\-_\.0-9]*$/
 	public static LOG_LEVEL_REGEX = /^\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\] (DEBUG|ERROR|WARN|INFO) /
+	public static BADGE_PLACEHOLDER_REGEX = /(\$BADGE(?:\{\d+\})?)/g
 
 }

@@ -17,8 +17,9 @@ export class ManageBadgeComponent implements OnInit {
   @Input() badgeType!: string
   @Input() specificationId?: number
   @Input() actorId?: number
+  @Input() forReport? = false
 
-  acceptedFileTypes = ['image/png', 'image/jpeg', 'image/gif', 'image/svg+xml' ]
+  acceptedFileTypes: string[] = ['image/png', 'image/jpeg', 'image/gif' ]
   pathForBadge?: string
   Constants = Constants
 
@@ -27,6 +28,9 @@ export class ManageBadgeComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
+    if (!this.forReport) {
+      this.acceptedFileTypes.push('image/svg+xml')
+    }
   }
 
   previewBadge() {
@@ -44,7 +48,8 @@ export class ManageBadgeComponent implements OnInit {
     }
     this.modalService.show(PreviewBadgeModalComponent, {
       initialState: {
-        config: config
+        config: config,
+        forReport: this.forReport
       }
     })
   }

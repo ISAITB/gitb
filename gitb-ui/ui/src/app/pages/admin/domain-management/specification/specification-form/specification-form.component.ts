@@ -1,6 +1,5 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { Constants } from 'src/app/common/constants';
 import { DataService } from 'src/app/services/data.service';
 import { Specification } from 'src/app/types/specification';
 

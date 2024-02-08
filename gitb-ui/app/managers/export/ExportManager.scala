@@ -431,9 +431,15 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, systemConfigura
             exportedSpecification.setGroup(exportedGroupMap(specification.group.get))
           }
           exportedSpecification.setBadges(badgesInfo(
-              repositoryUtils.getConformanceBadge(specification.id, None, None, TestResultStatus.SUCCESS.toString, exactMatch = true),
-              repositoryUtils.getConformanceBadge(specification.id, None, None, TestResultStatus.UNDEFINED.toString, exactMatch = true),
-              repositoryUtils.getConformanceBadge(specification.id, None, None, TestResultStatus.FAILURE.toString, exactMatch = true)
+              repositoryUtils.getConformanceBadge(specification.id, None, None, TestResultStatus.SUCCESS.toString, exactMatch = true, forReport = false),
+              repositoryUtils.getConformanceBadge(specification.id, None, None, TestResultStatus.UNDEFINED.toString, exactMatch = true, forReport = false),
+              repositoryUtils.getConformanceBadge(specification.id, None, None, TestResultStatus.FAILURE.toString, exactMatch = true, forReport = false)
+            ).orNull
+          )
+          exportedSpecification.setBadgesForReport(badgesInfo(
+              repositoryUtils.getConformanceBadge(specification.id, None, None, TestResultStatus.SUCCESS.toString, exactMatch = true, forReport = true),
+              repositoryUtils.getConformanceBadge(specification.id, None, None, TestResultStatus.UNDEFINED.toString, exactMatch = true, forReport = true),
+              repositoryUtils.getConformanceBadge(specification.id, None, None, TestResultStatus.FAILURE.toString, exactMatch = true, forReport = true)
             ).orNull
           )
           // Actors
@@ -454,9 +460,15 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, systemConfigura
               }
               exportedActor.setHidden(actor.hidden)
               exportedActor.setBadges(badgesInfo(
-                  repositoryUtils.getConformanceBadge(specification.id, Some(actor.id), None, TestResultStatus.SUCCESS.toString, exactMatch = true),
-                  repositoryUtils.getConformanceBadge(specification.id, Some(actor.id), None, TestResultStatus.UNDEFINED.toString, exactMatch = true),
-                  repositoryUtils.getConformanceBadge(specification.id, Some(actor.id), None, TestResultStatus.FAILURE.toString, exactMatch = true)
+                  repositoryUtils.getConformanceBadge(specification.id, Some(actor.id), None, TestResultStatus.SUCCESS.toString, exactMatch = true, forReport = false),
+                  repositoryUtils.getConformanceBadge(specification.id, Some(actor.id), None, TestResultStatus.UNDEFINED.toString, exactMatch = true, forReport = false),
+                  repositoryUtils.getConformanceBadge(specification.id, Some(actor.id), None, TestResultStatus.FAILURE.toString, exactMatch = true, forReport = false)
+                ).orNull
+              )
+              exportedActor.setBadges(badgesInfo(
+                  repositoryUtils.getConformanceBadge(specification.id, Some(actor.id), None, TestResultStatus.SUCCESS.toString, exactMatch = true, forReport = true),
+                  repositoryUtils.getConformanceBadge(specification.id, Some(actor.id), None, TestResultStatus.UNDEFINED.toString, exactMatch = true, forReport = true),
+                  repositoryUtils.getConformanceBadge(specification.id, Some(actor.id), None, TestResultStatus.FAILURE.toString, exactMatch = true, forReport = true)
                 ).orNull
               )
               // Endpoints.

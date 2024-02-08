@@ -7,6 +7,7 @@ import { ReportService } from 'src/app/services/report.service';
 import { ConformanceCertificateSettings } from 'src/app/types/conformance-certificate-settings';
 import { ConformanceResultFull } from 'src/app/types/conformance-result-full';
 import { saveAs } from 'file-saver'
+import { BadgePlaceholderInfo } from './badge-placeholder-info';
 
 @Component({
   selector: 'app-conformance-certificate-modal',
@@ -58,6 +59,38 @@ export class ConformanceCertificateModalComponent implements OnInit {
     message = message.split(Constants.PLACEHOLDER__ACTOR).join(this.conformanceStatement.actorName)
     message = message.split(Constants.PLACEHOLDER__ORGANISATION).join(this.conformanceStatement.organizationName)
     message = message.split(Constants.PLACEHOLDER__SYSTEM).join(this.conformanceStatement.systemName)
+    message = this.replaceBadgePlaceholders(message)
+    return message
+  }
+
+  private replaceBadgePlaceholders(message: string): string {
+    // Find placeholders.
+    const placeholders: BadgePlaceholderInfo[] = []
+    const matches = message.match(Constants.BADGE_PLACEHOLDER_REGEX)
+    if (matches) {
+      matches.forEach((match) => {
+        const openBracket = match.indexOf("{")
+        let width: number|undefined
+        if (openBracket > 0) {
+          const closeBracket = match.indexOf("}", openBracket)
+          if (closeBracket > openBracket) {
+            width = parseInt(match.substring(openBracket+1, closeBracket))
+          }
+        }
+        placeholders.push({ placeholder: match, width: width})
+      })
+    }
+    // Replace with images.
+    for (let placeholder of placeholders) {
+      let imagePath = this.conformanceService.conformanceBadgeByIdsPath(this.conformanceStatement.overallStatus!, this.conformanceStatement.systemId, this.conformanceStatement.specId, this.conformanceStatement.actorId, this.snapshotId)
+      let imageDefinition: string
+      if (placeholder.width) {
+        imageDefinition = "<img width='"+placeholder.width+"' src='"+imagePath+"'/>"
+      } else {
+        imageDefinition = "<img src='"+imagePath+"'/>"
+      }
+      message = message.split(placeholder.placeholder).join(imageDefinition)
+    }
     return message
   }
 

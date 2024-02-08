@@ -317,7 +317,7 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils, systemManag
 				} yield (results, specificationId)
 			)
 			// Check to see if we have badges. We use the SUCCESS badge as this will always be present if badges are defined.
-			val hasBadge = repositoryUtil.getConformanceBadge(statusItems._2, Some(actorId), snapshotId, TestResultType.SUCCESS.toString, exactMatch = false).isDefined
+			val hasBadge = repositoryUtil.getConformanceBadge(statusItems._2, Some(actorId), snapshotId, TestResultType.SUCCESS.toString, exactMatch = false, forReport = false).isDefined
 			val status = new ConformanceStatus(0, 0, 0, 0, 0, 0, TestResultType.UNDEFINED, None, hasBadge, new ListBuffer[ConformanceTestSuite])
 			val testSuiteMap = new mutable.LinkedHashMap[Long, ConformanceTestSuite]()
 			statusItems._1.foreach { item =>
@@ -1132,7 +1132,7 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils, systemManag
 		} yield ()
 	}
 
-	def getConformanceBadge(systemKey: String, actorKey: String, snapshotKey: Option[String]): Option[File] = {
+	def getConformanceBadge(systemKey: String, actorKey: String, snapshotKey: Option[String], forReport: Boolean): Option[File] = {
 		val query = if (snapshotKey.isDefined) {
 			// Query conformance snapshot.
 			for {
@@ -1179,7 +1179,7 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils, systemManag
 		if (systemId.isDefined && specificationId.isDefined && actorId.isDefined && (snapshotKey.isEmpty || snapshotId.isDefined)) {
 			val status = getConformanceStatus(actorId.get, systemId.get, testSuiteId = None, includeDisabled = false, snapshotId)
 			if (status.isDefined) {
-				repositoryUtil.getConformanceBadge(specificationId.get, actorId, snapshotId, status = status.get.result.value(), exactMatch = false)
+				repositoryUtil.getConformanceBadge(specificationId.get, actorId, snapshotId, status = status.get.result.value(), exactMatch = false, forReport)
 			} else {
 				None
 			}
@@ -1188,7 +1188,7 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils, systemManag
 		}
 	}
 
-	def getConformanceBadgeByIds(systemId: Long, actorId: Long, snapshotId: Option[Long]): Option[File] = {
+	def getConformanceBadgeByIds(systemId: Long, actorId: Long, snapshotId: Option[Long], forReport: Boolean): Option[File] = {
 		val status = getConformanceStatus(actorId, systemId, testSuiteId = None, includeDisabled = false, snapshotId)
 		if (status.isDefined) {
 			val specificationId = if (snapshotId.isDefined) {
@@ -1204,7 +1204,7 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils, systemManag
 			} else {
 				exec(PersistenceSchema.specificationHasActors.filter(_.actorId === actorId).map(_.specId).result.head)
 			}
-			repositoryUtil.getConformanceBadge(specificationId, Some(actorId), snapshotId, status = status.get.result.value(), exactMatch = false)
+			repositoryUtil.getConformanceBadge(specificationId, Some(actorId), snapshotId, status = status.get.result.value(), exactMatch = false, forReport)
 		} else {
 			None
 		}

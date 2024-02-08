@@ -1,67 +1,136 @@
-<div class="row" *ngIf="badges">
-    <div class="col-10 offset-1">
-        <div class="row mb-3 pt-1">
-            <label class="col-3 col-form-label text-end pt-0" for="badgesEnabled">Badges enabled:</label>
-            <div class="col-7">
-                <div class="form-check">
-                    <input class="form-check-input" id="badgesEnabled" name="badgesEnabled" [(ngModel)]="badges.enabled" type="checkbox">
-                    <div app-tooltip class="col-auto d-inline-flex" tbTooltip="Check to define conformance badges as visual indications of a conformance statement's status." [inline]="true"></div>
+@if (badges) {
+    <div class="row">
+        <div class="col-10 offset-1">
+            <div class="row mb-3 pt-1">
+                <label class="col-3 col-form-label text-end pt-0" for="badgesEnabled">Badges enabled:</label>
+                <div class="col-7">
+                    <div class="form-check">
+                        <input class="form-check-input" id="badgesEnabled" name="badgesEnabled" [(ngModel)]="badges.enabled" type="checkbox">
+                        <div app-tooltip class="col-auto d-inline-flex" tbTooltip="Check to define conformance badges as visual indications of a conformance statement's status." [inline]="true"></div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
-<div *ngIf="badges?.enabled != undefined" [collapse]="!badges.enabled" [isAnimated]="true">
-    <app-form-section sectionTitle="Conformance badges" [collapsed]="badgesCollapsed">
-        <div class="row">
-            <div class="col-10 offset-1">
-                <div class="row mt-3">
-                    <label class="col-3 col-form-label text-end">* Success badge:</label>
-                    <div class="col-7">
-                        <app-manage-badge
-                            [badge]="badges.success"
-                            [badgeType]="Constants.TEST_CASE_RESULT.SUCCESS"
-                            [specificationId]="badges.specificationId"
-                            [actorId]="badges.actorId"
-                        ></app-manage-badge>
-                    </div>
-                    <div app-tooltip class="col-auto" tbTooltip="The badge image to display for a successful conformance statement."></div>
-                </div>
-                <div class="row mt-3">
-                    <label class="col-3 col-form-label text-end">* Other badge:</label>
-                    <div class="col-7">
-                        <app-manage-badge
-                            [badge]="badges.other"
-                            [badgeType]="Constants.TEST_CASE_RESULT.UNDEFINED"
-                            [specificationId]="badges.specificationId"
-                            [actorId]="badges.actorId"
-                        ></app-manage-badge>
-                    </div>
-                    <div app-tooltip class="col-auto" tbTooltip="The badge image to display for a non-successful conformance statement."></div>
-                </div>
-                <div class="row mt-3">
-                    <div class="col-7 offset-3">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="distinctFailureBadge" name="distinctFailureBadge" [(ngModel)]="badges.failureBadgeActive">
-                            <label for="distinctFailureBadge">Use distinct badge for failed statements?</label>
+    @if (badges.enabled != undefined) {
+        <div [collapse]="!badges.enabled" [isAnimated]="true">
+            <app-form-section sectionTitle="Conformance badges" [collapsed]="badgesCollapsed">
+                <div class="row">
+                    <div class="col-10 offset-1">
+                        <div class="row mt-3">
+                            <label class="col-3 col-form-label text-end">* Success badge:</label>
+                            <div class="col-7">
+                                <app-manage-badge
+                                    [badge]="badges.success"
+                                    [badgeType]="Constants.TEST_CASE_RESULT.SUCCESS"
+                                    [specificationId]="badges.specificationId"
+                                    [actorId]="badges.actorId"
+                                ></app-manage-badge>
+                            </div>
+                            <div app-tooltip class="col-auto" tbTooltip="The badge image to display for a successful conformance statement."></div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-7 offset-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="distinctSuccessReportBadge" name="distinctSuccessReportBadge" [(ngModel)]="badges.successBadgeForReportActive" appTrueFalseValue [trueValue]="false" [falseValue]="true">
+                                    <label for="distinctSuccessReportBadge">Same badge for PDF reports?</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div [collapse]="!badges.successBadgeForReportActive" [isAnimated]="true">
+                            <div class="row mt-3">
+                                <label class="col-3 col-form-label text-end">* Success badge for reports:</label>
+                                <div class="col-7">
+                                    <app-manage-badge
+                                        [badge]="badges.successForReport"
+                                        [badgeType]="Constants.TEST_CASE_RESULT.SUCCESS"
+                                        [specificationId]="badges.specificationId"
+                                        [actorId]="badges.actorId"
+                                        [forReport]="true"
+                                    ></app-manage-badge>
+                                </div>
+                                <div app-tooltip class="col-auto" tbTooltip="The badge image to display specifically in PDF reports for a successful conformance statement."></div>
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <label class="col-3 col-form-label text-end">* Other badge:</label>
+                            <div class="col-7">
+                                <app-manage-badge
+                                    [badge]="badges.other"
+                                    [badgeType]="Constants.TEST_CASE_RESULT.UNDEFINED"
+                                    [specificationId]="badges.specificationId"
+                                    [actorId]="badges.actorId"
+                                ></app-manage-badge>
+                            </div>
+                            <div app-tooltip class="col-auto" tbTooltip="The badge image to display for a non-successful conformance statement."></div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-7 offset-3">
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" id="distinctOtherReportBadge" name="distinctOtherReportBadge" [(ngModel)]="badges.otherBadgeForReportActive" appTrueFalseValue [trueValue]="false" [falseValue]="true">
+                                    <label for="distinctOtherReportBadge">Same badge for PDF reports?</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" id="distinctFailureBadge" name="distinctFailureBadge" [(ngModel)]="badges.failureBadgeActive">
+                                    <label for="distinctFailureBadge">Use distinct badge for failed statements?</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div [collapse]="!badges.otherBadgeForReportActive" [isAnimated]="true">
+                            <div class="row mt-3">
+                                <label class="col-3 col-form-label text-end">* Other badge for reports:</label>
+                                <div class="col-7">
+                                    <app-manage-badge
+                                        [badge]="badges.otherForReport"
+                                        [badgeType]="Constants.TEST_CASE_RESULT.UNDEFINED"
+                                        [specificationId]="badges.specificationId"
+                                        [actorId]="badges.actorId"
+                                        [forReport]="true"
+                                    ></app-manage-badge>
+                                </div>
+                                <div app-tooltip class="col-auto" tbTooltip="The badge image to display specifically in PDF reports for a non-successful conformance statement."></div>
+                            </div>
+                        </div>
+                        <div [collapse]="!badges.failureBadgeActive" [isAnimated]="true">
+                            <div class="row mt-3">
+                                <label class="col-3 col-form-label text-end">* Failure badge:</label>
+                                <div class="col-7">
+                                    <app-manage-badge
+                                        [badge]="badges.failure"
+                                        [badgeType]="Constants.TEST_CASE_RESULT.FAILURE"
+                                        [specificationId]="badges.specificationId"
+                                        [actorId]="badges.actorId"
+                                    ></app-manage-badge>
+                                </div>
+                                <div app-tooltip class="col-auto" tbTooltip="The badge image to display specifically for a failed conformance statement. If this is not provided the 'other' badge will be used instead."></div>
+                            </div>
+                            <div class="row mt-3">
+                                <div class="col-7 offset-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="distinctFailureReportBadge" name="distinctFailureReportBadge" [(ngModel)]="badges.failureBadgeForReportActive" appTrueFalseValue [trueValue]="false" [falseValue]="true">
+                                        <label for="distinctFailureReportBadge">Same badge for PDF reports?</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div [collapse]="!badges.failureBadgeForReportActive" [isAnimated]="true">
+                                <div class="row mt-3">
+                                    <label class="col-3 col-form-label text-end">* Failure badge for reports:</label>
+                                    <div class="col-7">
+                                        <app-manage-badge
+                                            [badge]="badges.failureForReport"
+                                            [badgeType]="Constants.TEST_CASE_RESULT.FAILURE"
+                                            [specificationId]="badges.specificationId"
+                                            [actorId]="badges.actorId"
+                                            [forReport]="true"
+                                        ></app-manage-badge>
+                                    </div>
+                                    <div app-tooltip class="col-auto" tbTooltip="The badge image to display in PDF reports specifically for a failed conformance statement. If this is not provided the 'other' badge will be used instead."></div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div [collapse]="!badges.failureBadgeActive" [isAnimated]="true">
-                    <div class="row mt-3">
-                        <label class="col-3 col-form-label text-end">* Failure badge:</label>
-                        <div class="col-7">
-                            <app-manage-badge
-                                [badge]="badges.failure"
-                                [badgeType]="Constants.TEST_CASE_RESULT.FAILURE"
-                                [specificationId]="badges.specificationId"
-                                [actorId]="badges.actorId"
-                            ></app-manage-badge>
-                        </div>
-                        <div app-tooltip class="col-auto" tbTooltip="The badge image to display specifically for a failed conformance statement. If this is not provided the 'other' badge will be used instead."></div>
-                    </div>
-                </div>
-            </div>
+            </app-form-section>
         </div>
-    </app-form-section>
-</div>
+    }
+}

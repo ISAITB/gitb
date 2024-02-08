@@ -846,7 +846,7 @@ object JsonUtil {
    * @param spec Specification object to be converted
    * @return JsObject
    */
-  def jsSpecification(spec:Specifications, withApiKeys:Boolean = false, badgeStatus: Option[BadgeStatus] = None) : JsObject = {
+  def jsSpecification(spec:Specifications, withApiKeys:Boolean = false, badgeStatus: Option[(BadgeStatus, BadgeStatus)] = None) : JsObject = {
     var json = Json.obj(
       "id"      -> spec.id,
       "sname"   -> spec.shortname,
@@ -861,12 +861,12 @@ object JsonUtil {
       json = json.+("apiKey" -> JsString(spec.apiKey))
     }
     if (badgeStatus.isDefined) {
-      json = json.+("badges" -> jsBadgeStatus(badgeStatus.get))
+      json = json.+("badges" -> jsBadgeStatus(badgeStatus.get._1, badgeStatus.get._2))
     }
     json
   }
 
-  private def jsBadgeStatus(badgeStatus: BadgeStatus): JsObject = {
+  private def jsBadgeStatus(badgeStatus: BadgeStatus, badgeStatusForReport: BadgeStatus): JsObject = {
     Json.obj(
       "success" -> Json.obj(
         "enabled" -> badgeStatus.success.isDefined,
@@ -879,6 +879,18 @@ object JsonUtil {
       "other" -> Json.obj(
         "enabled" -> badgeStatus.other.isDefined,
         "nameToShow" -> (if (badgeStatus.other.isDefined) badgeStatus.other.get else JsNull)
+      ),
+      "successForReport" -> Json.obj(
+        "enabled" -> badgeStatusForReport.success.isDefined,
+        "nameToShow" -> (if (badgeStatusForReport.success.isDefined) badgeStatusForReport.success.get else JsNull)
+      ),
+      "failureForReport" -> Json.obj(
+        "enabled" -> badgeStatusForReport.failure.isDefined,
+        "nameToShow" -> (if (badgeStatusForReport.failure.isDefined) badgeStatusForReport.failure.get else JsNull)
+      ),
+      "otherForReport" -> Json.obj(
+        "enabled" -> badgeStatusForReport.other.isDefined,
+        "nameToShow" -> (if (badgeStatusForReport.other.isDefined) badgeStatusForReport.other.get else JsNull)
       )
     )
   }
@@ -898,10 +910,10 @@ object JsonUtil {
    * Converts a List of Specifications into Play!'s JSON notation
    * @return JsArray
    */
-  def jsSpecifications(list:Iterable[Specifications], withApiKeys:Boolean = false, badgeStatus: Option[BadgeStatus] = None):JsArray = {
+  def jsSpecifications(list:Iterable[Specifications], withApiKeys:Boolean = false):JsArray = {
     var json = Json.arr()
     list.foreach{ spec =>
-      json = json.append(jsSpecification(spec, withApiKeys, badgeStatus))
+      json = json.append(jsSpecification(spec, withApiKeys, None))
     }
     json
   }
@@ -933,7 +945,7 @@ object JsonUtil {
     json
   }
 
-  def jsActor(actor:Actor, badgeStatus: Option[BadgeStatus] = None) : JsObject = {
+  def jsActor(actor:Actor, badgeStatus: Option[(BadgeStatus, BadgeStatus)] = None) : JsObject = {
     var json = Json.obj(
       "id" -> actor.id,
       "actorId" -> actor.actorId,
@@ -949,7 +961,7 @@ object JsonUtil {
       json = json.+("apiKey"  -> (if(actor.apiKey.isDefined) JsString(actor.apiKey.get) else JsNull))
     }
     if (badgeStatus.isDefined) {
-      json = json.+("badges" -> jsBadgeStatus(badgeStatus.get))
+      json = json.+("badges" -> jsBadgeStatus(badgeStatus.get._1, badgeStatus.get._2))
     }
     json
   }

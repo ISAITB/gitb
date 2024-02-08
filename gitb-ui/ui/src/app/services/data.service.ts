@@ -1275,6 +1275,9 @@ export class DataService {
     params.success_badge_enabled = badges && badges.enabled && badges.success.enabled
     params.other_badge_enabled = badges && badges.enabled && badges.other.enabled
     params.failure_badge_enabled = badges && badges.enabled && badges.failureBadgeActive && badges.failure.enabled
+    params.success_badge_report_enabled = badges && badges.enabled && badges.success.enabled && badges.successBadgeForReportActive && badges.successForReport.enabled
+    params.other_badge_report_enabled = badges && badges.enabled && badges.other.enabled && badges.otherBadgeForReportActive && badges.otherForReport.enabled
+    params.failure_badge_report_enabled = badges && badges.enabled && badges.failureBadgeActive && badges.failure.enabled && badges.failureBadgeForReportActive && badges.failureForReport.enabled
     if (badges && badges.enabled) {
       files = []
       if (badges.success.enabled && badges.success.file && badges.success.file.file) {
@@ -1285,6 +1288,15 @@ export class DataService {
       }
       if (badges.failureBadgeActive && badges.failure.enabled && badges.failure.file && badges.failure.file.file) {
         files.push({ param: 'failure_badge', data: badges.failure.file.file})
+      }
+      if (badges.success.enabled && badges.successBadgeForReportActive && badges.successForReport.enabled && badges.successForReport.file && badges.successForReport.file.file) {
+        files.push({ param: 'success_badge_report', data: badges.successForReport.file.file})
+      }
+      if (badges.other.enabled && badges.otherBadgeForReportActive && badges.otherForReport.enabled && badges.otherForReport.file && badges.otherForReport.file.file) {
+        files.push({ param: 'other_badge_report', data: badges.otherForReport.file.file})
+      }
+      if (badges.failureBadgeActive && badges.failure.enabled && badges.failureBadgeForReportActive && badges.failureForReport.enabled && badges.failureForReport.file && badges.failureForReport.file.file) {
+        files.push({ param: 'failure_badge_report', data: badges.failureForReport.file.file})
       }
     }
     return files
@@ -1342,6 +1354,21 @@ export class DataService {
         }
       })
     )
+  }
+
+  badgesValid(badges: BadgesInfo|undefined) {
+    let valid = false
+    if (badges?.enabled) {
+      if (badges.success.enabled && badges.other.enabled 
+          && (!badges.successBadgeForReportActive || badges.successForReport.enabled)
+          && (!badges.otherBadgeForReportActive || badges.otherForReport.enabled)
+          && (!badges.failureBadgeActive || (badges.failure.enabled && (!badges.failureBadgeForReportActive || badges.failureForReport.enabled)))) {
+        valid = true
+      }
+    } else {
+      valid = true
+    }
+    return valid
   }
 
 }

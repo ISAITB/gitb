@@ -994,7 +994,13 @@ export class ConformanceService {
     })
   }
 
-  getBadgeForStatus(specificationId: number, actorId: number|undefined, status: string) {
+  getBadgeForStatus(specificationId: number, actorId: number|undefined, status: string, forReport?: boolean) {
+    let params: any
+    if (forReport != undefined) {
+      params = {
+        report: forReport
+      }
+    }
     let path: string
     if (actorId == undefined) {
       path = ROUTES.controllers.SpecificationService.getBadgeForStatus(specificationId, status).url
@@ -1003,6 +1009,7 @@ export class ConformanceService {
     }
     return this.restService.get<HttpResponse<ArrayBuffer>>({
       path: path,
+      params: params,
       authenticate: true,
       arrayBuffer: true,
       httpResponse: true
@@ -1024,12 +1031,20 @@ export class ConformanceService {
     })
   }
 
-  conformanceBadgeByIds(systemId: number, actorId: number, snapshotId?: number) {
+  conformanceBadgeByIdsPath(status: string, systemId: number, specificationId: number, actorId: number, snapshotId?: number): string {
+    if (snapshotId == undefined) {
+      return ROUTES.controllers.ConformanceService.conformanceBadgeReportPreview(status, systemId, specificationId, actorId).url
+    } else {
+      return ROUTES.controllers.ConformanceService.conformanceBadgeReportPreviewForSnapshot(status, systemId, specificationId, actorId, snapshotId).url
+    }
+  }
+
+  conformanceBadgeByIds(systemId: number, actorId: number, snapshotId?: number, forReport?: boolean) {
     let params: any = undefined
-    if (snapshotId != undefined) {
-      params = {
-        snapshot: snapshotId
-      }
+    if (snapshotId != undefined || forReport != undefined) {
+      params = {}
+      if (snapshotId != undefined) params.snapshot = snapshotId
+      if (forReport != undefined) params.report = forReport
     }
     return this.restService.get<HttpResponse<ArrayBuffer>>({
       path: ROUTES.controllers.ConformanceService.conformanceBadgeByIds(systemId, actorId).url,

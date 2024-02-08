@@ -64,8 +64,10 @@ export class ActorDetailsComponent extends BaseComponent implements OnInit, Afte
         this.actor.badges.enabled = this.actor.badges.success != undefined && this.actor.badges.success.enabled!
         this.actor.badges.initiallyEnabled = this.actor.badges.enabled
         this.actor.badges.failureBadgeActive = this.actor.badges.failure != undefined && this.actor.badges.failure.enabled!
+        this.actor.badges.successBadgeForReportActive = this.actor.badges.successForReport != undefined && this.actor.badges.successForReport.enabled!
+        this.actor.badges.otherBadgeForReportActive = this.actor.badges.otherForReport != undefined && this.actor.badges.otherForReport.enabled!
+        this.actor.badges.failureBadgeForReportActive = this.actor.badges.failureForReport != undefined && this.actor.badges.failureForReport.enabled!
       }
-
       this.routingService.actorBreadcrumbs(this.domainId, this.specificationId, this.actorId, this.actor.actorId)
     })
     this.conformanceService.getEndpointsForActor(this.actorId)
@@ -121,17 +123,7 @@ export class ActorDetailsComponent extends BaseComponent implements OnInit, Afte
       this.textProvided(this.actor?.actorId) && 
       this.textProvided(this.actor?.name) && 
       this.numberOrEmpty(this.actor?.displayOrder) &&
-      (
-        !this.actor.badges!.enabled || 
-        (
-          this.actor.badges!.success.enabled && 
-          this.actor.badges!.other.enabled && 
-          (
-            !this.actor.badges!.failureBadgeActive ||
-            this.actor.badges!.failure.enabled
-          )
-        )
-      )
+      this.dataService.badgesValid(this.actor?.badges)
     )
   }
 

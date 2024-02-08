@@ -8,7 +8,7 @@ import models.Enums.ImportItemType.ImportItemType
 import models.Enums.TestSuiteReplacementChoice.PROCEED
 import models.Enums._
 import models.theme.ThemeFiles
-import models.{Badges, Constants, Enums, NamedFile, ProcessedArchive, TestCaseDeploymentAction, TestCases, TestSuiteDeploymentAction}
+import models.{BadgeInfo, Badges, Constants, Enums, NamedFile, ProcessedArchive, TestCaseDeploymentAction, TestCases, TestSuiteDeploymentAction}
 import org.apache.commons.codec.binary.Base64
 import org.apache.commons.codec.digest.DigestUtils
 import org.apache.commons.io.{FileUtils, FilenameUtils}
@@ -1205,7 +1205,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                   if (data.getGroup == null || relatedGroupId.nonEmpty) {
                     val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
                     specificationManager.createSpecificationsInternal(models.Specifications(0L, data.getShortName, data.getFullName, Option(data.getDescription), data.isHidden, apiKey, getDomainIdFromParentItem(item), data.getDisplayOrder, relatedGroupId), checkApiKeyUniqueness = true,
-                      toModelBadges(data.getBadges, ctx), ctx.onSuccessCalls)
+                      BadgeInfo(toModelBadges(data.getBadges, ctx), toModelBadges(data.getBadgesForReport, ctx)), ctx.onSuccessCalls)
                   } else {
                     DBIO.successful(())
                   }
@@ -1215,7 +1215,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                   if (data.getGroup == null || relatedGroupId.nonEmpty) {
                     val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
                     specificationManager.updateSpecificationInternal(targetKey.toLong, data.getShortName, data.getFullName, Option(data.getDescription), data.isHidden, Some(apiKey), checkApiKeyUniqueness = true, relatedGroupId, Some(data.getDisplayOrder),
-                      toModelBadges(data.getBadges, ctx), ctx.onSuccessCalls)
+                      BadgeInfo(toModelBadges(data.getBadges, ctx), toModelBadges(data.getBadgesForReport, ctx)), ctx.onSuccessCalls)
                   } else {
                     DBIO.successful(())
                   }
@@ -1254,7 +1254,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                       val domainId = getDomainIdFromParentItem(item)
                       val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
                       actorManager.createActor(models.Actors(0L, data.getActorId, data.getName, Option(data.getDescription), Some(data.isDefault), data.isHidden, order, apiKey, domainId), specificationId, checkApiKeyUniqueness = true,
-                        toModelBadges(data.getBadges, ctx), ctx.onSuccessCalls)
+                        Some(BadgeInfo(toModelBadges(data.getBadges, ctx), toModelBadges(data.getBadgesForReport, ctx))), ctx.onSuccessCalls)
                     },
                     (data: com.gitb.xml.export.Actor, targetKey: String, item: ImportItem) => {
                       // Record actor info (needed for test suite processing).
@@ -1270,7 +1270,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                       }
                       val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
                       actorManager.updateActor(targetKey.toLong, data.getActorId, data.getName, Option(data.getDescription), Some(data.isDefault), data.isHidden, order, item.parentItem.get.targetKey.get.toLong, Some(apiKey), checkApiKeyUniqueness = true,
-                        toModelBadges(data.getBadges, ctx), ctx.onSuccessCalls)
+                        Some(BadgeInfo(toModelBadges(data.getBadges, ctx), toModelBadges(data.getBadgesForReport, ctx))), ctx.onSuccessCalls)
                     },
                     (data: com.gitb.xml.export.Actor, targetKey: Any, item: ImportItem) => {
                       // Record actor info (needed for test suite processing).
@@ -1492,16 +1492,16 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
     }
   }
 
-  private def toModelBadges(exportBadges: ConformanceBadges, ctx: ImportContext): Option[Badges] = {
+  private def toModelBadges(exportBadges: ConformanceBadges, ctx: ImportContext): Badges = {
     if (exportBadges != null) {
-      Some(Badges(
+      Badges(
         exportBadges.getSuccess != null, exportBadges.getFailure != null, exportBadges.getOther != null,
         toModelBadgeFile(exportBadges.getSuccess, ctx),
         toModelBadgeFile(exportBadges.getFailure, ctx),
         toModelBadgeFile(exportBadges.getOther, ctx)
-      ))
+      )
     } else {
-      None
+      Badges(hasSuccess = false, hasFailure = false, hasOther = false, None, None, None)
     }
   }
 

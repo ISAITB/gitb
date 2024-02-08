@@ -1,4 +1,4 @@
-<app-file-select [fileName]="badge.file?badge.file.name:badge.nameToShow" (onUpload)="selectBadge($event)" placeholder="Drop or browse for badge image ..." [accepts]="acceptedFileTypes" [extraActions]="true">
+<app-file-select [icon]="forReport?'fa solid fa-file-pdf':undefined" [fileName]="badge.file?badge.file.name:badge.nameToShow" (onUpload)="selectBadge($event)" placeholder="Drop or browse for badge image ..." [accepts]="acceptedFileTypes" [extraActions]="true">
     <button type="button" class="btn btn-secondary" *ngIf="badge.enabled" (click)="previewBadge()" containerClass="shortTooltip" tooltip="Preview" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-magnifying-glass"></i></button>
     <button type="button" class="btn btn-secondary" *ngIf="badge.enabled" (click)="removeBadge()" containerClass="shortTooltip" tooltip="Remove" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-trash"></i></button>
 </app-file-select>

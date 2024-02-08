@@ -93,7 +93,7 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 		Files.copy(source.toPath, targetPath, StandardCopyOption.REPLACE_EXISTING).toFile
 	}
 
-	def getConformanceBadge(specificationId: Long, actorId: Option[Long], snapshotId: Option[Long], status: String, exactMatch: Boolean): Option[File] = {
+	def getConformanceBadge(specificationId: Long, actorId: Option[Long], snapshotId: Option[Long], status: String, exactMatch: Boolean, forReport: Boolean): Option[File] = {
 		/*
 		 Structure is as follows (folders in square brackets):
 		 [badges]
@@ -123,37 +123,49 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 		var badge: Option[Path] = None
 		if (actorId.isDefined) {
 			val actorFolder = specificationFolder.resolve(actorId.get.toString)
-			badge = findBadge(actorFolder, status, exactMatch).headOption
+			badge = findBadge(actorFolder, status, exactMatch, forReport).headOption
 			if (badge.isEmpty && !exactMatch) {
-				badge = findBadge(specificationFolder, status, exactMatch).headOption
+				badge = findBadge(specificationFolder, status, exactMatch, forReport).headOption
 			}
 		} else {
-			badge = findBadge(specificationFolder, status, exactMatch).headOption
+			badge = findBadge(specificationFolder, status, exactMatch, forReport).headOption
 		}
 		badge.map(_.toFile)
 	}
 
-	private def findBadgeFile(badgeFolder: Path, status: String): List[Path] = {
+	private def findBadgeFile(badgeFolder: Path, status: String, forReport: Boolean): List[Path] = {
+		val baseFileName = if (forReport) {
+			status+".report"
+		} else {
+			status
+		}
 		Files.find(badgeFolder, 1, { (file, _) =>
-			status.equals(FilenameUtils.getBaseName(file.getFileName.toString))
+			baseFileName.equals(FilenameUtils.getBaseName(file.getFileName.toString))
 		}).toList.asScala.toList
 	}
 
-	private def findBadge(badgeFolder: Path, status: String, exactMatch: Boolean): List[Path] = {
+	private def findBadgeFileForStatus(badgeFolder: Path, status: String, exactMatch: Boolean, forReport: Boolean): List[Path] = {
+		var path = findBadgeFile(badgeFolder, status, forReport)
+		if (path.isEmpty && !exactMatch && forReport) {
+			// See if we have a non-report badge as a fallback.
+			path = findBadgeFile(badgeFolder, status, forReport = false)
+		}
+		path
+	}
+
+	private def findBadge(badgeFolder: Path, status: String, exactMatch: Boolean, forReport: Boolean): List[Path] = {
 		if (Files.exists(badgeFolder)) {
 			val statusValue = TestResultStatus.withName(status)
-			val pathToReturn = if (statusValue == TestResultStatus.SUCCESS) {
-				findBadgeFile(badgeFolder, TestResultStatus.SUCCESS.toString)
-			} else if (statusValue == TestResultStatus.FAILURE) {
+			val pathToReturn = if (statusValue == TestResultStatus.FAILURE) {
 				// Return the failure badge if this is defined.
-				var failurePath = findBadgeFile(badgeFolder, TestResultStatus.FAILURE.toString)
+				var failurePath = findBadgeFileForStatus(badgeFolder, status, exactMatch, forReport)
 				if (failurePath.isEmpty && !exactMatch) {
 					// If not defined return the other/incomplete badge.
-					failurePath = findBadgeFile(badgeFolder, TestResultStatus.UNDEFINED.toString)
+					failurePath = findBadgeFileForStatus(badgeFolder, TestResultStatus.UNDEFINED.toString, exactMatch, forReport)
 				}
 				failurePath
 			} else {
-				findBadgeFile(badgeFolder, TestResultStatus.UNDEFINED.toString)
+				findBadgeFileForStatus(badgeFolder, status, exactMatch, forReport)
 			}
 			pathToReturn
 		} else {
@@ -161,39 +173,44 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 		}
 	}
 
-	private def badgeFileName(baseName: String, reference: NamedFile): String = {
+	private def badgeFileName(baseName: String, reference: NamedFile, forReport: Boolean): String = {
+		val baseNameToUse = if (forReport) {
+			baseName+".report"
+		} else {
+			baseName
+		}
 		val extension = FilenameUtils.getExtension(reference.name)
 		if (StringUtils.isBlank(extension)) {
-			baseName
+			baseNameToUse
 		} else {
-			baseName + FilenameUtils.EXTENSION_SEPARATOR + extension
+			baseNameToUse + FilenameUtils.EXTENSION_SEPARATOR + extension
 		}
 	}
 
-	def setSpecificationBadge(specificationId: Long, badge: NamedFile, status: String): Unit = {
+	def setSpecificationBadge(specificationId: Long, badge: NamedFile, status: String, forReport: Boolean): Unit = {
 		val specificationFolder = Paths.get(Configurations.TEST_CASE_REPOSITORY_PATH, FILES_PATH, FILES_BADGES_PATH, FILES_BADGES_LATEST_PATH, specificationId.toString)
 		if (Files.notExists(specificationFolder)) {
 			Files.createDirectories(specificationFolder)
 		}
-		_setFile(specificationFolder.resolve(badgeFileName(status, badge)).toFile, badge.file, copy = false)
+		_setFile(specificationFolder.resolve(badgeFileName(status, badge, forReport)).toFile, badge.file, copy = false)
 	}
 
-	def setActorBadge(specificationId: Long, actorId: Long, badge: NamedFile, status: String): Unit = {
+	def setActorBadge(specificationId: Long, actorId: Long, badge: NamedFile, status: String, forReport: Boolean): Unit = {
 		val actorFolder = Paths.get(Configurations.TEST_CASE_REPOSITORY_PATH, FILES_PATH, FILES_BADGES_PATH, FILES_BADGES_LATEST_PATH, specificationId.toString, actorId.toString)
 		if (Files.notExists(actorFolder)) {
 			Files.createDirectories(actorFolder)
 		}
-		_setFile(actorFolder.resolve(badgeFileName(status, badge)).toFile, badge.file, copy = false)
+		_setFile(actorFolder.resolve(badgeFileName(status, badge, forReport)).toFile, badge.file, copy = false)
 	}
 
 	def deleteSpecificationBadges(specificationId: Long): Unit = {
 		_deleteFile(Paths.get(Configurations.TEST_CASE_REPOSITORY_PATH, FILES_PATH, FILES_BADGES_PATH, FILES_BADGES_LATEST_PATH, specificationId.toString).toFile)
 	}
 
-	def deleteSpecificationBadge(specificationId: Long, status: String): Unit = {
+	def deleteSpecificationBadge(specificationId: Long, status: String, forReport: Boolean): Unit = {
 		val specificationFolder = Paths.get(Configurations.TEST_CASE_REPOSITORY_PATH, FILES_PATH, FILES_BADGES_PATH, FILES_BADGES_LATEST_PATH, specificationId.toString)
 		if (Files.exists(specificationFolder)) {
-			findBadge(specificationFolder, status, exactMatch = true).foreach { badge =>
+			findBadge(specificationFolder, status, exactMatch = true, forReport).foreach { badge =>
 				_deleteFile(badge.toFile)
 			}
 		}
@@ -203,10 +220,10 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 		_deleteFile(Paths.get(Configurations.TEST_CASE_REPOSITORY_PATH, FILES_PATH, FILES_BADGES_PATH, FILES_BADGES_LATEST_PATH, specificationId.toString, actorId.toString).toFile)
 	}
 
-	def deleteActorBadge(specificationId: Long, actorId: Long, status: String): Unit = {
+	def deleteActorBadge(specificationId: Long, actorId: Long, status: String, forReport: Boolean): Unit = {
 		val actorFolder = Paths.get(Configurations.TEST_CASE_REPOSITORY_PATH, FILES_PATH, FILES_BADGES_PATH, FILES_BADGES_LATEST_PATH, specificationId.toString, actorId.toString)
 		if (Files.exists(actorFolder)) {
-			findBadge(actorFolder, status, exactMatch = true).foreach { badge =>
+			findBadge(actorFolder, status, exactMatch = true, forReport).foreach { badge =>
 				_deleteFile(badge.toFile)
 			}
 		}

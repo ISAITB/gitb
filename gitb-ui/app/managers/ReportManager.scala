@@ -577,48 +577,6 @@ class ReportManager @Inject() (domainParameterManager: DomainParameterManager, r
     overview.setIncludeMessage(addMessage)
     overview.setIncludePageNumbers(addPageNumbers)
 
-    // Prepare message
-    var messageToUse:String = null
-    if (addMessage && message.isDefined) {
-      messageToUse = message.get
-      // Replace placeholders
-      if (messageToUse.contains(Constants.PlaceholderDomain+"{")) {
-        // We are referring to domain parameters.
-        val parameters = domainParameterManager.getDomainParametersByCommunityId(communityId, onlySimple = true, loadValues = true)
-        parameters.foreach { param =>
-          messageToUse = messageToUse.replace("$DOMAIN{"+param.name+"}", param.value.getOrElse(""))
-        }
-      }
-      messageToUse = messageToUse.replace(Constants.PlaceholderActor, overview.getTestActor)
-      messageToUse = messageToUse.replace(Constants.PlaceholderDomain, overview.getTestDomain)
-      messageToUse = messageToUse.replace(Constants.PlaceholderOrganisation, overview.getOrganisation)
-      messageToUse = messageToUse.replace(Constants.PlaceholderSpecificationGroupOption, conformanceData.specificationGroupOptionNameFull)
-      messageToUse = messageToUse.replace(Constants.PlaceholderSpecificationGroup, conformanceData.specificationGroupNameFull.getOrElse(""))
-      messageToUse = messageToUse.replace(Constants.PlaceholderSpecification, overview.getTestSpecification)
-      messageToUse = messageToUse.replace(Constants.PlaceholderSystem, overview.getSystem)
-      // Badges.
-      val badgePlaceholders = BadgePlaceholderInfo.findBadgeDefinitions(messageToUse)
-      badgePlaceholders.foreach { placeholderInfo =>
-        // We have placeholders for badges.
-        val imagePath = if (isDemo) {
-          Some("classpath:reports/images/demo-badge.png")
-        } else {
-          val badge = repositoryUtils.getConformanceBadge(conformanceData.specificationId, Some(conformanceData.actorId), snapshotId, conformanceData.result, exactMatch = false)
-          badge.map(_.toURI.toString)
-        }
-        if (imagePath.isDefined) {
-          if (placeholderInfo.width.isDefined) {
-            // With specific width.
-            messageToUse = messageToUse.replace(placeholderInfo.placeholder, "<img width=\"%s\" src=\"%s\"/>".formatted(placeholderInfo.width.get, imagePath.get))
-          } else {
-            // With original image width.
-            messageToUse = messageToUse.replace(placeholderInfo.placeholder, "<img src=\"%s\"/>".formatted(imagePath.get))
-          }
-        }
-      }
-      overview.setMessage(messageToUse)
-    }
-
     if (addTestCaseResults) {
       overview.setTestSuites(new util.ArrayList[TestSuiteOverview]())
     }
@@ -747,6 +705,47 @@ class ReportManager @Inject() (domainParameterManager: DomainParameterManager, r
       overview.setTestSuites(new util.ArrayList[TestSuiteOverview](testMap.values.map(_._1).toList.asJavaCollection))
     }
     overview.setIncludeTestStatus(addTestStatus)
+    // Prepare message
+    var messageToUse:String = null
+    if (addMessage && message.isDefined) {
+      messageToUse = message.get
+      // Replace placeholders
+      if (messageToUse.contains(Constants.PlaceholderDomain+"{")) {
+        // We are referring to domain parameters.
+        val parameters = domainParameterManager.getDomainParametersByCommunityId(communityId, onlySimple = true, loadValues = true)
+        parameters.foreach { param =>
+          messageToUse = messageToUse.replace("$DOMAIN{"+param.name+"}", param.value.getOrElse(""))
+        }
+      }
+      messageToUse = messageToUse.replace(Constants.PlaceholderActor, overview.getTestActor)
+      messageToUse = messageToUse.replace(Constants.PlaceholderDomain, overview.getTestDomain)
+      messageToUse = messageToUse.replace(Constants.PlaceholderOrganisation, overview.getOrganisation)
+      messageToUse = messageToUse.replace(Constants.PlaceholderSpecificationGroupOption, conformanceData.specificationGroupOptionNameFull)
+      messageToUse = messageToUse.replace(Constants.PlaceholderSpecificationGroup, conformanceData.specificationGroupNameFull.getOrElse(""))
+      messageToUse = messageToUse.replace(Constants.PlaceholderSpecification, overview.getTestSpecification)
+      messageToUse = messageToUse.replace(Constants.PlaceholderSystem, overview.getSystem)
+      // Badges.
+      val badgePlaceholders = BadgePlaceholderInfo.findBadgeDefinitions(messageToUse)
+      badgePlaceholders.foreach { placeholderInfo =>
+        // We have placeholders for badges.
+        val imagePath = if (isDemo) {
+          Some("classpath:reports/images/demo-badge.png")
+        } else {
+          val badge = repositoryUtils.getConformanceBadge(conformanceData.specificationId, Some(conformanceData.actorId), snapshotId, overview.getOverallStatus, exactMatch = false, forReport = true)
+          badge.map(_.toURI.toString)
+        }
+        if (imagePath.isDefined) {
+          if (placeholderInfo.width.isDefined) {
+            // With specific width.
+            messageToUse = messageToUse.replace(placeholderInfo.placeholder, "<img width=\"%s\" src=\"%s\"/>".formatted(placeholderInfo.width.get, imagePath.get))
+          } else {
+            // With original image width.
+            messageToUse = messageToUse.replace(placeholderInfo.placeholder, "<img src=\"%s\"/>".formatted(imagePath.get))
+          }
+        }
+      }
+      overview.setMessage(messageToUse)
+    }
     Files.createDirectories(reportPath.getParent)
     val fos = Files.newOutputStream(reportPath)
     try {

@@ -11,9 +11,6 @@ export class ManageBadgesComponent implements OnInit {
   @Input() badges!: BadgesInfo
 
   badgesCollapsed: boolean = false
-  successName?: string
-  otherName?: string
-  failureName?: string
 
   Constants = Constants
 

@@ -815,26 +815,33 @@ object ParameterExtractor {
     (theme, themeFiles, resultToReturn)
   }
 
-  def extractBadges(request: Request[AnyContent], paramMap: Option[Map[String, Seq[String]]]): (Option[Badges], Option[Result]) = {
+  def extractBadges(request: Request[AnyContent], paramMap: Option[Map[String, Seq[String]]], forReport: Boolean): (Option[Badges], Option[Result]) = {
+    val successBadgeEnabledParam = if (forReport) Parameters.SUCCESS_BADGE_REPORT_ENABLED else Parameters.SUCCESS_BADGE_ENABLED
+    val failureBadgeEnabledParam = if (forReport) Parameters.FAILURE_BADGE_REPORT_ENABLED else Parameters.FAILURE_BADGE_ENABLED
+    val otherBadgeEnabledParam = if (forReport) Parameters.OTHER_BADGE_REPORT_ENABLED else Parameters.OTHER_BADGE_ENABLED
+    val successBadgeParam = if (forReport) Parameters.SUCCESS_BADGE_REPORT else Parameters.SUCCESS_BADGE
+    val failureBadgeParam = if (forReport) Parameters.FAILURE_BADGE_REPORT else Parameters.FAILURE_BADGE
+    val otherBadgeParam = if (forReport) Parameters.OTHER_BADGE_REPORT else Parameters.OTHER_BADGE
+
     val files = ParameterExtractor.extractFiles(request)
     var resultToReturn: Option[Result] = None
-    val hasSuccess = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.SUCCESS_BADGE_ENABLED).toBoolean
-    val hasFailure = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.FAILURE_BADGE_ENABLED).toBoolean
-    val hasOther = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.OTHER_BADGE_ENABLED).toBoolean
+    val hasSuccess = ParameterExtractor.requiredBodyParameter(paramMap, successBadgeEnabledParam).toBoolean
+    val hasFailure = ParameterExtractor.requiredBodyParameter(paramMap, failureBadgeEnabledParam).toBoolean
+    val hasOther = ParameterExtractor.requiredBodyParameter(paramMap, otherBadgeEnabledParam).toBoolean
     var successBadgeToStore: Option[NamedFile] = None
     var failureBadgeToStore: Option[NamedFile] = None
     var otherBadgeToStore: Option[NamedFile] = None
     val filesToScan = new ListBuffer[NamedFile]
-    if (hasSuccess && files.contains(Parameters.SUCCESS_BADGE)) {
-      successBadgeToStore = Some(NamedFile(files(Parameters.SUCCESS_BADGE).file, files(Parameters.SUCCESS_BADGE).name))
+    if (hasSuccess && files.contains(successBadgeParam)) {
+      successBadgeToStore = Some(NamedFile(files(successBadgeParam).file, files(successBadgeParam).name))
       filesToScan += successBadgeToStore.get
     }
-    if (files.contains(Parameters.FAILURE_BADGE)) {
-      failureBadgeToStore = Some(NamedFile(files(Parameters.FAILURE_BADGE).file, files(Parameters.FAILURE_BADGE).name))
+    if (files.contains(failureBadgeParam)) {
+      failureBadgeToStore = Some(NamedFile(files(failureBadgeParam).file, files(failureBadgeParam).name))
       filesToScan += failureBadgeToStore.get
     }
-    if (files.contains(Parameters.OTHER_BADGE)) {
-      otherBadgeToStore = Some(NamedFile(files(Parameters.OTHER_BADGE).file, files(Parameters.OTHER_BADGE).name))
+    if (files.contains(otherBadgeParam)) {
+      otherBadgeToStore = Some(NamedFile(files(otherBadgeParam).file, files(otherBadgeParam).name))
       filesToScan += otherBadgeToStore.get
     }
     if (filesToScan.nonEmpty) {

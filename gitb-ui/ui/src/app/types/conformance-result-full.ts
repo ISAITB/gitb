@@ -1,6 +1,5 @@
 import { Counters } from "../components/test-status-icons/counters";
 import { ConformanceTestSuite } from "../pages/organisation/conformance-statement/conformance-test-suite";
-import { ConformanceStatusItem } from "./conformance-status-item";
 
 export interface ConformanceResultFull {
 
@@ -36,6 +35,7 @@ export interface ConformanceResultFull {
     testSuites?: ConformanceTestSuite[]
     counters?: Counters
     copyBadgePending?: boolean
+    overallStatus?: string
 
     [key: string]: any
 

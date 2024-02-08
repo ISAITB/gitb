@@ -435,6 +435,7 @@
                     <xsd:element name="testSuites" type="TestSuites" minOccurs="0"/>
                     <xsd:element name="sharedTestSuites" type="xsd:IDREFS" minOccurs="0"/>
                     <xsd:element name="badges" type="ConformanceBadges" minOccurs="0"/>
+                    <xsd:element name="badgesForReport" type="ConformanceBadges" minOccurs="0"/>
                 </xsd:sequence>
                 <xsd:attribute name="hidden" type="xsd:boolean" default="false"/>
                 <xsd:attribute name="displayOrder" type="xsd:short" default="0"/>
@@ -474,6 +475,7 @@
                     <xsd:element name="apiKey" type="xsd:string" minOccurs="0"/>
                     <xsd:element name="endpoints" type="Endpoints" minOccurs="0"/>
                     <xsd:element name="badges" type="ConformanceBadges" minOccurs="0"/>
+                    <xsd:element name="badgesForReport" type="ConformanceBadges" minOccurs="0"/>
                 </xsd:sequence>
                 <xsd:attribute name="specification" use="required" type="xsd:IDREF"/>
                 <xsd:attribute name="default" type="xsd:boolean" default="false"/>

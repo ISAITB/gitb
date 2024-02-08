@@ -12,6 +12,7 @@ import { FileData } from 'src/app/types/file-data.type';
 })
 export class FileSelectComponent implements OnInit {
 
+  @Input() icon?: string
   @Input() fileName?: string
   @Input() placeholder = 'Drop or browse for file ...'
   @Input() accepts?: string[]

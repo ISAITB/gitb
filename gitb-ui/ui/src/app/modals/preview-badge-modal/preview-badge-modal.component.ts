@@ -15,6 +15,7 @@ import { DataService } from 'src/app/services/data.service';
 export class PreviewBadgeModalComponent implements OnInit {
 
   @Input() config!: PreviewByIds|PreviewForStatus|PreviewByFile
+  @Input() forReport? = false
 
   headerText: string = ''
   html?: string
@@ -56,9 +57,9 @@ export class PreviewBadgeModalComponent implements OnInit {
     if (this.isPreviewByFile(this.config)) {
       return of(this.config.badgeFile.file?.file!)
     } else if (this.isPreviewForStatus(this.config)) {
-      return this.dataService.binaryResponseToBlob(this.conformanceService.getBadgeForStatus(this.config.specificationId, this.config.actorId, this.config.status))
+      return this.dataService.binaryResponseToBlob(this.conformanceService.getBadgeForStatus(this.config.specificationId, this.config.actorId, this.config.status, this.forReport))
     } else { // PreviewByIds
-      return this.dataService.binaryResponseToBlob(this.conformanceService.conformanceBadgeByIds(this.config.systemId, this.config.actorId, this.config.snapshotId))
+      return this.dataService.binaryResponseToBlob(this.conformanceService.conformanceBadgeByIds(this.config.systemId, this.config.actorId, this.config.snapshotId, this.forReport))
     }
   }
 

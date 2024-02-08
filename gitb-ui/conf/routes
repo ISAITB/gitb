@@ -368,6 +368,8 @@ POST    /api/rest/testsuite/unlinkShared                         @controllers.Te
 POST    /api/crumbs                                              @controllers.BreadcrumbService.getBreadcrumbLabels()
 
 GET     /resources/:resourceName                                 @controllers.CommunityService.downloadCommunityResourceByName(resourceName: String)
+GET     /badgereportpreview/:status/:systemId/:specId/:actorId             @controllers.ConformanceService.conformanceBadgeReportPreview(status: String, systemId: Long, specId: Long, actorId: Long)
+GET     /badgereportpreview/:status/:systemId/:specId/:actorId/:snapshotId @controllers.ConformanceService.conformanceBadgeReportPreviewForSnapshot(status: String, systemId: Long, specId: Long, actorId: Long, snapshotId: Long)
 
 GET     /badge/:systemKey/:actorKey                              @controllers.ConformanceService.conformanceBadge(systemKey: String, actorKey: String)
 GET     /badge/:systemKey/:actorKey/:snapshotKey                 @controllers.ConformanceService.conformanceBadgeForSnapshot(systemKey: String, actorKey: String, snapshotKey: String)
