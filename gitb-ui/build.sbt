@@ -9,7 +9,7 @@ lazy val root = (project in file(".")).enablePlugins(PlayScala, SbtWeb)
 
 scalaVersion := "2.13.12"
 val pekkoVersion = "1.0.2"
-val jacksonVersion = "2.15.3"
+val jacksonVersion = "2.16.1"
 val cxfVersion = "4.0.3"
 val commonsTextVersion = "1.11.0"
 val gitbTypesVersion = "1.22.0-SNAPSHOT"
@@ -50,7 +50,13 @@ libraryDependencies ++= Seq(
   "org.apache.pekko" %% "pekko-serialization-jackson" % pekkoVersion,
   "org.playframework" %% "play-slick" % "6.0.0",
   "org.pac4j" %% "play-pac4j" % "12.0.0-PLAY3.0",
-  "org.pac4j" % "pac4j-cas" % "6.0.0" exclude("org.bouncycastle", "bcpkix-jdk15on"),
+  "org.pac4j" % "pac4j-cas" % "6.0.1" exclude("org.bouncycastle", "bcpkix-jdk15on"),
+  // Setting the cas-client-* dependencies of pac4j-cas explicitly to resolve CVE-2023-52428. Once pac-4j depends on at
+  // least version 4.0.4 of cas-client-* (leading to a transitive dependency of at least 9.37.2 of nimbus-jose-jwt) this
+  // direct dependency can be removed. START ...
+  "org.apereo.cas.client" % "cas-client-core" % "4.0.4",
+  "org.apereo.cas.client" % "cas-client-support-saml" % "4.0.4",
+  // ... END.
   "org.apache.commons" % "commons-lang3" % "3.14.0",
   "com.fasterxml.jackson.module" %% "jackson-module-scala" % jacksonVersion,
   "com.fasterxml.jackson.core" % "jackson-databind" % jacksonVersion,
