@@ -188,12 +188,12 @@ FROM `conformancesnapshotresults` AS `res`
 JOIN `systems` AS `sys` ON (`res`.`sut_id` = `sys`.`id`)
 WHERE `res`.`sut_id` > 0;
 -- Organisations.
-INSERT INTO `conformancesnapshotnorganisations`(`id`, `sname`, `fname`, `api_key`, `snapshot_id`)
+INSERT INTO `conformancesnapshotorganisations`(`id`, `sname`, `fname`, `api_key`, `snapshot_id`)
 SELECT DISTINCT `organization_id`, `organization`, `organization`, null, `snapshot_id`
 FROM `conformancesnapshotresults`
 WHERE `organization_id` <= 0;
 
-INSERT INTO `conformancesnapshotnorganisations`(`id`, `sname`, `fname`, `api_key`, `snapshot_id`)
+INSERT INTO `conformancesnapshotorganisations`(`id`, `sname`, `fname`, `api_key`, `snapshot_id`)
 SELECT DISTINCT `org`.`id`, `org`.`sname`, `org`.`fname`, `org`.`api_key`, `res`.`snapshot_id`
 FROM `conformancesnapshotresults` AS `res`
 JOIN `organizations` AS `org` ON (`res`.`organization_id` = `org`.`id`)
