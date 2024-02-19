@@ -54,8 +54,8 @@ libraryDependencies ++= Seq(
   // Setting the cas-client-* dependencies of pac4j-cas explicitly to resolve CVE-2023-52428. Once pac-4j depends on at
   // least version 4.0.4 of cas-client-* (leading to a transitive dependency of at least 9.37.2 of nimbus-jose-jwt) this
   // direct dependency can be removed. START ...
-  "org.apereo.cas.client" % "cas-client-core" % "4.0.4",
-  "org.apereo.cas.client" % "cas-client-support-saml" % "4.0.4",
+  "org.apereo.cas.client" % "cas-client-core" % "4.0.4" exclude("org.bouncycastle", "bcpkix-jdk15on"),
+  "org.apereo.cas.client" % "cas-client-support-saml" % "4.0.4" exclude("org.bouncycastle", "bcpkix-jdk15on"),
   // ... END.
   "org.apache.commons" % "commons-lang3" % "3.14.0",
   "com.fasterxml.jackson.module" %% "jackson-module-scala" % jacksonVersion,
