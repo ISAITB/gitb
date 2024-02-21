@@ -416,6 +416,22 @@ export class ConformanceService {
     })
   }
 
+  exportConformanceOverviewReport(systemId: number, domainId: number|undefined, groupId: number|undefined, specId: number|undefined, snapshotId: number|undefined) {
+    let params: any = {
+      system_id: systemId
+    }
+    if (domainId != undefined) params.domain_id = domainId
+    if (groupId != undefined) params.group_id = groupId
+    if (specId != undefined) params.spec_id = specId
+    if (snapshotId != undefined) params.snapshot = snapshotId
+    return this.restService.get<ArrayBuffer>({
+      path: ROUTES.controllers.RepositoryService.exportConformanceOverviewReport().url,
+      params: params,
+      authenticate: true,
+      arrayBuffer: true
+    })
+  }
+
   exportConformanceCertificateReport(communityId: number, actorId: number, systemId: number, settings: ConformanceCertificateSettings, snapshotId?: number) {
     let settingsData: any = {}
     if (settings != undefined) {

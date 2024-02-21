@@ -4,6 +4,7 @@ import { ConformanceStatementItem } from 'src/app/types/conformance-statement-it
 import { ConformanceStatementResult } from 'src/app/types/conformance-statement-result';
 import { Counters } from '../test-status-icons/counters';
 import { DataService } from 'src/app/services/data.service';
+import { Constants } from 'src/app/common/constants';
 
 @Component({
   selector: 'app-conformance-statement-item-display',
@@ -19,10 +20,12 @@ export class ConformanceStatementItemDisplayComponent implements OnInit {
   @Input() expandable = true
   @Input() wrapDescriptions = false
   @Input() withCheck = true
+  @Input() withExport = false
   @Input() withResults = false
   @Input() filtering = true
 
   @Output() selectionChanged = new EventEmitter<ConformanceStatementItem>()
+  @Output() export = new EventEmitter<ConformanceStatementItem>()
   hasChildren = false
   allChildrenHidden = false
   showCheck = false
@@ -31,8 +34,11 @@ export class ConformanceStatementItemDisplayComponent implements OnInit {
   counters?: Counters
   status?: string
   updateTime?: string
+  Constants = Constants
 
-  constructor(public dataService: DataService) { }
+  constructor(
+    public dataService: DataService
+  ) { }
 
   ngOnInit(): void {
     this.hasChildren = this.item.items != undefined && this.item.items.length > 0
@@ -119,5 +125,13 @@ export class ConformanceStatementItemDisplayComponent implements OnInit {
 
   childSelectionChanged(item: ConformanceStatementItem) {
     this.notifyForSelectionChange(item)
+  }
+
+  childExported(item: ConformanceStatementItem) {
+    this.export.emit(item)
+  }
+
+  onExport() {
+    this.export.emit(this.item)
   }
 }

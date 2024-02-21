@@ -1,5 +1,6 @@
 package models
 
+import models.statement.ResultHolder
 import utils.TimeUtil
 
 import java.sql.Timestamp
@@ -33,7 +34,7 @@ class ConformanceStatement(
     var specificationGroupDescription: Option[String] = None,
     var specificationDisplayOrder: Short = 0,
     var specificationGroupDisplayOrder: Option[Short] = None
-) {
+) extends ResultHolder {
 
   def copy(): ConformanceStatement = {
     new ConformanceStatement(
@@ -45,4 +46,7 @@ class ConformanceStatement(
     )
   }
 
+  override def resultStatus(): String = {
+    result
+  }
 }

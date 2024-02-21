@@ -1,1 +1,3 @@
-<app-conformance-statement-item-display *ngFor="let item of items" [item]="item" [shade]="item.hidden?!shade:shade" [wrapDescriptions]="wrapDescriptions" [expandable]="expandable" [filtering]="filtering" [hideSelf]="item.hidden!" [animated]="animated" [withCheck]="withCheck" [withResults]="withResults" (selectionChanged)="childSelectionChanged($event)"></app-conformance-statement-item-display>
+@for (item of items; track $index) {
+    <app-conformance-statement-item-display [item]="item" [shade]="item.hidden?!shade:shade" [wrapDescriptions]="wrapDescriptions" [expandable]="expandable" [filtering]="filtering" [hideSelf]="item.hidden!" [animated]="animated" [withCheck]="withCheck" [withExport]="withExport" [withResults]="withResults" (selectionChanged)="childSelectionChanged($event)" (export)="childExported($event)"></app-conformance-statement-item-display>
+}

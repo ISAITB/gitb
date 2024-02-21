@@ -2,6 +2,7 @@ package com.gitb.reports;
 
 import com.gitb.core.AnyContent;
 import com.gitb.core.ValueEmbeddingEnumeration;
+import com.gitb.reports.dto.ConformanceOverview;
 import com.gitb.reports.dto.ConformanceStatementOverview;
 import com.gitb.reports.dto.TestCaseOverview;
 import com.gitb.reports.dto.TestSuiteOverview;
@@ -360,21 +361,17 @@ public class ReportGenerator {
         return report;
     }
 
-    private List<TestCaseOverview.Tag> extractDistinctTags(List<TestSuiteOverview> testSuites) {
-        // Collect all distinct tags (by name and colours) that have a description.
-        Map<String, TestCaseOverview.Tag> uniqueTags = new HashMap<>();
-        testSuites.stream().map(TestSuiteOverview::getTestCases)
-                .flatMap(List::stream)
-                .filter((tc) -> tc.getTags() != null && !tc.getTags().isEmpty())
-                .map(TestCaseOverview::getTags)
-                .flatMap(List::stream)
-                .filter(tag -> StringUtils.isNotBlank(tag.description()))
-                .forEach(tag -> uniqueTags.putIfAbsent(tag.name()+"|"+tag.background()+"|"+tag.foreground(), tag));
-        // Sort by name.
-        if (uniqueTags.isEmpty()) {
-            return Collections.emptyList();
-        } else {
-            return uniqueTags.values().stream().sorted(Comparator.comparing(TestCaseOverview.Tag::name)).toList();
+    public void writeConformanceOverviewReport(ConformanceOverview overview, OutputStream outputStream, ReportSpecs specs) {
+        if (overview.getReportDate() == null) {
+            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+            overview.setReportDate(sdf.format(new Date()));
+        }
+        try {
+            Map<String, Object> parameters = new HashMap<>();
+            parameters.put("data", overview);
+            writeClasspathReport("reports/ConformanceOverview.ftl", parameters, outputStream, specs);
+        } catch (Exception e) {
+            throw new IllegalStateException("Unexpected error while generating report", e);
         }
     }
 
@@ -385,54 +382,10 @@ public class ReportGenerator {
         }
         try {
             Map<String, Object> parameters = new HashMap<>();
-            parameters.put("title", overview.getTitle());
-            parameters.put("organisation", overview.getOrganisation());
-            parameters.put("system", overview.getSystem());
-            parameters.put("testDomain", overview.getTestDomain());
-            parameters.put("testSpecification", overview.getTestSpecification());
-            parameters.put("testActor", overview.getTestActor());
-            parameters.put("completedTests", overview.getCompletedTests());
-            parameters.put("failedTests", overview.getFailedTests());
-            parameters.put("undefinedTests", overview.getUndefinedTests());
-            if (overview.getIncludeTestStatus()) {
-                parameters.put("testStatus", overview.getTestStatus());
-            }
-            parameters.put("overallStatus", overview.getOverallStatus());
-            parameters.put("reportDate", overview.getReportDate());
-            if (overview.getTestSuites() != null && !overview.getTestSuites().isEmpty()) {
-                // Flags for presence of optional and disabled test cases.
-                boolean hasOptionalTests = overview.getTestSuites().stream().anyMatch(testSuite -> testSuite.getTestCases().stream().anyMatch(TestCaseOverview::isOptional));
-                boolean hasDisabledTests = overview.getTestSuites().stream().anyMatch(testSuite -> testSuite.getTestCases().stream().anyMatch(TestCaseOverview::isDisabled));
-                boolean hasRequiredTests = overview.getTestSuites().stream().anyMatch(testSuite -> testSuite.getTestCases().stream().anyMatch((tc) -> !tc.isDisabled() && !tc.isOptional()));
-                parameters.put("hasOptionalTests", hasOptionalTests);
-                parameters.put("hasDisabledTests", hasDisabledTests);
-                parameters.put("hasRequiredTests", hasRequiredTests);
-                var distinctTags = extractDistinctTags(overview.getTestSuites());
-                if (!distinctTags.isEmpty()) {
-                    parameters.put("distinctTags", distinctTags);
-                }
-                parameters.put("testSuites", overview.getTestSuites());
-            } else {
-                parameters.put("hasOptionalTests", false);
-                parameters.put("hasDisabledTests", false);
-                parameters.put("hasRequiredTests", false);
-            }
-            parameters.put("includeTestCases", overview.getIncludeTestCases());
-            parameters.put("includeMessage", overview.getIncludeMessage());
-            if (overview.getIncludeMessage()) {
-                parameters.put("message", overview.getMessage());
-            }
-            parameters.put("includeTestStatus", overview.getIncludeTestStatus());
-            parameters.put("includeDetails", overview.getIncludeDetails());
-            parameters.put("includePageNumbers", overview.getIncludePageNumbers());
-            parameters.put("labelDomain", overview.getLabelDomain());
-            parameters.put("labelSpecification", overview.getLabelSpecification());
-            parameters.put("labelActor", overview.getLabelActor());
-            parameters.put("labelOrganisation", overview.getLabelOrganisation());
-            parameters.put("labelSystem", overview.getLabelSystem());
+            parameters.put("data", overview);
             writeClasspathReport("reports/ConformanceStatementOverview.ftl", parameters, outputStream, specs);
         } catch (Exception e) {
-            throw new IllegalStateException(e);
+            throw new IllegalStateException("Unexpected error while generating report", e);
         }
     }
 

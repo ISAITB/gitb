@@ -834,11 +834,11 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     setAuthResult(request, ok, "User cannot download this conformance certificate")
   }
 
-  def canViewConformanceStatementReport(request: RequestWithAttributes[_], systemId: String, snapshotId: Option[Long] = None):Boolean = {
+  def canViewConformanceStatementReport(request: RequestWithAttributes[_], systemId: Long, snapshotId: Option[Long] = None):Boolean = {
     if (snapshotId.isDefined) {
       canManageConformanceSnapshot(request, snapshotId.get)
     } else {
-      canViewSystem(request, systemId.toLong)
+      canViewSystem(request, systemId)
     }
   }
 

@@ -12,6 +12,7 @@ import { CheckboxOption } from 'src/app/components/checkbox-option-panel/checkbo
 import { ConformanceService } from 'src/app/services/conformance.service';
 import { ConformanceSnapshot } from 'src/app/types/conformance-snapshot';
 import { Observable, forkJoin } from 'rxjs';
+import { saveAs } from 'file-saver'
 
 @Component({
   selector: 'app-conformance-statements',
@@ -37,6 +38,7 @@ export class ConformanceStatementsComponent implements OnInit {
   showBack = false
   columnCount = -1
   Constants = Constants
+  exportPending = false
 
   private static SHOW_SUCCEEDED = '0'
   private static SHOW_FAILED = '1'
@@ -206,7 +208,6 @@ export class ConformanceStatementsComponent implements OnInit {
       }
       item.filtered = true
     })
-    this.sortItems(items)
     return items
   }
 
@@ -217,15 +218,6 @@ export class ConformanceStatementsComponent implements OnInit {
         this.visit(item.items, visitor)
       }
     }
-  }
-
-  private sortItems(items: ConformanceStatementItem[]) {
-    items.sort((a, b) => a.order - b.order || a.name.localeCompare(b.name))
-    items.forEach((item) => {
-      if (item.items) {
-        this.sortItems(item.items)
-      }
-    })
   }
 
   onStatementSelect(statement: ConformanceStatementItem) {
@@ -386,7 +378,7 @@ export class ConformanceStatementsComponent implements OnInit {
       this.routingService.toConformanceStatements(this.communityId, this.organisationId, this.system?.id, this.currentlySelectedSnapshot?.id, true)
     } else {
       this.routingService.toOwnConformanceStatements(this.organisationId, this.system?.id, this.currentlySelectedSnapshot?.id, true)
-    }      
+    }
   }
 
   snapshotSelected(snapshot?: ConformanceSnapshot) {
@@ -411,4 +403,33 @@ export class ConformanceStatementsComponent implements OnInit {
       })
     }
   }
+
+  onExportConformanceOverview(item: ConformanceStatementItem) {
+    let domainId: number|undefined
+    let groupId: number|undefined
+    let specId: number|undefined
+    if (item.itemType == Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.DOMAIN) domainId = item.id
+    if (item.itemType == Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.SPECIFICATION_GROUP) groupId = item.id
+    if (item.itemType == Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.SPECIFICATION) specId = item.id
+    item.exportPending = true
+    this.conformanceService.exportConformanceOverviewReport(this.system!.id, domainId, groupId, specId, this.currentlySelectedSnapshot?.id)
+    .subscribe((data) => {
+      const blobData = new Blob([data], {type: 'application/pdf'});
+      saveAs(blobData, "conformance_overview_report.pdf");
+    }).add(() => {
+      item.exportPending = false
+    })
+  }
+
+  exportOverview() {
+    this.exportPending = true
+    this.conformanceService.exportConformanceOverviewReport(this.system!.id, undefined, undefined, undefined, this.currentlySelectedSnapshot?.id)
+    .subscribe((data) => {
+      const blobData = new Blob([data], {type: 'application/pdf'});
+      saveAs(blobData, "conformance_overview_report.pdf");
+    }).add(() => {
+      this.exportPending = false
+    })
+  }
+
 }

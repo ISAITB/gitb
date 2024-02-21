@@ -3,15 +3,15 @@ package managers
 import actors.events.{ConformanceStatementSucceededEvent, TestSessionFailedEvent, TestSessionSucceededEvent}
 import com.gitb.core.StepStatus
 import com.gitb.reports.ReportGenerator
-import com.gitb.reports.dto.{ConformanceStatementOverview, TestCaseOverview, TestSuiteOverview}
+import com.gitb.reports.dto._
 import com.gitb.tbs.{ObjectFactory, TestStepStatus}
 import com.gitb.tpl.TestCase
 import com.gitb.tr._
 import com.gitb.utils.XMLUtils
 import config.Configurations
-import models.Enums.TestResultStatus
+import models.Enums.{ConformanceStatementItemType, TestResultStatus}
 import models._
-import models.statement.BadgePlaceholderInfo
+import models.statement.{BadgePlaceholderInfo, ConformanceData, ConformanceItemTreeData, ResultCountHolder}
 import org.apache.commons.codec.binary.Base64
 import org.apache.commons.io.FileUtils
 import org.apache.commons.lang3.StringUtils
@@ -24,7 +24,7 @@ import java.io.{File, FileOutputStream, StringReader}
 import java.nio.file.{Files, Path}
 import java.text.SimpleDateFormat
 import java.util
-import java.util.Date
+import java.util.{Calendar, Date}
 import javax.inject.{Inject, Singleton}
 import javax.xml.transform.stream.StreamSource
 import scala.collection.mutable
@@ -37,7 +37,7 @@ import scala.util.Using
   * Created by senan on 03.12.2014.
   */
 @Singleton
-class ReportManager @Inject() (domainParameterManager: DomainParameterManager, reportHelper: ReportHelper, triggerHelper: TriggerHelper, testCaseReportProducer: TestCaseReportProducer, testSuiteManager: TestSuiteManager, specificationManager: SpecificationManager, conformanceManager: ConformanceManager, dbConfigProvider: DatabaseConfigProvider, communityLabelManager: CommunityLabelManager, repositoryUtils: RepositoryUtils, testResultManager: TestResultManager) extends BaseManager(dbConfigProvider) {
+class ReportManager @Inject() (systemManager: SystemManager, domainParameterManager: DomainParameterManager, reportHelper: ReportHelper, triggerHelper: TriggerHelper, testCaseReportProducer: TestCaseReportProducer, testSuiteManager: TestSuiteManager, specificationManager: SpecificationManager, conformanceManager: ConformanceManager, dbConfigProvider: DatabaseConfigProvider, communityLabelManager: CommunityLabelManager, repositoryUtils: RepositoryUtils, testResultManager: TestResultManager) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
 
@@ -455,8 +455,8 @@ class ReportManager @Inject() (domainParameterManager: DomainParameterManager, r
       0L, "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.System), "",
       0L, "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Domain), "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Domain),
       0L, "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Actor), "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Actor), "",
-      0L, "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Specification), "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Specification),
-      Some("Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.SpecificationGroup)), Some("Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.SpecificationGroup)),
+      0L, "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Specification), "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Specification), 0,
+      Some(0L), Some("Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.SpecificationGroup)), Some("Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.SpecificationGroup)), Some(0),
       "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.SpecificationInGroup), "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.SpecificationInGroup),
       Some(index), Some("Sample Test Suite "+index), Some("Description for Sample Test Suite "+index), None, None, None,
       Some(index), Some("Sample Test Case "+index), Some("Description for Sample Test Case "+index), Some(false), Some(false), None,  None, None, None, None,
@@ -477,7 +477,7 @@ class ReportManager @Inject() (domainParameterManager: DomainParameterManager, r
   }
 
   def generateConformanceCertificate(reportPath: Path, settings: ConformanceCertificates, actorId: Long, systemId: Long, communityId: Long, snapshotId: Option[Long]): Path = {
-    val conformanceInfo = conformanceManager.getConformanceStatementsFull(None, None, None, Some(List(actorId)), None, None, Some(List(systemId)), None, None, None, None, None, None, None, snapshotId)
+    val conformanceInfo = conformanceManager.getConformanceStatementsResultBuilder(None, None, None, Some(List(actorId)), None, None, Some(List(systemId)), None, None, None, None, snapshotId, prefixSpecificationNameWithGroup = false).getDetails(None)
     generateConformanceCertificate(reportPath, settings, conformanceInfo, communityId, snapshotId: Option[Long], isDemo = false)
   }
 
@@ -545,12 +545,262 @@ class ReportManager @Inject() (domainParameterManager: DomainParameterManager, r
     reportPath
   }
 
+  private def getConformanceDataForOverviewReport(systemId: Long, domainId: Option[Long], groupId: Option[Long], specificationId: Option[Long], snapshotId: Option[Long]): ConformanceData = {
+    // Load conformance data.
+    val conformanceInfoBuilder = conformanceManager.getConformanceStatementsResultBuilder(domainId.map(List(_)), specificationId.map(List(_)), groupId.map(List(_)), None, None, None, Some(List(systemId)), None, None, None, None, snapshotId, prefixSpecificationNameWithGroup = false)
+    // The overview is a list of aggregated conformance statements.
+    val conformanceOverview = conformanceInfoBuilder.getOverview(None)
+    // The details is a list of the detailed conformance results (at test case level).
+    val conformanceDetails = conformanceInfoBuilder.getDetails(None)
+    // Map actor IDs to test suites.
+    val actorTestSuiteMap = new mutable.LinkedHashMap[Long, mutable.LinkedHashMap[Long, ConformanceTestSuite]]() // Actor ID to test suite map, test suite map
+    conformanceDetails.foreach { statement =>
+      var actorTestSuites = actorTestSuiteMap.get(statement.actorId)
+      if (actorTestSuites.isEmpty) {
+        actorTestSuites = Some(new mutable.LinkedHashMap[Long, ConformanceTestSuite])
+        actorTestSuiteMap += (statement.actorId -> actorTestSuites.get)
+      }
+      var testSuite = actorTestSuites.get.get(statement.testSuiteId.get)
+      if (testSuite.isEmpty) {
+        testSuite = Some(new ConformanceTestSuite(
+          statement.testSuiteId.get, statement.testSuiteName.get, statement.testSuiteDescription, false, statement.testSuiteSpecReference, statement.testSuiteSpecDescription, statement.testSuiteSpecLink,
+          TestResultType.UNDEFINED, 0, 0, 0, 0, 0, 0, new ListBuffer[ConformanceTestCase]
+        ))
+        actorTestSuites.get += (testSuite.get.id -> testSuite.get)
+      }
+      val testCase = new ConformanceTestCase(
+        statement.testCaseId.get, statement.testCaseName.get, statement.testCaseDescription, None, statement.updateTime, None, false,
+        statement.testCaseOptional.get, statement.testCaseDisabled.get, TestResultType.fromValue(statement.result), statement.testCaseTags,
+        statement.testCaseSpecReference, statement.testCaseSpecDescription, statement.testCaseSpecLink
+      )
+      testSuite.get.testCases.asInstanceOf[ListBuffer[ConformanceTestCase]] += testCase
+      if (!testCase.disabled) {
+        if (testCase.result == TestResultType.SUCCESS) {
+          if (testCase.optional) {
+            testSuite.get.completedOptional += 1
+          } else {
+            testSuite.get.completed += 1
+          }
+        } else if (testCase.result == TestResultType.FAILURE) {
+          if (testCase.optional) {
+            testSuite.get.failedOptional += 1
+          } else {
+            testSuite.get.failed += 1
+          }
+        } else {
+          if (testCase.optional) {
+            testSuite.get.undefinedOptional += 1
+          } else {
+            testSuite.get.undefined += 1
+          }
+        }
+      }
+    }
+    actorTestSuiteMap.values.foreach { testSuites =>
+      testSuites.values.foreach { testSuite =>
+        testSuite.result = TestResultType.fromValue(testSuite.resultStatus())
+      }
+    }
+    val conformanceItemTree = conformanceManager.createConformanceItemTree(ConformanceItemTreeData(conformanceOverview, None), withResults = true, testSuiteMapper = Some((statement: ConformanceStatement) => {
+      if (actorTestSuiteMap.contains(statement.actorId)) {
+        actorTestSuiteMap(statement.actorId).values.toList
+      } else {
+        List.empty
+      }
+    }))
+    // Check to see if only one domain can ever apply for the system (in which case it should be hidden).
+    val systemWithFixedDomain = systemManager.getDomainIdForSystemCommunity(systemId).isDefined
+    // Construct the DTOs expected by the report template.
+    val conformanceItems = toConformanceItems(conformanceItemTree, None, new ReportData(systemWithFixedDomain))
+    // Return results.
+    ConformanceData(
+      conformanceOverview.headOption.map(_.domainNameFull),
+      conformanceOverview.headOption.flatMap(_.specificationGroupNameFull),
+      conformanceOverview.headOption.map(_.specificationGroupOptionNameFull),
+      conformanceOverview.headOption.map(_.organizationName),
+      conformanceOverview.headOption.map(_.systemName),
+      displayDomainInStatementTree = !systemWithFixedDomain,
+      getOverallConformanceOverviewStatus(conformanceItems),
+      conformanceItems
+    )
+  }
+
+  private def getOverallConformanceOverviewStatus(items: util.List[ConformanceItem]): String = {
+    val counters = new Counters(0, 0, 0)
+    items.forEach { item =>
+      val status = TestResultType.fromValue(item.getOverallStatus)
+      if (status == TestResultType.SUCCESS) {
+        counters.successes += 1
+      } else if (status == TestResultType.FAILURE) {
+        counters.failures += 1
+      } else {
+        counters.other += 1
+      }
+    }
+    counters.resultStatus()
+  }
+
+  def generateConformanceOverviewReport(reportPath: Path, systemId: Long, domainId: Option[Long], groupId: Option[Long], specificationId: Option[Long], labels: Map[Short, CommunityLabels], communityId: Long, snapshotId: Option[Long]): Path = {
+    val overview = new ConformanceOverview()
+    val specs = reportHelper.createReportSpecs(Some(communityId))
+    // Labels
+    overview.setLabelDomain(communityLabelManager.getLabel(labels, models.Enums.LabelType.Domain))
+    overview.setLabelSpecificationGroup(communityLabelManager.getLabel(labels, models.Enums.LabelType.SpecificationGroup))
+    overview.setLabelSpecificationInGroup(communityLabelManager.getLabel(labels, models.Enums.LabelType.SpecificationInGroup))
+    overview.setLabelSpecification(communityLabelManager.getLabel(labels, models.Enums.LabelType.Specification))
+    overview.setLabelActor(communityLabelManager.getLabel(labels, models.Enums.LabelType.Actor))
+    overview.setLabelOrganisation(communityLabelManager.getLabel(labels, models.Enums.LabelType.Organisation))
+    overview.setLabelSystem(communityLabelManager.getLabel(labels, models.Enums.LabelType.System))
+    // Load conformance data.
+    val conformanceData = getConformanceDataForOverviewReport(systemId, domainId, groupId, specificationId, snapshotId)
+    // Set other report info.
+    if (domainId.isDefined || groupId.isDefined || specificationId.isDefined || !conformanceData.displayDomainInStatementTree) {
+      overview.setTestDomain(conformanceData.domainName.getOrElse("-"))
+      if (groupId.isDefined) {
+        overview.setTestSpecificationGroup(conformanceData.groupName.getOrElse("-"))
+      }
+      if (specificationId.isDefined) {
+        overview.setTestSpecification(conformanceData.specificationName.getOrElse("-"))
+      }
+    }
+    overview.setTitle("Conformance Overview Report")
+    overview.setReportDate(new SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(Calendar.getInstance().getTime))
+    overview.setOrganisation(conformanceData.organisationName.getOrElse("-"))
+    overview.setSystem(conformanceData.systemName.getOrElse("-"))
+    // TODO from settings - START
+    overview.setIncludeMessage(false)
+    overview.setIncludeDetails(true)
+    overview.setIncludeConformanceItems(true)
+    overview.setIncludeTestCases(true)
+    overview.setIncludePageNumbers(true)
+    overview.setIncludeTestStatus(true)
+    overview.setMessage("")
+    // TODO from settings - END
+    overview.setConformanceItems(conformanceData.conformanceItems)
+    overview.setOverallStatus(conformanceData.overallResult)
+    Files.createDirectories(reportPath.getParent)
+    val fos = Files.newOutputStream(reportPath)
+    try {
+      ReportGenerator.getInstance().writeConformanceOverviewReport(overview, fos, specs)
+      fos.flush()
+    } catch {
+      case e: Exception =>
+        throw new IllegalStateException("Unable to generate PDF report", e)
+    } finally {
+      if (fos != null) fos.close()
+    }
+    reportPath
+  }
+
+  private def toConformanceItems(items: Iterable[ConformanceStatementItem], parentItem: Option[ConformanceItem], reportData: ReportData): util.List[ConformanceItem] = {
+    val newItems = new util.ArrayList[ConformanceItem]
+    items.foreach { item =>
+      val newItem = toConformanceItem(item, reportData)
+      if (item.actorToShow || parentItem.isEmpty) {
+        if (item.itemType == ConformanceStatementItemType.DOMAIN && reportData.skipDomain) {
+          // Skip the domain and include the children directly.
+          newItems.addAll(newItem.getItems)
+        } else {
+          newItems.add(newItem)
+        }
+      } else {
+        // This is a hidden actor under a parent item - add all details to the parent.
+        parentItem.get.setOverallStatus(newItem.getOverallStatus)
+        parentItem.get.setData(newItem.getData)
+      }
+    }
+    newItems
+  }
+
+  private def toConformanceItem(item: ConformanceStatementItem, reportData: ReportData): ConformanceItem  = {
+    val newItem = new ConformanceItem
+    newItem.setName(item.name)
+    newItem.setDescription(item.description.orNull)
+    /*
+     * Record names of conformance items before we iterate children. Like this e.g. a spec will always have the name of its domain and group.
+     * The only case where we will use these names is when we record the results at leaf level in which case we'll have everything available.
+     */
+    if (item.itemType == ConformanceStatementItemType.DOMAIN) reportData.domainName = Some(newItem.getName)
+    if (item.itemType == ConformanceStatementItemType.SPECIFICATION_GROUP) reportData.groupName = Some(newItem.getName)
+    if (item.itemType == ConformanceStatementItemType.SPECIFICATION) reportData.specName = Some(newItem.getName)
+    if (item.itemType == ConformanceStatementItemType.ACTOR) reportData.actorName = Some(newItem.getName)
+    if (item.items.isDefined) {
+      val children = toConformanceItems(item.items.get, Some(newItem), reportData)
+      if (!children.isEmpty) {
+        newItem.setItems(children)
+        // The status may already be set in toConformanceItems() if all children were hidden.
+        val counters = new Counters(0, 0, 0)
+        children.forEach { child =>
+          val childStatus = TestResultStatus.withName(child.getOverallStatus)
+          if (childStatus == TestResultStatus.SUCCESS) {
+            counters.successes += 1
+          } else if (childStatus == TestResultStatus.FAILURE) {
+            counters.failures += 1
+          } else {
+            counters.other += 1
+          }
+        }
+        newItem.setOverallStatus(counters.resultStatus())
+      }
+    } else if (item.results.isDefined) {
+      val counters = new Counters(item.results.get.completedTests, item.results.get.failedTests, item.results.get.undefinedTests)
+      newItem.setOverallStatus(counters.resultStatus())
+      newItem.setData(new ConformanceStatementData())
+      newItem.getData.setOverallStatus(newItem.getOverallStatus)
+      newItem.getData.setCompletedTests(counters.successes.toInt)
+      newItem.getData.setFailedTests(counters.failures.toInt)
+      newItem.getData.setUndefinedTests(counters.other.toInt)
+      newItem.getData.setTestDomain(reportData.domainName.orNull)
+      newItem.getData.setTestSpecificationGroup(reportData.groupName.orNull)
+      newItem.getData.setTestSpecification(reportData.specName.orNull)
+      if (item.itemType == ConformanceStatementItemType.ACTOR && item.actorToShow) {
+        newItem.getData.setTestActor(reportData.actorName.orNull)
+      }
+      if (item.results.get.testSuites.isDefined) {
+        newItem.getData.setTestSuites(new util.ArrayList[TestSuiteOverview]())
+        item.results.get.testSuites.get.foreach { testSuite =>
+          val testSuiteOverview = new TestSuiteOverview()
+          newItem.getData.getTestSuites.add(testSuiteOverview)
+          testSuiteOverview.setOverallStatus(testSuite.result.value())
+          testSuiteOverview.setTestSuiteName(testSuite.name)
+          testSuiteOverview.setTestSuiteDescription(testSuite.description.orNull)
+          testSuiteOverview.setSpecReference(testSuite.specReference.orNull)
+          testSuiteOverview.setSpecLink(testSuite.specLink.orNull)
+          testSuiteOverview.setSpecDescription(testSuite.specDescription.orNull)
+          testSuiteOverview.setTestCases(new util.ArrayList[TestCaseOverview]())
+          testSuite.testCases.foreach { testCase =>
+            val testCaseOverview = new TestCaseOverview()
+            testSuiteOverview.getTestCases.add(testCaseOverview)
+            testCaseOverview.setTestName(testCase.name)
+            testCaseOverview.setReportResult(testCase.result.value())
+            testCaseOverview.setTestName(testCase.name)
+            testCaseOverview.setTestDescription(testCase.description.orNull)
+            testCaseOverview.setSpecReference(testCase.specReference.orNull)
+            testCaseOverview.setSpecLink(testCase.specLink.orNull)
+            testCaseOverview.setSpecDescription(testCase.specDescription.orNull)
+            testCaseOverview.setOptional(testCase.optional)
+            testCaseOverview.setDisabled(testCase.disabled)
+            if (testCase.tags.isDefined) {
+              testCaseOverview.setTags(parseTestCaseTags(testCase.tags.get))
+            }
+          }
+        }
+      }
+    }
+    newItem
+  }
+
+  private def parseTestCaseTags(tags: String): util.List[TestCaseOverview.Tag] = {
+    val parsedTags = JsonUtil.parseJsTags(tags).map(x => new TestCaseOverview.Tag(x.name, x.description.orNull, x.foreground.getOrElse("#777777"), x.background.getOrElse("#FFFFFF")))
+    new util.ArrayList(parsedTags.asJavaCollection)
+  }
+
   def generateConformanceStatementReport(reportPath: Path, addTestCases: Boolean, actorId: Long, systemId: Long, labels: Map[Short, CommunityLabels], communityId: Long, snapshotId: Option[Long]): Path = {
     generateCoreConformanceReport(reportPath, addTestCases, None, actorId, systemId, labels, communityId, snapshotId)
   }
 
   private def generateCoreConformanceReport(reportPath: Path, addTestCases: Boolean, message: Option[String], actorId: Long, systemId: Long, labels: Map[Short, CommunityLabels], communityId: Long, snapshotId: Option[Long]): Path = {
-    val conformanceInfo = conformanceManager.getConformanceStatementsFull(None, None, None, Some(List(actorId)), None, None, Some(List(systemId)), None, None, None, None, None, None, None, snapshotId)
+    val conformanceInfo = conformanceManager.getConformanceStatementsResultBuilder(None, None, None, Some(List(actorId)), None, None, Some(List(systemId)), None, None, None, None, snapshotId, prefixSpecificationNameWithGroup = false).getDetails(None)
     generateCoreConformanceReport(reportPath, addTestCases, Some("Conformance Statement Report"), addDetails = true, addTestCaseResults = true, addTestStatus = true, addMessage = false, addPageNumbers = true, message, conformanceInfo, labels, communityId, snapshotId, isDemo = false)
   }
 
@@ -560,6 +810,8 @@ class ReportManager @Inject() (domainParameterManager: DomainParameterManager, r
     val specs = reportHelper.createReportSpecs(Some(communityId))
     // Labels
     overview.setLabelDomain(communityLabelManager.getLabel(labels, models.Enums.LabelType.Domain))
+    overview.setLabelSpecificationGroup(communityLabelManager.getLabel(labels, models.Enums.LabelType.SpecificationGroup))
+    overview.setLabelSpecificationInGroup(communityLabelManager.getLabel(labels, models.Enums.LabelType.SpecificationInGroup))
     overview.setLabelSpecification(communityLabelManager.getLabel(labels, models.Enums.LabelType.Specification))
     overview.setLabelActor(communityLabelManager.getLabel(labels, models.Enums.LabelType.Actor))
     overview.setLabelOrganisation(communityLabelManager.getLabel(labels, models.Enums.LabelType.Organisation))
@@ -569,8 +821,11 @@ class ReportManager @Inject() (domainParameterManager: DomainParameterManager, r
     overview.setIncludeTestCases(addTestCases)
     overview.setTitle(title.orNull)
     overview.setTestDomain(conformanceData.domainNameFull)
+    overview.setTestSpecificationGroup(conformanceData.specificationGroupNameFull.orNull)
     overview.setTestSpecification(conformanceData.specificationNameFull)
-    overview.setTestActor(conformanceData.actorFull)
+    if (conformanceManager.getActorIdsToDisplayInStatementsWrapper(List(conformanceData)).contains(conformanceData.actorId)) {
+      overview.setTestActor(conformanceData.actorFull)
+    }
     overview.setOrganisation(conformanceData.organizationName)
     overview.setSystem(conformanceData.systemName)
     overview.setIncludeDetails(addDetails)
@@ -615,8 +870,7 @@ class ReportManager @Inject() (domainParameterManager: DomainParameterManager, r
         testCaseOverview.setOptional(info.testCaseOptional.get)
         testCaseOverview.setDisabled(info.testCaseDisabled.get)
         if (info.testCaseTags.isDefined) {
-          val parsedTags = JsonUtil.parseJsTags(info.testCaseTags.get).map(x => new TestCaseOverview.Tag(x.name, x.description.orNull, x.foreground.getOrElse("#777777"), x.background.getOrElse("#FFFFFF")))
-          testCaseOverview.setTags(new util.ArrayList(parsedTags.asJavaCollection))
+          testCaseOverview.setTags(parseTestCaseTags(info.testCaseTags.get))
         }
         if (addTestCases) {
           testCaseOverview.setTitle("Test Case Report #" + index)
@@ -762,4 +1016,14 @@ class ReportManager @Inject() (domainParameterManager: DomainParameterManager, r
 
 }
 
-private class Counters(var successes: Int, var failures: Int, var other: Int)
+private class ReportData(val skipDomain: Boolean, var domainName: Option[String] = None, var groupName: Option[String] = None, var specName: Option[String] = None, var actorName: Option[String] = None) {}
+
+private class Counters(var successes: Long, var failures: Long, var other: Long) extends ResultCountHolder {
+
+  override def completedCount(): Long = successes
+
+  override def failedCount(): Long = failures
+
+  override def otherCount(): Long = other
+
+}

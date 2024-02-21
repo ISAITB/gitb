@@ -16,6 +16,7 @@
 						</ul>
 					</div>
 				}
+				<button (click)="exportOverview()" [pending]="exportPending" [disable]="system == undefined" class="btn btn-secondary">Download report</button>
 				@if (showCreate) {
 					<button (click)="createStatement()" [disabled]="system == undefined || currentlySelectedSnapshot != undefined" class="btn btn-secondary">Create statements</button>
 				}
@@ -75,7 +76,7 @@
 											<span>No conformance statements match your search criteria.</span>
 										</div>
 									} @else {
-										<app-conformance-statement-items-display [items]="statements" [animated]="animated" [withCheck]="false" [withResults]="true" (selectionChanged)="onStatementSelect($event)"></app-conformance-statement-items-display>
+										<app-conformance-statement-items-display [items]="statements" [animated]="animated" [withCheck]="false" [withExport]="true" [withResults]="true" (selectionChanged)="onStatementSelect($event)" (export)="onExportConformanceOverview($event)"></app-conformance-statement-items-display>
 									}
 								</div>
 							}

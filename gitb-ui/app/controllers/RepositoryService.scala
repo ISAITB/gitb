@@ -20,6 +20,7 @@ import utils._
 
 import java.io._
 import java.nio.file.{Files, Path, Paths}
+import java.util.UUID
 import javax.inject.Inject
 import javax.xml.namespace.QName
 import javax.xml.transform.stream.StreamSource
@@ -340,9 +341,45 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
     }
   }
 
+  def exportConformanceOverviewReport(): Action[AnyContent] = authorizedAction { request =>
+    val snapshotId = ParameterExtractor.optionalLongQueryParameter(request, Parameters.SNAPSHOT)
+    val systemId = ParameterExtractor.requiredQueryParameter(request, Parameters.SYSTEM_ID).toLong
+    authorizationManager.canViewConformanceStatementReport(request, systemId, snapshotId)
+
+    val domainId = ParameterExtractor.optionalLongQueryParameter(request, Parameters.DOMAIN_ID)
+    val groupId = ParameterExtractor.optionalLongQueryParameter(request, Parameters.GROUP_ID)
+    val specificationId = ParameterExtractor.optionalLongQueryParameter(request, Parameters.SPECIFICATION_ID)
+
+    val reportPath = Paths.get(
+      repositoryUtils.getTempReportFolder().getAbsolutePath,
+      "conformance_reports",
+      "report_"+UUID.randomUUID().toString+".pdf"
+    )
+    try {
+      val labels = communityLabelManager.getLabelsByUserId(ParameterExtractor.extractUserId(request))
+      val communityId = if (snapshotId.isDefined) {
+        conformanceManager.getConformanceSnapshot(snapshotId.get).community
+      } else {
+        systemManager.getCommunityIdOfSystem(systemId)
+      }
+      reportManager.generateConformanceOverviewReport(reportPath, systemId, domainId, groupId, specificationId, labels, communityId, snapshotId)
+      Ok.sendFile(
+        content = reportPath.toFile,
+        fileName = _ => Some(reportPath.toFile.getName),
+        onClose = () => {
+          FileUtils.deleteQuietly(reportPath.toFile)
+        }
+      )
+    } catch {
+      case e: Exception =>
+        FileUtils.deleteQuietly(reportPath.toFile)
+        throw e
+    }
+  }
+
   def exportConformanceStatementReport(): Action[AnyContent] = authorizedAction { request =>
     val snapshotId = ParameterExtractor.optionalLongQueryParameter(request, Parameters.SNAPSHOT)
-    val systemId = ParameterExtractor.requiredQueryParameter(request, Parameters.SYSTEM_ID)
+    val systemId = ParameterExtractor.requiredQueryParameter(request, Parameters.SYSTEM_ID).toLong
     authorizationManager.canViewConformanceStatementReport(request, systemId, snapshotId)
     val actorId = ParameterExtractor.requiredQueryParameter(request, Parameters.ACTOR_ID)
     val includeTests = ParameterExtractor.requiredQueryParameter(request, Parameters.TESTS).toBoolean
@@ -350,7 +387,7 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
       repositoryUtils.getTempReportFolder().getAbsolutePath,
       "conformance_reports",
       actorId,
-      systemId,
+      systemId.toString,
       "report_"+System.currentTimeMillis+".pdf"
     )
     FileUtils.deleteQuietly(reportPath.toFile.getParentFile)
@@ -359,9 +396,9 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
       val communityId = if (snapshotId.isDefined) {
         conformanceManager.getConformanceSnapshot(snapshotId.get).community
       } else {
-        systemManager.getCommunityIdOfSystem(systemId.toLong)
+        systemManager.getCommunityIdOfSystem(systemId)
       }
-      reportManager.generateConformanceStatementReport(reportPath, includeTests, actorId.toLong, systemId.toLong, labels, communityId, snapshotId)
+      reportManager.generateConformanceStatementReport(reportPath, includeTests, actorId.toLong, systemId, labels, communityId, snapshotId)
       Ok.sendFile(
         content = reportPath.toFile,
         fileName = _ => Some(reportPath.toFile.getName),

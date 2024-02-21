@@ -4,14 +4,11 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import com.gitb.core.AnyContent;
 import com.gitb.core.ValueEmbeddingEnumeration;
-import com.gitb.reports.dto.ConformanceStatementOverview;
-import com.gitb.reports.dto.TestCaseOverview;
-import com.gitb.reports.dto.TestSuiteOverview;
+import com.gitb.reports.dto.*;
 import com.gitb.tr.*;
 import jakarta.xml.bind.JAXBElement;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 import org.slf4j.LoggerFactory;
 
 import javax.xml.datatype.DatatypeConfigurationException;
@@ -32,13 +29,13 @@ public class ReportGeneratorTest {
      * When adapting the templates for development purposes it is useful to work with a specific directory that is not deleted
      * after each test completes. To do this comment the @TempDir and uncomment the definition of a specific directory.
      */
-    @TempDir()
-    Path tempDirectory;
-//        Path tempDirectory = Path.of("/tmp/gitb_pdf_tests/");
+//    @TempDir()
+//    Path tempDirectory;
+        Path tempDirectory = Path.of("/tmp/gitb_pdf_tests/");
 
     @BeforeEach
     void setup() throws IOException {
-//        ((Logger)LoggerFactory.getLogger(ReportGenerator.class)).setLevel(Level.DEBUG);
+        ((Logger)LoggerFactory.getLogger(ReportGenerator.class)).setLevel(Level.DEBUG);
         Files.createDirectories(tempDirectory);
         ((Logger)LoggerFactory.getLogger("org.apache.fontbox")).setLevel(Level.WARN);
         ((Logger)LoggerFactory.getLogger("org.apache.pdfbox")).setLevel(Level.WARN);
@@ -129,19 +126,19 @@ public class ReportGeneratorTest {
                 generator.fromTestStepReportType(getTAR(TestResultType.UNDEFINED,false, false), "Step 20: Another step (20)", specs)
         ));
         // Documentation
-        data.setDocumentation("<p><strong>[TC2] Invalid registration</strong></p>\n" +
-                " <p>Passenger attempts to register in the wallet with an invalid photo. The wallet provider is expected to return an error with an appropriate error code.</p>\n" +
-                " <p><img style=\"display:block;margin-left:auto;margin-right:auto\" src=\"resources/TC2.png\" alt=\"\" width=\"2500\" height=\"400\" /></p>\n" +
-                " <p><strong>Assumptions:</strong></p>\n" +
-                " <ul><li>The access event ID and access gate ID used in API calls are provided as inputs by the user.</li><li>The wallet provider has already registered to obtain an API key.</li><li>When provided with an invalid photo the registration call shall return at least one boarding pass. For the purposes of the PoC this is triggered by passing a value of &#34;<em>BAD_PHOTO</em>&#34; for either the access event ID or access gate ID.</li></ul>\n" +
-                " <p>The following table summarises the <b>additional</b> test steps:</p><table style=\"border-collapse:collapse;width:100%;height:240.875px;border-color:#34495e;border-style:solid\"><tbody><tr style=\"height:27.375px\"><td style=\"width:12.9954%;height:27.375px;background-color:#34495e;border:1px solid #34495e\"><strong><span style=\"color:#ffffff\">  Test case</span></strong></td><td style=\"width:71.3364%;height:27.375px;background-color:#ecf0f1;border:1px solid #34495e\"><strong><span style=\"background-color:transparent\">Get requirements</span></strong></td><td style=\"width:7.74194%;height:27.375px;background-color:#34495e;text-align:center;border:1px solid #34495e\"><strong><span style=\"color:#ffffff\">ID</span></strong></td><td style=\"width:7.92627%;height:27.375px;background-color:#ecf0f1;text-align:center;border:1px solid #34495e\"><strong>TC1</strong></td></tr><tr style=\"height:27.75px\"><td style=\"height:27.75px;background-color:#34495e;width:12.9954%;border:1px solid #34495e\"><strong><span style=\"color:#ffffff\">  Actors</span></strong></td><td style=\"height:27.75px;width:87.0046%;border:1px solid #34495e\" colspan=\"3\"><strong>Evidence Requester (ER)¹</strong>, Evidence Broker (EB)</td></tr><tr style=\"height:27.375px\"><td style=\"width:12.9954%;height:27.375px;background-color:#34495e;border:1px solid #34495e\"><strong><span style=\"color:#ffffff\">  Description</span></strong></td><td style=\"height:27.375px;width:87.0046%;border:1px solid #34495e\" colspan=\"3\"><span style=\"background-color:transparent\">Test case to verify that an Evidence Requester (ER) can correctly query an Evidence Broker (EB) with a Get List of Requirements query.</span></td></tr><tr style=\"height:131px\"><td style=\"width:12.9954%;height:131px;background-color:#34495e;border:1px solid #34495e\"><strong><span style=\"color:#ffffff\">  Steps</span></strong></td><td style=\"height:131px;width:87.0046%;border:1px solid #34495e\" colspan=\"3\">\n" +
-                " <p style=\"text-align:left\">The following steps will be carried out as part of this test case (validation steps shown in <em>italics</em>).</p>\n" +
-                " <ol><li style=\"text-align:left\">ER sends to EB a “<a href=\"https://ec.europa.eu/cefdigital/wiki/pages/viewpage.action?pageId&#61;406946271#id-3.2EvidenceBroker%28EB%29-4.QueryInterfaceSpecification\" target=\"_blank\" rel=\"noopener noreferrer nofollow\">Get List of Requirements</a>” query (with any data from the shared test data).</li><li>EB responds with the requested requirements.\n" +
-                " <ol><li><em>Check that the query type is as expected.</em></li><li><em>Check that the query was valid (no exceptions were raised). </em></li></ol>\n" +
-                " </li></ol>\n" +
-                " </td></tr></tbody></table>\n" +
-                " <p><em><span style=\"font-size:8pt\">¹ This is the role that your system (the System Under Test - SUT) plays in this test case</span></em></p>\n" +
-                " <p>For service definitions, data models and expected behaviours please refer to the <a href=\"https://ec.europa.eu/cefdigital/wiki/display/SDGOO/Chapter&#43;3%3A&#43;Common&#43;Services&#43;-&#43;December&#43;2021?src&#61;contextnavpagetreemode\" target=\"_blank\" rel=\"noopener noreferrer nofollow\">SDG Once-Only Collaborative Space (Chapter 3)</a>.</p>");
+        data.setDocumentation("""
+                <p><strong>[TC2] Invalid registration</strong></p>
+                 <p>Passenger attempts to register in the wallet with an invalid photo. The wallet provider is expected to return an error with an appropriate error code.</p>
+                 <p><strong>Assumptions:</strong></p>
+                 <ul><li>The access event ID and access gate ID used in API calls are provided as inputs by the user.</li><li>The wallet provider has already registered to obtain an API key.</li><li>When provided with an invalid photo the registration call shall return at least one boarding pass. For the purposes of the PoC this is triggered by passing a value of &#34;<em>BAD_PHOTO</em>&#34; for either the access event ID or access gate ID.</li></ul>
+                 <p>The following table summarises the <b>additional</b> test steps:</p><table style="border-collapse:collapse;width:100%;height:240.875px;border-color:#34495e;border-style:solid"><tbody><tr style="height:27.375px"><td style="width:12.9954%;height:27.375px;background-color:#34495e;border:1px solid #34495e"><strong><span style="color:#ffffff">  Test case</span></strong></td><td style="width:71.3364%;height:27.375px;background-color:#ecf0f1;border:1px solid #34495e"><strong><span style="background-color:transparent">Get requirements</span></strong></td><td style="width:7.74194%;height:27.375px;background-color:#34495e;text-align:center;border:1px solid #34495e"><strong><span style="color:#ffffff">ID</span></strong></td><td style="width:7.92627%;height:27.375px;background-color:#ecf0f1;text-align:center;border:1px solid #34495e"><strong>TC1</strong></td></tr><tr style="height:27.75px"><td style="height:27.75px;background-color:#34495e;width:12.9954%;border:1px solid #34495e"><strong><span style="color:#ffffff">  Actors</span></strong></td><td style="height:27.75px;width:87.0046%;border:1px solid #34495e" colspan="3"><strong>Evidence Requester (ER)¹</strong>, Evidence Broker (EB)</td></tr><tr style="height:27.375px"><td style="width:12.9954%;height:27.375px;background-color:#34495e;border:1px solid #34495e"><strong><span style="color:#ffffff">  Description</span></strong></td><td style="height:27.375px;width:87.0046%;border:1px solid #34495e" colspan="3"><span style="background-color:transparent">Test case to verify that an Evidence Requester (ER) can correctly query an Evidence Broker (EB) with a Get List of Requirements query.</span></td></tr><tr style="height:131px"><td style="width:12.9954%;height:131px;background-color:#34495e;border:1px solid #34495e"><strong><span style="color:#ffffff">  Steps</span></strong></td><td style="height:131px;width:87.0046%;border:1px solid #34495e" colspan="3">
+                 <p style="text-align:left">The following steps will be carried out as part of this test case (validation steps shown in <em>italics</em>).</p>
+                 <ol><li style="text-align:left">ER sends to EB a “<a href="https://ec.europa.eu/cefdigital/wiki/pages/viewpage.action?pageId&#61;406946271#id-3.2EvidenceBroker%28EB%29-4.QueryInterfaceSpecification" target="_blank" rel="noopener noreferrer nofollow">Get List of Requirements</a>” query (with any data from the shared test data).</li><li>EB responds with the requested requirements.
+                 <ol><li><em>Check that the query type is as expected.</em></li><li><em>Check that the query was valid (no exceptions were raised). </em></li></ol>
+                 </li></ol>
+                 </td></tr></tbody></table>
+                 <p><em><span style="font-size:8pt">¹ This is the role that your system (the System Under Test - SUT) plays in this test case</span></em></p>
+                 <p>For service definitions, data models and expected behaviours please refer to the <a href="https://ec.europa.eu/cefdigital/wiki/display/SDGOO/Chapter&#43;3%3A&#43;Common&#43;Services&#43;-&#43;December&#43;2021?src&#61;contextnavpagetreemode" target="_blank" rel="noopener noreferrer nofollow">SDG Once-Only Collaborative Space (Chapter 3)</a>.</p>""");
         // Log messages
         data.setLogMessages(List.of(
                 "[2023-03-20 17:58:21] DEBUG - Configuring session [12c8548b-069b-4b61-85e6-1ce8a64f5911]",
@@ -190,7 +187,13 @@ public class ReportGeneratorTest {
                 .withContextItemTruncateLimit(1000)
                 .withContextItems(true)
                 .withTestSteps(true)
-                .withResourceResolver((uri) -> Objects.requireNonNull(Thread.currentThread().getContextClassLoader().getResource(uri)).toString());
+                .withResourceResolver((uri) -> {
+                    if (uri.startsWith("file://")) {
+                        return uri;
+                    } else {
+                        return Objects.requireNonNull(Thread.currentThread().getContextClassLoader().getResource(uri), "URI [%s]".formatted(uri)).toString();
+                    }
+                });
         var data = getTestCaseOverview("Test case report", specs);
         try (var outputStream = Files.newOutputStream(Path.of(tempDirectory.toString(), "TestCaseOverview.pdf"))) {
             generator.writeTestCaseOverviewReport(data, outputStream, specs);
@@ -207,12 +210,112 @@ public class ReportGeneratorTest {
     }
 
     @Test
+    void testConformanceOverview() throws IOException, DatatypeConfigurationException {
+        var specs = ReportSpecs.build()
+                .withResourceResolver((uri) -> Objects.requireNonNull(Thread.currentThread().getContextClassLoader().getResource(uri)).toString());
+        ConformanceOverview data = new ConformanceOverview();
+
+        data.setIncludeMessage(true);
+        data.setIncludeConformanceItems(true);
+        data.setIncludeTestCases(true);
+
+        data.setMessage("<b>This is your report</b>");
+        data.setLabelOrganisation("Organisation");
+        data.setLabelSystem("System");
+        data.setLabelDomain("Domain");
+        data.setLabelSpecification("Specification");
+        data.setLabelSpecificationGroup("Group");
+        data.setLabelSpecificationInGroup("Option");
+        data.setLabelActor("Actor");
+        data.setTitle("Conformance overview");
+        data.setTestDomain("Domain 1");
+
+        data.setOrganisation("Organisation");
+        data.setSystem("System");
+        data.setOverallStatus("SUCCESS");
+
+        // Items
+        var group1 = getConformanceItem("Group1", "Description for group 1", "FAILURE");
+        var spec1_1 = getConformanceItem("Specification 1", "Description for specification 1", "SUCCESS");
+        spec1_1.setData(new ConformanceStatementData());
+        spec1_1.getData().setTestDomain("Domain 1");
+        spec1_1.getData().setTestSpecification("Specification 1");
+        spec1_1.getData().setTestActor("Actor 1");
+        spec1_1.getData().setCompletedTests(245);
+        spec1_1.getData().setFailedTests(0);
+        spec1_1.getData().setUndefinedTests(0);
+        spec1_1.getData().setOverallStatus("SUCCESS");
+        spec1_1.getData().setLastUpdated("12/02/2024 12:30:21");
+        spec1_1.getData().setTestSuites(List.of(
+                getTestSuiteOverview("The third test suite", "Description for the third test suite", specs),
+                getTestSuiteOverview("Test suite 2", "Description for test suite 2", specs)
+        ));
+        var spec1_2 = getConformanceItem("Specification 2", "Description for specification 2", "UNDEFINED");
+        spec1_2.setData(new ConformanceStatementData());
+        spec1_2.getData().setTestDomain("Domain 1");
+        spec1_2.getData().setTestSpecification("Specification 2");
+        spec1_2.getData().setTestActor("Actor 1");
+        spec1_2.getData().setCompletedTests(0);
+        spec1_2.getData().setFailedTests(0);
+        spec1_2.getData().setUndefinedTests(30);
+        spec1_2.getData().setOverallStatus("UNDEFINED");
+        spec1_2.getData().setTestSuites(List.of(
+                getTestSuiteOverview("The third test suite", "Description for the third test suite", specs),
+                getTestSuiteOverview("Test suite 2", "Description for test suite 2", specs)
+        ));
+        var spec1_3 = getConformanceItem("Specification 3", "Description for specification 3", "FAILURE");
+        spec1_3.setData(new ConformanceStatementData());
+        spec1_3.getData().setTestDomain("Domain 1");
+        spec1_3.getData().setTestSpecification("Specification 3");
+        spec1_3.getData().setTestActor("Actor 1");
+        spec1_3.getData().setCompletedTests(245);
+        spec1_3.getData().setFailedTests(105);
+        spec1_3.getData().setUndefinedTests(0);
+        spec1_3.getData().setOverallStatus("FAILURE");
+        spec1_3.getData().setTestSuites(List.of(
+                getTestSuiteOverview("The third test suite", "Description for the third test suite", specs),
+                getTestSuiteOverview("Test suite 2", "Description for test suite 2", specs)
+        ));
+
+        group1.setItems(List.of(spec1_1, spec1_2, spec1_3));
+//        var group2 = getConformanceItem("Group2", "Description for group 2", "SUCCESS");
+//        group1.setItems(List.of(
+//                getConformanceItem("Specification 1", "Description for specification 1", "SUCCESS"),
+//                getConformanceItem("Specification 2", "Description for specification 2", "SUCCESS"),
+//                getConformanceItem("Specification 3", "Description for specification 3", "SUCCESS")
+//        ));
+
+        var domain = getConformanceItem("Domain1", "Description for domain 1", "FAILURE");
+        domain.setItems(List.of(group1));
+
+        data.setConformanceItems(List.of(domain));
+
+        try (var outputStream = Files.newOutputStream(Path.of(tempDirectory.toString(), "ConformanceOverview.pdf"))) {
+            generator.writeConformanceOverviewReport(data, outputStream, specs);
+        }
+    }
+
+    private ConformanceItem getConformanceItem(String name, String description, String status) {
+        var item = new ConformanceItem();
+        item.setName(name);
+        item.setDescription(description);
+        item.setOverallStatus(status);
+        return item;
+    }
+
+    @Test
     void testConformanceStatementOverview() throws IOException, DatatypeConfigurationException {
         var specs = ReportSpecs.build()
                 .withContextItemTruncateLimit(1000)
                 .withContextItems(true)
                 .withTestSteps(true)
-                .withResourceResolver((uri) -> Objects.requireNonNull(Thread.currentThread().getContextClassLoader().getResource(uri)).toString());
+                .withResourceResolver((uri) -> {
+                    if (uri.startsWith("file://")) {
+                        return uri;
+                    } else {
+                        return Objects.requireNonNull(Thread.currentThread().getContextClassLoader().getResource(uri), "URI [%s]".formatted(uri)).toString();
+                    }
+                });
         ConformanceStatementOverview data = new ConformanceStatementOverview();
         // Labels
         data.setTitle("Η γρήγορη καφέ αλεπού πήδηξε πάνω από το τεμπέλικο σκυλί.");
@@ -222,6 +325,8 @@ public class ReportGeneratorTest {
         data.setLabelSystem("System");
         data.setLabelDomain("Domain");
         data.setLabelSpecification("Specification");
+        data.setLabelSpecificationGroup("Group");
+        data.setLabelSpecificationInGroup("Option");
 //        data.setLabelSpecification("Specification profile to test with a very big label");
         data.setLabelActor("Actor");
         // Basic data
@@ -237,7 +342,9 @@ public class ReportGeneratorTest {
         data.setIncludeMessage(true);
         data.setIncludeTestStatus(true);
         data.setIncludeTestCases(true);
-        data.setMessage("<strong>This is the result.</strong>");
+
+//        data.setMessage("<strong>This is the result.</strong><img src=\"%s\"/>".formatted(Path.of("C:\\work\\gitb-repository\\files\\badges\\latest\\1\\SUCCESS.png").toUri()));
+        data.setMessage("<strong>This is the result.</strong><img width=\"100px\" src=\"%s\"/>".formatted(Path.of("reports/images/demo-badge.png").toUri()));
 
         data.setOverallStatus("SUCCESS");
         data.setTestSuites(List.of(
@@ -305,21 +412,22 @@ public class ReportGeneratorTest {
             tar.getContext().getItem().get(2).getItem().get(0).setEmbeddingMethod(ValueEmbeddingEnumeration.STRING);
             tar.getContext().getItem().get(2).getItem().add(new AnyContent());
             tar.getContext().getItem().get(2).getItem().get(1).setName("body");
-            tar.getContext().getItem().get(2).getItem().get(1).setValue("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-                    "<data>\n" +
-                    "\t<metadata>\n" +
-                    "\t\t<gitb:name>Simple TC</gitb:name>\n" +
-                    "\t\t<gitb:type>CONFORMANCE</gitb:type>\n" +
-                    "\t\t<gitb:version>1.0</gitb:version>\n" +
-                    "\t\t<gitb:description>A simple test case.</gitb:description>\n" +
-                    "\t</metadata>\n" +
-                    "\t<actors>\n" +
-                    "\t\t<gitb:actor id=\"Actor\" name=\"Actor\" role=\"SUT\"/>\n" +
-                    "\t</actors>\n" +
-                    "\t<steps>\n" +
-                    "        B,C,D\n" +
-                    "\t</steps>\n" +
-                    "</data>");
+            tar.getContext().getItem().get(2).getItem().get(1).setValue("""
+                    <?xml version="1.0" encoding="UTF-8"?>
+                    <data>
+                    \t<metadata>
+                    \t\t<gitb:name>Simple TC</gitb:name>
+                    \t\t<gitb:type>CONFORMANCE</gitb:type>
+                    \t\t<gitb:version>1.0</gitb:version>
+                    \t\t<gitb:description>A simple test case.</gitb:description>
+                    \t</metadata>
+                    \t<actors>
+                    \t\t<gitb:actor id="Actor" name="Actor" role="SUT"/>
+                    \t</actors>
+                    \t<steps>
+                            B,C,D
+                    \t</steps>
+                    </data>""");
             tar.getContext().getItem().get(2).getItem().get(1).setEmbeddingMethod(ValueEmbeddingEnumeration.STRING);
         }
         return tar;

@@ -22,8 +22,11 @@ class ConformanceStatementFull(
     specificationId: Long,
     specificationName: String,
     specificationNameFull: String,
+    specificationDisplayOrder: Short,
+    specificationGroupId: Option[Long],
     specificationGroupName: Option[String],
     val specificationGroupNameFull: Option[String],
+    specificationGroupDisplayOrder: Option[Short],
     val specificationGroupOptionName: String,
     val specificationGroupOptionNameFull: String,
     val testSuiteId: Option[Long],
@@ -56,7 +59,7 @@ class ConformanceStatementFull(
   domainId, domainName, domainNameFull, None,
   actorId, actorName, actorFull, None,
   specificationId, specificationName, specificationNameFull, None, systemId,
-  result, updateTime, completedTests, failedTests, undefinedTests, completedOptionalTests, failedOptionalTests, undefinedOptionalTests, None, specificationGroupName, None) {
+  result, updateTime, completedTests, failedTests, undefinedTests, completedOptionalTests, failedOptionalTests, undefinedOptionalTests, specificationGroupId, specificationGroupName, None, specificationDisplayOrder, specificationGroupDisplayOrder) {
 
 
   override def copy(): ConformanceStatementFull = {
@@ -78,8 +81,11 @@ class ConformanceStatementFull(
       this.specificationId,
       this.specificationName,
       this.specificationNameFull,
+      this.specificationDisplayOrder,
+      this.specificationGroupId,
       this.specificationGroupName,
       this.specificationGroupNameFull,
+      this.specificationGroupDisplayOrder,
       this.specificationGroupOptionName,
       this.specificationGroupOptionNameFull,
       this.testSuiteId,

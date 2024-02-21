@@ -16,9 +16,11 @@ export class ConformanceStatementItemsDisplayComponent implements OnInit {
   @Input() expandable = true
   @Input() wrapDescriptions = false
   @Input() withCheck = true
+  @Input() withExport = false
   @Input() withResults = false
   @Input() filtering = true
   @Output() selectionChanged = new EventEmitter<ConformanceStatementItem>()
+  @Output() export = new EventEmitter<ConformanceStatementItem>()
   hidden = false
 
   constructor() { }
@@ -32,5 +34,9 @@ export class ConformanceStatementItemsDisplayComponent implements OnInit {
 
   childSelectionChanged(childItem: ConformanceStatementItem) {
     this.selectionChanged.emit(childItem)
+  }
+
+  childExported(childItem: ConformanceStatementItem) {
+    this.export.emit(childItem)
   }
 }

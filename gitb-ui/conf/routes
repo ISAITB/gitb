@@ -329,6 +329,7 @@ GET     /api/repository/admininteractions                       @controllers.Rep
 GET     /api/repository/export/testcase                         @controllers.RepositoryService.exportTestCaseReport()
 GET     /api/repository/export/teststep/:session_id/*path       @controllers.RepositoryService.exportTestStepReport(session_id: String, path)
 GET     /api/repository/export/conformance                      @controllers.RepositoryService.exportConformanceStatementReport()
+GET     /api/repository/export/conformanceoverview              @controllers.RepositoryService.exportConformanceOverviewReport()
 POST    /api/repository/export/certificatedemo                  @controllers.RepositoryService.exportDemoConformanceCertificateReport(community_id: Long)
 POST    /api/repository/export/certificate                      @controllers.RepositoryService.exportConformanceCertificateReport()
 POST    /api/repository/exportOwn/certificate                   @controllers.RepositoryService.exportOwnConformanceCertificateReport()

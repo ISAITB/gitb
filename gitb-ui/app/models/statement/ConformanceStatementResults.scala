@@ -1,5 +1,7 @@
 package models.statement
 
+import models.ConformanceTestSuite
+
 import java.sql.Timestamp
 
 case class ConformanceStatementResults(
@@ -9,5 +11,6 @@ case class ConformanceStatementResults(
   undefinedTests: Long,
   completedOptionalTests: Long,
   failedOptionalTests: Long,
-  undefinedOptionalTests: Long
+  undefinedOptionalTests: Long,
+  testSuites: Option[Iterable[ConformanceTestSuite]] = None
 )
