@@ -8,6 +8,12 @@ import { ConformanceCertificateSettings } from 'src/app/types/conformance-certif
 import { ConformanceResultFull } from 'src/app/types/conformance-result-full';
 import { saveAs } from 'file-saver'
 import { BadgePlaceholderInfo } from './badge-placeholder-info';
+import { Observable, forkJoin, of } from 'rxjs';
+import { DomainParameter } from 'src/app/types/domain-parameter';
+import { OrganisationParameterWithValue } from 'src/app/types/organisation-parameter-with-value';
+import { OrganisationService } from 'src/app/services/organisation.service';
+import { SystemParameterWithValue } from 'src/app/types/system-parameter-with-value';
+import { SystemService } from 'src/app/services/system.service';
 
 @Component({
   selector: 'app-conformance-certificate-modal',
@@ -27,25 +33,57 @@ export class ConformanceCertificateModalComponent implements OnInit {
     private dataService: DataService,
     private modalInstance: BsModalRef,
     private conformanceService: ConformanceService,
+    private organisationService: OrganisationService,
+    private systemService: SystemService,
     private reportService: ReportService
   ) { }
 
   ngOnInit(): void {
     if (this.settings.message != undefined) {
       // Replace the placeholders for the preview.
+      let domainParamObservable: Observable<DomainParameter[]>
       if (this.settings.message.includes(Constants.PLACEHOLDER__DOMAIN+'{')) {
-        // The message includes domain parameter placeholders.
-        this.conformanceService.getDomainParametersOfCommunity(this.settings.community, true, true)
-        .subscribe((data) => {
-          let message = this.settings.message!
-          for (let param of data) {
+        domainParamObservable = this.conformanceService.getDomainParametersOfCommunity(this.settings.community, true, true)
+      } else {
+        domainParamObservable = of([])
+      }
+      let organisationParamObservable: Observable<OrganisationParameterWithValue[]>
+      if (this.settings.message.includes(Constants.PLACEHOLDER__ORGANISATION+'{')) {
+        organisationParamObservable = this.organisationService.getOrganisationParameterValues(this.conformanceStatement.organizationId, true)
+      } else {
+        organisationParamObservable = of([])
+      }
+      let systemParamObservable: Observable<SystemParameterWithValue[]>
+      if (this.settings.message.includes(Constants.PLACEHOLDER__SYSTEM+'{')) {
+        systemParamObservable = this.systemService.getSystemParameterValues(this.conformanceStatement.systemId, true)
+      } else {
+        systemParamObservable = of([])
+      }
+      forkJoin([domainParamObservable, organisationParamObservable, systemParamObservable]).subscribe((data) => {
+        let message = this.settings.message!
+        // Domain params
+        if (data[0].length > 0) {
+          for (let param of data[0]) {
             message = message.split(Constants.PLACEHOLDER__DOMAIN+'{'+param.name+'}').join((param.value == undefined)?'':param.value!)
           }
-          this.settings.message = this.replacePlaceholders(message)
-        })
-      } else {
-        this.settings.message = this.replacePlaceholders(this.settings.message)
-      }
+        }
+        // Organisation properties
+        if (data[1].length > 0) {
+          for (let param of data[1]) {
+            message = message.split(Constants.PLACEHOLDER__ORGANISATION+'{'+param.testKey+'}').join((param.value == undefined)?'':param.value!)
+          }
+        }
+        // System properties
+        if (data[2].length > 0) {
+          for (let param of data[2]) {
+            message = message.split(Constants.PLACEHOLDER__SYSTEM+'{'+param.testKey+'}').join((param.value == undefined)?'':param.value!)
+          }
+        }
+        this.settings.message = message
+      }).add(() => {
+        // Replace the other placeholders
+        this.settings.message = this.replacePlaceholders(this.settings.message!)
+      })
     } else {
       this.settings.message = ''
     }

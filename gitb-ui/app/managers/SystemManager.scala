@@ -766,11 +766,16 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils, testResultManag
       .map(x => x._2.community).result.head
   }
 
-  def getSystemParameterValues(systemId: Long): List[SystemParametersWithValue] = {
+  def getSystemParameterValues(systemId: Long, onlySimple: Option[Boolean] = None): List[SystemParametersWithValue] = {
+    var typeToCheck: Option[String] = None
+    if (onlySimple.isDefined && onlySimple.get) {
+      typeToCheck = Some("SIMPLE")
+    }
     val communityId = getCommunityIdOfSystem(systemId)
     exec(PersistenceSchema.systemParameters
       .joinLeft(PersistenceSchema.systemParameterValues).on((p, v) => p.id === v.parameter && v.system === systemId)
       .filter(_._1.community === communityId)
+      .filterOpt(typeToCheck)((table, propertyType)=> table._1.kind === propertyType)
       .sortBy(x => (x._1.displayOrder.asc, x._1.name.asc))
       .map(x => (x._1, x._2))
       .result

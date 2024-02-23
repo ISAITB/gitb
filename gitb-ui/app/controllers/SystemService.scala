@@ -294,7 +294,8 @@ class SystemService @Inject() (implicit ec: ExecutionContext, repositoryUtils: R
 
   def getSystemParameterValues(systemId: Long) = authorizedAction { request =>
     authorizationManager.canViewSystemsById(request, Some(List(systemId)))
-    val values = systemManager.getSystemParameterValues(systemId)
+    val onlySimple = ParameterExtractor.optionalBooleanQueryParameter(request, Parameters.SIMPLE)
+    val values = systemManager.getSystemParameterValues(systemId, onlySimple)
     val json: String = JsonUtil.jsSystemParametersWithValues(values, includeValues = true).toString
     ResponseConstructor.constructJsonResponse(json)
   }

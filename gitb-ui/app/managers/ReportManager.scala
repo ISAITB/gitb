@@ -37,7 +37,7 @@ import scala.util.Using
   * Created by senan on 03.12.2014.
   */
 @Singleton
-class ReportManager @Inject() (systemManager: SystemManager, domainParameterManager: DomainParameterManager, reportHelper: ReportHelper, triggerHelper: TriggerHelper, testCaseReportProducer: TestCaseReportProducer, testSuiteManager: TestSuiteManager, specificationManager: SpecificationManager, conformanceManager: ConformanceManager, dbConfigProvider: DatabaseConfigProvider, communityLabelManager: CommunityLabelManager, repositoryUtils: RepositoryUtils, testResultManager: TestResultManager) extends BaseManager(dbConfigProvider) {
+class ReportManager @Inject() (communityManager: CommunityManager, organizationManager: OrganizationManager, systemManager: SystemManager, domainParameterManager: DomainParameterManager, reportHelper: ReportHelper, triggerHelper: TriggerHelper, testCaseReportProducer: TestCaseReportProducer, testSuiteManager: TestSuiteManager, specificationManager: SpecificationManager, conformanceManager: ConformanceManager, dbConfigProvider: DatabaseConfigProvider, communityLabelManager: CommunityLabelManager, repositoryUtils: RepositoryUtils, testResultManager: TestResultManager) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
 
@@ -823,7 +823,7 @@ class ReportManager @Inject() (systemManager: SystemManager, domainParameterMana
     overview.setTestDomain(conformanceData.domainNameFull)
     overview.setTestSpecificationGroup(conformanceData.specificationGroupNameFull.orNull)
     overview.setTestSpecification(conformanceData.specificationNameFull)
-    if (conformanceManager.getActorIdsToDisplayInStatementsWrapper(List(conformanceData)).contains(conformanceData.actorId)) {
+    if (isDemo || conformanceManager.getActorIdsToDisplayInStatementsWrapper(List(conformanceData)).contains(conformanceData.actorId)) {
       overview.setTestActor(conformanceData.actorFull)
     }
     overview.setOrganisation(conformanceData.organizationName)
@@ -964,6 +964,41 @@ class ReportManager @Inject() (systemManager: SystemManager, domainParameterMana
     if (addMessage && message.isDefined) {
       messageToUse = message.get
       // Replace placeholders
+      if (messageToUse.contains(Constants.PlaceholderDomain+"{")) {
+        // We are referring to domain parameters.
+        val parameters = domainParameterManager.getDomainParametersByCommunityId(communityId, onlySimple = true, loadValues = true)
+        parameters.foreach { param =>
+          messageToUse = messageToUse.replace(Constants.PlaceholderDomain+"{"+param.name+"}", param.value.getOrElse(""))
+        }
+      }
+      if (messageToUse.contains(Constants.PlaceholderOrganisation+"{")) {
+        // We are referring to organisation parameters.
+        if (isDemo) {
+          val parameters = communityManager.getOrganisationParameters(communityId, Some(true))
+          parameters.foreach { param =>
+            messageToUse = messageToUse.replace(Constants.PlaceholderOrganisation+"{"+param.testKey+"}", param.testKey)
+          }
+        } else {
+          val parameters = organizationManager.getOrganisationParameterValues(conformanceData.organizationId, Some(true))
+          parameters.foreach { param =>
+            messageToUse = messageToUse.replace(Constants.PlaceholderOrganisation+"{"+param.parameter.testKey+"}", param.value.map(_.value).getOrElse(""))
+          }
+        }
+      }
+      if (messageToUse.contains(Constants.PlaceholderSystem+"{")) {
+        // We are referring to system parameters.
+        if (isDemo) {
+          val parameters = communityManager.getSystemParameters(communityId, Some(true))
+          parameters.foreach { param =>
+            messageToUse = messageToUse.replace(Constants.PlaceholderSystem+"{"+param.testKey+"}", param.testKey)
+          }
+        } else {
+          val parameters = systemManager.getSystemParameterValues(conformanceData.systemId, Some(true))
+          parameters.foreach { param =>
+            messageToUse = messageToUse.replace(Constants.PlaceholderSystem+"{"+param.parameter.testKey+"}", param.value.map(_.value).getOrElse(""))
+          }
+        }
+      }
       if (messageToUse.contains(Constants.PlaceholderDomain+"{")) {
         // We are referring to domain parameters.
         val parameters = domainParameterManager.getDomainParametersByCommunityId(communityId, onlySimple = true, loadValues = true)

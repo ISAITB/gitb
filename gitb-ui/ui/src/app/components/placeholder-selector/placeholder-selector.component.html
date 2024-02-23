@@ -1,5 +1,5 @@
 <div class="root">
-    @if ((placeholders && placeholders.length > 0) || (parameterPlaceholders && parameterPlaceholders.length > 0)) {
+    @if ((placeholders && placeholders.length > 0) || (domainParameterPlaceholders && domainParameterPlaceholders.length > 0) || (organisationParameterPlaceholders && organisationParameterPlaceholders.length > 0) || (systemParameterPlaceholders && systemParameterPlaceholders.length > 0)) {
         <div class="buttonContainer">
             <div class="button">
                 <div class="btn-group" dropdown>
@@ -8,9 +8,21 @@
                         @for (placeholder of placeholders; track placeholder.key) {
                             <li role="menuitem"><a class="dropdown-item" href (click)="selectedPlaceholder(placeholder); $event.preventDefault()"><b>{{placeholder.key}}{{placeholder.value != ''?':':''}}</b> {{placeholder.value}}</a></li>
                         }
-                        @if (parameterPlaceholders && parameterPlaceholders.length > 0) {
+                        @if (domainParameters && domainParameterPlaceholders && domainParameterPlaceholders.length > 0) {
                             <li class="divider dropdown-divider"></li>
-                            @for (placeholder of parameterPlaceholders; track placeholder.key) {
+                            @for (placeholder of domainParameterPlaceholders; track placeholder.key) {
+                                <li role="menuitem"><a class="dropdown-item" href (click)="selectedParameter(placeholder); $event.preventDefault()"><b>{{placeholder.key}}{{placeholder.value != ''?':':''}}</b> {{placeholder.value}}</a></li>
+                            }
+                        }
+                        @if (organisationParameters && organisationParameterPlaceholders && organisationParameterPlaceholders.length > 0) {
+                            <li class="divider dropdown-divider"></li>
+                            @for (placeholder of organisationParameterPlaceholders; track placeholder.key) {
+                                <li role="menuitem"><a class="dropdown-item" href (click)="selectedParameter(placeholder); $event.preventDefault()"><b>{{placeholder.key}}{{placeholder.value != ''?':':''}}</b> {{placeholder.value}}</a></li>
+                            }
+                        }
+                        @if (systemParameters && systemParameterPlaceholders && systemParameterPlaceholders.length > 0) {
+                            <li class="divider dropdown-divider"></li>
+                            @for (placeholder of systemParameterPlaceholders; track placeholder.key) {
                                 <li role="menuitem"><a class="dropdown-item" href (click)="selectedParameter(placeholder); $event.preventDefault()"><b>{{placeholder.key}}{{placeholder.value != ''?':':''}}</b> {{placeholder.value}}</a></li>
                             }
                         }

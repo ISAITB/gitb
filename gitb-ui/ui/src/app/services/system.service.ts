@@ -91,10 +91,17 @@ export class SystemService {
     })
   }
 
-  getSystemParameterValues(systemId: number) {
-    return this.restService.get<SystemParameter[]>({
+  getSystemParameterValues(systemId: number, onlySimple?: boolean) {
+    let params = undefined
+    if (onlySimple != undefined) {
+      params = {
+        simple: onlySimple
+      }
+    }
+    return this.restService.get<SystemParameterWithValue[]>({
       path: ROUTES.controllers.SystemService.getSystemParameterValues(systemId).url,
-      authenticate: true
+      authenticate: true,
+      params: params
     })
   }
 

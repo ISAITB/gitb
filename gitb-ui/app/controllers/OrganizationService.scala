@@ -188,7 +188,8 @@ class OrganizationService @Inject() (implicit ec: ExecutionContext, repositoryUt
 
   def getOrganisationParameterValues(orgId: Long) = authorizedAction { request =>
     authorizationManager.canViewOrganisation(request, orgId)
-    val values = organizationManager.getOrganisationParameterValues(orgId)
+    val onlySimple = ParameterExtractor.optionalBooleanQueryParameter(request, Parameters.SIMPLE)
+    val values = organizationManager.getOrganisationParameterValues(orgId, onlySimple)
     val json: String = JsonUtil.jsOrganisationParametersWithValues(values, includeValues = true).toString
     ResponseConstructor.constructJsonResponse(json)
   }
