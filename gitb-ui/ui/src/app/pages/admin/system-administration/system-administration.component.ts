@@ -127,7 +127,7 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
   constructor(
     router: Router,
     private userService: UserService,
-    private dataService: DataService,
+    public dataService: DataService,
     private routingService: RoutingService,
     private landingPageService: LandingPageService,
     private legalNoticeService: LegalNoticeService,

@@ -98,7 +98,11 @@
                                     </#if>
                                     <#if data.testSpecification??>
                                         <tr>
-                                            <td class="cell-label">${escape(data.labelSpecification)}:</td>
+                                            <#if data.testSpecificationGroup??>
+                                                <td class="cell-label">${escape(data.labelSpecificationInGroup)}:</td>
+                                            <#else>
+                                                <td class="cell-label">${escape(data.labelSpecification)}:</td>
+                                            </#if>
                                             <td class="cell-value">${escape(data.testSpecification)}</td>
                                         </tr>
                                     </#if>

@@ -3,7 +3,7 @@ package managers.export
 import com.gitb.xml
 import com.gitb.xml.export._
 import managers._
-import models.Enums.{LabelType, SelfRegistrationRestriction, SelfRegistrationType, TestResultStatus, UserRole}
+import models.Enums.{LabelType, OverviewLevelType, SelfRegistrationRestriction, SelfRegistrationType, TestResultStatus, UserRole}
 import models.{TestCases, Actors => _, Endpoints => _, Systems => _, _}
 import org.apache.commons.codec.binary.Base64
 import org.apache.commons.io.{FileUtils, IOUtils}
@@ -19,7 +19,7 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 @Singleton
-class ExportManager @Inject() (repositoryUtils: RepositoryUtils, systemConfigurationManager: SystemConfigurationManager, domainManager: DomainManager, domainParameterManager: DomainParameterManager, communityResourceManager: CommunityResourceManager, triggerManager: TriggerManager, communityManager: CommunityManager, conformanceManager: ConformanceManager, testSuiteManager: TestSuiteManager, landingPageManager: LandingPageManager, legalNoticeManager: LegalNoticeManager, errorTemplateManager: ErrorTemplateManager, specificationManager: SpecificationManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class ExportManager @Inject() (repositoryUtils: RepositoryUtils, systemConfigurationManager: SystemConfigurationManager, domainManager: DomainManager, domainParameterManager: DomainParameterManager, communityResourceManager: CommunityResourceManager, triggerManager: TriggerManager, communityManager: CommunityManager, testSuiteManager: TestSuiteManager, landingPageManager: LandingPageManager, legalNoticeManager: LegalNoticeManager, errorTemplateManager: ErrorTemplateManager, specificationManager: SpecificationManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   private final val logger: Logger = LoggerFactory.getLogger(classOf[ExportManager])
   private final val DEFAULT_CONTENT_TYPE = "application/octet-stream"
@@ -60,7 +60,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, systemConfigura
   def exportDomain(domainId: Long, exportSettings: ExportSettings): com.gitb.xml.export.Export = {
     val exportData = new Export
     exportData.setDomains(new Domains)
-    exportData.getDomains.getDomain.add(exportDomainInternal(domainId, exportSettings).exportedDomain)
+    exportData.getDomains.getDomain.add(exportDomainInternal(domainId, exportSettings).exportedDomain.get)
     exportData
   }
 
@@ -376,6 +376,8 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, systemConfigura
     val exportedEndpointParameterMap: scala.collection.mutable.Map[Long, com.gitb.xml.export.EndpointParameter] = scala.collection.mutable.Map()
     val exportedDomainParameterMap: scala.collection.mutable.Map[Long, com.gitb.xml.export.DomainParameter] = scala.collection.mutable.Map()
     val exportedSharedTestSuiteMap: scala.collection.mutable.Map[Long, com.gitb.xml.export.TestSuite] = scala.collection.mutable.Map()
+    val exportedSpecificationMap: scala.collection.mutable.Map[Long, com.gitb.xml.export.Specification] = scala.collection.mutable.Map()
+    val exportedSpecificationGroupMap: scala.collection.mutable.Map[Long, com.gitb.xml.export.SpecificationGroup] = scala.collection.mutable.Map()
     // Domain.
     val domain = domainManager.getDomainById(domainId)
     val exportedDomain = new com.gitb.xml.export.Domain
@@ -399,7 +401,6 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, systemConfigura
     // Specifications.
     if (exportSettings.specifications) {
       // Groups.
-      val exportedGroupMap = new mutable.HashMap[Long, com.gitb.xml.export.SpecificationGroup]()
       val groups = specificationManager.getSpecificationGroups(domain.id)
       if (groups.nonEmpty) {
         exportedDomain.setSpecificationGroups(new com.gitb.xml.export.SpecificationGroups)
@@ -411,7 +412,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, systemConfigura
           exportedGroup.setDescription(group.description.orNull)
           exportedGroup.setDisplayOrder(group.displayOrder)
           exportedDomain.getSpecificationGroups.getGroup.add(exportedGroup)
-          exportedGroupMap += (group.id -> exportedGroup)
+          exportedSpecificationGroupMap += (group.id -> exportedGroup)
         }
       }
       // Specs.
@@ -428,7 +429,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, systemConfigura
           exportedSpecification.setHidden(specification.hidden)
           exportedSpecification.setDisplayOrder(specification.displayOrder)
           if (specification.group.nonEmpty) {
-            exportedSpecification.setGroup(exportedGroupMap(specification.group.get))
+            exportedSpecification.setGroup(exportedSpecificationGroupMap(specification.group.get))
           }
           exportedSpecification.setBadges(badgesInfo(
               repositoryUtils.getConformanceBadge(specification.id, None, None, TestResultStatus.SUCCESS.toString, exactMatch = true, forReport = false),
@@ -442,6 +443,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, systemConfigura
               repositoryUtils.getConformanceBadge(specification.id, None, None, TestResultStatus.FAILURE.toString, exactMatch = true, forReport = true)
             ).orNull
           )
+          exportedSpecificationMap += (specification.id -> exportedSpecification)
           // Actors
           if (exportSettings.actors && specificationActorMap.contains(specification.id)) {
             exportedSpecification.setActors(new com.gitb.xml.export.Actors)
@@ -558,7 +560,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, systemConfigura
         }
       }
     }
-    DomainExportInfo(sequence.current(), exportedActorMap, exportedEndpointParameterMap, exportedDomain, actorEndpointMap, endpointParameterMap, exportedDomainParameterMap)
+    DomainExportInfo(sequence.current(), exportedActorMap, exportedEndpointParameterMap, Some(exportedDomain), actorEndpointMap, endpointParameterMap, exportedDomainParameterMap, exportedSpecificationGroupMap, exportedSpecificationMap)
   }
 
   private def toExportedTestSuite(sequence:IdGenerator, testSuite: models.TestSuites, specificationToSet: Option[com.gitb.xml.export.Specification], testCases: List[models.TestCases]):com.gitb.xml.export.TestSuite  = {
@@ -822,13 +824,13 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, systemConfigura
     var domainExportInfo: DomainExportInfo = null
     val exportedUserMap = new mutable.HashMap[Long, String]() // Map of DB user ID to XML user ID
     val idSequence = new IdGenerator()
-    if (community.get.domain.isDefined && exportSettings.domain) {
+    if (community.get.domain.isDefined && domainExportInfo.exportedDomain.isDefined) {
       // Add domain data as part of the community export.
       domainExportInfo = exportDomainInternal(community.get.domain.get, exportSettings.withoutSystemSettings())
       idSequence.reset(domainExportInfo.latestSequenceId)
       exportData.setDomains(new Domains)
-      exportData.getDomains.getDomain.add(domainExportInfo.exportedDomain)
-      communityData.setDomain(domainExportInfo.exportedDomain)
+      exportData.getDomains.getDomain.add(domainExportInfo.exportedDomain.get)
+      communityData.setDomain(domainExportInfo.exportedDomain.get)
     }
     exportData.setCommunities(new com.gitb.xml.export.Communities)
     exportData.getCommunities.getCommunity.add(communityData)
@@ -880,7 +882,8 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, systemConfigura
     }
     // Certificate settings.
     if (exportSettings.certificateSettings) {
-      val certificateSettings = communityManager.getConformanceCertificateSettingsWrapper(communityId, defaultIfMissing = false)
+      // Conformance statement certificate.
+      val certificateSettings = communityManager.getConformanceCertificateSettingsWrapper(communityId, defaultIfMissing = false, None)
       if (certificateSettings.isDefined) {
         communityData.setConformanceCertificateSettings(new ConformanceCertificateSettings)
         communityData.getConformanceCertificateSettings.setAddTitle(certificateSettings.get.includeTitle)
@@ -892,21 +895,80 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, systemConfigura
         communityData.getConformanceCertificateSettings.setAddPageNumbers(certificateSettings.get.includePageNumbers)
         communityData.getConformanceCertificateSettings.setMessage(certificateSettings.get.message.orNull)
         communityData.getConformanceCertificateSettings.setTitle(certificateSettings.get.title.orNull)
-        // Keystore settings.
-        if (certificateSettings.get.keystorePassword.isDefined
-          && certificateSettings.get.keyPassword.isDefined
-          && certificateSettings.get.keystoreType.isDefined
-          && certificateSettings.get.keystoreFile.isDefined) {
-          communityData.getConformanceCertificateSettings.setSignature(new SignatureSettings)
-          communityData.getConformanceCertificateSettings.getSignature.setKeystore(certificateSettings.get.keystoreFile.get)
-          // These values are stored encrypted using the master password that is unique per instance.
-          communityData.getConformanceCertificateSettings.getSignature.setKeyPassword(encryptText(certificateSettings.get.keyPassword, isAlreadyEncrypted = true, exportSettings.encryptionKey))
-          communityData.getConformanceCertificateSettings.getSignature.setKeystorePassword(encryptText(certificateSettings.get.keystorePassword, isAlreadyEncrypted = true, exportSettings.encryptionKey))
-          certificateSettings.get.keystoreType.get match {
-            case "PKCS_12" => communityData.getConformanceCertificateSettings.getSignature.setKeystoreType(KeystoreType.PKCS_12)
-            case "JCEKS" => communityData.getConformanceCertificateSettings.getSignature.setKeystoreType(KeystoreType.JCEKS)
-            case _ => communityData.getConformanceCertificateSettings.getSignature.setKeystoreType(KeystoreType.JKS)
+      }
+      // Conformance overview certificate.
+      val certificateOverviewSettings = communityManager.getConformanceOverviewCertificateSettingsWrapper(communityId, defaultIfMissing = false, None)
+      if (certificateOverviewSettings.isDefined) {
+        communityData.setConformanceOverviewCertificateSettings(new ConformanceOverviewCertificateSettings)
+        communityData.getConformanceOverviewCertificateSettings.setAddTitle(certificateOverviewSettings.get.settings.includeTitle)
+        communityData.getConformanceOverviewCertificateSettings.setAddDetails(certificateOverviewSettings.get.settings.includeDetails)
+        communityData.getConformanceOverviewCertificateSettings.setAddMessage(certificateOverviewSettings.get.settings.includeMessage)
+        communityData.getConformanceOverviewCertificateSettings.setAddStatementList(certificateOverviewSettings.get.settings.includeStatements)
+        communityData.getConformanceOverviewCertificateSettings.setAddStatementDetails(certificateOverviewSettings.get.settings.includeStatementDetails)
+        communityData.getConformanceOverviewCertificateSettings.setAddResultOverview(certificateOverviewSettings.get.settings.includeStatementStatus)
+        communityData.getConformanceOverviewCertificateSettings.setAddSignature(certificateOverviewSettings.get.settings.includeSignature)
+        communityData.getConformanceOverviewCertificateSettings.setAddPageNumbers(certificateOverviewSettings.get.settings.includePageNumbers)
+        communityData.getConformanceOverviewCertificateSettings.setTitle(certificateOverviewSettings.get.settings.title.orNull)
+        // Messages.
+        if (certificateOverviewSettings.get.messages.nonEmpty) {
+          communityData.getConformanceOverviewCertificateSettings.setMessages(new ConformanceOverviewCertificateMessages)
+          certificateOverviewSettings.get.messages.foreach { message =>
+            val exportedMessage = new com.gitb.xml.export.ConformanceOverviewCertificateMessage
+            exportedMessage.setMessage(message.message)
+            var includeInExport = false
+            OverviewLevelType.apply(message.messageType) match {
+              case OverviewLevelType.OrganisationLevel =>
+                exportedMessage.setMessageType(com.gitb.xml.export.ConformanceOverviewCertificateMessageType.ALL)
+                includeInExport = true
+              case OverviewLevelType.DomainLevel =>
+                exportedMessage.setMessageType(com.gitb.xml.export.ConformanceOverviewCertificateMessageType.DOMAIN)
+                if (message.domain.isDefined) {
+                  if (domainExportInfo.exportedDomain.isDefined) {
+                    exportedMessage.setIdentifier(domainExportInfo.exportedDomain.get.getId)
+                    includeInExport = true
+                  }
+                } else {
+                  includeInExport = true
+                }
+              case OverviewLevelType.SpecificationGroupLevel =>
+                exportedMessage.setMessageType(com.gitb.xml.export.ConformanceOverviewCertificateMessageType.SPECIFICATION_GROUP)
+                if (message.group.isDefined) {
+                  if (domainExportInfo.exportedSpecificationGroupMap.contains(message.group.get)) {
+                    exportedMessage.setIdentifier(domainExportInfo.exportedSpecificationGroupMap(message.group.get))
+                    includeInExport = true
+                  }
+                } else {
+                  includeInExport = true
+                }
+              case OverviewLevelType.SpecificationLevel =>
+                exportedMessage.setMessageType(com.gitb.xml.export.ConformanceOverviewCertificateMessageType.SPECIFICATION)
+                if (message.specification.isDefined) {
+                  if (domainExportInfo.exportedSpecificationMap.contains(message.specification.get)) {
+                    exportedMessage.setIdentifier(domainExportInfo.exportedSpecificationMap(message.specification.get))
+                    includeInExport = true
+                  }
+                } else {
+                  includeInExport = true
+                }
+            }
+            if (includeInExport) {
+              communityData.getConformanceOverviewCertificateSettings.getMessages.getMessage.add(exportedMessage)
+            }
           }
+        }
+      }
+      // Signature settings.
+      val keystore = communityManager.getCommunityKeystore(communityId, decryptKeys = false)
+      if (keystore.isDefined) {
+        communityData.setSignatureSettings(new SignatureSettings)
+        communityData.getSignatureSettings.setKeystore(keystore.get.keystoreFile)
+        // These values are stored encrypted using the master password that is unique per instance.
+        communityData.getSignatureSettings.setKeyPassword(encryptText(Some(keystore.get.keyPassword), isAlreadyEncrypted = true, exportSettings.encryptionKey))
+        communityData.getSignatureSettings.setKeystorePassword(encryptText(Some(keystore.get.keystorePassword), isAlreadyEncrypted = true, exportSettings.encryptionKey))
+        keystore.get.keystoreType match {
+          case "PKCS_12" => communityData.getSignatureSettings.setKeystoreType(KeystoreType.PKCS_12)
+          case "JCEKS" => communityData.getSignatureSettings.setKeystoreType(KeystoreType.JCEKS)
+          case _ => communityData.getSignatureSettings.setKeystoreType(KeystoreType.JKS)
         }
       }
     }

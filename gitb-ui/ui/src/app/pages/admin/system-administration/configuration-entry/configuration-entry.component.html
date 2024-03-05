@@ -2,18 +2,27 @@
     <div class="titleContainer" (click)="headerClicked()" (mouseover)="hovering = true" (mouseout)="hovering = false">
         <div class="configCollapse"><app-collapsing-icon [isCollapsed]="status.collapsed" [asDiv]="true"></app-collapsing-icon></div>
         <div class="configTitle">{{configTitle}}</div>
-        <div *ngIf="configDescription" class="configDescription">{{configDescription}}</div>
-        <div [class.active]="status.enabled" class="configStatus">
-            <app-tag
-                [label]="statusIcon()"
-                [value]="statusText()"
-                [foreground]="statusForeground()"
-                [background]="statusBackground()"
-                [icon]="true"
-            ></app-tag>
-        </div>
+        @if (configDescription) {
+            <div class="configDescription">{{configDescription}}</div>
+        }
+        @if (status.enabled != undefined) {
+            <div [class.active]="status.enabled" class="configStatus">
+                <app-tag
+                    [label]="statusIcon()"
+                    [value]="statusText()"
+                    [foreground]="statusForeground()"
+                    [background]="statusBackground()"
+                    [icon]="true"
+                ></app-tag>
+            </div>
+        }
+        @if (pendingExpand) {
+            <div class="configPending ps-3">
+                <div class="pending-icon"><app-pending-block [pending]="true"></app-pending-block></div>                
+            </div>
+        }
     </div>
-    <div class="collapseContainer" [collapse]="status.collapsed" [isAnimated]="true">
+    <div class="collapseContainer" [collapse]="status.collapsed" [isAnimated]="true" (expanded)="contentExpanded()">
         <div class="contentContainerOuter">
             <div class="contentContainer">
                 <ng-content></ng-content>

@@ -1,6 +1,5 @@
 import { Injectable } from '@angular/core';
 import { RestService } from './rest.service'
-import { Observable } from 'rxjs';
 import { DataService } from './data.service';
 import { ROUTES } from '../common/global';
 import { SelfRegistrationOption } from '../types/self-registration-option.type';

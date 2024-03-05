@@ -593,8 +593,8 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
     this.routingService.toUserManagement()
   }
 
-  updateConformanceCertificateSettings() {
-    this.routingService.toCommunityCertificateSettings(this.communityId)
+  updateReportSettings() {
+    this.routingService.toCommunityReportSettings(this.community.id)    
   }
 
   updateParameters() {

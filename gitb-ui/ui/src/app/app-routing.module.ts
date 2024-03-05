@@ -43,7 +43,6 @@ import { LegalNoticeResolver } from './resolvers/legal-notice-resolver';
 import { ProfileResolver } from './resolvers/profile-resolver'
 import { RouteAuthenticationGuard } from './resolvers/route-authentication.guard';
 import { CommunityPropertiesComponent } from './pages/admin/user-management/community-properties/community-properties.component';
-import { CommunityCertificateComponent } from './pages/admin/user-management/community-certificate/community-certificate.component';
 import { CommunityLabelsComponent } from './pages/admin/user-management/community-labels/community-labels.component';
 import { CreateUserComponent } from './pages/admin/user-management/user/create-user/create-user.component';
 import { UserDetailsComponent } from './pages/admin/user-management/user/user-details/user-details.component';
@@ -65,6 +64,7 @@ import { CreateThemeComponent } from './pages/admin/system-administration/create
 import { ThemeDetailsComponent } from './pages/admin/system-administration/theme-details/theme-details.component';
 import { Theme } from './types/theme';
 import { SystemConfigurationService } from './services/system-configuration.service';
+import { CommunityReportsComponent } from './pages/admin/user-management/community-reports/community-reports.component';
 
 const themeResolver: ResolveFn<Theme> = (route: ActivatedRouteSnapshot, state: RouterStateSnapshot) => {
   return inject(SystemConfigurationService).getTheme(Number(route.paramMap.get(Constants.NAVIGATION_PATH_PARAM.THEME_ID)!))
@@ -121,7 +121,7 @@ const routes: Routes = [
       { path: 'admin/users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/errortemplates/:'+Constants.NAVIGATION_PATH_PARAM.ERROR_TEMPLATE_ID, component: ErrorTemplateDetailsComponent },
       { path: 'admin/users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/triggers/create', component: TriggerComponent },
       { path: 'admin/users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/triggers/:'+Constants.NAVIGATION_PATH_PARAM.TRIGGER_ID, component: TriggerComponent },
-      { path: 'admin/users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/certificate', component: CommunityCertificateComponent },
+      { path: 'admin/users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/reports', component: CommunityReportsComponent },
       { path: 'admin/users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/parameters', component: CommunityPropertiesComponent },
       { path: 'admin/users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/labels', component: CommunityLabelsComponent },
       { path: 'admin/users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/organisation/create', component: CreateOrganisationComponent },

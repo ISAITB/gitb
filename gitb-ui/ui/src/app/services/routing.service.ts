@@ -343,8 +343,8 @@ export class RoutingService {
     return this.navigate(MenuItem.communityManagement, ['admin', 'users', 'community', communityId, 'labels'])
   }
 
-  toCommunityCertificateSettings(communityId: number) {
-    return this.navigate(MenuItem.communityManagement, ['admin', 'users', 'community', communityId, 'certificate'])
+  toCommunityReportSettings(communityId: number) {
+    return this.navigate(MenuItem.communityManagement, ['admin', 'users', 'community', communityId, 'reports'])
   }
 
   toCreateCommunityAdmin(communityId: number) {
@@ -811,9 +811,9 @@ export class RoutingService {
     return crumbs
   }
 
-  communityCertificateSettingsBreadcrumbs(communityId: number): BreadcrumbItem[] {
+  communityReportSettingsBreadcrumbs(communityId: number): BreadcrumbItem[] {
     const crumbs = this.communityBreadcrumbs(communityId)
-    crumbs.push({ type: BreadcrumbType.communityParameters, label: 'Certificate settings', action: (() => this.toCommunityCertificateSettings(communityId)).bind(this) })
+    crumbs.push({ type: BreadcrumbType.communityParameters, label: 'Report settings', action: (() => this.toCommunityReportSettings(communityId)).bind(this) })
     this.dataService.breadcrumbUpdate({ breadcrumbs: crumbs })
     return crumbs
   }

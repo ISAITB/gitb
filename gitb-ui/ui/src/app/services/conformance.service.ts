@@ -32,6 +32,8 @@ import { HttpResponse } from '@angular/common/http';
 import { ConformanceStatementItem } from '../types/conformance-statement-item';
 import { ConformanceStatementWithResults } from '../types/conformance-statement-with-results';
 import { ConformanceSnapshotList } from '../types/conformance-snapshot-list';
+import { CommunityKeystore } from '../types/community-keystore';
+import { ConformanceOverviewCertificateSettings } from '../types/conformance-overview-certificate-settings';
 
 @Injectable({
   providedIn: 'root'
@@ -73,6 +75,16 @@ export class ConformanceService {
   getCommunityDomain(communityId: number) {
     return this.restService.get<Domain|undefined>({
       path: ROUTES.controllers.ConformanceService.getCommunityDomain().url,
+      authenticate: true,
+      params: {
+        community_id: communityId
+      }
+    })
+  }
+
+  getCommunityDomains(communityId: number) {
+    return this.restService.get<{ linkedDomain: number|undefined, domains: Domain[] }>({
+      path: ROUTES.controllers.ConformanceService.getCommunityDomains().url,
       authenticate: true,
       params: {
         community_id: communityId
@@ -293,107 +305,120 @@ export class ConformanceService {
     })
   }
 
-  getConformanceCertificateSettings(communityId: number, includeKeystoreData: boolean) {
-    return this.restService.get<ConformanceCertificateSettings|undefined>({
-      path: ROUTES.controllers.ConformanceService.getConformanceCertificateSettings(communityId).url,
-      authenticate: true,
-      params: {
-        keystore: includeKeystoreData
-      }
+  getCommunityKeystoreInfo(communityId: number) {
+    return this.restService.get<CommunityKeystore|undefined>({
+      path: ROUTES.controllers.ConformanceService.getCommunityKeystoreInfo(communityId).url,
+      authenticate: true
     })
   }
 
-  downloadConformanceCertificateKeystore(communityId: number) {
+  getConformanceCertificateSettings(communityId: number) {
+    return this.restService.get<ConformanceCertificateSettings|undefined>({
+      path: ROUTES.controllers.ConformanceService.getConformanceCertificateSettings(communityId).url,
+      authenticate: true
+    })
+  }
+
+  getConformanceOverviewCertificateSettings(communityId: number) {
+    return this.restService.get<ConformanceOverviewCertificateSettings|undefined>({
+      path: ROUTES.controllers.ConformanceService.getConformanceOverviewCertificateSettings(communityId).url,
+      authenticate: true
+    })
+  }
+
+  deleteCommunityKeystore(communityId: number) {
+    return this.restService.delete<void>({
+      path: ROUTES.controllers.ConformanceService.deleteCommunityKeystore(communityId).url,
+      authenticate: true,
+    })
+  }
+
+  downloadCommunityKeystore(communityId: number) {
 		return this.restService.get<ArrayBuffer>({
-			path: ROUTES.controllers.ConformanceService.downloadConformanceCertificateKeystore(communityId).url,
+			path: ROUTES.controllers.ConformanceService.downloadCommunityKeystore(communityId).url,
 			authenticate: true,
 			arrayBuffer: true
 		})
   }
 
-  updateConformanceCertificateSettings(communityId: number, settings: ConformanceCertificateSettings, updatePasswords: boolean, removeKeystore: boolean) {
-    const data:any = {}
-    if (settings != undefined) {
-      data.title = settings.title
-      data.message = settings.message
-      data.includeTitle = settings.includeTitle != undefined && settings.includeTitle
-      data.includeMessage = settings.includeMessage != undefined && settings.includeMessage
-      data.includeTestStatus = settings.includeTestStatus != undefined && settings.includeTestStatus
-      data.includeTestCases = settings.includeTestCases != undefined && settings.includeTestCases
-      data.includeDetails = settings.includeDetails != undefined && settings.includeDetails
-      data.includeSignature = settings.includeSignature != undefined && settings.includeSignature
-      data.includePageNumbers = settings.includePageNumbers != undefined && settings.includePageNumbers
-      data.keystoreType = settings.keystoreType
-      data.keystorePassword = settings.keystorePassword
-      data.keyPassword = settings.keyPassword
-    }
-    let files: FileParam[]|undefined
-    if (settings.keystoreFile != undefined) {
-      files = [{param: 'file', data: settings.keystoreFile}]
-    }
+  updateConformanceCertificateSettings(communityId: number, settings: ConformanceCertificateSettings) {
     return this.restService.post<void>({
       path: ROUTES.controllers.ConformanceService.updateConformanceCertificateSettings(communityId).url,
       authenticate: true,
-      files: files,
       data: {
-        settings: JSON.stringify(data),
-        updatePasswords: updatePasswords,
-        removeKeystore: removeKeystore
+        settings: JSON.stringify(settings)
       }
     })
   }
 
-  testKeystoreSettings(communityId: number, settings: ConformanceCertificateSettings|undefined, updatePasswords: boolean) {
-    const data: any = {}
+  updateConformanceOverviewCertificateSettings(communityId: number, settings: ConformanceOverviewCertificateSettings) {
+    return this.restService.post<void>({
+      path: ROUTES.controllers.ConformanceService.updateConformanceOverviewCertificateSettings(communityId).url,
+      authenticate: true,
+      data: {
+        settings: JSON.stringify(settings)
+      }
+    })
+  }
+
+  testCommunityKeystore(communityId: number, settings: Partial<CommunityKeystore>) {
+    let data: any
     let files: FileParam[]|undefined
     if (settings != undefined) {
-      data.keystoreType = settings.keystoreType
-      data.keystorePassword = settings.keystorePassword
-      data.keyPassword = settings.keyPassword
+      data = {}
+      data.type = settings.keystoreType
+      data.keystore_pass = settings.keystorePassword
+      data.key_pass = settings.keyPassword
       if (settings.keystoreFile != undefined) {
         files = [{param: 'file', data: settings.keystoreFile}]
       }
     }
     return this.restService.post<{problem: string, level: string}|undefined>({
-      path: ROUTES.controllers.ConformanceService.testKeystoreSettings(communityId).url,
+      path: ROUTES.controllers.ConformanceService.testCommunityKeystore(communityId).url,
       authenticate: true,
       files: files,
-      data: {
-        settings: JSON.stringify(data),
-        updatePasswords: updatePasswords
-      }
+      data: data
     })
   }
 
-  exportDemoConformanceCertificateReport(communityId: number, settings: ConformanceCertificateSettings) {
+  saveCommunityKeystore(communityId: number, settings: Partial<CommunityKeystore>) {
+    let data: any
     let files: FileParam[]|undefined
-    const data: any = {}
     if (settings != undefined) {
-      data.title = settings.title
-      data.includeTitle = settings.includeTitle != undefined && settings.includeTitle
-      data.includeMessage = settings.includeMessage != undefined && settings.includeMessage
-      data.includeTestStatus = settings.includeTestStatus != undefined && settings.includeTestStatus
-      data.includeTestCases = settings.includeTestCases != undefined && settings.includeTestCases
-      data.includeDetails = settings.includeDetails != undefined && settings.includeDetails
-      data.includeSignature = settings.includeSignature != undefined && settings.includeSignature
-      data.includePageNumbers = settings.includePageNumbers != undefined && settings.includePageNumbers
-      if (data.includeMessage) {
-        data.message = settings.message
-      }
-      if (data.includeSignature) {
-        data.keystoreType = settings.keystoreType
-        data.keystorePassword = settings.keystorePassword
-        data.keyPassword = settings.keyPassword
-      }
+      data = {}
+      data.type = settings.keystoreType
+      data.keystore_pass = settings.keystorePassword
+      data.key_pass = settings.keyPassword
       if (settings.keystoreFile != undefined) {
         files = [{param: 'file', data: settings.keystoreFile}]
       }
     }
+    return this.restService.post<void>({
+      path: ROUTES.controllers.ConformanceService.saveCommunityKeystore(communityId).url,
+      authenticate: true,
+      files: files,
+      data: data
+    })
+  }
+
+  exportDemoConformanceCertificateReport(communityId: number, settings: ConformanceCertificateSettings) {
     return this.restService.post<ArrayBuffer>({
       path: ROUTES.controllers.RepositoryService.exportDemoConformanceCertificateReport(communityId).url,
-      files: files,
       data: {
-        settings: JSON.stringify(data)
+        settings: JSON.stringify(settings)
+      },
+      authenticate: true,
+      arrayBuffer: true
+    })
+  }
+
+  exportDemoConformanceOverviewCertificateReport(communityId: number, settings: ConformanceOverviewCertificateSettings, reportLevel: string, reportLevelIdentifier?: number) {
+    return this.restService.post<ArrayBuffer>({
+      path: ROUTES.controllers.RepositoryService.exportDemoConformanceOverviewCertificateReport(communityId).url,
+      data: {
+        settings: JSON.stringify(settings),
+        level: reportLevel,
+        id: reportLevelIdentifier
       },
       authenticate: true,
       arrayBuffer: true

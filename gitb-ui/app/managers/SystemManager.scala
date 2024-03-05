@@ -709,6 +709,7 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils, testResultManag
     PersistenceSchema.conformanceResults.filter(_.sut === systemId).delete andThen
     PersistenceSchema.conformanceSnapshotResults.filter(_.systemId === systemId).map(_.systemId).update(systemId * -1) andThen
     PersistenceSchema.conformanceSnapshotSystems.filter(_.id === systemId).map(_.id).update(systemId * -1) andThen
+    PersistenceSchema.conformanceSnapshotSystemProperties.filter(_.systemId === systemId).map(_.systemId).update(systemId * -1) andThen
     deleteSystemParameterValues(systemId, onSuccess) andThen
     PersistenceSchema.systems.filter(_.id === systemId).delete
   }

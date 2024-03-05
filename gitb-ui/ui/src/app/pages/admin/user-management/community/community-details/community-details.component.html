@@ -12,7 +12,7 @@
             <div class="card-footer button-container">
                 <div class="btn-toolbar">
                     <button class="btn btn-secondary" type="submit" (click)="updateCommunity()" [disable]="deletePending || saveDisabled()" [pending]="savePending">Save changes</button>
-                    <button class="btn btn-secondary" type="button" (click)="updateConformanceCertificateSettings()" [disabled]="savePending || deletePending">Edit conformance certificate settings</button>
+                    <button class="btn btn-secondary" type="button" (click)="updateReportSettings()" [disabled]="savePending || deletePending">Edit report settings</button>
                     <button class="btn btn-secondary" type="button" (click)="updateParameters()" [disabled]="savePending || deletePending">Edit custom member properties</button>
                     <button class="btn btn-secondary" type="button" (click)="editLabels()" [disabled]="savePending || deletePending">Edit labels</button>
                     <button class="btn btn-secondary" type="button" *ngIf="dataService.isSystemAdmin" (click)="cancelCommunityDetail()">Back</button>

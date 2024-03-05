@@ -364,23 +364,16 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
         }
         toDBIO(actions)
       }
-      // Update conformance certificate keys
-      certificateSettings <- PersistenceSchema.conformanceCertificates.map(x => (x.id, x.keyPassword, x.keystorePassword)).result
+      // Update community keystore keys
+      communityKeystores <- PersistenceSchema.communityKeystores.map(x => (x.community, x.keyPassword, x.keystorePassword)).result
       _ <- {
         val actions = ListBuffer[DBIO[_]]()
-        certificateSettings.foreach { setting =>
-          if (setting._2.isDefined || setting._3.isDefined) {
-            var keyPassToSet: Option[String] = None
-            if (setting._2.isDefined) {
-              keyPassToSet = Some(MimeUtil.encryptString(MimeUtil.decryptString(setting._2.get, previousPassword), newPassword))
-            }
-            var keystorePassToSet: Option[String] = None
-            if (setting._3.isDefined) {
-              keystorePassToSet = Some(MimeUtil.encryptString(MimeUtil.decryptString(setting._3.get, previousPassword), newPassword))
-            }
-            val q = for { c <- PersistenceSchema.conformanceCertificates if c.id === setting._1 } yield (c.keyPassword, c.keystorePassword)
-            actions += q.update(keyPassToSet, keystorePassToSet)
-          }
+        communityKeystores.foreach { keystore =>
+          val q = for { c <- PersistenceSchema.communityKeystores if c.id === keystore._1 } yield (c.keyPassword, c.keystorePassword)
+          actions += q.update(
+            MimeUtil.encryptString(MimeUtil.decryptString(keystore._2, previousPassword), newPassword),
+            MimeUtil.encryptString(MimeUtil.decryptString(keystore._3, previousPassword), newPassword)
+          )
         }
         toDBIO(actions)
       }

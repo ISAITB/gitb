@@ -834,6 +834,16 @@ object JsonUtil {
     json
   }
 
+  def jsCommunityDomains(domains: List[Domain], linkedDomain: Option[Long]): JsObject = {
+    var json = Json.obj(
+      "domains" -> jsDomains(domains)
+    )
+    if (linkedDomain.isDefined) {
+      json = json + ("linkedDomain" -> JsNumber(linkedDomain.get))
+    }
+    json
+  }
+
   def jsFileReference(dataURL: String, mimeType: String): JsObject = {
     Json.obj(
       "dataAsDataURL" -> dataURL,
@@ -1481,17 +1491,16 @@ object JsonUtil {
     )
   }
 
-  def parseJsConformanceCertificateSettings(json:String, communityId: Long, keystoreData: Option[String]): ConformanceCertificates = {
+  def parseJsConformanceCertificateSettings(json:String, communityId: Long): ConformanceCertificate = {
     val jsonConfig = Json.parse(json).as[JsObject]
     // Ensure the message content (if provided) is correctly sanitized.
     var certificateMessage = (jsonConfig \ "message").asOpt[String]
     if (certificateMessage.isDefined) {
       certificateMessage = Some(HtmlUtil.sanitizePdfContent(certificateMessage.get))
     }
-    ConformanceCertificates(
+    ConformanceCertificate(
       0L,
       (jsonConfig \ "title").asOpt[String],
-      certificateMessage,
       (jsonConfig \ "includeTitle").as[Boolean],
       (jsonConfig \ "includeMessage").as[Boolean],
       (jsonConfig \ "includeTestStatus").as[Boolean],
@@ -1499,32 +1508,58 @@ object JsonUtil {
       (jsonConfig \ "includeDetails").as[Boolean],
       (jsonConfig \ "includeSignature").as[Boolean],
       (jsonConfig \ "includePageNumbers").as[Boolean],
-      keystoreData,
-      (jsonConfig \ "keystoreType").asOpt[String],
-      (jsonConfig \ "keystorePassword").asOpt[String],
-      (jsonConfig \ "keyPassword").asOpt[String],
+      certificateMessage,
       communityId
     )
   }
 
-  def parseJsConformanceCertificateSettingsForKeystoreTest(json:String, communityId: Long): ConformanceCertificates = {
-    val jsonConfig = Json.parse(json).as[JsObject]
-    ConformanceCertificates(
-      0L,
+  def parseJsConformanceOverviewCertificateMessage(json: JsValue, communityId: Long): ConformanceOverviewCertificateMessage = {
+    val levelString = (json \ "level").as[String]
+    val level = if (levelString == "domain") {
+      OverviewLevelType.DomainLevel
+    } else if (levelString == "group") {
+      OverviewLevelType.SpecificationGroupLevel
+    } else if (levelString == "specification") {
+      OverviewLevelType.SpecificationLevel
+    } else {
+      OverviewLevelType.OrganisationLevel
+    }
+    val id = (json \ "id").asOpt[Long]
+    val identifier = (json \ "identifier").asOpt[Long]
+    val message = HtmlUtil.sanitizePdfContent((json \ "message").as[String])
+    ConformanceOverviewCertificateMessage(
+      id.getOrElse(0L),
+      level.id.toShort,
+      message,
+      if (level == OverviewLevelType.DomainLevel) identifier else None,
+      if (level == OverviewLevelType.SpecificationGroupLevel) identifier else None,
+      if (level == OverviewLevelType.SpecificationLevel) identifier else None,
       None,
-      None,
-      includeTitle = false,
-      includeMessage = false,
-      includeTestStatus = false,
-      includeTestCases = false,
-      includeDetails = false,
-      includeSignature = false,
-      includePageNumbers = false,
-      None,
-      (jsonConfig \ "keystoreType").asOpt[String],
-      (jsonConfig \ "keystorePassword").asOpt[String],
-      (jsonConfig \ "keyPassword").asOpt[String],
       communityId
+    )
+  }
+
+  def parseJsConformanceOverviewCertificateWithMessages(json:String, communityId: Long): ConformanceOverviewCertificateWithMessages = {
+    val jsonConfig = Json.parse(json).as[JsObject]
+    ConformanceOverviewCertificateWithMessages(
+      ConformanceOverviewCertificate(
+        0L,
+        (jsonConfig \ "title").asOpt[String],
+        (jsonConfig \ "includeTitle").as[Boolean],
+        (jsonConfig \ "includeMessage").as[Boolean],
+        (jsonConfig \ "includeTestStatus").as[Boolean],
+        (jsonConfig \ "includeTestCases").as[Boolean],
+        (jsonConfig \ "includeTestCaseDetails").as[Boolean],
+        (jsonConfig \ "includeDetails").as[Boolean],
+        (jsonConfig \ "includeSignature").as[Boolean],
+        (jsonConfig \ "includePageNumbers").as[Boolean],
+        (jsonConfig \ "enableAllLevel").as[Boolean],
+        (jsonConfig \ "enableDomainLevel").as[Boolean],
+        (jsonConfig \ "enableGroupLevel").as[Boolean],
+        (jsonConfig \ "enableSpecificationLevel").as[Boolean],
+        communityId
+      ),
+      (jsonConfig \ "messages").asOpt[JsArray].getOrElse(JsArray.empty).value.map { jsValue => parseJsConformanceOverviewCertificateMessage(jsValue, communityId)}.toList
     )
   }
 
@@ -2588,28 +2623,82 @@ object JsonUtil {
     json
   }
 
-  def jsConformanceSettings(settings:Option[ConformanceCertificates], includeKeystoreData: Boolean):Option[JsObject] = {
-    if (settings.isDefined) {
-      val json = Json.obj(
-        "id"    -> settings.get.id,
-        "title" -> (if(settings.get.title.isDefined) settings.get.title.get else JsNull),
-        "message" -> (if(settings.get.message.isDefined) settings.get.message.get else JsNull),
-        "includeTitle" -> settings.get.includeTitle,
-        "includeMessage" -> settings.get.includeMessage,
-        "includeTestStatus" -> settings.get.includeTestStatus,
-        "includeTestCases" -> settings.get.includeTestCases,
-        "includeDetails" -> settings.get.includeDetails,
-        "includeSignature" -> settings.get.includeSignature,
-        "includePageNumbers" -> settings.get.includePageNumbers,
-        "keystoreType" -> (if(includeKeystoreData && settings.get.keystoreType.isDefined) settings.get.keystoreType.get else JsNull),
-        "passwordsSet" -> (if(includeKeystoreData && settings.get.keystorePassword.isDefined && settings.get.keyPassword.isDefined) true else false),
-        "keystoreDefined" -> (if(settings.get.keystoreFile.isDefined && settings.get.keystoreType.isDefined && settings.get.keystorePassword.isDefined && settings.get.keyPassword.isDefined) true else false),
-        "community" -> settings.get.community
-      )
-      Some(json)
-    } else {
-      None
+  def jsCommunityKeystore(keystoreType: String): JsObject = {
+    Json.obj(
+      "keystoreType" -> keystoreType
+    )
+  }
+
+  def jsConformanceSettings(settings: ConformanceCertificate): JsObject = {
+    Json.obj(
+      "title" -> (if(settings.title.isDefined) settings.title.get else JsNull),
+      "message" -> (if(settings.message.isDefined) settings.message.get else JsNull),
+      "includeTitle" -> settings.includeTitle,
+      "includeMessage" -> settings.includeMessage,
+      "includeTestStatus" -> settings.includeTestStatus,
+      "includeTestCases" -> settings.includeTestCases,
+      "includeDetails" -> settings.includeDetails,
+      "includeSignature" -> settings.includeSignature,
+      "includePageNumbers" -> settings.includePageNumbers,
+      "community" -> settings.community
+    )
+  }
+
+  def jsConformanceOverviewCertificateMessages(data: Iterable[ConformanceOverviewCertificateMessage]): JsArray = {
+    var json = Json.arr()
+    data.foreach { item =>
+      json = json.append(jsConformanceOverviewCertificateMessage(item))
     }
+    json
+  }
+
+  def jsConformanceOverviewCertificateMessage(data: ConformanceOverviewCertificateMessage): JsObject = {
+    var level: Option[String] = None
+    var identifier: Option[Long] = None
+    if (data.messageType == OverviewLevelType.DomainLevel.id) {
+      level = Some("domain")
+      identifier = data.domain
+    } else if (data.messageType == OverviewLevelType.SpecificationGroupLevel.id) {
+      level = Some("group")
+      identifier = data.group
+    } else if (data.messageType == OverviewLevelType.SpecificationLevel.id) {
+      level = Some("specification")
+      identifier = data.specification
+    } else {
+      level = Some("all")
+    }
+    var json = Json.obj(
+      "id" -> data.id,
+      "level" -> level.get,
+      "message" -> data.message
+    )
+    if (identifier.isDefined) {
+      json = json + ("identifier" -> JsNumber(identifier.get))
+    }
+    json
+  }
+
+  def jsConformanceOverviewSettings(data: ConformanceOverviewCertificateWithMessages): JsObject = {
+    var json = Json.obj(
+      "title" -> (if(data.settings.title.isDefined) data.settings.title.get else JsNull),
+      "includeTitle" -> data.settings.includeTitle,
+      "includeMessage" -> data.settings.includeMessage,
+      "includeTestStatus" -> data.settings.includeStatementStatus,
+      "includeTestCases" -> data.settings.includeStatements,
+      "includeTestCaseDetails" -> data.settings.includeStatementDetails,
+      "includeDetails" -> data.settings.includeDetails,
+      "includeSignature" -> data.settings.includeSignature,
+      "includePageNumbers" -> data.settings.includePageNumbers,
+      "enableAllLevel" -> data.settings.enableAllLevel,
+      "enableDomainLevel" -> data.settings.enableDomainLevel,
+      "enableGroupLevel" -> data.settings.enableGroupLevel,
+      "enableSpecificationLevel" -> data.settings.enableSpecificationLevel,
+      "community" -> data.settings.community
+    )
+    if (data.messages.nonEmpty) {
+      json = json + ("messages" -> jsConformanceOverviewCertificateMessages(data.messages))
+    }
+    json
   }
 
   def jsConformanceSettingsValidation(problem: String, level: String): JsObject = {

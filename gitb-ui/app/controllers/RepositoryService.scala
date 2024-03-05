@@ -10,6 +10,8 @@ import exceptions.ErrorCodes
 import jakarta.xml.bind.JAXBElement
 import managers._
 import managers.export._
+import models.Enums.OverviewLevelType
+import models.Enums.OverviewLevelType.OverviewLevelType
 import models._
 import org.apache.commons.codec.net.URLCodec
 import org.apache.commons.io.FileUtils
@@ -341,6 +343,77 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
     }
   }
 
+  private def exportConformanceOverviewCertificateInternal(settings: ConformanceOverviewCertificateWithMessages, communityId: Long, systemId: Long, domainId: Option[Long], groupId: Option[Long], specificationId: Option[Long], snapshotId: Option[Long]): Result = {
+    // Get the message (if needed) for the specific level
+    var reportIdentifier: Option[Long] = None
+    var reportLevel: Option[OverviewLevelType] = None
+    if (domainId.isDefined) {
+      reportIdentifier = domainId
+      reportLevel = Some(OverviewLevelType.DomainLevel)
+    } else if (groupId.isDefined) {
+      reportIdentifier = groupId
+      reportLevel = Some(OverviewLevelType.SpecificationGroupLevel)
+    } else if (specificationId.isDefined) {
+      reportIdentifier = specificationId
+      reportLevel = Some(OverviewLevelType.SpecificationLevel)
+    } else {
+      reportLevel = Some(OverviewLevelType.OrganisationLevel)
+    }
+    val customMessage = settings.messageToUse(reportLevel.get, reportIdentifier)
+    // Get the keystore (if needed) to use for the signature
+    val keystore = if (settings.settings.includeSignature) {
+      communityManager.getCommunityKeystore(communityId, decryptKeys = true)
+    } else {
+      None
+    }
+    val reportPath = Paths.get(
+      repositoryUtils.getTempReportFolder().getAbsolutePath,
+      "conformance_reports",
+      UUID.randomUUID().toString+".pdf"
+    )
+    val settingsToUse = settings.settings.toConformanceCertificateInfo(customMessage, keystore)
+    try {
+      reportManager.generateConformanceOverviewCertificate(reportPath, Some(settingsToUse), systemId, domainId, groupId, specificationId, communityId, snapshotId)
+      Ok.sendFile(
+        content = reportPath.toFile,
+        fileName = _ => Some("conformance_certificate.pdf"),
+        onClose = () => {
+          FileUtils.deleteQuietly(reportPath.toFile)
+        }
+      )
+    } catch {
+      case e: Exception =>
+        FileUtils.deleteQuietly(reportPath.toFile)
+        logger.warn("Error while generating conformance certificate preview", e)
+        ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_REQUEST, "Preview failed. Please check your configuration and try again.")
+    }
+  }
+
+  def exportOwnConformanceOverviewCertificateReport(): Action[AnyContent] = authorizedAction { request =>
+    val snapshotId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.SNAPSHOT)
+    val systemId = ParameterExtractor.requiredBodyParameter(request, Parameters.SYSTEM_ID).toLong
+    authorizationManager.canViewOwnConformanceCertificateReport(request, systemId, snapshotId)
+    val domainId = ParameterExtractor.optionalLongQueryParameter(request, Parameters.DOMAIN_ID)
+    val groupId = ParameterExtractor.optionalLongQueryParameter(request, Parameters.GROUP_ID)
+    val specificationId = ParameterExtractor.optionalLongQueryParameter(request, Parameters.SPECIFICATION_ID)
+    val communityId = systemManager.getCommunityIdOfSystem(systemId)
+    val settings = communityManager.getConformanceOverviewCertificateSettingsWrapper(communityId, defaultIfMissing = true, snapshotId)
+    exportConformanceOverviewCertificateInternal(settings.get, communityId, systemId, domainId, groupId, specificationId, snapshotId)
+  }
+
+  def exportConformanceOverviewCertificateReport(): Action[AnyContent] = authorizedAction { request =>
+    val snapshotId = ParameterExtractor.optionalLongQueryParameter(request, Parameters.SNAPSHOT)
+    val communityId = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_ID).toLong
+    authorizationManager.canViewConformanceCertificateReport(request, communityId, snapshotId)
+    val systemId = ParameterExtractor.requiredQueryParameter(request, Parameters.SYSTEM_ID).toLong
+    val jsSettings = ParameterExtractor.requiredBodyParameter(request, Parameters.SETTINGS)
+    val settings = JsonUtil.parseJsConformanceOverviewCertificateWithMessages(jsSettings, communityId)
+    val domainId = ParameterExtractor.optionalLongQueryParameter(request, Parameters.DOMAIN_ID)
+    val groupId = ParameterExtractor.optionalLongQueryParameter(request, Parameters.GROUP_ID)
+    val specificationId = ParameterExtractor.optionalLongQueryParameter(request, Parameters.SPECIFICATION_ID)
+    exportConformanceOverviewCertificateInternal(settings, communityId, systemId, domainId, groupId, specificationId, snapshotId)
+  }
+
   def exportConformanceOverviewReport(): Action[AnyContent] = authorizedAction { request =>
     val snapshotId = ParameterExtractor.optionalLongQueryParameter(request, Parameters.SNAPSHOT)
     val systemId = ParameterExtractor.requiredQueryParameter(request, Parameters.SYSTEM_ID).toLong
@@ -413,19 +486,17 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
     }
   }
 
-  private def exportConformanceCertificateInternal(settings: ConformanceCertificates, communityId: Long, systemId: Long, actorId: Long, snapshotId: Option[Long]) = {
+  private def exportConformanceCertificateInternal(settings: ConformanceCertificateInfo, communityId: Long, systemId: Long, actorId: Long, snapshotId: Option[Long]): Result = {
     val reportPath = Paths.get(
       repositoryUtils.getTempReportFolder().getAbsolutePath,
       "conformance_reports",
-      "c"+communityId+"_a"+actorId+"_s"+systemId,
-      "report_"+System.currentTimeMillis+".pdf"
+      "report_"+UUID.randomUUID().toString+".pdf"
     )
-    FileUtils.deleteQuietly(reportPath.toFile.getParentFile)
     try {
       reportManager.generateConformanceCertificate(reportPath, settings, actorId, systemId, communityId, snapshotId)
       Ok.sendFile(
         content = reportPath.toFile,
-        fileName = _ => Some(reportPath.toFile.getName),
+        fileName = _ => Some("conformance_certificate.pdf"),
         onClose = () => {
           FileUtils.deleteQuietly(reportPath.toFile)
         }
@@ -437,24 +508,51 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
     }
   }
 
+  def exportDemoConformanceOverviewCertificateReport(communityId: Long): Action[AnyContent] = authorizedAction { request =>
+    authorizationManager.canPreviewConformanceCertificateReport(request, communityId)
+    val jsSettings = ParameterExtractor.requiredBodyParameter(request, Parameters.SETTINGS)
+    val reportIdentifier = ParameterExtractor.optionalLongBodyParameter(request, Parameters.ID)
+    val settings = JsonUtil.parseJsConformanceOverviewCertificateWithMessages(jsSettings, communityId)
+    val reportLevel = toCertificateMessageType(ParameterExtractor.requiredBodyParameter(request, Parameters.LEVEL))
+    // Get the message (if needed) for the specific level
+    val customMessage = settings.messageToUse(reportLevel, reportIdentifier)
+    // Get the keystore (if needed) to use for the signature
+    val keystore = if (settings.settings.includeSignature) {
+      communityManager.getCommunityKeystore(communityId, decryptKeys = true)
+    } else {
+      None
+    }
+    val reportPath = Paths.get(
+      repositoryUtils.getTempReportFolder().getAbsolutePath,
+      "conformance_reports",
+      UUID.randomUUID().toString+".pdf"
+    )
+    val settingsToUse = settings.settings.toConformanceCertificateInfo(customMessage, keystore)
+    try {
+      reportManager.generateDemoConformanceOverviewCertificate(reportPath, settingsToUse, communityId, reportLevel)
+      Ok.sendFile(
+        content = reportPath.toFile,
+        fileName = _ => Some("conformance_certificate.pdf"),
+        onClose = () => {
+          FileUtils.deleteQuietly(reportPath.toFile)
+        }
+      )
+    } catch {
+      case e: Exception =>
+        FileUtils.deleteQuietly(reportPath.toFile)
+        logger.warn("Error while generating conformance certificate preview", e)
+        ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_REQUEST, "Preview failed. Please check your configuration and try again.")
+    }
+  }
+
   def exportOwnConformanceCertificateReport(): Action[AnyContent] = authorizedAction { request =>
     val snapshotId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.SNAPSHOT)
     val systemId = ParameterExtractor.requiredBodyParameter(request, Parameters.SYSTEM_ID).toLong
     val actorId = ParameterExtractor.requiredBodyParameter(request, Parameters.ACTOR_ID).toLong
     authorizationManager.canViewOwnConformanceCertificateReport(request, systemId, snapshotId)
     val communityId = systemManager.getCommunityIdOfSystem(systemId)
-    var settingsToUse = communityManager.getConformanceCertificateSettingsWrapper(communityId, defaultIfMissing = true).get
-    val completeSettings = new ConformanceCertificate(settingsToUse)
-    if (settingsToUse.includeSignature) {
-      completeSettings.keystoreFile = settingsToUse.keystoreFile
-      completeSettings.keystoreType = settingsToUse.keystoreType
-      completeSettings.keyPassword = Some(MimeUtil.decryptString(settingsToUse.keyPassword.get))
-      completeSettings.keystorePassword = Some(MimeUtil.decryptString(settingsToUse.keystorePassword.get))
-      settingsToUse = completeSettings.toCaseObject
-    } else {
-      settingsToUse = settingsToUse
-    }
-    exportConformanceCertificateInternal(settingsToUse, communityId, systemId, actorId, snapshotId)
+    val settings = communityManager.getConformanceCertificateSettingsForExport(communityId, snapshotId)
+    exportConformanceCertificateInternal(settings, communityId, systemId, actorId, snapshotId)
   }
 
   def exportConformanceCertificateReport(): Action[AnyContent] = authorizedAction { request =>
@@ -463,81 +561,59 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
     val communityId = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_ID).toLong
     val actorId = ParameterExtractor.requiredBodyParameter(request, Parameters.ACTOR_ID).toLong
     authorizationManager.canViewConformanceCertificateReport(request, communityId, snapshotId)
-
     val jsSettings = ParameterExtractor.requiredBodyParameter(request, Parameters.SETTINGS)
-    var settings = JsonUtil.parseJsConformanceCertificateSettings(jsSettings, communityId, None)
-    if (settings.includeSignature) {
-      // The signature information needs to be looked up from the stored data.
-      val storedSettings = communityManager.getConformanceCertificateSettingsWrapper(communityId, defaultIfMissing = true)
-      val completeSettings = new ConformanceCertificate(settings)
-      completeSettings.keystoreFile = storedSettings.get.keystoreFile
-      completeSettings.keystoreType = storedSettings.get.keystoreType
-      completeSettings.keyPassword = Some(MimeUtil.decryptString(storedSettings.get.keyPassword.get))
-      completeSettings.keystorePassword = Some(MimeUtil.decryptString(storedSettings.get.keystorePassword.get))
-      settings = completeSettings.toCaseObject
+    val settings = JsonUtil.parseJsConformanceCertificateSettings(jsSettings, communityId)
+
+    val settingsToUse = if (settings.includeSignature) {
+      val keystore = communityManager.getCommunityKeystore(communityId, decryptKeys = true)
+      settings.toConformanceCertificateInfo(keystore)
+    } else {
+      settings.toConformanceCertificateInfo(None)
     }
-    exportConformanceCertificateInternal(settings, communityId, systemId, actorId, snapshotId)
+    exportConformanceCertificateInternal(settingsToUse, communityId, systemId, actorId, snapshotId)
   }
 
   def exportDemoConformanceCertificateReport(communityId: Long): Action[AnyContent] = authorizedAction { request =>
+    authorizationManager.canPreviewConformanceCertificateReport(request, communityId)
+    val jsSettings = ParameterExtractor.requiredBodyParameter(request, Parameters.SETTINGS)
+    val settings = JsonUtil.parseJsConformanceCertificateSettings(jsSettings, communityId)
+    val reportPath = Paths.get(
+      repositoryUtils.getTempReportFolder().getAbsolutePath,
+      "conformance_reports",
+      UUID.randomUUID().toString+".pdf"
+    )
+    val settingsToUse = if (settings.includeSignature) {
+      val keystore = communityManager.getCommunityKeystore(communityId, decryptKeys = true)
+      settings.toConformanceCertificateInfo(keystore)
+    } else {
+      settings.toConformanceCertificateInfo(None)
+    }
     try {
-      authorizationManager.canPreviewConformanceCertificateReport(request, communityId)
-      val paramMap = ParameterExtractor.paramMap(request)
-      val files = ParameterExtractor.extractFiles(request)
-      var response: Result = null
-      var keystoreData: Option[String] = None
-      if (files.contains(Parameters.FILE)) {
-        if (Configurations.ANTIVIRUS_SERVER_ENABLED) {
-          val virusScanner = new ClamAVClient(Configurations.ANTIVIRUS_SERVER_HOST, Configurations.ANTIVIRUS_SERVER_PORT, Configurations.ANTIVIRUS_SERVER_TIMEOUT)
-          val scanResult = virusScanner.scan(files(Parameters.FILE).file)
-          if (!ClamAVClient.isCleanReply(scanResult)) {
-            response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "Keystore file failed virus scan.")
-          }
+      reportManager.generateDemoConformanceCertificate(reportPath, settingsToUse, communityId)
+      Ok.sendFile(
+        content = reportPath.toFile,
+        fileName = _ => Some("conformance_certificate.pdf"),
+        onClose = () => {
+          FileUtils.deleteQuietly(reportPath.toFile)
         }
-        if (response == null) {
-          keystoreData = Some(MimeUtil.getFileAsDataURL(files(Parameters.FILE).file, "application/octet-stream"))
-        }
-      }
-      if (response == null) {
-        val jsSettings = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.SETTINGS)
-        var settings = JsonUtil.parseJsConformanceCertificateSettings(jsSettings, communityId, keystoreData)
-        val reportPath = Paths.get(
-          repositoryUtils.getTempReportFolder().getAbsolutePath,
-          "conformance_reports",
-          "c" + communityId,
-          "report_" + System.currentTimeMillis + ".pdf"
-        )
-        FileUtils.deleteQuietly(reportPath.toFile.getParentFile)
-        if (settings.includeSignature && (settings.keystorePassword.isEmpty || settings.keyPassword.isEmpty || settings.keystoreFile.isEmpty)) {
-          // The passwords or file need to be looked up from the stored data.
-          val storedSettings = communityManager.getConformanceCertificateSettingsWrapper(communityId, defaultIfMissing = true)
-          val completeSettings = new ConformanceCertificate(settings)
-          completeSettings.keyPassword = Some(MimeUtil.decryptString(storedSettings.get.keyPassword.get))
-          completeSettings.keystorePassword = Some(MimeUtil.decryptString(storedSettings.get.keystorePassword.get))
-          if (settings.keystoreFile.isEmpty) {
-            completeSettings.keystoreFile = storedSettings.get.keystoreFile
-          }
-          settings = completeSettings.toCaseObject
-        }
-        try {
-          reportManager.generateDemoConformanceCertificate(reportPath, settings, communityId)
-          response = Ok.sendFile(
-            content = reportPath.toFile,
-            fileName = _ => Some(reportPath.toFile.getName),
-            onClose = () => {
-              FileUtils.deleteQuietly(reportPath.toFile)
-            }
-          )
-        } catch {
-          case e: Exception =>
-            FileUtils.deleteQuietly(reportPath.toFile)
-            logger.warn("Error while generating conformance certificate preview", e)
-            response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_REQUEST, "Preview failed. Please check your configuration and try again.")
-        }
-      }
-      response
-    } finally {
-      if (request.body.asMultipartFormData.isDefined) request.body.asMultipartFormData.get.files.foreach { file => FileUtils.deleteQuietly(file.ref) }
+      )
+    } catch {
+      case e: Exception =>
+        FileUtils.deleteQuietly(reportPath.toFile)
+        logger.warn("Error while generating conformance certificate preview", e)
+        ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_REQUEST, "Preview failed. Please check your configuration and try again.")
+    }
+  }
+
+  private def toCertificateMessageType(reportLevel: String): OverviewLevelType = {
+    if (reportLevel == "all") {
+      OverviewLevelType.OrganisationLevel
+    } else if (reportLevel == "domain") {
+      OverviewLevelType.DomainLevel
+    } else if (reportLevel == "group") {
+      OverviewLevelType.SpecificationGroupLevel
+    } else { // Specification
+      OverviewLevelType.SpecificationLevel
     }
   }
 

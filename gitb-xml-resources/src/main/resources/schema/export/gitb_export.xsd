@@ -25,6 +25,8 @@
                     <xsd:element name="apiKey" type="xsd:string" minOccurs="0"/>
                     <xsd:element name="selfRegistrationSettings" type="SelfRegistrationSettings" minOccurs="0"/>
                     <xsd:element name="conformanceCertificateSettings" type="ConformanceCertificateSettings" minOccurs="0"/>
+                    <xsd:element name="conformanceOverviewCertificateSettings" type="ConformanceOverviewCertificateSettings" minOccurs="0"/>
+                    <xsd:element name="signatureSettings" type="SignatureSettings" minOccurs="0"/>
                     <xsd:element name="organisationProperties" type="OrganisationProperties" minOccurs="0"/>
                     <xsd:element name="systemProperties" type="SystemProperties" minOccurs="0"/>
                     <xsd:element name="customLabels" type="CustomLabels" minOccurs="0"/>
@@ -62,6 +64,36 @@
         <xsd:attribute name="addSignature" type="xsd:boolean" default="false"/>
         <xsd:attribute name="addPageNumbers" type="xsd:boolean" default="true"/>
     </xsd:complexType>
+    <xsd:complexType name="ConformanceOverviewCertificateSettings">
+        <xsd:sequence>
+            <xsd:element name="title" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="messages" type="ConformanceOverviewCertificateMessages" minOccurs="0"/>
+        </xsd:sequence>
+        <xsd:attribute name="addTitle" type="xsd:boolean" default="true"/>
+        <xsd:attribute name="addDetails" type="xsd:boolean" default="false"/>
+        <xsd:attribute name="addResultOverview" type="xsd:boolean" default="false"/>
+        <xsd:attribute name="addStatementList" type="xsd:boolean" default="false"/>
+        <xsd:attribute name="addStatementDetails" type="xsd:boolean" default="false"/>
+        <xsd:attribute name="addMessage" type="xsd:boolean" default="false"/>
+        <xsd:attribute name="addSignature" type="xsd:boolean" default="false"/>
+        <xsd:attribute name="addPageNumbers" type="xsd:boolean" default="true"/>
+        <xsd:attribute name="enableAggregateLevel" type="xsd:boolean" default="false"/>
+        <xsd:attribute name="enableDomainLevel" type="xsd:boolean" default="false"/>
+        <xsd:attribute name="enableSpecificationGroupLevel" type="xsd:boolean" default="false"/>
+        <xsd:attribute name="enableSpecificationLevel" type="xsd:boolean" default="false"/>
+    </xsd:complexType>
+    <xsd:complexType name="ConformanceOverviewCertificateMessages">
+        <xsd:sequence>
+            <xsd:element name="message" type="ConformanceOverviewCertificateMessage" maxOccurs="unbounded"/>
+        </xsd:sequence>
+    </xsd:complexType>
+    <xsd:complexType name="ConformanceOverviewCertificateMessage">
+        <xsd:sequence>
+            <xsd:element name="message" type="xsd:string"/>
+        </xsd:sequence>
+        <xsd:attribute name="messageType" type="ConformanceOverviewCertificateMessageType" use="required"/>
+        <xsd:attribute name="identifier" type="xsd:IDREF"/>
+    </xsd:complexType>
     <xsd:complexType name="SelfRegistrationSettings">
         <xsd:sequence>
             <xsd:element name="token" type="xsd:string" minOccurs="0"/>
@@ -73,6 +105,14 @@
         <xsd:attribute name="forceTemplateSelection" type="xsd:boolean" default="false"/>
         <xsd:attribute name="forceRequiredProperties" type="xsd:boolean" default="false"/>
     </xsd:complexType>
+    <xsd:simpleType name="ConformanceOverviewCertificateMessageType">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="ALL"/>
+            <xsd:enumeration value="DOMAIN"/>
+            <xsd:enumeration value="SPECIFICATION_GROUP"/>
+            <xsd:enumeration value="SPECIFICATION"/>
+        </xsd:restriction>
+    </xsd:simpleType>
     <xsd:simpleType name="SelfRegistrationMethod">
         <xsd:restriction base="xsd:string">
             <xsd:enumeration value="NOT_SUPPORTED"/>

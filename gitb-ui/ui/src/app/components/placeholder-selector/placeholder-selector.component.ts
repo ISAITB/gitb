@@ -1,17 +1,17 @@
-import { Component, Input, OnInit } from '@angular/core';
-import { Observable, forkJoin, of } from 'rxjs';
+import { Component, EventEmitter, Input, OnInit } from '@angular/core';
+import { Observable, forkJoin, mergeMap, of, share } from 'rxjs';
 import { CommunityService } from 'src/app/services/community.service';
 import { ConformanceService } from 'src/app/services/conformance.service';
 import { DataService } from 'src/app/services/data.service';
 import { PopupService } from 'src/app/services/popup.service';
 import { CommunityResource } from 'src/app/types/community-resource';
-import { DomainParameter } from 'src/app/types/domain-parameter';
 import { KeyValue } from 'src/app/types/key-value';
 import { FilterUpdate } from '../test-filter/filter-update';
 import { MultiSelectConfig } from '../multi-select-filter/multi-select-config';
 import { PlaceholderInfo } from './placeholder-info';
 import { OrganisationParameter } from 'src/app/types/organisation-parameter';
 import { SystemParameter } from 'src/app/types/system-parameter';
+import { Constants } from 'src/app/common/constants';
 
 @Component({
   selector: 'app-placeholder-selector',
@@ -22,11 +22,14 @@ export class PlaceholderSelectorComponent implements OnInit {
 
   @Input() placeholders: PlaceholderInfo[] = []
   @Input() domainParameters: boolean = false
+  @Input() domainId?: number
   @Input() organisationParameters: boolean = false
   @Input() systemParameters: boolean = false
   @Input() resources: boolean = false
   @Input() community?: number
+  @Input() domainChanged?: EventEmitter<number>
 
+  domainParameterCache = new Map<number, KeyValue[]>()
   domainParameterPlaceholders?: KeyValue[]
   organisationParameterPlaceholders?: KeyValue[]
   systemParameterPlaceholders?: KeyValue[]
@@ -49,18 +52,7 @@ export class PlaceholderSelectorComponent implements OnInit {
       communityIdToUse = this.community
     }    
     // Domain parameters
-    let domainParameterObservable: Observable<DomainParameter[]>
-    if (this.domainParameters) {
-      if (this.dataService.isCommunityAdmin && this.dataService.community!.domainId != undefined) {
-        domainParameterObservable = this.conformanceService.getDomainParameters(this.dataService.community!.domainId, false, true)
-      } else if (this.dataService.isSystemAdmin && this.community != undefined) {
-        domainParameterObservable = this.conformanceService.getDomainParametersOfCommunity(this.community, false, true)
-      } else {
-        domainParameterObservable = of([])
-      }
-    } else {
-      domainParameterObservable = of([])
-    }
+    const domainParameterObservable = this.updateDomainParameters(this.domainId)
     // Organisation properties
     let organisationParameterObservable: Observable<OrganisationParameter[]>
     if (this.organisationParameters && communityIdToUse) {
@@ -78,17 +70,7 @@ export class PlaceholderSelectorComponent implements OnInit {
     // Retrieve all results
     forkJoin([domainParameterObservable, organisationParameterObservable, systemParameterObservable]).subscribe((data) => {
       // Domain parameters
-      if (data[0].length > 0) {
-        this.domainParameterPlaceholders = []
-        for (let parameter of data[0]) {
-          let description = parameter.description
-          if (description == undefined) description = ''
-          this.domainParameterPlaceholders.push({
-            key: '$DOMAIN{'+parameter.name+'}',
-            value: description
-          })
-        }
-      }
+      this.domainParameterPlaceholders = data[0]
       // Organisation parameters
       if (data[1].length > 0) {
         this.organisationParameterPlaceholders = []
@@ -127,6 +109,44 @@ export class PlaceholderSelectorComponent implements OnInit {
           }).bind(this)
         }
       }
+    }
+    // Listen for domain changes
+    if (this.domainChanged) {
+      this.domainChanged.subscribe((newDomainId) => {
+        if (this.domainId != newDomainId) {
+          this.domainId = newDomainId
+          this.updateDomainParameters(newDomainId).subscribe((data) =>{
+            this.domainParameterPlaceholders = data
+          })
+        }
+      })
+    }
+  }
+
+  updateDomainParameters(domainId: number|undefined): Observable<KeyValue[]> {
+    if (this.domainParameters && domainId != undefined) {
+      if (this.domainParameterCache.has(domainId)) {
+        return of(this.domainParameterCache.get(domainId)!)
+      } else {
+        return this.conformanceService.getDomainParameters(domainId, false, true)
+          .pipe(
+            mergeMap((data) => {
+              const domainParameterPlaceholders = []
+              for (let parameter of data) {
+                let description = parameter.description
+                if (description == undefined) description = ''
+                domainParameterPlaceholders.push({
+                  key: Constants.PLACEHOLDER__DOMAIN+'{'+parameter.name+'}',
+                  value: description
+                })
+              }
+              this.domainParameterCache.set(domainId, domainParameterPlaceholders)
+              return of(domainParameterPlaceholders)
+            }), share()
+          )
+      }
+    } else {
+      return of([])
     }
   }
 

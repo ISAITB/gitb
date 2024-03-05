@@ -1,21 +1,7 @@
-export interface ConformanceCertificateSettings {
+import { CertificateSettings } from "./certificate-settings"
 
-    id: number
-    title?: string
+export interface ConformanceCertificateSettings extends CertificateSettings {
+
     message?: string
-    includeTitle: boolean
-    includeMessage: boolean
-    includeTestStatus: boolean
-    includeTestCases: boolean
-    includeDetails: boolean
-    includeSignature: boolean
-    includePageNumbers: boolean
-    keystoreFile?: File
-    keystoreType?: string
-    passwordsSet: boolean
-    keystoreDefined: boolean
-    community: number
-    keystorePassword? : string
-    keyPassword?: string
 
 }

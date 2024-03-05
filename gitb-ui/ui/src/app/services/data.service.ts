@@ -30,6 +30,7 @@ import { BadgesInfo } from '../components/manage-badges/badges-info';
 import { BreadcrumbChange } from '../types/breadcrumb-change';
 import { FieldInfo } from '../types/field-info';
 import { HttpResponse } from '@angular/common/http';
+import { EntityWithId } from '../types/entity-with-id';
 
 @Injectable({
   providedIn: 'root'
@@ -1369,6 +1370,10 @@ export class DataService {
       valid = true
     }
     return valid
+  }
+
+  sameId(a: EntityWithId, b: EntityWithId) {
+    return a == undefined && b == undefined || a != undefined && b != undefined && a.id == b.id
   }
 
 }

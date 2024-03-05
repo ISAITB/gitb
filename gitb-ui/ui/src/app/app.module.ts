@@ -102,7 +102,6 @@ import { ErrorTemplateDetailsComponent } from './pages/admin/user-management/err
 import { TriggerComponent } from './pages/admin/user-management/trigger/trigger.component';
 import { CreateOrganisationComponent } from './pages/admin/user-management/organisation/create-organisation/create-organisation.component';
 import { OrganisationDetailsComponent } from './pages/admin/user-management/organisation/organisation-details/organisation-details.component';
-import { CommunityCertificateComponent } from './pages/admin/user-management/community-certificate/community-certificate.component';
 import { CommunityPropertiesComponent } from './pages/admin/user-management/community-properties/community-properties.component';
 import { CommunityLabelsComponent } from './pages/admin/user-management/community-labels/community-labels.component';
 import { PreviewParametersModalComponent } from './modals/preview-parameters-modal/preview-parameters-modal.component';
@@ -187,7 +186,15 @@ import { FileDropTargetDirective } from './directives/file-drop-target.directive
 import { FormSectionComponent } from './components/form-section/form-section.component';
 import { SpecificationReferenceFormComponent } from './components/specification-reference-form/specification-reference-form.component';
 import { SpecificationReferenceDisplayComponent } from './components/specification-reference-display/specification-reference-display.component';
-import { SortIndicatorComponent } from './components/sort-indicator/sort-indicator.component';    
+import { SortIndicatorComponent } from './components/sort-indicator/sort-indicator.component';
+import { CommunityReportsComponent } from './pages/admin/user-management/community-reports/community-reports.component';
+import { ConformanceCertificateFormComponent } from './pages/admin/user-management/community-reports/conformance-certificate-form/conformance-certificate-form.component';
+import { ConformanceStatementReportFormComponent } from './pages/admin/user-management/community-reports/conformance-statement-report-form/conformance-statement-report-form.component';
+import { ConformanceOverviewReportFormComponent } from './pages/admin/user-management/community-reports/conformance-overview-report-form/conformance-overview-report-form.component';
+import { TestCaseReportFormComponent } from './pages/admin/user-management/community-reports/test-case-report-form/test-case-report-form.component';
+import { TestStepReportFormComponent } from './pages/admin/user-management/community-reports/test-step-report-form/test-step-report-form.component';
+import { CommunityKeystoreModalComponent } from './modals/community-keystore-modal/community-keystore-modal.component';
+import { ConformanceOverviewCertificateFormComponent } from './pages/admin/user-management/community-reports/conformance-overview-certificate-form/conformance-overview-certificate-form.component';
 
 @NgModule({
   providers: [
@@ -281,7 +288,6 @@ import { SortIndicatorComponent } from './components/sort-indicator/sort-indicat
     TriggerComponent,
     CreateOrganisationComponent,
     OrganisationDetailsComponent,
-    CommunityCertificateComponent,
     CommunityPropertiesComponent,
     CommunityLabelsComponent,
     PreviewParametersModalComponent,
@@ -364,7 +370,15 @@ import { SortIndicatorComponent } from './components/sort-indicator/sort-indicat
     FormSectionComponent,
     SpecificationReferenceFormComponent,
     SpecificationReferenceDisplayComponent,
-    SortIndicatorComponent
+    SortIndicatorComponent,
+    CommunityReportsComponent,
+    ConformanceCertificateFormComponent,
+    ConformanceStatementReportFormComponent,
+    ConformanceOverviewReportFormComponent,
+    TestCaseReportFormComponent,
+    TestStepReportFormComponent,
+    CommunityKeystoreModalComponent,
+    ConformanceOverviewCertificateFormComponent
   ],
   imports: [
     ColorPickerModule,

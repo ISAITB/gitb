@@ -45,6 +45,7 @@ object Constants {
   val PlaceholderActor = "$ACTOR"
   val PlaceholderDomain = "$DOMAIN"
   val PlaceholderBadge = "$BADGE"
+  val PlaceholderBadges = "$BADGES"
 
   val ProductionMode = "production"
   val DevelopmentMode = "development"

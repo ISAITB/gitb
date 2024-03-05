@@ -5,7 +5,7 @@ import exceptions.{ErrorCodes, InvalidRequestException}
 import models.Enums._
 import controllers.util.Parameters
 import models.theme.{Theme, ThemeFiles}
-import models.{Actor, Badges, Communities, CommunityResources, Domain, Endpoints, ErrorTemplates, FileInfo, LandingPages, LegalNotices, NamedFile, OrganisationParameterValues, Organizations, SpecificationGroups, Specifications, SystemParameterValues, Systems, Trigger, TriggerData, Triggers, Users}
+import models.{Actor, Badges, Communities, CommunityResources, ConformanceCertificate, Domain, Endpoints, ErrorTemplates, FileInfo, LandingPages, LegalNotices, NamedFile, OrganisationParameterValues, Organizations, SpecificationGroups, Specifications, SystemParameterValues, Systems, Trigger, TriggerData, Triggers, Users}
 import org.apache.commons.lang3.StringUtils
 import org.mindrot.jbcrypt.BCrypt
 import play.api.mvc._

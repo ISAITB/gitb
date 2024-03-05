@@ -94,6 +94,14 @@ export abstract class BaseComponent {
         this.addAlert({type:'danger', msg: message})
     }
 
+    addAlertWarning(message: string):void {
+        this.addAlert({type:'warning', msg: message})
+    }
+
+    addAlertSuccess(message: string):void {
+        this.addAlert({type:'success', msg: message})
+    }
+
     addAlert(alert: Alert):void {
         this.alerts.push(alert)
     }

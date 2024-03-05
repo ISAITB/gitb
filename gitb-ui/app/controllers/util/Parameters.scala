@@ -10,6 +10,9 @@ object Parameters {
   val SNAPSHOT  = "snapshot"
   val PUBLIC  = "public"
   val REPORT = "report"
+  val OVERVIEW = "overview"
+  val KEY_PASS   = "key_pass"
+  val KEYSTORE_PASS   = "keystore_pass"
 
   //Dashboard filter parameters
   val COMMUNITY_IDS = "community_ids"
@@ -155,6 +158,7 @@ object Parameters {
   val PROPERTIES = "properties"
   val TEST_STEP  = "teststep"
   val SETTINGS   = "settings"
+  val LEVEL   = "level"
   val UPDATE_PASSWORDS  = "updatePasswords"
   val REMOVE_KEYSTORE   = "removeKeystore"
   val INCLUDE_KEYSTORE_DATA  = "keystore"

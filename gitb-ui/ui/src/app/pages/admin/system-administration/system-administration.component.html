@@ -47,7 +47,7 @@
                                         <app-pending-block *ngSwitchCase="true"></app-pending-block>
                                         <ng-container *ngSwitchDefault [ngSwitch]="communities.length == 0">
                                             <div *ngSwitchCase="true" class="no-data-container">No communities available</div>
-                                            <select *ngSwitchDefault name="selectedCommunity" [disabled]="!demoAccountEnabled || loadCommunitiesPending || communities.length == 0" [(ngModel)]="selectedCommunity" [compareWith]="sameId" (change)="selectCommunity()" class="form-control form-select demoSelect">
+                                            <select *ngSwitchDefault name="selectedCommunity" [disabled]="!demoAccountEnabled || loadCommunitiesPending || communities.length == 0" [(ngModel)]="selectedCommunity" [compareWith]="dataService.sameId" (change)="selectCommunity()" class="form-control form-select demoSelect">
                                                 <option *ngFor="let community of communities" [ngValue]="community">{{community.fname}}</option>
                                             </select>
                                         </ng-container>
@@ -56,7 +56,7 @@
                                         <app-pending-block *ngSwitchCase="true"></app-pending-block>
                                         <ng-container *ngSwitchDefault [ngSwitch]="organisations.length == 0">
                                             <div *ngSwitchCase="true" class="no-data-container">No organisations available</div>
-                                            <select *ngSwitchDefault name="selectedOrganisation" [disabled]="!demoAccountEnabled || loadOrganisationsPending || organisations.length == 0" [(ngModel)]="selectedOrganisation" [compareWith]="sameId" (change)="selectCommunityOrganisation()" class="form-control form-select demoSelect">
+                                            <select *ngSwitchDefault name="selectedOrganisation" [disabled]="!demoAccountEnabled || loadOrganisationsPending || organisations.length == 0" [(ngModel)]="selectedOrganisation" [compareWith]="dataService.sameId" (change)="selectCommunityOrganisation()" class="form-control form-select demoSelect">
                                                 <option *ngFor="let organisation of organisations" [ngValue]="organisation">{{organisation.fname}}</option>
                                             </select>
                                         </ng-container>
@@ -65,7 +65,7 @@
                                         <app-pending-block *ngSwitchCase="true"></app-pending-block>
                                         <ng-container *ngSwitchDefault [ngSwitch]="users.length == 0">
                                             <div *ngSwitchCase="true" class="no-data-container">No non-administrator users available</div>
-                                            <select *ngSwitchDefault name="demoAccount" [disabled]="!demoAccountEnabled || loadUsersPending || users.length == 0" [(ngModel)]="demoAccount" [compareWith]="sameId" class="form-control form-select demoSelect">
+                                            <select *ngSwitchDefault name="demoAccount" [disabled]="!demoAccountEnabled || loadUsersPending || users.length == 0" [(ngModel)]="demoAccount" [compareWith]="dataService.sameId" class="form-control form-select demoSelect">
                                                 <option *ngFor="let user of users" [ngValue]="user">{{user.name}}</option>
                                             </select>
                                         </ng-container>

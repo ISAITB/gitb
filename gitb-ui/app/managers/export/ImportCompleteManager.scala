@@ -5,10 +5,11 @@ import config.Configurations
 import managers._
 import managers.testsuite.TestSuitePaths
 import models.Enums.ImportItemType.ImportItemType
+import models.Enums.OverviewLevelType.OverviewLevelType
 import models.Enums.TestSuiteReplacementChoice.PROCEED
 import models.Enums._
 import models.theme.ThemeFiles
-import models.{BadgeInfo, Badges, Constants, Enums, NamedFile, ProcessedArchive, TestCaseDeploymentAction, TestCases, TestSuiteDeploymentAction}
+import models.{BadgeInfo, Badges, ConformanceOverviewCertificateWithMessages, Constants, Enums, NamedFile, ProcessedArchive, TestCaseDeploymentAction, TestCases, TestSuiteDeploymentAction}
 import org.apache.commons.codec.binary.Base64
 import org.apache.commons.codec.digest.DigestUtils
 import org.apache.commons.io.{FileUtils, FilenameUtils}
@@ -327,6 +328,64 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
     }
   }
 
+  private def toModelConformanceOverCertificateSettingsWithMessages(exportedSettings: com.gitb.xml.export.ConformanceOverviewCertificateSettings, communityId: Long, ctx: ImportContext): ConformanceOverviewCertificateWithMessages = {
+    val settings = models.ConformanceOverviewCertificate(
+      0L, Option(exportedSettings.getTitle), exportedSettings.isAddTitle, exportedSettings.isAddMessage, exportedSettings.isAddResultOverview,
+      exportedSettings.isAddStatementList, exportedSettings.isAddStatementDetails, exportedSettings.isAddDetails, exportedSettings.isAddSignature,
+      exportedSettings.isAddPageNumbers, exportedSettings.isEnableAggregateLevel, exportedSettings.isEnableDomainLevel,
+      exportedSettings.isEnableSpecificationGroupLevel, exportedSettings.isEnableSpecificationLevel, communityId
+    )
+    val messages = new ListBuffer[models.ConformanceOverviewCertificateMessage]
+    if (exportedSettings.getMessages != null) {
+      exportedSettings.getMessages.getMessage.forEach { exportedMessage =>
+        val messageType = toModelConformanceOverviewCertificateMessageType(exportedMessage.getMessageType)
+        var domainId: Option[Long] = None
+        var groupId: Option[Long] = None
+        var specificationId: Option[Long] = None
+        var process = false
+        messageType match {
+          case OverviewLevelType.OrganisationLevel => process = true
+          case OverviewLevelType.DomainLevel =>
+            if (exportedMessage.getIdentifier != null) {
+              domainId = getProcessedDbId(exportedMessage.getIdentifier.asInstanceOf[String], ImportItemType.Domain, ctx)
+              process = domainId.isDefined
+            } else {
+              process = true
+            }
+          case OverviewLevelType.SpecificationGroupLevel =>
+            if (exportedMessage.getIdentifier != null) {
+              groupId = getProcessedDbId(exportedMessage.getIdentifier.asInstanceOf[String], ImportItemType.SpecificationGroup, ctx)
+              process = groupId.isDefined
+            } else {
+              process = true
+            }
+          case OverviewLevelType.SpecificationLevel =>
+            if (exportedMessage.getIdentifier != null) {
+              specificationId = getProcessedDbId(exportedMessage.getIdentifier.asInstanceOf[String], ImportItemType.Specification, ctx)
+              process = specificationId.isDefined
+            } else {
+              process = true
+            }
+        }
+        if (process) {
+          messages += models.ConformanceOverviewCertificateMessage(
+            0L, messageType.id.toShort, exportedMessage.getMessage, domainId, groupId, specificationId, None, communityId
+          )
+        }
+      }
+    }
+    ConformanceOverviewCertificateWithMessages(settings, messages)
+  }
+
+  private def toModelConformanceOverviewCertificateMessageType(exportedType: com.gitb.xml.export.ConformanceOverviewCertificateMessageType): OverviewLevelType = {
+    exportedType match {
+      case com.gitb.xml.export.ConformanceOverviewCertificateMessageType.DOMAIN => OverviewLevelType.DomainLevel
+      case com.gitb.xml.export.ConformanceOverviewCertificateMessageType.SPECIFICATION_GROUP => OverviewLevelType.SpecificationGroupLevel
+      case com.gitb.xml.export.ConformanceOverviewCertificateMessageType.SPECIFICATION => OverviewLevelType.SpecificationLevel
+      case _ => OverviewLevelType.OrganisationLevel
+    }
+  }
+
   private def toModelTestCases(exportedTestCases: List[com.gitb.xml.export.TestCase]): List[models.TestCases] = {
     val testCases = new ListBuffer[models.TestCases]()
     exportedTestCases.foreach { exportedTestCase =>
@@ -557,9 +616,17 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
   }
 
   private def getProcessedDbId(data: com.gitb.xml.export.ExportType, itemType: ImportItemType, ctx: ImportContext): Option[Long] = {
+    if (data != null) {
+      getProcessedDbId(data.getId, itemType, ctx)
+    } else {
+      None
+    }
+  }
+
+  private def getProcessedDbId(dataId: String, itemType: ImportItemType, ctx: ImportContext): Option[Long] = {
     var dbId: Option[Long] = None
-    if (data != null && ctx.processedIdMap.contains(itemType) && ctx.processedIdMap(itemType).contains(data.getId)) {
-      dbId = Some(ctx.processedIdMap(itemType)(data.getId).toLong)
+    if (dataId != null && ctx.processedIdMap.contains(itemType) && ctx.processedIdMap(itemType).contains(dataId)) {
+      dbId = Some(ctx.processedIdMap(itemType)(dataId).toLong)
     }
     dbId
   }
@@ -611,6 +678,19 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
       findDomainItem(item.parentItem.get)
     } else {
       None
+    }
+  }
+
+  private def handleCommunityKeystore(exportedSettings: com.gitb.xml.export.SignatureSettings, communityId: Long, importSettings: ImportSettings): DBIO[_] = {
+    if (exportedSettings == null) {
+      // Delete
+      communityManager.deleteCommunityKeystoreInternal(communityId)
+    } else {
+      // Update/Add
+      communityManager.saveCommunityKeystoreInternal(communityId, exportedSettings.getKeystoreType.value(),
+        Some(exportedSettings.getKeystore), Some(MimeUtil.encryptString(decrypt(importSettings, exportedSettings.getKeyPassword))),
+        Some(MimeUtil.encryptString(decrypt(importSettings, exportedSettings.getKeystorePassword)))
+      )
     }
   }
 
@@ -1513,15 +1593,6 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
     dbActionFinalisation(Some(ctx.onSuccessCalls), Some(ctx.onFailureCalls), dbAction)
   }
 
-  private def prepareCertificateSettingKey(archiveValue: String, importSettings: ImportSettings): Option[String] = {
-    if (archiveValue != null) {
-      // Decrypt using archive password and then encrypt for local storage
-      Some(MimeUtil.encryptString(decrypt(importSettings, archiveValue)))
-    } else {
-      None
-    }
-  }
-
   private def prepareSmtpSettings(value: Option[String], importSettings: ImportSettings): Option[String] = {
     if (value.isDefined) {
       val emailSettings = JsonUtil.parseJsEmailSettings(value.get)
@@ -1744,29 +1815,56 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
             communityManager.deleteConformanceCertificateSettings(communityId.get)
           } else {
             // Update/Add
-            var keystoreFile: Option[String] = None
-            var keystoreType: Option[String] = None
-            var keystorePassword: Option[String] = None
-            var keyPassword: Option[String] = None
-            if (exportedCommunity.getConformanceCertificateSettings.getSignature != null) {
-              keystoreFile = Option(exportedCommunity.getConformanceCertificateSettings.getSignature.getKeystore)
-              if (exportedCommunity.getConformanceCertificateSettings.getSignature.getKeystoreType != null) {
-                keystoreType = Some(exportedCommunity.getConformanceCertificateSettings.getSignature.getKeystoreType.value())
-              }
-              keystorePassword = prepareCertificateSettingKey(exportedCommunity.getConformanceCertificateSettings.getSignature.getKeystorePassword, importSettings)
-              keyPassword = prepareCertificateSettingKey(exportedCommunity.getConformanceCertificateSettings.getSignature.getKeyPassword, importSettings)
-            }
             communityManager.updateConformanceCertificateSettingsInternal(
-                models.ConformanceCertificates(
-                  0L, Option(exportedCommunity.getConformanceCertificateSettings.getTitle), Option(exportedCommunity.getConformanceCertificateSettings.getMessage),
+                models.ConformanceCertificate(
+                  0L, Option(exportedCommunity.getConformanceCertificateSettings.getTitle),
                   exportedCommunity.getConformanceCertificateSettings.isAddTitle, exportedCommunity.getConformanceCertificateSettings.isAddMessage, exportedCommunity.getConformanceCertificateSettings.isAddResultOverview,
                   exportedCommunity.getConformanceCertificateSettings.isAddTestCases, exportedCommunity.getConformanceCertificateSettings.isAddDetails,
                   exportedCommunity.getConformanceCertificateSettings.isAddSignature, exportedCommunity.getConformanceCertificateSettings.isAddPageNumbers,
-                  keystoreFile, keystoreType, keystorePassword, keyPassword,
-                  communityId.get
+                  Option(exportedCommunity.getConformanceCertificateSettings.getMessage), communityId.get
                 )
-              , updatePasswords =true, removeKeystore =false
+            ) andThen {
+              if (exportedCommunity.getConformanceCertificateSettings.getSignature != null) {
+                // This case is added here for backwards compatibility. Signature settings are normally added directly under the community.
+                handleCommunityKeystore(exportedCommunity.getConformanceCertificateSettings.getSignature, communityId.get, importSettings)
+              } else {
+                DBIO.successful(())
+              }
+            }
+          }
+        } else {
+          DBIO.successful(())
+        }
+      }
+      // Certificate overview settings
+      _ <- {
+        DBIO.successful(())
+        val communityId = getProcessedDbId(exportedCommunity, ImportItemType.Community, ctx)
+        if (communityId.isDefined) {
+          if (exportedCommunity.getConformanceOverviewCertificateSettings == null) {
+            // Delete
+            communityManager.deleteConformanceOverviewCertificateSettings(communityId.get)
+          } else {
+            // Update/Add
+            communityManager.updateConformanceOverviewCertificateSettingsInternal(
+              toModelConformanceOverCertificateSettingsWithMessages(exportedCommunity.getConformanceOverviewCertificateSettings, communityId.get, ctx)
             )
+          }
+        } else {
+          DBIO.successful(())
+        }
+      }
+      // Signature settings
+      _ <- {
+        DBIO.successful(())
+        val communityId = getProcessedDbId(exportedCommunity, ImportItemType.Community, ctx)
+        if (communityId.isDefined) {
+          if (exportedCommunity.getSignatureSettings == null) {
+            // Delete
+            communityManager.deleteCommunityKeystoreInternal(communityId.get)
+          } else {
+            // Update/Add
+            handleCommunityKeystore(exportedCommunity.getSignatureSettings, communityId.get, importSettings)
           }
         } else {
           DBIO.successful(())

@@ -9,9 +9,11 @@ import com.gitb.tpl.TestCase
 import com.gitb.tr._
 import com.gitb.utils.XMLUtils
 import config.Configurations
-import models.Enums.{ConformanceStatementItemType, TestResultStatus}
+import models.Enums.ConformanceStatementItemType.ConformanceStatementItemType
+import models.Enums.OverviewLevelType.OverviewLevelType
+import models.Enums.{ConformanceStatementItemType, OverviewLevelType, TestResultStatus}
 import models._
-import models.statement.{BadgePlaceholderInfo, ConformanceData, ConformanceItemTreeData, ResultCountHolder}
+import models.statement.{BadgeListPlaceholderInfo, BadgePlaceholderInfo, ConformanceData, ConformanceDataLocator, ConformanceItemTreeData, ResultCountHolder}
 import org.apache.commons.codec.binary.Base64
 import org.apache.commons.io.FileUtils
 import org.apache.commons.lang3.StringUtils
@@ -24,6 +26,8 @@ import java.io.{File, FileOutputStream, StringReader}
 import java.nio.file.{Files, Path}
 import java.text.SimpleDateFormat
 import java.util
+import java.util.regex.Pattern
+import java.util.stream.Collectors
 import java.util.{Calendar, Date}
 import javax.inject.{Inject, Singleton}
 import javax.xml.transform.stream.StreamSource
@@ -40,6 +44,15 @@ import scala.util.Using
 class ReportManager @Inject() (communityManager: CommunityManager, organizationManager: OrganizationManager, systemManager: SystemManager, domainParameterManager: DomainParameterManager, reportHelper: ReportHelper, triggerHelper: TriggerHelper, testCaseReportProducer: TestCaseReportProducer, testSuiteManager: TestSuiteManager, specificationManager: SpecificationManager, conformanceManager: ConformanceManager, dbConfigProvider: DatabaseConfigProvider, communityLabelManager: CommunityLabelManager, repositoryUtils: RepositoryUtils, testResultManager: TestResultManager) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
+
+  private val PLACEHOLDER_DOMAIN_WITH_INDEX_REGEXP = Pattern.compile("(\\"+Constants.PlaceholderDomain+"\\{(\\d+)\\})")
+  private val PLACEHOLDER_SPECIFICATION_GROUP_WITH_INDEX_REGEXP = Pattern.compile("(\\"+Constants.PlaceholderSpecificationGroup+"\\{(\\d+)\\})")
+  private val PLACEHOLDER_SPECIFICATION_GROUP_OPTION_WITH_INDEX_REGEXP = Pattern.compile("(\\"+Constants.PlaceholderSpecificationGroupOption+"\\{(\\d+)\\})")
+  private val PLACEHOLDER_SPECIFICATION_WITH_INDEX_REGEXP = Pattern.compile("(\\"+Constants.PlaceholderSpecification+"\\{(\\d+)\\})")
+  private val PLACEHOLDER_ACTOR_WITH_INDEX_REGEXP = Pattern.compile("(\\"+Constants.PlaceholderActor+"\\{(\\d+)\\})")
+  private val PLACEHOLDER_BADGE_REGEXP = Pattern.compile("(\\"+Constants.PlaceholderBadge+"(?:\\{(\\d+)(?:\\|(\\d+))?\\})?)")
+  private val PLACEHOLDER_BADGE_WITHOUT_INDEX_REGEXP = Pattern.compile("(\\"+Constants.PlaceholderBadge+"(?:\\{(\\d+)\\})?)")
+  private val PLACEHOLDER_BADGE_LIST_REGEXP = Pattern.compile("(\\"+Constants.PlaceholderBadges+"\\{((?:horizontal)|(?:vertical))(?:\\|(\\d+))?\\})")
 
   def getOrganisationActiveTestResults(organisationId: Long,
                                        systemIds: Option[List[Long]],
@@ -448,43 +461,83 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
     pdfReport
   }
 
-  private def getSampleConformanceStatement(index: Int, labels: Map[Short, CommunityLabels]): ConformanceStatementFull = {
+  private def getSampleConformanceStatement(addPrefixes: Boolean, testSuiteIndex: Int, testCaseIndex: Int, labels: Map[Short, CommunityLabels], domainId: Long, groupId: Long, specificationId: Long, actorId: Long): ConformanceStatementFull = {
+    val domainName = "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Domain, single = true, lowercase = true) + (if (addPrefixes) " "+domainId else "")
+    val groupName = "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.SpecificationGroup, single = true, lowercase = true) + (if (addPrefixes) " "+groupId else "")
+    val specificationName = "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Specification, single = true, lowercase = true) + (if (addPrefixes) " "+specificationId else "")
+    val actorName = "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Actor, single = true, lowercase = true) + (if (addPrefixes) " "+actorId else "")
     new ConformanceStatementFull(
-      0L, "Sample Community",
-      0L, "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Organisation),
-      0L, "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.System), "",
-      0L, "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Domain), "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Domain),
-      0L, "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Actor), "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Actor), "",
-      0L, "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Specification), "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Specification), 0,
-      Some(0L), Some("Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.SpecificationGroup)), Some("Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.SpecificationGroup)), Some(0),
-      "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.SpecificationInGroup), "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.SpecificationInGroup),
-      Some(index), Some("Sample Test Suite "+index), Some("Description for Sample Test Suite "+index), None, None, None,
-      Some(index), Some("Sample Test Case "+index), Some("Description for Sample Test Case "+index), Some(false), Some(false), None,  None, None, None, None,
+      0L, "Sample community",
+      0L, "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Organisation, single = true, lowercase = true),
+      0L, "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.System, single = true, lowercase = true), "",
+      domainId, domainName, domainName,
+      actorId, actorName, actorName, "",
+      specificationId, specificationName, specificationName, 0,
+      Some(groupId), Some(groupName), Some(groupName), Some(0),
+      specificationName, specificationName,
+      Some(testSuiteIndex), Some("Sample test suite "+testSuiteIndex), Some("Description for Sample test suite "+testSuiteIndex), None, None, None,
+      Some(testCaseIndex), Some("Sample test case "+testCaseIndex), Some("Description for Sample test case "+testCaseIndex), Some(false), Some(false), None,  None, None, None, None,
       "SUCCESS", Some("An output message for the test session"),
       None, None, 0L, 0L, 0L, 0L, 0L, 0L)
   }
 
-  def generateDemoConformanceCertificate(reportPath: Path, settings: ConformanceCertificates, communityId: Long): Path = {
+  def generateDemoConformanceCertificate(reportPath: Path, settings: ConformanceCertificateInfo, communityId: Long): Path = {
     val conformanceInfo = new ListBuffer[ConformanceStatementFull]
     val labels = communityLabelManager.getLabels(communityId)
-
-    conformanceInfo += getSampleConformanceStatement(1, labels)
-    conformanceInfo += getSampleConformanceStatement(2, labels)
-    conformanceInfo += getSampleConformanceStatement(3, labels)
-    conformanceInfo += getSampleConformanceStatement(4, labels)
-    conformanceInfo += getSampleConformanceStatement(5, labels)
+    conformanceInfo += getSampleConformanceStatement(addPrefixes = false, 1, 1, labels, 0L, 0L, 0L, 0L)
+    conformanceInfo += getSampleConformanceStatement(addPrefixes = false, 1, 2, labels, 0L, 0L, 0L, 0L)
+    conformanceInfo += getSampleConformanceStatement(addPrefixes = false, 1, 3, labels, 0L, 0L, 0L, 0L)
+    conformanceInfo += getSampleConformanceStatement(addPrefixes = false, 1, 4, labels, 0L, 0L, 0L, 0L)
+    conformanceInfo += getSampleConformanceStatement(addPrefixes = false, 1, 5, labels, 0L, 0L, 0L, 0L)
     generateConformanceCertificate(reportPath, settings, conformanceInfo.toList, communityId, None, isDemo = true)
   }
 
-  def generateConformanceCertificate(reportPath: Path, settings: ConformanceCertificates, actorId: Long, systemId: Long, communityId: Long, snapshotId: Option[Long]): Path = {
+  def generateDemoConformanceOverviewCertificate(reportPath: Path, settings: ConformanceCertificateInfo, communityId: Long, level: OverviewLevelType): Path = {
+    val labels = communityLabelManager.getLabels(communityId)
+    // Generate demo data
+    val builder = new ConformanceStatusBuilder[ConformanceStatementFull](true)
+    var actorIdsToDisplay: Option[Set[Long]] = None
+    if (level == OverviewLevelType.SpecificationLevel) {
+      // Actor 1
+      builder.addConformanceResult(getSampleConformanceStatement(addPrefixes = true, 1, 1, labels, 1L, 1L, 1L, 1L), isOptional = false, isDisabled = false)
+      builder.addConformanceResult(getSampleConformanceStatement(addPrefixes = true, 1, 2, labels, 1L, 1L, 1L, 1L), isOptional = false, isDisabled = false)
+      builder.addConformanceResult(getSampleConformanceStatement(addPrefixes = true, 1, 3, labels, 1L, 1L, 1L, 1L), isOptional = false, isDisabled = false)
+      // Actor 2
+      builder.addConformanceResult(getSampleConformanceStatement(addPrefixes = true, 1, 1, labels, 1L, 1L, 1L, 2L), isOptional = false, isDisabled = false)
+      builder.addConformanceResult(getSampleConformanceStatement(addPrefixes = true, 1, 2, labels, 1L, 1L, 1L, 2L), isOptional = false, isDisabled = false)
+      builder.addConformanceResult(getSampleConformanceStatement(addPrefixes = true, 1, 3, labels, 1L, 1L, 1L, 2L), isOptional = false, isDisabled = false)
+      actorIdsToDisplay = Some(Set(1L, 2L))
+    } else {
+      // Specification 1
+      builder.addConformanceResult(getSampleConformanceStatement(addPrefixes = true, 1, 1, labels, 1L, 1L, 1L, 1L), isOptional = false, isDisabled = false)
+      builder.addConformanceResult(getSampleConformanceStatement(addPrefixes = true, 1, 2, labels, 1L, 1L, 1L, 1L), isOptional = false, isDisabled = false)
+      builder.addConformanceResult(getSampleConformanceStatement(addPrefixes = true, 1, 3, labels, 1L, 1L, 1L, 1L), isOptional = false, isDisabled = false)
+      // Specification 2
+      builder.addConformanceResult(getSampleConformanceStatement(addPrefixes = true, 2, 4, labels, 1L, 1L, 2L, 2L), isOptional = false, isDisabled = false)
+      builder.addConformanceResult(getSampleConformanceStatement(addPrefixes = true, 2, 5, labels, 1L, 1L, 2L, 2L), isOptional = false, isDisabled = false)
+      builder.addConformanceResult(getSampleConformanceStatement(addPrefixes = true, 2, 6, labels, 1L, 1L, 2L, 2L), isOptional = false, isDisabled = false)
+      // Specification 3
+      builder.addConformanceResult(getSampleConformanceStatement(addPrefixes = true, 3, 7, labels, 1L, 1L, 3L, 3L), isOptional = false, isDisabled = false)
+      builder.addConformanceResult(getSampleConformanceStatement(addPrefixes = true, 3, 8, labels, 1L, 1L, 3L, 3L), isOptional = false, isDisabled = false)
+      builder.addConformanceResult(getSampleConformanceStatement(addPrefixes = true, 3, 9, labels, 1L, 1L, 3L, 3L), isOptional = false, isDisabled = false)
+      actorIdsToDisplay = Some(Set.empty)
+    }
+    // Construct the report data
+    val conformanceData = getConformanceDataForOverviewReport(builder, level, communityId, actorIdsToDisplay)
+    // Create the report
+    generateConformanceOverviewReport(conformanceData, Some(settings), reportPath, labels, communityId, isDemo = true, None)
+  }
+
+  def generateConformanceCertificate(reportPath: Path, settings: ConformanceCertificateInfo, actorId: Long, systemId: Long, communityId: Long, snapshotId: Option[Long]): Path = {
     val conformanceInfo = conformanceManager.getConformanceStatementsResultBuilder(None, None, None, Some(List(actorId)), None, None, Some(List(systemId)), None, None, None, None, snapshotId, prefixSpecificationNameWithGroup = false).getDetails(None)
     generateConformanceCertificate(reportPath, settings, conformanceInfo, communityId, snapshotId: Option[Long], isDemo = false)
   }
 
-  private def generateConformanceCertificate(reportPath: Path, settings: ConformanceCertificates, conformanceInfo: List[ConformanceStatementFull], communityId: Long, snapshotId: Option[Long], isDemo: Boolean): Path = {
-    var pathToUseForPdf = reportPath
-    if (settings.includeSignature) {
-      pathToUseForPdf = reportPath.resolveSibling(reportPath.getFileName.toString + ".signed.pdf")
+  private def generateConformanceCertificate(reportPath: Path, settings: ConformanceCertificateInfo, conformanceInfo: List[ConformanceStatementFull], communityId: Long, snapshotId: Option[Long], isDemo: Boolean): Path = {
+    var pathToUseForPdf = if (settings.includeSignature) {
+      reportPath.resolveSibling(reportPath.getFileName.toString + ".signed.pdf")
+    } else {
+      reportPath
     }
     var title: Option[String] = None
     if (settings.includeTitle) {
@@ -495,39 +548,39 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
       }
     }
     val labels = communityLabelManager.getLabels(settings.community)
-    generateCoreConformanceReport(pathToUseForPdf, addTestCases = false, title, addDetails = settings.includeDetails, addTestCaseResults = settings.includeTestCases, addTestStatus = settings.includeTestStatus,
+    generateCoreConformanceReport(pathToUseForPdf, addTestCases = false, title, addDetails = settings.includeDetails, addTestCaseResults = settings.includeItems, addTestStatus = settings.includeItemStatus,
       addMessage = settings.includeMessage, addPageNumbers = settings.includePageNumbers, settings.message,
       conformanceInfo, labels, communityId, snapshotId, isDemo
     )
-    // Add signature is needed.
-    if (settings.includeSignature) {
-      val keystore = SigUtils.loadKeystore(
-        Base64.decodeBase64(MimeUtil.getBase64FromDataURL(settings.keystoreFile.get)),
-        settings.keystoreType.get,
-        settings.keystorePassword.get.toCharArray
-      )
-      val signer = new CreateSignature(keystore, settings.keyPassword.get.toCharArray)
-      val fis = Files.newInputStream(pathToUseForPdf)
-      val fos = Files.newOutputStream(reportPath)
-      try {
+    // Add signature if needed.
+    if (settings.includeSignature && settings.keystore.isDefined) {
+      pathToUseForPdf = signReport(settings.keystore.get, pathToUseForPdf, reportPath)
+    }
+    pathToUseForPdf
+  }
+
+  private def signReport(communityKeystore: CommunityKeystore, tempPdfPath: Path, finalPdfPath: Path): Path = {
+    val keystore = SigUtils.loadKeystore(
+      Base64.decodeBase64(MimeUtil.getBase64FromDataURL(communityKeystore.keystoreFile)),
+      communityKeystore.keystoreType,
+      communityKeystore.keystorePassword.toCharArray
+    )
+    val signer = new CreateSignature(keystore, communityKeystore.keyPassword.toCharArray)
+    try {
+      Using.Manager { use =>
+        val input = use(Files.newInputStream(tempPdfPath))
+        val output = use(Files.newOutputStream(finalPdfPath))
         var tsaUrl: String = null
         if (Configurations.TSA_SERVER_ENABLED) {
           tsaUrl = Configurations.TSA_SERVER_URL
         }
-        signer.signDetached(fis, fos, tsaUrl)
-        fos.flush()
-      } catch {
-        case e: Exception =>
-          throw new IllegalStateException("Unable to generate signed PDF report", e)
-      } finally {
-        if (fos != null) fos.close()
-        if (fis != null) {
-          fis.close()
-          FileUtils.deleteQuietly(pathToUseForPdf.toFile)
-        }
+        signer.signDetached(input, output, tsaUrl)
+        output.flush()
       }
+    } finally {
+      FileUtils.deleteQuietly(tempPdfPath.toFile)
     }
-    reportPath
+    finalPdfPath
   }
 
   def generateTestCaseDocumentationPreviewReport(reportPath: Path, communityId: Long, documentation: String): Path = {
@@ -545,9 +598,7 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
     reportPath
   }
 
-  private def getConformanceDataForOverviewReport(systemId: Long, domainId: Option[Long], groupId: Option[Long], specificationId: Option[Long], snapshotId: Option[Long]): ConformanceData = {
-    // Load conformance data.
-    val conformanceInfoBuilder = conformanceManager.getConformanceStatementsResultBuilder(domainId.map(List(_)), specificationId.map(List(_)), groupId.map(List(_)), None, None, None, Some(List(systemId)), None, None, None, None, snapshotId, prefixSpecificationNameWithGroup = false)
+  private def getConformanceDataForOverviewReport(conformanceInfoBuilder: ConformanceStatusBuilder[ConformanceStatementFull], reportLevel: OverviewLevelType, communityId: Long, actorIdsToDisplay: Option[Set[Long]]): ConformanceData = {
     // The overview is a list of aggregated conformance statements.
     val conformanceOverview = conformanceInfoBuilder.getOverview(None)
     // The details is a list of the detailed conformance results (at test case level).
@@ -601,28 +652,49 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
         testSuite.result = TestResultType.fromValue(testSuite.resultStatus())
       }
     }
-    val conformanceItemTree = conformanceManager.createConformanceItemTree(ConformanceItemTreeData(conformanceOverview, None), withResults = true, testSuiteMapper = Some((statement: ConformanceStatement) => {
+    val conformanceItemTree = conformanceManager.createConformanceItemTree(ConformanceItemTreeData(conformanceOverview, actorIdsToDisplay), withResults = true, testSuiteMapper = Some((statement: ConformanceStatement) => {
       if (actorTestSuiteMap.contains(statement.actorId)) {
         actorTestSuiteMap(statement.actorId).values.toList
       } else {
         List.empty
       }
     }))
-    // Check to see if only one domain can ever apply for the system (in which case it should be hidden).
-    val systemWithFixedDomain = systemManager.getDomainIdForSystemCommunity(systemId).isDefined
+    // Check to see if only one domain can ever apply for the community (in which case it should be hidden).
+    val displayDomainInStatementTree = communityManager.getCommunityDomain(communityId).isEmpty
     // Construct the DTOs expected by the report template.
-    val conformanceItems = toConformanceItems(conformanceItemTree, None, new ReportData(systemWithFixedDomain))
+    val conformanceItems = toConformanceItems(conformanceItemTree, None, new ReportData(!displayDomainInStatementTree))
     // Return results.
     ConformanceData(
+      reportLevel,
       conformanceOverview.headOption.map(_.domainNameFull),
       conformanceOverview.headOption.flatMap(_.specificationGroupNameFull),
       conformanceOverview.headOption.map(_.specificationGroupOptionNameFull),
+      conformanceOverview.headOption.map(_.organizationId),
       conformanceOverview.headOption.map(_.organizationName),
+      conformanceOverview.headOption.map(_.systemId),
       conformanceOverview.headOption.map(_.systemName),
-      displayDomainInStatementTree = !systemWithFixedDomain,
+      displayDomainInStatementTree,
       getOverallConformanceOverviewStatus(conformanceItems),
-      conformanceItems
+      conformanceItems,
+      conformanceItemTree,
+      conformanceOverview
     )
+  }
+
+  private def getConformanceDataForOverviewReport(systemId: Long, domainId: Option[Long], groupId: Option[Long], specificationId: Option[Long], snapshotId: Option[Long], communityId: Long): ConformanceData = {
+    val reportLevel = if (domainId.isDefined) {
+      OverviewLevelType.DomainLevel
+    } else if (groupId.isDefined) {
+      OverviewLevelType.SpecificationGroupLevel
+    } else if (specificationId.isDefined) {
+      OverviewLevelType.SpecificationLevel
+    } else {
+      OverviewLevelType.OrganisationLevel
+    }
+    // Load conformance data.
+    val conformanceInfoBuilder = conformanceManager.getConformanceStatementsResultBuilder(domainId.map(List(_)), specificationId.map(List(_)), groupId.map(List(_)), None, None, None, Some(List(systemId)), None, None, None, None, snapshotId, prefixSpecificationNameWithGroup = false)
+    // Check to see if only one domain can ever apply for the system (in which case it should be hidden).
+    getConformanceDataForOverviewReport(conformanceInfoBuilder, reportLevel, communityId, None)
   }
 
   private def getOverallConformanceOverviewStatus(items: util.List[ConformanceItem]): String = {
@@ -640,7 +712,23 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
     counters.resultStatus()
   }
 
+  def generateConformanceOverviewCertificate(reportPath: Path, settings: Option[ConformanceCertificateInfo], systemId: Long, domainId: Option[Long], groupId: Option[Long], specificationId: Option[Long], communityId: Long, snapshotId: Option[Long]): Path = {
+    val labels = communityLabelManager.getLabels(communityId)
+    val conformanceData = getConformanceDataForOverviewReport(systemId, domainId, groupId, specificationId, snapshotId, communityId)
+    generateConformanceOverviewReport(conformanceData, settings, reportPath, labels, communityId, isDemo = false, snapshotId)
+  }
+
   def generateConformanceOverviewReport(reportPath: Path, systemId: Long, domainId: Option[Long], groupId: Option[Long], specificationId: Option[Long], labels: Map[Short, CommunityLabels], communityId: Long, snapshotId: Option[Long]): Path = {
+    val conformanceData = getConformanceDataForOverviewReport(systemId, domainId, groupId, specificationId, snapshotId, communityId)
+    generateConformanceOverviewReport(conformanceData, None, reportPath, labels, communityId, isDemo = false, snapshotId)
+  }
+
+  private def generateConformanceOverviewReport(conformanceData: ConformanceData, settings: Option[ConformanceCertificateInfo], reportPath: Path, labels: Map[Short, CommunityLabels], communityId: Long, isDemo: Boolean, snapshotId: Option[Long]): Path = {
+    var pathToUseForPdf = if (settings.isDefined && settings.get.includeSignature) {
+      reportPath.resolveSibling(reportPath.getFileName.toString + ".signed.pdf")
+    } else {
+      reportPath
+    }
     val overview = new ConformanceOverview()
     val specs = reportHelper.createReportSpecs(Some(communityId))
     // Labels
@@ -651,45 +739,273 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
     overview.setLabelActor(communityLabelManager.getLabel(labels, models.Enums.LabelType.Actor))
     overview.setLabelOrganisation(communityLabelManager.getLabel(labels, models.Enums.LabelType.Organisation))
     overview.setLabelSystem(communityLabelManager.getLabel(labels, models.Enums.LabelType.System))
-    // Load conformance data.
-    val conformanceData = getConformanceDataForOverviewReport(systemId, domainId, groupId, specificationId, snapshotId)
-    // Set other report info.
-    if (domainId.isDefined || groupId.isDefined || specificationId.isDefined || !conformanceData.displayDomainInStatementTree) {
-      overview.setTestDomain(conformanceData.domainName.getOrElse("-"))
-      if (groupId.isDefined) {
-        overview.setTestSpecificationGroup(conformanceData.groupName.getOrElse("-"))
-      }
-      if (specificationId.isDefined) {
-        overview.setTestSpecification(conformanceData.specificationName.getOrElse("-"))
+    if (conformanceData.reportLevel != OverviewLevelType.OrganisationLevel) {
+      overview.setTestDomain(conformanceData.domainName.orNull)
+      if (conformanceData.reportLevel == OverviewLevelType.SpecificationGroupLevel) {
+        overview.setTestSpecificationGroup(conformanceData.groupName.orNull)
+      } else if (conformanceData.reportLevel == OverviewLevelType.SpecificationLevel) {
+        overview.setTestSpecificationGroup(conformanceData.groupName.orNull)
+        overview.setTestSpecification(conformanceData.specificationName.orNull)
       }
     }
     overview.setTitle("Conformance Overview Report")
     overview.setReportDate(new SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(Calendar.getInstance().getTime))
     overview.setOrganisation(conformanceData.organisationName.getOrElse("-"))
     overview.setSystem(conformanceData.systemName.getOrElse("-"))
-    // TODO from settings - START
-    overview.setIncludeMessage(false)
-    overview.setIncludeDetails(true)
-    overview.setIncludeConformanceItems(true)
-    overview.setIncludeTestCases(true)
-    overview.setIncludePageNumbers(true)
-    overview.setIncludeTestStatus(true)
-    overview.setMessage("")
-    // TODO from settings - END
+    if (settings.isDefined) {
+      overview.setIncludeMessage(settings.get.includeMessage && settings.get.message.isDefined)
+      overview.setIncludeDetails(settings.get.includeDetails)
+      overview.setIncludeConformanceItems(settings.get.includeItems)
+      overview.setIncludeTestCases(settings.get.includeItemDetails)
+      overview.setIncludePageNumbers(settings.get.includePageNumbers)
+      overview.setIncludeTestStatus(settings.get.includeItemStatus)
+      if (overview.getIncludeMessage) {
+        val dataLocator = conformanceData.createLocator()
+        // Replace message placeholders
+        var messageToUse = settings.get.message.get
+        messageToUse = replacePlaceholdersByIndex(messageToUse, dataLocator, PLACEHOLDER_DOMAIN_WITH_INDEX_REGEXP, ConformanceStatementItemType.DOMAIN) // Before we look for domain parameters
+        messageToUse = replacePlaceholdersByIndex(messageToUse, dataLocator, PLACEHOLDER_SPECIFICATION_GROUP_WITH_INDEX_REGEXP, ConformanceStatementItemType.SPECIFICATION_GROUP)
+        messageToUse = replacePlaceholdersByIndex(messageToUse, dataLocator, PLACEHOLDER_SPECIFICATION_GROUP_OPTION_WITH_INDEX_REGEXP, ConformanceStatementItemType.SPECIFICATION)
+        messageToUse = replacePlaceholdersByIndex(messageToUse, dataLocator, PLACEHOLDER_SPECIFICATION_WITH_INDEX_REGEXP, ConformanceStatementItemType.SPECIFICATION)
+        messageToUse = replacePlaceholdersByIndex(messageToUse, dataLocator, PLACEHOLDER_ACTOR_WITH_INDEX_REGEXP, ConformanceStatementItemType.ACTOR)
+        messageToUse = replaceDomainParameters(messageToUse, communityId, snapshotId)
+        messageToUse = replaceOrganisationPropertyPlaceholders(messageToUse, isDemo, communityId, conformanceData.organisationId, snapshotId)
+        messageToUse = replaceSystemPropertyPlaceholders(messageToUse, isDemo, communityId, conformanceData.systemId, snapshotId)
+        messageToUse = replaceSimplePlaceholders(messageToUse, None, conformanceData.specificationName, conformanceData.specificationName, conformanceData.groupName, conformanceData.domainName, conformanceData.organisationName, conformanceData.systemName)
+        messageToUse = replaceBadgeListPlaceholders(messageToUse, isDemo, conformanceData, snapshotId)
+        messageToUse = replaceBadgePlaceholdersByIndex(messageToUse, isDemo, conformanceData, snapshotId)
+        overview.setMessage(messageToUse)
+      }
+    }
     overview.setConformanceItems(conformanceData.conformanceItems)
     overview.setOverallStatus(conformanceData.overallResult)
-    Files.createDirectories(reportPath.getParent)
-    val fos = Files.newOutputStream(reportPath)
-    try {
+    // Create PDF.
+    Files.createDirectories(pathToUseForPdf.getParent)
+    Using(Files.newOutputStream(pathToUseForPdf)) { fos =>
       ReportGenerator.getInstance().writeConformanceOverviewReport(overview, fos, specs)
       fos.flush()
-    } catch {
-      case e: Exception =>
-        throw new IllegalStateException("Unable to generate PDF report", e)
-    } finally {
-      if (fos != null) fos.close()
     }
-    reportPath
+    // Add signature if needed.
+    if (settings.isDefined) {
+      if (settings.get.includeSignature && settings.get.keystore.isDefined) {
+        pathToUseForPdf = signReport(settings.get.keystore.get, pathToUseForPdf, reportPath)
+      }
+    }
+    pathToUseForPdf
+  }
+
+  private def replacePlaceholdersByIndex(message: String, locator: ConformanceDataLocator, pattern: Pattern, itemType: ConformanceStatementItemType): String = {
+    var messageToUse = message
+    val matches = pattern.matcher(message).results().collect(Collectors.toList())
+    // Collect the indexes we are looking for.
+    val indexes = new ListBuffer[Int]()
+    matches.forEach(result => indexes += result.group(2).toInt)
+    if (indexes.nonEmpty) {
+      // Locate the values to use corresponding to the indexes.
+      val valuesToUse = locator.itemTypeNameByIndex(indexes, itemType)
+      matches.forEach(result => {
+        // Replace each indexed placeholder with the relevant value (if found).
+        val valueToUse = valuesToUse.get(result.group(2).toInt)
+        if (valueToUse.isDefined) {
+          messageToUse = messageToUse.replace(result.group(1), valueToUse.get)
+        }
+      })
+    }
+    messageToUse
+  }
+
+  private def replaceDomainParameters(message: String, communityId: Long, snapshotId: Option[Long]): String = {
+    var messageToUse = message
+    if (messageToUse.contains(Constants.PlaceholderDomain+"{")) {
+      // We are referring to domain parameters.
+      if (snapshotId.isEmpty) {
+        domainParameterManager.getDomainParametersByCommunityId(communityId, onlySimple = true, loadValues = true).foreach { param =>
+          messageToUse = messageToUse.replace(Constants.PlaceholderDomain+"{"+param.name+"}", param.value.getOrElse(""))
+        }
+      } else {
+        conformanceManager.getSnapshotDomainParameters(snapshotId.get).foreach { param =>
+          messageToUse = messageToUse.replace(Constants.PlaceholderDomain+"{"+param.paramKey+"}", param.paramValue)
+        }
+      }
+    }
+    messageToUse
+  }
+
+  private def replaceOrganisationPropertyPlaceholders(message: String, isDemo: Boolean, communityId: Long, organisationId: Option[Long], snapshotId: Option[Long]): String = {
+    var messageToUse = message
+    if (messageToUse.contains(Constants.PlaceholderOrganisation+"{")) {
+      // We are referring to organisation parameters.
+      if (isDemo) {
+        communityManager.getOrganisationParameters(communityId, Some(true)).foreach { param =>
+          messageToUse = messageToUse.replace(Constants.PlaceholderOrganisation+"{"+param.testKey+"}", param.testKey)
+        }
+      } else if (organisationId.isDefined) {
+        if (snapshotId.isEmpty) {
+          organizationManager.getOrganisationParameterValues(organisationId.get, Some(true)).foreach { param =>
+            messageToUse = messageToUse.replace(Constants.PlaceholderOrganisation+"{"+param.parameter.testKey+"}", param.value.map(_.value).getOrElse(""))
+          }
+        } else {
+          conformanceManager.getSnapshotOrganisationProperties(snapshotId.get, organisationId.get).foreach { param =>
+            messageToUse = messageToUse.replace(Constants.PlaceholderOrganisation+"{"+param.propertyKey+"}", param.propertyValue)
+          }
+        }
+      }
+    }
+    messageToUse
+  }
+
+  private def replaceSystemPropertyPlaceholders(message: String, isDemo: Boolean, communityId: Long, systemId: Option[Long], snapshotId: Option[Long]): String = {
+    var messageToUse = message
+    if (messageToUse.contains(Constants.PlaceholderSystem+"{")) {
+      // We are referring to system parameters.
+      if (isDemo) {
+        communityManager.getSystemParameters(communityId, Some(true)).foreach { param =>
+          messageToUse = messageToUse.replace(Constants.PlaceholderSystem+"{"+param.testKey+"}", param.testKey)
+        }
+      } else if (systemId.isDefined) {
+        if (snapshotId.isEmpty) {
+          systemManager.getSystemParameterValues(systemId.get, Some(true)).foreach { param =>
+            messageToUse = messageToUse.replace(Constants.PlaceholderSystem+"{"+param.parameter.testKey+"}", param.value.map(_.value).getOrElse(""))
+          }
+        } else {
+          conformanceManager.getSnapshotSystemProperties(snapshotId.get, systemId.get).foreach { param =>
+            messageToUse = messageToUse.replace(Constants.PlaceholderSystem+"{"+param.propertyKey+"}", param.propertyValue)
+          }
+        }
+      }
+    }
+    messageToUse
+  }
+
+  private def replaceSimplePlaceholders(message: String, actor: Option[String], specification: Option[String], option: Option[String], group: Option[String], domain: Option[String], organisation: Option[String], system: Option[String]): String = {
+    var messageToUse = message
+    if (actor.isDefined) messageToUse = messageToUse.replace(Constants.PlaceholderActor, actor.get)
+    if (domain.isDefined) messageToUse = messageToUse.replace(Constants.PlaceholderDomain, domain.get)
+    if (organisation.isDefined) messageToUse = messageToUse.replace(Constants.PlaceholderOrganisation, organisation.get)
+    if (option.isDefined) messageToUse = messageToUse.replace(Constants.PlaceholderSpecificationGroupOption, option.get)
+    if (group.isDefined) messageToUse = messageToUse.replace(Constants.PlaceholderSpecificationGroup, group.get)
+    if (specification.isDefined) messageToUse = messageToUse.replace(Constants.PlaceholderSpecification, specification.get)
+    if (system.isDefined) messageToUse = messageToUse.replace(Constants.PlaceholderSystem, system.get)
+    messageToUse
+  }
+
+  private def getBadgeListPlaceholders(message: String): List[BadgeListPlaceholderInfo] = {
+    val placeholders = new ListBuffer[BadgeListPlaceholderInfo]
+    val matches = PLACEHOLDER_BADGE_LIST_REGEXP.matcher(message).results().collect(Collectors.toList())
+    matches.forEach { result =>
+      placeholders += BadgeListPlaceholderInfo(result.group(1), result.group(2) == "horizontal", Option(result.group(3)).map(_.toInt))
+    }
+    placeholders.toList
+  }
+
+  private def getBadgePlaceholders(message: String, indexedBadges: Boolean): List[BadgePlaceholderInfo] = {
+    val placeholders = new ListBuffer[BadgePlaceholderInfo]
+    if (indexedBadges) {
+      val matches = PLACEHOLDER_BADGE_REGEXP.matcher(message).results().collect(Collectors.toList())
+      matches.forEach { result =>
+        placeholders += BadgePlaceholderInfo(result.group(1), Option(result.group(2)).map(_.toShort), Option(result.group(3)).map(_.toInt))
+      }
+    } else {
+      val matches = PLACEHOLDER_BADGE_WITHOUT_INDEX_REGEXP.matcher(message).results().collect(Collectors.toList())
+      matches.forEach { result =>
+        placeholders += BadgePlaceholderInfo(result.group(1), None, Option(result.group(2)).map(_.toInt))
+      }
+    }
+    placeholders.toList
+  }
+
+  private def replaceBadgePlaceholder(message: String, placeholderInfo: BadgePlaceholderInfo, isDemo: Boolean, specificationId: Option[Long], actorId: Option[Long], snapshotId: Option[Long], status: String, useActualInDemo: Boolean): String = {
+    var messageToUse = message
+    var imagePath: Option[String] = None
+    if (isDemo) {
+      var badge: Option[File] = None
+      if (useActualInDemo && specificationId.isDefined && actorId.isDefined) {
+        badge = repositoryUtils.getConformanceBadge(specificationId.get, actorId, snapshotId, status, exactMatch = false, forReport = true)
+      }
+      if (badge.isEmpty) {
+        imagePath = Some("classpath:reports/images/demo-badge.png")
+      } else {
+        imagePath = Some(badge.get.toURI.toString)
+      }
+    } else if (specificationId.isDefined && actorId.isDefined) {
+      val badge = repositoryUtils.getConformanceBadge(specificationId.get, actorId, snapshotId, status, exactMatch = false, forReport = true)
+      imagePath = badge.map(_.toURI.toString)
+    }
+    if (imagePath.isDefined) {
+      if (placeholderInfo.width.isDefined) {
+        // With specific width.
+        messageToUse = messageToUse.replace(placeholderInfo.placeholder, "<img width=\"%s\" src=\"%s\"/>".formatted(placeholderInfo.width.get, imagePath.get))
+      } else {
+        // With original image width.
+        messageToUse = messageToUse.replace(placeholderInfo.placeholder, "<img src=\"%s\"/>".formatted(imagePath.get))
+      }
+    }
+    messageToUse
+  }
+
+  private def replaceBadgeListPlaceholders(message: String, isDemo: Boolean, data: ConformanceData, snapshotId: Option[Long]): String = {
+    var messageToUse = message
+    val placeholders = getBadgeListPlaceholders(message)
+    val placeholdersToProcess = new ListBuffer[(BadgePlaceholderInfo, ConformanceStatement)]
+    if (data.statements.nonEmpty) {
+      placeholders.foreach { placeholder =>
+        // Additions: 1: before all, 2: before each, 3: after each, 4: after all
+        val additions = if (placeholder.horizontal) {
+          ("<tr>", "", "", "</tr>")
+        } else {
+          ("", "<tr>", "</tr>", "")
+        }
+        val placeholderTable = new StringBuilder()
+        placeholderTable.append("<table>")
+        placeholderTable.append(additions._1)
+        var index = 0
+        data.statements.foreach { statement =>
+          val placeholderText = Constants.PlaceholderBadge+"{"+index+placeholder.width.map("|"+_).getOrElse("")+"}"
+          placeholderTable
+            .append(additions._2)
+            .append("<td>")
+            .append(placeholderText)
+            .append("</td>")
+            .append(additions._3)
+          placeholdersToProcess.addOne((BadgePlaceholderInfo(placeholderText, Some(index.toShort), placeholder.width), statement))
+          index += 1
+        }
+        placeholderTable.append(additions._4)
+        placeholderTable.append("</table>")
+        messageToUse = messageToUse.replace(placeholder.placeholder, placeholderTable)
+      }
+    }
+    placeholdersToProcess.foreach { placeholderInfo =>
+      messageToUse = replaceBadgePlaceholder(messageToUse, placeholderInfo._1, isDemo, Some(placeholderInfo._2.specificationId), Some(placeholderInfo._2.actorId), snapshotId, placeholderInfo._2.result, useActualInDemo = false)
+    }
+    messageToUse
+  }
+
+  private def replaceBadgePlaceholdersByIndex(message: String, isDemo: Boolean, data: ConformanceData, snapshotId: Option[Long]): String = {
+    var messageToUse = message
+    getBadgePlaceholders(message, indexedBadges = true).filter(_.index.isDefined).foreach { indexedPlaceholder =>
+      // Get the statement for the given index.
+      val statement = data.statements.lift(indexedPlaceholder.index.get)
+      if (statement.isDefined) {
+        messageToUse = replaceBadgePlaceholder(messageToUse, indexedPlaceholder, isDemo, Some(statement.get.specificationId), Some(statement.get.actorId), snapshotId, statement.get.result, useActualInDemo = false)
+      } else if (isDemo) {
+        // A conformance statement at the given index was not found. If this is a demo report then replace it with the demo badge.
+        messageToUse = replaceBadgePlaceholder(messageToUse, indexedPlaceholder, isDemo, None, None, snapshotId, data.overallResult, useActualInDemo = false)
+      }
+    }
+    messageToUse
+  }
+
+  private def replaceBadgePlaceholders(message: String, isDemo: Boolean, specificationId: Option[Long], actorId: Option[Long], snapshotId: Option[Long], overallStatus: String): String = {
+    var messageToUse = message
+    val placeholders = getBadgePlaceholders(message, indexedBadges = false)
+    placeholders.filter(p => p.width.isDefined).foreach { placeholderInfo =>
+      messageToUse = replaceBadgePlaceholder(messageToUse, placeholderInfo, isDemo, specificationId, actorId, snapshotId, overallStatus, useActualInDemo = false)
+    }
+    placeholders.filter(p => p.width.isEmpty).foreach { placeholderInfo =>
+      messageToUse = replaceBadgePlaceholder(messageToUse, placeholderInfo, isDemo, specificationId, actorId, snapshotId, overallStatus, useActualInDemo = false)
+    }
+    messageToUse
   }
 
   private def toConformanceItems(items: Iterable[ConformanceStatementItem], parentItem: Option[ConformanceItem], reportData: ReportData): util.List[ConformanceItem] = {
@@ -959,80 +1275,14 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
       overview.setTestSuites(new util.ArrayList[TestSuiteOverview](testMap.values.map(_._1).toList.asJavaCollection))
     }
     overview.setIncludeTestStatus(addTestStatus)
-    // Prepare message
-    var messageToUse:String = null
+    // Replace message placeholders
     if (addMessage && message.isDefined) {
-      messageToUse = message.get
-      // Replace placeholders
-      if (messageToUse.contains(Constants.PlaceholderDomain+"{")) {
-        // We are referring to domain parameters.
-        val parameters = domainParameterManager.getDomainParametersByCommunityId(communityId, onlySimple = true, loadValues = true)
-        parameters.foreach { param =>
-          messageToUse = messageToUse.replace(Constants.PlaceholderDomain+"{"+param.name+"}", param.value.getOrElse(""))
-        }
-      }
-      if (messageToUse.contains(Constants.PlaceholderOrganisation+"{")) {
-        // We are referring to organisation parameters.
-        if (isDemo) {
-          val parameters = communityManager.getOrganisationParameters(communityId, Some(true))
-          parameters.foreach { param =>
-            messageToUse = messageToUse.replace(Constants.PlaceholderOrganisation+"{"+param.testKey+"}", param.testKey)
-          }
-        } else {
-          val parameters = organizationManager.getOrganisationParameterValues(conformanceData.organizationId, Some(true))
-          parameters.foreach { param =>
-            messageToUse = messageToUse.replace(Constants.PlaceholderOrganisation+"{"+param.parameter.testKey+"}", param.value.map(_.value).getOrElse(""))
-          }
-        }
-      }
-      if (messageToUse.contains(Constants.PlaceholderSystem+"{")) {
-        // We are referring to system parameters.
-        if (isDemo) {
-          val parameters = communityManager.getSystemParameters(communityId, Some(true))
-          parameters.foreach { param =>
-            messageToUse = messageToUse.replace(Constants.PlaceholderSystem+"{"+param.testKey+"}", param.testKey)
-          }
-        } else {
-          val parameters = systemManager.getSystemParameterValues(conformanceData.systemId, Some(true))
-          parameters.foreach { param =>
-            messageToUse = messageToUse.replace(Constants.PlaceholderSystem+"{"+param.parameter.testKey+"}", param.value.map(_.value).getOrElse(""))
-          }
-        }
-      }
-      if (messageToUse.contains(Constants.PlaceholderDomain+"{")) {
-        // We are referring to domain parameters.
-        val parameters = domainParameterManager.getDomainParametersByCommunityId(communityId, onlySimple = true, loadValues = true)
-        parameters.foreach { param =>
-          messageToUse = messageToUse.replace("$DOMAIN{"+param.name+"}", param.value.getOrElse(""))
-        }
-      }
-      messageToUse = messageToUse.replace(Constants.PlaceholderActor, overview.getTestActor)
-      messageToUse = messageToUse.replace(Constants.PlaceholderDomain, overview.getTestDomain)
-      messageToUse = messageToUse.replace(Constants.PlaceholderOrganisation, overview.getOrganisation)
-      messageToUse = messageToUse.replace(Constants.PlaceholderSpecificationGroupOption, conformanceData.specificationGroupOptionNameFull)
-      messageToUse = messageToUse.replace(Constants.PlaceholderSpecificationGroup, conformanceData.specificationGroupNameFull.getOrElse(""))
-      messageToUse = messageToUse.replace(Constants.PlaceholderSpecification, overview.getTestSpecification)
-      messageToUse = messageToUse.replace(Constants.PlaceholderSystem, overview.getSystem)
-      // Badges.
-      val badgePlaceholders = BadgePlaceholderInfo.findBadgeDefinitions(messageToUse)
-      badgePlaceholders.foreach { placeholderInfo =>
-        // We have placeholders for badges.
-        val imagePath = if (isDemo) {
-          Some("classpath:reports/images/demo-badge.png")
-        } else {
-          val badge = repositoryUtils.getConformanceBadge(conformanceData.specificationId, Some(conformanceData.actorId), snapshotId, overview.getOverallStatus, exactMatch = false, forReport = true)
-          badge.map(_.toURI.toString)
-        }
-        if (imagePath.isDefined) {
-          if (placeholderInfo.width.isDefined) {
-            // With specific width.
-            messageToUse = messageToUse.replace(placeholderInfo.placeholder, "<img width=\"%s\" src=\"%s\"/>".formatted(placeholderInfo.width.get, imagePath.get))
-          } else {
-            // With original image width.
-            messageToUse = messageToUse.replace(placeholderInfo.placeholder, "<img src=\"%s\"/>".formatted(imagePath.get))
-          }
-        }
-      }
+      var messageToUse = message.get
+      messageToUse = replaceDomainParameters(messageToUse, communityId, snapshotId)
+      messageToUse = replaceOrganisationPropertyPlaceholders(messageToUse, isDemo, communityId, Some(conformanceData.organizationId), snapshotId)
+      messageToUse = replaceSystemPropertyPlaceholders(messageToUse, isDemo, communityId, Some(conformanceData.systemId), snapshotId)
+      messageToUse = replaceSimplePlaceholders(messageToUse, Some(conformanceData.actorFull), Some(conformanceData.specificationNameFull), Some(conformanceData.specificationGroupOptionNameFull), conformanceData.specificationGroupNameFull, Some(conformanceData.domainNameFull), Some(conformanceData.organizationName), Some(conformanceData.systemName))
+      messageToUse = replaceBadgePlaceholders(messageToUse, isDemo, Some(conformanceData.specificationId), Some(conformanceData.actorId), snapshotId, overview.getOverallStatus)
       overview.setMessage(messageToUse)
     }
     Files.createDirectories(reportPath.getParent)

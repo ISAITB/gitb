@@ -1,7 +1,7 @@
 package persistence.db
 
 import models._
-import models.snapshot.{ConformanceSnapshot, ConformanceSnapshotActor, ConformanceSnapshotDomain, ConformanceSnapshotOrganisation, ConformanceSnapshotResult, ConformanceSnapshotSpecification, ConformanceSnapshotSpecificationGroup, ConformanceSnapshotSystem, ConformanceSnapshotTestCase, ConformanceSnapshotTestSuite}
+import models.snapshot.{ConformanceSnapshot, ConformanceSnapshotActor, ConformanceSnapshotCertificateMessage, ConformanceSnapshotDomain, ConformanceSnapshotDomainParameter, ConformanceSnapshotOrganisation, ConformanceSnapshotOrganisationProperty, ConformanceSnapshotOverviewCertificateMessage, ConformanceSnapshotResult, ConformanceSnapshotSpecification, ConformanceSnapshotSpecificationGroup, ConformanceSnapshotSystem, ConformanceSnapshotSystemProperty, ConformanceSnapshotTestCase, ConformanceSnapshotTestSuite}
 import models.theme.Theme
 import slick.collection.heterogeneous.HNil
 import slick.jdbc.MySQLProfile.api._
@@ -471,7 +471,7 @@ object PersistenceSchema {
   val errorTemplates = TableQuery[ErrorTemplatesTable]
   val insertErrorTemplate = errorTemplates returning errorTemplates.map(_.id)
 
-  class ConformanceCertificatesTable(tag: Tag) extends Table[ConformanceCertificates](tag, "ConformanceCertificates") {
+  class ConformanceCertificatesTable(tag: Tag) extends Table[ConformanceCertificate](tag, "ConformanceCertificates") {
     def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
     def title = column[Option[String]]("title", O.SqlType("TEXT"))
     def message = column[Option[String]]("message", O.SqlType("TEXT"))
@@ -482,15 +482,58 @@ object PersistenceSchema {
     def includeDetails = column[Boolean]("include_details")
     def includeSignature = column[Boolean]("include_signature")
     def includePageNumbers = column[Boolean]("include_page_numbers")
-    def keystoreFile = column[Option[String]]("keystore_file", O.SqlType("MEDIUMBLOB"))
-    def keystoreType = column[Option[String]]("keystore_type", O.SqlType("TEXT"))
-    def keystorePassword = column[Option[String]]("keystore_pass", O.SqlType("TEXT"))
-    def keyPassword = column[Option[String]]("key_pass", O.SqlType("TEXT"))
     def community = column[Long]("community")
-    def * = (id, title, message, includeTitle, includeMessage, includeTestStatus, includeTestCases, includeDetails, includeSignature, includePageNumbers, keystoreFile, keystoreType, keystorePassword, keyPassword, community) <> (ConformanceCertificates.tupled, ConformanceCertificates.unapply)
+    def * = (id, title, includeTitle, includeMessage, includeTestStatus, includeTestCases, includeDetails, includeSignature, includePageNumbers, message, community) <> (ConformanceCertificate.tupled, ConformanceCertificate.unapply)
   }
   val conformanceCertificates = TableQuery[ConformanceCertificatesTable]
   val insertConformanceCertificate = conformanceCertificates returning conformanceCertificates.map(_.id)
+
+  class CommunityKeystoresTable(tag: Tag) extends Table[CommunityKeystore](tag, "CommunityKeystores") {
+    def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
+    def keystoreFile = column[String]("keystore_file", O.SqlType("MEDIUMBLOB"))
+    def keystoreType = column[String]("keystore_type", O.SqlType("TEXT"))
+    def keystorePassword = column[String]("keystore_pass", O.SqlType("TEXT"))
+    def keyPassword = column[String]("key_pass", O.SqlType("TEXT"))
+    def community = column[Long]("community")
+    def * = (id, keystoreFile, keystoreType, keystorePassword, keyPassword, community) <> (CommunityKeystore.tupled, CommunityKeystore.unapply)
+  }
+  val communityKeystores = TableQuery[CommunityKeystoresTable]
+  val insertCommunityKeystore = communityKeystores returning communityKeystores.map(_.id)
+
+  class ConformanceOverviewCertificatesTable(tag: Tag) extends Table[ConformanceOverviewCertificate](tag, "ConformanceOverviewCertificates") {
+    def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
+    def title = column[Option[String]]("title", O.SqlType("TEXT"))
+    def includeTitle = column[Boolean]("include_title")
+    def includeMessage = column[Boolean]("include_message")
+    def includeStatementStatus = column[Boolean]("include_statement_status")
+    def includeStatements = column[Boolean]("include_statements")
+    def includeStatementDetails = column[Boolean]("include_statement_details")
+    def includeDetails = column[Boolean]("include_details")
+    def includeSignature = column[Boolean]("include_signature")
+    def includePageNumbers = column[Boolean]("include_page_numbers")
+    def enableAllLevel = column[Boolean]("enable_all")
+    def enableDomainLevel = column[Boolean]("enable_domain")
+    def enableGroupLevel = column[Boolean]("enable_group")
+    def enableSpecificationLevel = column[Boolean]("enable_specification")
+    def community = column[Long]("community")
+    def * = (id :: title :: includeTitle :: includeMessage :: includeStatementStatus :: includeStatements :: includeStatementDetails :: includeDetails :: includeSignature :: includePageNumbers :: enableAllLevel :: enableDomainLevel :: enableGroupLevel :: enableSpecificationLevel :: community :: HNil).mapTo[ConformanceOverviewCertificate]
+  }
+  val conformanceOverviewCertificates = TableQuery[ConformanceOverviewCertificatesTable]
+  val insertConformanceOverviewCertificate = conformanceOverviewCertificates returning conformanceOverviewCertificates.map(_.id)
+
+  class ConformanceOverviewCertificateMessagesTable(tag: Tag) extends Table[ConformanceOverviewCertificateMessage](tag, "ConformanceOverviewCertificateMessages") {
+    def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
+    def message = column[String]("message", O.SqlType("TEXT"))
+    def messageType = column[Short]("message_type")
+    def domain = column[Option[Long]]("domain_id")
+    def group = column[Option[Long]]("group_id")
+    def specification = column[Option[Long]]("specification_id")
+    def actor = column[Option[Long]]("actor_id")
+    def community = column[Long]("community_id")
+    def * = (id, messageType, message, domain, group, specification, actor, community) <> (ConformanceOverviewCertificateMessage.tupled, ConformanceOverviewCertificateMessage.unapply)
+  }
+  val conformanceOverviewCertificateMessages = TableQuery[ConformanceOverviewCertificateMessagesTable]
+  val insertConformanceOverviewCertificateMessage = conformanceOverviewCertificateMessages returning conformanceOverviewCertificateMessages.map(_.id)
 
   class OrganisationParametersTable(tag: Tag) extends Table[OrganisationParameters](tag, "OrganisationParameters") {
     def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
@@ -748,6 +791,53 @@ object PersistenceSchema {
   }
   val conformanceSnapshotOrganisations = TableQuery[ConformanceSnapshotOrganisationsTable]
 
+  class ConformanceSnapshotDomainParameterTable(tag: Tag) extends Table[ConformanceSnapshotDomainParameter](tag, "conformancesnapshotdomainparams") {
+    def domainId = column[Long]("domain_id")
+    def paramKey = column[String]("param_key")
+    def paramValue = column[String]("param_value")
+    def snapshotId = column[Long]("snapshot_id")
+    def * = (domainId :: paramKey :: paramValue :: snapshotId :: HNil).mapTo[ConformanceSnapshotDomainParameter]
+  }
+  val conformanceSnapshotDomainParameters = TableQuery[ConformanceSnapshotDomainParameterTable]
+
+  class ConformanceSnapshotOrganisationPropertyTable(tag: Tag) extends Table[ConformanceSnapshotOrganisationProperty](tag, "conformancesnapshotorgparams") {
+    def organisationId = column[Long]("org_id")
+    def propertyKey = column[String]("param_key")
+    def propertyValue = column[String]("param_value")
+    def snapshotId = column[Long]("snapshot_id")
+    def * = (organisationId :: propertyKey :: propertyValue :: snapshotId :: HNil).mapTo[ConformanceSnapshotOrganisationProperty]
+  }
+  val conformanceSnapshotOrganisationProperties = TableQuery[ConformanceSnapshotOrganisationPropertyTable]
+
+  class ConformanceSnapshotSystemPropertyTable(tag: Tag) extends Table[ConformanceSnapshotSystemProperty](tag, "conformancesnapshotsysparams") {
+    def systemId = column[Long]("sys_id")
+    def propertyKey = column[String]("param_key")
+    def propertyValue = column[String]("param_value")
+    def snapshotId = column[Long]("snapshot_id")
+    def * = (systemId :: propertyKey :: propertyValue :: snapshotId :: HNil).mapTo[ConformanceSnapshotSystemProperty]
+  }
+  val conformanceSnapshotSystemProperties = TableQuery[ConformanceSnapshotSystemPropertyTable]
+
+  class ConformanceSnapshotCertificateMessageTable(tag: Tag) extends Table[ConformanceSnapshotCertificateMessage](tag, "conformancesnapshotcertificatemessages") {
+    def message = column[String]("message")
+    def snapshotId = column[Long]("snapshot_id")
+    def * = (message :: snapshotId :: HNil).mapTo[ConformanceSnapshotCertificateMessage]
+  }
+  val conformanceSnapshotCertificateMessages = TableQuery[ConformanceSnapshotCertificateMessageTable]
+
+  class ConformanceSnapshotOverviewCertificateMessageTable(tag: Tag) extends Table[ConformanceSnapshotOverviewCertificateMessage](tag, "conformancesnapshotoverviewcertificatemessages") {
+    def id = column[Long]("id")
+    def message = column[String]("message")
+    def messageType = column[Short]("message_type")
+    def domainId = column[Option[Long]]("domain_id")
+    def groupId = column[Option[Long]]("group_id")
+    def specificationId = column[Option[Long]]("specification_id")
+    def actorId = column[Option[Long]]("actor_id")
+    def snapshotId = column[Long]("snapshot_id")
+    def * = (id :: message :: messageType:: domainId :: groupId :: specificationId:: actorId :: snapshotId :: HNil).mapTo[ConformanceSnapshotOverviewCertificateMessage]
+  }
+  val conformanceSnapshotOverviewCertificateMessages = TableQuery[ConformanceSnapshotOverviewCertificateMessageTable]
+
   class ThemesTable(tag: Tag) extends Table[Theme](tag, "Themes") {
     def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
     def key = column[String] ("theme_key")
@@ -773,7 +863,6 @@ object PersistenceSchema {
     def faviconPath = column[String] ("favicon_path")
     def * = (id :: key :: description :: active :: custom :: separatorTitleColor :: modalTitleColor :: tableTitleColor :: cardTitleColor :: pageTitleColor :: headingColor :: tabLinkColor :: footerTextColor :: headerBackgroundColor :: headerBorderColor :: headerSeparatorColor :: headerLogoPath :: footerBackgroundColor :: footerBorderColor :: footerLogoPath :: footerLogoDisplay :: faviconPath :: HNil).mapTo[Theme]
   }
-
   val themes = TableQuery[ThemesTable]
   val insertTheme = themes returning themes.map(_.id)
 
@@ -783,7 +872,6 @@ object PersistenceSchema {
     def importTime = column[Timestamp]("import_time", O.SqlType("TIMESTAMP"))
     def * = (id :: hash :: importTime :: HNil).mapTo[ProcessedArchive]
   }
-
   val processedArchives = TableQuery[ProcessedArchivesTable]
   val insertProcessedArchive = processedArchives returning processedArchives.map(_.id)
 

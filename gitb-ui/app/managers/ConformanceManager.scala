@@ -5,7 +5,7 @@ import config.Configurations
 import managers.ConformanceManager._
 import models.Enums.{ConformanceStatementItemType, OrganizationType}
 import models._
-import models.snapshot.{ConformanceSnapshot, ConformanceSnapshotActor, ConformanceSnapshotDomain, ConformanceSnapshotOrganisation, ConformanceSnapshotResult, ConformanceSnapshotSpecification, ConformanceSnapshotSpecificationGroup, ConformanceSnapshotSystem, ConformanceSnapshotTestCase, ConformanceSnapshotTestSuite}
+import models.snapshot._
 import models.statement.{ConformanceItemTreeData, ConformanceStatementResults}
 import org.apache.commons.lang3.StringUtils
 import persistence.db.PersistenceSchema
@@ -106,7 +106,7 @@ object ConformanceManager {
 }
 
 @Singleton
-class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils, systemManager: SystemManager, endpointManager: EndPointManager, parameterManager: ParameterManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils, domainParameterManager: DomainParameterManager, systemManager: SystemManager, endpointManager: EndPointManager, parameterManager: ParameterManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
 	import dbConfig.profile.api._
 
@@ -1068,6 +1068,8 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils, systemManag
 				}
 				toDBIO(dbActions)
 			}
+			// Copy conformance and conformance overview certificate settings
+			_ <- copyConformanceCertificateSettingsToSnapshot(snapshotId, communityId)
 			// Copy badges
 			_ <- {
 				onSuccessCalls += (() => {
@@ -1080,6 +1082,44 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils, systemManag
 		} yield snapshotId
 		val snapshotId = exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
 		ConformanceSnapshot(snapshotId, label, publicLabel, snapshotTime, apiKey, isPublic, communityId)
+	}
+
+	private def includesParameterPlaceholder(message: Option[String], messages: Iterable[ConformanceOverviewCertificateMessage], placeholderPrefix: String): Boolean = {
+		(message.isDefined && message.get.contains(placeholderPrefix)) || (messages.nonEmpty && messages.exists(_.message.contains(placeholderPrefix)))
+	}
+
+	private def copyConformanceCertificateSettingsToSnapshot(snapshotId: Long, communityId: Long): DBIO[_] = {
+		for {
+			messageForStatementCertificates <- PersistenceSchema.conformanceCertificates.filter(_.community === communityId).filter(_.includeMessage === true).map(_.message).result.headOption
+			messagesForOverviewCertificates <- PersistenceSchema.conformanceOverviewCertificateMessages.filter(_.community === communityId).result
+			_ <- {
+				val dbActions = new ListBuffer[DBIO[_]]
+				val messageForStatementCertificatesToCheck = messageForStatementCertificates.flatten
+				if (messageForStatementCertificatesToCheck.isDefined || messagesForOverviewCertificates.nonEmpty) {
+					// We might have references to domain/org/sys parameters in messages - copy them to the snapshot
+					if (includesParameterPlaceholder(messageForStatementCertificatesToCheck, messagesForOverviewCertificates, Constants.PlaceholderDomain+"{")) {
+						dbActions += createSnapshotDomainParameterValues(communityId, snapshotId)
+					}
+					if (includesParameterPlaceholder(messageForStatementCertificatesToCheck, messagesForOverviewCertificates, Constants.PlaceholderOrganisation+"{")) {
+						dbActions += createSnapshotOrganisationParameterValues(communityId, snapshotId)
+					}
+					if (includesParameterPlaceholder(messageForStatementCertificatesToCheck, messagesForOverviewCertificates, Constants.PlaceholderSystem+"{")) {
+						dbActions += createSnapshotSystemParameterValues(communityId, snapshotId)
+					}
+					if (messageForStatementCertificatesToCheck.isDefined) {
+						dbActions += (PersistenceSchema.conformanceSnapshotCertificateMessages += ConformanceSnapshotCertificateMessage(messageForStatementCertificates.get.get, snapshotId))
+					}
+					if (messagesForOverviewCertificates.nonEmpty) {
+						messagesForOverviewCertificates.foreach { message =>
+							dbActions += (PersistenceSchema.conformanceSnapshotOverviewCertificateMessages += ConformanceSnapshotOverviewCertificateMessage(
+								0L, message.message, message.messageType, message.domain, message.group, message.specification, message.actor, snapshotId
+							))
+						}
+					}
+				}
+				toDBIO(dbActions)
+			}
+		} yield ()
 	}
 
 	private def addIfNotProcessed(processedSet: mutable.HashSet[Long], id: Long, action: () => DBIO[Any]) = {
@@ -1164,6 +1204,11 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils, systemManag
 			_ <- PersistenceSchema.conformanceSnapshotDomains.filter(_.snapshotId === snapshot).delete
 			_ <- PersistenceSchema.conformanceSnapshotSystems.filter(_.snapshotId === snapshot).delete
 			_ <- PersistenceSchema.conformanceSnapshotOrganisations.filter(_.snapshotId === snapshot).delete
+			_ <- PersistenceSchema.conformanceSnapshotDomainParameters.filter(_.snapshotId === snapshot).delete
+			_ <- PersistenceSchema.conformanceSnapshotOrganisationProperties.filter(_.snapshotId === snapshot).delete
+			_ <- PersistenceSchema.conformanceSnapshotSystemProperties.filter(_.snapshotId === snapshot).delete
+			_ <- PersistenceSchema.conformanceSnapshotCertificateMessages.filter(_.snapshotId === snapshot).delete
+			_ <- PersistenceSchema.conformanceSnapshotOverviewCertificateMessages.filter(_.snapshotId === snapshot).delete
 			// Delete snapshot.
 			_ <- PersistenceSchema.conformanceSnapshots.filter(_.id === snapshot).delete
 			// Delete badges.
@@ -1290,6 +1335,73 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils, systemManag
 		} else {
 			None
 		}
+	}
+
+	def getSnapshotDomainParameters(snapshotId: Long): Iterable[ConformanceSnapshotDomainParameter] = {
+		exec(PersistenceSchema.conformanceSnapshotDomainParameters.filter(_.snapshotId === snapshotId).result)
+	}
+
+	def getSnapshotOrganisationProperties(snapshotId: Long, organisationId: Long): Iterable[ConformanceSnapshotOrganisationProperty] = {
+		exec(PersistenceSchema.conformanceSnapshotOrganisationProperties.filter(_.snapshotId === snapshotId).filter(_.organisationId === organisationId).result)
+	}
+
+	def getSnapshotSystemProperties(snapshotId: Long, systemId: Long): Iterable[ConformanceSnapshotSystemProperty] = {
+		exec(PersistenceSchema.conformanceSnapshotSystemProperties.filter(_.snapshotId === snapshotId).filter(_.systemId === systemId).result)
+	}
+
+	private def createSnapshotDomainParameterValues(communityId: Long, snapshotId: Long): DBIO[_] = {
+		for {
+			params <- domainParameterManager.getDomainParametersByCommunityIdInternal(communityId, onlySimple = true, loadValues = true)
+			_ <- {
+				val actions = ListBuffer[DBIO[_]]()
+				params.foreach { param =>
+					if (param.value.isDefined) {
+						actions += (PersistenceSchema.conformanceSnapshotDomainParameters += ConformanceSnapshotDomainParameter(
+							param.domain, param.name, param.value.get, snapshotId
+						))
+					}
+				}
+				toDBIO(actions)
+			}
+		} yield ()
+	}
+
+	private def createSnapshotOrganisationParameterValues(communityId: Long, snapshotId: Long): DBIO[_] = {
+		for {
+			properties <- PersistenceSchema.organisationParameterValues
+				.join(PersistenceSchema.organisationParameters).on(_.parameter === _.id)
+				.filter(_._2.community === communityId)
+				.filter(_._2.kind === "SIMPLE")
+				.result
+			_ <- {
+				val actions = ListBuffer[DBIO[_]]()
+				properties.foreach { property =>
+					actions += (PersistenceSchema.conformanceSnapshotOrganisationProperties += ConformanceSnapshotOrganisationProperty(
+						property._1.organisation, property._2.testKey, property._1.value, snapshotId
+					))
+				}
+				toDBIO(actions)
+			}
+		} yield ()
+	}
+
+	private def createSnapshotSystemParameterValues(communityId: Long, snapshotId: Long): DBIO[_] = {
+		for {
+			properties <- PersistenceSchema.systemParameterValues
+				.join(PersistenceSchema.systemParameters).on(_.parameter === _.id)
+				.filter(_._2.community === communityId)
+				.filter(_._2.kind === "SIMPLE")
+				.result
+			_ <- {
+				val actions = ListBuffer[DBIO[_]]()
+				properties.foreach { property =>
+					actions += (PersistenceSchema.conformanceSnapshotSystemProperties += ConformanceSnapshotSystemProperty(
+						property._1.system, property._2.testKey, property._1.value, snapshotId
+					))
+				}
+				toDBIO(actions)
+			}
+		} yield ()
 	}
 
 }

@@ -74,6 +74,7 @@ GET	    /api/actorDomain/:actor_id              @controllers.ConformanceService.
 GET	    /api/specDomain                         @controllers.ConformanceService.getDomainOfSpecification(spec_id: Long)
 GET	    /api/domains                            @controllers.ConformanceService.getDomains()
 GET	    /api/domains/community                  @controllers.ConformanceService.getCommunityDomain()
+GET	    /api/applicabledomains/community        @controllers.ConformanceService.getCommunityDomains()
 POST    /api/domains/conformance                @controllers.ConformanceService.getConformanceOverview()
 POST    /api/domains/conformance/snapshot       @controllers.ConformanceService.createConformanceSnapshot()
 GET     /api/domains/conformance/snapshot       @controllers.ConformanceService.getConformanceSnapshots()
@@ -312,10 +313,16 @@ POST    /api/reports/create                     @controllers.ReportService.creat
 GET     /api/reports/:session_id/steps          @controllers.ReportService.getTestStepResults(session_id:String)
 
 # Conformance certificate API
-GET     /api/conformancecertificate             @controllers.ConformanceService.getConformanceCertificateSettings(community_id: Long)
-POST    /api/conformancecertificate             @controllers.ConformanceService.updateConformanceCertificateSettings(community_id: Long)
-POST    /api/conformancecertificate/test        @controllers.ConformanceService.testKeystoreSettings(community_id: Long)
-GET     /api/conformancecertificate/download    @controllers.ConformanceService.downloadConformanceCertificateKeystore(community_id: Long)
+GET     /api/community/:community_id/certificatesettings          @controllers.ConformanceService.getConformanceCertificateSettings(community_id: Long)
+POST    /api/community/:community_id/certificatesettings          @controllers.ConformanceService.updateConformanceCertificateSettings(community_id: Long)
+GET     /api/community/:community_id/certificateoverviewsettings  @controllers.ConformanceService.getConformanceOverviewCertificateSettings(community_id: Long)
+POST    /api/community/:community_id/certificateoverviewsettings  @controllers.ConformanceService.updateConformanceOverviewCertificateSettings(community_id: Long)
+
+POST    /api/community/:community_id/keystore             @controllers.ConformanceService.saveCommunityKeystore(community_id: Long)
+POST    /api/community/:community_id/keystore/test        @controllers.ConformanceService.testCommunityKeystore(community_id: Long)
+GET     /api/community/:community_id/keystore/download    @controllers.ConformanceService.downloadCommunityKeystore(community_id: Long)
+GET     /api/community/:community_id/keystore             @controllers.ConformanceService.getCommunityKeystoreInfo(community_id: Long)
+DELETE  /api/community/:community_id/keystore             @controllers.ConformanceService.deleteCommunityKeystore(community_id: Long)
 
 # Repository file serving and management API
 GET     /api/repository/tests/:test_id/definition               @controllers.RepositoryService.getTestCaseDefinition(test_id:String)
@@ -331,8 +338,11 @@ GET     /api/repository/export/teststep/:session_id/*path       @controllers.Rep
 GET     /api/repository/export/conformance                      @controllers.RepositoryService.exportConformanceStatementReport()
 GET     /api/repository/export/conformanceoverview              @controllers.RepositoryService.exportConformanceOverviewReport()
 POST    /api/repository/export/certificatedemo                  @controllers.RepositoryService.exportDemoConformanceCertificateReport(community_id: Long)
+POST    /api/repository/export/certificateoverviewdemo          @controllers.RepositoryService.exportDemoConformanceOverviewCertificateReport(community_id: Long)
 POST    /api/repository/export/certificate                      @controllers.RepositoryService.exportConformanceCertificateReport()
 POST    /api/repository/exportOwn/certificate                   @controllers.RepositoryService.exportOwnConformanceCertificateReport()
+POST    /api/repository/export/certificateoverview              @controllers.RepositoryService.exportConformanceOverviewCertificateReport()
+POST    /api/repository/exportOwn/certificateoverview           @controllers.RepositoryService.exportOwnConformanceOverviewCertificateReport()
 GET     /api/repository/resource/:test_id/*file                 @controllers.RepositoryService.getTestSuiteResource(test_id: String, file: String)
 
 POST    /api/communities/export/:id                             @controllers.RepositoryService.exportCommunity(id: Long)

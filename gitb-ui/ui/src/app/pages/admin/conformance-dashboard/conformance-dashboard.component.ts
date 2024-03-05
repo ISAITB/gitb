@@ -272,9 +272,9 @@ export class ConformanceDashboardComponent implements OnInit {
     }
 		if (this.settings == undefined) {
       statementToProcess.exportPending = true
-			this.conformanceService.getConformanceCertificateSettings(statementToProcess.communityId, false)
+			this.conformanceService.getConformanceCertificateSettings(statementToProcess.communityId)
       .subscribe((settings) => {
-				if (settings != undefined && settings.id != undefined) {
+				if (settings) {
 					this.settings = settings
         } else {
 					this.settings = {}

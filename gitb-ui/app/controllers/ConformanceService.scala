@@ -1,7 +1,7 @@
 package controllers
 
 import config.Configurations
-import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, RequestWithAttributes, ResponseConstructor}
+import controllers.util.{Parameters, _}
 import exceptions.{ErrorCodes, NotFoundException}
 import managers._
 import models.Enums.TestSuiteReplacementChoice.{PROCEED, TestSuiteReplacementChoice}
@@ -63,6 +63,24 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
     } else {
       ResponseConstructor.constructEmptyResponse
     }
+  }
+
+  /**
+   * Gets the applicable domains for the given community (a specific domain or all domains).
+   */
+  def getCommunityDomains: Action[AnyContent] = authorizedAction { request =>
+    val communityId = ParameterExtractor.requiredQueryParameter(request, Parameters.COMMUNITY_ID).toLong
+    authorizationManager.canViewDomainByCommunityId(request, communityId)
+    val communityDomain = domainManager.getCommunityDomain(communityId)
+    var linkedDomain: Option[Long] = None
+    val domains = if (communityDomain.isDefined) {
+      linkedDomain = Some(communityDomain.get.id)
+      List(communityDomain.get)
+    } else {
+      domainManager.getDomains(None)
+    }
+    val json = JsonUtil.jsCommunityDomains(domains, linkedDomain).toString()
+    ResponseConstructor.constructJsonResponse(json)
   }
 
   /**
@@ -667,13 +685,19 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
     ResponseConstructor.constructEmptyResponse
   }
 
-  def downloadConformanceCertificateKeystore(communityId: Long): Action[AnyContent] = authorizedAction { request =>
+  def deleteCommunityKeystore(communityId: Long): Action[AnyContent] = authorizedAction { request =>
     authorizationManager.canViewConformanceCertificateSettings(request, communityId)
-    val settings = communityManager.getConformanceCertificateSettingsWrapper(communityId, defaultIfMissing = false)
-    if (settings.isDefined && settings.get.keystoreFile.isDefined) {
+    communityManager.deleteCommunityKeystore(communityId)
+    ResponseConstructor.constructEmptyResponse
+  }
+
+  def downloadCommunityKeystore(communityId: Long): Action[AnyContent] = authorizedAction { request =>
+    authorizationManager.canViewConformanceCertificateSettings(request, communityId)
+    val keystoreInfo = communityManager.getCommunityKeystore(communityId, decryptKeys = false)
+    if (keystoreInfo.isDefined) {
       val tempFile = Files.createTempFile("itb", "store")
       try {
-        Files.write(tempFile, Base64.decodeBase64(MimeUtil.getBase64FromDataURL(settings.get.keystoreFile.get)))
+        Files.write(tempFile, Base64.decodeBase64(MimeUtil.getBase64FromDataURL(keystoreInfo.get.keystoreFile)))
       } catch {
         case e:Exception =>
           FileUtils.deleteQuietly(tempFile.toFile)
@@ -689,13 +713,33 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
     }
   }
 
+  def getCommunityKeystoreInfo(communityId: Long): Action[AnyContent] = authorizedAction { request =>
+    authorizationManager.canViewConformanceCertificateSettings(request, communityId)
+    val storedKeystoreType = communityManager.getCommunityKeystoreType(communityId)
+    if (storedKeystoreType.isDefined) {
+      ResponseConstructor.constructJsonResponse(JsonUtil.jsCommunityKeystore(storedKeystoreType.get).toString())
+    } else {
+      ResponseConstructor.constructEmptyResponse
+    }
+  }
+
   def getConformanceCertificateSettings(communityId: Long): Action[AnyContent] = authorizedAction { request =>
     authorizationManager.canViewConformanceCertificateSettings(request, communityId)
-    val settings = communityManager.getConformanceCertificateSettingsWrapper(communityId, defaultIfMissing = true)
-    val includeKeystoreData = ParameterExtractor.optionalQueryParameter(request, Parameters.INCLUDE_KEYSTORE_DATA).getOrElse("false").toBoolean
-    val json = JsonUtil.jsConformanceSettings(settings, includeKeystoreData)
-    if (json.isDefined) {
-      ResponseConstructor.constructJsonResponse(json.get.toString)
+    val settings = communityManager.getConformanceCertificateSettingsWrapper(communityId, defaultIfMissing = true, None)
+    if (settings.isDefined) {
+      val json = JsonUtil.jsConformanceSettings(settings.get)
+      ResponseConstructor.constructJsonResponse(json.toString)
+    } else {
+      ResponseConstructor.constructEmptyResponse
+    }
+  }
+
+  def getConformanceOverviewCertificateSettings(communityId: Long): Action[AnyContent] = authorizedAction { request =>
+    authorizationManager.canViewConformanceCertificateSettings(request, communityId)
+    val settings = communityManager.getConformanceOverviewCertificateSettingsWrapper(communityId, defaultIfMissing = true, None)
+    if (settings.isDefined) {
+      val json = JsonUtil.jsConformanceOverviewSettings(settings.get)
+      ResponseConstructor.constructJsonResponse(json.toString)
     } else {
       ResponseConstructor.constructEmptyResponse
     }
@@ -703,10 +747,26 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
 
   def updateConformanceCertificateSettings(communityId: Long): Action[AnyContent] = authorizedAction { request =>
     authorizationManager.canUpdateConformanceCertificateSettings(request, communityId)
+    val jsSettings = ParameterExtractor.requiredBodyParameter(request, Parameters.SETTINGS)
+    val settings = JsonUtil.parseJsConformanceCertificateSettings(jsSettings, communityId)
+    communityManager.updateConformanceCertificateSettings(settings)
+    ResponseConstructor.constructEmptyResponse
+  }
+
+  def updateConformanceOverviewCertificateSettings(communityId: Long): Action[AnyContent] = authorizedAction { request =>
+    authorizationManager.canUpdateConformanceCertificateSettings(request, communityId)
+    val jsSettings = ParameterExtractor.requiredBodyParameter(request, Parameters.SETTINGS)
+    val settings = JsonUtil.parseJsConformanceOverviewCertificateWithMessages(jsSettings, communityId)
+    communityManager.updateConformanceOverviewCertificateSettings(settings)
+    ResponseConstructor.constructEmptyResponse
+  }
+
+  def saveCommunityKeystore(communityId: Long): Action[AnyContent] = authorizedAction { request =>
+    authorizationManager.canUpdateConformanceCertificateSettings(request, communityId)
     try {
+      var response: Result = null
       val paramMap = ParameterExtractor.paramMap(request)
       val files = ParameterExtractor.extractFiles(request)
-      var response: Result = null
       var keystoreData: Option[String] = None
       if (files.contains(Parameters.FILE)) {
         if (Configurations.ANTIVIRUS_SERVER_ENABLED) {
@@ -721,11 +781,10 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
         }
       }
       if (response == null) {
-        val jsSettings = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.SETTINGS)
-        val removeKeystore = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.REMOVE_KEYSTORE).toBoolean
-        val updatePasswords = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.UPDATE_PASSWORDS).toBoolean
-        val settings = JsonUtil.parseJsConformanceCertificateSettings(jsSettings, communityId, keystoreData)
-        communityManager.updateConformanceCertificateSettings(settings, updatePasswords, removeKeystore)
+        val keystorePassword = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.KEYSTORE_PASS)
+        val keyPassword = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.KEY_PASS)
+        val keystoreType = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.TYPE)
+        communityManager.saveCommunityKeystore(communityId, keystoreType, keystoreData, keyPassword, keystorePassword)
         response = ResponseConstructor.constructEmptyResponse
       }
       response
@@ -734,7 +793,7 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
     }
   }
 
-  def testKeystoreSettings(communityId: Long): Action[AnyContent] = authorizedAction { request =>
+  def testCommunityKeystore(communityId: Long): Action[AnyContent] = authorizedAction { request =>
     var keystoreFile: Option[File] = None
     try {
       authorizationManager.canUpdateConformanceCertificateSettings(request, communityId)
@@ -752,89 +811,80 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
         }
       }
       if (response == null) {
-        val jsSettings = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.SETTINGS)
-        val updatePasswords = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.UPDATE_PASSWORDS).toBoolean
-        val settings = JsonUtil.parseJsConformanceCertificateSettingsForKeystoreTest(jsSettings, communityId)
-        var keystorePassword: Option[String] = None
-        var keyPassword: Option[String] = None
-        if (updatePasswords) {
-          if (settings.keystorePassword.isDefined && settings.keyPassword.isDefined) {
-            keystorePassword = settings.keystorePassword
-            keyPassword = settings.keyPassword
+        var keystorePassword = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.KEYSTORE_PASS)
+        var keyPassword = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.KEY_PASS)
+        val keystoreType = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.TYPE)
+        if (keystorePassword.isEmpty || keyPassword.isEmpty || keystoreFile.isEmpty) {
+          val storedSettings = communityManager.getCommunityKeystore(communityId, decryptKeys = true)
+          if (storedSettings.isEmpty) {
+            throw new IllegalStateException("Missing keystore settings.")
+          }
+          if (keystorePassword.isEmpty) {
+            keystorePassword = Some(storedSettings.get.keystorePassword)
+          }
+          if (keyPassword.isEmpty) {
+            keyPassword = Some(storedSettings.get.keyPassword)
+          }
+          if (keystoreFile.isEmpty) {
+            val tempFile = Files.createTempFile("itb", "store")
+            Files.write(tempFile, Base64.decodeBase64(MimeUtil.getBase64FromDataURL(storedSettings.get.keystoreFile)))
+            keystoreFile = Some(tempFile.toFile)
           }
         }
-        if (keyPassword.isEmpty || keystorePassword.isEmpty || keystoreFile.isEmpty) {
-          val storedSettings = communityManager.getConformanceCertificateSettingsWrapper(communityId, defaultIfMissing = false)
-          if (storedSettings.isDefined) {
-            if (keyPassword.isEmpty && storedSettings.get.keyPassword.isDefined) {
-              keyPassword = Some(MimeUtil.decryptString(storedSettings.get.keyPassword.get))
-            }
-            if (keystorePassword.isEmpty && storedSettings.get.keystorePassword.isDefined) {
-              keystorePassword = Some(MimeUtil.decryptString(storedSettings.get.keystorePassword.get))
-            }
-            if (keystoreFile.isEmpty && storedSettings.get.keystoreFile.isDefined) {
-              val tempFile = Files.createTempFile("itb", "store")
-              Files.write(tempFile, Base64.decodeBase64(MimeUtil.getBase64FromDataURL(storedSettings.get.keystoreFile.get)))
-              keystoreFile = Some(tempFile.toFile)
-            }
-          }
-        }
-        if (keyPassword.isEmpty || keystorePassword.isEmpty || keystoreFile.isEmpty) {
-          throw new IllegalArgumentException("Passwords and keystore could not be loaded")
-        }
-        var problem:String = null
-        var level: String = null
-        val keystore = KeyStore.getInstance(settings.keystoreType.get)
+        // We have all the information we need - proceed.
+        var problem: Option[String] = None
+        var level: Option[String] = None
+        val keystore = KeyStore.getInstance(keystoreType)
         Using(Files.newInputStream(keystoreFile.get.toPath)) { input =>
           try {
             keystore.load(input, keystorePassword.get.toCharArray)
           } catch {
             case _: NoSuchAlgorithmException =>
-              problem = "The keystore defines an invalid integrity check algorithm"
-              level = "error"
+              problem = Some("The keystore defines an invalid integrity check algorithm.")
+              level = Some("error")
             case _: Exception =>
-              problem = "The keystore could not be opened"
-              level = "error"
+              problem = Some("The keystore could not be opened.")
+              level = Some("error")
           }
         }
-        if (problem == null) {
-          var certificate: Certificate = null
+        if (problem.isEmpty) {
+          var certificate: Option[Certificate] = None
           try {
-            certificate = SigUtils.checkKeystore(keystore, keyPassword.get.toCharArray)
+            certificate = Some(SigUtils.checkKeystore(keystore, keyPassword.get.toCharArray))
             if (certificate == null) {
-              problem = "A valid key could not be found in the keystore"
-              level = "error"
+              problem = Some("A valid key could not be found in the keystore.")
+              level = Some("error")
             }
           } catch {
             case _: Exception =>
-              problem = "The key could not be read from the keystore"
-              level = "error"
+              problem = Some("The key could not be read from the keystore.")
+              level = Some("error")
           }
-          if (problem == null) {
-            certificate match {
+          if (problem.isEmpty) {
+            certificate.get match {
               case x509Cert: X509Certificate =>
                 try {
                   SigUtils.checkCertificateValidity(x509Cert)
                   if (!SigUtils.checkCertificateUsage(x509Cert) || !SigUtils.checkCertificateExtendedUsage(x509Cert)) {
-                    problem = "The provided certificate is not valid for signature use"
-                    level = "warning"
+                    problem = Some("The provided certificate is not valid for signature use.")
+                    level = Some("warning")
                   }
                 } catch {
                   case _: CertificateExpiredException =>
-                    problem = "The contained certificate is expired"
-                    level = "error"
+                    problem = Some("The contained certificate is expired.")
+                    level = Some("error")
                   case _: CertificateNotYetValidException =>
-                    problem = "The certificate is not yet valid"
-                    level = "error"
+                    problem = Some("The certificate is not yet valid.")
+                    level = Some("error")
                 }
               case _ =>
             }
           }
         }
-        if (problem == null) {
+        if (problem.isEmpty) {
           response = ResponseConstructor.constructEmptyResponse
         } else {
-          val json = JsonUtil.jsConformanceSettingsValidation(problem, level)
+          val json = JsonUtil.jsConformanceSettingsValidation(problem.get, level.get)
           response = ResponseConstructor.constructJsonResponse(json.toString)
         }
       }
