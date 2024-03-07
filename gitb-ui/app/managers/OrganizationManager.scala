@@ -448,7 +448,7 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils, systemMan
     PersistenceSchema.users.filter(_.organization === orgId).delete
   }
 
-  def getOrganisationParameterValues(orgId: Long, onlySimple: Option[Boolean] = None): List[OrganisationParametersWithValue] = {
+  def getOrganisationParameterValues(orgId: Long, onlySimple: Option[Boolean] = None, forExports: Option[Boolean] = None): List[OrganisationParametersWithValue] = {
     var typeToCheck: Option[String] = None
     if (onlySimple.isDefined && onlySimple.get) {
       typeToCheck = Some("SIMPLE")
@@ -457,6 +457,7 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils, systemMan
     exec(PersistenceSchema.organisationParameters
       .joinLeft(PersistenceSchema.organisationParameterValues).on((p, v) => p.id === v.parameter && v.organisation === orgId)
       .filter(_._1.community === communityId)
+      .filterOpt(forExports)((q, flag) => q._1.inExports === flag)
       .filterOpt(typeToCheck)((table, propertyType)=> table._1.kind === propertyType)
       .sortBy(x => (x._1.displayOrder.asc, x._1.name.asc))
       .map(x => (x._1, x._2))

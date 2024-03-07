@@ -24,10 +24,7 @@ import javax.xml.parsers.*;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
-import javax.xml.transform.Source;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.*;
 import javax.xml.transform.dom.DOMResult;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stax.StAXSource;
@@ -37,6 +34,9 @@ import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
@@ -442,5 +442,25 @@ public class XMLUtils {
             }
         }
         return null;
+    }
+
+    public static Path prettyPrintXmlFile(Path xmlFile) {
+        var tempReportPath = xmlFile.resolveSibling("temp."+xmlFile.getFileName().toString());
+        try (var xmlStream = Files.newInputStream(xmlFile)) {
+            var transformer = getSecureTransformerFactory().newTransformer();
+            transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+            transformer.transform(
+                new StAXSource(XMLUtils.getSecureXMLInputFactory().createXMLStreamReader(xmlStream)),
+                new StreamResult(tempReportPath.toFile())
+            );
+        } catch (Exception e) {
+            throw new IllegalStateException("Unable to apply pretty-print transformation", e);
+        }
+        try {
+            Files.move(tempReportPath, xmlFile, StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException e) {
+            throw new IllegalStateException("Unable to complete pretty-printing", e);
+        }
+        return xmlFile;
     }
 }

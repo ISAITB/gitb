@@ -37,6 +37,7 @@
                     <xsd:element name="resources" type="CommunityResources" minOccurs="0"/>
                     <xsd:element name="organisations" type="Organisations" minOccurs="0"/>
                     <xsd:element name="administrators" type="CommunityAdministrators" minOccurs="0"/>
+                    <xsd:element name="reportStylesheets" type="CommunityReportStylesheets" minOccurs="0"/>
                 </xsd:sequence>
                 <xsd:attribute name="domain" type="xsd:IDREF"/>
                 <xsd:attribute name="allowCertificateDownload" type="xsd:boolean" default="false"/>
@@ -50,6 +51,25 @@
             </xsd:extension>
         </xsd:complexContent>
     </xsd:complexType>
+    <xsd:complexType name="CommunityReportStylesheets">
+        <xsd:sequence>
+            <xsd:element name="stylesheet" type="CommunityReportStylesheet" maxOccurs="unbounded"/>
+        </xsd:sequence>
+    </xsd:complexType>
+    <xsd:complexType name="CommunityReportStylesheet">
+        <xsd:sequence>
+            <xsd:element name="content" type="xsd:string"/>
+        </xsd:sequence>
+        <xsd:attribute name="reportType" type="ReportType" use="required"/>
+    </xsd:complexType>
+    <xsd:simpleType name="ReportType">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="CONFORMANCE_OVERVIEW"/>
+            <xsd:enumeration value="CONFORMANCE_STATEMENT"/>
+            <xsd:enumeration value="TEST_CASE"/>
+            <xsd:enumeration value="TEST_STEP"/>
+        </xsd:restriction>
+    </xsd:simpleType>
     <xsd:complexType name="ConformanceCertificateSettings">
         <xsd:sequence>
             <xsd:element name="title" type="xsd:string" minOccurs="0"/>

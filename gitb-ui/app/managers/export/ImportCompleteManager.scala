@@ -1856,7 +1856,6 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
       }
       // Signature settings
       _ <- {
-        DBIO.successful(())
         val communityId = getProcessedDbId(exportedCommunity, ImportItemType.Community, ctx)
         if (communityId.isDefined) {
           if (exportedCommunity.getSignatureSettings == null) {
@@ -1869,6 +1868,41 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
         } else {
           DBIO.successful(())
         }
+      }
+      // Community report stylesheets
+      _ <- {
+        val communityId = getProcessedDbId(exportedCommunity, ImportItemType.Community, ctx)
+        if (communityId.isDefined && exportedCommunity.getReportStylesheets != null) {
+          var hasConformanceOverview = false
+          var hasConformanceStatement = false
+          var hasTestCase = false
+          var hasTestStep = false
+          exportedCommunity.getReportStylesheets.getStylesheet.forEach { stylesheet =>
+            val tempFile = stringToTempFile(stylesheet.getContent).toPath
+            val reportType = stylesheet.getReportType match {
+              case ReportType.CONFORMANCE_OVERVIEW =>
+                hasConformanceOverview = true
+                XmlReportType.ConformanceOverviewReport
+              case ReportType.CONFORMANCE_STATEMENT =>
+                hasConformanceStatement = true
+                XmlReportType.ConformanceOverviewReport
+              case ReportType.TEST_CASE =>
+                hasTestCase = true
+                XmlReportType.TestCaseReport
+              case _ =>
+                hasTestStep = true
+                XmlReportType.TestStepReport
+            }
+            ctx.onSuccessCalls += (() => repositoryUtils.saveCommunityReportStylesheet(communityId.get, reportType, tempFile))
+            ctx.onSuccessCalls += (() => if (Files.exists(tempFile)) { FileUtils.deleteQuietly(tempFile.toFile) })
+            ctx.onFailureCalls += (() => if (Files.exists(tempFile)) { FileUtils.deleteQuietly(tempFile.toFile) })
+          }
+          if (!hasConformanceOverview) ctx.onSuccessCalls += (() => repositoryUtils.deleteCommunityReportStylesheet(communityId.get, XmlReportType.ConformanceOverviewReport))
+          if (!hasConformanceStatement) ctx.onSuccessCalls += (() => repositoryUtils.deleteCommunityReportStylesheet(communityId.get, XmlReportType.ConformanceStatementReport))
+          if (!hasTestCase) ctx.onSuccessCalls += (() => repositoryUtils.deleteCommunityReportStylesheet(communityId.get, XmlReportType.TestCaseReport))
+          if (!hasTestStep) ctx.onSuccessCalls += (() => repositoryUtils.deleteCommunityReportStylesheet(communityId.get, XmlReportType.TestStepReport))
+        }
+        DBIO.successful(())
       }
       // Custom labels
       _ <- {
@@ -2664,6 +2698,10 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
 
   private def dataUrlToTempFile(dataUrl: String, suffix: Option[String] = None): File = {
     Files.write(Files.createTempFile("itb", suffix.orNull), Base64.decodeBase64(MimeUtil.getBase64FromDataURL(dataUrl))).toFile
+  }
+
+  private def stringToTempFile(content: String, suffix: Option[String] = None): File = {
+    Files.writeString(Files.createTempFile("itb", suffix.orNull), content).toFile
   }
 
   private def parameterFileMetadata(ctx: ImportContext, parameterType: PropertyType, isDomainParameter: Boolean, parameterValue: String): (String, Option[String], Option[File]) = {

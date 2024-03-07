@@ -265,7 +265,7 @@ public class TestSuiteValidationAdapter {
     }
 
     private String getConfigValue(String name, Properties props) {
-        return System.getenv().getOrDefault(name, props.getProperty(name));
+        return java.lang.System.getenv().getOrDefault(name, props.getProperty(name));
     }
 
     private Set<String> asSet(String value) {

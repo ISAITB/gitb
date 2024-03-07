@@ -12,6 +12,9 @@ import { RestService } from './rest.service';
 import { FileReference } from '../types/file-reference';
 import { DataService } from './data.service';
 import { TestInteractionData } from '../types/test-interaction-data';
+import { FileData } from '../types/file-data.type';
+import { FileParam } from '../types/file-param.type';
+import { Constants } from '../common/constants';
 
 @Injectable({
   providedIn: 'root'
@@ -350,6 +353,73 @@ export class ReportService {
       path: path,
       authenticate: true
     })    
+  }
+
+  reportStylesheetExists(communityId: number, reportType: number) {
+    return this.restService.get<{exists: boolean}>({
+      path: ROUTES.controllers.RepositoryService.reportStylesheetExists(communityId).url,
+      authenticate: true,
+      params: {
+        type: reportType
+      }
+    })    
+  }
+
+  getReportStylesheet(communityId: number, reportType: number) {
+    return this.restService.get<string>({
+      path: ROUTES.controllers.RepositoryService.getReportStylesheet(communityId).url,
+      authenticate: true,
+      text: true,
+      params: {
+        type: reportType
+      }
+    })
+  }
+
+  updateReportStylesheet(communityId: number, enabled: boolean, reportType: number, file?: FileData) {
+    let files: FileParam[]|undefined
+    if (enabled && file?.file) {
+      files = [{ param: "file", data: file.file}]
+    }
+    return this.restService.post<{exists: boolean}>({
+      path: ROUTES.controllers.RepositoryService.updateReportStylesheet(communityId).url,
+      authenticate: true,
+      files: files,
+      data: {
+        enable: enabled,
+        type: reportType
+      }
+    })    
+  }
+
+  exportDemoReportInXML(communityId: number, reportType: number, enabled: boolean, file?: FileData, data?: {[key: string]: any}) {
+    let path: string
+    if (reportType == Constants.XML_REPORT_TYPE.CONFORMANCE_OVERVIEW_REPORT) {
+      path = ROUTES.controllers.RepositoryService.exportDemoConformanceOverviewReportInXML(communityId).url
+    } else if (reportType == Constants.XML_REPORT_TYPE.CONFORMANCE_STATEMENT_REPORT) {
+      path = ROUTES.controllers.RepositoryService.exportDemoConformanceStatementReportInXML(communityId).url
+    } else if (reportType == Constants.XML_REPORT_TYPE.TEST_CASE_REPORT) {
+      path = ROUTES.controllers.RepositoryService.exportDemoTestCaseReportInXML(communityId).url
+    } else {
+      path = ROUTES.controllers.RepositoryService.exportDemoTestStepReportInXML(communityId).url
+    }
+    let files: FileParam[]|undefined
+    if (enabled && file?.file) {
+      files = [{ param: "file", data: file.file}]
+    }
+    let dataToUse = data
+    if (dataToUse == undefined) {
+      dataToUse = {}
+    }
+    dataToUse.enable = enabled
+    dataToUse.type = reportType
+    return this.restService.post<string>({
+      path: path,
+      authenticate: true,
+      files: files,
+      text: true,
+      data: dataToUse
+    })      
   }
 
 }

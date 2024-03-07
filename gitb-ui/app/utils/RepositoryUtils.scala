@@ -5,7 +5,8 @@ import com.gitb.core._
 import com.gitb.utils.XMLUtils
 import config.Configurations
 import managers.{BaseManager, TestSuiteManager}
-import models.Enums.TestResultStatus
+import models.Enums.{TestResultStatus, XmlReportType}
+import models.Enums.XmlReportType.XmlReportType
 import models._
 import org.apache.commons.codec.binary.Base64
 import org.apache.commons.io.{FileUtils, FilenameUtils, IOUtils}
@@ -48,6 +49,7 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 	private final val FILES_SP_PATH: String = "sp"
 	private final val FILES_EP_PATH: String = "ep"
 	private final val FILES_CR_PATH: String = "cr"
+	private final val FILES_XSLT_PATH: String = "xslt"
 	private final val FILES_THEMES_PATH: String = "themes"
 	private final val FILES_BADGES_PATH: String = "badges"
 	private final val FILES_BADGES_LATEST_PATH: String = "latest"
@@ -64,6 +66,60 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 
 	private def isChildPath(expectedParent: Path, expectedChild: Path): Boolean = {
 		expectedChild.normalize().toAbsolutePath.startsWith(expectedParent.normalize().toAbsolutePath)
+	}
+
+	private def getCommunityReportStylesheetFolder(communityId: Long): Path = {
+		Paths.get(Configurations.TEST_CASE_REPOSITORY_PATH, FILES_PATH, FILES_XSLT_PATH, communityId.toString)
+	}
+
+	def hasCommunityReportStylesheets(communityId: Long): Boolean = {
+		var report = getCommunityReportStylesheet(communityId, XmlReportType.ConformanceOverviewReport)
+		if (report.isEmpty) {
+			report = getCommunityReportStylesheet(communityId, XmlReportType.ConformanceStatementReport)
+			if (report.isEmpty) {
+				report = getCommunityReportStylesheet(communityId, XmlReportType.TestCaseReport)
+				if (report.isEmpty) {
+					report = getCommunityReportStylesheet(communityId, XmlReportType.TestStepReport)
+				}
+			}
+		}
+		report.isDefined
+	}
+
+	def getCommunityReportStylesheet(communityId: Long, reportType: XmlReportType): Option[Path] = {
+		val stylesheetFolder = getCommunityReportStylesheetFolder(communityId)
+		val filePath = stylesheetFolder.resolve(stylesheetName(reportType))
+		Some(filePath).filter(Files.exists(_))
+	}
+
+	private def stylesheetName(reportType: XmlReportType): String = {
+		reportType match {
+			case XmlReportType.ConformanceStatementReport => "conformance_statement.xslt"
+			case XmlReportType.ConformanceOverviewReport => "conformance_overview.xslt"
+			case XmlReportType.TestCaseReport => "test_case.xslt"
+			case _ => "test_step.xslt" // XmlReportType.TestStepReport
+		}
+	}
+
+	def saveCommunityReportStylesheet(communityId: Long, reportType: XmlReportType, fileToSave: Path): Path = {
+		val stylesheetFolder = getCommunityReportStylesheetFolder(communityId)
+		if (Files.notExists(stylesheetFolder)) {
+			Files.createDirectories(stylesheetFolder)
+		}
+		val targetPath = stylesheetFolder.resolve(stylesheetName(reportType))
+		Files.copy(fileToSave, targetPath, StandardCopyOption.REPLACE_EXISTING)
+	}
+
+	def deleteCommunityReportStylesheet(communityId: Long, reportType: XmlReportType): Unit = {
+		val path = getCommunityReportStylesheet(communityId, reportType)
+		if (path.isDefined) {
+			FileUtils.deleteQuietly(path.get.toFile)
+		}
+	}
+
+	def deleteCommunityReportStylesheets(communityId: Long): Unit = {
+		val path = getCommunityReportStylesheetFolder(communityId)
+		FileUtils.deleteQuietly(path.toFile)
 	}
 
 	def getThemeResource(themeId: Long, name: String): Option[File] = {

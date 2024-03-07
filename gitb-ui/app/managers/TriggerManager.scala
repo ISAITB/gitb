@@ -530,7 +530,7 @@ class TriggerManager @Inject()(env: Environment, ws: WSClient, repositoryUtils: 
               populateAnyContent(testReportData, "testReport", "string", getSampleTestReport(), None)
             } else {
               val testReportAsString: Option[String] = fromCache(dataCache, "testReportData", () => {
-                val reportData = testCaseReportProducer.generateDetailedTestCaseReport(testSessionId.get, Some("application/xml"), None)
+                val reportData = testCaseReportProducer.generateDetailedTestCaseReport(testSessionId.get, Some(Constants.MimeTypeXML), None)
                 if (reportData._1.isDefined) {
                   val reportAsString = Some(Files.readString(reportData._1.get))
                   if (reportData._2.archived) {
@@ -671,7 +671,7 @@ class TriggerManager @Inject()(env: Environment, ws: WSClient, repositoryUtils: 
       val response = fnCallOperation.apply(service.getProcessingServicePort)
       val bos = new ByteArrayOutputStream()
       XMLUtils.marshalToStream(response, bos)
-      (true, List(new String(bos.toByteArray, StandardCharsets.UTF_8)), "application/xml")
+      (true, List(new String(bos.toByteArray, StandardCharsets.UTF_8)), Constants.MimeTypeXML)
     }
   }
 

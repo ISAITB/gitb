@@ -1,8 +1,8 @@
 package models.statement
 
 import com.gitb.reports.dto.ConformanceItem
-import models.{ConformanceStatement, ConformanceStatementItem}
 import models.Enums.OverviewLevelType.OverviewLevelType
+import models.{ConformanceStatement, ConformanceStatementItem}
 
 case class ConformanceData(
                             reportLevel: OverviewLevelType,

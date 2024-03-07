@@ -369,6 +369,13 @@ export class Constants {
 		LINKED: 3
 	}
 
+	public static XML_REPORT_TYPE = {
+		CONFORMANCE_STATEMENT_REPORT: 1,
+		CONFORMANCE_OVERVIEW_REPORT: 2,
+		TEST_CASE_REPORT: 3,
+		TEST_STEP_REPORT: 4
+	}
+
 	public static PASSWORD_REGEX = /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#&()_–\[{}\]:;'",?/\\*~$^+=<>]).{8,}$/
 	public static END_OF_TEST_STEP = "-1"
 	public static END_OF_TEST_STEP_EXTERNAL = "-2"

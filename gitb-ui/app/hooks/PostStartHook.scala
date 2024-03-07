@@ -285,6 +285,10 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext, authenticationMana
   }
 
   private def cleanupTempFiles() = {
+    // Make sure the root temp folders exist
+    Files.createDirectories(repositoryUtils.getTempReportFolder().toPath)
+    Files.createDirectories(repositoryUtils.getTempArchivedSessionWorkspaceFolder().toPath)
+    // Schedule the cleanup job.
     actorSystem.scheduler.scheduleAtFixedRate(0.minutes, 5.minutes) {
       () => {
         deleteSubfolders(repositoryUtils.getTempReportFolder(), 300000) // 5 minutes

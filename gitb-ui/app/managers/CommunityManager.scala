@@ -393,10 +393,16 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityRes
       deleteSystemParametersByCommunity(communityId) andThen
       communityResourceManager.deleteResourcesOfCommunity(communityId, onSuccessCalls) andThen
       deleteCommunityKeystoreInternal(communityId) andThen
+      deleteCommunityReportStylesheets(communityId, onSuccessCalls) andThen
       PersistenceSchema.communityLabels.filter(_.community === communityId).delete andThen
       PersistenceSchema.communities.filter(_.id === communityId).delete
     }
     exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
+  }
+
+  private def deleteCommunityReportStylesheets(communityId: Long, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
+    onSuccessCalls += (() => repositoryUtils.deleteCommunityReportStylesheets(communityId))
+    DBIO.successful(())
   }
 
   def createOrganisationParameterInternal(parameter: OrganisationParameters) = {
@@ -633,10 +639,10 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityRes
       .result).toList
   }
 
-  def getOrganisationParametersForExport(communityId: Long): List[OrganisationParameters] = {
+  def getSimpleOrganisationParameters(communityId: Long, forExports: Option[Boolean]): List[OrganisationParameters] = {
     exec(PersistenceSchema.organisationParameters
       .filter(_.community === communityId)
-      .filter(_.inExports === true)
+      .filterOpt(forExports)((q, flag) => q.inExports === flag)
       .filter(_.kind === "SIMPLE")
       .sortBy(_.testKey.asc)
       .result).toList
@@ -690,10 +696,10 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityRes
       .result).toList
   }
 
-  def getSystemParametersForExport(communityId: Long): List[SystemParameters] = {
+  def getSimpleSystemParameters(communityId: Long, forExports: Option[Boolean]): List[SystemParameters] = {
     exec(PersistenceSchema.systemParameters
       .filter(_.community === communityId)
-      .filter(_.inExports === true)
+      .filterOpt(forExports)((q, flag) => q.inExports === flag)
       .filter(_.kind === "SIMPLE")
       .sortBy(_.testKey.asc)
       .result).toList

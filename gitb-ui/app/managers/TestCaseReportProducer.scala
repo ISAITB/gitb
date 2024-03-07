@@ -7,7 +7,7 @@ import com.gitb.tbs.TestStepStatus
 import com.gitb.tpl._
 import com.gitb.tr.{TestCaseOverviewReportType, TestCaseStepReportType, TestCaseStepsType, TestResultType}
 import com.gitb.utils.{XMLDateTimeUtils, XMLUtils}
-import models.{CommunityLabels, SessionFolderInfo}
+import models.{CommunityLabels, Constants, SessionFolderInfo}
 import org.apache.commons.codec.net.URLCodec
 import org.apache.commons.io.FileUtils
 import org.apache.commons.lang3.StringUtils
@@ -43,7 +43,7 @@ class TestCaseReportProducer @Inject() (reportHelper: ReportHelper, testResultMa
     if (testResult.isDefined) {
       val reportData = contentType match {
         // The "vX" postfix is used to make sure we generate (but also subsequently cache) new versions of the step report
-        case Some("application/pdf") => (".v2.pdf", (list: ListBuffer[TitledTestStepReportType], exportedReportPath: File, testCase: Option[models.TestCase], session: String) => {
+        case Some(Constants.MimeTypePDF) => (".v2.pdf", (list: ListBuffer[TitledTestStepReportType], exportedReportPath: File, testCase: Option[models.TestCase], session: String) => {
           generateDetailedTestCaseReportPdf(list, exportedReportPath.getAbsolutePath, testCase, session, labelSupplier.getOrElse(() => Map.empty[Short, CommunityLabels]).apply(), reportSpecSupplier.getOrElse(() => reportHelper.createReportSpecs()).apply())
         })
         case _ => (".report.xml", (list: ListBuffer[TitledTestStepReportType], exportedReportPath: File, testCase: Option[models.TestCase], session: String) => {

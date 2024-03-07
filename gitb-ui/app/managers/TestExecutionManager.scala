@@ -464,7 +464,7 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
     if (result.isDefined) {
       var reportData: (Option[Path], SessionFolderInfo) = null
       try {
-        reportData = testCaseReportProducer.generateDetailedTestCaseReport(result.get, Some("application/xml"), None)
+        reportData = testCaseReportProducer.generateDetailedTestCaseReport(result.get, Some(Constants.MimeTypeXML), None)
         if (reportData._1.isDefined) {
           Some(Files.readString(reportData._1.get))
         } else {
@@ -503,7 +503,7 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
       val report = if (withReports) {
         var reportData: (Option[Path], SessionFolderInfo) = null
         try {
-          reportData = testCaseReportProducer.generateDetailedTestCaseReport(result._1, Some("application/xml"), None)
+          reportData = testCaseReportProducer.generateDetailedTestCaseReport(result._1, Some(Constants.MimeTypeXML), None)
           if (reportData._1.isDefined) {
             Some(Files.readString(reportData._1.get))
           } else {

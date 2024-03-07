@@ -5,7 +5,7 @@ import exceptions.{ErrorCodes, InvalidRequestException}
 import models.Enums._
 import controllers.util.Parameters
 import models.theme.{Theme, ThemeFiles}
-import models.{Actor, Badges, Communities, CommunityResources, ConformanceCertificate, Domain, Endpoints, ErrorTemplates, FileInfo, LandingPages, LegalNotices, NamedFile, OrganisationParameterValues, Organizations, SpecificationGroups, Specifications, SystemParameterValues, Systems, Trigger, TriggerData, Triggers, Users}
+import models.{Actor, Badges, Communities, CommunityResources, Constants, Domain, Endpoints, ErrorTemplates, FileInfo, LandingPages, LegalNotices, NamedFile, OrganisationParameterValues, Organizations, SpecificationGroups, Specifications, SystemParameterValues, Systems, Trigger, TriggerData, Triggers, Users}
 import org.apache.commons.lang3.StringUtils
 import org.mindrot.jbcrypt.BCrypt
 import play.api.mvc._
@@ -18,6 +18,7 @@ import scala.collection.mutable.ListBuffer
 object ParameterExtractor {
 
   private final val imageMimeTypes = Set("image/png", "image/x-png", "image/jpeg", "image/gif", "image/svg+xml", "image/vnd.microsoft.icon", "image/x-icon")
+  private final val xslMimeTypes = Set("text/xml", Constants.MimeTypeXML, "text/xsl", "application/xslt+xml")
 
   def paramMap(request: Request[AnyContent]): Option[Map[String, Seq[String]]] = {
     var paramMap: Option[Map[String, Seq[String]]] = None
@@ -853,6 +854,31 @@ object ParameterExtractor {
       }
     }
     (Some(Badges(hasSuccess, hasFailure, hasOther, successBadgeToStore, failureBadgeToStore, otherBadgeToStore)), resultToReturn)
+  }
+
+  def extractReportStylesheet(request: Request[AnyContent]): (Option[File], Option[Result]) = {
+    var stylesheetFile: Option[File] = None
+    var response: Option[Result] = None
+    val files = ParameterExtractor.extractFiles(request)
+    if (files.contains(Parameters.FILE)) {
+      stylesheetFile = Some(files(Parameters.FILE).file)
+      // Check for virus
+      if (Configurations.ANTIVIRUS_SERVER_ENABLED) {
+        val virusScanner = new ClamAVClient(Configurations.ANTIVIRUS_SERVER_HOST, Configurations.ANTIVIRUS_SERVER_PORT, Configurations.ANTIVIRUS_SERVER_TIMEOUT)
+        val scanResult = virusScanner.scan(stylesheetFile.get)
+        if (!ClamAVClient.isCleanReply(scanResult)) {
+          response = Some(ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "Stylesheet file failed virus scan."))
+        }
+      }
+      if (response.isEmpty) {
+        // Check for expected mime type
+        val mimeType = MimeUtil.getMimeType(stylesheetFile.get.toPath)
+        if (!xslMimeTypes.contains(mimeType)) {
+          response = Some(ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_REQUEST, "Only XSLT stylesheets are allowed."))
+        }
+      }
+    }
+    (stylesheetFile, response)
   }
 
 }

@@ -3,8 +3,9 @@ package managers.export
 import com.gitb.xml
 import com.gitb.xml.export._
 import managers._
-import models.Enums.{LabelType, OverviewLevelType, SelfRegistrationRestriction, SelfRegistrationType, TestResultStatus, UserRole}
-import models.{TestCases, Actors => _, Endpoints => _, Systems => _, _}
+import models.Enums.XmlReportType.XmlReportType
+import models.Enums.{LabelType, OverviewLevelType, SelfRegistrationRestriction, SelfRegistrationType, TestResultStatus, UserRole, XmlReportType}
+import models.{Enums, TestCases, Actors => _, Endpoints => _, Systems => _, _}
 import org.apache.commons.codec.binary.Base64
 import org.apache.commons.io.{FileUtils, IOUtils}
 import org.slf4j.{Logger, LoggerFactory}
@@ -972,6 +973,14 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, systemConfigura
         }
       }
     }
+    // Report stylesheets.
+    if (repositoryUtils.hasCommunityReportStylesheets(communityId)) {
+      communityData.setReportStylesheets(new CommunityReportStylesheets)
+      addCommunityStylesheetToExport(communityId, XmlReportType.ConformanceOverviewReport, communityData.getReportStylesheets)
+      addCommunityStylesheetToExport(communityId, XmlReportType.ConformanceStatementReport, communityData.getReportStylesheets)
+      addCommunityStylesheetToExport(communityId, XmlReportType.TestCaseReport, communityData.getReportStylesheets)
+      addCommunityStylesheetToExport(communityId, XmlReportType.TestStepReport, communityData.getReportStylesheets)
+    }
     // Custom member properties.
     val exportedOrganisationPropertyMap: scala.collection.mutable.Map[Long, OrganisationProperty] = scala.collection.mutable.Map()
     val exportedSystemPropertyMap: scala.collection.mutable.Map[Long, SystemProperty] = scala.collection.mutable.Map()
@@ -1343,6 +1352,21 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, systemConfigura
     val systemSettingsExportInfo = exportSystemSettingsInternal(exportSettings, Some(exportedUserMap), Some(idSequence.next()))
     exportData.setSettings(systemSettingsExportInfo.exportedSettings)
     exportData
+  }
+
+  private def addCommunityStylesheetToExport(communityId: Long, reportType: XmlReportType, exportData: CommunityReportStylesheets): Unit = {
+    val stylesheet = repositoryUtils.getCommunityReportStylesheet(communityId, reportType)
+    if (stylesheet.isDefined) {
+      val exportStylesheet = new CommunityReportStylesheet
+      reportType match {
+        case XmlReportType.ConformanceOverviewReport => exportStylesheet.setReportType(ReportType.CONFORMANCE_OVERVIEW)
+        case XmlReportType.ConformanceStatementReport => exportStylesheet.setReportType(ReportType.CONFORMANCE_STATEMENT)
+        case XmlReportType.TestCaseReport => exportStylesheet.setReportType(ReportType.TEST_CASE)
+        case _ => exportStylesheet.setReportType(ReportType.TEST_STEP)
+      }
+      exportStylesheet.setContent(Files.readString(stylesheet.get))
+      exportData.getStylesheet.add(exportStylesheet)
+    }
   }
 
   private def badgesInfo(successBadge: Option[File], otherBadge: Option[File], failureBadge: Option[File]): Option[ConformanceBadges] = {

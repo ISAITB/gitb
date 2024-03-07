@@ -1,19 +1,19 @@
 package managers
 
 import actors.events.{ConformanceStatementSucceededEvent, TestSessionFailedEvent, TestSessionSucceededEvent}
-import com.gitb.core.StepStatus
+import com.gitb.core.{Metadata, SpecificationInfo, StepStatus, Tags}
 import com.gitb.reports.ReportGenerator
 import com.gitb.reports.dto._
-import com.gitb.tbs.{ObjectFactory, TestStepStatus}
+import com.gitb.tbs.TestStepStatus
 import com.gitb.tpl.TestCase
 import com.gitb.tr._
-import com.gitb.utils.XMLUtils
+import com.gitb.utils.{XMLDateTimeUtils, XMLUtils}
 import config.Configurations
 import models.Enums.ConformanceStatementItemType.ConformanceStatementItemType
 import models.Enums.OverviewLevelType.OverviewLevelType
-import models.Enums.{ConformanceStatementItemType, OverviewLevelType, TestResultStatus}
+import models.Enums.{ConformanceStatementItemType, OverviewLevelType, TestResultStatus, XmlReportType}
 import models._
-import models.statement.{BadgeListPlaceholderInfo, BadgePlaceholderInfo, ConformanceData, ConformanceDataLocator, ConformanceItemTreeData, ResultCountHolder}
+import models.statement._
 import org.apache.commons.codec.binary.Base64
 import org.apache.commons.io.FileUtils
 import org.apache.commons.lang3.StringUtils
@@ -23,14 +23,18 @@ import utils._
 import utils.signature.{CreateSignature, SigUtils}
 
 import java.io.{File, FileOutputStream, StringReader}
-import java.nio.file.{Files, Path}
+import java.math.BigInteger
+import java.nio.file.{Files, Path, StandardCopyOption}
 import java.text.SimpleDateFormat
 import java.util
 import java.util.regex.Pattern
 import java.util.stream.Collectors
 import java.util.{Calendar, Date}
 import javax.inject.{Inject, Singleton}
-import javax.xml.transform.stream.StreamSource
+import javax.xml.datatype.XMLGregorianCalendar
+import javax.xml.transform.stax.StAXSource
+import javax.xml.transform.stream.{StreamResult, StreamSource}
+import javax.xml.transform.{OutputKeys, TransformerConfigurationException, TransformerException}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -53,6 +57,9 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
   private val PLACEHOLDER_BADGE_REGEXP = Pattern.compile("(\\"+Constants.PlaceholderBadge+"(?:\\{(\\d+)(?:\\|(\\d+))?\\})?)")
   private val PLACEHOLDER_BADGE_WITHOUT_INDEX_REGEXP = Pattern.compile("(\\"+Constants.PlaceholderBadge+"(?:\\{(\\d+)\\})?)")
   private val PLACEHOLDER_BADGE_LIST_REGEXP = Pattern.compile("(\\"+Constants.PlaceholderBadges+"\\{((?:horizontal)|(?:vertical))(?:\\|(\\d+))?\\})")
+  private val gitbTrObjectFactory = new com.gitb.tr.ObjectFactory
+  private val gitbTplObjectFactory = new com.gitb.tpl.ObjectFactory
+  private val gitbTbsObjectFactory = new com.gitb.tbs.ObjectFactory
 
   def getOrganisationActiveTestResults(organisationId: Long,
                                        systemIds: Option[List[Long]],
@@ -261,7 +268,7 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
     val testCaseId = testId.toLong
     // Remove the step documentation because it can greatly increase the size without any use (documentation links are not displayed for non-active test sessions)
     removeStepDocumentation(testCasePresentation)
-    val presentation = XMLUtils.marshalToString(new com.gitb.tpl.ObjectFactory().createTestcase(testCasePresentation))
+    val presentation = XMLUtils.marshalToString(gitbTplObjectFactory.createTestcase(testCasePresentation))
     exec(
       (for {
         // Load required data.
@@ -412,7 +419,7 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
           val file = new File(sessionFolder.toFile, testStepReportPath)
           file.createNewFile()
           Using(new FileOutputStream(file)) { stream =>
-            stream.write(XMLUtils.marshalToString(new ObjectFactory().createUpdateStatusRequest(step)).getBytes)
+            stream.write(XMLUtils.marshalToString(gitbTbsObjectFactory.createUpdateStatusRequest(step)).getBytes)
           }
         }
         // Save the path of the report file to the DB
@@ -429,36 +436,194 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
     exec(PersistenceSchema.testStepReports.filter(_.testSessionId === sessionId).result.map(_.toList))
   }
 
-  def generateTestStepXmlReport(xmlFile: Path, xmlReport: Path): Path = {
-    val fis = Files.newInputStream(xmlFile)
-    val fos = Files.newOutputStream(xmlReport)
-    try {
+  private def generateTestStepXmlReport(xmlFile: Path, xmlReport: Path): Path = {
+    Using.Manager { use =>
+      val fis = use(Files.newInputStream(xmlFile))
+      val fos = use(Files.newOutputStream(xmlReport))
       ReportGenerator.getInstance().writeTestStepStatusXmlReport(fis, fos, false)
       fos.flush()
-    } catch {
-      case e: Exception =>
-        throw new IllegalStateException("Unable to generate XML report", e)
-    } finally {
-      if (fis != null) fis.close()
-      if (fos != null) fos.close()
     }
     xmlReport
   }
 
-  def generateTestStepReport(xmlFile: Path, pdfReport: Path): Path = {
-    val fis = Files.newInputStream(xmlFile)
-    val fos = Files.newOutputStream(pdfReport)
-    try {
+  private def generateTestStepPdfReport(xmlFile: Path, pdfReport: Path): Path = {
+    Using.Manager { use =>
+      val fis = use(Files.newInputStream(xmlFile))
+      val fos = use(Files.newOutputStream(pdfReport))
       ReportGenerator.getInstance().writeTestStepStatusReport(fis, "Test step report", fos, reportHelper.createReportSpecs())
       fos.flush()
-    } catch {
-      case e: Exception =>
-        throw new IllegalStateException("Unable to generate PDF report", e)
-    } finally {
-      if (fis != null) fis.close()
-      if (fos != null) fos.close()
     }
     pdfReport
+  }
+
+  private def resolveCommunityId(sessionId: String, userId: Option[Long]): Option[Long] = {
+    var communityId = testResultManager.getCommunityIdForTestSession(sessionId).flatMap(_._2)
+    if (communityId.isEmpty && userId.isDefined) {
+      communityId = Some(communityManager.getUserCommunityId(userId.get))
+    }
+    communityId
+  }
+
+  private def createDemoTAR(id: Option[String], time: Option[XMLGregorianCalendar]): TAR = {
+    val report = new TAR
+    report.setId(id.orNull)
+    report.setDate(time.getOrElse(XMLDateTimeUtils.getXMLGregorianCalendarDateTime))
+    report.setName("Validation report")
+    report.setResult(TestResultType.FAILURE)
+    report.setCounters(new ValidationCounters)
+    report.getCounters.setNrOfErrors(BigInteger.ONE)
+    report.getCounters.setNrOfWarnings(BigInteger.ONE)
+    report.getCounters.setNrOfAssertions(BigInteger.ONE)
+    report.setReports(new TestAssertionGroupReportsType)
+    val errorContent = new BAR()
+    errorContent.setDescription("Error message")
+    report.getReports.getInfoOrWarningOrError.add(gitbTrObjectFactory.createTestAssertionGroupReportsTypeError(errorContent))
+    val warningContent = new BAR()
+    warningContent.setDescription("Warning message")
+    report.getReports.getInfoOrWarningOrError.add(gitbTrObjectFactory.createTestAssertionGroupReportsTypeWarning(warningContent))
+    val infoContent = new BAR()
+    infoContent.setDescription("Information message")
+    report.getReports.getInfoOrWarningOrError.add(gitbTrObjectFactory.createTestAssertionGroupReportsTypeInfo(infoContent))
+    report
+  }
+
+  def generateDemoTestStepReportInXML(reportPath: Path, transformer: Option[Path]): Path = {
+    // Construct demo data
+    val report = createDemoTAR(None, None)
+    // Generate report
+    Using(Files.newOutputStream(reportPath)) { output =>
+      ReportGenerator.getInstance().writeTestStepStatusXmlReport(report, output, false)
+      output.flush()
+    }
+    applyXsltToReportAndPrettyPrint(reportPath, transformer)
+  }
+
+  def generateTestStepReport(reportPath: Path, sessionId: String, stepXmlFilePath: String, contentType: String, userId: Option[Long]): Option[Path] = {
+    val communityId = resolveCommunityId(sessionId, userId)
+    val sessionFolderInfo = repositoryUtils.getPathForTestSessionWrapper(sessionId, isExpected = true)
+    try {
+      val reportData = contentType match {
+        // The "vX" postfix is used to make sure we generate (but also subsequently cache) new versions of the step report
+        case Constants.MimeTypePDF => (".v2.pdf", (stepDataFile: File, report: File) => generateTestStepPdfReport(stepDataFile.toPath, report.toPath))
+        case _ => (".report.xml", (stepDataFile: File, report: File) => generateTestStepXmlReport(stepDataFile.toPath, report.toPath))
+      }
+      var cachedReport = new File(sessionFolderInfo.path.toFile, stepXmlFilePath.toLowerCase().replace(".xml", reportData._1))
+      if (!cachedReport.exists()) {
+        val stepDataFile = new File(sessionFolderInfo.path.toFile, stepXmlFilePath)
+        if (stepDataFile.exists()) {
+          cachedReport = reportData._2.apply(stepDataFile, cachedReport).toFile
+        }
+      }
+      if (cachedReport.exists()) {
+        Files.copy(cachedReport.toPath, reportPath)
+        if (contentType != Constants.MimeTypePDF && communityId.isDefined) {
+          // Apply custom report stylesheet if one is defined for the relevant community
+          applyXsltToReportAndPrettyPrint(
+            reportPath,
+            repositoryUtils.getCommunityReportStylesheet(communityId.get, XmlReportType.TestStepReport)
+          )
+        }
+        Some(reportPath)
+      } else {
+        None
+      }
+    } finally {
+      if (sessionFolderInfo.archived) {
+        FileUtils.deleteQuietly(sessionFolderInfo.path.toFile)
+      }
+    }
+  }
+
+  private def createSimpleDemoSuccessStep(id: Option[String], date: Option[XMLGregorianCalendar]): TestCaseStepReportType = {
+    val step = new TestCaseStepReportType
+    step.setId(id.getOrElse("1"))
+    step.setDescription("Sample step")
+    val simpleReport = new SR
+    simpleReport.setId(step.getId)
+    simpleReport.setResult(TestResultType.SUCCESS)
+    simpleReport.setDate(date.getOrElse(XMLDateTimeUtils.getXMLGregorianCalendarDateTime))
+    step.setReport(simpleReport)
+    step
+  }
+
+  def generateDemoTestCaseReportInXML(reportPath: Path, transformer: Option[Path]): Path = {
+    // Create demo data
+    val report = new TestCaseOverviewReportType
+    report.setResult(TestResultType.FAILURE)
+    report.setMessage("Test session resulted in a failure.")
+    report.setStartTime(XMLDateTimeUtils.getXMLGregorianCalendarDateTime)
+    report.setEndTime(report.getStartTime)
+    // Test case metadata
+    report.setMetadata(new Metadata)
+    report.getMetadata.setName("Sample test case")
+    report.getMetadata.setDescription("Sample description")
+    report.getMetadata.setSpecification(new SpecificationInfo)
+    report.getMetadata.getSpecification.setReference("REF1")
+    report.getMetadata.getSpecification.setLink("https://link.to.spec")
+    report.getMetadata.getSpecification.setDescription("Sample specification description")
+    report.getMetadata.setTags(new Tags)
+    val sampleTag = new com.gitb.core.Tag
+    sampleTag.setName("security")
+    sampleTag.setValue("Test case linked to security requirements.")
+    sampleTag.setForeground("#FFFFFF")
+    sampleTag.setBackground("#000000")
+    report.getMetadata.getTags.getTag.add(sampleTag)
+    // Test case steps
+    report.setSteps(new TestCaseStepsType)
+    report.getSteps.getStep.add(createSimpleDemoSuccessStep(Some("1"), Some(report.getStartTime)))
+    val step2 = new TestCaseStepReportType
+    step2.setId("2")
+    step2.setDescription("Second sample step")
+    step2.setReport(createDemoTAR(Some(step2.getId), Some(report.getStartTime)))
+    report.getSteps.getStep.add(step2)
+    // Generate report
+    Using(Files.newOutputStream(reportPath)) { output =>
+      ReportGenerator.getInstance().writeTestCaseOverviewXmlReport(report, output)
+      output.flush()
+    }
+    applyXsltToReportAndPrettyPrint(reportPath, transformer)
+  }
+
+  def generateTestCaseReport(reportPath: Path, sessionId: String, contentType: String, userId: Option[Long]): Option[Path] = {
+    val communityId = resolveCommunityId(sessionId, userId)
+    var result: (Option[Path], SessionFolderInfo) = null
+    try {
+      result = testCaseReportProducer.generateDetailedTestCaseReport(sessionId, Some(contentType),
+        // Label provider
+        if (communityId.isDefined) {
+          Some(() => communityLabelManager.getLabels(communityId.get))
+        } else if (userId.isDefined) {
+          Some(() => communityLabelManager.getLabelsByUserId(userId.get))
+        } else {
+          None
+        },
+        // ReportSpec provider
+        if (communityId.isDefined) {
+          Some(() => {
+            reportHelper.createReportSpecs(communityId)
+          })
+        } else {
+          None
+        }
+      )
+      if (result._1.isDefined) {
+        Files.copy(result._1.get, reportPath)
+        if (contentType != Constants.MimeTypePDF && communityId.isDefined) {
+          // Apply custom report stylesheet if one is defined for the relevant community
+          applyXsltToReportAndPrettyPrint(
+            reportPath,
+            repositoryUtils.getCommunityReportStylesheet(communityId.get, XmlReportType.TestCaseReport)
+          )
+        }
+        Some(reportPath)
+      } else {
+        None
+      }
+    } finally {
+      if (result != null && result._2.archived) {
+        FileUtils.deleteQuietly(result._2.path.toFile)
+      }
+    }
   }
 
   private def getSampleConformanceStatement(addPrefixes: Boolean, testSuiteIndex: Int, testCaseIndex: Int, labels: Map[Short, CommunityLabels], domainId: Long, groupId: Long, specificationId: Long, actorId: Long): ConformanceStatementFull = {
@@ -482,58 +647,24 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
   }
 
   def generateDemoConformanceCertificate(reportPath: Path, settings: ConformanceCertificateInfo, communityId: Long): Path = {
-    val conformanceInfo = new ListBuffer[ConformanceStatementFull]
-    val labels = communityLabelManager.getLabels(communityId)
-    conformanceInfo += getSampleConformanceStatement(addPrefixes = false, 1, 1, labels, 0L, 0L, 0L, 0L)
-    conformanceInfo += getSampleConformanceStatement(addPrefixes = false, 1, 2, labels, 0L, 0L, 0L, 0L)
-    conformanceInfo += getSampleConformanceStatement(addPrefixes = false, 1, 3, labels, 0L, 0L, 0L, 0L)
-    conformanceInfo += getSampleConformanceStatement(addPrefixes = false, 1, 4, labels, 0L, 0L, 0L, 0L)
-    conformanceInfo += getSampleConformanceStatement(addPrefixes = false, 1, 5, labels, 0L, 0L, 0L, 0L)
-    generateConformanceCertificate(reportPath, settings, conformanceInfo.toList, communityId, None, isDemo = true)
+    val labels = communityLabelManager.getLabels(settings.community)
+    val conformanceInfo = createDemoDataForConformanceStatementReport(labels)
+    generateConformanceCertificate(reportPath, settings, conformanceInfo, communityId, labels, None, isDemo = true)
   }
 
   def generateDemoConformanceOverviewCertificate(reportPath: Path, settings: ConformanceCertificateInfo, communityId: Long, level: OverviewLevelType): Path = {
-    val labels = communityLabelManager.getLabels(communityId)
-    // Generate demo data
-    val builder = new ConformanceStatusBuilder[ConformanceStatementFull](true)
-    var actorIdsToDisplay: Option[Set[Long]] = None
-    if (level == OverviewLevelType.SpecificationLevel) {
-      // Actor 1
-      builder.addConformanceResult(getSampleConformanceStatement(addPrefixes = true, 1, 1, labels, 1L, 1L, 1L, 1L), isOptional = false, isDisabled = false)
-      builder.addConformanceResult(getSampleConformanceStatement(addPrefixes = true, 1, 2, labels, 1L, 1L, 1L, 1L), isOptional = false, isDisabled = false)
-      builder.addConformanceResult(getSampleConformanceStatement(addPrefixes = true, 1, 3, labels, 1L, 1L, 1L, 1L), isOptional = false, isDisabled = false)
-      // Actor 2
-      builder.addConformanceResult(getSampleConformanceStatement(addPrefixes = true, 1, 1, labels, 1L, 1L, 1L, 2L), isOptional = false, isDisabled = false)
-      builder.addConformanceResult(getSampleConformanceStatement(addPrefixes = true, 1, 2, labels, 1L, 1L, 1L, 2L), isOptional = false, isDisabled = false)
-      builder.addConformanceResult(getSampleConformanceStatement(addPrefixes = true, 1, 3, labels, 1L, 1L, 1L, 2L), isOptional = false, isDisabled = false)
-      actorIdsToDisplay = Some(Set(1L, 2L))
-    } else {
-      // Specification 1
-      builder.addConformanceResult(getSampleConformanceStatement(addPrefixes = true, 1, 1, labels, 1L, 1L, 1L, 1L), isOptional = false, isDisabled = false)
-      builder.addConformanceResult(getSampleConformanceStatement(addPrefixes = true, 1, 2, labels, 1L, 1L, 1L, 1L), isOptional = false, isDisabled = false)
-      builder.addConformanceResult(getSampleConformanceStatement(addPrefixes = true, 1, 3, labels, 1L, 1L, 1L, 1L), isOptional = false, isDisabled = false)
-      // Specification 2
-      builder.addConformanceResult(getSampleConformanceStatement(addPrefixes = true, 2, 4, labels, 1L, 1L, 2L, 2L), isOptional = false, isDisabled = false)
-      builder.addConformanceResult(getSampleConformanceStatement(addPrefixes = true, 2, 5, labels, 1L, 1L, 2L, 2L), isOptional = false, isDisabled = false)
-      builder.addConformanceResult(getSampleConformanceStatement(addPrefixes = true, 2, 6, labels, 1L, 1L, 2L, 2L), isOptional = false, isDisabled = false)
-      // Specification 3
-      builder.addConformanceResult(getSampleConformanceStatement(addPrefixes = true, 3, 7, labels, 1L, 1L, 3L, 3L), isOptional = false, isDisabled = false)
-      builder.addConformanceResult(getSampleConformanceStatement(addPrefixes = true, 3, 8, labels, 1L, 1L, 3L, 3L), isOptional = false, isDisabled = false)
-      builder.addConformanceResult(getSampleConformanceStatement(addPrefixes = true, 3, 9, labels, 1L, 1L, 3L, 3L), isOptional = false, isDisabled = false)
-      actorIdsToDisplay = Some(Set.empty)
-    }
-    // Construct the report data
-    val conformanceData = getConformanceDataForOverviewReport(builder, level, communityId, actorIdsToDisplay)
-    // Create the report
+    val labels = communityLabelManager.getLabels(settings.community)
+    val conformanceData = createDemoDataForConformanceOverviewReport(communityId, level, labels)
     generateConformanceOverviewReport(conformanceData, Some(settings), reportPath, labels, communityId, isDemo = true, None)
   }
 
   def generateConformanceCertificate(reportPath: Path, settings: ConformanceCertificateInfo, actorId: Long, systemId: Long, communityId: Long, snapshotId: Option[Long]): Path = {
     val conformanceInfo = conformanceManager.getConformanceStatementsResultBuilder(None, None, None, Some(List(actorId)), None, None, Some(List(systemId)), None, None, None, None, snapshotId, prefixSpecificationNameWithGroup = false).getDetails(None)
-    generateConformanceCertificate(reportPath, settings, conformanceInfo, communityId, snapshotId: Option[Long], isDemo = false)
+    val labels = communityLabelManager.getLabels(settings.community)
+    generateConformanceCertificate(reportPath, settings, conformanceInfo, communityId, labels, snapshotId: Option[Long], isDemo = false)
   }
 
-  private def generateConformanceCertificate(reportPath: Path, settings: ConformanceCertificateInfo, conformanceInfo: List[ConformanceStatementFull], communityId: Long, snapshotId: Option[Long], isDemo: Boolean): Path = {
+  private def generateConformanceCertificate(reportPath: Path, settings: ConformanceCertificateInfo, conformanceInfo: List[ConformanceStatementFull], communityId: Long, labels: Map[Short, CommunityLabels], snapshotId: Option[Long], isDemo: Boolean): Path = {
     var pathToUseForPdf = if (settings.includeSignature) {
       reportPath.resolveSibling(reportPath.getFileName.toString + ".signed.pdf")
     } else {
@@ -547,7 +678,6 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
         title = Some("Conformance Certificate")
       }
     }
-    val labels = communityLabelManager.getLabels(settings.community)
     generateCoreConformanceReport(pathToUseForPdf, addTestCases = false, title, addDetails = settings.includeDetails, addTestCaseResults = settings.includeItems, addTestStatus = settings.includeItemStatus,
       addMessage = settings.includeMessage, addPageNumbers = settings.includePageNumbers, settings.message,
       conformanceInfo, labels, communityId, snapshotId, isDemo
@@ -652,7 +782,7 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
         testSuite.result = TestResultType.fromValue(testSuite.resultStatus())
       }
     }
-    val conformanceItemTree = conformanceManager.createConformanceItemTree(ConformanceItemTreeData(conformanceOverview, actorIdsToDisplay), withResults = true, testSuiteMapper = Some((statement: ConformanceStatement) => {
+    val conformanceItemTree = conformanceManager.createConformanceItemTree(ConformanceItemTreeData(conformanceOverview, actorIdsToDisplay), withResults = true, testSuiteMapper = Some((statement: models.ConformanceStatement) => {
       if (actorTestSuiteMap.contains(statement.actorId)) {
         actorTestSuiteMap(statement.actorId).values.toList
       } else {
@@ -723,13 +853,260 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
     generateConformanceOverviewReport(conformanceData, None, reportPath, labels, communityId, isDemo = false, snapshotId)
   }
 
+  private def statementItemToXmlConformanceItemOverview(item: ConformanceStatementItem, tracker: ConformanceOverviewTracker): com.gitb.tr.ConformanceItemOverview = {
+    var xmlItem: Option[com.gitb.tr.ConformanceItemOverview] = None
+    var hasChildWithFailures = false
+    var hasChildWithIncomplete = false
+    item.itemType match {
+      case ConformanceStatementItemType.DOMAIN =>
+        xmlItem = Some(new DomainOverview)
+        if (item.items.nonEmpty) {
+          item.items.get.foreach { child =>
+            val childXmlItem = statementItemToXmlConformanceItemOverview(child, tracker)
+            if (childXmlItem.getResult == TestResultType.FAILURE) hasChildWithFailures = true
+            if (childXmlItem.getResult == TestResultType.UNDEFINED) hasChildWithIncomplete = true
+            // We can have specifications or groups under a domain
+            xmlItem.get.asInstanceOf[DomainOverview].getSpecificationGroupOrSpecification.add(childXmlItem)
+          }
+        }
+      case ConformanceStatementItemType.SPECIFICATION_GROUP =>
+        xmlItem = Some(new SpecificationGroupOverview)
+        if (item.items.nonEmpty) {
+          item.items.get.foreach { child =>
+            val childXmlItem = statementItemToXmlConformanceItemOverview(child, tracker)
+            if (childXmlItem.getResult == TestResultType.FAILURE) hasChildWithFailures = true
+            if (childXmlItem.getResult == TestResultType.UNDEFINED) hasChildWithIncomplete = true
+            // We can only have specifications under a group
+            xmlItem.get.asInstanceOf[SpecificationGroupOverview].getSpecification.add(childXmlItem.asInstanceOf[SpecificationOverview])
+          }
+        }
+      case ConformanceStatementItemType.SPECIFICATION =>
+        xmlItem = Some(new SpecificationOverview)
+        if (item.items.nonEmpty) {
+          item.items.get.foreach { child =>
+            val childXmlItem = statementItemToXmlConformanceItemOverview(child, tracker)
+            if (childXmlItem.getResult == TestResultType.FAILURE) hasChildWithFailures = true
+            if (childXmlItem.getResult == TestResultType.UNDEFINED) hasChildWithIncomplete = true
+            // We have actors under a specification
+            xmlItem.get.asInstanceOf[SpecificationOverview].getActor.add(childXmlItem.asInstanceOf[ActorOverview])
+          }
+        }
+      case _ =>
+        xmlItem = Some(new ActorOverview) // ACTOR
+        if (tracker.withIndexes) {
+          xmlItem.get.asInstanceOf[ActorOverview].setStatement(tracker.nextIndex().toString)
+        }
+    }
+    if (item.items.isDefined && item.items.get.nonEmpty) {
+      // We have children - calculate the result from their results
+      if (hasChildWithFailures) {
+        xmlItem.get.setResult(TestResultType.FAILURE)
+      } else if (hasChildWithIncomplete) {
+        xmlItem.get.setResult(TestResultType.UNDEFINED)
+      } else {
+        xmlItem.get.setResult(TestResultType.SUCCESS)
+      }
+    } else if (item.results.nonEmpty) {
+      // We have results
+      if (item.results.get.failedTests > 0) {
+        xmlItem.get.setResult(TestResultType.FAILURE)
+      } else if (item.results.get.undefinedTests > 0) {
+        xmlItem.get.setResult(TestResultType.UNDEFINED)
+      } else {
+        xmlItem.get.setResult(TestResultType.SUCCESS)
+      }
+      // This is a "leaf" item where we have a conformance statement - notify the tracker to maintain the statistics
+      tracker.addResult(xmlItem.get.getResult)
+    } else {
+      // Not normal
+      xmlItem.get.setResult(TestResultType.UNDEFINED)
+    }
+    xmlItem.get.setName(item.name)
+    xmlItem.get
+  }
+
+  private def getStatementTreeForXmlReport(conformanceData: ConformanceData, tracker: ConformanceOverviewTracker): com.gitb.tr.ConformanceStatementOverview = {
+    val overview = new com.gitb.tr.ConformanceStatementOverview
+    if (conformanceData.conformanceItemTree.nonEmpty) {
+      conformanceData.conformanceItemTree.foreach { item =>
+        val xmlItem = statementItemToXmlConformanceItemOverview(item, tracker)
+        xmlItem match {
+          case domainOverview: DomainOverview => overview.getDomain.add(domainOverview)
+          case groupOverview: SpecificationGroupOverview => overview.setSpecificationGroup(groupOverview)
+          case specificationOverview: SpecificationOverview => overview.setSpecification(specificationOverview)
+          case _ => // Not normal
+        }
+      }
+    }
+    overview
+  }
+
+  private def createDemoDataForConformanceOverviewReport(communityId: Long, level: OverviewLevelType, labels: Map[Short, CommunityLabels]): ConformanceData = {
+    // Generate demo data
+    val builder = new ConformanceStatusBuilder[ConformanceStatementFull](true)
+    var actorIdsToDisplay: Option[Set[Long]] = None
+    if (level == OverviewLevelType.SpecificationLevel) {
+      // Actor 1
+      builder.addConformanceResult(getSampleConformanceStatement(addPrefixes = true, 1, 1, labels, 1L, 1L, 1L, 1L), isOptional = false, isDisabled = false)
+      builder.addConformanceResult(getSampleConformanceStatement(addPrefixes = true, 1, 2, labels, 1L, 1L, 1L, 1L), isOptional = false, isDisabled = false)
+      builder.addConformanceResult(getSampleConformanceStatement(addPrefixes = true, 1, 3, labels, 1L, 1L, 1L, 1L), isOptional = false, isDisabled = false)
+      // Actor 2
+      builder.addConformanceResult(getSampleConformanceStatement(addPrefixes = true, 1, 1, labels, 1L, 1L, 1L, 2L), isOptional = false, isDisabled = false)
+      builder.addConformanceResult(getSampleConformanceStatement(addPrefixes = true, 1, 2, labels, 1L, 1L, 1L, 2L), isOptional = false, isDisabled = false)
+      builder.addConformanceResult(getSampleConformanceStatement(addPrefixes = true, 1, 3, labels, 1L, 1L, 1L, 2L), isOptional = false, isDisabled = false)
+      actorIdsToDisplay = Some(Set(1L, 2L))
+    } else {
+      // Specification 1
+      builder.addConformanceResult(getSampleConformanceStatement(addPrefixes = true, 1, 1, labels, 1L, 1L, 1L, 1L), isOptional = false, isDisabled = false)
+      builder.addConformanceResult(getSampleConformanceStatement(addPrefixes = true, 1, 2, labels, 1L, 1L, 1L, 1L), isOptional = false, isDisabled = false)
+      builder.addConformanceResult(getSampleConformanceStatement(addPrefixes = true, 1, 3, labels, 1L, 1L, 1L, 1L), isOptional = false, isDisabled = false)
+      // Specification 2
+      builder.addConformanceResult(getSampleConformanceStatement(addPrefixes = true, 2, 4, labels, 1L, 1L, 2L, 2L), isOptional = false, isDisabled = false)
+      builder.addConformanceResult(getSampleConformanceStatement(addPrefixes = true, 2, 5, labels, 1L, 1L, 2L, 2L), isOptional = false, isDisabled = false)
+      builder.addConformanceResult(getSampleConformanceStatement(addPrefixes = true, 2, 6, labels, 1L, 1L, 2L, 2L), isOptional = false, isDisabled = false)
+      if (level == OverviewLevelType.OrganisationLevel || level == OverviewLevelType.DomainLevel) {
+        // Group 2
+        // Specification 3
+        builder.addConformanceResult(getSampleConformanceStatement(addPrefixes = true, 3, 7, labels, 1L, 2L, 3L, 3L), isOptional = false, isDisabled = false)
+        builder.addConformanceResult(getSampleConformanceStatement(addPrefixes = true, 3, 8, labels, 1L, 2L, 3L, 3L), isOptional = false, isDisabled = false)
+        builder.addConformanceResult(getSampleConformanceStatement(addPrefixes = true, 3, 9, labels, 1L, 2L, 3L, 3L), isOptional = false, isDisabled = false)
+        // Specification 4
+        builder.addConformanceResult(getSampleConformanceStatement(addPrefixes = true, 3, 7, labels, 1L, 2L, 4L, 4L), isOptional = false, isDisabled = false)
+        builder.addConformanceResult(getSampleConformanceStatement(addPrefixes = true, 3, 8, labels, 1L, 2L, 4L, 4L), isOptional = false, isDisabled = false)
+        builder.addConformanceResult(getSampleConformanceStatement(addPrefixes = true, 3, 9, labels, 1L, 2L, 4L, 4L), isOptional = false, isDisabled = false)
+      }
+      actorIdsToDisplay = Some(Set.empty)
+    }
+    // Construct the report data
+    getConformanceDataForOverviewReport(builder, level, communityId, actorIdsToDisplay)
+  }
+
+  def generateDemoConformanceOverviewReportInXML(reportPath: Path, transformer: Option[Path], communityId: Long, level: OverviewLevelType): Path = {
+    val labels = communityLabelManager.getLabels(communityId)
+    val conformanceData = createDemoDataForConformanceOverviewReport(communityId, level, labels)
+    generateConformanceOverviewReportInXML(reportPath, transformer, communityId, conformanceData, isDemo = true)
+  }
+
+  def generateConformanceOverviewReportInXML(reportPath: Path, systemId: Long, domainId: Option[Long], groupId: Option[Long], specificationId: Option[Long], communityId: Long, snapshotId: Option[Long]): Path = {
+    val conformanceData = getConformanceDataForOverviewReport(systemId, domainId, groupId, specificationId, snapshotId, communityId)
+    val transformer = repositoryUtils.getCommunityReportStylesheet(communityId, XmlReportType.ConformanceOverviewReport)
+    generateConformanceOverviewReportInXML(reportPath, transformer, communityId, conformanceData, isDemo = false)
+  }
+
+  private def generateConformanceOverviewReportInXML(reportPath: Path, transformer: Option[Path], communityId: Long, conformanceData: ConformanceData, isDemo: Boolean): Path = {
+    val report = new ConformanceOverviewReportType
+    // Metadata
+    report.setMetadata(new com.gitb.tr.ReportMetadata)
+    report.getMetadata.setReportTime(XMLDateTimeUtils.getXMLGregorianCalendarDateTime)
+    report.setOverview(new com.gitb.tr.ConformanceOverview)
+    // Definition
+    report.getOverview.setDefinition(new ConformanceOverviewDefinition)
+    if (conformanceData.reportLevel != OverviewLevelType.OrganisationLevel) {
+      report.getOverview.getDefinition.setDomain(conformanceData.domainName.orNull)
+      if (conformanceData.reportLevel == OverviewLevelType.SpecificationGroupLevel) {
+        report.getOverview.getDefinition.setSpecificationGroup(conformanceData.groupName.orNull)
+      } else if (conformanceData.reportLevel == OverviewLevelType.SpecificationLevel) {
+        report.getOverview.getDefinition.setSpecificationGroup(conformanceData.groupName.orNull)
+        report.getOverview.getDefinition.setSpecification(conformanceData.specificationName.orNull)
+      }
+    }
+    // Party information
+    report.getOverview.getDefinition.setParty(getPartyDefinitionForXmlReport(conformanceData.organisationId.get, conformanceData.organisationName.get, conformanceData.systemId.get, conformanceData.systemName.get, communityId, isDemo))
+    // Statement overview
+    val tracker = new ConformanceOverviewTracker(true)
+    report.getOverview.setStatementOverview(getStatementTreeForXmlReport(conformanceData, tracker))
+    // Summary
+    report.getOverview.setSummary(new ResultSummary)
+    report.getOverview.getSummary.setStatus(tracker.aggregateStatus())
+    report.getOverview.getSummary.setFailed(BigInteger.valueOf(tracker.failureCount))
+    report.getOverview.getSummary.setIncomplete(BigInteger.valueOf(tracker.incompleteCount))
+    report.getOverview.getSummary.setSucceeded(BigInteger.valueOf(tracker.successCount))
+    // Statement details
+    if (conformanceData.statements.nonEmpty) {
+      report.getOverview.setStatementDetails(new com.gitb.tr.ConformanceStatements)
+      var statementIndex = 0
+      val statementList = ConformanceItem.flattenStatements(conformanceData.conformanceItems)
+      statementList.forEach { conformanceStatement =>
+        statementIndex = statementIndex + 1
+        val statement = new com.gitb.tr.ConformanceStatement
+        statement.setId(statementIndex.toString)
+        // Definition
+        statement.setDefinition(new ConformanceStatementDefinition)
+        statement.getDefinition.setDomain(conformanceStatement.getTestDomain)
+        statement.getDefinition.setSpecificationGroup(conformanceStatement.getTestSpecificationGroup)
+        statement.getDefinition.setSpecification(conformanceStatement.getTestSpecification)
+        statement.getDefinition.setActor(conformanceStatement.getTestActor)
+        // Party information
+        statement.getDefinition.setParty(getPartyDefinitionForXmlReport(conformanceData.organisationId.get, conformanceData.organisationName.get, conformanceData.systemId.get, conformanceData.systemName.get, communityId, isDemo))
+        // Test overview
+        statement.setTestOverview(new TestSuiteOverviews)
+        conformanceStatement.getTestSuites.forEach { testSuiteInfo =>
+          // Statement test suites
+          val testSuite = new com.gitb.tr.TestSuiteOverview
+          testSuite.setMetadata(new Metadata)
+          testSuite.getMetadata.setName(testSuiteInfo.getTestSuiteName)
+          testSuite.getMetadata.setDescription(testSuiteInfo.getTestSuiteDescription)
+          if (testSuiteInfo.getSpecReference != null || testSuiteInfo.getSpecLink != null || testSuiteInfo.getSpecDescription != null) {
+            testSuite.getMetadata.setSpecification(new SpecificationInfo)
+            testSuite.getMetadata.getSpecification.setReference(testSuiteInfo.getSpecReference)
+            testSuite.getMetadata.getSpecification.setLink(testSuiteInfo.getSpecLink)
+            testSuite.getMetadata.getSpecification.setDescription(testSuiteInfo.getSpecDescription)
+          }
+          testSuite.setResult(TestResultType.fromValue(testSuiteInfo.getOverallStatus))
+          // Test suite test cases
+          testSuite.setTestCases(new TestCaseOverviews)
+          if (!testSuiteInfo.getTestCases.isEmpty) {
+            testSuite.setTestCases(new TestCaseOverviews)
+            testSuiteInfo.getTestCases.forEach { testCaseInfo =>
+              val testCase = new com.gitb.tr.TestCaseOverview()
+              testCase.setMetadata(new Metadata)
+              testCase.getMetadata.setName(testCaseInfo.getTestName)
+              testCase.getMetadata.setDescription(testCaseInfo.getTestDescription)
+              if (testCaseInfo.getSpecReference != null || testCaseInfo.getSpecLink != null || testCaseInfo.getSpecDescription != null) {
+                testCase.getMetadata.setSpecification(new SpecificationInfo)
+                testCase.getMetadata.getSpecification.setReference(testCaseInfo.getSpecReference)
+                testCase.getMetadata.getSpecification.setLink(testCaseInfo.getSpecLink)
+                testCase.getMetadata.getSpecification.setDescription(testCaseInfo.getSpecDescription)
+              }
+              if (testCaseInfo.getTags != null && !testCaseInfo.getTags.isEmpty) {
+                testCase.getMetadata.setTags(new Tags)
+                testCaseInfo.getTags.forEach { tagInfo =>
+                  val tag = new com.gitb.core.Tag
+                  tag.setName(tagInfo.name())
+                  tag.setValue(tagInfo.description())
+                  tag.setBackground(tagInfo.background())
+                  tag.setForeground(tagInfo.foreground())
+                  testCase.getMetadata.getTags.getTag.add(tag)
+                }
+              }
+              testCase.setResult(TestResultType.fromValue(testCaseInfo.getReportResult))
+              if (testCaseInfo.isOptional) testCase.setOptional(testCaseInfo.isOptional)
+              if (testCaseInfo.isDisabled) testCase.setDisabled(testCaseInfo.isDisabled)
+              testSuite.getTestCases.getTestCase.add(testCase)
+            }
+          }
+          statement.getTestOverview.getTestSuite.add(testSuite)
+        }
+        report.getOverview.getStatementDetails.getStatement.add(statement)
+      }
+    }
+    // Produce XML report
+    Files.createDirectories(reportPath.getParent)
+    Using(Files.newOutputStream(reportPath)) { fos =>
+      ReportGenerator.getInstance().writeConformanceOverviewXmlReport(report, fos)
+      fos.flush()
+    }
+    // Apply XSLT if needed
+    applyXsltToReportAndPrettyPrint(reportPath, transformer)
+  }
+
   private def generateConformanceOverviewReport(conformanceData: ConformanceData, settings: Option[ConformanceCertificateInfo], reportPath: Path, labels: Map[Short, CommunityLabels], communityId: Long, isDemo: Boolean, snapshotId: Option[Long]): Path = {
     var pathToUseForPdf = if (settings.isDefined && settings.get.includeSignature) {
       reportPath.resolveSibling(reportPath.getFileName.toString + ".signed.pdf")
     } else {
       reportPath
     }
-    val overview = new ConformanceOverview()
+    val overview = new com.gitb.reports.dto.ConformanceOverview()
     val specs = reportHelper.createReportSpecs(Some(communityId))
     // Labels
     overview.setLabelDomain(communityLabelManager.getLabel(labels, models.Enums.LabelType.Domain))
@@ -946,7 +1323,7 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
   private def replaceBadgeListPlaceholders(message: String, isDemo: Boolean, data: ConformanceData, snapshotId: Option[Long]): String = {
     var messageToUse = message
     val placeholders = getBadgeListPlaceholders(message)
-    val placeholdersToProcess = new ListBuffer[(BadgePlaceholderInfo, ConformanceStatement)]
+    val placeholdersToProcess = new ListBuffer[(BadgePlaceholderInfo, models.ConformanceStatement)]
     if (data.statements.nonEmpty) {
       placeholders.foreach { placeholder =>
         // Additions: 1: before all, 2: before each, 3: after each, 4: after all
@@ -1073,9 +1450,9 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
         newItem.getData.setTestActor(reportData.actorName.orNull)
       }
       if (item.results.get.testSuites.isDefined) {
-        newItem.getData.setTestSuites(new util.ArrayList[TestSuiteOverview]())
+        newItem.getData.setTestSuites(new util.ArrayList[com.gitb.reports.dto.TestSuiteOverview]())
         item.results.get.testSuites.get.foreach { testSuite =>
-          val testSuiteOverview = new TestSuiteOverview()
+          val testSuiteOverview = new com.gitb.reports.dto.TestSuiteOverview()
           newItem.getData.getTestSuites.add(testSuiteOverview)
           testSuiteOverview.setOverallStatus(testSuite.result.value())
           testSuiteOverview.setTestSuiteName(testSuite.name)
@@ -1083,9 +1460,9 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
           testSuiteOverview.setSpecReference(testSuite.specReference.orNull)
           testSuiteOverview.setSpecLink(testSuite.specLink.orNull)
           testSuiteOverview.setSpecDescription(testSuite.specDescription.orNull)
-          testSuiteOverview.setTestCases(new util.ArrayList[TestCaseOverview]())
+          testSuiteOverview.setTestCases(new util.ArrayList[com.gitb.reports.dto.TestCaseOverview]())
           testSuite.testCases.foreach { testCase =>
-            val testCaseOverview = new TestCaseOverview()
+            val testCaseOverview = new com.gitb.reports.dto.TestCaseOverview()
             testSuiteOverview.getTestCases.add(testCaseOverview)
             testCaseOverview.setTestName(testCase.name)
             testCaseOverview.setReportResult(testCase.result.value())
@@ -1106,13 +1483,302 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
     newItem
   }
 
-  private def parseTestCaseTags(tags: String): util.List[TestCaseOverview.Tag] = {
-    val parsedTags = JsonUtil.parseJsTags(tags).map(x => new TestCaseOverview.Tag(x.name, x.description.orNull, x.foreground.getOrElse("#777777"), x.background.getOrElse("#FFFFFF")))
+  private def parseTestCaseTags(tags: String): util.List[com.gitb.reports.dto.TestCaseOverview.Tag] = {
+    val parsedTags = JsonUtil.parseJsTags(tags).map(x => new com.gitb.reports.dto.TestCaseOverview.Tag(x.name, x.description.orNull, x.foreground.getOrElse("#777777"), x.background.getOrElse("#FFFFFF")))
     new util.ArrayList(parsedTags.asJavaCollection)
   }
 
   def generateConformanceStatementReport(reportPath: Path, addTestCases: Boolean, actorId: Long, systemId: Long, labels: Map[Short, CommunityLabels], communityId: Long, snapshotId: Option[Long]): Path = {
     generateCoreConformanceReport(reportPath, addTestCases, None, actorId, systemId, labels, communityId, snapshotId)
+  }
+
+  private def createDemoDataForConformanceStatementReport(labels: Map[Short, CommunityLabels]): List[ConformanceStatementFull] = {
+    val conformanceInfo = new ListBuffer[ConformanceStatementFull]
+    conformanceInfo += getSampleConformanceStatement(addPrefixes = false, 1, 1, labels, 0L, 0L, 0L, 0L)
+    conformanceInfo += getSampleConformanceStatement(addPrefixes = false, 1, 2, labels, 0L, 0L, 0L, 0L)
+    conformanceInfo += getSampleConformanceStatement(addPrefixes = false, 1, 3, labels, 0L, 0L, 0L, 0L)
+    conformanceInfo += getSampleConformanceStatement(addPrefixes = false, 1, 4, labels, 0L, 0L, 0L, 0L)
+    conformanceInfo += getSampleConformanceStatement(addPrefixes = false, 1, 5, labels, 0L, 0L, 0L, 0L)
+    conformanceInfo.toList
+  }
+
+  def generateDemoConformanceStatementReportInXML(reportPath: Path, transformer: Option[Path], addTestCases: Boolean, communityId: Long): Path = {
+    val labels = communityLabelManager.getLabels(communityId)
+    val conformanceInfo = createDemoDataForConformanceStatementReport(labels)
+    generateConformanceStatementReportInXML(reportPath, transformer, addTestCases, conformanceInfo, isDemo = true)
+  }
+
+  def generateConformanceStatementReportInXML(reportPath: Path, addTestCases: Boolean, actorId: Long, systemId: Long, communityId: Long, snapshotId: Option[Long]): Path = {
+    val conformanceInfo = conformanceManager.getConformanceStatementsResultBuilder(None, None, None, Some(List(actorId)), None, None, Some(List(systemId)), None, None, None, None, snapshotId, prefixSpecificationNameWithGroup = false).getDetails(None)
+    val transformer = repositoryUtils.getCommunityReportStylesheet(communityId, XmlReportType.ConformanceStatementReport)
+    generateConformanceStatementReportInXML(reportPath, transformer, addTestCases, conformanceInfo, isDemo = false)
+  }
+
+  private def getPartyDefinitionForXmlReport(organisationId: Long, organisationName: String, systemId: Long, systemName: String, communityId: Long, isDemo: Boolean): PartyDefinition = {
+    val party = new PartyDefinition
+    party.setOrganisation(new com.gitb.tr.Organisation)
+    party.getOrganisation.setName(organisationName)
+    // Organisation properties
+    if (isDemo) {
+      val params = communityManager.getSimpleOrganisationParameters(communityId, Some(true))
+      if (params.nonEmpty) {
+        party.getOrganisation.setProperties(new PartyProperties)
+        params.foreach { param =>
+          val property = new PartyProperty
+          property.setName(param.testKey)
+          property.setValue("Value for "+param.testKey)
+          party.getOrganisation.getProperties.getProperty.add(property)
+        }
+      }
+    } else {
+      val params = organizationManager.getOrganisationParameterValues(organisationId, Some(true), Some(true))
+      if (params.nonEmpty) {
+        party.getOrganisation.setProperties(new PartyProperties)
+        params.foreach { param =>
+          if (param.value.isDefined) {
+            val property = new PartyProperty
+            property.setName(param.parameter.testKey)
+            property.setValue(param.value.get.value)
+            party.getOrganisation.getProperties.getProperty.add(property)
+          }
+        }
+      }
+    }
+    party.setSystem(new com.gitb.tr.System)
+    party.getSystem.setName(systemName)
+    // System properties
+    if (isDemo) {
+      val params = communityManager.getSimpleSystemParameters(communityId, Some(true))
+      if (params.nonEmpty) {
+        party.getSystem.setProperties(new PartyProperties)
+        params.foreach { param =>
+          val property = new PartyProperty
+          property.setName(param.testKey)
+          property.setValue("Value for "+param.testKey)
+          party.getSystem.getProperties.getProperty.add(property)
+        }
+      }
+    } else {
+      val params = systemManager.getSystemParameterValues(systemId, Some(true), Some(true))
+      if (params.nonEmpty) {
+        party.getSystem.setProperties(new PartyProperties)
+        params.foreach { param =>
+          if (param.value.isDefined) {
+            val property = new PartyProperty
+            property.setName(param.parameter.testKey)
+            property.setValue(param.value.get.value)
+            party.getSystem.getProperties.getProperty.add(property)
+          }
+        }
+      }
+    }
+    party
+  }
+
+  private def generateConformanceStatementReportInXML(reportPath: Path, transformer: Option[Path], addTestCases: Boolean, conformanceInfo: List[ConformanceStatementFull], isDemo: Boolean): Path = {
+    // Load the conformance data
+    val conformanceData = conformanceInfo.head
+    // Build the report
+    val report = new ConformanceStatementReportType
+    // Metadata
+    report.setMetadata(new com.gitb.tr.ReportMetadata)
+    report.getMetadata.setReportTime(XMLDateTimeUtils.getXMLGregorianCalendarDateTime)
+    report.setStatement(new com.gitb.tr.ConformanceStatement)
+    // Definition
+    report.getStatement.setDefinition(new ConformanceStatementDefinition)
+    report.getStatement.getDefinition.setDomain(conformanceData.domainNameFull)
+    report.getStatement.getDefinition.setSpecificationGroup(conformanceData.specificationGroupNameFull.orNull)
+    report.getStatement.getDefinition.setSpecification(conformanceData.specificationNameFull)
+    report.getStatement.getDefinition.setActor(conformanceData.actorFull)
+    // Party information
+    report.getStatement.getDefinition.setParty(getPartyDefinitionForXmlReport(conformanceData.organizationId, conformanceData.organizationName, conformanceData.systemId, conformanceData.systemName, conformanceData.communityId, isDemo))
+    // Test overview
+    var failedTests = 0
+    var completedTests = 0
+    var undefinedTests = 0
+    var index = 0
+    val testMap = new mutable.TreeMap[Long, (com.gitb.tr.TestSuiteOverview, Counters)]
+    if (addTestCases) {
+      report.getStatement.setTestDetails(new TestCaseDetails)
+    }
+    conformanceInfo.foreach { info =>
+      val result = TestResultStatus.withName(info.result)
+      if (!info.testCaseDisabled.get && !info.testCaseOptional.get) {
+        if (result == TestResultStatus.SUCCESS) {
+          completedTests += 1
+        } else if (result == TestResultStatus.FAILURE) {
+          failedTests += 1
+        } else {
+          undefinedTests += 1
+        }
+      }
+      // Test case
+      val testCaseOverview = new com.gitb.tr.TestCaseOverview()
+      testCaseOverview.setMetadata(new Metadata)
+      testCaseOverview.getMetadata.setName(info.testCaseName.orNull)
+      testCaseOverview.getMetadata.setDescription(info.testCaseDescription.orNull)
+      if (info.testCaseSpecReference.isDefined || info.testCaseSpecLink.isDefined || info.testCaseSpecDescription.isDefined) {
+        testCaseOverview.getMetadata.setSpecification(new SpecificationInfo)
+        if (info.testCaseSpecReference.isDefined) testCaseOverview.getMetadata.getSpecification.setReference(info.testCaseSpecReference.get)
+        if (info.testCaseSpecLink.isDefined) testCaseOverview.getMetadata.getSpecification.setLink(info.testCaseSpecLink.get)
+        if (info.testCaseSpecDescription.isDefined) testCaseOverview.getMetadata.getSpecification.setDescription(info.testCaseSpecDescription.get)
+      }
+      if (info.testCaseTags.isDefined) {
+        testCaseOverview.getMetadata.setTags(new Tags)
+        JsonUtil.parseJsTags(info.testCaseTags.get).map(tag => {
+          val tagToExport = new com.gitb.core.Tag
+          tagToExport.setName(tag.name)
+          tagToExport.setValue(tag.description.orNull)
+          tagToExport.setBackground(tag.background.orNull)
+          tagToExport.setForeground(tag.foreground.orNull)
+          tagToExport
+        }).foreach(testCaseOverview.getMetadata.getTags.getTag.add(_))
+      }
+      testCaseOverview.setResult(TestResultType.fromValue(info.result))
+      val optional = info.testCaseOptional.getOrElse(false)
+      if (optional) testCaseOverview.setOptional(optional)
+      val disabled = info.testCaseDisabled.getOrElse(false)
+      if (disabled) testCaseOverview.setDisabled(disabled)
+      // Add test session details
+      if (addTestCases && (isDemo || info.sessionId.isDefined)) {
+        index += 1
+        testCaseOverview.setRef(index.toString)
+        val testCaseReport = new TestCaseOverviewReportType
+        testCaseReport.setId(testCaseOverview.getRef)
+        testCaseReport.setMetadata(testCaseOverview.getMetadata)
+        testCaseReport.setResult(testCaseOverview.getResult)
+        testCaseReport.setMessage(info.outputMessage.orNull)
+        // Times and steps
+        if (isDemo) {
+          testCaseReport.setStartTime(XMLDateTimeUtils.getXMLGregorianCalendarDateTime())
+          testCaseReport.setEndTime(testCaseReport.getStartTime)
+          testCaseReport.setSteps(new TestCaseStepsType)
+          testCaseReport.getSteps.getStep.add(createSimpleDemoSuccessStep(Some("1"), Some(testCaseReport.getStartTime)))
+          testCaseReport.getSteps.getStep.add(createSimpleDemoSuccessStep(Some("2"), Some(testCaseReport.getStartTime)))
+          testCaseReport.getSteps.getStep.add(createSimpleDemoSuccessStep(Some("3"), Some(testCaseReport.getStartTime)))
+        } else {
+          val testResult = testResultManager.getTestResultForSessionWrapper(info.sessionId.get)
+          testCaseReport.setStartTime(XMLDateTimeUtils.getXMLGregorianCalendarDateTime(testResult.get._1.startTime))
+          testCaseReport.setEndTime(testResult.get._1.endTime.map(XMLDateTimeUtils.getXMLGregorianCalendarDateTime(_)).orNull)
+          // Add test steps
+          val testcasePresentation = XMLUtils.unmarshal(classOf[TestCase], new StreamSource(new StringReader(testResult.get._2)))
+          val sessionFolderInfo = repositoryUtils.getPathForTestSessionObj(info.sessionId.get, Some(testResult.get._1.startTime), isExpected = true)
+          try {
+            val list = testCaseReportProducer.getListOfTestSteps(testcasePresentation, sessionFolderInfo.path.toFile)
+            if (list.nonEmpty) {
+              testCaseReport.setSteps(new TestCaseStepsType)
+              list.foreach { stepReport =>
+                val report = new TestCaseStepReportType()
+                report.setId(stepReport.getWrapped.getId)
+                report.setDescription(stepReport.getTitle)
+                report.setReport(stepReport.getWrapped)
+                testCaseReport.getSteps.getStep.add(report)
+              }
+            }
+          } finally {
+            if (sessionFolderInfo.archived) {
+              FileUtils.deleteQuietly(sessionFolderInfo.path.toFile)
+            }
+          }
+        }
+        report.getStatement.getTestDetails.getTestCase.add(testCaseReport)
+      }
+      // Test suite
+      val testSuiteOverview = testMap.getOrElseUpdate(info.testSuiteId.get, {
+        val testSuite = new com.gitb.tr.TestSuiteOverview
+        testSuite.setMetadata(new Metadata)
+        testSuite.getMetadata.setName(info.testSuiteName.get)
+        testSuite.getMetadata.setDescription(info.testSuiteDescription.orNull)
+        if (info.testSuiteSpecReference.isDefined || info.testSuiteSpecLink.isDefined || info.testSuiteSpecDescription.isDefined) {
+          testSuite.getMetadata.setSpecification(new SpecificationInfo)
+          if (info.testSuiteSpecReference.isDefined) testSuite.getMetadata.getSpecification.setReference(info.testSuiteSpecReference.get)
+          if (info.testSuiteSpecLink.isDefined) testSuite.getMetadata.getSpecification.setLink(info.testSuiteSpecLink.get)
+          if (info.testSuiteSpecDescription.isDefined) testSuite.getMetadata.getSpecification.setDescription(info.testSuiteSpecDescription.get)
+        }
+        testSuite.setResult(TestResultType.UNDEFINED)
+        testSuite.setTestCases(new TestCaseOverviews)
+        (testSuite, new Counters(0, 0, 0))
+      })
+      // Update the test suite's results.
+      if (!info.testCaseDisabled.get && !info.testCaseOptional.get) {
+        if (result == TestResultStatus.SUCCESS) {
+          testSuiteOverview._2.successes += 1
+        } else if (result == TestResultStatus.FAILURE) {
+          testSuiteOverview._2.failures += 1
+        } else {
+          testSuiteOverview._2.other += 1
+        }
+      }
+      testSuiteOverview._1.getTestCases.getTestCase.add(testCaseOverview)
+    }
+    if (testMap.nonEmpty) {
+      // Set the status of the collected test suites
+      testMap.values.foreach { testSuiteInfo =>
+        if (testSuiteInfo._2.failures > 0) {
+          testSuiteInfo._1.setResult(TestResultType.FAILURE)
+        } else if (testSuiteInfo._2.other > 0) {
+          testSuiteInfo._1.setResult(TestResultType.UNDEFINED)
+        } else if (testSuiteInfo._2.successes > 0) {
+          testSuiteInfo._1.setResult(TestResultType.SUCCESS)
+        } else {
+          testSuiteInfo._1.setResult(TestResultType.UNDEFINED)
+        }
+      }
+      report.getStatement.setTestOverview(new TestSuiteOverviews)
+      // Add to overall output
+      testMap.values.map(_._1).foreach { testSuite =>
+        report.getStatement.getTestOverview.getTestSuite.add(testSuite)
+      }
+    }
+    // Summary
+    report.getStatement.setSummary(new ResultSummary)
+    report.getStatement.getSummary.setStatus(TestResultType.UNDEFINED)
+    if (failedTests > 0) {
+      report.getStatement.getSummary.setStatus(TestResultType.FAILURE)
+    } else if (undefinedTests > 0) {
+      report.getStatement.getSummary.setStatus(TestResultType.UNDEFINED)
+    } else if (completedTests > 0) {
+      report.getStatement.getSummary.setStatus(TestResultType.SUCCESS)
+    }
+    report.getStatement.getSummary.setSucceeded(BigInteger.valueOf(completedTests))
+    report.getStatement.getSummary.setFailed(BigInteger.valueOf(failedTests))
+    report.getStatement.getSummary.setIncomplete(BigInteger.valueOf(undefinedTests))
+    // Produce XML report
+    Files.createDirectories(reportPath.getParent)
+    Using(Files.newOutputStream(reportPath)) { fos =>
+      ReportGenerator.getInstance().writeConformanceStatementXmlReport(report, fos)
+      fos.flush()
+    }
+    // Apply XSLT if needed
+    applyXsltToReportAndPrettyPrint(reportPath, transformer)
+  }
+
+  private def applyXsltToReportAndPrettyPrint(reportPath: Path, xsltPath: Option[Path]): Path = {
+    if (xsltPath.isDefined) {
+      val tempReportPath = reportPath.resolveSibling("temp."+reportPath.getFileName.toString)
+      try {
+        Using.Manager { use =>
+          val xsltStream = use(Files.newInputStream(xsltPath.get))
+          val xmlStream = use(Files.newInputStream(reportPath))
+          val transformer = XMLUtils.getSecureTransformerFactory.newTransformer(
+            new StAXSource(XMLUtils.getSecureXMLInputFactory.createXMLStreamReader(xsltStream))
+          )
+          transformer.setOutputProperty(OutputKeys.INDENT, "yes")
+          transformer.transform(
+            new StAXSource(XMLUtils.getSecureXMLInputFactory.createXMLStreamReader(xmlStream)),
+            new StreamResult(tempReportPath.toFile))
+        }
+      } catch {
+        case e: TransformerConfigurationException =>
+          throw new IllegalArgumentException("An error occurred while preparing the XSLT transformation", e)
+        case e: TransformerException =>
+          throw new IllegalArgumentException("An error occurred during the XSLT transformation", e)
+      }
+      Files.move(tempReportPath, reportPath, StandardCopyOption.REPLACE_EXISTING)
+    } else {
+      XMLUtils.prettyPrintXmlFile(reportPath)
+    }
+    reportPath
   }
 
   private def generateCoreConformanceReport(reportPath: Path, addTestCases: Boolean, message: Option[String], actorId: Long, systemId: Long, labels: Map[Short, CommunityLabels], communityId: Long, snapshotId: Option[Long]): Path = {
@@ -1122,7 +1788,7 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
 
   private def generateCoreConformanceReport(reportPath: Path, addTestCases: Boolean, title: Option[String], addDetails: Boolean, addTestCaseResults: Boolean, addTestStatus: Boolean, addMessage: Boolean, addPageNumbers: Boolean, message: Option[String], conformanceInfo: List[ConformanceStatementFull], labels: Map[Short, CommunityLabels], communityId: Long, snapshotId: Option[Long], isDemo: Boolean): Path = {
     val sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss")
-    val overview = new ConformanceStatementOverview()
+    val overview = new com.gitb.reports.dto.ConformanceStatementOverview()
     val specs = reportHelper.createReportSpecs(Some(communityId))
     // Labels
     overview.setLabelDomain(communityLabelManager.getLabel(labels, models.Enums.LabelType.Domain))
@@ -1149,18 +1815,16 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
     overview.setIncludePageNumbers(addPageNumbers)
 
     if (addTestCaseResults) {
-      overview.setTestSuites(new util.ArrayList[TestSuiteOverview]())
+      overview.setTestSuites(new util.ArrayList[com.gitb.reports.dto.TestSuiteOverview]())
     }
     var failedTests = 0
     var completedTests = 0
     var undefinedTests = 0
-    var totalTests = 0
     var index = 1
-    val testMap = new mutable.TreeMap[Long, (TestSuiteOverview, Counters)]
+    val testMap = new mutable.TreeMap[Long, (com.gitb.reports.dto.TestSuiteOverview, Counters)]
     conformanceInfo.foreach { info =>
       val result = TestResultStatus.withName(info.result)
       if (!info.testCaseDisabled.get && !info.testCaseOptional.get) {
-        totalTests += 1
         if (result == TestResultStatus.SUCCESS) {
           completedTests += 1
         } else if (result == TestResultStatus.FAILURE) {
@@ -1170,7 +1834,7 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
         }
       }
       if (addTestCaseResults) {
-        val testCaseOverview = new TestCaseOverview()
+        val testCaseOverview = new com.gitb.reports.dto.TestCaseOverview()
         testCaseOverview.setId(index.toString)
         testCaseOverview.setTestName(info.testCaseName.get)
         if (info.testCaseDescription.isDefined) {
@@ -1223,14 +1887,14 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
           }
         }
         val testSuiteOverview = testMap.getOrElseUpdate(info.testSuiteId.get, {
-          val testSuite = new TestSuiteOverview
+          val testSuite = new com.gitb.reports.dto.TestSuiteOverview
           testSuite.setTestSuiteName(info.testSuiteName.get)
           testSuite.setTestSuiteDescription(info.testSuiteDescription.orNull)
           testSuite.setSpecReference(info.testSuiteSpecReference.orNull)
           testSuite.setSpecDescription(info.testSuiteSpecDescription.orNull)
           testSuite.setSpecLink(info.testSuiteSpecLink.orNull)
           testSuite.setOverallStatus("UNDEFINED")
-          testSuite.setTestCases(new util.ArrayList[TestCaseOverview]())
+          testSuite.setTestCases(new util.ArrayList[com.gitb.reports.dto.TestCaseOverview]())
           (testSuite, new Counters(0, 0, 0))
         })
         // Update the test suite's results.
@@ -1272,7 +1936,7 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
         }
       }
       // Add to overall output
-      overview.setTestSuites(new util.ArrayList[TestSuiteOverview](testMap.values.map(_._1).toList.asJavaCollection))
+      overview.setTestSuites(new util.ArrayList[com.gitb.reports.dto.TestSuiteOverview](testMap.values.map(_._1).toList.asJavaCollection))
     }
     overview.setIncludeTestStatus(addTestStatus)
     // Replace message placeholders
@@ -1298,10 +1962,41 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
     }
     reportPath
   }
-
 }
 
 private class ReportData(val skipDomain: Boolean, var domainName: Option[String] = None, var groupName: Option[String] = None, var specName: Option[String] = None, var actorName: Option[String] = None) {}
+
+private class ConformanceOverviewTracker(var withIndexes: Boolean) {
+
+  private var index = 0
+  var successCount = 0
+  var failureCount = 0
+  var incompleteCount = 0
+
+  def nextIndex(): Int = {
+    index = index + 1
+    index
+  }
+
+  def aggregateStatus(): TestResultType = {
+    if (failureCount > 0) {
+      TestResultType.FAILURE
+    } else if (incompleteCount > 0) {
+      TestResultType.UNDEFINED
+    } else {
+      TestResultType.SUCCESS
+    }
+  }
+
+  def addResult(result: TestResultType): Unit = {
+    result match {
+      case TestResultType.SUCCESS => successCount = successCount + 1
+      case TestResultType.FAILURE => failureCount = failureCount + 1
+      case _ => incompleteCount = incompleteCount + 1
+    }
+  }
+
+}
 
 private class Counters(var successes: Long, var failures: Long, var other: Long) extends ResultCountHolder {
 

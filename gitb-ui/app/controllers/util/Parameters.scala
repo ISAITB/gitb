@@ -13,6 +13,7 @@ object Parameters {
   val OVERVIEW = "overview"
   val KEY_PASS   = "key_pass"
   val KEYSTORE_PASS   = "keystore_pass"
+  val ENABLE = "enable"
 
   //Dashboard filter parameters
   val COMMUNITY_IDS = "community_ids"

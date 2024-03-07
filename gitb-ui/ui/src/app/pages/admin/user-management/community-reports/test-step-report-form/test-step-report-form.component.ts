@@ -1,17 +1,34 @@
 import { Component } from '@angular/core';
-import { BaseReportSettingsFormComponent } from '../base-report-settings-form.component';
-import { Observable, of } from 'rxjs';
+import { CommunityXmlReportFormComponent } from '../community-xml-report-form/community-xml-report-form.component';
+import { ReportService } from 'src/app/services/report.service';
+import { PopupService } from 'src/app/services/popup.service';
+import { BsModalService } from 'ngx-bootstrap/modal';
+import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
 
 @Component({
   selector: 'app-test-step-report-form',
-  templateUrl: './test-step-report-form.component.html'
+  templateUrl: './../community-xml-report-form/community-xml-report-form.component.html'
 })
-export class TestStepReportFormComponent extends BaseReportSettingsFormComponent {
+export class TestStepReportFormComponent extends CommunityXmlReportFormComponent {
 
-  constructor() { super() }
+  constructor(
+    reportService: ReportService,
+    popupService: PopupService,
+    modalService: BsModalService,
+    confirmationDialogService: ConfirmationDialogService
+  ) { super(reportService, popupService, modalService, confirmationDialogService) }
 
-  loadData(): Observable<any> {
-    return of(true)
+  getIdValue(): string {
+    return "stylesheetForTestStepReport"
+  }
+  getReportType(): number {
+    return this.Constants.XML_REPORT_TYPE.TEST_STEP_REPORT
+  }
+  getPreviewTitle(): string {
+    return "Test step report preview"
+  }
+  getPreviewFileName(): string {
+    return "step_report.xml"
   }
 
 }

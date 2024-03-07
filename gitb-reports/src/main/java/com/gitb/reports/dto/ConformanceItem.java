@@ -1,5 +1,7 @@
 package com.gitb.reports.dto;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 public class ConformanceItem {
@@ -53,4 +55,27 @@ public class ConformanceItem {
     public boolean isStatement() {
         return data != null;
     }
+
+    public static List<ConformanceStatementData> flattenStatements(Collection<ConformanceItem> conformanceItems) {
+        List<ConformanceStatementData> conformanceStatements = new ArrayList<>();
+        if (conformanceItems != null) {
+            for (var item: conformanceItems) {
+                addConformanceStatements(item, conformanceStatements);
+            }
+        }
+        return conformanceStatements;
+    }
+
+    private static void addConformanceStatements(ConformanceItem item, List<ConformanceStatementData> statements) {
+        if (item != null) {
+            if (item.getData() != null) {
+                statements.add(item.getData());
+            } else if (item.getItems() != null) {
+                for (var child: item.getItems()) {
+                    addConformanceStatements(child, statements);
+                }
+            }
+        }
+    }
+
 }

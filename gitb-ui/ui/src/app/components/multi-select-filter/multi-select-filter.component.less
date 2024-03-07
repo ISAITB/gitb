@@ -27,15 +27,9 @@
 .filterForm {
     border-radius: @border-radius;
     width: 400px;
-    box-shadow: 0 1px 5px @gray-shadow;
+    border: var(--bs-border-width) solid var(--bs-border-color-translucent);;
     position: absolute;
-    top: 36px;
-    &.leftForm {
-        right: 1px;
-    }
-    &.rightForm {
-        left: 1px;
-    }
+    top: 35px;
     z-index: 10;
     background: @white;
     .formSearch {
@@ -65,6 +59,10 @@
             padding-bottom: 3px;
             padding-left: 8px;
             padding-right: 8px;
+            &:last-child {
+                border-bottom-left-radius: @border-radius;
+                border-bottom-right-radius: @border-radius;
+            }
             &:hover {
                 background: @bs-background-highlight;
                 cursor: pointer;

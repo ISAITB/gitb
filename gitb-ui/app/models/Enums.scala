@@ -41,11 +41,11 @@ object Enums {
     val NotMigrated, NotLinked, Linked = Value
   }
 
-	object TestResultStatus extends Enumeration {
-		val UNDEFINED = Value("UNDEFINED")
-		val SUCCESS = Value("SUCCESS")
-		val FAILURE = Value("FAILURE")
-	}
+  object TestResultStatus extends Enumeration {
+    val UNDEFINED = Value("UNDEFINED")
+    val SUCCESS = Value("SUCCESS")
+    val FAILURE = Value("FAILURE")
+  }
 
   object TestSuiteReplacementChoice extends Enumeration {
     type TestSuiteReplacementChoice = Value
@@ -85,31 +85,31 @@ object Enums {
   object TriggerEventType extends Enumeration(1) {
     type TriggerEventType = Value
     val OrganisationCreated,
-        SystemCreated,
-        ConformanceStatementCreated,
-        OrganisationUpdated,
-        SystemUpdated,
-        ConformanceStatementUpdated,
-        TestSessionSucceeded,
-        TestSessionFailed,
-        ConformanceStatementSucceeded,
-        TestSessionStarted
-        = Value
+    SystemCreated,
+    ConformanceStatementCreated,
+    OrganisationUpdated,
+    SystemUpdated,
+    ConformanceStatementUpdated,
+    TestSessionSucceeded,
+    TestSessionFailed,
+    ConformanceStatementSucceeded,
+    TestSessionStarted
+    = Value
   }
 
   object TriggerDataType extends Enumeration(1) {
     type TriggerDataType = Value
     val Community,
-        Organisation,
-        System,
-        Specification,
-        Actor,
-        OrganisationParameter,
-        SystemParameter,
-        DomainParameter,
-        TestSession,
-        StatementParameter,
-        TestReport = Value
+    Organisation,
+    System,
+    Specification,
+    Actor,
+    OrganisationParameter,
+    SystemParameter,
+    DomainParameter,
+    TestSession,
+    StatementParameter,
+    TestReport = Value
   }
 
   object InputMappingMatchType extends Enumeration(1) {
@@ -130,6 +130,11 @@ object Enums {
   object OverviewLevelType extends Enumeration(1) {
     type OverviewLevelType = Value
     val OrganisationLevel, DomainLevel, SpecificationGroupLevel, SpecificationLevel = Value
+  }
+
+  object XmlReportType extends Enumeration(1) {
+    type XmlReportType = Value
+    val ConformanceStatementReport, ConformanceOverviewReport, TestCaseReport, TestStepReport = Value
   }
 
 }

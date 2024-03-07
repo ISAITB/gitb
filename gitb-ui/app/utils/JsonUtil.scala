@@ -984,7 +984,7 @@ object JsonUtil {
     json
   }
 
-	def jsConformanceStatement(conformanceStatement: ConformanceStatement): JsObject = {
+	def jsConformanceStatement(conformanceStatement: models.ConformanceStatement): JsObject = {
 		val json = Json.obj(
       "domainId" -> conformanceStatement.domainId,
       "domain" -> conformanceStatement.domainName,
@@ -1008,7 +1008,7 @@ object JsonUtil {
 		json
 	}
 
-	def jsConformanceStatements(list: List[ConformanceStatement]): JsArray = {
+	def jsConformanceStatements(list: List[models.ConformanceStatement]): JsArray = {
 		var json = Json.arr()
 		list.foreach { cs =>
 			json = json.append(jsConformanceStatement(cs))
@@ -2514,7 +2514,7 @@ object JsonUtil {
     json
   }
 
-  def jsConformanceStatement(statement: ConformanceStatementItem, results: ConformanceStatus, systemInfo: System): JsObject = {
+  def jsConformanceStatement(statement: ConformanceStatementItem, results: models.ConformanceStatus, systemInfo: models.System): JsObject = {
     Json.obj(
       "statement" -> jsConformanceStatementItem(statement),
       "results" -> jsConformanceStatus(results),

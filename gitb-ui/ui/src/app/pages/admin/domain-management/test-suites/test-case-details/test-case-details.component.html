@@ -78,7 +78,7 @@
 							<div class="btn-toolbar">
 								<div class="btn-group" dropdown [isDisabled]="previewPending || this.testCase.documentation == undefined || this.testCase.documentation.length == 0">
 									<button type="button" [disable]="this.testCase.documentation == undefined || this.testCase.documentation.length == 0" [pending]="previewPending" id="button-preview" class="btn btn-secondary" (click)="previewDocumentationPopup()">Preview documentation</button>
-									<button id="button-preview-pdf" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
+									<button id="button-preview-pdf" type="button" [disabled]="previewPending || this.testCase.documentation == undefined || this.testCase.documentation.length == 0" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
 										<span class="caret"></span>
 										<span class="sr-only visually-hidden">Preview documentation in PDF report</span>
 									</button>

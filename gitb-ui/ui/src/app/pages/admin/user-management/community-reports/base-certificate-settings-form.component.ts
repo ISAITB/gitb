@@ -5,7 +5,7 @@ import { BsModalService } from 'ngx-bootstrap/modal';
 import { CommunityKeystoreModalComponent } from 'src/app/modals/community-keystore-modal/community-keystore-modal.component';
 import { CertificateSettings } from 'src/app/types/certificate-settings';
 import { PlaceholderInfo } from 'src/app/components/placeholder-selector/placeholder-info';
-import { Observable, map, mergeMap, of } from 'rxjs';
+import { Observable, mergeMap, of } from 'rxjs';
 import { saveAs } from 'file-saver'
 import { PopupService } from 'src/app/services/popup.service';
 

@@ -71,7 +71,7 @@
 					@if (canExportConformanceCertificate()) {
 						<div class="btn-group export-group" dropdown [isDisabled]="exportCertificatePending || exportPending">
 							<button type="button" [disable]="exportCertificatePending || exportPending" [pending]="exportCertificatePending || exportPending" class="btn btn-secondary" (click)="onExportConformanceStatement()">Download report</button>
-							<button id="button-export" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
+							<button id="button-export" type="button" [disabled]="exportCertificatePending || exportPending" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
 								<span class="caret"></span>
 								<span class="sr-only visually-hidden">Download report</span>
 							</button>

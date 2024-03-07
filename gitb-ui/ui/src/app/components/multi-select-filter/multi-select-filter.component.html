@@ -1,6 +1,6 @@
 <div class="filterContainer">
     <button (click)="controlClicked()" type="button" class="btn btn-secondary filterControl"><div>{{filterLabel}}</div><div class="caret withMargin"></div></button>
-    <div *ngIf="formVisible" class="filterForm" [ngClass]="{'leftForm': openToLeft, 'rightForm': !openToLeft}">
+    <div *ngIf="formVisible" class="filterForm">
         <div class="formSearch" *ngIf="typeahead && availableItems.length > 0">
             <div class="inputDiv"><input #filterText type="text" class="form-control" placeholder="Search items..." [(ngModel)]="textValue" (ngModelChange)="searchApplied()"/></div>
             <div class="iconDiv"><span><i class="fa fa-search" aria-hidden="true"></i></span></div>

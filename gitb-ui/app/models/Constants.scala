@@ -57,6 +57,9 @@ object Constants {
   val defaultPage = 1L
   val defaultLimit = 10L
 
+  val MimeTypePDF = "application/pdf"
+  val MimeTypeXML = "application/xml"
+
   // When ending in "-snapshot", this is considered a non-published release.
   val VersionNumber = "1.22.0-snapshot"
 }
