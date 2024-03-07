@@ -14,9 +14,9 @@
         <div class="row mt-3">
             <legend class="col-3 col-form-label text-end">* Stylesheet:</legend>
             <div class="col-7">
-                <app-file-select [fileName]="fileNameToShow" (onUpload)="selectFile($event)" placeholder="Drop or browse for stylesheet file ..." [accepts]="acceptedFileTypes" [extraActions]="true">
+                <app-file-select [fileName]="fileNameToShow" (onUpload)="selectFile($event)" placeholder="Drop or browse for stylesheet file ..." [accepts]="acceptedFileTypes" [extraActions]="stylesheetExists">
                     @if (stylesheetExists) {
-                        <button type="button" class="btn btn-secondary" (click)="viewStylesheet()" containerClass="shortTooltip" tooltip="View" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-magnifying-glass"></i></button>
+                        <button type="button" class="btn btn-secondary" (click)="viewStylesheet()" containerClass="shortTooltip" tooltip="View" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'" container="body"><i class="fa-solid fa-magnifying-glass"></i></button>
                     }
                 </app-file-select>
             </div>
