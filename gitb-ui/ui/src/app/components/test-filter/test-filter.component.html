@@ -1,12 +1,13 @@
 <div class="card">
     <div class="card-header clickable" (click)="clickedHeader()">
-        <div class="card-title"><app-collapsing-icon [isCollapsed]="!showFiltering"></app-collapsing-icon>Filters</div>
+        <div class="card-title"><app-collapsing-icon [isCollapsed]="!showFiltering || !initialised"></app-collapsing-icon>Filters</div>
         <div class="btn-toolbar">
-            <button type="button" class="btn btn-secondary" (click)="applyFilters(); $event.stopPropagation()" [pending]="filterState.updatePending">Refresh</button>
-            <button type="button" class="btn btn-secondary" (click)="clearFilters(); $event.stopPropagation()" [disabled]="filterState.updatePending">Clear filters</button>
+          <div class="pending-icon"><app-pending-block [pending]="showFiltering && !initialised"></app-pending-block></div>
+          <button type="button" class="btn btn-secondary" (click)="applyFilters(); $event.stopPropagation()" [pending]="filterState.updatePending">Refresh</button>
+          <button type="button" class="btn btn-secondary" (click)="clearFilters(); $event.stopPropagation()" [disabled]="filterState.updatePending">Clear filters</button>
         </div>
     </div>
-    <div [collapse]="!showFiltering" [isAnimated]="true">
+    <div [collapse]="!showFiltering || !initialised" [isAnimated]="true">
       <div class="table-responsive session-filter">
         <div class="filterRow" *ngIf="filterDefined(Constants.FILTER_TYPE.DOMAIN) || filterDefined(Constants.FILTER_TYPE.SPECIFICATION) || filterDefined(Constants.FILTER_TYPE.ACTOR) || filterDefined(Constants.FILTER_TYPE.TEST_SUITE) || filterDefined(Constants.FILTER_TYPE.TEST_CASE) || filterDefined(Constants.FILTER_TYPE.COMMUNITY) || filterDefined(Constants.FILTER_TYPE.ORGANISATION) || filterDefined(Constants.FILTER_TYPE.SYSTEM)">
           <div class="filterCell" *ngIf="filterDefined(Constants.FILTER_TYPE.DOMAIN)">
@@ -96,48 +97,52 @@
             </div>
           </div>
         </div>
-        <div class="filterRow" *ngIf="filterDefined(Constants.FILTER_TYPE.ORGANISATION_PROPERTY)">
-          <div class="filterCell">
-            <div class="filterName"><span>{{names[Constants.FILTER_TYPE.ORGANISATION_PROPERTY]}}</span></div>
-            <div class="filterValue">
-              <div class="property-filters-container">
-                <div class="property-filter" *ngFor="let propFilter of organisationProperties">
-                  <app-custom-property-filter
-                    [propertyFilter]="propFilter"
-                    [properties]="availableOrganisationProperties"
-                    (onApply)="applyOrganisationProperty()"
-                    (onClear)="clearOrganisationProperty($event)"
-                    (onCancel)="cancelOrganisationProperty()">
-                  </app-custom-property-filter>
-                </div>
-                <div class="property-filters-control" [ngClass]="{'padded': organisationProperties && organisationProperties.length > 0}">
-                  <button [disable]="applicableCommunityId == undefined" [pending]="loadingOrganisationProperties" *ngIf="!addingOrganisationProperty || loadingOrganisationProperties" class="btn btn-secondary" (click)="addOrganisationProperty()">Add</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="filterRow" *ngIf="filterDefined(Constants.FILTER_TYPE.SYSTEM_PROPERTY)">
-          <div class="filterCell">
-            <div class="filterName"><span>{{names[Constants.FILTER_TYPE.SYSTEM_PROPERTY]}}</span></div>
-            <div class="filterValue">
-              <div class="property-filters-container">
-                <div class="property-filter" *ngFor="let propFilter of systemProperties">
-                  <app-custom-property-filter
-                    [propertyFilter]="propFilter"
-                    [properties]="availableSystemProperties"
-                    (onApply)="applySystemProperty()"
-                    (onClear)="clearSystemProperty($event)"
-                    (onCancel)="cancelSystemProperty()">
-                  </app-custom-property-filter>
-                </div>
-                <div class="property-filters-control" [ngClass]="{'padded': systemProperties && systemProperties.length > 0}">
-                  <button [disable]="applicableCommunityId == undefined" [pending]="loadingSystemProperties" *ngIf="!addingSystemProperty || loadingSystemProperties" class="btn btn-secondary" (click)="addSystemProperty()">Add</button>
+        @if (showOrganisationProperties) {
+          <div class="filterRow" *ngIf="filterDefined(Constants.FILTER_TYPE.ORGANISATION_PROPERTY)">
+            <div class="filterCell">
+              <div class="filterName"><span>{{names[Constants.FILTER_TYPE.ORGANISATION_PROPERTY]}}</span></div>
+              <div class="filterValue">
+                <div class="property-filters-container">
+                  <div class="property-filter" *ngFor="let propFilter of organisationProperties">
+                    <app-custom-property-filter
+                      [propertyFilter]="propFilter"
+                      [properties]="availableOrganisationProperties"
+                      (onApply)="applyOrganisationProperty()"
+                      (onClear)="clearOrganisationProperty($event)"
+                      (onCancel)="cancelOrganisationProperty()">
+                    </app-custom-property-filter>
+                  </div>
+                  <div class="property-filters-control" [ngClass]="{'padded': organisationProperties && organisationProperties.length > 0}">
+                    <button [disable]="applicableCommunityId == undefined" [pending]="loadingOrganisationProperties" *ngIf="!addingOrganisationProperty || loadingOrganisationProperties" class="btn btn-secondary" (click)="addOrganisationProperty()">Add</button>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        }
+        @if (showSystemProperties) {
+          <div class="filterRow" *ngIf="filterDefined(Constants.FILTER_TYPE.SYSTEM_PROPERTY)">
+            <div class="filterCell">
+              <div class="filterName"><span>{{names[Constants.FILTER_TYPE.SYSTEM_PROPERTY]}}</span></div>
+              <div class="filterValue">
+                <div class="property-filters-container">
+                  <div class="property-filter" *ngFor="let propFilter of systemProperties">
+                    <app-custom-property-filter
+                      [propertyFilter]="propFilter"
+                      [properties]="availableSystemProperties"
+                      (onApply)="applySystemProperty()"
+                      (onClear)="clearSystemProperty($event)"
+                      (onCancel)="cancelSystemProperty()">
+                    </app-custom-property-filter>
+                  </div>
+                  <div class="property-filters-control" [ngClass]="{'padded': systemProperties && systemProperties.length > 0}">
+                    <button [disable]="applicableCommunityId == undefined" [pending]="loadingSystemProperties" *ngIf="!addingSystemProperty || loadingSystemProperties" class="btn btn-secondary" (click)="addSystemProperty()">Add</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        }
       </div>
     </div>
   </div>

@@ -2,8 +2,8 @@ import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { Constants } from 'src/app/common/constants';
 import { DataService } from 'src/app/services/data.service';
 import { FilterState } from 'src/app/types/filter-state';
-import { Observable, of } from 'rxjs';
-import { mergeMap } from 'rxjs/operators'
+import { Observable, forkJoin, of } from 'rxjs';
+import { mergeMap, share } from 'rxjs/operators'
 import { map, remove, filter } from 'lodash';
 import { BsDatepickerConfig } from 'ngx-bootstrap/datepicker';
 import { formatDate } from '@angular/common';
@@ -85,6 +85,10 @@ export class TestFilterComponent implements OnInit {
   loadingSystemProperties = false
   applicableCommunityId?: number
   names: {[key: string]: string} = {}
+
+  initialised = false
+  showOrganisationProperties = false
+  showSystemProperties = false
 
   constructor(
     public dataService: DataService,
@@ -372,6 +376,9 @@ export class TestFilterComponent implements OnInit {
     } else {
       this.applicableCommunityId = undefined
     }
+    this.resetCustomProperties().subscribe(() => {
+      this.initialised = true
+    })
     if (update.applyFilters) {
       this.applyFilters()
     }
@@ -550,6 +557,29 @@ export class TestFilterComponent implements OnInit {
 
   clickedHeader() {
     this.showFiltering = !this.showFiltering
+    if (!this.initialised) {
+      this.resetCustomProperties().subscribe(() => {
+        this.initialised = true
+      })
+    }
+  }
+
+  private resetCustomProperties(): Observable<boolean> {
+    if (this.applicableCommunityId != undefined) {
+      const obs1 = this.loadOrganisationProperties(this.applicableCommunityId)
+      const obs2 = this.loadSystemProperties(this.applicableCommunityId)
+      return forkJoin([obs1, obs2]).pipe(
+        mergeMap((data) => {
+          this.showOrganisationProperties = data[0].length > 0
+          this.showSystemProperties = data[1].length > 0
+          return of(true)
+        })
+      )
+    } else {
+      this.showOrganisationProperties = false      
+      this.showSystemProperties = false      
+      return of(false)
+    }
   }
 
   applyTimeFiltering() {
