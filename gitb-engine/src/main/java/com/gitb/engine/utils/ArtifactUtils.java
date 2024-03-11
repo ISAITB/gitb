@@ -9,6 +9,7 @@ import com.gitb.tdl.TestArtifact;
 import com.gitb.types.DataType;
 import com.gitb.types.DataTypeFactory;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.tuple.Pair;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -18,7 +19,7 @@ import java.io.InputStream;
  */
 public class ArtifactUtils {
 
-	public static DataType resolveArtifact(TestCaseContext context, TestCaseScope scope, TestArtifact artifact) throws IOException {
+	public static Pair<String, DataType> resolveArtifact(TestCaseContext context, TestCaseScope scope, TestArtifact artifact) throws IOException {
 		if (artifact == null) {
 			return null;
 		}
@@ -48,7 +49,7 @@ public class ArtifactUtils {
 				data.setImportTestSuite(fromToConsider);
 			}
 		}
-		return data;
+		return Pair.of(pathToLookup, data);
 	}
 
 }

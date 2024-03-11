@@ -91,15 +91,27 @@ public class ModuleManager {
 	}
 
 	public IMessagingHandler getMessagingHandler(String name) {
-		return (IMessagingHandler) messagingHandlers.get(name).get();
+		if (messagingHandlers.containsKey(name)) {
+			return (IMessagingHandler) messagingHandlers.get(name).get();
+		} else {
+			throw new IllegalStateException("An invalid value [%s] was provided as a messaging handler".formatted(name));
+		}
 	}
 
 	public IValidationHandler getValidationHandler(String name) {
-		return (IValidationHandler) validationHandlers.get(name).get();
+		if (validationHandlers.containsKey(name)) {
+			return (IValidationHandler) validationHandlers.get(name).get();
+		} else {
+			throw new IllegalStateException("An invalid value [%s] was provided as a validation handler".formatted(name));
+		}
 	}
 
 	public IProcessingHandler getProcessingHandler(String name) {
-		return (IProcessingHandler) processingHandlers.get(name).get();
+		if (processingHandlers.containsKey(name)) {
+			return (IProcessingHandler) processingHandlers.get(name).get();
+		} else {
+			throw new IllegalStateException("An invalid value [%s] was provided as a processing handler".formatted(name));
+		}
 	}
 
 	public synchronized static ModuleManager getInstance() {
