@@ -5,18 +5,18 @@ import com.gitb.utils.{XMLDateTimeUtils, XMLUtils}
 import com.gitb.xml.export.Export
 import config.Configurations
 import controllers.util.ParameterExtractor.requiredBodyParameter
-import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, RequestWithAttributes, ResponseConstructor}
+import controllers.util.{Parameters, _}
 import exceptions.ErrorCodes
 import jakarta.xml.bind.JAXBElement
 import managers._
 import managers.export._
-import models.Enums.{OverviewLevelType, XmlReportType}
 import models.Enums.OverviewLevelType.OverviewLevelType
 import models.Enums.XmlReportType.XmlReportType
+import models.Enums.{OverviewLevelType, XmlReportType}
 import models._
 import org.apache.commons.codec.net.URLCodec
 import org.apache.commons.io.FileUtils
-import org.apache.commons.lang3.{RandomStringUtils, StringUtils}
+import org.apache.commons.lang3.StringUtils
 import org.slf4j.LoggerFactory
 import play.api.mvc._
 import utils._
@@ -366,35 +366,35 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
     val snapshotId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.SNAPSHOT)
     val systemId = ParameterExtractor.requiredBodyParameter(request, Parameters.SYSTEM_ID).toLong
     authorizationManager.canViewOwnConformanceCertificateReport(request, systemId, snapshotId)
-    val domainId = ParameterExtractor.optionalLongQueryParameter(request, Parameters.DOMAIN_ID)
-    val groupId = ParameterExtractor.optionalLongQueryParameter(request, Parameters.GROUP_ID)
-    val specificationId = ParameterExtractor.optionalLongQueryParameter(request, Parameters.SPECIFICATION_ID)
+    val domainId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.DOMAIN_ID)
+    val groupId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.GROUP_ID)
+    val specificationId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.SPECIFICATION_ID)
     val communityId = systemManager.getCommunityIdOfSystem(systemId)
-    val settings = communityManager.getConformanceOverviewCertificateSettingsWrapper(communityId, defaultIfMissing = true, snapshotId)
+    val settings = communityManager.getConformanceOverviewCertificateSettingsWrapper(communityId, defaultIfMissing = true, snapshotId, None, None)
     exportConformanceOverviewCertificateInternal(settings.get, communityId, systemId, domainId, groupId, specificationId, snapshotId)
   }
 
   def exportConformanceOverviewCertificateReport(): Action[AnyContent] = authorizedAction { request =>
-    val snapshotId = ParameterExtractor.optionalLongQueryParameter(request, Parameters.SNAPSHOT)
+    val snapshotId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.SNAPSHOT)
     val communityId = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_ID).toLong
     authorizationManager.canViewConformanceCertificateReport(request, communityId, snapshotId)
-    val systemId = ParameterExtractor.requiredQueryParameter(request, Parameters.SYSTEM_ID).toLong
+    val systemId = ParameterExtractor.requiredBodyParameter(request, Parameters.SYSTEM_ID).toLong
     val jsSettings = ParameterExtractor.requiredBodyParameter(request, Parameters.SETTINGS)
     val settings = JsonUtil.parseJsConformanceOverviewCertificateWithMessages(jsSettings, communityId)
-    val domainId = ParameterExtractor.optionalLongQueryParameter(request, Parameters.DOMAIN_ID)
-    val groupId = ParameterExtractor.optionalLongQueryParameter(request, Parameters.GROUP_ID)
-    val specificationId = ParameterExtractor.optionalLongQueryParameter(request, Parameters.SPECIFICATION_ID)
+    val domainId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.DOMAIN_ID)
+    val groupId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.GROUP_ID)
+    val specificationId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.SPECIFICATION_ID)
     exportConformanceOverviewCertificateInternal(settings, communityId, systemId, domainId, groupId, specificationId, snapshotId)
   }
 
   def exportConformanceOverviewReport(): Action[AnyContent] = authorizedAction { request =>
-    val snapshotId = ParameterExtractor.optionalLongQueryParameter(request, Parameters.SNAPSHOT)
-    val systemId = ParameterExtractor.requiredQueryParameter(request, Parameters.SYSTEM_ID).toLong
+    val snapshotId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.SNAPSHOT)
+    val systemId = ParameterExtractor.requiredBodyParameter(request, Parameters.SYSTEM_ID).toLong
     authorizationManager.canViewConformanceStatementReport(request, systemId, snapshotId)
 
-    val domainId = ParameterExtractor.optionalLongQueryParameter(request, Parameters.DOMAIN_ID)
-    val groupId = ParameterExtractor.optionalLongQueryParameter(request, Parameters.GROUP_ID)
-    val specificationId = ParameterExtractor.optionalLongQueryParameter(request, Parameters.SPECIFICATION_ID)
+    val domainId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.DOMAIN_ID)
+    val groupId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.GROUP_ID)
+    val specificationId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.SPECIFICATION_ID)
 
     val reportPath = getReportTempFile(".pdf")
     try {
@@ -419,12 +419,114 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
     }
   }
 
-  def exportConformanceStatementReport(): Action[AnyContent] = authorizedAction { request =>
-    val snapshotId = ParameterExtractor.optionalLongQueryParameter(request, Parameters.SNAPSHOT)
-    val systemId = ParameterExtractor.requiredQueryParameter(request, Parameters.SYSTEM_ID).toLong
+  def exportOwnConformanceOverviewReportInXML(): Action[AnyContent] = authorizedAction { request =>
+    val systemId = ParameterExtractor.requiredBodyParameter(request, Parameters.SYSTEM_ID).toLong
+    val snapshotId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.SNAPSHOT)
+    if (snapshotId.isDefined) {
+      authorizationManager.canViewSystemInSnapshot(request, systemId, snapshotId.get)
+    } else {
+      authorizationManager.canViewSystem(request, systemId)
+    }
+    val domainId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.DOMAIN_ID)
+    val groupId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.GROUP_ID)
+    val specificationId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.SPECIFICATION_ID)
+    val communityId = systemManager.getCommunityIdOfSystem(systemId)
+    val reportPath = getReportTempFile(".pdf")
+    try {
+      reportManager.generateConformanceOverviewReportInXML(reportPath, systemId, domainId, groupId, specificationId, communityId, snapshotId)
+      Ok.sendFile(
+        content = reportPath.toFile,
+        fileName = _ => Some("conformance_report.xml"),
+        onClose = () => {
+          FileUtils.deleteQuietly(reportPath.toFile)
+        }
+      )
+    } catch {
+      case e: Exception =>
+        FileUtils.deleteQuietly(reportPath.toFile)
+        throw e
+    }
+  }
+
+  def exportConformanceOverviewReportInXML(): Action[AnyContent] = authorizedAction { request =>
+    val communityId = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_ID).toLong
+    authorizationManager.canManageCommunity(request, communityId)
+    val systemId = ParameterExtractor.requiredBodyParameter(request, Parameters.SYSTEM_ID).toLong
+    val domainId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.DOMAIN_ID)
+    val groupId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.GROUP_ID)
+    val specificationId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.SPECIFICATION_ID)
+    val snapshotId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.SNAPSHOT)
+    val reportPath = getReportTempFile(".pdf")
+    try {
+      reportManager.generateConformanceOverviewReportInXML(reportPath, systemId, domainId, groupId, specificationId, communityId, snapshotId)
+      Ok.sendFile(
+        content = reportPath.toFile,
+        fileName = _ => Some("conformance_report.xml"),
+        onClose = () => {
+          FileUtils.deleteQuietly(reportPath.toFile)
+        }
+      )
+    } catch {
+      case e: Exception =>
+        FileUtils.deleteQuietly(reportPath.toFile)
+        throw e
+    }
+  }
+
+  def exportOwnConformanceStatementReportInXML(): Action[AnyContent] = authorizedAction { request =>
+    val snapshotId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.SNAPSHOT)
+    val systemId = ParameterExtractor.requiredBodyParameter(request, Parameters.SYSTEM_ID).toLong
     authorizationManager.canViewConformanceStatementReport(request, systemId, snapshotId)
-    val actorId = ParameterExtractor.requiredQueryParameter(request, Parameters.ACTOR_ID)
-    val includeTests = ParameterExtractor.requiredQueryParameter(request, Parameters.TESTS).toBoolean
+    val actorId = ParameterExtractor.requiredBodyParameter(request, Parameters.ACTOR_ID).toLong
+    val withTestSteps = ParameterExtractor.optionalBooleanBodyParameter(request, Parameters.TESTS).getOrElse(false)
+    val communityId = systemManager.getCommunityIdOfSystem(systemId)
+    val reportPath = getReportTempFile(".pdf")
+    try {
+      reportManager.generateConformanceStatementReportInXML(reportPath, withTestSteps, actorId, systemId, communityId, snapshotId)
+      Ok.sendFile(
+        content = reportPath.toFile,
+        fileName = _ => Some("conformance_report.xml"),
+        onClose = () => {
+          FileUtils.deleteQuietly(reportPath.toFile)
+        }
+      )
+    } catch {
+      case e: Exception =>
+        FileUtils.deleteQuietly(reportPath.toFile)
+        throw e
+    }
+  }
+
+  def exportConformanceStatementReportInXML(): Action[AnyContent] = authorizedAction { request =>
+    val communityId = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_ID).toLong
+    authorizationManager.canManageCommunity(request, communityId)
+    val withTestSteps = ParameterExtractor.optionalBooleanBodyParameter(request, Parameters.TESTS).getOrElse(false)
+    val actorId = ParameterExtractor.requiredBodyParameter(request, Parameters.ACTOR_ID).toLong
+    val snapshotId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.SNAPSHOT)
+    val systemId = ParameterExtractor.requiredBodyParameter(request, Parameters.SYSTEM_ID).toLong
+    val reportPath = getReportTempFile(".pdf")
+    try {
+      reportManager.generateConformanceStatementReportInXML(reportPath, withTestSteps, actorId, systemId, communityId, snapshotId)
+      Ok.sendFile(
+        content = reportPath.toFile,
+        fileName = _ => Some("conformance_report.xml"),
+        onClose = () => {
+          FileUtils.deleteQuietly(reportPath.toFile)
+        }
+      )
+    } catch {
+      case e: Exception =>
+        FileUtils.deleteQuietly(reportPath.toFile)
+        throw e
+    }
+  }
+
+  def exportConformanceStatementReport(): Action[AnyContent] = authorizedAction { request =>
+    val snapshotId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.SNAPSHOT)
+    val systemId = ParameterExtractor.requiredBodyParameter(request, Parameters.SYSTEM_ID).toLong
+    authorizationManager.canViewConformanceStatementReport(request, systemId, snapshotId)
+    val actorId = ParameterExtractor.requiredBodyParameter(request, Parameters.ACTOR_ID).toLong
+    val includeTests = ParameterExtractor.requiredBodyParameter(request, Parameters.TESTS).toBoolean
 
     val reportPath = getReportTempFile(".pdf")
     try {
@@ -434,7 +536,7 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
       } else {
         systemManager.getCommunityIdOfSystem(systemId)
       }
-      reportManager.generateConformanceStatementReport(reportPath, includeTests, actorId.toLong, systemId, labels, communityId, snapshotId)
+      reportManager.generateConformanceStatementReport(reportPath, includeTests, actorId, systemId, labels, communityId, snapshotId)
       Ok.sendFile(
         content = reportPath.toFile,
         fileName = _ => Some("conformance_report.pdf"),
@@ -472,7 +574,7 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
     val jsSettings = ParameterExtractor.requiredBodyParameter(request, Parameters.SETTINGS)
     val reportIdentifier = ParameterExtractor.optionalLongBodyParameter(request, Parameters.ID)
     val settings = JsonUtil.parseJsConformanceOverviewCertificateWithMessages(jsSettings, communityId)
-    val reportLevel = toReportOverviewLevel(ParameterExtractor.requiredBodyParameter(request, Parameters.LEVEL))
+    val reportLevel = OverviewLevelType.withName(ParameterExtractor.requiredBodyParameter(request, Parameters.LEVEL))
     // Get the message (if needed) for the specific level
     val customMessage = settings.messageToUse(reportLevel, reportIdentifier)
     // Get the keystore (if needed) to use for the signature
@@ -570,7 +672,7 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
 
   def exportDemoConformanceOverviewReportInXML(communityId: Long): Action[AnyContent] = authorizedAction { request =>
     exportDemoReportInXML(request, communityId, "conformance_report.xml", XmlReportType.ConformanceOverviewReport, (reportPath: Path, xsltPath: Option[Path], paramMap: Option[Map[String, Seq[String]]]) => {
-      val level = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.LEVEL).map(toReportOverviewLevel).getOrElse(OverviewLevelType.OrganisationLevel)
+      val level = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.LEVEL).map(OverviewLevelType.withName).getOrElse(OverviewLevelType.OrganisationLevel)
       reportManager.generateDemoConformanceOverviewReportInXML(reportPath, xsltPath, communityId, level)
     })
   }
@@ -682,18 +784,6 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
       if (request.body.asMultipartFormData.isDefined) {
         request.body.asMultipartFormData.get.files.foreach { file => FileUtils.deleteQuietly(file.ref) }
       }
-    }
-  }
-
-  private def toReportOverviewLevel(reportLevel: String): OverviewLevelType = {
-    if (reportLevel == "all") {
-      OverviewLevelType.OrganisationLevel
-    } else if (reportLevel == "domain") {
-      OverviewLevelType.DomainLevel
-    } else if (reportLevel == "group") {
-      OverviewLevelType.SpecificationGroupLevel
-    } else { // Specification
-      OverviewLevelType.SpecificationLevel
     }
   }
 

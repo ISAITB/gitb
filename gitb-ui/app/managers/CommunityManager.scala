@@ -1,6 +1,7 @@
 package managers
 
 import config.Configurations
+import models.Enums.OverviewLevelType.OverviewLevelType
 import models.Enums._
 import models._
 import org.apache.commons.lang3.StringUtils
@@ -849,8 +850,28 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityRes
     settings
   }
 
-  def getConformanceOverviewCertificateSettingsWrapper(communityId: Long, defaultIfMissing: Boolean, snapshotId: Option[Long]): Option[ConformanceOverviewCertificateWithMessages] = {
-    var settings = exec(getConformanceOverviewCertificateSettings(communityId, snapshotId))
+  def conformanceOverviewCertificateEnabled(communityId: Long, level: OverviewLevelType): Boolean = {
+    val flags = exec(
+      PersistenceSchema.conformanceOverviewCertificates
+        .filter(_.community === communityId)
+        .map(x => (x.enableAllLevel, x.enableDomainLevel, x.enableGroupLevel, x.enableSpecificationLevel))
+        .result
+        .headOption
+    )
+    if (flags.isDefined) {
+      level match {
+        case OverviewLevelType.DomainLevel => flags.get._2
+        case OverviewLevelType.SpecificationGroupLevel => flags.get._3
+        case OverviewLevelType.SpecificationLevel => flags.get._4
+        case _ => flags.get._1
+      }
+    } else {
+      false
+    }
+  }
+
+  def getConformanceOverviewCertificateSettingsWrapper(communityId: Long, defaultIfMissing: Boolean, snapshotId: Option[Long], levelForMessage: Option[OverviewLevelType], identifierForMessage: Option[Long]): Option[ConformanceOverviewCertificateWithMessages] = {
+    var settings = exec(getConformanceOverviewCertificateSettings(communityId, snapshotId, levelForMessage, identifierForMessage))
     if (settings.isEmpty && defaultIfMissing) {
       val title = "Conformance Overview Certificate"
       settings = Some(
@@ -891,21 +912,60 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityRes
     }
   }
 
-  private def getConformanceOverviewCertificateSettings(communityId: Long, snapshotId: Option[Long]): DBIO[Option[ConformanceOverviewCertificateWithMessages]] = {
+  def getConformanceStatementCertificateMessage(snapshotId: Option[Long], communityId: Long): Option[String] = {
+    exec(
+      for {
+        message <- if (snapshotId.isEmpty) {
+          PersistenceSchema.conformanceCertificates.filter(_.community === communityId).map(_.message).result.headOption
+        } else {
+          DBIO.successful(None)
+        }
+        snapshotMessage <- if (snapshotId.isDefined) {
+          PersistenceSchema.conformanceSnapshotCertificateMessages.filter(_.snapshotId === snapshotId.get).map(_.message).result.headOption
+        } else {
+          DBIO.successful(None)
+        }
+        messageToUse <- if (snapshotId.isEmpty) {
+          DBIO.successful(message.flatten)
+        } else {
+          DBIO.successful(snapshotMessage)
+        }
+      } yield messageToUse
+    )
+  }
+
+  def getConformanceOverviewCertificateMessage(snapshot: Boolean, messageId: Long): Option[String] = {
+    exec(for {
+        message <- if (snapshot) {
+          PersistenceSchema.conformanceSnapshotOverviewCertificateMessages.filter(_.id === messageId).map(_.message).result.headOption
+        } else {
+          PersistenceSchema.conformanceOverviewCertificateMessages.filter(_.id === messageId).map(_.message).result.headOption
+        }
+      } yield message
+    )
+  }
+
+  private def getConformanceOverviewCertificateSettings(communityId: Long, snapshotId: Option[Long], levelForMessage: Option[OverviewLevelType], identifierForMessage: Option[Long]): DBIO[Option[ConformanceOverviewCertificateWithMessages]] = {
     for {
       settings <- PersistenceSchema.conformanceOverviewCertificates.filter(_.community === communityId).result.headOption
       messages <- {
         // Load the current messages if this not related to a snapshot
-        if (snapshotId.isEmpty) {
-          PersistenceSchema.conformanceOverviewCertificateMessages.filter(_.community === communityId).result
+        if (snapshotId.isEmpty && settings.isDefined && settings.get.includeMessage) {
+          PersistenceSchema.conformanceOverviewCertificateMessages
+            .filter(_.community === communityId)
+            .filterOpt(levelForMessage)((q, level) => q.messageType === level.id.toShort)
+            .result
         } else {
           DBIO.successful(Seq.empty)
         }
       }
       snapshotMessages <- {
         // Load the snapshot messages if this is related to a snapshot
-        if (snapshotId.isDefined) {
-          PersistenceSchema.conformanceSnapshotOverviewCertificateMessages.filter(_.snapshotId === snapshotId.get).result
+        if (snapshotId.isDefined && settings.isDefined && settings.get.includeMessage) {
+          PersistenceSchema.conformanceSnapshotOverviewCertificateMessages
+            .filter(_.snapshotId === snapshotId.get)
+            .filterOpt(levelForMessage)((q, level) => q.messageType === level.id.toShort)
+            .result
         } else {
           DBIO.successful(Seq.empty)
         }
@@ -919,6 +979,26 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityRes
         }
       }
       result <- if (settings.isDefined) {
+        // Check for the message to apply for the specific identifier or return the default for the requested level
+        if (levelForMessage.isDefined) {
+          levelForMessage.get match {
+            case OverviewLevelType.DomainLevel =>
+              identifierForMessage
+                .flatMap(_ => messagesToUse.find(msg => msg.domain.isDefined && msg.domain.get == identifierForMessage.get))
+                .orElse(messagesToUse.find(msg => msg.domain.isEmpty))
+                .map(Seq(_)).getOrElse(Seq.empty)
+            case OverviewLevelType.SpecificationGroupLevel =>
+              identifierForMessage
+                .flatMap(_ => messagesToUse.find(msg => msg.group.isDefined && msg.group.get == identifierForMessage.get))
+                .orElse(messagesToUse.find(msg => msg.group.isEmpty))
+                .map(Seq(_)).getOrElse(Seq.empty)
+            case OverviewLevelType.SpecificationLevel =>
+              identifierForMessage
+                .flatMap(_ => messagesToUse.find(msg => msg.specification.isDefined && msg.specification.get == identifierForMessage.get))
+                .orElse(messagesToUse.find(msg => msg.specification.isEmpty))
+                .map(Seq(_)).getOrElse(Seq.empty)
+          }
+        }
         DBIO.successful(Some(ConformanceOverviewCertificateWithMessages(settings.get, messagesToUse)))
       } else {
         DBIO.successful(None)

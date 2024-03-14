@@ -1,0 +1,106 @@
+<div class="modal-header">
+    <div class="modal-title">Report generation options</div>
+</div>
+<form>
+    <div class="modal-body">
+        <div class="row pt-1">
+            <legend class="col-3 col-form-label text-end pt-0">* Report type:</legend>
+            <div class="col-8">
+                <div class="form-check pb-2">
+                    <input class="form-check-input" type="radio" [(ngModel)]="choice" name="choice" id="choice_report" [value]="Constants.REPORT_OPTION_CHOICE.REPORT">
+                    <label class="form-check-label" for="choice_report">Conformance overview report</label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" [(ngModel)]="choice" name="choice" id="choice_cert" [value]="Constants.REPORT_OPTION_CHOICE.CERTIFICATE" (change)="choiceChanged()">
+                    <label class="form-check-label" for="choice_cert">Conformance overview certificate
+                        @if (messagePending) {
+                            <app-pending-block [pending]="true"></app-pending-block>
+                        }
+                    </label>
+                </div>
+            </div>
+        </div>
+        @if (settings) {
+            <div [collapse]="choice != Constants.REPORT_OPTION_CHOICE.CERTIFICATE || !messageLoaded" [isAnimated]="true" (expanded)="certificateChoicesVisible()">
+                <div class="row my-3">
+                    <label class="col-3 col-form-label text-end">Title:</label>
+                    <div class="col-8">
+                        <div class="row row-cols-auto align-items-center">
+                            <div class="col-auto">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="includeTitle" name="includeTitle" (change)="includeTitleChanged()" [(ngModel)]="settings.includeTitle">
+                                    <label class="form-check-label" for="includeTitle">Included?</label>
+                                </div>
+                            </div>
+                            <div class="col-auto flex-grow-1">
+                                <input id="title" name="title" [(ngModel)]="settings.title" [readonly]="!settings.includeTitle" class="form-control" type="text">
+                            </div>
+                        </div>
+                    </div>
+                    <div app-tooltip class="col-auto" tbTooltip="Specify a specific title to use to override the default."></div>
+                </div>
+                <div class="row pt-1">
+                    <legend class="col-3 col-form-label text-end pt-0">Included sections:</legend>
+                    <div class="col-9">
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" id="includeDetailsOverview" name="includeDetailsOverview" [(ngModel)]="settings.includeDetails">
+                            <label class="form-check-label" for="includeDetailsOverview">Details
+                                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" [tbTooltip]="'Add the conformance overview details. These are the information on the '+dataService.labelDomainLower()+', '+dataService.labelSpecificationLower()+', '+dataService.labelActorLower()+', '+dataService.labelOrganisationLower()+' and '+dataService.labelSystemLower()+' (as applicable depending on the report\'s level).'"></div>
+                            </label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" id="includeTestStatusOverview" name="includeTestStatusOverview" [(ngModel)]="settings.includeTestStatus">
+                            <label class="form-check-label" for="includeTestStatusOverview">Result overview
+                                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" tbTooltip="Add a summary text on the number of successfully passed and failed conformance statements."></div>
+                            </label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" id="includeTestCasesOverview" name="includeTestCasesOverview" [(ngModel)]="settings.includeTestCases">
+                            <label class="form-check-label" for="includeTestCasesOverview">Statement list
+                                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" tbTooltip="Add a listing of all conformance statement included in the overview displaying the status per statement."></div>
+                            </label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" id="includeTestCaseDetailsOverview" name="includeTestCaseDetailsOverview" [(ngModel)]="settings.includeTestCaseDetails">
+                            <label class="form-check-label" for="includeTestCaseDetailsOverview">Statement details
+                                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" tbTooltip="Add the details for all conformance statements. Each statement included in the overview will be added as a separate page to the report."></div>
+                            </label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" id="includeMessageOverview" name="includeMessageOverview" [(ngModel)]="settings.includeMessage">
+                            <label class="form-check-label" for="includeMessageOverview">Message
+                                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" tbTooltip="Add a custom rich-text message following the title and before including other details."></div>
+                            </label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" id="includeSignatureOverview" name="includeSignatureOverview" [(ngModel)]="settings.includeSignature">
+                            <label class="form-check-label" for="includeSignatureOverview">Signature
+                                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" tbTooltip="Add a digital signature and timestamp for proof of authenticity."></div>
+                            </label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" id="includePageNumbersOverview" name="includePageNumbersOverview" [(ngModel)]="settings.includePageNumbers">
+                            <label class="form-check-label" for="includePageNumbersOverview">Page numbers
+                                <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" tbTooltip="Include a footer on each page displaying the current and total number of pages in the report."></div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div [collapse]="!settings.includeMessage" [isAnimated]="true">
+                    <div class="row mt-3">
+                        <label class="col-3 col-form-label text-end" for="messageContent">Message content:</label>
+                        <div class="col-8">
+                            <app-editor id="messageContent" name="messageContent" [(ngModel)]="message" [type]="'pdf'" [height]="300"></app-editor>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+    <div class="modal-footer">
+        <div class="btn-toolbar">
+            <button class="btn btn-secondary" type="button" (click)="cancel()">Cancel</button>
+            <button class="btn btn-secondary" type="submit" (click)="generate()" [pending]="exportPending">Generate report</button>
+        </div>
+    </div>
+</form>

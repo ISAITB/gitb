@@ -376,6 +376,12 @@ export class Constants {
 		TEST_STEP_REPORT: 4
 	}
 
+	public static FILTER_COMMAND = {
+		TOGGLE: 1,
+		CLEAR: 2,
+		REFRESH: 3
+	}
+
 	public static PASSWORD_REGEX = /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#&()_–\[{}\]:;'",?/\\*~$^+=<>]).{8,}$/
 	public static END_OF_TEST_STEP = "-1"
 	public static END_OF_TEST_STEP_EXTERNAL = "-2"
@@ -384,6 +390,7 @@ export class Constants {
 	public static DATA_URL_REGEX = /^data:.+\/(.+);base64,(.*)$/
 	public static VARIABLE_NAME_REGEX = /^[a-zA-Z][a-zA-Z\-_\.0-9]*$/
 	public static LOG_LEVEL_REGEX = /^\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\] (DEBUG|ERROR|WARN|INFO) /
-	public static BADGE_PLACEHOLDER_REGEX = /(\$BADGE(?:\{\d+\})?)/g
+	public static BADGE_PLACEHOLDER_REGEX = /(\$com\.gitb\.placeholder\.BadgeUrl\{[A-Z]+\|\d+\|\d+\|\d+\|\d+\})/g
+
 
 }

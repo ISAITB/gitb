@@ -1,21 +1,18 @@
 import { Counters } from "../components/test-status-icons/counters";
 import { ConformanceTestSuite } from "../pages/organisation/conformance-statement/conformance-test-suite";
+import { ConformanceIds } from "./conformance-ids";
 
-export interface ConformanceResultFull {
+export interface ConformanceResultFull extends ConformanceIds {
 
     communityId: number
     communityName: string
     organizationId: number
     organizationName: string
-    systemId: number
     systemName: string
-    domainId: number
     domainName: string
-    specId: number
     specName: string
     specGroupName?: string
     specGroupOptionName: string
-    actorId: number
     actorName: string
     testSuiteName: string
     testCaseName: string
@@ -36,7 +33,7 @@ export interface ConformanceResultFull {
     counters?: Counters
     copyBadgePending?: boolean
     overallStatus?: string
-
-    [key: string]: any
+    exportPdfPending?: boolean
+    exportXmlPending?: boolean
 
 }

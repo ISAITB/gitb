@@ -11,7 +11,6 @@ import { ReportSupport } from '../report-support';
 import { StepReport } from '../step-report';
 import { saveAs } from 'file-saver'
 import { HtmlService } from 'src/app/services/html.service';
-import { ValueType } from 'src/app/types/value-type';
 
 @Component({
   selector: 'app-any-content-view',
@@ -39,6 +38,7 @@ export class AnyContentViewComponent extends ReportSupport implements OnInit {
   withItems = false
   withName = false
   hoveringTitle = false
+  breakText = true
 
   constructor(
     private testService: TestService,
@@ -54,6 +54,9 @@ export class AnyContentViewComponent extends ReportSupport implements OnInit {
     this.value = this.context.valueToUse
     if (this.value != undefined) {
       this.showValueInline = this.context.embeddingMethod != 'BASE64' && !this.isFileReference(this.context) && (this.value.length <= 100 || this.forceDisplay)
+      if (this.showValueInline) {
+        this.breakText = this.value.indexOf(" ") < 0
+      }
     }
     this.withItems = this.context?.item != undefined
     this.withName = this.context?.name != undefined

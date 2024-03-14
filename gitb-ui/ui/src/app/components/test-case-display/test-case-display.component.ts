@@ -24,6 +24,7 @@ export class TestCaseDisplayComponent implements OnInit {
   @Input() showExecute? = true
   @Input() showExport? = false
   @Input() showViewDocumentation? = true
+  @Input() shaded = true
 
   @Output() viewTestSession = new EventEmitter<string>()
   @Output() execute = new EventEmitter<ConformanceTestCase>()

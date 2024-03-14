@@ -3,7 +3,7 @@
 <html>
 	<head>
 	    <style>
-	        <@commonStyles.basic includePageNumbers/>
+	        <@commonStyles.basic data.includePageNumbers/>
 	        <@commonStyles.testResult />
 	        <@commonStyles.testCoverage />
 	        <@commonStyles.conformanceStatement />

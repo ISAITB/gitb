@@ -127,9 +127,12 @@ object Enums {
     val DOMAIN, SPECIFICATION_GROUP, SPECIFICATION, ACTOR = Value
   }
 
-  object OverviewLevelType extends Enumeration(1) {
+  object OverviewLevelType extends Enumeration {
     type OverviewLevelType = Value
-    val OrganisationLevel, DomainLevel, SpecificationGroupLevel, SpecificationLevel = Value
+    val OrganisationLevel:OverviewLevelType = Value(1, "all")
+    val DomainLevel:OverviewLevelType = Value(2, "domain")
+    val SpecificationGroupLevel:OverviewLevelType = Value(3, "group")
+    val SpecificationLevel:OverviewLevelType = Value(4, "specification")
   }
 
   object XmlReportType extends Enumeration(1) {

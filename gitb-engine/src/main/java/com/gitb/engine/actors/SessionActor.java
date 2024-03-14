@@ -1,5 +1,6 @@
 package com.gitb.engine.actors;
 
+import com.gitb.engine.PropertyConstants;
 import org.apache.pekko.actor.AbstractActor;
 import org.apache.pekko.actor.ActorRef;
 import org.apache.pekko.actor.PoisonPill;
@@ -340,7 +341,11 @@ public class SessionActor extends AbstractActor {
             TestbedService.sendStatusUpdate(getSessionId(), msg.getStatusMessage());
         } catch (Exception e) {
             if (msg != null) {
-                logger.warn(MarkerFactory.getDetachedMarker(getSessionId()), String.format("Error while sending update for message [%s] - step ID [%s] - status [%s])", msg.getUuid(), msg.getStatusMessage().getStepId(), msg.getStatusMessage().getStatus()), e);
+                if (PropertyConstants.LOG_EVENT_STEP_ID.equals(msg.getStatusMessage().getStepId())) {
+                    logger.warn(MarkerFactory.getDetachedMarker(getSessionId()), "Error while recording log message in test session log", e);
+                } else {
+                    logger.warn(MarkerFactory.getDetachedMarker(getSessionId()), String.format("Error while sending update for message [%s] - step ID [%s] - status [%s])", msg.getUuid(), msg.getStatusMessage().getStepId(), msg.getStatusMessage().getStatus()), e);
+                }
             } else {
                 logger.warn(MarkerFactory.getDetachedMarker(getSessionId()), "Error while sending update - message was null", e);
             }

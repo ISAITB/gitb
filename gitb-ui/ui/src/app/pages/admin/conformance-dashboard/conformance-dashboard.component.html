@@ -1,168 +1,263 @@
-<div id="conformanceDashboardPage" class="page conformancedashboard">
-    <app-test-filter [filterState]="filterState" [communityId]="communityId" (onApply)="getConformanceStatements()"></app-test-filter>
-	<div id="conformanceDashboardPageTable" class="card mb-0">
-		<div class="card-header">
-			<div id="conformance-statements-title" class="card-title">Conformance statements</div>
-			<div class="btn-toolbar allStatementControls" [class.disable-events]="filterState.updatePending">
+<div #conformanceItemPage id="conformanceDashboardPage" class="page conformancedashboard">
+    <div class="card mb-0">
+        <div class="card-header">
+            <div class="card-title">Conformance statements</div>
+            <div class="btn-toolbar allStatementControls" [class.disable-events]="filterState.updatePending">
+                @if (!treeView) {
+                    <div class="btn-group" dropdown>
+                        <button type="button" class="btn btn-secondary" (click)="toggleFilters()"><app-collapsing-icon [isCollapsed]="!filtersVisible"></app-collapsing-icon>Search filters</button>
+                        <button id="button-filters" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
+                            <span class="caret"></span>
+                            <span class="sr-only visually-hidden">Search filters</span>
+                        </button>
+                        <ul id="dropdown-filters" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-filters">
+                            <li role="menuitem"><a class="dropdown-item" href (click)="refreshFilters();$event.preventDefault();">Refresh results</a></li>
+                            <li role="menuitem"><a class="dropdown-item" href (click)="clearFilters();$event.preventDefault();">Clear filters</a></li>
+                        </ul>
+                    </div>
+                    @if (conformanceStatements.length > 0) {
+                        <button type="button" class="btn btn-secondary"  (click)="onExportConformanceStatementsAsCsv()" [disable]="conformanceStatements.length == 0" [pending]="exportPending">Export CSV</button>
+                    }
+                    @if (showCollapseAll()) {
+                        <button type="button" class="btn btn-secondary" (click)="onCollapseAll()">Collapse all</button>
+                    }
+                }
                 <div class="btn-group" dropdown [isDisabled]="selectedCommunityId == undefined">
                     <button id="button-snapshot" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-snapshot">{{snapshotButtonLabel}}<span class="caret withMargin"></span></button>
-                    <ul id="dropdown-snapshot" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-snapshot">
+                    <ul id="dropdown-snapshot" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-snapshot">
                       <li role="menuitem"><a class="dropdown-item" href (click)="viewLatestConformanceSnapshot();$event.preventDefault()">{{latestSnapshotButtonLabel}}</a></li>
                       <li class="divider dropdown-divider"></li>
                       <li role="menuitem"><a class="dropdown-item" href (click)="manageConformanceSnapshots();$event.preventDefault()">Manage conformance snapshots</a></li>
                     </ul>
                 </div>
-                @if (conformanceStatements.length > 0) {
-                    <button type="button" class="btn btn-secondary"  (click)="onExportConformanceStatementsAsCsv()" [disable]="conformanceStatements.length == 0" [pending]="exportPending">Export CSV</button>
-                }
-                @if (showCollapseAll()) {
-                    <button type="button" class="btn btn-secondary" (click)="onCollapseAll()">Collapse all</button>
-                }
-			</div>
-		</div>
-        <div class="table-container rounded">
-            <table class="table table-directive expandable-table">
-                <thead>
-                    <tr>
-                        <th class="th-min-centered"></th>
-                        @if (!dataService.isCommunityAdmin) {
-                            <th class="sortableHeader" (click)="sort(Constants.FILTER_TYPE.COMMUNITY)">Community<app-sort-indicator [columnType]="Constants.FILTER_TYPE.COMMUNITY" [sortColumn]="sortColumn" [sortOrder]="sortOrder"></app-sort-indicator></th>
-                        }
-                        <th class="sortableHeader" (click)="sort(Constants.FILTER_TYPE.ORGANISATION)">{{dataService.labelOrganisation()}}<app-sort-indicator [columnType]="Constants.FILTER_TYPE.ORGANISATION" [sortColumn]="sortColumn" [sortOrder]="sortOrder"></app-sort-indicator></th>
-                        <th class="sortableHeader" (click)="sort(Constants.FILTER_TYPE.SYSTEM)">{{dataService.labelSystem()}}<app-sort-indicator [columnType]="Constants.FILTER_TYPE.SYSTEM" [sortColumn]="sortColumn" [sortOrder]="sortOrder"></app-sort-indicator></th>
-                        @if (dataService.isSystemAdmin || (dataService.isCommunityAdmin && dataService.community!.domain == undefined)) {
-                            <th class="sortableHeader" (click)="sort(Constants.FILTER_TYPE.DOMAIN)">{{dataService.labelDomain()}}<app-sort-indicator [columnType]="Constants.FILTER_TYPE.DOMAIN" [sortColumn]="sortColumn" [sortOrder]="sortOrder"></app-sort-indicator></th>
-                        }
-                        <th class="sortableHeader" (click)="sort(Constants.FILTER_TYPE.SPECIFICATION)">{{dataService.labelSpecification()}}<app-sort-indicator [columnType]="Constants.FILTER_TYPE.SPECIFICATION" [sortColumn]="sortColumn" [sortOrder]="sortOrder"></app-sort-indicator></th>
-                        <th class="sortableHeader" (click)="sort(Constants.FILTER_TYPE.ACTOR)">{{dataService.labelActor()}}<app-sort-indicator [columnType]="Constants.FILTER_TYPE.ACTOR" [sortColumn]="sortColumn" [sortOrder]="sortOrder"></app-sort-indicator></th>
-                        <th class="th-min">Last update</th>
-                        <th class="th-min-centered">Test results</th>
-                        <th class="th-min-centered">Status</th>
-                        <th class="th-min-centered"></th>
-                    </tr>
-                </thead>
-                @if (dataStatus.status != Constants.STATUS.FINISHED) {
-                    <tbody>
-                        <tr><td [attr.colspan]="columnCount" class="td-data-loading"><span><i class="fa-solid fa-spinner fa-spin-override fa-lg"></i></span></td></tr>
-                    </tbody>
-                } @else if (dataStatus.status == Constants.STATUS.FINISHED && conformanceStatements.length == 0) {
-                    <tbody>
-                        <tr><td [attr.colspan]="columnCount" class="td-no-data"><span>No conformance data found</span></td></tr>
-                    </tbody>
-                } @else if (conformanceStatements.length > 0) {
-                    <tbody [class.disable-events]="filterState.updatePending">
-                        @for (statement of conformanceStatements; track statement) {
-                            <tr (click)="onExpand(statement)"
-                                class="table-row-directive expandable-table-row-collapsed">
-                                <td class="td-min-centered"><app-collapsing-icon [padded]="false" [isCollapsed]="!isExpanded(statement)"></app-collapsing-icon></td>
-                                @if (!dataService.isCommunityAdmin) {
-                                    <td>{{statement.communityName}}</td>
-                                }
-                                <td>{{statement.organizationName}}</td>
-                                <td>{{statement.systemName}}</td>
-                                @if (dataService.isSystemAdmin || (dataService.isCommunityAdmin && dataService.community!.domain == undefined)) {
-                                    <td>{{statement.domainName}}</td>
-                                }
-                                <td>{{statement.specName}}</td>
-                                <td>{{statement.actorName}}</td>
-                                <td class="td-min">{{statement.updateTime}}</td>
-                                <td class="td-min-centered"><app-test-status-icons [counters]="statement.counters!" [asLine]="true"></app-test-status-icons></td>
-                                <td class="td-min-centered"><span><i containerClass="shortTooltip" [tooltip]="dataService.tooltipForTestResult(statement.overallStatus)" [ngClass]="dataService.iconForTestResult(statement.overallStatus)"></i></span></td>
-                                <td class="td-min-centered">
-                                    <button class="btn btn-secondary" (click)="onExportConformanceStatement(statement); $event.stopPropagation();" [pending]="statement.exportPending" [icon]="true"  containerClass="shortTooltip" tooltip="Export" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-regular fa-file-pdf"></i></button>
-                                </td>
-                            </tr>
-                            <tr class="expandable-table-row-expanded">
-                                <td [attr.colspan]="columnCount" class="expandable-table-expandable-cell">
-                                    <div [collapse]="!isExpanded(statement)" [isAnimated]="true">
-                                        <div class="collapsing-div">
-                                            <div class="statementControls">
-                                                <div class="statementButtons btn-toolbar">
-                                                    <!-- View statement -->
-                                                    <button type="button" class="btn btn-secondary" (click)="toStatement(statement)">View statement</button>
-                                                    <!-- View party -->
-                                                    @if (showToSystem(statement)) {
-                                                        <div class="btn-group" dropdown>
-                                                            <button type="button" class="btn btn-secondary" (click)="toSystem(statement)">View {{dataService.labelSystemLower()}}</button>
-                                                            <button id="button-system" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
-                                                            <ul id="dropdown-system" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-system">
-                                                                <li role="menuitem"><a class="dropdown-item" href (click)="toCommunity(statement);$event.preventDefault();">View community</a></li>
-                                                                <li role="menuitem"><a class="dropdown-item" href (click)="toOrganisation(statement); $event.preventDefault();">View {{dataService.labelOrganisationLower()}}</a></li>
-                                                            </ul>
-                                                        </div>
-                                                    } @else if (showToOrganisation(statement)) {
-                                                        <div class="btn-group" dropdown>
-                                                            <button type="button" class="btn btn-secondary" (click)="toOrganisation(statement)">View {{dataService.labelOrganisationLower()}}</button>
-                                                            <button id="button-system" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
-                                                            <ul id="dropdown-system" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-system">
-                                                                <li role="menuitem"><a class="dropdown-item" href (click)="toCommunity(statement);$event.preventDefault();">View community</a></li>
-                                                            </ul>
-                                                        </div>
-                                                    } @else {
-                                                        <button type="button" class="btn btn-secondary" (click)="toCommunity(statement)">View community</button>
-                                                    }
-                                                    <!-- View specification -->
-                                                    @if (showToDomain(statement) || showToSpecification(statement) || showToActor(statement)) {
-                                                        @if (showToSpecification(statement)) {
-                                                            <div class="btn-group" dropdown>
-                                                                <button type="button" class="btn btn-secondary" (click)="toSpecification(statement)">View {{dataService.labelSpecificationLower()}}</button>
-                                                                <button id="button-spec" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
-                                                                <ul id="dropdown-spec" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-spec">
-                                                                    <li role="menuitem"><a class="dropdown-item" href (click)="toDomain(statement);$event.preventDefault();">View {{dataService.labelDomainLower()}}</a></li>
-                                                                    @if (showToActor(statement)) {
-                                                                        <li role="menuitem"><a class="dropdown-item" href (click)="toActor(statement); $event.preventDefault();">View {{dataService.labelActorLower()}}</a></li>
-                                                                    }
-                                                                </ul>
-                                                            </div>
-                                                        } @else if (showToActor(statement)) {
-                                                            <div class="btn-group" dropdown>
-                                                                <button type="button" class="btn btn-secondary" (click)="toActor(statement)">View {{dataService.labelActorLower()}}</button>
-                                                                <button id="button-spec" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
-                                                                <ul id="dropdown-spec" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-spec">
-                                                                    <li role="menuitem"><a class="dropdown-item" href (click)="toDomain(statement);$event.preventDefault();">View {{dataService.labelDomainLower()}}</a></li>
-                                                                </ul>
-                                                            </div>
-                                                        } @else {
-                                                            <button type="button" class="btn btn-secondary" (click)="toDomain(statement)">View {{dataService.labelDomainLower()}}</button>
-                                                        }
-                                                    }
-                                                    @if (statement.hasBadge) {
-                                                        <app-view-badge-button [systemId]="statement.systemId" [actorId]="statement.actorId" [snapshotId]="activeConformanceSnapshot?.id" [leftMargin]="true"></app-view-badge-button>
-                                                    }
-                                                </div>
-                                                <div class="statementRatios">
-                                                    <app-test-result-ratio [counters]="statement.counters!" [asLine]="true"></app-test-result-ratio>
-                                                </div>
-                                            </div>
-                                            @if (statement.testSuitesLoaded == undefined || !statement.testSuitesLoaded) {
-                                                <div class="spinnerPadded">
-                                                    <app-pending-block></app-pending-block>
-                                                </div>
-                                            }
-                                            <app-test-suite-display
-                                                [testSuites]="statement.testSuites"
-                                                [showExecute]="false"
-                                                [showExport]="true"
-                                                (viewTestSession)="toTestSession($event)"
-                                            ></app-test-suite-display>
-                                        </div>
-                                    </div>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                }
-            </table>
-            @if ((!prevDisabled || !nextDisabled) && conformanceStatements && conformanceStatements.length > 0) {
-                <div class="text-center table-paging-controls">
-                    <div class="btn-group" role="group" [class.disable-events]="filterState.updatePending">
-                        <button type="button" class="btn btn-sm btn-secondary" [disabled]="prevDisabled" (click)="doFirstPage()">First</button>
-                        <button type="button" class="btn btn-sm btn-secondary" [disabled]="prevDisabled" (click)="doPrevPage()">Previous</button>
-                        <button type="button" class="btn btn-sm btn-secondary" [disabled]="nextDisabled" (click)="doNextPage()">Next</button>
-                        <button type="button" class="btn btn-sm btn-secondary" [disabled]="nextDisabled" (click)="doLastPage()">Last</button>
+                <div class="btn input-switch">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" role="switch" id="treeViewToggle" [(ngModel)]="treeView" (change)="treeViewToggled()">
+                        <label class="form-check-label" for="treeViewToggle">View per {{ dataService.labelOrganisationLower() }}</label>
                     </div>
                 </div>
-            }
+            </div>
         </div>
-	</div>
+        @if (treeView) {
+            <div class="card-body treeDisplay">
+                <div class="partyControls" [class.wrapped]="searchControlsWrapped" [class.not-wrapped]="!searchControlsWrapped">
+                    <div #selectorControls class="partySelectors">
+                        @if (communityId == undefined) {
+                            <div class="partyControl">
+                                @if (availableCommunities == undefined) {
+                                    <div class="pending-container">
+                                        <div class="pending-icon"><app-pending-block></app-pending-block></div>
+                                        <div class="pending-message">Loading communities...</div>
+                                    </div>
+                                } @else if (availableCommunities.length > 0) {
+                                    <app-multi-select-filter [config]="communitySelectConfig!" (apply)="communityChanged(false, $event)"></app-multi-select-filter>
+                                }
+                            </div>
+                        }
+                        @if (selectedCommunityId != undefined && availableCommunities) {
+                            <div class="partyControl">
+                                @if (availableOrganisations == undefined) {
+                                    <div class="pending-container">
+                                        <div class="pending-icon"><app-pending-block></app-pending-block></div>
+                                        <div class="pending-message">Loading {{dataService.labelOrganisationsLower()}}...</div>
+                                    </div>
+                                } @else if (availableOrganisations.length > 0) {
+                                    <app-multi-select-filter [config]="organisationSelectConfig!" (apply)="organisationChanged($event)"></app-multi-select-filter>
+                                }
+                            </div>
+                            @if (selectedOrganisationId != undefined && availableOrganisations) {
+                                <div class="partyControl">
+                                    @if (availableSystems == undefined) {
+                                        <div class="pending-container">
+                                            <div class="pending-icon"><app-pending-block></app-pending-block></div>
+                                            <div class="pending-message">Loading {{dataService.labelSystemsLower()}}...</div>
+                                        </div>
+                                        } @else if (availableSystems.length > 0) {
+                                        <app-multi-select-filter [config]="systemSelectConfig!" (apply)="systemChanged($event)"></app-multi-select-filter>
+                                    }
+                                </div>
+                            }
+                        }
+                    </div>
+                    @if (statements.length > 0) {
+                        <div #searchControls class="partyButtons">
+							<div class="text-filter">
+								<app-text-filter name="statementFilter" [width]="350" [placeholder]="'Search statements...'" [(ngModel)]="statementFilter" (apply)="filterStatements()"></app-text-filter>
+							</div>
+							<div class="status-filter">
+								<app-checkbox-option-panel 
+									label="Show statements..." 
+									[options]="statusOptions" 
+									(updated)="filterByStatus($event)"></app-checkbox-option-panel>
+							</div>
+                            <div class="btn-group export-group" dropdown [isDisabled]="selectedSystemId == undefined || statements.length == 0 || exportOverviewPending">
+                                <button type="button" [disable]="selectedSystemId == undefined || statements.length == 0 || exportOverviewPending" [pending]="exportOverviewPending" class="btn btn-secondary" (click)="exportOverview('pdf')">Download report</button>
+                                <button id="button-export" type="button" [disabled]="selectedSystemId == undefined || statements.length == 0 || exportOverviewPending" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
+                                    <span class="caret"></span>
+                                    <span class="sr-only visually-hidden">Download report</span>
+                                </button>
+                                <ul id="dropdown-export" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-export">
+                                    <li role="menuitem"><a class="dropdown-item" href (click)="exportOverview('xml');$event.preventDefault()">Download report as XML</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    }
+                </div>
+                @if (availableCommunities && availableCommunities.length == 0) {
+                    <div class="alert alert-info rounded mb-0 top-margin">
+                        <span>No communities are defined.</span>
+                    </div>
+                } @else if (selectedCommunityId != undefined && availableOrganisations && availableOrganisations.length == 0) {
+                    <div class="alert alert-info rounded mb-0 top-margin">
+                        <span>No {{dataService.labelOrganisationsLower()}} are defined.</span>
+                    </div>
+                } @else if (selectedOrganisationId != undefined && availableSystems && availableSystems.length == 0) {
+                    <div class="alert alert-info rounded mb-0 top-margin">
+                        <span>No {{dataService.labelSystemsLower()}} are defined.</span>
+                    </div>
+                } @else if (availableCommunities && selectedSystemId == undefined){
+                    <div class="alert alert-info rounded mb-0 top-margin">
+                        <span>Select a {{dataService.labelSystemLower()}} to view its conformance statements.</span>
+                    </div>
+                } @else if (availableCommunities && availableOrganisations && availableSystems && selectedSystemId != undefined) {
+                    @if (dataStatus.status == Constants.STATUS.FINISHED) {
+                        @if (statements.length == 0) {
+                            <div class="alert alert-info rounded mb-0 top-margin">
+                                <span>No conformance statements defined.</span>
+                            </div>
+                        } @else {
+                            <div class="statement-container">
+                                <app-conformance-statement-items-display
+                                    [items]="statements"
+                                    [animated]="true"
+                                    [withCheck]="false"
+                                    [withExport]="true"
+                                    [withResults]="true"
+                                    [withTestCases]="true"
+                                    [communityId]="selectedCommunityId"
+                                    [organisationId]="selectedOrganisationId"
+                                    [snapshotId]="activeConformanceSnapshot?.id"
+                                    [snapshotLabel]="activeConformanceSnapshot?.label"
+                                    [testSuiteLoader]="testSuiteLoader()"
+                                    (viewTestSession)="toTestSession($event)"
+                                    (export)="onExportConformanceItem($event)"
+                                ></app-conformance-statement-items-display>
+                            </div>
+                        }
+                    } @else {
+                        <div class="pending-container top-margin">
+                            <div class="pending-icon"><app-pending-block></app-pending-block></div>
+                            <div class="pending-message">Loading conformance statements...</div>
+                        </div>
+                    }
+                }
+            </div>
+        } @else {
+            <app-test-filter [embedded]="true" [commands]="filterCommands" [filterState]="filterState" [communityId]="communityId" (onApply)="getConformanceStatements()"></app-test-filter>
+            <div class="table-container rounded">
+                <table class="table table-directive expandable-table">
+                    <thead>
+                        <tr>
+                            <th class="th-min-centered"></th>
+                            @if (!dataService.isCommunityAdmin) {
+                                <th class="sortableHeader" (click)="sort(Constants.FILTER_TYPE.COMMUNITY)">Community<app-sort-indicator [columnType]="Constants.FILTER_TYPE.COMMUNITY" [sortColumn]="sortColumn" [sortOrder]="sortOrder"></app-sort-indicator></th>
+                            }
+                            <th class="sortableHeader" (click)="sort(Constants.FILTER_TYPE.ORGANISATION)">{{dataService.labelOrganisation()}}<app-sort-indicator [columnType]="Constants.FILTER_TYPE.ORGANISATION" [sortColumn]="sortColumn" [sortOrder]="sortOrder"></app-sort-indicator></th>
+                            <th class="sortableHeader" (click)="sort(Constants.FILTER_TYPE.SYSTEM)">{{dataService.labelSystem()}}<app-sort-indicator [columnType]="Constants.FILTER_TYPE.SYSTEM" [sortColumn]="sortColumn" [sortOrder]="sortOrder"></app-sort-indicator></th>
+                            @if (dataService.isSystemAdmin || (dataService.isCommunityAdmin && dataService.community!.domain == undefined)) {
+                                <th class="sortableHeader" (click)="sort(Constants.FILTER_TYPE.DOMAIN)">{{dataService.labelDomain()}}<app-sort-indicator [columnType]="Constants.FILTER_TYPE.DOMAIN" [sortColumn]="sortColumn" [sortOrder]="sortOrder"></app-sort-indicator></th>
+                            }
+                            <th class="sortableHeader" (click)="sort(Constants.FILTER_TYPE.SPECIFICATION)">{{dataService.labelSpecification()}}<app-sort-indicator [columnType]="Constants.FILTER_TYPE.SPECIFICATION" [sortColumn]="sortColumn" [sortOrder]="sortOrder"></app-sort-indicator></th>
+                            <th class="sortableHeader" (click)="sort(Constants.FILTER_TYPE.ACTOR)">{{dataService.labelActor()}}<app-sort-indicator [columnType]="Constants.FILTER_TYPE.ACTOR" [sortColumn]="sortColumn" [sortOrder]="sortOrder"></app-sort-indicator></th>
+                            <th class="th-min">Last update</th>
+                            <th class="th-min-centered">Test results</th>
+                            <th class="th-min-centered">Status</th>
+                            <th class="th-min-centered"></th>
+                        </tr>
+                    </thead>
+                    @if (dataStatus.status != Constants.STATUS.FINISHED) {
+                        <tbody>
+                            <tr><td [attr.colspan]="columnCount" class="td-data-loading"><span><i class="fa-solid fa-spinner fa-spin-override fa-lg"></i></span></td></tr>
+                        </tbody>
+                    } @else if (dataStatus.status == Constants.STATUS.FINISHED && conformanceStatements.length == 0) {
+                        <tbody>
+                            <tr><td [attr.colspan]="columnCount" class="td-no-data"><span>No conformance data found</span></td></tr>
+                        </tbody>
+                    } @else if (conformanceStatements.length > 0) {
+                        <tbody [class.disable-events]="filterState.updatePending">
+                            @for (statement of conformanceStatements; track statement) {
+                                <tr (click)="onExpand(statement)"
+                                    class="table-row-directive expandable-table-row-collapsed">
+                                    <td class="td-min-centered"><app-collapsing-icon [padded]="false" [isCollapsed]="!isExpanded(statement)"></app-collapsing-icon></td>
+                                    @if (!dataService.isCommunityAdmin) {
+                                        <td>{{statement.communityName}}</td>
+                                    }
+                                    <td>{{statement.organizationName}}</td>
+                                    <td>{{statement.systemName}}</td>
+                                    @if (dataService.isSystemAdmin || (dataService.isCommunityAdmin && dataService.community!.domain == undefined)) {
+                                        <td>{{statement.domainName}}</td>
+                                    }
+                                    <td>{{statement.specName}}</td>
+                                    <td>{{statement.actorName}}</td>
+                                    <td class="td-min">{{statement.updateTime}}</td>
+                                    <td class="td-min-centered"><app-test-status-icons [counters]="statement.counters!" [asLine]="true"></app-test-status-icons></td>
+                                    <td class="td-min-centered"><span><i containerClass="shortTooltip" [tooltip]="dataService.tooltipForTestResult(statement.overallStatus)" [ngClass]="dataService.iconForTestResult(statement.overallStatus)"></i></span></td>
+                                    <td class="td-min-centered">
+                                        <div class="btn-toolbar no-wrap">
+                                            <button class="btn btn-secondary" (click)="onExportConformanceStatement(statement, 'xml'); $event.stopPropagation();" [pending]="statement.exportXmlPending" [icon]="true"  containerClass="shortTooltip" tooltip="Export (XML)" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-regular fa-file-lines"></i></button>
+                                            <button class="btn btn-secondary" (click)="onExportConformanceStatement(statement, 'pdf'); $event.stopPropagation();" [pending]="statement.exportPdfPending" [icon]="true"  containerClass="shortTooltip" tooltip="Export (PDF)" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-regular fa-file-pdf"></i></button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr class="expandable-table-row-expanded">
+                                    <td [attr.colspan]="columnCount" class="expandable-table-expandable-cell">
+                                        <div [collapse]="!isExpanded(statement)" [isAnimated]="true">
+                                            <div class="collapsing-div">
+                                                <div class="statementControls">
+                                                    <div class="btn-toolbar">
+                                                        <app-statement-controls
+                                                            [conformanceIds]="statement"
+                                                            [communityId]="statement.communityId"
+                                                            [organisationId]="statement.organizationId"
+                                                            [snapshotId]="activeConformanceSnapshot?.id"
+                                                            [snapshotLabel]="activeConformanceSnapshot?.label"
+                                                            [hasBadge]="statement.hasBadge"
+                                                        ></app-statement-controls>
+                                                    </div>
+                                                    <div class="statementRatios">
+                                                        <app-test-result-ratio [counters]="statement.counters!" [asLine]="true"></app-test-result-ratio>
+                                                    </div>
+                                                </div>
+                                                @if (statement.testSuitesLoaded == undefined || !statement.testSuitesLoaded) {
+                                                    <div class="spinnerPadded">
+                                                        <app-pending-block></app-pending-block>
+                                                    </div>
+                                                }
+                                                <app-test-suite-display
+                                                    [testSuites]="statement.testSuites"
+                                                    [showExecute]="false"
+                                                    [showExport]="true"
+                                                    (viewTestSession)="toTestSession($event)"
+                                                ></app-test-suite-display>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    }
+                </table>
+                @if ((!prevDisabled || !nextDisabled) && conformanceStatements && conformanceStatements.length > 0) {
+                    <div class="text-center table-paging-controls">
+                        <div class="btn-group" role="group" [class.disable-events]="filterState.updatePending">
+                            <button type="button" class="btn btn-sm btn-secondary" [disabled]="prevDisabled" (click)="doFirstPage()">First</button>
+                            <button type="button" class="btn btn-sm btn-secondary" [disabled]="prevDisabled" (click)="doPrevPage()">Previous</button>
+                            <button type="button" class="btn btn-sm btn-secondary" [disabled]="nextDisabled" (click)="doNextPage()">Next</button>
+                            <button type="button" class="btn btn-sm btn-secondary" [disabled]="nextDisabled" (click)="doLastPage()">Last</button>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
 </div>

@@ -1,37 +1,58 @@
 <div class="filterContainer">
     <button (click)="controlClicked()" type="button" class="btn btn-secondary filterControl"><div>{{filterLabel}}</div><div class="caret withMargin"></div></button>
-    <div *ngIf="formVisible" class="filterForm" [ngClass]="{'leftForm': openToLeft, 'rightForm': !openToLeft}">
-        <div class="formSearch" *ngIf="typeahead && availableItems.length > 0">
-            <div class="inputDiv"><input #filterText type="text" class="form-control" placeholder="Search items..." [(ngModel)]="textValue" (ngModelChange)="searchApplied()"/></div>
-            <div class="iconDiv"><span><i class="fa fa-search" aria-hidden="true"></i></span></div>
-        </div>
-        <div class="itemsContainer" *ngIf="!config.singleSelection && selectedItems.length > 0">
-            <div *ngFor="let item of selectedItems; let index = index;" class="itemContainer" (click)="selectedItemClicked(item)">
-                <div class="d-flex">
-                    <input class="form-check-input" type="checkbox" [attr.id]="'item-'+index" [attr.name]="'item-'+index" [(ngModel)]="selectedSelectedItems[item.id].selected" (ngModelChange)="updateCheckFlag()">
-                    <label class="form-check-label disable-select mx-2" (click)="$event.stopPropagation()" [attr.for]="'item-'+index">{{item[config.textField]}}</label>
+    @if (formVisible) {
+        <div class="filterForm" [ngClass]="{'leftForm': openToLeft, 'rightForm': !openToLeft}">
+            @if (typeahead && availableItems.length > 0) {
+                <div class="formSearch">
+                    <div class="inputDiv"><input #filterText type="text" class="form-control" placeholder="Search items..." [(ngModel)]="textValue" (ngModelChange)="searchApplied()"/></div>
+                    <div class="iconDiv"><span><i class="fa fa-search" aria-hidden="true"></i></span></div>
                 </div>
-            </div>
-        </div>
-        <div class="itemsContainer availableItems" [ngSwitch]="loadPending">
-            <div class="loadingDiv" *ngSwitchCase="true"><app-pending-block></app-pending-block></div>
-            <ng-container *ngSwitchDefault [ngSwitch]="selectedItems.length == 0 && visibleAvailableItems.length == 0">
-                <div *ngSwitchCase="true" class="noItems">No items found</div>
-                <ng-container *ngSwitchDefault>
-                    <div *ngFor="let item of visibleAvailableItems; let index = index;" class="itemContainer" (click)="availableItemClicked(item)" [ngSwitch]="config.singleSelection">
-                        <div *ngSwitchCase="true">{{item[config.textField]}}</div>
-                        <div *ngSwitchDefault class="d-flex">
-                            <input class="form-check-input" [attr.id]="'a_item-'+index" [attr.name]="'a_item-'+index" type="checkbox" [(ngModel)]="selectedAvailableItems[item.id].selected" (ngModelChange)="updateCheckFlag()">
-                            <label class="form-check-label disable-select mx-2" (click)="$event.stopPropagation()" [attr.for]="'a_item-'+index">{{item[config.textField]}}</label>
+            }
+            @if (!config.singleSelection && selectedItems.length > 0) {
+                <div class="itemsContainer">
+                    @for (item of selectedItems; track $index) {
+                        <div class="itemContainer" (click)="selectedItemClicked(item)">
+                            <div class="d-flex">
+                                <input class="form-check-input" type="checkbox" [attr.id]="'item-'+$index" [attr.name]="'item-'+$index" [(ngModel)]="selectedSelectedItems[item.id].selected" (ngModelChange)="updateCheckFlag()">
+                                <label class="form-check-label disable-select mx-2" (click)="$event.stopPropagation()" [attr.for]="'item-'+$index">{{item[config.textField]}}</label>
+                            </div>
                         </div>
-                    </div>
-                </ng-container>
-            </ng-container>
+                    }
+                </div>
+            }
+            <div class="itemsContainer availableItems">
+                @if (loadPending) {
+                    <div class="loadingDiv"><app-pending-block></app-pending-block></div>
+                } @else {
+                    @if (selectedItems.length == 0 && visibleAvailableItems.length == 0) {
+                        <div class="noItems">No items found</div>
+                    } @else {
+                        @for (item of visibleAvailableItems; track $index) {
+                            <div class="itemContainer" (click)="availableItemClicked(item)">
+                                @if (config.singleSelection) {
+                                    <div>{{item[config.textField]}}</div>
+                                } @else {
+                                    <div class="d-flex">
+                                        <input class="form-check-input" [attr.id]="'a_item-'+$index" [attr.name]="'a_item-'+$index" type="checkbox" [(ngModel)]="selectedAvailableItems[item.id].selected" (ngModelChange)="updateCheckFlag()">
+                                        <label class="form-check-label disable-select mx-2" (click)="$event.stopPropagation()" [attr.for]="'a_item-'+$index">{{item[config.textField]}}</label>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    }
+                }
+            </div>
+            @if (!config.singleSelection) {
+                <div class="formButtons btn-toolbar">
+                    @if (selectedItems.length > 0 || visibleAvailableItems.length > 0) {
+                        <button type="button" class="btn btn-secondary" (click)="applyItems()">Apply</button>
+                    }
+                    <button type="button" class="btn btn-secondary" (click)="close()">Close</button>
+                    @if (hasCheckedSelectedItem) {
+                        <button type="button" class="btn btn-secondary" (click)="clearSelectedItems()">Clear selected items</button>
+                    }
+                </div>
+            }
         </div>
-        <div class="formButtons btn-toolbar" *ngIf="!config.singleSelection">
-            <button type="button" class="btn btn-secondary" (click)="applyItems()" *ngIf="selectedItems.length > 0 || visibleAvailableItems.length > 0">Apply</button>
-            <button type="button" class="btn btn-secondary" (click)="close()">Close</button>
-            <button type="button" class="btn btn-secondary" (click)="clearSelectedItems()" *ngIf="hasCheckedSelectedItem">Clear selected items</button>
-        </div>
-    </div>
+    }
 </div>

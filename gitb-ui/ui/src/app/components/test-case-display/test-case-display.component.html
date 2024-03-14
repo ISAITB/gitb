@@ -1,5 +1,5 @@
 <div class="testCaseContainer" (click)="$event.stopPropagation()">
-    <div class="testCase" (click)="descriptionVisible[testCase.id] = !descriptionVisible[testCase.id]" [class.disabled]="testCase.disabled" [class.hasDescription]="testCase.description != undefined && testCase.description != ''" [class.padded]="!first" [class.last]="last" *ngFor="let testCase of testCases; let first = first; let last = last">
+    <div class="testCase" (click)="descriptionVisible[testCase.id] = !descriptionVisible[testCase.id]" [class.shaded]="shaded" [class.disabled]="testCase.disabled" [class.hasDescription]="testCase.description != undefined && testCase.description != ''" [class.padded]="!first" [class.last]="last" *ngFor="let testCase of testCases; let first = first; let last = last">
         <div class="mainLine">
             <div *ngIf="this.hasDescriptions" class="collapseIconContainer"><app-collapsing-icon *ngIf="hasDescription[testCase.id]" [isCollapsed]="!descriptionVisible[testCase.id]" [asDiv]="true"></app-collapsing-icon></div>
             <div *ngIf="hasOptional || hasDisabled" class="testCasePrescription">

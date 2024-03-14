@@ -102,13 +102,13 @@
                                                                     </div>
                                                                 </ng-container>
                                                                 <div class="btn-group export-group" dropdown [isDisabled]="!exportEnabled(testCase) || exportPdfPending[testCase.id] || exportXmlPending[testCase.id]">
-                                                                    <button type="button" [disable]="!exportEnabled(testCase) || exportPdfPending[testCase.id] || exportXmlPending[testCase.id]" [pending]="exportPdfPending[testCase.id] || exportXmlPending[testCase.id]" class="btn btn-secondary" (click)="exportPdf(testCase)">Export report as PDF</button>
+                                                                    <button type="button" [disable]="!exportEnabled(testCase) || exportPdfPending[testCase.id] || exportXmlPending[testCase.id]" [pending]="exportPdfPending[testCase.id] || exportXmlPending[testCase.id]" class="btn btn-secondary" (click)="exportPdf(testCase)">Download report</button>
                                                                     <button id="button-export" type="button" [disabled]="!exportEnabled(testCase) || exportPdfPending[testCase.id] || exportXmlPending[testCase.id]" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
                                                                         <span class="caret"></span>
-                                                                        <span class="sr-only visually-hidden">Export report as PDF</span>
+                                                                        <span class="sr-only visually-hidden">Download report</span>
                                                                     </button>
                                                                     <ul id="dropdown-export" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-export">
-                                                                        <li role="menuitem"><a class="dropdown-item" href (click)="exportXml(testCase);$event.preventDefault();">Export report as XML</a></li>
+                                                                        <li role="menuitem"><a class="dropdown-item" href (click)="exportXml(testCase);$event.preventDefault();">Download report as XML</a></li>
                                                                     </ul>
                                                                 </div>                                                                                
                                                                 <div class="viewLogButton">

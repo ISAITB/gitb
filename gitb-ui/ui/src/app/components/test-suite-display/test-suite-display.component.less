@@ -3,11 +3,17 @@
 .testSuiteContainer {
     .testSuite {
         background: @white;
+        &.shaded {
+            background: @gray-light-1;
+        }
         border: 1px solid @gray-dark-1;
         border-radius: @border-radius;
         margin-top: 10px;
         &.hovering {
             background-color: @white-shaded;
+            &.shaded {
+                background: @gray-highlight;
+            }
         }
         .testSuiteInfo {
             display: flex;

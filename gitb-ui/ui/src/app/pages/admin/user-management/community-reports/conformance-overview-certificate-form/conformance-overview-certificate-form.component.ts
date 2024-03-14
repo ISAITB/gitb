@@ -14,6 +14,7 @@ import { SpecificationGroup } from 'src/app/types/specification-group';
 import { Specification } from 'src/app/types/specification';
 import { filter, find } from 'lodash';
 import { ConformanceOverviewMessage } from '../conformance-overview-message';
+import { ReportService } from 'src/app/services/report.service';
 
 @Component({
   selector: 'app-conformance-overview-certificate-form',
@@ -60,12 +61,13 @@ export class ConformanceOverviewCertificateFormComponent extends BaseCertificate
   currentMessageContent?: string
 
   constructor(
+    reportService: ReportService,
     conformanceService: ConformanceService,
     modalService: BsModalService,
     popupService: PopupService,
     public dataService: DataService,
-    private specificationService: SpecificationService
-  ) { super(conformanceService, modalService, popupService) }
+    private specificationService: SpecificationService,
+  ) { super(conformanceService, modalService, popupService, reportService) }
 
   getSettings(): Observable<ConformanceOverviewCertificateSettings | undefined> {
     return this.conformanceService.getConformanceOverviewCertificateSettings(this.communityId)
@@ -132,7 +134,7 @@ export class ConformanceOverviewCertificateFormComponent extends BaseCertificate
     if (this.currentMessageKey?.level == level) {
       identifier = this.currentMessageKey.identifier
     }
-    return this.conformanceService.exportDemoConformanceOverviewCertificateReport(this.communityId, this.prepareSettingsForUse(), level, identifier)
+    return this.reportService.exportDemoConformanceOverviewCertificateReport(this.communityId, this.prepareSettingsForUse(), level, identifier)
   }
 
   updateSettings(): Observable<any> {

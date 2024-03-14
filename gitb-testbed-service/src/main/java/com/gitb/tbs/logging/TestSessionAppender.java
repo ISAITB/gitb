@@ -1,6 +1,5 @@
 package com.gitb.tbs.logging;
 
-import org.apache.pekko.actor.ActorRef;
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
 import ch.qos.logback.classic.spi.ILoggingEvent;
@@ -9,19 +8,19 @@ import ch.qos.logback.core.AppenderBase;
 import com.gitb.core.AnyContent;
 import com.gitb.core.LogLevel;
 import com.gitb.core.StepStatus;
+import com.gitb.engine.PropertyConstants;
 import com.gitb.engine.TestEngine;
 import com.gitb.engine.actors.SessionActor;
 import com.gitb.engine.actors.processors.AbstractTestStepActor;
 import com.gitb.engine.commands.interaction.LogCommand;
 import com.gitb.tbs.TestStepStatus;
 import com.gitb.tr.TAR;
+import org.apache.pekko.actor.ActorRef;
 
 /**
  * Custom logging appender that is used session-specific log messages to the test bed client.
  */
 public class TestSessionAppender extends AppenderBase<ILoggingEvent> {
-
-    public static String LOG_EVENT_STEP_ID = "-999";
 
     private PatternLayoutEncoder encoder;
 
@@ -45,12 +44,13 @@ public class TestSessionAppender extends AppenderBase<ILoggingEvent> {
 
     @Override
     protected void append(ILoggingEvent eventObject) {
-        if (eventObject.getMarker() != null) {
-            String sessionId = eventObject.getMarker().getName();
+        var markerList =  eventObject.getMarkerList();
+        if (markerList != null && !markerList.isEmpty()) {
+            String sessionId = markerList.get(0).getName();
             //Construct the Callback response
             TestStepStatus testStepStatus = new TestStepStatus();
             testStepStatus.setTcInstanceId(sessionId);
-            testStepStatus.setStepId(LOG_EVENT_STEP_ID);
+            testStepStatus.setStepId(PropertyConstants.LOG_EVENT_STEP_ID);
             testStepStatus.setStatus(StepStatus.PROCESSING);
             TAR report = new TAR();
             report.setContext(new AnyContent());

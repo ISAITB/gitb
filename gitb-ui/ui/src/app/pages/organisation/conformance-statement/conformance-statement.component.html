@@ -68,20 +68,19 @@
 			</div>
 			<div class="card-footer button-container">
 				<div class="btn-toolbar">
-					@if (canExportConformanceCertificate()) {
-						<div class="btn-group export-group" dropdown [isDisabled]="exportCertificatePending || exportPending">
-							<button type="button" [disable]="exportCertificatePending || exportPending" [pending]="exportCertificatePending || exportPending" class="btn btn-secondary" (click)="onExportConformanceStatement()">Download report</button>
-							<button id="button-export" type="button" [disabled]="exportCertificatePending || exportPending" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
-								<span class="caret"></span>
-								<span class="sr-only visually-hidden">Download report</span>
-							</button>
-							<ul id="dropdown-export" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-export">
+					<div class="btn-group export-group" dropdown [isDisabled]="exportPending">
+						<button type="button" [disable]="exportPending" [pending]="exportPending" class="btn btn-secondary" (click)="onExportConformanceStatement('pdf')">Download report</button>
+						<button id="button-export" type="button" [disabled]="exportPending" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
+							<span class="caret"></span>
+							<span class="sr-only visually-hidden">Download report</span>
+						</button>
+						<ul id="dropdown-export" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-export">
+							<li role="menuitem"><a class="dropdown-item" href (click)="onExportConformanceStatement('xml');$event.preventDefault();">Download report as XML</a></li>
+							@if (canExportConformanceCertificate()) {
 								<li role="menuitem"><a class="dropdown-item" href (click)="onExportConformanceCertificate();$event.preventDefault();">Download conformance certificate</a></li>
-							</ul>
-						</div>
-					} @else {
-						<button type="button" class="btn btn-secondary" (click)="onExportConformanceStatement()" [pending]="exportPending">Download report</button>
-					}
+							}
+						</ul>
+					</div>
 					@if (hasBadge) {
 						<app-view-badge-button [systemId]="systemId" [actorId]="actorId" [snapshotId]="snapshotId" [leftMargin]="true"></app-view-badge-button>
 					}

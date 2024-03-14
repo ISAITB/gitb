@@ -8,6 +8,7 @@ import { PlaceholderInfo } from 'src/app/components/placeholder-selector/placeho
 import { Observable, mergeMap, of } from 'rxjs';
 import { saveAs } from 'file-saver'
 import { PopupService } from 'src/app/services/popup.service';
+import { ReportService } from 'src/app/services/report.service';
 
 @Component({ template: '' })
 export abstract class BaseCertificateSettingsFormComponent<T extends CertificateSettings> extends BaseReportSettingsFormComponent {
@@ -23,7 +24,8 @@ export abstract class BaseCertificateSettingsFormComponent<T extends Certificate
   constructor(
     protected conformanceService: ConformanceService,
     private modalService: BsModalService,
-    private popupService: PopupService
+    private popupService: PopupService,
+    protected reportService: ReportService
   ) { super() }
 
   handleExpanded(): void {

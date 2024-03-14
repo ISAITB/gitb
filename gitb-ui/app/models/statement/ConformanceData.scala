@@ -1,8 +1,8 @@
 package models.statement
 
-import com.gitb.reports.dto.ConformanceItem
+import com.gitb.reports.dto.{ConformanceItem, ConformanceStatementData}
+import models.ConformanceStatementItem
 import models.Enums.OverviewLevelType.OverviewLevelType
-import models.{ConformanceStatement, ConformanceStatementItem}
 
 case class ConformanceData(
                             reportLevel: OverviewLevelType,
@@ -16,12 +16,20 @@ case class ConformanceData(
                             displayDomainInStatementTree: Boolean,
                             overallResult: String,
                             conformanceItems: java.util.List[ConformanceItem],
-                            conformanceItemTree: List[ConformanceStatementItem],
-                            statements: List[ConformanceStatement]
+                            conformanceItemTree: List[ConformanceStatementItem]
                           ) {
+
+  private var conformanceStatements: Option[java.util.List[ConformanceStatementData]] = None
 
   def createLocator(): ConformanceDataLocator = {
     new ConformanceDataLocator(this)
+  }
+
+  def getConformanceStatements(): java.util.List[ConformanceStatementData]  = {
+    if (conformanceStatements.isEmpty) {
+      conformanceStatements = Some(ConformanceItem.flattenStatements(conformanceItems))
+    }
+    conformanceStatements.get
   }
 
 }

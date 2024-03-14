@@ -17,5 +17,6 @@ export interface ConformanceStatementItem {
     filteredByText?: boolean
     collapsed?: boolean
     checked?: boolean
-    exportPending?: boolean
+    exportPdfPending?: boolean
+    exportXmlPending?: boolean
 }

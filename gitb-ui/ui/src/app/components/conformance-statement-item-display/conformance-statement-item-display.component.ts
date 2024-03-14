@@ -5,6 +5,11 @@ import { ConformanceStatementResult } from 'src/app/types/conformance-statement-
 import { Counters } from '../test-status-icons/counters';
 import { DataService } from 'src/app/services/data.service';
 import { Constants } from 'src/app/common/constants';
+import { ConformanceStatus } from 'src/app/types/conformance-status';
+import { Observable } from 'rxjs';
+import { ConformanceTestSuite } from 'src/app/pages/organisation/conformance-statement/conformance-test-suite';
+import { ConformanceStatusSummary } from 'src/app/types/conformance-status-summary';
+import { ExportReportEvent } from 'src/app/types/export-report-event';
 
 @Component({
   selector: 'app-conformance-statement-item-display',
@@ -23,17 +28,33 @@ export class ConformanceStatementItemDisplayComponent implements OnInit {
   @Input() withExport = false
   @Input() withResults = false
   @Input() filtering = true
+  @Input() withTestCases = false
+
+  // Inputs for when we display test cases
+  @Input() testSuiteLoader?: (item: ConformanceStatementItem) => Observable<ConformanceStatus|undefined>
+  @Input() communityId?: number
+  @Input() organisationId?: number
+  @Input() snapshotId?: number
+  @Input() snapshotLabel?: string
 
   @Output() selectionChanged = new EventEmitter<ConformanceStatementItem>()
-  @Output() export = new EventEmitter<ConformanceStatementItem>()
+  @Output() export = new EventEmitter<ExportReportEvent>()
+  @Output() viewTestSession = new EventEmitter<string>()
+
   hasChildren = false
   allChildrenHidden = false
   showCheck = false
   showResults = false
+  showTestCases = false
   results?: ConformanceStatementResult
   counters?: Counters
   status?: string
   updateTime?: string
+  testCasesOpen = false
+  testSuites: ConformanceTestSuite[]|undefined
+  statementSummary?: ConformanceStatusSummary
+  hasBadge = false
+  pending = false
   Constants = Constants
 
   constructor(
@@ -55,6 +76,7 @@ export class ConformanceStatementItemDisplayComponent implements OnInit {
       this.results = this.findResults(this.item)
       if (this.results) {
         this.showResults = true
+        this.showTestCases = this.withTestCases
         this.counters = {
           completed: this.results.completed,
           failed: this.results.failed,
@@ -90,10 +112,42 @@ export class ConformanceStatementItemDisplayComponent implements OnInit {
         this.item.checked = !this.item.checked
       }
       if (this.hasChildren) {
-        this.notifyForSelectionChange(this.item.items![0])
+        this.itemSelected(this.item.items![0])
       } else {
-        this.notifyForSelectionChange()
+        this.itemSelected()
       }
+    }
+  }
+
+  itemSelected(otherItem?: ConformanceStatementItem) {
+    if (this.showTestCases) {
+      if (this.testCasesOpen) {
+        this.testCasesOpen = false
+      } else {
+        this.loadTestSuites(otherItem?otherItem:this.item)
+      }
+    }
+    this.notifyForSelectionChange(otherItem)
+  }
+
+  private loadTestSuites(item: ConformanceStatementItem) {
+    if (this.testSuites) {
+      this.testCasesOpen = true
+    } else {
+      this.pending = true
+      this.testSuiteLoader!(item).subscribe((data) => {
+        if (data) {
+          this.dataService.organiseTestSuitesForDisplay(data.testSuites)
+          this.statementSummary = data.summary
+          this.hasBadge = data.summary.hasBadge
+          this.testSuites = data.testSuites
+        }
+      }).add(() => {
+        setTimeout(() => {
+          this.testCasesOpen = true
+          this.pending = false
+        }, 1)
+      })
     }
   }
 
@@ -127,11 +181,19 @@ export class ConformanceStatementItemDisplayComponent implements OnInit {
     this.notifyForSelectionChange(item)
   }
 
-  childExported(item: ConformanceStatementItem) {
-    this.export.emit(item)
+  handleExportClick(statementReport: boolean, item: ConformanceStatementItem, format: 'xml'|'pdf') {
+    this.onExport({
+      item: item,
+      format: format,
+      statementReport: statementReport,
+    })
   }
 
-  onExport() {
-    this.export.emit(this.item)
+  onExport(event: ExportReportEvent) {
+    this.export.emit(event)
+  }
+
+  onViewTestSession(session: string) {
+    this.viewTestSession.emit(session)
   }
 }

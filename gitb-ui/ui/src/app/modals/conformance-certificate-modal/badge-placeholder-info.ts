@@ -1,6 +1,10 @@
 export interface BadgePlaceholderInfo {
 
     placeholder: string
-    width?: number
+    status: string
+    systemId: number
+    actorId: number
+    specificationId: number
+    snapshotId?: number
 
 }

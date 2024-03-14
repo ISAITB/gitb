@@ -297,10 +297,17 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils, domainParam
 						(x._1._1.result, x._1._1.outputMessage, x._1._1.testsession, x._1._1.updateTime) // Result
 					))
 			}
-			val specificationIdQuery = if (snapshotId.isDefined) {
-				PersistenceSchema.conformanceSnapshotResults.filter(_.actorId === actorId).filter(_.systemId === sutId).filter(_.snapshotId === snapshotId.get).map(_.specificationId).result.head
+			val specificationIdsQuery = if (snapshotId.isDefined) {
+				PersistenceSchema.conformanceSnapshotResults
+					.filter(_.actorId === actorId)
+					.filter(_.systemId === sutId)
+					.filter(_.snapshotId === snapshotId.get)
+					.map(x => (x.actorId, x.domainId)).result.head
 			} else {
-				PersistenceSchema.specificationHasActors.filter(_.actorId === actorId).map(_.specId).result.head
+				PersistenceSchema.specificationHasActors
+					.join(PersistenceSchema.specifications).on(_.specId === _.id)
+					.filter(_._1.actorId === actorId)
+					.map(x => (x._2.id, x._2.domain)).result.head
 			}
 			val statusItems = exec(
 				for {
@@ -313,12 +320,12 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils, domainParam
 								testCaseOptional = r._2._5, testCaseDisabled = r._2._6, testCaseTags = r._2._7
 							)
 						}))
-					specificationId <- specificationIdQuery
-				} yield (results, specificationId)
+					specificationIds <- specificationIdsQuery
+				} yield (results, specificationIds)
 			)
 			// Check to see if we have badges. We use the SUCCESS badge as this will always be present if badges are defined.
-			val hasBadge = repositoryUtil.getConformanceBadge(statusItems._2, Some(actorId), snapshotId, TestResultType.SUCCESS.toString, exactMatch = false, forReport = false).isDefined
-			val status = new ConformanceStatus(0, 0, 0, 0, 0, 0, TestResultType.UNDEFINED, None, hasBadge, new ListBuffer[ConformanceTestSuite])
+			val hasBadge = repositoryUtil.getConformanceBadge(statusItems._2._1, Some(actorId), snapshotId, TestResultType.SUCCESS.toString, exactMatch = false, forReport = false).isDefined
+			val status = new ConformanceStatus(sutId, statusItems._2._2, statusItems._2._1, actorId, 0, 0, 0, 0, 0, 0, TestResultType.UNDEFINED, None, hasBadge, new ListBuffer[ConformanceTestSuite])
 			val testSuiteMap = new mutable.LinkedHashMap[Long, ConformanceTestSuite]()
 			statusItems._1.foreach { item =>
 				val testSuite = if (testSuiteMap.contains(item.testSuiteId)) {

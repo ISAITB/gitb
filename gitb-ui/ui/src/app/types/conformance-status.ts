@@ -1,18 +1,9 @@
 import { ConformanceTestSuite } from "../pages/organisation/conformance-statement/conformance-test-suite";
+import { ConformanceStatusSummary } from "./conformance-status-summary";
 
 export interface ConformanceStatus {
 
-    summary: {
-        failed: number
-        completed: number
-        undefined: number
-        failedOptional: number
-        completedOptional: number
-        undefinedOptional: number
-        result: string
-        updateTime?: string
-        hasBadge: boolean
-    }
+    summary: ConformanceStatusSummary
     testSuites: ConformanceTestSuite[]
 
 }

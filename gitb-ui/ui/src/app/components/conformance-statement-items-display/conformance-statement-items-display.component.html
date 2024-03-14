@@ -1,3 +1,23 @@
 @for (item of items; track $index) {
-    <app-conformance-statement-item-display [item]="item" [shade]="item.hidden?!shade:shade" [wrapDescriptions]="wrapDescriptions" [expandable]="expandable" [filtering]="filtering" [hideSelf]="item.hidden!" [animated]="animated" [withCheck]="withCheck" [withExport]="withExport" [withResults]="withResults" (selectionChanged)="childSelectionChanged($event)" (export)="childExported($event)"></app-conformance-statement-item-display>
+    <app-conformance-statement-item-display 
+        [item]="item" 
+        [shade]="item.hidden?!shade:shade"
+        [wrapDescriptions]="wrapDescriptions"
+        [expandable]="expandable"
+        [filtering]="filtering"
+        [hideSelf]="item.hidden!"
+        [animated]="animated"
+        [withCheck]="withCheck"
+        [withExport]="withExport"
+        [withResults]="withResults"
+        [withTestCases]="withTestCases"
+        [testSuiteLoader]="testSuiteLoader"
+        [communityId]="communityId"
+        [organisationId]="organisationId"
+        [snapshotId]="snapshotId"
+        [snapshotLabel]="snapshotLabel"
+        (selectionChanged)="childSelectionChanged($event)"
+        (export)="childExported($event)"
+         (viewTestSession)="onViewTestSession($event)"
+    ></app-conformance-statement-item-display>
 }

@@ -65,6 +65,9 @@
 	        .conformance-item-data-td {
 	            min-width: 300px;
 	        }
+	        .placeholder-badge-td {
+	            padding: 5px;
+	        }
 	    </style>
     </head>
     <body>

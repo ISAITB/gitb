@@ -8,6 +8,7 @@ import { ConformanceCertificateSettings } from 'src/app/types/conformance-certif
 import { Observable, map, of, share } from 'rxjs';
 import { BsModalService } from 'ngx-bootstrap/modal';
 import { BaseCertificateSettingsFormComponent } from '../base-certificate-settings-form.component';
+import { ReportService } from 'src/app/services/report.service';
 
 @Component({
   selector: 'app-conformance-certificate-form',
@@ -22,11 +23,12 @@ export class ConformanceCertificateFormComponent extends BaseCertificateSettings
   domainChangedEmitter = new EventEmitter<number>()
 
   constructor(
+    reportService: ReportService,
     conformanceService: ConformanceService,
     modalService: BsModalService,
     popupService: PopupService,
     public dataService: DataService,
-  ) { super(conformanceService, modalService, popupService) }
+  ) { super(conformanceService, modalService, popupService, reportService) }
 
   getPlaceholders(): PlaceholderInfo[] {
     return [
@@ -80,7 +82,7 @@ export class ConformanceCertificateFormComponent extends BaseCertificateSettings
   }
 
   exportDemoReport(): Observable<ArrayBuffer> {
-    return this.conformanceService.exportDemoConformanceCertificateReport(this.communityId, this.prepareSettingsForUse())
+    return this.reportService.exportDemoConformanceCertificateReport(this.communityId, this.prepareSettingsForUse())
   }
 
   updateSettings(): Observable<any> {

@@ -3,7 +3,7 @@ import { Constants } from 'src/app/common/constants';
 import { DataService } from 'src/app/services/data.service';
 import { FilterState } from 'src/app/types/filter-state';
 import { Observable, forkJoin, of } from 'rxjs';
-import { mergeMap, share } from 'rxjs/operators'
+import { mergeMap } from 'rxjs/operators'
 import { map, remove, filter } from 'lodash';
 import { BsDatepickerConfig } from 'ngx-bootstrap/datepicker';
 import { formatDate } from '@angular/common';
@@ -43,6 +43,8 @@ export class TestFilterComponent implements OnInit {
   @Input() filterState!: FilterState
   @Input() communityId?: number
   @Input() organisationId?: number
+  @Input() embedded = false
+  @Input() commands?: EventEmitter<number>
 
   @Input() loadDomainsFn?: () => Observable<Domain[]>
   @Input() loadSpecificationsFn?: () => Observable<Specification[]>
@@ -141,6 +143,21 @@ export class TestFilterComponent implements OnInit {
     this.initialiseIfDefined(Constants.FILTER_TYPE.ORGANISATION, { name: Constants.FILTER_TYPE.ORGANISATION, textField: 'sname', loader: this.loadOrganisationsFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter() })
     this.initialiseIfDefined(Constants.FILTER_TYPE.SYSTEM, { name: Constants.FILTER_TYPE.SYSTEM, textField: 'sname', loader: this.loadSystemsFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter() })
     this.initialiseIfDefined(Constants.FILTER_TYPE.RESULT, { name: Constants.FILTER_TYPE.RESULT, textField: 'label', loader: this.loadTestResults.bind(this), clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter() } )
+    if (this.commands) {
+      this.commands.subscribe((command) => {
+        this.handleCommand(command)
+      })
+    }
+  }
+
+  private handleCommand(command: number) {
+    if (command == Constants.FILTER_COMMAND.TOGGLE) {
+      this.clickedHeader()
+    } else if (command == Constants.FILTER_COMMAND.REFRESH) {
+      this.applyFilters()
+    } else if (command == Constants.FILTER_COMMAND.CLEAR) {
+      this.clearFilters()
+    }
   }
 
   private setupDefaultLoadFunctions() {

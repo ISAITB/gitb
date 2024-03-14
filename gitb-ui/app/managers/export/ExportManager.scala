@@ -898,7 +898,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, systemConfigura
         communityData.getConformanceCertificateSettings.setTitle(certificateSettings.get.title.orNull)
       }
       // Conformance overview certificate.
-      val certificateOverviewSettings = communityManager.getConformanceOverviewCertificateSettingsWrapper(communityId, defaultIfMissing = false, None)
+      val certificateOverviewSettings = communityManager.getConformanceOverviewCertificateSettingsWrapper(communityId, defaultIfMissing = false, None, None, None)
       if (certificateOverviewSettings.isDefined) {
         communityData.setConformanceOverviewCertificateSettings(new ConformanceOverviewCertificateSettings)
         communityData.getConformanceOverviewCertificateSettings.setAddTitle(certificateOverviewSettings.get.settings.includeTitle)

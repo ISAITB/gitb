@@ -31,6 +31,7 @@ import { saveAs } from 'file-saver'
 import { CheckboxOption } from 'src/app/components/checkbox-option-panel/checkbox-option';
 import { CheckboxOptionState } from 'src/app/components/checkbox-option-panel/checkbox-option-state';
 import { ConformanceStatementItem } from 'src/app/types/conformance-statement-item';
+import { ReportSupportService } from 'src/app/services/report-support.service';
 
 @Component({
   selector: 'app-conformance-statement',
@@ -40,6 +41,7 @@ import { ConformanceStatementItem } from 'src/app/types/conformance-statement-it
 export class ConformanceStatementComponent implements OnInit, AfterViewInit {
 
   communityId?: number
+  communityIdOfStatement!: number
   snapshotId?: number
   organisationId!: number
   systemId!: number
@@ -64,7 +66,6 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
   runTestClicked = false
   deletePending = false
   exportPending = false
-  exportCertificatePending = false
   tabToShow = ConformanceStatementTab.tests
   @ViewChild('tabs', { static: false }) tabs?: TabsetComponent;
   collapsedDetails = false
@@ -113,7 +114,8 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
     private testService: TestService,
     private popupService: PopupService,
     private organisationService: OrganisationService,
-    private routingService: RoutingService
+    private routingService: RoutingService,
+    private reportSupportService: ReportSupportService
   ) { 
     // Access the tab to show via router state to have it cleared upon refresh.
     const navigation = router.getCurrentNavigation()
@@ -158,6 +160,7 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
       // Party definition.
       this.systemName = statementData.system.fname
       this.organisationName = statementData.organisation.fname
+      this.communityIdOfStatement = statementData.organisation.community
       // Statement definition.
       this.prepareStatement(statementData.statement)
       this.statement = statementData.statement
@@ -644,28 +647,22 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
     })
   }
 
-  onExportConformanceStatement() {
-    this.confirmationDialogService.confirm("Report options", "Would you like to include the detailed test step results per test session?", "Yes, include step results", "No, summary only", true)
-    .subscribe((choice: boolean) => {
-      this.exportPending = true
-      this.reportService.exportConformanceStatementReport(this.actorId, this.systemId, choice, this.snapshotId)
-      .subscribe((data) => {
-        const blobData = new Blob([data], {type: 'application/pdf'});
-        saveAs(blobData, "conformance_report.pdf");
-      }).add(() => {
-        this.exportPending = false
-      })
+  onExportConformanceStatement(format: 'xml'|'pdf') {
+    this.exportPending = true    
+    this.reportSupportService.handleConformanceStatementReport(this.communityIdOfStatement, this.actorId, this.systemId, this.snapshotId, format, false)
+    .subscribe(() => {
+      this.exportPending = false
     })
   }
 
   onExportConformanceCertificate() {
-    this.exportCertificatePending = true
-    this.conformanceService.exportOwnConformanceCertificateReport(this.actorId, this.systemId, this.snapshotId)
+    this.exportPending = true
+    this.reportService.exportOwnConformanceCertificateReport(this.actorId, this.systemId, this.snapshotId)
     .subscribe((data) => {
       const blobData = new Blob([data], {type: 'application/pdf'});
       saveAs(blobData, "conformance_certificate.pdf");
     }).add(() => {
-      this.exportCertificatePending = false
+      this.exportPending = true
     })
   }
 

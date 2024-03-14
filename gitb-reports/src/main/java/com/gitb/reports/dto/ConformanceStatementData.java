@@ -6,6 +6,9 @@ import java.util.*;
 
 public class ConformanceStatementData {
 
+    private Long actorId;
+    private Long specificationId;
+    private Long systemId;
     private String testActor;
     private String testSpecification;
     private String testSpecificationGroup;
@@ -167,4 +170,27 @@ public class ConformanceStatementData {
         return distinctTags;
     }
 
+    public Long getActorId() {
+        return actorId;
+    }
+
+    public void setActorId(Long actorId) {
+        this.actorId = actorId;
+    }
+
+    public Long getSpecificationId() {
+        return specificationId;
+    }
+
+    public void setSpecificationId(Long specificationId) {
+        this.specificationId = specificationId;
+    }
+
+    public Long getSystemId() {
+        return systemId;
+    }
+
+    public void setSystemId(Long systemId) {
+        this.systemId = systemId;
+    }
 }

@@ -5,6 +5,10 @@ import com.gitb.tr.TestResultType
 import java.sql.Timestamp
 
 class ConformanceStatus (
+  var systemId: Long,
+  var domainId: Long,
+  var specificationId: Long,
+  var actorId: Long,
   var failed: Int,
   var completed:Int,
   var undefined:Int,

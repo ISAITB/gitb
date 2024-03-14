@@ -1,14 +1,35 @@
 @if (!filtering || item.filtered) {
     @if (hideSelf) {
         @if (item.items) {
-            <app-conformance-statement-items-display [items]="item.items" [wrapDescriptions]="wrapDescriptions" [expandable]="expandable" [filtering]="filtering" [shade]="!shade" [animated]="animated" [withCheck]="withCheck" [withExport]="withExport" [withResults]="withResults" (selectionChanged)="childSelectionChanged($event)" (export)="childExported($event)"></app-conformance-statement-items-display>
+            <app-conformance-statement-items-display
+                [items]="item.items"
+                [wrapDescriptions]="wrapDescriptions"
+                [expandable]="expandable"
+                [filtering]="filtering"
+                [shade]="!shade"
+                [animated]="animated"
+                [withCheck]="withCheck"
+                [withExport]="withExport"
+                [withResults]="withResults"
+                [withTestCases]="withTestCases"
+                [testSuiteLoader]="testSuiteLoader"
+                [communityId]="communityId"
+                [organisationId]="organisationId"
+                [snapshotId]="snapshotId"
+                [snapshotLabel]="snapshotLabel"
+                (selectionChanged)="childSelectionChanged($event)"
+                (export)="onExport($event)"
+                (viewTestSession)="onViewTestSession($event)"
+            ></app-conformance-statement-items-display>
         }
     } @else {
         <div class="item-container" [class.shade]="shade">
-            <div class="item-header" (click)="clickHeader();$event.stopPropagation()" [class.actionable]="expandable || withCheck" [class.wrapDescriptions]="wrapDescriptions">
+            <div class="item-header" (click)="clickHeader();$event.stopPropagation()" [class.actionable]="expandable || withCheck || showTestCases" [class.wrapDescriptions]="wrapDescriptions">
                 <div class="item-header-title">
                     @if (expandable && hasChildren && !allChildrenHidden) {
                         <div class="item-icon"><app-collapsing-icon [isCollapsed]="item.collapsed!" [asDiv]="true"></app-collapsing-icon></div>
+                    } @else if (showTestCases) {
+                        <div class="item-icon"><app-collapsing-icon [isCollapsed]="!testCasesOpen" [asDiv]="true"></app-collapsing-icon></div>
                     }
                     @if (showCheck) {
                         <div class="item-check"><input type="checkbox" name="itemCheck" [(ngModel)]="item.checked" (ngModelChange)="updateChecked()"></div>
@@ -20,11 +41,19 @@
                 }
                 @if (withExport && expandable && hasChildren && !allChildrenHidden) {
                     <div class="item-controls">
-                        <button class="btn btn-secondary" (click)="onExport(); $event.stopPropagation();" [pending]="item.exportPending" [icon]="true"  containerClass="shortTooltip" tooltip="Export" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-regular fa-file-pdf"></i></button>
+                        <div class="btn-toolbar">
+                            <button class="btn btn-secondary" (click)="onExport({statementReport: false, item: item, format: 'xml'}); $event.stopPropagation();" [pending]="item.exportXmlPending" [icon]="true"  containerClass="shortTooltip" tooltip="Export (XML)" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-regular fa-file-lines"></i></button>
+                            <button class="btn btn-secondary" (click)="onExport({statementReport: false, item: item, format: 'pdf'}); $event.stopPropagation();" [pending]="item.exportPdfPending" [icon]="true"  containerClass="shortTooltip" tooltip="Export (PDF)" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-regular fa-file-pdf"></i></button>
+                        </div>
                     </div>
                 }
                 @if (showResults) {
                     <div class="item-results">
+                        @if (pending) {
+                            <div class="item-pending">
+                                <app-pending-block [pending]="true"></app-pending-block>
+                            </div>
+                        }
                         @if (updateTime) {
                             <app-tag label="fa-solid fa-clock" [icon]="true" tooltipText="Last update time" [value]="updateTime"></app-tag>
                         }
@@ -42,9 +71,66 @@
                     </div>
                 }
             </div>
-            @if (item.items && item.items.length > 0) {
-                <div class="item-content" [collapse]="item.collapsed!" [isAnimated]="expandable && animated" (expanded)="expanded()" (collapsed)="collapsed()">    
-                    <app-conformance-statement-items-display [items]="item.items" [wrapDescriptions]="wrapDescriptions" [expandable]="expandable" [filtering]="filtering" [shade]="!shade" [animated]="animated" [withCheck]="withCheck" [withExport]="withExport" [withResults]="withResults" (selectionChanged)="childSelectionChanged($event)" (export)="childExported($event)"></app-conformance-statement-items-display>
+            @if (showTestCases) {
+                <div class="item-content-container" [collapse]="!testCasesOpen" [isAnimated]="true" (expanded)="expanded()" (collapsed)="collapsed()">
+                    <div class="item-content">
+                        @if (statementSummary) {
+                            <div class="statement-controls">
+                                <app-statement-controls
+                                    [conformanceIds]="statementSummary"
+                                    [communityId]="communityId!"
+                                    [organisationId]="organisationId!"
+                                    [snapshotId]="snapshotId"
+                                    [snapshotLabel]="snapshotLabel"
+                                    [hasBadge]="hasBadge">
+                                    <div class="btn-group export-group" dropdown [isDisabled]="item.exportPdfPending == true || item.exportXmlPending == true">
+                                        <button type="button" [disable]="item.exportPdfPending == true || item.exportXmlPending == true" [pending]="item.exportPdfPending || item.exportXmlPending" class="btn btn-secondary" (click)="onExport({statementReport: true, item: item, actorId: statementSummary.actorId, format: 'pdf'})">Download report</button>
+                                        <button id="button-export" type="button" [disabled]="item.exportPdfPending == true || item.exportXmlPending == true" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
+                                            <span class="caret"></span>
+                                            <span class="sr-only visually-hidden">Download report</span>
+                                        </button>
+                                        <ul id="dropdown-export" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-export">
+                                            <li role="menuitem"><a class="dropdown-item" href (click)="onExport({statementReport: true, item: item, actorId: statementSummary.actorId, format: 'xml'});$event.preventDefault();">Download report as XML</a></li>
+                                        </ul>
+                                    </div>
+                                </app-statement-controls>
+                            </div>
+                        }
+                        @if (testSuites) {
+                            <div class="statement-test-suites">
+                                <app-test-suite-display
+                                    [testSuites]="testSuites"
+                                    [showExecute]="false"
+                                    [showExport]="true"
+                                    [shaded]="shade"
+                                    (viewTestSession)="onViewTestSession($event)"
+                                ></app-test-suite-display>                    
+                            </div>
+                        }
+                    </div>
+                </div>
+            } @else if (item.items && item.items.length > 0) {
+                <div class="item-content-container item-content" [collapse]="item.collapsed!" [isAnimated]="expandable && animated" (expanded)="expanded()" (collapsed)="collapsed()">
+                    <app-conformance-statement-items-display
+                        [items]="item.items"
+                        [wrapDescriptions]="wrapDescriptions"
+                        [expandable]="expandable"
+                        [filtering]="filtering"
+                        [shade]="!shade"
+                        [animated]="animated"
+                        [withCheck]="withCheck"
+                        [withExport]="withExport"
+                        [withResults]="withResults"
+                        [withTestCases]="withTestCases"
+                        [testSuiteLoader]="testSuiteLoader"
+                        [communityId]="communityId"
+                        [organisationId]="organisationId"
+                        [snapshotId]="snapshotId"
+                        [snapshotLabel]="snapshotLabel"
+                        (selectionChanged)="childSelectionChanged($event)"
+                        (export)="onExport($event)"
+                        (viewTestSession)="onViewTestSession($event)"
+                    ></app-conformance-statement-items-display>
                 </div>
             }
         </div>

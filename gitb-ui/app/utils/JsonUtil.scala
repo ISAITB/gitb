@@ -1514,19 +1514,10 @@ object JsonUtil {
   }
 
   def parseJsConformanceOverviewCertificateMessage(json: JsValue, communityId: Long): ConformanceOverviewCertificateMessage = {
-    val levelString = (json \ "level").as[String]
-    val level = if (levelString == "domain") {
-      OverviewLevelType.DomainLevel
-    } else if (levelString == "group") {
-      OverviewLevelType.SpecificationGroupLevel
-    } else if (levelString == "specification") {
-      OverviewLevelType.SpecificationLevel
-    } else {
-      OverviewLevelType.OrganisationLevel
-    }
     val id = (json \ "id").asOpt[Long]
     val identifier = (json \ "identifier").asOpt[Long]
     val message = HtmlUtil.sanitizePdfContent((json \ "message").as[String])
+    val level = OverviewLevelType.withName((json \ "level").as[String])
     ConformanceOverviewCertificateMessage(
       id.getOrElse(0L),
       level.id.toShort,
@@ -1553,10 +1544,10 @@ object JsonUtil {
         (jsonConfig \ "includeDetails").as[Boolean],
         (jsonConfig \ "includeSignature").as[Boolean],
         (jsonConfig \ "includePageNumbers").as[Boolean],
-        (jsonConfig \ "enableAllLevel").as[Boolean],
-        (jsonConfig \ "enableDomainLevel").as[Boolean],
-        (jsonConfig \ "enableGroupLevel").as[Boolean],
-        (jsonConfig \ "enableSpecificationLevel").as[Boolean],
+        (jsonConfig \ "enableAllLevel").asOpt[Boolean].getOrElse(false),
+        (jsonConfig \ "enableDomainLevel").asOpt[Boolean].getOrElse(false),
+        (jsonConfig \ "enableGroupLevel").asOpt[Boolean].getOrElse(false),
+        (jsonConfig \ "enableSpecificationLevel").asOpt[Boolean].getOrElse(false),
         communityId
       ),
       (jsonConfig \ "messages").asOpt[JsArray].getOrElse(JsArray.empty).value.map { jsValue => parseJsConformanceOverviewCertificateMessage(jsValue, communityId)}.toList
@@ -2534,7 +2525,11 @@ object JsonUtil {
         "undefinedOptional" -> status.undefinedOptional,
         "result" -> status.result.value(),
         "hasBadge" -> status.hasBadge,
-        "updateTime" -> (if (status.updateTime.isDefined) TimeUtil.serializeTimestamp(status.updateTime.get) else JsNull)
+        "updateTime" -> (if (status.updateTime.isDefined) TimeUtil.serializeTimestamp(status.updateTime.get) else JsNull),
+        "systemId" -> status.systemId,
+        "domainId" -> status.domainId,
+        "specificationId" -> status.specificationId,
+        "actorId" -> status.actorId
       ),
       "testSuites" -> jsConformanceTestSuites(status.testSuites)
     )

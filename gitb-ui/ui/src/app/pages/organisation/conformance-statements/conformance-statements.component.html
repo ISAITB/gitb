@@ -1,4 +1,4 @@
-<div class="page conformance">
+<div #conformanceItemPage class="page conformance">
 	<div class="card mb-0">
 		<div class="card-header">
 			<div class="card-title">Conformance statements</div>
@@ -16,7 +16,6 @@
 						</ul>
 					</div>
 				}
-				<button (click)="exportOverview()" [pending]="exportPending" [disable]="system == undefined" class="btn btn-secondary">Download report</button>
 				@if (showCreate) {
 					<button (click)="createStatement()" [disabled]="system == undefined || currentlySelectedSnapshot != undefined" class="btn btn-secondary">Create statements</button>
 				}
@@ -26,7 +25,7 @@
 		<div class="card-body">
 			@if (systemStatus.status == Constants.STATUS.FINISHED) {
 				@if (systems.length == 0) {
-					<div class="alert alert-info rounded mb-0" [ngSwitch]="showCreateSystem">
+					<div class="alert alert-info rounded mb-0">
 						@if (showCreateSystem && currentlySelectedSnapshot == undefined) {
 							<span>No {{dataService.labelSystemsLower()}} defined. You must <a href (click)="toCreateSystem();$event.preventDefault()">create a system</a> before defining its conformance statements.</span>
 						} @else if (currentlySelectedSnapshot == undefined) {
@@ -36,8 +35,8 @@
 						}
 					</div>
 				} @else {
-					<div class="controls">
-						<div class="system-filter">
+					<div class="controls" [class.wrapped]="searchControlsWrapped" [class.not-wrapped]="!searchControlsWrapped">
+						<div #selectorControls class="system-filter">
 							<div class="system-filter-label">
 								{{dataService.labelSystem()}}
 							</div>
@@ -52,8 +51,9 @@
 							</div>
 						</div>
 						@if (statements.length > 0) {
+						<div #searchControls class="searchControls">
 							<div class="text-filter">
-								<app-text-filter name="statementFilter" [width]="350" [placeholder]="'Search conformance statements...'" [(ngModel)]="statementFilter" (apply)="filterStatements()"></app-text-filter>
+								<app-text-filter name="statementFilter" [width]="300" [placeholder]="'Search statements...'" [(ngModel)]="statementFilter" (apply)="filterStatements()"></app-text-filter>
 							</div>
 							<div class="status-filter">
 								<app-checkbox-option-panel 
@@ -61,6 +61,17 @@
 									[options]="statusOptions" 
 									(updated)="filterByStatus($event)"></app-checkbox-option-panel>
 							</div>
+							<div class="btn-group export-group" dropdown [isDisabled]="system == undefined || exportPending">
+								<button type="button" [disable]="system == undefined || exportPending" [pending]="exportPending" class="btn btn-secondary" (click)="exportOverview('pdf')">Download report</button>
+								<button id="button-export" type="button" [disabled]="system == undefined || exportPending" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
+									<span class="caret"></span>
+									<span class="sr-only visually-hidden">Download report</span>
+								</button>
+								<ul id="dropdown-export" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-export">
+									<li role="menuitem"><a class="dropdown-item" href (click)="exportOverview('xml');$event.preventDefault()">Download report as XML</a></li>
+								</ul>
+							</div>
+						</div>
 						}
 					</div>
 					@if (system != undefined) {
@@ -70,7 +81,7 @@
 									<span>No conformance statements defined.</span>
 								</div>
 							} @else {
-								<div class="statement-container" [ngSwitch]="visibleItemCount">
+								<div class="statement-container">
 									@if (visibleItemCount == 0) {
 										<div class="alert alert-info rounded mb-0 top-margin">
 											<span>No conformance statements match your search criteria.</span>

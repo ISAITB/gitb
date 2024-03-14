@@ -19,7 +19,7 @@
               </div>
               <ng-container *ngSwitchDefault>
                 <div class="control-container btn-toolbar">
-                  <app-text-filter name="statementFilter" [width]="350" [placeholder]="'Search conformance statements...'" [(ngModel)]="statementFilter" (apply)="searchStatements()"></app-text-filter>
+                  <app-text-filter name="statementFilter" [width]="300" [placeholder]="'Search statements...'" [(ngModel)]="statementFilter" (apply)="searchStatements()"></app-text-filter>
                   <ng-container *ngIf="items.length > 0">
                     <div class="btn-group" dropdown>
                       <button id="button-item-select" [disabled]="visibleItemCount == 0" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-item-select">Select statements<span class="caret withMargin"></span></button>

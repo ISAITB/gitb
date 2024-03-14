@@ -8,8 +8,10 @@ export interface MultiSelectConfig<T extends EntityWithId> {
     textField: string
     loader?: () => Observable<T[]>
     clearItems?: EventEmitter<void>
+    replaceItems?: EventEmitter<T[]>
     replaceSelectedItems?: EventEmitter<T[]>
     singleSelection?: boolean
+    singleSelectionPersistent?: boolean
     filterLabel?: string
 
 }

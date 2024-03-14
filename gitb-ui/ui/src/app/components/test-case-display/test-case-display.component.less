@@ -10,7 +10,10 @@
     .testCase {
         display: flex;
         flex-wrap: wrap;
-        background: @gray-light-1;
+        background: @white;
+        &.shaded {
+            background: @gray-light-1;
+        }
         border: 1px solid @gray-dark-1;
         align-items: center;
         padding: 10px;
@@ -29,7 +32,10 @@
         &.hasDescription {
             &:hover {
                 cursor: pointer;
-                background: @gray-highlight;
+                background-color: @white-shaded;
+                &.shaded {
+                    background: @gray-highlight;
+                }
             }
         }
     }

@@ -31,6 +31,8 @@ import { BreadcrumbChange } from '../types/breadcrumb-change';
 import { FieldInfo } from '../types/field-info';
 import { HttpResponse } from '@angular/common/http';
 import { EntityWithId } from '../types/entity-with-id';
+import { ConformanceTestSuite } from '../pages/organisation/conformance-statement/conformance-test-suite';
+import { ConformanceStatementItem } from '../types/conformance-statement-item';
 
 @Injectable({
   providedIn: 'root'
@@ -693,6 +695,33 @@ export class DataService {
       })
       const blobData = new Blob([csv], {type: 'text/csv'})
       saveAs(blobData, 'export.csv')
+    }
+  }
+
+  conformanceStatusForConformanceItems(items: ConformanceStatementItem[]) {
+    let completedCount = 0
+    let failedCount = 0
+    let undefinedCount = 0
+    for (let item of items) {
+      const childStatus = this.conformanceStatusForConformanceItem(item)
+      if (childStatus == Constants.TEST_CASE_RESULT.SUCCESS) {
+        completedCount += 1
+      } else if (childStatus == Constants.TEST_CASE_RESULT.FAILURE) {
+        failedCount += 1
+      } else {
+        undefinedCount += 1
+      }
+    }
+    return this.conformanceStatusForTests(completedCount, failedCount, undefinedCount)
+  }
+
+  conformanceStatusForConformanceItem(item: ConformanceStatementItem) {
+    if (item.results) {
+      return this.conformanceStatusForTests(item.results.completed, item.results.failed, item.results.undefined)
+    } else if (item.items) {
+      return this.conformanceStatusForConformanceItems(item.items)
+    } else {
+      return Constants.TEST_CASE_RESULT.UNDEFINED
     }
   }
 
@@ -1374,6 +1403,78 @@ export class DataService {
 
   sameId(a: EntityWithId, b: EntityWithId) {
     return a == undefined && b == undefined || a != undefined && b != undefined && a.id == b.id
+  }
+
+  organiseTestSuitesForDisplay(testSuites: ConformanceTestSuite[]|undefined) {
+    if (testSuites != undefined) {
+      for (let testSuite of testSuites) {
+        testSuite.hasDisabledTestCases = find(testSuite.testCases, (testCase) => testCase.disabled) != undefined
+        testSuite.hasOptionalTestCases = find(testSuite.testCases, (testCase) => testCase.optional) != undefined
+        testSuite.expanded = true
+      }
+    }
+  }
+
+  organiseConformanceItemsByType(items: ConformanceStatementItem[]): { groups: ConformanceStatementItem[], specs: ConformanceStatementItem[], actors: ConformanceStatementItem[] } {
+    let groups: ConformanceStatementItem[] = []
+    let specs: ConformanceStatementItem[] = []
+    let actors: ConformanceStatementItem[] = []
+    for (let domain of items) {
+      if (domain.items) {
+        for (let specOrGroup of domain.items) {
+          if (specOrGroup.itemType == Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.SPECIFICATION_GROUP) {
+            groups.push(specOrGroup)
+            // Specifications in group
+            if (specOrGroup.items) {
+              specOrGroup.items.forEach((item) => specs.push(item))
+            }
+          } else {
+            // Specification in domain
+            specs.push(specOrGroup)
+          }
+        }
+      }
+    }
+    for (let spec of specs) {
+      if (spec.items) {
+        spec.items.forEach((item) => actors.push(item))
+      }
+    }
+    return {
+      groups: groups,
+      specs: specs,
+      actors: actors
+    }
+  }
+
+  prepareConformanceStatementItemsForDisplay(items: ConformanceStatementItem[]) {
+    if (items.length == 1) {
+      // We only have one domain. Hide it unless the user has access to any domain.
+      items[0].hidden = this.community?.domain != undefined
+    }
+    // Initialise item state.
+    this.visitConformanceItems(items, (item) => {
+      if (item.collapsed == undefined) {
+        item.collapsed = false
+      }
+      if (item.items && item.items.length == 1) {
+        item.items[0].collapsed = false
+      }
+      if (item.hidden == undefined) {
+        item.hidden = false
+      }
+      item.filtered = true
+    })
+    return items
+  }
+
+  visitConformanceItems(items: ConformanceStatementItem[]|undefined, visitor: (item: ConformanceStatementItem) => any) {
+    if (items) {
+      for (let item of items) {
+        visitor(item)
+        this.visitConformanceItems(item.items, visitor)
+      }
+    }
   }
 
 }

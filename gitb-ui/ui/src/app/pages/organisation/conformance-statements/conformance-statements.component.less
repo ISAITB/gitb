@@ -3,10 +3,10 @@
 .controls {
 	display: flex;
 	flex-wrap: wrap;
-	align-items: center;
 	.system-filter {
 		display: flex;
 		align-items: center;
+		margin-bottom: 5px;
 		.system-filter-label {
 			font-weight: bold;
 			margin-right: 10px;
@@ -15,16 +15,42 @@
 			min-width: 350px;
 		}
 	}
-	.text-filter, .status-filter {
-		margin-right: 5px;
+	.searchControls {
+		display: flex;
+		align-self: flex-start;
+		& > div {
+			margin-bottom: 5px;
+			margin-right: 5px;
+			&:last-child {
+				margin-right: 0px;
+			}
+		}		
 	}
-	.text-filter {
-		margin-left: 30px;
-		padding-left: 30px;
-		border-left: 1px solid @gray-light;
+	&.wrapped {
+		.system-filter {
+			flex-grow: 1;
+			padding-bottom: 15px;
+			margin-bottom: 15px;
+			border-bottom: 1px solid @gray-highlight;
+		}
+		.searchControls {
+			& > div {
+				&:last-child {
+					margin-right: 61px
+				}
+			}
+		}
 	}
-	& > * {
-		margin-bottom: 5px;
+	&.not-wrapped {
+		.searchControls {
+			& > div {
+				&:first-child {
+					margin-left: 30px;
+					padding-left: 30px;
+					border-left: 1px solid @gray-highlight;
+				}
+			}
+		}
 	}
 }
 .top-margin {

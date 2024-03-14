@@ -57,6 +57,7 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
   private val PLACEHOLDER_BADGE_REGEXP = Pattern.compile("(\\"+Constants.PlaceholderBadge+"(?:\\{(\\d+)(?:\\|(\\d+))?\\})?)")
   private val PLACEHOLDER_BADGE_WITHOUT_INDEX_REGEXP = Pattern.compile("(\\"+Constants.PlaceholderBadge+"(?:\\{(\\d+)\\})?)")
   private val PLACEHOLDER_BADGE_LIST_REGEXP = Pattern.compile("(\\"+Constants.PlaceholderBadges+"\\{((?:horizontal)|(?:vertical))(?:\\|(\\d+))?\\})")
+  private val BADGE_PREVIEW_URL_REGEXP = Pattern.compile("['\"](\\S*/badgereportpreview/([A-Z]+)/(-?\\d+)/(-?\\d+)/(-?\\d+)(?:/(\\d+))?)['\"]")
   private val gitbTrObjectFactory = new com.gitb.tr.ObjectFactory
   private val gitbTplObjectFactory = new com.gitb.tpl.ObjectFactory
   private val gitbTbsObjectFactory = new com.gitb.tbs.ObjectFactory
@@ -793,6 +794,18 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
     val displayDomainInStatementTree = communityManager.getCommunityDomain(communityId).isEmpty
     // Construct the DTOs expected by the report template.
     val conformanceItems = toConformanceItems(conformanceItemTree, None, new ReportData(!displayDomainInStatementTree))
+    // Set also the correct IDs.
+    val statementList = ConformanceItem.flattenStatements(conformanceItems)
+    if (statementList.size() == conformanceOverview.size) {
+      var index = 0
+      statementList.forEach { statementData =>
+        val statement = conformanceOverview(index)
+        statementData.setActorId(statement.actorId)
+        statementData.setSpecificationId(statement.specificationId)
+        statementData.setSystemId(statement.systemId)
+        index += 1
+      }
+    }
     // Return results.
     ConformanceData(
       reportLevel,
@@ -806,8 +819,7 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
       displayDomainInStatementTree,
       getOverallConformanceOverviewStatus(conformanceItems),
       conformanceItems,
-      conformanceItemTree,
-      conformanceOverview
+      conformanceItemTree
     )
   }
 
@@ -1022,11 +1034,11 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
     report.getOverview.getSummary.setIncomplete(BigInteger.valueOf(tracker.incompleteCount))
     report.getOverview.getSummary.setSucceeded(BigInteger.valueOf(tracker.successCount))
     // Statement details
-    if (conformanceData.statements.nonEmpty) {
+    val conformanceStatements = conformanceData.getConformanceStatements()
+    if (!conformanceStatements.isEmpty) {
       report.getOverview.setStatementDetails(new com.gitb.tr.ConformanceStatements)
       var statementIndex = 0
-      val statementList = ConformanceItem.flattenStatements(conformanceData.conformanceItems)
-      statementList.forEach { conformanceStatement =>
+      conformanceStatements.forEach { conformanceStatement =>
         statementIndex = statementIndex + 1
         val statement = new com.gitb.tr.ConformanceStatement
         statement.setId(statementIndex.toString)
@@ -1038,6 +1050,12 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
         statement.getDefinition.setActor(conformanceStatement.getTestActor)
         // Party information
         statement.getDefinition.setParty(getPartyDefinitionForXmlReport(conformanceData.organisationId.get, conformanceData.organisationName.get, conformanceData.systemId.get, conformanceData.systemName.get, communityId, isDemo))
+        // Summary
+        statement.setSummary(new ResultSummary)
+        statement.getSummary.setStatus(TestResultType.fromValue(conformanceStatement.getOverallStatus))
+        statement.getSummary.setSucceeded(BigInteger.valueOf(conformanceStatement.getCompletedTests))
+        statement.getSummary.setFailed(BigInteger.valueOf(conformanceStatement.getFailedTests))
+        statement.getSummary.setIncomplete(BigInteger.valueOf(conformanceStatement.getUndefinedTests))
         // Test overview
         statement.setTestOverview(new TestSuiteOverviews)
         conformanceStatement.getTestSuites.forEach { testSuiteInfo =>
@@ -1125,7 +1143,13 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
         overview.setTestSpecification(conformanceData.specificationName.orNull)
       }
     }
-    overview.setTitle("Conformance Overview Report")
+    if (settings.isDefined) {
+      if (settings.get.includeTitle) {
+        overview.setTitle(settings.get.title.getOrElse("Conformance Overview Certificate"))
+      }
+    } else {
+      overview.setTitle("Conformance Overview Report")
+    }
     overview.setReportDate(new SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(Calendar.getInstance().getTime))
     overview.setOrganisation(conformanceData.organisationName.getOrElse("-"))
     overview.setSystem(conformanceData.systemName.getOrElse("-"))
@@ -1137,20 +1161,8 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
       overview.setIncludePageNumbers(settings.get.includePageNumbers)
       overview.setIncludeTestStatus(settings.get.includeItemStatus)
       if (overview.getIncludeMessage) {
-        val dataLocator = conformanceData.createLocator()
         // Replace message placeholders
-        var messageToUse = settings.get.message.get
-        messageToUse = replacePlaceholdersByIndex(messageToUse, dataLocator, PLACEHOLDER_DOMAIN_WITH_INDEX_REGEXP, ConformanceStatementItemType.DOMAIN) // Before we look for domain parameters
-        messageToUse = replacePlaceholdersByIndex(messageToUse, dataLocator, PLACEHOLDER_SPECIFICATION_GROUP_WITH_INDEX_REGEXP, ConformanceStatementItemType.SPECIFICATION_GROUP)
-        messageToUse = replacePlaceholdersByIndex(messageToUse, dataLocator, PLACEHOLDER_SPECIFICATION_GROUP_OPTION_WITH_INDEX_REGEXP, ConformanceStatementItemType.SPECIFICATION)
-        messageToUse = replacePlaceholdersByIndex(messageToUse, dataLocator, PLACEHOLDER_SPECIFICATION_WITH_INDEX_REGEXP, ConformanceStatementItemType.SPECIFICATION)
-        messageToUse = replacePlaceholdersByIndex(messageToUse, dataLocator, PLACEHOLDER_ACTOR_WITH_INDEX_REGEXP, ConformanceStatementItemType.ACTOR)
-        messageToUse = replaceDomainParameters(messageToUse, communityId, snapshotId)
-        messageToUse = replaceOrganisationPropertyPlaceholders(messageToUse, isDemo, communityId, conformanceData.organisationId, snapshotId)
-        messageToUse = replaceSystemPropertyPlaceholders(messageToUse, isDemo, communityId, conformanceData.systemId, snapshotId)
-        messageToUse = replaceSimplePlaceholders(messageToUse, None, conformanceData.specificationName, conformanceData.specificationName, conformanceData.groupName, conformanceData.domainName, conformanceData.organisationName, conformanceData.systemName)
-        messageToUse = replaceBadgeListPlaceholders(messageToUse, isDemo, conformanceData, snapshotId)
-        messageToUse = replaceBadgePlaceholdersByIndex(messageToUse, isDemo, conformanceData, snapshotId)
+        val messageToUse = resolveConformanceOverviewCertificateMessage(settings.get.message.get, conformanceData, communityId, snapshotId, isDemo, useUrlPlaceholders = false)
         overview.setMessage(messageToUse)
       }
     }
@@ -1169,6 +1181,31 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
       }
     }
     pathToUseForPdf
+  }
+
+  def resolveConformanceOverviewCertificateMessage(rawMessage: String, systemId: Long, domainId: Option[Long], groupId: Option[Long], specificationId: Option[Long], snapshotId: Option[Long], communityId: Long): String = {
+    val conformanceData = getConformanceDataForOverviewReport(systemId, domainId, groupId, specificationId, snapshotId, communityId)
+    resolveConformanceOverviewCertificateMessage(rawMessage, conformanceData, communityId, snapshotId, isDemo = false, useUrlPlaceholders = true)
+  }
+
+  private def resolveConformanceOverviewCertificateMessage(rawMessage: String, conformanceData: ConformanceData, communityId: Long, snapshotId: Option[Long], isDemo: Boolean, useUrlPlaceholders: Boolean): String = {
+    val dataLocator = conformanceData.createLocator()
+    var messageToUse = rawMessage
+    messageToUse = replacePlaceholdersByIndex(messageToUse, dataLocator, PLACEHOLDER_DOMAIN_WITH_INDEX_REGEXP, ConformanceStatementItemType.DOMAIN) // Before we look for domain parameters
+    messageToUse = replacePlaceholdersByIndex(messageToUse, dataLocator, PLACEHOLDER_SPECIFICATION_GROUP_WITH_INDEX_REGEXP, ConformanceStatementItemType.SPECIFICATION_GROUP)
+    messageToUse = replacePlaceholdersByIndex(messageToUse, dataLocator, PLACEHOLDER_SPECIFICATION_GROUP_OPTION_WITH_INDEX_REGEXP, ConformanceStatementItemType.SPECIFICATION)
+    messageToUse = replacePlaceholdersByIndex(messageToUse, dataLocator, PLACEHOLDER_SPECIFICATION_WITH_INDEX_REGEXP, ConformanceStatementItemType.SPECIFICATION)
+    messageToUse = replacePlaceholdersByIndex(messageToUse, dataLocator, PLACEHOLDER_ACTOR_WITH_INDEX_REGEXP, ConformanceStatementItemType.ACTOR)
+    messageToUse = replaceDomainParameters(messageToUse, communityId, snapshotId)
+    messageToUse = replaceOrganisationPropertyPlaceholders(messageToUse, isDemo, communityId, conformanceData.organisationId, snapshotId)
+    messageToUse = replaceSystemPropertyPlaceholders(messageToUse, isDemo, communityId, conformanceData.systemId, snapshotId)
+    messageToUse = replaceSimplePlaceholders(messageToUse, None, conformanceData.specificationName, conformanceData.specificationName, conformanceData.groupName, conformanceData.domainName, conformanceData.organisationName, conformanceData.systemName)
+    messageToUse = replaceBadgeListPlaceholders(messageToUse, isDemo, conformanceData, snapshotId, useUrlPlaceholders)
+    messageToUse = replaceBadgePlaceholdersByIndex(messageToUse, isDemo, conformanceData, snapshotId, useUrlPlaceholders)
+    if (!useUrlPlaceholders) {
+      messageToUse = replaceBadgePreviewUrls(messageToUse, snapshotId)
+    }
+    messageToUse
   }
 
   private def replacePlaceholdersByIndex(message: String, locator: ConformanceDataLocator, pattern: Pattern, itemType: ConformanceStatementItemType): String = {
@@ -1291,7 +1328,7 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
     placeholders.toList
   }
 
-  private def replaceBadgePlaceholder(message: String, placeholderInfo: BadgePlaceholderInfo, isDemo: Boolean, specificationId: Option[Long], actorId: Option[Long], snapshotId: Option[Long], status: String, useActualInDemo: Boolean): String = {
+  private def replaceBadgePlaceholder(message: String, placeholderInfo: BadgePlaceholderInfo, isDemo: Boolean, specificationId: Option[Long], actorId: Option[Long], snapshotId: Option[Long], status: String, useActualInDemo: Boolean, useUrlPlaceholders: Boolean, systemId: Option[Long]): String = {
     var messageToUse = message
     var imagePath: Option[String] = None
     if (isDemo) {
@@ -1306,7 +1343,16 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
       }
     } else if (specificationId.isDefined && actorId.isDefined) {
       val badge = repositoryUtils.getConformanceBadge(specificationId.get, actorId, snapshotId, status, exactMatch = false, forReport = true)
-      imagePath = badge.map(_.toURI.toString)
+      if (useUrlPlaceholders) {
+        // This is a placeholder for a preview by the frontend. We create this as a placeholder with all information needed to create the image URL.
+        if (systemId.isDefined && specificationId.isDefined && actorId.isDefined && badge.isDefined) {
+          imagePath = Some("$com.gitb.placeholder.BadgeUrl{%s|%s|%s|%s|%s}".formatted(status, systemId.get, specificationId.get, actorId.get, snapshotId.getOrElse(0L)))
+        } else {
+          imagePath = None
+        }
+      } else {
+        imagePath = badge.map(_.toURI.toString)
+      }
     }
     if (imagePath.isDefined) {
       if (placeholderInfo.width.isDefined) {
@@ -1320,11 +1366,12 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
     messageToUse
   }
 
-  private def replaceBadgeListPlaceholders(message: String, isDemo: Boolean, data: ConformanceData, snapshotId: Option[Long]): String = {
+  private def replaceBadgeListPlaceholders(message: String, isDemo: Boolean, data: ConformanceData, snapshotId: Option[Long], useUrlPlaceholders: Boolean): String = {
     var messageToUse = message
     val placeholders = getBadgeListPlaceholders(message)
-    val placeholdersToProcess = new ListBuffer[(BadgePlaceholderInfo, models.ConformanceStatement)]
-    if (data.statements.nonEmpty) {
+    val placeholdersToProcess = new ListBuffer[(BadgePlaceholderInfo, ConformanceStatementData)]
+    val statements = data.getConformanceStatements()
+    if (!statements.isEmpty) {
       placeholders.foreach { placeholder =>
         // Additions: 1: before all, 2: before each, 3: after each, 4: after all
         val additions = if (placeholder.horizontal) {
@@ -1336,15 +1383,19 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
         placeholderTable.append("<table>")
         placeholderTable.append(additions._1)
         var index = 0
-        data.statements.foreach { statement =>
-          val placeholderText = Constants.PlaceholderBadge+"{"+index+placeholder.width.map("|"+_).getOrElse("")+"}"
-          placeholderTable
-            .append(additions._2)
-            .append("<td>")
-            .append(placeholderText)
-            .append("</td>")
-            .append(additions._3)
-          placeholdersToProcess.addOne((BadgePlaceholderInfo(placeholderText, Some(index.toShort), placeholder.width), statement))
+        statements.forEach { statement =>
+          val badge = repositoryUtils.getConformanceBadge(statement.getSpecificationId, Some(statement.getActorId), snapshotId, statement.getOverallStatus, exactMatch = false, forReport = true)
+          if (badge.isDefined) {
+            // When generating a badge list we will only include badges for the specifications/actors that have a badge configured.
+            val placeholderText = Constants.PlaceholderBadge+"{"+index+placeholder.width.map("|"+_).getOrElse("")+"}"
+            placeholderTable
+              .append(additions._2)
+              .append("<td class='placeholder-badge-td'>")
+              .append(placeholderText)
+              .append("</td>")
+              .append(additions._3)
+            placeholdersToProcess.addOne((BadgePlaceholderInfo(placeholderText, Some(index.toShort), placeholder.width), statement))
+          }
           index += 1
         }
         placeholderTable.append(additions._4)
@@ -1353,34 +1404,66 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
       }
     }
     placeholdersToProcess.foreach { placeholderInfo =>
-      messageToUse = replaceBadgePlaceholder(messageToUse, placeholderInfo._1, isDemo, Some(placeholderInfo._2.specificationId), Some(placeholderInfo._2.actorId), snapshotId, placeholderInfo._2.result, useActualInDemo = false)
+      messageToUse = replaceBadgePlaceholder(messageToUse, placeholderInfo._1, isDemo, Some(placeholderInfo._2.getSpecificationId), Some(placeholderInfo._2.getActorId), snapshotId, placeholderInfo._2.getOverallStatus, useActualInDemo = false, useUrlPlaceholders, data.systemId)
     }
     messageToUse
   }
 
-  private def replaceBadgePlaceholdersByIndex(message: String, isDemo: Boolean, data: ConformanceData, snapshotId: Option[Long]): String = {
+  private def replaceBadgePlaceholdersByIndex(message: String, isDemo: Boolean, data: ConformanceData, snapshotId: Option[Long], useUrlPlaceholders: Boolean): String = {
     var messageToUse = message
+    val statements = data.getConformanceStatements()
+    val statementSize = statements.size()
     getBadgePlaceholders(message, indexedBadges = true).filter(_.index.isDefined).foreach { indexedPlaceholder =>
       // Get the statement for the given index.
-      val statement = data.statements.lift(indexedPlaceholder.index.get)
+      val statement = if (statementSize > indexedPlaceholder.index.get) {
+        Option(statements.get(indexedPlaceholder.index.get))
+      } else {
+        None
+      }
       if (statement.isDefined) {
-        messageToUse = replaceBadgePlaceholder(messageToUse, indexedPlaceholder, isDemo, Some(statement.get.specificationId), Some(statement.get.actorId), snapshotId, statement.get.result, useActualInDemo = false)
+        messageToUse = replaceBadgePlaceholder(messageToUse, indexedPlaceholder, isDemo, Some(statement.get.getSpecificationId), Some(statement.get.getActorId), snapshotId, statement.get.getOverallStatus, useActualInDemo = false, useUrlPlaceholders, Some(statement.get.getSystemId))
       } else if (isDemo) {
         // A conformance statement at the given index was not found. If this is a demo report then replace it with the demo badge.
-        messageToUse = replaceBadgePlaceholder(messageToUse, indexedPlaceholder, isDemo, None, None, snapshotId, data.overallResult, useActualInDemo = false)
+        messageToUse = replaceBadgePlaceholder(messageToUse, indexedPlaceholder, isDemo, None, None, snapshotId, data.overallResult, useActualInDemo = false, useUrlPlaceholders = false, None)
       }
     }
     messageToUse
   }
 
-  private def replaceBadgePlaceholders(message: String, isDemo: Boolean, specificationId: Option[Long], actorId: Option[Long], snapshotId: Option[Long], overallStatus: String): String = {
+  private def replaceBadgePlaceholders(message: String, isDemo: Boolean, specificationId: Option[Long], actorId: Option[Long], snapshotId: Option[Long], overallStatus: String, useUrlPlaceholders: Boolean, systemId: Option[Long]): String = {
     var messageToUse = message
+    // Replace badge placeholders
     val placeholders = getBadgePlaceholders(message, indexedBadges = false)
     placeholders.filter(p => p.width.isDefined).foreach { placeholderInfo =>
-      messageToUse = replaceBadgePlaceholder(messageToUse, placeholderInfo, isDemo, specificationId, actorId, snapshotId, overallStatus, useActualInDemo = false)
+      messageToUse = replaceBadgePlaceholder(messageToUse, placeholderInfo, isDemo, specificationId, actorId, snapshotId, overallStatus, useActualInDemo = false, useUrlPlaceholders, systemId)
     }
     placeholders.filter(p => p.width.isEmpty).foreach { placeholderInfo =>
-      messageToUse = replaceBadgePlaceholder(messageToUse, placeholderInfo, isDemo, specificationId, actorId, snapshotId, overallStatus, useActualInDemo = false)
+      messageToUse = replaceBadgePlaceholder(messageToUse, placeholderInfo, isDemo, specificationId, actorId, snapshotId, overallStatus, useActualInDemo = false, useUrlPlaceholders, systemId)
+    }
+    messageToUse
+  }
+
+  private def replaceBadgePreviewUrls(message: String, snapshotId: Option[Long]): String = {
+    // Replace badge preview URLs. This applies if an administrator is previewing a certificate message in which case the badge placeholders have been replaced with preview URLs. Note that
+    // as IDs are provided directly here we need to ensure that they are valid for the requester.
+    // URL format is: /badgereportpreview/:status/:systemId/:specId/:actorId/:snapshotId
+    val badgeMap = new mutable.HashMap[String, String]()
+    val matches = BADGE_PREVIEW_URL_REGEXP.matcher(message).results().collect(Collectors.toList())
+    matches.forEach { result =>
+      if (result.groupCount() >= 5) {
+        val badgeUrl = result.group(1)
+        val status = result.group(2)
+        val specificationId = result.group(4).toLong
+        val actorId = result.group(5).toLong
+        val badgePath = repositoryUtils.getConformanceBadge(specificationId, Some(actorId), snapshotId, status, exactMatch = false, forReport = true).map(_.toURI.toString)
+        if (badgePath.isDefined) {
+          badgeMap += (badgeUrl -> badgePath.get)
+        }
+      }
+    }
+    var messageToUse = message
+    badgeMap.foreach { entry =>
+      messageToUse = messageToUse.replace(entry._1, entry._2)
     }
     messageToUse
   }
@@ -1941,12 +2024,7 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
     overview.setIncludeTestStatus(addTestStatus)
     // Replace message placeholders
     if (addMessage && message.isDefined) {
-      var messageToUse = message.get
-      messageToUse = replaceDomainParameters(messageToUse, communityId, snapshotId)
-      messageToUse = replaceOrganisationPropertyPlaceholders(messageToUse, isDemo, communityId, Some(conformanceData.organizationId), snapshotId)
-      messageToUse = replaceSystemPropertyPlaceholders(messageToUse, isDemo, communityId, Some(conformanceData.systemId), snapshotId)
-      messageToUse = replaceSimplePlaceholders(messageToUse, Some(conformanceData.actorFull), Some(conformanceData.specificationNameFull), Some(conformanceData.specificationGroupOptionNameFull), conformanceData.specificationGroupNameFull, Some(conformanceData.domainNameFull), Some(conformanceData.organizationName), Some(conformanceData.systemName))
-      messageToUse = replaceBadgePlaceholders(messageToUse, isDemo, Some(conformanceData.specificationId), Some(conformanceData.actorId), snapshotId, overview.getOverallStatus)
+      val messageToUse = resolveConformanceStatementCertificateMessage(message.get, communityId, snapshotId, conformanceData, overview.getOverallStatus, isDemo, useUrlPlaceholders = false)
       overview.setMessage(messageToUse)
     }
     Files.createDirectories(reportPath.getParent)
@@ -1961,6 +2039,46 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
       if (fos != null) fos.close()
     }
     reportPath
+  }
+
+  def resolveConformanceStatementCertificateMessage(rawMessage: String, actorId: Long, systemId: Long, communityId: Long, snapshotId: Option[Long]): String = {
+    val conformanceInfo = conformanceManager.getConformanceStatementsResultBuilder(None, None, None, Some(List(actorId)), None, None, Some(List(systemId)), None, None, None, None, snapshotId, prefixSpecificationNameWithGroup = false).getDetails(None)
+    // Calculate overall status
+    var failedTests = 0
+    var completedTests = 0
+    var undefinedTests = 0
+    conformanceInfo.foreach { info =>
+      val result = TestResultStatus.withName(info.result)
+      if (!info.testCaseDisabled.get && !info.testCaseOptional.get) {
+        if (result == TestResultStatus.SUCCESS) completedTests += 1
+        else if (result == TestResultStatus.FAILURE) failedTests += 1
+        else undefinedTests += 1
+      }
+    }
+    val overallStatus = if (failedTests > 0) {
+      "FAILURE"
+    } else if (undefinedTests > 0) {
+      "UNDEFINED"
+    } else if (completedTests > 0) {
+      "SUCCESS"
+    } else {
+      "UNDEFINED"
+    }
+    // Process placeholders
+    resolveConformanceStatementCertificateMessage(rawMessage, communityId, snapshotId, conformanceInfo.head, overallStatus, isDemo = false, useUrlPlaceholders = true)
+  }
+
+  private def resolveConformanceStatementCertificateMessage(rawMessage: String, communityId: Long, snapshotId: Option[Long], conformanceData: ConformanceStatementFull, overallStatus: String, isDemo: Boolean, useUrlPlaceholders: Boolean): String = {
+    var messageToUse = rawMessage
+    messageToUse = replaceDomainParameters(messageToUse, communityId, snapshotId)
+    messageToUse = replaceOrganisationPropertyPlaceholders(messageToUse, isDemo, communityId, Some(conformanceData.organizationId), snapshotId)
+    messageToUse = replaceSystemPropertyPlaceholders(messageToUse, isDemo, communityId, Some(conformanceData.systemId), snapshotId)
+    messageToUse = replaceSimplePlaceholders(messageToUse, Some(conformanceData.actorFull), Some(conformanceData.specificationNameFull), Some(conformanceData.specificationGroupOptionNameFull), conformanceData.specificationGroupNameFull, Some(conformanceData.domainNameFull), Some(conformanceData.organizationName), Some(conformanceData.systemName))
+    messageToUse = replaceBadgePlaceholders(messageToUse, isDemo, Some(conformanceData.specificationId), Some(conformanceData.actorId), snapshotId, overallStatus, useUrlPlaceholders, Some(conformanceData.systemId))
+    if (!useUrlPlaceholders) {
+      messageToUse = replaceBadgePreviewUrls(messageToUse, snapshotId)
+    }
+    messageToUse
   }
 }
 

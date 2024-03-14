@@ -6,6 +6,7 @@ import { EntityWithId } from '../../types/entity-with-id';
 import { filter, find } from 'lodash';
 import { FilterValues } from '../test-filter/filter-values';
 import { FilterUpdate } from '../test-filter/filter-update';
+import { Observable, Subscription, of } from 'rxjs';
 
 @Component({
   selector: 'app-multi-select-filter',
@@ -26,11 +27,16 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
   selectedSelectedItems: ItemMap<T> = {}
   formVisible = false
   hasCheckedSelectedItem = false
+  defaultFilterLabel = 'All'
   filterLabel = 'All'
   openToLeft = false
-  loadPending = true
+  loadPending = false
   textValue = ''
   focusInterval?: any
+
+  replaceItemsSubscription?: Subscription
+  replaceSelectedItemsSubscription?: Subscription
+  clearItemsSubscription?: Subscription
 
   /*
    * ID of the displayed item to array of the hidden items.
@@ -51,44 +57,61 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
     }
     if (this.config.filterLabel) {
       this.filterLabel = this.config.filterLabel
+      this.defaultFilterLabel = this.config.filterLabel
     }
     if (this.config.clearItems) {
-      this.config.clearItems.subscribe(() => {
+      this.clearItemsSubscription = this.config.clearItems.subscribe(() => {
         this.selectedSelectedItems = {}
         this.updateCheckFlag(false)
         this.updateLabel()
         this.selectedItems = []
       })
     }
+    if (this.config.replaceItems) {
+      this.replaceItemsSubscription = this.config.replaceItems.subscribe((newItems) => {
+        this.selectedSelectedItems = {}
+        this.updateCheckFlag(false)
+        this.updateLabel()
+        this.selectedItems = []
+        this.availableItems = newItems
+        this.visibleAvailableItems = this.availableItems
+      })
+    }
     if (this.config.replaceSelectedItems) {
-      this.config.replaceSelectedItems.subscribe((newItems) => {
-        const allowedIdSet = this.dataService.asIdSet(newItems)
-        const previousIdSet = this.selectedSelectedItems
-        for (let id in previousIdSet) {
-          if (this.itemsWithSameValue[id]) {
-            // We have other items with the same text value - mark as applicable only the ones we are supposed to keep.
-            // The other values are maintained to allow switching upstream values (e.g. the specification of a test suite).
-            for (let similarItem of this.itemsWithSameValue[id]) {
-              similarItem.applicable = allowedIdSet[similarItem.item.id] != undefined
-            }
+      this.replaceSelectedItemsSubscription = this.config.replaceSelectedItems.subscribe((newItems) => {
+        if (this.config.singleSelection == true) {
+          for (let item of newItems) {
+            this.selectedSelectedItems[item.id] = { selected: true, item: item }
           }
-          if (!allowedIdSet[id] && this.selectedSelectedItems[id]) {
-            // The currently selected item no longer applies.
-            const previouslySelectedItem = this.selectedSelectedItems[id].item
+        } else {
+          const allowedIdSet = this.dataService.asIdSet(newItems)
+          const previousIdSet = this.selectedSelectedItems
+          for (let id in previousIdSet) {
             if (this.itemsWithSameValue[id]) {
-              // Other similarly valued items exist.
-              let otherApplicableItemWithSameTextValue = find(this.itemsWithSameValue[id], (entry) => { return entry.applicable })
-              if (otherApplicableItemWithSameTextValue != undefined) {
-                const newSelectedItemId = otherApplicableItemWithSameTextValue.item.id
-                // A previously hidden similarly valued item still applies - replace the visible one with it.
-                const otherHiddenItems = filter(this.itemsWithSameValue[id], (entry) => { return entry.item.id != newSelectedItemId })
-                // Add the previously selected item as a hidden, non-applicable one and the remaining ones.
-                this.itemsWithSameValue[newSelectedItemId] = [{applicable: false, item: previouslySelectedItem}].concat(otherHiddenItems)
-                this.selectedSelectedItems[newSelectedItemId] = { selected: true, item: otherApplicableItemWithSameTextValue.item }
+              // We have other items with the same text value - mark as applicable only the ones we are supposed to keep.
+              // The other values are maintained to allow switching upstream values (e.g. the specification of a test suite).
+              for (let similarItem of this.itemsWithSameValue[id]) {
+                similarItem.applicable = allowedIdSet[similarItem.item.id] != undefined
               }
-              delete this.itemsWithSameValue[id]
             }
-            delete this.selectedSelectedItems[id]
+            if (!allowedIdSet[id] && this.selectedSelectedItems[id]) {
+              // The currently selected item no longer applies.
+              const previouslySelectedItem = this.selectedSelectedItems[id].item
+              if (this.itemsWithSameValue[id]) {
+                // Other similarly valued items exist.
+                let otherApplicableItemWithSameTextValue = find(this.itemsWithSameValue[id], (entry) => { return entry.applicable })
+                if (otherApplicableItemWithSameTextValue != undefined) {
+                  const newSelectedItemId = otherApplicableItemWithSameTextValue.item.id
+                  // A previously hidden similarly valued item still applies - replace the visible one with it.
+                  const otherHiddenItems = filter(this.itemsWithSameValue[id], (entry) => { return entry.item.id != newSelectedItemId })
+                  // Add the previously selected item as a hidden, non-applicable one and the remaining ones.
+                  this.itemsWithSameValue[newSelectedItemId] = [{applicable: false, item: previouslySelectedItem}].concat(otherHiddenItems)
+                  this.selectedSelectedItems[newSelectedItemId] = { selected: true, item: otherApplicableItemWithSameTextValue.item }
+                }
+                delete this.itemsWithSameValue[id]
+              }
+              delete this.selectedSelectedItems[id]
+            }
           }
         }
         const newItemsToSet: T[] = []
@@ -110,6 +133,9 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
       clearInterval(this.focusInterval)
       this.focusInterval = undefined
     }
+    if (this.replaceItemsSubscription) this.replaceItemsSubscription.unsubscribe()
+    if (this.replaceSelectedItemsSubscription) this.replaceSelectedItemsSubscription.unsubscribe()
+    if (this.clearItemsSubscription) this.clearItemsSubscription.unsubscribe()
   }
 
   @HostListener('document:click', ['$event'])
@@ -131,11 +157,26 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
     }
   }
 
+  @HostListener('document:keyup.enter', ['$event'])  
+  enterRegistered(event: KeyboardEvent) {
+    if (this.formVisible && this.typeahead) {
+      if (this.visibleAvailableItems?.length == 1) {
+        this.availableItemClicked(this.visibleAvailableItems[0])
+      }
+    }
+  }
+
   private updateLabel() {
     if (this.selectedItems.length == 0) {
-      this.filterLabel = 'All'
+      this.filterLabel = this.defaultFilterLabel
     } else {
-      this.filterLabel = "("+this.selectedItems.length+")"
+      if (this.config.singleSelection == true) {
+        if (this.config.singleSelectionPersistent == true) {
+          this.filterLabel = this.selectedItems[0][this.config.textField]
+        }
+      } else {
+        this.filterLabel = "("+this.selectedItems.length+")"
+      }
     }
   } 
 
@@ -222,15 +263,23 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
 
   private loadData() {
     this.selectedAvailableItems = {}
-    this.availableItems = []
-    this.visibleAvailableItems = []
-    this.loadPending = true
     this.itemsWithSameValue = {}
+    let loadObservable: Observable<T[]>
     if (this.config.loader) {
-      this.config.loader().subscribe((items) => {
-        const newSelectedAvailableItems: ItemMap<T> = {}
-        const newAvailableItems: T[] = []
-        for (let item of items) {
+      this.loadPending = true
+      this.availableItems = []
+      loadObservable = this.config.loader()
+    } else {
+      loadObservable = of(this.availableItems)
+    }
+    loadObservable.subscribe((items) => {
+      const newSelectedAvailableItems: ItemMap<T> = {}
+      const newAvailableItems: T[] = []
+      for (let item of items) {
+        if (this.config.singleSelection == true) {
+          newAvailableItems.push(item)
+          newSelectedAvailableItems[item.id] = { selected: false, item: item }
+        } else {
           if (!this.isSelected(item.id)) {
             let matchingItem = this.findItemWithSameTextValue(newAvailableItems, item)
             if (matchingItem) {
@@ -246,13 +295,13 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
             }
           }
         }
-        this.selectedAvailableItems = newSelectedAvailableItems
-        this.availableItems = newAvailableItems
-        this.visibleAvailableItems = this.availableItems
-      }).add(() => {
-        this.loadPending = false
-      })
-    }
+      }
+      this.selectedAvailableItems = newSelectedAvailableItems
+      this.availableItems = newAvailableItems
+      this.visibleAvailableItems = this.availableItems
+    }).add(() => {
+      this.loadPending = false
+    })
   }
 
   searchApplied() {
@@ -266,9 +315,11 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
 
   availableItemClicked(item: T) {
     if (this.config.singleSelection) {
+      this.selectedItems = [item]
       const itemToReport: FilterValues<T> = { active: [], other: [] }
       itemToReport.active = this.getItemsToSignalForItem(item)
       this.apply.emit({ values: itemToReport, applyFilters: false })
+      this.updateLabel()
       this.close()
     } else {
       this.itemClicked(this.selectedAvailableItems, item)

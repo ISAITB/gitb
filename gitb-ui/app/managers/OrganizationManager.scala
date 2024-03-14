@@ -3,7 +3,7 @@ package managers
 import actors.events.OrganisationUpdatedEvent
 
 import javax.inject.{Inject, Singleton}
-import models.Enums.UserRole
+import models.Enums.{OrganizationType, UserRole}
 import models._
 import models.automation.{ApiKeyActorInfo, ApiKeyInfo, ApiKeySpecificationInfo, ApiKeySystemInfo, ApiKeyTestCaseInfo, ApiKeyTestSuiteInfo}
 import org.slf4j.LoggerFactory
@@ -70,13 +70,26 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils, systemMan
   /**
     * Gets organizations with specified community
     */
-  def getOrganizationsByCommunity(communityId: Long, includeAdmin: Boolean = false): List[Organizations] = {
-    val organizations = exec(
-      PersistenceSchema.organizations
-        .filterIf(!includeAdmin)(_.adminOrganization === false)
-        .filter(_.community === communityId)
-      .sortBy(_.shortname.asc)
-      .result.map(_.toList))
+  def getOrganizationsByCommunity(communityId: Long, includeAdmin: Boolean = false, snapshotId: Option[Long]): List[Organizations] = {
+    val organizations = if (snapshotId.isDefined) {
+      exec(
+        PersistenceSchema.conformanceSnapshotOrganisations
+          .join(PersistenceSchema.conformanceSnapshots).on(_.snapshotId === _.id)
+          .filter(_._2.community === communityId)
+          .filter(_._2.id === snapshotId.get)
+          .sortBy(_._1.fullname.asc)
+          .map(_._1)
+          .result
+      ).map(x => Organizations(x.id, x.shortname, x.fullname, OrganizationType.Vendor.id.toShort, adminOrganization = false, None, None, None, template = false, None, x.apiKey, communityId)).toList
+    } else {
+      exec(
+        PersistenceSchema.organizations
+          .filterIf(!includeAdmin)(_.adminOrganization === false)
+          .filter(_.community === communityId)
+          .sortBy(_.shortname.asc)
+          .result.map(_.toList)
+      )
+    }
     organizations
   }
 

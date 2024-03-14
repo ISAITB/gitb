@@ -1,0 +1,54 @@
+<div class="btn-toolbar">
+    <!-- View statement -->
+    <button type="button" class="btn btn-secondary" (click)="toStatement()">View statement</button>
+    <!-- View party -->
+    @if (showToSystem()) {
+        <div class="btn-group" dropdown>
+            <button type="button" class="btn btn-secondary" (click)="toSystem()">View {{dataService.labelSystemLower()}}</button>
+            <button id="button-system" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
+            <ul id="dropdown-system" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-system">
+                <li role="menuitem"><a class="dropdown-item" href (click)="toCommunity();$event.preventDefault();">View community</a></li>
+                <li role="menuitem"><a class="dropdown-item" href (click)="toOrganisation(); $event.preventDefault();">View {{dataService.labelOrganisationLower()}}</a></li>
+            </ul>
+        </div>
+    } @else if (showToOrganisation()) {
+        <div class="btn-group" dropdown>
+            <button type="button" class="btn btn-secondary" (click)="toOrganisation()">View {{dataService.labelOrganisationLower()}}</button>
+            <button id="button-system" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
+            <ul id="dropdown-system" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-system">
+                <li role="menuitem"><a class="dropdown-item" href (click)="toCommunity();$event.preventDefault();">View community</a></li>
+            </ul>
+        </div>
+    } @else {
+        <button type="button" class="btn btn-secondary" (click)="toCommunity()">View community</button>
+    }
+    <!-- View specification -->
+    @if (showToDomain() || showToSpecification() || showToActor()) {
+        @if (showToSpecification()) {
+            <div class="btn-group" dropdown>
+                <button type="button" class="btn btn-secondary" (click)="toSpecification()">View {{dataService.labelSpecificationLower()}}</button>
+                <button id="button-spec" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
+                <ul id="dropdown-spec" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-spec">
+                    <li role="menuitem"><a class="dropdown-item" href (click)="toDomain();$event.preventDefault();">View {{dataService.labelDomainLower()}}</a></li>
+                    @if (showToActor()) {
+                        <li role="menuitem"><a class="dropdown-item" href (click)="toActor(); $event.preventDefault();">View {{dataService.labelActorLower()}}</a></li>
+                    }
+                </ul>
+            </div>
+        } @else if (showToActor()) {
+            <div class="btn-group" dropdown>
+                <button type="button" class="btn btn-secondary" (click)="toActor()">View {{dataService.labelActorLower()}}</button>
+                <button id="button-spec" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
+                <ul id="dropdown-spec" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-spec">
+                    <li role="menuitem"><a class="dropdown-item" href (click)="toDomain();$event.preventDefault();">View {{dataService.labelDomainLower()}}</a></li>
+                </ul>
+            </div>
+        } @else {
+            <button type="button" class="btn btn-secondary" (click)="toDomain()">View {{dataService.labelDomainLower()}}</button>
+        }
+    }
+    @if (hasBadge == true) {
+        <app-view-badge-button [systemId]="conformanceIds.systemId" [actorId]="conformanceIds.actorId" [snapshotId]="snapshotId" [leftMargin]="true"></app-view-badge-button>
+    }
+    <ng-content></ng-content>
+</div>

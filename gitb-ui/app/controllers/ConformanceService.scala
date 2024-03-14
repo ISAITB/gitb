@@ -24,7 +24,7 @@ import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.util.Using
 
-class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAction: AuthorizedAction, cc: ControllerComponents, systemManager: SystemManager, endpointManager: EndPointManager, specificationManager: SpecificationManager, domainParameterManager: DomainParameterManager, domainManager: DomainManager, communityManager: CommunityManager, conformanceManager: ConformanceManager, accountManager: AccountManager, actorManager: ActorManager, testSuiteManager: TestSuiteManager, testResultManager: TestResultManager, testCaseManager: TestCaseManager, parameterManager: ParameterManager, authorizationManager: AuthorizationManager, communityLabelManager: CommunityLabelManager, repositoryUtils: RepositoryUtils) extends AbstractController(cc) {
+class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAction: AuthorizedAction, cc: ControllerComponents, reportManager: ReportManager, systemManager: SystemManager, endpointManager: EndPointManager, specificationManager: SpecificationManager, domainParameterManager: DomainParameterManager, domainManager: DomainManager, communityManager: CommunityManager, conformanceManager: ConformanceManager, accountManager: AccountManager, actorManager: ActorManager, testSuiteManager: TestSuiteManager, testResultManager: TestResultManager, testCaseManager: TestCaseManager, parameterManager: ParameterManager, authorizationManager: AuthorizationManager, communityLabelManager: CommunityLabelManager, repositoryUtils: RepositoryUtils) extends AbstractController(cc) {
   private final val logger: Logger = LoggerFactory.getLogger(classOf[ConformanceService])
 
   /**
@@ -734,9 +734,59 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
     }
   }
 
+  def getConformanceOverviewCertificateSettingsWithApplicableMessage(communityId: Long): Action[AnyContent] = authorizedAction { request =>
+    authorizationManager.canViewConformanceCertificateSettings(request, communityId)
+    val identifier = ParameterExtractor.optionalLongQueryParameter(request, Parameters.ID)
+    val level = OverviewLevelType.withName(ParameterExtractor.requiredQueryParameter(request, Parameters.LEVEL))
+    val settings = communityManager.getConformanceOverviewCertificateSettingsWrapper(communityId, defaultIfMissing = true, None, Some(level), identifier)
+    if (settings.isDefined) {
+      val json = JsonUtil.jsConformanceOverviewSettings(settings.get)
+      ResponseConstructor.constructJsonResponse(json.toString)
+    } else {
+      ResponseConstructor.constructEmptyResponse
+    }
+  }
+
+  def getResolvedMessageForConformanceOverviewCertificate(communityId: Long): Action[AnyContent] = authorizedAction { request =>
+    authorizationManager.canViewConformanceCertificateSettings(request, communityId)
+    val id = ParameterExtractor.requiredQueryParameter(request, Parameters.ID).toLong
+    val snapshotId = ParameterExtractor.optionalLongQueryParameter(request, Parameters.SNAPSHOT)
+    var message = communityManager.getConformanceOverviewCertificateMessage(snapshotId.isDefined, id)
+    if (message.isDefined && message.get.indexOf("$") > 0) {
+      // Resolve placeholders for message
+      val systemId = ParameterExtractor.requiredQueryParameter(request, Parameters.SYSTEM_ID).toLong
+      val domainId = ParameterExtractor.optionalLongQueryParameter(request, Parameters.DOMAIN_ID)
+      val groupId = ParameterExtractor.optionalLongQueryParameter(request, Parameters.GROUP_ID)
+      val specificationId = ParameterExtractor.optionalLongQueryParameter(request, Parameters.SPECIFICATION_ID)
+      message = Some(reportManager.resolveConformanceOverviewCertificateMessage(message.get, systemId, domainId, groupId, specificationId, snapshotId, communityId))
+    }
+    if (message.isDefined) {
+      ResponseConstructor.constructStringResponse(message.get)
+    } else {
+      ResponseConstructor.constructEmptyResponse
+    }
+  }
+
+  def getResolvedMessageForConformanceStatementCertificate(communityId: Long): Action[AnyContent] = authorizedAction { request =>
+    authorizationManager.canViewConformanceCertificateSettings(request, communityId)
+    val snapshotId = ParameterExtractor.optionalLongQueryParameter(request, Parameters.SNAPSHOT)
+    var message = communityManager.getConformanceStatementCertificateMessage(snapshotId, communityId)
+    if (message.isDefined && message.get.indexOf("$") > 0) {
+      // Resolve placeholders for message
+      val systemId = ParameterExtractor.requiredQueryParameter(request, Parameters.SYSTEM_ID).toLong
+      val actorId = ParameterExtractor.requiredQueryParameter(request, Parameters.ACTOR_ID).toLong
+      message = Some(reportManager.resolveConformanceStatementCertificateMessage(message.get, actorId, systemId, communityId, snapshotId))
+    }
+    if (message.isDefined) {
+      ResponseConstructor.constructStringResponse(message.get)
+    } else {
+      ResponseConstructor.constructEmptyResponse
+    }
+  }
+
   def getConformanceOverviewCertificateSettings(communityId: Long): Action[AnyContent] = authorizedAction { request =>
     authorizationManager.canViewConformanceCertificateSettings(request, communityId)
-    val settings = communityManager.getConformanceOverviewCertificateSettingsWrapper(communityId, defaultIfMissing = true, None)
+    val settings = communityManager.getConformanceOverviewCertificateSettingsWrapper(communityId, defaultIfMissing = true, None, None, None)
     if (settings.isDefined) {
       val json = JsonUtil.jsConformanceOverviewSettings(settings.get)
       ResponseConstructor.constructJsonResponse(json.toString)
@@ -791,6 +841,13 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
     } finally {
       if (request.body.asMultipartFormData.isDefined) request.body.asMultipartFormData.get.files.foreach { file => FileUtils.deleteQuietly(file.ref) }
     }
+  }
+
+  def conformanceOverviewCertificateEnabled(communityId: Long): Action[AnyContent] = authorizedAction { request =>
+    authorizationManager.canViewCommunityBasic(request, communityId)
+    val reportLevel = OverviewLevelType.withName(ParameterExtractor.requiredQueryParameter(request, Parameters.LEVEL))
+    val checkResult = communityManager.conformanceOverviewCertificateEnabled(communityId, reportLevel)
+    ResponseConstructor.constructJsonResponse(JsonUtil.jsExists(checkResult).toString())
   }
 
   def testCommunityKeystore(communityId: Long): Action[AnyContent] = authorizedAction { request =>

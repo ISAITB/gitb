@@ -195,6 +195,8 @@ import { TestCaseReportFormComponent } from './pages/admin/user-management/commu
 import { TestStepReportFormComponent } from './pages/admin/user-management/community-reports/test-step-report-form/test-step-report-form.component';
 import { CommunityKeystoreModalComponent } from './modals/community-keystore-modal/community-keystore-modal.component';
 import { ConformanceOverviewCertificateFormComponent } from './pages/admin/user-management/community-reports/conformance-overview-certificate-form/conformance-overview-certificate-form.component';
+import { StatementControlsComponent } from './components/statement-controls/statement-controls.component';
+import { ConformanceOverviewCertificateModalComponent } from './modals/conformance-overview-certificate-modal/conformance-overview-certificate-modal.component';
 
 @NgModule({
   providers: [
@@ -378,7 +380,9 @@ import { ConformanceOverviewCertificateFormComponent } from './pages/admin/user-
     TestCaseReportFormComponent,
     TestStepReportFormComponent,
     CommunityKeystoreModalComponent,
-    ConformanceOverviewCertificateFormComponent
+    ConformanceOverviewCertificateFormComponent,
+    StatementControlsComponent,
+    ConformanceOverviewCertificateModalComponent
   ],
   imports: [
     ColorPickerModule,

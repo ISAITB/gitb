@@ -15,6 +15,8 @@ import { TestInteractionData } from '../types/test-interaction-data';
 import { FileData } from '../types/file-data.type';
 import { FileParam } from '../types/file-param.type';
 import { Constants } from '../common/constants';
+import { ConformanceCertificateSettings } from '../types/conformance-certificate-settings';
+import { ConformanceOverviewCertificateSettings } from '../types/conformance-overview-certificate-settings';
 
 @Injectable({
   providedIn: 'root'
@@ -214,47 +216,6 @@ export class ReportService {
     })
   }
 
-  exportTestCaseDocumentationPreviewReport(documentation: string) {
-    return this.restService.post<ArrayBuffer>(({
-      path: ROUTES.controllers.TestSuiteService.previewTestCaseDocumentationInReports().url,
-      data: {
-        documentation: documentation
-      },
-      authenticate: true,
-      arrayBuffer: true
-    }))
-  }
-
-  exportConformanceStatementReport(actorId: number, systemId: number, includeTests: boolean, snapshotId?: number) {
-    let params:any = {
-      actor_id: actorId,
-      system_id: systemId,
-      tests: includeTests
-    }
-    if (snapshotId != undefined) {
-      params.snapshot = snapshotId
-    }
-    return this.restService.get<ArrayBuffer>({
-      path: ROUTES.controllers.RepositoryService.exportConformanceStatementReport().url,
-      params: params,
-      authenticate: true,
-      arrayBuffer: true
-    })
-  }
-
-  exportTestCaseReport(session: string, testCaseId: number, contentType: string) {
-    return this.restService.get<ArrayBuffer>(({
-      path: ROUTES.controllers.RepositoryService.exportTestCaseReport().url,
-      params: {
-        session_id: session,
-        test_id: testCaseId
-      },
-      authenticate: true,
-      arrayBuffer: true,
-      accept: contentType
-    }))
-  }
-
   getTestStepResults(sessionId: string) {
     return this.restService.get<TestStepResult[]>({
       path: ROUTES.controllers.ReportService.getTestStepResults(sessionId).url,
@@ -296,15 +257,6 @@ export class ReportService {
       arrayBuffer: true,
       accept: mimeType,
       httpResponse: true
-    })
-  }
-
-  exportTestStepReport(sessionId: string, reportPath: string, reportContentType: string) {
-    return this.restService.get<ArrayBuffer>({
-      path: ROUTES.controllers.RepositoryService.exportTestStepReport(sessionId, reportPath).url,
-      authenticate: true,
-      arrayBuffer: true,
-      accept: reportContentType
     })
   }
 
@@ -420,6 +372,253 @@ export class ReportService {
       text: true,
       data: dataToUse
     })      
+  }
+
+  exportDemoConformanceCertificateReport(communityId: number, settings: ConformanceCertificateSettings) {
+    return this.restService.post<ArrayBuffer>({
+      path: ROUTES.controllers.RepositoryService.exportDemoConformanceCertificateReport(communityId).url,
+      data: {
+        settings: JSON.stringify(settings)
+      },
+      authenticate: true,
+      arrayBuffer: true
+    })
+  }
+
+  exportDemoConformanceOverviewCertificateReport(communityId: number, settings: ConformanceOverviewCertificateSettings, reportLevel: string, reportLevelIdentifier?: number) {
+    return this.restService.post<ArrayBuffer>({
+      path: ROUTES.controllers.RepositoryService.exportDemoConformanceOverviewCertificateReport(communityId).url,
+      data: {
+        settings: JSON.stringify(settings),
+        level: reportLevel,
+        id: reportLevelIdentifier
+      },
+      authenticate: true,
+      arrayBuffer: true
+    })
+  }
+
+  exportOwnConformanceOverviewCertificateReport(systemId: number, domainId: number|undefined, groupId: number|undefined, specificationId: number|undefined, snapshotId: number|undefined) {
+    let data: any = {
+      system_id: systemId
+    }
+    if (domainId != undefined) data.domain_id = domainId
+    if (groupId != undefined) data.group_id = groupId
+    if (specificationId != undefined) data.spec_id = specificationId
+    if (snapshotId != undefined) data.snapshot = snapshotId
+    return this.restService.post<ArrayBuffer>({
+      path: ROUTES.controllers.RepositoryService.exportOwnConformanceOverviewCertificateReport().url,
+      data: data,
+      authenticate: true,
+      arrayBuffer: true
+    })    
+  }
+
+  exportOwnConformanceCertificateReport(actorId: number, systemId: number, snapshotId?: number) {
+    let data: any = {
+      actor_id: actorId,
+      system_id: systemId
+    }
+    if (snapshotId != undefined) data.snapshot = snapshotId
+    return this.restService.post<ArrayBuffer>({
+      path: ROUTES.controllers.RepositoryService.exportOwnConformanceCertificateReport().url,
+      data: data,
+      authenticate: true,
+      arrayBuffer: true
+    })
+  }
+
+  exportConformanceOverviewCertificate(communityId: number, systemId: number, domainId: number|undefined, groupId: number|undefined, specId: number|undefined, settings: ConformanceOverviewCertificateSettings, snapshotId: number|undefined) {
+    let settingsData: any = {}
+    if (settings != undefined) {
+      settingsData.title = settings.title
+      settingsData.includeTitle = settings.includeTitle == true
+      settingsData.includeMessage = settings.includeMessage == true
+      settingsData.includeTestStatus = settings.includeTestStatus == true
+      settingsData.includeTestCases = settings.includeTestCases == true
+      settingsData.includeTestCaseDetails = settings.includeTestCaseDetails == true
+      settingsData.includeDetails = settings.includeDetails == true
+      settingsData.includeSignature = settings.includeSignature == true
+      settingsData.includePageNumbers = settings.includePageNumbers == true
+      if (settingsData.includeMessage) {
+        settingsData.messages = settings.messages
+      }
+    }    
+    let data: any = {
+      settings: JSON.stringify(settingsData),
+      system_id: systemId,
+      community_id: communityId,
+    }
+    if (domainId != undefined) data.domain_id = domainId
+    if (groupId != undefined) data.group_id = groupId
+    if (specId != undefined) data.spec_id = specId
+    if (snapshotId != undefined) data.snapshot = snapshotId
+    return this.restService.post<ArrayBuffer>({
+      path: ROUTES.controllers.RepositoryService.exportConformanceOverviewCertificateReport().url,
+      data: data,
+      authenticate: true,
+      arrayBuffer: true
+    })
+  }
+
+  exportConformanceOverviewReport(systemId: number, domainId: number|undefined, groupId: number|undefined, specId: number|undefined, snapshotId: number|undefined) {
+    let data: any = {
+      system_id: systemId
+    }
+    if (domainId != undefined) data.domain_id = domainId
+    if (groupId != undefined) data.group_id = groupId
+    if (specId != undefined) data.spec_id = specId
+    if (snapshotId != undefined) data.snapshot = snapshotId
+    return this.restService.post<ArrayBuffer>({
+      path: ROUTES.controllers.RepositoryService.exportConformanceOverviewReport().url,
+      data: data,
+      authenticate: true,
+      arrayBuffer: true
+    })
+  }
+
+  exportConformanceCertificate(communityId: number, actorId: number, systemId: number, settings: ConformanceCertificateSettings, snapshotId?: number) {
+    let settingsData: any = {}
+    if (settings != undefined) {
+      settingsData.title = settings.title
+      settingsData.includeTitle = settings.includeTitle == true
+      settingsData.includeMessage = settings.includeMessage == true
+      settingsData.includeTestStatus = settings.includeTestStatus == true
+      settingsData.includeTestCases = settings.includeTestCases == true
+      settingsData.includeDetails = settings.includeDetails == true
+      settingsData.includeSignature = settings.includeSignature == true
+      settingsData.includePageNumbers = settings.includePageNumbers == true
+      if (settingsData.includeMessage) {
+        settingsData.message = settings.message
+      }
+    }
+    let data: any = {
+      settings: JSON.stringify(settingsData),
+      community_id: communityId,
+      actor_id: actorId,
+      system_id: systemId
+    }
+    if (snapshotId != undefined) {
+      data.snapshot = snapshotId
+    }
+    return this.restService.post<ArrayBuffer>({
+      path: ROUTES.controllers.RepositoryService.exportConformanceCertificateReport().url,
+      data: data,
+      authenticate: true,
+      arrayBuffer: true
+    })
+  }
+
+  exportTestStepReport(sessionId: string, reportPath: string, reportContentType: string) {
+    return this.restService.get<ArrayBuffer>({
+      path: ROUTES.controllers.RepositoryService.exportTestStepReport(sessionId, reportPath).url,
+      authenticate: true,
+      arrayBuffer: true,
+      accept: reportContentType
+    })
+  }
+
+  exportTestCaseDocumentationPreviewReport(documentation: string) {
+    return this.restService.post<ArrayBuffer>(({
+      path: ROUTES.controllers.TestSuiteService.previewTestCaseDocumentationInReports().url,
+      data: {
+        documentation: documentation
+      },
+      authenticate: true,
+      arrayBuffer: true
+    }))
+  }
+
+  exportConformanceOverviewReportInXML(communityId: number, systemId: number, domainId: number|undefined, groupId: number|undefined, specId: number|undefined, snapshotId: number|undefined) {
+    let data:any = {
+      community_id: communityId,
+      system_id: systemId
+    }
+    if (domainId != undefined) data.domain_id = domainId
+    if (groupId != undefined) data.group_id = groupId
+    if (specId != undefined) data.spec_id = specId
+    if (snapshotId != undefined) data.snapshot = snapshotId
+    return this.restService.post<ArrayBuffer>({
+      path: ROUTES.controllers.RepositoryService.exportConformanceOverviewReportInXML().url,
+      data: data,
+      authenticate: true,
+      arrayBuffer: true
+    })   
+  }
+
+  exportOwnConformanceOverviewReportInXML(systemId: number, domainId: number|undefined, groupId: number|undefined, specId: number|undefined, snapshotId: number|undefined) {
+    let data:any = {
+      system_id: systemId,
+    }
+    if (domainId != undefined) data.domain_id = domainId
+    if (groupId != undefined) data.group_id = groupId
+    if (specId != undefined) data.spec_id = specId
+    if (snapshotId != undefined) data.snapshot = snapshotId
+    return this.restService.post<ArrayBuffer>({
+      path: ROUTES.controllers.RepositoryService.exportOwnConformanceOverviewReportInXML().url,
+      data: data,
+      authenticate: true,
+      arrayBuffer: true
+    }) 
+  }
+
+  exportConformanceStatementReportInXML(actorId: number, systemId: number, communityId: number, includeTests: boolean, snapshotId?: number) {
+    let data:any = {
+      community_id: communityId,
+      actor_id: actorId,
+      system_id: systemId,
+      tests: includeTests
+    }
+    if (snapshotId != undefined) data.snapshot = snapshotId
+    return this.restService.post<ArrayBuffer>({
+      path: ROUTES.controllers.RepositoryService.exportConformanceStatementReportInXML().url,
+      data: data,
+      authenticate: true,
+      arrayBuffer: true
+    })    
+  }
+
+  exportOwnConformanceStatementReportInXML(systemId: number, actorId: number, includeTests: boolean, snapshotId: number|undefined) {
+    let data:any = {
+      actor_id: actorId,
+      system_id: systemId,
+      tests: includeTests
+    }
+    if (snapshotId != undefined) data.snapshot = snapshotId
+    return this.restService.post<ArrayBuffer>({
+      path: ROUTES.controllers.RepositoryService.exportOwnConformanceStatementReportInXML().url,
+      data: data,
+      authenticate: true,
+      arrayBuffer: true
+    })
+  }
+
+  exportConformanceStatementReport(actorId: number, systemId: number, includeTests: boolean, snapshotId?: number) {
+    let data:any = {
+      actor_id: actorId,
+      system_id: systemId,
+      tests: includeTests
+    }
+    if (snapshotId != undefined) data.snapshot = snapshotId
+    return this.restService.post<ArrayBuffer>({
+      path: ROUTES.controllers.RepositoryService.exportConformanceStatementReport().url,
+      data: data,
+      authenticate: true,
+      arrayBuffer: true
+    })
+  }
+
+  exportTestCaseReport(session: string, testCaseId: number, contentType: string) {
+    return this.restService.get<ArrayBuffer>(({
+      path: ROUTES.controllers.RepositoryService.exportTestCaseReport().url,
+      params: {
+        session_id: session,
+        test_id: testCaseId
+      },
+      authenticate: true,
+      arrayBuffer: true,
+      accept: contentType
+    }))
   }
 
 }
