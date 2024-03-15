@@ -88,7 +88,11 @@ export class ConformanceCertificateModalComponent {
       } else {
         contentType = "application/xml"
         fileName = "conformance_report.xml"
-        exportObservable = this.reportService.exportConformanceStatementReportInXML(this.actorId, this.systemId, this.communityId, includeDetails, this.snapshotId)
+        if (this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin) {
+          exportObservable = this.reportService.exportConformanceStatementReportInXML(this.actorId, this.systemId, this.communityId, includeDetails, this.snapshotId)
+        } else {
+          exportObservable = this.reportService.exportOwnConformanceStatementReportInXML(this.actorId, this.systemId, includeDetails, this.snapshotId)          
+        }
       }
     }
     exportObservable.subscribe((data) => {

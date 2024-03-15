@@ -9,7 +9,6 @@
                 <app-file-select id="name" placeholder="Select ZIP archive ..."
                     [fileName]="file?.name"
                     [accepts]="['application/zip']"
-                    [acceptsDrop]="['application/zip', 'application/x-zip-compressed']"
                     (onUpload)="selectFile($event)"
                     [maxSize]="-1">
                 </app-file-select>

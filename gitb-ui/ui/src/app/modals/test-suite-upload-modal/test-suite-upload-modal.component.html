@@ -20,7 +20,6 @@
 					<app-file-select placeholder="Drop or browse for test suite archive ..."
 						[fileName]="file?.name"
 						[accepts]="['application/zip']"
-						[acceptsDrop]="['application/zip', 'application/x-zip-compressed']" 
 						(onUpload)="selectArchive($event)"
 						[maxSize]="-1">
 					</app-file-select>

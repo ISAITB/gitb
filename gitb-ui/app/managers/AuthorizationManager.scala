@@ -836,7 +836,7 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
 
   def canViewConformanceStatementReport(request: RequestWithAttributes[_], systemId: Long, snapshotId: Option[Long] = None):Boolean = {
     if (snapshotId.isDefined) {
-      canManageConformanceSnapshot(request, snapshotId.get)
+      canViewSystemInSnapshot(request, systemId, snapshotId.get)
     } else {
       canViewSystem(request, systemId)
     }

@@ -32,6 +32,10 @@ class ExportSettings {
   var systemConfigurations: Boolean = false
   var encryptionKey: Option[String] = None
 
+  def hasSystemSettings(): Boolean = {
+    themes || systemAdministrators || defaultLandingPages || defaultLegalNotices || defaultErrorTemplates || systemConfigurations
+  }
+
   def withoutSystemSettings(): ExportSettings = {
     if (this.themes) {
       val copy = new ExportSettings

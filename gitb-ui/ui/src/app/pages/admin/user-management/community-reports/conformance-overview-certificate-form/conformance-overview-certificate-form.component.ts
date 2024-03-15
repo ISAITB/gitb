@@ -330,11 +330,9 @@ export class ConformanceOverviewCertificateFormComponent extends BaseCertificate
         this.groupId = undefined
         this.specificationId = undefined
       }
+      this.specificMessageSetting = false
       this.toggleSpecificMessageSetting()
     }, 1)
-    // setTimeout(() => {
-    //   this.messageLevelSelectionCollapsed = this.messageLevel == "all"
-    // }, 1)
   }
 
   toggleSpecificMessageSetting() {

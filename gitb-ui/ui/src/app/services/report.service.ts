@@ -578,7 +578,7 @@ export class ReportService {
     })    
   }
 
-  exportOwnConformanceStatementReportInXML(systemId: number, actorId: number, includeTests: boolean, snapshotId: number|undefined) {
+  exportOwnConformanceStatementReportInXML(actorId: number, systemId: number, includeTests: boolean, snapshotId: number|undefined) {
     let data:any = {
       actor_id: actorId,
       system_id: systemId,

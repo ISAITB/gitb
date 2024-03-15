@@ -91,6 +91,7 @@ export class TestFilterComponent implements OnInit {
   initialised = false
   showOrganisationProperties = false
   showSystemProperties = false
+  filterCollapsedFinished = false
 
   constructor(
     public dataService: DataService,
@@ -148,6 +149,7 @@ export class TestFilterComponent implements OnInit {
         this.handleCommand(command)
       })
     }
+    this.filterCollapsedFinished = !this.showFiltering || !this.initialised
   }
 
   private handleCommand(command: number) {

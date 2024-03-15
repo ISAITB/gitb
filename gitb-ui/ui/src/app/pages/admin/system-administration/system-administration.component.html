@@ -1,9 +1,9 @@
 <div class="page">
     <div class="card">
-        <div class="card-header clickable" (click)="configsCollapsed = !configsCollapsed">
+        <div class="card-header clickable" (click)="configsCollapsed = !configsCollapsed; configsCollapsedFinished = false" [class.collapsed]="configsCollapsedFinished">
             <div class="card-title"><app-collapsing-icon [isCollapsed]="configsCollapsed"></app-collapsing-icon>System configuration</div>
         </div>
-        <div [collapse]="configsCollapsed" [isAnimated]="true">
+        <div [collapse]="configsCollapsed" [isAnimated]="true" (collapsed)="configsCollapsedFinished = true">
             <div class="configsContainer" [ngSwitch]="configValuesPending">
                 <ng-container *ngSwitchCase="true">
                     <div class="pending-container my-3">

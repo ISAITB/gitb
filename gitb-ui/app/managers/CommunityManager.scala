@@ -980,7 +980,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityRes
       }
       result <- if (settings.isDefined) {
         // Check for the message to apply for the specific identifier or return the default for the requested level
-        if (levelForMessage.isDefined) {
+        val filteredMessages = if (levelForMessage.isDefined) {
           levelForMessage.get match {
             case OverviewLevelType.DomainLevel =>
               identifierForMessage
@@ -997,9 +997,13 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityRes
                 .flatMap(_ => messagesToUse.find(msg => msg.specification.isDefined && msg.specification.get == identifierForMessage.get))
                 .orElse(messagesToUse.find(msg => msg.specification.isEmpty))
                 .map(Seq(_)).getOrElse(Seq.empty)
+            case _ =>
+              messagesToUse
           }
+        } else {
+          messagesToUse
         }
-        DBIO.successful(Some(ConformanceOverviewCertificateWithMessages(settings.get, messagesToUse)))
+        DBIO.successful(Some(ConformanceOverviewCertificateWithMessages(settings.get, filteredMessages)))
       } else {
         DBIO.successful(None)
       }
@@ -1033,8 +1037,8 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityRes
         } else {
           // Update settings
           PersistenceSchema.conformanceOverviewCertificates.filter(_.id === existingId)
-            .map(x => (x.title, x.includePageNumbers, x.includeTitle, x.includeDetails, x.includeMessage, x.includeSignature, x.includeStatements, x.includeStatementStatus, x.enableAllLevel, x.enableDomainLevel, x.enableGroupLevel, x.enableSpecificationLevel))
-            .update((data.settings.title, data.settings.includePageNumbers, data.settings.includeTitle, data.settings.includeDetails, data.settings.includeMessage, data.settings.includeSignature, data.settings.includeStatements, data.settings.includeStatementStatus, data.settings.enableAllLevel, data.settings.enableDomainLevel, data.settings.enableGroupLevel, data.settings.enableSpecificationLevel))
+            .map(x => (x.title, x.includePageNumbers, x.includeTitle, x.includeDetails, x.includeMessage, x.includeSignature, x.includeStatements, x.includeStatementDetails, x.includeStatementStatus, x.enableAllLevel, x.enableDomainLevel, x.enableGroupLevel, x.enableSpecificationLevel))
+            .update((data.settings.title, data.settings.includePageNumbers, data.settings.includeTitle, data.settings.includeDetails, data.settings.includeMessage, data.settings.includeSignature, data.settings.includeStatements, data.settings.includeStatementDetails, data.settings.includeStatementStatus, data.settings.enableAllLevel, data.settings.enableDomainLevel, data.settings.enableGroupLevel, data.settings.enableSpecificationLevel))
         }
       }
       _ <- {
@@ -1050,7 +1054,10 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityRes
           }
         }
         // Delete other existing messages
-        actions += PersistenceSchema.conformanceOverviewCertificateMessages.filterNot(_.id inSet updatedIds).delete
+        actions += PersistenceSchema.conformanceOverviewCertificateMessages
+          .filter(_.community === data.settings.community)
+          .filterNot(_.id inSet updatedIds)
+          .delete
         // Insert new messages
         if (data.settings.includeMessage) {
           data.messages.foreach { message =>

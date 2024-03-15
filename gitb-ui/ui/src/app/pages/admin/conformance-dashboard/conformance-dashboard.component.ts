@@ -564,6 +564,7 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
   }
 
   communityChanged(fromSnapshotChange: boolean, community?: FilterUpdate<Community>) {
+    this.dataStatus.status = Constants.STATUS.PENDING
     if (community && community.values.active.length > 0) {
       this.selectedCommunityId = community.values.active[0].id
     }
@@ -600,6 +601,7 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
   }
 
   organisationChanged(organisation?: FilterUpdate<Organisation>) {
+    this.dataStatus.status = Constants.STATUS.PENDING
     if (organisation && organisation.values.active.length > 0) {
       this.selectedOrganisationId = organisation.values.active[0].id
     }
@@ -633,6 +635,7 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
   }
 
   systemChanged(system?: FilterUpdate<System>) {
+    this.dataStatus.status = Constants.STATUS.PENDING
     if (system && system.values.active.length > 0) {
       this.selectedSystemId = system.values.active[0].id
     }
@@ -668,6 +671,13 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
     }).add(() => {
       this.exportOverviewPending = false
     })
+  }
+
+  treeControlsExist() {
+    return (this.communityId == undefined && (this.availableCommunities == undefined || this.availableCommunities.length > 0)) ||
+    ((this.selectedCommunityId != undefined && this.availableCommunities) && (this.availableOrganisations == undefined || this.availableOrganisations.length > 0)) ||
+    ((this.selectedOrganisationId != undefined && this.availableOrganisations) && (this.availableSystems == undefined || this.availableSystems.length > 0)) ||
+    (this.statements.length > 0)
   }
 
 }

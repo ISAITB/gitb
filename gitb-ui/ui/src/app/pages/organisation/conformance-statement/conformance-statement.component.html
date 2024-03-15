@@ -1,9 +1,9 @@
 <div id="conformanceDetailPage" class="page conformance">
 	<div class="card">
-		<div class="card-header clickable" (click)="collapsedDetails = !collapsedDetails">
+		<div class="card-header clickable" (click)="collapsedDetails = !collapsedDetails" [class.collapsed]="collapsedDetailsFinished">
 			<div class="card-title"><app-collapsing-icon [isCollapsed]="collapsedDetails"></app-collapsing-icon>Conformance statement details</div>
 		</div>
-		<div [collapse]="collapsedDetails" [isAnimated]="true">
+		<div [collapse]="collapsedDetails" [isAnimated]="true" (collapsed)="collapsedDetailsFinished = true" (expands)="collapsedDetailsFinished = false">
 			<div class="card-body detailsPanel">
 				@if (snapshotId != undefined) {
 					<div class="alert alert-info rounded mb-0">
@@ -76,7 +76,7 @@
 						</button>
 						<ul id="dropdown-export" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-export">
 							<li role="menuitem"><a class="dropdown-item" href (click)="onExportConformanceStatement('xml');$event.preventDefault();">Download report as XML</a></li>
-							@if (canExportConformanceCertificate()) {
+							@if (allTestsSuccessful && (dataService.isSystemAdmin || dataService.isCommunityAdmin || dataService.community!.allowCertificateDownload)) {
 								<li role="menuitem"><a class="dropdown-item" href (click)="onExportConformanceCertificate();$event.preventDefault();">Download conformance certificate</a></li>
 							}
 						</ul>

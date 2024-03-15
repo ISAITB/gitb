@@ -10,6 +10,7 @@ public class ConformanceStatementData {
     private Long specificationId;
     private Long systemId;
     private String testActor;
+    private String testActorInternal;
     private String testSpecification;
     private String testSpecificationGroup;
     private String testDomain;
@@ -192,5 +193,13 @@ public class ConformanceStatementData {
 
     public void setSystemId(Long systemId) {
         this.systemId = systemId;
+    }
+
+    public String getTestActorInternal() {
+        return testActorInternal;
+    }
+
+    public void setTestActorInternal(String testActorInternal) {
+        this.testActorInternal = testActorInternal;
     }
 }

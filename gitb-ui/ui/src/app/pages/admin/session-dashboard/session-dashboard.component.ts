@@ -68,7 +68,9 @@ export class SessionDashboardComponent implements OnInit {
   sessionIdToShow?: string
   sessionRefreshCompleteEmitter = new EventEmitter<TestResultReport|undefined>()
   activeSessionsCollapsed = false
+  activeSessionsCollapsedFinished = false  
   completedSessionsCollapsed = false
+  completedSessionsCollapsedFinished = false  
   
   constructor(
     public dataService: DataService,

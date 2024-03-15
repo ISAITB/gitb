@@ -5,7 +5,7 @@ import com.gitb.reports.dto.TestCaseOverview
 import com.gitb.reports.{ReportGenerator, ReportSpecs}
 import com.gitb.tbs.TestStepStatus
 import com.gitb.tpl._
-import com.gitb.tr.{TestCaseOverviewReportType, TestCaseStepReportType, TestCaseStepsType, TestResultType}
+import com.gitb.tr.{TAR, TestCaseOverviewReportType, TestCaseStepReportType, TestCaseStepsType, TestResultType}
 import com.gitb.utils.{XMLDateTimeUtils, XMLUtils}
 import models.{CommunityLabels, Constants, SessionFolderInfo}
 import org.apache.commons.codec.net.URLCodec
@@ -217,6 +217,10 @@ class TestCaseReportProducer @Inject() (reportHelper: ReportHelper, testResultMa
       //convert string in xml format into its object representation
       val report = XMLUtils.unmarshal(classOf[TestStepStatus], new StreamSource(new StringReader(string)))
       stepReport.setWrapped(report.getReport)
+      if (report.getReport != null && report.getReport.isInstanceOf[TAR] && report.getReport.asInstanceOf[TAR].getReports != null && report.getReport.asInstanceOf[TAR].getReports.getReports.isEmpty) {
+        // If not set to null this would result in an empty element that is not schema-valid.
+        report.getReport.asInstanceOf[TAR].setReports(null)
+      }
       collectedSteps += stepReport
       // Process child steps as well if applicable
       testStep match {

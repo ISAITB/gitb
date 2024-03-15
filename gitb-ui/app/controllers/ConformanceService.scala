@@ -738,7 +738,8 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
     authorizationManager.canViewConformanceCertificateSettings(request, communityId)
     val identifier = ParameterExtractor.optionalLongQueryParameter(request, Parameters.ID)
     val level = OverviewLevelType.withName(ParameterExtractor.requiredQueryParameter(request, Parameters.LEVEL))
-    val settings = communityManager.getConformanceOverviewCertificateSettingsWrapper(communityId, defaultIfMissing = true, None, Some(level), identifier)
+    val snapshotId = ParameterExtractor.optionalLongQueryParameter(request, Parameters.SNAPSHOT)
+    val settings = communityManager.getConformanceOverviewCertificateSettingsWrapper(communityId, defaultIfMissing = true, snapshotId, Some(level), identifier)
     if (settings.isDefined) {
       val json = JsonUtil.jsConformanceOverviewSettings(settings.get)
       ResponseConstructor.constructJsonResponse(json.toString)
@@ -1142,7 +1143,11 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
   }
 
   private def returnConformanceBadgeForReportPreview(status: String, systemId: Long, specificationId: Long, actorId: Long, snapshotId: Option[Long], request: RequestWithAttributes[_]): Result = {
-    authorizationManager.canViewSystem(request, systemId)
+    if (snapshotId.isDefined) {
+      authorizationManager.canViewSystemInSnapshot(request, systemId, snapshotId.get)
+    } else {
+      authorizationManager.canViewSystem(request, systemId)
+    }
     val badge = repositoryUtils.getConformanceBadge(specificationId, Some(actorId), snapshotId, status, exactMatch = false, forReport = true)
     if (badge.isDefined && badge.get.exists()) {
       Ok.sendFile(content = badge.get)

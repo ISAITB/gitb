@@ -8,13 +8,13 @@
 	<div class="btn-toolbar">
 		<button type="button" class="btn btn-secondary" (click)="close()">Close</button>
 		<div class="btn-group" dropdown [isDisabled]="exportPdfPending || exportXmlPending">
-			<button type="button" [pending]="exportPdfPending || exportXmlPending" class="btn btn-secondary" (click)="exportPdf()">Export report as PDF</button>
+			<button type="button" [pending]="exportPdfPending || exportXmlPending" class="btn btn-secondary" (click)="exportPdf()">Download report</button>
 			<button id="button-export" [disabled]="exportPdfPending || exportXmlPending" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
 				<span class="caret"></span>
-				<span class="sr-only visually-hidden">Export report as PDF</span>
+				<span class="sr-only visually-hidden">Download report</span>
 			</button>
 			<ul id="dropdown-export" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-export">
-				<li role="menuitem"><a class="dropdown-item" href (click)="exportXml();$event.preventDefault();">Export report as XML</a></li>
+				<li role="menuitem"><a class="dropdown-item" href (click)="exportXml();$event.preventDefault();">Download report as XML</a></li>
 			</ul>
 		</div>
 	</div>

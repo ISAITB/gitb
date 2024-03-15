@@ -5,7 +5,7 @@ import com.gitb.xml.export._
 import managers._
 import models.Enums.XmlReportType.XmlReportType
 import models.Enums.{LabelType, OverviewLevelType, SelfRegistrationRestriction, SelfRegistrationType, TestResultStatus, UserRole, XmlReportType}
-import models.{Enums, TestCases, Actors => _, Endpoints => _, Systems => _, _}
+import models.{TestCases, Actors => _, Endpoints => _, Systems => _, _}
 import org.apache.commons.codec.binary.Base64
 import org.apache.commons.io.{FileUtils, IOUtils}
 import org.slf4j.{Logger, LoggerFactory}
@@ -822,16 +822,18 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, systemConfigura
     }
     val exportData = new Export
     val communityData = new com.gitb.xml.export.Community
-    var domainExportInfo: DomainExportInfo = null
+    var domainExportInfo: Option[DomainExportInfo] = None
     val exportedUserMap = new mutable.HashMap[Long, String]() // Map of DB user ID to XML user ID
     val idSequence = new IdGenerator()
-    if (community.get.domain.isDefined && domainExportInfo.exportedDomain.isDefined) {
+    if (community.get.domain.isDefined && exportSettings.domain) {
       // Add domain data as part of the community export.
-      domainExportInfo = exportDomainInternal(community.get.domain.get, exportSettings.withoutSystemSettings())
-      idSequence.reset(domainExportInfo.latestSequenceId)
-      exportData.setDomains(new Domains)
-      exportData.getDomains.getDomain.add(domainExportInfo.exportedDomain.get)
-      communityData.setDomain(domainExportInfo.exportedDomain.get)
+      domainExportInfo = Some(exportDomainInternal(community.get.domain.get, exportSettings.withoutSystemSettings()))
+      idSequence.reset(domainExportInfo.get.latestSequenceId)
+      if (domainExportInfo.get.exportedDomain.isDefined) {
+        exportData.setDomains(new Domains)
+        exportData.getDomains.getDomain.add(domainExportInfo.get.exportedDomain.get)
+        communityData.setDomain(domainExportInfo.get.exportedDomain.get)
+      }
     }
     exportData.setCommunities(new com.gitb.xml.export.Communities)
     exportData.getCommunities.getCommunity.add(communityData)
@@ -909,6 +911,10 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, systemConfigura
         communityData.getConformanceOverviewCertificateSettings.setAddResultOverview(certificateOverviewSettings.get.settings.includeStatementStatus)
         communityData.getConformanceOverviewCertificateSettings.setAddSignature(certificateOverviewSettings.get.settings.includeSignature)
         communityData.getConformanceOverviewCertificateSettings.setAddPageNumbers(certificateOverviewSettings.get.settings.includePageNumbers)
+        communityData.getConformanceOverviewCertificateSettings.setEnableAggregateLevel(certificateOverviewSettings.get.settings.enableAllLevel)
+        communityData.getConformanceOverviewCertificateSettings.setEnableDomainLevel(certificateOverviewSettings.get.settings.enableDomainLevel)
+        communityData.getConformanceOverviewCertificateSettings.setEnableSpecificationGroupLevel(certificateOverviewSettings.get.settings.enableGroupLevel)
+        communityData.getConformanceOverviewCertificateSettings.setEnableSpecificationLevel(certificateOverviewSettings.get.settings.enableSpecificationLevel)
         communityData.getConformanceOverviewCertificateSettings.setTitle(certificateOverviewSettings.get.settings.title.orNull)
         // Messages.
         if (certificateOverviewSettings.get.messages.nonEmpty) {
@@ -924,8 +930,8 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, systemConfigura
               case OverviewLevelType.DomainLevel =>
                 exportedMessage.setMessageType(com.gitb.xml.export.ConformanceOverviewCertificateMessageType.DOMAIN)
                 if (message.domain.isDefined) {
-                  if (domainExportInfo.exportedDomain.isDefined) {
-                    exportedMessage.setIdentifier(domainExportInfo.exportedDomain.get.getId)
+                  if (domainExportInfo.isDefined && domainExportInfo.get.exportedDomain.isDefined) {
+                    exportedMessage.setIdentifier(domainExportInfo.get.exportedDomain.get.getId)
                     includeInExport = true
                   }
                 } else {
@@ -934,8 +940,8 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, systemConfigura
               case OverviewLevelType.SpecificationGroupLevel =>
                 exportedMessage.setMessageType(com.gitb.xml.export.ConformanceOverviewCertificateMessageType.SPECIFICATION_GROUP)
                 if (message.group.isDefined) {
-                  if (domainExportInfo.exportedSpecificationGroupMap.contains(message.group.get)) {
-                    exportedMessage.setIdentifier(domainExportInfo.exportedSpecificationGroupMap(message.group.get))
+                  if (domainExportInfo.isDefined && domainExportInfo.get.exportedSpecificationGroupMap.contains(message.group.get)) {
+                    exportedMessage.setIdentifier(domainExportInfo.get.exportedSpecificationGroupMap(message.group.get))
                     includeInExport = true
                   }
                 } else {
@@ -944,8 +950,8 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, systemConfigura
               case OverviewLevelType.SpecificationLevel =>
                 exportedMessage.setMessageType(com.gitb.xml.export.ConformanceOverviewCertificateMessageType.SPECIFICATION)
                 if (message.specification.isDefined) {
-                  if (domainExportInfo.exportedSpecificationMap.contains(message.specification.get)) {
-                    exportedMessage.setIdentifier(domainExportInfo.exportedSpecificationMap(message.specification.get))
+                  if (domainExportInfo.isDefined && domainExportInfo.get.exportedSpecificationMap.contains(message.specification.get)) {
+                    exportedMessage.setIdentifier(domainExportInfo.get.exportedSpecificationMap(message.specification.get))
                     includeInExport = true
                   }
                 } else {
@@ -1138,6 +1144,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, systemConfigura
                   (dataType == models.Enums.TriggerDataType.DomainParameter && exportSettings.domain && exportSettings.domainParameters) ||
                   (dataType == models.Enums.TriggerDataType.StatementParameter && exportSettings.endpoints)
               ) {
+                var addItem = true
                 val exportedDataItem = new TriggerDataItem
                 exportedDataItem.setId(toId(idSequence.next()))
                 dataType match {
@@ -1149,19 +1156,37 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, systemConfigura
                   case models.Enums.TriggerDataType.TestSession => exportedDataItem.setDataType(TriggerDataType.TEST_SESSION)
                   case models.Enums.TriggerDataType.TestReport => exportedDataItem.setDataType(TriggerDataType.TEST_REPORT)
                   case models.Enums.TriggerDataType.OrganisationParameter =>
-                    exportedDataItem.setDataType(TriggerDataType.ORGANISATION_PARAMETER)
-                    exportedDataItem.setData(exportedOrganisationPropertyMap(dataItem.dataId))
+                    if (exportedOrganisationPropertyMap.contains(dataItem.dataId)) {
+                      exportedDataItem.setDataType(TriggerDataType.ORGANISATION_PARAMETER)
+                      exportedDataItem.setData(exportedOrganisationPropertyMap(dataItem.dataId))
+                    } else {
+                      addItem = false
+                    }
                   case models.Enums.TriggerDataType.SystemParameter =>
-                    exportedDataItem.setDataType(TriggerDataType.SYSTEM_PARAMETER)
-                    exportedDataItem.setData(exportedSystemPropertyMap(dataItem.dataId))
+                    if (exportedSystemPropertyMap.contains(dataItem.dataId)) {
+                      exportedDataItem.setDataType(TriggerDataType.SYSTEM_PARAMETER)
+                      exportedDataItem.setData(exportedSystemPropertyMap(dataItem.dataId))
+                    } else {
+                      addItem = false
+                    }
                   case models.Enums.TriggerDataType.DomainParameter =>
-                    exportedDataItem.setDataType(TriggerDataType.DOMAIN_PARAMETER)
-                    exportedDataItem.setData(domainExportInfo.exportedDomainParameterMap(dataItem.dataId))
+                    if (domainExportInfo.isDefined && domainExportInfo.get.exportedDomainParameterMap.contains(dataItem.dataId)) {
+                      exportedDataItem.setDataType(TriggerDataType.DOMAIN_PARAMETER)
+                      exportedDataItem.setData(domainExportInfo.get.exportedDomainParameterMap(dataItem.dataId))
+                    } else {
+                      addItem = false
+                    }
                   case models.Enums.TriggerDataType.StatementParameter =>
-                    exportedDataItem.setDataType(TriggerDataType.STATEMENT_PARAMETER)
-                    exportedDataItem.setData(domainExportInfo.exportedEndpointParameterMap(dataItem.dataId))
+                    if (domainExportInfo.isDefined && domainExportInfo.get.exportedEndpointParameterMap.contains(dataItem.dataId)) {
+                      exportedDataItem.setDataType(TriggerDataType.STATEMENT_PARAMETER)
+                      exportedDataItem.setData(domainExportInfo.get.exportedEndpointParameterMap(dataItem.dataId))
+                    } else {
+                      addItem = false
+                    }
                 }
-                exportedTrigger.getDataItems.getTriggerDataItem.add(exportedDataItem)
+                if (addItem) {
+                  exportedTrigger.getDataItems.getTriggerDataItem.add(exportedDataItem)
+                }
               }
             }
             if (exportedTrigger.getDataItems != null && exportedTrigger.getDataItems.getTriggerDataItem.isEmpty) {
@@ -1300,19 +1325,19 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, systemConfigura
                 }
               }
               // Conformance statements.
-              if (exportSettings.domain && exportSettings.statements && systemStatementsMap.contains(system.id)) {
+              if (exportSettings.domain && exportSettings.statements && systemStatementsMap.contains(system.id) && domainExportInfo.isDefined) {
                 exportedSystem.setStatements(new ConformanceStatements)
                 systemStatementsMap(system.id).foreach { x =>
                   val exportedStatement = new com.gitb.xml.export.ConformanceStatement
                   exportedStatement.setId(toId(idSequence.next()))
-                  exportedStatement.setActor(domainExportInfo.exportedActorMap(x._2.id))
+                  exportedStatement.setActor(domainExportInfo.get.exportedActorMap(x._2.id))
                   if (exportSettings.statementConfigurations) {
                     // From the statement's actor get its endpoints.
-                    if (domainExportInfo.actorEndpointMap.contains(x._2.id)) {
-                      domainExportInfo.actorEndpointMap(x._2.id).foreach { endpoint =>
+                    if (domainExportInfo.get.actorEndpointMap.contains(x._2.id)) {
+                      domainExportInfo.get.actorEndpointMap(x._2.id).foreach { endpoint =>
                         // For the endpoint get the parameters.
-                        if (domainExportInfo.endpointParameterMap.contains(endpoint.id)) {
-                          domainExportInfo.endpointParameterMap(endpoint.id).foreach { parameter =>
+                        if (domainExportInfo.get.endpointParameterMap.contains(endpoint.id)) {
+                          domainExportInfo.get.endpointParameterMap(endpoint.id).foreach { parameter =>
                             // Get the system configurations for the parameter.
                             val key = s"${endpoint.actor}_${parameter.endpoint}_${system.id}_${parameter.id}"
                             if (systemConfigurationsMap.contains(key)) {
@@ -1322,7 +1347,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, systemConfigura
                               systemConfigurationsMap(key).foreach { config =>
                                 val exportedConfiguration = new com.gitb.xml.export.Configuration
                                 exportedConfiguration.setId(toId(idSequence.next()))
-                                exportedConfiguration.setParameter(domainExportInfo.exportedEndpointParameterMap(config.parameter))
+                                exportedConfiguration.setParameter(domainExportInfo.get.exportedEndpointParameterMap(config.parameter))
                                 if (exportedConfiguration.getParameter.getType == PropertyType.SECRET) {
                                   exportedConfiguration.setValue(encryptText(Some(config.value), isAlreadyEncrypted = true, exportSettings.encryptionKey))
                                 } else if (exportedConfiguration.getParameter.getType == PropertyType.BINARY) {
@@ -1349,8 +1374,10 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, systemConfigura
       }
     }
     // Add system settings as part of the community export.
-    val systemSettingsExportInfo = exportSystemSettingsInternal(exportSettings, Some(exportedUserMap), Some(idSequence.next()))
-    exportData.setSettings(systemSettingsExportInfo.exportedSettings)
+    if (exportSettings.hasSystemSettings()) {
+      val systemSettingsExportInfo = exportSystemSettingsInternal(exportSettings, Some(exportedUserMap), Some(idSequence.next()))
+      exportData.setSettings(systemSettingsExportInfo.exportedSettings)
+    }
     exportData
   }
 

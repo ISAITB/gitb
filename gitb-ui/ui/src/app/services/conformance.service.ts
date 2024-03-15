@@ -328,11 +328,12 @@ export class ConformanceService {
     })
   }
 
-  getConformanceOverviewCertificateSettingsWithApplicableMessage(communityId: number, level: 'all'|'domain'|'group'|'specification', identifier: number|undefined) {
+  getConformanceOverviewCertificateSettingsWithApplicableMessage(communityId: number, level: 'all'|'domain'|'group'|'specification', identifier: number|undefined, snapshotId: number|undefined) {
     const params:any = {
       level: level
     }
     if (identifier != undefined) params.id = identifier
+    if (snapshotId != undefined) params.snapshot = snapshotId
     return this.restService.get<ConformanceOverviewCertificateSettings|undefined>({
       path: ROUTES.controllers.ConformanceService.getConformanceOverviewCertificateSettingsWithApplicableMessage(communityId).url,
       authenticate: true,

@@ -170,7 +170,7 @@
                                     </div>
                                 </div>
                                 <div class="card">
-                                    <div class="card-header session-table-title clickable" (click)="diagramCollapsed[row.session] = !diagramCollapsed[row.session]">
+                                    <div class="card-header session-table-title clickable" (click)="diagramCollapsed[row.session] = !diagramCollapsed[row.session]" [class.collapsed]="diagramCollapsedFinished[row.session]">
                                         <div class="session-table-title-part">
                                             <div class="session-table-title-label"><app-collapsing-icon [isCollapsed]="diagramCollapsed[row.session]"></app-collapsing-icon>Test suite</div>
                                             <div class="session-table-title-value">{{row.testSuite}}</div>
@@ -184,7 +184,7 @@
                                             <div class="session-table-title-value"><app-copy-enabled-text [value]="row.session"></app-copy-enabled-text></div>
                                         </div>
                                     </div>
-                                    <div [collapse]="diagramCollapsed[row.session]" [isAnimated]="true">
+                                    <div [collapse]="diagramCollapsed[row.session]" [isAnimated]="true" (collapsed)="diagramCollapsedFinished[row.session] = true" (expands)="diagramCollapsedFinished[row.session] = false">
                                         <div class="card-body" [class.disable-events]="sessionBeingRefreshed?.session == row.session" style="overflow-x: auto; overflow-y: hidden;">
                                             <div *ngIf="!row.hideLoadingIcon"><span><i class="fa-solid fa-spinner fa-spin-override fa-lg"></i></span></div>
                                             <div [collapse]="!row.diagramExpanded" [isAnimated]="true">

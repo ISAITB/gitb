@@ -79,6 +79,7 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
 
   configValuesPending = true
   configsCollapsed = false
+  configsCollapsedFinished = false
 
   // Account retention period
   accountRetentionPeriodStatus: ConfigStatus = { pending: false, collapsed: true, enabled: false, fromDefault: false, fromEnv: false}

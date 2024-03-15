@@ -69,6 +69,7 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
   tabToShow = ConformanceStatementTab.tests
   @ViewChild('tabs', { static: false }) tabs?: TabsetComponent;
   collapsedDetails = false
+  collapsedDetailsFinished = false
   hasBadge = false
   
   hasDisabledTests = false
@@ -662,12 +663,8 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
       const blobData = new Blob([data], {type: 'application/pdf'});
       saveAs(blobData, "conformance_certificate.pdf");
     }).add(() => {
-      this.exportPending = true
+      this.exportPending = false
     })
-  }
-
-  canExportConformanceCertificate() {
-    return this.allTestsSuccessful && (this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin || this.dataService.community!.allowCertificateDownload)
   }
 
   toTestSession(sessionId: string) {

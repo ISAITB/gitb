@@ -730,9 +730,10 @@ object PersistenceSchema {
     def actorId = column[String]("actorId")
     def name = column[String]("name")
     def description = column[Option[String]]("description", O.SqlType("TEXT"))
+    def visible = column[Boolean]("visible")
     def apiKey = column[String]("api_key")
     def snapshotId = column[Long]("snapshot_id")
-    def * = (id :: actorId :: name :: description :: apiKey :: snapshotId :: HNil).mapTo[ConformanceSnapshotActor]
+    def * = (id :: actorId :: name :: description :: visible :: apiKey :: snapshotId :: HNil).mapTo[ConformanceSnapshotActor]
   }
   val conformanceSnapshotActors = TableQuery[ConformanceSnapshotActorsTable]
 

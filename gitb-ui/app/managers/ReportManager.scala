@@ -729,7 +729,7 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
     reportPath
   }
 
-  private def getConformanceDataForOverviewReport(conformanceInfoBuilder: ConformanceStatusBuilder[ConformanceStatementFull], reportLevel: OverviewLevelType, communityId: Long, actorIdsToDisplay: Option[Set[Long]]): ConformanceData = {
+  private def getConformanceDataForOverviewReport(conformanceInfoBuilder: ConformanceStatusBuilder[ConformanceStatementFull], reportLevel: OverviewLevelType, communityId: Long, actorIdsToDisplay: Option[Set[Long]], snapshotId: Option[Long]): ConformanceData = {
     // The overview is a list of aggregated conformance statements.
     val conformanceOverview = conformanceInfoBuilder.getOverview(None)
     // The details is a list of the detailed conformance results (at test case level).
@@ -783,7 +783,7 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
         testSuite.result = TestResultType.fromValue(testSuite.resultStatus())
       }
     }
-    val conformanceItemTree = conformanceManager.createConformanceItemTree(ConformanceItemTreeData(conformanceOverview, actorIdsToDisplay), withResults = true, testSuiteMapper = Some((statement: models.ConformanceStatement) => {
+    val conformanceItemTree = conformanceManager.createConformanceItemTree(ConformanceItemTreeData(conformanceOverview, actorIdsToDisplay), withResults = true, snapshotId, testSuiteMapper = Some((statement: models.ConformanceStatement) => {
       if (actorTestSuiteMap.contains(statement.actorId)) {
         actorTestSuiteMap(statement.actorId).values.toList
       } else {
@@ -836,7 +836,7 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
     // Load conformance data.
     val conformanceInfoBuilder = conformanceManager.getConformanceStatementsResultBuilder(domainId.map(List(_)), specificationId.map(List(_)), groupId.map(List(_)), None, None, None, Some(List(systemId)), None, None, None, None, snapshotId, prefixSpecificationNameWithGroup = false)
     // Check to see if only one domain can ever apply for the system (in which case it should be hidden).
-    getConformanceDataForOverviewReport(conformanceInfoBuilder, reportLevel, communityId, None)
+    getConformanceDataForOverviewReport(conformanceInfoBuilder, reportLevel, communityId, None, snapshotId)
   }
 
   private def getOverallConformanceOverviewStatus(items: util.List[ConformanceItem]): String = {
@@ -990,7 +990,7 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
       actorIdsToDisplay = Some(Set.empty)
     }
     // Construct the report data
-    getConformanceDataForOverviewReport(builder, level, communityId, actorIdsToDisplay)
+    getConformanceDataForOverviewReport(builder, level, communityId, actorIdsToDisplay, None)
   }
 
   def generateDemoConformanceOverviewReportInXML(reportPath: Path, transformer: Option[Path], communityId: Long, level: OverviewLevelType): Path = {
@@ -1047,7 +1047,7 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
         statement.getDefinition.setDomain(conformanceStatement.getTestDomain)
         statement.getDefinition.setSpecificationGroup(conformanceStatement.getTestSpecificationGroup)
         statement.getDefinition.setSpecification(conformanceStatement.getTestSpecification)
-        statement.getDefinition.setActor(conformanceStatement.getTestActor)
+        statement.getDefinition.setActor(conformanceStatement.getTestActorInternal) // We use getTestActorInternal as it is always populated
         // Party information
         statement.getDefinition.setParty(getPartyDefinitionForXmlReport(conformanceData.organisationId.get, conformanceData.organisationName.get, conformanceData.systemId.get, conformanceData.systemName.get, communityId, isDemo))
         // Summary
@@ -1532,6 +1532,7 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
       if (item.itemType == ConformanceStatementItemType.ACTOR && item.actorToShow) {
         newItem.getData.setTestActor(reportData.actorName.orNull)
       }
+      newItem.getData.setTestActorInternal(reportData.actorName.orNull)
       if (item.results.get.testSuites.isDefined) {
         newItem.getData.setTestSuites(new util.ArrayList[com.gitb.reports.dto.TestSuiteOverview]())
         item.results.get.testSuites.get.foreach { testSuite =>
@@ -1888,7 +1889,7 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
     overview.setTestDomain(conformanceData.domainNameFull)
     overview.setTestSpecificationGroup(conformanceData.specificationGroupNameFull.orNull)
     overview.setTestSpecification(conformanceData.specificationNameFull)
-    if (isDemo || conformanceManager.getActorIdsToDisplayInStatementsWrapper(List(conformanceData)).contains(conformanceData.actorId)) {
+    if (isDemo || conformanceManager.getActorIdsToDisplayInStatementsWrapper(List(conformanceData), snapshotId).contains(conformanceData.actorId)) {
       overview.setTestActor(conformanceData.actorFull)
     }
     overview.setOrganisation(conformanceData.organizationName)

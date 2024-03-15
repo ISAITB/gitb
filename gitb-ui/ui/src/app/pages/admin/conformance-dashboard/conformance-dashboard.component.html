@@ -40,75 +40,77 @@
         </div>
         @if (treeView) {
             <div class="card-body treeDisplay">
-                <div class="partyControls" [class.wrapped]="searchControlsWrapped" [class.not-wrapped]="!searchControlsWrapped">
-                    <div #selectorControls class="partySelectors">
-                        @if (communityId == undefined) {
-                            <div class="partyControl">
-                                @if (availableCommunities == undefined) {
-                                    <div class="pending-container">
-                                        <div class="pending-icon"><app-pending-block></app-pending-block></div>
-                                        <div class="pending-message">Loading communities...</div>
-                                    </div>
-                                } @else if (availableCommunities.length > 0) {
-                                    <app-multi-select-filter [config]="communitySelectConfig!" (apply)="communityChanged(false, $event)"></app-multi-select-filter>
-                                }
-                            </div>
-                        }
-                        @if (selectedCommunityId != undefined && availableCommunities) {
-                            <div class="partyControl">
-                                @if (availableOrganisations == undefined) {
-                                    <div class="pending-container">
-                                        <div class="pending-icon"><app-pending-block></app-pending-block></div>
-                                        <div class="pending-message">Loading {{dataService.labelOrganisationsLower()}}...</div>
-                                    </div>
-                                } @else if (availableOrganisations.length > 0) {
-                                    <app-multi-select-filter [config]="organisationSelectConfig!" (apply)="organisationChanged($event)"></app-multi-select-filter>
-                                }
-                            </div>
-                            @if (selectedOrganisationId != undefined && availableOrganisations) {
+                @if (treeControlsExist()) {
+                    <div class="partyControls" [class.wrapped]="searchControlsWrapped" [class.not-wrapped]="!searchControlsWrapped">
+                        <div #selectorControls class="partySelectors">
+                            @if (communityId == undefined) {
                                 <div class="partyControl">
-                                    @if (availableSystems == undefined) {
+                                    @if (availableCommunities == undefined) {
                                         <div class="pending-container">
                                             <div class="pending-icon"><app-pending-block></app-pending-block></div>
-                                            <div class="pending-message">Loading {{dataService.labelSystemsLower()}}...</div>
+                                            <div class="pending-message">Loading communities...</div>
                                         </div>
-                                        } @else if (availableSystems.length > 0) {
-                                        <app-multi-select-filter [config]="systemSelectConfig!" (apply)="systemChanged($event)"></app-multi-select-filter>
+                                    } @else if (availableCommunities.length > 0) {
+                                        <app-multi-select-filter [config]="communitySelectConfig!" (apply)="communityChanged(false, $event)"></app-multi-select-filter>
                                     }
                                 </div>
                             }
+                            @if (selectedCommunityId != undefined && availableCommunities) {
+                                <div class="partyControl">
+                                    @if (availableOrganisations == undefined) {
+                                        <div class="pending-container">
+                                            <div class="pending-icon"><app-pending-block></app-pending-block></div>
+                                            <div class="pending-message">Loading {{dataService.labelOrganisationsLower()}}...</div>
+                                        </div>
+                                    } @else if (availableOrganisations.length > 0) {
+                                        <app-multi-select-filter [config]="organisationSelectConfig!" (apply)="organisationChanged($event)"></app-multi-select-filter>
+                                    }
+                                </div>
+                                @if (selectedOrganisationId != undefined && availableOrganisations) {
+                                    <div class="partyControl">
+                                        @if (availableSystems == undefined) {
+                                            <div class="pending-container">
+                                                <div class="pending-icon"><app-pending-block></app-pending-block></div>
+                                                <div class="pending-message">Loading {{dataService.labelSystemsLower()}}...</div>
+                                            </div>
+                                            } @else if (availableSystems.length > 0) {
+                                            <app-multi-select-filter [config]="systemSelectConfig!" (apply)="systemChanged($event)"></app-multi-select-filter>
+                                        }
+                                    </div>
+                                }
+                            }
+                        </div>
+                        @if (dataStatus.status == Constants.STATUS.FINISHED && statements.length > 0) {
+                            <div #searchControls class="partyButtons">
+                                <div class="text-filter">
+                                    <app-text-filter name="statementFilter" [width]="350" [placeholder]="'Search statements...'" [(ngModel)]="statementFilter" (apply)="filterStatements()"></app-text-filter>
+                                </div>
+                                <div class="status-filter">
+                                    <app-checkbox-option-panel 
+                                        label="Show statements..." 
+                                        [options]="statusOptions" 
+                                        (updated)="filterByStatus($event)"></app-checkbox-option-panel>
+                                </div>
+                                <div class="btn-group export-group" dropdown [isDisabled]="selectedSystemId == undefined || statements.length == 0 || exportOverviewPending">
+                                    <button type="button" [disable]="selectedSystemId == undefined || statements.length == 0 || exportOverviewPending" [pending]="exportOverviewPending" class="btn btn-secondary" (click)="exportOverview('pdf')">Download report</button>
+                                    <button id="button-export" type="button" [disabled]="selectedSystemId == undefined || statements.length == 0 || exportOverviewPending" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
+                                        <span class="caret"></span>
+                                        <span class="sr-only visually-hidden">Download report</span>
+                                    </button>
+                                    <ul id="dropdown-export" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-export">
+                                        <li role="menuitem"><a class="dropdown-item" href (click)="exportOverview('xml');$event.preventDefault()">Download report as XML</a></li>
+                                    </ul>
+                                </div>
+                            </div>
                         }
                     </div>
-                    @if (statements.length > 0) {
-                        <div #searchControls class="partyButtons">
-							<div class="text-filter">
-								<app-text-filter name="statementFilter" [width]="350" [placeholder]="'Search statements...'" [(ngModel)]="statementFilter" (apply)="filterStatements()"></app-text-filter>
-							</div>
-							<div class="status-filter">
-								<app-checkbox-option-panel 
-									label="Show statements..." 
-									[options]="statusOptions" 
-									(updated)="filterByStatus($event)"></app-checkbox-option-panel>
-							</div>
-                            <div class="btn-group export-group" dropdown [isDisabled]="selectedSystemId == undefined || statements.length == 0 || exportOverviewPending">
-                                <button type="button" [disable]="selectedSystemId == undefined || statements.length == 0 || exportOverviewPending" [pending]="exportOverviewPending" class="btn btn-secondary" (click)="exportOverview('pdf')">Download report</button>
-                                <button id="button-export" type="button" [disabled]="selectedSystemId == undefined || statements.length == 0 || exportOverviewPending" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
-                                    <span class="caret"></span>
-                                    <span class="sr-only visually-hidden">Download report</span>
-                                </button>
-                                <ul id="dropdown-export" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-export">
-                                    <li role="menuitem"><a class="dropdown-item" href (click)="exportOverview('xml');$event.preventDefault()">Download report as XML</a></li>
-                                </ul>
-                            </div>
-                        </div>
-                    }
-                </div>
+                }
                 @if (availableCommunities && availableCommunities.length == 0) {
-                    <div class="alert alert-info rounded mb-0 top-margin">
+                    <div class="alert alert-info rounded mb-0" [class.top-margin]="treeControlsExist()">
                         <span>No communities are defined.</span>
                     </div>
                 } @else if (selectedCommunityId != undefined && availableOrganisations && availableOrganisations.length == 0) {
-                    <div class="alert alert-info rounded mb-0 top-margin">
+                    <div class="alert alert-info rounded mb-0" [class.top-margin]="treeControlsExist()">
                         <span>No {{dataService.labelOrganisationsLower()}} are defined.</span>
                     </div>
                 } @else if (selectedOrganisationId != undefined && availableSystems && availableSystems.length == 0) {

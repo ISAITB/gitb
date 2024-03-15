@@ -20,7 +20,7 @@ import { SpecificationService } from 'src/app/services/specification.service';
 import { forkJoin } from 'rxjs';
 import { DomainSpecification } from 'src/app/types/domain-specification';
 import { SpecificationGroup } from 'src/app/types/specification-group';
-import { find, remove, findIndex } from 'lodash';
+import { find, remove } from 'lodash';
 import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
 import { CdkDragDrop } from '@angular/cdk/drag-drop';
 
@@ -331,6 +331,7 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
         newGroup.options.push(newSpecification)
         this.dataService.sortDomainSpecifications(newGroup.options)
         this.dataService.setSpecificationGroupVisibility(newGroup)
+        this.specifications = this.dataService.toSpecifications(this.domainSpecifications)
         this.popupService.success(this.dataService.labelSpecificationInGroup()+' copied.')
       }
     })

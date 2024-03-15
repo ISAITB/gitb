@@ -85,7 +85,6 @@ export abstract class BaseCertificateSettingsFormComponent<T extends Certificate
     this.updateSettings()
     .subscribe(() => {
       this.popupService.success('Conformance certificate settings updated.')
-      this.collapseForm()
     }).add(() => {
       this.updatePending = false
     })

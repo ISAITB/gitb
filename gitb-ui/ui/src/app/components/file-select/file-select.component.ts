@@ -16,7 +16,6 @@ export class FileSelectComponent implements OnInit {
   @Input() fileName?: string
   @Input() placeholder = 'Drop or browse for file ...'
   @Input() accepts?: string[]
-  @Input() acceptsDrop?: string[]
   @Input() maxSize!: number
   @Input() extraActions = false
   @Input() disableUpload = false
@@ -39,9 +38,6 @@ export class FileSelectComponent implements OnInit {
   ngOnInit(): void {
     if (this.accepts != undefined && this.accepts.length > 0) {
       this.acceptString = this.accepts.join(',')
-    }
-    if (this.acceptsDrop == undefined) {
-      this.acceptsDrop = this.accepts
     }
     if (this.maxSize == undefined) {
       this.maxSizeKbs = this.dataService.configuration.savedFileMaxSize
@@ -118,15 +114,7 @@ export class FileSelectComponent implements OnInit {
           if (event.dataTransfer.files.length == 1) {
             const file = event.dataTransfer.files.item(0)
             if (file) {
-              if (this.acceptsDrop && this.acceptsDrop.length > 0) {
-                if (this.acceptsDrop.includes(file.type)) {
-                  this.selectFile(file)
-                } else {
-                  this.popupService.warning("File is not of the expected type.")
-                }
-              } else {
-                this.selectFile(file)
-              }
+              this.selectFile(file)
             }
           } else {
             this.popupService.warning("Only a single file can be selected.")

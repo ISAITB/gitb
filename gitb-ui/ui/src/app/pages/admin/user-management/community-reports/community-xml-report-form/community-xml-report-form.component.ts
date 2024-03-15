@@ -90,7 +90,6 @@ export abstract class CommunityXmlReportFormComponent extends BaseReportSettings
             this.stylesheetExists = false
           }
           this.popupService.success('Report settings updated.')
-          this.collapseForm()
         }).add(() => {
           this.updatePending = false
         })
@@ -135,7 +134,7 @@ export abstract class CommunityXmlReportFormComponent extends BaseReportSettings
       if (this.uploadedFile?.file) {
         contentObservable = from(this.uploadedFile.file.text())
       } else {
-        contentObservable = this.reportService.getReportStylesheet(this.communityId, this.Constants.XML_REPORT_TYPE.CONFORMANCE_STATEMENT_REPORT)
+        contentObservable = this.reportService.getReportStylesheet(this.communityId, this.reportType)
       }
       contentObservable.subscribe((data) => {
         this.modalService.show(CodeEditorModalComponent, {

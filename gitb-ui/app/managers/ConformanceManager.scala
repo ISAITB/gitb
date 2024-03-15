@@ -746,44 +746,85 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils, domainParam
 						}
 					})
 			}
-			actorIdsToDisplay <- getActorIdsToDisplayInStatements(statements)
+			actorIdsToDisplay <- getActorIdsToDisplayInStatements(statements, snapshotId)
 		} yield (statements, actorIdsToDisplay))
-		createConformanceItemTree(ConformanceItemTreeData(results._1, Some(results._2)), withResults)
+		createConformanceItemTree(ConformanceItemTreeData(results._1, Some(results._2)), withResults, snapshotId)
 	}
 
-	def getActorIdsToDisplayInStatementsWrapper(statements: Iterable[ConformanceStatement]): Set[Long] = {
-		exec(getActorIdsToDisplayInStatements(statements))
+	def getActorIdsToDisplayInStatementsWrapper(statements: Iterable[ConformanceStatement], snapshotId: Option[Long]): Set[Long] = {
+		exec(getActorIdsToDisplayInStatements(statements, snapshotId))
 	}
 
-	private def getActorIdsToDisplayInStatements(statements: Iterable[ConformanceStatement]): DBIO[Set[Long]] = {
-		PersistenceSchema.testCaseHasActors
-			.join(PersistenceSchema.actors).on(_.actor === _.id)
-			.filter(_._1.specification inSet statements.map(_.specificationId))
-			.filter(_._1.sut === true)
-			.filter(_._2.hidden === false)
-			.map(x => (x._1.specification, x._1.actor))
-			.distinct
-			.result
-			.map { actorResults =>
-				// This map gives us the SUT actors IDs per specification.
-				val specMap = new mutable.HashMap[Long, mutable.HashSet[Long]]() // Spec ID to set of actor IDs
-				actorResults.foreach { actorResult =>
-					if (!specMap.contains(actorResult._1)) {
-						specMap += (actorResult._1 -> new mutable.HashSet[Long]())
+	private def getActorIdsToDisplayInStatementsByCommunity(communityId: Long): DBIO[Set[Long]] = {
+		for {
+			communityDomainId <- PersistenceSchema.communities.filter(_.id === communityId).map(_.domain).result.headOption
+			actorIds <- PersistenceSchema.testCaseHasActors
+				.join(PersistenceSchema.actors).on(_.actor === _.id)
+				.filter(_._1.sut === true)
+				.filter(_._2.hidden === false)
+				.filterOpt(communityDomainId)((q, domainId) => q._2.domain === domainId)
+				.map(x => (x._1.specification, x._1.actor))
+				.distinct
+				.result
+				.map { actorResults =>
+					// This map gives us the SUT actors IDs per specification.
+					val specMap = new mutable.HashMap[Long, mutable.HashSet[Long]]() // Spec ID to set of actor IDs
+					actorResults.foreach { actorResult =>
+						if (!specMap.contains(actorResult._1)) {
+							specMap += (actorResult._1 -> new mutable.HashSet[Long]())
+						}
+						specMap(actorResult._1).add(actorResult._2)
 					}
-					specMap(actorResult._1).add(actorResult._2)
+					// Return the actor IDs of the specifications that have more than one SUT actor.
+					val ids = mutable.HashSet[Long]()
+					specMap.filter(entry => entry._2.size > 1).values.foreach { idSet =>
+						idSet.foreach { id =>
+							ids += id
+						}
+					}
+					ids.toSet
 				}
-				// Check to see if the actor IDs we loaded previously have also other SUT actors.
-				// If yes these are actors we will want to display.
-				val actorIdsToDisplay = statements.filter { statement =>
-					specMap(statement.specificationId).size > 1 // We have more than one actor as a SUT
-				}.map(_.actorId)
-				actorIdsToDisplay.toSet
-			}
+		} yield actorIds
 	}
 
-	def createConformanceItemTree(data: ConformanceItemTreeData, withResults: Boolean, testSuiteMapper: Option[ConformanceStatement => List[ConformanceTestSuite]] = None): List[ConformanceStatementItem] = {
-		val actorIdsToDisplay = data.actorIdsToDisplay.getOrElse(exec(getActorIdsToDisplayInStatements(data.statements)))
+	private def getActorIdsToDisplayInStatements(statements: Iterable[ConformanceStatement], snapshotId: Option[Long]): DBIO[Set[Long]] = {
+		if (snapshotId.isDefined) {
+			PersistenceSchema.conformanceSnapshotActors
+				.filter(_.snapshotId === snapshotId.get)
+				.filter(_.visible === true)
+				.map(_.id)
+				.result
+				.map(_.toSet)
+		} else {
+			PersistenceSchema.testCaseHasActors
+				.join(PersistenceSchema.actors).on(_.actor === _.id)
+				.filter(_._1.specification inSet statements.map(_.specificationId))
+				.filter(_._1.sut === true)
+				.filter(_._2.hidden === false)
+				.map(x => (x._1.specification, x._1.actor))
+				.distinct
+				.result
+				.map { actorResults =>
+					// This map gives us the SUT actors IDs per specification.
+					val specMap = new mutable.HashMap[Long, mutable.HashSet[Long]]() // Spec ID to set of actor IDs
+					actorResults.foreach { actorResult =>
+						if (!specMap.contains(actorResult._1)) {
+							specMap += (actorResult._1 -> new mutable.HashSet[Long]())
+						}
+						specMap(actorResult._1).add(actorResult._2)
+					}
+					// Check to see if the actor IDs we loaded previously have also other SUT actors.
+					// If yes these are actors we will want to display.
+					val actorIdsToDisplay = statements.filter { statement =>
+						specMap(statement.specificationId).size > 1 // We have more than one actor as a SUT
+					}.map(_.actorId)
+					actorIdsToDisplay.toSet
+				}
+		}
+	}
+
+	def createConformanceItemTree(data: ConformanceItemTreeData, withResults: Boolean, snapshotId: Option[Long], testSuiteMapper: Option[ConformanceStatement => List[ConformanceTestSuite]] = None): List[ConformanceStatementItem] = {
+		val actorIdsToDisplay = data.actorIdsToDisplay.getOrElse(exec(getActorIdsToDisplayInStatements(data.statements, snapshotId)))
 		// Convert to hierarchical item structure.
 		val domainMap = new mutable.HashMap[Long, (ConformanceStatementItem,
 			mutable.HashMap[Long, (ConformanceStatementItem, mutable.HashMap[Long, (ConformanceStatementItem, ListBuffer[ConformanceStatementItem])])], // Specification groups pointing to specifications
@@ -1019,6 +1060,7 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils, domainParam
 					.join(PersistenceSchema.testSuites).on(_._1._1._1._1._1._1.testsuite === _.id)
 					.join(PersistenceSchema.testCases).on(_._1._1._1._1._1._1._1.testcase === _.id)
 					.filter(_._1._1._2.community === communityId)
+					.filter(_._1._1._2.adminOrganization === false)
 					.map(x => (
 						(x._1._1._2.id, x._1._1._2.shortname, x._1._1._2.fullname, x._1._1._2.apiKey), // 1. Organisation
 						(x._1._1._1._2.id, x._1._1._1._2.shortname, x._1._1._1._2.fullname, x._1._1._1._2.description, x._1._1._1._2.apiKey, x._1._1._1._2.badgeKey), // 2. System
@@ -1034,6 +1076,8 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils, domainParam
 			}
 			// Create snapshot
 			snapshotId <- PersistenceSchema.insertConformanceSnapshot += ConformanceSnapshot(0L, label, publicLabel, snapshotTime, apiKey, isPublic, communityId)
+			// Determine which actor IDs should be displayed when viewing conformance statements.
+			visibleActorsIds <- getActorIdsToDisplayInStatementsByCommunity(communityId)
 			// Populate snapshot
 			_ <- {
 				val dbActions = new ListBuffer[DBIO[_]]
@@ -1054,7 +1098,7 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils, domainParam
 					// 3. Domain
 					dbActions += addIfNotProcessed(addedDomains, result._3._1, () => PersistenceSchema.conformanceSnapshotDomains += ConformanceSnapshotDomain(id = result._3._1, shortname = result._3._2, fullname = result._3._3, description = result._3._4, snapshotId = snapshotId))
 					// 4. Actor
-					dbActions += addIfNotProcessed(addedActors, result._4._1, () => PersistenceSchema.conformanceSnapshotActors += ConformanceSnapshotActor(id = result._4._1, actorId = result._4._2, name = result._4._3, description = result._4._4, apiKey = result._4._5, snapshotId = snapshotId))
+					dbActions += addIfNotProcessed(addedActors, result._4._1, () => PersistenceSchema.conformanceSnapshotActors += ConformanceSnapshotActor(id = result._4._1, actorId = result._4._2, name = result._4._3, description = result._4._4, visible = visibleActorsIds.contains(result._4._1), apiKey = result._4._5, snapshotId = snapshotId))
 					// 5. Specification
 					dbActions += addIfNotProcessed(addedSpecifications, result._5._1, () => PersistenceSchema.conformanceSnapshotSpecifications += ConformanceSnapshotSpecification(id = result._5._1, shortname = result._5._2, fullname = result._5._3, description = result._5._4, apiKey = result._5._5, displayOrder = result._5._6, snapshotId = snapshotId))
 					// 6. Specification group

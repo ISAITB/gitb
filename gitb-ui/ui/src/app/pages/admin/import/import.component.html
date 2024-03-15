@@ -57,7 +57,6 @@
                                     <app-file-select 
                                         (onUpload)="uploadArchive($event)"
                                         [accepts]="['application/zip']" 
-                                        [acceptsDrop]="['application/zip', 'application/x-zip-compressed']" 
                                         [placeholder]="'Drop or browse for data archive ...'"
                                         [fileName]="archiveData?.name"
                                         [maxSize]="52428800"></app-file-select>

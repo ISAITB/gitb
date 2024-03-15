@@ -325,8 +325,8 @@
     </xsd:complexType>
     <xsd:complexType name="ConformanceBadges">
         <xsd:sequence>
-            <xsd:element name="success" type="ConformanceBadge"/>
-            <xsd:element name="other" type="ConformanceBadge"/>
+            <xsd:element name="success" type="ConformanceBadge" minOccurs="0"/>
+            <xsd:element name="other" type="ConformanceBadge" minOccurs="0"/>
             <xsd:element name="failure" type="ConformanceBadge" minOccurs="0"/>
         </xsd:sequence>
     </xsd:complexType>

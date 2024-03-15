@@ -13,6 +13,7 @@ import com.gitb.tr.*;
 import jakarta.xml.bind.JAXBElement;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.slf4j.LoggerFactory;
 
 import javax.xml.datatype.DatatypeConfigurationException;
@@ -33,9 +34,9 @@ public class ReportGeneratorTest {
      * When adapting the templates for development purposes it is useful to work with a specific directory that is not deleted
      * after each test completes. To do this comment the @TempDir and uncomment the definition of a specific directory.
      */
-//    @TempDir()
-//    Path tempDirectory;
-        Path tempDirectory = Path.of("/tmp/gitb_pdf_tests/");
+    @TempDir()
+    Path tempDirectory;
+//        Path tempDirectory = Path.of("/tmp/gitb_pdf_tests/");
 
     @BeforeEach
     void setup() throws IOException {
@@ -346,6 +347,7 @@ public class ReportGeneratorTest {
         data.setIncludeMessage(true);
         data.setIncludeTestStatus(true);
         data.setIncludeTestCases(true);
+        data.setIncludePageNumbers(false);
 
 //        data.setMessage("<strong>This is the result.</strong><img src=\"%s\"/>".formatted(Path.of("C:\\work\\gitb-repository\\files\\badges\\latest\\1\\SUCCESS.png").toUri()));
         data.setMessage("<strong>This is the result.</strong><img width=\"100px\" src=\"%s\"/>".formatted(Path.of("reports/images/demo-badge.png").toUri()));

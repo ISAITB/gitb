@@ -5,6 +5,7 @@ case class ConformanceSnapshotActor(
   actorId: String,
   name: String,
   description: Option[String],
+  visible: Boolean,
   apiKey: String,
   snapshotId: Long
 )

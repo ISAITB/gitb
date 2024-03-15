@@ -34,6 +34,7 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
   Constants = Constants
   columnCount = 0
   diagramCollapsed: {[key: string]: boolean} = {}
+  diagramCollapsedFinished: {[key: string]: boolean} = {}
   viewLogPending: {[key: string]: boolean} = {}
   stateEmitters: {[key: string]: EventEmitter<void>} = {}
   sessionBeingRefreshed?: TestResultForDisplay

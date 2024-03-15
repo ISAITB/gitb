@@ -347,21 +347,21 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
           case OverviewLevelType.OrganisationLevel => process = true
           case OverviewLevelType.DomainLevel =>
             if (exportedMessage.getIdentifier != null) {
-              domainId = getProcessedDbId(exportedMessage.getIdentifier.asInstanceOf[String], ImportItemType.Domain, ctx)
+              domainId = getProcessedDbId(exportedMessage.getIdentifier.asInstanceOf[com.gitb.xml.export.ExportType].getId, ImportItemType.Domain, ctx)
               process = domainId.isDefined
             } else {
               process = true
             }
           case OverviewLevelType.SpecificationGroupLevel =>
             if (exportedMessage.getIdentifier != null) {
-              groupId = getProcessedDbId(exportedMessage.getIdentifier.asInstanceOf[String], ImportItemType.SpecificationGroup, ctx)
+              groupId = getProcessedDbId(exportedMessage.getIdentifier.asInstanceOf[com.gitb.xml.export.ExportType].getId, ImportItemType.SpecificationGroup, ctx)
               process = groupId.isDefined
             } else {
               process = true
             }
           case OverviewLevelType.SpecificationLevel =>
             if (exportedMessage.getIdentifier != null) {
-              specificationId = getProcessedDbId(exportedMessage.getIdentifier.asInstanceOf[String], ImportItemType.Specification, ctx)
+              specificationId = getProcessedDbId(exportedMessage.getIdentifier.asInstanceOf[com.gitb.xml.export.ExportType].getId, ImportItemType.Specification, ctx)
               process = specificationId.isDefined
             } else {
               process = true
@@ -688,8 +688,8 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
     } else {
       // Update/Add
       communityManager.saveCommunityKeystoreInternal(communityId, exportedSettings.getKeystoreType.value(),
-        Some(exportedSettings.getKeystore), Some(MimeUtil.encryptString(decrypt(importSettings, exportedSettings.getKeyPassword))),
-        Some(MimeUtil.encryptString(decrypt(importSettings, exportedSettings.getKeystorePassword)))
+        Some(exportedSettings.getKeystore), Some(decrypt(importSettings, exportedSettings.getKeyPassword)),
+        Some(decrypt(importSettings, exportedSettings.getKeystorePassword))
       )
     }
   }
@@ -1114,6 +1114,12 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
         }
       }
       if (ctx.importTargets.hasSpecifications) {
+        exec(PersistenceSchema.specificationGroups
+          .filter(_.domain === targetDomainId.get)
+          .result
+        ).foreach(x => {
+          ctx.existingIds.map(ImportItemType.SpecificationGroup) += x.id.toString
+        })
         exec(PersistenceSchema.specifications
           .filter(_.domain === targetDomainId.get)
           .result
@@ -1885,7 +1891,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                 XmlReportType.ConformanceOverviewReport
               case ReportType.CONFORMANCE_STATEMENT =>
                 hasConformanceStatement = true
-                XmlReportType.ConformanceOverviewReport
+                XmlReportType.ConformanceStatementReport
               case ReportType.TEST_CASE =>
                 hasTestCase = true
                 XmlReportType.TestCaseReport

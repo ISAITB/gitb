@@ -113,10 +113,11 @@ class DomainManager @Inject() (domainParameterManager: DomainParameterManager, r
       _ <- deleteTransactionByDomain(domain)
       _ <- testResultManager.updateForDeletedDomain(domain)
       _ <- domainParameterManager.deleteDomainParameters(domain, onSuccessCalls)
+      _ <- PersistenceSchema.conformanceOverviewCertificateMessages.filter(row => row.domain.isDefined && row.domain === domain).delete
       _ <- PersistenceSchema.conformanceSnapshotResults.filter(_.domainId === domain).map(_.domainId).update(domain * -1)
       _ <- PersistenceSchema.conformanceSnapshotDomains.filter(_.id === domain).map(_.id).update(domain * -1)
       _ <- PersistenceSchema.conformanceSnapshotDomainParameters.filter(_.domainId === domain).map(_.domainId).update(domain * -1)
-      _ <- PersistenceSchema.conformanceSnapshotOverviewCertificateMessages.filter(row => row.domainId.isDefined && row.domainId.get === domain).map(_.domainId).update(Some(domain * -1)) // TODO TEST THIS
+      _ <- PersistenceSchema.conformanceSnapshotOverviewCertificateMessages.filter(row => row.domainId.isDefined && row.domainId === domain).map(_.domainId).update(Some(domain * -1))
       _ <- PersistenceSchema.domains.filter(_.id === domain).delete
       _ <- {
         onSuccessCalls += (() => {

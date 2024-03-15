@@ -96,7 +96,7 @@ export class ReportSupportService {
     } else {
       if (this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin) {
         // Get the overview certificate settings for the admin to verify before producing a certificate (if that choice is selected)
-        return this.conformanceService.getConformanceOverviewCertificateSettingsWithApplicableMessage(communityId, reportLevel, identifier)
+        return this.conformanceService.getConformanceOverviewCertificateSettingsWithApplicableMessage(communityId, reportLevel, identifier, snapshotId)
           .pipe(
             mergeMap((settings) => {
               if (settings) {
