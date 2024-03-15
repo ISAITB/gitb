@@ -514,7 +514,7 @@ export class ConformanceDashboardComponent extends BaseConformanceItemDisplayCom
       let observable: Observable<Community[]>
       if (this.availableCommunities == undefined) {
         if (this.dataService.isSystemAdmin) {
-          observable = this.communityService.getCommunities()
+          observable = this.communityService.getCommunities(undefined, true)
         } else if (this.dataService.community) {
           observable = of([this.dataService.community])
         } else {
