@@ -140,7 +140,7 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext, authenticationMana
 
   private def getBuildTimestamp(): String = {
     var timestamp = ""
-    Using(environment.classLoader.getResourceAsStream("core-module.properties")) { stream =>
+    Using.resource(environment.classLoader.getResourceAsStream("core-module.properties")) { stream =>
       val props = new Properties()
       props.load(stream)
       timestamp = props.getOrDefault("gitb.buildTimestamp", "").asInstanceOf[String]
@@ -396,7 +396,7 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext, authenticationMana
       apiUrl += Configurations.API_ROOT+"/rest"
     }
     try {
-      Using(Thread.currentThread().getContextClassLoader.getResourceAsStream("api/openapi.json")) { stream =>
+      Using.resource(Thread.currentThread().getContextClassLoader.getResourceAsStream("api/openapi.json")) { stream =>
         var template = new String(stream.readAllBytes(), StandardCharsets.UTF_8)
         template = StringUtils.replaceEach(template,
           Array("${version}", "${contactEmail}", "${userGuideAddress}", "${apiUrl}"),

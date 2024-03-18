@@ -13,6 +13,7 @@ class Module extends AbstractModule with PekkoGuiceSupport {
      Calling here the initialisation of FlyWayDB (and not via its own module). The reason for this is to ensure a DB
      is correctly created/migrated before we do other changes that may require DB interactions at start-up.
      */
+    // Apply any Flyway migrations not covered by the current baseline.
     bind(classOf[MigrationInitializer]).asEagerSingleton()
     // Bind top level actors - START
     bindActor[TriggerActor](TriggerActor.actorName)

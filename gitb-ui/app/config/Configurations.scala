@@ -21,6 +21,8 @@ object Configurations {
 
   var DB_ROOT_URL:String = ""
   var DB_NAME:String = ""
+  var DB_MIGRATION_TABLE:String = ""
+  var DB_LATEST_DB_BASELINE_SCRIPT: Option[String] = None
 
   // Redis parameters
   var REDIS_HOST:String = ""
@@ -159,6 +161,8 @@ object Configurations {
       DB_PASSWORD     = conf.getString("db.default.password")
       DB_ROOT_URL     = conf.getString("db.default.rooturl")
       DB_NAME         = conf.getString("db.default.name")
+      DB_MIGRATION_TABLE = conf.getString("db.default.migration.table")
+      DB_LATEST_DB_BASELINE_SCRIPT = Some(conf.getString("latestDbBaselineScript"))
 
       //Parse Redis Parameters
       REDIS_HOST = conf.getString("redis.host")
