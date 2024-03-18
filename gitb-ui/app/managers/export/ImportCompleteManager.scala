@@ -407,7 +407,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
     val testSuiteData = Base64.decodeBase64(data.getData)
     if (Configurations.ANTIVIRUS_SERVER_ENABLED) {
       val virusScanner = new ClamAVClient(Configurations.ANTIVIRUS_SERVER_HOST, Configurations.ANTIVIRUS_SERVER_PORT, Configurations.ANTIVIRUS_SERVER_TIMEOUT)
-      Using(new ByteArrayInputStream(testSuiteData)) { input =>
+      Using.resource(new ByteArrayInputStream(testSuiteData)) { input =>
         require(ClamAVClient.isCleanReply(virusScanner.scan(input)), "A virus was found in one of the imported test suites")
       }
     }
@@ -2605,7 +2605,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
     var processingComplete = false
     var errorMessage: Option[String] = None
     var archiveHash: Option[String] = None
-    Using(Files.newInputStream(archive.toPath)) { inputStream =>
+    Using.resource(Files.newInputStream(archive.toPath)) { inputStream =>
       archiveHash = Some(DigestUtils.sha256Hex(inputStream))
     }
     val processedArchive = findProcessedArchive(archiveHash.get)

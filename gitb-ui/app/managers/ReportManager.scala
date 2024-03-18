@@ -419,7 +419,7 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
           }
           val file = new File(sessionFolder.toFile, testStepReportPath)
           file.createNewFile()
-          Using(new FileOutputStream(file)) { stream =>
+          Using.resource(new FileOutputStream(file)) { stream =>
             stream.write(XMLUtils.marshalToString(gitbTbsObjectFactory.createUpdateStatusRequest(step)).getBytes)
           }
         }
@@ -438,21 +438,21 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
   }
 
   private def generateTestStepXmlReport(xmlFile: Path, xmlReport: Path): Path = {
-    Using.Manager { use =>
-      val fis = use(Files.newInputStream(xmlFile))
-      val fos = use(Files.newOutputStream(xmlReport))
-      ReportGenerator.getInstance().writeTestStepStatusXmlReport(fis, fos, false)
-      fos.flush()
+    Using.resource(Files.newInputStream(xmlFile)) { fis =>
+      Using.resource(Files.newOutputStream(xmlReport)) { fos =>
+        ReportGenerator.getInstance().writeTestStepStatusXmlReport(fis, fos, false)
+        fos.flush()
+      }
     }
     xmlReport
   }
 
   private def generateTestStepPdfReport(xmlFile: Path, pdfReport: Path): Path = {
-    Using.Manager { use =>
-      val fis = use(Files.newInputStream(xmlFile))
-      val fos = use(Files.newOutputStream(pdfReport))
-      ReportGenerator.getInstance().writeTestStepStatusReport(fis, "Test step report", fos, reportHelper.createReportSpecs())
-      fos.flush()
+    Using.resource(Files.newInputStream(xmlFile)) { fis =>
+      Using.resource(Files.newOutputStream(pdfReport)) { fos =>
+        ReportGenerator.getInstance().writeTestStepStatusReport(fis, "Test step report", fos, reportHelper.createReportSpecs())
+        fos.flush()
+      }
     }
     pdfReport
   }
@@ -492,7 +492,7 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
     // Construct demo data
     val report = createDemoTAR(None, None)
     // Generate report
-    Using(Files.newOutputStream(reportPath)) { output =>
+    Using.resource(Files.newOutputStream(reportPath)) { output =>
       ReportGenerator.getInstance().writeTestStepStatusXmlReport(report, output, false)
       output.flush()
     }
@@ -578,7 +578,7 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
     step2.setReport(createDemoTAR(Some(step2.getId), Some(report.getStartTime)))
     report.getSteps.getStep.add(step2)
     // Generate report
-    Using(Files.newOutputStream(reportPath)) { output =>
+    Using.resource(Files.newOutputStream(reportPath)) { output =>
       ReportGenerator.getInstance().writeTestCaseOverviewXmlReport(report, output)
       output.flush()
     }
@@ -698,15 +698,15 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
     )
     val signer = new CreateSignature(keystore, communityKeystore.keyPassword.toCharArray)
     try {
-      Using.Manager { use =>
-        val input = use(Files.newInputStream(tempPdfPath))
-        val output = use(Files.newOutputStream(finalPdfPath))
-        var tsaUrl: String = null
-        if (Configurations.TSA_SERVER_ENABLED) {
-          tsaUrl = Configurations.TSA_SERVER_URL
+      Using.resource(Files.newInputStream(tempPdfPath)) { input =>
+        Using.resource(Files.newOutputStream(finalPdfPath)) { output =>
+          var tsaUrl: String = null
+          if (Configurations.TSA_SERVER_ENABLED) {
+            tsaUrl = Configurations.TSA_SERVER_URL
+          }
+          signer.signDetached(input, output, tsaUrl)
+          output.flush()
         }
-        signer.signDetached(input, output, tsaUrl)
-        output.flush()
       }
     } finally {
       FileUtils.deleteQuietly(tempPdfPath.toFile)
@@ -1110,7 +1110,7 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
     }
     // Produce XML report
     Files.createDirectories(reportPath.getParent)
-    Using(Files.newOutputStream(reportPath)) { fos =>
+    Using.resource(Files.newOutputStream(reportPath)) { fos =>
       ReportGenerator.getInstance().writeConformanceOverviewXmlReport(report, fos)
       fos.flush()
     }
@@ -1170,7 +1170,7 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
     overview.setOverallStatus(conformanceData.overallResult)
     // Create PDF.
     Files.createDirectories(pathToUseForPdf.getParent)
-    Using(Files.newOutputStream(pathToUseForPdf)) { fos =>
+    Using.resource(Files.newOutputStream(pathToUseForPdf)) { fos =>
       ReportGenerator.getInstance().writeConformanceOverviewReport(overview, fos, specs)
       fos.flush()
     }
@@ -1829,7 +1829,7 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
     report.getStatement.getSummary.setIncomplete(BigInteger.valueOf(undefinedTests))
     // Produce XML report
     Files.createDirectories(reportPath.getParent)
-    Using(Files.newOutputStream(reportPath)) { fos =>
+    Using.resource(Files.newOutputStream(reportPath)) { fos =>
       ReportGenerator.getInstance().writeConformanceStatementXmlReport(report, fos)
       fos.flush()
     }
@@ -1841,16 +1841,16 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
     if (xsltPath.isDefined) {
       val tempReportPath = reportPath.resolveSibling("temp."+reportPath.getFileName.toString)
       try {
-        Using.Manager { use =>
-          val xsltStream = use(Files.newInputStream(xsltPath.get))
-          val xmlStream = use(Files.newInputStream(reportPath))
-          val transformer = XMLUtils.getSecureTransformerFactory.newTransformer(
-            new StAXSource(XMLUtils.getSecureXMLInputFactory.createXMLStreamReader(xsltStream))
-          )
-          transformer.setOutputProperty(OutputKeys.INDENT, "yes")
-          transformer.transform(
-            new StAXSource(XMLUtils.getSecureXMLInputFactory.createXMLStreamReader(xmlStream)),
-            new StreamResult(tempReportPath.toFile))
+        Using.resource(Files.newInputStream(xsltPath.get)) { xsltStream =>
+          Using.resource(Files.newInputStream(reportPath)) { xmlStream =>
+            val transformer = XMLUtils.getSecureTransformerFactory.newTransformer(
+              new StAXSource(XMLUtils.getSecureXMLInputFactory.createXMLStreamReader(xsltStream))
+            )
+            transformer.setOutputProperty(OutputKeys.INDENT, "yes")
+            transformer.transform(
+              new StAXSource(XMLUtils.getSecureXMLInputFactory.createXMLStreamReader(xmlStream)),
+              new StreamResult(tempReportPath.toFile))
+          }
         }
       } catch {
         case e: TransformerConfigurationException =>
@@ -2029,15 +2029,9 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
       overview.setMessage(messageToUse)
     }
     Files.createDirectories(reportPath.getParent)
-    val fos = Files.newOutputStream(reportPath)
-    try {
+    Using.resource(Files.newOutputStream(reportPath)) { fos =>
       ReportGenerator.getInstance().writeConformanceStatementOverviewReport(overview, fos, specs)
       fos.flush()
-    } catch {
-      case e: Exception =>
-        throw new IllegalStateException("Unable to generate PDF report", e)
-    } finally {
-      if (fos != null) fos.close()
     }
     reportPath
   }

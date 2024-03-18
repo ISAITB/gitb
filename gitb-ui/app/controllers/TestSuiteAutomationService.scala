@@ -40,7 +40,7 @@ class TestSuiteAutomationService @Inject() (authorizedAction: AuthorizedAction, 
     if (response == null) {
       if (Configurations.ANTIVIRUS_SERVER_ENABLED) {
         val virusScanner = new ClamAVClient(Configurations.ANTIVIRUS_SERVER_HOST, Configurations.ANTIVIRUS_SERVER_PORT, Configurations.ANTIVIRUS_SERVER_TIMEOUT)
-        Using(Files.newInputStream(testSuiteArchive.toPath)) { stream =>
+        Using.resource(Files.newInputStream(testSuiteArchive.toPath)) { stream =>
           val scanResult = virusScanner.scan(stream)
           if (!ClamAVClient.isCleanReply(scanResult)) {
             response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "Test suite failed virus scan.")

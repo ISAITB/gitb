@@ -875,7 +875,7 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
     val exportPathZip = getReportTempFile(".zip")
     try {
       // Serialise to temp XML file.
-      Using(Files.newOutputStream(exportPathXml)) { xmlOS =>
+      Using.resource(Files.newOutputStream(exportPathXml)) { xmlOS =>
         XMLUtils.marshalToStream(new JAXBElement(EXPORT_QNAME, classOf[com.gitb.xml.export.Export], exportData), xmlOS)
         xmlOS.flush()
       }

@@ -592,10 +592,9 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 								testSuitePath = Some(path)
 							}
 
-							Using(Files.newOutputStream(newFile.toPath)) { fos =>
+							Using.resource(Files.newOutputStream(newFile.toPath)) { fos =>
 								IOUtils.copy(zip.getInputStream(zipEntry), fos)
 								fos.flush()
-								fos.close()
 							}
 							logger.debug("Wrote ["+newFile+"]")
 						} else {
@@ -868,7 +867,7 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 
 	def getTestSuite(definitionFile: File): com.gitb.tdl.TestSuite = {
 		var testSuite: com.gitb.tdl.TestSuite = null
-		Using(Files.newInputStream(definitionFile.toPath)) { stream =>
+		Using.resource(Files.newInputStream(definitionFile.toPath)) { stream =>
 			testSuite = XMLUtils.unmarshal(classOf[com.gitb.tdl.TestSuite], new StreamSource(stream))
 		}
 		testSuite

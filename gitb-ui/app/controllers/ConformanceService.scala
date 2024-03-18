@@ -893,7 +893,7 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
         var problem: Option[String] = None
         var level: Option[String] = None
         val keystore = KeyStore.getInstance(keystoreType)
-        Using(Files.newInputStream(keystoreFile.get.toPath)) { input =>
+        Using.resource(Files.newInputStream(keystoreFile.get.toPath)) { input =>
           try {
             keystore.load(input, keystorePassword.get.toCharArray)
           } catch {

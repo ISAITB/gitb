@@ -98,7 +98,7 @@ class TestCaseReportProducer @Inject() (reportHelper: ReportHelper, testResultMa
       }
     }
     Files.createDirectories(reportPath.getParent)
-    Using(Files.newOutputStream(reportPath)) { fos =>
+    Using.resource(Files.newOutputStream(reportPath)) { fos =>
       ReportGenerator.getInstance().writeTestCaseOverviewXmlReport(overview, fos)
       fos.flush()
     }
