@@ -391,6 +391,7 @@ POST    /api/rest/testsuite/deployShared                         @controllers.Te
 POST    /api/rest/testsuite/undeployShared                       @controllers.TestSuiteAutomationService.undeployShared()
 POST    /api/rest/testsuite/linkShared                           @controllers.TestSuiteAutomationService.linkShared()
 POST    /api/rest/testsuite/unlinkShared                         @controllers.TestSuiteAutomationService.unlinkShared()
+POST    /api/rest/configure                                      @controllers.ConfigurationAutomationService.configure()
 
 POST    /api/crumbs                                              @controllers.BreadcrumbService.getBreadcrumbLabels()
 

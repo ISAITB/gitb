@@ -116,6 +116,21 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     setAuthResult(request, ok, "You are not allowed to manage test sessions through the automation API")
   }
 
+  def canManageConfigurationThroughAutomationApi(request: RequestWithAttributes[_]): Boolean = {
+    var ok = false
+    if (Configurations.AUTOMATION_API_ENABLED) {
+      val apiKey = request.headers.get(Constants.AutomationHeader)
+      if (apiKey.isDefined) {
+        // Check to see that the API key identifies a community that allows API usage.
+        val community = communityManager.getByApiKey(apiKey.get)
+        if (community.isDefined) {
+          ok = true
+        }
+      }
+    }
+    setAuthResult(request, ok, "You are not allowed to manage configuration properties through the automation API")
+  }
+
   def canManageTestSuitesThroughAutomationApi(request: RequestWithAttributes[_]): Boolean = {
     var ok = false
     if (Configurations.AUTOMATION_API_ENABLED) {
