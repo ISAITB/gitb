@@ -12,6 +12,7 @@ public class TestSuiteOverview {
     private String specReference;
     private String specDescription;
     private String specLink;
+    private String version;
     private List<TestCaseOverview> testCases;
 
     public List<TestCaseOverview> getTestCases() {
@@ -68,5 +69,13 @@ public class TestSuiteOverview {
 
     public void setSpecLink(String specLink) {
         this.specLink = specLink;
+    }
+
+    public String getVersion() {
+        return version;
+    }
+
+    public void setVersion(String version) {
+        this.version = version;
     }
 }

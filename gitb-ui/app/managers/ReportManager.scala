@@ -25,6 +25,7 @@ import utils.signature.{CreateSignature, SigUtils}
 import java.io.{File, FileOutputStream, StringReader}
 import java.math.BigInteger
 import java.nio.file.{Files, Path, StandardCopyOption}
+import java.sql.Timestamp
 import java.text.SimpleDateFormat
 import java.util
 import java.util.regex.Pattern
@@ -642,10 +643,10 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
       specificationId, specificationName, specificationName, Some(specificationName+" description"), 0,
       Some(groupId), Some(groupName), Some(groupName), Some(groupName+" description"), Some(0),
       specificationName, specificationName,
-      Some(testSuiteIndex), Some("Sample test suite "+testSuiteIndex), Some("Description for Sample test suite "+testSuiteIndex), None, None, None,
-      Some(testCaseIndex), Some("Sample test case "+testCaseIndex), Some("Description for Sample test case "+testCaseIndex), Some(false), Some(false), None,  None, None, None, None,
+      Some(testSuiteIndex), Some("Sample test suite "+testSuiteIndex), Some("Description for Sample test suite "+testSuiteIndex), None, None, None, "1.0",
+      Some(testCaseIndex), Some("Sample test case "+testCaseIndex), Some("Description for Sample test case "+testCaseIndex), Some(false), Some(false), None,  None, None, None, None, "1.0",
       "SUCCESS", Some("An output message for the test session"),
-      None, None, 0L, 0L, 0L, 0L, 0L, 0L)
+      None, Some(new Timestamp(Calendar.getInstance().getTimeInMillis)), 0L, 0L, 0L, 0L, 0L, 0L)
   }
 
   def generateDemoConformanceCertificate(reportPath: Path, settings: ConformanceCertificateInfo, communityId: Long): Path = {
@@ -735,6 +736,7 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
     val conformanceOverview = conformanceInfoBuilder.getOverview(None)
     // The details is a list of the detailed conformance results (at test case level).
     val conformanceDetails = conformanceInfoBuilder.getDetails(None)
+    val actorLastUpdateTime = new mutable.HashMap[Long, Timestamp]()
     // Map actor IDs to test suites.
     val actorTestSuiteMap = new mutable.LinkedHashMap[Long, mutable.LinkedHashMap[Long, ConformanceTestSuite]]() // Actor ID to test suite map, test suite map
     conformanceDetails.foreach { statement =>
@@ -746,13 +748,13 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
       var testSuite = actorTestSuites.get.get(statement.testSuiteId.get)
       if (testSuite.isEmpty) {
         testSuite = Some(new ConformanceTestSuite(
-          statement.testSuiteId.get, statement.testSuiteName.get, statement.testSuiteDescription, false, statement.testSuiteSpecReference, statement.testSuiteSpecDescription, statement.testSuiteSpecLink,
+          statement.testSuiteId.get, statement.testSuiteName.get, statement.testSuiteDescription, Some(statement.testSuiteVersion), false, statement.testSuiteSpecReference, statement.testSuiteSpecDescription, statement.testSuiteSpecLink,
           TestResultType.UNDEFINED, 0, 0, 0, 0, 0, 0, new ListBuffer[ConformanceTestCase]
         ))
         actorTestSuites.get += (testSuite.get.id -> testSuite.get)
       }
       val testCase = new ConformanceTestCase(
-        statement.testCaseId.get, statement.testCaseName.get, statement.testCaseDescription, None, statement.updateTime, None, false,
+        statement.testCaseId.get, statement.testCaseName.get, statement.testCaseDescription, Some(statement.testCaseVersion), None, statement.updateTime, None, false,
         statement.testCaseOptional.get, statement.testCaseDisabled.get, TestResultType.fromValue(statement.result), statement.testCaseTags,
         statement.testCaseSpecReference, statement.testCaseSpecDescription, statement.testCaseSpecLink
       )
@@ -776,6 +778,16 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
           } else {
             testSuite.get.undefined += 1
           }
+        }
+      }
+      // Calculate last update time.
+      if (statement.updateTime.isDefined) {
+        if (actorLastUpdateTime.contains(statement.actorId)) {
+          if (actorLastUpdateTime(statement.actorId).before(statement.updateTime.get)) {
+            actorLastUpdateTime += (statement.actorId -> statement.updateTime.get)
+          }
+        } else {
+          actorLastUpdateTime += (statement.actorId -> statement.updateTime.get)
         }
       }
     }
@@ -825,7 +837,8 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
       displayDomainInStatementTree,
       getOverallConformanceOverviewStatus(conformanceItems),
       conformanceItems,
-      conformanceItemTree
+      conformanceItemTree,
+      actorLastUpdateTime.toMap
     )
   }
 
@@ -1087,6 +1100,10 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
         statement.getDefinition.getActor.setDescription(conformanceStatement.getTestActorDescription)
         // Party information
         statement.getDefinition.setParty(getPartyDefinitionForXmlReport(conformanceData.organisationId.get, conformanceData.organisationName.get, conformanceData.systemId.get, conformanceData.systemName.get, conformanceData.systemVersion, conformanceData.systemDescription, communityId, isDemo))
+        // Last update
+        if (conformanceData.actorLastUpdateTime.contains(conformanceStatement.getActorId)) {
+          statement.setLastUpdate(XMLDateTimeUtils.getXMLGregorianCalendarDateTime(conformanceData.actorLastUpdateTime(conformanceStatement.getActorId)))
+        }
         // Summary
         statement.setSummary(new ResultSummary)
         statement.getSummary.setStatus(TestResultType.fromValue(conformanceStatement.getOverallStatus))
@@ -1101,6 +1118,7 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
           testSuite.setMetadata(new Metadata)
           testSuite.getMetadata.setName(testSuiteInfo.getTestSuiteName)
           testSuite.getMetadata.setDescription(testSuiteInfo.getTestSuiteDescription)
+          testSuite.getMetadata.setVersion(testSuiteInfo.getVersion)
           if (testSuiteInfo.getSpecReference != null || testSuiteInfo.getSpecLink != null || testSuiteInfo.getSpecDescription != null) {
             testSuite.getMetadata.setSpecification(new SpecificationInfo)
             testSuite.getMetadata.getSpecification.setReference(testSuiteInfo.getSpecReference)
@@ -1117,6 +1135,7 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
               testCase.setMetadata(new Metadata)
               testCase.getMetadata.setName(testCaseInfo.getTestName)
               testCase.getMetadata.setDescription(testCaseInfo.getTestDescription)
+              testCase.getMetadata.setVersion(testCaseInfo.getVersion)
               if (testCaseInfo.getSpecReference != null || testCaseInfo.getSpecLink != null || testCaseInfo.getSpecDescription != null) {
                 testCase.getMetadata.setSpecification(new SpecificationInfo)
                 testCase.getMetadata.getSpecification.setReference(testCaseInfo.getSpecReference)
@@ -1133,6 +1152,9 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
                   tag.setForeground(tagInfo.foreground())
                   testCase.getMetadata.getTags.getTag.add(tag)
                 }
+              }
+              if (testCaseInfo.getEndTimeInternal != null) {
+                testCase.setLastUpdate(XMLDateTimeUtils.getXMLGregorianCalendarDateTime(testCaseInfo.getEndTimeInternal))
               }
               testCase.setResult(TestResultType.fromValue(testCaseInfo.getReportResult))
               if (testCaseInfo.isOptional) testCase.setOptional(testCaseInfo.isOptional)
@@ -1594,6 +1616,7 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
           testSuiteOverview.setOverallStatus(testSuite.result.value())
           testSuiteOverview.setTestSuiteName(testSuite.name)
           testSuiteOverview.setTestSuiteDescription(testSuite.description.orNull)
+          testSuiteOverview.setVersion(testSuite.version.orNull)
           testSuiteOverview.setSpecReference(testSuite.specReference.orNull)
           testSuiteOverview.setSpecLink(testSuite.specLink.orNull)
           testSuiteOverview.setSpecDescription(testSuite.specDescription.orNull)
@@ -1603,8 +1626,10 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
             testSuiteOverview.getTestCases.add(testCaseOverview)
             testCaseOverview.setTestName(testCase.name)
             testCaseOverview.setReportResult(testCase.result.value())
+            testCaseOverview.setEndTimeInternal(testCase.updateTime.orNull)
             testCaseOverview.setTestName(testCase.name)
             testCaseOverview.setTestDescription(testCase.description.orNull)
+            testCaseOverview.setVersion(testCase.version.orNull)
             testCaseOverview.setSpecReference(testCase.specReference.orNull)
             testCaseOverview.setSpecLink(testCase.specLink.orNull)
             testCaseOverview.setSpecDescription(testCase.specDescription.orNull)
@@ -1766,6 +1791,7 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
       testCaseOverview.setMetadata(new Metadata)
       testCaseOverview.getMetadata.setName(info.testCaseName.orNull)
       testCaseOverview.getMetadata.setDescription(info.testCaseDescription.orNull)
+      testCaseOverview.getMetadata.setVersion(StringUtils.trimToNull(info.testCaseVersion))
       if (info.testCaseSpecReference.isDefined || info.testCaseSpecLink.isDefined || info.testCaseSpecDescription.isDefined) {
         testCaseOverview.getMetadata.setSpecification(new SpecificationInfo)
         if (info.testCaseSpecReference.isDefined) testCaseOverview.getMetadata.getSpecification.setReference(info.testCaseSpecReference.get)
@@ -1838,6 +1864,7 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
         testSuite.setMetadata(new Metadata)
         testSuite.getMetadata.setName(info.testSuiteName.get)
         testSuite.getMetadata.setDescription(info.testSuiteDescription.orNull)
+        testSuite.getMetadata.setVersion(StringUtils.trimToNull(info.testSuiteVersion))
         if (info.testSuiteSpecReference.isDefined || info.testSuiteSpecLink.isDefined || info.testSuiteSpecDescription.isDefined) {
           testSuite.getMetadata.setSpecification(new SpecificationInfo)
           if (info.testSuiteSpecReference.isDefined) testSuite.getMetadata.getSpecification.setReference(info.testSuiteSpecReference.get)
@@ -1889,6 +1916,7 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
     } else if (completedTests > 0) {
       report.getStatement.getSummary.setStatus(TestResultType.SUCCESS)
     }
+    report.getStatement.setLastUpdate(conformanceData.updateTime.map(XMLDateTimeUtils.getXMLGregorianCalendarDateTime(_)).orNull)
     report.getStatement.getSummary.setSucceeded(BigInteger.valueOf(completedTests))
     report.getStatement.getSummary.setFailed(BigInteger.valueOf(failedTests))
     report.getStatement.getSummary.setIncomplete(BigInteger.valueOf(undefinedTests))

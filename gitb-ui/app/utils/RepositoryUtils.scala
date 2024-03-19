@@ -743,7 +743,7 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 						if (completeParse && tdlTestSuite.getMetadata.getDocumentation != null) {
 							documentation = getDocumentation(tdlTestSuite.getId, tdlTestSuite.getMetadata.getDocumentation, zip, specificationId, domainId)
 						}
-						val caseObject = TestSuites(0L, name, name, version, Option(authors), Option(originalDate), Option(modificationDate), Option(description), None,
+						val caseObject = TestSuites(0L, name, name, Option(version).getOrElse(""), Option(authors), Option(originalDate), Option(modificationDate), Option(description), None,
 							folderName, documentation.isDefined, documentation, identifier, tdlTestCaseEntries.isEmpty, shared = false, domainId, None,
 							specificationInfo.flatMap(x => Option(x.getReference)),
 							specificationInfo.flatMap(x => Option(x.getDescription)),
@@ -782,7 +782,7 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 									}
 									val testCaseSpecificationInfo = Option(tdlTestCase.getMetadata.getSpecification)
 									TestCases(
-										0L, tdlTestCase.getMetadata.getName, tdlTestCase.getMetadata.getName, tdlTestCase.getMetadata.getVersion,
+										0L, tdlTestCase.getMetadata.getName, tdlTestCase.getMetadata.getName, Option(tdlTestCase.getMetadata.getVersion).getOrElse(""),
 										Option(tdlTestCase.getMetadata.getAuthors), Option(tdlTestCase.getMetadata.getPublished),
 										Option(tdlTestCase.getMetadata.getLastModified), Option(tdlTestCase.getMetadata.getDescription),
 										None, testCaseType.ordinal().toShort, null, Some(actorString.toString()), None,

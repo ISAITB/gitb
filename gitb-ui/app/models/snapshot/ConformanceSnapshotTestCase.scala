@@ -5,6 +5,7 @@ case class ConformanceSnapshotTestCase(
   shortname: String,
   fullname: String,
   description: Option[String],
+  version: String,
   testSuiteOrder: Short,
   identifier: String,
   isOptional: Boolean,

@@ -7,6 +7,7 @@ class ConformanceTestSuite(
   var id: Long,
   var name: String,
   var description: Option[String],
+  var version: Option[String],
   var hasDocumentation: Boolean,
   var specReference: Option[String],
   var specDescription: Option[String],

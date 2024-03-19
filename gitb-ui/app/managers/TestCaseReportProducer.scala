@@ -86,6 +86,7 @@ class TestCaseReportProducer @Inject() (reportHelper: ReportHelper, testResultMa
       overview.setMetadata(new Metadata())
       overview.getMetadata.setName(testCase.get.fullname)
       overview.getMetadata.setDescription(testCase.get.description.orNull)
+      overview.getMetadata.setVersion(StringUtils.trimToNull(testCase.get.version))
     }
     if (list.nonEmpty) {
       overview.setSteps(new TestCaseStepsType())

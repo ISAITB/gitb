@@ -5,6 +5,7 @@ case class ConformanceSnapshotTestSuite(
   shortname: String,
   fullname: String,
   description: Option[String],
+  version: String,
   identifier: String,
   specReference: Option[String],
   specDescription: Option[String],

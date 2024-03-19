@@ -4,6 +4,8 @@ import com.gitb.reports.dto.{ConformanceItem, ConformanceStatementData}
 import models.ConformanceStatementItem
 import models.Enums.OverviewLevelType.OverviewLevelType
 
+import java.sql.Timestamp
+
 case class ConformanceData(
                             reportLevel: OverviewLevelType,
                             domainName: Option[String],
@@ -21,7 +23,8 @@ case class ConformanceData(
                             displayDomainInStatementTree: Boolean,
                             overallResult: String,
                             conformanceItems: java.util.List[ConformanceItem],
-                            conformanceItemTree: List[ConformanceStatementItem]
+                            conformanceItemTree: List[ConformanceStatementItem],
+                            actorLastUpdateTime: Map[Long, Timestamp]
                           ) {
 
   private var conformanceStatements: Option[java.util.List[ConformanceStatementData]] = None

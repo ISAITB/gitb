@@ -698,6 +698,7 @@ object PersistenceSchema {
     def shortname = column[String]("sname")
     def fullname = column[String]("fname")
     def description = column[Option[String]]("description", O.SqlType("TEXT"))
+    def version = column[String]("version")
     def testSuiteOrder = column[Short]("testsuite_order")
     def identifier = column[String]("identifier")
     def isOptional = column[Boolean]("is_optional")
@@ -707,7 +708,7 @@ object PersistenceSchema {
     def specDescription = column[Option[String]]("spec_description", O.SqlType("TEXT"))
     def specLink = column[Option[String]]("spec_link")
     def snapshotId = column[Long]("snapshot_id")
-    def * = (id :: shortname :: fullname :: description :: testSuiteOrder :: identifier :: isOptional :: isDisabled :: tags :: specReference :: specDescription :: specLink :: snapshotId :: HNil).mapTo[ConformanceSnapshotTestCase]
+    def * = (id :: shortname :: fullname :: description :: version :: testSuiteOrder :: identifier :: isOptional :: isDisabled :: tags :: specReference :: specDescription :: specLink :: snapshotId :: HNil).mapTo[ConformanceSnapshotTestCase]
   }
   val conformanceSnapshotTestCases = TableQuery[ConformanceSnapshotTestCasesTable]
 
@@ -716,12 +717,13 @@ object PersistenceSchema {
     def shortname = column[String]("sname")
     def fullname = column[String]("fname")
     def description = column[Option[String]]("description", O.SqlType("TEXT"))
+    def version = column[String]("version")
     def identifier = column[String]("identifier")
     def specReference = column[Option[String]]("spec_reference")
     def specDescription = column[Option[String]]("spec_description", O.SqlType("TEXT"))
     def specLink = column[Option[String]]("spec_link")
     def snapshotId = column[Long]("snapshot_id")
-    def * = (id :: shortname :: fullname :: description :: identifier :: specReference :: specDescription :: specLink :: snapshotId :: HNil).mapTo[ConformanceSnapshotTestSuite]
+    def * = (id :: shortname :: fullname :: description :: version :: identifier :: specReference :: specDescription :: specLink :: snapshotId :: HNil).mapTo[ConformanceSnapshotTestSuite]
   }
   val conformanceSnapshotTestSuites = TableQuery[ConformanceSnapshotTestSuitesTable]
 
