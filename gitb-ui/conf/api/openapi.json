@@ -19,6 +19,10 @@
   ],
   "tags": [
     {
+      "name": "Configuration",
+      "description": "Operations relevant to configuration actions."
+    },
+    {
       "name": "Test sessions",
       "description": "Operations on test sessions."
     },
@@ -28,6 +32,51 @@
     }
   ],
   "paths": {
+    "/configure": {
+      "post": {
+        "tags": [
+          "Configuration"
+        ],
+        "summary": "Update configuration entries for domains, organisations, systems and conformance statements.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "Information on the configuration updates to carry out.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfigureRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Configuration updates applied (with possible warnings).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfigureResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/tests/start": {
       "post": {
         "tags": [
@@ -1375,6 +1424,135 @@
         "required": [
           "description"
         ]
+      },
+      "ConfigureRequest": {
+        "description": "Information on the configuration updates to carry out.",
+        "type": "object",
+        "properties": {
+          "domainProperties": {
+            "description": "Updates to domain properties.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConfigurationEntry"
+            }
+          },
+          "organisationProperties": {
+            "description": "Updates to organisation properties.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrganisationConfigurationEntry"
+            }
+          },
+          "systemProperties": {
+            "description": "Updates to system properties.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SystemConfigurationEntry"
+            }
+          },
+          "statementProperties": {
+            "description": "Updates to conformance statement properties.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConformanceStatementConfigurationEntry"
+            }
+          }
+        }
+      },
+      "OrganisationConfigurationEntry": {
+        "description": "Configuration updates to apply to a given organisation.",
+        "type": "object",
+        "properties": {
+          "organisation": {
+            "description": "The API key used to identify the organisation.",
+            "type": "string"
+          },
+          "properties": {
+            "description": "The updates to carry out on organisation properties.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConfigurationEntry"
+            },
+            "minItems": 1
+          }
+        },
+        "required": [
+          "organisation",
+          "properties"
+        ]
+      },
+      "SystemConfigurationEntry": {
+        "description": "Configuration updates to apply to a given system.",
+        "type": "object",
+        "properties": {
+          "system": {
+            "description": "The API key used to identify the system.",
+            "type": "string"
+          },
+          "properties": {
+            "description": "The updates to carry out on system properties.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConfigurationEntry"
+            },
+            "minItems": 1
+          }
+        },
+        "required": [
+          "organisation",
+          "properties"
+        ]
+      },
+      "ConformanceStatementConfigurationEntry": {
+        "description": "Configuration updates to apply for a given conformance statement.",
+        "type": "object",
+        "properties": {
+          "system": {
+            "description": "The API key used to identify the relevant system.",
+            "type": "string"
+          },
+          "actor": {
+            "description": "The API key used to identify the relevant actor.",
+            "type": "string"
+          },
+          "properties": {
+            "description": "The updates to carry out on the statement's properties.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ConfigurationEntry"
+            },
+            "minItems": 1
+          }
+        }
+      },
+      "ConfigurationEntry": {
+        "description": "The value for configuration item identified by its unique key.",
+        "type": "object",
+        "properties": {
+          "key": {
+            "description": "The unique key used to identify the configuration property.",
+            "type": "string"
+          },
+          "value": {
+            "description": "The value to apply for the configuration property (if missing this signals a delete of the existing value)."
+          }
+        },
+        "required": [
+          "key"
+        ]
+      },
+      "ConfigureResponse": {
+        "description": "The results of a configuration update.",
+        "type": "object",
+        "properties": {
+          "messages": {
+            "description": "The list of warning messages for updates that could not be carried out.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
       }
     },
     "securitySchemes": {

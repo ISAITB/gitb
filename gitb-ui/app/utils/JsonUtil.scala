@@ -1123,6 +1123,43 @@ object JsonUtil {
     TestSuiteUndeployRequest(specification, testSuite, sharedTestSuite)
   }
 
+  def parseJsConfigurationRequest(json: JsValue): ConfigurationRequest = {
+    ConfigurationRequest(
+      domainProperties = parseJsKeyValueArray((json \ "domainProperties").asOpt[JsArray].getOrElse(JsArray.empty)),
+      organisationProperties = parseJsPartyConfigurationArray((json \ "organisationProperties").asOpt[JsArray].getOrElse(JsArray.empty), "organisation"),
+      systemProperties = parseJsPartyConfigurationArray((json \ "systemProperties").asOpt[JsArray].getOrElse(JsArray.empty), "system"),
+      statementProperties = parseJsStatementConfigurationArray((json \ "statementProperties").asOpt[JsArray].getOrElse(JsArray.empty))
+    )
+  }
+
+  private def parseJsStatementConfigurationArray(jsonArray: JsArray): List[StatementConfiguration] = {
+    jsonArray.value.map { json =>
+      StatementConfiguration(
+        (json \ "system").as[String],
+        (json \ "actor").as[String],
+        parseJsKeyValueArray((json \ "properties").asOpt[JsArray].getOrElse(JsArray.empty))
+      )
+    }.toList
+  }
+
+  private def parseJsPartyConfigurationArray(jsonArray: JsArray, partyPropertyName: String): List[PartyConfiguration] = {
+    jsonArray.value.map { json =>
+      PartyConfiguration(
+        (json \ partyPropertyName).as[String],
+        parseJsKeyValueArray((json \ "properties").asOpt[JsArray].getOrElse(JsArray.empty))
+      )
+    }.toList
+  }
+
+  private def parseJsKeyValueArray(jsonArray: JsArray): List[KeyValue] = {
+    jsonArray.value.map { json =>
+      KeyValue(
+        (json \ "key").as[String],
+        (json \ "value").asOpt[String]
+      )
+    }.toList
+  }
+
   def parseJsTestSuiteLinkRequest(json: JsValue): TestSuiteLinkRequest = {
     val testSuite = (json \ "testSuite").as[String]
     val specifications = parseJsTestSuiteLinkSpecificationInfo((json \ "specifications").asOpt[JsArray].getOrElse(JsArray.empty))

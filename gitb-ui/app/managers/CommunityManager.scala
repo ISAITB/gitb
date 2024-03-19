@@ -4,6 +4,7 @@ import config.Configurations
 import models.Enums.OverviewLevelType.OverviewLevelType
 import models.Enums._
 import models._
+import models.automation.{ConfigurationRequest, KeyValue, PartyConfiguration, StatementConfiguration}
 import org.apache.commons.lang3.StringUtils
 import persistence.db._
 import play.api.db.slick.DatabaseConfigProvider
@@ -1086,6 +1087,375 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityRes
   def deleteConformanceOverviewCertificateSettings(communityId: Long): DBIO[_] = {
     PersistenceSchema.conformanceOverviewCertificateMessages.filter(_.community === communityId).delete andThen
       PersistenceSchema.conformanceOverviewCertificates.filter(_.community === communityId).delete
+  }
+
+  def applyConfigurationViaAutomationApi(communityKey: String, request: ConfigurationRequest): List[String] = {
+    val warnings = new ListBuffer[String]()
+    exec(
+      for {
+        communityIds <- PersistenceSchema.communities.filter(_.apiKey === communityKey).map(x => (x.id, x.domain)).result.headOption
+        // Process domain properties
+        _ <- {
+          val warnings = new ListBuffer[String]()
+          if (communityIds.isDefined) {
+            if (request.domainProperties.nonEmpty) {
+              if (communityIds.get._2.isDefined) {
+                updateDomainParametersViaApi(communityIds.get._2.get, request.domainProperties, warnings)
+              } else {
+                warnings += "Domain property updates not allowed as community for API key [%s] is not linked to a specific domain.".formatted(communityKey)
+              }
+            }
+          } else {
+            warnings += "Community not found for API key [%s].".formatted(communityKey)
+          }
+          DBIO.successful(())
+        }
+        // Process organisation properties
+        _ <- {
+          val actions = new ListBuffer[DBIO[_]]
+          if (communityIds.isDefined && request.organisationProperties.nonEmpty) {
+            request.organisationProperties.foreach { updates =>
+              actions += updateOrganisationPropertiesViaApi(updates, communityIds.get._1, warnings)
+            }
+          }
+          toDBIO(actions)
+        }
+        // Process system properties
+        _ <- {
+          val actions = new ListBuffer[DBIO[_]]
+          if (communityIds.isDefined && request.systemProperties.nonEmpty) {
+            request.systemProperties.foreach { updates =>
+              actions += updateSystemPropertiesViaApi(updates, communityIds.get._1, warnings)
+            }
+          }
+          toDBIO(actions)
+        }
+        // Process statement properties
+        _ <- {
+          val actions = new ListBuffer[DBIO[_]]
+          if (communityIds.isDefined && request.statementProperties.nonEmpty) {
+            request.statementProperties.foreach { updates =>
+              actions += updateStatementPropertiesViaApi(updates, communityIds.get._1, communityIds.get._2, warnings)
+            }
+          }
+          toDBIO(actions)
+        }
+      } yield warnings.toList
+    )
+  }
+
+  private def updateStatementPropertiesViaApi(updateData: StatementConfiguration, communityId: Long, domainId: Option[Long], warnings: ListBuffer[String]): DBIO[_] = {
+    for {
+      // Get relevant statement information
+      statementIds <- PersistenceSchema.conformanceResults
+        .join(PersistenceSchema.systems).on(_.sut === _.id)
+        .join(PersistenceSchema.organizations).on(_._2.owner === _.id)
+        .join(PersistenceSchema.actors).on(_._1._1.actor === _.id)
+        .filter(_._1._2.community === communityId)
+        .filterOpt(domainId)((q, domainId) => q._2.domain === domainId)
+        .filter(_._1._1._2.apiKey === updateData.system)
+        .filter(_._2.apiKey === updateData.actor)
+        .map(x => (x._1._1._1.sut, x._1._1._1.actor)) // (system ID, actor ID)
+        .result
+        .headOption
+      // Get configuration properties
+      existingProperties <- if (statementIds.isDefined) {
+        PersistenceSchema.parameters
+        .join(PersistenceSchema.endpoints).on(_.endpoint === _.id)
+        .filter(_._2.actor === statementIds.get._2)
+        .map(x => (x._1.id, x._1.endpoint, x._1.testKey, x._1.kind))
+        .result
+        .map { properties =>
+          val keyMap = new mutable.HashMap[String, (Long, Long, String)]() // property key to (property ID, endpoint ID, property type)
+          properties.foreach { property =>
+            keyMap += (property._3 -> (property._1, property._2, property._4))
+          }
+          keyMap.toMap
+        }
+      } else {
+        warnings += "No conformance statement defined for system [%s] and actor [%s].".formatted(updateData.system, updateData.actor)
+        DBIO.successful(new mutable.HashMap[String, (Long, Long, String)]())
+      }
+      // Load the properties for which the system has existing values
+      existingValues <- if (statementIds.isDefined) {
+        PersistenceSchema.configs
+          .join(PersistenceSchema.parameters).on(_.parameter === _.id)
+          .join(PersistenceSchema.endpoints).on(_._2.endpoint === _.id)
+          .filter(_._1._1.system === statementIds.get._1)
+          .filter(_._2.actor === statementIds.get._2)
+          .map(x => (x._1._2.testKey, x._1._2.id, x._1._2.endpoint))
+          .result
+          .map { properties =>
+            val keyMap = new mutable.HashMap[String, (Long, Long)]() // property key to (property ID, endpoint ID)
+            properties.foreach { property =>
+              keyMap += (property._1 -> (property._2, property._3))
+            }
+            keyMap.toMap
+          }
+      } else {
+        DBIO.successful(new mutable.HashMap[String, (Long, Long)]())
+      }
+      // Process updates
+      _ <- {
+        val actions = new ListBuffer[DBIO[_]]()
+        if (statementIds.isDefined) {
+          updateData.properties.foreach { configData =>
+            if (existingProperties.contains(configData.key)) {
+              if (existingProperties(configData.key)._3 == "SIMPLE") {
+                if (existingValues.contains(configData.key)) {
+                  if (configData.value.isDefined) {
+                    // Update
+                    actions += PersistenceSchema.configs
+                      .filter(_.system === statementIds.get._1)
+                      .filter(_.parameter === existingValues(configData.key)._1)
+                      .map(_.value)
+                      .update(configData.value.get)
+                  } else {
+                    // Delete
+                    actions += PersistenceSchema.configs
+                      .filter(_.system === statementIds.get._1)
+                      .filter(_.parameter === existingValues(configData.key)._1)
+                      .delete
+                  }
+                } else {
+                  if (configData.value.isDefined) {
+                    // Insert
+                    actions += (PersistenceSchema.configs += Configs(statementIds.get._1, existingProperties(configData.key)._1, existingProperties(configData.key)._2, configData.value.get, None))
+                  } else {
+                    warnings += "Ignoring delete for conformance statement property [%s] of system [%s] for actor [%s]. No value for this property was defined.".formatted(configData.key, updateData.system, updateData.actor)
+                  }
+                }
+              } else {
+                warnings += "Ignoring update for conformance statement property [%s] of system [%s] for actor [%s]. Only simple properties can be updated via the automation API.".formatted(configData.key, updateData.system, updateData.actor)
+              }
+            } else {
+              warnings += "Ignoring update for conformance statement property [%s] of system [%s] for actor [%s]. No property with that key is defined for the conformance statement.".formatted(configData.key, updateData.system, updateData.actor)
+            }
+          }
+        }
+        toDBIO(actions)
+      }
+    } yield ()
+  }
+
+  private def updateDomainParametersViaApi(domainId: Long, updates: List[KeyValue], warnings: ListBuffer[String]): DBIO[_] = {
+    for {
+      existingDomainProperties <- {
+        if (updates.nonEmpty) {
+          PersistenceSchema.domainParameters
+            .filter(_.domain === domainId)
+            .map(x => (x.name, x.id, x.kind))
+            .result
+            .map { properties =>
+              val keyMap = new mutable.HashMap[String, (Long, String)]() // Key to (ID, type)
+              properties.foreach { property =>
+                keyMap += (property._1 -> (property._2, property._3))
+              }
+              keyMap.toMap
+            }
+        } else {
+          DBIO.successful(new mutable.HashMap[String, (Long, String)]())
+        }
+      }
+      // Update domain properties
+      _ <- {
+        val actions = new ListBuffer[DBIO[_]]()
+        updates.foreach { propertyData =>
+          if (existingDomainProperties.contains(propertyData.key)) {
+            if (existingDomainProperties(propertyData.key)._2 == "SIMPLE") {
+              if (propertyData.value.isDefined) {
+                // Update
+                actions += PersistenceSchema.domainParameters
+                  .filter(_.id === existingDomainProperties(propertyData.key)._1)
+                  .map(_.value)
+                  .update(propertyData.value)
+              } else {
+                // Delete
+                warnings += "Ignoring deletion for domain property [%s]. Domain properties cannot be deleted via automation API.".formatted(propertyData.key)
+              }
+            } else {
+              warnings += "Ignoring update for domain property [%s]. Only simple properties can be updated via the automation API.".formatted(propertyData.key)
+            }
+          } else {
+            warnings += "Ignoring update for domain property [%s]. Property was not found.".formatted(propertyData.key)
+          }
+        }
+        toDBIO(actions)
+      }
+    } yield ()
+  }
+
+  private def updateOrganisationPropertiesViaApi(updateData: PartyConfiguration, communityId: Long, warnings: ListBuffer[String]): DBIO[_] = {
+    for {
+      // Load organisation ID
+      organisationId <- PersistenceSchema.organizations
+        .filter(_.community === communityId)
+        .filter(_.apiKey === updateData.partyKey)
+        .map(_.id)
+        .result
+        .headOption
+      // Load the properties for which the organisation has existing values
+      existingValues <- if (organisationId.isDefined) {
+        PersistenceSchema.organisationParameterValues
+          .join(PersistenceSchema.organisationParameters).on(_.parameter === _.id)
+          .filter(_._1.organisation === organisationId.get)
+          .map(x => (x._2.id, x._2.testKey))
+          .result
+          .map { properties =>
+            val keyMap = new mutable.HashMap[String, Long]() // property key to property ID
+            properties.foreach { property =>
+              keyMap += (property._2 -> property._1)
+            }
+            keyMap.toMap
+        }
+      } else {
+        warnings += "No organisation was found for API Key [%s]".formatted(updateData.partyKey)
+        DBIO.successful(new mutable.HashMap[String, Long]())
+      }
+      // Load the community's properties and record their type
+      existingProperties <- if (organisationId.isDefined) {
+        PersistenceSchema.organisationParameters
+          .filter(_.community === communityId)
+          .map(x => (x.id, x.testKey, x.kind))
+          .result
+          .map { properties =>
+            val keyMap = new mutable.HashMap[String, (Long, String)]() // property key to (property ID, property type)
+            properties.foreach { property =>
+              keyMap += (property._2 -> (property._1, property._3))
+            }
+            keyMap.toMap
+          }
+      } else {
+        DBIO.successful(new mutable.HashMap[String, (Long, String)]())
+      }
+      // Process the updates
+      _ <- {
+        val actions = new ListBuffer[DBIO[_]]
+        if (organisationId.isDefined) {
+          updateData.properties.foreach { configData =>
+            if (existingProperties.contains(configData.key)) {
+              if (existingProperties(configData.key)._2 == "SIMPLE") {
+                if (existingValues.contains(configData.key)) {
+                  if (configData.value.isDefined) {
+                    // Update
+                    actions += PersistenceSchema.organisationParameterValues
+                      .filter(_.organisation === organisationId.get)
+                      .filter(_.parameter === existingValues(configData.key))
+                      .map(_.value)
+                      .update(configData.value.get)
+                  } else {
+                    // Delete
+                    actions += PersistenceSchema.organisationParameterValues
+                      .filter(_.organisation === organisationId.get)
+                      .filter(_.parameter === existingValues(configData.key))
+                      .delete
+                  }
+                } else {
+                  if (configData.value.isDefined) {
+                    // Insert
+                    actions += (PersistenceSchema.organisationParameterValues += OrganisationParameterValues(organisationId.get, existingProperties(configData.key)._1, configData.value.get, None))
+                  } else {
+                    warnings += "Ignoring delete for organisation property [%s] and organisation [%s]. No value for this property was defined for the organisation.".formatted(configData.key, updateData.partyKey)
+                  }
+                }
+              } else {
+                warnings += "Ignoring update for organisation property [%s] and organisation [%s]. Only simple properties can be updated via the automation API.".formatted(configData.key, updateData.partyKey)
+              }
+            } else {
+              warnings += "Ignoring update for organisation property [%s] and organisation [%s]. No organisation property with that key is configured for the community.".formatted(configData.key, updateData.partyKey)
+            }
+          }
+        }
+        toDBIO(actions)
+      }
+    } yield ()
+  }
+
+  private def updateSystemPropertiesViaApi(updateData: PartyConfiguration, communityId: Long, warnings: ListBuffer[String]): DBIO[_] = {
+    for {
+      // Load system ID
+      systemId <- PersistenceSchema.systems
+        .join(PersistenceSchema.organizations).on(_.owner === _.id)
+        .filter(_._2.community === communityId)
+        .filter(_._1.apiKey === updateData.partyKey)
+        .map(_._1.id)
+        .result
+        .headOption
+      // Load the properties for which the organisation has existing values
+      existingValues <- if (systemId.isDefined) {
+        PersistenceSchema.systemParameterValues
+          .join(PersistenceSchema.systemParameters).on(_.parameter === _.id)
+          .filter(_._1.system === systemId.get)
+          .map(x => (x._2.id, x._2.testKey))
+          .result
+          .map { properties =>
+            val keyMap = new mutable.HashMap[String, Long]() // property key to property ID
+            properties.foreach { property =>
+              keyMap += (property._2 -> property._1)
+            }
+            keyMap.toMap
+          }
+      } else {
+        warnings += "No system was found for API Key [%s]".formatted(updateData.partyKey)
+        DBIO.successful(new mutable.HashMap[String, Long]())
+      }
+      // Load the community's properties and record their type
+      existingProperties <- if (systemId.isDefined) {
+        PersistenceSchema.systemParameters
+          .filter(_.community === communityId)
+          .map(x => (x.id, x.testKey, x.kind))
+          .result
+          .map { properties =>
+            val keyMap = new mutable.HashMap[String, (Long, String)]() // property key to (property ID, property type)
+            properties.foreach { property =>
+              keyMap += (property._2 -> (property._1, property._3))
+            }
+            keyMap.toMap
+          }
+      } else {
+        DBIO.successful(new mutable.HashMap[String, (Long, String)]())
+      }
+      // Process the updates
+      _ <- {
+        val actions = new ListBuffer[DBIO[_]]
+        if (systemId.isDefined) {
+          updateData.properties.foreach { configData =>
+            if (existingProperties.contains(configData.key)) {
+              if (existingProperties(configData.key)._2 == "SIMPLE") {
+                if (existingValues.contains(configData.key)) {
+                  if (configData.value.isDefined) {
+                    // Update
+                    actions += PersistenceSchema.systemParameterValues
+                      .filter(_.system === systemId.get)
+                      .filter(_.parameter === existingValues(configData.key))
+                      .map(_.value)
+                      .update(configData.value.get)
+                  } else {
+                    // Delete
+                    actions += PersistenceSchema.systemParameterValues
+                      .filter(_.system === systemId.get)
+                      .filter(_.parameter === existingValues(configData.key))
+                      .delete
+                  }
+                } else {
+                  if (configData.value.isDefined) {
+                    // Insert
+                    actions += (PersistenceSchema.systemParameterValues += SystemParameterValues(systemId.get, existingProperties(configData.key)._1, configData.value.get, None))
+                  } else {
+                    warnings += "Ignoring delete for system property [%s] and system [%s]. No value for this property was defined for the system.".formatted(configData.key, updateData.partyKey)
+                  }
+                }
+              } else {
+                warnings += "Ignoring update for system property [%s] and system [%s]. Only simple properties can be updated via the automation API.".formatted(configData.key, updateData.partyKey)
+              }
+            } else {
+              warnings += "Ignoring update for system property [%s] and system [%s]. No system property with that key is configured for the community.".formatted(configData.key, updateData.partyKey)
+            }
+          }
+        }
+        toDBIO(actions)
+      }
+    } yield ()
   }
 
 }
