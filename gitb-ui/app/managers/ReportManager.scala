@@ -1810,6 +1810,7 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
         }).foreach(testCaseOverview.getMetadata.getTags.getTag.add(_))
       }
       testCaseOverview.setResult(TestResultType.fromValue(info.result))
+      testCaseOverview.setLastUpdate(info.updateTime.map(XMLDateTimeUtils.getXMLGregorianCalendarDateTime(_)).orNull)
       val optional = info.testCaseOptional.getOrElse(false)
       if (optional) testCaseOverview.setOptional(optional)
       val disabled = info.testCaseDisabled.getOrElse(false)
