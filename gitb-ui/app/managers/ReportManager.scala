@@ -632,14 +632,15 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
     val groupName = "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.SpecificationGroup, single = true, lowercase = true) + (if (addPrefixes) " "+groupId else "")
     val specificationName = "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Specification, single = true, lowercase = true) + (if (addPrefixes) " "+specificationId else "")
     val actorName = "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Actor, single = true, lowercase = true) + (if (addPrefixes) " "+actorId else "")
+    val systemName = "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.System, single = true, lowercase = true)
     new ConformanceStatementFull(
       0L, "Sample community",
       0L, "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Organisation, single = true, lowercase = true),
-      0L, "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.System, single = true, lowercase = true), "",
-      domainId, domainName, domainName,
-      actorId, actorName, actorName, "",
-      specificationId, specificationName, specificationName, 0,
-      Some(groupId), Some(groupName), Some(groupName), Some(0),
+      0L, systemName, "", Some(systemName+" description"), Some("v1.0.0"),
+      domainId, domainName, domainName, Some(domainName+" description"),
+      actorId, actorName, actorName, Some(actorName+" description"), "",
+      specificationId, specificationName, specificationName, Some(specificationName+" description"), 0,
+      Some(groupId), Some(groupName), Some(groupName), Some(groupName+" description"), Some(0),
       specificationName, specificationName,
       Some(testSuiteIndex), Some("Sample test suite "+testSuiteIndex), Some("Description for Sample test suite "+testSuiteIndex), None, None, None,
       Some(testCaseIndex), Some("Sample test case "+testCaseIndex), Some("Description for Sample test case "+testCaseIndex), Some(false), Some(false), None,  None, None, None, None,
@@ -810,12 +811,17 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
     ConformanceData(
       reportLevel,
       conformanceOverview.headOption.map(_.domainNameFull),
+      conformanceOverview.headOption.flatMap(_.domainDescription),
       conformanceOverview.headOption.flatMap(_.specificationGroupNameFull),
+      conformanceOverview.headOption.flatMap(_.specificationGroupDescription),
       conformanceOverview.headOption.map(_.specificationGroupOptionNameFull),
+      conformanceOverview.headOption.flatMap(_.specificationDescription),
       conformanceOverview.headOption.map(_.organizationId),
       conformanceOverview.headOption.map(_.organizationName),
       conformanceOverview.headOption.map(_.systemId),
       conformanceOverview.headOption.map(_.systemName),
+      conformanceOverview.headOption.flatMap(_.systemVersion),
+      conformanceOverview.headOption.flatMap(_.systemDescription),
       displayDomainInStatementTree,
       getOverallConformanceOverviewStatus(conformanceItems),
       conformanceItems,
@@ -934,6 +940,7 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
       xmlItem.get.setResult(TestResultType.UNDEFINED)
     }
     xmlItem.get.setName(item.name)
+    xmlItem.get.setDescription(item.description.orNull)
     xmlItem.get
   }
 
@@ -1014,16 +1021,32 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
     // Definition
     report.getOverview.setDefinition(new ConformanceOverviewDefinition)
     if (conformanceData.reportLevel != OverviewLevelType.OrganisationLevel) {
-      report.getOverview.getDefinition.setDomain(conformanceData.domainName.orNull)
+      if (conformanceData.domainName.isDefined) {
+        report.getOverview.getDefinition.setDomain(new ConformanceItemInformation)
+        report.getOverview.getDefinition.getDomain.setName(conformanceData.domainName.orNull)
+        report.getOverview.getDefinition.getDomain.setDescription(conformanceData.domainDescription.orNull)
+      }
       if (conformanceData.reportLevel == OverviewLevelType.SpecificationGroupLevel) {
-        report.getOverview.getDefinition.setSpecificationGroup(conformanceData.groupName.orNull)
+        if (conformanceData.groupName.isDefined) {
+          report.getOverview.getDefinition.setSpecificationGroup(new ConformanceItemInformation)
+          report.getOverview.getDefinition.getSpecificationGroup.setName(conformanceData.groupName.orNull)
+          report.getOverview.getDefinition.getSpecificationGroup.setDescription(conformanceData.groupDescription.orNull)
+        }
       } else if (conformanceData.reportLevel == OverviewLevelType.SpecificationLevel) {
-        report.getOverview.getDefinition.setSpecificationGroup(conformanceData.groupName.orNull)
-        report.getOverview.getDefinition.setSpecification(conformanceData.specificationName.orNull)
+        if (conformanceData.specificationName.isDefined) {
+          if (conformanceData.groupName.isDefined) {
+            report.getOverview.getDefinition.setSpecificationGroup(new ConformanceItemInformation)
+            report.getOverview.getDefinition.getSpecificationGroup.setName(conformanceData.groupName.orNull)
+            report.getOverview.getDefinition.getSpecificationGroup.setDescription(conformanceData.groupDescription.orNull)
+          }
+          report.getOverview.getDefinition.setSpecification(new ConformanceItemInformation)
+          report.getOverview.getDefinition.getSpecification.setName(conformanceData.specificationName.orNull)
+          report.getOverview.getDefinition.getSpecification.setDescription(conformanceData.specificationDescription.orNull)
+        }
       }
     }
     // Party information
-    report.getOverview.getDefinition.setParty(getPartyDefinitionForXmlReport(conformanceData.organisationId.get, conformanceData.organisationName.get, conformanceData.systemId.get, conformanceData.systemName.get, communityId, isDemo))
+    report.getOverview.getDefinition.setParty(getPartyDefinitionForXmlReport(conformanceData.organisationId.get, conformanceData.organisationName.get, conformanceData.systemId.get, conformanceData.systemName.get, conformanceData.systemVersion, conformanceData.systemDescription, communityId, isDemo))
     // Statement overview
     val tracker = new ConformanceOverviewTracker(true)
     report.getOverview.setStatementOverview(getStatementTreeForXmlReport(conformanceData, tracker))
@@ -1044,12 +1067,26 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
         statement.setId(statementIndex.toString)
         // Definition
         statement.setDefinition(new ConformanceStatementDefinition)
-        statement.getDefinition.setDomain(conformanceStatement.getTestDomain)
-        statement.getDefinition.setSpecificationGroup(conformanceStatement.getTestSpecificationGroup)
-        statement.getDefinition.setSpecification(conformanceStatement.getTestSpecification)
-        statement.getDefinition.setActor(conformanceStatement.getTestActorInternal) // We use getTestActorInternal as it is always populated
+        // Domain
+        statement.getDefinition.setDomain(new ConformanceItemInformation)
+        statement.getDefinition.getDomain.setName(conformanceStatement.getTestDomain)
+        statement.getDefinition.getDomain.setDescription(conformanceStatement.getTestDomainDescription)
+        // Specification group
+        if (conformanceStatement.getTestSpecificationGroup != null) {
+          statement.getDefinition.setSpecificationGroup(new ConformanceItemInformation)
+          statement.getDefinition.getSpecificationGroup.setName(conformanceStatement.getTestSpecificationGroup)
+          statement.getDefinition.getSpecificationGroup.setDescription(conformanceStatement.getTestSpecificationGroupDescription)
+        }
+        // Specification
+        statement.getDefinition.setSpecification(new ConformanceItemInformation)
+        statement.getDefinition.getSpecification.setName(conformanceStatement.getTestSpecification)
+        statement.getDefinition.getSpecification.setDescription(conformanceStatement.getTestSpecificationDescription)
+        // Actor
+        statement.getDefinition.setActor(new ConformanceItemInformation)
+        statement.getDefinition.getActor.setName(conformanceStatement.getTestActorInternal) // We use getTestActorInternal as it is always populated
+        statement.getDefinition.getActor.setDescription(conformanceStatement.getTestActorDescription)
         // Party information
-        statement.getDefinition.setParty(getPartyDefinitionForXmlReport(conformanceData.organisationId.get, conformanceData.organisationName.get, conformanceData.systemId.get, conformanceData.systemName.get, communityId, isDemo))
+        statement.getDefinition.setParty(getPartyDefinitionForXmlReport(conformanceData.organisationId.get, conformanceData.organisationName.get, conformanceData.systemId.get, conformanceData.systemName.get, conformanceData.systemVersion, conformanceData.systemDescription, communityId, isDemo))
         // Summary
         statement.setSummary(new ResultSummary)
         statement.getSummary.setStatus(TestResultType.fromValue(conformanceStatement.getOverallStatus))
@@ -1496,10 +1533,22 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
      * Record names of conformance items before we iterate children. Like this e.g. a spec will always have the name of its domain and group.
      * The only case where we will use these names is when we record the results at leaf level in which case we'll have everything available.
      */
-    if (item.itemType == ConformanceStatementItemType.DOMAIN) reportData.domainName = Some(newItem.getName)
-    if (item.itemType == ConformanceStatementItemType.SPECIFICATION_GROUP) reportData.groupName = Some(newItem.getName)
-    if (item.itemType == ConformanceStatementItemType.SPECIFICATION) reportData.specName = Some(newItem.getName)
-    if (item.itemType == ConformanceStatementItemType.ACTOR) reportData.actorName = Some(newItem.getName)
+    if (item.itemType == ConformanceStatementItemType.DOMAIN) {
+      reportData.domainName = Some(newItem.getName)
+      reportData.domainDescription = Option(newItem.getDescription)
+    }
+    if (item.itemType == ConformanceStatementItemType.SPECIFICATION_GROUP) {
+      reportData.groupName = Some(newItem.getName)
+      reportData.groupDescription = Option(newItem.getDescription)
+    }
+    if (item.itemType == ConformanceStatementItemType.SPECIFICATION) {
+      reportData.specName = Some(newItem.getName)
+      reportData.specDescription = Option(newItem.getDescription)
+    }
+    if (item.itemType == ConformanceStatementItemType.ACTOR) {
+      reportData.actorName = Some(newItem.getName)
+      reportData.actorDescription = Option(newItem.getDescription)
+    }
     if (item.items.isDefined) {
       val children = toConformanceItems(item.items.get, Some(newItem), reportData)
       if (!children.isEmpty) {
@@ -1527,12 +1576,16 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
       newItem.getData.setFailedTests(counters.failures.toInt)
       newItem.getData.setUndefinedTests(counters.other.toInt)
       newItem.getData.setTestDomain(reportData.domainName.orNull)
+      newItem.getData.setTestDomainDescription(reportData.domainDescription.orNull)
       newItem.getData.setTestSpecificationGroup(reportData.groupName.orNull)
+      newItem.getData.setTestSpecificationGroupDescription(reportData.groupDescription.orNull)
       newItem.getData.setTestSpecification(reportData.specName.orNull)
+      newItem.getData.setTestSpecificationDescription(reportData.specDescription.orNull)
       if (item.itemType == ConformanceStatementItemType.ACTOR && item.actorToShow) {
         newItem.getData.setTestActor(reportData.actorName.orNull)
       }
       newItem.getData.setTestActorInternal(reportData.actorName.orNull)
+      newItem.getData.setTestActorDescription(reportData.actorDescription.orNull)
       if (item.results.get.testSuites.isDefined) {
         newItem.getData.setTestSuites(new util.ArrayList[com.gitb.reports.dto.TestSuiteOverview]())
         item.results.get.testSuites.get.foreach { testSuite =>
@@ -1598,7 +1651,7 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
     generateConformanceStatementReportInXML(reportPath, transformer, addTestCases, conformanceInfo, isDemo = false)
   }
 
-  private def getPartyDefinitionForXmlReport(organisationId: Long, organisationName: String, systemId: Long, systemName: String, communityId: Long, isDemo: Boolean): PartyDefinition = {
+  private def getPartyDefinitionForXmlReport(organisationId: Long, organisationName: String, systemId: Long, systemName: String, systemVersion: Option[String], systemDescription: Option[String], communityId: Long, isDemo: Boolean): PartyDefinition = {
     val party = new PartyDefinition
     party.setOrganisation(new com.gitb.tr.Organisation)
     party.getOrganisation.setName(organisationName)
@@ -1630,6 +1683,8 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
     }
     party.setSystem(new com.gitb.tr.System)
     party.getSystem.setName(systemName)
+    party.getSystem.setVersion(systemVersion.orNull)
+    party.getSystem.setDescription(systemDescription.orNull)
     // System properties
     if (isDemo) {
       val params = communityManager.getSimpleSystemParameters(communityId, Some(true))
@@ -1670,12 +1725,22 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
     report.setStatement(new com.gitb.tr.ConformanceStatement)
     // Definition
     report.getStatement.setDefinition(new ConformanceStatementDefinition)
-    report.getStatement.getDefinition.setDomain(conformanceData.domainNameFull)
-    report.getStatement.getDefinition.setSpecificationGroup(conformanceData.specificationGroupNameFull.orNull)
-    report.getStatement.getDefinition.setSpecification(conformanceData.specificationNameFull)
-    report.getStatement.getDefinition.setActor(conformanceData.actorFull)
+    report.getStatement.getDefinition.setDomain(new ConformanceItemInformation)
+    report.getStatement.getDefinition.getDomain.setName(conformanceData.domainNameFull)
+    report.getStatement.getDefinition.getDomain.setDescription(conformanceData.domainDescription.orNull)
+    if (conformanceData.specificationGroupNameFull.isDefined) {
+      report.getStatement.getDefinition.setSpecificationGroup(new ConformanceItemInformation)
+      report.getStatement.getDefinition.getSpecificationGroup.setName(conformanceData.specificationGroupNameFull.orNull)
+      report.getStatement.getDefinition.getSpecificationGroup.setDescription(conformanceData.specificationGroupDescription.orNull)
+    }
+    report.getStatement.getDefinition.setSpecification(new ConformanceItemInformation)
+    report.getStatement.getDefinition.getSpecification.setName(conformanceData.specificationNameFull)
+    report.getStatement.getDefinition.getSpecification.setDescription(conformanceData.specificationDescription.orNull)
+    report.getStatement.getDefinition.setActor(new ConformanceItemInformation)
+    report.getStatement.getDefinition.getActor.setName(conformanceData.actorFull)
+    report.getStatement.getDefinition.getActor.setDescription(conformanceData.actorDescription.orNull)
     // Party information
-    report.getStatement.getDefinition.setParty(getPartyDefinitionForXmlReport(conformanceData.organizationId, conformanceData.organizationName, conformanceData.systemId, conformanceData.systemName, conformanceData.communityId, isDemo))
+    report.getStatement.getDefinition.setParty(getPartyDefinitionForXmlReport(conformanceData.organizationId, conformanceData.organizationName, conformanceData.systemId, conformanceData.systemName, conformanceData.systemVersion, conformanceData.systemDescription, conformanceData.communityId, isDemo))
     // Test overview
     var failedTests = 0
     var completedTests = 0
@@ -2077,7 +2142,17 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
   }
 }
 
-private class ReportData(val skipDomain: Boolean, var domainName: Option[String] = None, var groupName: Option[String] = None, var specName: Option[String] = None, var actorName: Option[String] = None) {}
+private class ReportData(
+  val skipDomain: Boolean,
+  var domainName: Option[String] = None,
+  var domainDescription: Option[String] = None,
+  var groupName: Option[String] = None,
+  var groupDescription: Option[String] = None,
+  var specName: Option[String] = None,
+  var specDescription: Option[String] = None,
+  var actorName: Option[String] = None,
+  var actorDescription: Option[String] = None
+) {}
 
 private class ConformanceOverviewTracker(var withIndexes: Boolean) {
 

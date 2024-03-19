@@ -774,11 +774,12 @@ object PersistenceSchema {
     def id = column[Long]("id")
     def shortname = column[String]("sname")
     def fullname = column[String]("fname")
+    def version = column[Option[String]]("version")
     def description = column[Option[String]]("description", O.SqlType("TEXT"))
     def apiKey = column[Option[String]]("api_key")
     def badgeKey = column[String]("badge_key")
     def snapshotId = column[Long]("snapshot_id")
-    def * = (id :: shortname :: fullname :: description :: apiKey :: badgeKey :: snapshotId :: HNil).mapTo[ConformanceSnapshotSystem]
+    def * = (id :: shortname :: fullname :: version :: description :: apiKey :: badgeKey :: snapshotId :: HNil).mapTo[ConformanceSnapshotSystem]
   }
   val conformanceSnapshotSystems = TableQuery[ConformanceSnapshotSystemsTable]
 

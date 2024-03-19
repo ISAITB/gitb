@@ -11,9 +11,13 @@ public class ConformanceStatementData {
     private Long systemId;
     private String testActor;
     private String testActorInternal;
+    private String testActorDescription;
     private String testSpecification;
+    private String testSpecificationDescription;
     private String testSpecificationGroup;
+    private String testSpecificationGroupDescription;
     private String testDomain;
+    private String testDomainDescription;
     private String lastUpdated;
     private int completedTests = 0;
     private int failedTests = 0;
@@ -201,5 +205,37 @@ public class ConformanceStatementData {
 
     public void setTestActorInternal(String testActorInternal) {
         this.testActorInternal = testActorInternal;
+    }
+
+    public String getTestActorDescription() {
+        return testActorDescription;
+    }
+
+    public void setTestActorDescription(String testActorDescription) {
+        this.testActorDescription = testActorDescription;
+    }
+
+    public String getTestSpecificationDescription() {
+        return testSpecificationDescription;
+    }
+
+    public void setTestSpecificationDescription(String testSpecificationDescription) {
+        this.testSpecificationDescription = testSpecificationDescription;
+    }
+
+    public String getTestSpecificationGroupDescription() {
+        return testSpecificationGroupDescription;
+    }
+
+    public void setTestSpecificationGroupDescription(String testSpecificationGroupDescription) {
+        this.testSpecificationGroupDescription = testSpecificationGroupDescription;
+    }
+
+    public String getTestDomainDescription() {
+        return testDomainDescription;
+    }
+
+    public void setTestDomainDescription(String testDomainDescription) {
+        this.testDomainDescription = testDomainDescription;
     }
 }
