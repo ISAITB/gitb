@@ -52,7 +52,7 @@
         <version.xmlStreamBuffer>2.1.0</version.xmlStreamBuffer>
         <version.xmlWsPolicy>4.0.1</version.xmlWsPolicy>
         <version.gmbalApi>4.0.3</version.gmbalApi>
-        <version.commonsConfiguration>2.9.0</version.commonsConfiguration>
+        <version.commonsConfiguration>2.10.1</version.commonsConfiguration>
         <version.commonsText>1.10.0</version.commonsText>
         <version.akka>2.6.21</version.akka>
         <version.rgxgen>1.4</version.rgxgen>
