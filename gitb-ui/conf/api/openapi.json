@@ -1457,7 +1457,8 @@
               "$ref": "#/components/schemas/ConformanceStatementConfigurationEntry"
             }
           }
-        }
+        },
+        "additionalProperties": false
       },
       "OrganisationConfigurationEntry": {
         "description": "Configuration updates to apply to a given organisation.",
@@ -1479,7 +1480,8 @@
         "required": [
           "organisation",
           "properties"
-        ]
+        ],
+        "additionalProperties": false
       },
       "SystemConfigurationEntry": {
         "description": "Configuration updates to apply to a given system.",
@@ -1499,9 +1501,10 @@
           }
         },
         "required": [
-          "organisation",
+          "system",
           "properties"
-        ]
+        ],
+        "additionalProperties": false
       },
       "ConformanceStatementConfigurationEntry": {
         "description": "Configuration updates to apply for a given conformance statement.",
@@ -1523,7 +1526,13 @@
             },
             "minItems": 1
           }
-        }
+        },
+        "required": [
+          "system",
+          "actor",
+          "properties"
+        ],
+        "additionalProperties": false
       },
       "ConfigurationEntry": {
         "description": "The value for configuration item identified by its unique key.",
@@ -1534,12 +1543,14 @@
             "type": "string"
           },
           "value": {
-            "description": "The value to apply for the configuration property (if missing this signals a delete of the existing value)."
+            "description": "The value to apply for the configuration property (if missing this signals a delete of the existing value).",
+            "type": "string"
           }
         },
         "required": [
           "key"
-        ]
+        ],
+        "additionalProperties": false
       },
       "ConfigureResponse": {
         "description": "The results of a configuration update.",
@@ -1552,7 +1563,8 @@
               "type": "string"
             }
           }
-        }
+        },
+        "additionalProperties": false
       }
     },
     "securitySchemes": {
