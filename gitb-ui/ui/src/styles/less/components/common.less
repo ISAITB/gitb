@@ -17,10 +17,10 @@ table th.sortable {
 			&.selectable {
 				&:hover, &:hover td {
 					cursor: pointer;
-					background-color: @gray-highlight;
+					background-color: @gray-highlight !important;
 				}
-				&.selected, &:hover td {
-					background-color: @gray-highlight;
+				&.selected td, &:hover td {
+					background-color: @gray-highlight !important;
 				}
 			}
 			td {

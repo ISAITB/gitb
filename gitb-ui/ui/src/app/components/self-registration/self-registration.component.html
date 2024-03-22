@@ -40,69 +40,71 @@
                 </div>
             </div>
         </app-form-section>
-        <app-form-section [sectionTitle]="dataService.labelOrganisation() + ' details'" [marginBefore]="true" [marginAfter]="!sso" titleTooltip="This information defines the member of the selected community through which will you be testing for conformance.">
-            <div class="row mt-3">
-                <label class="col-3 col-form-label text-end" for="orgShortName">* Short name:</label>
-                <div class="col-7">
-                    <input id="orgShortName" [(ngModel)]="model.orgShortName" class="form-control" type="text"/>
+        @if (model && model.selfRegOption) {
+            <app-form-section [sectionTitle]="dataService.labelOrganisation() + ' details'" [marginBefore]="true" [marginAfter]="!sso" titleTooltip="This information defines the member of the selected community through which will you be testing for conformance.">
+                <div class="row mt-3">
+                    <label class="col-3 col-form-label text-end" for="orgShortName">* Short name:</label>
+                    <div class="col-7">
+                        <input id="orgShortName" [(ngModel)]="model.orgShortName" class="form-control" type="text"/>
+                    </div>
+                    <div app-tooltip class="col-auto" tbTooltip="A short name for your {{dataService.labelOrganisationLower()}} to appear in reports."></div>
                 </div>
-                <div app-tooltip class="col-auto" tbTooltip="A short name for your {{dataService.labelOrganisationLower()}} to appear in reports."></div>
-            </div>
-            <div class="row mt-3">
-                <label class="col-3 col-form-label text-end" for="orgFullName">* Full name:</label>
-                <div class="col-7">
-                    <input id="orgFullName" [(ngModel)]="model.orgFullName" class="form-control" type="text"/>
+                <div class="row mt-3">
+                    <label class="col-3 col-form-label text-end" for="orgFullName">* Full name:</label>
+                    <div class="col-7">
+                        <input id="orgFullName" [(ngModel)]="model.orgFullName" class="form-control" type="text"/>
+                    </div>
+                    <div app-tooltip class="col-auto" tbTooltip="The complete name of your {{dataService.labelOrganisationLower()}}."></div>
                 </div>
-                <div app-tooltip class="col-auto" tbTooltip="The complete name of your {{dataService.labelOrganisationLower()}}."></div>
-            </div>
-            <div class="row mt-3" *ngIf="model.selfRegOption?.templates && model.selfRegOption!.templates!.length > 0">
-                <label class="col-3 col-form-label text-end" for="template"><span [hidden]="!model.selfRegOption?.forceTemplateSelection">* </span>Configuration:</label>
-                <div class="col-7">
-                    <select id="template" name="template" class="form-control form-select" [disabled]="templateReadonly" [(ngModel)]="model.template">
-                        <option value="" disabled></option>
-                        <option *ngFor="let template of model.selfRegOption?.templates" [ngValue]="template">{{template.name}}</option>
-                    </select>
+                <div class="row mt-3" *ngIf="model.selfRegOption?.templates && model.selfRegOption!.templates!.length > 0">
+                    <label class="col-3 col-form-label text-end" for="template"><span [hidden]="!model.selfRegOption?.forceTemplateSelection">* </span>Configuration:</label>
+                    <div class="col-7">
+                        <select id="template" name="template" class="form-control form-select" [disabled]="templateReadonly" [(ngModel)]="model.template">
+                            <option value="" disabled></option>
+                            <option *ngFor="let template of model.selfRegOption?.templates" [ngValue]="template">{{template.name}}</option>
+                        </select>
+                    </div>
+                    <div app-tooltip class="col-auto" tbTooltip="Predefined test configuration(s) curated by the community administrator."></div>
                 </div>
-                <div app-tooltip class="col-auto" tbTooltip="Predefined test configuration(s) curated by the community administrator."></div>
-            </div>
-            <div class="row" *ngIf="model.selfRegOption?.organisationProperties && model.selfRegOption!.organisationProperties!.length > 0">
-              <div class="col-12">
-                <div class="form-separator mt-3 mb-0"></div>
-              </div>
-            </div>
-            <app-custom-property-form *ngIf="model.selfRegOption"
-                [refresh]="refreshSignal"
-                [tbProperties]="model.selfRegOption!.organisationProperties"
-                [tbShowFormHeader]="false"
-                [tbFormPadded]="false"
-                [tbColInputLess]="1"
-                [tbShowRequiredAsterisks]="model.selfRegOption!.forceRequiredProperties"
-                [tbForceEditable]="true"
-                [tbSetDefaults]="true"
-                [tbPropertyType]="'organisation'"></app-custom-property-form>
-        </app-form-section>
-        <app-form-section *ngIf="!sso" [marginAfter]="false" sectionTitle="Administrator account details" [titleTooltip]="'Through your administrator account you can manage your ' + dataService.labelOrganisationLower() + ' users, configure your conformance statements and execute tests.'">
-            <div class="row my-3">
-                <label class="col-3 col-form-label text-end" for="adminName">* Name:</label>
-                <div class="col-7">
-                    <input id="adminName" [(ngModel)]="model.adminName" class="form-control" type="text"/>
+                <div class="row" *ngIf="model.selfRegOption?.organisationProperties && model.selfRegOption!.organisationProperties!.length > 0">
+                  <div class="col-12">
+                    <div class="form-separator mt-3 mb-0"></div>
+                  </div>
                 </div>
-                <div app-tooltip class="col-auto" tbTooltip="This may be your name or a description in case this account will be shared by multiple people."></div>
-            </div>
-            <div class="row mb-3">
-                <label class="col-3 col-form-label text-end" for="adminEmail">* Username:</label>
-                <div class="col-7">
-                    <input id="adminEmail" [(ngModel)]="model.adminEmail" class="form-control" type="text"/>
+                <app-custom-property-form *ngIf="model.selfRegOption"
+                    [refresh]="refreshSignal"
+                    [tbProperties]="model.selfRegOption!.organisationProperties"
+                    [tbShowFormHeader]="false"
+                    [tbFormPadded]="false"
+                    [tbColInputLess]="1"
+                    [tbShowRequiredAsterisks]="model.selfRegOption!.forceRequiredProperties"
+                    [tbForceEditable]="true"
+                    [tbSetDefaults]="true"
+                    [tbPropertyType]="'organisation'"></app-custom-property-form>
+            </app-form-section>
+            <app-form-section *ngIf="!sso" [marginAfter]="false" sectionTitle="Administrator account details" [titleTooltip]="'Through your administrator account you can manage your ' + dataService.labelOrganisationLower() + ' users, configure your conformance statements and execute tests.'">
+                <div class="row my-3">
+                    <label class="col-3 col-form-label text-end" for="adminName">* Name:</label>
+                    <div class="col-7">
+                        <input id="adminName" [(ngModel)]="model.adminName" class="form-control" type="text"/>
+                    </div>
+                    <div app-tooltip class="col-auto" tbTooltip="This may be your name or a description in case this account will be shared by multiple people."></div>
                 </div>
-                <div app-tooltip class="col-auto" tbTooltip="This is your account's username."></div>
-            </div>
-            <div class="row">
-                <label class="col-3 col-form-label text-end" for="adminPassword">* Password:</label>
-                <div class="col-7">
-                    <app-secret-input id="adminPassword" name="adminPassword" [(ngModel)]="model.adminPassword"></app-secret-input>
+                <div class="row mb-3">
+                    <label class="col-3 col-form-label text-end" for="adminEmail">* Username:</label>
+                    <div class="col-7">
+                        <input id="adminEmail" [(ngModel)]="model.adminEmail" class="form-control" type="text"/>
+                    </div>
+                    <div app-tooltip class="col-auto" tbTooltip="This is your account's username."></div>
                 </div>
-                <div app-tooltip class="col-auto" tbTooltip="The account's password, to be provided with the username when logging in."></div>
-            </div>
-        </app-form-section>
+                <div class="row">
+                    <label class="col-3 col-form-label text-end" for="adminPassword">* Password:</label>
+                    <div class="col-7">
+                        <app-secret-input id="adminPassword" name="adminPassword" [(ngModel)]="model.adminPassword"></app-secret-input>
+                    </div>
+                    <div app-tooltip class="col-auto" tbTooltip="The account's password, to be provided with the username when logging in."></div>
+                </div>
+            </app-form-section>
+        }
     </div>
   </div>

@@ -51,6 +51,9 @@ export class LinkAccountComponent extends BaseComponent implements OnInit {
 
   resetSelfRegOptions() {
     this.selfRegData = {}
+    for (let option of this.selfRegOptions) {
+      (option as any)._selected = undefined
+    }
   }
 
   selectAccount(accountId: number) {
