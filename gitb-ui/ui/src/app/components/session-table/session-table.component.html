@@ -1,31 +1,50 @@
 <div class="table-container rounded">
     <table [attr.id]="sessionTableId" class="table table-directive expandable-table">
-        <caption *ngIf="tableCaptionVisible">{{tableCaption}}</caption>
+        @if (tableCaptionVisible) {
+            <caption>{{tableCaption}}</caption>
+        }
         <thead>
             <tr>
-                <th class="th-min-centered" *ngIf="checkboxEnabled"></th>
+                @if (checkboxEnabled) {
+                    <th class="th-min-centered"></th>
+                }
                 <th class="th-min-centered"></th>
-                <th [ngClass]="column.headerClass!" *ngFor="let column of columnsLeft" (click)="!column.sortable || headerColumnClicked(column)">
-                    {{column.title}} 
-                    <i *ngIf="column.order == 'desc'" class="fa-solid fa-caret-down"></i>
-                    <i *ngIf="column.order == 'asc'" class="fa-solid fa-caret-up"></i>
-                </th>
-                <th *ngIf="actionVisible || exportVisible || operationsVisible" class="th-min-centered"></th>
-                <th [ngClass]="column.headerClass!" *ngFor="let column of columnsRight" (click)="!column.sortable || headerColumnClicked(column)">
-                    {{column.title}} 
-                    <i *ngIf="column.order == 'desc'" class="fa-solid fa-caret-down"></i>
-                    <i *ngIf="column.order == 'asc'" class="fa-solid fa-caret-up"></i>
-                </th>
+                @for (column of columnsLeft; track $index) {
+                    <th [ngClass]="column.headerClass!" (click)="!column.sortable || headerColumnClicked(column)">
+                        {{column.title}} 
+                        @if (column.order == 'desc') {
+                            <i class="fa-solid fa-caret-down"></i>
+                        } @else if (column.order == 'asc') {
+                            <i class="fa-solid fa-caret-up"></i>
+                        }
+                    </th>
+                }
+                @if (actionVisible || exportVisible || operationsVisible) {
+                    <th class="th-min-centered"></th>
+                }
+                @for (column of columnsRight; track $index) {
+                    <th [ngClass]="column.headerClass!" (click)="!column.sortable || headerColumnClicked(column)">
+                        {{column.title}}
+                        @if (column.order == 'desc') {
+                            <i class="fa-solid fa-caret-down"></i>
+                        } @else if (column.order == 'asc') {
+                            <i class="fa-solid fa-caret-up"></i>
+                        }
+                    </th>
+                }
             </tr>
         </thead>
         <tbody [class.disable-events]="contentRefreshing">
-            <tr *ngIf="loadingStatus && loadingStatus.status != Constants.STATUS.FINISHED">
-                <td [attr.colspan]="columnCount" class="td-data-loading"><span><i class="fa-solid fa-spinner fa-spin-override fa-lg"></i></span></td>
-            </tr>
-            <tr *ngIf="loadingStatus && loadingStatus.status == Constants.STATUS.FINISHED && (!data || data.length == 0)">
-                <td [attr.colspan]="columnCount" class="td-no-data"><span>{{noDataMessage}}</span></td>
-            </tr>
-            <ng-container *ngFor="let row of data; let i = index">
+            @if (loadingStatus && loadingStatus.status != Constants.STATUS.FINISHED) {
+                <tr>
+                    <td [attr.colspan]="columnCount" class="td-data-loading"><span><i class="fa-solid fa-spinner fa-spin-override fa-lg"></i></span></td>
+                </tr>
+            } @else if (loadingStatus && loadingStatus.status == Constants.STATUS.FINISHED && (!data || data.length == 0)) {
+                <tr>
+                    <td [attr.colspan]="columnCount" class="td-no-data"><span>{{noDataMessage}}</span></td>
+                </tr>
+            }
+            @for (row of data; let i = $index; track i) {
                 <tr table-row-directive
                     class="table-row-directive expandable-table-row-collapsed session-table-row" 
                     [ngClass]="rowClass(row)" 
@@ -60,12 +79,12 @@
                             <div class="collapsing-div">
                                 <div class="sessionControls">
                                     <div class="btn-toolbar">
-                                        <ng-container *ngIf="supportRefresh">
+                                        @if (supportRefresh) {
                                             <button type="button" class="btn btn-secondary" (click)="refresh(row)" [pending]="sessionBeingRefreshed?.session == row.session" [disable]="row.endTime != undefined">Refresh</button>
-                                        </ng-container>
+                                        }
                                         <!-- View log button - we need the switches because the [pending] directive doesn't allow it to update dynamically. -->
-                                        <ng-container [ngSwitch]="supportRefresh">
-                                            <button *ngSwitchCase="true" type="button" [disabled]="sessionBeingRefreshed?.session == row.session || row.diagramState?.logs == undefined" class="btn btn-secondary position-relative" (click)="showTestSessionLog(row)">
+                                        @if (supportRefresh) {
+                                            <button type="button" [disabled]="sessionBeingRefreshed?.session == row.session || row.diagramState?.logs == undefined" class="btn btn-secondary position-relative" (click)="showTestSessionLog(row)">
                                                 View log
                                                 <span 
                                                     [class.badgeLogErrors]="row.hasUnreadErrorLogs"
@@ -75,98 +94,99 @@
                                                     class="buttonBadge position-absolute top-0 start-100 translate-middle border border-light rounded-circle">
                                                 </span>                                                   
                                             </button>
-                                            <button *ngSwitchDefault type="button" [disable]="!row.diagramLoaded" class="btn btn-secondary position-relative" (click)="showTestSessionLog(row)" [pending]="viewLogPending[row.session]">View log</button>
-                                        </ng-container>
-                                        <ng-container *ngIf="supportRefresh && row.diagramState?.interactions != undefined && row.diagramState.interactions.length > 0" [ngSwitch]="row.diagramState.interactions.length == 1">
-                                            <button *ngSwitchCase="true" type="button" [disabled]="sessionBeingRefreshed?.session == row.session" class="btn btn-secondary" (click)="displayPendingInteraction(row)">View pending interaction</button>
-                                            <div *ngSwitchDefault class="btn-group" dropdown>
-                                                <button id="button-interactions" dropdownToggle class="btn btn-secondary dropdown-toggle" type="button" aria-controls="dropdown-interactions">View pending interaction<span class="caret withMargin"></span></button>
-                                                <ul id="dropdown-interactions" *dropdownMenu class="dropdown-menu" aria-labelledby="button-interactions">
-                                                    <li *ngFor="let interaction of row.diagramState.interactions; let index = index">
-                                                        <a class="dropdown-item" href (click)="displayPendingInteraction(row, interaction.stepId);$event.preventDefault();">{{labelForPendingInteraction(interaction, index)}}</a>
-                                                    </li>
-                                                </ul>                                                                        
-                                            </div>
-                                        </ng-container>
+                                        } @else {
+                                            <button type="button" [disable]="!row.diagramLoaded" class="btn btn-secondary position-relative" (click)="showTestSessionLog(row)" [pending]="viewLogPending[row.session]">View log</button>
+                                        }
+                                        @if (supportRefresh && row.diagramState?.interactions != undefined && row.diagramState.interactions.length > 0) {
+                                            @if (row.diagramState.interactions.length == 1) {
+                                                <button type="button" [disabled]="sessionBeingRefreshed?.session == row.session" class="btn btn-secondary" (click)="displayPendingInteraction(row)">View pending interaction</button>
+                                            } @else {
+                                                <div class="btn-group" dropdown>
+                                                    <button id="button-interactions" dropdownToggle class="btn btn-secondary dropdown-toggle" type="button" aria-controls="dropdown-interactions">View pending interaction<span class="caret withMargin"></span></button>
+                                                    <ul id="dropdown-interactions" *dropdownMenu class="dropdown-menu" aria-labelledby="button-interactions">
+                                                        @for (interaction of row.diagramState.interactions; let index = $index; track index) {
+                                                            <li>
+                                                                <a class="dropdown-item" href (click)="displayPendingInteraction(row, interaction.stepId);$event.preventDefault();">{{labelForPendingInteraction(interaction, index)}}</a>
+                                                            </li>
+                                                        }
+                                                    </ul>                                                                        
+                                                </div>
+                                            }
+                                        }
                                     </div>
                                     <div class="btn-toolbar goto-controls">
                                         <!-- View statement -->
-                                        <button *ngIf="showToStatement(row)" type="button" class="btn btn-secondary" (click)="toStatement(row)">View statement</button>
+                                        @if (showToStatement(row)) {
+                                            <button type="button" class="btn btn-secondary" (click)="toStatement(row)">View statement</button>
+                                        }
                                         <!-- View party -->
-                                        <ng-container *ngIf="showPartyNavigation(row)">
-                                            <ng-container [ngSwitch]="showToSystem(row)">
-                                                <ng-container *ngSwitchCase="true">
-                                                    <div class="btn-group" dropdown>
-                                                        <button type="button" class="btn btn-secondary" (click)="toSystem(row)">View {{dataService.labelSystemLower()}}</button>
-                                                        <button id="button-system" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
-                                                        <ul id="dropdown-system" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-system">
+                                        @if (showPartyNavigation(row)) {
+                                            @if (showToSystem(row)) {
+                                                <div class="btn-group" dropdown>
+                                                    <button type="button" class="btn btn-secondary" (click)="toSystem(row)">View {{dataService.labelSystemLower()}}</button>
+                                                    <button id="button-system" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
+                                                    <ul id="dropdown-system" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-system">
+                                                        @if (showToCommunity(row)) {
                                                             <li role="menuitem"><a class="dropdown-item" href (click)="toCommunity(row);$event.preventDefault();">View community</a></li>
-                                                            <li role="menuitem"><a class="dropdown-item" href (click)="toOrganisation(row); $event.preventDefault();">View {{dataService.labelOrganisationLower()}}</a></li>
+                                                        }
+                                                        <li role="menuitem"><a class="dropdown-item" href (click)="toOrganisation(row); $event.preventDefault();">View {{dataService.labelOrganisationLower()}}</a></li>
+                                                    </ul>
+                                                </div>
+                                            } @else {
+                                                @if (showToOrganisation(row)) {
+                                                    <div class="btn-group" dropdown>
+                                                        <button type="button" class="btn btn-secondary" (click)="toOrganisation(row)">View {{dataService.labelOrganisationLower()}}</button>
+                                                        <button id="button-system" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
+                                                        <ul id="dropdown-system" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-system">
+                                                            <li role="menuitem"><a class="dropdown-item" href (click)="toCommunity(row);$event.preventDefault();">View community</a></li>
                                                         </ul>
                                                     </div>
-                                                </ng-container>
-                                                <ng-container *ngSwitchDefault [ngSwitch]="showToOrganisation(row)">
-                                                    <ng-container *ngSwitchCase="true">
-                                                        <div class="btn-group" dropdown>
-                                                            <button type="button" class="btn btn-secondary" (click)="toOrganisation(row)">View {{dataService.labelOrganisationLower()}}</button>
-                                                            <button id="button-system" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
-                                                            <ul id="dropdown-system" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-system">
-                                                                <li role="menuitem"><a class="dropdown-item" href (click)="toCommunity(row);$event.preventDefault();">View community</a></li>
-                                                            </ul>
-                                                        </div>
-                                                    </ng-container>
-                                                    <ng-container *ngSwitchDefault>
-                                                        <button type="button" class="btn btn-secondary" (click)="toCommunity(row)">View community</button>
-                                                    </ng-container>
-                                                </ng-container>
-                                            </ng-container>
-                                        </ng-container>
+                                                } @else {
+                                                    <button type="button" class="btn btn-secondary" (click)="toCommunity(row)">View community</button>
+                                                }
+                                            }
+                                        }
                                         <!-- View specification -->
-                                        <ng-container *ngIf="showSpecificationNavigation(row)">
-                                            <ng-container [ngSwitch]="showToSpecification(row)">
-                                                <ng-container *ngSwitchCase="true">
+                                        @if (showSpecificationNavigation(row)) {
+                                            @if (showToSpecification(row)) {
+                                                <div class="btn-group" dropdown>
+                                                    <button type="button" class="btn btn-secondary" (click)="toSpecification(row)">View {{dataService.labelSpecificationLower()}}</button>
+                                                    <button id="button-spec" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
+                                                    <ul id="dropdown-spec" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-spec">
+                                                        <li role="menuitem"><a class="dropdown-item" href (click)="toDomain(row);$event.preventDefault();">View {{dataService.labelDomainLower()}}</a></li>
+                                                        @if (showToActor(row)) {
+                                                            <li role="menuitem"><a class="dropdown-item" href (click)="toActor(row); $event.preventDefault();">View {{dataService.labelActorLower()}}</a></li>
+                                                        }
+                                                    </ul>
+                                                </div>
+                                            } @else {
+                                                @if (showToActor(row)) {
                                                     <div class="btn-group" dropdown>
-                                                        <button type="button" class="btn btn-secondary" (click)="toSpecification(row)">View {{dataService.labelSpecificationLower()}}</button>
+                                                        <button type="button" class="btn btn-secondary" (click)="toActor(row)">View {{dataService.labelActorLower()}}</button>
                                                         <button id="button-spec" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
-                                                        <ul id="dropdown-spec" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-spec">
+                                                        <ul id="dropdown-spec" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-spec">
                                                             <li role="menuitem"><a class="dropdown-item" href (click)="toDomain(row);$event.preventDefault();">View {{dataService.labelDomainLower()}}</a></li>
-                                                            <li *ngIf="showToActor(row)" role="menuitem"><a class="dropdown-item" href (click)="toActor(row); $event.preventDefault();">View {{dataService.labelActorLower()}}</a></li>
                                                         </ul>
                                                     </div>
-                                                </ng-container>
-                                                <ng-container *ngSwitchDefault [ngSwitch]="showToActor(row)">
-                                                    <ng-container *ngSwitchCase="true">
-                                                        <div class="btn-group" dropdown>
-                                                            <button type="button" class="btn btn-secondary" (click)="toActor(row)">View {{dataService.labelActorLower()}}</button>
-                                                            <button id="button-spec" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
-                                                            <ul id="dropdown-spec" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-spec">
-                                                                <li role="menuitem"><a class="dropdown-item" href (click)="toDomain(row);$event.preventDefault();">View {{dataService.labelDomainLower()}}</a></li>
-                                                            </ul>
-                                                        </div>
-                                                    </ng-container>
-                                                    <ng-container *ngSwitchDefault>
-                                                        <button type="button" class="btn btn-secondary" (click)="toDomain(row)">View {{dataService.labelDomainLower()}}</button>
-                                                    </ng-container>
-                                                </ng-container>
-                                            </ng-container>
-                                        </ng-container>
+                                                } @else {
+                                                    <button type="button" class="btn btn-secondary" (click)="toDomain(row)">View {{dataService.labelDomainLower()}}</button>
+                                                }
+                                            }
+                                        }
                                         <!-- View test case -->
-                                        <ng-container *ngIf="showToTestSuite(row) || showToTestCase(row)">
-                                            <ng-container [ngSwitch]="showToTestCase(row)">
-                                                <ng-container *ngSwitchCase="true">
-                                                    <div class="btn-group" dropdown>
-                                                        <button type="button" class="btn btn-secondary" (click)="toTestCase(row)">View test case</button>
-                                                        <button id="button-testcase" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
-                                                        <ul id="dropdown-testcase" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-testcase">
-                                                            <li role="menuitem"><a class="dropdown-item" href (click)="toTestSuite(row);$event.preventDefault();">View test suite</a></li>
-                                                        </ul>
-                                                    </div>
-                                                </ng-container>
-                                                <ng-container *ngSwitchDefault>
-                                                    <button type="button" class="btn btn-secondary" (click)="toTestSuite(row)">View test suite</button>
-                                                </ng-container>
-                                            </ng-container>
-                                        </ng-container>
+                                        @if (showToTestSuite(row) || showToTestCase(row)) {
+                                            @if (showToTestCase(row)) {
+                                                <div class="btn-group" dropdown>
+                                                    <button type="button" class="btn btn-secondary" (click)="toTestCase(row)">View test case</button>
+                                                    <button id="button-testcase" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
+                                                    <ul id="dropdown-testcase" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-testcase">
+                                                        <li role="menuitem"><a class="dropdown-item" href (click)="toTestSuite(row);$event.preventDefault();">View test suite</a></li>
+                                                    </ul>
+                                                </div>
+                                            } @else {
+                                                <button type="button" class="btn btn-secondary" (click)="toTestSuite(row)">View test suite</button>
+                                            }
+                                        }
                                     </div>
                                 </div>
                                 <div class="card">
@@ -184,16 +204,20 @@
                                             <div class="session-table-title-value"><app-copy-enabled-text [value]="row.session"></app-copy-enabled-text></div>
                                         </div>
                                     </div>
-                                    <div [collapse]="diagramCollapsed[row.session]" [isAnimated]="true" (collapsed)="diagramCollapsedFinished[row.session] = true" (expands)="diagramCollapsedFinished[row.session] = false">
+                                    <div [collapse]="diagramCollapsed[row.session]" [isAnimated]="true" (collapsed)="toggleDiagramCollapsedFinished(row.session, true)" (expands)="toggleDiagramCollapsedFinished(row.session, false)">
                                         <div class="card-body" [class.disable-events]="sessionBeingRefreshed?.session == row.session" style="overflow-x: auto; overflow-y: hidden;">
-                                            <div *ngIf="!row.hideLoadingIcon"><span><i class="fa-solid fa-spinner fa-spin-override fa-lg"></i></span></div>
+                                            @if (!row.hideLoadingIcon) {
+                                                <div><span><i class="fa-solid fa-spinner fa-spin-override fa-lg"></i></span></div>
+                                            }
                                             <div [collapse]="!row.diagramExpanded" [isAnimated]="true">
-                                                <div *ngIf="row.expanded || row.diagramLoaded">
-                                                    <app-test-session-presentation
-                                                        [session]="row" 
-                                                        (ready)="diagramReady($event)">
-                                                    </app-test-session-presentation>
-                                                </div>
+                                                @if (row.expanded || row.diagramLoaded) {
+                                                    <div>
+                                                        <app-test-session-presentation
+                                                            [session]="row" 
+                                                            (ready)="diagramReady($event)">
+                                                        </app-test-session-presentation>
+                                                    </div>
+                                                }
                                             </div>
                                         </div>
                                     </div>                                                
@@ -202,15 +226,17 @@
                         </div>
                     </td>
                 </tr>
-            </ng-container>
+            }
         </tbody>
     </table>
-    <div *ngIf="(!prevDisabled || !nextDisabled) && data && data.length > 0" class="text-center table-paging-controls">
-        <div class="btn-group" role="group" [class.disable-events]="contentRefreshing">
-            <button type="button" class="btn btn-sm btn-secondary" [disabled]="prevDisabled" (click)="doFirstPage()">First</button>
-            <button type="button" class="btn btn-sm btn-secondary" [disabled]="prevDisabled" (click)="doPrevPage()">Previous</button>
-            <button type="button" class="btn btn-sm btn-secondary" [disabled]="nextDisabled" (click)="doNextPage()">Next</button>
-            <button type="button" class="btn btn-sm btn-secondary" [disabled]="nextDisabled" (click)="doLastPage()">Last</button>
+    @if ((!prevDisabled || !nextDisabled) && data && data.length > 0) {
+        <div class="text-center table-paging-controls">
+            <div class="btn-group" role="group" [class.disable-events]="contentRefreshing">
+                <button type="button" class="btn btn-sm btn-secondary" [disabled]="prevDisabled" (click)="doFirstPage()">First</button>
+                <button type="button" class="btn btn-sm btn-secondary" [disabled]="prevDisabled" (click)="doPrevPage()">Previous</button>
+                <button type="button" class="btn btn-sm btn-secondary" [disabled]="nextDisabled" (click)="doNextPage()">Next</button>
+                <button type="button" class="btn btn-sm btn-secondary" [disabled]="nextDisabled" (click)="doLastPage()">Last</button>
+            </div>
         </div>
-    </div>
+    }
 </div>

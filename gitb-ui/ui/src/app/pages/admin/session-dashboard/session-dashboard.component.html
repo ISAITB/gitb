@@ -18,7 +18,7 @@
                 <button type="button" class="btn btn-secondary" *ngIf="showCollapseAllActive()" (click)="onCollapseAllActive();$event.stopPropagation()">Collapse all</button>
             </div>
         </div>
-        <div [collapse]="activeSessionsCollapsed" [isAnimated]="true" (collapsed)="activeSessionsCollapsedFinished = true" (expands)="activeSessionsCollapsedFinished = false">
+        <div [collapse]="activeSessionsCollapsed" [isAnimated]="true" (collapsed)="toggleActiveSessionsCollapsedFinished(true)" (expands)="toggleActiveSessionsCollapsedFinished(false)">
             <div app-session-table
                 [sessionTableId]="'dashboard-table-active'"
                 [expandedCounter]="activeExpandedCounter"
@@ -50,7 +50,7 @@
                 <button type="button" class="btn btn-secondary" *ngIf="showCollapseAll()" (click)="onCollapseAll();$event.stopPropagation()">Collapse all</button>
             </div>
         </div>
-        <div [collapse]="completedSessionsCollapsed" [isAnimated]="true" (collapsed)="completedSessionsCollapsedFinished = true" (expands)="completedSessionsCollapsedFinished = false">
+        <div [collapse]="completedSessionsCollapsed" [isAnimated]="true" (collapsed)="toggleCompletedSessionsCollapsedFinished(true)" (expands)="toggleCompletedSessionsCollapsedFinished(false)">
             <div app-session-table
                 [sessionTableId]="'dashboard-table'"
                 [expandedCounter]="completedExpandedCounter"

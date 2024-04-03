@@ -3,7 +3,7 @@
 		<div class="card-header clickable" (click)="collapsedDetails = !collapsedDetails" [class.collapsed]="collapsedDetailsFinished">
 			<div class="card-title"><app-collapsing-icon [isCollapsed]="collapsedDetails"></app-collapsing-icon>Conformance statement details</div>
 		</div>
-		<div [collapse]="collapsedDetails" [isAnimated]="true" (collapsed)="collapsedDetailsFinished = true" (expands)="collapsedDetailsFinished = false">
+		<div [collapse]="collapsedDetails" [isAnimated]="true" (collapsed)="toggleOverviewCollapse(true)" (expands)="toggleOverviewCollapse(false)">
 			<div class="card-body detailsPanel">
 				@if (snapshotId != undefined) {
 					<div class="alert alert-info rounded mb-0">

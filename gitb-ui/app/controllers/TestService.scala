@@ -181,7 +181,7 @@ class TestService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerC
   }
 
   def stopAllOrganisationSessions(organisationId: Long): Action[AnyContent] = authorizedAction { request =>
-    authorizationManager.canManageOrganisationBasic(request, organisationId)
+    authorizationManager.canViewOrganisation(request, organisationId)
     actorSystem.eventStream.publish(TerminateAllSessionsEvent(None, Some(organisationId), None))
     testResultManager.getRunningSessionsForOrganisation(organisationId).foreach { sessionId =>
       testExecutionManager.endSession(sessionId)

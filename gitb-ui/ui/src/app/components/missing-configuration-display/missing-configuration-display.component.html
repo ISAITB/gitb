@@ -10,12 +10,12 @@
 		<!-- Something is not visible -->
 		<ng-container [ngSwitch]="requiredPropertiesAreHidden">
 			<div class="alert alert-info rounded" *ngSwitchCase="true">
-				<p>Required information is needed before tests can be launched. Please review this below and complete it accordingly.</p>
+				<p>Required information is needed before tests can be launched. Review this below and complete it accordingly.</p>
 				<span><b>Note: </b></span><span>Certain additional configuration must be completed for you by an administrator before you can proceed with testing.</span>
 			</div>
 			<!-- Everything is visible -->
 			<div class="alert alert-info rounded" *ngSwitchDefault>
-				<span>Required information is needed before tests can be launched. Please review this below and complete it accordingly.</span>
+				<span>Required information is needed before tests can be launched. Review this below and complete it accordingly.</span>
 			</div>
 		</ng-container>
 		<div class="card" *ngIf="showOrganisationProperties">

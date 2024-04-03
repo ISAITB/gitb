@@ -345,7 +345,7 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
     this.started = false
     this.reload = true
     if (this.session != undefined) {
-      this.stop(this.session)
+      this.stop(this.session, true)
     }
   }
 
@@ -1071,13 +1071,17 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
     })
   }
 
-  stop(session: string) {
+  stop(session: string, force?: boolean) {
+    let signalStop = force == true
     if (this.started && !this.stopped) {
       this.stopped = true
       if (this.testsToExecute.length == 1) {
         this.allStopped = true
       }
       this.started = false
+      signalStop = true
+    }
+    if (signalStop) {
       this.testService.stop(session).subscribe(() => {
         this.closeWebSocket()
         this.session = undefined

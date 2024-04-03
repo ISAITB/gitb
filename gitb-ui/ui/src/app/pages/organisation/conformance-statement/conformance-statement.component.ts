@@ -731,6 +731,12 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
     return this.showToDomain() || this.showToSpecification() || this.showToActor()
   }
 
+  toggleOverviewCollapse(value: boolean) {
+    setTimeout(() => {
+      this.collapsedDetailsFinished = value
+    }, 1)
+  }
+
   back() {
     if (this.communityId == undefined) {
       this.routingService.toOwnConformanceStatements(this.organisationId, this.systemId, this.snapshotId)

@@ -345,4 +345,9 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
     }
   }
 
+  toggleDiagramCollapsedFinished(session: string, value: boolean) {
+    setTimeout(() => {
+      this.diagramCollapsedFinished[session] = value
+    }, 1)
+  }
 }

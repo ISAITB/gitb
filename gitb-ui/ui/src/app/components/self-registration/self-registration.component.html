@@ -57,7 +57,7 @@
                     <div app-tooltip class="col-auto" tbTooltip="The complete name of your {{dataService.labelOrganisationLower()}}."></div>
                 </div>
                 <div class="row mt-3" *ngIf="model.selfRegOption?.templates && model.selfRegOption!.templates!.length > 0">
-                    <label class="col-3 col-form-label text-end" for="template"><span [hidden]="!model.selfRegOption?.forceTemplateSelection">* </span>Configuration:</label>
+                    <label class="col-3 col-form-label text-end" for="template"><span [hidden]="!model.selfRegOption.forceTemplateSelection">* </span>Configuration:</label>
                     <div class="col-7">
                         <select id="template" name="template" class="form-control form-select" [disabled]="templateReadonly" [(ngModel)]="model.template">
                             <option value="" disabled></option>

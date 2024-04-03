@@ -62,7 +62,6 @@ export class OrganisationTestsComponent implements OnInit {
   activeSessionsCollapsedFinished = false
   completedSessionsCollapsed = false
   completedSessionsCollapsedFinished = false
-  showTerminateAll = false
 
   constructor(
     private route: ActivatedRoute,
@@ -78,7 +77,6 @@ export class OrganisationTestsComponent implements OnInit {
 
   ngOnInit(): void {
     this.organisationId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.ORGANISATION_ID))
-    this.showTerminateAll = this.dataService.isCommunityAdmin || this.dataService.isVendorAdmin || this.dataService.isSystemAdmin
     const sessionIdValue = this.route.snapshot.queryParamMap.get(Constants.NAVIGATION_QUERY_PARAM.TEST_SESSION_ID)
     if (sessionIdValue != undefined) {
       this.sessionIdToShow = sessionIdValue
@@ -466,5 +464,17 @@ export class OrganisationTestsComponent implements OnInit {
       }
     })
   }
+
+  toggleActiveSessionsCollapsedFinished(value: boolean) {
+    setTimeout(() => {
+      this.activeSessionsCollapsedFinished = value
+    }, 1)
+  }
+
+  toggleCompletedSessionsCollapsedFinished(value: boolean) {
+    setTimeout(() => {
+      this.completedSessionsCollapsedFinished = value
+    }, 1)
+  }  
 
 }

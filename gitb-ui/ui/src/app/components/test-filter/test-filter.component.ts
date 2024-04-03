@@ -764,4 +764,10 @@ export class TestFilterComponent implements OnInit {
     this.endDateModel = undefined
   }
 
+  toggleFilterCollapsedFinished(value: boolean) {
+    setTimeout(() => {
+      this.filterCollapsedFinished = value
+    }, 1)
+  }
+
 }

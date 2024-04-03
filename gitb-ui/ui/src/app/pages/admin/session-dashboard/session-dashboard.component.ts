@@ -663,4 +663,16 @@ export class SessionDashboardComponent implements OnInit {
     })
   }
 
+  toggleActiveSessionsCollapsedFinished(value: boolean) {
+    setTimeout(() => {
+      this.activeSessionsCollapsedFinished = value
+    }, 1)
+  }
+
+  toggleCompletedSessionsCollapsedFinished(value: boolean) {
+    setTimeout(() => {
+      this.completedSessionsCollapsedFinished = value
+    }, 1)
+  }
+
 }
