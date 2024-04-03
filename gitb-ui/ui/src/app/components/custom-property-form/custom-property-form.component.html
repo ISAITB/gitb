@@ -1,74 +1,107 @@
-<div *ngIf="hasVisibleProperties()">
-  <div class="row" *ngIf="tbShowFormHeader">
-    <div class="col-12">
-      <div class="mb-0 form-separator" [class.expandable]="tbExpandable" (click)="checkToExpand()">
-        <div class="separator-title"><app-collapsing-icon *ngIf="tbExpandable" [isCollapsed]="tbCollapsed!"></app-collapsing-icon>Additional properties<span class="ms-2" [tooltip]="'Properties specific to the community. Required properties will need to be completed before executing tests.'" [containerClass]="'tooltipContainerBig'"><i class="fa-solid fa-question-circle"></i></span></div>
+@if (hasVisibleProperties()) {
+  <div>
+    <div class="row" *ngIf="tbShowFormHeader">
+      <div class="col-12">
+        <div class="mb-0 form-separator" [class.expandable]="tbExpandable" (click)="checkToExpand()">
+          <div class="separator-title">
+            @if (tbExpandable) {
+              <app-collapsing-icon [isCollapsed]="tbCollapsed!"></app-collapsing-icon>
+            }
+            Additional properties<span class="ms-2" [tooltip]="'Properties specific to the community. Required properties will need to be completed before executing tests.'" [containerClass]="'tooltipContainerBig'"><i class="fa-solid fa-question-circle"></i></span>
+          </div>
+        </div>
       </div>
     </div>
-  </div>
-  <div [collapse]="tbCollapsed!" [isAnimated]="true">
-    <div [ngClass]="{'row': tbFormPadded}">
-      <div [ngClass]="innerDivStyle">
-        <form>
-          <ng-container *ngFor="let property of tbProperties">
-            <div *ngIf="(isAdmin || !property.hidden) && property.prerequisiteOk" class="row mt-3">
-              <label [ngClass]="'col-'+tbColLabel" class="col-form-label text-end" [attr.for]="'prop-'+property.id"><span *ngIf="property.use == 'R' && tbShowRequiredAsterisks">* </span>{{property.name}}:</label>
-              <ng-container [ngSwitch]="property.kind">
-                <ng-container *ngSwitchCase="'SIMPLE'">
-                  <div [ngClass]="'col-'+(11-tbColLabel-tbColInputLess)" [ngSwitch]="property.hasPresetValues">
-                    <ng-container *ngSwitchCase="true" [ngSwitch]="isReadonly || (property.adminOnly && !isAdmin)">
-                      <p *ngSwitchCase="true" class="form-control-plaintext">{{presetValueLabel(property)}}<span *ngIf="property.desc" [ngStyle]="{'margin-left':(property.value?'10px':'0px')}" [tooltip]="property.desc" [containerClass]="'tooltipContainer'"><i class="fa-solid fa-question-circle"></i></span></p>
-                      <select *ngSwitchDefault (change)="checkPrerequisites(property, true)" [attr.id]="'prop-'+property.id" name="{{'prop-'+property.id}}" [(ngModel)]="property.value" class="form-control form-select">
-                        <option value=""></option>
-                        <option *ngFor="let v of property.presetValues" [ngValue]="v.value">{{v.label}}</option>
-                      </select>
-                    </ng-container>
-                    <ng-container *ngSwitchDefault [ngSwitch]="isReadonly || (property.adminOnly && !isAdmin)">
-                      <p *ngSwitchCase="true" class="form-control-plaintext">{{property.value}}<span *ngIf="property.desc" [ngStyle]="{'margin-left':(property.value?'10px':'0px')}" [tooltip]="property.desc" [containerClass]="'tooltipContainer'"><i class="fa-solid fa-question-circle"></i></span></p>
-                      <input *ngSwitchDefault (change)="checkPrerequisites(property, true)" [attr.id]="'prop-'+property.id" name="{{'prop-'+property.id}}" [(ngModel)]="property.value" class="form-control" type="text"/>
-                    </ng-container>
-                  </div>
-                </ng-container>
-                <ng-container *ngSwitchCase="'SECRET'">
-                  <div [ngClass]="'col-'+(11-tbColLabel-tbColInputLess)" [ngSwitch]="isReadonly || (property.adminOnly && !isAdmin)">
-                    <div *ngSwitchCase="true" class="form-control-plaintext">{{property.configured?'*****':''}}<span *ngIf="property.desc" [class.ml-2]="property.configured" [tooltip]="property.desc" [containerClass]="'tooltipContainer'"><i class="fa-solid fa-question-circle"></i></span></div>
-                    <div *ngSwitchDefault class="row row-cols-auto align-items-center">
-                      <div class="col-auto">
-                        <div class="form-check">
-                          <input class="form-check-input" type="checkbox" [attr.id]="'update-'+property.id" name="{{'prop-update-'+property.id}}" [(ngModel)]="property.changeValue">
-                          <label class="form-check-label" [attr.for]="'update-'+property.id">Update</label>
+    <div [collapse]="tbCollapsed!" [isAnimated]="true">
+      <div [ngClass]="{'row': tbFormPadded}">
+        <div [ngClass]="innerDivStyle">
+          <form>
+            @for (property of tbProperties; track $index) {
+              @if ((isAdmin || !property.hidden) && property.prerequisiteOk) {
+                <div class="row mt-3">
+                  <label [ngClass]="'col-'+tbColLabel" class="col-form-label text-end" [attr.for]="'prop-'+property.id">
+                    @if (property.use == 'R' && tbShowRequiredAsterisks) {
+                      <span>* </span>
+                    }
+                    {{property.name}}:
+                  </label>
+                  @if (property.kind == 'SIMPLE') {
+                    <div [ngClass]="'col-'+(11-tbColLabel-tbColInputLess)" [ngSwitch]="property.hasPresetValues">
+                      <ng-container *ngSwitchCase="true" [ngSwitch]="isReadonly || (property.adminOnly && !isAdmin)">
+                        <p *ngSwitchCase="true" class="form-control-plaintext">{{presetValueLabel(property)}}<span *ngIf="property.desc" [ngStyle]="{'margin-left':(property.value?'10px':'0px')}" [tooltip]="property.desc" [containerClass]="'tooltipContainer'"><i class="fa-solid fa-question-circle"></i></span></p>
+                        <select *ngSwitchDefault (change)="checkPrerequisites(property, true)" [attr.id]="'prop-'+property.id" name="{{'prop-'+property.id}}" [(ngModel)]="property.value" class="form-control form-select">
+                          <option value=""></option>
+                          <option *ngFor="let v of property.presetValues" [ngValue]="v.value">{{v.label}}</option>
+                        </select>
+                      </ng-container>
+                      <ng-container *ngSwitchDefault [ngSwitch]="isReadonly || (property.adminOnly && !isAdmin)">
+                        <p *ngSwitchCase="true" class="form-control-plaintext">{{property.value}}<span *ngIf="property.desc" [ngStyle]="{'margin-left':(property.value?'10px':'0px')}" [tooltip]="property.desc" [containerClass]="'tooltipContainer'"><i class="fa-solid fa-question-circle"></i></span></p>
+                        <input *ngSwitchDefault (change)="checkPrerequisites(property, true)" [attr.id]="'prop-'+property.id" name="{{'prop-'+property.id}}" [(ngModel)]="property.value" class="form-control" type="text"/>
+                      </ng-container>
+                    </div>
+                  } @else if (property.kind == 'SECRET') {
+                    <div [ngClass]="'col-'+(11-tbColLabel-tbColInputLess)">
+                      @if (isReadonly || (property.adminOnly && !isAdmin)) {
+                        <div class="form-control-plaintext">
+                          {{property.configured?'*****':''}}
+                          @if (property.desc) {
+                            <span [class.ml-2]="property.configured" [tooltip]="property.desc" [containerClass]="'tooltipContainer'"><i class="fa-solid fa-question-circle"></i></span>
+                          }
+                        </div>                          
+                      } @else {
+                        <div class="row row-cols-auto align-items-center">
+                          <div class="col-auto">
+                            <div class="form-check">
+                              <input class="form-check-input" type="checkbox" [attr.id]="'update-'+property.id" name="{{'prop-update-'+property.id}}" [(ngModel)]="property.changeValue">
+                              <label class="form-check-label" [attr.for]="'update-'+property.id">Update</label>
+                            </div>
+                          </div>
+                          <div class="col-auto flex-grow-1">
+                            @if (property.changeValue == undefined || !property.changeValue) {
+                              @if (property.configured) {
+                                <input type="text" [readonly]="true" class="form-control" value="*****">
+                              } @else {
+                                <input type="text" [readonly]="true" class="form-control">
+                              }
+                            } @else {
+                              <app-secret-input [attr.id]="'prop-'+property.id" name="{{'prop-'+property.id}}" [(ngModel)]="property.value"></app-secret-input>
+                            }
+                          </div>
                         </div>
-                      </div>
-                      <div class="col-auto flex-grow-1" [ngSwitch]="property.changeValue == undefined || !property.changeValue">
-                        <ng-container *ngSwitchCase="true" [ngSwitch]="property.configured">
-                          <input *ngSwitchCase="true" type="text" [readonly]="true" class="form-control" value="*****">
-                          <input *ngSwitchDefault type="text" [readonly]="true" class="form-control">
-                        </ng-container>
-                        <ng-container *ngSwitchDefault>
-                          <app-secret-input [attr.id]="'prop-'+property.id" name="{{'prop-'+property.id}}" [(ngModel)]="property.value"></app-secret-input>
-                        </ng-container>
-                      </div>
+                      }
                     </div>
-                  </div>
-                </ng-container>
-                <ng-container *ngSwitchCase="'BINARY'">
-                  <div [ngClass]="'col-'+(11-tbColLabel-tbColInputLess)" [ngSwitch]="isReadonly || (property.adminOnly && !isAdmin)">
-                    <div *ngSwitchCase="true">
-                      <p class="form-control-plaintext"><a *ngIf="property.value != undefined" href (click)="downloadProperty(property);$event.preventDefault()" style="padding-right:10px;">{{fileName(property)}}</a><span *ngIf="property.desc" [ngStyle]="{'margin-left':(property.value?'10px':'0px')}" [tooltip]="property.desc" [containerClass]="'tooltipContainer'"><i class="fa-solid fa-question-circle"></i></span></p>
+                  } @else if (property.kind == 'BINARY') {
+                    <div [ngClass]="'col-'+(11-tbColLabel-tbColInputLess)">
+                      @if (isReadonly || (property.adminOnly && !isAdmin)) {
+                        <div>
+                          <p class="form-control-plaintext">
+                            @if (property.value != undefined) {
+                              <a href (click)="downloadProperty(property);$event.preventDefault()" style="padding-right:10px;">{{fileName(property)}}</a>
+                            }
+                            @if (property.desc) {
+                              <span [ngStyle]="{'margin-left':(property.value?'10px':'0px')}" [tooltip]="property.desc" [containerClass]="'tooltipContainer'"><i class="fa-solid fa-question-circle"></i></span>
+                            }
+                          </p>                            
+                        </div>
+                      } @else {
+                        <app-file-select [fileName]="fileName(property)" (onUpload)="onFileSelect(property, $event)" placeholder="Drop or browse for file ..." [extraActions]="true">
+                          @if (property.value != undefined) {
+                            <button type="button" class="btn btn-secondary" (click)="downloadProperty(property)" containerClass="shortTooltip" tooltip="Download" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'" container="body"><i class="fa-solid fa-download"></i></button>
+                            <button type="button" class="btn btn-secondary" (click)="removeFile(property)" containerClass="shortTooltip" tooltip="Remove" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'" container="body"><i class="fa-solid fa-trash"></i></button>
+                          }
+                        </app-file-select>
+                      }
                     </div>
-                    <ng-container *ngSwitchDefault>
-                      <app-file-select [fileName]="fileName(property)" (onUpload)="onFileSelect(property, $event)" placeholder="Drop or browse for file ..." [extraActions]="true">
-                        <button type="button" class="btn btn-secondary" (click)="removeFile(property)" containerClass="shortTooltip" tooltip="Remove" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'" container="body"><i class="fa-solid fa-trash"></i></button>
-                      </app-file-select>
-                    </ng-container>
-                  </div>
-                </ng-container>
-              </ng-container>
-              <div app-tooltip class="col-auto" *ngIf="!isReadonly && (!property.adminOnly || isAdmin) && property.desc" [tbTooltip]="property.desc"></div>                  
-            </div>
-          </ng-container>
-        </form>
+                  }
+                  @if (!isReadonly && (!property.adminOnly || isAdmin) && property.desc) {
+                    <div app-tooltip class="col-auto" [tbTooltip]="property.desc"></div>
+                  }
+                </div>
+              }
+            }
+          </form>
+        </div>
       </div>
     </div>
   </div>
-</div>
+}
