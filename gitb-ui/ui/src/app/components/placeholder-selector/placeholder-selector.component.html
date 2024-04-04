@@ -33,15 +33,15 @@
                 <div app-tooltip class="col-auto d-inline-flex" tbTooltip="Placeholders are predefined types of values that will be automatically replaced in the resulting content." [inline]="true"></div>
             </div>
         </div>
-        @if (communityResourceConfig) {
-            <div class="buttonContainer">
-                <div class="communityResourceControl">
-                    <app-multi-select-filter [config]="communityResourceConfig" (apply)="resourceSelected($event)"></app-multi-select-filter>
-                </div>
-                <div class="help">
-                    <div app-tooltip class="col-auto d-inline-flex" tbTooltip="Resources defined for the community can be referenced in the content (for example as image sources)." [inline]="true"></div>
-                </div>    
+    }
+    @if (communityResourceConfig) {
+        <div class="buttonContainer">
+            <div class="communityResourceControl">
+                <app-multi-select-filter [config]="communityResourceConfig" (apply)="resourceSelected($event)"></app-multi-select-filter>
             </div>
-        }
+            <div class="help">
+                <div app-tooltip class="col-auto d-inline-flex" tbTooltip="Resources defined for the community can be referenced in the content (for example as image sources)." [inline]="true"></div>
+            </div>    
+        </div>
     }
 </div>

@@ -207,7 +207,7 @@
                 }
                 <div class="row mt-3">
                     <div class="col-auto pe-0">
-                        <app-placeholder-selector [placeholders]="placeholders" [domainParameters]="true" [domainChanged]="domainChangedEmitter" [organisationParameters]="true" [systemParameters]="true" [resources]="true" [community]="communityId"></app-placeholder-selector>
+                        <app-placeholder-selector [placeholders]="placeholders" [domainParameters]="true" [domainChanged]="domainChangedEmitter" [organisationParameters]="true" [systemParameters]="true" [resources]="true" [community]="communityId" [domainId]="domainId"></app-placeholder-selector>
                     </div>
                     <div class="col-auto ps-0">
                         <button class="btn btn-secondary" type="button" (click)="clearCurrentMessage()" [disabled]="!textProvided(currentMessageContent)">Remove message</button>

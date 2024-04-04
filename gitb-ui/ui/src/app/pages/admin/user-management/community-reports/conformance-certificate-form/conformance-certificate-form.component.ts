@@ -47,6 +47,7 @@ export class ConformanceCertificateFormComponent extends BaseCertificateSettings
   loadAdditionalData(): Observable<any> {
     if (this.dataService.isCommunityAdmin && this.dataService.community!.domainId != undefined) {
       this.domainId = this.dataService.community!.domainId
+      this.domainChangedEmitter.emit(this.domainId)
       return of(true)
     } else {
       return this.conformanceService.getCommunityDomain(this.communityId)
