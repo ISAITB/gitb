@@ -53,7 +53,8 @@ export class EditorComponent implements OnInit, ControlValueAccessor {
       cache_suffix: this.dataService.configuration.versionNumber,
       content_css: 'assets/build/styles.css,api/theme/css',
       body_class: 'editor-body',
-      suffix: '.min'
+      suffix: '.min',
+      convert_unsafe_embeds: true      
     }
     if (this.type == 'normal') {
       config.plugins = 'advlist autolink lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table code'
