@@ -62,6 +62,4 @@ object Constants {
 
   // When ending in "-snapshot", this is considered a non-published release.
   val VersionNumber = "1.23.0-snapshot"
-  val VersionNumberPostfixForResources = "_1"
-
 }
