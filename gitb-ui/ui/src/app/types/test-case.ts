@@ -1,7 +1,8 @@
 import { EntityWithId } from "./entity-with-id"
+import { SpecificationReferenceInfo } from "./specification-reference-info"
 import { TestCaseTag } from "./test-case-tag"
 
-export interface TestCase extends EntityWithId {
+export interface TestCase extends EntityWithId, SpecificationReferenceInfo {
 
     identifier: string
     sname: string,

@@ -6,7 +6,7 @@ import { ReportService } from 'src/app/services/report.service';
 import { FilterState } from 'src/app/types/filter-state';
 import { TableColumnDefinition } from 'src/app/types/table-column-definition.type';
 import { TestResultSearchCriteria } from 'src/app/types/test-result-search-criteria';
-import { map } from 'lodash'
+import { filter, map } from 'lodash'
 import { TestResultReport } from 'src/app/types/test-result-report';
 import { TestResultForExport } from './test-result-for-export';
 import { TestResultForDisplay } from '../../../types/test-result-for-display';
@@ -19,17 +19,19 @@ import { DiagramLoaderService } from 'src/app/components/diagram/test-session-pr
 import { saveAs } from 'file-saver'
 import { RoutingService } from 'src/app/services/routing.service';
 import { FieldInfo } from 'src/app/types/field-info';
+import { SessionData } from 'src/app/components/diagram/test-session-presentation/session-data';
 
 @Component({
   selector: 'app-session-dashboard',
-  templateUrl: './session-dashboard.component.html',
-  styles: [
-  ]
+  templateUrl: './session-dashboard.component.html'
 })
 export class SessionDashboardComponent implements OnInit {
 
   exportActivePending = false
   exportCompletedPending = false
+  interactionLoadPending = false
+  pendingAdminInteraction = false
+  sessionsPendingAdminInteraction: Set<string>|undefined
   selectingForDelete = false
   activeExpandedCounter = {count: 0}
   completedExpandedCounter = {count: 0}
@@ -39,6 +41,7 @@ export class SessionDashboardComponent implements OnInit {
   activeTestsColumns!: TableColumnDefinition[]
   completedTestsColumns!: TableColumnDefinition[]
   activeTests: TestResultForDisplay[] = []
+  activeTestsToDisplay: TestResultForDisplay[] = []
   completedTests: TestResultForDisplay[] = []
   completedTestsCheckboxEmitter = new EventEmitter<boolean>()
   completedTestsTotalCount = 0
@@ -63,9 +66,11 @@ export class SessionDashboardComponent implements OnInit {
   deleteSessionsPending = false
   stopAllPending = false
   sessionIdToShow?: string
-  sessionRefreshCompleteEmitter = new EventEmitter<void>()
+  sessionRefreshCompleteEmitter = new EventEmitter<TestResultReport|undefined>()
   activeSessionsCollapsed = false
+  activeSessionsCollapsedFinished = false  
   completedSessionsCollapsed = false
+  completedSessionsCollapsedFinished = false  
   
   constructor(
     public dataService: DataService,
@@ -172,11 +177,21 @@ export class SessionDashboardComponent implements OnInit {
     this.refreshActivePending = true
     this.activeExpandedCounter.count = 0
     this.setFilterRefreshState()
-    this.reportService.getActiveTestResults(params).subscribe((data) => {
-      this.activeTests = map(data.data, (testResult) => {
-        return this.newTestResultForDisplay(testResult, false)
+    this.reportService.getActiveTestResults(params)
+    .pipe(
+      mergeMap((data) => {
+        this.activeTests = map(data.data, (testResult) => {
+          return this.newTestResultForDisplay(testResult, false)
+        })
+        this.sessionsPendingAdminInteraction = undefined
+        return this.filterActiveTests(this.activeTests, false)
       })
-    }).add(() => {
+    )
+    .subscribe((tests) => {
+      this.activeTestsToDisplay = tests
+    })
+    .add(() => {
+      this.interactionLoadPending = false
       this.refreshActivePending = false
       this.setFilterRefreshState()
       this.activeStatus.status = Constants.STATUS.FINISHED
@@ -437,33 +452,43 @@ export class SessionDashboardComponent implements OnInit {
     this.exportActivePending = true
     const params = this.getCurrentSearchCriteria()
     this.reportService.getActiveTestResults(params, true)
-    .subscribe((data) => {
-      const fields: FieldInfo[] = [
-        { header: 'Session', field: 'session' },
-        { header: this.dataService.labelDomain(), field: 'domain' },
-        { header: this.dataService.labelSpecification(), field: 'specification' },
-        { header: this.dataService.labelActor(), field: 'actor' },
-        { header: 'Test suite', field: 'testSuite' },
-        { header: 'Test case', field: 'testCase' },
-        { header: this.dataService.labelOrganisation(), field: 'organization' },
-        { header: this.dataService.labelSystem(), field: 'system' },
-        { header: 'Start time', field: 'startTime' }
-      ]
-      if (data.orgParameters !== undefined) {
-        for (let param of data.orgParameters) {
-          fields.push({ header: this.dataService.labelOrganisation() + ' ('+param+')', field: 'organization_'+param})
+    .pipe(
+      mergeMap((data) => {
+        const fields: FieldInfo[] = [
+          { header: 'Session', field: 'session' },
+          { header: this.dataService.labelDomain(), field: 'domain' },
+          { header: this.dataService.labelSpecification(), field: 'specification' },
+          { header: this.dataService.labelActor(), field: 'actor' },
+          { header: 'Test suite', field: 'testSuite' },
+          { header: 'Test case', field: 'testCase' },
+          { header: this.dataService.labelOrganisation(), field: 'organization' },
+          { header: this.dataService.labelSystem(), field: 'system' },
+          { header: 'Start time', field: 'startTime' }
+        ]
+        if (data.orgParameters !== undefined) {
+          for (let param of data.orgParameters) {
+            fields.push({ header: this.dataService.labelOrganisation() + ' ('+param+')', field: 'organization_'+param})
+          }
         }
-      }
-      if (data.sysParameters !== undefined) {
-        for (let param of data.sysParameters) {
-          fields.push({ header: this.dataService.labelSystem() + ' ('+param+')', field: 'system_'+param})
+        if (data.sysParameters !== undefined) {
+          for (let param of data.sysParameters) {
+            fields.push({ header: this.dataService.labelSystem() + ' ('+param+')', field: 'system_'+param})
+          }
         }
-      }
-      const tests = map(data.data, (testResult) => {
-        return this.newTestResultForExport(testResult, false, data.orgParameters, data.sysParameters)
+        const tests = map(data.data, (testResult) => {
+          return this.newTestResultForExport(testResult, false, data.orgParameters, data.sysParameters)
+        })
+        return this.filterActiveTests(tests, false).pipe(
+          mergeMap((testsToExport) => {
+            return of({fields: fields, tests: testsToExport})
+          })
+        )
       })
-      this.dataService.exportAllAsCsv(fields, tests)
-    }).add(() => {
+    )
+    .subscribe((exportData) => {
+      this.dataService.exportAllAsCsv(exportData.fields, exportData.tests)
+    })
+    .add(() => {
       this.exportActivePending = false
     })
   }
@@ -572,7 +597,7 @@ export class SessionDashboardComponent implements OnInit {
         // Session was deleted
         this.popupService.warning("The test session has been deleted by an administrator.")
         this.applyFilters()
-        this.sessionRefreshCompleteEmitter.emit()
+        this.sessionRefreshCompleteEmitter.emit(result)
       } else {
         this.diagramLoaderService.loadTestStepResults(session.session)
         .subscribe((data) => {
@@ -584,10 +609,70 @@ export class SessionDashboardComponent implements OnInit {
           }
           this.diagramLoaderService.updateStatusOfSteps(session, currentState.stepsOfTests[session.session], data)
         }).add(() => {
-          this.sessionRefreshCompleteEmitter.emit()
+          this.sessionRefreshCompleteEmitter.emit(result)
         })
       }
     })
+  }
+
+  private filterActiveTests<Type extends SessionData>(tests: Type[], showToggleAsBusy: boolean): Observable<Type[]> {
+    if (this.pendingAdminInteraction) {
+      return this.getPendingSessionsForAdminInput(showToggleAsBusy)
+      .pipe(
+        mergeMap((sessionIds) => {
+          if (sessionIds.size == 0) {
+            return of([])
+          } else {
+            return of(filter(tests, (test) => this.sessionsPendingAdminInteraction!.has(test.session)))
+          }
+        })
+      )
+    } else {
+      return of(tests)
+    }
+  }
+
+  private getPendingSessionsForAdminInput(showToggleAsBusy: boolean): Observable<Set<string>> {
+    if (this.sessionsPendingAdminInteraction) {
+      return of(this.sessionsPendingAdminInteraction)
+    } else {
+      if (showToggleAsBusy) {
+        this.interactionLoadPending = true
+      }
+      return this.reportService.getPendingTestSessionsForAdminInteraction(this.communityId)
+        .pipe(
+          mergeMap((data) => {
+            const sessionIds = new Set<string>()
+            for (let sessionId of data) {
+              sessionIds.add(sessionId)
+            }
+            this.sessionsPendingAdminInteraction = sessionIds
+            return of(sessionIds)
+          })
+        )
+    }
+  }
+
+  togglePendingAdminInteraction() {
+    this.filterActiveTests(this.activeTests, true)
+    .subscribe((filteredTests) => {
+      this.activeTestsToDisplay = filteredTests
+    })
+    .add(() => {
+      this.interactionLoadPending = false
+    })
+  }
+
+  toggleActiveSessionsCollapsedFinished(value: boolean) {
+    setTimeout(() => {
+      this.activeSessionsCollapsedFinished = value
+    }, 1)
+  }
+
+  toggleCompletedSessionsCollapsedFinished(value: boolean) {
+    setTimeout(() => {
+      this.completedSessionsCollapsedFinished = value
+    }, 1)
   }
 
 }

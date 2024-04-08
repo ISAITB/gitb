@@ -18,7 +18,6 @@ import { BsModalService } from 'ngx-bootstrap/modal';
 import { LinkSharedTestSuiteModalComponent } from 'src/app/modals/link-shared-test-suite-modal/link-shared-test-suite-modal.component';
 import { filter, find } from 'lodash';
 import { forkJoin } from 'rxjs';
-import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
 
 @Component({
   selector: 'app-test-suite-details',
@@ -33,7 +32,6 @@ export class TestSuiteDetailsComponent extends BaseComponent implements OnInit, 
   testSuiteId!: number
   dataStatus = {status: Constants.STATUS.NONE}
   specificationStatus = {status: Constants.STATUS.NONE}
-  showDocumentation = false
   testCaseTableColumns: TableColumnDefinition[] = [
     { field: 'identifier', title: 'ID' },
     { field: 'sname', title: 'Name' },
@@ -165,7 +163,7 @@ export class TestSuiteDetailsComponent extends BaseComponent implements OnInit, 
 
 	saveChanges() {
     this.savePending = true
-		this.testSuiteService.updateTestSuiteMetadata(this.testSuite.id!, this.testSuite.sname!, this.testSuite.description, this.testSuite.documentation, this.testSuite.version!)
+		this.testSuiteService.updateTestSuiteMetadata(this.testSuite.id!, this.testSuite.sname!, this.testSuite.description, this.testSuite.documentation, this.testSuite.version!, this.testSuite.specReference, this.testSuite.specDescription, this.testSuite.specLink)
     .subscribe(() => {
       this.popupService.success('Test suite updated.')
     }).add(() => {

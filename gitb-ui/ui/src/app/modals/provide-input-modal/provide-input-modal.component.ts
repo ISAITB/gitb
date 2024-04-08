@@ -15,9 +15,9 @@ import { UserInteractionInput } from 'src/app/types/user-interaction-input';
 export class ProvideInputModalComponent implements OnInit, AfterViewInit {
 
   @Input() interactions!: UserInteraction[]
-  @Input() inputTitle = 'Server interaction'
+  @Input() inputTitle = 'User interaction'
   @Input() sessionId!: string
-  @Output() result = new EventEmitter<UserInteractionInput[]>()
+  @Output() result = new EventEmitter<UserInteractionInput[]|undefined>()
   @ViewChildren(CodemirrorComponent) codeMirrors?: QueryList<CodemirrorComponent>
   needsInput = false
   firstCodeIndex:number|undefined
@@ -135,7 +135,17 @@ export class ProvideInputModalComponent implements OnInit, AfterViewInit {
     }
   }
 
-  hideInput() {
+  minimise() {
+    this.result.emit(undefined)
+    this.modalRef.hide()    
+  }
+
+  close() {
+    this.result.emit([])
+    this.modalRef.hide()    
+  }
+
+  submit() {
     const inputs:UserInteractionInput[] = []
     for (let interaction of this.interactions) {
       if (interaction.type == "request") {

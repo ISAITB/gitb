@@ -3,6 +3,9 @@ import { LabelConfig } from '../types/label-config.type'
 
 export class Constants {
 
+	public static THEME_CSS_LINK_ID = "themeCssLink"
+	public static THEME_FAVICON_LINK_ID = "themeFaviconLink"
+
     public static TABLE_PAGE_SIZE = 10
     public static DEFAULT_LOGO = '/assets/images/gitb.png'
 	public static DEFAULT_COMMUNITY_ID = 0
@@ -14,8 +17,12 @@ export class Constants {
 
 	public static TEST_ENGINE_ACTOR_ID = 'com.gitb.TestEngine'
 	public static TESTER_ACTOR_ID = 'com.gitb.Operator'
+	public static ADMINISTRATOR_ACTOR_ID = 'com.gitb.Administrator'
 	public static TEST_ENGINE_ACTOR_NAME = 'Test Engine'
 	public static TESTER_ACTOR_NAME = 'Operator'
+	public static ADMINISTRATOR_ACTOR_NAME = 'Administrator'
+
+	public static LATEST_CONFORMANCE_STATUS_LABEL = 'Latest conformance status'
 
 	public static EMBEDDING_METHOD = {
 		BASE64: 'BASE64',
@@ -137,6 +144,8 @@ export class Constants {
 	public static PLACEHOLDER__SPECIFICATION_GROUP_OPTION = "$SPECIFICATION_GROUP_OPTION"
 	public static PLACEHOLDER__ACTOR = "$ACTOR"
 	public static PLACEHOLDER__DOMAIN = "$DOMAIN"
+	public static PLACEHOLDER__BADGE = "$BADGE"
+	public static PLACEHOLDER__BADGES = "$BADGES"
 
 	public static TEST_STATUS = {
 		UNKNOWN: null,
@@ -161,7 +170,8 @@ export class Constants {
 	public static TEST_CASE_RESULT = {
 		SUCCESS : "SUCCESS",
 		FAILURE : "FAILURE",
-		UNDEFINED : "UNDEFINED"
+		UNDEFINED : "UNDEFINED",
+		WARNING : "WARNING"
 	}
 
 	public static STATUS = {
@@ -249,7 +259,14 @@ export class Constants {
 		STATEMENT_CONFIGURATION: 22,
 		TRIGGER: 23,
 		RESOURCE: 24,
-		SPECIFICATION_GROUP: 25
+		SPECIFICATION_GROUP: 25,
+		SYSTEM_SETTINGS: 26,
+		THEME: 27,
+		DEFAULT_LANDING_PAGE: 28,
+		DEFAULT_LEGAL_NOTICE: 29,
+		DEFAULT_ERROR_TEMPLATE: 30,
+		SYSTEM_ADMINISTRATOR: 31,
+		SYSTEM_CONFIGURATION: 32
 	}
 
 	public static IMPORT_ITEM_MATCH = {
@@ -311,6 +328,7 @@ export class Constants {
 		TEST_SUITE_ID: 'ts',
 		COPY: 'copy',
 		COPY_DEFAULT: 'copyDefault',
+		SNAPSHOT_ID: 'snapshot'
 	}
 
 	public static NAVIGATION_PATH_PARAM = {
@@ -329,6 +347,10 @@ export class Constants {
 		LEGAL_NOTICE_ID: 'notice_id',
 		ERROR_TEMPLATE_ID: 'template_id',
 		TRIGGER_ID: 'trigger_id',
+		THEME_ID: 'theme_id',
+		SNAPSHOT_ID: 'snapshot_id',
+		SNAPSHOT_LABEL: 'snapshot_label',
+		TAB: 'snapshot_id'
 	}
 
 	public static SYSTEM_CONFIG = {
@@ -336,13 +358,28 @@ export class Constants {
 		REST_API_ENABLED: 'rest_api_enabled',
 		SELF_REGISTRATION_ENABLED: 'self_registration_enabled',
 		DEMO_ACCOUNT: 'demo_account',
-		WELCOME_MESSAGE: 'welcome'
+		WELCOME_MESSAGE: 'welcome',
+		ACCOUNT_RETENTION_PERIOD: 'account_retention_period',
+		EMAIL_SETTINGS: 'email_settings',
 	}
 
 	public static USER_SSO_STATUS = {
 		NOT_MIGRATED: 1,
 		NOT_LINKED: 2,
 		LINKED: 3
+	}
+
+	public static XML_REPORT_TYPE = {
+		CONFORMANCE_STATEMENT_REPORT: 1,
+		CONFORMANCE_OVERVIEW_REPORT: 2,
+		TEST_CASE_REPORT: 3,
+		TEST_STEP_REPORT: 4
+	}
+
+	public static FILTER_COMMAND = {
+		TOGGLE: 1,
+		CLEAR: 2,
+		REFRESH: 3
 	}
 
 	public static PASSWORD_REGEX = /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#&()_–\[{}\]:;'",?/\\*~$^+=<>]).{8,}$/
@@ -353,5 +390,7 @@ export class Constants {
 	public static DATA_URL_REGEX = /^data:.+\/(.+);base64,(.*)$/
 	public static VARIABLE_NAME_REGEX = /^[a-zA-Z][a-zA-Z\-_\.0-9]*$/
 	public static LOG_LEVEL_REGEX = /^\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\] (DEBUG|ERROR|WARN|INFO) /
+	public static BADGE_PLACEHOLDER_REGEX = /(\$com\.gitb\.placeholder\.BadgeUrl\{[A-Z]+\|\-?\d+\|\-?\d+\|\-?\d+\|\-?\d+\})/g
+
 
 }

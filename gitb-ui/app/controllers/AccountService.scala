@@ -6,6 +6,7 @@ import exceptions.ErrorCodes
 import managers._
 import models.Enums.UserRole
 import org.apache.commons.io.FileUtils
+import org.apache.commons.lang3.StringUtils
 import org.apache.tika.Tika
 import org.slf4j.{Logger, LoggerFactory}
 import play.api.mvc._
@@ -135,9 +136,10 @@ class AccountService @Inject() (authorizedAction: AuthorizedAction, cc: Controll
     authorizationManager.canViewConfiguration(request)
     val configProperties = new java.util.HashMap[String, String]()
     configProperties.put("email.enabled", String.valueOf(Configurations.EMAIL_ENABLED))
+    configProperties.put("email.contactFormEnabled", String.valueOf(Configurations.EMAIL_CONTACT_FORM_ENABLED.getOrElse(false)))
     configProperties.put("email.attachments.maxCount", String.valueOf(Configurations.EMAIL_ATTACHMENTS_MAX_COUNT))
     configProperties.put("email.attachments.maxSize", String.valueOf(Configurations.EMAIL_ATTACHMENTS_MAX_SIZE))
-    configProperties.put("email.attachments.allowedTypes", String.valueOf(Configurations.EMAIL_ATTACHMENTS_ALLOWED_TYPES_STR))
+    configProperties.put("email.attachments.allowedTypes", String.valueOf(StringUtils.join(Configurations.EMAIL_ATTACHMENTS_ALLOWED_TYPES,",")))
     configProperties.put("survey.enabled", String.valueOf(Configurations.SURVEY_ENABLED))
     configProperties.put("survey.address", String.valueOf(Configurations.SURVEY_ADDRESS))
     configProperties.put("moreinfo.enabled", String.valueOf(Configurations.MORE_INFO_ENABLED))
@@ -165,56 +167,60 @@ class AccountService @Inject() (authorizedAction: AuthorizedAction, cc: Controll
   def submitFeedback = authorizedAction { request =>
     try {
       authorizationManager.canSubmitFeedback(request)
-      val paramMap = ParameterExtractor.paramMap(request)
-      val userId = ParameterExtractor.extractOptionalUserId(request)
-      val userEmail: String = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.USER_EMAIL)
-      val messageTypeId: String = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.MESSAGE_TYPE_ID)
-      val messageTypeDescription: String = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.MESSAGE_TYPE_DESCRIPTION)
-      val messageContent: String = HtmlUtil.sanitizeMinimalEditorContent(ParameterExtractor.requiredBodyParameter(paramMap, Parameters.MESSAGE_CONTENT))
       var response: Result = null
-      // Extract attachments
-      val attachments = ListBuffer[AttachmentType]()
-      val files = ParameterExtractor.extractFiles(request)
-      if (files.nonEmpty) {
-        var totalAttachmentSize = 0L
-        for (file <- files) {
-          attachments += new AttachmentType(file._2.name, file._2.file)
-          totalAttachmentSize += Files.size(file._2.file.toPath)
-        }
-        // Validate attachments
-        if (attachments.size > Configurations.EMAIL_ATTACHMENTS_MAX_COUNT) {
-          // Count.
-          response = ResponseConstructor.constructErrorResponse(ErrorCodes.EMAIL_ATTACHMENT_COUNT_EXCEEDED, s"A maximum of ${Configurations.EMAIL_ATTACHMENTS_MAX_COUNT} attachments can be provided")
-        } else if (totalAttachmentSize > (Configurations.EMAIL_ATTACHMENTS_MAX_SIZE * 1024 * 1024)) {
-          // Size.
-          response = ResponseConstructor.constructErrorResponse(ErrorCodes.EMAIL_ATTACHMENT_COUNT_EXCEEDED, s"The total size of attachments cannot exceed ${Configurations.EMAIL_ATTACHMENTS_MAX_SIZE} MBs.")
-        } else {
-          var virusScanner: Option[ClamAVClient] = None
-          if (Configurations.ANTIVIRUS_SERVER_ENABLED) {
-            virusScanner = Some(new ClamAVClient(Configurations.ANTIVIRUS_SERVER_HOST, Configurations.ANTIVIRUS_SERVER_PORT, Configurations.ANTIVIRUS_SERVER_TIMEOUT))
+      if (Configurations.EMAIL_CONTACT_FORM_ENABLED.getOrElse(true)) {
+        val paramMap = ParameterExtractor.paramMap(request)
+        val userId = ParameterExtractor.extractOptionalUserId(request)
+        val userEmail: String = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.USER_EMAIL)
+        val messageTypeId: String = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.MESSAGE_TYPE_ID)
+        val messageTypeDescription: String = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.MESSAGE_TYPE_DESCRIPTION)
+        val messageContent: String = HtmlUtil.sanitizeMinimalEditorContent(ParameterExtractor.requiredBodyParameter(paramMap, Parameters.MESSAGE_CONTENT))
+        // Extract attachments
+        val attachments = ListBuffer[AttachmentType]()
+        val files = ParameterExtractor.extractFiles(request)
+        if (files.nonEmpty) {
+          var totalAttachmentSize = 0L
+          for (file <- files) {
+            attachments += new AttachmentType(file._2.name, file._2.file)
+            totalAttachmentSize += Files.size(file._2.file.toPath)
           }
-          attachments.foreach { attachment =>
-            if (response == null) {
-              val detectedMimeType = tika.detect(attachment.getContent)
-              if (!Configurations.EMAIL_ATTACHMENTS_ALLOWED_TYPES.contains(detectedMimeType)) {
-                logger.warn(s"Attachment type [$detectedMimeType] of file [${attachment.getName}] not allowed.")
-                response = ResponseConstructor.constructErrorResponse(ErrorCodes.EMAIL_ATTACHMENT_TYPE_NOT_ALLOWED, s"Attachment [${attachment.getName}] not allowed. Allowed types are images, text files and PDFs.")
-              } else {
-                attachment.setType(detectedMimeType);
-                if (virusScanner.isDefined) {
-                  val scanResult = virusScanner.get.scan(attachment.getContent)
-                  if (!ClamAVClient.isCleanReply(scanResult)) {
-                    logger.warn("Attachment [" + attachment.getName + "] found to contain virus.")
-                    response = ResponseConstructor.constructErrorResponse(ErrorCodes.VIRUS_FOUND, "Attachments failed virus scan.")
+          // Validate attachments
+          if (attachments.size > Configurations.EMAIL_ATTACHMENTS_MAX_COUNT) {
+            // Count.
+            response = ResponseConstructor.constructErrorResponse(ErrorCodes.EMAIL_ATTACHMENT_COUNT_EXCEEDED, s"A maximum of ${Configurations.EMAIL_ATTACHMENTS_MAX_COUNT} attachments can be provided")
+          } else if (totalAttachmentSize > (Configurations.EMAIL_ATTACHMENTS_MAX_SIZE * 1024 * 1024)) {
+            // Size.
+            response = ResponseConstructor.constructErrorResponse(ErrorCodes.EMAIL_ATTACHMENT_COUNT_EXCEEDED, s"The total size of attachments cannot exceed ${Configurations.EMAIL_ATTACHMENTS_MAX_SIZE} MBs.")
+          } else {
+            var virusScanner: Option[ClamAVClient] = None
+            if (Configurations.ANTIVIRUS_SERVER_ENABLED) {
+              virusScanner = Some(new ClamAVClient(Configurations.ANTIVIRUS_SERVER_HOST, Configurations.ANTIVIRUS_SERVER_PORT, Configurations.ANTIVIRUS_SERVER_TIMEOUT))
+            }
+            attachments.foreach { attachment =>
+              if (response == null) {
+                val detectedMimeType = tika.detect(attachment.getContent)
+                if (!Configurations.EMAIL_ATTACHMENTS_ALLOWED_TYPES.contains(detectedMimeType)) {
+                  logger.warn(s"Attachment type [$detectedMimeType] of file [${attachment.getName}] not allowed.")
+                  response = ResponseConstructor.constructErrorResponse(ErrorCodes.EMAIL_ATTACHMENT_TYPE_NOT_ALLOWED, s"Attachment [${attachment.getName}] not allowed. Allowed types are images, text files and PDFs.")
+                } else {
+                  attachment.setType(detectedMimeType);
+                  if (virusScanner.isDefined) {
+                    val scanResult = virusScanner.get.scan(attachment.getContent)
+                    if (!ClamAVClient.isCleanReply(scanResult)) {
+                      logger.warn("Attachment [" + attachment.getName + "] found to contain virus.")
+                      response = ResponseConstructor.constructErrorResponse(ErrorCodes.VIRUS_FOUND, "Attachments failed virus scan.")
+                    }
                   }
                 }
               }
             }
           }
         }
+        if (response == null) {
+          accountManager.submitFeedback(userId, userEmail, messageTypeId, messageTypeDescription, messageContent, attachments.toArray)
+        }
       }
       if (response == null) {
-        accountManager.submitFeedback(userId, userEmail, messageTypeId, messageTypeDescription, messageContent, attachments.toArray)
         response = ResponseConstructor.constructEmptyResponse
       }
       response

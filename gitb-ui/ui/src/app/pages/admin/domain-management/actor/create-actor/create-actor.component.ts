@@ -39,11 +39,17 @@ export class CreateActorComponent extends BaseComponent implements OnInit, After
     this.actor.badges = {
       enabled: false,
       initiallyEnabled: false,
-      failureBadgeActive: false,
       success: { enabled: false },
       other: { enabled: false },
-      failure: { enabled: false }
-    }    
+      failure: { enabled: false },
+      successForReport: { enabled: false },
+      otherForReport: { enabled: false },
+      failureForReport: { enabled: false },
+      failureBadgeActive: false,
+      successBadgeForReportActive: false,
+      otherBadgeForReportActive: false,
+      failureBadgeForReportActive: false
+    }
   }
 
 	saveDisabled() {
@@ -51,17 +57,7 @@ export class CreateActorComponent extends BaseComponent implements OnInit, After
       this.textProvided(this.actor?.actorId) && 
       this.textProvided(this.actor?.name) && 
       this.numberOrEmpty(this.actor?.displayOrder) &&
-      (
-        !this.actor.badges!.enabled || 
-        (
-          this.actor.badges!.success.enabled && 
-          this.actor.badges!.other.enabled && 
-          (
-            !this.actor.badges!.failureBadgeActive ||
-            this.actor.badges!.failure.enabled
-          )
-        )
-      )
+      this.dataService.badgesValid(this.actor?.badges)
     )
   }
 

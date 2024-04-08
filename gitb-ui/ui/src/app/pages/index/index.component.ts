@@ -1,5 +1,4 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { SystemConfigurationService } from "../../services/system-configuration.service"
 import { DataService } from '../../services/data.service'
 import { UserGuideService } from '../../services/user-guide.service'
 import { HtmlService } from '../../services/html.service';
@@ -20,8 +19,6 @@ import { MenuItem } from 'src/app/types/menu-item.enum';
 })
 export class IndexComponent implements OnInit, OnDestroy {
 
-  logo?: string
-  footer?: string
   version?: string
   pageTitle = ''
   menuExpanded = false
@@ -33,7 +30,6 @@ export class IndexComponent implements OnInit, OnDestroy {
 
   constructor(
     public dataService: DataService,
-    private systemConfigurationService: SystemConfigurationService, 
     private userGuideService: UserGuideService,
     private htmlService: HtmlService,
     private legalNoticeService: LegalNoticeService,
@@ -51,12 +47,6 @@ export class IndexComponent implements OnInit, OnDestroy {
       }, 1)
     })
     this.version = this.dataService.configuration.versionNumber
-    this.systemConfigurationService.getLogo().subscribe((data) => {
-      this.logo = data
-    })
-    this.systemConfigurationService.getFooterLogo().subscribe((data) => {
-      this.footer = data
-    })
     this.logoutSubscription = this.authProviderService.onLogout$.subscribe(() => {
       this.logoutInProgress = true
     })
@@ -88,7 +78,7 @@ export class IndexComponent implements OnInit, OnDestroy {
   }
 
   showContactUs(): boolean {
-    return this.dataService.configuration && this.dataService.configuration.emailEnabled
+    return this.dataService.configuration && this.dataService.configuration.emailEnabled && this.dataService.configuration.emailContactFormEnabled
   }
 
   showMoreInfo(): boolean {

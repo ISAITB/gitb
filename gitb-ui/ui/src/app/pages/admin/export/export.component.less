@@ -1,0 +1,58 @@
+@import '../../../../styles/less/_common.less';
+
+.table-container {
+	overflow: inherit;
+	table {
+		thead {
+			tr:first-child {
+				th:first-child {
+					border-top-left-radius: @border-radius;
+				}
+				th:last-child {
+					border-top-right-radius: @border-radius;
+				}
+			}
+			th {
+				background: @gray-light-1;
+				vertical-align: middle;
+				& > div {
+					display: flex;
+					white-space: nowrap;
+				}
+				&.first-column {
+					border-right-width: 1px;
+				}
+				&.second-column {
+					padding-left: 20px;
+					padding-right: 20px;
+					border-right-width: 1px;
+				}
+			}
+		}
+		tbody {
+			tr:last-child {
+				td:first-child {
+					border-bottom-left-radius: @border-radius;
+				}
+				td:last-child {
+					border-bottom-right-radius: @border-radius;
+				}
+			}
+			td {
+				&.row-header {
+					border-right-width: 1px;
+					background: @gray-light-1;
+					width: 1px;
+					& > div {
+						display: flex;
+						white-space: nowrap;
+					}
+				}
+				&.second-column {
+					border-right-width: 1px;
+					width: 1px;
+				}
+			}
+		}
+	}
+}

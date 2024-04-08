@@ -6,6 +6,7 @@
             <xsd:element name="description" type="xsd:string" minOccurs="0"/>
             <xsd:element name="domains" type="Domains" minOccurs="0"/>
             <xsd:element name="communities" type="Communities" minOccurs="0"/>
+            <xsd:element name="settings" type="Settings" minOccurs="0"/>
         </xsd:sequence>
         <xsd:attribute name="version" type="xsd:string" use="required"/>
         <xsd:attribute name="timestamp" type="xsd:dateTime" use="required"/>
@@ -24,6 +25,8 @@
                     <xsd:element name="apiKey" type="xsd:string" minOccurs="0"/>
                     <xsd:element name="selfRegistrationSettings" type="SelfRegistrationSettings" minOccurs="0"/>
                     <xsd:element name="conformanceCertificateSettings" type="ConformanceCertificateSettings" minOccurs="0"/>
+                    <xsd:element name="conformanceOverviewCertificateSettings" type="ConformanceOverviewCertificateSettings" minOccurs="0"/>
+                    <xsd:element name="signatureSettings" type="SignatureSettings" minOccurs="0"/>
                     <xsd:element name="organisationProperties" type="OrganisationProperties" minOccurs="0"/>
                     <xsd:element name="systemProperties" type="SystemProperties" minOccurs="0"/>
                     <xsd:element name="customLabels" type="CustomLabels" minOccurs="0"/>
@@ -34,6 +37,7 @@
                     <xsd:element name="resources" type="CommunityResources" minOccurs="0"/>
                     <xsd:element name="organisations" type="Organisations" minOccurs="0"/>
                     <xsd:element name="administrators" type="CommunityAdministrators" minOccurs="0"/>
+                    <xsd:element name="reportStylesheets" type="CommunityReportStylesheets" minOccurs="0"/>
                 </xsd:sequence>
                 <xsd:attribute name="domain" type="xsd:IDREF"/>
                 <xsd:attribute name="allowCertificateDownload" type="xsd:boolean" default="false"/>
@@ -43,9 +47,29 @@
                 <xsd:attribute name="allowPostTestSystemUpdates" type="xsd:boolean" default="true"/>
                 <xsd:attribute name="allowPostTestStatementUpdates" type="xsd:boolean" default="true"/>
                 <xsd:attribute name="allowAutomationApi" type="xsd:boolean" default="false"/>
+                <xsd:attribute name="interactionNotification" type="xsd:boolean" default="false"/>
             </xsd:extension>
         </xsd:complexContent>
     </xsd:complexType>
+    <xsd:complexType name="CommunityReportStylesheets">
+        <xsd:sequence>
+            <xsd:element name="stylesheet" type="CommunityReportStylesheet" maxOccurs="unbounded"/>
+        </xsd:sequence>
+    </xsd:complexType>
+    <xsd:complexType name="CommunityReportStylesheet">
+        <xsd:sequence>
+            <xsd:element name="content" type="xsd:string"/>
+        </xsd:sequence>
+        <xsd:attribute name="reportType" type="ReportType" use="required"/>
+    </xsd:complexType>
+    <xsd:simpleType name="ReportType">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="CONFORMANCE_OVERVIEW"/>
+            <xsd:enumeration value="CONFORMANCE_STATEMENT"/>
+            <xsd:enumeration value="TEST_CASE"/>
+            <xsd:enumeration value="TEST_STEP"/>
+        </xsd:restriction>
+    </xsd:simpleType>
     <xsd:complexType name="ConformanceCertificateSettings">
         <xsd:sequence>
             <xsd:element name="title" type="xsd:string" minOccurs="0"/>
@@ -58,6 +82,37 @@
         <xsd:attribute name="addTestCases" type="xsd:boolean" default="false"/>
         <xsd:attribute name="addMessage" type="xsd:boolean" default="false"/>
         <xsd:attribute name="addSignature" type="xsd:boolean" default="false"/>
+        <xsd:attribute name="addPageNumbers" type="xsd:boolean" default="true"/>
+    </xsd:complexType>
+    <xsd:complexType name="ConformanceOverviewCertificateSettings">
+        <xsd:sequence>
+            <xsd:element name="title" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="messages" type="ConformanceOverviewCertificateMessages" minOccurs="0"/>
+        </xsd:sequence>
+        <xsd:attribute name="addTitle" type="xsd:boolean" default="true"/>
+        <xsd:attribute name="addDetails" type="xsd:boolean" default="false"/>
+        <xsd:attribute name="addResultOverview" type="xsd:boolean" default="false"/>
+        <xsd:attribute name="addStatementList" type="xsd:boolean" default="false"/>
+        <xsd:attribute name="addStatementDetails" type="xsd:boolean" default="false"/>
+        <xsd:attribute name="addMessage" type="xsd:boolean" default="false"/>
+        <xsd:attribute name="addSignature" type="xsd:boolean" default="false"/>
+        <xsd:attribute name="addPageNumbers" type="xsd:boolean" default="true"/>
+        <xsd:attribute name="enableAggregateLevel" type="xsd:boolean" default="false"/>
+        <xsd:attribute name="enableDomainLevel" type="xsd:boolean" default="false"/>
+        <xsd:attribute name="enableSpecificationGroupLevel" type="xsd:boolean" default="false"/>
+        <xsd:attribute name="enableSpecificationLevel" type="xsd:boolean" default="false"/>
+    </xsd:complexType>
+    <xsd:complexType name="ConformanceOverviewCertificateMessages">
+        <xsd:sequence>
+            <xsd:element name="message" type="ConformanceOverviewCertificateMessage" maxOccurs="unbounded"/>
+        </xsd:sequence>
+    </xsd:complexType>
+    <xsd:complexType name="ConformanceOverviewCertificateMessage">
+        <xsd:sequence>
+            <xsd:element name="message" type="xsd:string"/>
+        </xsd:sequence>
+        <xsd:attribute name="messageType" type="ConformanceOverviewCertificateMessageType" use="required"/>
+        <xsd:attribute name="identifier" type="xsd:IDREF"/>
     </xsd:complexType>
     <xsd:complexType name="SelfRegistrationSettings">
         <xsd:sequence>
@@ -70,6 +125,14 @@
         <xsd:attribute name="forceTemplateSelection" type="xsd:boolean" default="false"/>
         <xsd:attribute name="forceRequiredProperties" type="xsd:boolean" default="false"/>
     </xsd:complexType>
+    <xsd:simpleType name="ConformanceOverviewCertificateMessageType">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="ALL"/>
+            <xsd:enumeration value="DOMAIN"/>
+            <xsd:enumeration value="SPECIFICATION_GROUP"/>
+            <xsd:enumeration value="SPECIFICATION"/>
+        </xsd:restriction>
+    </xsd:simpleType>
     <xsd:simpleType name="SelfRegistrationMethod">
         <xsd:restriction base="xsd:string">
             <xsd:enumeration value="NOT_SUPPORTED"/>
@@ -262,8 +325,8 @@
     </xsd:complexType>
     <xsd:complexType name="ConformanceBadges">
         <xsd:sequence>
-            <xsd:element name="success" type="ConformanceBadge"/>
-            <xsd:element name="other" type="ConformanceBadge"/>
+            <xsd:element name="success" type="ConformanceBadge" minOccurs="0"/>
+            <xsd:element name="other" type="ConformanceBadge" minOccurs="0"/>
             <xsd:element name="failure" type="ConformanceBadge" minOccurs="0"/>
         </xsd:sequence>
     </xsd:complexType>
@@ -432,6 +495,7 @@
                     <xsd:element name="testSuites" type="TestSuites" minOccurs="0"/>
                     <xsd:element name="sharedTestSuites" type="xsd:IDREFS" minOccurs="0"/>
                     <xsd:element name="badges" type="ConformanceBadges" minOccurs="0"/>
+                    <xsd:element name="badgesForReport" type="ConformanceBadges" minOccurs="0"/>
                 </xsd:sequence>
                 <xsd:attribute name="hidden" type="xsd:boolean" default="false"/>
                 <xsd:attribute name="displayOrder" type="xsd:short" default="0"/>
@@ -471,6 +535,7 @@
                     <xsd:element name="apiKey" type="xsd:string" minOccurs="0"/>
                     <xsd:element name="endpoints" type="Endpoints" minOccurs="0"/>
                     <xsd:element name="badges" type="ConformanceBadges" minOccurs="0"/>
+                    <xsd:element name="badgesForReport" type="ConformanceBadges" minOccurs="0"/>
                 </xsd:sequence>
                 <xsd:attribute name="specification" use="required" type="xsd:IDREF"/>
                 <xsd:attribute name="default" type="xsd:boolean" default="false"/>
@@ -542,12 +607,22 @@
             <xsd:element name="administrator" type="CommunityAdministrator" maxOccurs="unbounded"/>
         </xsd:sequence>
     </xsd:complexType>
+    <xsd:complexType name="SystemAdministrators">
+        <xsd:sequence>
+            <xsd:element name="administrator" type="SystemAdministrator" maxOccurs="unbounded"/>
+        </xsd:sequence>
+    </xsd:complexType>
     <xsd:complexType name="Users">
         <xsd:sequence>
             <xsd:element name="user" type="OrganisationUser" maxOccurs="unbounded"/>
         </xsd:sequence>
     </xsd:complexType>
     <xsd:complexType name="CommunityAdministrator">
+        <xsd:complexContent>
+            <xsd:extension base="User"/>
+        </xsd:complexContent>
+    </xsd:complexType>
+    <xsd:complexType name="SystemAdministrator">
         <xsd:complexContent>
             <xsd:extension base="User"/>
         </xsd:complexContent>
@@ -628,6 +703,9 @@
                     <xsd:element name="hasDocumentation" type="xsd:boolean"/>
                     <xsd:element name="documentation" type="xsd:string" minOccurs="0"/>
                     <xsd:element name="data" type="xsd:string"/>
+                    <xsd:element name="specReference" type="xsd:string" minOccurs="0"/>
+                    <xsd:element name="specDescription" type="xsd:string" minOccurs="0"/>
+                    <xsd:element name="specLink" type="xsd:string" minOccurs="0"/>
                     <xsd:element name="testCases" type="TestCases" minOccurs="0"/>
                 </xsd:sequence>
                 <xsd:attribute name="specification" type="xsd:IDREF"/>
@@ -663,6 +741,9 @@
                     <xsd:element name="optional" type="xsd:boolean" minOccurs="0"/>
                     <xsd:element name="disabled" type="xsd:boolean" minOccurs="0"/>
                     <xsd:element name="tags" type="xsd:string" minOccurs="0"/>
+                    <xsd:element name="specReference" type="xsd:string" minOccurs="0"/>
+                    <xsd:element name="specDescription" type="xsd:string" minOccurs="0"/>
+                    <xsd:element name="specLink" type="xsd:string" minOccurs="0"/>
                 </xsd:sequence>
                 <xsd:attribute name="testSuite" use="required" type="xsd:IDREF"/>
                 <xsd:attribute name="specification" type="xsd:IDREF"/>
@@ -679,6 +760,67 @@
             <xsd:extension base="ExportType">
                 <xsd:attribute name="actor" use="required" type="xsd:IDREF"/>
                 <xsd:attribute name="sut" use="required" type="xsd:boolean"/>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+    <xsd:complexType name="Settings">
+        <xsd:sequence>
+            <xsd:element name="themes" type="Themes" minOccurs="0"/>
+            <xsd:element name="systemConfigurations" type="SystemConfigurations" minOccurs="0"/>
+            <xsd:element name="landingPages" type="LandingPages" minOccurs="0"/>
+            <xsd:element name="legalNotices" type="LegalNotices" minOccurs="0"/>
+            <xsd:element name="errorTemplates" type="ErrorTemplates" minOccurs="0"/>
+            <xsd:element name="administrators" type="SystemAdministrators" minOccurs="0"/>
+        </xsd:sequence>
+    </xsd:complexType>
+    <xsd:complexType name="Themes">
+        <xsd:sequence>
+            <xsd:element name="theme" type="Theme" maxOccurs="unbounded"/>
+        </xsd:sequence>
+    </xsd:complexType>
+    <xsd:complexType name="Theme">
+        <xsd:complexContent>
+            <xsd:extension base="ExportType">
+                <xsd:sequence>
+                    <xsd:element name="key" type="xsd:string"/>
+                    <xsd:element name="description" type="xsd:string" minOccurs="0"/>
+                    <xsd:element name="separatorTitleColor" type="xsd:string"/>
+                    <xsd:element name="modalTitleColor" type="xsd:string"/>
+                    <xsd:element name="tableTitleColor" type="xsd:string"/>
+                    <xsd:element name="cardTitleColor" type="xsd:string"/>
+                    <xsd:element name="pageTitleColor" type="xsd:string"/>
+                    <xsd:element name="headingColor" type="xsd:string"/>
+                    <xsd:element name="tabLinkColor" type="xsd:string"/>
+                    <xsd:element name="footerTextColor" type="xsd:string"/>
+                    <xsd:element name="headerBackgroundColor" type="xsd:string"/>
+                    <xsd:element name="headerBorderColor" type="xsd:string"/>
+                    <xsd:element name="headerSeparatorColor" type="xsd:string"/>
+                    <xsd:element name="headerLogoPath" type="xsd:string"/>
+                    <xsd:element name="headerLogoContent" type="xsd:string" minOccurs="0"/>
+                    <xsd:element name="footerBackgroundColor" type="xsd:string"/>
+                    <xsd:element name="footerBorderColor" type="xsd:string"/>
+                    <xsd:element name="footerLogoPath" type="xsd:string"/>
+                    <xsd:element name="footerLogoContent" type="xsd:string" minOccurs="0"/>
+                    <xsd:element name="footerLogoDisplay" type="xsd:string"/>
+                    <xsd:element name="faviconPath" type="xsd:string"/>
+                    <xsd:element name="faviconContent" type="xsd:string" minOccurs="0"/>
+                </xsd:sequence>
+                <xsd:attribute name="active" type="xsd:boolean" default="false"/>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+    <xsd:complexType name="SystemConfigurations">
+        <xsd:sequence>
+            <xsd:element name="config" type="SystemConfiguration" maxOccurs="unbounded"/>
+        </xsd:sequence>
+    </xsd:complexType>
+    <xsd:complexType name="SystemConfiguration">
+        <xsd:complexContent>
+            <xsd:extension base="ExportType">
+                <xsd:sequence>
+                    <xsd:element name="value" type="xsd:string" minOccurs="0"/>
+                </xsd:sequence>
+                <xsd:attribute name="name" type="xsd:string" use="required"/>
             </xsd:extension>
         </xsd:complexContent>
     </xsd:complexType>

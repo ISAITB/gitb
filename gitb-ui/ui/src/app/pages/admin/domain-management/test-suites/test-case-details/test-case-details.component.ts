@@ -33,7 +33,6 @@ export class TestCaseDetailsComponent extends BaseComponent implements OnInit, A
   specificationId?:number
   testSuiteId!:number
   testCaseId!:number
-  showDocumentation = false
   pending = false
   diagramLoaded = false
   steps: {[key: string]: StepData[]} = {}
@@ -125,7 +124,7 @@ export class TestCaseDetailsComponent extends BaseComponent implements OnInit, A
 
 	saveChanges() {
     this.pending = true
-		this.testSuiteService.updateTestCaseMetadata(this.testCase.id!, this.testCase.sname!, this.testCase.description, this.testCase.documentation, this.testCase.optional, this.testCase.disabled, this.serialiseTags())
+		this.testSuiteService.updateTestCaseMetadata(this.testCase.id!, this.testCase.sname!, this.testCase.description, this.testCase.documentation, this.testCase.optional, this.testCase.disabled, this.serialiseTags(), this.testCase.specReference, this.testCase.specDescription, this.testCase.specLink)
     .subscribe(() => {
       this.popupService.success('Test case updated.')
     }).add(() => {

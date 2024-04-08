@@ -1,13 +1,15 @@
 <div class="modal-header">
-	<h5 *ngIf="isNameVisible">{{documentName}}</h5>
-	<div class="btn-toolbar">
-		<button type="button" class="btn btn-default" (click)="copyToClipboard()" *ngIf="isCopyVisible">Copy to clipboard</button>
-		<button type="button" class="btn btn-default" (click)="download()" *ngIf="isDownloadVisible">Download</button>
-		<button type="button" class="btn btn-default" (click)="close()">Close</button>
-	</div>
+	<div class="modal-title">{{isNameVisible?documentName:"Data"}}</div>
 </div>
 <div class="modal-body">
 	<div class="editor" [ngClass]="styleClass">
 		<ngx-codemirror #codeEditor [(ngModel)]="editorOptions.value" [options]="editorOptions"></ngx-codemirror>
+	</div>
+</div>
+<div class="modal-footer">
+	<div class="btn-toolbar">
+		<button type="button" class="btn btn-secondary" (click)="close()">Close</button>
+		<button type="button" class="btn btn-secondary" (click)="copyToClipboard()" *ngIf="isCopyVisible">Copy to clipboard</button>
+		<button type="button" class="btn btn-secondary" (click)="download()" *ngIf="isDownloadVisible">Download</button>
 	</div>
 </div>

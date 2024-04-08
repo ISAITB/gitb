@@ -2,7 +2,7 @@ package filters
 
 import java.util.concurrent.TimeoutException
 
-import akka.stream.Materializer
+import org.apache.pekko.stream.Materializer
 import com.gitb.tbs.Error
 import controllers.util.ResponseConstructor
 import exceptions._

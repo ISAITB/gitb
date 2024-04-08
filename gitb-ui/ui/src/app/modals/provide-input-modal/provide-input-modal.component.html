@@ -1,29 +1,27 @@
 <div class="modal-header">
-	<h4 class="modal-title" id="myModalLabel">{{inputTitle}}</h4>
+    <div class="modal-title" id="myModalLabel">{{inputTitle}}</div>
 </div>
 <form>
-	<div class="modal-body provide-input-body" style="overflow-x: auto; overflow-y: hidden;">
-		<div *ngFor="let interaction of interactions; let index = index">
-			<div class="form-group">
-				<div class="col-md-12 col-centered" >
+	<div class="modal-body provide-input-body" style="overflow-x: auto; overflow-y: hidden;" appFileDropTarget>
+		<div *ngFor="let interaction of interactions; let index = index; let first = first;">
+			<div class="row">
+				<div class="col-12" [class.mt-3]="!first">
 					<!-- request interaction: server asks operator to send inputs -->
 					<div *ngIf="interaction.type == 'request'">
-						<label>{{interaction.desc}}</label>
+						<label [attr.for]="'input-'+index" class="form-label">{{interaction.desc}}</label>
 						<ng-container [ngSwitch]="interaction.inputType">
 							<!-- Select single. -->
-							<select *ngSwitchCase="'SELECT_SINGLE'" [name]="'input-'+index" [attr.id]="'input-'+index" class="form-control" [(ngModel)]="interaction.selectedOption">
+							<select *ngSwitchCase="'SELECT_SINGLE'" [name]="'input-'+index" [attr.id]="'input-'+index" class="form-select" [(ngModel)]="interaction.selectedOption">
 								<option value=""></option>
 								<option *ngFor="let option of interaction.optionData" [ngValue]="option">{{option.label}}</option>
 							</select>
 							<!-- Select multiple -->
-							<select *ngSwitchCase="'SELECT_MULTIPLE'" [name]="'input-'+index" [attr.id]="'input-'+index" multiple="true" class="form-control" [(ngModel)]="interaction.selectedOption">
+							<select *ngSwitchCase="'SELECT_MULTIPLE'" [name]="'input-'+index" [attr.id]="'input-'+index" multiple="true" class="form-select" [(ngModel)]="interaction.selectedOption">
 								<option *ngFor="let option of interaction.optionData" [ngValue]="option">{{option.label}}</option>
 							</select>
 							<!-- Upload -->
 							<div *ngSwitchCase="'UPLOAD'">
-								<span class="mini-tab" *ngIf="interaction.file != undefined">{{interaction.file.name}} - {{interaction.file.size}} bytes</span>
-								<span class="mini-tab" *ngIf="interaction.file == undefined">No file selected</span>
-								<app-file-select label="Select file" (onUpload)="onFileSelect(interaction, $event)"></app-file-select>
+								<app-file-select [fileName]="interaction.file?.name" (onUpload)="onFileSelect(interaction, $event)"></app-file-select>
 							</div>
 							<!-- Code editor -->
 							<ngx-codemirror *ngSwitchCase="'CODE'" #codeMirror (focusChange)="codeEditorFocus($event, 'input-'+index)" [name]="'input-'+index" [attr.id]="'input-'+index" [(ngModel)]="interaction.data" [options]="{lineNumbers:true, smartIndent: false, electricChars: false, mode: interaction.mimeType}" [ngClass]="{'focused': editorFocus['input-'+index]}"></ngx-codemirror>
@@ -37,15 +35,18 @@
 					</div>
 					<!-- instruction interaction: server shows a message -->
 					<div *ngIf="interaction.type == 'instruction'">
-						<app-any-content-view [context]="instructionAsAnyContent(interaction)" [forceDisplay]="interaction.forceDisplay == true" [fileNameDownload]="interaction.name" [sessionId]="sessionId"></app-any-content-view>
+						<app-any-content-view [context]="instructionAsAnyContent(interaction)" [forceDisplay]="interaction.forceDisplay == true" [fileNameDownload]="interaction.name" [sessionId]="sessionId" [noMargin]="true"></app-any-content-view>
 					</div>
 				</div>
 			</div>
 		</div>
 	</div>
 	<div class="modal-footer">
-		<button type="button" *ngIf="!needsInput" (click)="hideInput()" class="btn btn-default">Close</button>
-		<button type="button" *ngIf="needsInput" (click)="reset()" class="btn btn-default">Reset</button>
-		<button type="submit" *ngIf="needsInput" (click)="hideInput()" class="btn btn-default">Submit</button>
+		<div class="btn-toolbar">
+			<button type="button" (click)="minimise()" class="btn btn-secondary">Minimise</button>
+			<button type="button" *ngIf="!needsInput" (click)="close()" class="btn btn-secondary">Close</button>
+			<button type="button" *ngIf="needsInput" (click)="reset()" class="btn btn-secondary">Reset</button>
+			<button type="submit" *ngIf="needsInput" (click)="submit()" class="btn btn-secondary">Submit</button>
+		</div>
 	</div>
 </form>

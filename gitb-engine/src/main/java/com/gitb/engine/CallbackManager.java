@@ -1,6 +1,6 @@
 package com.gitb.engine;
 
-import akka.actor.ActorRef;
+import org.apache.pekko.actor.ActorRef;
 import com.gitb.core.LogLevel;
 import com.gitb.engine.commands.messaging.NotificationReceived;
 import com.gitb.messaging.MessagingReport;

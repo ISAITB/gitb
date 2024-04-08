@@ -2,7 +2,6 @@
 
 .statementControls {
     display: flex;
-    margin-left: -5px;
     margin-bottom: 10px;
 }
 .statementRatios {
@@ -13,4 +12,62 @@
 
 .spinnerPadded {
     padding-bottom: 15px;
+}
+
+.treeDisplay {
+    .partyControls {
+        display: flex;
+        flex-wrap: wrap;
+        .partySelectors {
+            display: flex;
+            .partyControl {
+                margin-bottom: 5px;
+                margin-right: 5px;
+                align-self: center;
+                &:last-child {
+                    margin-right: 0px;
+                }                
+            }
+        }
+        .partyButtons {
+            display: flex;
+            align-self: flex-start;
+            & > div {
+                margin-bottom: 5px;
+                margin-right: 5px;
+                &:last-child {
+                    margin-right: 0px;
+                }
+            }
+        }
+        &.wrapped {
+            .partySelectors {
+                flex-grow: 1;
+                padding-bottom: 10px;
+                margin-bottom: 15px;
+                border-bottom: 1px solid @gray-highlight;
+            }
+            .partyButtons {
+                & > div {
+                    &:last-child {
+                        margin-right: 61px
+                    }
+                }
+            }
+        }
+        &.not-wrapped {
+            .partyButtons {
+                & > div {
+                    &:first-child {
+                        margin-left: 30px;
+                        padding-left: 30px;
+                        border-left: 1px solid @gray-highlight;
+                    }
+                }
+            }
+        }
+    }
+}
+.top-margin {
+    margin-top: 10px;
 }

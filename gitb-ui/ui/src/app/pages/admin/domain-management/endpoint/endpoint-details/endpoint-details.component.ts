@@ -20,6 +20,7 @@ import { ParameterDetailsModalComponent } from 'src/app/components/parameters/pa
 import { ParameterReference } from 'src/app/types/parameter-reference';
 import { RoutingService } from 'src/app/services/routing.service';
 import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
+import { CdkDragDrop } from '@angular/cdk/drag-drop';
 
 @Component({
   selector: 'app-endpoint-details',
@@ -35,6 +36,7 @@ export class EndpointDetailsComponent extends BaseComponent implements OnInit, A
   specificationId!: number
   orderParametersDisabled = true
   orderPending = false
+  draggingParameter = false
   dataStatus = {status: Constants.STATUS.PENDING}
   endpoint: Partial<EndpointData> = {}
   parameters: ParameterData[] = []
@@ -104,18 +106,6 @@ export class EndpointDetailsComponent extends BaseComponent implements OnInit, A
     }).add(() => {
 			this.dataStatus.status = Constants.STATUS.FINISHED
     })
-  }
-
-	moveParameterUp(index: number) {
-		const item = this.parameters.splice(index, 1)[0]
-		this.orderParametersDisabled = false
-		this.parameters.splice(index-1, 0, item)
-  }
-
-	moveParameterDown(index: number) {
-		const item = this.parameters.splice(index, 1)[0]
-		this.orderParametersDisabled = false
-		this.parameters.splice(index+1, 0, item)
   }
 
 	orderParameters() {
@@ -232,6 +222,13 @@ export class EndpointDetailsComponent extends BaseComponent implements OnInit, A
         this.popupService.success('Parameter deleted.')
       })
     })
+  }
+
+  dropParameter(event: CdkDragDrop<any>) {
+    if (event.currentIndex != event.previousIndex) {
+      this.parameters.splice(event.currentIndex, 0, this.parameters.splice(event.previousIndex, 1)[0]);
+      this.orderParametersDisabled = false
+    }
   }
 
 }

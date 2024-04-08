@@ -5,9 +5,9 @@ import com.gitb.reports.dto.TestCaseOverview
 import com.gitb.reports.{ReportGenerator, ReportSpecs}
 import com.gitb.tbs.TestStepStatus
 import com.gitb.tpl._
-import com.gitb.tr.{TestCaseOverviewReportType, TestCaseStepReportType, TestCaseStepsType, TestResultType}
+import com.gitb.tr.{TAR, TestCaseOverviewReportType, TestCaseStepReportType, TestCaseStepsType, TestResultType}
 import com.gitb.utils.{XMLDateTimeUtils, XMLUtils}
-import models.{CommunityLabels, SessionFolderInfo}
+import models.{CommunityLabels, Constants, SessionFolderInfo}
 import org.apache.commons.codec.net.URLCodec
 import org.apache.commons.io.FileUtils
 import org.apache.commons.lang3.StringUtils
@@ -43,7 +43,7 @@ class TestCaseReportProducer @Inject() (reportHelper: ReportHelper, testResultMa
     if (testResult.isDefined) {
       val reportData = contentType match {
         // The "vX" postfix is used to make sure we generate (but also subsequently cache) new versions of the step report
-        case Some("application/pdf") => (".v2.pdf", (list: ListBuffer[TitledTestStepReportType], exportedReportPath: File, testCase: Option[models.TestCase], session: String) => {
+        case Some(Constants.MimeTypePDF) => (".v2.pdf", (list: ListBuffer[TitledTestStepReportType], exportedReportPath: File, testCase: Option[models.TestCase], session: String) => {
           generateDetailedTestCaseReportPdf(list, exportedReportPath.getAbsolutePath, testCase, session, labelSupplier.getOrElse(() => Map.empty[Short, CommunityLabels]).apply(), reportSpecSupplier.getOrElse(() => reportHelper.createReportSpecs()).apply())
         })
         case _ => (".report.xml", (list: ListBuffer[TitledTestStepReportType], exportedReportPath: File, testCase: Option[models.TestCase], session: String) => {
@@ -86,6 +86,7 @@ class TestCaseReportProducer @Inject() (reportHelper: ReportHelper, testResultMa
       overview.setMetadata(new Metadata())
       overview.getMetadata.setName(testCase.get.fullname)
       overview.getMetadata.setDescription(testCase.get.description.orNull)
+      overview.getMetadata.setVersion(StringUtils.trimToNull(testCase.get.version))
     }
     if (list.nonEmpty) {
       overview.setSteps(new TestCaseStepsType())
@@ -98,7 +99,7 @@ class TestCaseReportProducer @Inject() (reportHelper: ReportHelper, testResultMa
       }
     }
     Files.createDirectories(reportPath.getParent)
-    Using(Files.newOutputStream(reportPath)) { fos =>
+    Using.resource(Files.newOutputStream(reportPath)) { fos =>
       ReportGenerator.getInstance().writeTestCaseOverviewXmlReport(overview, fos)
       fos.flush()
     }
@@ -174,6 +175,9 @@ class TestCaseReportProducer @Inject() (reportHelper: ReportHelper, testResultMa
           overview.setLogMessages(logContents.get.asJava)
         }
       }
+      overview.setSpecReference(testCase.get.specReference.orNull)
+      overview.setSpecDescription(testCase.get.specDescription.orNull)
+      overview.setSpecLink(testCase.get.specLink.orNull)
     } else {
       // This is a deleted test case - get data as possible from TestResult
       overview.setTestDescription("-")
@@ -214,6 +218,10 @@ class TestCaseReportProducer @Inject() (reportHelper: ReportHelper, testResultMa
       //convert string in xml format into its object representation
       val report = XMLUtils.unmarshal(classOf[TestStepStatus], new StreamSource(new StringReader(string)))
       stepReport.setWrapped(report.getReport)
+      if (report.getReport != null && report.getReport.isInstanceOf[TAR] && report.getReport.asInstanceOf[TAR].getReports != null && report.getReport.asInstanceOf[TAR].getReports.getReports.isEmpty) {
+        // If not set to null this would result in an empty element that is not schema-valid.
+        report.getReport.asInstanceOf[TAR].setReports(null)
+      }
       collectedSteps += stepReport
       // Process child steps as well if applicable
       testStep match {

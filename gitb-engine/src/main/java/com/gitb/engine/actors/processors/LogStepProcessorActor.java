@@ -1,6 +1,6 @@
 package com.gitb.engine.actors.processors;
 
-import akka.actor.ActorRef;
+import org.apache.pekko.actor.ActorRef;
 import com.gitb.core.LogLevel;
 import com.gitb.engine.expr.ExpressionHandler;
 import com.gitb.engine.expr.resolvers.VariableResolver;

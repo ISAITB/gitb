@@ -26,33 +26,6 @@ is developed in Scala and uses the Play Framework.
 The frontend of the ``gitb-ui`` component is an Angular app developed in TypeScript, and is managed in terms
 of scaffolding and build using Angular CLI.
 
-# Prerequisites
-
-To build and run the Test Bed's components you need to have the following tools:
-- JDK 17+, used as the base platform for both ``gitb-srv`` and ``gitb-ui``.
-- Maven 3+, used to build ``gitb-srv``.
-- SBT 1.3.13+, used to build ``gitb-ui``.
-- Scala 2.13+, used to build the backend app of ``gitb-ui``.
-- NPM version 6.14+, used to build the frontend app of ``gitb-ui``.
-
-Although not mandatory, the proposed IDE to use is IntelliJ, and VS Code for ``gitb-ui``'s Angular app.  
-
-## Additional Test Bed components
-
-The focus of this README file is the ``gitb-srv`` and ``gitb-ui`` components. To run a complete Test Bed instance 
-you will also require at least:
-- A MySQL database (version 8.*) for its persistence.
-- A REDIS instance for the caching of user sessions.
-
-Both these instances are set up separately (e.g. via Docker) environment. These can be set up from Docker 
-as follows:
-- MySQL: ``docker run --name gitb-mysql -p 3306:3306 -d isaitb/gitb-mysql``
-- REDIS: ``docker run --name gitb-redis -p 6379:6379 -d redis:7.0.11``
-
-> **Note**  
-> All images and containers are defined in ``docker-compose.yml`` and explained in detail the [developer installation guide](https://www.itb.ec.europa.eu/docs/guides/latest/installingTheTestBed/index.html). You may build and launch the complete service as described [here](#build-for-deployment).
-
-
 # Configuration properties
 
 The main configuration file of interest is ``application.conf`` from ``gitb-ui`` although this never needs
@@ -64,6 +37,32 @@ The full listing and documentation of properties is available [here](https://www
 # Build for development
 
 Follow these steps to build and run the application components for development purposes.
+
+## Prerequisites
+
+To build and run the Test Bed's components you need to have the following tools:
+- JDK 17+, used as the base platform for both ``gitb-srv`` and ``gitb-ui``.
+- Maven 3.9+, used to build ``gitb-srv``.
+- SBT 1.9+, used to build ``gitb-ui``.
+- Scala 2.13+, used to build the backend app of ``gitb-ui``.
+- Node version 20+, used to build the frontend app of ``gitb-ui``.
+
+Although not mandatory, the proposed IDE to use is IntelliJ, and VS Code for ``gitb-ui``'s Angular app.
+
+### Additional Test Bed components
+
+The focus of this README file is the ``gitb-srv`` and ``gitb-ui`` components. To run a complete Test Bed instance
+you will also require at least:
+- A MySQL database (version 8.*) for its persistence.
+- A REDIS instance for the caching of user sessions.
+
+Both these instances are set up separately (e.g. via Docker) environment. These can be set up from Docker
+as follows:
+- MySQL: ``docker run --name gitb-mysql -p 3306:3306 -d isaitb/gitb-mysql``
+- REDIS: ``docker run --name gitb-redis -p 6379:6379 -d redis:7.0.11``
+
+> **Note**  
+> All images and containers are defined in ``docker-compose.yml`` and explained in detail the [developer installation guide](https://www.itb.ec.europa.eu/docs/guides/latest/installingTheTestBed/index.html). You may build and launch the complete service as described [here](#build-for-deployment).
 
 ## Test engine (gitb-srv)
 
@@ -141,7 +140,7 @@ Follow these steps to build the components for deployment as a Dockerised servic
 
 ## Build using development tools
 
-This approach is more suitable is you have set up the repository for development and have installed all necessary tooling.
+This approach is more suitable is you have set up the repository for development and have [installed all necessary tooling](#prerequisites).
 Producing build artefacts is faster but expects the necessary tools (Java, Maven, NPM, SBT, Scala) to be installed, and manual steps
 to build Docker images.
 
@@ -182,9 +181,21 @@ Once a complete Test Bed instance has been set up, either in development or as a
 Test Bed administrator account as follows:
 1. Go to http://localhost:9000.
 2. Click on the login button.
-3. Authenticate using ``test@test.com`` with a (one-time) password of ``test``.
+3. Authenticate using ``admin@itb``. This account is set with a one-time password that is refreshed at start-up until a
+   first login is made. The password to use is obtained by checking the logs of container `gitb-ui`.
 
-For information on how to proceed you may refer to the Test Bed's [user guide](https://www.itb.ec.europa.eu/docs/itb-ta/latest/) 
+An example log output to retrieve the administrator password is as follows: 
+```
+###############################################################################
+
+The one-time password for the default administrator account [admin@itb] is:
+
+b1afbc39-8ad7-49f4-a9d9-0bcec942aef4
+
+###############################################################################
+```
+
+For information on how to proceed once you have logged in, you may refer to the Test Bed's [user guide](https://www.itb.ec.europa.eu/docs/itb-ta/latest/) 
 and [sample usage tutorials](https://www.itb.ec.europa.eu/docs/guides/latest/definingYourTestConfiguration/index.html).
 
 # Licence

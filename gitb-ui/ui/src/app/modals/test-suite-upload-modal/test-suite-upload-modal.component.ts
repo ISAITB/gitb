@@ -36,6 +36,7 @@ export class TestSuiteUploadModalComponent implements OnInit {
   specifications: Specification[] = []
   actionPending = false
   actionProceedPending = false
+  validationReportItems?: AssertionReport[]
   hasValidationWarnings = false
   hasValidationErrors = false
   hasValidationMessages = false
@@ -88,6 +89,9 @@ export class TestSuiteUploadModalComponent implements OnInit {
       this.hasValidationErrors = false
       this.hasValidationWarnings = false
       this.hasValidationMessages = false
+    }
+    if (this.uploadResult?.validationReport?.reports) {
+      this.validationReportItems = this.toAssertionReports(this.uploadResult.validationReport.reports)
     }
   }
 
@@ -427,13 +431,15 @@ export class TestSuiteUploadModalComponent implements OnInit {
     this.hasChoicesToComplete = hasPendingChoices
   }
 
-  toAssertionReport(item: ValidationReportItem): AssertionReport {
-    return {
-      type: item.level,
-      value: {
-        description: item.description,
-        location: item.location
+  toAssertionReports(items: ValidationReportItem[]): AssertionReport[] {
+    return items.map((item) => {
+      return {
+        type: item.level,
+        value: {
+          description: item.description,
+          location: item.location
+        }
       }
-    }
+    })
   }
 }

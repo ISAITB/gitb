@@ -1,0 +1,101 @@
+import { Component, OnInit } from '@angular/core';
+import { RoutingService } from 'src/app/services/routing.service';
+import { SystemAdministrationTab } from '../system-administration-tab.enum';
+import { Theme } from 'src/app/types/theme';
+import { ActivatedRoute } from '@angular/router';
+import { BaseComponent } from 'src/app/pages/base-component.component';
+import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
+import { Observable, of } from 'rxjs';
+import { SystemConfigurationService } from 'src/app/services/system-configuration.service';
+import { PopupService } from 'src/app/services/popup.service';
+import { DataService } from 'src/app/services/data.service';
+
+@Component({
+  selector: 'app-create-theme',
+  templateUrl: './create-theme.component.html',
+  styles: [
+  ]
+})
+export class CreateThemeComponent extends BaseComponent implements OnInit {
+
+  theme!: Theme
+  referenceThemeId!: number
+  savePending = false
+
+  constructor(
+    private routingService: RoutingService,
+    private route: ActivatedRoute,
+    private confirmationDialogService: ConfirmationDialogService,
+    private systemConfigurationService: SystemConfigurationService,
+    private popupService: PopupService,
+    private dataService: DataService
+  ) { super() }
+
+  ngOnInit(): void {
+    const referenceTheme = this.route.snapshot.data['theme'] as Theme
+    this.referenceThemeId = referenceTheme.id
+    this.theme = {
+      id: -1,
+      active: false,
+      custom: true,
+      key: '',
+      separatorTitleColor: referenceTheme.separatorTitleColor,
+      cardTitleColor: referenceTheme.cardTitleColor,
+      faviconPath: referenceTheme.faviconPath,
+      footerBackgroundColor: referenceTheme.footerBackgroundColor,
+      footerBorderColor: referenceTheme.footerBorderColor,
+      footerLogoDisplay: referenceTheme.footerLogoDisplay,
+      footerLogoPath: referenceTheme.footerLogoPath,
+      footerTextColor: referenceTheme.footerTextColor,
+      headerBackgroundColor: referenceTheme.headerBackgroundColor,
+      headerBorderColor: referenceTheme.headerBorderColor,
+      headerSeparatorColor: referenceTheme.headerSeparatorColor,
+      headerLogoPath: referenceTheme.headerLogoPath,
+      headingColor: referenceTheme.headingColor,
+      modalTitleColor: referenceTheme.modalTitleColor,
+      pageTitleColor: referenceTheme.pageTitleColor,
+      tabLinkColor: referenceTheme.tabLinkColor,
+      tableTitleColor: referenceTheme.tableTitleColor
+    }
+    this.routingService.systemConfigurationBreadcrumbs()
+  }
+
+  saveDisabled() {
+    return !this.textProvided(this.theme.key)
+  }
+
+  save() {
+    let proceed: Observable<boolean>
+    if (this.theme.active) {
+      proceed = this.confirmationDialogService.confirm("Confirm active theme", "You are about to change the currently active theme. Are you sure?", "Change", "Cancel")
+    } else {
+      proceed = of(true)
+    }
+    proceed.subscribe((confirmed) => {
+      this.savePending = true
+      if (confirmed) {
+        this.clearAlerts()
+        this.systemConfigurationService.createTheme(this.theme, this.referenceThemeId)
+        .subscribe((error) => {
+          if (this.isErrorDescription(error)) {
+            this.addAlertError(error.error_description)
+          } else {
+            this.popupService.success("Theme created.")
+            if (this.theme.active) {
+              this.dataService.refreshCss()
+            }
+            this.back()
+          }
+        })
+        .add(() => {
+          this.savePending = false
+        })
+      }
+    })
+  }
+
+  back() {
+    this.routingService.toSystemAdministration(SystemAdministrationTab.themes)
+  }
+
+}

@@ -1,13 +1,18 @@
-<ng-container [ngSwitch]="isButton">
-  <div *ngSwitchCase="true" style="display:inline-block">
-    <button type="button" class="btn btn-default" (click)="onButtonClick()">{{label}}</button>
+@if (dragActive) {
+  <div class="drag-active form-control" [class.drop-active]="dropActive">
+    <span class="drop-icon"><i class="fa-solid fa-upload"></i></span>
+    <span>Drop file here</span>
   </div>
-  <div *ngSwitchCase="false" class="input-group">
-    <input type="text" autocomplete="off" class="form-control clickable" [value]="(fileName != undefined)?fileName:''" [attr.placeholder]="placeholder" (click)="onButtonClick()" readonly="readonly"/>
-    <div class="input-group-btn">
-      <button class="btn btn-default" type="button" (click)="onButtonClick()" containerClass="shortTooltip" tooltip="Open" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-regular fa-folder-open"></i></button>
-      <ng-content *ngIf="extraActions"></ng-content>
-    </div>
+} @else {
+  <div class="input-group">
+    @if (icon) {
+      <span class="input-group-text"><i [ngClass]="icon"></i></span>
+    }
+    <input type="text" autocomplete="off" class="form-control" [class.clickable]="!disableUpload" [value]="(fileName != undefined)?fileName:''" [attr.placeholder]="placeholder" (click)="onButtonClick()" readonly="readonly"/>
+    <button *ngIf="!disableUpload" class="btn btn-secondary" type="button" (click)="onButtonClick()" containerClass="shortTooltip" container="body" tooltip="Open" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-regular fa-folder-open"></i></button>
+    @if (extraActions) {
+      <ng-content></ng-content>
+    }
   </div>
-  <input #fileInput type="file" style="display:none" (change)="onFileChange()" [attr.accept]="acceptString"/>
-</ng-container>
+}
+<input #fileInput type="file" style="display:none" (change)="onFileChange()" [attr.accept]="acceptString"/>

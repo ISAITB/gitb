@@ -53,10 +53,11 @@ export class OrganisationService {
     })
   }
 
-  getOrganisationsByCommunity(communityId: number, includeAdminOrganisation?: boolean) {
+  getOrganisationsByCommunity(communityId: number, includeAdminOrganisation?: boolean, snapshotId?: number) {
     const params: any = {}
-    if (includeAdminOrganisation) {
+    if (includeAdminOrganisation || snapshotId != undefined) {
       params.admin = true
+      params.snapshot = snapshotId
     }
     return this.restService.get<Organisation[]>({
       path: ROUTES.controllers.OrganizationService.getOrganizationsByCommunity(communityId).url,
@@ -184,10 +185,17 @@ export class OrganisationService {
     })
   }
 
-  getOrganisationParameterValues(orgId: number) {
+  getOrganisationParameterValues(orgId: number, onlySimple?: boolean) {
+    let params = undefined
+    if (onlySimple != undefined) {
+      params = {
+        simple: onlySimple
+      }
+    }
     return this.restService.get<OrganisationParameterWithValue[]>({
       path: ROUTES.controllers.OrganizationService.getOrganisationParameterValues(orgId).url,
-      authenticate: true
+      authenticate: true,
+      params: params
     })
   }
 

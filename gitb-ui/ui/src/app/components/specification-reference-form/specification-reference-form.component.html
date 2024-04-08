@@ -1,0 +1,31 @@
+<app-form-section sectionTitle="Specification reference" [collapsed]="true">
+    <div class="offset-1 col-10">
+        <div class="row mt-3">
+            <label class="col-3 col-form-label text-end" for="specReference">Reference:</label>
+            <div class="col-7">
+                <input id="specReference" name="specReference" [(ngModel)]="reference.specReference" class="form-control" type="text">
+            </div>
+            <div app-tooltip class="col-auto" tbTooltip="A specification reference code such as a URI, chapter number, or requirement identifier. This will be displayed as text in all listings and reports, or as a link if a specification link is also defined."></div>
+        </div>
+        <div class="row mt-3">
+            <label class="col-3 col-form-label text-end" for="specDescription">Description:</label>
+            <div class="col-7">
+                <textarea id="specDescription" name="specDescription" [(ngModel)]="reference.specDescription" class="form-control"></textarea>
+            </div>
+            <div app-tooltip class="col-auto" tbTooltip="A description summarising briefly the referenced specification. This will be displayed as supporting text in all listings and reports."></div>
+        </div>
+        <div class="row mt-3">
+            <label class="col-3 col-form-label text-end" for="specLink">Link:</label>
+            <div class="col-7">
+                <div class="input-group">
+                    <input id="specLink" name="specLink" [(ngModel)]="reference.specLink" class="form-control" type="text">
+                    <a [href]="reference.specLink" target="blank" class="btn btn-secondary" [class.disabled]="reference.specLink == undefined || reference.specLink.length == 0" role="button" containerClass="shortTooltip" container="body" tooltip="Visit" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'">
+                        <i class="fa-solid fa-up-right-from-square"></i>                        
+                    </a>
+                </div>
+            </div>
+            <div app-tooltip class="col-auto" tbTooltip="The address to lookup the relevant specification online. This will be rendered as a link in all listings and reports."></div>
+        </div>
+    </div>
+</app-form-section>
+

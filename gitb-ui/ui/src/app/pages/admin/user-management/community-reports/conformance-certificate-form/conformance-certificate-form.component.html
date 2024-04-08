@@ -1,0 +1,81 @@
+@if (settings) {
+    <form>
+        <div class="row">
+            <label class="col-3 col-form-label text-end">Title:</label>
+            <div class="col-7">
+                <div class="row row-cols-auto align-items-center">
+                    <div class="col-auto">
+                        <div class="form-check mb-0">
+                            <input class="form-check-input" type="checkbox" id="includeTitle" name="includeTitle" (change)="includeTitleChanged()" [(ngModel)]="settings.includeTitle">
+                            <label class="form-check-label" for="includeTitle">Included?</label>
+                        </div>
+                    </div>
+                    <div class="col-auto flex-grow-1">
+                        <input #titleField id="title" name="title" [(ngModel)]="settings.title" [readonly]="!settings.includeTitle" class="form-control" type="text">
+                    </div>
+                </div>
+            </div>
+            <div app-tooltip class="col-auto" tbTooltip="The title to display for the certificate. If unspecified and the title is enabled, 'Conformance Certificate' is used."></div>
+        </div>
+        <div class="row mt-3 pt-1">
+            <legend class="col-3 col-form-label text-end pt-0">Included sections:</legend>
+            <div class="col-8">
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="checkbox" id="includeDetails" name="includeDetails" [(ngModel)]="settings.includeDetails">
+                    <label class="form-check-label" for="includeDetails">Details
+                        <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" [tbTooltip]="'Add the conformance statement details. These are the information on the '+dataService.labelDomainLower()+', '+dataService.labelSpecificationLower()+', '+dataService.labelActorLower()+', '+dataService.labelOrganisationLower()+' and '+dataService.labelSystemLower()+'.'"></div>
+                    </label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="checkbox" id="includeTestStatus" name="includeTestStatus" [(ngModel)]="settings.includeTestStatus">
+                    <label class="form-check-label" for="includeTestStatus">Result overview
+                        <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" tbTooltip="Add a summary text on the number of successfully passed and failed test cases."></div>
+                    </label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="checkbox" id="includeTestCases" name="includeTestCases" [(ngModel)]="settings.includeTestCases">
+                    <label class="form-check-label" for="includeTestCases">Test cases
+                        <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" tbTooltip="Add the individual test cases. Doing so will include a table showing the status for each test case in the conformance statement."></div>
+                    </label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="checkbox" id="includeMessage" name="includeMessage" [(ngModel)]="settings.includeMessage">
+                    <label class="form-check-label" for="includeMessage">Message
+                        <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" tbTooltip="Add a custom rich-text message following the title and before including other details."></div>
+                    </label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="checkbox" id="includeSignature" name="includeSignature" [(ngModel)]="settings.includeSignature">
+                    <label class="form-check-label" for="includeSignature">Signature
+                        <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" tbTooltip="Add a digital signature and timestamp for proof of authenticity."></div>
+                    </label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="checkbox" id="includePageNumbers" name="includePageNumbers" [(ngModel)]="settings.includePageNumbers">
+                    <label class="form-check-label" for="includePageNumbers">Page numbers
+                        <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" tbTooltip="Include a footer on each page displaying the current and total number of pages in the report."></div>
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div [collapse]="!settings.includeMessage" [isAnimated]="true">
+            <app-form-section sectionTitle="Message configuration" [marginBefore]="true">
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <div>
+                            <app-placeholder-selector [placeholders]="placeholders" [domainParameters]="true" [domainChanged]="domainChangedEmitter" [organisationParameters]="true" [systemParameters]="true" [resources]="true" [community]="communityId" [domainId]="domainId"></app-placeholder-selector>
+                        </div>
+                        <div class="mt-3">
+                            <app-editor name="message" [(ngModel)]="settings.message" [type]="'pdf'"></app-editor>
+                        </div>
+                    </div>
+                </div>
+            </app-form-section>
+        </div>
+        <div class="btn-toolbar mt-3">
+            <button class="btn btn-secondary" type="submit" (click)="update()" [disable]="exportPending" [pending]="updatePending">Update</button>
+            <button class="btn btn-secondary" type="button" (click)="preview()" [disable]="updatePending" [pending]="exportPending">Generate preview</button>
+            <button class="btn btn-secondary" (click)="manageKeystore()" [pending]="manageKeystorePending">Manage signature settings</button>
+        </div>
+    </form>
+}

@@ -8,49 +8,52 @@
             cursor: pointer;
             &.error {
                 .report-content {
-                    background: @red-light-hover;
+                    background: @red-error-hover;
                 }                
             }
             &.warning {
                 .report-content {
-                    background: @orange-light-hover;
+                    background: @orange-warning-hover;
                 }                
             }
             &.info {
                 .report-content {
-                    background: @gray-dark-1;
+                    background: @blue-info-hover;
                 }                
             }
         }
     }
     &.error {
-        background: @error-red;
-        border: 1px solid @error-red;
+        background: @red-error-border;
+        border: 1px solid @red-error-border;
         .report-content {
-            background: @red-light;
+            background: @red-error-background;
+            color: @red-error-text;
         }
         .report-icon {
-            color: @error-red;
+            color: @red-error-content;
         }
     }
     &.warning {
-        background: @warning-yellow;
-        border: 1px solid @warning-yellow;
+        background: @orange-warning-border;
+        border: 1px solid @orange-warning-border;
         .report-content {
-            background: @orange-light;
+            background: @orange-warning-background;
+            color: @orange-warning-text;
         }
         .report-icon {
-            color: @warning-yellow;
+            color: @orange-warning-content;
         }
     }
     &.info {
-        background: @info-blue;
-        border: 1px solid @info-blue;
+        background: @blue-info-border;
+        border: 1px solid @blue-info-border;
         .report-content {
-            background: @gray-highlight;
+            background: @blue-info-background;
+            color: @blue-info-text;
         }
         .report-icon {
-            color: @info-blue;
+            color: @blue-info-content;
         }
     }
 }

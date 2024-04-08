@@ -1,8 +1,7 @@
 package hooks
 
-import akka.actor.ActorSystem
 import config.Configurations
-import config.Configurations.BUILD_TIMESTAMP
+import config.Configurations.{BUILD_TIMESTAMP, MASTER_PASSWORD}
 import jakarta.xml.ws.Endpoint
 import jaxws.TestbedService
 import managers._
@@ -10,11 +9,12 @@ import managers.export.ImportCompleteManager
 import models.Constants
 import models.Enums.UserRole
 import org.apache.commons.io.FileUtils
-import org.apache.commons.lang3.{RandomStringUtils, StringUtils}
+import org.apache.commons.lang3.StringUtils
+import org.apache.pekko.actor.ActorSystem
 import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
 import play.api.Environment
-import utils.{RepositoryUtils, TimeUtil, ZipArchiver}
+import utils.{JsonUtil, RepositoryUtils, TimeUtil, ZipArchiver}
 
 import java.io.{File, FileFilter}
 import java.nio.charset.StandardCharsets
@@ -27,7 +27,7 @@ import scala.concurrent.duration.DurationInt
 import scala.util.Using
 
 @Singleton
-class PostStartHook @Inject() (implicit ec: ExecutionContext, actorSystem: ActorSystem, systemConfigurationManager: SystemConfigurationManager, testResultManager: TestResultManager, testExecutionManager: TestExecutionManager, importCompleteManager: ImportCompleteManager, repositoryUtils: RepositoryUtils, environment: Environment, userManager: UserManager) {
+class PostStartHook @Inject() (implicit ec: ExecutionContext, authenticationManager: AuthenticationManager, actorSystem: ActorSystem, systemConfigurationManager: SystemConfigurationManager, testResultManager: TestResultManager, testExecutionManager: TestExecutionManager, importCompleteManager: ImportCompleteManager, repositoryUtils: RepositoryUtils, environment: Environment, userManager: UserManager) {
 
   private def logger = LoggerFactory.getLogger(this.getClass)
 
@@ -37,19 +37,63 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext, actorSystem: Actor
     logger.info("Starting Application")
     System.setProperty("java.io.tmpdir", System.getProperty("user.dir"))
     BUILD_TIMESTAMP = getBuildTimestamp()
+    checkOperationMode()
     initialiseTestbedClient()
-    adaptSystemConfiguration()
     checkMasterPassword()
+    loadDataExports()
+    adaptSystemConfiguration()
     destroyIdleSessions()
+    deleteInactiveUserAccounts()
     cleanupPendingTestSuiteUploads()
     cleanupTempFiles()
-    loadDataExports()
     archiveOldTestSessions()
     prepareRestApiDocumentation()
+    prepareTheme()
+    setupAdministratorOneTimePassword()
+    setupInteractionNotifications()
     logger.info("Application has started in "+Configurations.TESTBED_MODE+" mode - release "+Constants.VersionNumber + " built at "+Configurations.BUILD_TIMESTAMP)
   }
 
+  private def checkOperationMode(): Unit = {
+    val modeSetting = sys.env.get("TESTBED_MODE")
+    if (modeSetting.isDefined && modeSetting.get == Constants.DevelopmentMode) {
+      // Explicitly set to development mode.
+      Configurations.TESTBED_MODE = Constants.DevelopmentMode
+    } else {
+      val secretsNotForProduction = secretsSetForDevelopment()
+      if (modeSetting.isDefined && modeSetting.get == Constants.ProductionMode) {
+        if (secretsNotForProduction) {
+          // Production mode with dev-level secrets - Fail the start-up.
+          throw new IllegalStateException("Your application is running in production mode with default values set for sensitive configuration properties. Switch to development mode by setting on gitb-ui the TESTBED_MODE environment variable to \""+Constants.DevelopmentMode+"\" or replace these settings accordingly. For more details refer to the test bed's production installation guide.")
+        } else {
+          // All ok.
+          Configurations.TESTBED_MODE = Constants.ProductionMode
+        }
+      } else {
+        // Sandbox or other non-production mode.
+        Configurations.TESTBED_MODE = Constants.DevelopmentMode
+        if (secretsNotForProduction) {
+          // Log a warning.
+          logger.warn("Your application is running with default values set for sensitive configuration properties. Replace these settings accordingly and switch to production mode by setting on gitb-ui the TESTBED_MODE environment variable to \""+Constants.ProductionMode+"\". For more details refer to the test bed's production installation guide.")
+        }
+      }
+    }
+  }
+
+  private def secretsSetForDevelopment(): Boolean = {
+    val appSecret = sys.env.getOrElse("APPLICATION_SECRET", "value_used_during_development_to_be_replaced_in_production")
+    val dbPassword = sys.env.getOrElse("DB_DEFAULT_PASSWORD", "gitb")
+    val hmacKey = sys.env.getOrElse("HMAC_KEY", "devKey")
+    val masterPassword = String.valueOf(MASTER_PASSWORD)
+    appSecret == "value_used_during_development_to_be_replaced_in_production" || appSecret == "CHANGE_ME" ||
+      masterPassword == "value_used_during_development_to_be_replaced_in_production" || masterPassword == "CHANGE_ME" ||
+      dbPassword == "gitb" || dbPassword == "CHANGE_ME" ||
+      hmacKey == "devKey" || hmacKey == "CHANGE_ME"
+  }
+
   private def adaptSystemConfiguration(): Unit = {
+    // Record the default settings (from the config, fixed values and the environment).
+    val defaultEmailSettings = systemConfigurationManager.recordDefaultEmailSettings()
     // Load persisted configuration parameters.
     val persistedConfigs = systemConfigurationManager.getEditableSystemConfigurationValues(onlyPersisted = true)
     // Check against environment settings.
@@ -87,11 +131,16 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext, actorSystem: Actor
     } else {
       Configurations.WELCOME_MESSAGE = Configurations.WELCOME_MESSAGE_DEFAULT
     }
+    // Email settings.
+    val emailSettings = persistedConfigs.find(config => config.config.name == Constants.EmailSettings).map(_.config)
+    if (emailSettings.nonEmpty && emailSettings.get.parameter.nonEmpty) {
+      JsonUtil.parseJsEmailSettings(emailSettings.get.parameter.get).toEnvironment(Some(defaultEmailSettings))
+    }
   }
 
   private def getBuildTimestamp(): String = {
     var timestamp = ""
-    Using(environment.classLoader.getResourceAsStream("core-module.properties")) { stream =>
+    Using.resource(environment.classLoader.getResourceAsStream("core-module.properties")) { stream =>
       val props = new Properties()
       props.load(stream)
       timestamp = props.getOrDefault("gitb.buildTimestamp", "").asInstanceOf[String]
@@ -167,6 +216,24 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext, actorSystem: Actor
     }
   }
 
+  private def setupAdministratorOneTimePassword(): Unit = {
+    val defaultUsername = "admin@itb"
+    val newDefaultAdminAccountPassword = authenticationManager.replaceDefaultAdminPasswordIfNeeded(defaultUsername)
+    if (newDefaultAdminAccountPassword.isDefined) {
+      logger.info(
+        "The default administrator account has a onetime password to be replaced on first login.\n\n\n" +
+        "###############################################################################\n\n" +
+        s"The one-time password for the default administrator account [$defaultUsername] is:\n\n"+
+        s"${newDefaultAdminAccountPassword.get}\n\n"+
+        "###############################################################################\n\n"
+      )
+    }
+  }
+
+  private def setupInteractionNotifications(): Unit = {
+    testResultManager.schedulePendingTestInteractionNotifications()
+  }
+
   private def initialiseTestbedClient(): Unit = {
     TestbedService.endpoint = Endpoint.publish(Configurations.TESTBED_CLIENT_URL, new TestbedService(actorSystem))
   }
@@ -193,6 +260,22 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext, actorSystem: Actor
     }
   }
 
+  /**
+   * Scheduled job that deletes inactive user accounts.
+   */
+  private def deleteInactiveUserAccounts() = {
+    actorSystem.scheduler.scheduleWithFixedDelay(5.minutes, 1.day) {
+      () => {
+        val deletedAccounts = systemConfigurationManager.deleteInactiveUserAccounts()
+        if (deletedAccounts.isDefined) {
+          logger.info("Deleted {} inactive user account(s)", deletedAccounts.get)
+        } else {
+          logger.debug("Skipped the deletion of inactive user accounts")
+        }
+      }
+    }
+  }
+
   private def cleanupPendingTestSuiteUploads() = {
     actorSystem.scheduler.scheduleWithFixedDelay(1.hours, 1.hours) {
       () => {
@@ -202,6 +285,10 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext, actorSystem: Actor
   }
 
   private def cleanupTempFiles() = {
+    // Make sure the root temp folders exist
+    Files.createDirectories(repositoryUtils.getTempReportFolder().toPath)
+    Files.createDirectories(repositoryUtils.getTempArchivedSessionWorkspaceFolder().toPath)
+    // Schedule the cleanup job.
     actorSystem.scheduler.scheduleAtFixedRate(0.minutes, 5.minutes) {
       () => {
         deleteSubfolders(repositoryUtils.getTempReportFolder(), 300000) // 5 minutes
@@ -236,13 +323,7 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext, actorSystem: Actor
         } else {
           containedFiles.foreach { file =>
             if (file.getName.toLowerCase.endsWith(".zip")) {
-              val moveArchive = importCompleteManager.importSandboxData(file, archiveKey)._1
-              if (moveArchive) {
-                // Ensure a unique name in the "processed" folder.
-                val targetFile = repositoryUtils.getDataProcessedFolder().toPath.resolve("export_"+RandomStringUtils.random(10, false, true)+".zip").toFile
-                Files.createDirectories(targetFile.getParentFile.toPath)
-                FileUtils.moveFile(file, targetFile)
-              }
+              importCompleteManager.importSandboxData(file, archiveKey)
             }
           }
         }
@@ -315,7 +396,7 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext, actorSystem: Actor
       apiUrl += Configurations.API_ROOT+"/rest"
     }
     try {
-      Using(Thread.currentThread().getContextClassLoader.getResourceAsStream("api/openapi.json")) { stream =>
+      Using.resource(Thread.currentThread().getContextClassLoader.getResourceAsStream("api/openapi.json")) { stream =>
         var template = new String(stream.readAllBytes(), StandardCharsets.UTF_8)
         template = StringUtils.replaceEach(template,
           Array("${version}", "${contactEmail}", "${userGuideAddress}", "${apiUrl}"),
@@ -340,6 +421,11 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext, actorSystem: Actor
       case _: NumberFormatException =>
         false
     }
+  }
+
+  private def prepareTheme(): Unit = {
+    // Calling this method will parse and cache the active theme.
+    systemConfigurationManager.getCssForActiveTheme()
   }
 
 }

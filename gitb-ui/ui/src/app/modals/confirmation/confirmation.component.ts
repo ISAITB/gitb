@@ -17,7 +17,7 @@ export class ConfirmationComponent implements OnInit {
   closeButtonText = ''
   sameStyles = true
   oneButton = false
-  actionClass = 'btn btn-default'
+  actionClass = 'btn btn-secondary'
 
   constructor(public modalRef: BsModalRef) { }
 
@@ -38,7 +38,7 @@ export class ConfirmationComponent implements OnInit {
     if (this.sameStyles) {
       return this.actionClass
     } else {
-      return "btn btn-default"  
+      return "btn btn-secondary"  
     }
   }
 

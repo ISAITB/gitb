@@ -83,33 +83,35 @@ class DomainParameterManager @Inject()(repositoryUtils: RepositoryUtils, trigger
     exec(PersistenceSchema.domainParameters.filter(_.id === domainParameterId).result.head)
   }
 
-  def getDomainParametersByCommunityId(communityId: Long, onlySimple: Boolean, loadValues: Boolean): List[DomainParameter] = {
-    exec(
-      for {
-        domainId <- PersistenceSchema.communities.filter(_.id === communityId).map(x => x.domain).result.head
-        domainParameters <- {
-          if (domainId.isDefined) {
-            val query = PersistenceSchema.domainParameters
-              .filter(_.domain === domainId.get)
-              .filterIf(onlySimple)(_.kind === "SIMPLE")
-            if (loadValues) {
-              query.map(x => (x.id, x.name, x.kind, x.desc, x.value))
-                .sortBy(_._2.asc)
-                .result
-                .map(_.toList.map(x => DomainParameter(x._1, x._2, x._4, x._3, x._5, inTests = false, None, domainId.get)))
-            } else {
-              query.map(x => (x.id, x.name, x.kind, x.desc))
-                .sortBy(_._2.asc)
-                .result
-                .map(_.toList.map(x => DomainParameter(x._1, x._2, x._4, x._3, None, inTests = false, None, domainId.get)))
-
-            }
+  def getDomainParametersByCommunityIdInternal(communityId: Long, onlySimple: Boolean, loadValues: Boolean): DBIO[Seq[DomainParameter]] = {
+    for {
+      domainId <- PersistenceSchema.communities.filter(_.id === communityId).map(x => x.domain).result.head
+      domainParameters <- {
+        if (domainId.isDefined) {
+          val query = PersistenceSchema.domainParameters
+            .filter(_.domain === domainId.get)
+            .filterIf(onlySimple)(_.kind === "SIMPLE")
+          if (loadValues) {
+            query.map(x => (x.id, x.name, x.kind, x.desc, x.value))
+              .sortBy(_._2.asc)
+              .result
+              .map(_.toList.map(x => DomainParameter(x._1, x._2, x._4, x._3, x._5, inTests = false, None, domainId.get)))
           } else {
-            DBIO.successful(List[DomainParameter]())
+            query.map(x => (x.id, x.name, x.kind, x.desc))
+              .sortBy(_._2.asc)
+              .result
+              .map(_.toList.map(x => DomainParameter(x._1, x._2, x._4, x._3, None, inTests = false, None, domainId.get)))
+
           }
+        } else {
+          DBIO.successful(List[DomainParameter]())
         }
-      } yield domainParameters
-    )
+      }
+    } yield domainParameters
+  }
+
+  def getDomainParametersByCommunityId(communityId: Long, onlySimple: Boolean, loadValues: Boolean): List[DomainParameter] = {
+    exec(getDomainParametersByCommunityIdInternal(communityId, onlySimple, loadValues)).toList
   }
 
   def getDomainParameters(domainId: Long, loadValues: Boolean, onlyForTests: Option[Boolean], onlySimple: Boolean): List[DomainParameter] = {

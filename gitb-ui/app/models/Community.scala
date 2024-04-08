@@ -8,7 +8,8 @@ case class Communities(
                         selfRegType: Short,
                         selfRegToken: Option[String],
                         selfRegTokenHelpText: Option[String],
-                        selfregNotification: Boolean,
+                        selfRegNotification: Boolean,
+                        interactionNotification: Boolean,
                         description: Option[String],
                         selfRegRestriction: Short,
                         selfRegForceTemplateSelection: Boolean,
@@ -21,15 +22,16 @@ case class Communities(
                         allowPostTestStatementUpdates : Boolean,
                         allowAutomationApi : Boolean,
                         apiKey: String,
+                        latestStatusLabel: Option[String],
                         domain: Option[Long]) {
 
   def withApiKey(apiKey: String): Communities = {
     Communities(this.id, this.shortname, this.fullname, this.supportEmail, this.selfRegType, this.selfRegToken,
-      this.selfRegTokenHelpText, this.selfregNotification, this.description, this.selfRegRestriction,
+      this.selfRegTokenHelpText, this.selfRegNotification, this.interactionNotification, this.description, this.selfRegRestriction,
       this.selfRegForceTemplateSelection, this.selfRegForceRequiredProperties, this.allowCertificateDownload,
       this.allowStatementManagement, this.allowSystemManagement, this.allowPostTestOrganisationUpdates,
       this.allowPostTestSystemUpdates, this.allowPostTestStatementUpdates, this.allowAutomationApi,
-      apiKey, this.domain)
+      apiKey, this.latestStatusLabel, this.domain)
   }
 
 }
@@ -42,7 +44,8 @@ class Community(
                  _selfRegType: Short,
                  _selfRegToken: Option[String],
                  _selfRegTokenHelpText: Option[String],
-                 _selfregNotification: Boolean,
+                 _selfRegNotification: Boolean,
+                 _interactionNotification: Boolean,
                  _description: Option[String],
                  _selfRegRestriction: Short,
                  _selfRegForceTemplateSelection: Boolean,
@@ -63,7 +66,8 @@ class Community(
   var selfRegType:Short = _selfRegType
   var selfRegToken:Option[String] = _selfRegToken
   var selfRegTokenHelpText: Option[String] = _selfRegTokenHelpText
-  var selfRegNotification:Boolean = _selfregNotification
+  var selfRegNotification:Boolean = _selfRegNotification
+  var interactionNotification:Boolean = _interactionNotification
   var description:Option[String] = _description
   var selfRegRestriction:Short = _selfRegRestriction
   var selfRegForceTemplateSelection:Boolean = _selfRegForceTemplateSelection
@@ -87,7 +91,8 @@ class Community(
       _case.selfRegType,
       _case.selfRegToken,
       _case.selfRegTokenHelpText,
-      _case.selfregNotification,
+      _case.selfRegNotification,
+      _case.interactionNotification,
       _case.description,
       _case.selfRegRestriction,
       _case.selfRegForceTemplateSelection,
@@ -117,6 +122,7 @@ class Community(
       selfRegToken,
       selfRegTokenHelpText,
       selfRegNotification,
+      interactionNotification,
       description,
       selfRegRestriction,
       selfRegForceTemplateSelection,
@@ -129,6 +135,7 @@ class Community(
       allowPostTestStatementUpdates,
       allowAutomationApi,
       apiKey,
+      None,
       d
     )
   }

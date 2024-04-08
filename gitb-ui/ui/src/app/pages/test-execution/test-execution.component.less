@@ -24,27 +24,6 @@
 .viewLogButton {
     position: relative;
     margin-left: 5px;
-    .unreadBadge {
-        &.badgeLogErrors {
-            background-color: @error-red;
-        }
-        &.badgeLogWarnings {
-            background-color: @warning-yellow;
-        }
-        &.badgeLogMessages {
-            background-color: @gray-button;
-        }
-        position: absolute;
-        height: 7px;
-        width: 7px;
-        border-radius: 50%;
-        right: 3px;
-        top: 3px;
-        cursor: pointer;
-        &.hidden {
-            display: none;
-        }
-    }
 }
 .session-execution-info {
 	display: flex;
@@ -68,17 +47,22 @@
     justify-content: right;
     & > .optionsDiv {
         flex-grow: 0;
-        border-left: 1px solid #ddd;
+        border-left: 1px solid @gray-dark-1;
         margin-left: 20px;
         padding-left: 20px;
     }
     & > .actionButtonDiv {
         flex-grow: 0;
-        border-left: 1px solid #ddd;
+        border-left: 1px solid @gray-dark-1;
         margin-left: 20px;
-        padding-left: 15px;
+        padding-left: 20px;
     }
 }
 .expandable-hidden {
     opacity: 0;
+}
+.test-case-table {
+    .expandable-table-row-expanded {
+        border-top-style: hidden;
+    }
 }

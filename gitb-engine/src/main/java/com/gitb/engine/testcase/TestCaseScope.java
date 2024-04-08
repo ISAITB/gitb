@@ -192,8 +192,13 @@ public class TestCaseScope {
 							break;
 						} else {
 							try {
-								artifactData = ArtifactUtils.resolveArtifact(context, current, (TestArtifact) artifact);
-								current.resolvedArtifacts.put(name, valueToStore(artifactData));
+								var artifactLookup = ArtifactUtils.resolveArtifact(context, current, (TestArtifact) artifact);
+								artifactData = artifactLookup.getValue();
+								var valueToStore = valueToStore(artifactData);
+								if (valueToStore == null) {
+									throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Artifact linked to name [%s] could not be loaded from path [%s].".formatted(name, artifactLookup.getKey())));
+								}
+								current.resolvedArtifacts.put(name, valueToStore);
 								break;
 							} catch (IOException e) {
 								throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Artifact linked to name ["+name+"] could not be loaded."), e);

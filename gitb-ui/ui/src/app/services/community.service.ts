@@ -1,6 +1,5 @@
 import { Injectable } from '@angular/core';
 import { RestService } from './rest.service'
-import { Observable } from 'rxjs';
 import { DataService } from './data.service';
 import { ROUTES } from '../common/global';
 import { SelfRegistrationOption } from '../types/self-registration-option.type';
@@ -124,7 +123,7 @@ export class CommunityService {
 
   createCommunity(shortName: string, fullName: string, email: string|undefined,
     selfRegType: number, selfRegRestriction: number, selfRegToken: string|undefined, selfRegTokenHelpText: string|undefined, selfRegNotification: boolean|undefined,
-    description: string|undefined, selfRegForceTemplate: boolean|undefined, selfRegForceProperties: boolean|undefined,
+    interactionNotification: boolean, description: string|undefined, selfRegForceTemplate: boolean|undefined, selfRegForceProperties: boolean|undefined,
     allowCertificateDownload: boolean, allowStatementManagement: boolean, allowSystemManagement: boolean, allowPostTestOrganisationUpdate: boolean,
     allowPostTestSystemUpdate: boolean, allowPostTestStatementUpdate: boolean, allowAutomationApi: boolean|undefined,
     domainId: number|undefined) {
@@ -138,7 +137,8 @@ export class CommunityService {
       allow_system_management: allowSystemManagement,
       allow_post_test_org_update: allowPostTestOrganisationUpdate,
       allow_post_test_sys_update: allowPostTestSystemUpdate,
-      allow_post_test_stm_update: allowPostTestStatementUpdate
+      allow_post_test_stm_update: allowPostTestStatementUpdate,
+      interaction_notification: interactionNotification
     }
     if (this.dataService.configuration.registrationEnabled) {
       if (selfRegNotification == undefined) selfRegNotification = false
@@ -168,7 +168,7 @@ export class CommunityService {
 
   updateCommunity(communityId: number, shortName: string, fullName: string, email: string|undefined,
     selfRegType: number, selfRegRestriction: number, selfRegToken: string|undefined, selfRegTokenHelpText: string|undefined, selfRegNotification: boolean|undefined,
-    description: string|undefined, selfRegForceTemplate: boolean|undefined, selfRegForceProperties: boolean|undefined,
+    interactionNotification: boolean, description: string|undefined, selfRegForceTemplate: boolean|undefined, selfRegForceProperties: boolean|undefined,
     allowCertificateDownload: boolean, allowStatementManagement: boolean, allowSystemManagement: boolean, allowPostTestOrganisationUpdate: boolean,
     allowPostTestSystemUpdate: boolean, allowPostTestStatementUpdate: boolean, allowAutomationApi: boolean|undefined,
     domainId: number|undefined) {
@@ -182,7 +182,8 @@ export class CommunityService {
       allow_system_management: allowSystemManagement,
       allow_post_test_org_update: allowPostTestOrganisationUpdate,
       allow_post_test_sys_update: allowPostTestSystemUpdate,
-      allow_post_test_stm_update: allowPostTestStatementUpdate
+      allow_post_test_stm_update: allowPostTestStatementUpdate,
+      interaction_notification: interactionNotification
     }
     if (this.dataService.configuration.registrationEnabled) {
       if (selfRegNotification == undefined) selfRegNotification = false
@@ -377,8 +378,14 @@ export class CommunityService {
   }
 
   exportCommunity(communityId: number, settings: ExportSettings) {
+    let path
+    if (settings.themes) {
+      path = ROUTES.controllers.RepositoryService.exportCommunityAndSettings(communityId).url
+    } else {
+      path = ROUTES.controllers.RepositoryService.exportCommunity(communityId).url
+    }
     return this.restService.post<ArrayBuffer>({
-      path: ROUTES.controllers.RepositoryService.exportCommunity(communityId).url,
+      path: path,
       data: {
         values: JSON.stringify(settings)
       },
@@ -387,12 +394,50 @@ export class CommunityService {
     })
   }
 
-  uploadCommunityExport(communityId: number, settings: ImportSettings, archiveData: FileData) {
+  exportSystemSettings(settings: ExportSettings) {
+    return this.restService.post<ArrayBuffer>({
+      path: ROUTES.controllers.RepositoryService.exportSystemSettings().url,
+      data: {
+        values: JSON.stringify(settings)
+      },
+      authenticate: true,
+      arrayBuffer: true
+    })
+  }
+
+  uploadSystemSettingsExport(settings: ImportSettings, archiveData: FileData) {
     return this.restService.post<ImportPreview>({
-      path: ROUTES.controllers.RepositoryService.uploadCommunityExport(communityId).url,
+      path: ROUTES.controllers.RepositoryService.uploadSystemSettingsExport().url,
       files: [{param: 'file', data: archiveData.file!}],
       data: {
         settings: JSON.stringify(settings)
+      },
+      authenticate: true
+    })
+  }
+
+  uploadCommunityExport(communityId: number, settings: ImportSettings, archiveData: FileData) {
+    let pathToUse
+    if (this.dataService.isSystemAdmin) {
+      pathToUse = ROUTES.controllers.RepositoryService.uploadCommunityExportTestBedAdmin(communityId).url
+    } else {
+      pathToUse = ROUTES.controllers.RepositoryService.uploadCommunityExportCommunityAdmin(communityId).url
+    }
+    return this.restService.post<ImportPreview>({
+      path: pathToUse,
+      files: [{param: 'file', data: archiveData.file!}],
+      data: {
+        settings: JSON.stringify(settings)
+      },
+      authenticate: true
+    })
+  }
+
+  cancelSystemSettingsImport(pendingImportId: string) {
+    return this.restService.post<void>({
+      path: ROUTES.controllers.RepositoryService.cancelSystemSettingsImport().url,
+      data: {
+        pending_id: pendingImportId
       },
       authenticate: true
     })
@@ -403,6 +448,18 @@ export class CommunityService {
       path: ROUTES.controllers.RepositoryService.cancelCommunityImport(communityId).url,
       data: {
         pending_id: pendingImportId
+      },
+      authenticate: true
+    })
+  }
+
+  confirmSystemSettingsImport(pendingImportId: string, settings: ImportSettings, items: ImportItem[]) {
+    return this.restService.post<void>({
+      path: ROUTES.controllers.RepositoryService.confirmSystemSettingsImport().url,
+      data: {
+        settings: JSON.stringify(settings),
+        pending_id: pendingImportId,
+        items: JSON.stringify(items)
       },
       authenticate: true
     })

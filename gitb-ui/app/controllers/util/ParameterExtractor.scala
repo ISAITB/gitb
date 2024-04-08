@@ -4,17 +4,21 @@ import config.Configurations
 import exceptions.{ErrorCodes, InvalidRequestException}
 import models.Enums._
 import controllers.util.Parameters
-import models.{Actor, BadgeFile, Badges, Communities, CommunityResources, Domain, Endpoints, ErrorTemplates, FileInfo, LandingPages, LegalNotices, Options, OrganisationParameterValues, Organizations, SpecificationGroups, Specifications, SystemParameterValues, Systems, Trigger, TriggerData, Triggers, Users}
+import models.theme.{Theme, ThemeFiles}
+import models.{Actor, Badges, Communities, CommunityResources, Constants, Domain, Endpoints, ErrorTemplates, FileInfo, LandingPages, LegalNotices, NamedFile, OrganisationParameterValues, Organizations, SpecificationGroups, Specifications, SystemParameterValues, Systems, Trigger, TriggerData, Triggers, Users}
 import org.apache.commons.lang3.StringUtils
 import org.mindrot.jbcrypt.BCrypt
 import play.api.mvc._
-import utils.{ClamAVClient, CryptoUtil, HtmlUtil, JsonUtil}
+import utils.{ClamAVClient, CryptoUtil, HtmlUtil, JsonUtil, MimeUtil}
 
 import java.io.File
 import java.util.concurrent.ThreadLocalRandom
 import scala.collection.mutable.ListBuffer
 
 object ParameterExtractor {
+
+  private final val imageMimeTypes = Set("image/png", "image/x-png", "image/jpeg", "image/gif", "image/svg+xml", "image/vnd.microsoft.icon", "image/x-icon")
+  private final val xslMimeTypes = Set("text/xml", Constants.MimeTypeXML, "text/xsl", "application/xslt+xml")
 
   def paramMap(request: Request[AnyContent]): Option[Map[String, Seq[String]]] = {
     var paramMap: Option[Map[String, Seq[String]]] = None
@@ -302,6 +306,7 @@ object ParameterExtractor {
     if (Configurations.AUTOMATION_API_ENABLED) {
       allowAutomationApi = requiredBodyParameter(request, Parameters.ALLOW_AUTOMATION_API).toBoolean
     }
+    val interactionNotification = requiredBodyParameter(request, Parameters.COMMUNITY_INTERACTION_NOTIFICATION).toBoolean
     var selfRegType: Short = SelfRegistrationType.NotSupported.id.toShort
     var selfRegRestriction: Short = SelfRegistrationRestriction.NoRestriction.id.toShort
     var selfRegToken: Option[String] = None
@@ -343,11 +348,11 @@ object ParameterExtractor {
 
     val domainId:Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, Parameters.DOMAIN_ID)
     Communities(
-      0L, sname, fname, email, selfRegType, selfRegToken, selfRegTokenHelpText, selfRegNotification, description,
+      0L, sname, fname, email, selfRegType, selfRegToken, selfRegTokenHelpText, selfRegNotification, interactionNotification, description,
       selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties,
       allowCertificateDownload, allowStatementManagement, allowSystemManagement,
       allowPostTestOrganisationUpdate, allowPostTestSystemUpdate, allowPostTestStatementUpdate, allowAutomationApi,
-      CryptoUtil.generateApiKey(), domainId
+      CryptoUtil.generateApiKey(), None, domainId
     )
   }
 
@@ -746,32 +751,134 @@ object ParameterExtractor {
     listStr.split(",").map(_.toLong).toList
   }
 
-  def extractBadges(request: Request[AnyContent], paramMap: Option[Map[String, Seq[String]]]): (Option[Badges], Option[Result]) = {
+  def extractTheme(request: Request[AnyContent], paramMap: Option[Map[String, Seq[String]]], themeIdToUse: Option[Long] = None): (Option[Theme], Option[ThemeFiles], Option[Result]) = {
     val files = ParameterExtractor.extractFiles(request)
     var resultToReturn: Option[Result] = None
-    val hasSuccess = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.SUCCESS_BADGE_ENABLED).toBoolean
-    val hasFailure = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.FAILURE_BADGE_ENABLED).toBoolean
-    val hasOther = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.OTHER_BADGE_ENABLED).toBoolean
-    var successBadgeToStore: Option[BadgeFile] = None
-    var failureBadgeToStore: Option[BadgeFile] = None
-    var otherBadgeToStore: Option[BadgeFile] = None
-    val filesToScan = new ListBuffer[BadgeFile]
-    if (hasSuccess && files.contains(Parameters.SUCCESS_BADGE)) {
-      successBadgeToStore = Some(BadgeFile(files(Parameters.SUCCESS_BADGE).file, files(Parameters.SUCCESS_BADGE).name))
+    var theme: Option[Theme] = None
+    var themeFiles: Option[ThemeFiles] = None
+    var headerLogoFile: Option[NamedFile] = None
+    var footerLogoFile: Option[NamedFile] = None
+    var faviconFile: Option[NamedFile] = None
+    val filesToScan = new ListBuffer[NamedFile]
+    if (files.contains(Parameters.HEADER_LOGO_FILE)) {
+      headerLogoFile = Some(NamedFile(files(Parameters.HEADER_LOGO_FILE).file, files(Parameters.HEADER_LOGO_FILE).name))
+      filesToScan += headerLogoFile.get
+    }
+    if (files.contains(Parameters.FOOTER_LOGO_FILE)) {
+      footerLogoFile = Some(NamedFile(files(Parameters.FOOTER_LOGO_FILE).file, files(Parameters.FOOTER_LOGO_FILE).name))
+      filesToScan += footerLogoFile.get
+    }
+    if (files.contains(Parameters.FAVICON_FILE)) {
+      faviconFile = Some(NamedFile(files(Parameters.FAVICON_FILE).file, files(Parameters.FAVICON_FILE).name))
+      filesToScan += faviconFile.get
+    }
+    if (filesToScan.nonEmpty) {
+      if (Configurations.ANTIVIRUS_SERVER_ENABLED && ParameterExtractor.virusPresentInFiles(filesToScan.toList.map(_.file))) {
+        resultToReturn = Some(ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "Files failed virus scan."))
+      }
+      if (resultToReturn.isEmpty && filesToScan.exists(p => !imageMimeTypes.contains(MimeUtil.getMimeType(p.file.toPath)))) {
+        resultToReturn = Some(ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_REQUEST, "Only image files are allowed."))
+      }
+    }
+    if (resultToReturn.isEmpty) {
+      themeFiles = Some(ThemeFiles(headerLogoFile, footerLogoFile, faviconFile))
+      theme = Some(Theme(
+        themeIdToUse.getOrElse(0L),
+        ParameterExtractor.requiredBodyParameter(paramMap, Parameters.KEY),
+        ParameterExtractor.optionalBodyParameter(paramMap, Parameters.DESCRIPTION),
+        ParameterExtractor.requiredBodyParameter(paramMap, Parameters.ACTIVE).toBoolean,
+        custom = true,
+        ParameterExtractor.requiredBodyParameter(paramMap, Parameters.SEPARATOR_TITLE_COLOR),
+        ParameterExtractor.requiredBodyParameter(paramMap, Parameters.MODAL_TITLE_COLOR),
+        ParameterExtractor.requiredBodyParameter(paramMap, Parameters.TABLE_TITLE_COLOR),
+        ParameterExtractor.requiredBodyParameter(paramMap, Parameters.CARD_TILE_COLOR),
+        ParameterExtractor.requiredBodyParameter(paramMap, Parameters.PAGE_TITLE_COLOR),
+        ParameterExtractor.requiredBodyParameter(paramMap, Parameters.HEADING_COLOR),
+        ParameterExtractor.requiredBodyParameter(paramMap, Parameters.TAB_LINK_COLOR),
+        ParameterExtractor.requiredBodyParameter(paramMap, Parameters.FOOTER_TEXT_COLOR),
+        ParameterExtractor.requiredBodyParameter(paramMap, Parameters.HEADER_BACKGROUND_COLOR),
+        ParameterExtractor.requiredBodyParameter(paramMap, Parameters.HEADER_BORDER_COLOR),
+        ParameterExtractor.requiredBodyParameter(paramMap, Parameters.HEADER_SEPARATOR_COLOR),
+        ParameterExtractor.optionalBodyParameter(paramMap, Parameters.HEADER_LOGO_PATH)
+          .getOrElse(themeFiles.flatMap(_.headerLogo).map(_.name).getOrElse(throw new IllegalStateException("Missing header logo"))),
+        ParameterExtractor.requiredBodyParameter(paramMap, Parameters.FOOTER_BACKGROUND_COLOR),
+        ParameterExtractor.requiredBodyParameter(paramMap, Parameters.FOOTER_BORDER_COLOR),
+        ParameterExtractor.optionalBodyParameter(paramMap, Parameters.FOOTER_LOGO_PATH)
+          .getOrElse(themeFiles.flatMap(_.footerLogo).map(_.name).getOrElse(throw new IllegalStateException("Missing footer logo"))),
+        ParameterExtractor.requiredBodyParameter(paramMap, Parameters.FOOTER_LOGO_DISPLAY),
+        ParameterExtractor.optionalBodyParameter(paramMap, Parameters.FAVICON_PATH)
+          .getOrElse(themeFiles.flatMap(_.faviconFile).map(_.name).getOrElse(throw new IllegalStateException("Missing favicon")))
+      ))
+      if (!theme.get.footerLogoDisplay.equals("inherit") && !theme.get.footerLogoDisplay.equals("none")) {
+        resultToReturn = Some(ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_PARAM, "Unexpected value for footer logo display."))
+      }
+    }
+    (theme, themeFiles, resultToReturn)
+  }
+
+  def extractBadges(request: Request[AnyContent], paramMap: Option[Map[String, Seq[String]]], forReport: Boolean): (Option[Badges], Option[Result]) = {
+    val successBadgeEnabledParam = if (forReport) Parameters.SUCCESS_BADGE_REPORT_ENABLED else Parameters.SUCCESS_BADGE_ENABLED
+    val failureBadgeEnabledParam = if (forReport) Parameters.FAILURE_BADGE_REPORT_ENABLED else Parameters.FAILURE_BADGE_ENABLED
+    val otherBadgeEnabledParam = if (forReport) Parameters.OTHER_BADGE_REPORT_ENABLED else Parameters.OTHER_BADGE_ENABLED
+    val successBadgeParam = if (forReport) Parameters.SUCCESS_BADGE_REPORT else Parameters.SUCCESS_BADGE
+    val failureBadgeParam = if (forReport) Parameters.FAILURE_BADGE_REPORT else Parameters.FAILURE_BADGE
+    val otherBadgeParam = if (forReport) Parameters.OTHER_BADGE_REPORT else Parameters.OTHER_BADGE
+
+    val files = ParameterExtractor.extractFiles(request)
+    var resultToReturn: Option[Result] = None
+    val hasSuccess = ParameterExtractor.requiredBodyParameter(paramMap, successBadgeEnabledParam).toBoolean
+    val hasFailure = ParameterExtractor.requiredBodyParameter(paramMap, failureBadgeEnabledParam).toBoolean
+    val hasOther = ParameterExtractor.requiredBodyParameter(paramMap, otherBadgeEnabledParam).toBoolean
+    var successBadgeToStore: Option[NamedFile] = None
+    var failureBadgeToStore: Option[NamedFile] = None
+    var otherBadgeToStore: Option[NamedFile] = None
+    val filesToScan = new ListBuffer[NamedFile]
+    if (hasSuccess && files.contains(successBadgeParam)) {
+      successBadgeToStore = Some(NamedFile(files(successBadgeParam).file, files(successBadgeParam).name))
       filesToScan += successBadgeToStore.get
     }
-    if (files.contains(Parameters.FAILURE_BADGE)) {
-      failureBadgeToStore = Some(BadgeFile(files(Parameters.FAILURE_BADGE).file, files(Parameters.FAILURE_BADGE).name))
+    if (files.contains(failureBadgeParam)) {
+      failureBadgeToStore = Some(NamedFile(files(failureBadgeParam).file, files(failureBadgeParam).name))
       filesToScan += failureBadgeToStore.get
     }
-    if (files.contains(Parameters.OTHER_BADGE)) {
-      otherBadgeToStore = Some(BadgeFile(files(Parameters.OTHER_BADGE).file, files(Parameters.OTHER_BADGE).name))
+    if (files.contains(otherBadgeParam)) {
+      otherBadgeToStore = Some(NamedFile(files(otherBadgeParam).file, files(otherBadgeParam).name))
       filesToScan += otherBadgeToStore.get
     }
-    if (Configurations.ANTIVIRUS_SERVER_ENABLED && filesToScan.nonEmpty && ParameterExtractor.virusPresentInFiles(filesToScan.toList.map(_.file))) {
-      resultToReturn = Some(ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "Files failed virus scan."))
+    if (filesToScan.nonEmpty) {
+      if (Configurations.ANTIVIRUS_SERVER_ENABLED && ParameterExtractor.virusPresentInFiles(filesToScan.toList.map(_.file))) {
+        resultToReturn = Some(ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "Files failed virus scan."))
+      }
+      if (resultToReturn.isEmpty && filesToScan.exists(p => !imageMimeTypes.contains(MimeUtil.getMimeType(p.file.toPath)))) {
+        resultToReturn = Some(ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_REQUEST, "Only image files are allowed."))
+      }
     }
     (Some(Badges(hasSuccess, hasFailure, hasOther, successBadgeToStore, failureBadgeToStore, otherBadgeToStore)), resultToReturn)
+  }
+
+  def extractReportStylesheet(request: Request[AnyContent]): (Option[File], Option[Result]) = {
+    var stylesheetFile: Option[File] = None
+    var response: Option[Result] = None
+    val files = ParameterExtractor.extractFiles(request)
+    if (files.contains(Parameters.FILE)) {
+      stylesheetFile = Some(files(Parameters.FILE).file)
+      // Check for virus
+      if (Configurations.ANTIVIRUS_SERVER_ENABLED) {
+        val virusScanner = new ClamAVClient(Configurations.ANTIVIRUS_SERVER_HOST, Configurations.ANTIVIRUS_SERVER_PORT, Configurations.ANTIVIRUS_SERVER_TIMEOUT)
+        val scanResult = virusScanner.scan(stylesheetFile.get)
+        if (!ClamAVClient.isCleanReply(scanResult)) {
+          response = Some(ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "Stylesheet file failed virus scan."))
+        }
+      }
+      if (response.isEmpty) {
+        // Check for expected mime type
+        val mimeType = MimeUtil.getMimeType(stylesheetFile.get.toPath)
+        if (!xslMimeTypes.contains(mimeType)) {
+          response = Some(ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_REQUEST, "Only XSLT stylesheets are allowed."))
+        }
+      }
+    }
+    (stylesheetFile, response)
   }
 
 }

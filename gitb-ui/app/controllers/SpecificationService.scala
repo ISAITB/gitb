@@ -3,6 +3,7 @@ package controllers
 import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, ResponseConstructor}
 import exceptions.{ErrorCodes, NotFoundException}
 import managers.{AuthorizationManager, CommunityLabelManager, SpecificationManager}
+import models.BadgeInfo
 import models.Enums.{LabelType, TestResultStatus}
 import org.apache.commons.io.FileUtils
 import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents}
@@ -25,17 +26,22 @@ class SpecificationService @Inject() (implicit ec: ExecutionContext, authorizedA
       val paramMap = ParameterExtractor.paramMap(request)
       val specExists = specificationManager.checkSpecificationExists(specId)
       if (specExists) {
-        val badgeInfo = ParameterExtractor.extractBadges(request, paramMap)
+        val badgeInfo = ParameterExtractor.extractBadges(request, paramMap, forReport = false)
         if (badgeInfo._2.nonEmpty) {
           badgeInfo._2.get
         } else {
-          val sname: String = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.SHORT_NAME)
-          val fname: String = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.FULL_NAME)
-          val descr: Option[String] = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.DESC)
-          val hidden = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.HIDDEN).toBoolean
-          val groupId = ParameterExtractor.optionalLongBodyParameter(paramMap, Parameters.GROUP_ID)
-          specificationManager.updateSpecification(specId, sname, fname, descr, hidden, groupId, badgeInfo._1)
-          ResponseConstructor.constructEmptyResponse
+          val badgeInfoForReport = ParameterExtractor.extractBadges(request, paramMap, forReport = true)
+          if (badgeInfoForReport._2.nonEmpty) {
+            badgeInfoForReport._2.get
+          } else {
+            val sname: String = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.SHORT_NAME)
+            val fname: String = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.FULL_NAME)
+            val descr: Option[String] = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.DESC)
+            val hidden = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.HIDDEN).toBoolean
+            val groupId = ParameterExtractor.optionalLongBodyParameter(paramMap, Parameters.GROUP_ID)
+            specificationManager.updateSpecification(specId, sname, fname, descr, hidden, groupId, BadgeInfo(badgeInfo._1.get, badgeInfoForReport._1.get))
+            ResponseConstructor.constructEmptyResponse
+          }
         }
       } else {
         throw NotFoundException(ErrorCodes.SYSTEM_NOT_FOUND, communityLabelManager.getLabel(request, LabelType.Specification) + " with ID '" + specId + "' not found.")
@@ -104,7 +110,7 @@ class SpecificationService @Inject() (implicit ec: ExecutionContext, authorizedA
 
   def getSpecificationGroups() = authorizedAction { request =>
     val domainId = ParameterExtractor.requiredQueryParameter(request, Parameters.DOMAIN_ID).toLong
-    authorizationManager.canManageDomain(request, domainId)
+    authorizationManager.canViewDomains(request, Some(List(domainId)))
     val groups = specificationManager.getSpecificationGroups(domainId)
     ResponseConstructor.constructJsonResponse(JsonUtil.jsSpecificationGroups(groups).toString())
   }
@@ -143,8 +149,9 @@ class SpecificationService @Inject() (implicit ec: ExecutionContext, authorizedA
 
   def getBadgeForStatus(specId: Long, status: String): Action[AnyContent] = authorizedAction { request =>
     authorizationManager.canManageSpecification(request, specId)
+    val forReport = ParameterExtractor.optionalBooleanQueryParameter(request, Parameters.REPORT)
     val statusToLookup = TestResultStatus.withName(status).toString
-    val badge = repositoryUtils.getConformanceBadge(specId, None, None, statusToLookup, exactMatch = true)
+    val badge = repositoryUtils.getConformanceBadge(specId, None, None, statusToLookup, exactMatch = true, forReport.getOrElse(false))
     if (badge.isDefined && badge.get.exists()) {
       Ok.sendFile(content = badge.get)
     } else {

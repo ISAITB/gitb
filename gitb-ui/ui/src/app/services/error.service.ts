@@ -73,17 +73,25 @@ export class ErrorService {
             }
           } else if (error instanceof HttpErrorResponse) {
             let errorInfoToUse: ErrorDescription = {}
-            if (error.error != undefined) {
-              if (error.error instanceof ArrayBuffer) {
-                const decoder = new TextDecoder("utf-8")
-                const decoded = JSON.parse(decoder.decode(error.error)) as ErrorDescription|undefined
-                if (decoded?.error_description != undefined) {
-                  errorInfoToUse = decoded
+            try {
+              if (error.error != undefined) {
+                if (error.error instanceof ArrayBuffer) {
+                  const decoder = new TextDecoder("utf-8")
+                  const decoded = JSON.parse(decoder.decode(error.error)) as ErrorDescription|undefined
+                  if (decoded?.error_description != undefined) {
+                    errorInfoToUse = decoded
+                  }
+                } else if (typeof error.error == 'string' || error.error instanceof String) {
+                  errorInfoToUse = JSON.parse(error.error as string)
+                } else {
+                  errorInfoToUse = error.error
                 }
-              } else if (typeof error.error == 'string' || error.error instanceof String) {
-                errorInfoToUse = JSON.parse(error.error as string)
+              }
+            } catch (e) {
+              if (error.statusText) {
+                errorInfoToUse.error_description = `An unexpected error occurred [${error.statusText}].`
               } else {
-                errorInfoToUse = error.error
+                errorInfoToUse.error_description = "An unexpected error occurred."
               }
             }
             errorObj = { 
@@ -159,9 +167,9 @@ export class ErrorService {
         if (error.error && error.error.error_id) {
           error.template = 
             '<p>'+Constants.PLACEHOLDER__ERROR_DESCRIPTION+'</p>' +
-            '<p><b>Error reference: </b>'+Constants.PLACEHOLDER__ERROR_ID+'</p>'
+            '<span><b>Error reference: </b>'+Constants.PLACEHOLDER__ERROR_ID+'</span>'
         } else {
-          error.template = '<p>'+Constants.PLACEHOLDER__ERROR_DESCRIPTION+'</p>'
+          error.template = '<span>'+Constants.PLACEHOLDER__ERROR_DESCRIPTION+'</span>'
         }
       }
       const modal = this.modalService.show(ErrorComponent, {

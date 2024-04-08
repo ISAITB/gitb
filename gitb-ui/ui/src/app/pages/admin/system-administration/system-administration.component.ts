@@ -26,6 +26,11 @@ import { EntityWithId } from 'src/app/types/entity-with-id';
 import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
 import { ConfigStatus } from './config-status';
 import { forkJoin, map, mergeMap, of, share } from 'rxjs';
+import { Theme } from 'src/app/types/theme';
+import { EmailSettings } from 'src/app/types/email-settings';
+import { CodeEditorModalComponent } from 'src/app/components/code-editor-modal/code-editor-modal.component';
+import { BsModalService } from 'ngx-bootstrap/modal';
+import { SystemConfiguration } from 'src/app/types/system-configuration';
 
 @Component({
   selector: 'app-system-administration',
@@ -38,6 +43,7 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
   landingPageStatus = {status: Constants.STATUS.NONE}
   errorTemplateStatus = {status: Constants.STATUS.NONE}
   legalNoticeStatus = {status: Constants.STATUS.NONE}
+  themeStatus = {status: Constants.STATUS.NONE}
 
   tabToShow = SystemAdministrationTab.administrators
   tabTriggers!: Record<SystemAdministrationTab, {index: number, loader: () => any}>
@@ -59,14 +65,26 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
     { field: 'description', title: 'Description' },
     { field: 'default', title: 'Default' }
   ]
+  themeColumns: TableColumnDefinition[] = [
+    { field: 'key', title: 'Key' },
+    { field: 'description', title: 'Description' },
+    { field: 'active', title: 'Active' }
+  ]
 
   admins: User[] = []
   landingPages: LandingPage[] = []
   legalNotices: LegalNotice[] = []
   errorTemplates: ErrorTemplate[] = []
+  themes: Theme[] = []
 
   configValuesPending = true
   configsCollapsed = false
+  configsCollapsedFinished = false
+
+  // Account retention period
+  accountRetentionPeriodStatus: ConfigStatus = { pending: false, collapsed: true, enabled: false, fromDefault: false, fromEnv: false}
+  accountRetentionPeriodEnabled = false
+  accountRetentionPeriodValue?: number
 
   // TTL
   ttlStatus: ConfigStatus = { pending: false, collapsed: true, enabled: false, fromDefault: false, fromEnv: false}
@@ -96,13 +114,21 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
 
   // Welcome page
   welcomePageStatus: ConfigStatus = { pending: false, collapsed: true, enabled: false, fromDefault: false, fromEnv: false}
-  welcomePageResetPending = false  
+  welcomePageResetPending = false
   welcomePageMessage?: string
+
+  // Email settings
+  emailSettingsStatus: ConfigStatus = { pending: false, collapsed: true, enabled: false, fromDefault: false, fromEnv: false}
+  emailTestActive = false
+  emailResetPending = false
+  emailTestPending = false
+  emailTestToAddress?: string
+  emailSettings: EmailSettings = { enabled: false }
 
   constructor(
     router: Router,
     private userService: UserService,
-    private dataService: DataService,
+    public dataService: DataService,
     private routingService: RoutingService,
     private landingPageService: LandingPageService,
     private legalNoticeService: LegalNoticeService,
@@ -111,14 +137,15 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
     private systemConfigurationService: SystemConfigurationService,
     private communityService: CommunityService,
     private organisationService: OrganisationService,
-    private confirmationDialogService: ConfirmationDialogService
+    private confirmationDialogService: ConfirmationDialogService,
+    private modalService: BsModalService
   ) {
     super()
     // Access the tab to show via router state to have it cleared upon refresh.
     const tabParam = router.getCurrentNavigation()?.extras?.state?.tab
     if (tabParam != undefined) {
       this.tabToShow = SystemAdministrationTab[tabParam as keyof typeof SystemAdministrationTab]
-    }    
+    }
   }
 
   ngAfterViewInit(): void {
@@ -146,6 +173,18 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
     const configObs = this.systemConfigurationService.getConfigurationValues()
     .pipe(
       mergeMap((data) => {
+        // Account retention period.
+        const accountRetentionPeriodConfig = find(data, (configItem) => configItem.name == Constants.SYSTEM_CONFIG.ACCOUNT_RETENTION_PERIOD)
+        if (accountRetentionPeriodConfig && accountRetentionPeriodConfig.parameter != undefined) {
+          this.accountRetentionPeriodEnabled = true
+          this.accountRetentionPeriodValue = Number(accountRetentionPeriodConfig.parameter)
+        } else {
+          this.accountRetentionPeriodEnabled = false
+          this.accountRetentionPeriodValue = undefined
+        }
+        this.accountRetentionPeriodStatus.enabled = this.accountRetentionPeriodEnabled
+        this.accountRetentionPeriodStatus.fromEnv = accountRetentionPeriodConfig != undefined && accountRetentionPeriodConfig.environment
+        this.accountRetentionPeriodStatus.fromDefault = accountRetentionPeriodConfig != undefined && accountRetentionPeriodConfig.default
         // TTL.
         const ttlConfig = find(data, (configItem) => configItem.name == Constants.SYSTEM_CONFIG.SESSION_ALIVE_TIME)
         if (ttlConfig && ttlConfig.parameter != undefined) {
@@ -178,6 +217,9 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
         this.welcomePageStatus.fromEnv = welcomeMessageConfig != undefined && welcomeMessageConfig.environment
         this.welcomePageStatus.fromDefault = welcomeMessageConfig != undefined && welcomeMessageConfig.default
         this.welcomePageStatus.enabled = !this.welcomePageStatus.fromDefault
+        // Email settings.
+        const emailSettingsConfig = find(data, (configItem) => configItem.name == Constants.SYSTEM_CONFIG.EMAIL_SETTINGS)
+        this.initialiseEmailSettings(emailSettingsConfig)
         // Demo account.
         const demoAccountConfig = find(data, (configItem) => configItem.name == Constants.SYSTEM_CONFIG.DEMO_ACCOUNT)
         if (demoAccountConfig) {
@@ -217,6 +259,24 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
     // Setup tab triggers
     this.setupTabs()
     this.routingService.systemConfigurationBreadcrumbs()
+  }
+
+  private initialiseEmailSettings(emailSettingsConfig: SystemConfiguration|undefined) {
+    if (emailSettingsConfig?.parameter) {
+      this.emailSettings = JSON.parse(emailSettingsConfig.parameter)
+      this.emailSettingsStatus.enabled = this.emailSettings.enabled
+      this.emailSettingsStatus.fromDefault = emailSettingsConfig.default
+      this.emailSettingsStatus.fromEnv = emailSettingsConfig.environment
+      if (this.emailSettings.to != undefined &&  this.emailSettings.to.length > 0) {
+        this.emailSettings.defaultSupportMailbox = this.emailSettings.to[0]
+      }
+      this.emailSettings.newPassword = undefined
+      if (this.emailSettings.password == undefined) {
+        this.emailSettings.updatePassword = true
+      } else {
+        this.emailSettings.updatePassword = false
+      }
+    }
   }
 
   applyDemoCommunity() {
@@ -290,6 +350,7 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
     temp[SystemAdministrationTab.landingPages] = {index: 1, loader: () => {this.showLandingPages()}}
     temp[SystemAdministrationTab.legalNotices] = {index: 2, loader: () => {this.showLegalNotices()}}
     temp[SystemAdministrationTab.errorTemplates] = {index: 3, loader: () => {this.showErrorTemplates()}}
+    temp[SystemAdministrationTab.themes] = {index: 4, loader: () => {this.showThemes()}}
     this.tabTriggers = temp as Record<SystemAdministrationTab, {index: number, loader: () => any}>
   }
 
@@ -352,6 +413,18 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
     }
   }
 
+  showThemes() {
+    if (this.themeStatus.status == Constants.STATUS.NONE) {
+      this.themeStatus.status = Constants.STATUS.PENDING
+      this.systemConfigurationService.getThemes()
+      .subscribe((data) => {
+        this.themes = data
+      }).add(() => {
+        this.themeStatus.status = Constants.STATUS.FINISHED
+      })
+    }
+  }
+
   createLandingPage() {
     this.routingService.toCreateLandingPage()
   }
@@ -376,11 +449,28 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
     this.routingService.toErrorTemplate(undefined, errorTemplate.id)
   }
 
+  createTheme() {
+    const activeTheme = find(this.themes, (theme) => theme.active)
+    if (activeTheme) {
+      this.routingService.toCreateTheme(activeTheme.id)
+    }
+  }
+
+  themeSelect(theme: Theme) {
+    this.routingService.toTheme(theme.id)
+  }
+
   ttlCheckChanged() {
     if (!this.ttlEnabled) {
       this.ttlValue = undefined
     }
   }
+
+  accountRetentionPeriodCheckChanged() {
+    if (!this.accountRetentionPeriodEnabled) {
+      this.accountRetentionPeriodValue = undefined
+    }
+  }  
 
   saveTTL() {
     this.ttlStatus.pending = true
@@ -405,6 +495,33 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
     }
   }
 
+  saveAccountRetentionPeriod() {
+    if (this.accountRetentionPeriodEnabled && this.accountRetentionPeriodValue != undefined) {
+      this.confirmationDialogService.confirmedDangerous("Delete inactive accounts", "Inactive user accounts based on the configured retention period will be immediately deleted. Are you sure you want to proceed?", "Enable retention period and delete accounts", "Cancel")
+      .subscribe(() => {
+        this.accountRetentionPeriodStatus.pending = true
+        this.systemConfigurationService.updateConfigurationValue(Constants.SYSTEM_CONFIG.ACCOUNT_RETENTION_PERIOD, this.accountRetentionPeriodValue!.toString())
+        .subscribe(() => {
+          this.accountRetentionPeriodStatus.collapsed = true
+          this.accountRetentionPeriodStatus.enabled = true
+          this.popupService.success('Updated inactive account retention period.')
+        }).add(() => {
+          this.accountRetentionPeriodStatus.pending = false
+        })
+      })
+    } else {
+      this.accountRetentionPeriodStatus.pending = true
+      this.systemConfigurationService.updateConfigurationValue(Constants.SYSTEM_CONFIG.ACCOUNT_RETENTION_PERIOD)
+      .subscribe(() => {
+        this.accountRetentionPeriodStatus.collapsed = true
+        this.accountRetentionPeriodStatus.enabled = false
+        this.popupService.success('Disabled inactive account retention period.')
+      }).add(() => {
+        this.accountRetentionPeriodStatus.pending = false
+      })
+    }
+  }
+
   saveSelfRegistration() {
     this.selfRegistrationStatus.pending = true
     if (this.selfRegistrationEnabled) {
@@ -412,6 +529,7 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
       .subscribe(() => {
         this.selfRegistrationStatus.collapsed = true
         this.selfRegistrationStatus.enabled = true
+        this.dataService.configuration.registrationEnabled = true
         this.popupService.success('Enabled self-registration.')
       }).add(() => {
         this.selfRegistrationStatus.pending = false
@@ -421,6 +539,7 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
       .subscribe(() => {
         this.selfRegistrationStatus.collapsed = true
         this.selfRegistrationStatus.enabled = false
+        this.dataService.configuration.registrationEnabled = false
         this.popupService.success('Disabled self-registration.')
       }).add(() => {
         this.selfRegistrationStatus.pending = false
@@ -435,6 +554,7 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
       .subscribe(() => {
         this.restApiStatus.collapsed = true
         this.restApiStatus.enabled = true
+        this.dataService.configuration.automationApiEnabled = true
         this.popupService.success('Enabled REST API.')
       }).add(() => {
         this.restApiStatus.pending = false
@@ -444,6 +564,7 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
       .subscribe(() => {
         this.restApiStatus.collapsed = true
         this.restApiStatus.enabled = false
+        this.dataService.configuration.automationApiEnabled = false
         this.popupService.success('Disabled REST API.')
       }).add(() => {
         this.restApiStatus.pending = false
@@ -462,6 +583,8 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
         this.demoAccountStatus.fromDefault = false
         this.demoAccountStatus.fromEnv = false
         this.demoAccountStatus.collapsed = true
+        this.dataService.configuration.demosEnabled = true
+        this.dataService.configuration.demosAccount = this.demoAccount!.id!
         this.popupService.success('Enabled demo account.')
       }).add(() => {
         this.demoAccountStatus.pending = false
@@ -477,6 +600,8 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
         this.demoAccountStatus.fromDefault = false
         this.demoAccountStatus.fromEnv = false
         this.demoAccountStatus.collapsed = true
+        this.dataService.configuration.demosEnabled = false
+        this.dataService.configuration.demosAccount = -1
         this.popupService.success('Disabled demo account.')
       }).add(() => {
         this.demoAccountStatus.pending = false
@@ -507,12 +632,12 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
       this.systemConfigurationService.updateConfigurationValue(Constants.SYSTEM_CONFIG.WELCOME_MESSAGE)
       .subscribe((appliedValue) => {
         if (appliedValue) {
-          this.welcomePageMessage = appliedValue
+          this.welcomePageMessage = appliedValue.parameter
+          this.welcomePageStatus.fromDefault = appliedValue.default
+          this.welcomePageStatus.fromEnv = appliedValue.environment
+          this.welcomePageStatus.enabled = false
         }
         this.welcomePageStatus.collapsed = true
-        this.welcomePageStatus.enabled = false
-        this.welcomePageStatus.fromDefault = true
-        this.welcomePageStatus.fromEnv = false
         this.popupService.success('Welcome page message reset to default.')
       }).add(() => {
         this.welcomePageResetPending = false
@@ -523,4 +648,130 @@ export class SystemAdministrationComponent extends BaseComponent implements OnIn
   sameId(a: EntityWithId, b: EntityWithId) {
     return a == undefined && b == undefined || a != undefined && b != undefined && a.id == b.id
   }
+
+  emailSettingsOk() {
+    return !this.emailSettings.enabled ||
+      (
+        this.textProvided(this.emailSettings.host) && 
+        this.numberProvided(this.emailSettings.port, 1) &&
+        (!this.emailSettings.authenticate || (
+          this.textProvided(this.emailSettings.username) && 
+          ((!this.emailSettings.updatePassword && this.textProvided(this.emailSettings.password)) || (this.emailSettings.updatePassword && this.textProvided(this.emailSettings.newPassword)))
+        )) &&
+        this.textProvided(this.emailSettings.from) && 
+        (!this.emailSettings.contactFormEnabled || (
+          this.textProvided(this.emailSettings.defaultSupportMailbox) && 
+          this.numberProvided(this.emailSettings.maxAttachmentCount, 0) && 
+          this.numberProvided(this.emailSettings.maxAttachmentSize, 1)
+        )) &&
+        this.numberProvided(this.emailSettings.testInteractionReminder, 1)
+      )
+  }
+
+  private prepareEmailSettings():EmailSettings {
+    const emailSettingsToPost: Partial<EmailSettings> = {
+      enabled: this.emailSettings.enabled
+    }
+    if (this.emailSettings.enabled) {
+      emailSettingsToPost.host = this.emailSettings.host
+      emailSettingsToPost.port = this.emailSettings.port
+      emailSettingsToPost.from = this.emailSettings.from
+      emailSettingsToPost.startTlsEnabled = this.emailSettings.startTlsEnabled
+      emailSettingsToPost.sslEnabled = this.emailSettings.sslEnabled
+      if (emailSettingsToPost.sslEnabled) {
+        emailSettingsToPost.sslProtocols = this.emailSettings.sslProtocols
+      }
+      emailSettingsToPost.authenticate = this.emailSettings.authenticate
+      if (this.emailSettings.authenticate) {
+        emailSettingsToPost.username = this.emailSettings.username
+        if (this.emailSettings.updatePassword) {
+          emailSettingsToPost.password = this.emailSettings.newPassword
+        }
+      }
+      if (this.emailSettings.defaultSupportMailbox != undefined) {
+        emailSettingsToPost.to = [this.emailSettings.defaultSupportMailbox]
+      }
+      emailSettingsToPost.maxAttachmentCount = this.emailSettings.maxAttachmentCount
+      emailSettingsToPost.maxAttachmentSize = this.emailSettings.maxAttachmentSize
+      emailSettingsToPost.allowedAttachmentTypes = this.emailSettings.allowedAttachmentTypes
+      emailSettingsToPost.testInteractionReminder = this.emailSettings.testInteractionReminder
+      emailSettingsToPost.contactFormEnabled = this.emailSettings.contactFormEnabled
+      emailSettingsToPost.contactFormCopyDefaultMailbox = this.emailSettings.contactFormCopyDefaultMailbox
+    }
+    return (emailSettingsToPost as EmailSettings)
+  }
+
+  private applyEmailSettingsToCurrentConfiguration() {
+    this.dataService.configuration.emailEnabled = this.emailSettings.enabled
+    this.dataService.configuration.emailContactFormEnabled = this.emailSettings.contactFormEnabled != undefined && this.emailSettings.contactFormEnabled
+    this.dataService.configuration.emailAttachmentsMaxSize = this.emailSettings.maxAttachmentSize
+    this.dataService.configuration.emailAttachmentsMaxCount = this.emailSettings.maxAttachmentCount
+    if (this.emailSettings.allowedAttachmentTypes == undefined) {
+      this.dataService.configuration.emailAttachmentsAllowedTypes = undefined
+    } else {
+      this.dataService.configuration.emailAttachmentsAllowedTypes = this.emailSettings.allowedAttachmentTypes.join(',')
+    }
+  }
+
+  saveEmailSettings() {
+    this.emailSettingsStatus.pending = true
+    const emailSettingsToPost = this.prepareEmailSettings()
+    this.systemConfigurationService.updateConfigurationValue(Constants.SYSTEM_CONFIG.EMAIL_SETTINGS, JSON.stringify(emailSettingsToPost))
+    .subscribe((appliedValue) => {
+      this.initialiseEmailSettings(appliedValue)
+      this.applyEmailSettingsToCurrentConfiguration()
+      this.emailSettingsStatus.collapsed = true
+      this.popupService.success('Updated email settings.')
+    }).add(() => {
+      this.emailSettingsStatus.pending = false
+    })
+  }
+
+  resetEmailSettings() {
+    this.emailResetPending = true
+    this.systemConfigurationService.updateConfigurationValue(Constants.SYSTEM_CONFIG.EMAIL_SETTINGS)
+    .subscribe((appliedValue) => {
+      this.initialiseEmailSettings(appliedValue)
+      this.applyEmailSettingsToCurrentConfiguration()
+      this.emailSettingsStatus.collapsed = true
+      this.popupService.success('Email settings reset to default.')
+    }).add(() => {
+      this.emailResetPending = false
+    })
+
+  }
+
+  testEmailSettings() {
+    if (this.emailTestToAddress) {
+      this.emailTestPending = true
+      const emailSettingsToPost = this.prepareEmailSettings()
+      this.systemConfigurationService.testEmailSettings(emailSettingsToPost, this.emailTestToAddress)
+      .subscribe((result) => {
+        if (result.success) {
+          this.popupService.success("Test email sent successfully.")
+        } else {
+          let content = this.dataService.errorArrayToString(result.messages)
+          this.modalService.show(CodeEditorModalComponent, {
+            class: 'modal-lg',
+            initialState: {
+              documentName: 'Error message(s)',
+              editorOptions: {
+                value: content,
+                readOnly: true,
+                copy: true,
+                lineNumbers: false,
+                smartIndent: false,
+                electricChars: false,
+                styleClass: 'editor-short',
+                mode: 'text/plain'
+              }
+            }
+          })
+        }
+      }).add(() => {
+        this.emailTestPending = false
+      })
+    }
+  }
+
 }

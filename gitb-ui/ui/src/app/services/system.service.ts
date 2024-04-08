@@ -19,9 +19,12 @@ export class SystemService {
     private dataService: DataService
   ) { }
 
-  getSystemsByOrganisation(orgId: number, checkIfHasTests?: boolean) {
+  getSystemsByOrganisation(orgId: number, snapshotId?: number, checkIfHasTests?: boolean) {
     let params: any = {
       organization_id: orgId
+    }
+    if (snapshotId !== undefined) {
+      params.snapshot = snapshotId
     }
     if (checkIfHasTests !== undefined) {
       params.check_has_tests = checkIfHasTests
@@ -88,10 +91,17 @@ export class SystemService {
     })
   }
 
-  getSystemParameterValues(systemId: number) {
-    return this.restService.get<SystemParameter[]>({
+  getSystemParameterValues(systemId: number, onlySimple?: boolean) {
+    let params = undefined
+    if (onlySimple != undefined) {
+      params = {
+        simple: onlySimple
+      }
+    }
+    return this.restService.get<SystemParameterWithValue[]>({
       path: ROUTES.controllers.SystemService.getSystemParameterValues(systemId).url,
-      authenticate: true
+      authenticate: true,
+      params: params
     })
   }
 

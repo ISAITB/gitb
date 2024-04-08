@@ -1,8 +1,10 @@
 package managers
 
 import config.Configurations
+import models.Enums.OverviewLevelType.OverviewLevelType
 import models.Enums._
 import models._
+import models.automation.{ConfigurationRequest, KeyValue, PartyConfiguration, StatementConfiguration}
 import org.apache.commons.lang3.StringUtils
 import persistence.db._
 import play.api.db.slick.DatabaseConfigProvider
@@ -143,6 +145,10 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityRes
     PersistenceSchema.communities.filter(_.id === id).result.headOption
   }
 
+  def getCommunityDomain(communityId: Long): Option[Long] = {
+    exec(PersistenceSchema.communities.filter(_.id === communityId).map(_.domain).result.headOption).flatten
+  }
+
   /**
     * Gets the user community
     */
@@ -258,7 +264,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityRes
   }
 
   private[managers] def updateCommunityInternal(community: Communities, shortName: String, fullName: String, supportEmail: Option[String],
-                                                selfRegType: Short, selfRegToken: Option[String], selfRegTokenHelpText: Option[String], selfRegNotification: Boolean,
+                                                selfRegType: Short, selfRegToken: Option[String], selfRegTokenHelpText: Option[String], selfRegNotification: Boolean, interactionNotification: Boolean,
                                                 description: Option[String], selfRegRestriction: Short, selfRegForceTemplateSelection: Boolean, selfRegForceRequiredProperties: Boolean,
                                                 allowCertificateDownload: Boolean, allowStatementManagement: Boolean, allowSystemManagement: Boolean,
                                                 allowPostTestOrganisationUpdates: Boolean, allowPostTestSystemUpdates: Boolean, allowPostTestStatementUpdates: Boolean, allowAutomationApi: Option[Boolean],
@@ -288,10 +294,10 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityRes
         .filter(_.id === community.id)
         .map(c => (
           c.supportEmail, c.domain, c.description, c.allowCertificateDownload, c.allowStatementManagement, c.allowSystemManagement,
-          c.allowPostTestOrganisationUpdates, c.allowPostTestSystemUpdates, c.allowPostTestStatementUpdates
+          c.allowPostTestOrganisationUpdates, c.allowPostTestSystemUpdates, c.allowPostTestStatementUpdates, c.interactionNotification
         ))
         .update(supportEmail, domainId, description, allowCertificateDownload, allowStatementManagement, allowSystemManagement,
-          allowPostTestOrganisationUpdates, allowPostTestSystemUpdates, allowPostTestStatementUpdates
+          allowPostTestOrganisationUpdates, allowPostTestSystemUpdates, allowPostTestStatementUpdates, interactionNotification
         )
       // Update self-registration properties.
       _ <- {
@@ -299,7 +305,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityRes
           PersistenceSchema.communities
             .filter(_.id === community.id)
             .map(c => (
-              c.selfRegType, c.selfRegToken, c.selfRegTokenHelpText, c.selfregNotification,
+              c.selfRegType, c.selfRegToken, c.selfRegTokenHelpText, c.selfRegNotification,
               c.selfRegRestriction, c.selfRegForceTemplateSelection, c.selfRegForceRequiredProperties
             ))
             .update(selfRegType, selfRegToken, selfRegTokenHelpText, selfRegNotification,
@@ -343,7 +349,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityRes
     */
   def updateCommunity(communityId: Long, shortName: String, fullName: String, supportEmail: Option[String],
                       selfRegType: Short, selfRegToken: Option[String], selfRegTokenHelpText: Option[String],
-                      selfRegNotification: Boolean, description: Option[String], selfRegRestriction: Short,
+                      selfRegNotification: Boolean, interactionNotification: Boolean, description: Option[String], selfRegRestriction: Short,
                       selfRegForceTemplateSelection: Boolean, selfRegForceRequiredProperties: Boolean,
                       allowCertificateDownload: Boolean, allowStatementManagement: Boolean, allowSystemManagement: Boolean,
                       allowPostTestOrganisationUpdates: Boolean, allowPostTestSystemUpdates: Boolean,
@@ -357,7 +363,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityRes
         if (community.isDefined) {
           updateCommunityInternal(
             community.get, shortName, fullName, supportEmail, selfRegType, selfRegToken, selfRegTokenHelpText,
-            selfRegNotification, description, selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties,
+            selfRegNotification, interactionNotification, description, selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties,
             allowCertificateDownload, allowStatementManagement, allowSystemManagement,
             allowPostTestOrganisationUpdates, allowPostTestSystemUpdates, allowPostTestStatementUpdates, allowAutomationApi, None,
             domainId, checkApiKeyUniqueness = false, onSuccess
@@ -384,13 +390,21 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityRes
       triggerManager.deleteTriggersByCommunity(communityId) andThen
       testResultManager.updateForDeletedCommunity(communityId) andThen
       deleteConformanceCertificateSettings(communityId) andThen
+      deleteConformanceOverviewCertificateSettings(communityId) andThen
       deleteOrganisationParametersByCommunity(communityId) andThen
       deleteSystemParametersByCommunity(communityId) andThen
       communityResourceManager.deleteResourcesOfCommunity(communityId, onSuccessCalls) andThen
+      deleteCommunityKeystoreInternal(communityId) andThen
+      deleteCommunityReportStylesheets(communityId, onSuccessCalls) andThen
       PersistenceSchema.communityLabels.filter(_.community === communityId).delete andThen
       PersistenceSchema.communities.filter(_.id === communityId).delete
     }
     exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
+  }
+
+  private def deleteCommunityReportStylesheets(communityId: Long, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
+    onSuccessCalls += (() => repositoryUtils.deleteCommunityReportStylesheets(communityId))
+    DBIO.successful(())
   }
 
   def createOrganisationParameterInternal(parameter: OrganisationParameters) = {
@@ -627,10 +641,10 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityRes
       .result).toList
   }
 
-  def getOrganisationParametersForExport(communityId: Long): List[OrganisationParameters] = {
+  def getSimpleOrganisationParameters(communityId: Long, forExports: Option[Boolean]): List[OrganisationParameters] = {
     exec(PersistenceSchema.organisationParameters
       .filter(_.community === communityId)
-      .filter(_.inExports === true)
+      .filterOpt(forExports)((q, flag) => q.inExports === flag)
       .filter(_.kind === "SIMPLE")
       .sortBy(_.testKey.asc)
       .result).toList
@@ -684,10 +698,10 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityRes
       .result).toList
   }
 
-  def getSystemParametersForExport(communityId: Long): List[SystemParameters] = {
+  def getSimpleSystemParameters(communityId: Long, forExports: Option[Boolean]): List[SystemParameters] = {
     exec(PersistenceSchema.systemParameters
       .filter(_.community === communityId)
-      .filter(_.inExports === true)
+      .filterOpt(forExports)((q, flag) => q.inExports === flag)
       .filter(_.kind === "SIMPLE")
       .sortBy(_.testKey.asc)
       .result).toList
@@ -748,106 +762,700 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityRes
     exec(PersistenceSchema.communityLabels.filter(_.community === communityId).result).toList
   }
 
-  def getConformanceCertificateSettingsWrapper(communityId: Long, defaultIfMissing: Boolean): Option[ConformanceCertificates] = {
-    var settings = exec(getConformanceCertificateSettings(communityId))
+  def getCommunityKeystoreType(communityId: Long): Option[String] = {
+    exec(PersistenceSchema.communityKeystores.filter(_.community === communityId).map(_.keystoreType).result.headOption)
+  }
+
+  def getCommunityKeystore(communityId: Long, decryptKeys: Boolean): Option[CommunityKeystore] = {
+    val keystore = exec(PersistenceSchema.communityKeystores.filter(_.community === communityId).result.headOption)
+    if (decryptKeys && keystore.isDefined) {
+      Some(keystore.get.withDecryptedKeys())
+    } else {
+      keystore
+    }
+  }
+
+  def deleteCommunityKeystore(communityId: Long): Unit = {
+    exec(deleteCommunityKeystoreInternal(communityId).transactionally)
+  }
+
+  def deleteCommunityKeystoreInternal(communityId: Long): DBIO[_] = {
+    PersistenceSchema.communityKeystores.filter(_.community === communityId).delete
+  }
+
+  def saveCommunityKeystoreInternal(communityId: Long, keystoreType: String, keystoreData: Option[String], keyPass: Option[String], keystorePass: Option[String]): DBIO[_] = {
+    // Prepare passwords
+    val keyPassToUse = if (keyPass.isDefined) {
+      Some(MimeUtil.encryptString(keyPass.get))
+    } else {
+      None
+    }
+    val keystorePassToUse = if (keystorePass.isDefined) {
+      Some(MimeUtil.encryptString(keystorePass.get))
+    } else {
+      None
+    }
+    // Proceed with updates
+    val query = for {
+      existingSettingsInfo <- PersistenceSchema.communityKeystores.filter(_.community === communityId).map(x => (x.id, x.keystoreType)).result.headOption
+      _ <- if (existingSettingsInfo.isEmpty) {
+        // Create new keystore
+        if (keystoreData.isEmpty || keystorePassToUse.isEmpty || keyPassToUse.isEmpty) {
+          throw new IllegalArgumentException("Missing expect keystore information")
+        }
+        PersistenceSchema.insertCommunityKeystore += CommunityKeystore(0L, keystoreData.get, keystoreType, keystorePassToUse.get, keyPassToUse.get, communityId)
+      } else {
+        // Update existing keystore
+        val actions = ListBuffer[DBIO[_]]()
+        if (keystoreData.isDefined) {
+          actions += PersistenceSchema.communityKeystores.filter(_.id === existingSettingsInfo.get._1)
+            .map(_.keystoreFile)
+            .update(keystoreData.get)
+        }
+        if (keystorePassToUse.isDefined) {
+          actions += PersistenceSchema.communityKeystores.filter(_.id === existingSettingsInfo.get._1)
+            .map(x => (x.keystorePassword, x.keyPassword))
+            .update((keystorePassToUse.get, keyPassToUse.get))
+        }
+        if (existingSettingsInfo.get._2 != keystoreType) {
+          actions += PersistenceSchema.communityKeystores.filter(_.id === existingSettingsInfo.get._1)
+            .map(_.keystoreType)
+            .update(keystoreType)
+        }
+        toDBIO(actions)
+      }
+    } yield ()
+    query
+  }
+
+  def saveCommunityKeystore(communityId: Long, keystoreType: String, keystoreData: Option[String], keyPass: Option[String], keystorePass: Option[String]): Unit = {
+    val query = saveCommunityKeystoreInternal(communityId, keystoreType, keystoreData, keyPass, keystorePass)
+    exec(query.transactionally)
+  }
+
+  def getConformanceCertificateSettingsForExport(communityId: Long, snapshotId: Option[Long]): ConformanceCertificateInfo = {
+    val settings = getConformanceCertificateSettingsWrapper(communityId, defaultIfMissing = true, snapshotId).get
+    val keystore = getCommunityKeystore(communityId, decryptKeys = true)
+    settings.toConformanceCertificateInfo(keystore)
+  }
+
+  def getConformanceCertificateSettingsWrapper(communityId: Long, defaultIfMissing: Boolean, snapshotId: Option[Long]): Option[ConformanceCertificate] = {
+    var settings = exec(getConformanceCertificateSettings(communityId, snapshotId))
     if (settings.isEmpty && defaultIfMissing) {
-      settings = Some(ConformanceCertificates(0L, Some("Conformance Certificate"), None, includeTitle = true, includeMessage = false, includeTestStatus = true, includeTestCases = true, includeDetails = true, includeSignature = false, None, None, None, None, communityId))
+      val title = "Conformance Certificate"
+      settings = Some(ConformanceCertificate(
+        id = 0L, title = Some(title), includeTitle = true, includeMessage = false, includeTestStatus = true, includeTestCases = true,
+        includeDetails = true, includeSignature = false, includePageNumbers = true, message = None, community = communityId
+      ))
     }
     settings
   }
 
-  def getConformanceCertificateSettings(communityId: Long): DBIO[Option[ConformanceCertificates]] = {
-    PersistenceSchema.conformanceCertificates.filter(_.community === communityId).result.headOption
+  def conformanceOverviewCertificateEnabled(communityId: Long, level: OverviewLevelType): Boolean = {
+    val flags = exec(
+      PersistenceSchema.conformanceOverviewCertificates
+        .filter(_.community === communityId)
+        .map(x => (x.enableAllLevel, x.enableDomainLevel, x.enableGroupLevel, x.enableSpecificationLevel))
+        .result
+        .headOption
+    )
+    if (flags.isDefined) {
+      level match {
+        case OverviewLevelType.DomainLevel => flags.get._2
+        case OverviewLevelType.SpecificationGroupLevel => flags.get._3
+        case OverviewLevelType.SpecificationLevel => flags.get._4
+        case _ => flags.get._1
+      }
+    } else {
+      false
+    }
   }
 
-  def updateConformanceCertificateSettingsInternal(conformanceCertificate: ConformanceCertificates, updatePasswords: Boolean, removeKeystore: Boolean): DBIO[_] = {
-    for {
-      existingSettings <- getConformanceCertificateSettings(conformanceCertificate.community)
-      _ <- {
-        var actions = ListBuffer[DBIO[_]]()
-        if (existingSettings.isDefined) {
-          if (removeKeystore) {
-            val q = for {c <- PersistenceSchema.conformanceCertificates if c.id === existingSettings.get.id} yield (
-              c.message, c.title, c.includeTitle, c.includeMessage, c.includeTestStatus, c.includeTestCases, c.includeDetails,
-              c.includeSignature, c.keystoreFile, c.keystoreType, c.keystorePassword, c.keyPassword
-            )
-            actions += q.update(
-              conformanceCertificate.message,
-              conformanceCertificate.title,
-              conformanceCertificate.includeTitle,
-              conformanceCertificate.includeMessage,
-              conformanceCertificate.includeTestStatus,
-              conformanceCertificate.includeTestCases,
-              conformanceCertificate.includeDetails,
-              conformanceCertificate.includeSignature,
-              None,
-              None,
-              None,
-              None
-            )
+  def getConformanceOverviewCertificateSettingsWrapper(communityId: Long, defaultIfMissing: Boolean, snapshotId: Option[Long], levelForMessage: Option[OverviewLevelType], identifierForMessage: Option[Long]): Option[ConformanceOverviewCertificateWithMessages] = {
+    var settings = exec(getConformanceOverviewCertificateSettings(communityId, snapshotId, levelForMessage, identifierForMessage))
+    if (settings.isEmpty && defaultIfMissing) {
+      val title = "Conformance Overview Certificate"
+      settings = Some(
+        ConformanceOverviewCertificateWithMessages(
+          ConformanceOverviewCertificate(
+            id = 0L, title = Some(title), includeTitle = true, includeMessage = false, includeStatementStatus = true, includeStatements = true, includeStatementDetails = true,
+            includeDetails = true, includeSignature = false, includePageNumbers = true, enableAllLevel = false, enableDomainLevel = false,
+            enableGroupLevel = false, enableSpecificationLevel = false, community = communityId
+          ),
+          List.empty
+        )
+      )
+    }
+    settings
+  }
+
+  private def getConformanceCertificateSettings(communityId: Long, snapshotId: Option[Long]): DBIO[Option[ConformanceCertificate]] = {
+    if (snapshotId.isEmpty) {
+      PersistenceSchema.conformanceCertificates.filter(_.community === communityId).result.headOption
+    } else {
+      for {
+        settings <- PersistenceSchema.conformanceCertificates.filter(_.community === communityId).result.headOption
+        messageToUse <- {
+          if (settings.isDefined && settings.get.includeMessage) {
+            PersistenceSchema.conformanceSnapshotCertificateMessages.filter(_.snapshotId === snapshotId).map(_.message).result.headOption
           } else {
-            if (conformanceCertificate.keystoreFile.isDefined) {
-              val q = for {c <- PersistenceSchema.conformanceCertificates if c.id === existingSettings.get.id} yield c.keystoreFile
-              actions += q.update(conformanceCertificate.keystoreFile)
-            }
-            if (updatePasswords) {
-              val q = for {c <- PersistenceSchema.conformanceCertificates if c.id === existingSettings.get.id} yield (
-                c.message, c.title, c.includeTitle, c.includeMessage, c.includeTestStatus, c.includeTestCases, c.includeDetails,
-                c.includeSignature, c.keystoreType, c.keystorePassword, c.keyPassword
-              )
-              var keystorePasswordToUpdate = conformanceCertificate.keystorePassword
-              if (keystorePasswordToUpdate.isDefined) {
-                keystorePasswordToUpdate = Some(MimeUtil.encryptString(keystorePasswordToUpdate.get))
-              }
-              var keyPasswordToUpdate = conformanceCertificate.keyPassword
-              if (keyPasswordToUpdate.isDefined) {
-                keyPasswordToUpdate = Some(MimeUtil.encryptString(keyPasswordToUpdate.get))
-              }
-              actions += q.update(
-                conformanceCertificate.message,
-                conformanceCertificate.title,
-                conformanceCertificate.includeTitle,
-                conformanceCertificate.includeMessage,
-                conformanceCertificate.includeTestStatus,
-                conformanceCertificate.includeTestCases,
-                conformanceCertificate.includeDetails,
-                conformanceCertificate.includeSignature,
-                conformanceCertificate.keystoreType,
-                keystorePasswordToUpdate,
-                keyPasswordToUpdate
-              )
-            } else {
-              val q = for {c <- PersistenceSchema.conformanceCertificates if c.id === existingSettings.get.id} yield (
-                c.message, c.title, c.includeTitle, c.includeMessage, c.includeTestStatus, c.includeTestCases, c.includeDetails,
-                c.includeSignature, c.keystoreType
-              )
-              actions += q.update(
-                conformanceCertificate.message,
-                conformanceCertificate.title,
-                conformanceCertificate.includeTitle,
-                conformanceCertificate.includeMessage,
-                conformanceCertificate.includeTestStatus,
-                conformanceCertificate.includeTestCases,
-                conformanceCertificate.includeDetails,
-                conformanceCertificate.includeSignature,
-                conformanceCertificate.keystoreType
-              )
-            }
+            DBIO.successful(None)
+          }
+        }
+        settingsToUse <- {
+          if (messageToUse.isDefined) {
+            DBIO.successful(Some(settings.get.withMessage(messageToUse.get)))
+          } else {
+            DBIO.successful(settings)
+          }
+        }
+      } yield settingsToUse
+    }
+  }
+
+  def getConformanceStatementCertificateMessage(snapshotId: Option[Long], communityId: Long): Option[String] = {
+    exec(
+      for {
+        message <- if (snapshotId.isEmpty) {
+          PersistenceSchema.conformanceCertificates.filter(_.community === communityId).map(_.message).result.headOption
+        } else {
+          DBIO.successful(None)
+        }
+        snapshotMessage <- if (snapshotId.isDefined) {
+          PersistenceSchema.conformanceSnapshotCertificateMessages.filter(_.snapshotId === snapshotId.get).map(_.message).result.headOption
+        } else {
+          DBIO.successful(None)
+        }
+        messageToUse <- if (snapshotId.isEmpty) {
+          DBIO.successful(message.flatten)
+        } else {
+          DBIO.successful(snapshotMessage)
+        }
+      } yield messageToUse
+    )
+  }
+
+  def getConformanceOverviewCertificateMessage(snapshot: Boolean, messageId: Long): Option[String] = {
+    exec(for {
+        message <- if (snapshot) {
+          PersistenceSchema.conformanceSnapshotOverviewCertificateMessages.filter(_.id === messageId).map(_.message).result.headOption
+        } else {
+          PersistenceSchema.conformanceOverviewCertificateMessages.filter(_.id === messageId).map(_.message).result.headOption
+        }
+      } yield message
+    )
+  }
+
+  private def getConformanceOverviewCertificateSettings(communityId: Long, snapshotId: Option[Long], levelForMessage: Option[OverviewLevelType], identifierForMessage: Option[Long]): DBIO[Option[ConformanceOverviewCertificateWithMessages]] = {
+    for {
+      settings <- PersistenceSchema.conformanceOverviewCertificates.filter(_.community === communityId).result.headOption
+      messages <- {
+        // Load the current messages if this not related to a snapshot
+        if (snapshotId.isEmpty && settings.isDefined && settings.get.includeMessage) {
+          PersistenceSchema.conformanceOverviewCertificateMessages
+            .filter(_.community === communityId)
+            .filterOpt(levelForMessage)((q, level) => q.messageType === level.id.toShort)
+            .result
+        } else {
+          DBIO.successful(Seq.empty)
+        }
+      }
+      snapshotMessages <- {
+        // Load the snapshot messages if this is related to a snapshot
+        if (snapshotId.isDefined && settings.isDefined && settings.get.includeMessage) {
+          PersistenceSchema.conformanceSnapshotOverviewCertificateMessages
+            .filter(_.snapshotId === snapshotId.get)
+            .filterOpt(levelForMessage)((q, level) => q.messageType === level.id.toShort)
+            .result
+        } else {
+          DBIO.successful(Seq.empty)
+        }
+      }
+      messagesToUse <- {
+        // Pick the current or snapshot messages depending on the case
+        if (snapshotId.isEmpty) {
+          DBIO.successful(messages)
+        } else {
+          DBIO.successful(snapshotMessages.map(_.toConformanceOverviewCertificateMessage()))
+        }
+      }
+      result <- if (settings.isDefined) {
+        // Check for the message to apply for the specific identifier or return the default for the requested level
+        val filteredMessages = if (levelForMessage.isDefined) {
+          levelForMessage.get match {
+            case OverviewLevelType.DomainLevel =>
+              identifierForMessage
+                .flatMap(_ => messagesToUse.find(msg => msg.domain.isDefined && msg.domain.get == identifierForMessage.get))
+                .orElse(messagesToUse.find(msg => msg.domain.isEmpty))
+                .map(Seq(_)).getOrElse(Seq.empty)
+            case OverviewLevelType.SpecificationGroupLevel =>
+              identifierForMessage
+                .flatMap(_ => messagesToUse.find(msg => msg.group.isDefined && msg.group.get == identifierForMessage.get))
+                .orElse(messagesToUse.find(msg => msg.group.isEmpty))
+                .map(Seq(_)).getOrElse(Seq.empty)
+            case OverviewLevelType.SpecificationLevel =>
+              identifierForMessage
+                .flatMap(_ => messagesToUse.find(msg => msg.specification.isDefined && msg.specification.get == identifierForMessage.get))
+                .orElse(messagesToUse.find(msg => msg.specification.isEmpty))
+                .map(Seq(_)).getOrElse(Seq.empty)
+            case _ =>
+              messagesToUse
           }
         } else {
-          actions += (PersistenceSchema.insertConformanceCertificate += conformanceCertificate)
+          messagesToUse
+        }
+        DBIO.successful(Some(ConformanceOverviewCertificateWithMessages(settings.get, filteredMessages)))
+      } else {
+        DBIO.successful(None)
+      }
+    } yield result
+  }
+
+  def updateConformanceCertificateSettingsInternal(data: ConformanceCertificate): DBIO[_] = {
+    for {
+      existingId <- PersistenceSchema.conformanceCertificates.filter(_.community === data.community).map(_.id).result.headOption
+      _ <- {
+        if (existingId.isEmpty) {
+          // Create settings
+          PersistenceSchema.insertConformanceCertificate += data
+        } else {
+          // Update settings
+          PersistenceSchema.conformanceCertificates.filter(_.id === existingId)
+            .map(x => (x.title, x.message, x.includePageNumbers, x.includeTitle, x.includeDetails, x.includeMessage, x.includeSignature, x.includeTestCases, x.includeTestStatus))
+            .update((data.title, data.message, data.includePageNumbers, data.includeTitle, data.includeDetails, data.includeMessage, data.includeSignature, data.includeTestCases, data.includeTestStatus))
+        }
+      }
+    } yield ()
+  }
+
+  def updateConformanceOverviewCertificateSettingsInternal(data: ConformanceOverviewCertificateWithMessages): DBIO[_] = {
+    for {
+      existingId <- PersistenceSchema.conformanceOverviewCertificates.filter(_.community === data.settings.community).map(_.id).result.headOption
+      _ <- {
+        if (existingId.isEmpty) {
+          // Create settings
+          PersistenceSchema.insertConformanceOverviewCertificate += data.settings
+        } else {
+          // Update settings
+          PersistenceSchema.conformanceOverviewCertificates.filter(_.id === existingId)
+            .map(x => (x.title, x.includePageNumbers, x.includeTitle, x.includeDetails, x.includeMessage, x.includeSignature, x.includeStatements, x.includeStatementDetails, x.includeStatementStatus, x.enableAllLevel, x.enableDomainLevel, x.enableGroupLevel, x.enableSpecificationLevel))
+            .update((data.settings.title, data.settings.includePageNumbers, data.settings.includeTitle, data.settings.includeDetails, data.settings.includeMessage, data.settings.includeSignature, data.settings.includeStatements, data.settings.includeStatementDetails, data.settings.includeStatementStatus, data.settings.enableAllLevel, data.settings.enableDomainLevel, data.settings.enableGroupLevel, data.settings.enableSpecificationLevel))
+        }
+      }
+      _ <- {
+        val actions = new ListBuffer[DBIO[_]]()
+        val updatedIds = new mutable.HashSet[Long]()
+        // Update matching messages
+        if (data.settings.includeMessage) {
+          data.messages.foreach { message =>
+            if (message.id != 0L) {
+              updatedIds += message.id
+              actions += PersistenceSchema.conformanceOverviewCertificateMessages.filter(_.id === message.id).map(_.message).update(message.message)
+            }
+          }
+        }
+        // Delete other existing messages
+        actions += PersistenceSchema.conformanceOverviewCertificateMessages
+          .filter(_.community === data.settings.community)
+          .filterNot(_.id inSet updatedIds)
+          .delete
+        // Insert new messages
+        if (data.settings.includeMessage) {
+          data.messages.foreach { message =>
+            if (message.id == 0L) {
+              actions += (PersistenceSchema.conformanceOverviewCertificateMessages += message)
+            }
+          }
         }
         toDBIO(actions)
       }
     } yield ()
   }
 
-  def updateConformanceCertificateSettings(conformanceCertificate: ConformanceCertificates, updatePasswords: Boolean, removeKeystore: Boolean): Unit = {
-    exec(updateConformanceCertificateSettingsInternal(conformanceCertificate, updatePasswords, removeKeystore).transactionally)
+  def updateConformanceCertificateSettings(conformanceCertificate: ConformanceCertificate): Unit = {
+    exec(updateConformanceCertificateSettingsInternal(conformanceCertificate).transactionally)
+  }
+
+  def updateConformanceOverviewCertificateSettings(settings: ConformanceOverviewCertificateWithMessages): Unit = {
+    exec(updateConformanceOverviewCertificateSettingsInternal(settings).transactionally)
   }
 
   def deleteConformanceCertificateSettings(communityId: Long): DBIO[_] = {
     PersistenceSchema.conformanceCertificates.filter(_.community === communityId).delete
+  }
+
+  def deleteConformanceOverviewCertificateSettings(communityId: Long): DBIO[_] = {
+    PersistenceSchema.conformanceOverviewCertificateMessages.filter(_.community === communityId).delete andThen
+      PersistenceSchema.conformanceOverviewCertificates.filter(_.community === communityId).delete
+  }
+
+  def applyConfigurationViaAutomationApi(communityKey: String, request: ConfigurationRequest): List[String] = {
+    val warnings = new ListBuffer[String]()
+    exec(
+      for {
+        communityIds <- PersistenceSchema.communities.filter(_.apiKey === communityKey).map(x => (x.id, x.domain)).result.headOption
+        // Process domain properties
+        _ <- {
+          val warnings = new ListBuffer[String]()
+          if (communityIds.isDefined) {
+            if (request.domainProperties.nonEmpty) {
+              if (communityIds.get._2.isDefined) {
+                updateDomainParametersViaApi(communityIds.get._2.get, request.domainProperties, warnings)
+              } else {
+                warnings += "Domain property updates not allowed as community for API key [%s] is not linked to a specific domain.".formatted(communityKey)
+              }
+            }
+          } else {
+            warnings += "Community not found for API key [%s].".formatted(communityKey)
+          }
+          DBIO.successful(())
+        }
+        // Process organisation properties
+        _ <- {
+          val actions = new ListBuffer[DBIO[_]]
+          if (communityIds.isDefined && request.organisationProperties.nonEmpty) {
+            request.organisationProperties.foreach { updates =>
+              actions += updateOrganisationPropertiesViaApi(updates, communityIds.get._1, warnings)
+            }
+          }
+          toDBIO(actions)
+        }
+        // Process system properties
+        _ <- {
+          val actions = new ListBuffer[DBIO[_]]
+          if (communityIds.isDefined && request.systemProperties.nonEmpty) {
+            request.systemProperties.foreach { updates =>
+              actions += updateSystemPropertiesViaApi(updates, communityIds.get._1, warnings)
+            }
+          }
+          toDBIO(actions)
+        }
+        // Process statement properties
+        _ <- {
+          val actions = new ListBuffer[DBIO[_]]
+          if (communityIds.isDefined && request.statementProperties.nonEmpty) {
+            request.statementProperties.foreach { updates =>
+              actions += updateStatementPropertiesViaApi(updates, communityIds.get._1, communityIds.get._2, warnings)
+            }
+          }
+          toDBIO(actions)
+        }
+      } yield warnings.toList
+    )
+  }
+
+  private def updateStatementPropertiesViaApi(updateData: StatementConfiguration, communityId: Long, domainId: Option[Long], warnings: ListBuffer[String]): DBIO[_] = {
+    for {
+      // Get relevant statement information
+      statementIds <- PersistenceSchema.conformanceResults
+        .join(PersistenceSchema.systems).on(_.sut === _.id)
+        .join(PersistenceSchema.organizations).on(_._2.owner === _.id)
+        .join(PersistenceSchema.actors).on(_._1._1.actor === _.id)
+        .filter(_._1._2.community === communityId)
+        .filterOpt(domainId)((q, domainId) => q._2.domain === domainId)
+        .filter(_._1._1._2.apiKey === updateData.system)
+        .filter(_._2.apiKey === updateData.actor)
+        .map(x => (x._1._1._1.sut, x._1._1._1.actor)) // (system ID, actor ID)
+        .result
+        .headOption
+      // Get configuration properties
+      existingProperties <- if (statementIds.isDefined) {
+        PersistenceSchema.parameters
+        .join(PersistenceSchema.endpoints).on(_.endpoint === _.id)
+        .filter(_._2.actor === statementIds.get._2)
+        .map(x => (x._1.id, x._1.endpoint, x._1.testKey, x._1.kind))
+        .result
+        .map { properties =>
+          val keyMap = new mutable.HashMap[String, (Long, Long, String)]() // property key to (property ID, endpoint ID, property type)
+          properties.foreach { property =>
+            keyMap += (property._3 -> (property._1, property._2, property._4))
+          }
+          keyMap.toMap
+        }
+      } else {
+        warnings += "No conformance statement defined for system [%s] and actor [%s].".formatted(updateData.system, updateData.actor)
+        DBIO.successful(new mutable.HashMap[String, (Long, Long, String)]())
+      }
+      // Load the properties for which the system has existing values
+      existingValues <- if (statementIds.isDefined) {
+        PersistenceSchema.configs
+          .join(PersistenceSchema.parameters).on(_.parameter === _.id)
+          .join(PersistenceSchema.endpoints).on(_._2.endpoint === _.id)
+          .filter(_._1._1.system === statementIds.get._1)
+          .filter(_._2.actor === statementIds.get._2)
+          .map(x => (x._1._2.testKey, x._1._2.id, x._1._2.endpoint))
+          .result
+          .map { properties =>
+            val keyMap = new mutable.HashMap[String, (Long, Long)]() // property key to (property ID, endpoint ID)
+            properties.foreach { property =>
+              keyMap += (property._1 -> (property._2, property._3))
+            }
+            keyMap.toMap
+          }
+      } else {
+        DBIO.successful(new mutable.HashMap[String, (Long, Long)]())
+      }
+      // Process updates
+      _ <- {
+        val actions = new ListBuffer[DBIO[_]]()
+        if (statementIds.isDefined) {
+          updateData.properties.foreach { configData =>
+            if (existingProperties.contains(configData.key)) {
+              if (existingProperties(configData.key)._3 == "SIMPLE") {
+                if (existingValues.contains(configData.key)) {
+                  if (configData.value.isDefined) {
+                    // Update
+                    actions += PersistenceSchema.configs
+                      .filter(_.system === statementIds.get._1)
+                      .filter(_.parameter === existingValues(configData.key)._1)
+                      .map(_.value)
+                      .update(configData.value.get)
+                  } else {
+                    // Delete
+                    actions += PersistenceSchema.configs
+                      .filter(_.system === statementIds.get._1)
+                      .filter(_.parameter === existingValues(configData.key)._1)
+                      .delete
+                  }
+                } else {
+                  if (configData.value.isDefined) {
+                    // Insert
+                    actions += (PersistenceSchema.configs += Configs(statementIds.get._1, existingProperties(configData.key)._1, existingProperties(configData.key)._2, configData.value.get, None))
+                  } else {
+                    warnings += "Ignoring delete for conformance statement property [%s] of system [%s] for actor [%s]. No value for this property was defined.".formatted(configData.key, updateData.system, updateData.actor)
+                  }
+                }
+              } else {
+                warnings += "Ignoring update for conformance statement property [%s] of system [%s] for actor [%s]. Only simple properties can be updated via the automation API.".formatted(configData.key, updateData.system, updateData.actor)
+              }
+            } else {
+              warnings += "Ignoring update for conformance statement property [%s] of system [%s] for actor [%s]. No property with that key is defined for the conformance statement.".formatted(configData.key, updateData.system, updateData.actor)
+            }
+          }
+        }
+        toDBIO(actions)
+      }
+    } yield ()
+  }
+
+  private def updateDomainParametersViaApi(domainId: Long, updates: List[KeyValue], warnings: ListBuffer[String]): DBIO[_] = {
+    for {
+      existingDomainProperties <- {
+        if (updates.nonEmpty) {
+          PersistenceSchema.domainParameters
+            .filter(_.domain === domainId)
+            .map(x => (x.name, x.id, x.kind))
+            .result
+            .map { properties =>
+              val keyMap = new mutable.HashMap[String, (Long, String)]() // Key to (ID, type)
+              properties.foreach { property =>
+                keyMap += (property._1 -> (property._2, property._3))
+              }
+              keyMap.toMap
+            }
+        } else {
+          DBIO.successful(new mutable.HashMap[String, (Long, String)]())
+        }
+      }
+      // Update domain properties
+      _ <- {
+        val actions = new ListBuffer[DBIO[_]]()
+        updates.foreach { propertyData =>
+          if (existingDomainProperties.contains(propertyData.key)) {
+            if (existingDomainProperties(propertyData.key)._2 == "SIMPLE") {
+              if (propertyData.value.isDefined) {
+                // Update
+                actions += PersistenceSchema.domainParameters
+                  .filter(_.id === existingDomainProperties(propertyData.key)._1)
+                  .map(_.value)
+                  .update(propertyData.value)
+              } else {
+                // Delete
+                warnings += "Ignoring deletion for domain property [%s]. Domain properties cannot be deleted via automation API.".formatted(propertyData.key)
+              }
+            } else {
+              warnings += "Ignoring update for domain property [%s]. Only simple properties can be updated via the automation API.".formatted(propertyData.key)
+            }
+          } else {
+            warnings += "Ignoring update for domain property [%s]. Property was not found.".formatted(propertyData.key)
+          }
+        }
+        toDBIO(actions)
+      }
+    } yield ()
+  }
+
+  private def updateOrganisationPropertiesViaApi(updateData: PartyConfiguration, communityId: Long, warnings: ListBuffer[String]): DBIO[_] = {
+    for {
+      // Load organisation ID
+      organisationId <- PersistenceSchema.organizations
+        .filter(_.community === communityId)
+        .filter(_.apiKey === updateData.partyKey)
+        .map(_.id)
+        .result
+        .headOption
+      // Load the properties for which the organisation has existing values
+      existingValues <- if (organisationId.isDefined) {
+        PersistenceSchema.organisationParameterValues
+          .join(PersistenceSchema.organisationParameters).on(_.parameter === _.id)
+          .filter(_._1.organisation === organisationId.get)
+          .map(x => (x._2.id, x._2.testKey))
+          .result
+          .map { properties =>
+            val keyMap = new mutable.HashMap[String, Long]() // property key to property ID
+            properties.foreach { property =>
+              keyMap += (property._2 -> property._1)
+            }
+            keyMap.toMap
+        }
+      } else {
+        warnings += "No organisation was found for API Key [%s]".formatted(updateData.partyKey)
+        DBIO.successful(new mutable.HashMap[String, Long]())
+      }
+      // Load the community's properties and record their type
+      existingProperties <- if (organisationId.isDefined) {
+        PersistenceSchema.organisationParameters
+          .filter(_.community === communityId)
+          .map(x => (x.id, x.testKey, x.kind))
+          .result
+          .map { properties =>
+            val keyMap = new mutable.HashMap[String, (Long, String)]() // property key to (property ID, property type)
+            properties.foreach { property =>
+              keyMap += (property._2 -> (property._1, property._3))
+            }
+            keyMap.toMap
+          }
+      } else {
+        DBIO.successful(new mutable.HashMap[String, (Long, String)]())
+      }
+      // Process the updates
+      _ <- {
+        val actions = new ListBuffer[DBIO[_]]
+        if (organisationId.isDefined) {
+          updateData.properties.foreach { configData =>
+            if (existingProperties.contains(configData.key)) {
+              if (existingProperties(configData.key)._2 == "SIMPLE") {
+                if (existingValues.contains(configData.key)) {
+                  if (configData.value.isDefined) {
+                    // Update
+                    actions += PersistenceSchema.organisationParameterValues
+                      .filter(_.organisation === organisationId.get)
+                      .filter(_.parameter === existingValues(configData.key))
+                      .map(_.value)
+                      .update(configData.value.get)
+                  } else {
+                    // Delete
+                    actions += PersistenceSchema.organisationParameterValues
+                      .filter(_.organisation === organisationId.get)
+                      .filter(_.parameter === existingValues(configData.key))
+                      .delete
+                  }
+                } else {
+                  if (configData.value.isDefined) {
+                    // Insert
+                    actions += (PersistenceSchema.organisationParameterValues += OrganisationParameterValues(organisationId.get, existingProperties(configData.key)._1, configData.value.get, None))
+                  } else {
+                    warnings += "Ignoring delete for organisation property [%s] and organisation [%s]. No value for this property was defined for the organisation.".formatted(configData.key, updateData.partyKey)
+                  }
+                }
+              } else {
+                warnings += "Ignoring update for organisation property [%s] and organisation [%s]. Only simple properties can be updated via the automation API.".formatted(configData.key, updateData.partyKey)
+              }
+            } else {
+              warnings += "Ignoring update for organisation property [%s] and organisation [%s]. No organisation property with that key is configured for the community.".formatted(configData.key, updateData.partyKey)
+            }
+          }
+        }
+        toDBIO(actions)
+      }
+    } yield ()
+  }
+
+  private def updateSystemPropertiesViaApi(updateData: PartyConfiguration, communityId: Long, warnings: ListBuffer[String]): DBIO[_] = {
+    for {
+      // Load system ID
+      systemId <- PersistenceSchema.systems
+        .join(PersistenceSchema.organizations).on(_.owner === _.id)
+        .filter(_._2.community === communityId)
+        .filter(_._1.apiKey === updateData.partyKey)
+        .map(_._1.id)
+        .result
+        .headOption
+      // Load the properties for which the organisation has existing values
+      existingValues <- if (systemId.isDefined) {
+        PersistenceSchema.systemParameterValues
+          .join(PersistenceSchema.systemParameters).on(_.parameter === _.id)
+          .filter(_._1.system === systemId.get)
+          .map(x => (x._2.id, x._2.testKey))
+          .result
+          .map { properties =>
+            val keyMap = new mutable.HashMap[String, Long]() // property key to property ID
+            properties.foreach { property =>
+              keyMap += (property._2 -> property._1)
+            }
+            keyMap.toMap
+          }
+      } else {
+        warnings += "No system was found for API Key [%s]".formatted(updateData.partyKey)
+        DBIO.successful(new mutable.HashMap[String, Long]())
+      }
+      // Load the community's properties and record their type
+      existingProperties <- if (systemId.isDefined) {
+        PersistenceSchema.systemParameters
+          .filter(_.community === communityId)
+          .map(x => (x.id, x.testKey, x.kind))
+          .result
+          .map { properties =>
+            val keyMap = new mutable.HashMap[String, (Long, String)]() // property key to (property ID, property type)
+            properties.foreach { property =>
+              keyMap += (property._2 -> (property._1, property._3))
+            }
+            keyMap.toMap
+          }
+      } else {
+        DBIO.successful(new mutable.HashMap[String, (Long, String)]())
+      }
+      // Process the updates
+      _ <- {
+        val actions = new ListBuffer[DBIO[_]]
+        if (systemId.isDefined) {
+          updateData.properties.foreach { configData =>
+            if (existingProperties.contains(configData.key)) {
+              if (existingProperties(configData.key)._2 == "SIMPLE") {
+                if (existingValues.contains(configData.key)) {
+                  if (configData.value.isDefined) {
+                    // Update
+                    actions += PersistenceSchema.systemParameterValues
+                      .filter(_.system === systemId.get)
+                      .filter(_.parameter === existingValues(configData.key))
+                      .map(_.value)
+                      .update(configData.value.get)
+                  } else {
+                    // Delete
+                    actions += PersistenceSchema.systemParameterValues
+                      .filter(_.system === systemId.get)
+                      .filter(_.parameter === existingValues(configData.key))
+                      .delete
+                  }
+                } else {
+                  if (configData.value.isDefined) {
+                    // Insert
+                    actions += (PersistenceSchema.systemParameterValues += SystemParameterValues(systemId.get, existingProperties(configData.key)._1, configData.value.get, None))
+                  } else {
+                    warnings += "Ignoring delete for system property [%s] and system [%s]. No value for this property was defined for the system.".formatted(configData.key, updateData.partyKey)
+                  }
+                }
+              } else {
+                warnings += "Ignoring update for system property [%s] and system [%s]. Only simple properties can be updated via the automation API.".formatted(configData.key, updateData.partyKey)
+              }
+            } else {
+              warnings += "Ignoring update for system property [%s] and system [%s]. No system property with that key is configured for the community.".formatted(configData.key, updateData.partyKey)
+            }
+          }
+        }
+        toDBIO(actions)
+      }
+    } yield ()
   }
 
 }

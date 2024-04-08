@@ -27,7 +27,6 @@ export class LandingPageDetailsComponent extends BaseComponent implements OnInit
   deletePending = false
   copyPending = false
   page: Partial<LandingPage> = {}
-  showContent = true
   tooltipForDefaultCheck!: string
 
   constructor(

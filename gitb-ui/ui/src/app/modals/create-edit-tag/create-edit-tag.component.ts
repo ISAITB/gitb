@@ -6,8 +6,7 @@ import { TestCaseTag } from 'src/app/types/test-case-tag';
 
 @Component({
   selector: 'app-create-edit-tag',
-  templateUrl: './create-edit-tag.component.html',
-  styleUrls: [ './create-edit-tag.component.less' ]
+  templateUrl: './create-edit-tag.component.html'
 })
 export class CreateEditTagComponent extends BaseComponent implements OnInit, AfterViewInit {
 
@@ -21,7 +20,7 @@ export class CreateEditTagComponent extends BaseComponent implements OnInit, Aft
 
   constructor(
     private modalInstance: BsModalRef,
-    private dataService: DataService   
+    private dataService: DataService
   ) { super() }
 
   ngAfterViewInit(): void {

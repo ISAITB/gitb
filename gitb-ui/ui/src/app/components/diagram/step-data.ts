@@ -26,5 +26,6 @@ export interface StepData {
     documentation?: string,
     currentIndex?: number,
     reply?: boolean
+    admin?: boolean
 
 }

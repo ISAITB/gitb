@@ -23,30 +23,9 @@
     </suppress>
     <suppress>
         <notes><![CDATA[
-   file name: snakeyaml-1.33.jar
+   file name: jackson-databind-2.15.3.jar
    ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.yaml/snakeyaml@.*$</packageUrl>
-        <vulnerabilityName>CVE-2022-1471</vulnerabilityName>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-   file name: akka-actor_2.12-2.6.21.jar
-   ]]></notes>
-        <packageUrl regex="true">^pkg:maven/com\.typesafe\.akka/akka\-actor_2\.12@.*$</packageUrl>
-        <cpe>cpe:/a:akka:akka</cpe>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-   file name: akka-actor_2.12-2.6.21.jar
-   ]]></notes>
-        <packageUrl regex="true">^pkg:maven/com\.typesafe\.akka/akka\-actor_2\.12@.*$</packageUrl>
-        <cve>CVE-2023-31442</cve>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-   file name: akka-actor_2.12-2.6.21.jar
-   ]]></notes>
-        <packageUrl regex="true">^pkg:maven/com\.typesafe\.akka/akka\-actor_2\.12@.*$</packageUrl>
-        <vulnerabilityName>CVE-2023-45865</vulnerabilityName>
+        <packageUrl regex="true">^pkg:maven/com\.fasterxml\.jackson\.core/jackson\-databind@.*$</packageUrl>
+        <cve>CVE-2023-35116</cve>
     </suppress>
 </suppressions>

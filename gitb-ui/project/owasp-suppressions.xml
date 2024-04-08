@@ -1,151 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
     <suppress>
-        <!-- To be maintained as the tool mixes the client library with the REDIS server. -->
-        <notes><![CDATA[
-   file name: redisclient_2.13-3.40.jar
-   ]]></notes>
-        <packageUrl regex="true">^pkg:maven/net\.debasishg/redisclient_2\.13@.*$</packageUrl>
-        <cve>CVE-2021-32626</cve>
-    </suppress>
-    <suppress>
-        <!-- To be maintained as the CVE refers to the normal itext library (not the JasperReports fork). -->
-        <notes><![CDATA[
-   file name: itext-2.1.7.js8.jar
-   ]]></notes>
-        <packageUrl regex="true">^pkg:maven/com\.lowagie/itext@.*$</packageUrl>
-        <vulnerabilityName>CVE-2017-9096</vulnerabilityName>
-    </suppress>
-    <suppress>
-        <!-- To be maintained as the CVE refers to the normal itext library (not the JasperReports fork). -->
-        <notes><![CDATA[
-   file name: itext-2.1.7.js8.jar
-   ]]></notes>
-        <packageUrl regex="true">^pkg:maven/com\.lowagie/itext@.*$</packageUrl>
-        <vulnerabilityName>CVE-2021-43113</vulnerabilityName>
-    </suppress>
-    <suppress>
-        <!-- To be re-evaluated if this is updated in the MySQL connector as a transient dependency.
-        Currently, this poses no risk but could be removed if the dependency version in the MySQL connector is updated. -->
-        <notes><![CDATA[
-   file name: protobuf-java-3.11.4.jar
-   ]]></notes>
-        <packageUrl regex="true">^pkg:maven/com\.google\.protobuf/protobuf\-java@.*$</packageUrl>
-        <cpe>cpe:/a:google:protobuf-java</cpe>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-   file name: commons-digester-2.1.jar
-   ]]></notes>
-        <packageUrl regex="true">^pkg:maven/commons\-digester/commons\-digester@.*$</packageUrl>
-        <cve>CVE-2021-38542</cve>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-   file name: commons-digester-2.1.jar
-   ]]></notes>
-        <packageUrl regex="true">^pkg:maven/commons\-digester/commons\-digester@.*$</packageUrl>
-        <cve>CVE-2021-40110</cve>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-   file name: commons-digester-2.1.jar
-   ]]></notes>
-        <packageUrl regex="true">^pkg:maven/commons\-digester/commons\-digester@.*$</packageUrl>
-        <cve>CVE-2021-40111</cve>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-   file name: commons-digester-2.1.jar
-   ]]></notes>
-        <packageUrl regex="true">^pkg:maven/commons\-digester/commons\-digester@.*$</packageUrl>
-        <cve>CVE-2021-40525</cve>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-   file name: flyway-mysql-8.5.9.jar
-   ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.flywaydb/flyway\-mysql@.*$</packageUrl>
-        <cve>CVE-2007-1420</cve>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-   file name: flyway-mysql-8.5.9.jar
-   ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.flywaydb/flyway\-mysql@.*$</packageUrl>
-        <cve>CVE-2007-2691</cve>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-   file name: flyway-mysql-8.5.9.jar
-   ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.flywaydb/flyway\-mysql@.*$</packageUrl>
-        <cve>CVE-2007-5925</cve>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-   file name: flyway-mysql-8.5.9.jar
-   ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.flywaydb/flyway\-mysql@.*$</packageUrl>
-        <cve>CVE-2009-0819</cve>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-   file name: flyway-mysql-8.5.9.jar
-   ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.flywaydb/flyway\-mysql@.*$</packageUrl>
-        <cve>CVE-2009-4028</cve>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-   file name: flyway-mysql-8.5.9.jar
-   ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.flywaydb/flyway\-mysql@.*$</packageUrl>
-        <cve>CVE-2010-1621</cve>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-   file name: flyway-mysql-8.5.9.jar
-   ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.flywaydb/flyway\-mysql@.*$</packageUrl>
-        <cve>CVE-2010-1626</cve>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-   file name: flyway-mysql-8.5.9.jar
-   ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.flywaydb/flyway\-mysql@.*$</packageUrl>
-        <cve>CVE-2010-3677</cve>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-   file name: flyway-mysql-8.5.9.jar
-   ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.flywaydb/flyway\-mysql@.*$</packageUrl>
-        <cve>CVE-2010-3682</cve>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-   file name: flyway-mysql-8.5.9.jar
-   ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.flywaydb/flyway\-mysql@.*$</packageUrl>
-        <cve>CVE-2012-5627</cve>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-   file name: flyway-mysql-8.5.9.jar
-   ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.flywaydb/flyway\-mysql@.*$</packageUrl>
-        <cve>CVE-2015-2575</cve>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-   file name: flyway-mysql-8.5.9.jar
-   ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.flywaydb/flyway\-mysql@.*$</packageUrl>
-        <cve>CVE-2017-15945</cve>
-    </suppress>
-    <suppress>
         <notes><![CDATA[
    file name: xercesImpl-2.12.2.jar
    ]]></notes>
@@ -165,62 +20,6 @@
    ]]></notes>
         <packageUrl regex="true">^pkg:maven/xerces/xercesImpl@.*$</packageUrl>
         <vulnerabilityName>CVE-2017-10355</vulnerabilityName>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-   file name: jackson-core-2.14.2.jar
-   ]]></notes>
-        <packageUrl regex="true">^pkg:maven/com\.fasterxml\.jackson\.core/jackson\-core@.*$</packageUrl>
-        <cve>CVE-2022-45688</cve>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-   file name: guava-30.1.1-jre.jar
-   ]]></notes>
-        <packageUrl regex="true">^pkg:maven/com\.google\.guava/guava@.*$</packageUrl>
-        <vulnerabilityName>CVE-2020-8908</vulnerabilityName>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-   file name: cxf-rt-bindings-soap-3.5.5.jar
-   ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.apache\.cxf/cxf\-rt\-bindings\-soap@.*$</packageUrl>
-        <cve>CVE-2022-40705</cve>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-   file name: jetty-*-9.4.49.v20220914.jar
-   ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.eclipse\.jetty/jetty\-.*@.*$</packageUrl>
-        <vulnerabilityName>CVE-2023-26048</vulnerabilityName>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-   file name: jetty-*-9.4.49.v20220914.jar
-   ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.eclipse\.jetty/jetty\-.*@.*$</packageUrl>
-        <vulnerabilityName>CVE-2023-26049</vulnerabilityName>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-   file name: bootstrap-3.4.1.jar
-   ]]></notes>
-        <packageUrl regex="true">^pkg:javascript/bootstrap@.*$</packageUrl>
-        <vulnerabilityName>Bootstrap before 4.0.0 is end-of-life and no longer maintained.</vulnerabilityName>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-   file name: guava-31.1-jre.jar
-   ]]></notes>
-        <packageUrl regex="true">^pkg:maven/com\.google\.guava/guava@.*$</packageUrl>
-        <vulnerabilityName>CVE-2023-2976</vulnerabilityName>
-    </suppress>
-    <suppress>
-        <notes><![CDATA[
-   file name: bcprov-jdk15on-1.70.jar
-   ]]></notes>
-        <packageUrl regex="true">^pkg:maven/org\.bouncycastle/bcprov\-jdk15on@.*$</packageUrl>
-        <vulnerabilityName>CVE-2023-33201</vulnerabilityName>
     </suppress>
     <suppress>
         <notes><![CDATA[
@@ -245,9 +44,23 @@
     </suppress>
     <suppress>
         <notes><![CDATA[
-   file name: akka-actor_2.13-2.6.21.jar
+   file name: ch.qos.logback.logback-core-1.4.7.jar
    ]]></notes>
-        <packageUrl regex="true">^pkg:maven/com\.typesafe\.akka/akka\-actor_2\.13@.*$</packageUrl>
-        <vulnerabilityName>CVE-2023-45865</vulnerabilityName>
+        <packageUrl regex="true">^pkg:maven/ch\.qos\.logback/logback\-core@.*$</packageUrl>
+        <cve>CVE-2023-6378</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: logback-classic-1.4.7.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/ch\.qos\.logback/logback\-classic@.*$</packageUrl>
+        <cve>CVE-2023-6378</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: org.playframework.twirl.twirl-api_2.13-2.0.1.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.playframework\.twirl/twirl\-api_2\.13@.*$</packageUrl>
+        <cve>CVE-2015-2156</cve>
     </suppress>
 </suppressions>

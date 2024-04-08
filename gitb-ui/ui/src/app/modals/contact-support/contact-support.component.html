@@ -1,62 +1,65 @@
 <div class="modal-header">
-    <h4>Provide feedback</h4>
+    <div class="modal-title">Provide feedback</div>
 </div>
-<form class="form-horizontal">
-    <div class="modal-body">
-        <app-alert-display [alerts]="alerts" innerClass="col-xs-10 col-xs-offset-1"></app-alert-display>
-        <div class="form-group">
-            <label class="col-xs-3 control-label">* Contact email:</label>
-            <div class="col-xs-7">
+<form>
+    <div class="modal-body" appFileDropTarget>
+        <app-alert-display [alerts]="alerts" innerClass="col-10 offset-1"></app-alert-display>
+        <div class="row mb-3">
+            <label class="col-3 col-form-label text-end">* Contact email:</label>
+            <div class="col-7">
                 <input id="contact" name="contact" [(ngModel)]="contactAddress" class="form-control" type="text">
             </div>
-            <app-tooltip tbTooltip="Specify the email at which you would like to receive feedback regarding your request."></app-tooltip>
+            <div app-tooltip class="col-auto" tbTooltip="Specify the email at which you would like to receive feedback regarding your request."></div>
         </div>
-        <div class="form-group">
-            <label class="col-xs-3 control-label">* Feedback type:</label>
-            <div class="col-xs-7">
-                <select class="form-control" name="feedback" [(ngModel)]="feedback">
+        <div class="row mb-3">
+            <label class="col-3 col-form-label text-end">* Feedback type:</label>
+            <div class="col-7">
+                <select class="form-control form-select" name="feedback" [(ngModel)]="feedback">
                     <option *ngFor="let feedbackType of feedbackTypes" [ngValue]="feedbackType">{{feedbackType.description}}</option>
                 </select>
             </div>
-            <app-tooltip tbTooltip="Select the nature of your request to facilitate its processing by support staff."></app-tooltip>
+            <div app-tooltip class="col-auto" tbTooltip="Select the nature of your request to facilitate its processing by support staff."></div>
         </div>
-        <div class="form-group">
-            <label class="col-xs-3 control-label">* Message:</label>
-            <div class="col-xs-7">
+        <div class="row mb-3">
+            <label class="col-3 col-form-label text-end">* Message:</label>
+            <div class="col-7">
                 <app-editor name="contentMessage" [(ngModel)]="contentMessage" [type]="'minimal'" [height]="300"></app-editor>
             </div>
         </div>
-        <div class="form-group" *ngIf="showUpload() && attachments.length == 0">
-            <label class="col-xs-3 control-label">Attachment(s):</label>
-            <div class="col-xs-8">
-                <app-file-select label="Select file" (onUpload)="attachFile($event)"></app-file-select>
+        <div class="row mb-3" *ngIf="showUpload() && attachments.length == 0">
+            <label class="col-3 col-form-label text-end">Attachment(s):</label>
+            <div class="col-7">
+                <app-file-select (onUpload)="attachFile($event)"></app-file-select>
             </div>
         </div>
-        <div class="form-group" *ngFor="let attachment of attachments; let first = first; let index = index"> 
-            <label class="col-xs-3 control-label" *ngIf="first">Attachment(s):</label>
-            <div class="col-xs-8" [ngClass]="{'col-xs-offset-3': !first}">
-                <span>{{attachment.name}} ({{attachment.size}} bytes)</span>
-                <button type="button" class="btn btn-default" style="margin-left:5px;" (click)="removeAttachment(index)" containerClass="shortTooltip" tooltip="Remove" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-times"></i></button>
+        <div class="row mb-3" *ngFor="let attachment of attachments; let first = first; let index = index"> 
+            <label class="col-3 col-form-label text-end" *ngIf="first">Attachment(s):</label>
+            <div class="col-7" [ngClass]="{'offset-3': !first}">
+                <app-file-select [fileName]="attachment.name" [extraActions]="true" [disableUpload]="true">
+                    <button type="button" class="btn btn-secondary" (click)="removeAttachment(index)" container="body" containerClass="shortTooltip" tooltip="Remove" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-trash"></i></button>
+                </app-file-select>
             </div>
         </div>
-        <div class="form-group" *ngIf="attachments.length > 0">
-            <div class="col-xs-8 col-xs-offset-3">
-                <app-file-select *ngIf="maximumAttachments > attachments.length" label="Select file" (onUpload)="attachFile($event)"></app-file-select>
+        <div class="row mb-3" *ngIf="attachments.length > 0 && maximumAttachments > attachments.length">
+            <div class="col-7 offset-3">
+                <app-file-select (onUpload)="attachFile($event)"></app-file-select>
             </div>
         </div>
-        <div class="form-group" *ngIf="showSurveyLink()">
-            <div class="col-xs-offset-1 col-xs-10 bg-info div-rounded">
-                <p class="form-control-static">If you have 10 minutes to spare we would much appreciate if you would complete our feedback survey. Click <a [href]="surveyAddress" target="blank">here</a> to open the survey in a separate window and start.</p>
+        <div class="row mb-3" *ngIf="showSurveyLink()">
+            <div class="col-12">
+                <div class="alert alert-info rounded mb-0">If you have 10 minutes to spare we would much appreciate if you would complete our feedback survey. Click <a [href]="surveyAddress" target="blank">here</a> to open the survey in a separate window and start.</div>
             </div>
         </div>
-        <div class="form-group">
-            <div class="col-xs-offset-1 col-xs-10 bg-info div-rounded">
-                <p class="form-control-static"><b>Privacy note:</b> The information you provide is treated by the test bed support team and is never shared to other parties. The 'Contact email' you provide is used only to receive a response from the support team. Please refer to the legal notice (link available in the screen's footer) for more information.</p>
+        <div class="row">
+            <div class="col-12">
+                <div class="alert alert-info rounded mb-0"><b>Privacy note:</b> The information you provide is treated by the test bed support team and is never shared to other parties. The 'Contact email' you provide is used only to receive a response from the support team. Please refer to the legal notice (link available in the screen's footer) for more information.</div>
             </div>
         </div>
     </div>
     <div class="modal-footer">
-        <button class="btn btn-default" type="button" (click)="cancel()">Close</button>
-        <button class="btn btn-default" type="submit" (click)="send()" [disable]="sendDisabled()"[pending]="sendPending">Send feedback</button>
+        <div class="btn-toolbar">
+            <button class="btn btn-secondary" type="button" (click)="cancel()">Close</button>
+            <button class="btn btn-secondary" type="submit" (click)="send()" [disable]="sendDisabled()"[pending]="sendPending">Send feedback</button>
+        </div>
     </div>
 </form>

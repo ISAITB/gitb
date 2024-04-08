@@ -1,5 +1,5 @@
 <div class="testSuiteContainer">
-    <div class="testSuite" [class.hovering]="hovering[testSuite.id]" *ngFor="let testSuite of testSuites">
+    <div class="testSuite" [class.shaded]="shaded" [class.hovering]="hovering[testSuite.id]" *ngFor="let testSuite of testSuites">
         <div class="testSuiteInfo" (mouseenter)="hovering[testSuite.id] = true" (mouseleave)="hovering[testSuite.id] = false" (click)="onExpand(testSuite)">
             <div><app-collapsing-icon [isCollapsed]="!testSuite.expanded" [asDiv]="true"></app-collapsing-icon></div>
             <div class="testSuiteName">{{testSuite.sname}}</div>
@@ -7,8 +7,8 @@
             <div class="testSuiteExecution">
                 <div class="testSuiteControls" *ngIf="testSuite.hasDocumentation && showViewDocumentation || showExecute">
                     <div class="btn-toolbar">
-                        <button *ngIf="testSuite.hasDocumentation && showViewDocumentation" type="button" class="btn btn-default" (click)="showTestSuiteDocumentation(testSuite); $event.stopPropagation();" [icon]="true" [pending]="viewDocumentationPending[testSuite.id]" containerClass="shortTooltip" tooltip="Documentation" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-info-circle"></i></button>
-                        <button *ngIf="showExecute" class="btn btn-primary" (click)="onTestSuiteSelect(testSuite); $event.stopPropagation();" containerClass="shortTooltip" tooltip="Run all" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-play"></i></button>
+                        <button *ngIf="testSuite.hasDocumentation && showViewDocumentation" type="button" class="btn btn-secondary" (click)="showTestSuiteDocumentation(testSuite); $event.stopPropagation();" [icon]="true" [pending]="viewDocumentationPending[testSuite.id]" containerClass="shortTooltip" tooltip="Documentation" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-info-circle"></i></button>
+                        <button *ngIf="showExecute" class="btn btn-primary" (click)="onTestSuiteSelect(testSuite); $event.stopPropagation();" containerClass="shortTooltip" tooltip="Run all" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-play"></i></button>
                     </div>
                 </div>
                 <div class="testSuiteResult"><i containerClass="shortTooltip" [tooltip]="dataService.tooltipForTestResult(testSuite.result)" [ngClass]="dataService.iconForTestResult(testSuite.result)"></i></div>
@@ -18,11 +18,13 @@
             <div class="collapsibleTestCaseDiv">
                 <app-test-case-display 
                     [testCases]="testSuite.testCases"
+                    [testSuiteSpecificationReference]="testSuite"
                     [hasOptional]="testSuite.hasOptionalTestCases"
                     [hasDisabled]="testSuite.hasDisabledTestCases"
                     [showExecute]="showExecute"
                     [showExport]="showExport"
                     [showViewDocumentation]="showViewDocumentation"
+                    [shaded]="!shaded"
                     (viewTestSession)="propagateViewTestSession($event)"
                     (execute)="propagateExecuteTestSession($event)"
                 ></app-test-case-display>

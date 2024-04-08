@@ -37,6 +37,7 @@ export class CheckboxOptionPanelComponent implements OnInit {
     if (this.optionFormVisible) {
       this.buttonClicked()
     }
+    this.open = false
   }
 
   ngOnInit(): void {

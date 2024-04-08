@@ -1,0 +1,56 @@
+<form>
+    <div class="row">
+        <legend class="col-3 col-form-label text-end pt-0">Use custom format for XML reports:</legend>
+        <div class="col-7">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" [attr.id]="idValue" [name]="idValue" [(ngModel)]="useStylesheet">
+                <label class="form-check-label" [attr.for]="idValue">Apply stylesheet to XML reports
+                    <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="Enable a custom XML report format by applying an XSLT stylesheet to the default report."></div>
+                </label>
+            </div>
+        </div>
+    </div>
+    <div [collapse]="!useStylesheet" [isAnimated]="animated">
+        <div class="row mt-3">
+            <legend class="col-3 col-form-label text-end">* Stylesheet:</legend>
+            <div class="col-7">
+                <app-file-select [fileName]="fileNameToShow" (onUpload)="selectFile($event)" placeholder="Drop or browse for stylesheet file ..." [accepts]="acceptedFileTypes" [extraActions]="stylesheetExists">
+                    @if (stylesheetExists) {
+                        <button type="button" class="btn btn-secondary" (click)="viewStylesheet()" containerClass="shortTooltip" tooltip="View" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'" container="body"><i class="fa-solid fa-magnifying-glass"></i></button>
+                    }
+                </app-file-select>
+            </div>
+            <div app-tooltip class="col-auto" tbTooltip="The XSLT stylesheet to apply to the default report."></div>
+        </div>
+    </div>
+    <div class="btn-toolbar mt-3">
+        <button class="btn btn-secondary" type="submit" (click)="update()" [disable]="previewPending || !updateEnabled()" [pending]="updatePending">Update</button>
+        @if (previewOptions.length == 0) {
+            <button type="button" [disable]="updatePending || !updateEnabled()" [pending]="previewPending" class="btn btn-secondary" (click)="preview()">Generate preview</button>
+        } @else {
+            @if (previewDefaultOption) {
+                <div class="btn-group" dropdown [isDisabled]="updatePending || !updateEnabled()">
+                    <button type="button" [disable]="updatePending || !updateEnabled()" [pending]="previewPending" class="btn btn-secondary" (click)="preview()">Generate preview</button>
+                    <button id="button-export" [disabled]="updatePending || !updateEnabled() || previewPending" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
+                        <span class="caret"></span>
+                        <span class="sr-only visually-hidden">Generate preview</span>
+                    </button>
+                    <ul id="dropdown-export" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-export">
+                        @for (option of previewOptions; track $index) {
+                            <li role="menuitem"><a class="dropdown-item" href (click)="preview($index);$event.preventDefault();">{{option.label}}</a></li>
+                        }
+                    </ul>
+                </div>                                                                                
+            } @else {
+                <div class="btn-group" dropdown [isDisabled]="updatePending || !updateEnabled()">
+                    <button id="button-preview" dropdownToggle type="button" [disable]="updatePending || !updateEnabled()" [pending]="previewPending" aria-controls="dropdown-preview" class="btn btn-secondary dropdown-toggle">Generate preview<span class="caret withMargin"></span></button>
+                    <ul id="dropdown-preview" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-preview">
+                        @for (option of previewOptions; track $index) {
+                            <li role="menuitem"><a class="dropdown-item" href (click)="preview($index);$event.preventDefault();">{{option.label}}</a></li>
+                        }
+                    </ul>
+                </div>
+            }
+        }
+    </div>
+</form>

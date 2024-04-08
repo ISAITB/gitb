@@ -1,4 +1,3 @@
-import { AnyContent } from "../components/diagram/any-content";
 import { UserInteractionInputRequest } from "./user-interaction-input-request";
 import { UserInteractionInstruction } from "./user-interaction-instruction";
 

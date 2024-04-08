@@ -1,5 +1,5 @@
 import { Injectable } from "@angular/core";
-import { ActivatedRouteSnapshot, Resolve, RouterStateSnapshot } from "@angular/router";
+import { ActivatedRouteSnapshot, RouterStateSnapshot } from "@angular/router";
 import { Observable, Subscriber } from "rxjs";
 import { Constants } from "../common/constants";
 import { ErrorTemplateService } from "../services/error-template.service";
@@ -8,7 +8,7 @@ import { ErrorTemplate } from "../types/error-template";
 @Injectable({
     providedIn: "root"
 })
-export class ErrorTemplateResolver implements Resolve<any> {
+export class ErrorTemplateResolver  {
 
     constructor(
         private errorTemplateService: ErrorTemplateService

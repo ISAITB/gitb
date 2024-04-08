@@ -57,10 +57,11 @@ export class OrganisationTestsComponent implements OnInit {
   deletePending = false
   stopAllPending = false
   sessionIdToShow?: string
-  sessionRefreshCompleteEmitter = new EventEmitter<void>()
+  sessionRefreshCompleteEmitter = new EventEmitter<TestResultReport|undefined>()
   activeSessionsCollapsed = false
+  activeSessionsCollapsedFinished = false
   completedSessionsCollapsed = false
-  showTerminateAll = false
+  completedSessionsCollapsedFinished = false
 
   constructor(
     private route: ActivatedRoute,
@@ -76,7 +77,6 @@ export class OrganisationTestsComponent implements OnInit {
 
   ngOnInit(): void {
     this.organisationId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.ORGANISATION_ID))
-    this.showTerminateAll = this.dataService.isCommunityAdmin || this.dataService.isVendorAdmin || this.dataService.isSystemAdmin
     const sessionIdValue = this.route.snapshot.queryParamMap.get(Constants.NAVIGATION_QUERY_PARAM.TEST_SESSION_ID)
     if (sessionIdValue != undefined) {
       this.sessionIdToShow = sessionIdValue
@@ -447,7 +447,7 @@ export class OrganisationTestsComponent implements OnInit {
         // Session was deleted
         this.popupService.warning("The test session has been deleted by an administrator.")
         this.goFirstPage()
-        this.sessionRefreshCompleteEmitter.emit()
+        this.sessionRefreshCompleteEmitter.emit(result)
       } else {
         this.diagramLoaderService.loadTestStepResults(session.session)
         .subscribe((data) => {
@@ -459,10 +459,22 @@ export class OrganisationTestsComponent implements OnInit {
           }
           this.diagramLoaderService.updateStatusOfSteps(session, currentState.stepsOfTests[session.session], data)
         }).add(() => {
-          this.sessionRefreshCompleteEmitter.emit()
+          this.sessionRefreshCompleteEmitter.emit(result)
         })
       }
     })
   }
+
+  toggleActiveSessionsCollapsedFinished(value: boolean) {
+    setTimeout(() => {
+      this.activeSessionsCollapsedFinished = value
+    }, 1)
+  }
+
+  toggleCompletedSessionsCollapsedFinished(value: boolean) {
+    setTimeout(() => {
+      this.completedSessionsCollapsedFinished = value
+    }, 1)
+  }  
 
 }

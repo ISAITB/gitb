@@ -78,16 +78,16 @@ class TestCaseManager @Inject() (testResultManager: TestResultManager, dbConfigP
 		}
 	}
 
-	def updateTestCaseMetadata(testCaseId: Long, name: String, description: Option[String], documentation: Option[String], isOptional: Boolean, isDisabled: Boolean, tags: Option[String]): Unit = {
+	def updateTestCaseMetadata(testCaseId: Long, name: String, description: Option[String], documentation: Option[String], isOptional: Boolean, isDisabled: Boolean, tags: Option[String], specReference: Option[String], specDescription: Option[String], specLink: Option[String]): Unit = {
 		var hasDocumentationToSet = false
 		var documentationToSet: Option[String] = None
 		if (documentation.isDefined && !documentation.get.isBlank) {
 			hasDocumentationToSet = true
 			documentationToSet = documentation
 		}
-		val q1 = for {t <- PersistenceSchema.testCases if t.id === testCaseId} yield (t.shortname, t.fullname, t.description, t.documentation, t.hasDocumentation, t.isOptional, t.isDisabled, t.tags)
+		val q1 = for {t <- PersistenceSchema.testCases if t.id === testCaseId} yield (t.shortname, t.fullname, t.description, t.documentation, t.hasDocumentation, t.isOptional, t.isDisabled, t.tags, t.specReference, t.specDescription, t.specLink)
 		exec(
-			q1.update(name, name, description, documentationToSet, hasDocumentationToSet, isOptional, isDisabled, tags) andThen
+			q1.update(name, name, description, documentationToSet, hasDocumentationToSet, isOptional, isDisabled, tags, specReference, specDescription, specLink) andThen
 				testResultManager.updateForUpdatedTestCase(testCaseId, name)
 					.transactionally
 		)
@@ -98,9 +98,9 @@ class TestCaseManager @Inject() (testResultManager: TestResultManager, dbConfigP
 		q1.update(path, testSuiteOrder, Some(targetActors))
 	}
 
-	def updateTestCase(testCaseId: Long, identifier: String, shortName: String, fullName: String, version: String, authors: Option[String], description: Option[String], keywords: Option[String], testCaseType: Short, path: String, testSuiteOrder: Short, targetActors: String, hasDocumentation: Boolean, documentation: Option[String], isOptional: Boolean, isDisabled: Boolean, tags: Option[String]): DBIO[_] = {
-		val q1 = for {t <- PersistenceSchema.testCases if t.id === testCaseId} yield (t.identifier, t.shortname, t.fullname, t.version, t.authors, t.description, t.keywords, t.testCaseType, t.path, t.testSuiteOrder, t.targetActors, t.hasDocumentation, t.documentation, t.isOptional, t.isDisabled, t.tags)
-		q1.update(identifier, shortName, fullName, version, authors, description, keywords, testCaseType, path, testSuiteOrder, Some(targetActors), hasDocumentation, documentation, isOptional, isDisabled, tags) andThen
+	def updateTestCase(testCaseId: Long, identifier: String, shortName: String, fullName: String, version: String, authors: Option[String], description: Option[String], keywords: Option[String], testCaseType: Short, path: String, testSuiteOrder: Short, targetActors: String, hasDocumentation: Boolean, documentation: Option[String], isOptional: Boolean, isDisabled: Boolean, tags: Option[String], specReference: Option[String], specDescription: Option[String], specLink: Option[String]): DBIO[_] = {
+		val q1 = for {t <- PersistenceSchema.testCases if t.id === testCaseId} yield (t.identifier, t.shortname, t.fullname, t.version, t.authors, t.description, t.keywords, t.testCaseType, t.path, t.testSuiteOrder, t.targetActors, t.hasDocumentation, t.documentation, t.isOptional, t.isDisabled, t.tags, t.specReference, t.specDescription, t.specLink)
+		q1.update(identifier, shortName, fullName, version, authors, description, keywords, testCaseType, path, testSuiteOrder, Some(targetActors), hasDocumentation, documentation, isOptional, isDisabled, tags, specReference, specDescription, specLink) andThen
 		testResultManager.updateForUpdatedTestCase(testCaseId, shortName)
 	}
 
@@ -115,6 +115,7 @@ class TestCaseManager @Inject() (testResultManager: TestResultManager, dbConfigP
 		actions += PersistenceSchema.testCaseCoversOptions.filter(_.testcase === testCaseId).delete
 		actions += PersistenceSchema.testSuiteHasTestCases.filter(_.testcase === testCaseId).delete
 		actions += PersistenceSchema.conformanceSnapshotResults.filter(_.testCaseId === testCaseId).map(_.testCaseId).update(testCaseId * -1)
+		actions += PersistenceSchema.conformanceSnapshotTestCases.filter(_.id === testCaseId).map(_.id).update(testCaseId * -1)
 		actions += PersistenceSchema.conformanceResults.filter(_.testcase === testCaseId).delete
 		actions += PersistenceSchema.testCases.filter(_.id === testCaseId).delete
 		DBIO.seq(actions.toList.map(a => a): _*)

@@ -1,7 +1,7 @@
 <div class="page-with-margins">
     <div class="container">
         <div class="row">
-            <div class="col-md-12">
+            <div class="col-12">
                 <ng-container [ngSwitch]="dataService.currentLandingPageContent == undefined">
                     <div class="container" *ngSwitchCase="true"><span class="tab" style="font-size: xx-large;"><i class="fa-solid fa-spinner fa-spin-override fa-lg"></i></span></div>
                     <div id="content" *ngSwitchCase="false" [innerHtml]="dataService.currentLandingPageContent! | sanitizeHtml"></div>

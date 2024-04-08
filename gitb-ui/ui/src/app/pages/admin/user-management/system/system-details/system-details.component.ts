@@ -67,7 +67,7 @@ export class SystemDetailsComponent extends BaseComponent implements OnInit {
       if (this.system.owner == this.dataService.vendor?.id) {
         this.routingService.ownSystemBreadcrumbs(this.systemId, this.system.sname!)
       } else {
-        this.routingService.systemBreadcrumbs(this.communityId, this.organisationId, this.systemId, this.system.sname!)
+        this.routingService.systemBreadcrumbs(this.communityId, this.organisationId, undefined, this.systemId, this.system.sname!)
       }
     })
   }

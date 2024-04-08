@@ -8,7 +8,9 @@
       "schematics": {
         "@schematics/angular:component": {
           "skipTests": true,
-          "inlineStyle": true
+          "inlineStyle": false,
+          "style": "less",
+          "standalone": false
         },
         "@schematics/angular:service": {
           "skipTests": true,
@@ -39,7 +41,7 @@
               { "glob": "**/*", "input": "node_modules/tinymce", "output": "/tinymce/" }
             ],
             "styles": [
-              "node_modules/bootstrap/dist/css/bootstrap.min.css",
+              "src/styles/styles.scss",
               "node_modules/@fortawesome/fontawesome-free/css/fontawesome.css",
               "node_modules/@fortawesome/fontawesome-free/css/solid.css",
               "node_modules/@fortawesome/fontawesome-free/css/regular.css",
@@ -101,18 +103,18 @@
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
           "options": {
-            "browserTarget": "ui:build"
+            "buildTarget": "ui:build"
           },
           "configurations": {
             "production": {
-              "browserTarget": "ui:build:production"
+              "buildTarget": "ui:build:production"
             }
           }
         },
         "extract-i18n": {
           "builder": "@angular-devkit/build-angular:extract-i18n",
           "options": {
-            "browserTarget": "ui:build"
+            "buildTarget": "ui:build"
           }
         },
         "test": {
@@ -160,5 +162,7 @@
       }
     }
   },
-  "defaultProject": "ui"
+  "cli": {
+    "analytics": false
+  }
 }

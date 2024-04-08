@@ -1,6 +1,6 @@
 package com.gitb.engine.actors;
 
-import akka.actor.ActorRef;
+import org.apache.pekko.actor.ActorRef;
 import com.gitb.engine.actors.supervisors.SessionSupervisor;
 
 /**
@@ -13,12 +13,12 @@ public class ActorSystem {
 
 	public static final String BLOCKING_DISPATCHER = "blocking-processor-dispatcher";
 
-	private akka.actor.ActorSystem system;
+	private org.apache.pekko.actor.ActorSystem system;
 
 	private ActorRef sessionSupervisor;
 
 	public ActorSystem() {
-		system = akka.actor.ActorSystem.create(ACTOR_SYSTEM_NAME);
+		system = org.apache.pekko.actor.ActorSystem.create(ACTOR_SYSTEM_NAME);
 
 		init();
 	}
@@ -27,7 +27,7 @@ public class ActorSystem {
 		sessionSupervisor = SessionSupervisor.create(system);
 	}
 
-	public akka.actor.ActorSystem getActorSystem() {
+	public org.apache.pekko.actor.ActorSystem getActorSystem() {
 		return system;
 	}
 

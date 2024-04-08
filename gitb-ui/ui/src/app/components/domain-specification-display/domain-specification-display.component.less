@@ -3,7 +3,7 @@
 .root-container {
     padding: 10px;
     border: 1px solid @gray-dark-1;
-    border-radius: 5px;
+    border-radius: @border-radius;
     display: flex;
     background-color: @gray-light-1;
     flex-wrap: wrap;
@@ -16,14 +16,18 @@
         background-color: @white;
     }
     &:hover {
-        cursor: pointer;
-        background-color: @gray-highlight;
+        &:not(.dragging) {
+            cursor: pointer;
+            background-color: @gray-highlight;
+        }
     }    
     &.top-level {
         background-color: @white;
-        &:hover {
-            cursor: pointer;
-            background-color: @white-shaded;
+        &:not(.dragging) {
+            &:hover {
+                cursor: pointer;
+                background-color: @white-shaded;
+            }
         }
     }
     .spec-container {
@@ -48,12 +52,7 @@
         align-items: center;
         .btn-toolbar {
             display: flex;
-            &.btn-stacked {
-                display: flex;
-                flex-flow: column;
-                align-self: center;
-                margin-left: 0px;
-            }
+            flex-wrap: nowrap;            
         }
         .spec-hidden {
             margin-right: 10px;
@@ -72,7 +71,7 @@
     .no-options {
         padding: 10px;
         border: 1px solid @gray-dark-1;
-        border-radius: 5px;
+        border-radius: @border-radius;
         background-color: @gray-light-1;
     }
 }

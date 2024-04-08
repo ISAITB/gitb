@@ -1,13 +1,16 @@
-section.page-top {
-    background-color: #171717;
-    border-bottom-color: #CCC;
-}
-
-section.page-top h2 {
-    color: #FFF;
-}
-
-.footer-bar {
-    background-color: #121214;
-    border-top-color: #CCC;
+:root {
+     --itb-modal-title-color: #337ab7;
+     --itb-card-title-color: #337ab7;
+     --itb-table-title-color: #337ab7;
+     --itb-heading-color: #337ab7;
+     --itb-tab-link-color: #337ab7;
+     --itb-page-title-color: #FFF;
+     --itb-footer-text-color: #FFF;
+     --itb-header-background-color: #171717;
+     --itb-header-border-color: #CCC;
+     --itb-footer-background-color: #121214;
+     --itb-footer-border-color: #CCC;
+     --itb-header-logo-path: url("http://localhost:9000/assets/images/gitb.png");
+     --itb-footer-logo-display: none;
+     --itb-footer-logo-path: url("http://localhost:9000/assets/images/gitb.png");
 }

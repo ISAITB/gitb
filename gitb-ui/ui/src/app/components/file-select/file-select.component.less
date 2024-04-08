@@ -1,0 +1,23 @@
+@import '../../../styles/less/_common.less';
+
+@stripe-color-1: lighten(@bs-input-focus-highlight, 10%);
+@stripe-color-2: lighten(@bs-input-focus-highlight, 15%);
+@stripe-width: 10;
+.drag-active {
+    border-color: @bs-input-focus-highlight;
+    font-weight: bold;
+    text-align: center;
+    background-image: repeating-linear-gradient(
+        45deg,
+        @stripe-color-1,
+        @stripe-color-1 (@stripe-width * 1px),
+        @stripe-color-2 (@stripe-width * 1px),
+        @stripe-color-2 (@stripe-width * 2px)
+    );
+    &.drop-active {
+        box-shadow: 0 0 0 var(--bs-focus-ring-width) @bs-input-focus-highlight;
+    }
+}
+.drop-icon {
+    margin-right: 10px;
+}

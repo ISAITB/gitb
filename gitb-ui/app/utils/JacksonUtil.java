@@ -125,8 +125,7 @@ public class JacksonUtil {
         @Override
         public void serialize(TestStepReportType testStepReport, JsonGenerator json, SerializerProvider serializerProvider) throws IOException, JsonProcessingException {
             json.writeStartObject();
-            if(testStepReport instanceof TAR) {
-                TAR tar = (TAR) testStepReport;
+            if(testStepReport instanceof TAR tar) {
                 json.writeStringField("name", tar.getName());
                 json.writeObjectField("overview", tar.getOverview());
                 json.writeObjectField("counters", tar.getCounters());
@@ -134,8 +133,7 @@ public class JacksonUtil {
                 json.writeObjectField("reports", tar.getReports());
                 json.writeStringField("type", "TAR");
 
-            } else if(testStepReport instanceof DR) {
-                DR decisionReport = (DR) testStepReport;
+            } else if(testStepReport instanceof DR decisionReport) {
                 json.writeStringField("type", "DR");
                 json.writeBooleanField("decision", decisionReport.isDecision());
             } else {
@@ -183,10 +181,18 @@ public class JacksonUtil {
             json.writeStringField("stepId", value.getStepId());
             json.writeStringField("tcInstanceId", value.getTcInstanceid());
 
-            if(value.getInteraction().getWith() != null) {
+            if (value.getInteraction().getWith() != null) {
                 json.writeStringField("with", value.getInteraction().getWith());
             }
-            json.writeStringField("inputTitle", value.getInteraction().getInputTitle());
+            if (value.getInteraction().getInputTitle() != null) {
+                json.writeStringField("inputTitle", value.getInteraction().getInputTitle());
+            }
+            if (value.getInteraction().isAdmin()) {
+                json.writeBooleanField("admin", true);
+            }
+            if (value.getInteraction().getDesc() != null) {
+                json.writeStringField("desc", value.getInteraction().getDesc());
+            }
 
             json.writeArrayFieldStart("interactions");
             for(Object ior : value.getInteraction().getInstructionOrRequest()){
@@ -348,6 +354,7 @@ public class JacksonUtil {
                     jsonGenerator.writeStringField("type", "interact");
                     jsonGenerator.writeStringField("title", ((UserInteractionStep) step).getTitle());
                     jsonGenerator.writeBooleanField("collapsed", ((UserInteractionStep) step).isCollapsed());
+                    jsonGenerator.writeBooleanField("admin", ((UserInteractionStep) step).isAdmin());
                     jsonGenerator.writeArrayFieldStart("interactions");
                     for(InstructionOrRequest ior : ((UserInteractionStep) step).getInstructOrRequest()){
                         jsonGenerator.writeStartObject();

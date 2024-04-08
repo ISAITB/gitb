@@ -1,17 +1,16 @@
 @(config: models.PublicConfig, mode: play.api.Mode)
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
 	<meta charset="utf-8">
 	<title>Interoperability Test Bed</title>
 	<base href="@config.contextPath">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<link rel="icon" type="image/x-icon" href="favicon.ico">
-	<link rel="stylesheet" href="api/theme/css">
 	<link rel="stylesheet" href='assets/build/styles.css?v=@config.resourceVersionNumber'>
+	<link id="themeCssLink" rel="stylesheet" href="api/theme/css">
+	<link id="themeFaviconLink" rel="icon" href="favicon.ico">
 	<script type="text/javascript" src="assets/javascripts/routes"></script>
 	<script type="text/javascript" src='assets/build/runtime.js?v=@config.resourceVersionNumber' defer></script>
-	<script src='assets/build/polyfills-es5.js?v=@config.resourceVersionNumber' nomodule defer></script>
 	<script src='assets/build/polyfills.js?v=@config.resourceVersionNumber' defer></script>
 	@if(mode != play.api.Mode.Prod) {
 	<script type="text/javascript" src='assets/build/scripts.js?v=@config.resourceVersionNumber' defer></script>

@@ -16,16 +16,12 @@ object Constants {
   val MasterPassword = "master_password"
   val DemoAccount = "demo_account"
   val WelcomeMessage = "welcome"
+  val AccountRetentionPeriod = "account_retention_period"
+  val EmailSettings = "email_settings"
 
   // env variables
   val EnvironmentTheme = "THEME"
   val DefaultTheme = "gitb"
-  val EcTheme = "ec"
-  val ImagePath = "assets/images/"
-  val EcLogo: String = ImagePath + "ec.png"
-  val GitbLogo: String = ImagePath + "gitb.png"
-  val EcFavicon = "public/images/favicon-ec.gif"
-  val GitbFavicon = "public/images/favicon.png"
 
   val domainTestVariable = "DOMAIN"
   val organisationTestVariable = "ORGANISATION"
@@ -48,6 +44,8 @@ object Constants {
   val PlaceholderSpecificationGroupOption = "$SPECIFICATION_GROUP_OPTION"
   val PlaceholderActor = "$ACTOR"
   val PlaceholderDomain = "$DOMAIN"
+  val PlaceholderBadge = "$BADGE"
+  val PlaceholderBadges = "$BADGES"
 
   val ProductionMode = "production"
   val DevelopmentMode = "development"
@@ -59,6 +57,9 @@ object Constants {
   val defaultPage = 1L
   val defaultLimit = 10L
 
+  val MimeTypePDF = "application/pdf"
+  val MimeTypeXML = "application/xml"
+
   // When ending in "-snapshot", this is considered a non-published release.
-  val VersionNumber = "1.21.1"
+  val VersionNumber = "1.22.0"
 }

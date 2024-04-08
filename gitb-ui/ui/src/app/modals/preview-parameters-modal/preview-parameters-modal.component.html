@@ -1,66 +1,63 @@
 <div class="modal-header">
-	<h4>{{modalTitle}}</h4>
+    <div class="modal-title">{{modalTitle}}</div>
 </div>
-<form class="form-horizontal">
-	<div class="modal-body">
+<form>
+	<div class="modal-body" appFileDropTarget>
         <div class="row">
-            <div class="col-xs-12">
-                <div class="bg-info div-rounded div-padded bottom-margin">
+            <div class="col-12">
+                <div class="alert alert-info rounded">
                     <span>The defined properties generate a form that differs depending on the connected user. Use the preview mode below to ensure this form matches your expectations for each case.</span>
                 </div>
             </div>
         </div>
         <div class="row">
-            <div class="col-xs-10 col-xs-offset-1">
-                <div class="form-group">
-                    <label class="col-xs-3 control-label" for="mode">Preview mode:</label>
-                    <div class="col-xs-8">
-                        <select class="form-control" id="mode" name="mode" [(ngModel)]="mode">
+            <div class="col-10 offset-1">
+                <div class="row mb-3">
+                    <label class="col-3 col-form-label text-end" for="mode">Preview mode:</label>
+                    <div class="col-8">
+                        <select class="form-control form-select" id="mode" name="mode" [(ngModel)]="mode">
                             <option value="user">{{dataService.labelOrganisation()}} user</option>
                             <option value="registration" *ngIf="hasRegistrationCase">Self-registration screen</option>
                             <option value="admin">Community administrator</option>
                         </select>
                     </div>
-                    <app-tooltip tbTooltip="The mode to consider to generate the preview."></app-tooltip>
+                    <div app-tooltip class="col-auto" tbTooltip="The mode to consider to generate the preview."></div>
                 </div>
             </div>
         </div>
-        <div class="row">
-            <div class="col-xs-12">
-                <div class="form-separator">
-                    <h4 class="title">Property form</h4>
-                </div>
-            </div>
-        </div>
-        <app-custom-property-form *ngIf="mode == 'user'"
-            [tbProperties]="parameters"
-            [tbPropertyType]="parameterType"
-            [tbShowFormHeader]="false"
-            [tbSetDefaults]="true"
-            [tbAdmin]="false"></app-custom-property-form>
-        <app-custom-property-form *ngIf="mode == 'admin'"
-            [tbProperties]="parameters"
-            [tbPropertyType]="parameterType"
-            [tbShowFormHeader]="false"
-            [tbSetDefaults]="true"
-            [tbAdmin]="true"></app-custom-property-form>
-        <app-custom-property-form *ngIf="hasRegistrationCase && mode == 'registration'"
-            [tbProperties]="parametersForRegistration"
-            [tbPropertyType]="parameterType"
-            [tbShowFormHeader]="false"
-            [tbSetDefaults]="true"
-            [tbAdmin]="false"></app-custom-property-form>
-        <div *ngIf="!hasVisibleProperties()">
-            <div class="row">
-                <div class="col-xs-12">
-                    <div class="bg-info div-rounded div-padded bottom-margin">
-                        <span>The form resulting from the defined properties and selected preview mode is empty.</span>
+        <app-form-section sectionTitle="Property form">
+            <app-custom-property-form *ngIf="mode == 'user'"
+                [tbProperties]="parameters"
+                [tbPropertyType]="parameterType"
+                [tbShowFormHeader]="false"
+                [tbSetDefaults]="true"
+                [tbAdmin]="false"></app-custom-property-form>
+            <app-custom-property-form *ngIf="mode == 'admin'"
+                [tbProperties]="parameters"
+                [tbPropertyType]="parameterType"
+                [tbShowFormHeader]="false"
+                [tbSetDefaults]="true"
+                [tbAdmin]="true"></app-custom-property-form>
+            <app-custom-property-form *ngIf="hasRegistrationCase && mode == 'registration'"
+                [tbProperties]="parametersForRegistration"
+                [tbPropertyType]="parameterType"
+                [tbShowFormHeader]="false"
+                [tbSetDefaults]="true"
+                [tbAdmin]="false"></app-custom-property-form>
+            <div *ngIf="!hasVisibleProperties()">
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <div class="alert alert-info rounded mb-0">
+                            <span>The form resulting from the defined properties and selected preview mode is empty.</span>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </app-form-section>
 	</div>
 	<div class="modal-footer">
-        <button class="btn btn-default" type="button" (click)="close()">Close</button>
+        <div class="btn-toolbar">
+            <button class="btn btn-secondary" type="button" (click)="close()">Close</button>
+        </div>
 	</div>
 </form>

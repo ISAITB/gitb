@@ -13,6 +13,8 @@ import models.Enums.TestSuiteReplacementChoice.TestSuiteReplacementChoice
 import models.Enums._
 import models._
 import models.automation._
+import models.snapshot.ConformanceSnapshot
+import models.theme.Theme
 import org.apache.commons.codec.binary.Base64
 import play.api.libs.json.{JsObject, Json, _}
 
@@ -22,6 +24,41 @@ import scala.collection.{immutable, mutable}
 import scala.jdk.CollectionConverters.{CollectionHasAsScala, IterableHasAsJava}
 
 object JsonUtil {
+
+  def jsThemes(themes: List[Theme]): JsArray = {
+    var json = Json.arr()
+    themes.foreach { theme =>
+      json = json.append(jsTheme(theme))
+    }
+    json
+  }
+
+  def jsTheme(theme: Theme): JsObject = {
+    Json.obj(
+      "id" -> theme.id,
+      "key" -> theme.key,
+      "description" -> (if (theme.description.isDefined) theme.description.get else JsNull),
+      "active" -> JsBoolean(theme.active),
+      "custom" -> JsBoolean(theme.custom),
+      "separatorTitleColor" -> theme.separatorTitleColor,
+      "modalTitleColor" -> theme.modalTitleColor,
+      "tableTitleColor" -> theme.tableTitleColor,
+      "cardTitleColor" -> theme.cardTitleColor,
+      "pageTitleColor" -> theme.pageTitleColor,
+      "headingColor" -> theme.headingColor,
+      "tabLinkColor" -> theme.tabLinkColor,
+      "footerTextColor" -> theme.footerTextColor,
+      "headerBackgroundColor" -> theme.headerBackgroundColor,
+      "headerBorderColor" -> theme.headerBorderColor,
+      "headerSeparatorColor" -> theme.headerSeparatorColor,
+      "headerLogoPath" -> theme.headerLogoPath,
+      "footerBackgroundColor" -> theme.footerBackgroundColor,
+      "footerBorderColor" -> theme.footerBorderColor,
+      "footerLogoPath" -> theme.footerLogoPath,
+      "footerLogoDisplay" -> theme.footerLogoDisplay,
+      "faviconPath" -> theme.faviconPath
+    )
+  }
 
   def jsTextArray(texts: List[String]): JsObject = {
     var textArray = Json.arr()
@@ -34,7 +71,7 @@ object JsonUtil {
     json
   }
 
-  def jsStringArray(texts: List[String]): JsValue = {
+  def jsStringArray(texts: Iterable[String]): JsValue = {
     var textArray = Json.arr()
     texts.foreach { text =>
       textArray = textArray.append(JsString(text))
@@ -265,8 +302,8 @@ object JsonUtil {
     "resources/" + resource.name
   }
 
-  def jsTestSuite(suite: TestSuites, specificationIds: Option[List[Long]], withDocumentation: Boolean): JsObject = {
-    val json = Json.obj(
+  def jsTestSuite(suite: TestSuites, specificationIds: Option[List[Long]], withDocumentation: Boolean, withSpecReference: Boolean): JsObject = {
+    var json = Json.obj(
       "id"                -> suite.id,
       "identifier"        -> suite.identifier,
       "sname"             -> suite.shortname,
@@ -282,6 +319,11 @@ object JsonUtil {
       "shared"            -> suite.shared,
       "documentation"     -> (if(withDocumentation && suite.documentation.isDefined) suite.documentation else JsNull),
     )
+    if (withSpecReference) {
+      if (suite.specReference.isDefined) json = json + ("specReference" -> JsString(suite.specReference.get))
+      if (suite.specDescription.isDefined) json = json + ("specDescription" -> JsString(suite.specDescription.get))
+      if (suite.specLink.isDefined) json = json + ("specLink" -> JsString(suite.specLink.get))
+    }
     json
   }
 
@@ -332,13 +374,13 @@ object JsonUtil {
   def jsTestSuitesList(list: List[TestSuites]): JsArray = {
     var json = Json.arr()
     list.foreach { testSuite =>
-      json = json.append(jsTestSuite(testSuite, None, withDocumentation = false))
+      json = json.append(jsTestSuite(testSuite, None, withDocumentation = false, withSpecReference = false))
     }
     json
   }
 
-  def jsTestSuite(testSuite: TestSuite, withDocumentation: Boolean): JsObject = {
-    var jTestSuite: JsObject = jsTestSuite(testSuite.toCaseObject, testSuite.specifications, withDocumentation)
+  def jsTestSuite(testSuite: TestSuite, withDocumentation: Boolean, withSpecReference: Boolean): JsObject = {
+    var jTestSuite: JsObject = jsTestSuite(testSuite.toCaseObject, testSuite.specifications, withDocumentation, withSpecReference)
     if (testSuite.testCases.isDefined) {
       jTestSuite = jTestSuite ++ Json.obj("testCases" -> jsTestCasesList(testSuite.testCases.get))
     } else {
@@ -350,7 +392,7 @@ object JsonUtil {
   def jsTestSuiteList(testSuites: Iterable[TestSuite]): JsArray = {
     var json = Json.arr()
     testSuites.foreach { testSuite =>
-      json = json.append(jsTestSuite(testSuite, withDocumentation = false))
+      json = json.append(jsTestSuite(testSuite, withDocumentation = false, withSpecReference = false))
     }
     json
   }
@@ -528,7 +570,14 @@ object JsonUtil {
       "default" -> config.defaultSetting,
       "environment" -> config.environmentSetting
     )
-    if (config.config.parameter.isDefined) json = json + ("parameter" -> JsString(config.config.parameter.get))
+    if (config.config.parameter.isDefined) {
+      if (config.config.name == Constants.EmailSettings) {
+        // Make sure the SMTP password is not included.
+        json = json + ("parameter" -> JsString(jsEmailSettings(parseJsEmailSettings(config.config.parameter.get)).toString()))
+      } else {
+        json = json + ("parameter" -> JsString(config.config.parameter.get))
+      }
+    }
     json
   }
 
@@ -707,10 +756,11 @@ object JsonUtil {
       json = json.+("selfRegRestriction" -> JsNumber(community.selfRegRestriction))
       json = json.+("selfRegToken" -> (if(community.selfRegToken.isDefined) JsString(community.selfRegToken.get) else JsNull))
       json = json.+("selfRegTokenHelpText" -> (if(community.selfRegTokenHelpText.isDefined) JsString(community.selfRegTokenHelpText.get) else JsNull))
-      json = json.+("selfRegNotification" -> JsBoolean(community.selfregNotification))
+      json = json.+("selfRegNotification" -> JsBoolean(community.selfRegNotification))
       json = json.+("selfRegForceTemplateSelection" -> JsBoolean(community.selfRegForceTemplateSelection))
       json = json.+("selfRegForceRequiredProperties" -> JsBoolean(community.selfRegForceRequiredProperties))
       json = json.+("description" -> (if(community.description.isDefined) JsString(community.description.get) else JsNull))
+      json = json.+("interactionNotification" -> JsBoolean(community.interactionNotification))
       if (Configurations.AUTOMATION_API_ENABLED) {
         json = json.+("apiKey" -> JsString(community.apiKey))
       }
@@ -784,12 +834,29 @@ object JsonUtil {
     json
   }
 
+  def jsCommunityDomains(domains: List[Domain], linkedDomain: Option[Long]): JsObject = {
+    var json = Json.obj(
+      "domains" -> jsDomains(domains)
+    )
+    if (linkedDomain.isDefined) {
+      json = json + ("linkedDomain" -> JsNumber(linkedDomain.get))
+    }
+    json
+  }
+
+  def jsFileReference(dataURL: String, mimeType: String): JsObject = {
+    Json.obj(
+      "dataAsDataURL" -> dataURL,
+      "mimeType" -> mimeType
+    )
+  }
+
   /**
    * Converts a Specification object into Play!'s JSON notation.
    * @param spec Specification object to be converted
    * @return JsObject
    */
-  def jsSpecification(spec:Specifications, withApiKeys:Boolean = false, badgeStatus: Option[BadgeStatus] = None) : JsObject = {
+  def jsSpecification(spec:Specifications, withApiKeys:Boolean = false, badgeStatus: Option[(BadgeStatus, BadgeStatus)] = None) : JsObject = {
     var json = Json.obj(
       "id"      -> spec.id,
       "sname"   -> spec.shortname,
@@ -804,12 +871,12 @@ object JsonUtil {
       json = json.+("apiKey" -> JsString(spec.apiKey))
     }
     if (badgeStatus.isDefined) {
-      json = json.+("badges" -> jsBadgeStatus(badgeStatus.get))
+      json = json.+("badges" -> jsBadgeStatus(badgeStatus.get._1, badgeStatus.get._2))
     }
     json
   }
 
-  private def jsBadgeStatus(badgeStatus: BadgeStatus): JsObject = {
+  private def jsBadgeStatus(badgeStatus: BadgeStatus, badgeStatusForReport: BadgeStatus): JsObject = {
     Json.obj(
       "success" -> Json.obj(
         "enabled" -> badgeStatus.success.isDefined,
@@ -822,6 +889,18 @@ object JsonUtil {
       "other" -> Json.obj(
         "enabled" -> badgeStatus.other.isDefined,
         "nameToShow" -> (if (badgeStatus.other.isDefined) badgeStatus.other.get else JsNull)
+      ),
+      "successForReport" -> Json.obj(
+        "enabled" -> badgeStatusForReport.success.isDefined,
+        "nameToShow" -> (if (badgeStatusForReport.success.isDefined) badgeStatusForReport.success.get else JsNull)
+      ),
+      "failureForReport" -> Json.obj(
+        "enabled" -> badgeStatusForReport.failure.isDefined,
+        "nameToShow" -> (if (badgeStatusForReport.failure.isDefined) badgeStatusForReport.failure.get else JsNull)
+      ),
+      "otherForReport" -> Json.obj(
+        "enabled" -> badgeStatusForReport.other.isDefined,
+        "nameToShow" -> (if (badgeStatusForReport.other.isDefined) badgeStatusForReport.other.get else JsNull)
       )
     )
   }
@@ -841,10 +920,10 @@ object JsonUtil {
    * Converts a List of Specifications into Play!'s JSON notation
    * @return JsArray
    */
-  def jsSpecifications(list:Iterable[Specifications], withApiKeys:Boolean = false, badgeStatus: Option[BadgeStatus] = None):JsArray = {
+  def jsSpecifications(list:Iterable[Specifications], withApiKeys:Boolean = false):JsArray = {
     var json = Json.arr()
     list.foreach{ spec =>
-      json = json.append(jsSpecification(spec, withApiKeys, badgeStatus))
+      json = json.append(jsSpecification(spec, withApiKeys, None))
     }
     json
   }
@@ -876,7 +955,7 @@ object JsonUtil {
     json
   }
 
-  def jsActor(actor:Actor, badgeStatus: Option[BadgeStatus] = None) : JsObject = {
+  def jsActor(actor:Actor, badgeStatus: Option[(BadgeStatus, BadgeStatus)] = None) : JsObject = {
     var json = Json.obj(
       "id" -> actor.id,
       "actorId" -> actor.actorId,
@@ -892,7 +971,7 @@ object JsonUtil {
       json = json.+("apiKey"  -> (if(actor.apiKey.isDefined) JsString(actor.apiKey.get) else JsNull))
     }
     if (badgeStatus.isDefined) {
-      json = json.+("badges" -> jsBadgeStatus(badgeStatus.get))
+      json = json.+("badges" -> jsBadgeStatus(badgeStatus.get._1, badgeStatus.get._2))
     }
     json
   }
@@ -905,7 +984,7 @@ object JsonUtil {
     json
   }
 
-	def jsConformanceStatement(conformanceStatement: ConformanceStatement): JsObject = {
+	def jsConformanceStatement(conformanceStatement: models.ConformanceStatement): JsObject = {
 		val json = Json.obj(
       "domainId" -> conformanceStatement.domainId,
       "domain" -> conformanceStatement.domainName,
@@ -929,7 +1008,7 @@ object JsonUtil {
 		json
 	}
 
-	def jsConformanceStatements(list: List[ConformanceStatement]): JsArray = {
+	def jsConformanceStatements(list: List[models.ConformanceStatement]): JsArray = {
 		var json = Json.arr()
 		list.foreach { cs =>
 			json = json.append(jsConformanceStatement(cs))
@@ -1031,7 +1110,7 @@ object JsonUtil {
     testCaseActions.foreach { action =>
       testCaseMap.put(action.identifier, action)
     }
-    (TestSuiteDeployRequest(specification, ignoreWarnings, replaceTestHistory, updateSpecification, testCaseMap.toMap, sharedTestSuite), testSuite)
+    (TestSuiteDeployRequest(specification, ignoreWarnings, replaceTestHistory, updateSpecification, testCaseMap, sharedTestSuite), testSuite)
   }
 
   def parseJsTestSuiteUndeployRequest(jsonConfig: JsValue, sharedTestSuite: Boolean): TestSuiteUndeployRequest = {
@@ -1042,6 +1121,43 @@ object JsonUtil {
     }
     val testSuite = (jsonConfig \ "testSuite").as[String]
     TestSuiteUndeployRequest(specification, testSuite, sharedTestSuite)
+  }
+
+  def parseJsConfigurationRequest(json: JsValue): ConfigurationRequest = {
+    ConfigurationRequest(
+      domainProperties = parseJsKeyValueArray((json \ "domainProperties").asOpt[JsArray].getOrElse(JsArray.empty)),
+      organisationProperties = parseJsPartyConfigurationArray((json \ "organisationProperties").asOpt[JsArray].getOrElse(JsArray.empty), "organisation"),
+      systemProperties = parseJsPartyConfigurationArray((json \ "systemProperties").asOpt[JsArray].getOrElse(JsArray.empty), "system"),
+      statementProperties = parseJsStatementConfigurationArray((json \ "statementProperties").asOpt[JsArray].getOrElse(JsArray.empty))
+    )
+  }
+
+  private def parseJsStatementConfigurationArray(jsonArray: JsArray): List[StatementConfiguration] = {
+    jsonArray.value.map { json =>
+      StatementConfiguration(
+        (json \ "system").as[String],
+        (json \ "actor").as[String],
+        parseJsKeyValueArray((json \ "properties").asOpt[JsArray].getOrElse(JsArray.empty))
+      )
+    }.toList
+  }
+
+  private def parseJsPartyConfigurationArray(jsonArray: JsArray, partyPropertyName: String): List[PartyConfiguration] = {
+    jsonArray.value.map { json =>
+      PartyConfiguration(
+        (json \ partyPropertyName).as[String],
+        parseJsKeyValueArray((json \ "properties").asOpt[JsArray].getOrElse(JsArray.empty))
+      )
+    }.toList
+  }
+
+  private def parseJsKeyValueArray(jsonArray: JsArray): List[KeyValue] = {
+    jsonArray.value.map { json =>
+      KeyValue(
+        (json \ "key").as[String],
+        (json \ "value").asOpt[String]
+      )
+    }.toList
   }
 
   def parseJsTestSuiteLinkRequest(json: JsValue): TestSuiteLinkRequest = {
@@ -1275,7 +1391,7 @@ object JsonUtil {
     result
   }
 
-  def parseJsExportSettings(json:String):ExportSettings = {
+  def parseJsExportSettings(json:String, includeSettings: Boolean):ExportSettings = {
     val jsonConfig = Json.parse(json).as[JsObject]
     val settings = new ExportSettings()
     settings.communityAdministrators = (jsonConfig \ "communityAdministrators").as[Boolean]
@@ -1300,6 +1416,21 @@ object JsonUtil {
     settings.actors = (jsonConfig \ "actors").as[Boolean]
     settings.endpoints = (jsonConfig \ "endpoints").as[Boolean]
     settings.testSuites = (jsonConfig \ "testSuites").as[Boolean]
+    if (includeSettings) {
+      settings.themes = (jsonConfig \ "themes").as[Boolean]
+      settings.systemAdministrators = (jsonConfig \ "systemAdministrators").as[Boolean]
+      settings.defaultLandingPages = (jsonConfig \ "defaultLandingPages").as[Boolean]
+      settings.defaultLegalNotices = (jsonConfig \ "defaultLegalNotices").as[Boolean]
+      settings.defaultErrorTemplates = (jsonConfig \ "defaultErrorTemplates").as[Boolean]
+      settings.systemConfigurations = (jsonConfig \ "systemConfigurations").as[Boolean]
+    } else {
+      settings.themes = false
+      settings.systemAdministrators = false
+      settings.defaultLandingPages = false
+      settings.defaultLegalNotices = false
+      settings.defaultErrorTemplates = false
+      settings.systemConfigurations = false
+    }
     settings.encryptionKey = (jsonConfig \ "encryptionKey").asOpt[String]
     settings
   }
@@ -1397,48 +1528,66 @@ object JsonUtil {
     )
   }
 
-  def parseJsConformanceCertificateSettings(json:String, communityId: Long, keystoreData: Option[String]): ConformanceCertificates = {
+  def parseJsConformanceCertificateSettings(json:String, communityId: Long): ConformanceCertificate = {
     val jsonConfig = Json.parse(json).as[JsObject]
     // Ensure the message content (if provided) is correctly sanitized.
     var certificateMessage = (jsonConfig \ "message").asOpt[String]
     if (certificateMessage.isDefined) {
       certificateMessage = Some(HtmlUtil.sanitizePdfContent(certificateMessage.get))
     }
-    ConformanceCertificates(
+    ConformanceCertificate(
       0L,
       (jsonConfig \ "title").asOpt[String],
-      certificateMessage,
       (jsonConfig \ "includeTitle").as[Boolean],
       (jsonConfig \ "includeMessage").as[Boolean],
       (jsonConfig \ "includeTestStatus").as[Boolean],
       (jsonConfig \ "includeTestCases").as[Boolean],
       (jsonConfig \ "includeDetails").as[Boolean],
       (jsonConfig \ "includeSignature").as[Boolean],
-      keystoreData,
-      (jsonConfig \ "keystoreType").asOpt[String],
-      (jsonConfig \ "keystorePassword").asOpt[String],
-      (jsonConfig \ "keyPassword").asOpt[String],
+      (jsonConfig \ "includePageNumbers").as[Boolean],
+      certificateMessage,
       communityId
     )
   }
 
-  def parseJsConformanceCertificateSettingsForKeystoreTest(json:String, communityId: Long): ConformanceCertificates = {
-    val jsonConfig = Json.parse(json).as[JsObject]
-    ConformanceCertificates(
-      0L,
+  def parseJsConformanceOverviewCertificateMessage(json: JsValue, communityId: Long): ConformanceOverviewCertificateMessage = {
+    val id = (json \ "id").asOpt[Long]
+    val identifier = (json \ "identifier").asOpt[Long]
+    val message = HtmlUtil.sanitizePdfContent((json \ "message").as[String])
+    val level = OverviewLevelType.withName((json \ "level").as[String])
+    ConformanceOverviewCertificateMessage(
+      id.getOrElse(0L),
+      level.id.toShort,
+      message,
+      if (level == OverviewLevelType.DomainLevel) identifier else None,
+      if (level == OverviewLevelType.SpecificationGroupLevel) identifier else None,
+      if (level == OverviewLevelType.SpecificationLevel) identifier else None,
       None,
-      None,
-      includeTitle = false,
-      includeMessage = false,
-      includeTestStatus = false,
-      includeTestCases = false,
-      includeDetails = false,
-      includeSignature = false,
-      None,
-      (jsonConfig \ "keystoreType").asOpt[String],
-      (jsonConfig \ "keystorePassword").asOpt[String],
-      (jsonConfig \ "keyPassword").asOpt[String],
       communityId
+    )
+  }
+
+  def parseJsConformanceOverviewCertificateWithMessages(json:String, communityId: Long): ConformanceOverviewCertificateWithMessages = {
+    val jsonConfig = Json.parse(json).as[JsObject]
+    ConformanceOverviewCertificateWithMessages(
+      ConformanceOverviewCertificate(
+        0L,
+        (jsonConfig \ "title").asOpt[String],
+        (jsonConfig \ "includeTitle").as[Boolean],
+        (jsonConfig \ "includeMessage").as[Boolean],
+        (jsonConfig \ "includeTestStatus").as[Boolean],
+        (jsonConfig \ "includeTestCases").as[Boolean],
+        (jsonConfig \ "includeTestCaseDetails").as[Boolean],
+        (jsonConfig \ "includeDetails").as[Boolean],
+        (jsonConfig \ "includeSignature").as[Boolean],
+        (jsonConfig \ "includePageNumbers").as[Boolean],
+        (jsonConfig \ "enableAllLevel").asOpt[Boolean].getOrElse(false),
+        (jsonConfig \ "enableDomainLevel").asOpt[Boolean].getOrElse(false),
+        (jsonConfig \ "enableGroupLevel").asOpt[Boolean].getOrElse(false),
+        (jsonConfig \ "enableSpecificationLevel").asOpt[Boolean].getOrElse(false),
+        communityId
+      ),
+      (jsonConfig \ "messages").asOpt[JsArray].getOrElse(JsArray.empty).value.map { jsValue => parseJsConformanceOverviewCertificateMessage(jsValue, communityId)}.toList
     )
   }
 
@@ -1447,7 +1596,7 @@ object JsonUtil {
    * @param testCase TestCase object to be converted
    * @return JsObject
    */
-  def jsTestCases(testCase:TestCases, withDocumentation: Boolean, withTags: Boolean) : JsObject = {
+  def jsTestCases(testCase:TestCases, withDocumentation: Boolean, withTags: Boolean, withSpecReference: Boolean) : JsObject = {
     var json = Json.obj(
       "id"      -> testCase.id,
       "identifier"    -> testCase.identifier,
@@ -1467,6 +1616,11 @@ object JsonUtil {
     )
     if (withDocumentation && testCase.documentation.isDefined) json = json + ("documentation" -> JsString(testCase.documentation.get))
     if (withTags && testCase.tags.isDefined) json = json + ("tags" -> JsString(testCase.tags.get))
+    if (withSpecReference) {
+      if (testCase.specReference.isDefined) json = json + ("specReference" -> JsString(testCase.specReference.get))
+      if (testCase.specDescription.isDefined) json = json + ("specDescription" -> JsString(testCase.specDescription.get))
+      if (testCase.specLink.isDefined) json = json + ("specLink" -> JsString(testCase.specLink.get))
+    }
     json
   }
 
@@ -1504,7 +1658,7 @@ object JsonUtil {
   def jsTestCasesList(list:List[TestCases]):JsArray = {
     var json = Json.arr()
     list.foreach{ testCase =>
-      json = json.append(jsTestCases(testCase, withDocumentation = false, withTags = false))
+      json = json.append(jsTestCases(testCase, withDocumentation = false, withTags = false, withSpecReference = false))
     }
     json
   }
@@ -1631,8 +1785,16 @@ object JsonUtil {
     json
   }
 
-  def jsTestResultReport(result: TestResult, orgParameterDefinitions: Option[List[OrganisationParameters]], orgParameterValues: Option[scala.collection.mutable.Map[Long, scala.collection.mutable.Map[Long, String]]], sysParameterDefinitions: Option[List[SystemParameters]], sysParameterValues: Option[scala.collection.mutable.Map[Long, scala.collection.mutable.Map[Long, String]]], withOutputMessage: Boolean = false): JsObject = {
-    val json = Json.obj(
+  def jsTestResultReport(result: TestResult,
+                         orgParameterDefinitions: Option[List[OrganisationParameters]],
+                         orgParameterValues: Option[scala.collection.mutable.Map[Long, scala.collection.mutable.Map[Long, String]]],
+                         sysParameterDefinitions: Option[List[SystemParameters]],
+                         sysParameterValues: Option[scala.collection.mutable.Map[Long, scala.collection.mutable.Map[Long, String]]],
+                         withOutputMessage: Boolean = false,
+                         logEntries: Option[List[String]] = None,
+                         pendingInteractions: Option[List[TestInteraction]] = None
+                        ): JsObject = {
+    var json = Json.obj(
       "result" -> jsTestResult(result, None, withOutputMessage),
       "test" ->  {
         Json.obj(
@@ -1684,7 +1846,21 @@ object JsonUtil {
         )
       }
     )
+    if (logEntries.isDefined) {
+      json = json + ("logs", jsStringArray(logEntries.get))
+    }
+    if (pendingInteractions.isDefined) {
+      json = json + ("interactions", jsTestInteractions(pendingInteractions.get))
+    }
     json
+  }
+
+  def jsTestInteractions(interactions: List[TestInteraction]): JsArray = {
+    var array = Json.arr()
+    interactions.foreach{ interaction =>
+      array = array.append(Json.parse(interaction.tpl))
+    }
+    array
   }
 
   /**
@@ -1827,6 +2003,7 @@ object JsonUtil {
   def serializeConfigurationProperties(config: util.HashMap[String, String]):JsObject = {
     val json = Json.obj(
       "emailEnabled" -> config.get("email.enabled").toBoolean,
+      "emailContactFormEnabled" -> config.get("email.contactFormEnabled").toBoolean,
       "emailAttachmentsMaxCount" -> config.get("email.attachments.maxCount").toInt,
       "emailAttachmentsMaxSize" -> config.get("email.attachments.maxSize").toLong,
       "emailAttachmentsAllowedTypes" -> config.get("email.attachments.allowedTypes"),
@@ -2136,21 +2313,39 @@ object JsonUtil {
     json
   }
 
-  def jsConformanceSnapshots(snapshots: Iterable[ConformanceSnapshot]): JsArray = {
+  def jsConformanceSnapshotList(latestLabel: Option[String], snapshots: Iterable[ConformanceSnapshot], public: Boolean): JsObject = {
+    var json = Json.obj(
+      "snapshots" -> jsConformanceSnapshots(snapshots, public)
+    )
+    if (latestLabel.isDefined) {
+      json += ("latest" -> JsString(latestLabel.get))
+    }
+    json
+  }
+
+  private def jsConformanceSnapshots(snapshots: Iterable[ConformanceSnapshot], public: Boolean): JsArray = {
     var array = Json.arr()
     snapshots.foreach { snapshot =>
-      array = array.append(jsConformanceSnapshot(snapshot))
+      array = array.append(jsConformanceSnapshot(snapshot, public))
     }
     array
   }
 
-  def jsConformanceSnapshot(snapshot: ConformanceSnapshot):JsObject = {
-    Json.obj(
+  def jsConformanceSnapshot(snapshot: ConformanceSnapshot, public: Boolean):JsObject = {
+    var json = Json.obj(
       "id" -> snapshot.id,
-      "label" -> snapshot.label,
-      "snapshotTime" -> TimeUtil.serializeTimestamp(snapshot.snapshotTime),
-      "community" -> snapshot.community
+      "snapshotTime" -> TimeUtil.serializeTimestamp(snapshot.snapshotTime)
     )
+    if (public) {
+      json += ("label" -> JsString(snapshot.publicLabel.getOrElse(snapshot.label)))
+    } else {
+      json += ("label" -> JsString(snapshot.label))
+      if (snapshot.publicLabel.isDefined) {
+        json += ("publicLabel" -> JsString(snapshot.publicLabel.get))
+      }
+      json += ("hidden" -> JsBoolean(!snapshot.isPublic))
+    }
+    json
   }
 
   def jsTestSuiteUploadResult(result: TestSuiteUploadResult):JsObject = {
@@ -2308,7 +2503,10 @@ object JsonUtil {
         "optional" -> testCase.optional,
         "disabled" -> testCase.disabled,
         "result" -> testCase.result.value(),
-        "tags" -> (if (testCase.tags.isDefined) testCase.tags.get else JsNull)
+        "tags" -> (if (testCase.tags.isDefined) testCase.tags.get else JsNull),
+        "specReference" -> (if (testCase.specReference.isDefined) testCase.specReference.get else JsNull),
+        "specDescription" -> (if (testCase.specDescription.isDefined) testCase.specDescription.get else JsNull),
+        "specLink" -> (if (testCase.specLink.isDefined) testCase.specLink.get else JsNull)
       ))
     }
     json
@@ -2322,6 +2520,9 @@ object JsonUtil {
         "sname" -> testSuite.name,
         "description" -> (if (testSuite.description.isDefined) testSuite.description.get else JsNull),
         "hasDocumentation" -> testSuite.hasDocumentation,
+        "specReference" -> (if (testSuite.specReference.isDefined) testSuite.specReference.get else JsNull),
+        "specDescription" -> (if (testSuite.specDescription.isDefined) testSuite.specDescription.get else JsNull),
+        "specLink" -> (if (testSuite.specLink.isDefined) testSuite.specLink.get else JsNull),
         "result" -> testSuite.result.value(),
         "testCases" -> jsConformanceTestCases(testSuite.testCases)
       ))
@@ -2341,7 +2542,7 @@ object JsonUtil {
     json
   }
 
-  def jsConformanceStatement(statement: ConformanceStatementItem, results: ConformanceStatus, systemInfo: System): JsObject = {
+  def jsConformanceStatement(statement: ConformanceStatementItem, results: models.ConformanceStatus, systemInfo: models.System): JsObject = {
     Json.obj(
       "statement" -> jsConformanceStatementItem(statement),
       "results" -> jsConformanceStatus(results),
@@ -2361,7 +2562,11 @@ object JsonUtil {
         "undefinedOptional" -> status.undefinedOptional,
         "result" -> status.result.value(),
         "hasBadge" -> status.hasBadge,
-        "updateTime" -> (if (status.updateTime.isDefined) TimeUtil.serializeTimestamp(status.updateTime.get) else JsNull)
+        "updateTime" -> (if (status.updateTime.isDefined) TimeUtil.serializeTimestamp(status.updateTime.get) else JsNull),
+        "systemId" -> status.systemId,
+        "domainId" -> status.domainId,
+        "specificationId" -> status.specificationId,
+        "actorId" -> status.actorId
       ),
       "testSuites" -> jsConformanceTestSuites(status.testSuites)
     )
@@ -2413,7 +2618,7 @@ object JsonUtil {
       "specGroupName"    -> (if(item.specificationGroupName.isDefined) item.specificationGroupName.get else JsNull),
       "specGroupOptionName"    -> item.specificationGroupOptionName,
       "actorId"    -> item.actorId,
-      "actorName"    -> item.actorName,
+      "actorName"    -> item.actorFull,
       "testSuiteName" -> item.testSuiteName,
       "testCaseName" -> item.testCaseName,
       "testCaseDescription" -> item.testCaseDescription,
@@ -2450,27 +2655,82 @@ object JsonUtil {
     json
   }
 
-  def jsConformanceSettings(settings:Option[ConformanceCertificates], includeKeystoreData: Boolean):Option[JsObject] = {
-    if (settings.isDefined) {
-      val json = Json.obj(
-        "id"    -> settings.get.id,
-        "title" -> (if(settings.get.title.isDefined) settings.get.title.get else JsNull),
-        "message" -> (if(settings.get.message.isDefined) settings.get.message.get else JsNull),
-        "includeTitle" -> settings.get.includeTitle,
-        "includeMessage" -> settings.get.includeMessage,
-        "includeTestStatus" -> settings.get.includeTestStatus,
-        "includeTestCases" -> settings.get.includeTestCases,
-        "includeDetails" -> settings.get.includeDetails,
-        "includeSignature" -> settings.get.includeSignature,
-        "keystoreType" -> (if(includeKeystoreData && settings.get.keystoreType.isDefined) settings.get.keystoreType.get else JsNull),
-        "passwordsSet" -> (if(includeKeystoreData && settings.get.keystorePassword.isDefined && settings.get.keyPassword.isDefined) true else false),
-        "keystoreDefined" -> (if(settings.get.keystoreFile.isDefined && settings.get.keystoreType.isDefined && settings.get.keystorePassword.isDefined && settings.get.keyPassword.isDefined) true else false),
-        "community" -> settings.get.community
-      )
-      Some(json)
-    } else {
-      None
+  def jsCommunityKeystore(keystoreType: String): JsObject = {
+    Json.obj(
+      "keystoreType" -> keystoreType
+    )
+  }
+
+  def jsConformanceSettings(settings: ConformanceCertificate): JsObject = {
+    Json.obj(
+      "title" -> (if(settings.title.isDefined) settings.title.get else JsNull),
+      "message" -> (if(settings.message.isDefined) settings.message.get else JsNull),
+      "includeTitle" -> settings.includeTitle,
+      "includeMessage" -> settings.includeMessage,
+      "includeTestStatus" -> settings.includeTestStatus,
+      "includeTestCases" -> settings.includeTestCases,
+      "includeDetails" -> settings.includeDetails,
+      "includeSignature" -> settings.includeSignature,
+      "includePageNumbers" -> settings.includePageNumbers,
+      "community" -> settings.community
+    )
+  }
+
+  def jsConformanceOverviewCertificateMessages(data: Iterable[ConformanceOverviewCertificateMessage]): JsArray = {
+    var json = Json.arr()
+    data.foreach { item =>
+      json = json.append(jsConformanceOverviewCertificateMessage(item))
     }
+    json
+  }
+
+  def jsConformanceOverviewCertificateMessage(data: ConformanceOverviewCertificateMessage): JsObject = {
+    var level: Option[String] = None
+    var identifier: Option[Long] = None
+    if (data.messageType == OverviewLevelType.DomainLevel.id) {
+      level = Some("domain")
+      identifier = data.domain
+    } else if (data.messageType == OverviewLevelType.SpecificationGroupLevel.id) {
+      level = Some("group")
+      identifier = data.group
+    } else if (data.messageType == OverviewLevelType.SpecificationLevel.id) {
+      level = Some("specification")
+      identifier = data.specification
+    } else {
+      level = Some("all")
+    }
+    var json = Json.obj(
+      "id" -> data.id,
+      "level" -> level.get,
+      "message" -> data.message
+    )
+    if (identifier.isDefined) {
+      json = json + ("identifier" -> JsNumber(identifier.get))
+    }
+    json
+  }
+
+  def jsConformanceOverviewSettings(data: ConformanceOverviewCertificateWithMessages): JsObject = {
+    var json = Json.obj(
+      "title" -> (if(data.settings.title.isDefined) data.settings.title.get else JsNull),
+      "includeTitle" -> data.settings.includeTitle,
+      "includeMessage" -> data.settings.includeMessage,
+      "includeTestStatus" -> data.settings.includeStatementStatus,
+      "includeTestCases" -> data.settings.includeStatements,
+      "includeTestCaseDetails" -> data.settings.includeStatementDetails,
+      "includeDetails" -> data.settings.includeDetails,
+      "includeSignature" -> data.settings.includeSignature,
+      "includePageNumbers" -> data.settings.includePageNumbers,
+      "enableAllLevel" -> data.settings.enableAllLevel,
+      "enableDomainLevel" -> data.settings.enableDomainLevel,
+      "enableGroupLevel" -> data.settings.enableGroupLevel,
+      "enableSpecificationLevel" -> data.settings.enableSpecificationLevel,
+      "community" -> data.settings.community
+    )
+    if (data.messages.nonEmpty) {
+      json = json + ("messages" -> jsConformanceOverviewCertificateMessages(data.messages))
+    }
+    json
   }
 
   def jsConformanceSettingsValidation(problem: String, level: String): JsObject = {
@@ -2593,6 +2853,52 @@ object JsonUtil {
       json = json + ("item" -> children)
     }
     json
+  }
+
+  def jsEmailSettings(settings: EmailSettings, maskPassword: Boolean = true): JsObject = {
+    var json = Json.obj("enabled" -> JsBoolean(settings.enabled))
+    if (settings.from.isDefined) json = json + ("from" -> JsString(settings.from.get))
+    if (settings.to.isDefined && settings.to.get.nonEmpty) json = json + ("to" -> jsStringArray(settings.to.get))
+    if (settings.smtpHost.isDefined) json = json + ("host" -> JsString(settings.smtpHost.get))
+    if (settings.smtpPort.isDefined) json = json + ("port" -> JsNumber(settings.smtpPort.get))
+    if (settings.authEnabled.isDefined) {
+      json = json + ("authenticate" -> JsBoolean(settings.authEnabled.get))
+      if (settings.authUsername.isDefined) json = json + ("username" -> JsString(settings.authUsername.get))
+      if (settings.authPassword.isDefined) json = json + ("password" -> JsString(if (maskPassword) "*****" else settings.authPassword.get))
+    }
+    if (settings.sslEnabled.isDefined) json = json + ("sslEnabled" -> JsBoolean(settings.sslEnabled.get))
+    if (settings.sslProtocols.isDefined && settings.sslProtocols.get.nonEmpty) json = json + ("sslProtocols" -> jsStringArray(settings.sslProtocols.get))
+    if (settings.startTlsEnabled.isDefined) json = json + ("startTlsEnabled" -> JsBoolean(settings.startTlsEnabled.get))
+    if (settings.maximumAttachments.isDefined) json = json + ("maxAttachmentCount" -> JsNumber(settings.maximumAttachments.get))
+    if (settings.maximumAttachmentSize.isDefined) json = json + ("maxAttachmentSize" -> JsNumber(settings.maximumAttachmentSize.get))
+    if (settings.allowedAttachmentTypes.isDefined && settings.allowedAttachmentTypes.get.nonEmpty) json = json + ("allowedAttachmentTypes" -> jsStringArray(settings.allowedAttachmentTypes.get))
+    if (settings.testInteractionReminder.isDefined) json = json + ("testInteractionReminder" -> JsNumber(settings.testInteractionReminder.get))
+    if (settings.contactFormEnabled.isDefined) json = json + ("contactFormEnabled" -> JsBoolean(settings.contactFormEnabled.get))
+    if (settings.contactFormCopyDefaultMailbox.isDefined) json = json + ("contactFormCopyDefaultMailbox" -> JsBoolean(settings.contactFormCopyDefaultMailbox.get))
+    json
+  }
+
+  def parseJsEmailSettings(jsonString: String): EmailSettings = {
+    val json = Json.parse(jsonString)
+    EmailSettings(
+      enabled = (json \ "enabled").as[Boolean],
+      from = (json \ "from").asOpt[String],
+      to = (json \ "to").asOpt[JsArray].map(_.value.map(_.as[String]).toArray),
+      smtpHost = (json \ "host").asOpt[String],
+      smtpPort = (json \ "port").asOpt[Int],
+      authEnabled = (json \ "authenticate").asOpt[Boolean],
+      authUsername = (json \ "username").asOpt[String],
+      authPassword = (json \ "password").asOpt[String],
+      sslEnabled = (json \ "sslEnabled").asOpt[Boolean],
+      startTlsEnabled = (json \ "startTlsEnabled").asOpt[Boolean],
+      sslProtocols = (json \ "sslProtocols").asOpt[JsArray].map(_.value.map(_.as[String]).toArray),
+      maximumAttachments = (json \ "maxAttachmentCount").asOpt[Int],
+      maximumAttachmentSize = (json \ "maxAttachmentSize").asOpt[Int],
+      allowedAttachmentTypes = (json \ "allowedAttachmentTypes").asOpt[JsArray].map(_.value.map(_.as[String]).toSet),
+      testInteractionReminder = (json \ "testInteractionReminder").asOpt[Int],
+      contactFormEnabled = (json \ "contactFormEnabled").asOpt[Boolean],
+      contactFormCopyDefaultMailbox = (json \ "contactFormCopyDefaultMailbox").asOpt[Boolean]
+    )
   }
 
   def validatorForAnyContent(): Reads[AnyContent] = {

@@ -1,9 +1,10 @@
 export interface AppConfigurationProperties {
 
     emailEnabled: boolean
-    emailAttachmentsMaxCount: number
-    emailAttachmentsMaxSize: number
-    emailAttachmentsAllowedTypes: string
+    emailContactFormEnabled: boolean,
+    emailAttachmentsMaxCount?: number
+    emailAttachmentsMaxSize?: number
+    emailAttachmentsAllowedTypes?: string
     surveyEnabled: boolean
     surveyAddress: string
     moreInfoEnabled: boolean

@@ -9,6 +9,10 @@ public class TestSuiteOverview {
     private String testSuiteName;
     private String testSuiteDescription;
     private String overallStatus;
+    private String specReference;
+    private String specDescription;
+    private String specLink;
+    private String version;
     private List<TestCaseOverview> testCases;
 
     public List<TestCaseOverview> getTestCases() {
@@ -41,5 +45,37 @@ public class TestSuiteOverview {
 
     public void setTestSuiteDescription(String testSuiteDescription) {
         this.testSuiteDescription = StringUtils.normalizeSpace(testSuiteDescription);
+    }
+
+    public String getSpecReference() {
+        return specReference;
+    }
+
+    public void setSpecReference(String specReference) {
+        this.specReference = specReference;
+    }
+
+    public String getSpecDescription() {
+        return specDescription;
+    }
+
+    public void setSpecDescription(String specDescription) {
+        this.specDescription = specDescription;
+    }
+
+    public String getSpecLink() {
+        return specLink;
+    }
+
+    public void setSpecLink(String specLink) {
+        this.specLink = specLink;
+    }
+
+    public String getVersion() {
+        return version;
+    }
+
+    public void setVersion(String version) {
+        this.version = version;
     }
 }

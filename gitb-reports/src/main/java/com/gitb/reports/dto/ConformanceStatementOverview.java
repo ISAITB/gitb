@@ -1,62 +1,31 @@
 package com.gitb.reports.dto;
 
-import java.util.List;
-
-public class ConformanceStatementOverview {
+public class ConformanceStatementOverview extends ConformanceStatementData {
 
     private String title;
-    private String testActor;
-    private String testSpecification;
-    private String testDomain;
     private String organisation;
     private String system;
-    private int completedTests = 0;
-    private int failedTests = 0;
-    private int undefinedTests = 0;
-    private String overallStatus;
     private String reportDate;
     private Boolean includeTestCases;
     private Boolean includeDetails = Boolean.TRUE;
     private Boolean includeMessage = Boolean.FALSE;
     private Boolean includeTestStatus = Boolean.TRUE;
+    private Boolean includePageNumbers = Boolean.TRUE;
     private String message;
     private String labelDomain;
+    private String labelSpecificationGroup;
+    private String labelSpecificationInGroup;
     private String labelSpecification;
     private String labelActor;
     private String labelOrganisation;
     private String labelSystem;
-    private List<TestSuiteOverview> testSuites;
 
-    public int getCompletedTests() {
-        return completedTests;
+    public String getLabelSpecificationInGroup() {
+        return labelSpecificationInGroup;
     }
 
-    public void setCompletedTests(int completedTests) {
-        this.completedTests = completedTests;
-    }
-
-    public int getFailedTests() {
-        return failedTests;
-    }
-
-    public void setFailedTests(int failedTests) {
-        this.failedTests = failedTests;
-    }
-
-    public int getUndefinedTests() {
-        return undefinedTests;
-    }
-
-    public void setUndefinedTests(int undefinedTests) {
-        this.undefinedTests = undefinedTests;
-    }
-
-    public String getOverallStatus() {
-        return overallStatus;
-    }
-
-    public void setOverallStatus(String overallStatus) {
-        this.overallStatus = overallStatus;
+    public void setLabelSpecificationInGroup(String labelSpecificationInGroup) {
+        this.labelSpecificationInGroup = labelSpecificationInGroup;
     }
 
     public String getTitle() {
@@ -65,30 +34,6 @@ public class ConformanceStatementOverview {
 
     public void setTitle(String title) {
         this.title = title;
-    }
-
-    public String getTestActor() {
-        return testActor;
-    }
-
-    public void setTestActor(String testActor) {
-        this.testActor = testActor;
-    }
-
-    public String getTestSpecification() {
-        return testSpecification;
-    }
-
-    public void setTestSpecification(String testSpecification) {
-        this.testSpecification = testSpecification;
-    }
-
-    public String getTestDomain() {
-        return testDomain;
-    }
-
-    public void setTestDomain(String testDomain) {
-        this.testDomain = testDomain;
     }
 
     public String getOrganisation() {
@@ -107,26 +52,6 @@ public class ConformanceStatementOverview {
         this.system = system;
     }
 
-    public String getTestStatus() {
-        var resultText = new StringBuilder();
-        var totalTests = completedTests + failedTests + undefinedTests;
-        resultText.append(completedTests).append(" of ").append(totalTests).append(" required tests passed");
-        if (totalTests > completedTests) {
-            resultText.append(" (");
-            if (failedTests > 0) {
-                resultText.append(failedTests).append(" failed");
-                if (undefinedTests > 0) {
-                    resultText.append(", ");
-                }
-            }
-            if (undefinedTests > 0) {
-                resultText.append(undefinedTests).append(" incomplete");
-            }
-            resultText.append(")");
-        }
-        return resultText.toString();
-    }
-
     public String getReportDate() {
         return reportDate;
     }
@@ -141,14 +66,6 @@ public class ConformanceStatementOverview {
 
     public void setIncludeTestCases(Boolean includeTestCases) {
         this.includeTestCases = includeTestCases;
-    }
-
-    public List<TestSuiteOverview> getTestSuites() {
-        return testSuites;
-    }
-
-    public void setTestSuites(List<TestSuiteOverview> testSuites) {
-        this.testSuites = testSuites;
     }
 
     public Boolean getIncludeDetails() {
@@ -173,6 +90,14 @@ public class ConformanceStatementOverview {
 
     public void setIncludeTestStatus(Boolean includeTestStatus) {
         this.includeTestStatus = includeTestStatus;
+    }
+
+    public Boolean getIncludePageNumbers() {
+        return includePageNumbers;
+    }
+
+    public void setIncludePageNumbers(Boolean includePageNumbers) {
+        this.includePageNumbers = includePageNumbers;
     }
 
     public String getMessage() {
@@ -221,5 +146,13 @@ public class ConformanceStatementOverview {
 
     public void setLabelSystem(String labelSystem) {
         this.labelSystem = labelSystem;
+    }
+
+    public String getLabelSpecificationGroup() {
+        return labelSpecificationGroup;
+    }
+
+    public void setLabelSpecificationGroup(String labelSpecificationGroup) {
+        this.labelSpecificationGroup = labelSpecificationGroup;
     }
 }

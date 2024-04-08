@@ -90,10 +90,6 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils, testResultManag
     PersistenceSchema.organizations.filter(_.id === organisationId).map(x => x.community).result.head
   }
 
-  private def getCommunityIdForSystemId(systemId: Long): DBIO[Long] = {
-    PersistenceSchema.organizations.join(PersistenceSchema.systems).on(_.id === _.owner).filter(_._2.id === systemId).map(x => x._1.community).result.head
-  }
-
   def registerSystemWrapper(userId:Long, system: Systems, otherSystem: Option[Long], propertyValues: Option[List[SystemParameterValues]], propertyFiles: Option[Map[Long, FileInfo]], copySystemParameters: Boolean, copyStatementParameters: Boolean) = {
     var propertyValuesToUse = propertyValues
     if (otherSystem.isDefined && copySystemParameters) {
@@ -255,7 +251,7 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils, testResultManag
   def updateSystemProfile(userId: Long, systemId: Long, sname: String, fname: String, description: Option[String], version: Option[String], otherSystem: Option[Long], propertyValues: Option[List[SystemParameterValues]], propertyFiles: Option[Map[Long, FileInfo]], copySystemParameters: Boolean, copyStatementParameters: Boolean): Unit = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction = for {
-      communityId <- getCommunityIdForSystemId(systemId)
+      communityId <- getCommunityIdOfSystemInternal(systemId)
       linkedActorIds <- updateSystemProfileInternal(Some(userId), None, systemId, sname, fname, description, version, None, None, otherSystem, propertyValues, propertyFiles, copySystemParameters, copyStatementParameters, checkApiKeyUniqueness = false, onSuccessCalls)
     } yield (communityId, linkedActorIds)
     val result = exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
@@ -366,9 +362,22 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils, testResultManag
     ).map(x => x.get).toSet
   }
 
-  def getSystemsByOrganization(orgId: Long): List[Systems] = {
-    val systems = exec(getSystemsByOrganizationInternal(orgId))
-    systems
+  def getSystemsByOrganization(orgId: Long, snapshotId: Option[Long]): List[Systems] = {
+    if (snapshotId.isEmpty) {
+      exec(getSystemsByOrganizationInternal(orgId))
+    } else {
+      exec(
+        PersistenceSchema.conformanceSnapshotResults
+          .join(PersistenceSchema.conformanceSnapshotSystems).on((res, sys) => res.snapshotId === sys.snapshotId && res.systemId === sys.id)
+          .filter(_._1.snapshotId === snapshotId.get)
+          .filter(_._1.organisationId === orgId)
+          .map(_._2)
+          .distinct
+          .sortBy(_.shortname.asc)
+          .result
+      ).map(x => Systems(id = x.id, shortname = x.shortname, fullname = x.fullname, description = x.description, version = None, apiKey = x.apiKey, badgeKey = x.badgeKey, owner = orgId))
+        .toList
+    }
   }
 
   def getSystemsByOrganizationInternal(orgId: Long): DBIO[List[Systems]] = {
@@ -390,7 +399,7 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils, testResultManag
 
   def defineConformanceStatements(systemId: Long, actorIds: Seq[Long]):Unit = {
     val result = exec((for {
-      communityId <- getCommunityIdForSystemId(systemId)
+      communityId <- getCommunityIdOfSystemInternal(systemId)
       domainId <- {
         if (communityId == Constants.DefaultCommunityId) {
           // This is to allow the test bed admin to create any statement.
@@ -605,7 +614,7 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils, testResultManag
   def deleteEndpointConfiguration(systemId: Long, parameterId: Long, endpointId: Long) = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction = for {
-      communityId <- getCommunityIdForSystemId(systemId)
+      communityId <- getCommunityIdOfSystemInternal(systemId)
       _ <- deleteEndpointConfigurationInternal(systemId, parameterId, endpointId, onSuccessCalls)
     } yield communityId
     val communityId = exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
@@ -646,7 +655,7 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils, testResultManag
   def saveEndpointConfiguration(config: Configs, fileValue: Option[File]) = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction = for {
-      communityId <- getCommunityIdForSystemId(config.system)
+      communityId <- getCommunityIdOfSystemInternal(config.system)
       _ <- saveEndpointConfigurationInternal(forceAdd = false, forceUpdate = false, config, fileValue, onSuccessCalls)
     } yield communityId
     val communityId = exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
@@ -699,6 +708,8 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils, testResultManag
     PersistenceSchema.systemImplementsOptions.filter(_.systemId === systemId).delete andThen
     PersistenceSchema.conformanceResults.filter(_.sut === systemId).delete andThen
     PersistenceSchema.conformanceSnapshotResults.filter(_.systemId === systemId).map(_.systemId).update(systemId * -1) andThen
+    PersistenceSchema.conformanceSnapshotSystems.filter(_.id === systemId).map(_.id).update(systemId * -1) andThen
+    PersistenceSchema.conformanceSnapshotSystemProperties.filter(_.systemId === systemId).map(_.systemId).update(systemId * -1) andThen
     deleteSystemParameterValues(systemId, onSuccess) andThen
     PersistenceSchema.systems.filter(_.id === systemId).delete
   }
@@ -733,6 +744,18 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils, testResultManag
       .result.map(_.toList))
   }
 
+  def getDomainIdForSystemCommunity(systemId: Long): Option[Long] = {
+    exec(
+      PersistenceSchema.systems
+      .join(PersistenceSchema.organizations).on(_.owner === _.id)
+      .join(PersistenceSchema.communities).on(_._2.community === _.id)
+      .filter(_._1._1.id === systemId)
+      .map(_._2.domain)
+      .result
+      .headOption
+    ).flatten
+  }
+
   def getCommunityIdOfSystem(systemId: Long): Long = {
     exec(getCommunityIdOfSystemInternal(systemId))
   }
@@ -744,11 +767,17 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils, testResultManag
       .map(x => x._2.community).result.head
   }
 
-  def getSystemParameterValues(systemId: Long): List[SystemParametersWithValue] = {
+  def getSystemParameterValues(systemId: Long, onlySimple: Option[Boolean] = None, forExports: Option[Boolean] = None): List[SystemParametersWithValue] = {
+    var typeToCheck: Option[String] = None
+    if (onlySimple.isDefined && onlySimple.get) {
+      typeToCheck = Some("SIMPLE")
+    }
     val communityId = getCommunityIdOfSystem(systemId)
     exec(PersistenceSchema.systemParameters
       .joinLeft(PersistenceSchema.systemParameterValues).on((p, v) => p.id === v.parameter && v.system === systemId)
       .filter(_._1.community === communityId)
+      .filterOpt(forExports)((q, flag) => q._1.inExports === flag)
+      .filterOpt(typeToCheck)((table, propertyType)=> table._1.kind === propertyType)
       .sortBy(x => (x._1.displayOrder.asc, x._1.name.asc))
       .map(x => (x._1, x._2))
       .result

@@ -1,25 +1,17 @@
 @(config: models.PublicConfig)
-<!DOCTYPE html>
-<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
-<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
-<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
-<!--[if gt IE 8]><!-->
-<html>
-<!--<![endif]-->
+<!doctype html>
+<html lang="en">
 	<head>
 		<meta charset="utf-8">
 		<meta http-equiv="X-UA-Compatible" content="IE=edge">
 		<title>Interoperability Test Bed</title>
 		<meta name="description" content="">
 		<meta name="viewport" content="width=device-width">
-		<link rel="stylesheet" href="api/theme/css">
 		<link rel="stylesheet" href='assets/build/styles.css?v=@config.resourceVersionNumber'>
-		<script type='text/javascript' src='webjars/jquery/3.6.4/jquery.min.js'></script>
-		<script type='text/javascript' src='webjars/bootstrap/3.4.1/js/bootstrap.min.js'></script>
+		<link id="themeFaviconLink" rel="icon" href="favicon.ico">
+		<link id="themeCssLink" rel="stylesheet" href="api/theme/css">
+		<script type='text/javascript' src='webjars/jquery/3.7.1/jquery.min.js'></script>
 		<script type='text/javascript' src='assets/components/gitb-cookie-cleanup.js?v=@config.resourceVersionNumber'></script>
-		@if(config.initialSandboxRun) {
-		<script type='text/javascript' src='assets/components/gitb-init-sandbox.js?v=@config.resourceVersionNumber'></script>
-		}
 	</head>
 	<body>
 		<div id="cp-div" style="display:none">@config.cookiePath</div>
@@ -28,7 +20,7 @@
 				<div class="container">
 					<div class="header-container">
 						<div class="header-logo-container">
-							<img src='@config.logoPath' class="logo"/>
+							<img class="logo"/>
 						</div>
 					</div>
 				</div>
@@ -37,8 +29,8 @@
 				<section class="page-top">
 					<div class="container">
 						<div class="row">
-							<div class="col-xs-12">
-								<h2>Welcome to the Interoperability Test Bed</h2>
+							<div class="col-12">
+								<div class="page-title">Welcome to the Interoperability Test Bed</div>
 							</div>
 						</div>
 					</div>
@@ -46,38 +38,42 @@
 				<div class="page-with-margins">
 					<div class="container">
 						<div class="row">
-							<div class="col-xs-12">
+							<div class="col-12">
 								<div class="welcome-text">@Html(config.welcomeText)</div>
 								<div style="padding-top:20px">
 									<div style="display:flex; align-items:center;">
 										<div>
 											<button id="loginOption" type="button" class="btn btn-primary" style="padding:20px">Click to log in</button>
 										</div>
-										<div style="margin-left:20px;">
+										<div class="ms-4">
 											@if(config.ssoEnabled) {
-											<p><b style="margin-right:10px;">Assigned a new role by an administrator?</b><a id="linkOption" href="#">Confirm your new role</a>.</p>
+											   @if(config.demosEnabled || config.registrationEnabled) {
+											<p><b class="me-2">Assigned a new role by an administrator?</b><a id="linkOption" href="#">Confirm your new role</a>.</p>
+											   } else {
+											<p class="mb-0"><b class="me-2">Assigned a new role by an administrator?</b><a id="linkOption" href="#">Confirm your new role</a>.</p>
+											   }
 											}
 											@if(config.demosEnabled && config.registrationEnabled) {
-											<span><b style="margin-right:10px;">New to the Test Bed?</b><a id="registerOption" href="#">Register in a public community</a> or <a id="demoOption" href="#">try out our demos</a></span>.
+											<p class="mb-0"><b class="me-2">New to the Test Bed?</b><a id="registerOption" href="#">Register in a public community</a> or <a id="demoOption" href="#">try out our demos</a>.</p>
 											} else {@if(config.demosEnabled && !config.registrationEnabled) {
-											<span><b style="margin-right:10px;">New to the Test Bed?</b><a id="demoOption" href="#">Try out our demos</a>.</span>
+											<p class="mb-0"><b class="me-2">New to the Test Bed?</b><a id="demoOption" href="#">Try out our demos</a>.</p>
 											} else {@if(!config.demosEnabled && config.registrationEnabled) {
-											<span><b style="margin-right:10px;">New to the Test Bed?</b><a id="registerOption" href="#">Register in a public community</a>.</span>
+											<p class="mb-0"><b class="me-2">New to the Test Bed?</b><a id="registerOption" href="#">Register in a public community</a>.</p>
 											}}}
 										</div>
 									</div>
 								</div>
-								<div class="bg-info div-rounded div-spaced div-padded">
+								<div class="alert alert-info rounded padded mt-3 mb-0">
 									@if(config.ssoEnabled) {
-									<p>To connect to the Test Bed you need to first authenticate using your EU Login account. If you are new to EU Login follow <a href="@config.euLoginUseGuideLink" target="blank">this tutorial</a> to get started.</p>
+									<p class="mb-2">To connect to the Test Bed you need to first authenticate using your EU Login account. If you are new to EU Login follow <a href="@config.euLoginUseGuideLink" target="blank">this tutorial</a> to get started.</p>
 									}
-									<p style="margin-bottom: 0px"><b>Privacy note:</b> By connecting you consent to the use of cookies to manage your session.
+									<p class="mb-0"><b>Privacy note:</b> By connecting you consent to the use of cookies to manage your session.
 										@if(config.hasDefaultLegalNotice) {
 										<span>Please refer to our <a href="#" data-toggle="modal" data-target="#legalModal">legal notice</a> for more information.</span>
 										}
 									</p>
 									@if(config.ssoEnabled && config.inMigrationPeriod) {
-									<p style="margin-top: 10px; margin-bottom: 0px"><b>Migration note:</b> If you have been using a functional account to log in click <a id="migrateOption" href="#">here</a> to migrate it to EU Login. Step-by-step instructions are available in <a href="@config.euLoginMigrationGuideLink" target="blank">this guide</a>.</p>
+									<p class="mt-2 mb-0"><b>Migration note:</b> If you have been using a functional account to log in click <a id="migrateOption" href="#">here</a> to migrate it to EU Login. Step-by-step instructions are available in <a href="@config.euLoginMigrationGuideLink" target="blank">this guide</a>.</p>
 									}
 								</div>
 							</div>
@@ -89,7 +85,7 @@
 			<div class="footer-bar">
 				<div class="container">
 					<div class="footer-logo">
-						<img src="@config.footerLogoPath"/>
+						<img/>
 					</div>
 					@if(config.developmentMode) {
 					<div class="footer-devmode-container">
@@ -122,7 +118,7 @@
 					<!-- Modal content-->
 					<div class="modal-content">
 						<div class="modal-header">
-							<h4>Legal Notice</h4>
+							<div class="modal-title">Legal Notice</div>
 						</div>
 						<div class="modal-body html-modal">
 							<div id="content">
@@ -130,7 +126,9 @@
 							</div>
 						</div>
 						<div class="modal-footer">
-							<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+							<div class="btn-toolbar">
+								<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+							</div>
 						</div>
 					</div>
 				</div>
@@ -143,47 +141,57 @@
 					<!-- Modal content-->
 					<div class="modal-content">
 						<div class="modal-header">
-							<h4>Initial setup</h4>
+							<div class="modal-title">Initial setup</div>
 						</div>
-						<form id="initForm" enctype="multipart/form-data" class="form-horizontal">
+						<form id="initForm" enctype="multipart/form-data">
 							<div class="modal-body">
-								<div class="bg-info div-rounded div-padded bottom-margin">
+								<div class="alert alert-info rounded div-padded">
 									<span>Please provide the data archive and its password to initialise the Test Bed's configuration. If you would prefer to proceed with an empty installation close this dialog and make an initial login.</span>
 								</div>
 								<div id="initFormAlerts"></div>
-								<div class="form-group">
-									<label class="col-xs-3 control-label">* Data archive:</label>
-									<div class="col-xs-7">
+								<div class="row mb-3">
+									<label class="col-3 col-form-label d-flex justify-content-end">* Data archive:</label>
+									<div class="col-7">
 										<div class="input-group">
-											<div class="input-group-btn">
-												<button id="fileInputButton" class="btn btn-default" type="button"><i class="fa-regular fa-folder-open"></i></button>
-											</div>
 											<input id="fileInputText" type="text" class="form-control clickable" placeholder="Select data archive ..." readonly="readonly"/>
+											<button id="fileInputButton" class="btn btn-secondary" type="button"><i class="fa-regular fa-folder-open"></i></button>
 										</div>
 										<input id="fileInputControl" name="file" type="file" style="display: none" />
 									</div>
-									<div class="form-control-static"><span data-toggle="tooltip" class="check" title="The archive containing the data to import."><i class="fa-solid fa-question-circle"></i></span></div>
+									<div class="col-auto">
+										<div class="form-control-plaintext"><span data-toggle="tooltip" class="check" title="The archive containing the data to import."><i class="fa-solid fa-question-circle"></i></span></div>
+									</div>
 								</div>
-								<div class="form-group">
-									<label class="col-xs-3 control-label" for="encryptionPassword">* Archive password:</label>
-									<div class="col-xs-6 inline-checkbox-container">
+								<div class="row align-items-center">
+									<label class="col-3 col-form-label d-flex justify-content-end" for="encryptionPassword">* Archive password:</label>
+									<div class="col-5">
 										<input id="encryptionPasswordVisible" name="passwordVisible" type="text" class="form-control"/>
 										<input id="encryptionPassword" name="passwordHidden" type="password" class="form-control"/>
-										<label class="inline-checkbox">
-											<input id="encryptionPasswordCheck" type="checkbox" class="checkinput">Show
-											<div class="inline-tooltip"><div class="check"><span data-toggle="tooltip" class="check" title="Provide the password that was used to encrypt the data archive."><i class="fa-solid fa-question-circle"></i></span></div></div>
-										</label>
+									</div>
+									<div class="col-auto">
+										<div class="form-check">
+											<input class="form-check-input" id="encryptionPasswordCheck" type="checkbox">
+											<label class="form-check-label" for="encryptionPasswordCheck">Show
+												<div class="inline-tooltip"><div class="check"><span data-toggle="tooltip" class="check" title="Provide the password that was used to encrypt the data archive."><i class="fa-solid fa-question-circle"></i></span></div></div>
+											</label>
+										</div>
 									</div>
 								</div>
 							</div>
 							<div class="modal-footer">
-								<button id="buttonImport" type="submit" class="btn btn-default"><span id="initDataSpinner" class="tab"><i class="fa-solid fa-spinner fa-spin-override fa-lg"></i></span>Import archive</button>
-								<button id="buttonNoImport" type="button" class="btn btn-default">Close</button>
+								<div class="btn-toolbar">
+									<button id="buttonNoImport" type="button" class="btn btn-secondary">Close</button>
+									<button id="buttonImport" type="submit" class="btn btn-secondary"><span id="initDataSpinner" class="tab"><i class="fa-solid fa-spinner fa-spin-override fa-lg"></i></span>Import archive</button>
+								</div>
 							</div>
 						</form>
 					</div>
 				</div>
 			</div>
+		}
+		<script type='text/javascript' src='webjars/bootstrap/5.3.2/js/bootstrap.bundle.min.js'></script>
+		@if(config.initialSandboxRun) {
+		<script type='text/javascript' src='assets/components/gitb-init-sandbox.js?v=@config.resourceVersionNumber'></script>
 		}
 	</body>
 </html>

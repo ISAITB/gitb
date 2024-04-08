@@ -1,12 +1,14 @@
-<#macro basic>
+<#macro basic pageCounter=true>
     @page {
         size: a4 landscape;
         margin: 50px;
-        @bottom-right {
-            font-family: "FreeSans";
-            font-size: 10px;
-            content: 'Page '+counter(page)+' of '+counter(pages);
-        }
+        <#if pageCounter>
+            @bottom-right {
+                font-family: "FreeSans";
+                font-size: 10px;
+                content: 'Page '+counter(page)+' of '+counter(pages);
+            }
+        </#if>
     }
     page-before {
       display: block;
@@ -82,6 +84,15 @@
         display: inline-block;
         vertical-align: top;
     }
+    .column.single {
+        width: 99%;
+    }
+    .column.left {
+        width: 44%;
+    }
+    .column.right {
+        width: 55%;
+    }
     .value {
         display: inline-block;
         vertical-align: top;
@@ -100,7 +111,7 @@
         padding-left: 10px;
         padding-right: 10px;
         text-align: right;
-        min-width: 120px;
+        min-width: 140px;
     }
     td.cell-label, td.cell-value {
         vertical-align: top;
@@ -142,25 +153,28 @@
         background-color: #f0ad4e;
     }
     .background-UNDEFINED {
-        background-color: #7c7c7c;
+        background-color: #343a40;
     }
     .background-strong-error {
-        background-color: #c9302c;
+        background-color: #f1aeb5;
     }
     .background-strong-warning {
-        background-color: #f0ad4e;
+        background-color: #fbebb9;
     }
     .background-strong-info {
-        background-color: #3D8BE9;
+        background-color: #bddded;
     }
     .background-error {
-        background-color: #f2dede;
+        background-color: #f8d7da;
     }
     .background-warning {
-        background-color: #fcf8e3;
+        background-color: #fdf5dc;
     }
     .background-info {
-        background-color: #ededed;
+        background-color: #d9edf7;
+    }
+    .background-white {
+        background: #ffffff;
     }
     .background-normal {
         background: #ededed;
@@ -169,13 +183,17 @@
         border: 1px solid #000000;
     }
     .border-error {
-        border: 1px solid #c9302c;
+        border: 1px solid #f1aeb5;
     }
     .border-warning {
-        border: 1px solid #f0ad4e;
+        border: 1px solid #fbebb9;
     }
     .border-info {
-        border: 1px solid #3D8BE9;
+        border: 1px solid #bddded;
+    }
+    .inline-text-separator {
+        margin-left: 10px;
+        margin-right: 10px;
     }
 </#macro>
 <#macro testResult>
@@ -194,12 +212,12 @@
         page-break-inside: avoid;
     }
     .output-message.FAILURE {
-        background: #f2dede;
-        border: 1px solid #c9302c;
+        background: #f8d7da;
+        border: 1px solid #f1aeb5;
     }
     .output-message.SUCCESS {
-        background: #dff0d8;
-        border: 1px solid #5cb85c;
+        background: #def1de;
+        border: 1px solid #bee3be;
     }
     .output-message.UNDEFINED {
         background: #ededed;
@@ -255,6 +273,160 @@
     }
     .coverage-undefined {
         color: #ffffff;
-        background: #7c7c7c;
+        background: #343a40;
+    }
+</#macro>
+<#macro conformanceStatement>
+    .test-suite-container {
+        border: 1px solid #000000;
+        margin-top: 10px;
+        border-radius: 5px;
+        padding: 10px;
+        background: #ffffff;
+    }
+    .test-suite-spec-info {
+        margin-top: 10px;
+    }
+    .test-suite-test-case-spec-info {
+        padding-top: 5px;
+        border-top: 1px solid #c4c4c4;
+        margin-left: 5px;
+    }
+    .test-suite-content {
+        margin-top: 10px;
+    }
+    .test-suite-header {
+        display: block;
+    }
+    .test-case-container.disabled .test-case-first-line .test-case-name > a,
+    .test-case-container.disabled .spec-reference-container a {
+        color: #847ef0;
+    }
+    .test-case-container.disabled .test-case-first-line .test-case-name,
+    .test-case-container.disabled .test-case-description,
+    .test-case-container.disabled .spec-reference-container {
+        color: #B4B4B4;
+    }
+    .test-case-prescription-level {
+        padding-right: 20px;
+    }
+    .test-suite-name {
+        display: inline-block;
+        font-weight: bold;
+    }
+    .test-suite-description {
+        display: inline-block;
+        border-left: 1px solid #7c7c7c;
+        padding-left: 10px;
+        margin-left: 10px;
+        margin-right: 20px;
+    }
+    .test-suite-status {
+        display: inline;
+        float: right;
+        padding-right: 11px;
+    }
+    .test-case-status.icon img, .test-suite-status.icon img {
+        margin-top: -3px;
+    }
+    .test-case-container {
+        border: 1px solid #000000;
+        margin-top: 5px;
+        border-radius: 5px;
+        padding: 5px 10px;
+        background: #efefef;
+        page-break-inside: avoid;
+    }
+    .test-case-name {
+        display: inline-block;
+        font-weight: bold;
+    }
+    .test-case-description {
+        display: inline-block;
+        margin-top: 5px;
+        margin-bottom: 5px;
+        width: 99%;
+    }
+    .test-case-first-line-start {
+        display: inline-block;
+    }
+    .test-case-status {
+        display: inline;
+        float: right;
+    }
+    .test-case-table {
+        width: 950px;
+    }
+    .test-case-prescription-td {
+        width: 20px;
+    }
+    .test-case-name-td {
+    }
+    .test-case-tags-td {
+        text-align: right;
+        vertical-align: top;
+    }
+    .test-case-tags {
+        padding-right: 10px;
+        padding-left: 10px;
+    }
+    .test-case-tag {
+        display: inline;
+        border-radius: 15px;
+        padding-left: 5px;
+        padding-right: 5px;
+        margin-right: 3px;
+        font-weight: bold;
+        font-size: smaller;
+        white-space: nowrap;
+    }
+    .test-suite-header-texts {
+        display: inline-block;
+        width: 95%;
+    }
+    .test-suites td {
+        vertical-align: top;
+    }
+    .test-case-legend {
+        border: 1px solid #404040;
+        margin-top: 10px;
+        border-radius: 5px;
+        background: #404040;
+        page-break-inside: avoid;
+        position: relative;
+    }
+    .legend-prescription-text {
+        padding-left: 5px;
+        padding-right: 30px;
+        font-style: italic;
+    }
+    .legend-tags-div.with-padding {
+        padding-top: 10px;
+    }
+    .legend-tag-description {
+        padding-left: 10px;
+        padding-top: 3px;
+        padding-bottom: 3px;
+        font-style: italic;
+    }
+    .legend-highlight {
+        position: absolute;
+        top: 8px;
+        left: 6px;
+    }
+    .legend-highlight > img {
+        width: 24px;
+        margin-top: -4px;
+    }
+    .legend-content {
+        margin-left: 36px;
+        background: #efefef;
+        padding: 10px;
+        border-top-right-radius: 5px;
+        border-bottom-right-radius: 5px;
+    }
+    .legend-tag-pill .test-case-tag {
+        margin-top: 3px;
+        margin-bottom: 3px;
     }
 </#macro>

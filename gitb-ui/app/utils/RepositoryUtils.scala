@@ -5,8 +5,10 @@ import com.gitb.core._
 import com.gitb.utils.XMLUtils
 import config.Configurations
 import managers.{BaseManager, TestSuiteManager}
-import models.Enums.TestResultStatus
+import models.Enums.{TestResultStatus, XmlReportType}
+import models.Enums.XmlReportType.XmlReportType
 import models._
+import org.apache.commons.codec.binary.Base64
 import org.apache.commons.io.{FileUtils, FilenameUtils, IOUtils}
 import org.apache.commons.lang3.{RandomStringUtils, StringUtils}
 import org.slf4j.LoggerFactory
@@ -19,6 +21,7 @@ import java.nio.file._
 import java.nio.file.attribute.BasicFileAttributes
 import java.sql.Timestamp
 import java.time.LocalDateTime
+import java.util.UUID
 import java.util.zip.{ZipEntry, ZipFile}
 import javax.inject.{Inject, Singleton}
 import javax.xml.transform.stream.StreamSource
@@ -46,6 +49,8 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 	private final val FILES_SP_PATH: String = "sp"
 	private final val FILES_EP_PATH: String = "ep"
 	private final val FILES_CR_PATH: String = "cr"
+	private final val FILES_XSLT_PATH: String = "xslt"
+	private final val FILES_THEMES_PATH: String = "themes"
 	private final val FILES_BADGES_PATH: String = "badges"
 	private final val FILES_BADGES_LATEST_PATH: String = "latest"
 	private final val FILES_BADGES_SNAPSHOT_PATH: String = "snapshot"
@@ -59,7 +64,92 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 		new File(getRepositoryPath(), FILES_PATH)
 	}
 
-	def getConformanceBadge(specificationId: Long, actorId: Option[Long], snapshotId: Option[Long], status: String, exactMatch: Boolean): Option[File] = {
+	private def isChildPath(expectedParent: Path, expectedChild: Path): Boolean = {
+		expectedChild.normalize().toAbsolutePath.startsWith(expectedParent.normalize().toAbsolutePath)
+	}
+
+	private def getCommunityReportStylesheetFolder(communityId: Long): Path = {
+		Paths.get(Configurations.TEST_CASE_REPOSITORY_PATH, FILES_PATH, FILES_XSLT_PATH, communityId.toString)
+	}
+
+	def hasCommunityReportStylesheets(communityId: Long): Boolean = {
+		var report = getCommunityReportStylesheet(communityId, XmlReportType.ConformanceOverviewReport)
+		if (report.isEmpty) {
+			report = getCommunityReportStylesheet(communityId, XmlReportType.ConformanceStatementReport)
+			if (report.isEmpty) {
+				report = getCommunityReportStylesheet(communityId, XmlReportType.TestCaseReport)
+				if (report.isEmpty) {
+					report = getCommunityReportStylesheet(communityId, XmlReportType.TestStepReport)
+				}
+			}
+		}
+		report.isDefined
+	}
+
+	def getCommunityReportStylesheet(communityId: Long, reportType: XmlReportType): Option[Path] = {
+		val stylesheetFolder = getCommunityReportStylesheetFolder(communityId)
+		val filePath = stylesheetFolder.resolve(stylesheetName(reportType))
+		Some(filePath).filter(Files.exists(_))
+	}
+
+	private def stylesheetName(reportType: XmlReportType): String = {
+		reportType match {
+			case XmlReportType.ConformanceStatementReport => "conformance_statement.xslt"
+			case XmlReportType.ConformanceOverviewReport => "conformance_overview.xslt"
+			case XmlReportType.TestCaseReport => "test_case.xslt"
+			case _ => "test_step.xslt" // XmlReportType.TestStepReport
+		}
+	}
+
+	def saveCommunityReportStylesheet(communityId: Long, reportType: XmlReportType, fileToSave: Path): Path = {
+		val stylesheetFolder = getCommunityReportStylesheetFolder(communityId)
+		if (Files.notExists(stylesheetFolder)) {
+			Files.createDirectories(stylesheetFolder)
+		}
+		val targetPath = stylesheetFolder.resolve(stylesheetName(reportType))
+		Files.copy(fileToSave, targetPath, StandardCopyOption.REPLACE_EXISTING)
+	}
+
+	def deleteCommunityReportStylesheet(communityId: Long, reportType: XmlReportType): Unit = {
+		val path = getCommunityReportStylesheet(communityId, reportType)
+		if (path.isDefined) {
+			FileUtils.deleteQuietly(path.get.toFile)
+		}
+	}
+
+	def deleteCommunityReportStylesheets(communityId: Long): Unit = {
+		val path = getCommunityReportStylesheetFolder(communityId)
+		FileUtils.deleteQuietly(path.toFile)
+	}
+
+	def getThemeResource(themeId: Long, name: String): Option[File] = {
+		val resourceFolder = Path.of(Configurations.TEST_CASE_REPOSITORY_PATH, FILES_PATH, FILES_THEMES_PATH, themeId.toString)
+		val resourcePath = resourceFolder.resolve(name)
+		if (Files.exists(resourcePath) && isChildPath(resourceFolder, resourcePath)) {
+			Some(resourcePath.toFile)
+		} else {
+			None
+		}
+	}
+
+	def deleteThemeResource(themeId: Long, name: String): Unit = {
+		FileUtils.deleteQuietly(Path.of(Configurations.TEST_CASE_REPOSITORY_PATH, FILES_PATH, FILES_THEMES_PATH, themeId.toString, name).toFile)
+	}
+
+	def deleteThemeResources(themeId: Long): Unit = {
+		FileUtils.deleteQuietly(Path.of(Configurations.TEST_CASE_REPOSITORY_PATH, FILES_PATH, FILES_THEMES_PATH, themeId.toString).toFile)
+	}
+
+	def saveThemeResource(themeId: Long, targetName: String, source: File): File = {
+		val themeFolder = Path.of(Configurations.TEST_CASE_REPOSITORY_PATH, FILES_PATH, FILES_THEMES_PATH, themeId.toString)
+		if (Files.notExists(themeFolder)) {
+			Files.createDirectories(themeFolder)
+		}
+		val targetPath = themeFolder.resolve(Path.of(targetName))
+		Files.copy(source.toPath, targetPath, StandardCopyOption.REPLACE_EXISTING).toFile
+	}
+
+	def getConformanceBadge(specificationId: Long, actorId: Option[Long], snapshotId: Option[Long], status: String, exactMatch: Boolean, forReport: Boolean): Option[File] = {
 		/*
 		 Structure is as follows (folders in square brackets):
 		 [badges]
@@ -89,37 +179,49 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 		var badge: Option[Path] = None
 		if (actorId.isDefined) {
 			val actorFolder = specificationFolder.resolve(actorId.get.toString)
-			badge = findBadge(actorFolder, status, exactMatch).headOption
+			badge = findBadge(actorFolder, status, exactMatch, forReport).headOption
 			if (badge.isEmpty && !exactMatch) {
-				badge = findBadge(specificationFolder, status, exactMatch).headOption
+				badge = findBadge(specificationFolder, status, exactMatch, forReport).headOption
 			}
 		} else {
-			badge = findBadge(specificationFolder, status, exactMatch).headOption
+			badge = findBadge(specificationFolder, status, exactMatch, forReport).headOption
 		}
 		badge.map(_.toFile)
 	}
 
-	private def findBadgeFile(badgeFolder: Path, status: String): List[Path] = {
+	private def findBadgeFile(badgeFolder: Path, status: String, forReport: Boolean): List[Path] = {
+		val baseFileName = if (forReport) {
+			status+".report"
+		} else {
+			status
+		}
 		Files.find(badgeFolder, 1, { (file, _) =>
-			status.equals(FilenameUtils.getBaseName(file.getFileName.toString))
+			baseFileName.equals(FilenameUtils.getBaseName(file.getFileName.toString))
 		}).toList.asScala.toList
 	}
 
-	private def findBadge(badgeFolder: Path, status: String, exactMatch: Boolean): List[Path] = {
+	private def findBadgeFileForStatus(badgeFolder: Path, status: String, exactMatch: Boolean, forReport: Boolean): List[Path] = {
+		var path = findBadgeFile(badgeFolder, status, forReport)
+		if (path.isEmpty && !exactMatch && forReport) {
+			// See if we have a non-report badge as a fallback.
+			path = findBadgeFile(badgeFolder, status, forReport = false)
+		}
+		path
+	}
+
+	private def findBadge(badgeFolder: Path, status: String, exactMatch: Boolean, forReport: Boolean): List[Path] = {
 		if (Files.exists(badgeFolder)) {
 			val statusValue = TestResultStatus.withName(status)
-			val pathToReturn = if (statusValue == TestResultStatus.SUCCESS) {
-				findBadgeFile(badgeFolder, TestResultStatus.SUCCESS.toString)
-			} else if (statusValue == TestResultStatus.FAILURE) {
+			val pathToReturn = if (statusValue == TestResultStatus.FAILURE) {
 				// Return the failure badge if this is defined.
-				var failurePath = findBadgeFile(badgeFolder, TestResultStatus.FAILURE.toString)
+				var failurePath = findBadgeFileForStatus(badgeFolder, status, exactMatch, forReport)
 				if (failurePath.isEmpty && !exactMatch) {
 					// If not defined return the other/incomplete badge.
-					failurePath = findBadgeFile(badgeFolder, TestResultStatus.UNDEFINED.toString)
+					failurePath = findBadgeFileForStatus(badgeFolder, TestResultStatus.UNDEFINED.toString, exactMatch, forReport)
 				}
 				failurePath
 			} else {
-				findBadgeFile(badgeFolder, TestResultStatus.UNDEFINED.toString)
+				findBadgeFileForStatus(badgeFolder, status, exactMatch, forReport)
 			}
 			pathToReturn
 		} else {
@@ -127,39 +229,44 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 		}
 	}
 
-	private def badgeFileName(baseName: String, reference: BadgeFile): String = {
+	private def badgeFileName(baseName: String, reference: NamedFile, forReport: Boolean): String = {
+		val baseNameToUse = if (forReport) {
+			baseName+".report"
+		} else {
+			baseName
+		}
 		val extension = FilenameUtils.getExtension(reference.name)
 		if (StringUtils.isBlank(extension)) {
-			baseName
+			baseNameToUse
 		} else {
-			baseName + FilenameUtils.EXTENSION_SEPARATOR + extension
+			baseNameToUse + FilenameUtils.EXTENSION_SEPARATOR + extension
 		}
 	}
 
-	def setSpecificationBadge(specificationId: Long, badge: BadgeFile, status: String): Unit = {
+	def setSpecificationBadge(specificationId: Long, badge: NamedFile, status: String, forReport: Boolean): Unit = {
 		val specificationFolder = Paths.get(Configurations.TEST_CASE_REPOSITORY_PATH, FILES_PATH, FILES_BADGES_PATH, FILES_BADGES_LATEST_PATH, specificationId.toString)
 		if (Files.notExists(specificationFolder)) {
 			Files.createDirectories(specificationFolder)
 		}
-		_setFile(specificationFolder.resolve(badgeFileName(status, badge)).toFile, badge.file, copy = false)
+		_setFile(specificationFolder.resolve(badgeFileName(status, badge, forReport)).toFile, badge.file, copy = false)
 	}
 
-	def setActorBadge(specificationId: Long, actorId: Long, badge: BadgeFile, status: String): Unit = {
+	def setActorBadge(specificationId: Long, actorId: Long, badge: NamedFile, status: String, forReport: Boolean): Unit = {
 		val actorFolder = Paths.get(Configurations.TEST_CASE_REPOSITORY_PATH, FILES_PATH, FILES_BADGES_PATH, FILES_BADGES_LATEST_PATH, specificationId.toString, actorId.toString)
 		if (Files.notExists(actorFolder)) {
 			Files.createDirectories(actorFolder)
 		}
-		_setFile(actorFolder.resolve(badgeFileName(status, badge)).toFile, badge.file, copy = false)
+		_setFile(actorFolder.resolve(badgeFileName(status, badge, forReport)).toFile, badge.file, copy = false)
 	}
 
 	def deleteSpecificationBadges(specificationId: Long): Unit = {
 		_deleteFile(Paths.get(Configurations.TEST_CASE_REPOSITORY_PATH, FILES_PATH, FILES_BADGES_PATH, FILES_BADGES_LATEST_PATH, specificationId.toString).toFile)
 	}
 
-	def deleteSpecificationBadge(specificationId: Long, status: String): Unit = {
+	def deleteSpecificationBadge(specificationId: Long, status: String, forReport: Boolean): Unit = {
 		val specificationFolder = Paths.get(Configurations.TEST_CASE_REPOSITORY_PATH, FILES_PATH, FILES_BADGES_PATH, FILES_BADGES_LATEST_PATH, specificationId.toString)
 		if (Files.exists(specificationFolder)) {
-			findBadge(specificationFolder, status, exactMatch = true).foreach { badge =>
+			findBadge(specificationFolder, status, exactMatch = true, forReport).foreach { badge =>
 				_deleteFile(badge.toFile)
 			}
 		}
@@ -169,10 +276,10 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 		_deleteFile(Paths.get(Configurations.TEST_CASE_REPOSITORY_PATH, FILES_PATH, FILES_BADGES_PATH, FILES_BADGES_LATEST_PATH, specificationId.toString, actorId.toString).toFile)
 	}
 
-	def deleteActorBadge(specificationId: Long, actorId: Long, status: String): Unit = {
+	def deleteActorBadge(specificationId: Long, actorId: Long, status: String, forReport: Boolean): Unit = {
 		val actorFolder = Paths.get(Configurations.TEST_CASE_REPOSITORY_PATH, FILES_PATH, FILES_BADGES_PATH, FILES_BADGES_LATEST_PATH, specificationId.toString, actorId.toString)
 		if (Files.exists(actorFolder)) {
-			findBadge(actorFolder, status, exactMatch = true).foreach { badge =>
+			findBadge(actorFolder, status, exactMatch = true, forReport).foreach { badge =>
 				_deleteFile(badge.toFile)
 			}
 		}
@@ -485,10 +592,9 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 								testSuitePath = Some(path)
 							}
 
-							Using(Files.newOutputStream(newFile.toPath)) { fos =>
+							Using.resource(Files.newOutputStream(newFile.toPath)) { fos =>
 								IOUtils.copy(zip.getInputStream(zipEntry), fos)
 								fos.flush()
-								fos.close()
 							}
 							logger.debug("Wrote ["+newFile+"]")
 						} else {
@@ -633,11 +739,15 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 						val tdlTestCaseEntries = tdlTestSuite.getTestcase.asScala
 						val folderName = generateTestSuiteFileName()
 						var documentation: Option[String] = None
+						val specificationInfo = Option(tdlTestSuite.getMetadata.getSpecification)
 						if (completeParse && tdlTestSuite.getMetadata.getDocumentation != null) {
 							documentation = getDocumentation(tdlTestSuite.getId, tdlTestSuite.getMetadata.getDocumentation, zip, specificationId, domainId)
 						}
-						val caseObject = TestSuites(0L, name, name, version, Option(authors), Option(originalDate), Option(modificationDate), Option(description), None,
-							folderName, documentation.isDefined, documentation, identifier, tdlTestCaseEntries.isEmpty, shared = false, domainId, None
+						val caseObject = TestSuites(0L, name, name, Option(version).getOrElse(""), Option(authors), Option(originalDate), Option(modificationDate), Option(description), None,
+							folderName, documentation.isDefined, documentation, identifier, tdlTestCaseEntries.isEmpty, shared = false, domainId, None,
+							specificationInfo.flatMap(x => Option(x.getReference)),
+							specificationInfo.flatMap(x => Option(x.getDescription)),
+							specificationInfo.flatMap(x => Option(x.getLink))
 						)
 
 						var testCases: Option[List[TestCases]] = None
@@ -670,12 +780,16 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 									if (tdlTestCase.getMetadata.getUpdate != null) {
 										testCaseUpdateApproachTemp += (tdlTestCase.getId -> tdlTestCase.getMetadata.getUpdate)
 									}
+									val testCaseSpecificationInfo = Option(tdlTestCase.getMetadata.getSpecification)
 									TestCases(
-										0L, tdlTestCase.getMetadata.getName, tdlTestCase.getMetadata.getName, tdlTestCase.getMetadata.getVersion,
+										0L, tdlTestCase.getMetadata.getName, tdlTestCase.getMetadata.getName, Option(tdlTestCase.getMetadata.getVersion).getOrElse(""),
 										Option(tdlTestCase.getMetadata.getAuthors), Option(tdlTestCase.getMetadata.getPublished),
 										Option(tdlTestCase.getMetadata.getLastModified), Option(tdlTestCase.getMetadata.getDescription),
 										None, testCaseType.ordinal().toShort, null, Some(actorString.toString()), None,
-										testCaseCounter.toShort, documentation.isDefined, documentation, tdlTestCase.getId, tdlTestCase.isOptional, tdlTestCase.isDisabled, getTagsStr(tdlTestCase)
+										testCaseCounter.toShort, documentation.isDefined, documentation, tdlTestCase.getId, tdlTestCase.isOptional, tdlTestCase.isDisabled, getTagsStr(tdlTestCase),
+										testCaseSpecificationInfo.flatMap(x => Option(x.getReference)),
+										testCaseSpecificationInfo.flatMap(x => Option(x.getDescription)),
+										testCaseSpecificationInfo.flatMap(x => Option(x.getLink))
 									)
 							}.toList)
 							testCaseUpdateApproach = Some(testCaseUpdateApproachTemp.toMap)
@@ -753,7 +867,7 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 
 	def getTestSuite(definitionFile: File): com.gitb.tdl.TestSuite = {
 		var testSuite: com.gitb.tdl.TestSuite = null
-		Using(Files.newInputStream(definitionFile.toPath)) { stream =>
+		Using.resource(Files.newInputStream(definitionFile.toPath)) { stream =>
 			testSuite = XMLUtils.unmarshal(classOf[com.gitb.tdl.TestSuite], new StreamSource(stream))
 		}
 		testSuite
@@ -840,12 +954,16 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 		result
 	}
 
-	def getPathForTestSessionData(folderInfo: SessionFolderInfo): Path = {
-		getPathForTestSessionData(folderInfo.path)
+	def getPathForTestSessionData(folderInfo: SessionFolderInfo, tempData: Boolean): Path = {
+		getPathForTestSessionData(folderInfo.path, tempData)
 	}
 
-	def getPathForTestSessionData(sessionFolder: Path): Path = {
-		Path.of(sessionFolder.toString, "data")
+	def getPathForTestSessionData(sessionFolder: Path, tempData: Boolean): Path = {
+		if (tempData) {
+			Path.of(sessionFolder.toString, "data_temp")
+		} else {
+			Path.of(sessionFolder.toString, "data")
+		}
 	}
 
 	def getPathForTestSessionWrapper(sessionId: String, isExpected: Boolean): SessionFolderInfo = {
@@ -920,6 +1038,36 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 		} else {
 			SessionFolderInfo(path, archived = false)
 		}
+	}
+
+	def decoupleLargeData(item: AnyContent, sessionFolder: Path, isTempData: Boolean): Unit = {
+		if (item != null) {
+			// We check first the length of the string as for large content this will already be over the threshold.
+			if (item.getValue != null && (item.getValue.length > Configurations.TEST_SESSION_EMBEDDED_REPORT_DATA_THRESHOLD || item.getValue.getBytes.length > Configurations.TEST_SESSION_EMBEDDED_REPORT_DATA_THRESHOLD)) {
+				if (item.getEmbeddingMethod == ValueEmbeddingEnumeration.BASE_64) {
+					if (MimeUtil.isDataURL(item.getValue)) {
+						writeValueToFile(item, isTempData, sessionFolder, file => { Files.write(file, Base64.decodeBase64(MimeUtil.getBase64FromDataURL(item.getValue))) })
+					} else {
+						writeValueToFile(item, isTempData, sessionFolder, file => { Files.write(file, Base64.decodeBase64(item.getValue)) })
+					}
+				} else {
+					writeValueToFile(item, isTempData, sessionFolder, file => { Files.writeString(file, item.getValue) })
+				}
+			}
+			// Check children.
+			item.getItem.forEach { child =>
+				decoupleLargeData(child, sessionFolder, isTempData)
+			}
+		}
+	}
+
+	private def writeValueToFile(item: AnyContent, isTempData: Boolean, sessionFolder: Path, writeFn: Path => Unit): Unit = {
+		val dataFolder = getPathForTestSessionData(sessionFolder, isTempData)
+		Files.createDirectories(dataFolder)
+		val fileUuid = UUID.randomUUID().toString
+		val dataFile = Path.of(dataFolder.toString, fileUuid)
+		writeFn.apply(dataFile)
+		item.setValue(s"___[[$fileUuid]]___")
 	}
 
 }

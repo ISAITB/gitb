@@ -10,9 +10,9 @@ class BeforeStartHook {
 
   private def logger = LoggerFactory.getLogger(this.getClass)
 
-  //Load application configurations before the applications starts
+  // Load application configurations before the applications starts
   Configurations.loadConfigurations()
-  //Create database if not exists.
+  // Create database if not exists.
   PersistenceLayer.preInitialize()
   logger.info("Application has been configured")
 

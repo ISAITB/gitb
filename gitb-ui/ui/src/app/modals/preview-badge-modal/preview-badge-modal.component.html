@@ -1,10 +1,12 @@
 <div class="modal-header">
-    <h4>{{headerText}}</h4>
+    <div class="modal-title">{{headerText}}</div>
 </div>
 <div class="modal-body" [ngSwitch]="html != undefined">
     <div *ngSwitchCase="true" id="content" [innerHtml]="html! | sanitizeHtml"></div>
     <app-pending-block *ngSwitchDefault [pending]="true"></app-pending-block>
 </div>
 <div class="modal-footer">
-    <button type="button" class="btn btn-default" (click)="close()">Close</button>
+    <div class="btn-toolbar">
+        <button type="button" class="btn btn-secondary" (click)="close()">Close</button>
+    </div>
 </div>

@@ -17,27 +17,29 @@ import { ParameterDetailsModalComponent } from 'src/app/components/parameters/pa
 import { ActionMethods } from './action-methods';
 import { PreviewParametersModalComponent } from 'src/app/modals/preview-parameters-modal/preview-parameters-modal.component';
 import { RoutingService } from 'src/app/services/routing.service';
+import { CdkDragDrop } from '@angular/cdk/drag-drop';
 
 @Component({
   selector: 'app-community-properties',
-  templateUrl: './community-properties.component.html',
-  styles: [
-  ]
+  templateUrl: './community-properties.component.html'
 })
 export class CommunityPropertiesComponent implements OnInit {
 
   organisationParameterStatus = {status: Constants.STATUS.PENDING}
   systemParameterStatus = {status: Constants.STATUS.PENDING}
   communityId!:number
-  orderOrganisationParametersDisabled = {value: true}
-  orderSystemParametersDisabled = {value: true}
+  orderOrganisationParametersDisabled = true
+  orderSystemParametersDisabled = true
   organisationReservedKeys = ['fullName', 'shortName']
   systemReservedKeys = ['fullName', 'shortName', 'version']  
   organisationParameters: OrganisationParameter[] = []
   organisationParameterValues: ParameterReference[] = []
   systemParameters: SystemParameter[] = []
   systemParameterValues: ParameterReference[] = []
-  orderPending = false
+  orderOrganisationParametersPending = false
+  orderSystemParametersPending = false
+  draggingOrganisationParameter = false
+  draggingSystemParameter = false
 
   Constants = Constants
 
@@ -145,13 +147,13 @@ export class CommunityPropertiesComponent implements OnInit {
     for (let param of this.organisationParameters) {
       ids.push(param.id)
     }
-    this.orderPending = true
+    this.orderOrganisationParametersPending = true
     this.communityService.orderOrganisationParameters(this.communityId, ids)
     .subscribe(() => {
       this.popupService.success('Property ordering saved.')
     }).add(() => {
-      this.orderOrganisationParametersDisabled.value = true
-      this.orderPending = false
+      this.orderOrganisationParametersDisabled = true
+      this.orderOrganisationParametersPending = false
     })
   }
 
@@ -160,24 +162,14 @@ export class CommunityPropertiesComponent implements OnInit {
     for (let param of this.systemParameters) {
       ids.push(param.id)
     }
+    this.orderSystemParametersPending = true
     this.communityService.orderSystemParameters(this.communityId, ids)
     .subscribe(() => {
       this.popupService.success('Property ordering saved.')
     }).add(() => {
-      this.orderSystemParametersDisabled.value = true
+      this.orderSystemParametersDisabled = true
+      this.orderSystemParametersPending = false
     })
-  }
-
-  movePropertyUp<T extends CustomProperty>(properties: T[], disabledFlag: {value: boolean}, index: number) {
-    const item = properties.splice(index, 1)[0]
-    disabledFlag.value = false
-    properties.splice(index-1, 0, item)
-  }
-
-  movePropertyDown<T extends CustomProperty>(properties: T[], disabledFlag: {value: boolean}, index: number) {
-    const item = properties.splice(index, 1)[0]
-    disabledFlag.value = false
-    properties.splice(index+1, 0, item)
   }
 
   addParameter(modalTitle: string, existingValues: ParameterReference[], reservedKeys: string[], methods: ActionMethods, propertyLabel: string, hideInRegistration: boolean) {
@@ -274,4 +266,19 @@ export class CommunityPropertiesComponent implements OnInit {
   cancel() {
     this.routingService.toCommunity(this.communityId)
   }
+
+  dropOrganisationParameter(event: CdkDragDrop<any>) {
+    if (event.currentIndex != event.previousIndex) {
+      this.organisationParameters.splice(event.currentIndex, 0, this.organisationParameters.splice(event.previousIndex, 1)[0]);
+      this.orderOrganisationParametersDisabled = false
+    }
+  }
+
+  dropSystemParameter(event: CdkDragDrop<any>) {
+    if (event.currentIndex != event.previousIndex) {
+      this.systemParameters.splice(event.currentIndex, 0, this.systemParameters.splice(event.previousIndex, 1)[0]);
+      this.orderSystemParametersDisabled = false
+    }
+  }
+
 }

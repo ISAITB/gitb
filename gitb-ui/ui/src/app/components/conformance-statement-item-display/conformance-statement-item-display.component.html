@@ -1,36 +1,138 @@
-<ng-container *ngIf="!filtering || item.filtered">
-    <ng-container [ngSwitch]="hideSelf">
-        <ng-container *ngSwitchCase="true">
-            <app-conformance-statement-items-display *ngIf="item.items" [items]="item.items" [wrapDescriptions]="wrapDescriptions" [expandable]="expandable" [filtering]="filtering" [shade]="!shade" [animated]="animated" [withCheck]="withCheck" [withResults]="withResults" (selectionChanged)="childSelectionChanged($event)"></app-conformance-statement-items-display>        
-        </ng-container>
-        <ng-container *ngSwitchDefault>
-            <div class="item-container" [class.shade]="shade">
-                <div class="item-header" (click)="clickHeader();$event.stopPropagation()" [class.actionable]="expandable || withCheck" [class.wrapDescriptions]="wrapDescriptions">
-                    <div class="item-header-title">
-                        <div class="item-icon" *ngIf="expandable && hasChildren && !allChildrenHidden"><app-collapsing-icon [isCollapsed]="item.collapsed!" [asDiv]="true"></app-collapsing-icon></div>
-                        <div class="item-check" *ngIf="showCheck"><input type="checkbox" name="itemCheck" [(ngModel)]="item.checked" (ngModelChange)="updateChecked()"></div>
-                        <div class="item-name">{{item.name}}</div>
+@if (!filtering || item.filtered) {
+    @if (hideSelf) {
+        @if (item.items) {
+            <app-conformance-statement-items-display
+                [items]="item.items"
+                [wrapDescriptions]="wrapDescriptions"
+                [expandable]="expandable"
+                [filtering]="filtering"
+                [shade]="!shade"
+                [animated]="animated"
+                [withCheck]="withCheck"
+                [withExport]="withExport"
+                [withResults]="withResults"
+                [withTestCases]="withTestCases"
+                [testSuiteLoader]="testSuiteLoader"
+                [communityId]="communityId"
+                [organisationId]="organisationId"
+                [snapshotId]="snapshotId"
+                [snapshotLabel]="snapshotLabel"
+                (selectionChanged)="childSelectionChanged($event)"
+                (export)="onExport($event)"
+                (viewTestSession)="onViewTestSession($event)"
+            ></app-conformance-statement-items-display>
+        }
+    } @else {
+        <div class="item-container" [class.shade]="shade">
+            <div class="item-header" (click)="clickHeader();$event.stopPropagation()" [class.actionable]="expandable || withCheck || showTestCases" [class.wrapDescriptions]="wrapDescriptions">
+                <div class="item-header-title">
+                    @if (expandable && hasChildren && !allChildrenHidden) {
+                        <div class="item-icon"><app-collapsing-icon [isCollapsed]="item.collapsed!" [asDiv]="true"></app-collapsing-icon></div>
+                    } @else if (showTestCases) {
+                        <div class="item-icon"><app-collapsing-icon [isCollapsed]="!testCasesOpen" [asDiv]="true"></app-collapsing-icon></div>
+                    }
+                    @if (showCheck) {
+                        <div class="item-check"><input type="checkbox" name="itemCheck" [(ngModel)]="item.checked" (ngModelChange)="updateChecked()"></div>
+                    }
+                    <div class="item-name">{{item.name}}</div>
+                </div>
+                @if (item.description) {
+                    <div class="item-description">{{item.description}}</div>
+                }
+                @if (withExport && expandable && hasChildren && !allChildrenHidden) {
+                    <div class="item-controls">
+                        <div class="btn-toolbar">
+                            <button class="btn btn-secondary" (click)="onExport({statementReport: false, item: item, format: 'xml'}); $event.stopPropagation();" [pending]="item.exportXmlPending" [icon]="true"  containerClass="shortTooltip" tooltip="Export (XML)" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-regular fa-file-lines"></i></button>
+                            <button class="btn btn-secondary" (click)="onExport({statementReport: false, item: item, format: 'pdf'}); $event.stopPropagation();" [pending]="item.exportPdfPending" [icon]="true"  containerClass="shortTooltip" tooltip="Export (PDF)" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-regular fa-file-pdf"></i></button>
+                        </div>
                     </div>
-                    <div class="item-description" *ngIf="item.description">{{item.description}}</div>
-                    <div class="item-results" *ngIf="showResults">
-                        <app-tag *ngIf="updateTime" label="fa-solid fa-clock" [icon]="true" tooltipText="Last update time" [value]="updateTime"></app-tag>
-                        <ng-container *ngIf="counters">
+                }
+                @if (showResults) {
+                    <div class="item-results">
+                        @if (pending) {
+                            <div class="item-pending">
+                                <app-pending-block [pending]="true"></app-pending-block>
+                            </div>
+                        }
+                        @if (updateTime) {
+                            <app-tag label="fa-solid fa-clock" [icon]="true" tooltipText="Last update time" [value]="updateTime"></app-tag>
+                        }
+                        @if (counters) {
                             <div class="item-counters">
                                 <app-test-status-icons [counters]="counters" [asLine]="true"></app-test-status-icons>
                             </div>
                             <div class="item-ratios">
                                 <app-test-result-ratio [counters]="counters" [asLine]="true"></app-test-result-ratio>
                             </div>
-                        </ng-container>
-                        <div class="item-status" *ngIf="status"><i containerClass="shortTooltip" [tooltip]="dataService.tooltipForTestResult(status)" [ngClass]="dataService.iconForTestResult(status)"></i></div>
+                        }
+                        @if (status) {
+                            <div class="item-status"><i containerClass="shortTooltip" [tooltip]="dataService.tooltipForTestResult(status)" [ngClass]="dataService.iconForTestResult(status)"></i></div>
+                        }
+                    </div>
+                }
+            </div>
+            @if (showTestCases) {
+                <div class="item-content-container" [collapse]="!testCasesOpen" [isAnimated]="true" (expanded)="expanded()" (collapsed)="collapsed()">
+                    <div class="item-content">
+                        @if (statementSummary) {
+                            <div class="statement-controls">
+                                <app-statement-controls
+                                    [conformanceIds]="statementSummary"
+                                    [communityId]="communityId!"
+                                    [organisationId]="organisationId!"
+                                    [snapshotId]="snapshotId"
+                                    [snapshotLabel]="snapshotLabel"
+                                    [hasBadge]="hasBadge">
+                                    <div class="btn-group export-group" dropdown [isDisabled]="item.exportPdfPending == true || item.exportXmlPending == true">
+                                        <button type="button" [disable]="item.exportPdfPending == true || item.exportXmlPending == true" [pending]="item.exportPdfPending || item.exportXmlPending" class="btn btn-secondary" (click)="onExport({statementReport: true, item: item, actorId: statementSummary.actorId, format: 'pdf'})">Download report</button>
+                                        <button id="button-export" type="button" [disabled]="item.exportPdfPending == true || item.exportXmlPending == true" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
+                                            <span class="caret"></span>
+                                            <span class="sr-only visually-hidden">Download report</span>
+                                        </button>
+                                        <ul id="dropdown-export" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-export">
+                                            <li role="menuitem"><a class="dropdown-item" href (click)="onExport({statementReport: true, item: item, actorId: statementSummary.actorId, format: 'xml'});$event.preventDefault();">Download report as XML</a></li>
+                                        </ul>
+                                    </div>
+                                </app-statement-controls>
+                            </div>
+                        }
+                        @if (testSuites) {
+                            <div class="statement-test-suites">
+                                <app-test-suite-display
+                                    [testSuites]="testSuites"
+                                    [showExecute]="false"
+                                    [showExport]="true"
+                                    [shaded]="shade"
+                                    (viewTestSession)="onViewTestSession($event)"
+                                ></app-test-suite-display>                    
+                            </div>
+                        }
                     </div>
                 </div>
-                <ng-container *ngIf="item.items && item.items.length > 0">
-                    <div class="item-content" [collapse]="item.collapsed!" [isAnimated]="expandable && animated" (expanded)="expanded()" (collapsed)="collapsed()">    
-                        <app-conformance-statement-items-display [items]="item.items" [wrapDescriptions]="wrapDescriptions" [expandable]="expandable" [filtering]="filtering" [shade]="!shade" [animated]="animated" [withCheck]="withCheck" [withResults]="withResults" (selectionChanged)="childSelectionChanged($event)"></app-conformance-statement-items-display>        
-                    </div>
-                </ng-container>
-            </div>
-        </ng-container>
-    </ng-container>
-</ng-container>
+            } @else if (item.items && item.items.length > 0) {
+                <div class="item-content-container item-content" [collapse]="item.collapsed!" [isAnimated]="expandable && animated" (expanded)="expanded()" (collapsed)="collapsed()">
+                    <app-conformance-statement-items-display
+                        [items]="item.items"
+                        [wrapDescriptions]="wrapDescriptions"
+                        [expandable]="expandable"
+                        [filtering]="filtering"
+                        [shade]="!shade"
+                        [animated]="animated"
+                        [withCheck]="withCheck"
+                        [withExport]="withExport"
+                        [withResults]="withResults"
+                        [withTestCases]="withTestCases"
+                        [testSuiteLoader]="testSuiteLoader"
+                        [communityId]="communityId"
+                        [organisationId]="organisationId"
+                        [snapshotId]="snapshotId"
+                        [snapshotLabel]="snapshotLabel"
+                        (selectionChanged)="childSelectionChanged($event)"
+                        (export)="onExport($event)"
+                        (viewTestSession)="onViewTestSession($event)"
+                    ></app-conformance-statement-items-display>
+                </div>
+            }
+        </div>
+    }
+}

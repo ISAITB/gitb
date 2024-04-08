@@ -50,7 +50,9 @@ export class ProfileComponent extends BaseComponent implements OnInit, AfterView
   }
 
 	disconnect() {
-    const modalRef = this.modalService.show(DisconnectRoleComponent)
+    const modalRef = this.modalService.show(DisconnectRoleComponent, {
+      class: 'modal-lg'
+    })
     modalRef.content!.result.subscribe((choice?: number) => {
       if (choice != undefined) {
         this.cookieService.set(Constants.LOGIN_OPTION_COOKIE_KEY, Constants.LOGIN_OPTION.FORCE_CHOICE)

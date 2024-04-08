@@ -1,8 +1,8 @@
 package jaxws;
 
 import actors.SessionManagerActor$;
-import akka.actor.ActorRef;
-import akka.actor.ActorSystem;
+import org.apache.pekko.actor.ActorRef;
+import org.apache.pekko.actor.ActorSystem;
 import com.gitb.tbs.*;
 import com.gitb.tbs.Void;
 

@@ -1,9 +1,8 @@
 package com.gitb.engine.actors.processors;
 
-import akka.actor.ActorContext;
-import akka.actor.ActorRef;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.tdl.Group;
+import org.apache.pekko.actor.ActorRef;
 
 /**
  * Created by serbay on 9/12/14.

@@ -1,0 +1,108 @@
+<div class="page">
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">Report settings</div>
+        </div>
+        <div class="configsContainer">
+            <div class="configContainer">
+                <!-- Conformance statement certificate -->
+                <app-configuration-entry
+                    configTitle="Conformance statement certificate"
+                    configDescription="Certificate produced for a specific conformance statement that is successfully completed."
+                    [(status)]="conformanceStatementCertificateSettings.status"
+                    (beforeExpand)="conformanceStatementCertificateSettings.setExpanding()"
+                    (afterExpand)="conformanceStatementCertificateSettings.setExpanded()">
+                    <app-conformance-certificate-form
+                        [communityId]="communityId"
+                        [selected]="conformanceStatementCertificateSettings.expanding"
+                        [expanded]="conformanceStatementCertificateSettings.expanded"
+                        (loaded)="conformanceStatementCertificateSettings.setLoaded()"
+                        (collapse)="conformanceStatementCertificateSettings.setCollapsed()"></app-conformance-certificate-form>
+                </app-configuration-entry>
+            </div>
+            <div class="configContainer">
+                <!-- Conformance overview certificate -->
+                <app-configuration-entry
+                    configTitle="Conformance overview certificate"
+                    configDescription="Certificate produced for multiple conformance statements once all have successfully completed."
+                    [(status)]="conformanceOverviewCertificateSettings.status"
+                    (beforeExpand)="conformanceOverviewCertificateSettings.setExpanding()"
+                    (afterExpand)="conformanceOverviewCertificateSettings.setExpanded()">
+                    <app-conformance-overview-certificate-form
+                        [communityId]="communityId"
+                        [selected]="conformanceOverviewCertificateSettings.expanding"
+                        [expanded]="conformanceOverviewCertificateSettings.expanded"
+                        (loaded)="conformanceOverviewCertificateSettings.setLoaded()"
+                        (collapse)="conformanceOverviewCertificateSettings.setCollapsed()"></app-conformance-overview-certificate-form>
+                </app-configuration-entry>
+            </div>
+            <div class="configContainer">
+                <!-- Conformance statement report -->
+                <app-configuration-entry
+                    configTitle="Conformance statement report"
+                    configDescription="Report summarising the status of a specific conformance statement."
+                    [(status)]="conformanceStatementReportSettings.status"
+                    (beforeExpand)="conformanceStatementReportSettings.setExpanding()"
+                    (afterExpand)="conformanceStatementReportSettings.setExpanded()">
+                <app-conformance-statement-report-form
+                    [communityId]="communityId"
+                    [selected]="conformanceStatementReportSettings.expanding"
+                    [expanded]="conformanceStatementReportSettings.expanded"
+                    (loaded)="conformanceStatementReportSettings.setLoaded()"
+                    (collapse)="conformanceStatementReportSettings.setCollapsed()"></app-conformance-statement-report-form>
+                </app-configuration-entry>
+            </div>
+            <div class="configContainer">
+                <!-- Conformance overview report -->
+                <app-configuration-entry
+                    configTitle="Conformance overview report"
+                    configDescription="Report summarising the status of multiple conformance statements."
+                    [(status)]="conformanceOverviewReportSettings.status"
+                    (beforeExpand)="conformanceOverviewReportSettings.setExpanding()"
+                    (afterExpand)="conformanceOverviewReportSettings.setExpanded()">
+                    <app-conformance-overview-report-form
+                        [communityId]="communityId"
+                        [selected]="conformanceOverviewReportSettings.expanding"
+                        [expanded]="conformanceOverviewReportSettings.expanded"
+                        (loaded)="conformanceOverviewReportSettings.setLoaded()"
+                        (collapse)="conformanceOverviewReportSettings.setCollapsed()"></app-conformance-overview-report-form>
+                </app-configuration-entry>
+            </div>
+            <div class="configContainer">
+                <!-- Test case report -->
+                <app-configuration-entry
+                    configTitle="Test case report"
+                    configDescription="Report providing details on the result of a test session execution."
+                    [(status)]="testCaseReportSettings.status"
+                    (beforeExpand)="testCaseReportSettings.setExpanding()"
+                    (afterExpand)="testCaseReportSettings.setExpanded()">
+                    <app-test-case-report-form
+                        [communityId]="communityId"
+                        [selected]="testCaseReportSettings.expanding"
+                        [expanded]="testCaseReportSettings.expanded"
+                        (loaded)="testCaseReportSettings.setLoaded()"
+                        (collapse)="testCaseReportSettings.setCollapsed()"></app-test-case-report-form>
+                </app-configuration-entry>
+            </div>
+            <div class="configContainer">
+                <!-- Test step report -->
+                <app-configuration-entry
+                    configTitle="Test step report"
+                    configDescription="Report summarising the results of a specific test case step."
+                    [(status)]="testStepReportSettings.status"
+                    (beforeExpand)="testStepReportSettings.setExpanding()"
+                    (afterExpand)="testStepReportSettings.setExpanded()">
+                    <app-test-step-report-form
+                        [communityId]="communityId"
+                        [selected]="testStepReportSettings.expanding"
+                        [expanded]="testStepReportSettings.expanded"
+                        (loaded)="testStepReportSettings.setLoaded()"
+                        (collapse)="testStepReportSettings.setCollapsed()"></app-test-step-report-form>
+                </app-configuration-entry>
+            </div>
+        </div>
+        <div class="card-footer">
+            <button class="btn btn-secondary" type="button" (click)="back()">Back</button>
+        </div>
+    </div>
+</div>

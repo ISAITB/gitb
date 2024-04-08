@@ -17,6 +17,7 @@ export class TestSuiteDisplayComponent implements OnInit {
   @Input() showExecute? = true
   @Input() showExport? = false
   @Input() showViewDocumentation? = true
+  @Input() shaded = false
 
   @Output() viewTestSession = new EventEmitter<string>()
   @Output() viewTestCaseDocumentation = new EventEmitter<number>()

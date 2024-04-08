@@ -2,7 +2,7 @@ package controllers
 
 import actors.events.TestSessionStartedEvent
 import actors.events.sessions.TerminateAllSessionsEvent
-import akka.actor.ActorSystem
+import org.apache.pekko.actor.ActorSystem
 import com.gitb.tbs._
 import config.Configurations
 import controllers.util._
@@ -68,42 +68,60 @@ class TestService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerC
     ResponseConstructor.constructEmptyResponse
   }
 
+  private def provideInputInternal(sessionId: String, request: RequestWithAttributes[AnyContent], isAdmin: Boolean): Result = {
+    val paramMap = ParameterExtractor.paramMap(request)
+    val files = ParameterExtractor.extractFiles(request)
+    var response: Result = null
+    if (Configurations.ANTIVIRUS_SERVER_ENABLED) {
+      // Check for viruses in the uploaded file(s)
+      val scanner = new ClamAVClient(Configurations.ANTIVIRUS_SERVER_HOST, Configurations.ANTIVIRUS_SERVER_PORT, Configurations.ANTIVIRUS_SERVER_TIMEOUT)
+      files.foreach { file =>
+        if (response == null) {
+          val scanResult = scanner.scan(file._2.file)
+          if (!ClamAVClient.isCleanReply(scanResult)) {
+            response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "Provided file failed virus scan.")
+          }
+        }
+      }
+    }
+    if (response == null) {
+      val inputs = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.INPUTS)
+      val step   = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.TEST_STEP)
+      val userInputs = JsonUtil.parseJsUserInputs(inputs)
+      // Set files to inputs.
+      userInputs.foreach { userInput =>
+        if (userInput.getValue == null && files.contains(s"file_${userInput.getId}")) {
+          val fileInfo = files(s"file_${userInput.getId}")
+          userInput.setValue(MimeUtil.getFileAsDataURL(fileInfo.file, fileInfo.contentType.orNull))
+        }
+      }
+      testbedClient.provideInput(sessionId, step, Some(userInputs), isAdmin)
+      // Delete the test interaction entry.
+      testResultManager.deleteTestInteractionsWrapper(sessionId, Some(step))
+      response = ResponseConstructor.constructEmptyResponse
+    }
+    response
+  }
+
   /**
    * Sends inputs to the TestbedService
    */
-  def provideInput(session_id:String): Action[AnyContent] = authorizedAction { request =>
+  def provideInput(sessionId:String): Action[AnyContent] = authorizedAction { request =>
     try {
-      authorizationManager.canExecuteTestSession(request, session_id)
-      val paramMap = ParameterExtractor.paramMap(request)
-      val files = ParameterExtractor.extractFiles(request)
-      var response: Result = null
-      if (Configurations.ANTIVIRUS_SERVER_ENABLED) {
-        // Check for viruses in the uploaded file(s)
-        val scanner = new ClamAVClient(Configurations.ANTIVIRUS_SERVER_HOST, Configurations.ANTIVIRUS_SERVER_PORT, Configurations.ANTIVIRUS_SERVER_TIMEOUT)
-        files.foreach { file =>
-          if (response == null) {
-            val scanResult = scanner.scan(file._2.file)
-            if (!ClamAVClient.isCleanReply(scanResult)) {
-              response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "Provided file failed virus scan.")
-            }
-          }
-        }
-      }
-      if (response == null) {
-        val inputs = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.INPUTS)
-        val step   = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.TEST_STEP)
-        val userInputs = JsonUtil.parseJsUserInputs(inputs)
-        // Set files to inputs.
-        userInputs.foreach { userInput =>
-          if (userInput.getValue == null && files.contains(s"file_${userInput.getId}")) {
-            val fileInfo = files(s"file_${userInput.getId}")
-            userInput.setValue(MimeUtil.getFileAsDataURL(fileInfo.file, fileInfo.contentType.orNull))
-          }
-        }
-        testbedClient.provideInput(session_id, step, Some(userInputs))
-        response = ResponseConstructor.constructEmptyResponse
-      }
-      response
+      authorizationManager.canExecuteTestSession(request, sessionId)
+      provideInputInternal(sessionId, request, isAdmin = false)
+    } finally {
+      if (request.body.asMultipartFormData.isDefined) request.body.asMultipartFormData.get.files.foreach { file => FileUtils.deleteQuietly(file.ref) }
+    }
+  }
+
+  /**
+   * Sends inputs to the TestbedService as an administrator
+   */
+  def provideInputAdmin(sessionId:String): Action[AnyContent] = authorizedAction { request =>
+    try {
+      authorizationManager.canExecuteTestSession(request, sessionId, requireAdmin = true)
+      provideInputInternal(sessionId, request, isAdmin = true)
     } finally {
       if (request.body.asMultipartFormData.isDefined) request.body.asMultipartFormData.get.files.foreach { file => FileUtils.deleteQuietly(file.ref) }
     }
@@ -163,7 +181,7 @@ class TestService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerC
   }
 
   def stopAllOrganisationSessions(organisationId: Long): Action[AnyContent] = authorizedAction { request =>
-    authorizationManager.canManageOrganisationBasic(request, organisationId)
+    authorizationManager.canViewOrganisation(request, organisationId)
     actorSystem.eventStream.publish(TerminateAllSessionsEvent(None, Some(organisationId), None))
     testResultManager.getRunningSessionsForOrganisation(organisationId).foreach { sessionId =>
       testExecutionManager.endSession(sessionId)

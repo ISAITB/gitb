@@ -25,7 +25,6 @@ import { RoutingService } from 'src/app/services/routing.service';
 export class ImportComponent extends BaseComponent implements OnInit, OnDestroy {
 
   itemId = 0
-  showDomainOption = true
   pending = false
   cancelPending = false
   community?: Community
@@ -34,6 +33,7 @@ export class ImportComponent extends BaseComponent implements OnInit, OnDestroy 
   communities: Community[] = []
   domains: Domain[] = []
   pendingImportId?: string
+  showDomainOption = true
   importStep1 = true
   importStep2 = false
   settings: ImportSettings = {}
@@ -141,6 +141,13 @@ export class ImportComponent extends BaseComponent implements OnInit, OnDestroy 
     this.importItemTypeLabels[Constants.IMPORT_ITEM_TYPE.SYSTEM_PROPERTY_VALUE] = 'Custom ' + this.dataService.labelSystemLower() + ' property values'
     this.importItemTypeLabels[Constants.IMPORT_ITEM_TYPE.STATEMENT] = 'Conformance statements'
     this.importItemTypeLabels[Constants.IMPORT_ITEM_TYPE.STATEMENT_CONFIGURATION] = 'Conformance statement configurations'
+    this.importItemTypeLabels[Constants.IMPORT_ITEM_TYPE.SYSTEM_SETTINGS] = 'System settings'
+    this.importItemTypeLabels[Constants.IMPORT_ITEM_TYPE.THEME] = 'Themes'
+    this.importItemTypeLabels[Constants.IMPORT_ITEM_TYPE.DEFAULT_LANDING_PAGE] = 'Default landing pages'
+    this.importItemTypeLabels[Constants.IMPORT_ITEM_TYPE.DEFAULT_LEGAL_NOTICE] = 'Default legal notices'
+    this.importItemTypeLabels[Constants.IMPORT_ITEM_TYPE.DEFAULT_ERROR_TEMPLATE] = 'Error templates'
+    this.importItemTypeLabels[Constants.IMPORT_ITEM_TYPE.SYSTEM_ADMINISTRATOR] = 'Administrators'
+    this.importItemTypeLabels[Constants.IMPORT_ITEM_TYPE.SYSTEM_CONFIGURATION] = 'Configuration settings'
   }
 
   typeDescription(type: number) {
@@ -169,7 +176,7 @@ export class ImportComponent extends BaseComponent implements OnInit, OnDestroy 
   }
 
   importDisabled() {
-    return this.importStep1 && !(this.archiveData?.file != undefined && this.textProvided(this.settings.encryptionKey) && (this.exportType == 'domain' && this.domain != undefined || this.exportType == 'community' && this.community != undefined))
+    return this.importStep1 && !(this.archiveData?.file != undefined && this.textProvided(this.settings.encryptionKey) && (this.exportType == 'domain' && this.domain != undefined || this.exportType == 'community' && this.community != undefined || this.exportType == 'settings'))
   }
 
   import() {
@@ -177,8 +184,10 @@ export class ImportComponent extends BaseComponent implements OnInit, OnDestroy 
     let result: Observable<ImportPreview>
     if (this.exportType == 'domain') {
       result = this.conformanceService.uploadDomainExport(this.domain!.id, this.settings, this.archiveData!)
-    } else {
+    } else if (this.exportType == 'community') {
       result = this.communityService.uploadCommunityExport(this.community!.id, this.settings, this.archiveData!)
+    } else {
+      result = this.communityService.uploadSystemSettingsExport(this.settings, this.archiveData!)
     }
     result.subscribe((data) => {
       this.importStep1 = false
@@ -193,6 +202,7 @@ export class ImportComponent extends BaseComponent implements OnInit, OnDestroy 
           const state = this.toImportItemState(item)
           if (groupMap[item.type] == undefined) {
             groupMap[item.type] = {
+              type: item.type,
               typeLabel: this.typeDescription(item.type),
               open: false,
               items: []
@@ -235,6 +245,7 @@ export class ImportComponent extends BaseComponent implements OnInit, OnDestroy 
         state.children.push(childAsState)
         if (childGroupMap[child.type] == undefined) {
           childGroupMap[child.type] = {
+            type: child.type,
             typeLabel: this.typeDescription(child.type),
             open: false,
             items: []
@@ -294,8 +305,10 @@ export class ImportComponent extends BaseComponent implements OnInit, OnDestroy 
     let result: Observable<void>
     if (this.exportType == 'domain') {
       result = this.conformanceService.cancelDomainImport(this.domain!.id, this.pendingImportId!)
-    } else {
+    } else if (this.exportType == 'community') {
       result = this.communityService.cancelCommunityImport(this.community!.id, this.pendingImportId!)
+    } else {
+      result = this.communityService.cancelSystemSettingsImport(this.pendingImportId!)
     }
     this.cancelPending = true
     result.subscribe(() => {
@@ -323,8 +336,10 @@ export class ImportComponent extends BaseComponent implements OnInit, OnDestroy 
     let result: Observable<void>
     if (this.exportType == 'domain') {
       result = this.conformanceService.confirmDomainImport(this.domain!.id, this.pendingImportId!, this.settings!, this.cleanImportItems())
-    } else {
+    } else if (this.exportType == 'community') {
       result = this.communityService.confirmCommunityImport(this.community!.id, this.pendingImportId!, this.settings!, this.cleanImportItems())
+    } else {
+      result = this.communityService.confirmSystemSettingsImport(this.pendingImportId!, this.settings!, this.cleanImportItems())
     }
     result.subscribe(() => {
       this.resetSettings(true)

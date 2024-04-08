@@ -50,10 +50,10 @@ class AccountManager @Inject()(dbConfigProvider: DatabaseConfigProvider, landing
       .map(x => new UserAccount(
         Users(x._1, x._2, x._3, null, onetimePassword = false, x._4, x._5, None, None, UserSSOStatus.NotLinked.id.toShort),
         Organizations(x._5, x._6, x._7, -1, x._8, null, null, null, template = false, None, None, x._9),
-        Communities(x._9, x._10, x._11, None, -1, None, None, selfregNotification = false, None, SelfRegistrationRestriction.NoRestriction.id.toShort, selfRegForceTemplateSelection = false, selfRegForceRequiredProperties = false,
+        Communities(x._9, x._10, x._11, None, -1, None, None, selfRegNotification = false, interactionNotification = false, None, SelfRegistrationRestriction.NoRestriction.id.toShort, selfRegForceTemplateSelection = false, selfRegForceRequiredProperties = false,
           allowCertificateDownload = false, allowStatementManagement = false, allowSystemManagement = false,
           allowPostTestOrganisationUpdates = false, allowPostTestSystemUpdates = false, allowPostTestStatementUpdates = false,
-          allowAutomationApi = false, "",
+          allowAutomationApi = false, "", None,
           None)
       ))
     results.sorted
@@ -85,10 +85,10 @@ class AccountManager @Inject()(dbConfigProvider: DatabaseConfigProvider, landing
     .map(x => new UserAccount(
       Users(x._1, x._2, x._3, null, onetimePassword = false, x._4, x._5, None, None, UserSSOStatus.Linked.id.toShort),
       Organizations(x._5, x._6, x._7, -1, x._8, null, null, null, template = false, None, None, x._9),
-      Communities(x._9, x._10, x._11, None, -1, None, None, selfregNotification = false, None, SelfRegistrationRestriction.NoRestriction.id.toShort, selfRegForceTemplateSelection = false, selfRegForceRequiredProperties = false,
+      Communities(x._9, x._10, x._11, None, -1, None, None, selfRegNotification = false, interactionNotification = false, None, SelfRegistrationRestriction.NoRestriction.id.toShort, selfRegForceTemplateSelection = false, selfRegForceRequiredProperties = false,
         allowCertificateDownload = false, allowStatementManagement = false, allowSystemManagement = false,
         allowPostTestOrganisationUpdates = false, allowPostTestSystemUpdates = false, allowPostTestStatementUpdates = false,
-        allowAutomationApi = false, "",
+        allowAutomationApi = false, "", None,
         None)
     ))
     results.sorted
@@ -240,7 +240,7 @@ class AccountManager @Inject()(dbConfigProvider: DatabaseConfigProvider, landing
   def submitFeedback(userId: Option[Long], userEmail: String, messageTypeId: String, messageTypeDescription: String, messageContent: String, attachments: Array[AttachmentType]): Unit = {
     val subject = "Test Bed feedback form submission"
     var content = "<h2>Message information</h2>"
-    var toAddresses: Array[String] = Configurations.EMAIL_TO.get
+    var toAddresses: Array[String] = Configurations.EMAIL_TO.getOrElse(Array.empty)
     var ccAddresses: Array[String] = null
     if (userId.isDefined) {
       val user = getUserProfile(userId.get)
@@ -256,7 +256,9 @@ class AccountManager @Inject()(dbConfigProvider: DatabaseConfigProvider, landing
         content += s"<b>Community:</b> ${community.fullname}<br/>"
         if (community.supportEmail.isDefined) {
           toAddresses = Array[String](community.supportEmail.get)
-          ccAddresses = Configurations.EMAIL_TO.get
+          if (Configurations.EMAIL_CONTACT_FORM_COPY_DEFAULT_MAILBOX.getOrElse(true) && Configurations.EMAIL_TO.isDefined) {
+            ccAddresses = Configurations.EMAIL_TO.get
+          }
         }
       }
     } else {
@@ -266,6 +268,6 @@ class AccountManager @Inject()(dbConfigProvider: DatabaseConfigProvider, landing
     content += s"<b>Message type:</b> $messageTypeId - $messageTypeDescription<br/>"
     content += "<h2>Message content</h2>"
     content += s"<p>$messageContent</p>"
-    EmailUtil.sendEmail(Configurations.EMAIL_FROM, toAddresses, ccAddresses, subject, content, attachments)
+    EmailUtil.sendEmail(toAddresses, ccAddresses, subject, content, attachments)
   }
 }

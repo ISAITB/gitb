@@ -26,7 +26,6 @@ export class CreateLandingPageComponent extends BaseComponent implements OnInit,
     default: false
   }
   savePending = false
-  showContent = true
   tooltipForDefaultCheck!: string
 
   constructor(

@@ -1,5 +1,5 @@
 import { Injectable, Renderer2, RendererFactory2 } from '@angular/core';
-import { Observable, Subject } from 'rxjs';
+import { Observable, Subject, mergeMap, of } from 'rxjs';
 import { Constants } from '../common/constants'
 import { ObjectWithId } from '../components/test-filter/object-with-id';
 import { ConformanceTestCase } from '../pages/organisation/conformance-statement/conformance-test-case';
@@ -29,6 +29,10 @@ import { PageChange } from '../types/page-change';
 import { BadgesInfo } from '../components/manage-badges/badges-info';
 import { BreadcrumbChange } from '../types/breadcrumb-change';
 import { FieldInfo } from '../types/field-info';
+import { HttpResponse } from '@angular/common/http';
+import { EntityWithId } from '../types/entity-with-id';
+import { ConformanceTestSuite } from '../pages/organisation/conformance-statement/conformance-test-suite';
+import { ConformanceStatementItem } from '../types/conformance-statement-item';
 
 @Injectable({
   providedIn: 'root'
@@ -90,6 +94,7 @@ export class DataService {
     this.configurationLoaded = false
     return {
       emailEnabled: (this.configuration?.emailEnabled != undefined)?this.configuration!.emailEnabled:false,
+      emailContactFormEnabled: (this.configuration?.emailContactFormEnabled != undefined)?this.configuration!.emailContactFormEnabled:false,
       emailAttachmentsMaxCount: (this.configuration?.emailAttachmentsMaxCount != undefined)?this.configuration!.emailAttachmentsMaxCount:5,
       emailAttachmentsMaxSize: (this.configuration?.emailAttachmentsMaxSize != undefined)?this.configuration!.emailAttachmentsMaxSize:5,
       emailAttachmentsAllowedTypes: (this.configuration?.emailAttachmentsAllowedTypes != undefined)?this.configuration!.emailAttachmentsAllowedTypes:'',
@@ -147,9 +152,11 @@ export class DataService {
   setConfiguration(config: AppConfigurationProperties) {
     this.configuration = config
     this.acceptedEmailAttachmentTypes = {}
-    let acceptedTypes = config.emailAttachmentsAllowedTypes.split(',')
-    for (let acceptedType of acceptedTypes) {
-      this.acceptedEmailAttachmentTypes[acceptedType] = true
+    if (config.emailAttachmentsAllowedTypes) {
+      let acceptedTypes = config.emailAttachmentsAllowedTypes.split(',')
+      for (let acceptedType of acceptedTypes) {
+        this.acceptedEmailAttachmentTypes[acceptedType] = true
+      }
     }
     this.configurationLoaded = true
   }
@@ -498,6 +505,10 @@ export class DataService {
     }
   }
 
+  dataUrlFromBase64(base64: string, mimeType: string) {
+    return "data:"+mimeType+";base64,"+base64
+  }
+
   base64FromDataURL(dataURL: string) {
     // DEPRECATED - To be removed
     return dataURL.substring(dataURL.indexOf(',')+1)
@@ -508,56 +519,73 @@ export class DataService {
     return dataURL.substring(dataURL.indexOf(':')+1, dataURL.indexOf(';'))
   }
 
-  extensionFromMimeType(mimeType: string|undefined) {
+  isImageType(mimeTypeToCheck: string|undefined) {
+    if (mimeTypeToCheck != undefined) {
+      const mimeType = mimeTypeToCheck.toLowerCase()
+      if (mimeType == "image/png" ||
+          mimeType == "image/gif" ||
+          mimeType == "image/jpeg" ||
+          mimeType == "image/svg+xml") {
+        return true
+      }
+    }
+    return false
+  }
+
+  extensionFromMimeType(mimeTypeToCheck: string|undefined) {
     let result = ""
-    if (mimeType == "text/xml" || mimeType == "application/xml") {
-      result = ".xml"
-    } else if (mimeType == "application/zip" || mimeType == "application/x-zip-compressed") {
-      result = ".zip"
-    } else if (mimeType == "application/pkix-cert") {
-      result = ".cer"
-    } else if (mimeType == "application/pdf") {
-      result = ".pdf"
-    } else if (mimeType == "application/json") {
-      result = ".json"
-    } else if (mimeType == "text/plain") {
-      result = ".txt"
-    } else if (mimeType == "image/png") {
-      result = ".png"
-    } else if (mimeType == "image/gif") {
-      result = ".gif"
-    } else if (mimeType == "image/jpeg") {
-      result = ".jpeg"
-    } else if (mimeType == "image/svg+xml") {
-      result = ".svg"
+    if (mimeTypeToCheck != undefined) {
+      const mimeType = mimeTypeToCheck.toLowerCase()
+      if (mimeType == "text/xml" || mimeType == "application/xml") {
+        result = ".xml"
+      } else if (mimeType == "application/zip" || mimeType == "application/x-zip-compressed") {
+        result = ".zip"
+      } else if (mimeType == "application/pkix-cert") {
+        result = ".cer"
+      } else if (mimeType == "application/pdf") {
+        result = ".pdf"
+      } else if (mimeType == "application/json") {
+        result = ".json"
+      } else if (mimeType == "text/plain") {
+        result = ".txt"
+      } else if (mimeType == "image/png") {
+        result = ".png"
+      } else if (mimeType == "image/gif") {
+        result = ".gif"
+      } else if (mimeType == "image/jpeg") {
+        result = ".jpeg"
+      } else if (mimeType == "image/svg+xml") {
+        result = ".svg"
+      }
     }
     return result
   }
 
-  mimeTypeFromExtension(extension: string|undefined) {
-    let result: string
-    if (extension == ".xml") {
-      result = "application/xml"
-    } else if (extension == ".zip") {
-      result = "application/zip"
-    } else if (extension == ".cer") {
-      result = "application/pkix-cert"
-    } else if (extension == ".pdf") {
-      result = "application/pdf"
-    } else if (extension == ".json") {
-      result = "application/json"
-    } else if (extension == ".txt") {
-      result = "text/plain"
-    } else if (extension == ".png") {
-      result = "image/png"
-    } else if (extension == ".gif") {
-      result = "image/gif"
-    } else if (extension == ".jpeg" || extension == ".jpg") {
-      result = "image/jpeg"
-    } else if (extension == ".svg") {
-      result = "image/svg+xml"
-    } else {
-      result = "application/octet-stream"
+  mimeTypeFromExtension(extensionToCheck: string|undefined) {
+    let result = "application/octet-stream"
+    if (extensionToCheck != undefined) {
+      const extension = extensionToCheck.toLowerCase()
+      if (extension == ".xml") {
+        result = "application/xml"
+      } else if (extension == ".zip") {
+        result = "application/zip"
+      } else if (extension == ".cer") {
+        result = "application/pkix-cert"
+      } else if (extension == ".pdf") {
+        result = "application/pdf"
+      } else if (extension == ".json") {
+        result = "application/json"
+      } else if (extension == ".txt") {
+        result = "text/plain"
+      } else if (extension == ".png") {
+        result = "image/png"
+      } else if (extension == ".gif") {
+        result = "image/gif"
+      } else if (extension == ".jpeg" || extension == ".jpg") {
+        result = "image/jpeg"
+      } else if (extension == ".svg") {
+        result = "image/svg+xml"
+      }
     }
     return result
   }
@@ -589,6 +617,8 @@ export class DataService {
       icon = "fa-solid testsuite-progress-icon fa-check-circle test-case-success"
     } else if (result == Constants.TEST_CASE_RESULT.FAILURE) {
       icon = "fa-solid testsuite-progress-icon fa-times-circle test-case-error"
+    } else if (result == Constants.TEST_CASE_RESULT.WARNING) {
+      icon = "fa-solid testsuite-progress-icon fa-exclamation test-case-warning"
     } else {
       icon = "fa-solid testsuite-progress-icon fa-ban test-case-undefined"
     }
@@ -601,6 +631,8 @@ export class DataService {
       text = "Success"
     } else if (result == Constants.TEST_CASE_RESULT.FAILURE) {
       text = "Failure"
+    } else if (result == Constants.TEST_CASE_RESULT.WARNING) {
+      text = "Warning"
     } else {
       text = "Incomplete"
     }
@@ -663,6 +695,33 @@ export class DataService {
       })
       const blobData = new Blob([csv], {type: 'text/csv'})
       saveAs(blobData, 'export.csv')
+    }
+  }
+
+  conformanceStatusForConformanceItems(items: ConformanceStatementItem[]) {
+    let completedCount = 0
+    let failedCount = 0
+    let undefinedCount = 0
+    for (let item of items) {
+      const childStatus = this.conformanceStatusForConformanceItem(item)
+      if (childStatus == Constants.TEST_CASE_RESULT.SUCCESS) {
+        completedCount += 1
+      } else if (childStatus == Constants.TEST_CASE_RESULT.FAILURE) {
+        failedCount += 1
+      } else {
+        undefinedCount += 1
+      }
+    }
+    return this.conformanceStatusForTests(completedCount, failedCount, undefinedCount)
+  }
+
+  conformanceStatusForConformanceItem(item: ConformanceStatementItem) {
+    if (item.results) {
+      return this.conformanceStatusForTests(item.results.completed, item.results.failed, item.results.undefined)
+    } else if (item.items) {
+      return this.conformanceStatusForConformanceItems(item.items)
+    } else {
+      return Constants.TEST_CASE_RESULT.UNDEFINED
     }
   }
 
@@ -1246,6 +1305,9 @@ export class DataService {
     params.success_badge_enabled = badges && badges.enabled && badges.success.enabled
     params.other_badge_enabled = badges && badges.enabled && badges.other.enabled
     params.failure_badge_enabled = badges && badges.enabled && badges.failureBadgeActive && badges.failure.enabled
+    params.success_badge_report_enabled = badges && badges.enabled && badges.success.enabled && badges.successBadgeForReportActive && badges.successForReport.enabled
+    params.other_badge_report_enabled = badges && badges.enabled && badges.other.enabled && badges.otherBadgeForReportActive && badges.otherForReport.enabled
+    params.failure_badge_report_enabled = badges && badges.enabled && badges.failureBadgeActive && badges.failure.enabled && badges.failureBadgeForReportActive && badges.failureForReport.enabled
     if (badges && badges.enabled) {
       files = []
       if (badges.success.enabled && badges.success.file && badges.success.file.file) {
@@ -1256,6 +1318,15 @@ export class DataService {
       }
       if (badges.failureBadgeActive && badges.failure.enabled && badges.failure.file && badges.failure.file.file) {
         files.push({ param: 'failure_badge', data: badges.failure.file.file})
+      }
+      if (badges.success.enabled && badges.successBadgeForReportActive && badges.successForReport.enabled && badges.successForReport.file && badges.successForReport.file.file) {
+        files.push({ param: 'success_badge_report', data: badges.successForReport.file.file})
+      }
+      if (badges.other.enabled && badges.otherBadgeForReportActive && badges.otherForReport.enabled && badges.otherForReport.file && badges.otherForReport.file.file) {
+        files.push({ param: 'other_badge_report', data: badges.otherForReport.file.file})
+      }
+      if (badges.failureBadgeActive && badges.failure.enabled && badges.failureBadgeForReportActive && badges.failureForReport.enabled && badges.failureForReport.file && badges.failureForReport.file.file) {
+        files.push({ param: 'failure_badge_report', data: badges.failureForReport.file.file})
       }
     }
     return files
@@ -1270,6 +1341,139 @@ export class DataService {
       }
     } else {
       return user.name!
+    }
+  }
+
+  private updateThemeLink(linkId: string, token: number) {
+    const linkElement = document.getElementById(linkId)
+    if (linkElement) {
+      const href = linkElement.getAttribute('href')
+      if (href) {
+        let newHref = href.split('?')[0] + '?refresh='+ token
+        linkElement.setAttribute('href', newHref)
+      }
+    }
+  }
+
+  refreshCss() {
+    const token = Date.now()
+    this.updateThemeLink(Constants.THEME_CSS_LINK_ID, token)
+    this.updateThemeLink(Constants.THEME_FAVICON_LINK_ID, token)
+  }
+
+  binaryResponseToBlob(response: Observable<HttpResponse<ArrayBuffer>>): Observable<Blob|undefined> {
+    return response.pipe(
+      mergeMap((data) => {
+        if (data.body) {
+          let mimeType: string|undefined = undefined
+          if (data.headers.has('Content-Type')) {
+            const contentType = data.headers.get('Content-Type')
+            if (contentType) {
+              mimeType = contentType
+            }
+          }
+          let blobData: Blob
+          if (mimeType) {
+            blobData = new Blob([data.body], { type: mimeType });
+          } else {
+            blobData = new Blob([data.body]);
+          }
+          return of(blobData)
+        } else {
+          return of(undefined)
+        }
+      })
+    )
+  }
+
+  badgesValid(badges: BadgesInfo|undefined) {
+    let valid = false
+    if (badges?.enabled) {
+      if (badges.success.enabled && badges.other.enabled 
+          && (!badges.successBadgeForReportActive || badges.successForReport.enabled)
+          && (!badges.otherBadgeForReportActive || badges.otherForReport.enabled)
+          && (!badges.failureBadgeActive || (badges.failure.enabled && (!badges.failureBadgeForReportActive || badges.failureForReport.enabled)))) {
+        valid = true
+      }
+    } else {
+      valid = true
+    }
+    return valid
+  }
+
+  sameId(a: EntityWithId, b: EntityWithId) {
+    return a == undefined && b == undefined || a != undefined && b != undefined && a.id == b.id
+  }
+
+  organiseTestSuitesForDisplay(testSuites: ConformanceTestSuite[]|undefined) {
+    if (testSuites != undefined) {
+      for (let testSuite of testSuites) {
+        testSuite.hasDisabledTestCases = find(testSuite.testCases, (testCase) => testCase.disabled) != undefined
+        testSuite.hasOptionalTestCases = find(testSuite.testCases, (testCase) => testCase.optional) != undefined
+        testSuite.expanded = true
+      }
+    }
+  }
+
+  organiseConformanceItemsByType(items: ConformanceStatementItem[]): { groups: ConformanceStatementItem[], specs: ConformanceStatementItem[], actors: ConformanceStatementItem[] } {
+    let groups: ConformanceStatementItem[] = []
+    let specs: ConformanceStatementItem[] = []
+    let actors: ConformanceStatementItem[] = []
+    for (let domain of items) {
+      if (domain.items) {
+        for (let specOrGroup of domain.items) {
+          if (specOrGroup.itemType == Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.SPECIFICATION_GROUP) {
+            groups.push(specOrGroup)
+            // Specifications in group
+            if (specOrGroup.items) {
+              specOrGroup.items.forEach((item) => specs.push(item))
+            }
+          } else {
+            // Specification in domain
+            specs.push(specOrGroup)
+          }
+        }
+      }
+    }
+    for (let spec of specs) {
+      if (spec.items) {
+        spec.items.forEach((item) => actors.push(item))
+      }
+    }
+    return {
+      groups: groups,
+      specs: specs,
+      actors: actors
+    }
+  }
+
+  prepareConformanceStatementItemsForDisplay(items: ConformanceStatementItem[]) {
+    if (items.length == 1) {
+      // We only have one domain. Hide it unless the user has access to any domain.
+      items[0].hidden = this.community?.domain != undefined
+    }
+    // Initialise item state.
+    this.visitConformanceItems(items, (item) => {
+      if (item.collapsed == undefined) {
+        item.collapsed = false
+      }
+      if (item.items && item.items.length == 1) {
+        item.items[0].collapsed = false
+      }
+      if (item.hidden == undefined) {
+        item.hidden = false
+      }
+      item.filtered = true
+    })
+    return items
+  }
+
+  visitConformanceItems(items: ConformanceStatementItem[]|undefined, visitor: (item: ConformanceStatementItem) => any) {
+    if (items) {
+      for (let item of items) {
+        visitor(item)
+        this.visitConformanceItems(item.items, visitor)
+      }
     }
   }
 

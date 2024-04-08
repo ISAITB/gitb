@@ -20,5 +20,7 @@ export interface WebSocketMessage {
     configs?: SUTConfiguration[]
     errorCode?: string
     errorDescription?: string
+    admin?: boolean
+    desc?: string
 
 }

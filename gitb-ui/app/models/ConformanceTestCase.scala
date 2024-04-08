@@ -8,6 +8,7 @@ class ConformanceTestCase(
   var id: Long,
   var name: String,
   var description: Option[String],
+  var version: Option[String],
   var sessionId: Option[String],
   var updateTime: Option[Timestamp],
   var outputMessage: Option[String],
@@ -15,5 +16,8 @@ class ConformanceTestCase(
   var optional: Boolean,
   var disabled: Boolean,
   var result: TestResultType,
-  var tags: Option[String]
+  var tags: Option[String],
+  var specReference: Option[String],
+  var specDescription: Option[String],
+  var specLink: Option[String]
 ) {}

@@ -1,101 +1,108 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input } from '@angular/core';
 import { BsModalRef } from 'ngx-bootstrap/modal';
 import { Constants } from 'src/app/common/constants';
-import { ConformanceService } from 'src/app/services/conformance.service';
 import { DataService } from 'src/app/services/data.service';
 import { ReportService } from 'src/app/services/report.service';
 import { ConformanceCertificateSettings } from 'src/app/types/conformance-certificate-settings';
-import { ConformanceResultFull } from 'src/app/types/conformance-result-full';
 import { saveAs } from 'file-saver'
+import { Observable } from 'rxjs';
+import { ConformanceService } from 'src/app/services/conformance.service';
 
 @Component({
   selector: 'app-conformance-certificate-modal',
-  templateUrl: './conformance-certificate-modal.component.html',
-  styleUrls: [ './conformance-certificate-modal.component.less' ]
+  templateUrl: './conformance-certificate-modal.component.html'
 })
-export class ConformanceCertificateModalComponent implements OnInit {
+export class ConformanceCertificateModalComponent {
 
-  @Input() settings!: ConformanceCertificateSettings
-  @Input() conformanceStatement!: ConformanceResultFull
+  @Input() communityId!: number
+  @Input() actorId!: number
+  @Input() systemId!: number
   @Input() snapshotId?: number
+  @Input() format!: 'xml'|'pdf'
+  @Input() settings?: ConformanceCertificateSettings
+  @Input() certificateEnabled!: boolean
 
   exportPending = false
+  messagePending = false
+  messageLoaded = false
   choice = Constants.REPORT_OPTION_CHOICE.REPORT
   Constants = Constants
 
   constructor(
     private dataService: DataService,
     private modalInstance: BsModalRef,
-    private conformanceService: ConformanceService,
-    private reportService: ReportService
+    private reportService: ReportService,
+    private conformanceService: ConformanceService
   ) { }
 
-  ngOnInit(): void {
-    if (this.settings.message != undefined) {
-      // Replace the placeholders for the preview.
-      if (this.settings.message.includes(Constants.PLACEHOLDER__DOMAIN+'{')) {
-        // The message includes domain parameter placeholders.
-        this.conformanceService.getDomainParametersOfCommunity(this.settings.community, true, true)
+  choiceChanged() {
+    if (this.choice == Constants.REPORT_OPTION_CHOICE.CERTIFICATE) {
+      if (!this.messageLoaded) {
+        this.messagePending = true
+        this.conformanceService.getResolvedMessageForConformanceStatementCertificate(this.communityId, this.systemId, this.actorId, this.snapshotId)
         .subscribe((data) => {
-          let message = this.settings.message!
-          for (let param of data) {
-            message = message.split(Constants.PLACEHOLDER__DOMAIN+'{'+param.name+'}').join((param.value == undefined)?'':param.value!)
+          if (data) {
+            this.settings!.message = this.conformanceService.replaceBadgePlaceholdersInCertificateMessage(data)
           }
-          this.settings.message = this.replacePlaceholders(message)
+        }).add(() => {
+          this.messagePending = false
+          setTimeout(() => {
+            this.messageLoaded = true
+          }, 1)
         })
-      } else {
-        this.settings.message = this.replacePlaceholders(this.settings.message)
       }
-    } else {
-      this.settings.message = ''
     }
   }
 
-  private replacePlaceholders(message: string) {
-    message = message.split(Constants.PLACEHOLDER__DOMAIN).join(this.conformanceStatement.domainName)
-    message = message.split(Constants.PLACEHOLDER__SPECIFICATION_GROUP_OPTION).join(this.conformanceStatement.specGroupOptionName)
-    message = message.split(Constants.PLACEHOLDER__SPECIFICATION_GROUP).join(this.conformanceStatement.specGroupName?this.conformanceStatement.specGroupName:'')
-    message = message.split(Constants.PLACEHOLDER__SPECIFICATION).join(this.conformanceStatement.specName)
-    message = message.split(Constants.PLACEHOLDER__ACTOR).join(this.conformanceStatement.actorName)
-    message = message.split(Constants.PLACEHOLDER__ORGANISATION).join(this.conformanceStatement.organizationName)
-    message = message.split(Constants.PLACEHOLDER__SYSTEM).join(this.conformanceStatement.systemName)
-    return message
-  }
-
-  certificateChoice() {
-    if (this.settings.includeTitle) {
-        this.dataService.focus('title', 200)
+  certificateChoicesVisible() {
+    if (this.settings?.includeTitle) {
+      this.dataService.focus('title')
     }
   }
 
   includeTitleChanged() {
-    if (this.settings.includeTitle) {
+    if (this.settings?.includeTitle) {
       this.dataService.focus('title')
     }
   }
 
   generate() {
     this.exportPending = true
+    let fileName: string
+    let contentType: string
+    let exportObservable: Observable<ArrayBuffer>
     if (this.choice == Constants.REPORT_OPTION_CHOICE.CERTIFICATE) {
-        this.conformanceService.exportConformanceCertificateReport(this.conformanceStatement.communityId, this.conformanceStatement.actorId, this.conformanceStatement.systemId, this.settings, this.snapshotId)
-        .subscribe((data) => {
-          const blobData = new Blob([data], {type: 'application/pdf'});
-          saveAs(blobData, "conformance_certificate.pdf");
-          this.modalInstance.hide()
-        }).add(() => {
-          this.exportPending = false
-        })
+      fileName = "conformance_certificate.pdf"
+      contentType = "application/pdf"
+      if (this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin) {
+        exportObservable = this.reportService.exportConformanceCertificate(this.communityId, this.actorId, this.systemId, this.settings!, this.snapshotId)
+      } else {
+        exportObservable = this.reportService.exportOwnConformanceCertificateReport(this.actorId, this.systemId, this.snapshotId)
+      }
     } else {
-        const includeDetails = this.choice == Constants.REPORT_OPTION_CHOICE.DETAILED_REPORT
-        this.reportService.exportConformanceStatementReport(this.conformanceStatement.actorId, this.conformanceStatement.systemId, includeDetails, this.snapshotId)
-        .subscribe((data) => {
-          const blobData = new Blob([data], {type: 'application/pdf'});
-          saveAs(blobData, "conformance_report.pdf");
-          this.modalInstance.hide()
-        }).add(() => {
-          this.exportPending = false
-        })
+      const includeDetails = this.choice == Constants.REPORT_OPTION_CHOICE.DETAILED_REPORT
+      if (this.format == 'pdf') {
+        contentType = "application/pdf"
+        fileName = "conformance_report.pdf"
+        exportObservable = this.reportService.exportConformanceStatementReport(this.actorId, this.systemId, includeDetails, this.snapshotId)
+      } else {
+        contentType = "application/xml"
+        fileName = "conformance_report.xml"
+        if (this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin) {
+          exportObservable = this.reportService.exportConformanceStatementReportInXML(this.actorId, this.systemId, this.communityId, includeDetails, this.snapshotId)
+        } else {
+          exportObservable = this.reportService.exportOwnConformanceStatementReportInXML(this.actorId, this.systemId, includeDetails, this.snapshotId)          
+        }
+      }
     }
+    exportObservable.subscribe((data) => {
+      const blobData = new Blob([data], {type: contentType})
+      saveAs(blobData, fileName)
+      this.modalInstance.hide()
+    }).add(() => {
+      this.exportPending = false
+    })
+
   }
 
   cancel() {

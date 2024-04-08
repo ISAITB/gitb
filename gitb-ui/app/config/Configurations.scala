@@ -5,13 +5,13 @@ import com.typesafe.config.{Config, ConfigFactory}
 import models.Constants
 import org.apache.commons.lang3.StringUtils
 
-import java.util.{Locale, Properties}
+import java.util.Locale
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 import scala.util.matching.Regex
 
 object Configurations {
 
-  var _IS_LOADED = false
+  private var _IS_LOADED = false
 
   // Database parameters
   var DB_DRIVER_CLASS:String = ""
@@ -21,6 +21,8 @@ object Configurations {
 
   var DB_ROOT_URL:String = ""
   var DB_NAME:String = ""
+  var DB_MIGRATION_TABLE:String = ""
+  var DB_LATEST_DB_BASELINE_SCRIPT: Option[String] = None
 
   // Redis parameters
   var REDIS_HOST:String = ""
@@ -36,16 +38,23 @@ object Configurations {
 	var TEST_CASE_REPOSITORY_PATH = ""
 
   var EMAIL_ENABLED = false
-  var EMAIL_FROM = ""
+  var EMAIL_FROM: Option[String] = None
   var EMAIL_TO: Option[Array[String]] = None
-  var EMAIL_SMTP_HOST = ""
-  var EMAIL_SMTP_PORT: Int = -1
-  var EMAIL_SMTP_SSL_ENABLED = false
-  var EMAIL_SMTP_SSL_PROTOCOLS: Option[String] = None
-  var EMAIL_SMTP_STARTTLS_ENABLED = false
-  var EMAIL_SMTP_AUTH_ENABLED = true
-  var EMAIL_SMTP_AUTH_USERNAME = ""
-  var EMAIL_SMTP_AUTH_PASSWORD = ""
+  var EMAIL_SMTP_HOST: Option[String] = None
+  var EMAIL_SMTP_PORT: Option[Int] = None
+  var EMAIL_SMTP_SSL_ENABLED: Option[Boolean] = None
+  var EMAIL_SMTP_SSL_PROTOCOLS: Option[Array[String]] = None
+  var EMAIL_SMTP_STARTTLS_ENABLED: Option[Boolean] = None
+  var EMAIL_CONTACT_FORM_ENABLED: Option[Boolean] = None
+  var EMAIL_CONTACT_FORM_COPY_DEFAULT_MAILBOX: Option[Boolean] = None
+  var EMAIL_SMTP_AUTH_ENABLED: Option[Boolean] = None
+  var EMAIL_SMTP_AUTH_USERNAME: Option[String] = None
+  var EMAIL_SMTP_AUTH_PASSWORD: Option[String] = None
+  var EMAIL_ATTACHMENTS_MAX_SIZE: Int = -1
+  var EMAIL_ATTACHMENTS_MAX_COUNT: Int = -1
+  var EMAIL_ATTACHMENTS_ALLOWED_TYPES: Set[String] = _
+  var EMAIL_NOTIFICATION_TEST_INTERACTION_REMINDER: Int = -1
+
   var SURVEY_ENABLED = false
   var SURVEY_ADDRESS = ""
   var MORE_INFO_ENABLED = false
@@ -60,11 +69,6 @@ object Configurations {
 
   var GUIDES_EULOGIN_USE = ""
   var GUIDES_EULOGIN_MIGRATION = ""
-
-  var EMAIL_ATTACHMENTS_MAX_SIZE: Int = -1
-  var EMAIL_ATTACHMENTS_MAX_COUNT: Int = -1
-  var EMAIL_ATTACHMENTS_ALLOWED_TYPES_STR = ""
-  var EMAIL_ATTACHMENTS_ALLOWED_TYPES: Set[String] = _
 
   var ANTIVIRUS_SERVER_ENABLED = false
   var ANTIVIRUS_SERVER_HOST = ""
@@ -109,8 +113,6 @@ object Configurations {
   // 5120 KB default (5 MBs)
   var SAVED_FILE_MAX_SIZE: Long = 5120
 
-  var SMTP_PROPERTIES = new Properties()
-
   var INPUT_SANITIZER__ENABLED = true
   var INPUT_SANITIZER__METHODS_TO_CHECK_STR:String = _
   var INPUT_SANITIZER__METHODS_TO_CHECK:Set[String] = _
@@ -123,7 +125,7 @@ object Configurations {
   var DATA_WEB_INIT_ENABLED = false
 
   var TEST_SESSION_ARCHIVE_THRESHOLD = 30
-  var TEST_SESSION_EMBEDDED_REPORT_DATA_THRESHOLD = 1000L
+  var TEST_SESSION_EMBEDDED_REPORT_DATA_THRESHOLD = 500L
   var PASSWORD_COMPLEXITY_RULE_REGEX:Regex = _
 
   var TESTBED_MODE:String = ""
@@ -159,6 +161,8 @@ object Configurations {
       DB_PASSWORD     = conf.getString("db.default.password")
       DB_ROOT_URL     = conf.getString("db.default.rooturl")
       DB_NAME         = conf.getString("db.default.name")
+      DB_MIGRATION_TABLE = conf.getString("db.default.migration.table")
+      DB_LATEST_DB_BASELINE_SCRIPT = Some(conf.getString("latestDbBaselineScript"))
 
       //Parse Redis Parameters
       REDIS_HOST = conf.getString("redis.host")
@@ -175,34 +179,31 @@ object Configurations {
       TEST_CASE_REPOSITORY_PATH = conf.getString("testcase.repository.path")
 
       EMAIL_ENABLED = fromEnv("EMAIL_ENABLED", conf.getString("email.enabled")).toBoolean
-      if (EMAIL_ENABLED) {
-        EMAIL_FROM = fromEnv("EMAIL_FROM", conf.getString("email.from"))
-        EMAIL_TO = Some(fromEnv("EMAIL_TO", conf.getString("email.to")).split(","))
-        EMAIL_SMTP_HOST = fromEnv("EMAIL_SMTP_HOST", conf.getString("email.smtp.host"))
-        EMAIL_SMTP_PORT = fromEnv("EMAIL_SMTP_PORT", conf.getString("email.smtp.port")).toInt
-        EMAIL_SMTP_AUTH_ENABLED = fromEnv("EMAIL_SMTP_AUTH_ENABLED", conf.getString("email.smtp.auth.enabled")).toBoolean
-        EMAIL_SMTP_AUTH_USERNAME = fromEnv("EMAIL_SMTP_AUTH_USERNAME", conf.getString("email.smtp.auth.username"))
-        EMAIL_SMTP_AUTH_PASSWORD = fromEnv("EMAIL_SMTP_AUTH_PASSWORD", conf.getString("email.smtp.auth.password"))
-        // Collect as Properties object
-        if (EMAIL_SMTP_AUTH_ENABLED) {
-          SMTP_PROPERTIES.setProperty("mail.smtp.auth", "true")
-        }
-        EMAIL_SMTP_SSL_ENABLED = fromEnv("EMAIL_SMTP_SSL_ENABLED", conf.getString("email.smtp.ssl.enabled")).toBoolean
-        if (EMAIL_SMTP_SSL_ENABLED) {
-          SMTP_PROPERTIES.setProperty("mail.smtp.ssl.enable", "true")
-          val sslProtocolsValue = fromEnv("EMAIL_SMTP_SSL_PROTOCOLS", conf.getString("email.smtp.ssl.protocols"))
-          if (!sslProtocolsValue.isBlank) {
-            EMAIL_SMTP_SSL_PROTOCOLS = Some(sslProtocolsValue.trim)
-            SMTP_PROPERTIES.setProperty("mail.smtp.ssl.protocols", EMAIL_SMTP_SSL_PROTOCOLS.get)
-          }
-        }
-        EMAIL_SMTP_STARTTLS_ENABLED = fromEnv("EMAIL_SMTP_STARTTLS_ENABLED", conf.getString("email.smtp.starttls.enabled")).toBoolean
-        if (EMAIL_SMTP_STARTTLS_ENABLED) {
-          SMTP_PROPERTIES.setProperty("mail.smtp.starttls.enable", "true")
-        }
-        SMTP_PROPERTIES.setProperty("mail.smtp.host", EMAIL_SMTP_HOST)
-        SMTP_PROPERTIES.setProperty("mail.smtp.port", EMAIL_SMTP_PORT.toString)
+      EMAIL_FROM = Option(fromEnv("EMAIL_FROM", null))
+      EMAIL_TO = Option(fromEnv("EMAIL_TO", null)).map(_.split(","))
+      EMAIL_SMTP_HOST = Option(fromEnv("EMAIL_SMTP_HOST", null))
+      EMAIL_SMTP_PORT = Option(fromEnv("EMAIL_SMTP_PORT", null)).map(_.toInt)
+      EMAIL_SMTP_AUTH_ENABLED = Option(fromEnv("EMAIL_SMTP_AUTH_ENABLED", conf.getString("email.smtp.auth.enabled")).toBoolean)
+      EMAIL_SMTP_AUTH_USERNAME = Option(fromEnv("EMAIL_SMTP_AUTH_USERNAME", null))
+      EMAIL_SMTP_AUTH_PASSWORD = Option(fromEnv("EMAIL_SMTP_AUTH_PASSWORD", null))
+      // Collect as Properties object
+      EMAIL_SMTP_SSL_ENABLED = Option(fromEnv("EMAIL_SMTP_SSL_ENABLED", conf.getString("email.smtp.ssl.enabled")).toBoolean)
+      val sslProtocolsValue = fromEnv("EMAIL_SMTP_SSL_PROTOCOLS", conf.getString("email.smtp.ssl.protocols")).split(",")
+      if (sslProtocolsValue.nonEmpty) {
+        EMAIL_SMTP_SSL_PROTOCOLS = Some(sslProtocolsValue)
       }
+      EMAIL_SMTP_STARTTLS_ENABLED = Option(fromEnv("EMAIL_SMTP_STARTTLS_ENABLED", conf.getString("email.smtp.starttls.enabled")).toBoolean)
+      EMAIL_CONTACT_FORM_ENABLED = Some(fromEnv("EMAIL_CONTACT_FORM_ENABLED", "true").toBoolean)
+      EMAIL_CONTACT_FORM_COPY_DEFAULT_MAILBOX = Some(fromEnv("EMAIL_CONTACT_FORM_COPY_DEFAULT_MAILBOX", "true").toBoolean)
+      EMAIL_ATTACHMENTS_MAX_SIZE = fromEnv("EMAIL_ATTACHMENTS_MAX_SIZE", conf.getString("email.attachments.maxSize")).toInt
+      EMAIL_ATTACHMENTS_MAX_COUNT = fromEnv("EMAIL_ATTACHMENTS_MAX_COUNT", conf.getString("email.attachments.maxCount")).toInt
+      val typesStr = fromEnv("EMAIL_ATTACHMENTS_ALLOWED_TYPES", conf.getString("email.attachments.allowedTypes"))
+      var tempSet = new scala.collection.mutable.HashSet[String]()
+      typesStr.split(",").map(_.trim).foreach{ mimeType =>
+        tempSet += mimeType
+      }
+      EMAIL_ATTACHMENTS_ALLOWED_TYPES = tempSet.toSet
+      EMAIL_NOTIFICATION_TEST_INTERACTION_REMINDER = fromEnv("EMAIL_NOTIFICATION_TEST_INTERACTION_REMINDER", "30").toInt
 
       SURVEY_ENABLED = fromEnv("SURVEY_ENABLED", conf.getString("survey.enabled")).toBoolean
       SURVEY_ADDRESS = fromEnv("SURVEY_ADDRESS", conf.getString("survey.address"))
@@ -215,15 +216,6 @@ object Configurations {
       USERGUIDE_OA = fromEnv("USERGUIDE_OA", conf.getString("userguide.oa"))
       USERGUIDE_CA = fromEnv("USERGUIDE_CA", conf.getString("userguide.ca"))
       USERGUIDE_TA = fromEnv("USERGUIDE_TA", conf.getString("userguide.ta"))
-
-      EMAIL_ATTACHMENTS_MAX_SIZE = fromEnv("EMAIL_ATTACHMENTS_MAX_SIZE", conf.getString("email.attachments.maxSize")).toInt
-      EMAIL_ATTACHMENTS_MAX_COUNT = fromEnv("EMAIL_ATTACHMENTS_MAX_COUNT", conf.getString("email.attachments.maxCount")).toInt
-      EMAIL_ATTACHMENTS_ALLOWED_TYPES_STR = fromEnv("EMAIL_ATTACHMENTS_ALLOWED_TYPES", conf.getString("email.attachments.allowedTypes"))
-      var tempSet = new scala.collection.mutable.HashSet[String]()
-      EMAIL_ATTACHMENTS_ALLOWED_TYPES_STR.split(",").map(_.trim).foreach{ mimeType =>
-        tempSet += mimeType
-      }
-      EMAIL_ATTACHMENTS_ALLOWED_TYPES = tempSet.toSet
 
       ANTIVIRUS_SERVER_ENABLED = fromEnv("ANTIVIRUS_SERVER_ENABLED", conf.getString("antivirus.enabled")).toBoolean
       if (ANTIVIRUS_SERVER_ENABLED) {
@@ -261,8 +253,8 @@ object Configurations {
       }
 
       // Configure HMAC processing
-      val hmacKey = System.getenv.getOrDefault("HMAC_KEY", "devKey")
-      val hmacKeyWindow = System.getenv.getOrDefault("HMAC_WINDOW", "10000")
+      val hmacKey = fromEnv("HMAC_KEY", "devKey")
+      val hmacKeyWindow = fromEnv("HMAC_WINDOW", "10000")
       HmacUtils.configure(hmacKey, hmacKeyWindow.toLong)
 
       AUTHENTICATION_COOKIE_PATH = fromEnv("AUTHENTICATION_COOKIE_PATH", conf.getString("authentication.cookie.path"))
@@ -326,30 +318,6 @@ object Configurations {
 
       DATA_ARCHIVE_KEY = fromEnv("DATA_ARCHIVE_KEY", "")
       DATA_WEB_INIT_ENABLED = fromEnv("DATA_WEB_INIT_ENABLED", "false").toBoolean
-
-      // Mode - START
-      /*
-        Use of default values for secrets should only be allowed for a development instance.
-       */
-      if (DATA_ARCHIVE_KEY.nonEmpty || DATA_WEB_INIT_ENABLED) {
-        TESTBED_MODE = Constants.SandboxMode
-      } else {
-        TESTBED_MODE = fromEnv("TESTBED_MODE", Constants.DevelopmentMode)
-        // Test that no default values are being used.
-        if (TESTBED_MODE == Constants.ProductionMode) {
-          val appSecret = fromEnv("APPLICATION_SECRET", "value_used_during_development_to_be_replaced_in_production")
-          val dbPassword = fromEnv("DB_DEFAULT_PASSWORD", "gitb")
-          val masterPassword = String.valueOf(MASTER_PASSWORD)
-          if (appSecret == "value_used_during_development_to_be_replaced_in_production" || appSecret == "CHANGE_ME" ||
-            masterPassword == "value_used_during_development_to_be_replaced_in_production" || masterPassword == "CHANGE_ME" ||
-            dbPassword == "gitb" || dbPassword == "CHANGE_ME" ||
-            hmacKey == "devKey" || hmacKey == "CHANGE_ME"
-          ) {
-            throw new IllegalStateException("Your application is running in production mode with default values set for sensitive configuration properties. Switch to development mode by setting on gitb-ui the TESTBED_MODE environment variable to \""+Constants.DevelopmentMode+"\" or replace these settings accordingly. For more details refer to the test bed's production installation guide.")
-          }
-        }
-      }
-      // Mode - END
       TEST_SESSION_ARCHIVE_THRESHOLD = fromEnv("TEST_SESSION_ARCHIVE_THRESHOLD", conf.getString("testsession.archive.threshold")).toInt
       TEST_SESSION_EMBEDDED_REPORT_DATA_THRESHOLD = fromEnv("TEST_SESSION_EMBEDDED_REPORT_DATA_THRESHOLD", conf.getString("testsession.embeddedReportData.threshold")).toLong
       API_ROOT = conf.getString("apiPrefix")

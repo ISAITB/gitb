@@ -10,6 +10,7 @@ import persistence.db._
 import play.api.db.slick.DatabaseConfigProvider
 import utils.CryptoUtil
 
+import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
 import javax.inject.{Inject, Singleton}
 
@@ -53,6 +54,20 @@ class AuthenticationManager @Inject()(dbConfigProvider: DatabaseConfigProvider) 
       val q = PersistenceSchema.users.filter(_.email === email)
       exec(q.result.headOption).isEmpty
     }
+  }
+
+  def replaceDefaultAdminPasswordIfNeeded(username: String): Option[String] = {
+    exec(for {
+      adminIdToProcess <- PersistenceSchema.users.filter(_.email === username).filter(_.onetimePassword === true).map(_.id).result.headOption
+      passwordToUse <- {
+        if (adminIdToProcess.isDefined) {
+          val newPassword = UUID.randomUUID().toString
+          PersistenceSchema.users.filter(_.id === adminIdToProcess).map(_.password).update(BCrypt.hashpw(newPassword, BCrypt.gensalt())) andThen DBIO.successful(Some(newPassword))
+        } else {
+          DBIO.successful(None)
+        }
+      }
+    } yield passwordToUse)
   }
 
   def checkUserByEmail(email:String, passwd:String): Option[Users] = {

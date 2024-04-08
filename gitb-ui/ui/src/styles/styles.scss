@@ -1,0 +1,25 @@
+$enable-reduced-motion: false;
+$body-color: #777;
+$table-color: $body-color;
+$primary: #337ab7;
+$font-size-base: 0.875rem;
+$table-cell-padding-y: .5rem;
+$table-cell-padding-x: .5rem;
+$font-family-base: "Open Sans", sans-serif;
+$h1-font-size: 2.25rem;
+$h2-font-size: 1.875rem;
+$h3-font-size: 1.5rem;
+$h4-font-size: 1.125rem;
+$h5-font-size: 0.875rem;
+$h6-font-size: 0.75rem;
+$headings-color: $primary;
+$card-cap-bg: #F5F5F5;
+$input-disabled-bg: #F5F5F5;
+$popover-font-size: $font-size-base;
+$success: #5cb85c;
+$warning: #f4ce4f;
+$info-text-emphasis: #005885;
+$info-bg-subtle: #d9edf7;
+$info-border-subtle: #bddded;
+
+@import "../../node_modules/bootstrap/scss/bootstrap";

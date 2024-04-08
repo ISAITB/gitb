@@ -55,7 +55,8 @@ class OrganizationService @Inject() (implicit ec: ExecutionContext, repositoryUt
   def getOrganizationsByCommunity(communityId: Long) = authorizedAction { request =>
     authorizationManager.canViewOrganisationsByCommunity(request, communityId)
     val includeAdmin = ParameterExtractor.optionalQueryParameter(request, Parameters.ADMIN).exists(_.toBoolean)
-    val list = organizationManager.getOrganizationsByCommunity(communityId, includeAdmin)
+    val snapshotId = ParameterExtractor.optionalLongQueryParameter(request, Parameters.SNAPSHOT)
+    val list = organizationManager.getOrganizationsByCommunity(communityId, includeAdmin, snapshotId)
     val json: String = JsonUtil.jsOrganizations(list).toString
     ResponseConstructor.constructJsonResponse(json)
   }
@@ -188,7 +189,8 @@ class OrganizationService @Inject() (implicit ec: ExecutionContext, repositoryUt
 
   def getOrganisationParameterValues(orgId: Long) = authorizedAction { request =>
     authorizationManager.canViewOrganisation(request, orgId)
-    val values = organizationManager.getOrganisationParameterValues(orgId)
+    val onlySimple = ParameterExtractor.optionalBooleanQueryParameter(request, Parameters.SIMPLE)
+    val values = organizationManager.getOrganisationParameterValues(orgId, onlySimple)
     val json: String = JsonUtil.jsOrganisationParametersWithValues(values, includeValues = true).toString
     ResponseConstructor.constructJsonResponse(json)
   }

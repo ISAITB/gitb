@@ -1,5 +1,5 @@
 <div class="modal-header">
-	<h4 class="modal-title">Simulated configurations</h4>
+	<div class="modal-title">Simulated configurations</div>
 </div>
 <div class="modal-body">
     <div class="itemContainer" *ngFor="let item of items">
@@ -7,5 +7,7 @@
     </div>
 </div>
 <div class="modal-footer">
-    <button type="button" (click)="close()" class="btn btn-default">Close</button>
+    <div class="btn-toolbar">
+        <button type="button" (click)="close()" class="btn btn-secondary">Close</button>
+    </div>
 </div>

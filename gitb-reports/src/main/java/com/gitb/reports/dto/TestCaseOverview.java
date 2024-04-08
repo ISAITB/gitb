@@ -3,6 +3,7 @@ package com.gitb.reports.dto;
 import com.gitb.reports.dto.tar.Report;
 import org.apache.commons.lang3.StringUtils;
 
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,8 +32,37 @@ public class TestCaseOverview {
     private boolean optional;
     private boolean disabled;
     private List<Tag> tags;
+    private String specReference;
+    private String specDescription;
+    private String specLink;
+    private String version;
+    private Timestamp endTimeInternal;
 
     private List<Report> steps = new ArrayList<>();
+
+    public String getSpecReference() {
+        return specReference;
+    }
+
+    public void setSpecReference(String specReference) {
+        this.specReference = specReference;
+    }
+
+    public String getSpecDescription() {
+        return specDescription;
+    }
+
+    public void setSpecDescription(String specDescription) {
+        this.specDescription = specDescription;
+    }
+
+    public String getSpecLink() {
+        return specLink;
+    }
+
+    public void setSpecLink(String specLink) {
+        this.specLink = specLink;
+    }
 
     public String getOutputMessage() {
         return outputMessage;
@@ -220,6 +250,22 @@ public class TestCaseOverview {
 
     public void setTags(List<Tag> tags) {
         this.tags = tags;
+    }
+
+    public String getVersion() {
+        return version;
+    }
+
+    public void setVersion(String version) {
+        this.version = version;
+    }
+
+    public Timestamp getEndTimeInternal() {
+        return endTimeInternal;
+    }
+
+    public void setEndTimeInternal(Timestamp endTimeInternal) {
+        this.endTimeInternal = endTimeInternal;
     }
 
     public void setLogMessages(List<String> logLines) {

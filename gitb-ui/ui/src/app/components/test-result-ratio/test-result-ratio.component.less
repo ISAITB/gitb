@@ -6,11 +6,11 @@
 }
 .popup-panel {
     border: 1px solid @gray-light;
-    border-radius: 4px;
-    box-shadow: 0 1px 5px #959595;
+    border-radius: @border-radius;
+    box-shadow: 0 1px 5px @gray-shadow;
     position: absolute;
     background: @white;
-    z-index: 1;
+    z-index: 3;
     &.asLine {
         right: 0px;
         top: -4px;
@@ -81,6 +81,7 @@
     right: 5px;
     top: 5px;
     padding: 0px 4px;    
+    z-index: 2;
     cursor: pointer;
 }
 .optional-container {
@@ -98,21 +99,21 @@
     align-items: center;
     height: 32px;    
     &.completed {
-        background: @success-green;
+        background: @green-success;
     }
     &.failed {
-        background: @error-red;
+        background: @red-error;
     }
     &.other {
-        background: @gray;
+        background: @gray-incomplete;
     }
     &.start {
-        border-top-left-radius: 4px;
-        border-bottom-left-radius: 4px;
+        border-top-left-radius: @border-radius;
+        border-bottom-left-radius: @border-radius;
     }
     &.end {
-        border-top-right-radius: 4px;
-        border-bottom-right-radius: 4px;
+        border-top-right-radius: @border-radius;
+        border-bottom-right-radius: @border-radius;
     }
 }
 ::ng-deep {

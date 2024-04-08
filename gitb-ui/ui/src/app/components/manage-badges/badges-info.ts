@@ -7,8 +7,14 @@ export interface BadgesInfo {
     success: BadgeInfo
     failure: BadgeInfo
     other: BadgeInfo
+    successForReport: BadgeInfo
+    failureForReport: BadgeInfo
+    otherForReport: BadgeInfo
 
     enabled: boolean
     failureBadgeActive: boolean
+    successBadgeForReportActive: boolean
+    otherBadgeForReportActive: boolean
+    failureBadgeForReportActive: boolean
     initiallyEnabled: boolean
 }

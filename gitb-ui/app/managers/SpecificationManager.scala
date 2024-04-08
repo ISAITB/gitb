@@ -1,7 +1,7 @@
 package managers
 
 import models.Enums.TestResultStatus
-import models.{Actors, Badges, Constants, Endpoints, SpecificationGroups, Specifications}
+import models._
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
 import utils.{CryptoUtil, RepositoryUtils}
@@ -47,7 +47,10 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils, testSuit
       }
       _ <- DBIO.seq(testSuiteIds.map(id => testSuiteManager.undeployTestSuite(id, onSuccessCalls)): _*)
       _ <- PersistenceSchema.specificationHasTestSuites.filter(_.specId === specId).delete
+      _ <- PersistenceSchema.conformanceOverviewCertificateMessages.filter(row => row.specification.isDefined && row.specification === specId).delete
       _ <- PersistenceSchema.conformanceSnapshotResults.filter(_.specificationId === specId).map(_.specificationId).update(specId * -1)
+      _ <- PersistenceSchema.conformanceSnapshotSpecifications.filter(_.id === specId).map(_.id).update(specId * -1)
+      _ <- PersistenceSchema.conformanceSnapshotOverviewCertificateMessages.filter(row => row.specificationId.isDefined && row.specificationId === specId).map(_.specificationId).update(Some(specId * -1))
       _ <- PersistenceSchema.conformanceResults.filter(_.spec === specId).delete
       _ <- PersistenceSchema.specifications.filter(_.id === specId).delete
       _ <- {
@@ -213,7 +216,10 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils, testSuit
           // There may be linked specifications to the group.
           actions += PersistenceSchema.specifications.filter(_.group === groupId).map(x => (x.group, x.displayOrder)).update(None, 0)
         }
+        actions += PersistenceSchema.conformanceOverviewCertificateMessages.filter(row => row.group.isDefined && row.group === groupId).delete
         actions += PersistenceSchema.conformanceSnapshotResults.filter(_.specificationGroupId === groupId).map(_.specificationGroupId).update(Some(groupId * -1))
+        actions += PersistenceSchema.conformanceSnapshotSpecificationGroups.filter(_.id === groupId).map(_.id).update(groupId * -1)
+        actions += PersistenceSchema.conformanceSnapshotOverviewCertificateMessages.filter(row => row.groupId.isDefined && row.groupId === groupId).map(_.groupId).update(Some(groupId * -1))
         actions += PersistenceSchema.specificationGroups.filter(_.id === groupId).delete
         toDBIO(actions)
       }
@@ -276,7 +282,7 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils, testSuit
     } yield idsToReturn)
   }
 
-  def updateSpecificationInternal(specId: Long, sname: String, fname: String, descr: Option[String], hidden:Boolean, apiKey: Option[String], checkApiKeyUniqueness: Boolean, groupId: Option[Long], displayOrder: Option[Short], badges: Option[Badges], onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
+  def updateSpecificationInternal(specId: Long, sname: String, fname: String, descr: Option[String], hidden:Boolean, apiKey: Option[String], checkApiKeyUniqueness: Boolean, groupId: Option[Long], displayOrder: Option[Short], badges: BadgeInfo, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
     for {
       _ <- {
         val q = for {s <- PersistenceSchema.specifications if s.id === specId} yield (s.shortname, s.fullname, s.description, s.hidden, s.group)
@@ -306,35 +312,38 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils, testSuit
         }
       }
       _ <- {
-        if (badges.isDefined) {
-          onSuccessCalls += (() => updateSpecificationBadges(specId, badges.get))
-        }
+        onSuccessCalls += (() => updateSpecificationBadges(specId, badges.forWeb, badges.forReport))
         DBIO.successful(())
       }
     } yield ()
   }
 
-  private def updateSpecificationBadges(specId: Long, badges: Badges): Unit = {
+  private def updateSpecificationBadges(specId: Long, badges: Badges, badgesForReport: Badges): Unit = {
     // We can either have no badges or at least the success and other ones.
     if ((!badges.hasSuccess && !badges.hasOther && !badges.hasFailure) || (badges.hasSuccess && badges.hasOther)) {
-      // Delete previous or removed files.
-      if (!badges.hasSuccess && !badges.hasOther && !badges.hasFailure) {
-        repositoryUtils.deleteSpecificationBadges(specId)
-      } else if (!badges.hasSuccess || badges.success.isDefined) {
-        repositoryUtils.deleteSpecificationBadge(specId, TestResultStatus.SUCCESS.toString)
-      } else if (!badges.hasOther || badges.other.isDefined) {
-        repositoryUtils.deleteSpecificationBadge(specId, TestResultStatus.UNDEFINED.toString)
-      } else if (!badges.hasFailure || badges.failure.isDefined) {
-        repositoryUtils.deleteSpecificationBadge(specId, TestResultStatus.FAILURE.toString)
-      }
-      // Add new files.
-      if (badges.success.isDefined) repositoryUtils.setSpecificationBadge(specId, badges.success.get, TestResultStatus.SUCCESS.toString)
-      if (badges.other.isDefined) repositoryUtils.setSpecificationBadge(specId, badges.other.get, TestResultStatus.UNDEFINED.toString)
-      if (badges.failure.isDefined) repositoryUtils.setSpecificationBadge(specId, badges.failure.get, TestResultStatus.FAILURE.toString)
+      updateSpecificationBadgesForCase(specId, badges, forReport = false)
+      updateSpecificationBadgesForCase(specId, badgesForReport, forReport = true)
     }
   }
 
-  def updateSpecification(specId: Long, sname: String, fname: String, descr: Option[String], hidden:Boolean, groupId: Option[Long], badges: Option[Badges]) = {
+  private def updateSpecificationBadgesForCase(specId: Long, badges: Badges, forReport: Boolean): Unit = {
+    // Delete previous or removed files.
+    if (!badges.hasSuccess || badges.success.isDefined) {
+      repositoryUtils.deleteSpecificationBadge(specId, TestResultStatus.SUCCESS.toString, forReport)
+    }
+    if (!badges.hasOther || badges.other.isDefined) {
+      repositoryUtils.deleteSpecificationBadge(specId, TestResultStatus.UNDEFINED.toString, forReport)
+    }
+    if (!badges.hasFailure || badges.failure.isDefined) {
+      repositoryUtils.deleteSpecificationBadge(specId, TestResultStatus.FAILURE.toString, forReport)
+    }
+    // Add new files.
+    if (badges.success.isDefined) repositoryUtils.setSpecificationBadge(specId, badges.success.get, TestResultStatus.SUCCESS.toString, forReport)
+    if (badges.other.isDefined) repositoryUtils.setSpecificationBadge(specId, badges.other.get, TestResultStatus.UNDEFINED.toString, forReport)
+    if (badges.failure.isDefined) repositoryUtils.setSpecificationBadge(specId, badges.failure.get, TestResultStatus.FAILURE.toString, forReport)
+  }
+
+  def updateSpecification(specId: Long, sname: String, fname: String, descr: Option[String], hidden:Boolean, groupId: Option[Long], badges: BadgeInfo) = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction = updateSpecificationInternal(specId, sname, fname, descr, hidden, None, checkApiKeyUniqueness = false, groupId, None, badges, onSuccessCalls)
     exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
@@ -439,7 +448,7 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils, testSuit
     getSpecifications(Some(specificationIds), None, withGroups = true)
   }
 
-  def createSpecificationsInternal(specification: Specifications, checkApiKeyUniqueness: Boolean, badges: Option[Badges], onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[Long] = {
+  def createSpecificationsInternal(specification: Specifications, checkApiKeyUniqueness: Boolean, badges: BadgeInfo, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[Long] = {
     for {
       replaceApiKey <- if (checkApiKeyUniqueness) {
         PersistenceSchema.specifications.filter(_.apiKey === specification.apiKey).exists.result
@@ -451,15 +460,13 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils, testSuit
         PersistenceSchema.specifications.returning(PersistenceSchema.specifications.map(_.id)) += specToUse
       }
       _ <- {
-        if (badges.isDefined) {
-          onSuccessCalls += (() => updateSpecificationBadges(newSpecId, badges.get))
-        }
+        onSuccessCalls += (() => updateSpecificationBadges(newSpecId, badges.forWeb, badges.forReport))
         DBIO.successful(())
       }
     } yield newSpecId
   }
 
-  def createSpecifications(specification: Specifications, badges: Option[Badges]): Long = {
+  def createSpecifications(specification: Specifications, badges: BadgeInfo): Long = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction = createSpecificationsInternal(specification, checkApiKeyUniqueness = false, badges, onSuccessCalls)
     exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)

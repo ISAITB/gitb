@@ -206,7 +206,7 @@ export class OrganisationDetailsComponent extends BaseComponent implements OnIni
   showSystems() {
     if (this.systemsStatus.status == Constants.STATUS.NONE) {
       this.systemsStatus.status = Constants.STATUS.PENDING
-      this.systemService.getSystemsByOrganisation(this.orgId, false)
+      this.systemService.getSystemsByOrganisation(this.orgId)
       .subscribe((data) => {
         this.systems = data
       }).add(() => {

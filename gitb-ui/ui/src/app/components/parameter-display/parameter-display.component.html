@@ -1,4 +1,4 @@
-<div class="table-container">
+<div class="table-container rounded">
     <table class="table table-directive" [ngClass]="{'expandable-table': styleAsNestedTable}" *ngIf="parameters && parameters.length > 0">
         <thead>
             <tr>
@@ -17,7 +17,7 @@
                 <td *ngIf="showValues && parameter.kind == 'BINARY'"><a *ngIf="parameter.value != undefined" href (click)="downloadBinaryParameter(parameter);$event.preventDefault()">{{parameter.fileName}}</a></td>
                 <td *ngIf="showValues && parameter.kind != 'BINARY'"><span *ngIf="parameter.valueToShow != undefined">{{parameter.valueToShow}}</span><span *ngIf="parameter.valueToShow == undefined">{{parameter.value}}</span></td>
                 <td>{{parameter.desc}}</td>
-                <td class="td-min-centered" *ngIf="showActions"><button type="button" class="btn btn-default" *ngIf="canEdit!(parameter)" (click)="onEdit(parameter)" containerClass="shortTooltip" tooltip="Edit" [delay]="Constants.TOOLTIP_DELAY"><i class="fa-solid fa-pencil"></i></button></td>
+                <td class="td-min-centered" *ngIf="showActions"><button type="button" class="btn btn-secondary" *ngIf="canEdit!(parameter)" (click)="onEdit(parameter)" containerClass="shortTooltip" tooltip="Edit" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-pencil"></i></button></td>
             </tr>
         </tbody>
     </table>

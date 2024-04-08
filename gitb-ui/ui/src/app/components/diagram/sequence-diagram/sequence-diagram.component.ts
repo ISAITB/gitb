@@ -44,7 +44,8 @@ export class SequenceDiagramComponent implements OnInit {
     let steps = this.stepsOfTests[this.test]
     this.actorInfo = this.actorInfoOfTests[this.test].concat([
       {id: Constants.TEST_ENGINE_ACTOR_ID, name: Constants.TEST_ENGINE_ACTOR_NAME},
-      {id: Constants.TESTER_ACTOR_ID, name: this.getTesterActorName()}
+      {id: Constants.TESTER_ACTOR_ID, name: this.getTesterActorName()},
+      {id: Constants.ADMINISTRATOR_ACTOR_ID, name: Constants.ADMINISTRATOR_ACTOR_NAME}
     ])
     if (steps != undefined) {
       this.messages = this.extractSteps(steps, this.actorInfo)
@@ -89,9 +90,16 @@ export class SequenceDiagramComponent implements OnInit {
         this.extractSteps(thread, actorInfo)
       }
     } else if (step.type == 'interact') {
-      if (this.hasRequests(step.interactions)) {
+      const hasRequests = this.hasRequests(step.interactions)
+      if (hasRequests && step.admin) {
+        step.from = Constants.ADMINISTRATOR_ACTOR_ID
+        step.to = Constants.TEST_ENGINE_ACTOR_ID
+      } else if (hasRequests && !step.admin) {
         step.from = Constants.TESTER_ACTOR_ID
         step.to = Constants.TEST_ENGINE_ACTOR_ID
+      } else if (!hasRequests && step.admin) {
+        step.from = Constants.TEST_ENGINE_ACTOR_ID
+        step.to = Constants.ADMINISTRATOR_ACTOR_ID
       } else {
         step.from = Constants.TEST_ENGINE_ACTOR_ID
         step.to = Constants.TESTER_ACTOR_ID
@@ -151,10 +159,11 @@ export class SequenceDiagramComponent implements OnInit {
       actorsToReturn = actors
     }
     this.includesNonSpecificationActor = find(actorsToReturn, (actor) => {
-      return actor == Constants.TESTER_ACTOR_ID || actor == Constants.TEST_ENGINE_ACTOR_ID
+      return actor == Constants.TESTER_ACTOR_ID || actor == Constants.TEST_ENGINE_ACTOR_ID || actor == Constants.ADMINISTRATOR_ACTOR_ID
     }) != undefined
     if (this.includesNonSpecificationActor) {
       actorsToReturn = this.moveActorToTheEnd(actorsToReturn, Constants.TESTER_ACTOR_ID)
+      actorsToReturn = this.moveActorToTheEnd(actorsToReturn, Constants.ADMINISTRATOR_ACTOR_ID)
       actorsToReturn = this.moveActorToTheEnd(actorsToReturn, Constants.TEST_ENGINE_ACTOR_ID)
     }
     return actorsToReturn
@@ -184,8 +193,15 @@ export class SequenceDiagramComponent implements OnInit {
         } else if (message.type == 'exit') {
           return [Constants.TEST_ENGINE_ACTOR_ID, Constants.TEST_ENGINE_ACTOR_ID]
         } else if (message.type == 'interact') {
-          let instructionActors = [Constants.TEST_ENGINE_ACTOR_ID, Constants.TESTER_ACTOR_ID]
-          let requestActors = [Constants.TESTER_ACTOR_ID, Constants.TEST_ENGINE_ACTOR_ID]
+          let instructionActors: string[]
+          let requestActors: string[]
+          if (message.admin) {
+            instructionActors = [Constants.TEST_ENGINE_ACTOR_ID, Constants.ADMINISTRATOR_ACTOR_ID]
+            requestActors = [Constants.ADMINISTRATOR_ACTOR_ID, Constants.TEST_ENGINE_ACTOR_ID]
+          } else {
+            instructionActors = [Constants.TEST_ENGINE_ACTOR_ID, Constants.TESTER_ACTOR_ID]
+            requestActors = [Constants.TESTER_ACTOR_ID, Constants.TEST_ENGINE_ACTOR_ID]
+          }
           return flatten(instructionActors.concat(requestActors))
         } else {
           return []

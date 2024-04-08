@@ -1,4 +1,5 @@
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { CdkDragDrop } from '@angular/cdk/drag-drop';
+import { Component, EventEmitter, Input, OnInit, Output, ViewChild } from '@angular/core';
 import { Constants } from 'src/app/common/constants';
 import { DataService } from 'src/app/services/data.service';
 import { RoutingService } from 'src/app/services/routing.service';
@@ -16,12 +17,12 @@ export class DomainSpecificationDisplayComponent implements OnInit {
   @Input() groups: SpecificationGroup[] = []
   @Input() first = false
   @Input() last = false
+  @Input() dragOngoing = false
   @Output() selectSpec = new EventEmitter<DomainSpecification>()
   @Output() removeSpec = new EventEmitter<[number, number]>()
   @Output() moveSpec = new EventEmitter<[number, number|undefined, number]>()
   @Output() copySpec = new EventEmitter<[number, number|undefined, number]>()
-  @Output() moveUp = new EventEmitter<DomainSpecification>()
-  @Output() moveDown = new EventEmitter<DomainSpecification>()
+  @Output() dragging = new EventEmitter<boolean>()
   Constants = Constants
 
   removePending = false
@@ -71,14 +72,6 @@ export class DomainSpecificationDisplayComponent implements OnInit {
       || (this.spec.copyPending != undefined && this.spec.copyPending)
   }
 
-  doMoveUp() {
-    this.propagateUp(this.spec)
-  }
-
-  doMoveDown() {
-    this.propagateDown(this.spec)
-  }
-
   doSelect() {
     this.propagateSelect(this.spec)
   }
@@ -95,16 +88,26 @@ export class DomainSpecificationDisplayComponent implements OnInit {
     this.copySpec.emit(event)
   }
 
-  propagateUp(event: DomainSpecification) {
-    this.moveUp.emit(event)
-  }
-
-  propagateDown(event: DomainSpecification) {
-    this.moveDown.emit(event)
-  }
-
   propagateSelect(event: DomainSpecification) {
     this.selectSpec.emit(event)
+  }
+
+  dropSpecification(event: CdkDragDrop<any>) {
+    if (event.currentIndex != event.previousIndex && this.spec.options) {
+      this.spec.options.splice(event.currentIndex, 0, this.spec.options.splice(event.previousIndex, 1)[0]);
+    }    
+  }
+
+  propagateDrag(dragging: boolean) {
+    this.dragging.emit(dragging)
+  }
+
+  startDrag() {
+    this.dragging.emit(true)
+  }
+
+  endDrag() {
+    this.dragging.emit(false)
   }
 
 }

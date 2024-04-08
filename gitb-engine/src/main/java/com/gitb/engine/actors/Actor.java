@@ -1,6 +1,6 @@
 package com.gitb.engine.actors;
 
-import akka.actor.UntypedAbstractActor;
+import org.apache.pekko.actor.UntypedAbstractActor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -105,9 +105,9 @@ export class CreateConformanceStatementComponent implements OnInit {
       }
     }
     this.checkToHideActors(specs)
-    this.itemsByType = this.getItemsByType(items)
+    this.itemsByType = this.dataService.organiseConformanceItemsByType(items)
     // Initialise item state.
-    this.visit(items, (item) => {
+    this.dataService.visitConformanceItems(items, (item) => {
       if (item.collapsed == undefined) {
         item.collapsed = true
       }
@@ -137,7 +137,7 @@ export class CreateConformanceStatementComponent implements OnInit {
 
   private countVisibleItems() {
     let count = 0
-    this.visit(this.items, (item) => {
+    this.dataService.visitConformanceItems(this.items, (item) => {
       if (item.filtered == true) {
         count += 1
       }
@@ -150,7 +150,7 @@ export class CreateConformanceStatementComponent implements OnInit {
       for (let specification of specifications) {
         // If we have a specification with a single actor don't show the actor.
         if (specification.itemType == Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.SPECIFICATION
-          && specification.items != undefined && specification.items.length == 1 && specification.items[0].itemType == Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.ACTOR) {
+          && specification.items != undefined && specification.items.length == 1 && specification.items[0].itemType == Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.ACTOR && specification.items[0].hidden) {
             // The specification will be an alias for the actor.
             specification.id = specification.items[0].id
             specification.checked = specification.items[0].checked
@@ -188,38 +188,6 @@ export class CreateConformanceStatementComponent implements OnInit {
         item.matched = true
         item.filtered = true
       }
-    }
-  }
-
-  private getItemsByType(items: ConformanceStatementItem[]): { groups: ConformanceStatementItem[], specs: ConformanceStatementItem[], actors: ConformanceStatementItem[] } {
-    let groups: ConformanceStatementItem[] = []
-    let specs: ConformanceStatementItem[] = []
-    let actors: ConformanceStatementItem[] = []
-    for (let domain of items) {
-      if (domain.items) {
-        for (let specOrGroup of domain.items) {
-          if (specOrGroup.itemType == Constants.CONFORMANCE_STATEMENT_ITEM_TYPE.SPECIFICATION_GROUP) {
-            groups.push(specOrGroup)
-            // Specifications in group
-            if (specOrGroup.items) {
-              specOrGroup.items.forEach((item) => specs.push(item))
-            }
-          } else {
-            // Specification in domain
-            specs.push(specOrGroup)
-          }
-        }
-      }
-    }
-    for (let spec of specs) {
-      if (spec.items) {
-        spec.items.forEach((item) => actors.push(item))
-      }
-    }
-    return {
-      groups: groups,
-      specs: specs,
-      actors: actors
     }
   }
 
@@ -290,7 +258,7 @@ export class CreateConformanceStatementComponent implements OnInit {
         item.filtered = hasVisibleChild
       } else {
         // Apply filtering logic to children.
-        this.visit(item.items, (item) => {
+        this.dataService.visitConformanceItems(item.items, (item) => {
           item.filtered = true
         })
       }
@@ -298,7 +266,7 @@ export class CreateConformanceStatementComponent implements OnInit {
   }
 
   toggleCheck(check: boolean) {
-    this.visit(this.items, (item) => {
+    this.dataService.visitConformanceItems(this.items, (item) => {
       if (item.filtered && (item.items == undefined || item.items.length == 0)) {
         // Only toggle items that are visible and have a checkbox.
         item.checked = check
@@ -310,20 +278,11 @@ export class CreateConformanceStatementComponent implements OnInit {
   toggleCollapse(collapse: boolean) {
     this.animated = false
     setTimeout(() => {
-      this.visit(this.items, (item) => {
+      this.dataService.visitConformanceItems(this.items, (item) => {
         item.collapsed = collapse
       })
       this.toggleAnimated(true)
     })
-  }
-
-  private visit(items: ConformanceStatementItem[]|undefined, visitor: (item: ConformanceStatementItem) => any) {
-    if (items) {
-      for (let item of items) {
-        visitor(item)
-        this.visit(item.items, visitor)
-      }
-    }
   }
 
   selectionChanged(selectedItem: ConformanceStatementItem) {

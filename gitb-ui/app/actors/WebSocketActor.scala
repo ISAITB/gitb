@@ -1,6 +1,6 @@
 package actors
 
-import akka.actor.{Actor, ActorRef, ActorSystem, Props}
+import org.apache.pekko.actor.{Actor, ActorRef, ActorSystem, Props}
 import org.slf4j.{Logger, LoggerFactory}
 import play.api.libs.json._
 
@@ -32,7 +32,7 @@ class WebSocketActor @Inject() (actorSystem: ActorSystem, testbedClient: manager
   private def broadcastAttempt(sessionId:String, msg:String, attempt: Int): Unit = {
     if (attempt <= 10) {
       if (!broadcastMessage(sessionId, msg)) {
-        akka.pattern.after(duration = 1.seconds, using = actorSystem.scheduler) {
+        org.apache.pekko.pattern.after(duration = 1.seconds, using = actorSystem.scheduler) {
           Future.successful(true)
         } andThen {
           case _ => broadcastAttempt(sessionId, msg, attempt+1)

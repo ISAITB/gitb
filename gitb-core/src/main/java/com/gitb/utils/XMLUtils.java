@@ -1,5 +1,6 @@
 package com.gitb.utils;
 
+import jakarta.xml.bind.*;
 import net.sf.saxon.jaxp.SaxonTransformerFactory;
 import org.apache.xerces.jaxp.DocumentBuilderFactoryImpl;
 import org.apache.xerces.jaxp.SAXParserFactoryImpl;
@@ -11,7 +12,6 @@ import org.xml.sax.*;
 import org.xml.sax.helpers.DefaultHandler;
 
 import javax.xml.XMLConstants;
-import jakarta.xml.bind.*;
 import javax.xml.crypto.dsig.*;
 import javax.xml.crypto.dsig.dom.DOMSignContext;
 import javax.xml.crypto.dsig.keyinfo.KeyInfo;
@@ -24,17 +24,19 @@ import javax.xml.parsers.*;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.*;
 import javax.xml.transform.dom.DOMResult;
 import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stax.StAXSource;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
@@ -125,19 +127,59 @@ public class XMLUtils {
         return writer.toString();
     }
 
-    public static void validateAgainstSchema(InputStream contentToValidate, InputStream schema) throws IOException, SAXException {
-        SchemaFactory schemaFactory = new XMLSchemaFactory();
-        Schema schemaResource;
+    /**
+     * Validate XML content using an XML Schema securely.
+     * <p/>
+     * Findings will be reported through the provided error handler which is also returned by this method.
+     *
+     * @param contentToValidate The input to validate.
+     * @param schemaToValidateWith The schema to use.
+     * @throws XMLStreamException If the input cannot be parsed as XML.
+     * @throws SAXException If the input is invalid (not thrown for regular errors if a custom errorHandler is provided).
+     */
+    public static void validateAgainstSchema(InputStream contentToValidate, InputStream schemaToValidateWith) throws XMLStreamException, SAXException {
+        validateAgainstSchema(new StreamSource(contentToValidate), new StreamSource(schemaToValidateWith), null, null);
+    }
+
+    /**
+     * Validate XML content using an XML Schema securely.
+     * <p/>
+     * Findings will be reported through the provided error handler which is also returned by this method.
+     *
+     * @param contentToValidate The input to validate.
+     * @param schemaToValidateWith The schema to use.
+     * @param errorHandler The error handler to configure (optional).
+     * @param resourceResolver The resource resolver to configure (optional).
+     * @throws XMLStreamException If the input cannot be parsed as XML.
+     * @throws SAXException If the input is invalid (not thrown for regular errors if a custom errorHandler is provided).
+     */
+    public static void validateAgainstSchema(Source contentToValidate, Source schemaToValidateWith, ErrorHandler errorHandler, LSResourceResolver resourceResolver) throws XMLStreamException, SAXException {
+        /*
+         * The security configuration for the Xerces parser involves:
+         * - Setting the FEATURE_SECURE_PROCESSING to true.
+         * - Using a secured underlying parser (see getSecureXMLInputFactory()) that completely disables DTD processing.
+         * Xerces does not directly support the JAXP 1.5 features to disable XXE (ACCESS_EXTERNAL_DTD, ACCESS_EXTERNAL_SCHEMA)
+         * but we ensure secure processing by means of the secured underlying parser.
+         */
+        XMLSchemaFactory factory = new XMLSchemaFactory();
+        if (errorHandler != null) factory.setErrorHandler(errorHandler);
+        if (resourceResolver != null) factory.setResourceResolver(resourceResolver);
+        Schema schema;
         try {
-            schemaResource = schemaFactory.newSchema(new StreamSource(schema));
-        } catch (Exception e) {
-            throw new IllegalStateException("Unable to load schema resource", e);
+            factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+            schema = factory.newSchema(schemaToValidateWith);
+        } catch (SAXException e) {
+            throw new IllegalStateException("Unable to configure schema", e);
         }
-        Validator validator = schemaResource.newValidator();
-        validator.setFeature("http://xml.org/sax/features/external-general-entities", false);
-        validator.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
-        StreamSource source = new StreamSource(contentToValidate);
-        validator.validate(source);
+        Validator validator = schema.newValidator();
+        if (errorHandler != null) validator.setErrorHandler(errorHandler);
+        if (resourceResolver != null) validator.setResourceResolver(resourceResolver);
+        try {
+            // If no custom error handler is set, the default implementation will throw an exception upon detected errors.
+            validator.validate(new StAXSource(getSecureXMLInputFactory().createXMLStreamReader(contentToValidate)));
+        } catch (IOException e) {
+            throw new IllegalStateException("Unable to read input stream", e);
+        }
     }
 
     /**
@@ -400,5 +442,25 @@ public class XMLUtils {
             }
         }
         return null;
+    }
+
+    public static Path prettyPrintXmlFile(Path xmlFile) {
+        var tempReportPath = xmlFile.resolveSibling("temp."+xmlFile.getFileName().toString());
+        try (var xmlStream = Files.newInputStream(xmlFile)) {
+            var transformer = getSecureTransformerFactory().newTransformer();
+            transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+            transformer.transform(
+                new StAXSource(XMLUtils.getSecureXMLInputFactory().createXMLStreamReader(xmlStream)),
+                new StreamResult(tempReportPath.toFile())
+            );
+        } catch (Exception e) {
+            throw new IllegalStateException("Unable to apply pretty-print transformation", e);
+        }
+        try {
+            Files.move(tempReportPath, xmlFile, StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException e) {
+            throw new IllegalStateException("Unable to complete pretty-printing", e);
+        }
+        return xmlFile;
     }
 }

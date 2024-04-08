@@ -154,7 +154,9 @@ export class BreadcrumbComponent implements OnInit, OnDestroy {
   }
 
   breadcrumbClicked(crumb: BreadcrumbItem) {
-    crumb.action()
+    if (crumb.action) {
+      crumb.action()
+    }
   }
 
   isAuthenticated(): boolean {

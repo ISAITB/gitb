@@ -42,5 +42,7 @@ export enum BreadcrumbType {
     communityParameters,
     communityCertificateSettings,
     profile,
-    changePassword
+    changePassword,
+    theme,
+    conformanceSnapshot
 }

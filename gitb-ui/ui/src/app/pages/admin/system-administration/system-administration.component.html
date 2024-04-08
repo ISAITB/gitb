@@ -1,59 +1,30 @@
 <div class="page">
-    <div class="panel panel-default">
-        <div class="panel-heading clickable" (click)="configsCollapsed = !configsCollapsed">
-            <h4 class="title">System configuration</h4>
+    <div class="card">
+        <div class="card-header clickable" (click)="configsCollapsed = !configsCollapsed; configsCollapsedFinished = false" [class.collapsed]="configsCollapsedFinished">
+            <div class="card-title"><app-collapsing-icon [isCollapsed]="configsCollapsed"></app-collapsing-icon>System configuration</div>
         </div>
-        <div [collapse]="configsCollapsed" [isAnimated]="true">
+        <div [collapse]="configsCollapsed" [isAnimated]="true" (collapsed)="configsCollapsedFinished = true">
             <div class="configsContainer" [ngSwitch]="configValuesPending">
                 <ng-container *ngSwitchCase="true">
-                    <div class="pending-container">
+                    <div class="pending-container my-3">
                         <div class="pending-icon"><app-pending-block [pending]="true"></app-pending-block></div>
                         <div class="pending-message">Loading system configuration properties...</div>
                     </div>
                 </ng-container>
                 <ng-container *ngSwitchDefault>
-                    <!-- Idle session timeout. -->
-                    <div class="configContainer" >
-                        <app-configuration-entry
-                            configTitle="Test session timeout"
-                            configDescription="Terminate test sessions exceeding a maximum duration."
-                            [(status)]="ttlStatus"
-                        >
-                            <form class="form-inline">
-                                <div class="form-group">
-                                    <div class="checkbox">
-                                        <label>
-                                            <input type="checkbox" name="ttlEnabled" (change)="ttlCheckChanged()" [(ngModel)]="ttlEnabled"> Enabled?
-                                        </label>
-                                    </div>
-                                </div>
-                                <div class="form-group">
-                                    <label class="sr-only" for="ttlValue">Seconds before terminating sessions:</label>
-                                    <div class="input-group">
-                                        <input type="number" min="1" class="form-control" id="ttlValue" name="ttlValue" placeholder="Timeout" [disabled]="!ttlEnabled" [(ngModel)]="ttlValue">
-                                        <div class="input-group-addon">seconds</div>
-                                    </div>
-                                </div>
-                                <button type="submit" class="btn btn-default" [disable]="ttlEnabled && ttlValue == undefined" [pending]="ttlStatus.pending" (click)="saveTTL()">Save</button>
-                            </form>
-                        </app-configuration-entry>
-                    </div>
-                    <!-- Self-registration. -->
+                    <!-- Welcome page. -->
                     <div class="configContainer">
                         <app-configuration-entry
-                            configTitle="Self-registration"
-                            configDescription="Enable user self-registration for hosted communities."
-                            [(status)]="selfRegistrationStatus"
+                            configTitle="Custom welcome page message"
+                            configDescription="Display a custom message on the Test Bed's welcome page."
+                            [(status)]="welcomePageStatus"
                         >
-                            <form class="form-inline">
-                                <div class="form-group">
-                                    <div class="checkbox">
-                                        <label>
-                                            <input type="checkbox" name="selfRegistrationEnabled" [(ngModel)]="selfRegistrationEnabled"> Enabled?
-                                        </label>
-                                    </div>
+                            <form>
+                                <app-editor id="welcomePageMessage" name="welcomePageMessage" [(ngModel)]="welcomePageMessage" type="normal" [height]="200"></app-editor>
+                                <div class="btn-toolbar mt-3">
+                                    <button type="submit" class="btn btn-secondary" [disable]="welcomePageResetPending || !textProvided(welcomePageMessage)" [pending]="welcomePageStatus.pending" (click)="saveWelcomePage()">Save</button>
+                                    <button type="button" class="btn btn-secondary" [disable]="welcomePageStatus.fromDefault || welcomePageStatus.fromEnv || welcomePageStatus.pending" [pending]="welcomePageResetPending" (click)="resetWelcomePage()">Reset to default</button>
                                 </div>
-                                <button type="submit" class="btn btn-default" [pending]="selfRegistrationStatus.pending" (click)="saveSelfRegistration()">Save</button>
                             </form>
                         </app-configuration-entry>
                     </div>
@@ -64,45 +35,292 @@
                             configDescription="Enable access to demos using a configured demo account."
                             [(status)]="demoAccountStatus"
                         >
-                            <form class="form-inline">
-                                <div class="form-group">
-                                    <div class="checkbox">
-                                        <label>
-                                            <input type="checkbox" name="demoAccountEnabled" [(ngModel)]="demoAccountEnabled"> Enabled?
-                                        </label>
+                            <form>
+                                <div class="row row-cols-auto align-items-center gx-3">
+                                    <div class="col-auto">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="demoAccountEnabled" name="demoAccountEnabled" [(ngModel)]="demoAccountEnabled">
+                                            <label class="form-check-label" for="demoAccountEnabled">Enabled?</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-auto" [ngSwitch]="loadCommunitiesPending">
+                                        <app-pending-block *ngSwitchCase="true"></app-pending-block>
+                                        <ng-container *ngSwitchDefault [ngSwitch]="communities.length == 0">
+                                            <div *ngSwitchCase="true" class="no-data-container">No communities available</div>
+                                            <select *ngSwitchDefault name="selectedCommunity" [disabled]="!demoAccountEnabled || loadCommunitiesPending || communities.length == 0" [(ngModel)]="selectedCommunity" [compareWith]="dataService.sameId" (change)="selectCommunity()" class="form-control form-select demoSelect">
+                                                <option *ngFor="let community of communities" [ngValue]="community">{{community.fname}}</option>
+                                            </select>
+                                        </ng-container>
+                                    </div>
+                                    <div class="col-auto" *ngIf="selectedCommunity && !loadCommunitiesPending" [ngSwitch]="loadOrganisationsPending">
+                                        <app-pending-block *ngSwitchCase="true"></app-pending-block>
+                                        <ng-container *ngSwitchDefault [ngSwitch]="organisations.length == 0">
+                                            <div *ngSwitchCase="true" class="no-data-container">No organisations available</div>
+                                            <select *ngSwitchDefault name="selectedOrganisation" [disabled]="!demoAccountEnabled || loadOrganisationsPending || organisations.length == 0" [(ngModel)]="selectedOrganisation" [compareWith]="dataService.sameId" (change)="selectCommunityOrganisation()" class="form-control form-select demoSelect">
+                                                <option *ngFor="let organisation of organisations" [ngValue]="organisation">{{organisation.fname}}</option>
+                                            </select>
+                                        </ng-container>
+                                    </div>
+                                    <div class="col-auto" *ngIf="selectedOrganisation && !loadCommunitiesPending && !loadOrganisationsPending" [ngSwitch]="loadUsersPending">
+                                        <app-pending-block *ngSwitchCase="true"></app-pending-block>
+                                        <ng-container *ngSwitchDefault [ngSwitch]="users.length == 0">
+                                            <div *ngSwitchCase="true" class="no-data-container">No non-administrator users available</div>
+                                            <select *ngSwitchDefault name="demoAccount" [disabled]="!demoAccountEnabled || loadUsersPending || users.length == 0" [(ngModel)]="demoAccount" [compareWith]="dataService.sameId" class="form-control form-select demoSelect">
+                                                <option *ngFor="let user of users" [ngValue]="user">{{user.name}}</option>
+                                            </select>
+                                        </ng-container>
+                                    </div>
+                                    <div class="col-auto">
+                                        <button type="submit" class="btn btn-secondary" [disable]="demoAccountEnabled && demoAccount == undefined" [pending]="demoAccountStatus.pending" (click)="saveDemoAccount()">Save</button>
                                     </div>
                                 </div>
-                                <div class="form-group" [ngSwitch]="loadCommunitiesPending">
-                                    <app-pending-block *ngSwitchCase="true"></app-pending-block>
-                                    <ng-container *ngSwitchDefault [ngSwitch]="communities.length == 0">
-                                        <div *ngSwitchCase="true" class="no-data-container">No communities available</div>
-                                        <select *ngSwitchDefault name="selectedCommunity" [disabled]="!demoAccountEnabled || loadCommunitiesPending || communities.length == 0" [(ngModel)]="selectedCommunity" [compareWith]="sameId" (change)="selectCommunity()" class="form-control demoSelect">
-                                            <option *ngFor="let community of communities" [ngValue]="community">{{community.fname}}</option>
-                                        </select>
-                                    </ng-container>
-                                </div>
-                                <div class="form-group" *ngIf="selectedCommunity && !loadCommunitiesPending" [ngSwitch]="loadOrganisationsPending">
-                                    <app-pending-block *ngSwitchCase="true"></app-pending-block>
-                                    <ng-container *ngSwitchDefault [ngSwitch]="organisations.length == 0">
-                                        <div *ngSwitchCase="true" class="no-data-container">No organisations available</div>
-                                        <select *ngSwitchDefault name="selectedOrganisation" [disabled]="!demoAccountEnabled || loadOrganisationsPending || organisations.length == 0" [(ngModel)]="selectedOrganisation" [compareWith]="sameId" (change)="selectCommunityOrganisation()" class="form-control demoSelect">
-                                            <option *ngFor="let organisation of organisations" [ngValue]="organisation">{{organisation.fname}}</option>
-                                        </select>
-                                    </ng-container>
-                                </div>
-                                <div class="form-group" *ngIf="selectedOrganisation && !loadCommunitiesPending && !loadOrganisationsPending" [ngSwitch]="loadUsersPending">
-                                    <app-pending-block *ngSwitchCase="true"></app-pending-block>
-                                    <ng-container *ngSwitchDefault [ngSwitch]="users.length == 0">
-                                        <div *ngSwitchCase="true" class="no-data-container">No non-administrator users available</div>
-                                        <select *ngSwitchDefault name="demoAccount" [disabled]="!demoAccountEnabled || loadUsersPending || users.length == 0" [(ngModel)]="demoAccount" [compareWith]="sameId" class="form-control demoSelect">
-                                            <option *ngFor="let user of users" [ngValue]="user">{{user.name}}</option>
-                                        </select>
-                                    </ng-container>
-                                </div>
-                                <button type="submit" class="btn btn-default" [disable]="demoAccountEnabled && demoAccount == undefined" [pending]="demoAccountStatus.pending" (click)="saveDemoAccount()">Save</button>
                             </form>
                         </app-configuration-entry>
-                    </div>            
+                    </div>
+                    <!-- Email settings. -->
+                    <div class="configContainer">
+                        <app-configuration-entry
+                            configTitle="Email settings"
+                            configDescription="Enable email notifications and exchanges with Test Bed users."
+                            [(status)]="emailSettingsStatus"
+                        >
+                        <form>
+                            <div class="row">
+                                <div class="col-auto">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="emailEnabled" name="emailEnabled" [(ngModel)]="emailSettings.enabled">
+                                        <label class="form-check-label" for="emailEnabled">Emails enabled?</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div [collapse]="!emailSettings.enabled" [isAnimated]="true">
+                                <div class="emailFormContainer mt-3">
+                                    <app-form-section sectionTitle="Basic settings">
+                                        <div class="row">
+                                            <div class="offset-1 col-11">
+                                                <div class="row mt-3 gx-3">
+                                                    <label class="col-3 col-form-label text-end" for="smtpHost">* SMTP server:</label>
+                                                    <div class="col-3 minimum-width-text"><input type="text" class="form-control" placeholder="Host" id="smtpHost" name="smtpHost" [(ngModel)]="emailSettings.host"></div>
+                                                    <div class="col-1 minimum-width-number"><input type="number" class="form-control" placeholder="Port" id="emailPort" name="emailPort" [(ngModel)]="emailSettings.port"></div>
+                                                    <div class="col-auto" app-tooltip tbTooltip="The host and port of the SMTP server used to send emails."></div>
+                                                </div>
+                                                <div class="row mt-3">
+                                                    <div class="offset-3 col-auto">
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="checkbox" id="emailSslEnabled" name="emailSslEnabled" [(ngModel)]="emailSettings.sslEnabled">
+                                                            <label class="form-check-label" for="emailSslEnabled">Enable SSL?
+                                                                <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="Whether an SSL channel should be used to connect to the SMTP server."></div>
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-auto">
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="checkbox" id="emailStartTlsEnabled" name="emailStartTlsEnabled" [(ngModel)]="emailSettings.startTlsEnabled">
+                                                            <label class="form-check-label" for="emailStartTlsEnabled">Enable StartTLS?
+                                                                <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="StartTLS is a backwards compatibility flag allowing you to connect to a SMTP server over a plain text channel and then upgrade automatically to an encrypted one."></div>
+                                                            </label>
+                                                        </div>
+                                                    </div>                                        
+                                                </div>
+                                                <div [collapse]="!emailSettings.sslEnabled" [isAnimated]="true">
+                                                    <div class="row mt-3">
+                                                        <label class="col-3 col-form-label text-end" for="emailSslProtocols">SSL protocols:</label>
+                                                        <div class="col-4 minimum-width-text">
+                                                            <select id="emailSslProtocols" size="6" name="emailSslProtocols" class="form-control form-select" multiple="true" [(ngModel)]="emailSettings.sslProtocols">
+                                                                <option value="SSLv2Hello">SSL v2</option>
+                                                                <option value="SSLv3">SSL v3</option>
+                                                                <option value="TLSv1">TLS v1</option>
+                                                                <option value="TLSv1.1">TLS v1.1</option>
+                                                                <option value="TLSv1.2">TLS v1.2</option>
+                                                                <option value="TLSv1.3">TLS v1.3</option>
+                                                            </select>
+                                                        </div>
+                                                        <div class="col-auto" app-tooltip tbTooltip="Specify one or more SSL protocols to signal as acceptable for creating the SSL channel. You may need to adapt these if you experience SSL handshake rejections from the SMTP server."></div>
+                                                    </div>
+                                                </div>
+                                                <div class="row mt-3">
+                                                    <div class="offset-3 col-auto">
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="checkbox" id="emailAuthEnabled" name="emailAuthEnabled" [(ngModel)]="emailSettings.authenticate">
+                                                            <label class="form-check-label" for="emailAuthEnabled">Authenticate?
+                                                                <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="Check this if the SMTP server requires authentication."></div>
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div [collapse]="!emailSettings.authenticate" [isAnimated]="true">
+                                                    <div class="row mt-3">
+                                                        <label class="col-3 col-form-label text-end" for="emailUsername">* Username:</label>
+                                                        <div class="col-4 minimum-width-text"><input id="emailUsername" name="emailUsername" [(ngModel)]="emailSettings.username" class="form-control" type="text"></div>
+                                                        <div class="col-auto" app-tooltip tbTooltip="The username used to authenticate to the SMTP server."></div>
+                                                    </div>
+                                                    <div class="row mt-3 align-items-center">
+                                                        <legend class="col-3 col-form-label text-end">* Password:</legend>
+                                                        <div class="col-4 minimum-width-text" [ngSwitch]="emailSettings.password == undefined">
+                                                            <app-secret-input *ngSwitchCase="true" id="emailPassword" name="emailPassword" [(ngModel)]="emailSettings.newPassword"></app-secret-input>
+                                                            <div *ngSwitchDefault class="row row-cols-auto align-items-center gx-3">
+                                                                <div class="col-auto">
+                                                                    <div class="form-check">
+                                                                        <input class="form-check-input" type="checkbox" id="updatePassword" name="updatePassword" [(ngModel)]="emailSettings.updatePassword">
+                                                                        <label class="form-check-label" for="updatePassword">Update</label>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="col-auto flex-grow-1">
+                                                                    <app-secret-input *ngIf="emailSettings.updatePassword" id="emailPassword" name="emailPassword" [(ngModel)]="emailSettings.newPassword"></app-secret-input>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div *ngIf="emailSettings.password == undefined || emailSettings.updatePassword" class="col-auto" app-tooltip tbTooltip="The password used to authenticate to the SMTP server."></div>
+                                                    </div>
+                                                </div>
+                                                <div class="row mt-3">
+                                                    <label class="col-3 col-form-label text-end" for="emailFrom">* Test Bed email address:</label>
+                                                    <div class="col-4 minimum-width-text"><input id="emailFrom" name="emailFrom" [(ngModel)]="emailSettings.from" class="form-control" type="text"></div>
+                                                    <div class="col-auto" app-tooltip tbTooltip="The email address to use as the sender for outgoing emails. You may also use the format 'NAME &lt;EMAIL&gt;' to include a user-friendly name."></div>
+                                                </div>
+                                                <div class="row mt-3">
+                                                    <div class="offset-3 col-4 minimum-width-text">
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="checkbox" id="emailTestActive" name="emailTestActive" [(ngModel)]="emailTestActive">
+                                                            <label class="form-check-label" for="emailTestActive">Send test email?
+                                                                <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="Test your current configuration by sending a test email to a target email address."></div>
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div [collapse]="!emailTestActive" [isAnimated]="true">
+                                                    <div class="row mt-3 gx-3">
+                                                        <div class="offset-3 col-4 minimum-width-text">
+                                                            <div class="input-group">
+                                                                <input id="emailTestToAddress" placeholder="Recipient address" name="emailTestToAddress" [(ngModel)]="emailTestToAddress" class="form-control">
+                                                                <button type="button" class="btn btn-secondary" [disable]="!textProvided(emailTestToAddress) || emailTestPending" [pending]="emailTestPending" (click)="testEmailSettings()">Send</button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </app-form-section>
+                                    <app-form-section sectionTitle="Contact form settings" [marginBefore]="true">
+                                        <div class="row">
+                                            <div class="offset-1 col-11">
+                                                <div class="mt-3 row">
+                                                    <label class="col-3 col-form-label text-end pt-0" for="contactFormEnabled">Enable contact form:</label>
+                                                    <div class="col-7">
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" id="contactFormEnabled" name="contactFormEnabled" [(ngModel)]="emailSettings.contactFormEnabled" type="checkbox">
+                                                            <div app-tooltip class="col-auto d-inline-flex" tbTooltip="Check this to enable the 'Contact support' feature." [inline]="true"></div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div [collapse]="!emailSettings.contactFormEnabled" [isAnimated]="true">
+                                                    <div class="row mt-3">
+                                                        <label class="col-3 col-form-label text-end" for="emailDefaultSupportMailbox">* Default support mailbox:</label>
+                                                        <div class="col-4 minimum-width-text"><input id="emailDefaultSupportMailbox" name="emailDefaultSupportMailbox" [(ngModel)]="emailSettings.defaultSupportMailbox" class="form-control" type="text"></div>
+                                                        <div class="col-auto" app-tooltip tbTooltip="The default mailbox to receive support requests."></div>
+                                                    </div>
+                                                    <div class="row mt-3">
+                                                        <div class="offset-3 col-auto">
+                                                            <div class="form-check">
+                                                                <input class="form-check-input" type="checkbox" id="copyDefaultMailbox" name="copyDefaultMailbox" [(ngModel)]="emailSettings.contactFormCopyDefaultMailbox">
+                                                                <label class="form-check-label" for="copyDefaultMailbox">Add in CC when community-specific mailbox is defined?
+                                                                    <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="Support requests made by authenticated users belonging to user communities with defined support mailboxes, may also include the default Test Bed support mailbox in CC."></div>
+                                                                </label>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="row mt-3">
+                                                        <label class="col-3 col-form-label text-end" for="emailMaxAttachmentCount">* Maximum attachments:</label>
+                                                        <div class="col-1 minimum-width-number"><input min="0" id="emailMaxAttachmentCount" name="emailMaxAttachmentCount" [(ngModel)]="emailSettings.maxAttachmentCount" class="form-control" type="number"></div>
+                                                        <div class="col-auto" app-tooltip tbTooltip="The maximum number of attachments allowed when sending a support request."></div>
+                                                    </div>
+                                                    <div class="row mt-3">
+                                                        <label class="col-3 col-form-label text-end" for="emailMaxAttachmentSize">* Maximum attachment size:</label>
+                                                        <div class="col-2 minimum-width-number-grouped">
+                                                            <div class="input-group">
+                                                                <input min="1" id="emailMaxAttachmentSize" name="emailMaxAttachmentSize" [(ngModel)]="emailSettings.maxAttachmentSize" class="form-control" type="number">
+                                                                <div class="input-group-text">MBs</div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-auto" app-tooltip tbTooltip="The maximum allowed combined size (in megabytes) of all support request attachments."></div>
+                                                    </div>
+                                                    <div class="row mt-3">
+                                                        <label class="col-3 col-form-label text-end" for="emailAllowedAttachmentTypes">Allowed attachment types:</label>
+                                                        <div class="col-4 minimum-width-text">
+                                                            <select id="emailAllowedAttachmentTypes" size="7" name="emailAllowedAttachmentTypes" class="form-control form-select" multiple="true" [(ngModel)]="emailSettings.allowedAttachmentTypes">
+                                                                <option value="text/plain">Text (text/plain)</option>
+                                                                <option value="image/gif">GIF (image/gif)</option>
+                                                                <option value="image/png">PNG (image/png)</option>
+                                                                <option value="image/jpeg">JPEG (image/jpeg)</option>
+                                                                <option value="application/pdf">PDF (application/pdf)</option>
+                                                                <option value="application/xml">XML (application/xml)</option>
+                                                                <option value="text/xml">XML (text/xml)</option>
+                                                            </select>
+                                                        </div>
+                                                        <div class="col-auto" app-tooltip tbTooltip="The attachment types that are allowed to be included in support requests."></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </app-form-section>
+                                    <app-form-section sectionTitle="Notification settings" [marginBefore]="true">
+                                        <div class="row">
+                                            <div class="offset-1 col-11">
+                                                <div class="row mt-3">
+                                                    <label class="col-3 col-form-label text-end" for="testInteractionReminder">* Test interaction reminders:</label>
+                                                    <div class="col-2">
+                                                        <div class="input-group minimum-width-text">
+                                                            <input min="1" id="testInteractionReminder" name="testInteractionReminder" [(ngModel)]="emailSettings.testInteractionReminder" class="form-control" type="number">
+                                                            <div class="input-group-text">minutes</div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-auto" app-tooltip tbTooltip="The frequency (in minutes) between notifications for active test sessions that are pending administrator interactions. Note that notifications are only sent for new pending interactions registered since the last notification check."></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </app-form-section>
+                                </div>
+                            </div>
+                            <div class="row mt-3">
+                                <div class="col-auto">
+                                    <div class="btn-toolbar">
+                                        <button type="submit" class="btn btn-secondary" [disable]="emailSettingsStatus.pending || !emailSettingsOk()" [pending]="emailSettingsStatus.pending" (click)="saveEmailSettings()">Save</button>
+                                        <button type="button" class="btn btn-secondary" [disable]="emailSettingsStatus.fromDefault || emailSettingsStatus.fromEnv || emailSettingsStatus.pending" [pending]="emailResetPending" (click)="resetEmailSettings()">Reset to default</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </app-configuration-entry>
+                    </div>
+                    <!-- Inactive account retention period. -->
+                    <div class="configContainer" >
+                        <app-configuration-entry
+                            configTitle="Inactive account retention period"
+                            configDescription="Delete user accounts for organisations that have been inactive above a maximum retention period."
+                            [(status)]="accountRetentionPeriodStatus"
+                        >
+                            <form>
+                                <div class="row row-cols-auto align-items-center gx-3">
+                                    <div class="col-auto">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="accountRetentionPeriodEnabled" name="accountRetentionPeriodEnabled" (change)="accountRetentionPeriodCheckChanged()" [(ngModel)]="accountRetentionPeriodEnabled">
+                                            <label class="form-check-label" for="accountRetentionPeriodEnabled">Enabled?</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <label class="sr-only" for="ttlValue">Inactive days before deleting accounts:</label>
+                                        <div class="input-group">
+                                            <input type="number" min="1" class="form-control" id="accountRetentionPeriodValue" name="accountRetentionPeriodValue" placeholder="Retention period" [disabled]="!accountRetentionPeriodEnabled" [(ngModel)]="accountRetentionPeriodValue">
+                                            <div class="input-group-text">days</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <button type="submit" class="btn btn-secondary" [disable]="accountRetentionPeriodEnabled && accountRetentionPeriodValue == undefined" [pending]="accountRetentionPeriodStatus.pending" (click)="saveAccountRetentionPeriod()">Save</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </app-configuration-entry>
+                    </div>
                     <!-- REST API. -->
                     <div class="configContainer">
                         <app-configuration-entry
@@ -110,30 +328,68 @@
                             configDescription="Allow operations by means of the Test Bed's REST API."
                             [(status)]="restApiStatus"
                         >
-                            <form class="form-inline">
-                                <div class="form-group">
-                                    <div class="checkbox">
-                                        <label>
-                                            <input type="checkbox" name="restApiEnabled" [(ngModel)]="restApiEnabled"> Enabled?
-                                        </label>
+                            <form>
+                                <div class="row row-cols-auto align-items-center gx-3">
+                                    <div class="col-auto">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="restApiEnabled" name="restApiEnabled" [(ngModel)]="restApiEnabled">
+                                            <label class="form-check-label" for="restApiEnabled">Enabled?</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <button type="submit" class="btn btn-secondary" [pending]="restApiStatus.pending" (click)="saveRestApi()">Save</button>
                                     </div>
                                 </div>
-                                <button type="submit" class="btn btn-default" [pending]="restApiStatus.pending" (click)="saveRestApi()">Save</button>
                             </form>
                         </app-configuration-entry>
                     </div>
-                    <!-- Welcome page. -->
+                    <!-- Self-registration. -->
                     <div class="configContainer">
                         <app-configuration-entry
-                            configTitle="Custom welcome page message"
-                            configDescription="Display a custom message on the Test Bed's welcome page."
-                            [(status)]="welcomePageStatus"
+                            configTitle="Self-registration"
+                            configDescription="Enable user self-registration for hosted communities."
+                            [(status)]="selfRegistrationStatus"
                         >
-                            <form class="form-inline">
-                                <app-editor id="welcomePageMessage" name="welcomePageMessage" [(ngModel)]="welcomePageMessage" type="normal" [height]="200"></app-editor>
-                                <div class="btn-toolbar topMargin">
-                                    <button type="submit" class="btn btn-default" [disable]="welcomePageResetPending || !textProvided(welcomePageMessage)" [pending]="welcomePageStatus.pending" (click)="saveWelcomePage()">Save</button>
-                                    <button type="button" class="btn btn-default" [disable]="welcomePageStatus.fromDefault || welcomePageStatus.fromEnv || welcomePageStatus.pending" [pending]="welcomePageResetPending" (click)="resetWelcomePage()">Reset to default</button>
+                            <form>
+                                <div class="row row-cols-auto align-items-center gx-3">
+                                    <div class="col-auto">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="selfRegistrationEnabled" name="selfRegistrationEnabled" [(ngModel)]="selfRegistrationEnabled">
+                                            <label class="form-check-label" for="selfRegistrationEnabled">Enabled?</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <button type="submit" class="btn btn-secondary" [pending]="selfRegistrationStatus.pending" (click)="saveSelfRegistration()">Save</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </app-configuration-entry>
+                    </div>
+                    <!-- Idle session timeout. -->
+                    <div class="configContainer" >
+                        <app-configuration-entry
+                            configTitle="Test session timeout"
+                            configDescription="Terminate test sessions exceeding a maximum duration."
+                            [(status)]="ttlStatus"
+                        >
+                            <form>
+                                <div class="row row-cols-auto align-items-center gx-3">
+                                    <div class="col-auto">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="ttlEnabled" name="ttlEnabled" (change)="ttlCheckChanged()" [(ngModel)]="ttlEnabled">
+                                            <label class="form-check-label" for="ttlEnabled">Enabled?</label>
+                                        </div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <label class="sr-only" for="ttlValue">Seconds before terminating sessions:</label>
+                                        <div class="input-group">
+                                            <input type="number" min="1" class="form-control" id="ttlValue" name="ttlValue" placeholder="Timeout" [disabled]="!ttlEnabled" [(ngModel)]="ttlValue">
+                                            <div class="input-group-text">seconds</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <button type="submit" class="btn btn-secondary" [disable]="ttlEnabled && ttlValue == undefined" [pending]="ttlStatus.pending" (click)="saveTTL()">Save</button>
+                                    </div>
                                 </div>
                             </form>
                         </app-configuration-entry>
@@ -149,9 +405,9 @@
                 <!-- Administrators -->
                 <div class="tabPanel">
                     <div class="tabControls">
-                        <button type="button" class="btn btn-default" (click)="createAdmin()">Create system administrator</button>
+                        <button type="button" class="btn btn-secondary" (click)="createAdmin()">Create system administrator</button>
                     </div>
-                    <div class="panel panel-default">
+                    <div class="card">
                         <div table-directive
                             [columns]="adminColumns"
                             [data]="admins"
@@ -169,10 +425,10 @@
                 <div class="tabPanel">
                     <div class="tabControls">
                         <div class="btn-toolbar">
-                            <button type="button" class="btn btn-default" (click)="createLandingPage()">Create landing page</button>
+                            <button type="button" class="btn btn-secondary" (click)="createLandingPage()">Create landing page</button>
                         </div>
                     </div>
-                    <div class="panel panel-default">
+                    <div class="card">
                         <div table-directive
                             [columns]="landingPagesColumns"
                             [data]="landingPages"
@@ -190,10 +446,10 @@
                 <div class="tabPanel">
                     <div class="tabControls">
                         <div class="btn-toolbar">
-                            <button type="button" class="btn btn-default" (click)="createLegalNotice()">Create legal notice</button>
+                            <button type="button" class="btn btn-secondary" (click)="createLegalNotice()">Create legal notice</button>
                         </div>
                     </div>
-                    <div class="panel panel-default">
+                    <div class="card">
                         <div table-directive
                             [columns]="legalNoticesColumns"
                             [data]="legalNotices"
@@ -211,10 +467,10 @@
                 <div class="tabPanel">
                     <div class="tabControls">
                         <div class="btn-toolbar">
-                            <button type="button" class="btn btn-default" (click)="createErrorTemplate()">Create error template</button>
+                            <button type="button" class="btn btn-secondary" (click)="createErrorTemplate()">Create error template</button>
                         </div>
                     </div>
-                    <div class="panel panel-default">
+                    <div class="card">
                         <div table-directive
                             [columns]="errorTemplatesColumns"
                             [data]="errorTemplates"
@@ -222,6 +478,27 @@
                             [loadingStatus]="errorTemplateStatus"
                             [allowSelect]="true"
                             (onSelect)="errorTemplateSelect($event)">
+                        </div>
+                    </div>
+                </div>
+            </tab>
+            <tab (selectTab)="showThemes()" customClass="tabClass">
+                <ng-template tabHeading><app-tab-title icon="fa-solid fa-palette" text="Themes"></app-tab-title></ng-template>
+                <!-- Themes -->
+                <div class="tabPanel">
+                    <div class="tabControls">
+                        <div class="btn-toolbar">
+                            <button type="button" class="btn btn-secondary" (click)="createTheme()">Create theme</button>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div table-directive
+                            [columns]="themeColumns"
+                            [data]="themes"
+                            noDataMessage="No themes found"
+                            [loadingStatus]="themeStatus"
+                            [allowSelect]="true"
+                            (onSelect)="themeSelect($event)">
                         </div>
                     </div>
                 </div>

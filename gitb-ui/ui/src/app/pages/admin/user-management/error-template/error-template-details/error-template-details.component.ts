@@ -31,7 +31,6 @@ export class ErrorTemplateDetailsComponent extends BaseComponent implements OnIn
   copyPending = false
   deletePending = false
   placeholders: KeyValue[] = []
-  showContent = true
   tooltipForDefaultCheck!: string
 
   constructor(

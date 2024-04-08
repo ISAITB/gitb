@@ -1,6 +1,6 @@
 package filters
 
-import akka.stream.Materializer
+import org.apache.pekko.stream.Materializer
 import com.gitb.utils.HmacUtils
 import config.Configurations
 import config.Configurations.API_ROOT
@@ -145,7 +145,7 @@ class AuthenticationFilter @Inject() (implicit ec: ExecutionContext, implicit va
   }
 
   def isAuthenticatedHttpAccessAllowed(request:RequestHeader): Boolean = {
-    request.path.startsWith("/resources/")
+    request.path.startsWith("/resources/") || request.path.startsWith("/badgereportpreview/")
   }
 
   def isPublic(request:RequestHeader):Boolean = {
@@ -160,6 +160,7 @@ class AuthenticationFilter @Inject() (implicit ec: ExecutionContext, implicit va
       request.path.startsWith("/"+API_ROOT+"/oauth/") ||
       request.path.startsWith("/"+API_ROOT+"/theme/") ||
       request.path.equals("/"+API_ROOT+"/initdata") ||
+      request.path.equals("/"+API_ROOT+"/healthcheck") ||
       request.path.startsWith("/badge/") ||
       //public assets
       request.path.startsWith("/assets/") ||

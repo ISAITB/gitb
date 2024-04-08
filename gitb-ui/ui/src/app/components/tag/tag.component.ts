@@ -14,6 +14,7 @@ export class TagComponent implements OnInit {
   @Input() tooltipText?: string
   @Input() foreground?: string
   @Input() background?: string
+  @Input() styleClass?: string
   @Input() editable? = false
   @Input() icon? = false
   @Input() pill? = false

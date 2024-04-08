@@ -29,8 +29,6 @@ class Application @Inject() (implicit ec: ExecutionContext, cc: ControllerCompon
     Ok(views.html.index(
       new PublicConfig(
       Configurations.AUTHENTICATION_SSO_ENABLED,
-      systemConfigurationManager.getLogoPath(),
-      systemConfigurationManager.getFooterLogoPath(),
       versionInfo(),
       resourceVersionToUse(),
       hasDefaultLegalNotice,
@@ -77,6 +75,10 @@ class Application @Inject() (implicit ec: ExecutionContext, cc: ControllerCompon
       ACCESS_CONTROL_ALLOW_METHODS -> CorsFilter.methods,
       ACCESS_CONTROL_ALLOW_HEADERS -> CorsFilter.headers
     )
+  }
+
+  def healthcheck = defaultAction {
+    Ok
   }
 
   def restApiInfo = defaultAction {

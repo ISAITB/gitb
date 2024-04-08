@@ -8,6 +8,7 @@ import { TestCaseTag } from 'src/app/types/test-case-tag';
 import { sortBy } from 'lodash';
 import { ConformanceService } from 'src/app/services/conformance.service';
 import { HtmlService } from 'src/app/services/html.service';
+import { SpecificationReferenceInfo } from 'src/app/types/specification-reference-info';
 
 @Component({
   selector: 'app-test-case-display',
@@ -17,11 +18,13 @@ import { HtmlService } from 'src/app/services/html.service';
 export class TestCaseDisplayComponent implements OnInit {
 
   @Input() testCases!: ConformanceTestCase[]
+  @Input() testSuiteSpecificationReference?: SpecificationReferenceInfo
   @Input() hasOptional? = false
   @Input() hasDisabled? = false
   @Input() showExecute? = true
   @Input() showExport? = false
   @Input() showViewDocumentation? = true
+  @Input() shaded = true
 
   @Output() viewTestSession = new EventEmitter<string>()
   @Output() execute = new EventEmitter<ConformanceTestCase>()

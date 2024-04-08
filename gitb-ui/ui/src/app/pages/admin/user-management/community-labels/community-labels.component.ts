@@ -11,8 +11,7 @@ import { TypedLabelConfig } from 'src/app/types/typed-label-config.type';
 @Component({
   selector: 'app-community-labels',
   templateUrl: './community-labels.component.html',
-  styles: [
-  ]
+  styleUrls: [ './community-labels.component.less' ]
 })
 export class CommunityLabelsComponent extends BaseComponent implements OnInit {
 

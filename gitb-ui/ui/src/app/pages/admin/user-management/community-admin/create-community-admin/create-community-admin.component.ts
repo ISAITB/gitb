@@ -53,8 +53,7 @@ export class CreateCommunityAdminComponent extends BaseComponent implements OnIn
     } else {
       return !(this.textProvided(this.user.name) 
         && this.textProvided(this.user.email) 
-        && this.textProvided(this.user.password) 
-        && this.textProvided(this.user.passwordConfirmation))
+        && this.textProvided(this.user.password))
     }
   }
 
@@ -68,11 +67,9 @@ export class CreateCommunityAdminComponent extends BaseComponent implements OnIn
 
   createAdmin() {
     this.clearAlerts()
-    let ok = false
+    let ok = true
     if (this.isSSO) {
       ok = this.requireValidEmail(this.user.email, "Please enter a valid email address.")
-    } else {
-      ok = this.requireSame(this.user.password, this.user.passwordConfirmation, "Please enter equal passwords.")
     }
     if (ok) {
       this.savePending = true

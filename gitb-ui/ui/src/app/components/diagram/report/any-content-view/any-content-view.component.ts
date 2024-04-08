@@ -10,6 +10,7 @@ import { AnyContent } from '../../any-content';
 import { ReportSupport } from '../report-support';
 import { StepReport } from '../step-report';
 import { saveAs } from 'file-saver'
+import { HtmlService } from 'src/app/services/html.service';
 
 @Component({
   selector: 'app-any-content-view',
@@ -23,6 +24,7 @@ export class AnyContentViewComponent extends ReportSupport implements OnInit {
   @Input() report?: StepReport
   @Input() sessionId?: string
   @Input() noBorder = false
+  @Input() noMargin = false
   @Input() root = false
   @Input() forceDisplay = false
 
@@ -36,20 +38,25 @@ export class AnyContentViewComponent extends ReportSupport implements OnInit {
   withItems = false
   withName = false
   hoveringTitle = false
+  breakText = true
 
   constructor(
     private testService: TestService,
     reportService: ReportService,
-    private dataService: DataService,
+    dataService: DataService,
     modalService: BsModalService,
     private popupService: PopupService,
-    private confirmationDialogService: ConfirmationDialogService
-  ) { super(modalService, reportService) }
+    private confirmationDialogService: ConfirmationDialogService,
+    htmlService: HtmlService
+  ) { super(modalService, reportService, htmlService, dataService) }
 
   ngOnInit(): void {
     this.value = this.context.valueToUse
     if (this.value != undefined) {
       this.showValueInline = this.context.embeddingMethod != 'BASE64' && !this.isFileReference(this.context) && (this.value.length <= 100 || this.forceDisplay)
+      if (this.showValueInline) {
+        this.breakText = this.value.indexOf(" ") < 0
+      }
     }
     this.withItems = this.context?.item != undefined
     this.withName = this.context?.name != undefined
@@ -57,42 +64,18 @@ export class AnyContentViewComponent extends ReportSupport implements OnInit {
 
   open(lineNumber?: number) {
     try {
-      if (this.isFileReference(this.context) && this.sessionId) {
-        this.openPending = true
-        this.downloadFileReference(this.sessionId, this.context)
-        .subscribe((data) => {
-          this.openEditor(new TextDecoder("utf-8").decode(data.data), lineNumber)
-        }).add(() => {
-          this.openPending = false
-        })
-      } else {
-        let valueToShow
-        if (this.context.embeddingMethod == 'BASE64') {
-          if (this.dataService.isDataURL(this.value!)) {
-            valueToShow = atob(this.dataService.base64FromDataURL(this.value!))
-          } else {
-            valueToShow = atob(this.value!)
-          }
-        } else {
-          valueToShow = this.value!
-        }
-        this.openEditor(valueToShow, lineNumber)
-      }
+      this.openPending = true
+      this.commonOpen(this.context, this.sessionId!, this.report?.reports?.assertionReports, lineNumber)
+      .subscribe(() => {
+        this.openPending = false
+      })
     } catch (e) {
+      this.openPending = false
       this.confirmationDialogService.confirmed('Unable to open editor', 'It is not possible to display this content as text in an editor, only download it as a file.', 'Download', 'Cancel')
       .subscribe(() => {
         this.download()
       })
     }
-  }
-
-  private openEditor(valueToShow: string, lineNumber?: number) {
-    this.openEditorWindow(
-      this.context.name,
-      valueToShow,
-      this.report?.reports?.assertionReports,
-      lineNumber,
-      this.context.mimeType)
   }
 
   private toBlob(mimeType: string) {
@@ -108,13 +91,15 @@ export class AnyContentViewComponent extends ReportSupport implements OnInit {
   download() {
     if (this.isFileReference(this.context) && this.sessionId) {
       this.downloadPending = true
-      this.downloadFileReference(this.sessionId, this.context)
+      this.downloadFileReference(this.sessionId, this.context, false)
       .subscribe((data) => {
-        const bb = new Blob([data.data], {type: data.mimeType})
-        if (this.fileNameDownload != undefined) {
-          saveAs(bb, this.fileNameDownload)
-        } else {
-          saveAs(bb, 'file'+this.extension(data.mimeType))
+        if (data.dataAsBytes) {
+          const bb = new Blob([data.dataAsBytes], {type: data.mimeType})
+          if (this.fileNameDownload != undefined) {
+            saveAs(bb, this.fileNameDownload)
+          } else {
+            saveAs(bb, 'file'+this.extension(data.mimeType))
+          }
         }
       }).add(() => {
         this.downloadPending = false

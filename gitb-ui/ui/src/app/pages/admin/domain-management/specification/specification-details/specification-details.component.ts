@@ -106,6 +106,9 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
           this.specification.badges.enabled = this.specification.badges.success != undefined && this.specification.badges.success.enabled!
           this.specification.badges.initiallyEnabled = this.specification.badges.enabled
           this.specification.badges.failureBadgeActive = this.specification.badges.failure != undefined && this.specification.badges.failure.enabled!
+          this.specification.badges.successBadgeForReportActive = this.specification.badges.successForReport != undefined && this.specification.badges.successForReport.enabled!
+          this.specification.badges.otherBadgeForReportActive = this.specification.badges.otherForReport != undefined && this.specification.badges.otherForReport.enabled!
+          this.specification.badges.failureBadgeForReportActive = this.specification.badges.failureForReport != undefined && this.specification.badges.failureForReport.enabled!
         }
       }),
       share()
@@ -293,17 +296,7 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
     return !(
       this.textProvided(this.specification?.sname) && 
       this.textProvided(this.specification?.fname) &&
-      (
-        !this.specification.badges!.enabled || 
-        (
-          this.specification.badges!.success.enabled && 
-          this.specification.badges!.other.enabled && 
-          (
-            !this.specification.badges!.failureBadgeActive ||
-            this.specification.badges!.failure.enabled
-          )
-        )
-      )
+      this.dataService.badgesValid(this.specification?.badges)
     )
   }
 

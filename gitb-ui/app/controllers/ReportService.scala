@@ -94,9 +94,9 @@ class ReportService @Inject() (authorizedAction: AuthorizedAction, cc: Controlle
     var sysParameterDefinitions: Option[List[SystemParameters]] = None
     var sysParameterValues: Option[scala.collection.mutable.Map[Long, scala.collection.mutable.Map[Long, String]]] = None
     if (forExport && communityIds.isDefined && communityIds.get.size == 1) {
-      orgParameterDefinitions = Some(communityManager.getOrganisationParametersForExport(communityIds.get.head))
+      orgParameterDefinitions = Some(communityManager.getSimpleOrganisationParameters(communityIds.get.head, Some(true)))
       orgParameterValues = Some(communityManager.getOrganisationParametersValuesForExport(communityIds.get.head, organizationIds))
-      sysParameterDefinitions = Some(communityManager.getSystemParametersForExport(communityIds.get.head))
+      sysParameterDefinitions = Some(communityManager.getSimpleSystemParameters(communityIds.get.head, Some(true)))
       sysParameterValues = Some(communityManager.getSystemParametersValuesForExport(communityIds.get.head, organizationIds, systemIds))
     }
     val json = JsonUtil.jsTestResultSessionReports(testResultReports, orgParameterDefinitions, orgParameterValues, sysParameterDefinitions, sysParameterValues, None).toString()
@@ -137,24 +137,13 @@ class ReportService @Inject() (authorizedAction: AuthorizedAction, cc: Controlle
     var sysParameterDefinitions: Option[List[SystemParameters]] = None
     var sysParameterValues: Option[scala.collection.mutable.Map[Long, scala.collection.mutable.Map[Long, String]]] = None
     if (forExport && communityIds.isDefined && communityIds.get.size == 1) {
-      orgParameterDefinitions = Some(communityManager.getOrganisationParametersForExport(communityIds.get.head))
+      orgParameterDefinitions = Some(communityManager.getSimpleOrganisationParameters(communityIds.get.head, Some(true)))
       orgParameterValues = Some(communityManager.getOrganisationParametersValuesForExport(communityIds.get.head, organizationIds))
-      sysParameterDefinitions = Some(communityManager.getSystemParametersForExport(communityIds.get.head))
+      sysParameterDefinitions = Some(communityManager.getSimpleSystemParameters(communityIds.get.head, Some(true)))
       sysParameterValues = Some(communityManager.getSystemParametersValuesForExport(communityIds.get.head, organizationIds, systemIds))
     }
     val json = JsonUtil.jsTestResultSessionReports(output._1, orgParameterDefinitions, orgParameterValues, sysParameterDefinitions, sysParameterValues, Some(output._2)).toString()
     ResponseConstructor.constructJsonResponse(json)
-  }
-
-  def getTestResult(sessionId: String) = authorizedAction { request =>
-    authorizationManager.canViewTestResultForSession(request, sessionId)
-    val result = this.reportManager.getTestResult(sessionId)
-    if (result.isDefined) {
-      val json = JsonUtil.jsTestResultReport(result.get, None, None, None, None, withOutputMessage = true).toString()
-      ResponseConstructor.constructJsonResponse(json)
-    } else {
-      ResponseConstructor.constructEmptyResponse
-    }
   }
 
   private def getPageOrDefault(_page: Option[String] = None) = _page match {

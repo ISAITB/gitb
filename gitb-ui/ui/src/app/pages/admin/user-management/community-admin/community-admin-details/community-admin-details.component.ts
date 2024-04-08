@@ -56,26 +56,24 @@ export class CommunityAdminDetailsComponent extends BaseComponent implements OnI
   }
 
   saveDisabled() {
-    return !(this.textProvided(this.user.name) && (!this.changePassword || (this.textProvided(this.user.password) && this.textProvided(this.user.passwordConfirmation))))
+    return !(this.textProvided(this.user.name) && (!this.changePassword || this.textProvided(this.user.password)))
   }
 
   updateAdmin() {
     this.clearAlerts()
-    if (!this.changePassword || this.requireSame(this.user.password, this.user.passwordConfirmation, "Passwords do not match.")) {
-      let newPassword: string|undefined
-      if (this.changePassword) {
-        newPassword = this.user.password
-      }
-      this.savePending = true
-      this.userService.updateCommunityAdminProfile(this.userId, this.user.name!, newPassword)
-      .subscribe(() => {
-        this.cancelDetailAdmin()
-        this.popupService.success('Administrator updated')
-        this.dataService.breadcrumbUpdate({ id: this.userId, type: BreadcrumbType.communityAdmin, label: this.dataService.userDisplayName(this.user)})
-      }).add(() => {
-        this.savePending = false
-      })
+    let newPassword: string|undefined
+    if (this.changePassword) {
+      newPassword = this.user.password
     }
+    this.savePending = true
+    this.userService.updateCommunityAdminProfile(this.userId, this.user.name!, newPassword)
+    .subscribe(() => {
+      this.cancelDetailAdmin()
+      this.popupService.success('Administrator updated')
+      this.dataService.breadcrumbUpdate({ id: this.userId, type: BreadcrumbType.communityAdmin, label: this.dataService.userDisplayName(this.user)})
+    }).add(() => {
+      this.savePending = false
+    })
   }
 
   deleteAdmin() {

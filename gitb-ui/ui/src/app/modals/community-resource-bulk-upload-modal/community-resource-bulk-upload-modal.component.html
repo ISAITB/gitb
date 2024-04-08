@@ -1,11 +1,11 @@
 <div class="modal-header">
-    <h4>Community resource bulk upload</h4>
+    <div class="modal-title">Community resource bulk upload</div>
 </div>
-<form class="form-horizontal">
-    <div class="modal-body">
-        <div class="form-group">
-            <label class="col-xs-3 control-label" for="name">* Resource:</label>
-            <div class="col-xs-7">
+<form>
+    <div class="modal-body" appFileDropTarget>
+        <div class="row mb-3">
+            <label class="col-3 col-form-label text-end" for="name">* Resource:</label>
+            <div class="col-7">
                 <app-file-select id="name" placeholder="Select ZIP archive ..."
                     [fileName]="file?.name"
                     [accepts]="['application/zip']"
@@ -13,22 +13,30 @@
                     [maxSize]="-1">
                 </app-file-select>
             </div>
-            <app-tooltip tbTooltip="The ZIP archive containing the resources to make available. The archive should directly contain the resources to upload, without containing or contained directories."></app-tooltip>
+            <div app-tooltip class="col-auto" tbTooltip="The ZIP archive containing the resources to make available. The archive should directly contain the resources to upload, without containing or contained directories."></div>
         </div>
-        <div class="form-group">
-            <label class="col-xs-3 control-label" for="updateMatching">Update approach:</label>
-            <div class="col-xs-8">
-                <label class="radio-inline"><input type="radio" name="updateMatching" [(ngModel)]="updateMatching" id="updateMatching_1" [value]="true">Replace matching resources
-                    <app-tooltip [inline]="true" inlineType="checkLabel" tbTooltip="Uploaded files matching existing resources will update the existing ones."></app-tooltip>
-                </label>
-                <label class="radio-inline"><input type="radio" name="updateMatching" [(ngModel)]="updateMatching" id="updateMatching_2" [value]="false">Keep matching resources
-                    <app-tooltip [inline]="true" inlineType="checkLabel" tbTooltip="Uploaded files matching existing resources will be added as new resources, without updating the existing ones."></app-tooltip>
-                </label>
+        <div class="row pt-1">
+            <legend class="col-3 col-form-label text-end pt-0">Update approach:</legend>
+            <div class="col-8">
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" id="updateMatching" name="updateMatching" [(ngModel)]="updateMatching" [value]="true">
+                    <label class="form-check-label" for="updateMatching">Replace matching resources
+                        <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" tbTooltip="Uploaded files matching existing resources will update the existing ones."></div>
+                    </label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" id="keepMatching" name="keepMatching" [(ngModel)]="updateMatching" [value]="false">
+                    <label class="form-check-label" for="keepMatching">Keep matching resources
+                        <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" tbTooltip="Uploaded files matching existing resources will be added as new resources, without updating the existing ones."></div>
+                    </label>
+                </div>
             </div>
         </div>
     </div>
     <div class="modal-footer">
-        <button class="btn btn-default" type="button" (click)="cancel()" [disabled]="uploadPending">Cancel</button>
-        <button class="btn btn-default" type="submit" (click)="upload()" [disable]="!uploadEnabled()" [pending]="uploadPending">Upload</button>
+        <div class="btn-toolbar">
+            <button class="btn btn-secondary" type="button" (click)="cancel()" [disabled]="uploadPending">Cancel</button>
+            <button class="btn btn-secondary" type="submit" (click)="upload()" [disable]="!uploadEnabled()" [pending]="uploadPending">Upload</button>
+        </div>
     </div>
 </form>

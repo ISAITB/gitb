@@ -20,8 +20,9 @@ import { SpecificationService } from 'src/app/services/specification.service';
 import { forkJoin } from 'rxjs';
 import { DomainSpecification } from 'src/app/types/domain-specification';
 import { SpecificationGroup } from 'src/app/types/specification-group';
-import { find, remove, findIndex } from 'lodash';
+import { find, remove } from 'lodash';
 import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
+import { CdkDragDrop } from '@angular/cdk/drag-drop';
 
 @Component({
   selector: 'app-domain-details',
@@ -57,6 +58,7 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
   savePending = false
   deletePending = false
   saveOrderPending = false
+  dragOngoing = false
 
   constructor(
     public dataService: DataService,
@@ -329,6 +331,7 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
         newGroup.options.push(newSpecification)
         this.dataService.sortDomainSpecifications(newGroup.options)
         this.dataService.setSpecificationGroupVisibility(newGroup)
+        this.specifications = this.dataService.toSpecifications(this.domainSpecifications)
         this.popupService.success(this.dataService.labelSpecificationInGroup()+' copied.')
       }
     })
@@ -363,30 +366,10 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
     })
   }
 
-  moveSpecificationUp(spec: DomainSpecification) {
-    const arrayToModify = this.findContainingArray(spec)
-    const index = findIndex(arrayToModify, (ds) => ds.id == spec.id)
-    const removed = arrayToModify.splice(index, 1)[0]
-    arrayToModify.splice(index-1, 0, removed)
-  }
-
-  moveSpecificationDown(spec: DomainSpecification) {
-    const arrayToModify = this.findContainingArray(spec)
-    const index = findIndex(arrayToModify, (ds) => ds.id == spec.id)
-    const removed = arrayToModify.splice(index, 1)[0]
-    arrayToModify.splice(index+1, 0, removed)    
-  }
-
-  private findContainingArray(spec: DomainSpecification) {
-    let arrayToModify = this.domainSpecifications
-    if (spec.groupId != undefined) {
-      // Nested
-      const group = find(this.domainSpecifications, (group) => { return group.id == spec.groupId })
-      if (group && group.options) {
-        arrayToModify = group?.options!
-      }
-    }
-    return arrayToModify
+  dropSpecification(event: CdkDragDrop<any>) {
+    if (event.currentIndex != event.previousIndex && this.domainSpecifications) {
+      this.domainSpecifications.splice(event.currentIndex, 0, this.domainSpecifications.splice(event.previousIndex, 1)[0]);
+    }    
   }
 
   saveOrdering() {

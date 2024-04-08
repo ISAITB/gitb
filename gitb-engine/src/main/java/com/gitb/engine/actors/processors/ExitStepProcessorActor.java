@@ -1,6 +1,6 @@
 package com.gitb.engine.actors.processors;
 
-import akka.actor.ActorRef;
+import org.apache.pekko.actor.ActorRef;
 import com.gitb.core.StepStatus;
 import com.gitb.engine.actors.SessionActor;
 import com.gitb.engine.commands.interaction.PrepareForStopCommand;

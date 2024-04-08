@@ -19,6 +19,8 @@ export class ImportItemGroupPreviewComponent implements OnInit {
   showSkipAll = false
   showProceedAll = false
   showExpandAll = false
+  collapsed = false
+  showCount = true
 
   constructor() { }
 
@@ -27,6 +29,7 @@ export class ImportItemGroupPreviewComponent implements OnInit {
     this.showProceedAll = this.evaluateShowProceedAll()
     this.showSkipAll = this.evaluateShowSkipAll()
     this.showExpandAll = this.evaluateShowExpandAll()
+    this.showCount = this.tbImportItemGroup.type != Constants.IMPORT_ITEM_TYPE.SYSTEM_SETTINGS
   }
 
   ngOnInit(): void {
@@ -47,6 +50,18 @@ export class ImportItemGroupPreviewComponent implements OnInit {
     for (let item of group.items) {
       this.closeItem(item)
     }
+  }
+
+  childrenCollapsed() {
+    setTimeout(() => {
+      this.collapsed = true      
+    }, 1)
+  }
+
+  childrenExpanding() {
+    setTimeout(() => {
+      this.collapsed = false
+    }, 1)
   }
 
   closeItem(item: ImportItemState) {

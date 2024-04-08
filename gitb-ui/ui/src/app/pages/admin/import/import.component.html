@@ -1,87 +1,103 @@
 <div class="page">
-	<div class="panel panel-default no-bottom-margin">
-		<div class="panel-heading">
-			<h4 class="title">Data import</h4>
+	<div class="card mb-0">
+		<div class="card-header">
+			<div class="card-title">Data import</div>
 		</div>
-		<form class="form-horizontal">
-            <div class="panel-body">
+		<form>
+            <div class="card-body">
 				<div *ngIf="importStep1">
-					<div class="form-group" *ngIf="showDomainOption">
-						<label class="col-xs-3 control-label" for="choice_domain">* Data to import:</label>
-						<div class="col-xs-8">
-							<label class="radio-inline">
-								<input type="radio" [(ngModel)]="exportType" name="choice" id="choice_domain" [value]="'domain'" (change)="resetSettings()">{{dataService.labelDomain()}} configuration
-								<app-tooltip [inline]="true" [inlineType]="'checkLabel'" [tbTooltip]="'Import data linked to conformance testing scenarios, including '+dataService.labelSpecificationsLower()+' and configured test suites.'"></app-tooltip>
-							</label>
-							<label class="radio-inline">
-								<input type="radio" [(ngModel)]="exportType" name="choice" id="choice_community" [value]="'community'" (change)="resetSettings()">Community configuration
-								<app-tooltip [inline]="true" [inlineType]="'checkLabel'" [tbTooltip]="'Import data linked to a community. This may also include the community\'s '+dataService.labelDomainLower()+' configuration.'"></app-tooltip>
-							</label>
+					<div class="row pt-2" [class.mb-3]="exportType != undefined" *ngIf="showDomainOption || dataService.isSystemAdmin">
+						<legend class="col-3 col-form-label text-end pt-0">* Data to import:</legend>
+						<div class="col-7">
+                            <div class="form-check form-check-inline" *ngIf="showDomainOption">
+                                <input class="form-check-input" type="radio" [(ngModel)]="exportType" name="choice" id="choice_domain" [value]="'domain'" (change)="resetSettings()">
+                                <label class="form-check-label" for="choice_domain">{{dataService.labelDomain()}} configuration
+                                    <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" [tbTooltip]="'Import data linked to conformance testing scenarios, including '+dataService.labelSpecificationsLower()+' and configured test suites.'"></div>
+                                </label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" [(ngModel)]="exportType" name="choice" id="choice_community" [value]="'community'" (change)="resetSettings()">
+                                <label class="form-check-label" for="choice_community">Community configuration
+                                    <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" [tbTooltip]="'Import data linked to a community. This may also include the community\'s '+dataService.labelDomainLower()+' configuration.'"></div>
+                                </label>
+                            </div>
+                            <div class="form-check form-check-inline" *ngIf="dataService.isSystemAdmin">
+                                <input class="form-check-input" type="radio" [(ngModel)]="exportType" name="choice" id="choice_system" [value]="'settings'" (change)="resetSettings()">
+                                <label class="form-check-label" for="choice_system">System settings
+                                    <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" [tbTooltip]="'Import system settings to apply for the entire Test Bed instance.'"></div>
+                                </label>
+                            </div>
 						</div>
 					</div>
 					<div [collapse]="!exportType" [isAnimated]="true">
                         <div>
-                            <div class="form-group" *ngIf="exportType == 'domain'">
-                                <label class="col-xs-3 control-label" for="domain">* Target {{dataService.labelDomainLower()}}:</label>
-                                <div class="col-xs-7">
-                                    <select *ngIf="dataService.isSystemAdmin" class="form-control" id="domain" name="domain" [(ngModel)]="domain">
+                            <div class="row mb-3" *ngIf="exportType == 'domain'">
+                                <label class="col-3 col-form-label text-end" for="domain">* Target {{dataService.labelDomainLower()}}:</label>
+                                <div class="col-6">
+                                    <select *ngIf="dataService.isSystemAdmin" class="form-control form-select" id="domain" name="domain" [(ngModel)]="domain">
                                         <option *ngFor="let domain of domains" [ngValue]="domain">{{domain.fname}}</option>
                                     </select>
                                     <input *ngIf="dataService.isCommunityAdmin && domain != undefined" name="domain" class="form-control" id="domain" [(ngModel)]="domain.fname" readonly="true"/>
                                 </div>
-                                <app-tooltip [tbTooltip]="'The '+dataService.labelDomainLower()+' for which data will be imported.'"></app-tooltip>
+                                <div app-tooltip class="col-auto" [tbTooltip]="'The '+dataService.labelDomainLower()+' for which data will be imported.'"></div>
                             </div>
-                            <div class="form-group" *ngIf="exportType == 'community'">
-                                <label class="col-xs-3 control-label" for="community">* Target community:</label>
-                                <div class="col-xs-7">
-                                    <select *ngIf="dataService.isSystemAdmin" class="form-control" id="community" name="community" [(ngModel)]="community">
+                            <div class="row mb-3" *ngIf="exportType == 'community'">
+                                <label class="col-3 col-form-label text-end" for="community">* Target community:</label>
+                                <div class="col-6">
+                                    <select *ngIf="dataService.isSystemAdmin" class="form-control form-select" id="community" name="community" [(ngModel)]="community">
                                         <option *ngFor="let c of communities" [ngValue]="c">{{c.fname}}</option>
                                     </select>
                                     <input *ngIf="dataService.isCommunityAdmin && community != undefined" name="community" class="form-control" id="community" [(ngModel)]="community.fname" readonly="true"/>
                                 </div>
-                                <app-tooltip tbTooltip="The community for which data will be imported."></app-tooltip>
+                                <div app-tooltip class="col-auto" tbTooltip="The community for which data will be imported."></div>
                             </div>
-                            <div class="form-group">
-                                <label class="col-xs-3 control-label">* Data archive:</label>
-                                <div class="col-xs-7">
+                            <div class="row mb-3">
+                                <label class="col-3 col-form-label text-end">* Data archive:</label>
+                                <div class="col-6">
                                     <app-file-select 
                                         (onUpload)="uploadArchive($event)"
                                         [accepts]="['application/zip']" 
-                                        [placeholder]="'Select data archive ...'"
+                                        [placeholder]="'Drop or browse for data archive ...'"
                                         [fileName]="archiveData?.name"
                                         [maxSize]="52428800"></app-file-select>
                                 </div>
-                                <app-tooltip tbTooltip="The archive containing the data to import."></app-tooltip>
+                                <div app-tooltip class="col-auto" tbTooltip="The archive containing the data to import."></div>
                             </div>
-                            <div class="form-group">
-                                <label class="col-xs-3 control-label" for="encryptionPassword">* Archive password:</label>
-                                <div class="col-xs-4">
+                            <div class="row mb-3">
+                                <label class="col-3 col-form-label text-end" for="encryptionPassword">* Archive password:</label>
+                                <div class="col-4">
                                     <app-secret-input id="encryptionPassword" name="encryptionPassword" [(ngModel)]="settings.encryptionKey"></app-secret-input>
                                 </div>
-                                <app-tooltip tbTooltip="Provide the password that was used to encrypt the export archive."></app-tooltip>
+                                <div app-tooltip class="col-auto" tbTooltip="Provide the password that was used to encrypt the export archive."></div>
                             </div>
-                            <div class="form-group">
-                                <label class="col-xs-3 control-label">* Default import actions:</label>
-                                <div class="col-xs-8">
-                                    <label class="checkbox-inline">
-                                        <input type="checkbox" name="createNewData" [(ngModel)]="settings.createNewData">Create new data found in the archive
-                                        <app-tooltip [inline]="true" inlineType="checkLabel" tbTooltip="When set, the data that is present in the provided archive that cannot be matched against existing data will be flagged for creation. Don't select this if you only want to process data that already exists."></app-tooltip>
-                                    </label>
-                                    <label class="checkbox-inline">
-                                        <input type="checkbox" name="deleteUnmatchedData" [(ngModel)]="settings.deleteUnmatchedData">Delete unmatched existing data
-                                        <app-tooltip [inline]="true" inlineType="checkLabel" tbTooltip="When set, the data that exists but that is not matched against data from the provided archive, will be flagged for deletion. Don't select this if you want to leave such data unchanged."></app-tooltip>
-                                    </label>
-                                    <label class="checkbox-inline">
-                                        <input type="checkbox" name="updateMatchingData" [(ngModel)]="settings.updateMatchingData">Update matched data
-                                        <app-tooltip [inline]="true" inlineType="checkLabel" tbTooltip="When set, all existing data that is matched against data from the provided archive will have their information updated. Don't select this to skip updating such data and only process additions and deletions."></app-tooltip>
-                                    </label>
+                            <div class="row mb-3 pt-2">
+                                <legend class="col-3 col-form-label text-end pt-0">* Default import actions:</legend>
+                                <div class="col-7">
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="checkbox" id="createNewData" name="createNewData" [(ngModel)]="settings.createNewData">
+                                        <label class="form-check-label" for="createNewData">Create new data found in the archive
+                                            <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" tbTooltip="When set, the data that is present in the provided archive that cannot be matched against existing data will be flagged for creation. Don't select this if you only want to process data that already exists."></div>
+                                        </label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="checkbox" id="deleteUnmatchedData" name="deleteUnmatchedData" [(ngModel)]="settings.deleteUnmatchedData">
+                                        <label class="form-check-label" for="deleteUnmatchedData">Delete unmatched existing data
+                                            <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" tbTooltip="When set, the data that exists but that is not matched against data from the provided archive, will be flagged for deletion. Don't select this if you want to leave such data unchanged."></div>
+                                        </label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="checkbox" id="updateMatchingData" name="updateMatchingData" [(ngModel)]="settings.updateMatchingData">
+                                        <label class="form-check-label" for="updateMatchingData">Update matched data
+                                            <div app-tooltip class="col-auto d-inline-flex" [inline]="true" inlineType="checkLabel" tbTooltip="When set, all existing data that is matched against data from the provided archive will have their information updated. Don't select this to skip updating such data and only process additions and deletions."></div>
+                                        </label>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 					</div>
 				</div>
 				<div *ngIf="importStep2">
-					<div class="bg-info div-rounded div-padded bottom-margin">
+					<div class="alert alert-info rounded">
 						<span>The items below represent the detailed actions to be carried out if the import is confirmed. You can review these actions and fine tune them to ensure the expected outcome.</span>
 					</div>
                     <div class="import-item-root">
@@ -90,13 +106,13 @@
                     </div>                    
 				</div>
 			</div>
-            <div class="panel-footer">
+            <div class="card-footer">
 				<div *ngIf="importStep1">
-					<button class="btn btn-default" type="submit" (click)="import()" [disable]="importDisabled()" [pending]="pending">Import</button>
+					<button class="btn btn-secondary" type="submit" (click)="import()" [disable]="importDisabled()" [pending]="pending">Import</button>
 				</div>
 				<div *ngIf="importStep2" class="btn-toolbar">
-					<button class="btn btn-default" type="submit" (click)="confirm()" [disable]="cancelPending || importDisabled()" [pending]="pending">Confirm</button>
-					<button class="btn btn-default" type="button" (click)="cancel()" [disable]="pending" [pending]="cancelPending">Cancel</button>
+					<button class="btn btn-secondary" type="submit" (click)="confirm()" [disable]="cancelPending || importDisabled()" [pending]="pending">Confirm</button>
+					<button class="btn btn-secondary" type="button" (click)="cancel()" [disable]="pending" [pending]="cancelPending">Cancel</button>
 				</div>
 			</div>
 		</form>

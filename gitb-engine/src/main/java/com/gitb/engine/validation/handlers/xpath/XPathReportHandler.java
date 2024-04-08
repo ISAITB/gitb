@@ -12,6 +12,7 @@ import com.gitb.types.ObjectType;
 import com.gitb.types.StringType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.MediaType;
 
 /**
  * Created by root on 20.02.2015.
@@ -34,6 +35,7 @@ public class XPathReportHandler extends AbstractReportHandler {
 	    AnyContent xml = new AnyContent();
 	    xml.setName(XML_ITEM_NAME);
 	    xml.setType(DataType.OBJECT_DATA_TYPE);
+		xml.setMimeType(MediaType.APPLICATION_XML_VALUE);
 	    xml.setEmbeddingMethod(ValueEmbeddingEnumeration.STRING);
 	    xml.setValue(new String(content.serializeByDefaultEncoding()));
 	    attachment.getItem().add(xml);

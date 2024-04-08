@@ -41,11 +41,11 @@ object Enums {
     val NotMigrated, NotLinked, Linked = Value
   }
 
-	object TestResultStatus extends Enumeration {
-		val UNDEFINED = Value("UNDEFINED")
-		val SUCCESS = Value("SUCCESS")
-		val FAILURE = Value("FAILURE")
-	}
+  object TestResultStatus extends Enumeration {
+    val UNDEFINED = Value("UNDEFINED")
+    val SUCCESS = Value("SUCCESS")
+    val FAILURE = Value("FAILURE")
+  }
 
   object TestSuiteReplacementChoice extends Enumeration {
     type TestSuiteReplacementChoice = Value
@@ -63,7 +63,8 @@ object Enums {
     val Domain, DomainParameter, Specification, Actor, Endpoint, EndpointParameter, TestSuite,
     Community, Administrator, CustomLabel, OrganisationProperty, SystemProperty, LandingPage, LegalNotice, ErrorTemplate,
     Organisation, OrganisationUser, OrganisationPropertyValue, System, SystemPropertyValue,
-    Statement, StatementConfiguration, Trigger, CommunityResource, SpecificationGroup = Value
+    Statement, StatementConfiguration, Trigger, CommunityResource, SpecificationGroup, Settings, Theme,
+    DefaultLandingPage, DefaultLegalNotice, DefaultErrorTemplate, SystemAdministrator, SystemConfiguration = Value
   }
 
   object ImportItemMatch extends Enumeration(1) {
@@ -84,31 +85,31 @@ object Enums {
   object TriggerEventType extends Enumeration(1) {
     type TriggerEventType = Value
     val OrganisationCreated,
-        SystemCreated,
-        ConformanceStatementCreated,
-        OrganisationUpdated,
-        SystemUpdated,
-        ConformanceStatementUpdated,
-        TestSessionSucceeded,
-        TestSessionFailed,
-        ConformanceStatementSucceeded,
-        TestSessionStarted
-        = Value
+    SystemCreated,
+    ConformanceStatementCreated,
+    OrganisationUpdated,
+    SystemUpdated,
+    ConformanceStatementUpdated,
+    TestSessionSucceeded,
+    TestSessionFailed,
+    ConformanceStatementSucceeded,
+    TestSessionStarted
+    = Value
   }
 
   object TriggerDataType extends Enumeration(1) {
     type TriggerDataType = Value
     val Community,
-        Organisation,
-        System,
-        Specification,
-        Actor,
-        OrganisationParameter,
-        SystemParameter,
-        DomainParameter,
-        TestSession,
-        StatementParameter,
-        TestReport = Value
+    Organisation,
+    System,
+    Specification,
+    Actor,
+    OrganisationParameter,
+    SystemParameter,
+    DomainParameter,
+    TestSession,
+    StatementParameter,
+    TestReport = Value
   }
 
   object InputMappingMatchType extends Enumeration(1) {
@@ -124,6 +125,19 @@ object Enums {
   object ConformanceStatementItemType extends Enumeration(1) {
     type ConformanceStatementItemType = Value
     val DOMAIN, SPECIFICATION_GROUP, SPECIFICATION, ACTOR = Value
+  }
+
+  object OverviewLevelType extends Enumeration {
+    type OverviewLevelType = Value
+    val OrganisationLevel:OverviewLevelType = Value(1, "all")
+    val DomainLevel:OverviewLevelType = Value(2, "domain")
+    val SpecificationGroupLevel:OverviewLevelType = Value(3, "group")
+    val SpecificationLevel:OverviewLevelType = Value(4, "specification")
+  }
+
+  object XmlReportType extends Enumeration(1) {
+    type XmlReportType = Value
+    val ConformanceStatementReport, ConformanceOverviewReport, TestCaseReport, TestStepReport = Value
   }
 
 }

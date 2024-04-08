@@ -28,26 +28,30 @@ object TestSuiteManager {
 
 	val TEST_SUITES_PATH = "test-suites"
 
-	type TestSuiteDbTuple = (
+	private type TestSuiteDbTuple = (
 			Rep[Long], Rep[String], Rep[String], Rep[String],
 			Rep[Option[String]], Rep[Option[String]], Rep[Option[String]], Rep[Option[String]],
-			Rep[Option[String]], Rep[Long], Rep[String], Rep[Boolean], Rep[Boolean], Rep[String], Rep[Option[String]]
+			Rep[Option[String]], Rep[Long], Rep[String], Rep[Boolean], Rep[Boolean], Rep[String], Rep[Option[String]],
+			Rep[Option[String]], Rep[Option[String]], Rep[Option[String]]
 		)
 
-	type TestSuiteValueTuple = (
+	private type TestSuiteValueTuple = (
 		Long, String, String, String,
 			Option[String], Option[String], Option[String], Option[String],
-			Option[String], Long, String, Boolean, Boolean, String, Option[String]
+			Option[String], Long, String, Boolean, Boolean, String, Option[String],
+			Option[String], Option[String], Option[String]
 		)
 
 	private def withoutDocumentation(dbTestSuite: PersistenceSchema.TestSuitesTable): TestSuiteDbTuple = {
 		(dbTestSuite.id, dbTestSuite.shortname, dbTestSuite.fullname, dbTestSuite.version,
 			dbTestSuite.authors, dbTestSuite.originalDate, dbTestSuite.modificationDate, dbTestSuite.description,
-			dbTestSuite.keywords, dbTestSuite.domain, dbTestSuite.filename, dbTestSuite.hasDocumentation, dbTestSuite.shared, dbTestSuite.identifier, dbTestSuite.definitionPath)
+			dbTestSuite.keywords, dbTestSuite.domain, dbTestSuite.filename, dbTestSuite.hasDocumentation, dbTestSuite.shared, dbTestSuite.identifier, dbTestSuite.definitionPath,
+			dbTestSuite.specReference, dbTestSuite.specDescription, dbTestSuite.specLink
+		)
 	}
 
 	private def tupleToTestSuite(x: TestSuiteValueTuple): TestSuites = {
-		TestSuites(x._1, x._2, x._3, x._4, x._5, x._6, x._7, x._8, x._9, x._11, x._12, None, x._14, hidden = false, x._13, x._10, x._15)
+		TestSuites(x._1, x._2, x._3, x._4, x._5, x._6, x._7, x._8, x._9, x._11, x._12, None, x._14, hidden = false, x._13, x._10, x._15, x._16, x._17, x._18)
 	}
 
 }
@@ -436,12 +440,23 @@ class TestSuiteManager @Inject() (domainParameterManager: DomainParameterManager
 		}
 		// Test case settings.
 		if (testSuiteDefinition.testCaseUpdateApproach.isDefined) {
-			settingsToUse.testCaseUpdates.foreach { testCaseInfo =>
-				if (testCaseInfo._2.resetTestHistory.isEmpty) {
-					testCaseInfo._2.resetTestHistory = Some(testSuiteDefinition.testCaseUpdateApproach.get.get(testCaseInfo._1).exists(_.isResetTestHistory))
-				}
-				if (testCaseInfo._2.updateDefinition.isEmpty) {
-					testCaseInfo._2.updateDefinition = Some(testSuiteDefinition.testCaseUpdateApproach.get.get(testCaseInfo._1).exists(_.isUpdateMetadata))
+			testSuiteDefinition.testCaseUpdateApproach.get.foreach { updateInfoFromDefinition =>
+				val updateInfoFromRequest  = settingsToUse.testCaseUpdates.get(updateInfoFromDefinition._1)
+				if (updateInfoFromRequest.isEmpty) {
+					// No update info found in request.
+					settingsToUse.testCaseUpdates += (updateInfoFromDefinition._1 -> new TestCaseDeploymentAction(
+						updateInfoFromDefinition._1,
+						Some(updateInfoFromDefinition._2.isUpdateMetadata),
+						Some(updateInfoFromDefinition._2.isResetTestHistory)
+					))
+				} else {
+					// We have update info in the request but we may not have for the specific settings in question.
+					if (updateInfoFromRequest.get.updateDefinition.isEmpty) {
+						updateInfoFromRequest.get.updateDefinition = Some(updateInfoFromDefinition._2.isUpdateMetadata)
+					}
+					if (updateInfoFromRequest.get.resetTestHistory.isEmpty) {
+						updateInfoFromRequest.get.resetTestHistory = Some(updateInfoFromDefinition._2.isResetTestHistory)
+					}
 				}
 			}
 		}
@@ -679,16 +694,16 @@ class TestSuiteManager @Inject() (domainParameterManager: DomainParameterManager
 		} yield testSuite
 	}
 
-	def updateTestSuiteMetadata(testSuiteId: Long, name: String, description: Option[String], documentation: Option[String], version: String): Unit = {
+	def updateTestSuiteMetadata(testSuiteId: Long, name: String, description: Option[String], documentation: Option[String], version: String, specReference: Option[String], specDescription: Option[String], specLink: Option[String]): Unit = {
 		var hasDocumentationToSet = false
 		var documentationToSet: Option[String] = None
 		if (documentation.isDefined && !documentation.get.isBlank) {
 			hasDocumentationToSet = true
 			documentationToSet = documentation
 		}
-		val q1 = for {t <- PersistenceSchema.testSuites if t.id === testSuiteId} yield (t.shortname, t.fullname, t.description, t.documentation, t.hasDocumentation, t.version)
+		val q1 = for {t <- PersistenceSchema.testSuites if t.id === testSuiteId} yield (t.shortname, t.fullname, t.description, t.documentation, t.hasDocumentation, t.version, t.specReference, t.specDescription, t.specLink)
 		exec(
-			q1.update(name, name, description, documentationToSet, hasDocumentationToSet, version) andThen
+			q1.update(name, name, description, documentationToSet, hasDocumentationToSet, version, specReference, specDescription, specLink) andThen
 				testResultManager.updateForUpdatedTestSuite(testSuiteId, name)
 				.transactionally
 		)
@@ -700,8 +715,8 @@ class TestSuiteManager @Inject() (domainParameterManager: DomainParameterManager
 	}
 
 	private def updateTestSuiteInDb(testSuiteId: Long, newData: TestSuites): DBIO[_] = {
-		val q1 = for {t <- PersistenceSchema.testSuites if t.id === testSuiteId} yield (t.identifier, t.shortname, t.fullname, t.version, t.authors, t.keywords, t.description, t.filename, t.hasDocumentation, t.documentation, t.hidden)
-		q1.update(newData.identifier, newData.shortname, newData.fullname, newData.version, newData.authors, newData.keywords, newData.description, newData.filename, newData.hasDocumentation, newData.documentation, newData.hidden) andThen
+		val q1 = for {t <- PersistenceSchema.testSuites if t.id === testSuiteId} yield (t.identifier, t.shortname, t.fullname, t.version, t.authors, t.keywords, t.description, t.filename, t.hasDocumentation, t.documentation, t.hidden, t.specReference, t.specDescription, t.specLink)
+		q1.update(newData.identifier, newData.shortname, newData.fullname, newData.version, newData.authors, newData.keywords, newData.description, newData.filename, newData.hasDocumentation, newData.documentation, newData.hidden, newData.specReference, newData.specDescription, newData.specLink) andThen
 			testResultManager.updateForUpdatedTestSuite(testSuiteId, newData.shortname)
 	}
 
@@ -956,7 +971,8 @@ class TestSuiteManager @Inject() (domainParameterManager: DomainParameterManager
 									testCaseToStore.version, testCaseToStore.authors, testCaseToStore.description,
 									testCaseToStore.keywords, testCaseToStore.testCaseType, testCaseToStore.path, testCaseToStore.testSuiteOrder,
 									testCaseToStore.targetActors.get, testCaseToStore.documentation.isDefined, testCaseToStore.documentation,
-									testCaseToStore.isOptional, testCaseToStore.isDisabled, testCaseToStore.tags
+									testCaseToStore.isOptional, testCaseToStore.isDisabled, testCaseToStore.tags,
+									testCaseToStore.specReference, testCaseToStore.specDescription, testCaseToStore.specLink
 								) andThen DBIO.successful(savedTestCaseIds += (testCaseToStore.identifier -> (existingTestCaseId, false)))
 							}
 						} else {
@@ -1675,6 +1691,7 @@ class TestSuiteManager @Inject() (domainParameterManager: DomainParameterManager
 			PersistenceSchema.specificationHasTestSuites.filter(_.testSuiteId === testSuiteId).delete andThen
 			PersistenceSchema.testSuiteHasActors.filter(_.testsuite === testSuiteId).delete andThen
 			PersistenceSchema.conformanceSnapshotResults.filter(_.testSuiteId === testSuiteId).map(_.testSuiteId).update(testSuiteId * -1) andThen
+			PersistenceSchema.conformanceSnapshotTestSuites.filter(_.id === testSuiteId).map(_.id).update(testSuiteId * -1) andThen
 			PersistenceSchema.conformanceResults.filter(_.testsuite === testSuiteId).delete andThen
 			(for {
 				testCases <- PersistenceSchema.testSuiteHasTestCases.filter(_.testsuite === testSuiteId).map(_.testcase).result
@@ -1684,6 +1701,7 @@ class TestSuiteManager @Inject() (domainParameterManager: DomainParameterManager
 						PersistenceSchema.testCaseCoversOptions.filter(_.testcase === testCase).delete andThen
 						PersistenceSchema.testSuiteHasTestCases.filter(_.testcase === testCase).delete andThen
 						PersistenceSchema.conformanceSnapshotResults.filter(_.testCaseId === testCase).map(_.testCaseId).update(testCase * -1) andThen
+						PersistenceSchema.conformanceSnapshotTestCases.filter(_.id === testCase).map(_.id).update(testCase * -1) andThen
 						PersistenceSchema.testCases.filter(_.id === testCase).delete
 				}): _*)
 			} yield ()) andThen

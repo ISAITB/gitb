@@ -1,6 +1,6 @@
 package com.gitb.engine;
 
-import akka.actor.ActorRef;
+import org.apache.pekko.actor.ActorRef;
 import com.gitb.core.ActorConfiguration;
 import com.gitb.core.AnyContent;
 import com.gitb.core.ErrorCode;
@@ -107,8 +107,8 @@ public class TestbedService {
 	 * @param stepId
 	 * @param userInputs
 	 */
-	public static void provideInput(String sessionId, String stepId, List<UserInput> userInputs) {
-		TestStepInputEventBus.getInstance().publish(new InputEvent(sessionId, stepId, userInputs));
+	public static void provideInput(String sessionId, String stepId, List<UserInput> userInputs, boolean isAdmin)  {
+		TestStepInputEventBus.getInstance().publish(new InputEvent(sessionId, stepId, userInputs, isAdmin));
 	}
 
 	public static void initiatePreliminary(String sessionId) {

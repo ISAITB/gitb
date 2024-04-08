@@ -2,7 +2,7 @@ import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { Constants } from 'src/app/common/constants';
 import { DataService } from 'src/app/services/data.service';
 import { FilterState } from 'src/app/types/filter-state';
-import { Observable, of } from 'rxjs';
+import { Observable, forkJoin, of } from 'rxjs';
 import { mergeMap } from 'rxjs/operators'
 import { map, remove, filter } from 'lodash';
 import { BsDatepickerConfig } from 'ngx-bootstrap/datepicker';
@@ -43,6 +43,8 @@ export class TestFilterComponent implements OnInit {
   @Input() filterState!: FilterState
   @Input() communityId?: number
   @Input() organisationId?: number
+  @Input() embedded = false
+  @Input() commands?: EventEmitter<number>
 
   @Input() loadDomainsFn?: () => Observable<Domain[]>
   @Input() loadSpecificationsFn?: () => Observable<Specification[]>
@@ -85,6 +87,11 @@ export class TestFilterComponent implements OnInit {
   loadingSystemProperties = false
   applicableCommunityId?: number
   names: {[key: string]: string} = {}
+
+  initialised = false
+  showOrganisationProperties = false
+  showSystemProperties = false
+  filterCollapsedFinished = false
 
   constructor(
     public dataService: DataService,
@@ -130,13 +137,29 @@ export class TestFilterComponent implements OnInit {
     this.initialiseIfDefined(Constants.FILTER_TYPE.DOMAIN, { name: Constants.FILTER_TYPE.DOMAIN, textField: 'sname', loader: this.loadDomainsFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter() })
     this.initialiseIfDefined(Constants.FILTER_TYPE.SPECIFICATION, { name: Constants.FILTER_TYPE.SPECIFICATION, textField: 'sname', loader: this.loadSpecificationsFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter() })
     this.initialiseIfDefined(Constants.FILTER_TYPE.SPECIFICATION_GROUP, { name: Constants.FILTER_TYPE.SPECIFICATION_GROUP, textField: 'sname', loader: this.loadSpecificationGroupsFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter() })
-    this.initialiseIfDefined(Constants.FILTER_TYPE.ACTOR, { name: Constants.FILTER_TYPE.ACTOR, textField: 'actorId', loader: this.loadActorsFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter() })
+    this.initialiseIfDefined(Constants.FILTER_TYPE.ACTOR, { name: Constants.FILTER_TYPE.ACTOR, textField: 'name', loader: this.loadActorsFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter() })
     this.initialiseIfDefined(Constants.FILTER_TYPE.TEST_SUITE, { name: Constants.FILTER_TYPE.TEST_SUITE, textField: 'sname', loader: this.loadTestSuitesFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter() })
     this.initialiseIfDefined(Constants.FILTER_TYPE.TEST_CASE, { name: Constants.FILTER_TYPE.TEST_CASE, textField: 'sname', loader: this.loadTestCasesFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter() })
     this.initialiseIfDefined(Constants.FILTER_TYPE.COMMUNITY, { name: Constants.FILTER_TYPE.COMMUNITY, textField: 'sname', loader: this.loadCommunitiesFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter() })
     this.initialiseIfDefined(Constants.FILTER_TYPE.ORGANISATION, { name: Constants.FILTER_TYPE.ORGANISATION, textField: 'sname', loader: this.loadOrganisationsFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter() })
     this.initialiseIfDefined(Constants.FILTER_TYPE.SYSTEM, { name: Constants.FILTER_TYPE.SYSTEM, textField: 'sname', loader: this.loadSystemsFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter() })
     this.initialiseIfDefined(Constants.FILTER_TYPE.RESULT, { name: Constants.FILTER_TYPE.RESULT, textField: 'label', loader: this.loadTestResults.bind(this), clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter() } )
+    if (this.commands) {
+      this.commands.subscribe((command) => {
+        this.handleCommand(command)
+      })
+    }
+    this.filterCollapsedFinished = !this.showFiltering || !this.initialised
+  }
+
+  private handleCommand(command: number) {
+    if (command == Constants.FILTER_COMMAND.TOGGLE) {
+      this.clickedHeader()
+    } else if (command == Constants.FILTER_COMMAND.REFRESH) {
+      this.applyFilters()
+    } else if (command == Constants.FILTER_COMMAND.CLEAR) {
+      this.clearFilters()
+    }
   }
 
   private setupDefaultLoadFunctions() {
@@ -372,6 +395,9 @@ export class TestFilterComponent implements OnInit {
     } else {
       this.applicableCommunityId = undefined
     }
+    this.resetCustomProperties().subscribe(() => {
+      this.initialised = true
+    })
     if (update.applyFilters) {
       this.applyFilters()
     }
@@ -550,6 +576,29 @@ export class TestFilterComponent implements OnInit {
 
   clickedHeader() {
     this.showFiltering = !this.showFiltering
+    if (!this.initialised) {
+      this.resetCustomProperties().subscribe(() => {
+        this.initialised = true
+      })
+    }
+  }
+
+  private resetCustomProperties(): Observable<boolean> {
+    if (this.applicableCommunityId != undefined) {
+      const obs1 = this.loadOrganisationProperties(this.applicableCommunityId)
+      const obs2 = this.loadSystemProperties(this.applicableCommunityId)
+      return forkJoin([obs1, obs2]).pipe(
+        mergeMap((data) => {
+          this.showOrganisationProperties = data[0].length > 0
+          this.showSystemProperties = data[1].length > 0
+          return of(true)
+        })
+      )
+    } else {
+      this.showOrganisationProperties = false      
+      this.showSystemProperties = false      
+      return of(false)
+    }
   }
 
   applyTimeFiltering() {
@@ -713,6 +762,12 @@ export class TestFilterComponent implements OnInit {
 
   clearEndRange() {
     this.endDateModel = undefined
+  }
+
+  toggleFilterCollapsedFinished(value: boolean) {
+    setTimeout(() => {
+      this.filterCollapsedFinished = value
+    }, 1)
   }
 
 }

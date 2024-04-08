@@ -3,7 +3,7 @@ package managers
 import actors.events.OrganisationUpdatedEvent
 
 import javax.inject.{Inject, Singleton}
-import models.Enums.UserRole
+import models.Enums.{OrganizationType, UserRole}
 import models._
 import models.automation.{ApiKeyActorInfo, ApiKeyInfo, ApiKeySpecificationInfo, ApiKeySystemInfo, ApiKeyTestCaseInfo, ApiKeyTestSuiteInfo}
 import org.slf4j.LoggerFactory
@@ -70,13 +70,26 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils, systemMan
   /**
     * Gets organizations with specified community
     */
-  def getOrganizationsByCommunity(communityId: Long, includeAdmin: Boolean = false): List[Organizations] = {
-    val organizations = exec(
-      PersistenceSchema.organizations
-        .filterIf(!includeAdmin)(_.adminOrganization === false)
-        .filter(_.community === communityId)
-      .sortBy(_.shortname.asc)
-      .result.map(_.toList))
+  def getOrganizationsByCommunity(communityId: Long, includeAdmin: Boolean = false, snapshotId: Option[Long]): List[Organizations] = {
+    val organizations = if (snapshotId.isDefined) {
+      exec(
+        PersistenceSchema.conformanceSnapshotOrganisations
+          .join(PersistenceSchema.conformanceSnapshots).on(_.snapshotId === _.id)
+          .filter(_._2.community === communityId)
+          .filter(_._2.id === snapshotId.get)
+          .sortBy(_._1.fullname.asc)
+          .map(_._1)
+          .result
+      ).map(x => Organizations(x.id, x.shortname, x.fullname, OrganizationType.Vendor.id.toShort, adminOrganization = false, None, None, None, template = false, None, x.apiKey, communityId)).toList
+    } else {
+      exec(
+        PersistenceSchema.organizations
+          .filterIf(!includeAdmin)(_.adminOrganization === false)
+          .filter(_.community === communityId)
+          .sortBy(_.shortname.asc)
+          .result.map(_.toList)
+      )
+    }
     organizations
   }
 
@@ -426,6 +439,8 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils, systemMan
       systemManager.deleteSystemByOrganization(orgId, onSuccess) andThen
       deleteOrganizationParameterValues(orgId, onSuccess) andThen
       PersistenceSchema.conformanceSnapshotResults.filter(_.organisationId === orgId).map(_.organisationId).update(orgId * -1) andThen
+      PersistenceSchema.conformanceSnapshotOrganisations.filter(_.id === orgId).map(_.id).update(orgId * -1) andThen
+      PersistenceSchema.conformanceSnapshotOrganisationProperties.filter(_.organisationId === orgId).map(_.organisationId).update(orgId * -1) andThen
       PersistenceSchema.organizations.filter(_.id === orgId).delete andThen
       DBIO.successful(())
   }
@@ -446,11 +461,17 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils, systemMan
     PersistenceSchema.users.filter(_.organization === orgId).delete
   }
 
-  def getOrganisationParameterValues(orgId: Long): List[OrganisationParametersWithValue] = {
+  def getOrganisationParameterValues(orgId: Long, onlySimple: Option[Boolean] = None, forExports: Option[Boolean] = None): List[OrganisationParametersWithValue] = {
+    var typeToCheck: Option[String] = None
+    if (onlySimple.isDefined && onlySimple.get) {
+      typeToCheck = Some("SIMPLE")
+    }
     val communityId = getById(orgId).get.community
     exec(PersistenceSchema.organisationParameters
       .joinLeft(PersistenceSchema.organisationParameterValues).on((p, v) => p.id === v.parameter && v.organisation === orgId)
       .filter(_._1.community === communityId)
+      .filterOpt(forExports)((q, flag) => q._1.inExports === flag)
+      .filterOpt(typeToCheck)((table, propertyType)=> table._1.kind === propertyType)
       .sortBy(x => (x._1.displayOrder.asc, x._1.name.asc))
       .map(x => (x._1, x._2))
       .result

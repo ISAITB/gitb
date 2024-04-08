@@ -36,6 +36,7 @@ export abstract class BaseTableComponent extends BaseComponent {
   @Input() contentRefreshing = false
   @Input() expandableRowProperty?: string
   @Input() clearSelection?: EventEmitter<void>
+  @Input() refreshRows?: EventEmitter<void>
 
   @Output() onSelect: EventEmitter<any> = new EventEmitter()
   @Output() onDeselect: EventEmitter<any> = new EventEmitter()

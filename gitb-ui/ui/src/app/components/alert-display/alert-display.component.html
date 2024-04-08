@@ -1,7 +1,11 @@
-<div [ngClass]="outerClass" *ngIf="alerts && alerts.length > 0">
-    <div [ngClass]="innerClass">
-        <div *ngFor="let alert of alerts; let i = index; let last = last" [class.non-padded-alert]="!last">
-            <alert [type]="alert.type" [dismissible]="true" (onClosed)="clearAlert(i)">{{alert.msg}}</alert>
+@if (alerts && alerts.length > 0) {
+    <div [ngClass]="outerClass">
+        <div [ngClass]="innerClass">
+            @for (alert of alerts; track $index) {
+                <div [class.non-padded-alert]="!$last">
+                    <alert [type]="alert.type" [dismissible]="true" (onClosed)="clearAlert($index)">{{alert.msg}}</alert>
+                </div>
+            }
         </div>
     </div>
-</div>
+}

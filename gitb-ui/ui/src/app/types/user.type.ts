@@ -12,6 +12,5 @@ export interface User {
     ssoStatusText?: string,
     organization?: Organisation,
     password?: string,
-    passwordConfirmation?: string
 
 }

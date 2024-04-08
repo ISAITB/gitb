@@ -1,67 +1,69 @@
 <ng-container>
     <div class="row" [ngSwitch]="readonly">
-        <div class="col-xs-10 col-xs-offset-1" *ngSwitchCase="true">
-            <div class="form-group">
-                <label class="col-sm-3 control-label">Short name:</label>
-                <div class="col-sm-8"><p class="form-control-static">{{system.sname}}</p></div>
+        <div class="col-10 offset-1" *ngSwitchCase="true">
+            <div class="row mb-3">
+                <label class="col-3 col-form-label text-end">Short name:</label>
+                <div class="col-7"><p class="form-control-plaintext">{{system.sname}}</p></div>
             </div>
-            <div class="form-group">
-                <label class="col-sm-3 control-label">Full name:</label>
-                <div class="col-sm-8"><p class="form-control-static">{{system.fname}}</p></div>
-            </div>            
-            <div class="form-group">
-                <label class="col-sm-3 control-label">Description:</label>
-                <div class="col-sm-8"><p class="form-control-static">{{system.description}}</p></div>
-            </div>            
-            <div class="form-group">
-                <label class="col-sm-3 control-label">Version:</label>
-                <div class="col-sm-8"><p class="form-control-static">{{system.version}}</p></div>
-            </div>            
+            <div class="row mb-3">
+                <label class="col-3 col-form-label text-end">Full name:</label>
+                <div class="col-7"><p class="form-control-plaintext">{{system.fname}}</p></div>
+            </div>
+            <div class="row mb-3">
+                <label class="col-3 col-form-label text-end">Description:</label>
+                <div class="col-7"><p class="form-control-plaintext">{{system.description}}</p></div>
+            </div>
+            <div class="row mb-3">
+                <label class="col-3 col-form-label text-end">Version:</label>
+                <div class="col-7"><p class="form-control-plaintext">{{system.version}}</p></div>
+            </div>
         </div>
-        <div class="col-xs-10 col-xs-offset-1" *ngSwitchDefault>
-            <div class="form-group">
-                <label class="col-xs-3 control-label" for="sname">* Short name:</label>
-                <div class="col-xs-7"><input id="sname" name="sname" [(ngModel)]="system.sname" class="form-control" type="text"></div>
-                <app-tooltip [tbTooltip]="'A short name used to refer to this '+dataService.labelSystemLower()+' in lists and tabular displays where space is limited.'"></app-tooltip>
+        <div class="col-10 offset-1" *ngSwitchDefault>
+            <div class="row mb-3">
+                <label class="col-3 col-form-label text-end" for="sname">* Short name:</label>
+                <div class="col-7"><input id="sname" name="sname" [(ngModel)]="system.sname" class="form-control" type="text"></div>
+                <div app-tooltip class="col-auto" [tbTooltip]="'A short name used to refer to this '+dataService.labelSystemLower()+' in lists and tabular displays where space is limited.'"></div>
             </div>
-            <div class="form-group">
-                <label class="col-xs-3 control-label" for="fname">* Full name:</label>
-                <div class="col-xs-7"><input id="fname" name="fname" [(ngModel)]="system.fname" class="form-control" type="text"></div>
-                <app-tooltip [tbTooltip]="'The full name for this '+dataService.labelSystemLower()+' used in reports and detail screens.'"></app-tooltip>
+            <div class="row mb-3">
+                <label class="col-3 col-form-label text-end" for="fname">* Full name:</label>
+                <div class="col-7"><input id="fname" name="fname" [(ngModel)]="system.fname" class="form-control" type="text"></div>
+                <div app-tooltip class="col-auto" [tbTooltip]="'The full name for this '+dataService.labelSystemLower()+' used in reports and detail screens.'"></div>
             </div>
-            <div class="form-group">
-                <label class="col-xs-3 control-label" for="description">Description:</label>
-                <div class="col-xs-7">
+            <div class="row mb-3">
+                <label class="col-3 col-form-label text-end" for="description">Description:</label>
+                <div class="col-7">
                     <textarea id="description" name="description" [(ngModel)]="system.description" class="form-control"></textarea>
                 </div>
-                <app-tooltip [tbTooltip]="'A short description of the purpose of this '+dataService.labelSystemLower()+'. This is only used for presentation purposes to distinguish this '+dataService.labelSystemLower()+' from others.'"></app-tooltip>
+                <div app-tooltip class="col-auto" [tbTooltip]="'A short description of the purpose of this '+dataService.labelSystemLower()+'. This is only used for presentation purposes to distinguish this '+dataService.labelSystemLower()+' from others.'"></div>
             </div>
-            <div class="form-group">
-                <label class="col-xs-3 control-label" for="version">Version:</label>
-                <div class="col-xs-7"><input id="version" name="version" [(ngModel)]="system.version" class="form-control" type="text"></div>
-                <app-tooltip [tbTooltip]="'An arbitrary text to serve as a version number for this '+dataService.labelSystemLower()+'. Apart from being displayed here this is not currently used, however it is reserved for potential future needs.'"></app-tooltip>
+            <div class="row mb-3">
+                <label class="col-3 col-form-label text-end" for="version">Version:</label>
+                <div class="col-7"><input id="version" name="version" [(ngModel)]="system.version" class="form-control" type="text"></div>
+                <div app-tooltip class="col-auto" [tbTooltip]="'An arbitrary text to serve as a version number for this '+dataService.labelSystemLower()+'. Apart from being displayed here this is not currently used, however it is reserved for potential future needs.'"></div>
             </div>
             <ng-container *ngIf="showAdminInfo">
-                <div class="form-group" *ngIf="otherSystems.length">
-                    <label class="col-xs-3 control-label" for="version">Copy test setup from:</label>
-                    <div class="col-xs-7">
-                        <select class="form-control" name="otherSystem" [(ngModel)]="system.otherSystems">
+                <div class="row mb-3" *ngIf="otherSystems.length">
+                    <label class="col-3 col-form-label text-end" for="version">Copy test setup from:</label>
+                    <div class="col-7">
+                        <select class="form-control form-select" name="otherSystem" [(ngModel)]="system.otherSystems">
                             <option value=""></option>
                             <option *ngFor="let sys of otherSystems" [ngValue]="sys.id">{{sys.sname}}</option>
                         </select>
                     </div>
-                    <app-tooltip [tbTooltip]="'Select another '+dataService.labelSystemLower()+' to serve as a template for this one. The configuration from the selected '+dataService.labelSystemLower()+' will be copied to the current one.'"></app-tooltip>
+                    <div app-tooltip class="col-auto" [tbTooltip]="'Select another '+dataService.labelSystemLower()+' to serve as a template for this one. The configuration from the selected '+dataService.labelSystemLower()+' will be copied to the current one.'"></div>
                 </div>
                 <div [collapse]="!system.otherSystems" [isAnimated]="true">
-                    <div class="form-group">
-                        <label class="col-xs-3 control-label">Copy also:</label>
-                        <div class="col-xs-8">
-                            <label class="checkbox-inline">
-                                <input type="checkbox" name="copySystemParameters" (change)="copyChanged()" [(ngModel)]="system.copySystemParameters">{{dataService.labelSystem()}} properties
-                            </label>
-                            <label class="checkbox-inline">
-                                <input type="checkbox" name="copyStatementParameters" (change)="copyChanged()" [(ngModel)]="system.copyStatementParameters">Conformance statement configurations
-                            </label>
+                    <div class="row mb-3 pt-1">
+                        <legend class="col-3 col-form-label text-end pt-0">Copy also:</legend>
+                        <div class="col-7">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="copySystemParameters" name="copySystemParameters" (change)="copyChanged()" [(ngModel)]="system.copySystemParameters">
+                                <label class="form-check-label" for="copySystemParameters">{{dataService.labelSystem()}} properties</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="copyStatementParameters" name="copyStatementParameters" (change)="copyChanged()" [(ngModel)]="system.copyStatementParameters">
+                                <label class="form-check-label" for="copyStatementParameters">Conformance statement configurations</label>
+                            </div>
                         </div>
                     </div>
                 </div>

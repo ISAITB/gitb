@@ -1,0 +1,20 @@
+<div class="page">
+    <div class="card mb-0">
+        <div class="card-header">
+            <div class="card-title">Create theme</div>
+        </div>
+        <form>
+            <div class="card-body">
+                <!-- Error messages -->
+                <app-alert-display [alerts]="alerts" innerClass="col-10 offset-1"></app-alert-display>
+                <app-theme-form [theme]="theme" [referenceThemeId]="referenceThemeId"/>
+            </div>
+            <div class="card-footer button-container">
+                <div class="btn-toolbar">
+                    <button class="btn btn-secondary" type="button" (click)="save()" [disable]="saveDisabled()" [pending]="savePending">Save</button>
+                    <button class="btn btn-secondary" type="button" (click)="back()">Cancel</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

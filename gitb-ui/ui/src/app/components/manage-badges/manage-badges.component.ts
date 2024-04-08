@@ -11,20 +11,13 @@ export class ManageBadgesComponent implements OnInit {
   @Input() badges!: BadgesInfo
 
   badgesCollapsed: boolean = false
-  successName?: string
-  otherName?: string
-  failureName?: string
 
   Constants = Constants
 
   constructor() { }
 
   ngOnInit(): void {
-    this.badgesCollapsed = this.badges.initiallyEnabled != undefined && this.badges.initiallyEnabled
-  }
-
-  formCollapsed(): boolean {
-    return this.badgesCollapsed
+    this.badgesCollapsed = this.badges.enabled
   }
 
 }

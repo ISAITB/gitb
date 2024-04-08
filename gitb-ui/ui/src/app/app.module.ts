@@ -102,7 +102,6 @@ import { ErrorTemplateDetailsComponent } from './pages/admin/user-management/err
 import { TriggerComponent } from './pages/admin/user-management/trigger/trigger.component';
 import { CreateOrganisationComponent } from './pages/admin/user-management/organisation/create-organisation/create-organisation.component';
 import { OrganisationDetailsComponent } from './pages/admin/user-management/organisation/organisation-details/organisation-details.component';
-import { CommunityCertificateComponent } from './pages/admin/user-management/community-certificate/community-certificate.component';
 import { CommunityPropertiesComponent } from './pages/admin/user-management/community-properties/community-properties.component';
 import { CommunityLabelsComponent } from './pages/admin/user-management/community-labels/community-labels.component';
 import { PreviewParametersModalComponent } from './modals/preview-parameters-modal/preview-parameters-modal.component';
@@ -177,9 +176,30 @@ import { ViewBadgeButtonComponent } from './components/view-badge-button/view-ba
 import { ResultLabelComponent } from './components/result-label/result-label.component';
 import { PreviewLandingPageComponent } from './pages/admin/user-management/landing-page/preview-landing-page/preview-landing-page.component';
 import { BreadcrumbComponent } from './components/breadcrumb/breadcrumb.component';
+import { TarReportComponent } from './components/tar-report/tar-report.component';
+import { CreateThemeComponent } from './pages/admin/system-administration/create-theme/create-theme.component';
+import { ThemeDetailsComponent } from './pages/admin/system-administration/theme-details/theme-details.component';
+import { ThemeFormComponent } from './pages/admin/system-administration/theme-form/theme-form.component';
+import { ColorPickerComponent } from './components/color-picker/color-picker.component';
+import { DragDropModule } from '@angular/cdk/drag-drop';
+import { FileDropTargetDirective } from './directives/file-drop-target.directive';
+import { FormSectionComponent } from './components/form-section/form-section.component';
+import { SpecificationReferenceFormComponent } from './components/specification-reference-form/specification-reference-form.component';
+import { SpecificationReferenceDisplayComponent } from './components/specification-reference-display/specification-reference-display.component';
+import { SortIndicatorComponent } from './components/sort-indicator/sort-indicator.component';
+import { CommunityReportsComponent } from './pages/admin/user-management/community-reports/community-reports.component';
+import { ConformanceCertificateFormComponent } from './pages/admin/user-management/community-reports/conformance-certificate-form/conformance-certificate-form.component';
+import { ConformanceStatementReportFormComponent } from './pages/admin/user-management/community-reports/conformance-statement-report-form/conformance-statement-report-form.component';
+import { ConformanceOverviewReportFormComponent } from './pages/admin/user-management/community-reports/conformance-overview-report-form/conformance-overview-report-form.component';
+import { TestCaseReportFormComponent } from './pages/admin/user-management/community-reports/test-case-report-form/test-case-report-form.component';
+import { TestStepReportFormComponent } from './pages/admin/user-management/community-reports/test-step-report-form/test-step-report-form.component';
+import { CommunityKeystoreModalComponent } from './modals/community-keystore-modal/community-keystore-modal.component';
+import { ConformanceOverviewCertificateFormComponent } from './pages/admin/user-management/community-reports/conformance-overview-certificate-form/conformance-overview-certificate-form.component';
+import { StatementControlsComponent } from './components/statement-controls/statement-controls.component';
+import { ConformanceOverviewCertificateModalComponent } from './modals/conformance-overview-certificate-modal/conformance-overview-certificate-modal.component';
 
 @NgModule({
-  providers: [ 
+  providers: [
     CookieService,
     { provide: TINYMCE_SCRIPT_SRC, useValue: 'tinymce/tinymce.min.js' }
   ],
@@ -270,7 +290,6 @@ import { BreadcrumbComponent } from './components/breadcrumb/breadcrumb.componen
     TriggerComponent,
     CreateOrganisationComponent,
     OrganisationDetailsComponent,
-    CommunityCertificateComponent,
     CommunityPropertiesComponent,
     CommunityLabelsComponent,
     PreviewParametersModalComponent,
@@ -343,7 +362,27 @@ import { BreadcrumbComponent } from './components/breadcrumb/breadcrumb.componen
     ViewBadgeButtonComponent,
     ResultLabelComponent,
     PreviewLandingPageComponent,
-    BreadcrumbComponent
+    BreadcrumbComponent,
+    TarReportComponent,
+    CreateThemeComponent,
+    ThemeDetailsComponent,
+    ThemeFormComponent,
+    ColorPickerComponent,
+    FileDropTargetDirective,
+    FormSectionComponent,
+    SpecificationReferenceFormComponent,
+    SpecificationReferenceDisplayComponent,
+    SortIndicatorComponent,
+    CommunityReportsComponent,
+    ConformanceCertificateFormComponent,
+    ConformanceStatementReportFormComponent,
+    ConformanceOverviewReportFormComponent,
+    TestCaseReportFormComponent,
+    TestStepReportFormComponent,
+    CommunityKeystoreModalComponent,
+    ConformanceOverviewCertificateFormComponent,
+    StatementControlsComponent,
+    ConformanceOverviewCertificateModalComponent
   ],
   imports: [
     ColorPickerModule,
@@ -353,6 +392,7 @@ import { BreadcrumbComponent } from './components/breadcrumb/breadcrumb.componen
     FormsModule,
     AppRoutingModule,
     HttpClientModule,
+    DragDropModule,
     SimpleNotificationsModule.forRoot(),
     ModalModule.forRoot(),
     TooltipModule.forRoot(),

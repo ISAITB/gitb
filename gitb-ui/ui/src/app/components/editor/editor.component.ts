@@ -50,39 +50,24 @@ export class EditorComponent implements OnInit, ControlValueAccessor {
       menubar: false,
       branding: false,
       base_url: this.dataService.completePath('/assets/build/tinymce'),
-      content_css: 'assets/build/styles.css',
-      content_style: 'h1, h2, h3, h4, h5, h6 { color: #428bca; }',
+      cache_suffix: this.dataService.configuration.versionNumber,
+      content_css: 'assets/build/styles.css,api/theme/css',
       body_class: 'editor-body',
-      suffix: '.min'
+      suffix: '.min',
+      convert_unsafe_embeds: true      
     }
     if (this.type == 'normal') {
-      config.plugins = [
-          'advlist autolink lists link image charmap print preview anchor',
-          'searchreplace visualblocks code fullscreen',
-          'insertdatetime media table paste code'
-      ]
-      config.toolbar = 'undo redo | insert | styleselect | bold italic | charmap | forecolor backcolor | fontsizeselect | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image | table tabledelete | tableprops tablerowprops tablecellprops | tableinsertrowbefore tableinsertrowafter tabledeleterow | tableinsertcolbefore tableinsertcolafter tabledeletecol'
+      config.plugins = 'advlist autolink lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table code'
+      config.toolbar = 'undo redo | insert | styles | bold italic | charmap | forecolor backcolor | fontsize | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image | table tabledelete | tableprops tablerowprops tablecellprops | tableinsertrowbefore tableinsertrowafter tabledeleterow | tableinsertcolbefore tableinsertcolafter tabledeletecol'
     } else if (this.type == 'minimal') {
-      config.plugins = [
-        'advlist autolink lists link charmap print preview anchor',
-        'searchreplace visualblocks code fullscreen',
-        'insertdatetime media table paste code'
-      ]
+      config.plugins = 'advlist autolink lists link charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table code'
       config.toolbar = 'bold italic | charmap | bullist numlist outdent indent | link'
     } else if (this.type == 'pdf') {
       // Same as normal
-      config.plugins = [
-        'advlist autolink lists link image charmap print preview anchor',
-        'searchreplace visualblocks code fullscreen',
-        'insertdatetime media table paste code'
-      ]
-      config.toolbar = 'undo redo | insert | styleselect | bold italic | charmap | forecolor backcolor | fontsizeselect | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image | table tabledelete | tableprops tablerowprops tablecellprops | tableinsertrowbefore tableinsertrowafter tabledeleterow | tableinsertcolbefore tableinsertcolafter tabledeletecol'
+      config.plugins = 'advlist autolink lists link image charmap preview anchor searchreplace visualblocks code fullscreen insertdatetime media table code'
+      config.toolbar = 'undo redo | insert | styles | bold italic | charmap | forecolor backcolor | fontsize | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image | table tabledelete | tableprops tablerowprops tablecellprops | tableinsertrowbefore tableinsertrowafter tabledeleterow | tableinsertcolbefore tableinsertcolafter tabledeletecol'
     } else if (this.type == 'line') {
-      config.plugins = [
-        'autolink link charmap anchor',
-        'visualblocks code fullscreen',
-        'paste code'
-      ]
+      config.plugins =  'autolink link charmap anchor visualblocks code fullscreen code'
       config.toolbar = 'bold italic | charmap | link'
     }
     this.editorConfig = config

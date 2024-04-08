@@ -1,14 +1,17 @@
-import { Component, Input, OnInit } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Component, EventEmitter, Input, OnInit } from '@angular/core';
+import { Observable, forkJoin, mergeMap, of, share } from 'rxjs';
 import { CommunityService } from 'src/app/services/community.service';
 import { ConformanceService } from 'src/app/services/conformance.service';
 import { DataService } from 'src/app/services/data.service';
 import { PopupService } from 'src/app/services/popup.service';
 import { CommunityResource } from 'src/app/types/community-resource';
-import { DomainParameter } from 'src/app/types/domain-parameter';
 import { KeyValue } from 'src/app/types/key-value';
 import { FilterUpdate } from '../test-filter/filter-update';
 import { MultiSelectConfig } from '../multi-select-filter/multi-select-config';
+import { PlaceholderInfo } from './placeholder-info';
+import { OrganisationParameter } from 'src/app/types/organisation-parameter';
+import { SystemParameter } from 'src/app/types/system-parameter';
+import { Constants } from 'src/app/common/constants';
 
 @Component({
   selector: 'app-placeholder-selector',
@@ -17,12 +20,19 @@ import { MultiSelectConfig } from '../multi-select-filter/multi-select-config';
 })
 export class PlaceholderSelectorComponent implements OnInit {
 
-  @Input() placeholders: KeyValue[] = []
+  @Input() placeholders: PlaceholderInfo[] = []
   @Input() domainParameters: boolean = false
+  @Input() domainId?: number
+  @Input() organisationParameters: boolean = false
+  @Input() systemParameters: boolean = false
   @Input() resources: boolean = false
   @Input() community?: number
+  @Input() domainChanged?: EventEmitter<number>
 
-  parameterPlaceholders?: KeyValue[]
+  domainParameterCache = new Map<number, KeyValue[]>()
+  domainParameterPlaceholders?: KeyValue[]
+  organisationParameterPlaceholders?: KeyValue[]
+  systemParameterPlaceholders?: KeyValue[]
   communityResources?: CommunityResource[]
   communityResourceConfig?: MultiSelectConfig<CommunityResource>
 
@@ -34,34 +44,60 @@ export class PlaceholderSelectorComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
-    if (this.domainParameters) {
-      let domainParameterFnResult: Observable<DomainParameter[]>|undefined
-      if (this.dataService.isCommunityAdmin && this.dataService.community!.domainId != undefined) {
-        domainParameterFnResult = this.conformanceService.getDomainParameters(this.dataService.community!.domainId, false, true)
-      } else if (this.dataService.isSystemAdmin && this.community != undefined) {
-        domainParameterFnResult = this.conformanceService.getDomainParametersOfCommunity(this.community, false, true)
-      }
-      if (domainParameterFnResult) {
-        domainParameterFnResult.subscribe((data) => {
-          this.parameterPlaceholders = []
-          for (let parameter of data) {
-            let description = parameter.description
-            if (description == undefined) description = ''
-            this.parameterPlaceholders.push({
-              key: '$DOMAIN{'+parameter.name+'}',
-              value: description
-            })
-          }
-        })
-      }
+    // Determine community ID
+    let communityIdToUse: number|undefined;
+    if (this.dataService.isCommunityAdmin) {
+      communityIdToUse = this.dataService.community?.id
+    } else {
+      communityIdToUse = this.community
+    }    
+    // Domain parameters
+    const domainParameterObservable = this.updateDomainParameters(this.domainId)
+    // Organisation properties
+    let organisationParameterObservable: Observable<OrganisationParameter[]>
+    if (this.organisationParameters && communityIdToUse) {
+      organisationParameterObservable = this.communityService.getOrganisationParameters(communityIdToUse, true)
+    } else {
+      organisationParameterObservable = of([])
     }
-    if (this.resources) {
-      let communityIdToUse: number|undefined;
-      if (this.dataService.isCommunityAdmin) {
-        communityIdToUse = this.dataService.community?.id
-      } else {
-        communityIdToUse = this.community
+    // System properties
+    let systemParameterObservable: Observable<SystemParameter[]>
+    if (this.systemParameters && communityIdToUse) {
+      systemParameterObservable = this.communityService.getSystemParameters(communityIdToUse, true)
+    } else {
+      systemParameterObservable = of([])
+    }
+    // Retrieve all results
+    forkJoin([domainParameterObservable, organisationParameterObservable, systemParameterObservable]).subscribe((data) => {
+      // Domain parameters
+      this.domainParameterPlaceholders = data[0]
+      // Organisation parameters
+      if (data[1].length > 0) {
+        this.organisationParameterPlaceholders = []
+        for (let parameter of data[1]) {
+          let description = parameter.desc
+          if (description == undefined) description = ''
+          this.organisationParameterPlaceholders.push({
+            key: '$ORGANISATION{'+parameter.testKey+'}',
+            value: description
+          })
+        }
       }
+      // System parameters
+      if (data[2].length > 0) {
+        this.systemParameterPlaceholders = []
+        for (let parameter of data[2]) {
+          let description = parameter.desc
+          if (description == undefined) description = ''
+          this.systemParameterPlaceholders.push({
+            key: '$SYSTEM{'+parameter.testKey+'}',
+            value: description
+          })
+        }
+      }
+    })
+    // Community resources
+    if (this.resources) {
       if (communityIdToUse) {
         this.communityResourceConfig = {
           name: 'resources',
@@ -74,19 +110,69 @@ export class PlaceholderSelectorComponent implements OnInit {
         }
       }
     }
+    // Listen for domain changes
+    if (this.domainChanged) {
+      this.domainChanged.subscribe((newDomainId) => {
+        if (this.domainId != newDomainId) {
+          this.domainId = newDomainId
+          this.updateDomainParameters(newDomainId).subscribe((data) =>{
+            this.domainParameterPlaceholders = data
+          })
+        }
+      })
+    }
   }
 
-  selected(placeholder: KeyValue) {
-    this.dataService.copyToClipboard(placeholder.key).subscribe(() => {
-      this.popupService.success('Placeholder copied to clipboard.')
+  updateDomainParameters(domainId: number|undefined): Observable<KeyValue[]> {
+    if (this.domainParameters && domainId != undefined) {
+      if (this.domainParameterCache.has(domainId)) {
+        return of(this.domainParameterCache.get(domainId)!)
+      } else {
+        return this.conformanceService.getDomainParameters(domainId, false, true)
+          .pipe(
+            mergeMap((data) => {
+              const domainParameterPlaceholders = []
+              for (let parameter of data) {
+                let description = parameter.description
+                if (description == undefined) description = ''
+                domainParameterPlaceholders.push({
+                  key: Constants.PLACEHOLDER__DOMAIN+'{'+parameter.name+'}',
+                  value: description
+                })
+              }
+              this.domainParameterCache.set(domainId, domainParameterPlaceholders)
+              return of(domainParameterPlaceholders)
+            }), share()
+          )
+      }
+    } else {
+      return of([])
+    }
+  }
+
+  selectedPlaceholder(placeholder: PlaceholderInfo) {
+    let valueToCopy: string
+    if (placeholder.select) {
+      valueToCopy = placeholder.select()
+    } else {
+      valueToCopy = placeholder.key
+    }
+    this.copyValue(valueToCopy, 'Placeholder copied to clipboard.')
+  }
+
+  selectedParameter(placeholder: KeyValue) {
+    this.copyValue(placeholder.key, 'Placeholder copied to clipboard.')
+  }
+
+  private copyValue(value: string, message: string) {
+    this.dataService.copyToClipboard(value).subscribe(() => {
+      this.popupService.success(message)
     })
   }
 
   resourceSelected(update: FilterUpdate<CommunityResource>) {
     if (update.values.active.length > 0) {
-      this.dataService.copyToClipboard(update.values.active[0].reference).subscribe(() => {
-        this.popupService.success('Resource reference copied to clipboard.')
-      })
+      this.copyValue(update.values.active[0].reference, 'Resource reference copied to clipboard.')
     }
   }
 

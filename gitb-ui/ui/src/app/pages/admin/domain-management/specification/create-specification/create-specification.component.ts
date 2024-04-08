@@ -49,10 +49,16 @@ export class CreateSpecificationComponent extends BaseComponent implements OnIni
     this.specification.badges = {
       enabled: false,
       initiallyEnabled: false,
-      failureBadgeActive: false,
       success: { enabled: false },
       other: { enabled: false },
-      failure: { enabled: false }
+      failure: { enabled: false },
+      successForReport: { enabled: false },
+      otherForReport: { enabled: false },
+      failureForReport: { enabled: false },
+      failureBadgeActive: false,
+      successBadgeForReportActive: false,
+      otherBadgeForReportActive: false,
+      failureBadgeForReportActive: false
     }
   }
 
@@ -60,17 +66,7 @@ export class CreateSpecificationComponent extends BaseComponent implements OnIni
     return !(
       this.textProvided(this.specification?.sname) && 
       this.textProvided(this.specification?.fname) &&
-      (
-        !this.specification.badges!.enabled || 
-        (
-          this.specification.badges!.success.enabled && 
-          this.specification.badges!.other.enabled && 
-          (
-            !this.specification.badges!.failureBadgeActive ||
-            this.specification.badges!.failure.enabled
-          )
-        )
-      )
+      this.dataService.badgesValid(this.specification?.badges)
     )
   }
 

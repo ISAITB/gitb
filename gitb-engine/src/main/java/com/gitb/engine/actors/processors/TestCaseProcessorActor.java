@@ -1,8 +1,8 @@
 package com.gitb.engine.actors.processors;
 
-import akka.actor.ActorRef;
-import akka.actor.Props;
-import akka.japi.Creator;
+import org.apache.pekko.actor.ActorRef;
+import org.apache.pekko.actor.Props;
+import org.apache.pekko.japi.Creator;
 import com.gitb.core.AnyContent;
 import com.gitb.core.StepStatus;
 import com.gitb.engine.SessionManager;

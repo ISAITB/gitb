@@ -1,26 +1,24 @@
 <div class="page users detail">
-    <div class="panel panel-default">
-        <div class="panel-heading">
-            <h4 class="title">Community details</h4>
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">Community details</div>
         </div>
-        <form class="form-horizontal">
-            <div class="panel-body">
+        <form>
+            <div class="card-body">
                 <!-- Error messages -->
-                <div class="row">
-                    <app-alert-display [alerts]="alerts" innerClass="col-xs-10 col-xs-offset-1"></app-alert-display>
-                </div>
+                <app-alert-display [alerts]="alerts" innerClass="col-10 offset-1"></app-alert-display>
                 <app-community-form [community]="community" [admin]="dataService.isSystemAdmin" [domains]="domains"></app-community-form>
             </div>
-            <div class="panel-footer button-container">
+            <div class="card-footer button-container">
                 <div class="btn-toolbar">
-                    <button class="btn btn-default" type="submit" (click)="updateCommunity()" [disable]="deletePending || saveDisabled()" [pending]="savePending">Save changes</button>
-                    <button class="btn btn-default" type="button" (click)="updateConformanceCertificateSettings()" [disabled]="savePending || deletePending">Edit conformance certificate settings</button>
-                    <button class="btn btn-default" type="button" (click)="updateParameters()" [disabled]="savePending || deletePending">Edit custom member properties</button>
-                    <button class="btn btn-default" type="button" (click)="editLabels()" [disabled]="savePending || deletePending">Edit labels</button>
-                    <button class="btn btn-default" type="button" *ngIf="dataService.isSystemAdmin" (click)="cancelCommunityDetail()">Back</button>
+                    <button class="btn btn-secondary" type="submit" (click)="updateCommunity()" [disable]="deletePending || saveDisabled()" [pending]="savePending">Save changes</button>
+                    <button class="btn btn-secondary" type="button" (click)="updateReportSettings()" [disabled]="savePending || deletePending">Edit report settings</button>
+                    <button class="btn btn-secondary" type="button" (click)="updateParameters()" [disabled]="savePending || deletePending">Edit custom member properties</button>
+                    <button class="btn btn-secondary" type="button" (click)="editLabels()" [disabled]="savePending || deletePending">Edit labels</button>
+                    <button class="btn btn-secondary" type="button" *ngIf="dataService.isSystemAdmin" (click)="cancelCommunityDetail()">Back</button>
                 </div>
                 <div class="btn-toolbar btn-toolbar-delete" *ngIf="dataService.isSystemAdmin">
-                    <button class="btn btn-default btn-delete" type="button" (click)="deleteCommunity()" [disable]="savePending" [pending]="deletePending">Delete</button>
+                    <button class="btn btn-outline-danger" type="button" (click)="deleteCommunity()" [disable]="savePending" [pending]="deletePending">Delete</button>
                 </div>
             </div>
         </form>
@@ -31,11 +29,11 @@
                 <ng-template tabHeading><app-tab-title icon="fa-solid fa-building" [text]="dataService.labelOrganisations()"></app-tab-title></ng-template>
                 <!-- Organisations -->
                 <div class="tabPanel">
-                    <div class="tabControls form-inline">
+                    <div class="tabControls">
                         <div class="searchControls btn-toolbar">
                             <app-text-filter name="organisationFilter" [width]="300" [placeholder]="'Search '+dataService.labelOrganisationsLower()+'...'" [(ngModel)]="organisationFilter" (apply)="applyOrganisationFilter()"></app-text-filter>
                             <div class="btn-group" dropdown>
-                                <button id="button-order" dropdownToggle type="button" class="btn btn-default dropdown-toggle" aria-controls="dropdown-result">{{sortByCreationOrderLabel}}<span class="caret withMargin"></span></button>
+                                <button id="button-order" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-result">{{sortByCreationOrderLabel}}<span class="caret withMargin"></span></button>
                                 <ul id="dropdown-order" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-order">
                                     <li role="menuitem"><a class="dropdown-item" href (click)="applyCreationOrderSort(sortByCreationOrderNone, sortByCreationOrderLabelNone); $event.preventDefault()">Do not apply</a></li>
                                     <li class="divider dropdown-divider"></li>
@@ -43,10 +41,10 @@
                                     <li role="menuitem"><a class="dropdown-item" href (click)="applyCreationOrderSort(sortByCreationOrderDesc, sortByCreationOrderLabelDesc); $event.preventDefault()">{{sortByCreationOrderLabelDesc}}</a></li>
                                 </ul>
                             </div>
-                            <button type="button" class="btn btn-default" (click)="createOrganisation()">Create {{dataService.labelOrganisationLower()}}</button>
+                            <button type="button" class="btn btn-secondary" (click)="createOrganisation()">Create {{dataService.labelOrganisationLower()}}</button>
                         </div>
                     </div>
-                    <div class="panel panel-default">
+                    <div class="card">
                         <div table-directive
                             [columns]="organizationColumns"
                             [data]="organizations"
@@ -71,9 +69,9 @@
                 <!-- Administrators -->
                 <div class="tabPanel">
                     <div class="tabControls">
-                        <button type="button" class="btn btn-default" (click)="createAdmin()">Create community administrator</button>
+                        <button type="button" class="btn btn-secondary" (click)="createAdmin()">Create community administrator</button>
                     </div>
-                    <div class="panel panel-default">
+                    <div class="card">
                         <div table-directive
                             [columns]="adminColumns"
                             [data]="admins"
@@ -91,11 +89,11 @@
                 <div class="tabPanel">
                     <div class="tabControls">
                         <div class="btn-toolbar">
-                            <button [disabled]="testBedLandingPage == undefined" *ngIf="communityId != Constants.DEFAULT_COMMUNITY_ID" type="button" class="btn btn-default" (click)="createLandingPage(true)">Copy Test Bed landing page</button>
-                            <button type="button" class="btn btn-default" (click)="createLandingPage(false)">Create landing page</button>
+                            <button [disabled]="testBedLandingPage == undefined" *ngIf="communityId != Constants.DEFAULT_COMMUNITY_ID" type="button" class="btn btn-secondary" (click)="createLandingPage(true)">Copy Test Bed landing page</button>
+                            <button type="button" class="btn btn-secondary" (click)="createLandingPage(false)">Create landing page</button>
                         </div>
                     </div>
-                    <div class="panel panel-default">
+                    <div class="card">
                         <div table-directive
                             [columns]="landingPagesColumns"
                             [data]="landingPages"
@@ -113,11 +111,11 @@
                 <div class="tabPanel">
                     <div class="tabControls">
                         <div class="btn-toolbar">
-                            <button [disabled]="testBedLegalNotice == undefined" *ngIf="communityId != Constants.DEFAULT_COMMUNITY_ID" type="button" class="btn btn-default" (click)="createLegalNotice(true)">Copy Test Bed legal notice</button>
-                            <button type="button" class="btn btn-default" (click)="createLegalNotice(false)">Create legal notice</button>
+                            <button [disabled]="testBedLegalNotice == undefined" *ngIf="communityId != Constants.DEFAULT_COMMUNITY_ID" type="button" class="btn btn-secondary" (click)="createLegalNotice(true)">Copy Test Bed legal notice</button>
+                            <button type="button" class="btn btn-secondary" (click)="createLegalNotice(false)">Create legal notice</button>
                         </div>
                     </div>
-                    <div class="panel panel-default">
+                    <div class="card">
                         <div table-directive
                             [columns]="legalNoticesColumns"
                             [data]="legalNotices"
@@ -135,11 +133,11 @@
                 <div class="tabPanel">
                     <div class="tabControls">
                         <div class="btn-toolbar">
-                            <button [disabled]="testBedErrorTemplate == undefined" *ngIf="communityId != Constants.DEFAULT_COMMUNITY_ID" type="button" class="btn btn-default" (click)="createErrorTemplate(true)">Copy Test Bed error template</button>
-                            <button type="button" class="btn btn-default" (click)="createErrorTemplate(false)">Create error template</button>
+                            <button [disabled]="testBedErrorTemplate == undefined" *ngIf="communityId != Constants.DEFAULT_COMMUNITY_ID" type="button" class="btn btn-secondary" (click)="createErrorTemplate(true)">Copy Test Bed error template</button>
+                            <button type="button" class="btn btn-secondary" (click)="createErrorTemplate(false)">Create error template</button>
                         </div>
                     </div>
-                    <div class="panel panel-default">
+                    <div class="card">
                         <div table-directive
                             [columns]="errorTemplatesColumns"
                             [data]="errorTemplates"
@@ -156,9 +154,9 @@
                 <!-- Triggers -->
                 <div class="tabPanel">
                     <div class="tabControls">
-                        <button type="button" class="btn btn-default" (click)="createTrigger()">Create trigger</button>
+                        <button type="button" class="btn btn-secondary" (click)="createTrigger()">Create trigger</button>
                     </div>
-                    <div class="panel panel-default">
+                    <div class="card">
                         <div table-directive
                             [columns]="triggerColumns"
                             [data]="triggers"
@@ -174,12 +172,12 @@
                 <ng-template tabHeading><app-tab-title icon="fa-solid fa-image" text="Resources"></app-tab-title></ng-template>
                 <!-- Community resources -->
                 <div class="tabPanel">
-                    <div class="tabControls form-inline">
+                    <div class="tabControls">
                         <div class="searchControls btn-toolbar">
                             <app-text-filter name="resourceFilter" [width]="300" [placeholder]="'Search resources...'" [(ngModel)]="resourceFilter" (apply)="applyResourceFilter()"></app-text-filter>
-                            <div class="btn-group" dropdown>
-                                <button type="button" class="btn btn-default" (click)="uploadResource()" [disabled]="downloadAllResourcesPending || selectingForDeleteResources">Upload resource</button>
-                                <button id="button-upload-resource" dropdownToggle type="button" class="btn btn-default dropdown-toggle dropdown-toggle-split" aria-controls="dropdown-upload-resource" [disabled]="downloadAllResourcesPending || selectingForDeleteResources">
+                            <div class="btn-group" dropdown [isDisabled]="downloadAllResourcesPending || selectingForDeleteResources">
+                                <button type="button" class="btn btn-secondary" (click)="uploadResource()" [disabled]="downloadAllResourcesPending || selectingForDeleteResources">Upload resource</button>
+                                <button id="button-upload-resource" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle dropdown-toggle-split" aria-controls="dropdown-upload-resource" [disabled]="downloadAllResourcesPending || selectingForDeleteResources">
                                     <span class="caret"></span>
                                     <span class="sr-only visually-hidden"></span>
                                 </button>
@@ -187,13 +185,13 @@
                                     <li role="menuitem"><a class="dropdown-item" href (click)="uploadResourceBulk(); $event.preventDefault()">Bulk upload</a></li>
                                 </ul>
                             </div>
-                            <button type="button" class="btn btn-default" (click)="downloadAllResources()" [disable]="resources.length == 0 || selectingForDeleteResources" [pending]="downloadAllResourcesPending">Download all</button>
-                            <button type="button" class="btn btn-default" (click)="selectDeleteResources()" *ngIf="!selectingForDeleteResources" [disabled]="resources.length == 0 || downloadAllResourcesPending">Delete resources...</button>
-                            <button type="button" class="btn btn-default" (click)="cancelDeleteResources()" *ngIf="selectingForDeleteResources" [disabled]="deleteResourcesPending">Cancel</button>
-                            <button type="button" class="btn btn-default btn-delete" (click)="confirmDeleteResources()" *ngIf="selectingForDeleteResources" [disable]="!resourcesChecked()" [pending]="deleteResourcesPending">Confirm</button>
+                            <button type="button" class="btn btn-secondary" (click)="downloadAllResources()" [disable]="resources.length == 0 || selectingForDeleteResources" [pending]="downloadAllResourcesPending">Download all</button>
+                            <button type="button" class="btn btn-secondary" (click)="selectDeleteResources()" *ngIf="!selectingForDeleteResources" [disabled]="resources.length == 0 || downloadAllResourcesPending">Delete resources...</button>
+                            <button type="button" class="btn btn-secondary" (click)="cancelDeleteResources()" *ngIf="selectingForDeleteResources" [disabled]="deleteResourcesPending">Cancel</button>
+                            <button type="button" class="btn btn-outline-danger" (click)="confirmDeleteResources()" *ngIf="selectingForDeleteResources" [disable]="!resourcesChecked()" [pending]="deleteResourcesPending">Confirm</button>
                         </div>
                     </div>
-                    <div class="panel panel-default">
+                    <div class="card">
                         <div table-directive
                             [columns]="resourceColumns"
                             [data]="resources"

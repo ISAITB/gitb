@@ -1,0 +1,263 @@
+@if (settings) {
+    <form>
+        <div class="row">
+            <label class="col-3 col-form-label text-end">Title:</label>
+            <div class="col-7">
+                <div class="row row-cols-auto align-items-center">
+                    <div class="col-auto">
+                        <div class="form-check mb-0">
+                            <input class="form-check-input" type="checkbox" id="includeTitleOverview" name="includeTitleOverview" (change)="includeTitleChanged()" [(ngModel)]="settings.includeTitle">
+                            <label class="form-check-label" for="includeTitleOverview">Included?</label>
+                        </div>
+                    </div>
+                    <div class="col-auto flex-grow-1">
+                        <input #titleField id="titleOverview" name="titleOverview" [(ngModel)]="settings.title" [readonly]="!settings.includeTitle" class="form-control" type="text">
+                    </div>
+                </div>
+            </div>
+            <div app-tooltip class="col-auto" tbTooltip="The title to display for the certificate. If unspecified and the title is enabled, 'Conformance Overview Certificate' is used."></div>
+        </div>
+        <div class="row mt-3 pt-1">
+            <legend class="col-3 col-form-label text-end pt-0">Included sections:</legend>
+            <div class="col-9">
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="checkbox" id="includeDetailsOverview" name="includeDetailsOverview" [(ngModel)]="settings.includeDetails">
+                    <label class="form-check-label" for="includeDetailsOverview">Details
+                        <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" [tbTooltip]="'Add the conformance overview details. These are the information on the '+dataService.labelDomainLower()+', '+dataService.labelSpecificationLower()+', '+dataService.labelActorLower()+', '+dataService.labelOrganisationLower()+' and '+dataService.labelSystemLower()+' (as applicable depending on the report\'s level).'"></div>
+                    </label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="checkbox" id="includeTestStatusOverview" name="includeTestStatusOverview" [(ngModel)]="settings.includeTestStatus">
+                    <label class="form-check-label" for="includeTestStatusOverview">Result overview
+                        <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" tbTooltip="Add a summary text on the number of successfully passed and failed conformance statements."></div>
+                    </label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="checkbox" id="includeTestCasesOverview" name="includeTestCasesOverview" [(ngModel)]="settings.includeTestCases">
+                    <label class="form-check-label" for="includeTestCasesOverview">Statement list
+                        <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" tbTooltip="Add a listing of all conformance statement included in the overview displaying the status per statement."></div>
+                    </label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="checkbox" id="includeTestCaseDetailsOverview" name="includeTestCaseDetailsOverview" [(ngModel)]="settings.includeTestCaseDetails">
+                    <label class="form-check-label" for="includeTestCaseDetailsOverview">Statement details
+                        <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" tbTooltip="Add the details for all conformance statements. Each statement included in the overview will be added as a separate page to the report."></div>
+                    </label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="checkbox" id="includeMessageOverview" name="includeMessageOverview" [(ngModel)]="settings.includeMessage" (change)="includeMessageChanged()">
+                    <label class="form-check-label" for="includeMessageOverview">Message
+                        <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" tbTooltip="Add a custom rich-text message following the title and before including other details."></div>
+                    </label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="checkbox" id="includeSignatureOverview" name="includeSignatureOverview" [(ngModel)]="settings.includeSignature">
+                    <label class="form-check-label" for="includeSignatureOverview">Signature
+                        <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" tbTooltip="Add a digital signature and timestamp for proof of authenticity."></div>
+                    </label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="checkbox" id="includePageNumbersOverview" name="includePageNumbersOverview" [(ngModel)]="settings.includePageNumbers">
+                    <label class="form-check-label" for="includePageNumbersOverview">Page numbers
+                        <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" tbTooltip="Include a footer on each page displaying the current and total number of pages in the report."></div>
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div class="row mt-3 pt-1">
+            <legend class="col-3 col-form-label text-end pt-0">Report enabled for:</legend>
+            <div class="col-9">
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="checkbox" id="enableAllLevel" name="enableAllLevel" [(ngModel)]="settings.enableAllLevel" (change)="reportEnabledOptionChanged()">
+                    <label class="form-check-label" for="enableAllLevel">Aggregate status
+                        <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" [tbTooltip]="'Enable certificates for the overall conformance status of a given '+dataService.labelOrganisationLower()+'.'"></div>
+                    </label>
+                </div>
+                @if (communityDomainId == undefined) {
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="checkbox" id="enableDomainLevel" name="enableDomainLevel" [(ngModel)]="settings.enableDomainLevel" (change)="reportEnabledOptionChanged()">
+                        <label class="form-check-label" for="enableDomainLevel">{{ dataService.labelDomains() }}
+                            <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" [tbTooltip]="'Enable certificates at the level of a single '+dataService.labelDomainLower()+'.'"></div>
+                        </label>
+                    </div>
+                }
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="checkbox" id="enableGroupLevel" name="enableGroupLevel" [(ngModel)]="settings.enableGroupLevel" (change)="reportEnabledOptionChanged()">
+                    <label class="form-check-label" for="enableGroupLevel">{{ dataService.labelSpecificationGroups() }}
+                        <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" [tbTooltip]="'Enable certificates at the level of a single '+dataService.labelSpecificationGroupLower()+'.'"></div>
+                    </label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="checkbox" id="enableSpecificationLevel" name="enableSpecificationLevel" [(ngModel)]="settings.enableSpecificationLevel" (change)="reportEnabledOptionChanged()">
+                    <label class="form-check-label" for="enableSpecificationLevel">{{ dataService.labelSpecifications() }}
+                        <div app-tooltip class="col-auto d-inline-flex" [inline]="true" [inlineType]="'checkLabel'" [tbTooltip]="'Enable certificates at the level of a single '+dataService.labelSpecificationLower()+'.'"></div>
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div [collapse]="!settings.includeMessage || (!settings.enableAllLevel && !settings.enableDomainLevel && !settings.enableGroupLevel && !settings.enableSpecificationLevel)" [isAnimated]="true">
+            <app-form-section sectionTitle="Message configuration" [marginBefore]="true">
+                <div class="row mt-3">
+                    <label class="col-3 col-form-label text-end" for="messageLevel">Report level:</label>
+                    <div class="col-3">
+                        @if ((settings.enableAllLevel && !(settings.enableDomainLevel || settings.enableGroupLevel || settings.enableSpecificationLevel)) ||
+                            (settings.enableDomainLevel && !(settings.enableAllLevel || settings.enableGroupLevel || settings.enableSpecificationLevel)) ||
+                            (settings.enableGroupLevel && !(settings.enableAllLevel || settings.enableDomainLevel || settings.enableSpecificationLevel)) ||
+                            (settings.enableSpecificationLevel && !(settings.enableAllLevel || settings.enableDomainLevel || settings.enableGroupLevel)) ||
+                            (!settings.enableAllLevel && !settings.enableDomainLevel && !settings.enableGroupLevel && !settings.enableSpecificationLevel)) {
+                            @if (settings.enableAllLevel) {
+                                <input type="text" value="Aggregate status" readonly="true" class="form-control" type="text">
+                            } @else if (settings.enableDomainLevel) {
+                                <input type="text" [value]="dataService.labelDomain()" readonly="true" class="form-control" type="text">
+                            } @else if (settings.enableGroupLevel) {
+                                <input type="text" [value]="dataService.labelSpecificationGroup()" readonly="true" class="form-control" type="text">
+                            } @else if (settings.enableSpecificationLevel) {
+                                <input type="text" [value]="dataService.labelSpecification()" readonly="true" class="form-control" type="text">
+                            } @else {
+                                <input type="text" value="" readonly="true" class="form-control" type="text">
+                            }
+                        } @else {
+                            <select id="messageLevel" class="form-control form-select" name="messageLevel" (change)="messageLevelChanged()" [(ngModel)]="messageLevel">
+                                @if (settings.enableAllLevel) {
+                                    <option value="all">Aggregate status</option>
+                                }
+                                @if (settings.enableDomainLevel) {
+                                    <option value="domain">{{ dataService.labelDomain() }}</option>
+                                }
+                                @if (settings.enableGroupLevel) {
+                                    <option value="group">{{ dataService.labelSpecificationGroup() }}</option>
+                                }
+                                @if (settings.enableSpecificationLevel) {
+                                    <option value="specification">{{ dataService.labelSpecification() }}</option>
+                                }
+                            </select>
+                        }
+                    </div>
+                    @if (messageLevel != "all" && (settings.enableDomainLevel || settings.enableGroupLevel || settings.enableSpecificationLevel)) {
+                        <div class="col-4">
+                            @if ((messageLevel == "domain" && allDomains && allDomains.length > 0) ||
+                            (messageLevel == "group" && allGroups && allGroups.length > 0) ||
+                            (messageLevel == "specification" && allSpecifications && allSpecifications.length > 0)) {
+                                <select class="form-control form-select" id="specificMessageSetting" name="specificMessageSetting" [(ngModel)]="specificMessageSetting" (change)="toggleSpecificMessageSetting()">
+                                    <option [ngValue]="false">Default message</option>
+                                    <option [ngValue]="true">Specific message</option>
+                                </select>
+                            } @else {
+                                <input type="text" value="Default message" readonly="true" class="form-control" type="text">
+                            }
+                        </div>
+                    }
+                </div>
+                @if (messageLevel != "all" && specificMessageSetting) {
+                    @if (communityDomainId == undefined && domains) {
+                        <div class="row mt-3">
+                            <label class="col-3 col-form-label text-end" for="domainMessage">{{dataService.labelDomain()}}:</label>
+                            <div class="col-7">
+                                @if (domains.length > 1) {
+                                    <select id="domainMessage" class="form-control form-select" name="domainMessage" (change)="domainChanged()" [(ngModel)]="domainId">
+                                        @for (domain of domains; track domain.id) {
+                                            <option [ngValue]="domain.id">{{domain.fname}}</option>
+                                        }
+                                    </select>
+                                } @else if (domains.length == 1) {
+                                    <input type="text" [value]="domains[0].fname" readonly="true" class="form-control" type="text">
+                                }
+                            </div>
+                        </div>
+                    }
+                    @if (domainId && groups && (messageLevel == "group" || (messageLevel == "specification" && groups.length > 0)) && groups) {
+                        <div class="row mt-3">
+                            <label class="col-3 col-form-label text-end" for="groupMessage">{{dataService.labelSpecificationGroup()}}:</label>
+                            <div class="col-7">
+                                @if (groups.length > 1 || (messageLevel == "specification" && groups.length == 1 && specsPerDomain.has(domainId))) {
+                                    <select id="groupMessage" class="form-control form-select" name="groupMessage" (change)="groupChanged()" [(ngModel)]="groupId">
+                                        @if (messageLevel == "specification" && specsPerDomain.has(domainId)) {
+                                            <option [ngValue]="noGroup">None</option>
+                                        }
+                                        @for (group of groups; track group.id) {
+                                            <option [ngValue]="group.id">{{group.fname}}</option>
+                                        }
+                                    </select>
+                                } @else if (groups.length == 1) {
+                                    <input type="text" [value]="groups[0].fname" readonly="true" class="form-control" type="text">
+                                }
+                            </div>
+                        </div>
+                    }
+                    @if (messageLevel == "specification" && specifications) {
+                        <div class="row mt-3">
+                            @if (groupId == undefined || groupId == noGroup) {
+                                <label class="col-3 col-form-label text-end" for="specMessage">{{dataService.labelSpecification()}}:</label>
+                            } @else {
+                                <label class="col-3 col-form-label text-end" for="specMessage">{{dataService.labelSpecificationInGroup()}}:</label>
+                            }
+                            <div class="col-7">
+                                @if (specifications.length > 1) {
+                                    <select id="specMessage" class="form-control form-select" name="specMessage" (change)="specificationChanged()" [(ngModel)]="specificationId">
+                                        @for (specification of specifications; track specification.id) {
+                                            <option [ngValue]="specification.id">{{specification.fname}}</option>
+                                        }
+                                    </select>
+                                } @else if (specifications.length == 1) {
+                                    <input type="text" [value]="specifications[0].fname" readonly="true" class="form-control" type="text">
+                                }
+                            </div>
+                        </div>
+                    }
+                }
+                <div class="row mt-3">
+                    <div class="col-auto pe-0">
+                        <app-placeholder-selector [placeholders]="placeholders" [domainParameters]="true" [domainChanged]="domainChangedEmitter" [organisationParameters]="true" [systemParameters]="true" [resources]="true" [community]="communityId" [domainId]="domainId"></app-placeholder-selector>
+                    </div>
+                    <div class="col-auto ps-0">
+                        <button class="btn btn-secondary" type="button" (click)="clearCurrentMessage()" [disabled]="!textProvided(currentMessageContent)">Remove message</button>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <app-editor name="messageOverview" [(ngModel)]="currentMessageContent" [type]="'pdf'"></app-editor>
+                    </div>
+                </div>
+            </app-form-section>
+        </div>
+        <div class="btn-toolbar mt-3">
+            <button class="btn btn-secondary" type="submit" (click)="update()" [disable]="exportPending" [pending]="updatePending">Update</button>
+            @if ((settings.enableAllLevel && !(settings.enableDomainLevel || settings.enableGroupLevel || settings.enableSpecificationLevel)) ||
+                (settings.enableDomainLevel && !(settings.enableAllLevel || settings.enableGroupLevel || settings.enableSpecificationLevel)) ||
+                (settings.enableGroupLevel && !(settings.enableAllLevel || settings.enableDomainLevel || settings.enableSpecificationLevel)) ||
+                (settings.enableSpecificationLevel && !(settings.enableAllLevel || settings.enableDomainLevel || settings.enableGroupLevel)) ||
+                (!settings.enableAllLevel && !settings.enableDomainLevel && !settings.enableGroupLevel && !settings.enableSpecificationLevel)) {
+                @if (settings.enableAllLevel) {
+                    <button class="btn btn-secondary" type="button" (click)="preview('all')" [disable]="exportPending" [pending]="exportPending">Generate preview</button>
+                } @else if (settings.enableDomainLevel) {
+                    <button class="btn btn-secondary" type="button" (click)="preview('domain')" [disable]="exportPending" [pending]="exportPending">Generate preview</button>
+                } @else if (settings.enableGroupLevel) {
+                    <button class="btn btn-secondary" type="button" (click)="preview('group')" [disable]="exportPending" [pending]="exportPending">Generate preview</button>
+                } @else if (settings.enableSpecificationLevel) {
+                    <button class="btn btn-secondary" type="button" (click)="preview('specification')" [disable]="exportPending" [pending]="exportPending">Generate preview</button>
+                } @else {
+                    <button class="btn btn-secondary" type="button" disabled="true">Generate preview</button>
+                }
+            } @else {
+                <div class="btn-group" dropdown [isDisabled]="updatePending">
+                    <button id="button-preview" dropdownToggle type="button" [disable]="updatePending" [pending]="exportPending" aria-controls="dropdown-preview" class="btn btn-secondary dropdown-toggle">Generate preview<span class="caret withMargin"></span></button>
+                    <ul id="dropdown-preview" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-preview">
+                        @if (settings.enableAllLevel) {
+                            <li role="menuitem"><a class="dropdown-item" href (click)="preview('all');$event.preventDefault();">Aggregate level</a></li>
+                        }
+                        @if (settings.enableDomainLevel) {
+                            <li role="menuitem"><a class="dropdown-item" href (click)="preview('domain');$event.preventDefault();">{{dataService.labelDomain()}} level</a></li>
+                        }
+                        @if (settings.enableGroupLevel) {
+                            <li role="menuitem"><a class="dropdown-item" href (click)="preview('group');$event.preventDefault();">{{dataService.labelSpecificationGroup()}} level</a></li>
+                        }
+                        @if (settings.enableSpecificationLevel) {
+                            <li role="menuitem"><a class="dropdown-item" href (click)="preview('specification');$event.preventDefault();">{{dataService.labelSpecification()}} level</a></li>
+                        }
+                    </ul>
+                </div>
+            }
+            <button class="btn btn-secondary" (click)="manageKeystore()" [pending]="manageKeystorePending">Manage signature settings</button>
+        </div>
+    </form>
+}

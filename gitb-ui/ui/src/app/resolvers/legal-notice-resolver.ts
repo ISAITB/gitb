@@ -1,5 +1,5 @@
 import { Injectable } from "@angular/core";
-import { ActivatedRouteSnapshot, Resolve, RouterStateSnapshot } from "@angular/router";
+import { ActivatedRouteSnapshot, RouterStateSnapshot } from "@angular/router";
 import { Observable, Subscriber } from "rxjs";
 import { LegalNoticeService } from "../services/legal-notice.service";
 import { LegalNotice } from "../types/legal-notice";
@@ -8,7 +8,7 @@ import { Constants } from "../common/constants";
 @Injectable({
     providedIn: "root"
 })
-export class LegalNoticeResolver implements Resolve<any> {
+export class LegalNoticeResolver  {
 
     constructor(
         private legalNoticeService: LegalNoticeService
