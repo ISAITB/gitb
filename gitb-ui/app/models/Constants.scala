@@ -61,5 +61,5 @@ object Constants {
   val MimeTypeXML = "application/xml"
 
   // When ending in "-snapshot", this is considered a non-published release.
-  val VersionNumber = "1.22.0-snapshot"
+  val VersionNumber = "1.22.0"
 }
