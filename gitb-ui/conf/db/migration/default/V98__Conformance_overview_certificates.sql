@@ -156,7 +156,7 @@ CREATE TABLE `communitykeystores` (
 INSERT INTO `communitykeystores`(`keystore_file`, `keystore_type`, `keystore_pass`, `key_pass`, `community`)
 SELECT `cert`.`keystore_file`, `cert`.`keystore_type`, `cert`.`keystore_pass`, `cert`.`key_pass`, `cert`.`community`
 FROM `conformancecertificates` AS `cert`
-WHERE `cert`.`keystore_pass` IS NOT NULL;
+WHERE `cert`.`keystore_pass` IS NOT NULL AND `cert`.`keystore_type` IS NOT NULL AND `cert`.`keystore_file` IS NOT NULL AND `cert`.`key_pass` IS NOT NULL;
 --
 -- Drop previous columns.
 --
