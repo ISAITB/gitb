@@ -52,7 +52,7 @@ class Application @Inject() (implicit ec: ExecutionContext, cc: ControllerCompon
   }
 
   private def resourceVersionToUse(): String = {
-    Configurations.versionInfo().replace(' ', '_')
+    Configurations.versionInfo().replace(' ', '_')+Constants.VersionNumberPostfixForResources
   }
 
   def app() = defaultAction {
