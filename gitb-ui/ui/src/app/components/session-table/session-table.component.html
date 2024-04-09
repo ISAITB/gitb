@@ -9,7 +9,7 @@
                     <th class="th-min-centered"></th>
                 }
                 <th class="th-min-centered"></th>
-                @for (column of columnsLeft; track $index) {
+                @for (column of columnsLeft; track column) {
                     <th [ngClass]="column.headerClass!" (click)="!column.sortable || headerColumnClicked(column)">
                         {{column.title}} 
                         @if (column.order == 'desc') {
@@ -22,7 +22,7 @@
                 @if (actionVisible || exportVisible || operationsVisible) {
                     <th class="th-min-centered"></th>
                 }
-                @for (column of columnsRight; track $index) {
+                @for (column of columnsRight; track column) {
                     <th [ngClass]="column.headerClass!" (click)="!column.sortable || headerColumnClicked(column)">
                         {{column.title}}
                         @if (column.order == 'desc') {
@@ -44,7 +44,7 @@
                     <td [attr.colspan]="columnCount" class="td-no-data"><span>{{noDataMessage}}</span></td>
                 </tr>
             }
-            @for (row of data; let i = $index; track i) {
+            @for (row of data; let i = $index; track row) {
                 <tr table-row-directive
                     class="table-row-directive expandable-table-row-collapsed session-table-row" 
                     [ngClass]="rowClass(row)" 
@@ -104,7 +104,7 @@
                                                 <div class="btn-group" dropdown>
                                                     <button id="button-interactions" dropdownToggle class="btn btn-secondary dropdown-toggle" type="button" aria-controls="dropdown-interactions">View pending interaction<span class="caret withMargin"></span></button>
                                                     <ul id="dropdown-interactions" *dropdownMenu class="dropdown-menu" aria-labelledby="button-interactions">
-                                                        @for (interaction of row.diagramState.interactions; let index = $index; track index) {
+                                                        @for (interaction of row.diagramState.interactions; let index = $index; track interaction) {
                                                             <li>
                                                                 <a class="dropdown-item" href (click)="displayPendingInteraction(row, interaction.stepId);$event.preventDefault();">{{labelForPendingInteraction(interaction, index)}}</a>
                                                             </li>

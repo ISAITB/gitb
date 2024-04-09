@@ -10,7 +10,7 @@
             }
             @if (!config.singleSelection && selectedItems.length > 0) {
                 <div class="itemsContainer">
-                    @for (item of selectedItems; track $index) {
+                    @for (item of selectedItems; track item.id) {
                         <div class="itemContainer" (click)="selectedItemClicked(item)">
                             <div class="d-flex">
                                 <input class="form-check-input" type="checkbox" [attr.id]="'item-'+$index" [attr.name]="'item-'+$index" [(ngModel)]="selectedSelectedItems[item.id].selected" (ngModelChange)="updateCheckFlag()">
@@ -27,7 +27,7 @@
                     @if (selectedItems.length == 0 && visibleAvailableItems.length == 0) {
                         <div class="noItems">No items found</div>
                     } @else {
-                        @for (item of visibleAvailableItems; track $index) {
+                        @for (item of visibleAvailableItems; track item.id) {
                             <div class="itemContainer" (click)="availableItemClicked(item)">
                                 @if (config.singleSelection) {
                                     <div>{{item[config.textField]}}</div>

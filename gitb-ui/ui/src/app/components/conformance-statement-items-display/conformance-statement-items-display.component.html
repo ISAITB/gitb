@@ -1,4 +1,4 @@
-@for (item of items; track $index) {
+@for (item of items; track item) {
     <app-conformance-statement-item-display 
         [item]="item" 
         [shade]="item.hidden?!shade:shade"
