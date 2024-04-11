@@ -31,7 +31,7 @@
         <!-- Dependency versions -->
         <version.springBoot>3.2.4</version.springBoot>
         <version.gitbTypes>1.22.0</version.gitbTypes>
-        <version.bouncycastle>1.77</version.bouncycastle>
+        <version.bouncycastle>1.78</version.bouncycastle>
         <version.helgerSchematron>7.1.3</version.helgerSchematron>
         <version.metaInfServices>1.9</version.metaInfServices>
         <version.cxf>4.0.4</version.cxf>
