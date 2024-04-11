@@ -14,7 +14,7 @@ val cxfVersion = "4.0.4"
 val commonsTextVersion = "1.11.0"
 val gitbTypesVersion = "1.22.0"
 val jettyVersion = "11.0.18"
-val bouncyCastleVersion = "1.77"
+val bouncyCastleVersion = "1.78"
 
 useCoursier := false
 
