@@ -1212,12 +1212,78 @@
             "items": {
               "$ref": "#/components/schemas/TestSuiteValidationReportItem"
             }
+          },
+          "identifiers": {
+            "description": "The API key identifiers linked to the test suite.",
+            "type": "object",
+            "required": [
+              "testSuite"
+            ],
+            "properties": {
+              "testSuite": {
+                "description": "The test suite identifier.",
+                "type": "string"
+              },
+              "testCases": {
+                "description": "The identifiers of the test suite's test cases.",
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "specifications": {
+                "description": "The identifiers linked to the test suite's linked specification(s).",
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "name",
+                    "identifier"
+                  ],
+                  "properties": {
+                    "name": {
+                      "description": "The specification's name.",
+                      "type": "string"
+                    },
+                    "identifier": {
+                      "description": "The specification's API key.",
+                      "type": "string"
+                    },
+                    "actors": {
+                      "description": "The information for the actors linked to the specification.",
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/TestSuiteUploadActorKeys"
+                      }
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "required": [
           "completed"
         ],
         "additionalProperties": false
+      },
+      "TestSuiteUploadActorKeys": {
+        "description": "The API keys for the actors related to the test suite.",
+        "type": "object",
+        "required": [
+          "name",
+          "identifier"
+        ],
+        "properties": {
+          "name": {
+            "description": "The name of the actor.",
+            "type": "string"
+          },
+          "identifier": {
+            "description": "The API key of the actor.",
+            "type": "string"
+          }
+        }
       },
       "TestCaseDeploymentAction": {
         "description": "Deployment choices for a given test case.",
@@ -1352,6 +1418,13 @@
           "message": {
             "description": "A message detailing why the specification was not linked (if linking didn't take place).",
             "type": "string"
+          },
+          "actors": {
+            "description": "The information for the actors linked to the specification.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TestSuiteUploadActorKeys"
+            }
           }
         },
         "required": [

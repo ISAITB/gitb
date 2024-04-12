@@ -5,7 +5,7 @@ import managers.testsuite.{TestSuitePaths, TestSuiteSaveResult}
 import models.Enums.TestSuiteReplacementChoice.{PROCEED, TestSuiteReplacementChoice}
 import models.Enums.{TestCaseUploadMatchType, TestResultStatus, TestSuiteReplacementChoice}
 import models._
-import models.automation.{TestSuiteDeployRequest, TestSuiteLinkRequest, TestSuiteLinkResponseSpecification, TestSuiteUnlinkRequest}
+import models.automation._
 import org.apache.commons.io.FileUtils
 import org.slf4j.{Logger, LoggerFactory}
 import persistence.db.PersistenceSchema
@@ -369,8 +369,8 @@ class TestSuiteManager @Inject() (domainParameterManager: DomainParameterManager
 			.result
 	}
 
-	def deployTestSuiteFromApi(domainId: Long, specificationId: Option[Long], deployRequest: TestSuiteDeployRequest, tempTestSuiteArchive: File): TestSuiteUploadResult = {
-		val result = new TestSuiteUploadResult()
+	def deployTestSuiteFromApi(domainId: Long, specificationId: Option[Long], deployRequest: TestSuiteDeployRequest, tempTestSuiteArchive: File): TestSuiteUploadResultWithApiKeys = {
+		val result = new TestSuiteUploadResultWithApiKeys()
 		val specificationIds = if (specificationId.isDefined) {
 			Some(List(specificationId.get))
 		} else {
@@ -412,11 +412,88 @@ class TestSuiteManager @Inject() (domainParameterManager: DomainParameterManager
 					result.items.addAll(exec(dbActionFinalisation(Some(onSuccessCalls), Some(onFailureCalls), action).transactionally).asJavaCollection)
 					result.success = true
 				}
+				// Lookup the API key information to return.
+				if (result.success) {
+					result.testSuiteIdentifier = Some(testSuite.get.identifier)
+					result.testCaseIdentifiers = testSuite.get.testCases.map(_.map(_.identifier))
+					result.specifications = collectSpecificationIdentifiers(testSuite.get.domain, specificationIds, testSuite.get.identifier)
+				}
 			} else {
 				throw new IllegalArgumentException("Test suite could not be read from archive")
 			}
 		} else {
 			result.needsConfirmation = true
+		}
+		result
+	}
+
+	private def collectActorIdentifiersWrapper(specificationId: Long, testSuiteId: Long): List[KeyValueRequired] = {
+		exec(collectActorIdentifiers(specificationId, testSuiteId))
+	}
+
+	private def collectActorIdentifiers(specificationId: Long, testSuiteId: Long): DBIO[List[KeyValueRequired]] = {
+		PersistenceSchema.actors
+			.join(PersistenceSchema.specificationHasActors).on(_.id === _.actorId)
+			.join(PersistenceSchema.testSuiteHasActors).on(_._2.actorId === _.actor)
+			.filter(_._1._2.specId === specificationId)
+			.filter(_._2.testsuite === testSuiteId)
+			.map(x => (x._1._1.actorId, x._1._1.apiKey))
+			.result
+			.map(_.map(x => KeyValueRequired(x._1, x._2)).toList)
+	}
+
+	private def collectSpecificationIdentifiers(domainId: Long, specificationIds: Option[List[Long]], testSuiteIdentifier: String): Option[List[SpecificationActorApiKeys]] = {
+		var result: Option[List[SpecificationActorApiKeys]] = None
+		// Get the specification IDs to lookup.
+		var specificationIdsToUse: Option[Iterable[Long]] = None
+		if (specificationIds.isDefined) {
+			// This is a deployment for a specification.
+			specificationIdsToUse = specificationIds
+		} else {
+			// This is a deployment for a shared test suite. It could already be linked to specifications.
+			specificationIdsToUse = Some(exec(
+				PersistenceSchema.testSuites
+					.join(PersistenceSchema.specificationHasTestSuites).on(_.id === _.testSuiteId)
+					.filter(_._1.domain === domainId)
+					.filter(_._1.identifier === testSuiteIdentifier)
+					.filter(_._1.shared === true)
+					.map(_._2.specId)
+					.result
+			))
+		}
+		if (specificationIdsToUse.isDefined && specificationIdsToUse.get.nonEmpty) {
+			val specs = new ListBuffer[SpecificationActorApiKeys]
+			specificationIdsToUse.get.foreach { specId =>
+				val specResults = exec(
+					for {
+						specificationInfo <- PersistenceSchema.specifications
+							.filter(_.id === specId)
+							.map(x => (x.fullname, x.apiKey))
+							.result
+							.head
+						testSuiteId <- PersistenceSchema.testSuites
+							.join(PersistenceSchema.specificationHasTestSuites).on(_.id === _.testSuiteId)
+							.filter(_._1.identifier === testSuiteIdentifier)
+							.filter(_._2.specId === specId)
+							.map(_._1.id)
+							.result
+							.head
+						actorInfo <- collectActorIdentifiers(specId, testSuiteId)
+					} yield (specificationInfo, actorInfo)
+				)
+				val specKeys = new SpecificationActorApiKeys
+				specKeys.specificationName = specResults._1._1
+				specKeys.specificationApiKey = specResults._1._2
+				if (specResults._2.nonEmpty) {
+					specKeys.actors = Some(specResults._2)
+				} else {
+					specKeys.actors = None
+				}
+				specs += specKeys
+			}
+			if (specs.nonEmpty) {
+				result = Some(specs.toList)
+			}
 		}
 		result
 	}
@@ -1567,29 +1644,36 @@ class TestSuiteManager @Inject() (domainParameterManager: DomainParameterManager
 				// Specifications that were linked.
 				targetSpecs.foreach { id =>
 					val key = specificationMap(id)
-					specResults += TestSuiteLinkResponseSpecification(key, linked = true, None)
+					specResults += TestSuiteLinkResponseSpecification(key, Some(id), linked = true, None)
 					pendingKeys -= key
 				}
 				// Specifications that were skipped because they were already linked to the test suite.
 				specsLinkedToSameTestSuite.foreach { id =>
 					val key = specificationMap(id)
-					specResults += TestSuiteLinkResponseSpecification(specificationMap(id), linked = false, Some("Specification already linked to this test suite."))
+					specResults += TestSuiteLinkResponseSpecification(specificationMap(id), Some(id), linked = false, Some("Specification already linked to this test suite."))
 					pendingKeys -= key
 				}
 				// Specifications that were skipped because they were linked to another test suite.
 				specsLinkedToMatchingOtherTestSuite.foreach { id =>
 					val key = specificationMap(id)
-					specResults += TestSuiteLinkResponseSpecification(specificationMap(id), linked = false, Some("Specification linked to another suite with the same identifier."))
+					specResults += TestSuiteLinkResponseSpecification(specificationMap(id), Some(id), linked = false, Some("Specification linked to another suite with the same identifier."))
 					pendingKeys -= key
 				}
 				// Specifications that were skipped because they were not found.
 				pendingKeys.foreach { key =>
-					specResults += TestSuiteLinkResponseSpecification(key, linked = false, Some("Specification not found."))
+					specResults += TestSuiteLinkResponseSpecification(key, None, linked = false, Some("Specification not found."))
 				}
 				DBIO.successful(specResults.toList)
 			}
 		} yield result
-		exec(dbActionFinalisation(Some(onSuccessCalls), Some(onFailureCalls), dbAction).transactionally)
+		val results = exec(dbActionFinalisation(Some(onSuccessCalls), Some(onFailureCalls), dbAction).transactionally)
+		results.map(result => {
+			if (result.specificationId.isDefined && result.linked) {
+				result.withActorIdentifiers(collectActorIdentifiersWrapper(result.specificationId.get, testSuiteId))
+			} else {
+				result
+			}
+		})
 	}
 
 	def unlinkSharedTestSuiteFromApi(testSuiteId: Long, domainId: Long, input: TestSuiteUnlinkRequest): Unit = {

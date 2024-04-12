@@ -1185,11 +1185,14 @@ object JsonUtil {
     var items = Json.arr()
     results.foreach { result =>
       var item = Json.obj(
-        "specification" -> result.specification,
+        "specification" -> result.specificationKey,
         "linked" -> result.linked
       )
       if (result.message.isDefined) {
         item = item + ("message", JsString(result.message.get))
+      }
+      if (result.actors.isDefined && result.actors.get.nonEmpty) {
+        item = item + ("actors", jsTestSuiteSpecificationActorApiKeys(result.actors.get))
       }
       items = items.append(item)
     }
@@ -2408,7 +2411,7 @@ object JsonUtil {
     testCaseArray
   }
 
-  def jsTestSuiteDeployInfo(result: TestSuiteUploadResult):JsObject = {
+  def jsTestSuiteDeployInfo(result: TestSuiteUploadResultWithApiKeys):JsObject = {
     var errors = Json.arr()
     var warnings = Json.arr()
     var messages = Json.arr()
@@ -2443,9 +2446,47 @@ object JsonUtil {
     if (messages.value.nonEmpty) {
       json = json.+("messages", messages)
     }
+    // API key identifiers.
+    if (result.testSuiteIdentifier.isDefined) {
+      var identifiers = Json.obj(
+        "testSuite" -> result.testSuiteIdentifier.get
+      )
+      if (result.testCaseIdentifiers.isDefined && result.testCaseIdentifiers.get.nonEmpty) {
+        identifiers = identifiers+("testCases" -> jsStringArray(result.testCaseIdentifiers.get))
+      }
+      if (result.specifications.isDefined && result.specifications.get.nonEmpty) {
+        identifiers = identifiers+("specifications" -> jsTestSuiteSpecificationApiKeys(result.specifications.get))
+      }
+      json = json+("identifiers", identifiers)
+    }
     json
   }
 
+  private def jsTestSuiteSpecificationApiKeys(specifications: Iterable[SpecificationActorApiKeys]): JsArray = {
+    var specArray = Json.arr()
+    specifications.foreach { spec =>
+      var specJson = Json.obj(
+        "name" -> spec.specificationName,
+        "identifier" -> spec.specificationApiKey,
+      )
+      if (spec.actors.isDefined && spec.actors.get.nonEmpty) {
+        specJson = specJson + ("actors" -> jsTestSuiteSpecificationActorApiKeys(spec.actors.get))
+      }
+      specArray = specArray.append(specJson)
+    }
+    specArray
+  }
+
+  private def jsTestSuiteSpecificationActorApiKeys(actors: Iterable[KeyValueRequired]): JsArray = {
+    var actorArray = Json.arr()
+    actors.foreach { actor =>
+      actorArray = actorArray.append(Json.obj(
+        "name" -> actor.key,
+        "identifier" -> actor.value
+      ))
+    }
+    actorArray
+  }
 
   def jsTAR(report: TAR): JsObject = {
     val json = Json.obj(
