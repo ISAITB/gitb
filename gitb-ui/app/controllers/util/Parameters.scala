@@ -228,4 +228,5 @@ object Parameters {
   val FAVICON_PATH = "faviconPath"
   val REFERENCE = "reference"
   val TO = "to"
+  val KEYS = "keys"
 }

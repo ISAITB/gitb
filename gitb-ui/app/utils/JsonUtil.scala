@@ -2313,9 +2313,9 @@ object JsonUtil {
     json
   }
 
-  def jsConformanceSnapshotList(latestLabel: Option[String], snapshots: Iterable[ConformanceSnapshot], public: Boolean): JsObject = {
+  def jsConformanceSnapshotList(latestLabel: Option[String], snapshots: Iterable[ConformanceSnapshot], public: Boolean, withApiKeys: Boolean): JsObject = {
     var json = Json.obj(
-      "snapshots" -> jsConformanceSnapshots(snapshots, public)
+      "snapshots" -> jsConformanceSnapshots(snapshots, public, withApiKeys)
     )
     if (latestLabel.isDefined) {
       json += ("latest" -> JsString(latestLabel.get))
@@ -2323,19 +2323,22 @@ object JsonUtil {
     json
   }
 
-  private def jsConformanceSnapshots(snapshots: Iterable[ConformanceSnapshot], public: Boolean): JsArray = {
+  private def jsConformanceSnapshots(snapshots: Iterable[ConformanceSnapshot], public: Boolean, withApiKeys: Boolean): JsArray = {
     var array = Json.arr()
     snapshots.foreach { snapshot =>
-      array = array.append(jsConformanceSnapshot(snapshot, public))
+      array = array.append(jsConformanceSnapshot(snapshot, public, withApiKeys))
     }
     array
   }
 
-  def jsConformanceSnapshot(snapshot: ConformanceSnapshot, public: Boolean):JsObject = {
+  def jsConformanceSnapshot(snapshot: ConformanceSnapshot, public: Boolean, withApiKey: Boolean):JsObject = {
     var json = Json.obj(
       "id" -> snapshot.id,
       "snapshotTime" -> TimeUtil.serializeTimestamp(snapshot.snapshotTime)
     )
+    if (withApiKey) {
+      json += ("apiKey" -> JsString(snapshot.apiKey))
+    }
     if (public) {
       json += ("label" -> JsString(snapshot.publicLabel.getOrElse(snapshot.label)))
     } else {

@@ -33,5 +33,10 @@
     <logger name="org.pac4j" level="WARN"/>
     <logger name="org.pac4j.core.client.direct.AnonymousClient" level="ERROR"/>
     <logger name="org.pac4j.core.matching.matcher.PathMatcher" level="ERROR"/>
+
+    <!-- DB debug logging used only in development
+    <logger name="slick" level="INFO"/>
+    <logger name="slick.jdbc" level="DEBUG"/>
+    -->
 </configuration>
 

@@ -392,6 +392,10 @@ POST    /api/rest/testsuite/undeployShared                       @controllers.Te
 POST    /api/rest/testsuite/linkShared                           @controllers.TestSuiteAutomationService.linkShared()
 POST    /api/rest/testsuite/unlinkShared                         @controllers.TestSuiteAutomationService.unlinkShared()
 POST    /api/rest/configure                                      @controllers.ConfigurationAutomationService.configure()
+GET     /api/rest/conformance/:system/:actor                     @controllers.TestAutomationService.statementReport(system: String, actor: String)
+GET     /api/rest/conformance/:system/:actor/:snapshot           @controllers.TestAutomationService.statementReportForSnapshot(system: String, actor: String, snapshot: String)
+PUT     /api/rest/conformance/:system/:actor                     @controllers.TestAutomationService.createStatement(system: String, actor: String)
+DELETE  /api/rest/conformance/:system/:actor                     @controllers.TestAutomationService.deleteStatement(system: String, actor: String)
 
 POST    /api/crumbs                                              @controllers.BreadcrumbService.getBreadcrumbLabels()
 

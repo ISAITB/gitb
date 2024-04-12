@@ -504,7 +504,7 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
     val actorId = ParameterExtractor.requiredBodyParameter(request, Parameters.ACTOR_ID).toLong
     val snapshotId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.SNAPSHOT)
     val systemId = ParameterExtractor.requiredBodyParameter(request, Parameters.SYSTEM_ID).toLong
-    val reportPath = getReportTempFile(".pdf")
+    val reportPath = getReportTempFile(".xml")
     try {
       reportManager.generateConformanceStatementReportInXML(reportPath, withTestSteps, actorId, systemId, communityId, snapshotId)
       Ok.sendFile(
