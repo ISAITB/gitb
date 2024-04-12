@@ -1,6 +1,8 @@
 import { Component, EventEmitter, Input, OnInit } from '@angular/core';
+import { Observable, forkJoin, of } from 'rxjs';
 import { Constants } from 'src/app/common/constants';
 import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
+import { ConformanceService } from 'src/app/services/conformance.service';
 import { DataService } from 'src/app/services/data.service';
 import { OrganisationService } from 'src/app/services/organisation.service';
 import { PopupService } from 'src/app/services/popup.service';
@@ -12,6 +14,8 @@ import { ApiKeySpecificationInfo } from 'src/app/types/api-key-specification-inf
 import { ApiKeySystemInfo } from 'src/app/types/api-key-system-info';
 import { ApiKeyTestCaseInfo } from 'src/app/types/api-key-test-case-info';
 import { ApiKeyTestSuiteInfo } from 'src/app/types/api-key-test-suite-info';
+import { ConformanceSnapshot } from 'src/app/types/conformance-snapshot';
+import { ConformanceSnapshotList } from 'src/app/types/conformance-snapshot-list';
 
 @Component({
   selector: 'app-api-key-info',
@@ -22,8 +26,14 @@ export class ApiKeyInfoComponent implements OnInit {
 
   @Input() organisationName?: string
   @Input() organisationId!: number
+  @Input() communityId!: number
+  @Input() adminOrganisation!: boolean
   @Input() loadData?: EventEmitter<void>
+
   apiInfo?: ApiKeyInfo
+  conformanceSnapshots?: ConformanceSnapshot[]
+  latestSnapshotLabel = Constants.LATEST_CONFORMANCE_STATUS_LABEL
+  selectedSnapshot?: ConformanceSnapshot
   selectedSpecification?: ApiKeySpecificationInfo
   selectedActor?: ApiKeyActorInfo
   selectedTestSuite?: ApiKeyTestSuiteInfo
@@ -34,6 +44,8 @@ export class ApiKeyInfoComponent implements OnInit {
   systemUpdatePending: {[key: number]: boolean} = {}
   systemDeletePending: {[key: number]: boolean} = {}
   dataStatus = {status: Constants.STATUS.NONE}
+
+  snapshotKeysLoading = false
   canUpdate = false
   Constants = Constants
 
@@ -42,6 +54,7 @@ export class ApiKeyInfoComponent implements OnInit {
     private systemService: SystemService,
     private popupService: PopupService,
     private confirmationDialogService: ConfirmationDialogService,
+    private conformanceService: ConformanceService,
     public dataService: DataService
   ) { }
 
@@ -56,6 +69,16 @@ export class ApiKeyInfoComponent implements OnInit {
       })
     }
     this.canUpdate = this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin || this.dataService.isVendorAdmin
+  }
+
+  snapshotChanged(): void {
+    this.snapshotKeysLoading = true
+    this.organisationService.getAutomationKeysForOrganisation(this.organisationId, this.selectedSnapshot?.id)
+    .subscribe((data) => {
+      this.apiInfoLoaded(data)
+    }).add(() => {
+      this.snapshotKeysLoading = false
+    })
   }
 
   specificationChanged():void {
@@ -153,20 +176,41 @@ export class ApiKeyInfoComponent implements OnInit {
   loadApiInfo() {
     if (this.dataStatus.status == Constants.STATUS.NONE) {
       this.dataStatus.status = Constants.STATUS.PENDING
-      this.organisationService.getAutomationKeysForOrganisation(this.organisationId)
-      .subscribe((data) => {
-        this.apiInfo = data
-        if (this.apiInfo.specifications.length > 0) {
-          this.selectedSpecification = this.apiInfo.specifications[0]
-          this.specificationChanged()
+      let snapshotsLoaded: Observable<ConformanceSnapshotList>
+      if (this.adminOrganisation) {
+        // Administrator organisations don't get included in snapshots
+        snapshotsLoaded = of({snapshots: []})
+      } else {
+        snapshotsLoaded = this.conformanceService.getConformanceSnapshots(this.communityId, true)
+      }
+      const apiKeysLoaded = this.organisationService.getAutomationKeysForOrganisation(this.organisationId)
+      forkJoin([snapshotsLoaded, apiKeysLoaded]).subscribe((results) => {
+        // Snapshots
+        this.conformanceSnapshots = results[0].snapshots
+        if (results[0].latest) {
+          this.latestSnapshotLabel = results[0].latest
         }
-        if (this.apiInfo.systems.length > 0) {
-          this.selectedSystem = this.apiInfo.systems[0]
-        }
-      })
-      .add(() => {
+        // API keys for latest status
+        this.apiInfoLoaded(results[1])
+      }).add(() => {
         this.dataStatus.status = Constants.STATUS.FINISHED
       })
+    }
+  }
+
+  private apiInfoLoaded(apiKeyInfo: ApiKeyInfo) {
+    this.apiInfo = apiKeyInfo
+    this.selectedSystem = undefined
+    this.selectedSpecification = undefined
+    this.selectedActor = undefined
+    this.selectedTestSuite = undefined
+    this.selectedTestCase = undefined
+    if (this.apiInfo.specifications.length > 0) {
+      this.selectedSpecification = this.apiInfo.specifications[0]
+      this.specificationChanged()
+    }
+    if (this.apiInfo.systems.length > 0) {
+      this.selectedSystem = this.apiInfo.systems[0]
     }
   }
 

@@ -42,7 +42,7 @@ export class ConformanceSnapshotsModalComponent extends BaseComponent implements
     private conformanceService: ConformanceService,
     private popupService: PopupService,
     private confirmationDialogService: ConfirmationDialogService,
-    private dataService: DataService
+    public dataService: DataService
   ) { super() }
 
   ngOnInit(): void {
@@ -54,7 +54,7 @@ export class ConformanceSnapshotsModalComponent extends BaseComponent implements
     this.snapshots = []
     this.visibleSnapshots = []
     this.snapshotsStatus.status = Constants.STATUS.PENDING
-    this.conformanceService.getConformanceSnapshots(this.communityId)
+    this.conformanceService.getConformanceSnapshots(this.communityId, true)
     .subscribe((data) => {
       this.snapshots = data.snapshots
       this.snapshots.unshift({
@@ -89,7 +89,8 @@ export class ConformanceSnapshotsModalComponent extends BaseComponent implements
       snapshotTime: snapshot.snapshotTime,
       hidden: snapshot.hidden,
       sameLabel: snapshot.hidden || snapshot.publicLabel == undefined,
-      latest: snapshot.latest
+      latest: snapshot.latest,
+      apiKey: snapshot.apiKey
     }
     this.editMode = true
     if (!snapshot.latest) {

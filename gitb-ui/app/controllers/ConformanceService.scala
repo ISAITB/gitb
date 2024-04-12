@@ -1053,7 +1053,7 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
     val publicLabel = ParameterExtractor.optionalBodyParameter(request, Parameters.PUBLIC_LABEL)
     val isPublic = ParameterExtractor.requiredBodyParameter(request, Parameters.PUBLIC).toBoolean
     val snapshot = conformanceManager.createConformanceSnapshot(communityId, label, publicLabel, isPublic)
-    ResponseConstructor.constructJsonResponse(JsonUtil.jsConformanceSnapshot(snapshot, public = false).toString)
+    ResponseConstructor.constructJsonResponse(JsonUtil.jsConformanceSnapshot(snapshot, public = false, withApiKey = true).toString)
   }
 
   def getConformanceSnapshot(snapshotId: Long): Action[AnyContent] = authorizedAction { request =>
@@ -1064,7 +1064,7 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
       authorizationManager.canManageConformanceSnapshot(request, snapshotId)
     }
     val snapshot = conformanceManager.getConformanceSnapshot(snapshotId)
-    ResponseConstructor.constructJsonResponse(JsonUtil.jsConformanceSnapshot(snapshot, public).toString)
+    ResponseConstructor.constructJsonResponse(JsonUtil.jsConformanceSnapshot(snapshot, public, withApiKey = false).toString)
   }
 
   def getConformanceSnapshots(): Action[AnyContent] = authorizedAction { request =>
@@ -1075,9 +1075,10 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
     } else {
       authorizationManager.canManageCommunity(request, communityId)
     }
+    val withApiKeys = ParameterExtractor.optionalBooleanQueryParameter(request, Parameters.KEYS).getOrElse(false)
     val snapshots = conformanceManager.getConformanceSnapshots(communityId, public)
     val latestLabel = conformanceManager.getLatestConformanceStatusLabel(communityId)
-    ResponseConstructor.constructJsonResponse(JsonUtil.jsConformanceSnapshotList(latestLabel, snapshots, public).toString)
+    ResponseConstructor.constructJsonResponse(JsonUtil.jsConformanceSnapshotList(latestLabel, snapshots, public, withApiKeys).toString)
   }
 
   def setLatestConformanceStatusLabel(communityId: Long): Action[AnyContent] = authorizedAction { request =>

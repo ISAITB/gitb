@@ -73,6 +73,8 @@
                     <app-api-key-info 
                         [organisationId]="orgId" 
                         [organisationName]="organisation.fname"
+                        [adminOrganisation]="organisation.adminOrganization == true"
+                        [communityId]="communityId"
                         [loadData]="loadApiInfo">
                     </app-api-key-info>
                 </div>

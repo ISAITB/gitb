@@ -42,6 +42,15 @@
                     <div app-tooltip class="col-auto" [tbTooltip]="snapshotToEdit.latest?'The alternate label of the latest conformance testing status used to present it to the community users.':'The alternate label of the snapshot used to present it to the community users.'"></div>
                 </div>
             </div>
+            @if (dataService.configuration.automationApiEnabled && !snapshotToEdit.latest && snapshotToEdit.apiKey != undefined) {
+                <div class="row mt-3">
+                    <label class="col-3 col-form-label text-end" for="apiKey">API key:</label>
+                    <div class="col-8">
+                        <app-api-key-text idName="apiKey" name="apiKey" [key]="snapshotToEdit.apiKey"></app-api-key-text>
+                    </div>
+                    <div app-tooltip class="col-auto" [tbTooltip]="'The key to use when calling the Test Bed\'s REST API to identify the snapshot.'"></div>
+                </div>
+            }
         } @else {
             <div class="alert alert-info rounded">
                 <span>Select the snapshot to view in the conformance dashboard.</span>
