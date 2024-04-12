@@ -23,6 +23,10 @@
       "description": "Operations relevant to configuration actions."
     },
     {
+      "name": "Conformance statements",
+      "description": "Operations relevant to conformance statements."
+    },
+    {
       "name": "Test sessions",
       "description": "Operations on test sessions."
     },
@@ -60,6 +64,217 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ConfigureResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/conformance/{system}/{actor}": {
+      "put": {
+        "tags": [
+          "Conformance statements"
+        ],
+        "summary": "Create a conformance statement between a system and a specification actor.",
+        "security": [
+          {
+            "OrganisationApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "system",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "The API key identifying the system for which to create the conformance statement."
+          },
+          {
+            "in": "path",
+            "name": "actor",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "The API key identifying the target specification actor."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Conformance statement successfully created."
+          },
+          "400": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Conformance statements"
+        ],
+        "summary": "Delete a conformance statement between a system and a specification actor.",
+        "security": [
+          {
+            "OrganisationApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "system",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "The API key identifying the conformance statement's system."
+          },
+          {
+            "in": "path",
+            "name": "actor",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "The API key identifying the conformance statement's specification actor."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Conformance statement successfully deleted."
+          },
+          "400": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Conformance statements"
+        ],
+        "summary": "Get a conformance statement report for a system and actor pair considering the latest conformance testing status.",
+        "security": [
+          {
+            "OrganisationApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "system",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "The API key identifying the system for which to create the conformance statement."
+          },
+          {
+            "in": "path",
+            "name": "actor",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "The API key identifying the target specification actor."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Conformance statement report successfully returned.",
+            "content": {
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConformanceStatementReport"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/conformance/{system}/{actor}/{snapshot}": {
+      "get": {
+        "tags": [
+          "Conformance statements"
+        ],
+        "summary": "Get a conformance statement report for a system and actor pair considering a given conformance snapshot.",
+        "security": [
+          {
+            "OrganisationApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "system",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "The API key identifying the system for which to create the conformance statement."
+          },
+          {
+            "in": "path",
+            "name": "actor",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "The API key identifying the target specification actor."
+          },
+          {
+            "in": "path",
+            "name": "snapshot",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "The API key identifying the conformance snapshot."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Conformance statement report successfully returned.",
+            "content": {
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConformanceStatementReport"
                 }
               }
             }
@@ -1240,6 +1455,351 @@
         ],
         "additionalProperties": false
       },
+      "ConformanceStatementReport": {
+        "description": "XML conformance statement report.",
+        "type": "object",
+        "required": [
+          "metadata",
+          "statement"
+        ],
+        "properties": {
+          "metadata": {
+            "description": "The report's metadata.",
+            "type": "object",
+            "required": [
+              "reportTime"
+            ],
+            "properties": {
+              "reportTime": {
+                "description": "The date of the report.",
+                "type": "string"
+              }
+            }
+          },
+          "statement": {
+            "description": "The content of the report.",
+            "type": "object",
+            "required": [
+              "definition",
+              "summary",
+              "testOverview"
+            ],
+            "properties": {
+              "definition": {
+                "description": "The context defining what the report concerns.",
+                "type": "object",
+                "required": [
+                  "party",
+                  "domain",
+                  "specification",
+                  "actor"
+                ],
+                "properties": {
+                  "party": {
+                    "description": "The party linked to the conformance statement.",
+                    "type": "object",
+                    "properties": {
+                      "organisation": {
+                        "$ref": "#/components/schemas/PartyDefinition"
+                      },
+                      "system": {
+                        "$ref": "#/components/schemas/PartyDefinition"
+                      }
+                    }
+                  },
+                  "domain": {
+                    "$ref": "#/components/schemas/ConformanceItemInformation"
+                  },
+                  "specificationGroup": {
+                    "$ref": "#/components/schemas/ConformanceItemInformation"
+                  },
+                  "specification": {
+                    "$ref": "#/components/schemas/ConformanceItemInformation"
+                  },
+                  "actor": {
+                    "$ref": "#/components/schemas/ConformanceItemInformation"
+                  }
+                }
+              },
+              "summary": {
+                "description": "The test result summary for the report.",
+                "type": "object",
+                "required": [
+                  "status",
+                  "succeeded",
+                  "failed",
+                  "incomplete"
+                ],
+                "properties": {
+                  "status": {
+                    "description": "The overall result status.",
+                    "type": "string",
+                    "enum": [
+                      "SUCCESS",
+                      "FAILURE",
+                      "UNDEFINED"
+                    ]
+                  },
+                  "succeeded": {
+                    "description": "The number of succeeded tests or statements.",
+                    "type": "number"
+                  },
+                  "failed": {
+                    "description": "The number of failed tests or statements.",
+                    "type": "number"
+                  },
+                  "incomplete": {
+                    "description": "The number of incomplete tests or statements.",
+                    "type": "number"
+                  }
+                }
+              },
+              "lastUpdate": {
+                "description": "The last time the conformance statement's status was updated.",
+                "type": "string"
+              },
+              "testOverview": {
+                "description": "The overview of test results.",
+                "type": "object",
+                "properties": {
+                  "testSuite": {
+                    "description": "Result for a specific test suite.",
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "metadata": {
+                          "$ref": "#/components/schemas/TestDefinitionMetadata"
+                        },
+                        "result": {
+                          "description": "The test suite's overall result status.",
+                          "type": "string",
+                          "enum": [
+                            "SUCCESS",
+                            "FAILURE",
+                            "UNDEFINED"
+                          ]
+                        },
+                        "testCases": {
+                          "description": "The list of test cases included in the test suite.",
+                          "type": "object",
+                          "properties": {
+                            "testCase": {
+                              "description": "A test case.",
+                              "type": "array",
+                              "items": {
+                                "$ref": "#/components/schemas/TestCaseOverview"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "testDetails": {
+                "description": "The list of latest relevant test case results.",
+                "type": "object",
+                "properties": {
+                  "testCase": {
+                    "description": "A test case result.",
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/TestCaseOverviewReport"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "TestCaseOverview": {
+        "description": "Overview information for a specific test case.",
+        "type": "object",
+        "required": [
+          "result"
+        ],
+        "properties": {
+          "metadata": {
+            "$ref": "#/components/schemas/TestDefinitionMetadata"
+          },
+          "result": {
+            "description": "The test suite's overall result status.",
+            "type": "string",
+            "enum": [
+              "SUCCESS",
+              "FAILURE",
+              "UNDEFINED"
+            ]
+          },
+          "lastUpdate": {
+            "description": "The last time the test case was executed.",
+            "type": "string"
+          },
+          "optional": {
+            "description": "Whether the test case is flagged as optional.",
+            "type": "boolean",
+            "default": false,
+            "xml": {
+              "attribute": true
+            }
+          },
+          "disabled": {
+            "description": "Whether the test case is flagged as disabled.",
+            "type": "boolean",
+            "default": false,
+            "xml": {
+              "attribute": true
+            }
+          },
+          "ref": {
+            "description": "Reference to a specific test session report.",
+            "type": "string",
+            "xml": {
+              "attribute": true
+            }
+          }
+        }
+      },
+      "ConformanceItemInformation": {
+        "description": "Information on an element in the conformance hierarchy.",
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "properties": {
+          "name": {
+            "description": "The name of the element.",
+            "type": "string"
+          },
+          "description": {
+            "description": "The description of the element.",
+            "type": "string"
+          }
+        }
+      },
+      "PartyDefinition": {
+        "description": "Information on the party linked to a report.",
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "properties": {
+          "name": {
+            "description": "The name of the party.",
+            "type": "string"
+          },
+          "properties": {
+            "$ref": "#/components/schemas/PartyProperties"
+          }
+        }
+      },
+      "PartyProperties": {
+        "description": "The list of custom party properties",
+        "type": "object",
+        "properties": {
+          "property": {
+            "description": "A custom party property.",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "name"
+              ],
+              "properties": {
+                "name": {
+                  "description": "The name of the property",
+                  "type": "string",
+                  "xml": {
+                    "attribute": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "TestDefinitionMetadata": {
+        "description": "Metadata about the relevant test case/suite.",
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "properties": {
+          "name": {
+            "description": "The test case/suite's name.",
+            "type": "string"
+          },
+          "version": {
+            "description": "The test case/suite's version.",
+            "type": "string"
+          },
+          "description": {
+            "description": "The test case/suite's description.",
+            "type": "string"
+          },
+          "tags": {
+            "description": "The test case/suite's tags.",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "minLength": 0,
+              "properties": {
+                "tag": {
+                  "description": "A test case/suite tag.",
+                  "type": "object",
+                  "required": [
+                    "name"
+                  ],
+                  "properties": {
+                    "name": {
+                      "description": "The name of the tag.",
+                      "type": "string",
+                      "xml": {
+                        "attribute": true
+                      }
+                    },
+                    "foreground": {
+                      "description": "The foreground colour of the tag.",
+                      "type": "string",
+                      "xml": {
+                        "attribute": true
+                      }
+                    },
+                    "background": {
+                      "description": "The background colour of the tag.",
+                      "type": "string",
+                      "xml": {
+                        "attribute": true
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "specification": {
+            "description": "The normative specification reference for the test case.",
+            "type": "object",
+            "properties": {
+              "reference": {
+                "description": "The specification's reference code.",
+                "type": "string"
+              },
+              "description": {
+                "description": "A description of the specification reference.",
+                "type": "string"
+              },
+              "link": {
+                "description": "A link to online documentation for the specification.",
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
       "TestCaseOverviewReport": {
         "description": "XML test case report for a given test session.",
         "type": "object",
@@ -1257,21 +1817,7 @@
             }
           },
           "metadata": {
-            "description": "Metadata about the relevant test case.",
-            "type": "object",
-            "required": [
-              "name"
-            ],
-            "properties": {
-              "name": {
-                "description": "The test case's name.",
-                "type": "string"
-              },
-              "description": {
-                "description": "The test case's description.",
-                "type": "string"
-              }
-            }
+            "$ref": "#/components/schemas/TestDefinitionMetadata"
           },
           "startTime": {
             "description": "The test session's start time.",

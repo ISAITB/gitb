@@ -9,6 +9,7 @@ import com.gitb.tpl.TestCase
 import com.gitb.tr._
 import com.gitb.utils.{XMLDateTimeUtils, XMLUtils}
 import config.Configurations
+import exceptions.{AutomationApiException, ErrorCodes}
 import models.Enums.ConformanceStatementItemType.ConformanceStatementItemType
 import models.Enums.OverviewLevelType.OverviewLevelType
 import models.Enums.{ConformanceStatementItemType, OverviewLevelType, TestResultStatus, XmlReportType}
@@ -46,7 +47,7 @@ import scala.util.Using
   * Created by senan on 03.12.2014.
   */
 @Singleton
-class ReportManager @Inject() (communityManager: CommunityManager, organizationManager: OrganizationManager, systemManager: SystemManager, domainParameterManager: DomainParameterManager, reportHelper: ReportHelper, triggerHelper: TriggerHelper, testCaseReportProducer: TestCaseReportProducer, testSuiteManager: TestSuiteManager, specificationManager: SpecificationManager, conformanceManager: ConformanceManager, dbConfigProvider: DatabaseConfigProvider, communityLabelManager: CommunityLabelManager, repositoryUtils: RepositoryUtils, testResultManager: TestResultManager) extends BaseManager(dbConfigProvider) {
+class ReportManager @Inject() (communityManager: CommunityManager, apiHelper: AutomationApiHelper, organizationManager: OrganizationManager, systemManager: SystemManager, domainParameterManager: DomainParameterManager, reportHelper: ReportHelper, triggerHelper: TriggerHelper, testCaseReportProducer: TestCaseReportProducer, testSuiteManager: TestSuiteManager, specificationManager: SpecificationManager, conformanceManager: ConformanceManager, dbConfigProvider: DatabaseConfigProvider, communityLabelManager: CommunityLabelManager, repositoryUtils: RepositoryUtils, testResultManager: TestResultManager) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
 
@@ -1668,6 +1669,45 @@ class ReportManager @Inject() (communityManager: CommunityManager, organizationM
     val labels = communityLabelManager.getLabels(communityId)
     val conformanceInfo = createDemoDataForConformanceStatementReport(labels)
     generateConformanceStatementReportInXML(reportPath, transformer, addTestCases, conformanceInfo, isDemo = true)
+  }
+
+  def generateConformanceStatementReportInXMLViaApi(reportPath: Path, organisationKey: String, systemKey: String, actorKey: String, snapshotKey: Option[String]): Path = {
+    val idsForReport = exec(for {
+      // Load statement IDs.
+      statementIds <- apiHelper.getStatementIdsForApiKeys(organisationKey, systemKey, actorKey, snapshotKey)
+      // Check that snapshot key was correct.
+      _ <- if (snapshotKey.isDefined && statementIds.snapshotId.isEmpty) {
+        throw AutomationApiException(ErrorCodes.API_SNAPSHOT_DOES_NOT_EXIST, "Unable to find conformance snapshot based on provided API key")
+      } else {
+        DBIO.successful(())
+      }
+      // Check to see if statement already exists
+      statementExists <- if (statementIds.snapshotId.isEmpty) {
+        PersistenceSchema.systemImplementsActors
+        .filter(_.systemId === statementIds.systemId)
+        .filter(_.actorId === statementIds.actorId)
+        .exists
+        .result
+      } else {
+        PersistenceSchema.conformanceSnapshotResults
+          .join(PersistenceSchema.conformanceSnapshots).on(_.snapshotId === _.id)
+          .filter(_._1.systemId === statementIds.systemId)
+          .filter(_._1.actorId === statementIds.actorId)
+          .filter(_._1.organisationId === statementIds.organisationId)
+          .filter(_._2.community === statementIds.communityId)
+          .filter(_._2.id === statementIds.snapshotId.get)
+          .exists
+          .result
+      }
+      _ <- {
+        if (statementExists) {
+          DBIO.successful(())
+        } else {
+          throw AutomationApiException(ErrorCodes.API_STATEMENT_DOES_NOT_EXIST, "Unable to find conformance statement based on provided API keys")
+        }
+      }
+    } yield statementIds)
+    generateConformanceStatementReportInXML(reportPath, addTestCases = true, idsForReport.actorId, idsForReport.systemId, idsForReport.communityId, idsForReport.snapshotId)
   }
 
   def generateConformanceStatementReportInXML(reportPath: Path, addTestCases: Boolean, actorId: Long, systemId: Long, communityId: Long, snapshotId: Option[Long]): Path = {
