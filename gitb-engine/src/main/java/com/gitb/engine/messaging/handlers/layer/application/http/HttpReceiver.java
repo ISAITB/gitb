@@ -225,10 +225,15 @@ public class HttpReceiver extends AbstractTransactionReceiver {
         message
                 .getFragments()
                 .put(HttpMessagingHandler.HTTP_HEADERS_FIELD_NAME, constructHttpHeadersFragment(response));
-        if (statusCode != null && statusCode != HttpStatus.SC_NO_CONTENT) {
+        if (statusCode != null) {
             message
                     .getFragments()
-                    .put(HttpMessagingHandler.HTTP_BODY_FIELD_NAME, constructHttpBodyFragment(entity));
+                    .put(HttpMessagingHandler.HTTP_STATUS_FIELD_NAME, new StringType(statusCode.toString()));
+            if (statusCode != HttpStatus.SC_NO_CONTENT) {
+                message
+                        .getFragments()
+                        .put(HttpMessagingHandler.HTTP_BODY_FIELD_NAME, constructHttpBodyFragment(entity));
+            }
         }
 
         return message;

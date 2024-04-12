@@ -30,6 +30,7 @@ public class HttpMessagingHandler extends AbstractMessagingHandler {
 	public static final String HTTP_METHOD_FIELD_NAME = "http_method";
 	public static final String HTTP_PATH_FIELD_NAME = "http_path";
     public static final String HTTP_PROTOCOL_VERSION_FIELD_NAME = "http_version";
+	public static final String HTTP_STATUS_FIELD_NAME = "http_status";
 
 	public static final String HTTP_URI_CONFIG_NAME = "http.uri";
 	public static final String HTTP_METHOD_CONFIG_NAME = "http.method";
