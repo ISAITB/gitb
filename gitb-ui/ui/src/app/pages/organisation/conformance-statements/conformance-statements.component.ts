@@ -9,10 +9,11 @@ import { System } from 'src/app/types/system';
 import { ConformanceStatementItem } from 'src/app/types/conformance-statement-item';
 import { ConformanceService } from 'src/app/services/conformance.service';
 import { ConformanceSnapshot } from 'src/app/types/conformance-snapshot';
-import { Observable, forkJoin } from 'rxjs';
+import { Observable, forkJoin, of } from 'rxjs';
 import { ExportReportEvent } from 'src/app/types/export-report-event';
 import { ReportSupportService } from 'src/app/services/report-support.service';
 import { BaseConformanceItemDisplayComponent } from 'src/app/components/base-conformance-item-display/base-conformance-item-display.component';
+import { ConformanceSnapshotList } from 'src/app/types/conformance-snapshot-list';
 
 @Component({
   selector: 'app-conformance-statements',
@@ -54,10 +55,12 @@ export class ConformanceStatementsComponent extends BaseConformanceItemDisplayCo
 
   ngOnInit(): void {
     this.organisationId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.ORGANISATION_ID))
+    let isOwnConformanceStatements = true
     if (this.route.snapshot.paramMap.has(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID)) {
       this.communityId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID))
       this.communityIdForSnapshots = this.communityId
       this.showBack = this.organisationId >= 0
+      isOwnConformanceStatements = false
     } else {
       this.communityIdForSnapshots = this.dataService.vendor!.community
     }
@@ -70,7 +73,13 @@ export class ConformanceStatementsComponent extends BaseConformanceItemDisplayCo
     this.showDomain = this.dataService.isSystemAdmin || this.dataService.community?.domainId == undefined
     this.columnCount = this.showDomain?6:5
     const systemsLoaded = this.systemService.getSystemsByOrganisation(this.organisationId, snapshotId)
-    const snapshotsLoaded = this.conformanceService.getConformanceSnapshots(this.communityIdForSnapshots)
+    let snapshotsLoaded: Observable<ConformanceSnapshotList>
+    if (isOwnConformanceStatements && (this.dataService.isCommunityAdmin || this.dataService.isSystemAdmin)) {
+      // Administrator organisations are not included in conformance snapshots
+      snapshotsLoaded = of({snapshots: []})
+    } else {
+      snapshotsLoaded = this.conformanceService.getConformanceSnapshots(this.communityIdForSnapshots)
+    }
     forkJoin([systemsLoaded, snapshotsLoaded]).subscribe((results) => {
       // Snapshots
       this.conformanceSnapshots = results[1].snapshots
