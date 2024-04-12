@@ -214,10 +214,17 @@ export class OrganisationService {
 		})
   }
 
-  getAutomationKeysForOrganisation(organisationId: number) {
+  getAutomationKeysForOrganisation(organisationId: number, snapshotId?: number) {
+    let params: any
+    if (snapshotId != undefined) {
+      params = {
+        snapshot: snapshotId        
+      }
+    }
     return this.restService.get<ApiKeyInfo>({
       path: ROUTES.controllers.OrganizationService.getAutomationKeysForOrganisation(organisationId).url,
-      authenticate: true
+      authenticate: true,
+      params: params
     })
   }
 

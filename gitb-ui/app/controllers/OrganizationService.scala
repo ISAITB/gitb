@@ -255,8 +255,13 @@ class OrganizationService @Inject() (implicit ec: ExecutionContext, repositoryUt
   }
 
   def getAutomationKeysForOrganisation(organisationId: Long) = authorizedAction { request =>
-    authorizationManager.canViewOrganisationAutomationKeys(request, organisationId)
-    val result = organizationManager.getAutomationKeysForOrganisation(organisationId)
+    val snapshotId = ParameterExtractor.optionalLongQueryParameter(request, Parameters.SNAPSHOT)
+    if (snapshotId.isEmpty) {
+      authorizationManager.canViewOrganisationAutomationKeys(request, organisationId)
+    } else {
+      authorizationManager.canViewOrganisationAutomationKeysInSnapshot(request, organisationId, snapshotId.get)
+    }
+    val result = organizationManager.getAutomationKeysForOrganisation(organisationId, snapshotId)
     ResponseConstructor.constructJsonResponse(JsonUtil.jsApiKeyInfo(result).toString)
   }
 

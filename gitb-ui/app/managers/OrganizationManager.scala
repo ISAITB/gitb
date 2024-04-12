@@ -614,32 +614,62 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils, systemMan
     exec(PersistenceSchema.organizations.filter(_.id === organisationId).map(_.apiKey).update(apiKey).transactionally)
   }
 
-  def getAutomationKeysForOrganisation(organisationId: Long): ApiKeyInfo = {
+  def getAutomationKeysForOrganisation(organisationId: Long, snapshotId: Option[Long]): ApiKeyInfo = {
     val results = exec(for {
       organisationApiKey <- PersistenceSchema.organizations.filter(_.id === organisationId).map(_.apiKey).result.head
-      systemApiKeys <- PersistenceSchema.systems.filter(_.owner === organisationId).map(x => (x.id, x.fullname, x.apiKey)).sortBy(_._2.asc).result
+      systemApiKeys <- if (snapshotId.isEmpty) {
+        PersistenceSchema.systems.filter(_.owner === organisationId).map(x => (x.id, x.fullname, x.apiKey)).sortBy(_._2.asc).result
+      } else {
+        PersistenceSchema.conformanceSnapshotSystems
+          .join(PersistenceSchema.conformanceSnapshotResults).on((a, b) => a.id === b.systemId && a.snapshotId === b.snapshotId)
+          .filter(_._2.snapshotId === snapshotId)
+          .filter(_._2.organisationId === organisationId)
+          .map(x => (x._1.id, x._1.fullname, x._1.apiKey))
+          .distinct
+          .result
+      }
       domainApiKeys <- {
         if (systemApiKeys.nonEmpty) {
-          PersistenceSchema.conformanceResults
-            .join(PersistenceSchema.specifications).on(_.spec === _.id)
-            .join(PersistenceSchema.actors).on(_._1.actor === _.id)
-            .join(PersistenceSchema.testSuites).on(_._1._1.testsuite === _.id)
-            .join(PersistenceSchema.testCases).on(_._1._1._1.testcase === _.id)
-            .joinLeft(PersistenceSchema.specificationGroups).on(_._1._1._1._2.group === _.id)
-            .filter(_._1._1._1._1._1.sut inSet systemApiKeys.map(_._1).toSet)
-            .map(x => (
-              x._1._1._1._1._2.shortname, // Specification name [1]
-              x._1._1._1._2.name, // Actor name [2]
-              x._1._1._1._2.apiKey, // Actor API key [3]
-              x._1._1._2.shortname, // Test suite name [4]
-              x._1._1._2.identifier, // Test suite identifier [5]
-              x._1._2.shortname, // Test case name [6]
-              x._1._2.identifier, // Test case identifier [7]
-              x._1._1._1._1._2.id, // Specification ID [8]
-              x._2.map(_.shortname) // Specification group name [9]
-            ))
-            .sortBy(x => (x._9.asc, x._1.asc, x._2.asc, x._4.asc, x._6.asc))
-            .result
+          val query = if (snapshotId.isEmpty) {
+            PersistenceSchema.conformanceResults
+              .join(PersistenceSchema.specifications).on(_.spec === _.id)
+              .join(PersistenceSchema.actors).on(_._1.actor === _.id)
+              .join(PersistenceSchema.testSuites).on(_._1._1.testsuite === _.id)
+              .join(PersistenceSchema.testCases).on(_._1._1._1.testcase === _.id)
+              .joinLeft(PersistenceSchema.specificationGroups).on(_._1._1._1._2.group === _.id)
+              .filter(_._1._1._1._1._1.sut inSet systemApiKeys.map(_._1).toSet)
+              .map(x => (
+                x._1._1._1._1._2.shortname, // Specification name [1]
+                x._1._1._1._2.name, // Actor name [2]
+                x._1._1._1._2.apiKey, // Actor API key [3]
+                x._1._1._2.shortname, // Test suite name [4]
+                x._1._1._2.identifier, // Test suite identifier [5]
+                x._1._2.shortname, // Test case name [6]
+                x._1._2.identifier, // Test case identifier [7]
+                x._1._1._1._1._2.id, // Specification ID [8]
+                x._2.map(_.shortname) // Specification group name [9]
+              ))
+          } else {
+            PersistenceSchema.conformanceSnapshotResults
+              .join(PersistenceSchema.conformanceSnapshotSpecifications).on((a, b) => a.specificationId === b.id && a.snapshotId === b.snapshotId)
+              .join(PersistenceSchema.conformanceSnapshotActors).on((a, b) => a._1.actorId === b.id && a._1.snapshotId === b.snapshotId)
+              .join(PersistenceSchema.conformanceSnapshotTestSuites).on((a, b) => a._1._1.testSuiteId === b.id && a._1._1.snapshotId === b.snapshotId)
+              .join(PersistenceSchema.conformanceSnapshotTestCases).on((a, b) => a._1._1._1.testCaseId === b.id && a._1._1._1.snapshotId === b.snapshotId)
+              .joinLeft(PersistenceSchema.conformanceSnapshotSpecificationGroups).on((a, b) => a._1._1._1._1.specificationGroupId === b.id && a._1._1._1._1.snapshotId === b.snapshotId)
+              .filter(_._1._1._1._1._1.systemId inSet systemApiKeys.map(_._1).toSet)
+              .map(x => (
+                x._1._1._1._1._2.shortname, // Specification name [1]
+                x._1._1._1._2.name, // Actor name [2]
+                x._1._1._1._2.apiKey, // Actor API key [3]
+                x._1._1._2.shortname, // Test suite name [4]
+                x._1._1._2.identifier, // Test suite identifier [5]
+                x._1._2.shortname, // Test case name [6]
+                x._1._2.identifier, // Test case identifier [7]
+                x._1._1._1._1._2.id, // Specification ID [8]
+                x._2.map(_.shortname) // Specification group name [9]
+              ))
+          }
+          query.distinct.sortBy(x => (x._9.asc, x._1.asc, x._2.asc, x._4.asc, x._6.asc)).result
         } else {
           DBIO.successful(List.empty)
         }

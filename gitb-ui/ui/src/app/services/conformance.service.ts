@@ -949,13 +949,14 @@ export class ConformanceService {
     })
   }
 
-  getConformanceSnapshots(communityId: number) {
+  getConformanceSnapshots(communityId: number, withApiKeys?: boolean) {
     return this.restService.get<ConformanceSnapshotList>({
       path: ROUTES.controllers.ConformanceService.getConformanceSnapshots().url,
       authenticate: true,
       params: {
         community_id: communityId,
-        public: !this.dataService.isSystemAdmin && !this.dataService.isCommunityAdmin
+        public: !this.dataService.isSystemAdmin && !this.dataService.isCommunityAdmin,
+        keys: withApiKeys == true
       }
     })
   }

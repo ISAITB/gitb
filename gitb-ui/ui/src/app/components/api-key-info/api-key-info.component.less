@@ -7,4 +7,21 @@ table {
     .typeKey {
         width: 50%;
     }
+    tr.with-top-border {
+        td {
+            border-top-width: var(--bs-border-width);
+        }
+    }
+}
+.api-keys-container {
+    position: relative;
+    .api-keys-pending {
+        position: absolute;
+        display: flex;
+        justify-content: center;
+        top: 90px;
+        width: 100%;
+        z-index: 1;     
+        font-size: x-large;   
+    }
 }
