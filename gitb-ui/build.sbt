@@ -12,7 +12,7 @@ val pekkoVersion = "1.0.2"
 val jacksonVersion = "2.16.1"
 val cxfVersion = "4.0.4"
 val commonsTextVersion = "1.11.0"
-val gitbTypesVersion = "1.22.0"
+val gitbTypesVersion = "1.23.0-SNAPSHOT"
 val bouncyCastleVersion = "1.78"
 
 useCoursier := false
@@ -59,7 +59,7 @@ libraryDependencies ++= Seq(
   "org.apache.tika" % "tika-core" % "2.9.2",
   "org.webjars" %% "webjars-play" % "3.0.1",
   "org.webjars" % "jquery" % "3.7.1",
-  "org.webjars" % "bootstrap" % "5.3.2",
+  "org.webjars" % "bootstrap" % "5.3.3",
   "com.sun.mail" % "jakarta.mail" % "2.0.1",
   "jakarta.activation" % "jakarta.activation-api" % "2.1.3",
   "jakarta.xml.ws" % "jakarta.xml.ws-api" % "4.0.1",
