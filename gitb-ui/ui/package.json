@@ -6,7 +6,8 @@
     "start": "ng serve --open --proxy-config src/proxy.conf.js --host 0.0.0.0",
     "build": "ng build --progress --output-path ../app/assets/build",
     "build:dev": "ng build --progress --watch --output-path ../app/assets/build",
-    "build:prod": "ng build --progress --configuration production --output-path ../app/assets/build --output-hashing none"
+    "build:prod": "ng build --progress --configuration production --output-path ../app/assets/build --output-hashing none",
+    "audit": "better-npm-audit audit --production"
   },
   "private": true,
   "dependencies": {
@@ -42,6 +43,7 @@
     "@types/jasmine": "^5.1.4",
     "@types/lodash": "^4.17.0",
     "@types/node": "^20.12.7",
+    "better-npm-audit": "^3.7.3",
     "codelyzer": "^6.0.2",
     "ts-node": "~10.9.2",
     "tslib": "^2.5.0",
