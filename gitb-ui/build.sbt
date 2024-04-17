@@ -33,7 +33,6 @@ libraryDependencies ++= Seq(
   "com.gitb" % "gitb-validator-tdl" % "1.0-SNAPSHOT",
   "com.gitb" % "gitb-xml-resources" % "1.0-SNAPSHOT",
   "com.mysql" % "mysql-connector-j" % "8.3.0" exclude("com.google.protobuf", "protobuf-java"), // Exclude protobuf as we don't need the X DevAPI.
-  // ... END.
   "org.apache.pekko" %% "pekko-actor" % pekkoVersion,
   "org.apache.pekko" %% "pekko-actor-typed" % pekkoVersion,
   "org.apache.pekko" %% "pekko-remote" % pekkoVersion,
@@ -67,18 +66,14 @@ libraryDependencies ++= Seq(
   "jakarta.xml.bind" % "jakarta.xml.bind-api" % "4.0.2",
   "com.sun.xml.bind" % "jaxb-impl" % "4.0.5",
   "jakarta.xml.soap" % "jakarta.xml.soap-api" % "3.0.1",
-  "com.sun.xml.messaging.saaj" % "saaj-impl" % "3.0.3",
-  "com.sun.org.apache.xml.internal" % "resolver" % "20050927",
-  "com.sun.xml.stream.buffer" % "streambuffer" % "2.1.0",
-  "com.sun.xml.ws" % "policy" % "4.0.2",
-  "org.glassfish.gmbal" % "gmbal-api-only" % "4.0.3",
+  "com.sun.xml.messaging.saaj" % "saaj-impl" % "3.0.3", // Needed for SOAP exchanges
   "org.bouncycastle" % "bcmail-jdk18on" % bouncyCastleVersion,
   "org.bouncycastle" % "bcpkix-jdk18on" % bouncyCastleVersion,
   "org.apache.pdfbox" % "pdfbox" % "2.0.31",
   "org.jasypt" % "jasypt" % "1.9.3",
   "org.apache.httpcomponents" % "httpclient" % "4.5.14",
   "org.flywaydb" %% "flyway-play" % "9.0.0",
-  "org.flywaydb" % "flyway-mysql" % "9.16.0",
+  "org.flywaydb" % "flyway-mysql" % "10.11.0",
   "com.googlecode.owasp-java-html-sanitizer" % "owasp-java-html-sanitizer" % "20220608.1",
   "net.lingala.zip4j" % "zip4j" % "2.11.5",
   // Specific version overrides (to be removed if no longer needed)
