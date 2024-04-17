@@ -64,22 +64,6 @@
 			<artifactId>jakarta.jws-api</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>com.sun.org.apache.xml.internal</groupId>
-			<artifactId>resolver</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>com.sun.xml.stream.buffer</groupId>
-			<artifactId>streambuffer</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>com.sun.xml.ws</groupId>
-			<artifactId>policy</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.glassfish.gmbal</groupId>
-			<artifactId>gmbal-api-only</artifactId>
-		</dependency>
-		<dependency>
 			<groupId>com.github.curious-odd-man</groupId>
 			<artifactId>rgxgen</artifactId>
 		</dependency>

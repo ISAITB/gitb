@@ -32,7 +32,7 @@
         <version.springBoot>3.2.4</version.springBoot>
         <version.gitbTypes>1.23.0-SNAPSHOT</version.gitbTypes>
         <version.bouncycastle>1.78</version.bouncycastle>
-        <version.helgerSchematron>7.1.3</version.helgerSchematron>
+        <version.helgerSchematron>8.0.0</version.helgerSchematron>
         <version.metaInfServices>1.9</version.metaInfServices>
         <version.cxf>4.0.4</version.cxf>
         <version.httpComponents>4.5.13</version.httpComponents>
@@ -44,20 +44,16 @@
         <version.xerces>2.12.2</version.xerces>
         <version.jaxbApi>4.0.1</version.jaxbApi>
         <version.jaxbRuntime>4.0.4</version.jaxbRuntime>
-        <version.saxon>12.2</version.saxon>
+        <version.saxon>12.4</version.saxon>
         <version.jaxwsApi>4.0.1</version.jaxwsApi>
         <version.jwsApi>3.0.0</version.jwsApi>
         <version.activation>2.1.2</version.activation>
-        <version.xmlResolver>20050927</version.xmlResolver>
-        <version.xmlStreamBuffer>2.1.0</version.xmlStreamBuffer>
-        <version.xmlWsPolicy>4.0.1</version.xmlWsPolicy>
-        <version.gmbalApi>4.0.3</version.gmbalApi>
         <version.commonsConfiguration>2.10.1</version.commonsConfiguration>
         <version.commonsText>1.11.0</version.commonsText>
         <version.pekko>1.0.2</version.pekko>
         <version.rgxgen>1.4</version.rgxgen>
         <version.saajImpl>3.0.3</version.saajImpl>
-        <version.helgerCommons>11.1.3</version.helgerCommons>
+        <version.helgerCommons>11.1.6</version.helgerCommons>
         <version.dnsJava>3.5.2</version.dnsJava>
         <version.commonsFileUpload>1.5</version.commonsFileUpload>
         <version.commonsCollections>4.4</version.commonsCollections>
@@ -68,9 +64,7 @@
         <version.com.openhtmltopdf>1.0.10</version.com.openhtmltopdf>
         <version.org.jsoup>1.15.4</version.org.jsoup>
         <!-- Other version overrides - START -->
-        <version.woodstox>6.5.1</version.woodstox> <!-- Woodstox version to resolve CVE-2022-40152. This needs to match the version included in CXF core (currently at 4.0.3). -->
-        <version.pdfbox>2.0.30</version.pdfbox>
-        <version.logback>1.4.14</version.logback> <!-- Logback override to resolve CVE-2023-6378 and CVE-2023-6481 -->
+        <version.pdfbox>2.0.31</version.pdfbox>
         <!-- Other version overrides - END -->
         <!-- Properties used for filtering replacements -->
         <timestamp>${maven.build.timestamp}</timestamp>
@@ -278,28 +272,6 @@
                 <artifactId>jakarta.activation-api</artifactId>
                 <version>${version.activation}</version>
             </dependency>
-            <!-- TODO check if needed -->
-            <dependency>
-                <groupId>com.sun.org.apache.xml.internal</groupId>
-                <artifactId>resolver</artifactId>
-                <version>${version.xmlResolver}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.sun.xml.stream.buffer</groupId>
-                <artifactId>streambuffer</artifactId>
-                <version>${version.xmlStreamBuffer}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.sun.xml.ws</groupId>
-                <artifactId>policy</artifactId>
-                <version>${version.xmlWsPolicy}</version>
-            </dependency>
-            <!-- TODO check if needed -->
-            <dependency>
-                <groupId>org.glassfish.gmbal</groupId>
-                <artifactId>gmbal-api-only</artifactId>
-                <version>${version.gmbalApi}</version>
-            </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-configuration2</artifactId>
@@ -416,24 +388,6 @@
                 <artifactId>freemarker</artifactId>
                 <version>${version.freeMarker}</version>
             </dependency>
-            <!-- Woodstox override -->
-            <dependency>
-                <groupId>com.fasterxml.woodstox</groupId>
-                <artifactId>woodstox-core</artifactId>
-                <version>${version.woodstox}</version>
-            </dependency>
-            <!-- Logback override - Start -->
-            <dependency>
-                <groupId>ch.qos.logback</groupId>
-                <artifactId>logback-classic</artifactId>
-                <version>${version.logback}</version>
-            </dependency>
-            <dependency>
-                <groupId>ch.qos.logback</groupId>
-                <artifactId>logback-core</artifactId>
-                <version>${version.logback}</version>
-            </dependency>
-
         </dependencies>
     </dependencyManagement>
 
