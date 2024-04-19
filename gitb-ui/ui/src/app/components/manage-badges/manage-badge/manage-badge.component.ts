@@ -19,7 +19,7 @@ export class ManageBadgeComponent implements OnInit {
   @Input() actorId?: number
   @Input() forReport? = false
 
-  acceptedFileTypes: string[] = ['image/png', 'image/jpeg', 'image/gif' ]
+  acceptedFileTypes: string[] = ['image/png', 'image/jpeg', 'image/gif', 'image/svg+xml' ]
   pathForBadge?: string
   Constants = Constants
 
