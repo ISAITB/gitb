@@ -32,7 +32,7 @@
                 </div>
             </div>
         </section>
-        <div class="container">
+        <div class="container mt-4 mb-4">
             <div class="row">
                 <div class="col-12">
                     An unexpected error occurred while processing your request. If you need to contact the support team about this you can refer to error code <b>@config.errorId</b>.
@@ -54,7 +54,7 @@
                 <div class="footer-links">
                     <div class="footer-link"><a href="@config.userGuideLink">User guide</a></div>
                     @if(config.hasDefaultLegalNotice) {
-                    <div class="footer-link"><a href="#" data-toggle="modal" data-target="#legalModal">Legal notice</a></div>
+                    <div class="footer-link"><a href="#" data-bs-toggle="modal" data-bs-target="#legalModal">Legal notice</a></div>
                     }
                     @if(config.releaseInfoEnabled) {
                     <div class="footer-link"><a href="@config.releaseInfoLink" target="blank">@config.versionNumber</a></div>
@@ -81,7 +81,7 @@
             </div>
             <div class="modal-footer">
                 <div class="btn-toolbar">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                 </div>
             </div>
         </div>

@@ -69,7 +69,7 @@
 									}
 									<p class="mb-0"><b>Privacy note:</b> By connecting you consent to the use of cookies to manage your session.
 										@if(config.hasDefaultLegalNotice) {
-										<span>Please refer to our <a href="#" data-toggle="modal" data-target="#legalModal">legal notice</a> for more information.</span>
+										<span>Please refer to our <a href="#" data-bs-toggle="modal" data-bs-target="#legalModal">legal notice</a> for more information.</span>
 										}
 									</p>
 									@if(config.ssoEnabled && config.inMigrationPeriod) {
@@ -96,7 +96,7 @@
 						<div class="footer-links">
 							<div class="footer-link"><a href="@config.userGuideLink">User guide</a></div>
 							@if(config.hasDefaultLegalNotice) {
-							<div class="footer-link"><a href="#" data-toggle="modal" data-target="#legalModal">Legal notice</a></div>
+							<div class="footer-link"><a href="#" data-bs-toggle="modal" data-bs-target="#legalModal">Legal notice</a></div>
 							}
 							@if(config.moreInfoEnabled) {
 							<div class="footer-link"><a href="@config.moreInfoLink" target="blank">Find out more</a></div>
@@ -127,7 +127,7 @@
 						</div>
 						<div class="modal-footer">
 							<div class="btn-toolbar">
-								<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+								<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
 							</div>
 						</div>
 					</div>
@@ -159,7 +159,7 @@
 										<input id="fileInputControl" name="file" type="file" style="display: none" />
 									</div>
 									<div class="col-auto">
-										<div class="form-control-plaintext"><span data-toggle="tooltip" class="check" title="The archive containing the data to import."><i class="fa-solid fa-question-circle"></i></span></div>
+										<div class="form-control-plaintext"><span data-bs-toggle="tooltip" class="check" title="The archive containing the data to import."><i class="fa-solid fa-question-circle"></i></span></div>
 									</div>
 								</div>
 								<div class="row align-items-center">
@@ -172,7 +172,7 @@
 										<div class="form-check">
 											<input class="form-check-input" id="encryptionPasswordCheck" type="checkbox">
 											<label class="form-check-label" for="encryptionPasswordCheck">Show
-												<div class="inline-tooltip"><div class="check"><span data-toggle="tooltip" class="check" title="Provide the password that was used to encrypt the data archive."><i class="fa-solid fa-question-circle"></i></span></div></div>
+												<div class="inline-tooltip"><div class="check"><span data-bs-toggle="tooltip" class="check" title="Provide the password that was used to encrypt the data archive."><i class="fa-solid fa-question-circle"></i></span></div></div>
 											</label>
 										</div>
 									</div>
