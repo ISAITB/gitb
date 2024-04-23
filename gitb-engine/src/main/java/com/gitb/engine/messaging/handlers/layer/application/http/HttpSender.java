@@ -2,11 +2,11 @@ package com.gitb.engine.messaging.handlers.layer.application.http;
 
 import com.gitb.core.ActorConfiguration;
 import com.gitb.core.Configuration;
-import com.gitb.messaging.Message;
 import com.gitb.engine.messaging.handlers.ServerUtils;
 import com.gitb.engine.messaging.handlers.layer.AbstractTransactionSender;
 import com.gitb.engine.messaging.handlers.model.SessionContext;
 import com.gitb.engine.messaging.handlers.model.TransactionContext;
+import com.gitb.messaging.Message;
 import com.gitb.types.*;
 import com.gitb.utils.ConfigurationUtils;
 import org.apache.http.HttpConnectionFactory;
@@ -192,6 +192,9 @@ public class HttpSender extends AbstractTransactionSender {
                 } else {
                     logger.warn(addMarker(), "Input for " + HttpMessagingHandler.HTTP_PARTS_FIELD_NAME + " must contain map items");
                 }
+            } else {
+                request.addHeader(HTTP.CONTENT_LEN, "0");
+                request.addHeader(HTTP.TARGET_HOST, getHost() + ":" + getPort());
             }
         }
 
