@@ -615,9 +615,12 @@ public class TestCaseContext {
 	}
 
 	public void removeProcessingContext(String txId) {
-		if (processingContexts.containsKey(txId)) {
-			SessionManager.getInstance().removeProcessingSession(processingContexts.get(txId).getSession());
-			processingContexts.remove(txId);
+		if (txId != null && processingContexts.containsKey(txId)) {
+			var context = processingContexts.get(txId);
+			if (context != null) {
+				SessionManager.getInstance().removeProcessingSession(context.getSession());
+				processingContexts.remove(txId);
+			}
 		}
 	}
 

@@ -92,7 +92,12 @@ public class ModuleManager {
 
 	public IMessagingHandler getMessagingHandler(String name) {
 		if (messagingHandlers.containsKey(name)) {
-			return (IMessagingHandler) messagingHandlers.get(name).get();
+			var supplier = messagingHandlers.get(name);
+			if (supplier != null) {
+				return (IMessagingHandler) supplier.get();
+			} else {
+				throw new IllegalStateException("An invalid value [%s] was provided as a messaging handler".formatted(name));
+			}
 		} else {
 			throw new IllegalStateException("An invalid value [%s] was provided as a messaging handler".formatted(name));
 		}
@@ -100,7 +105,12 @@ public class ModuleManager {
 
 	public IValidationHandler getValidationHandler(String name) {
 		if (validationHandlers.containsKey(name)) {
-			return (IValidationHandler) validationHandlers.get(name).get();
+			var supplier = validationHandlers.get(name);
+			if (supplier != null) {
+				return (IValidationHandler) supplier.get();
+			} else {
+				throw new IllegalStateException("An invalid value [%s] was provided as a validation handler".formatted(name));
+			}
 		} else {
 			throw new IllegalStateException("An invalid value [%s] was provided as a validation handler".formatted(name));
 		}
@@ -108,7 +118,12 @@ public class ModuleManager {
 
 	public IProcessingHandler getProcessingHandler(String name) {
 		if (processingHandlers.containsKey(name)) {
-			return (IProcessingHandler) processingHandlers.get(name).get();
+			var supplier = processingHandlers.get(name);
+			if (supplier != null) {
+				return (IProcessingHandler) supplier.get();
+			} else {
+				throw new IllegalStateException("An invalid value [%s] was provided as a processing handler".formatted(name));
+			}
 		} else {
 			throw new IllegalStateException("An invalid value [%s] was provided as a processing handler".formatted(name));
 		}
