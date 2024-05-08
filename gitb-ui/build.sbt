@@ -2,18 +2,26 @@ name := """GITB"""
 version := "1.0-SNAPSHOT"
 maintainer := "DIGIT-ITB@ec.europa.eu"
 
-lazy val root = (project in file(".")).enablePlugins(PlayScala, SbtWeb)
+/*
+Dependency checking is disabled given that the sbt-dependency-check is not updated for the NVP 9+ API.
+To run the dependency check the simplest and fastest approach is to do a sbt dist and then extract the
+libraries from the produced archive and pass them to the ODC CLI. The settings to include for a ODC run
+with the sbt-dependency-check would be as follows.
+
   .settings(dependencyCheckOSSIndexWarnOnlyOnRemoteErrors := Some(true))
   .settings(dependencyCheckFailBuildOnCVSS := 0)
   .settings(dependencyCheckSuppressionFile := Some(file("project/owasp-suppressions.xml")))
+*/
+
+lazy val root = (project in file(".")).enablePlugins(PlayScala, SbtWeb)
 
 scalaVersion := "2.13.12"
 val pekkoVersion = "1.0.2"
-val jacksonVersion = "2.16.1"
+val jacksonVersion = "2.16.2"
 val cxfVersion = "4.0.4"
 val commonsTextVersion = "1.11.0"
 val gitbTypesVersion = "1.23.0-SNAPSHOT"
-val bouncyCastleVersion = "1.78"
+val bouncyCastleVersion = "1.78.1"
 
 useCoursier := false
 
@@ -32,7 +40,7 @@ libraryDependencies ++= Seq(
   "com.gitb" % "gitb-reports" % "1.0-SNAPSHOT",
   "com.gitb" % "gitb-validator-tdl" % "1.0-SNAPSHOT",
   "com.gitb" % "gitb-xml-resources" % "1.0-SNAPSHOT",
-  "com.mysql" % "mysql-connector-j" % "8.3.0" exclude("com.google.protobuf", "protobuf-java"), // Exclude protobuf as we don't need the X DevAPI.
+  "com.mysql" % "mysql-connector-j" % "8.4.0" exclude("com.google.protobuf", "protobuf-java"), // Exclude protobuf as we don't need the X DevAPI.
   "org.apache.pekko" %% "pekko-actor" % pekkoVersion,
   "org.apache.pekko" %% "pekko-actor-typed" % pekkoVersion,
   "org.apache.pekko" %% "pekko-remote" % pekkoVersion,
@@ -72,8 +80,8 @@ libraryDependencies ++= Seq(
   "org.apache.pdfbox" % "pdfbox" % "2.0.31",
   "org.jasypt" % "jasypt" % "1.9.3",
   "org.apache.httpcomponents" % "httpclient" % "4.5.14",
-  "org.flywaydb" %% "flyway-play" % "9.0.0",
-  "org.flywaydb" % "flyway-mysql" % "10.11.0",
+  "org.flywaydb" %% "flyway-play" % "9.1.0",
+  "org.flywaydb" % "flyway-mysql" % "10.12.0",
   "com.googlecode.owasp-java-html-sanitizer" % "owasp-java-html-sanitizer" % "20220608.1",
   "net.lingala.zip4j" % "zip4j" % "2.11.5",
   // Specific version overrides (to be removed if no longer needed)
