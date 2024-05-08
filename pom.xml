@@ -57,7 +57,7 @@
         <version.dnsJava>3.5.2</version.dnsJava>
         <version.commonsFileUpload>1.5</version.commonsFileUpload>
         <version.commonsCollections>4.4</version.commonsCollections>
-        <version.xmlUnit>2.9.1</version.xmlUnit>
+        <version.xmlUnit>2.10.0</version.xmlUnit>
         <version.jerseyClient>1.19.4</version.jerseyClient>
         <version.beanUtils>1.9.4</version.beanUtils>
         <version.freeMarker>2.3.32</version.freeMarker>
