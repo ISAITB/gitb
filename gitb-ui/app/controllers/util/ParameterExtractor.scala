@@ -434,7 +434,7 @@ object ParameterExtractor {
 		val sname:String = ParameterExtractor.requiredBodyParameter(request, Parameters.SHORT_NAME)
 		val fname:String = ParameterExtractor.requiredBodyParameter(request, Parameters.FULL_NAME)
 		val descr:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DESC)
-		Domain(0L, sname, fname, descr)
+		Domain(0L, sname, fname, descr, CryptoUtil.generateApiKey())
 	}
 
 	def extractSpecification(paramMap:Option[Map[String, Seq[String]]]): Specifications = {

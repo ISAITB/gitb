@@ -34,19 +34,20 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
     val ids = ParameterExtractor.extractLongIdsQueryParameter(request)
     authorizationManager.canViewDomains(request, ids)
     val result = domainManager.getDomains(ids)
-    val json = JsonUtil.jsDomains(result).toString()
+    val withApiKeys = ids.exists(_.nonEmpty)
+    val json = JsonUtil.jsDomains(result, withApiKeys).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
 
   def getDomainOfSpecification(specId: Long): Action[AnyContent] = authorizedAction { request =>
     authorizationManager.canViewDomainBySpecificationId(request, specId)
-    val json = JsonUtil.jsDomain(domainManager.getDomainOfSpecification(specId)).toString()
+    val json = JsonUtil.jsDomain(domainManager.getDomainOfSpecification(specId), withApiKeys = false).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
 
   def getDomainOfActor(actorId: Long): Action[AnyContent] = authorizedAction { request =>
     authorizationManager.canViewActor(request, actorId)
-    val json = JsonUtil.jsDomain(domainManager.getDomainOfActor(actorId)).toString()
+    val json = JsonUtil.jsDomain(domainManager.getDomainOfActor(actorId), withApiKeys = false).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
 
@@ -58,7 +59,7 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
     authorizationManager.canViewDomainByCommunityId(request, communityId)
     val domain = domainManager.getCommunityDomain(communityId)
     if (domain.isDefined) {
-      val json = JsonUtil.jsDomain(domain.get).toString()
+      val json = JsonUtil.jsDomain(domain.get, withApiKeys = false).toString()
       ResponseConstructor.constructJsonResponse(json)
     } else {
       ResponseConstructor.constructEmptyResponse

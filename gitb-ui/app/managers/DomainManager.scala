@@ -3,7 +3,7 @@ package managers
 import models.Domain
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
-import utils.RepositoryUtils
+import utils.{CryptoUtil, RepositoryUtils}
 
 import javax.inject.{Inject, Singleton}
 import scala.collection.mutable
@@ -77,14 +77,35 @@ class DomainManager @Inject() (domainParameterManager: DomainParameterManager, r
     exec(createDomainInternal(domain))
   }
 
-  def updateDomain(domainId: Long, shortName: String, fullName: String, description: Option[String]) = {
-    exec(updateDomainInternal(domainId, shortName, fullName, description).transactionally)
+  def updateDomain(domainId: Long, shortName: String, fullName: String, description: Option[String]): Unit = {
+    exec(updateDomainInternal(domainId, shortName, fullName, description, None).transactionally)
   }
 
-  def updateDomainInternal(domainId: Long, shortName: String, fullName: String, description: Option[String]) = {
-    val q = for {d <- PersistenceSchema.domains if d.id === domainId} yield (d.shortname, d.fullname, d.description)
-    q.update(shortName, fullName, description) andThen
-      testResultManager.updateForUpdatedDomain(domainId, shortName)
+  def updateDomainInternal(domainId: Long, shortName: String, fullName: String, description: Option[String], apiKey: Option[String]): DBIO[_] = {
+    for {
+      replaceApiKey <- {
+        if (apiKey.isDefined) {
+          PersistenceSchema.domains.filter(_.apiKey === apiKey.get).filter(_.id =!= domainId).exists.result
+        } else {
+          DBIO.successful(false)
+        }
+      }
+      _ <- {
+        if (apiKey.isDefined) {
+          val apiKeyToUse = if (replaceApiKey) CryptoUtil.generateApiKey() else apiKey.get
+          PersistenceSchema.domains.filter(_.id === domainId)
+            .map(x => (x.shortname, x.fullname, x.description, x.apiKey))
+            .update((shortName, fullName, description, apiKeyToUse))
+        } else {
+          PersistenceSchema.domains.filter(_.id === domainId)
+            .map(x => (x.shortname, x.fullname, x.description))
+            .update((shortName, fullName, description))
+        }
+      }
+      _ <- {
+        testResultManager.updateForUpdatedDomain(domainId, shortName)
+      }
+    } yield ()
   }
 
   private def removeDomainFromCommunities(domainId: Long, onSuccess: mutable.ListBuffer[() => _]): DBIO[_] = {

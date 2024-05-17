@@ -15,3 +15,12 @@
     </div>
     <div app-tooltip class="col-auto" [tbTooltip]="'This is used to describe and contextualise the '+dataService.labelSpecificationsLower()+' included in the '+dataService.labelDomainLower()+'. It is visible to users when managing conformance statements and may also be used as a community\'s description during self-registration (if enabled).'"></div>
 </div>
+@if (dataService.configuration.automationApiEnabled && domain.id != undefined) {
+    <div class="row mt-3">
+        <label class="col-3 col-form-label text-end" for="apiKey">API key:</label>
+        <div class="col-7">
+            <app-api-key-text idName="apiKey" name="apiKey" [key]="domain.apiKey!"></app-api-key-text>
+        </div>
+        <div app-tooltip class="col-auto" [tbTooltip]="'The key to use when calling the Test Bed\'s REST API to identify the '+dataService.labelDomainLower()+'.'"></div>
+    </div>
+}

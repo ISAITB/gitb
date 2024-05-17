@@ -386,6 +386,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, systemConfigura
     exportedDomain.setShortName(domain.shortname)
     exportedDomain.setFullName(domain.fullname)
     exportedDomain.setDescription(domain.description.orNull)
+    exportedDomain.setApiKey(domain.apiKey)
     // Shared test suites.
     if (exportSettings.testSuites) {
       val testSuites = loadSharedTestSuites(domain.id)

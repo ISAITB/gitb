@@ -452,6 +452,7 @@
                     <xsd:element name="shortName" type="xsd:string"/>
                     <xsd:element name="fullName" type="xsd:string"/>
                     <xsd:element name="description" type="xsd:string" minOccurs="0"/>
+                    <xsd:element name="apiKey" type="xsd:string" minOccurs="0"/>
                     <xsd:element name="specifications" type="Specifications" minOccurs="0"/>
                     <xsd:element name="parameters" type="DomainParameters" minOccurs="0"/>
                     <xsd:element name="sharedTestSuites" type="TestSuites" minOccurs="0"/>

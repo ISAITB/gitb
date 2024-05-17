@@ -771,7 +771,7 @@ object JsonUtil {
   def serializeCommunity(community:Community, labels: Option[List[CommunityLabels]], includeAdminInfo: Boolean):String = {
     var jCommunity:JsObject = jsCommunity(community.toCaseObject, includeAdminInfo)
     if(community.domain.isDefined){
-      jCommunity = jCommunity ++ Json.obj("domain" -> jsDomain(community.domain.get))
+      jCommunity = jCommunity ++ Json.obj("domain" -> jsDomain(community.domain.get, withApiKeys = false))
     } else{
       jCommunity = jCommunity ++ Json.obj("domain" -> JsNull)
     }
@@ -786,13 +786,16 @@ object JsonUtil {
    * @param domain Domain object to be converted
    * @return JsObject
    */
-  def jsDomain(domain:Domain):JsObject = {
-    val json = Json.obj(
+  def jsDomain(domain:Domain, withApiKeys: Boolean):JsObject = {
+    var json = Json.obj(
       "id" -> domain.id,
       "sname" -> domain.shortname,
       "fname" -> domain.fullname,
       "description" -> domain.description
     )
+    if (withApiKeys && Configurations.AUTOMATION_API_ENABLED) {
+      json = json.+("apiKey" -> JsString(domain.apiKey))
+    }
     json
   }
 
@@ -826,17 +829,17 @@ object JsonUtil {
    * @param list List of Domains to be converted
    * @return JsArray
    */
-  def jsDomains(list:List[Domain]):JsArray = {
+  def jsDomains(list:List[Domain], withApiKeys: Boolean):JsArray = {
     var json = Json.arr()
     list.foreach{ domain =>
-      json = json.append(jsDomain(domain))
+      json = json.append(jsDomain(domain, withApiKeys))
     }
     json
   }
 
   def jsCommunityDomains(domains: List[Domain], linkedDomain: Option[Long]): JsObject = {
     var json = Json.obj(
-      "domains" -> jsDomains(domains)
+      "domains" -> jsDomains(domains, withApiKeys = false)
     )
     if (linkedDomain.isDefined) {
       json = json + ("linkedDomain" -> JsNumber(linkedDomain.get))

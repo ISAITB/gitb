@@ -99,7 +99,8 @@ object PersistenceSchema {
     def shortname = column[String]("sname")
     def fullname = column[String]("fname")
   	def description = column[Option[String]]("description", O.SqlType("TEXT"))
-    def * = (id, shortname, fullname, description) <> (Domain.tupled, Domain.unapply)
+    def apiKey = column[String]("api_key")
+    def * = (id, shortname, fullname, description, apiKey) <> (Domain.tupled, Domain.unapply)
   }
   val domains = TableQuery[DomainsTable]
 

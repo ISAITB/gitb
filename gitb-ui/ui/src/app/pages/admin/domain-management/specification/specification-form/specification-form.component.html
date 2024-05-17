@@ -1,15 +1,19 @@
 <div class="row">
     <div class="col-10 offset-1">
-        <div class="row mb-3" *ngIf="specification.groups && specification.groups.length > 0">
-            <label class="col-3 col-form-label text-end" for="groupChoice">{{dataService.labelSpecificationGroup()}}:</label>
-            <div class="col-7">
-                <select id="groupChoice" class="form-control form-select" name="group" [(ngModel)]="specification.group">
-                    <option [ngValue]="undefined">--Optional--</option>
-                    <option *ngFor="let group of specification.groups" [ngValue]="group.id">{{group.sname}}</option>
-                </select>
+        @if (specification.groups && specification.groups.length > 0) {
+            <div class="row mb-3">
+                <label class="col-3 col-form-label text-end" for="groupChoice">{{dataService.labelSpecificationGroup()}}:</label>
+                <div class="col-7">
+                    <select id="groupChoice" class="form-control form-select" name="group" [(ngModel)]="specification.group">
+                        <option [ngValue]="undefined">--Optional--</option>
+                        @for (group of specification.groups; track group.id) {
+                            <option [ngValue]="group.id">{{group.sname}}</option>
+                        }
+                    </select>
+                </div>
+                <div app-tooltip class="col-auto" [tbTooltip]="'If selected, this is the '+dataService.labelSpecificationGroupLower()+' that will contain this '+dataService.labelSpecificationLower()+'.'"></div>
             </div>
-            <div app-tooltip class="col-auto" [tbTooltip]="'If selected, this is the '+dataService.labelSpecificationGroupLower()+' that will contain this '+dataService.labelSpecificationLower()+'.'"></div>
-        </div>
+        }
         <div class="row mb-3">
             <label class="col-3 col-form-label text-end" for="shortName">* Short name:</label>
             <div class="col-7"><input id="shortName" name="shortName" [(ngModel)]="specification.sname" class="form-control" type="text"></div>
@@ -36,13 +40,17 @@
                 </div>
             </div>
         </div>
-        <div class="row mb-3" *ngIf="dataService.configuration.automationApiEnabled && specification.id != undefined">
-            <label class="col-3 col-form-label text-end" for="apiKey">API key:</label>
-            <div class="col-7">
-                <app-api-key-text idName="apiKey" name="apiKey" [key]="specification.apiKey!"></app-api-key-text>
+        @if (dataService.configuration.automationApiEnabled && specification.id != undefined) {
+            <div class="row mb-3">
+                <label class="col-3 col-form-label text-end" for="apiKey">API key:</label>
+                <div class="col-7">
+                    <app-api-key-text idName="apiKey" name="apiKey" [key]="specification.apiKey!"></app-api-key-text>
+                </div>
+                <div app-tooltip class="col-auto" [tbTooltip]="'The key to use when calling the Test Bed\'s REST API to identify the '+dataService.labelSpecificationLower()+'.'"></div>
             </div>
-            <div app-tooltip class="col-auto" [tbTooltip]="'The key to use when calling the Test Bed\'s REST API to identify the '+dataService.labelSpecificationLower()+'.'"></div>
-        </div>
+        }
     </div>
 </div>
-<app-manage-badges *ngIf="specification.badges" [badges]="specification.badges"></app-manage-badges>
+@if (specification.badges) {
+    <app-manage-badges [badges]="specification.badges"></app-manage-badges>
+}

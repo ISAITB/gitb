@@ -1168,10 +1168,12 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
         processFromArchive(ImportItemType.Domain, exportedDomain, exportedDomain.getId, ctx,
           ImportCallbacks.set(
             (data: com.gitb.xml.export.Domain, item: ImportItem) => {
-              domainManager.createDomainInternal(models.Domain(0L, data.getShortName, data.getFullName, Option(data.getDescription)))
+              val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
+              domainManager.createDomainInternal(models.Domain(0L, data.getShortName, data.getFullName, Option(data.getDescription), apiKey))
             },
             (data: com.gitb.xml.export.Domain, targetKey: String, item: ImportItem) => {
-              domainManager.updateDomainInternal(targetKey.toLong, data.getShortName, data.getFullName, Option(data.getDescription))
+              val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
+              domainManager.updateDomainInternal(targetKey.toLong, data.getShortName, data.getFullName, Option(data.getDescription), Some(apiKey))
             },
             (data: com.gitb.xml.export.Domain, targetKey: Any, item: ImportItem) => {
               // Record this in case we need to do a global cleanup.
