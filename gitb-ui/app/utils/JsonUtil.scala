@@ -1128,7 +1128,7 @@ object JsonUtil {
 
   def parseJsConfigurationRequest(json: JsValue): ConfigurationRequest = {
     ConfigurationRequest(
-      domainProperties = parseJsKeyValueArray((json \ "domainProperties").asOpt[JsArray].getOrElse(JsArray.empty)),
+      domainProperties = parseJsDomainParameterConfigurationArray((json \ "domainProperties").asOpt[JsArray].getOrElse(JsArray.empty)),
       organisationProperties = parseJsPartyConfigurationArray((json \ "organisationProperties").asOpt[JsArray].getOrElse(JsArray.empty), "organisation"),
       systemProperties = parseJsPartyConfigurationArray((json \ "systemProperties").asOpt[JsArray].getOrElse(JsArray.empty), "system"),
       statementProperties = parseJsStatementConfigurationArray((json \ "statementProperties").asOpt[JsArray].getOrElse(JsArray.empty))
@@ -1150,6 +1150,18 @@ object JsonUtil {
       PartyConfiguration(
         (json \ partyPropertyName).as[String],
         parseJsKeyValueArray((json \ "properties").asOpt[JsArray].getOrElse(JsArray.empty))
+      )
+    }.toList
+  }
+
+  private def parseJsDomainParameterConfigurationArray(jsonArray: JsArray): List[DomainParameterInfo] = {
+    jsonArray.value.map { json =>
+      DomainParameterInfo(
+        KeyValue(
+          (json \ "key").as[String],
+          (json \ "value").asOpt[String]
+        ),
+        (json \ "domain").asOpt[String]
       )
     }.toList
   }

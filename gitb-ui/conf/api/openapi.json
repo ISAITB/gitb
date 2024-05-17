@@ -2052,7 +2052,7 @@
             "description": "Updates to domain properties.",
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/ConfigurationEntry"
+              "$ref": "#/components/schemas/DomainPropertyConfigurationEntry"
             }
           },
           "organisationProperties": {
@@ -2076,7 +2076,28 @@
               "$ref": "#/components/schemas/ConformanceStatementConfigurationEntry"
             }
           }
+        }
+      },
+      "DomainPropertyConfigurationEntry": {
+        "description": "Configuration update to apply to a given domain property.",
+        "type": "object",
+        "properties": {
+          "key": {
+            "description": "The unique key used to identify the configuration property.",
+            "type": "string"
+          },
+          "value": {
+            "description": "The value to apply for the configuration property (if missing this signals a delete of the existing value).",
+            "type": "string"
+          },
+          "domain": {
+            "description": "The API key to identify the domain under which this property is defined (in case of multiple domains defining the same property).",
+            "type": "string"
+          }
         },
+        "required": [
+          "key"
+        ],
         "additionalProperties": false
       },
       "OrganisationConfigurationEntry": {
