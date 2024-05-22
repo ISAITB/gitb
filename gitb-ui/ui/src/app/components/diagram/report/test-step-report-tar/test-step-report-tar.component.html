@@ -1,6 +1,6 @@
 <ng-container>
   <div class="col-12" *ngIf="hasContextItems">
-    <app-any-content-view [context]="report.context!" [report]="report" [sessionId]="sessionId" [noBorder]="true"></app-any-content-view>
+    <app-any-content-view [context]="report.context!" [report]="report" [sessionId]="sessionId" [noBorder]="true" [collapsed]="false"></app-any-content-view>
   </div>
   <ng-container *ngIf="report.reports != null && report.reports.assertionReports != null && report.reports.assertionReports.length > 0">
     <div class="col-12 countersDiv" *ngIf="report.counters != null && (report.counters.nrOfErrors > 0 || report.counters.nrOfWarnings > 0 || report.counters.nrOfAssertions > 0)">

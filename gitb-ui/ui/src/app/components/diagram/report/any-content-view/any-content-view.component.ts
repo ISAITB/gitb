@@ -27,14 +27,15 @@ export class AnyContentViewComponent extends ReportSupport implements OnInit {
   @Input() noMargin = false
   @Input() root = false
   @Input() forceDisplay = false
+  @Input() collapsed = true
 
   Constants = Constants
 
+  name?: string
   value?: string
   showValueInline = true
   downloadPending = false
   openPending = false
-  collapsed = false
   withItems = false
   withName = false
   hoveringTitle = false
@@ -55,18 +56,13 @@ export class AnyContentViewComponent extends ReportSupport implements OnInit {
     if (this.context.valueToUse != undefined && this.context.valueToUse.trim().length > 0) {
       this.value = this.context.valueToUse
     }
-    if (this.value != undefined) {
-      this.showName = this.context.name != undefined
-    } else if (this.context.name != undefined) {
-      this.showName = false
-      this.value = this.context.name
-    }
+    this.name = this.context.name
     this.showValueInline = this.value != undefined && (this.context.embeddingMethod != 'BASE64' && !this.isFileReference(this.context) && (this.value.length <= 100 || this.forceDisplay))
     if (this.showValueInline) {
       this.breakText = this.value!.indexOf(" ") < 0
     }
     this.withItems = this.context?.item != undefined
-    this.withName = this.context?.name != undefined
+    this.withName = this.name != undefined
   }
 
   open(lineNumber?: number) {

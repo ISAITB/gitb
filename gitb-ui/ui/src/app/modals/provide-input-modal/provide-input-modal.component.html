@@ -35,7 +35,7 @@
 					</div>
 					<!-- instruction interaction: server shows a message -->
 					<div *ngIf="interaction.type == 'instruction'">
-						<app-any-content-view [context]="instructionAsAnyContent(interaction)" [forceDisplay]="interaction.forceDisplay == true" [fileNameDownload]="interaction.name" [sessionId]="sessionId" [noMargin]="true"></app-any-content-view>
+						<app-any-content-view [context]="instructionAsAnyContent(interaction)" [forceDisplay]="interaction.forceDisplay == true" [fileNameDownload]="interaction.name" [sessionId]="sessionId" [noMargin]="true" [collapsed]="false"></app-any-content-view>
 					</div>
 				</div>
 			</div>
