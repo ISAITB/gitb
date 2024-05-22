@@ -88,6 +88,10 @@ public class ListType extends ContainerType implements Iterable<DataType> {
 
     @Override
     public Object getValue() {
+        return getElements();
+    }
+
+    public List<DataType> getElements() {
         return this.elements;
     }
 
