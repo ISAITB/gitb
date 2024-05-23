@@ -99,6 +99,10 @@ public class TestSuiteValidationAdapter {
                 config.getOptionalReceiveConfigs().addAll(asSet(getConfigValue("validator.messagingHandlers." + handler + ".config.receive.optional", configProperties)));
                 config.getRequiredInputs().addAll(asSet(getConfigValue("validator.messagingHandlers." + handler + ".input.required", configProperties)));
                 config.getOptionalInputs().addAll(asSet(getConfigValue("validator.messagingHandlers." + handler + ".input.optional", configProperties)));
+                config.getRequiredSendInputs().addAll(asSet(getConfigValue("validator.messagingHandlers." + handler + ".input.send.required", configProperties)));
+                config.getOptionalSendInputs().addAll(asSet(getConfigValue("validator.messagingHandlers." + handler + ".input.send.optional", configProperties)));
+                config.getRequiredReceiveInputs().addAll(asSet(getConfigValue("validator.messagingHandlers." + handler + ".input.receive.required", configProperties)));
+                config.getOptionalReceiveInputs().addAll(asSet(getConfigValue("validator.messagingHandlers." + handler + ".input.receive.optional", configProperties)));
                 embeddedMessagingHandlers.put(handler, config);
             }
         }

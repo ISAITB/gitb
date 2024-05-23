@@ -1,13 +1,8 @@
 package com.gitb.engine.actors.processors;
 
-import org.apache.pekko.actor.ActorRef;
-import org.apache.pekko.dispatch.Futures;
-import org.apache.pekko.dispatch.OnFailure;
-import org.apache.pekko.dispatch.OnSuccess;
 import com.gitb.core.Configuration;
 import com.gitb.core.ErrorCode;
 import com.gitb.core.MessagingModule;
-import com.gitb.core.StepStatus;
 import com.gitb.engine.CallbackManager;
 import com.gitb.engine.actors.ActorSystem;
 import com.gitb.engine.commands.messaging.NotificationReceived;
@@ -23,13 +18,16 @@ import com.gitb.messaging.IMessagingHandler;
 import com.gitb.messaging.Message;
 import com.gitb.messaging.MessagingReport;
 import com.gitb.tr.TAR;
-import com.gitb.tr.TestResultType;
 import com.gitb.tr.TestStepReportType;
 import com.gitb.types.BooleanType;
 import com.gitb.types.MapType;
 import com.gitb.utils.BindingUtils;
 import com.gitb.utils.ErrorUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.pekko.actor.ActorRef;
+import org.apache.pekko.dispatch.Futures;
+import org.apache.pekko.dispatch.OnFailure;
+import org.apache.pekko.dispatch.OnSuccess;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.concurrent.Future;
@@ -56,18 +54,6 @@ public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorAct
 
 	public ReceiveStepProcessorActor(com.gitb.tdl.Receive step, TestCaseScope scope, String stepId) {
 		super(step, scope, stepId);
-	}
-
-	private void signalStepStatus(TestStepReportType result) {
-		if (result != null) {
-			if (result.getResult() == TestResultType.SUCCESS) {
-				updateTestStepStatus(getContext(), StepStatus.COMPLETED, result);
-			} else if (result.getResult() == TestResultType.WARNING) {
-				updateTestStepStatus(getContext(), StepStatus.WARNING, result);
-			} else {
-				updateTestStepStatus(getContext(), StepStatus.ERROR, result);
-			}
-		}
 	}
 
 	@Override
@@ -230,7 +216,7 @@ public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorAct
 						message.getFragments().put(flagName, new BooleanType(false));
 					}
 				}
-				if (step.getOutput().size() == 0) {
+				if (step.getOutput().isEmpty()) {
 					map = generateOutputWithMessageFields(message);
 				} else {
 					boolean isNameBinding = BindingUtils.isNameBinding(step.getOutput());

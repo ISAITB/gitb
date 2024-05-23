@@ -175,7 +175,7 @@ public class MessagingHandlerUtils {
 	}
 
 	public static MessagingReport generateSuccessReport(Message message) {
-		TAR report = null;
+		TAR report;
 		try {
 			report = new TAR();
 			report.setDate(XMLDateTimeUtils.getXMLGregorianCalendarDateTime());

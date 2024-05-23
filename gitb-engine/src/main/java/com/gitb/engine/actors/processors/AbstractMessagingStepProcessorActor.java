@@ -1,5 +1,6 @@
 package com.gitb.engine.actors.processors;
 
+import com.gitb.tr.TestResultType;
 import org.apache.pekko.dispatch.OnFailure;
 import org.apache.pekko.dispatch.OnSuccess;
 import com.gitb.core.*;
@@ -243,5 +244,17 @@ public abstract class AbstractMessagingStepProcessorActor<T extends MessagingSte
                 promise.tryFailure(failure);
             }
         };
+    }
+
+    protected void signalStepStatus(TestStepReportType result) {
+        if (result != null) {
+            if (result.getResult() == TestResultType.SUCCESS) {
+                updateTestStepStatus(getContext(), StepStatus.COMPLETED, result);
+            } else if (result.getResult() == TestResultType.WARNING) {
+                updateTestStepStatus(getContext(), StepStatus.WARNING, result);
+            } else {
+                updateTestStepStatus(getContext(), StepStatus.ERROR, result);
+            }
+        }
     }
 }

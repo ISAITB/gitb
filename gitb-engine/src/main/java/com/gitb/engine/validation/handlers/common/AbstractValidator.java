@@ -2,6 +2,7 @@ package com.gitb.engine.validation.handlers.common;
 
 import com.gitb.core.Configuration;
 import com.gitb.core.ValidationModule;
+import com.gitb.engine.AbstractHandler;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.tr.TestStepReportType;
 import com.gitb.types.DataType;
@@ -16,7 +17,7 @@ import java.util.Map;
 /**
  * Created by senan on 24.10.2014.
  */
-public abstract class AbstractValidator implements IValidationHandler {
+public abstract class AbstractValidator extends AbstractHandler implements IValidationHandler {
 
     public static final String TEST_CASE_ID_INPUT = "com.gitb.TestCaseID";
 
@@ -48,15 +49,6 @@ public abstract class AbstractValidator implements IValidationHandler {
 
     protected String getTestCaseId(Map<String, DataType> inputs) {
         return (String) inputs.get(TEST_CASE_ID_INPUT).getValue();
-    }
-
-    protected <T extends DataType> T getAndConvert(Map<String, DataType> inputs, String inputName, String dataType, Class<T> dataTypeClass) {
-        var input = inputs.get(inputName);
-        if (input != null) {
-            return dataTypeClass.cast(input.convertTo(dataType));
-        } else {
-            return null;
-        }
     }
 
     public abstract TestStepReportType validate(List<Configuration> configurations, Map<String, DataType> inputs);

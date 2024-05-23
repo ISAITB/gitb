@@ -54,10 +54,14 @@ public class CheckHandlers extends AbstractTestCaseObserver {
                         context.getExternalConfiguration().getEmbeddedMessagingHandlers().get(handler).getOptionalSendConfigs(),
                         handler
                 );
+                Set<String> requiredInputs = new HashSet<>(context.getExternalConfiguration().getEmbeddedMessagingHandlers().get(handler).getRequiredInputs());
+                requiredInputs.addAll(context.getExternalConfiguration().getEmbeddedMessagingHandlers().get(handler).getRequiredSendInputs());
+                Set<String> optionalInputs = new HashSet<>(context.getExternalConfiguration().getEmbeddedMessagingHandlers().get(handler).getOptionalInputs());
+                optionalInputs.addAll(context.getExternalConfiguration().getEmbeddedMessagingHandlers().get(handler).getOptionalSendInputs());
                 checkInputs(
                         ((Send) stepObj).getInput(),
-                        context.getExternalConfiguration().getEmbeddedMessagingHandlers().get(handler).getRequiredInputs(),
-                        context.getExternalConfiguration().getEmbeddedMessagingHandlers().get(handler).getOptionalInputs(),
+                        requiredInputs,
+                        optionalInputs,
                         handler
                 );
             }
@@ -77,10 +81,14 @@ public class CheckHandlers extends AbstractTestCaseObserver {
                         context.getExternalConfiguration().getEmbeddedMessagingHandlers().get(handler).getOptionalReceiveConfigs(),
                         handler
                 );
+                Set<String> requiredInputs = new HashSet<>(context.getExternalConfiguration().getEmbeddedMessagingHandlers().get(handler).getRequiredInputs());
+                requiredInputs.addAll(context.getExternalConfiguration().getEmbeddedMessagingHandlers().get(handler).getRequiredReceiveInputs());
+                Set<String> optionalInputs = new HashSet<>(context.getExternalConfiguration().getEmbeddedMessagingHandlers().get(handler).getOptionalInputs());
+                optionalInputs.addAll(context.getExternalConfiguration().getEmbeddedMessagingHandlers().get(handler).getOptionalReceiveInputs());
                 checkInputs(
                         ((ReceiveOrListen) stepObj).getInput(),
-                        context.getExternalConfiguration().getEmbeddedMessagingHandlers().get(handler).getRequiredInputs(),
-                        context.getExternalConfiguration().getEmbeddedMessagingHandlers().get(handler).getOptionalInputs(),
+                        requiredInputs,
+                        optionalInputs,
                         handler
                 );
             }

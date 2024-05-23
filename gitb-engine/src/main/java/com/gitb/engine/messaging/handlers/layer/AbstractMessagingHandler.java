@@ -1,6 +1,7 @@
 package com.gitb.engine.messaging.handlers.layer;
 
 import com.gitb.core.*;
+import com.gitb.engine.AbstractHandler;
 import com.gitb.engine.CallbackManager;
 import com.gitb.engine.messaging.handlers.SessionManager;
 import com.gitb.engine.messaging.handlers.model.*;
@@ -35,7 +36,7 @@ import java.util.*;
  *
  * Abstract Messaging Handler class that provides several utilities to handle the session and transaction configuration
  */
-public abstract class AbstractMessagingHandler implements IMessagingHandler {
+public abstract class AbstractMessagingHandler extends AbstractHandler implements IMessagingHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractMessagingHandler.class);
     private String testSessionId;
@@ -112,7 +113,7 @@ public abstract class AbstractMessagingHandler implements IMessagingHandler {
         SessionContext sessionContext = sessionManager.getSession(sessionId);
         List<TransactionContext> transactions = sessionContext.getTransactions(transactionId);
 
-        if(transactions.size() == 0) {
+        if(transactions.isEmpty()) {
             throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Messages can not be sent before creating transactions"));
         } else if(transactions.size() == 2) {
             throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "'send' command functionality is not available between 2 SUTs, please take a look at 'listen' command"));
@@ -164,7 +165,7 @@ public abstract class AbstractMessagingHandler implements IMessagingHandler {
         SessionContext sessionContext = sessionManager.getSession(sessionId);
         List<TransactionContext> transactions = sessionContext.getTransactions(transactionId);
 
-        if(transactions.size() == 0) {
+        if(transactions.isEmpty()) {
             throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Messages can not be listened before creating transactions"));
         } else if(transactions.size() == 1) {
             throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "'listen' command functionality is only available between 2 SUTs, please take a look at 'send' or 'receive' commands"));
@@ -176,18 +177,17 @@ public abstract class AbstractMessagingHandler implements IMessagingHandler {
         String toActorId = ActorUtils.extractActorId(to);
         String toEndpointName = ActorUtils.extractEndpointName(to);
 
-        Message incomingMessage = null;
-        Message outgoingMessage = null;
+        Message incomingMessage;
 
         TransactionContext receiverTransactionContext = null;
         TransactionContext senderTransactionContext = null;
 
         for(TransactionContext transactionContext : transactions) {
-            if((fromEndpointName == null && fromActorId.equals(transactionContext.getWith().getActor()))
-                    || (fromEndpointName != null && fromActorId.equals(transactionContext.getWith().getActor()) && fromEndpointName.equals(transactionContext.getWith().getEndpoint()))) {
+            if((fromEndpointName == null && Objects.equals(fromActorId, transactionContext.getWith().getActor()))
+                    || (fromEndpointName != null && Objects.equals(fromActorId, transactionContext.getWith().getActor()) && fromEndpointName.equals(transactionContext.getWith().getEndpoint()))) {
                 receiverTransactionContext = transactionContext;
-            } else if((toEndpointName == null && toActorId.equals(transactionContext.getWith().getActor()))
-                    || (toEndpointName != null && toActorId.equals(transactionContext.getWith().getActor()) && toEndpointName.equals(transactionContext.getWith().getEndpoint()))) {
+            } else if((toEndpointName == null && Objects.equals(toActorId, transactionContext.getWith().getActor()))
+                    || (toEndpointName != null && Objects.equals(toActorId, transactionContext.getWith().getActor()) && toEndpointName.equals(transactionContext.getWith().getEndpoint()))) {
                 senderTransactionContext = transactionContext;
             }
         }
@@ -401,7 +401,7 @@ public abstract class AbstractMessagingHandler implements IMessagingHandler {
             SessionContext sessionContext = sessionManager.getSession(sessionId);
             List<TransactionContext> transactions = sessionContext.getTransactions(transactionId);
 
-            if(transactions.size() == 0) {
+            if(transactions.isEmpty()) {
                 throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Messages can not be received before creating transactions"));
             } else if(transactions.size() == 2) {
                 throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "'receive' command functionality is not available between 2 SUTs, please take a look at 'listen' command"));
