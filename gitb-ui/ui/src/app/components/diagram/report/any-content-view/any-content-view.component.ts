@@ -25,9 +25,8 @@ export class AnyContentViewComponent extends ReportSupport implements OnInit {
   @Input() sessionId?: string
   @Input() noBorder = false
   @Input() noMargin = false
-  @Input() root = false
+  @Input() root = true
   @Input() forceDisplay = false
-  @Input() collapsed = true
 
   Constants = Constants
 
@@ -41,6 +40,7 @@ export class AnyContentViewComponent extends ReportSupport implements OnInit {
   hoveringTitle = false
   breakText = true
   showName = false
+  collapsed = true  
 
   constructor(
     private testService: TestService,
@@ -63,6 +63,13 @@ export class AnyContentViewComponent extends ReportSupport implements OnInit {
     }
     this.withItems = this.context?.item != undefined
     this.withName = this.name != undefined
+    if (this.root) {
+      this.collapsed = false
+    } else {
+      if (this.name == undefined && this.value == undefined && this.withItems) {
+        this.name = ""
+      }
+    }
   }
 
   open(lineNumber?: number) {
@@ -151,7 +158,7 @@ export class AnyContentViewComponent extends ReportSupport implements OnInit {
   }
 
   containerClicked() {
-    if (this.context.name != undefined) {
+    if (!this.root) {
       this.collapsed = !this.collapsed
     }
   }
