@@ -228,7 +228,7 @@ public abstract class AbstractMessagingStepProcessorActor<T extends MessagingSte
         }
     }
 
-    protected OnSuccess<TestStepReportType> handleSuccess(Promise<TestStepReportType> promise, IMessagingHandler handler, TransactionContext transaction) {
+    protected OnSuccess<TestStepReportType> handleSuccess(Promise<TestStepReportType> promise) {
         return new OnSuccess<>() {
             @Override
             public void onSuccess(TestStepReportType result) {
@@ -237,7 +237,7 @@ public abstract class AbstractMessagingStepProcessorActor<T extends MessagingSte
         };
     }
 
-    protected OnFailure handleFailure(Promise<TestStepReportType> promise, IMessagingHandler handler, TransactionContext transaction) {
+    protected OnFailure handleFailure(Promise<TestStepReportType> promise) {
         return new OnFailure() {
             @Override
             public void onFailure(Throwable failure) {

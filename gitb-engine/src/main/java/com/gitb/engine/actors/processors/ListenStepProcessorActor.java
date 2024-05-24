@@ -147,8 +147,8 @@ public class ListenStepProcessorActor extends AbstractMessagingStepProcessorActo
 
             }, context.dispatcher());
 
-            future.foreach(handleSuccess(promise, messagingHandler, transactionContext), getContext().dispatcher());
-            future.failed().foreach(handleFailure(promise, messagingHandler, transactionContext), getContext().dispatcher());
+            future.foreach(handleSuccess(promise), getContext().dispatcher());
+            future.failed().foreach(handleFailure(promise), getContext().dispatcher());
         } else {
             throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Messaging handler is not available"));
         }

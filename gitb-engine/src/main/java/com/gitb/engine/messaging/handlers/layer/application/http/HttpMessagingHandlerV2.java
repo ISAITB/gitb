@@ -1,5 +1,6 @@
 package com.gitb.engine.messaging.handlers.layer.application.http;
 
+import com.gitb.core.ActorConfiguration;
 import com.gitb.core.Configuration;
 import com.gitb.core.MessagingModule;
 import com.gitb.engine.messaging.MessagingHandler;
@@ -8,6 +9,7 @@ import com.gitb.engine.messaging.handlers.utils.MessagingHandlerUtils;
 import com.gitb.messaging.DeferredMessagingReport;
 import com.gitb.messaging.Message;
 import com.gitb.messaging.MessagingReport;
+import com.gitb.ms.InitiateResponse;
 import com.gitb.types.*;
 import org.apache.commons.lang3.StringUtils;
 
@@ -21,7 +23,6 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Future;
 
 @MessagingHandler(name="HttpMessagingV2")
 public class HttpMessagingHandlerV2 extends AbstractMessagingHandler {
@@ -286,5 +287,34 @@ public class HttpMessagingHandlerV2 extends AbstractMessagingHandler {
         return strBuilder.toString();
     }
 
+    @Override
+    public void beginTransaction(String sessionId, String transactionId, String stepId, String from, String to, List<Configuration> configurations) {
+        // Do nothing.
+    }
+
+    @Override
+    public void endTransaction(String sessionId, String transactionId, String stepId) {
+        // Do nothing.
+    }
+
+    @Override
+    public void endSession(String sessionId) {
+        // Do nothing.
+    }
+
+    @Override
+    public MessagingReport listenMessage(String sessionId, String transactionId, String stepId, String from, String to, List<Configuration> configurations, Message inputs) {
+        throw new IllegalStateException("The HttpMessagingV2 handler can only be used for send and receive operations");
+    }
+
+    @Override
+    public boolean needsMessagingServerWorker() {
+        return false;
+    }
+
+    @Override
+    public InitiateResponse initiate(List<ActorConfiguration> actorConfigurations) {
+        return new InitiateResponse();
+    }
 
 }
