@@ -69,12 +69,12 @@ libraryDependencies ++= Seq(
   "org.webjars" % "bootstrap" % "5.3.3",
   "com.sun.mail" % "jakarta.mail" % "2.0.1",
   "jakarta.activation" % "jakarta.activation-api" % "2.1.3",
-  "jakarta.xml.ws" % "jakarta.xml.ws-api" % "4.0.1",
+  "jakarta.xml.ws" % "jakarta.xml.ws-api" % "4.0.2",
   "jakarta.jws" % "jakarta.jws-api" % "3.0.0",
   "jakarta.xml.bind" % "jakarta.xml.bind-api" % "4.0.2",
   "com.sun.xml.bind" % "jaxb-impl" % "4.0.5",
-  "jakarta.xml.soap" % "jakarta.xml.soap-api" % "3.0.1",
-  "com.sun.xml.messaging.saaj" % "saaj-impl" % "3.0.3", // Needed for SOAP exchanges
+  "jakarta.xml.soap" % "jakarta.xml.soap-api" % "3.0.2",
+  "com.sun.xml.messaging.saaj" % "saaj-impl" % "3.0.4", // Needed for SOAP exchanges
   "org.bouncycastle" % "bcmail-jdk18on" % bouncyCastleVersion,
   "org.bouncycastle" % "bcpkix-jdk18on" % bouncyCastleVersion,
   "org.apache.pdfbox" % "pdfbox" % "2.0.31",
