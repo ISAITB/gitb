@@ -104,8 +104,11 @@ public class SendStepProcessorActor extends AbstractMessagingStepProcessorActor<
 										message
 								);
 				if (report instanceof DeferredMessagingReport deferredReport) {
-					deferredReport.getDeferredReport().thenAccept(completedReport -> {
+					deferredReport.getDeferredReport().thenAccept((completedReport) -> {
 						self().tell(new NotificationReceived(completedReport), self());
+					}).exceptionally(error -> {
+						error(error);
+						return null;
 					});
 					return null;
 				} else if (report != null) {
