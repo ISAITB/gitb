@@ -15,8 +15,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import javax.xml.transform.stream.StreamSource;
 import java.io.InputStream;
-import java.util.Collection;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by serbay.
@@ -236,4 +235,34 @@ public class MessagingHandlerUtils {
 	        throw new GITBEngineInternalError(e);
 	    }
 	}
+
+	public static <T extends DataType> T getAndConvert(Map<String, DataType> inputs, String inputName, String dataType, Class<T> dataTypeClass) {
+		var input = inputs.get(inputName);
+		if (input != null) {
+			return dataTypeClass.cast(input.convertTo(dataType));
+		} else {
+			return null;
+		}
+	}
+
+	public static Map<String, List<String>> getMapOfValues(Map<String, DataType> inputs, String argumentName) {
+		return Optional.ofNullable(getAndConvert(inputs, argumentName, DataType.MAP_DATA_TYPE, MapType.class))
+				.map(inputMap -> {
+					Map<String, List<String>> headerMap = new HashMap<>();
+					inputMap.getItems().forEach((key, value) -> {
+						if (key != null && !key.isBlank()) {
+							var headersForKey = headerMap.computeIfAbsent(key, k -> new ArrayList<>());
+							if (value instanceof MapType mapType) {
+								headersForKey.addAll(mapType.getItems().values().stream().map(x -> x.convertTo(DataType.STRING_DATA_TYPE).toString()).toList());
+							} else if (value instanceof ListType listType) {
+								headersForKey.addAll(listType.getElements().stream().map(x -> x.convertTo(DataType.STRING_DATA_TYPE).toString()).toList());
+							} else {
+								headersForKey.add(value.convertTo(DataType.STRING_DATA_TYPE).toString());
+							}
+						}
+					});
+					return headerMap;
+				}).orElse(new HashMap<>(0));
+	}
+
 }

@@ -20,6 +20,7 @@ import com.gitb.messaging.IMessagingHandler;
 import com.gitb.messaging.Message;
 import com.gitb.messaging.MessagingReport;
 import com.gitb.ms.InitiateResponse;
+import com.gitb.tdl.MessagingStep;
 import com.gitb.utils.ActorUtils;
 import com.gitb.utils.ErrorUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -151,8 +152,8 @@ public abstract class AbstractMessagingHandler extends AbstractHandler implement
     }
 
     @Override
-    public MessagingReport receiveMessage(String sessionId, String transactionId, String callId, String stepId, List<Configuration> configurations, Message inputs, List<Thread> messagingThreads) {
-        Thread receiveThread = new Thread(new ReceiveRunner(sessionId, transactionId, callId, configurations, inputs, this));
+    public MessagingReport receiveMessage(String sessionId, String transactionId, String callId, MessagingStep step, Message inputs, List<Thread> messagingThreads) {
+        Thread receiveThread = new Thread(new ReceiveRunner(sessionId, transactionId, callId, step.getConfig(), inputs, this));
         messagingThreads.add(receiveThread);
         receiveThread.start();
         return new DeferredMessagingReport();

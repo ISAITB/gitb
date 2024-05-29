@@ -1306,7 +1306,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, systemConfigura
               exportedSystem.setFullName(system.fullname)
               exportedSystem.setDescription(system.description.orNull)
               exportedSystem.setVersion(system.version.orNull)
-              exportedSystem.setApiKey(system.apiKey.orNull)
+              exportedSystem.setApiKey(system.apiKey)
               exportedSystem.setBadgeKey(system.badgeKey)
               // System property values.
               if (exportSettings.customProperties && exportSettings.systemPropertyValues && systemParameterValueMap.contains(system.id)) {

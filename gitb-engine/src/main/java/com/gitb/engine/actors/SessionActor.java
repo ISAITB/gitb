@@ -278,9 +278,9 @@ public class SessionActor extends AbstractActor {
             for (var input: inputs) {
                 if (input != null) {
                     if (input.getName() == null) {
-                        logger.warn("Session ["+getSessionId()+"] received input with no name");
+                        logger.warn("Session [{}] received input with no name", getSessionId());
                     } else if (input.getName().equals(DOMAIN_MAP) || input.getName().equals(ORGANISATION_MAP) || input.getName().equals(SYSTEM_MAP) || input.getName().equals(SESSION_MAP)) {
-                        logger.warn("Session ["+getSessionId()+"] received input with reserved name ["+input.getName()+"]");
+                        logger.warn("Session [{}] received input with reserved name [{}]", getSessionId(), input.getName());
                     } else {
                         // Add the input to the scope. Note that this may override existing (a) actor configs, (b) imports, or (c) variables
                         var variable = context.getScope().createVariable(input.getName());

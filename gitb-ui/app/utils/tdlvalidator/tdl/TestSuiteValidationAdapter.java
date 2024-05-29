@@ -69,6 +69,10 @@ public class TestSuiteValidationAdapter {
             // Handler configuration
             for (String handler : asSet(getConfigValue("validator.validationHandlers", configProperties))) {
                 ExternalConfiguration.ValidationHandlerConfiguration config = new ExternalConfiguration.ValidationHandlerConfiguration();
+                config.setDeprecated(Boolean.parseBoolean(Optional.ofNullable(getConfigValue("validator.validationHandlers." + handler + ".deprecated", configProperties)).orElse("false")));
+                if (config.isDeprecated()) {
+                    config.setReplacement(getConfigValue("validator.validationHandlers." + handler + ".replacedBy", configProperties));
+                }
                 config.getRequiredConfigs().addAll(asSet(getConfigValue("validator.validationHandlers." + handler + ".config.required", configProperties)));
                 config.getOptionalConfigs().addAll(asSet(getConfigValue("validator.validationHandlers." + handler + ".config.optional", configProperties)));
                 config.getRequiredInputs().addAll(asSet(getConfigValue("validator.validationHandlers." + handler + ".input.required", configProperties)));
@@ -77,6 +81,10 @@ public class TestSuiteValidationAdapter {
             }
             for (String handler : asSet(getConfigValue("validator.processingHandlers", configProperties))) {
                 ExternalConfiguration.ProcessingHandlerConfiguration config = new ExternalConfiguration.ProcessingHandlerConfiguration();
+                config.setDeprecated(Boolean.parseBoolean(Optional.ofNullable(getConfigValue("validator.processingHandlers." + handler + ".deprecated", configProperties)).orElse("false")));
+                if (config.isDeprecated()) {
+                    config.setReplacement(getConfigValue("validator.processingHandlers." + handler + ".replacedBy", configProperties));
+                }
                 config.getRequiredConfigs().addAll(asSet(getConfigValue("validator.processingHandlers." + handler + ".config.required", configProperties)));
                 config.getOptionalConfigs().addAll(asSet(getConfigValue("validator.processingHandlers." + handler + ".config.optional", configProperties)));
                 // Operation-specific configuration.
@@ -91,6 +99,10 @@ public class TestSuiteValidationAdapter {
             }
             for (String handler : asSet(getConfigValue("validator.messagingHandlers", configProperties))) {
                 ExternalConfiguration.MessagingHandlerConfiguration config = new ExternalConfiguration.MessagingHandlerConfiguration();
+                config.setDeprecated(Boolean.parseBoolean(Optional.ofNullable(getConfigValue("validator.messagingHandlers." + handler + ".deprecated", configProperties)).orElse("false")));
+                if (config.isDeprecated()) {
+                    config.setReplacement(getConfigValue("validator.messagingHandlers." + handler + ".replacedBy", configProperties));
+                }
                 config.getRequiredTxConfigs().addAll(asSet(getConfigValue("validator.messagingHandlers." + handler + ".config.tx.required", configProperties)));
                 config.getOptionalTxConfigs().addAll(asSet(getConfigValue("validator.messagingHandlers." + handler + ".config.tx.optional", configProperties)));
                 config.getRequiredSendConfigs().addAll(asSet(getConfigValue("validator.messagingHandlers." + handler + ".config.send.required", configProperties)));

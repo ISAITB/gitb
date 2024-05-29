@@ -5,6 +5,7 @@ import com.gitb.core.ActorConfiguration;
 import com.gitb.core.Configuration;
 import com.gitb.core.MessagingModule;
 import com.gitb.ms.InitiateResponse;
+import com.gitb.tdl.MessagingStep;
 
 import java.util.List;
 
@@ -53,10 +54,9 @@ public interface IMessagingHandler extends StepHandler {
      *
      * @param sessionId
      * @param transactionId
-     * @param configurations
      * @return
      */
-    MessagingReport receiveMessage(String sessionId, String transactionId, String callId, String stepId, List<Configuration> configurations, Message message, List<Thread> messagingThreads);
+    MessagingReport receiveMessage(String sessionId, String transactionId, String callId, MessagingStep step, Message message, List<Thread> messagingThreads);
 
     /**
      *

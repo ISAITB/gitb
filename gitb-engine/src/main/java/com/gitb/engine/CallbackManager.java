@@ -1,27 +1,30 @@
 package com.gitb.engine;
 
-import org.apache.pekko.actor.ActorRef;
 import com.gitb.core.LogLevel;
 import com.gitb.engine.commands.messaging.NotificationReceived;
+import com.gitb.messaging.Message;
 import com.gitb.messaging.MessagingReport;
+import com.gitb.messaging.callback.CallbackType;
+import com.gitb.messaging.callback.SessionCallbackData;
+import org.apache.pekko.actor.ActorRef;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MarkerFactory;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import java.util.*;
+import java.util.function.Function;
 
 public class CallbackManager {
 
     private static final CallbackManager INSTANCE = new CallbackManager();
     private static final Logger LOG = LoggerFactory.getLogger(CallbackManager.class);
 
-    private final ConcurrentMap<String, Set<String>> sessionToCallMap = new ConcurrentHashMap<>();
-    private final ConcurrentMap<String, ActorRef> callToActorMap = new ConcurrentHashMap<>();
+    private final Map<String, Set<String>> sessionToCallMap = new HashMap<>();
+    private final Map<String, ActorRef> callToActorMap = new HashMap<>();
+
+    private final Map<String, SessionCallbackData> callToDataMap = new HashMap<>();
+    private final Map<String, Set<String>> systemToCallMap = new HashMap<>();
+
     private final Object mutex = new Object();
 
     private CallbackManager() {
@@ -29,6 +32,29 @@ public class CallbackManager {
 
     public static CallbackManager getInstance() {
         return INSTANCE;
+    }
+
+    public void registerCallbackData(SessionCallbackData data) {
+        synchronized (mutex) {
+            callToDataMap.put(data.callId(), data);
+            Set<String> existingCallIds = systemToCallMap.computeIfAbsent(data.systemApiKey(), (k) -> new HashSet<>());
+            existingCallIds.add(data.callId());
+        }
+    }
+
+    public Optional<SessionCallbackData> lookupHandlingData(CallbackType type, String systemApiKey, Function<Message, Boolean> matchFunction) {
+        synchronized (mutex) {
+            if (systemToCallMap.containsKey(systemApiKey)) {
+                return systemToCallMap.get(systemApiKey)
+                        .stream().filter(callId -> {
+                            var callbackData = callToDataMap.get(callId);
+                            return callbackData != null && callbackData.data().type() == type && matchFunction.apply(callbackData.data().inputs());
+                        })
+                        .findFirst()
+                        .map(callToDataMap::get);
+            }
+            return Optional.empty();
+        }
     }
 
     public void registerForNotification(ActorRef actor, String sessionId, String callId) {
@@ -39,8 +65,15 @@ public class CallbackManager {
         }
     }
 
+    public void callbackReceived(String sessionId, String callId, Exception error) {
+        callbackReceived(sessionId, callId, null, error);
+    }
 
     public void callbackReceived(String sessionId, String callId, MessagingReport result) {
+        callbackReceived(sessionId, callId, result, null);
+    }
+
+    private void callbackReceived(String sessionId, String callId, MessagingReport result, Exception error) {
         synchronized (mutex) {
             if (sessionToCallMap.containsKey(sessionId)) {
                 // Step 1 - Get the calls that are linked to this notification.
@@ -65,7 +98,7 @@ public class CallbackManager {
                 try {
                     for (ActorRef actor: actorsToNotify) {
                         if (!actor.isTerminated()) {
-                            actor.tell(new NotificationReceived(result), ActorRef.noSender());
+                            actor.tell(new NotificationReceived(result, error), ActorRef.noSender());
                         }
                     }
                 } finally {
@@ -80,7 +113,6 @@ public class CallbackManager {
 
     private void cleanup(String sessionId, String callId) {
         synchronized (mutex) {
-            callToActorMap.remove(callId);
             if (sessionToCallMap.containsKey(sessionId)) {
                 Set<String> callIds = sessionToCallMap.get(sessionId);
                 if (callIds != null) {
@@ -92,6 +124,11 @@ public class CallbackManager {
                     sessionToCallMap.remove(sessionId);
                 }
             }
+            callToActorMap.remove(callId);
+            var data = callToDataMap.remove(callId);
+            if (data != null) {
+                systemToCallMap.remove(data.systemApiKey());
+            }
         }
     }
 
@@ -100,6 +137,10 @@ public class CallbackManager {
             if (sessionToCallMap.containsKey(sessionId)) {
                 for (String callId: sessionToCallMap.get(sessionId)) {
                     callToActorMap.remove(callId);
+                    var data = callToDataMap.remove(callId);
+                    if (data != null) {
+                        systemToCallMap.remove(data.systemApiKey());
+                    }
                 }
                 sessionToCallMap.remove(sessionId);
             }

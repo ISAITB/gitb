@@ -4,6 +4,7 @@ import com.gitb.core.Configuration;
 import com.gitb.core.ErrorCode;
 import com.gitb.core.MessagingModule;
 import com.gitb.engine.CallbackManager;
+import com.gitb.engine.PropertyConstants;
 import com.gitb.engine.actors.ActorSystem;
 import com.gitb.engine.commands.messaging.NotificationReceived;
 import com.gitb.engine.commands.messaging.TimeoutExpired;
@@ -17,6 +18,7 @@ import com.gitb.messaging.DeferredMessagingReport;
 import com.gitb.messaging.IMessagingHandler;
 import com.gitb.messaging.Message;
 import com.gitb.messaging.MessagingReport;
+import com.gitb.messaging.callback.SessionCallbackData;
 import com.gitb.tr.TAR;
 import com.gitb.tr.TestStepReportType;
 import com.gitb.types.BooleanType;
@@ -37,8 +39,6 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Created by serbay on 9/30/14.
- *
  * Receive step executor actor
  */
 public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorActor<com.gitb.tdl.Receive> {
@@ -133,13 +133,21 @@ public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorAct
 							messagingContext.getSessionId(),
 							transactionContext.getTransactionId(),
 							callId,
-							step.getId(),
-							step.getConfig(),
+							step,
 							inputMessage,
 							messagingContext.getMessagingThreads()
 				);
-				if (report instanceof DeferredMessagingReport) {
+				if (report instanceof DeferredMessagingReport deferredReport) {
 					// This means that we should not resolve this step but rather wait for a message to be delivered to the actor.
+					if (deferredReport.getCallbackData() != null) {
+						// Register the data needed to respond when receiving a call.
+						CallbackManager.getInstance().registerCallbackData(new SessionCallbackData(
+								messagingContext.getSessionId(),
+								callId,
+								((MapType) scope.getVariable(PropertyConstants.SYSTEM_MAP).getValue()).getItem(PropertyConstants.SYSTEM_MAP__API_KEY).toString(),
+								deferredReport.getCallbackData())
+						);
+					}
 					return null;
 				} else {
 					return handleMessagingResult(report);
@@ -156,10 +164,13 @@ public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorAct
 	@Override
 	public void onReceive(Object message) {
 		try {
-			if (message instanceof NotificationReceived) {
+			if (message instanceof NotificationReceived notificationMessage) {
+				if (notificationMessage.getError() != null) {
+					throw notificationMessage.getError();
+				}
 				logger.debug(addMarker(), "Received notification");
 				receivedResponse = true;
-				signalStepStatus(handleMessagingResult(((NotificationReceived) message).getReport()));
+				signalStepStatus(handleMessagingResult(notificationMessage.getReport()));
 			} else if (message instanceof TimeoutExpired) {
 				if (!receivedResponse) {
 					VariableResolver resolver = new VariableResolver(scope);
@@ -190,7 +201,6 @@ public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorAct
 				super.onReceive(message);
 			}
 		} catch (Exception e) {
-			logger.error(addMarker(), "Processing caught an exception", e);
 			error(e);
 		}
 	}

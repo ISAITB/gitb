@@ -1,5 +1,6 @@
 package com.gitb.messaging;
 
+import com.gitb.messaging.callback.CallbackData;
 import com.gitb.tr.TAR;
 
 import java.util.concurrent.CompletableFuture;
@@ -7,14 +8,25 @@ import java.util.concurrent.CompletableFuture;
 public class DeferredMessagingReport extends MessagingReport {
 
     private final CompletableFuture<MessagingReport> deferredReport;
+    private final CallbackData callbackData;
 
     public DeferredMessagingReport() {
-        this(null);
+        this(null, null);
     }
 
     public DeferredMessagingReport(CompletableFuture<MessagingReport> deferredReport) {
+        this(deferredReport, null);
+    }
+
+    public DeferredMessagingReport(CallbackData callbackData) {
+        this(null, callbackData);
+    }
+
+    private DeferredMessagingReport(CompletableFuture<MessagingReport> deferredReport, CallbackData callbackData) {
         super(null);
         this.deferredReport = deferredReport;
+        this.callbackData = callbackData;
+
     }
 
     @Override
@@ -31,4 +43,7 @@ public class DeferredMessagingReport extends MessagingReport {
         return deferredReport;
     }
 
+    public CallbackData getCallbackData() {
+        return callbackData;
+    }
 }

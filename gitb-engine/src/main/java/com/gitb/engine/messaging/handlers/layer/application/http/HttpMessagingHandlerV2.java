@@ -1,17 +1,25 @@
 package com.gitb.engine.messaging.handlers.layer.application.http;
 
-import com.gitb.core.ActorConfiguration;
 import com.gitb.core.Configuration;
-import com.gitb.core.MessagingModule;
+import com.gitb.engine.CallbackManager;
+import com.gitb.engine.PropertyConstants;
+import com.gitb.engine.SessionManager;
 import com.gitb.engine.messaging.MessagingHandler;
-import com.gitb.engine.messaging.handlers.layer.AbstractMessagingHandler;
+import com.gitb.engine.messaging.handlers.layer.AbstractNonWorkerMessagingHandler;
 import com.gitb.engine.messaging.handlers.utils.MessagingHandlerUtils;
 import com.gitb.messaging.DeferredMessagingReport;
 import com.gitb.messaging.Message;
 import com.gitb.messaging.MessagingReport;
-import com.gitb.ms.InitiateResponse;
+import com.gitb.messaging.callback.CallbackData;
+import com.gitb.messaging.callback.CallbackType;
+import com.gitb.tdl.MessagingStep;
 import com.gitb.types.*;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MarkerFactory;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 
 import java.io.ByteArrayInputStream;
 import java.net.URI;
@@ -23,25 +31,37 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Supplier;
+
+import static com.gitb.engine.TestEngineConfiguration.HANDLER_API_ROOT;
+import static com.gitb.engine.messaging.handlers.utils.MessagingHandlerUtils.getMapOfValues;
 
 @MessagingHandler(name="HttpMessagingV2")
-public class HttpMessagingHandlerV2 extends AbstractMessagingHandler {
+public class HttpMessagingHandlerV2 extends AbstractNonWorkerMessagingHandler {
 
+    private static final Logger LOG = LoggerFactory.getLogger(HttpMessagingHandlerV2.class);
+
+    public final static String METHOD_ARGUMENT_NAME = "method";
+    public final static String STATUS_ARGUMENT_NAME = "status";
+    public final static String HEADERS_ARGUMENT_NAME = "headers";
+    public final static String BODY_ARGUMENT_NAME = "body";
+    public final static String URI_EXTENSION_ARGUMENT_NAME = "uriExtension";
     private final static String URI_ARGUMENT_NAME = "uri";
-    private final static String METHOD_ARGUMENT_NAME = "method";
     private final static String PARAMETERS_ARGUMENT_NAME = "parameters";
     private final static String QUERY_PARAMETERS_ARGUMENT_NAME = "queryParameters";
-    private final static String HEADERS_ARGUMENT_NAME = "headers";
-    private final static String BODY_ARGUMENT_NAME = "body";
     private final static String PARTS_ARGUMENT_NAME = "parts";
     private final static String FOLLOW_REDIRECTS_ARGUMENT_NAME = "followRedirects";
 
-    private final static String CONTENT_TYPE = "Content-Type";
+    public static final String REPORT_ITEM_REQUEST = "request";
+    public static final String REPORT_ITEM_RESPONSE = "response";
+    public static final String REPORT_ITEM_URI = "uri";
+    public static final String REPORT_ITEM_HEADERS = "headers";
+    public static final String REPORT_ITEM_METHOD = "method";
+    public static final String REPORT_ITEM_STATUS = "status";
+    public static final String REPORT_ITEM_BODY = "body";
 
-    @Override
-    public MessagingModule getModuleDefinition() {
-        return new MessagingModule();
-    }
+    public static final String API_PATH = "http";
+    public static final String CONTENT_TYPE = "Content-Type";
 
     @Override
     public MessagingReport sendMessage(String sessionId, String transactionId, String stepId, List<Configuration> configurations, Message message) {
@@ -60,16 +80,13 @@ public class HttpMessagingHandlerV2 extends AbstractMessagingHandler {
         // Multipart form parts.
         var parts = Optional.ofNullable(getAndConvert(message.getFragments(), PARTS_ARGUMENT_NAME, DataType.LIST_DATA_TYPE, ListType.class));
         // The HTTP method to use (GET being the default).
-        var method = Optional.ofNullable(getAndConvert(message.getFragments(), METHOD_ARGUMENT_NAME, DataType.STRING_DATA_TYPE, StringType.class))
-                .map(StringType::toString)
-                .orElseGet(() -> {
-                    if (body.isPresent() || parts.isPresent()) {
-                        return "POST";
-                    } else {
-                        return "GET";
-                    }
-                })
-                .toUpperCase();
+        var method = getMethod(message.getFragments()).orElseGet(() -> {
+            if (body.isPresent() || parts.isPresent()) {
+                return HttpMethod.POST;
+            } else {
+                return HttpMethod.GET;
+            }
+        });
         // The HTTP headers.
         var headers = getMapOfValues(message.getFragments(), HEADERS_ARGUMENT_NAME);
         // Create request.
@@ -77,10 +94,10 @@ public class HttpMessagingHandlerV2 extends AbstractMessagingHandler {
         String uriToUse;
         HttpRequest.BodyPublisher bodyPublisher;
         DataType requestBodyItem = null;
-        if ("GET".equals(method) || "DELETE".equals(method)) {
+        if (HttpMethod.GET.equals(method) || HttpMethod.DELETE.equals(method)) {
             uriToUse = getUriToUse(uri, mergeMapsOfValues(parameters, queryParameters));
             bodyPublisher = HttpRequest.BodyPublishers.noBody();
-        } else if ("POST".equals(method) || "PUT".equals(method)) {
+        } else if (HttpMethod.POST.equals(method) || HttpMethod.PUT.equals(method)) {
             if (body.isPresent() || parts.isPresent()) {
                 if (parameters.isEmpty()) {
                     uriToUse = uri;
@@ -154,15 +171,12 @@ public class HttpMessagingHandlerV2 extends AbstractMessagingHandler {
             requestHeadersItem.addItem(key, new StringType(String.join(", ", value)));
         });
         if (headers.containsKey(CONTENT_TYPE) && requestBodyItem != null) {
-            Optional<String> contentTypeToSet = headers.get(CONTENT_TYPE).stream()
+            headers.get(CONTENT_TYPE).stream()
                     .findFirst()
-                    .flatMap(contentType -> Arrays.stream(StringUtils.split(contentType, ';')).findFirst());
-            if (contentTypeToSet.isPresent()) {
-                requestBodyItem.setContentType(contentTypeToSet.get());
-            }
+                    .flatMap(contentType -> Arrays.stream(StringUtils.split(contentType, ';')).findFirst())
+                    .ifPresent(requestBodyItem::setContentType);
         }
-        builder.uri(URI.create(uriToUse))
-                .method(method, bodyPublisher);
+        builder.uri(URI.create(uriToUse)).method(method.name(), bodyPublisher);
         DataType finalRequestBodyItem = requestBodyItem;
         // Make request.
         CompletableFuture<HttpResponse<byte[]>> asyncResponse;
@@ -180,29 +194,29 @@ public class HttpMessagingHandlerV2 extends AbstractMessagingHandler {
             var messageForReport = new Message();
             var requestItem = new MapType();
             // Method
-            requestItem.getItems().put("method", new StringType(method));
+            requestItem.getItems().put(REPORT_ITEM_METHOD, new StringType(method.name()));
             // URI
-            requestItem.getItems().put("uri", new StringType(uriToUse));
+            requestItem.getItems().put(REPORT_ITEM_URI, new StringType(uriToUse));
             // Headers
             if (!headers.isEmpty()) {
-                requestItem.getItems().put("headers", requestHeadersItem);
+                requestItem.getItems().put(REPORT_ITEM_HEADERS, requestHeadersItem);
             }
             // Body
             if (finalRequestBodyItem != null) {
-                requestItem.getItems().put("body", finalRequestBodyItem);
+                requestItem.getItems().put(REPORT_ITEM_BODY, finalRequestBodyItem);
             }
-            messageForReport.getFragments().put("request", requestItem);
+            messageForReport.getFragments().put(REPORT_ITEM_REQUEST, requestItem);
             // Create report - response
             var responseItem = new MapType();
             // Status
-            responseItem.getItems().put("status", new StringType(String.valueOf(response.statusCode())));
+            responseItem.getItems().put(REPORT_ITEM_STATUS, new StringType(String.valueOf(response.statusCode())));
             // Headers
             if (!response.headers().map().isEmpty()) {
                 MapType responseHeadersItem = new MapType();
                 response.headers().map().forEach((headerName, headerValues) -> {
                     responseHeadersItem.addItem(headerName, new StringType(String.join(", ", headerValues)));
                 });
-                responseItem.getItems().put("headers", responseHeadersItem);
+                responseItem.getItems().put(REPORT_ITEM_HEADERS, responseHeadersItem);
             }
             // Body
             byte[] responseBody = response.body();
@@ -212,17 +226,82 @@ public class HttpMessagingHandlerV2 extends AbstractMessagingHandler {
                         .firstValue(CONTENT_TYPE)
                         .flatMap(contentType -> Arrays.stream(StringUtils.split(contentType, ';')).findFirst())
                         .ifPresent(contentType -> dataItem.setContentType(contentType.trim()));
-                responseItem.addItem("body", dataItem);
+                responseItem.addItem(REPORT_ITEM_BODY, dataItem);
             }
-            messageForReport.getFragments().put("response", responseItem);
+            messageForReport.getFragments().put(REPORT_ITEM_RESPONSE, responseItem);
             return MessagingHandlerUtils.generateSuccessReport(messageForReport);
         });
         return new DeferredMessagingReport(asyncReport);
     }
 
     @Override
-    public MessagingReport receiveMessage(String sessionId, String transactionId, String callId, String stepId, List<Configuration> configurations, Message inputs, List<Thread> messagingThreads) {
-        throw new IllegalStateException("The 'receive' step is not currently supported for the HttpMessagingV2 handler");
+    public MessagingReport receiveMessage(String sessionId, String transactionId, String callId, MessagingStep step, Message inputs, List<Thread> messagingThreads) {
+        /*
+         * Extract here the important inputs to have a chance of failing quick and reporting issues directly.
+         */
+        // Method.
+        Optional<HttpMethod> method = getMethod(inputs.getFragments());
+        // Status.
+        getStatus(inputs.getFragments(), () -> HttpStatus.OK);
+        // URI extension.
+        DataType systemData = SessionManager.getInstance().getContext(sessionId).getScope().getVariable(PropertyConstants.SYSTEM_MAP).getValue();
+        String systemApiKey;
+        if (systemData instanceof MapType systemMap) {
+            if (systemMap.getItems().get("apiKey") instanceof StringType apiKey) {
+                systemApiKey = apiKey.toString();
+            } else {
+                throw new IllegalStateException("The SYSTEM map did not contain the expected apiKey property");
+            }
+        } else {
+            throw new IllegalStateException("No SYSTEM map was found in the test session");
+        }
+        Optional<String> uriExtension = getUriExtension(inputs.getFragments());
+        var receptionEndpoint = "%s%s%s%s".formatted(
+                StringUtils.appendIfMissing(HANDLER_API_ROOT, "/"),
+                StringUtils.appendIfMissing(API_PATH, "/"),
+                systemApiKey,
+                uriExtension.map(uri -> {
+                    if (uri.startsWith("?")) {
+                        return uri;
+                    } else {
+                        return StringUtils.prependIfMissing(uri, "/");
+                    }
+                }).orElse("")
+        );
+        LOG.info(MarkerFactory.getDetachedMarker(sessionId), "Waiting to receive {} at [{}]{}",
+                method.map(HttpMethod::name).orElse("any call"),
+                receptionEndpoint,
+                Optional.ofNullable(StringUtils.trimToNull(step.getDesc())).map(" for step [%s]"::formatted).orElse("")
+        );
+        return new DeferredMessagingReport(new CallbackData(inputs, CallbackType.HTTP));
+    }
+
+    @Override
+    public void endSession(String sessionId) {
+        CallbackManager.getInstance().sessionEnded(sessionId);
+    }
+
+    public static Optional<HttpMethod> getMethod(Map<String, DataType> data) {
+        return Optional.ofNullable(getAndConvert(data, HttpMessagingHandlerV2.METHOD_ARGUMENT_NAME, DataType.STRING_DATA_TYPE, StringType.class))
+                .map(value -> HttpMethod.valueOf(value.toString()));
+    }
+
+    public static HttpStatus getStatus(Map<String, DataType> data, Supplier<HttpStatus> defaultSupplier) {
+        return Optional.ofNullable(getAndConvert(data, HttpMessagingHandlerV2.STATUS_ARGUMENT_NAME, DataType.NUMBER_DATA_TYPE, NumberType.class))
+                .map(value -> HttpStatus.valueOf(value.intValue()))
+                .orElseGet(defaultSupplier);
+    }
+
+    public static Optional<String> getUriExtension(Map<String, DataType> data) {
+        return Optional.ofNullable(getAndConvert(data, HttpMessagingHandlerV2.URI_EXTENSION_ARGUMENT_NAME, DataType.STRING_DATA_TYPE, StringType.class))
+                .flatMap(value -> {
+                    var valueStr = value.toString();
+                    if (valueStr == null || valueStr.isBlank()) {
+                        return Optional.empty();
+                    } else {
+                        return Optional.of(valueStr.trim().toLowerCase());
+                    }
+                });
     }
 
     private Map<String, List<String>> mergeMapsOfValues(Map<String, List<String>> map1, Map<String, List<String>> map2) {
@@ -233,25 +312,6 @@ public class HttpMessagingHandlerV2 extends AbstractMessagingHandler {
            return uniqueValues.stream().toList();
         }));
         return result;
-    }
-
-    private Map<String, List<String>> getMapOfValues(Map<String, DataType> inputs, String argumentName) {
-        return Optional.ofNullable(getAndConvert(inputs, argumentName, DataType.MAP_DATA_TYPE, MapType.class))
-                .map(inputMap -> {
-                    Map<String, List<String>> headerMap = new HashMap<>();
-                    inputMap.getItems().forEach((key, value) -> {
-                        Objects.requireNonNull(key, "A value was provided in the [%s] map that did not have a name.".formatted(argumentName));
-                        var headersForKey = headerMap.computeIfAbsent(key, k -> new ArrayList<>());
-                        if (value instanceof MapType mapType) {
-                            headersForKey.addAll(mapType.getItems().values().stream().map(x -> x.convertTo(DataType.STRING_DATA_TYPE).toString()).toList());
-                        } else if (value instanceof ListType listType) {
-                            headersForKey.addAll(listType.getElements().stream().map(x -> x.convertTo(DataType.STRING_DATA_TYPE).toString()).toList());
-                        } else {
-                            headersForKey.add(value.convertTo(DataType.STRING_DATA_TYPE).toString());
-                        }
-                    });
-                    return headerMap;
-                }).orElse(new HashMap<>(0));
     }
 
     private String getUriToUse(String uri, Map<String, List<String>> parameters) {
@@ -285,36 +345,6 @@ public class HttpMessagingHandlerV2 extends AbstractMessagingHandler {
             }
         }
         return strBuilder.toString();
-    }
-
-    @Override
-    public void beginTransaction(String sessionId, String transactionId, String stepId, String from, String to, List<Configuration> configurations) {
-        // Do nothing.
-    }
-
-    @Override
-    public void endTransaction(String sessionId, String transactionId, String stepId) {
-        // Do nothing.
-    }
-
-    @Override
-    public void endSession(String sessionId) {
-        // Do nothing.
-    }
-
-    @Override
-    public MessagingReport listenMessage(String sessionId, String transactionId, String stepId, String from, String to, List<Configuration> configurations, Message inputs) {
-        throw new IllegalStateException("The HttpMessagingV2 handler can only be used for send and receive operations");
-    }
-
-    @Override
-    public boolean needsMessagingServerWorker() {
-        return false;
-    }
-
-    @Override
-    public InitiateResponse initiate(List<ActorConfiguration> actorConfigurations) {
-        return new InitiateResponse();
     }
 
 }

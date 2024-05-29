@@ -36,6 +36,7 @@ object Constants {
   val systemConfiguration_shortName = "shortName"
   val systemConfiguration_fullName = "fullName"
   val systemConfiguration_version = "version"
+  val systemConfiguration_apiKey = "apiKey"
 
   val PlaceholderOrganisation = "$ORGANISATION"
   val PlaceholderSystem = "$SYSTEM"

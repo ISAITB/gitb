@@ -149,7 +149,6 @@ public class SendStepProcessorActor extends AbstractMessagingStepProcessorActor<
 				super.onReceive(message);
 			}
 		} catch (Exception e) {
-			logger.error(addMarker(), "Processing caught an exception", e);
 			error(e);
 		}
 	}

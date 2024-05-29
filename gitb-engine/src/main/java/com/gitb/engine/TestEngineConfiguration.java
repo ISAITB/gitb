@@ -7,6 +7,9 @@ import org.apache.commons.configuration2.EnvironmentConfiguration;
 import org.apache.commons.configuration2.SystemConfiguration;
 import org.apache.commons.configuration2.builder.fluent.Configurations;
 import org.apache.commons.configuration2.ex.ConfigurationException;
+import org.apache.commons.lang3.StringUtils;
+
+import java.util.Objects;
 
 /**
  * Created by serbay on 9/8/14.
@@ -15,6 +18,7 @@ import org.apache.commons.configuration2.ex.ConfigurationException;
 public class TestEngineConfiguration {
 
 	public static int ITERATION_LIMIT;
+	public static String ROOT_CALLBACK_URL;
 	public static String MESSAGING_CALLBACK_URL;
 	public static String VALIDATION_CALLBACK_URL;
 	public static String PROCESSING_CALLBACK_URL;
@@ -31,6 +35,13 @@ public class TestEngineConfiguration {
 	public static String TEST_ID_PARAMETER;
 	public static String RESOURCE_ID_PARAMETER;
 	public static Configuration DEFAULT_MESSAGING_CONFIGURATION;
+	public static String HANDLER_API_ROOT;
+
+	public static final String HANDLER_API_SEGMENT = "api";
+	private static final String ENV_CALLBACK_ROOT_URL = "CALLBACK_ROOT_URL";
+	private static final String ENV_CALLBACK_MESSAGING_URL = "CALLBACK_MESSAGING_URL";
+	private static final String ENV_CALLBACK_VALIDATION_URL = "CALLBACK_VALIDATION_URL";
+	private static final String ENV_CALLBACK_PROCESSING_URL = "CALLBACK_PROCESSING_URL";
 
     /**
      * Load the configurations from the configuration files
@@ -43,10 +54,52 @@ public class TestEngineConfiguration {
 			config.addConfiguration(new Configurations().properties("engine-module.properties"));
 
 			ITERATION_LIMIT = config.getInt("gitb.engine.iteration-limit", 1000);
-			MESSAGING_CALLBACK_URL = config.getString("gitb.messaging.callbackURL");
-			// By default, infer the processing and validation callback URLs from the messaging callback to avoid requiring their explicit definition.
-			VALIDATION_CALLBACK_URL = config.getString("gitb.validation.callbackURL", inferCallbackURL("ValidationClient", MESSAGING_CALLBACK_URL));
-			PROCESSING_CALLBACK_URL = config.getString("gitb.processing.callbackURL", inferCallbackURL("ProcessingClient", MESSAGING_CALLBACK_URL));
+			// Determine callback URLs - start.
+			var rootCallbackUrl = config.getString(ENV_CALLBACK_ROOT_URL, "");
+			var messagingCallbackUrl = config.getString(ENV_CALLBACK_MESSAGING_URL, "");
+			var validationCallbackUrl = config.getString(ENV_CALLBACK_VALIDATION_URL, "");
+			var processingCallbackUrl = config.getString(ENV_CALLBACK_PROCESSING_URL, "");
+			// Backwards compatibility checks.
+			if (messagingCallbackUrl.isEmpty()) {
+				messagingCallbackUrl = config.getString("gitb.messaging.callbackURL", "");
+			}
+			if (validationCallbackUrl.isEmpty()) {
+				validationCallbackUrl = config.getString("gitb.validation.callbackURL", "");
+			}
+			if (processingCallbackUrl.isEmpty()) {
+				processingCallbackUrl = config.getString("gitb.processing.callbackURL", "");
+			}
+			if (rootCallbackUrl.isEmpty()) {
+				// Ideally the root callback URL is the one configured. However if any of the other callback URLs are defined instead we can infer from them the root.
+				String referenceToUse;
+				if (!messagingCallbackUrl.isEmpty()) {
+					referenceToUse = messagingCallbackUrl;
+				} else if (!validationCallbackUrl.isEmpty()) {
+					referenceToUse = validationCallbackUrl;
+				} else if (!processingCallbackUrl.isEmpty()) {
+					referenceToUse = processingCallbackUrl;
+				} else {
+					throw new IllegalStateException("No callback addresses were configured for test engine notifications. You must configure at least one of %s, %s, %s or %s the properties.".formatted(ENV_CALLBACK_ROOT_URL, ENV_CALLBACK_MESSAGING_URL, ENV_CALLBACK_VALIDATION_URL, ENV_CALLBACK_PROCESSING_URL));
+				}
+				rootCallbackUrl = inferCallbackURL("", referenceToUse);
+			}
+			// By default, infer the messaging, processing and validation callback URLs from the root callback URL to avoid requiring their explicit definition.
+			rootCallbackUrl = Objects.requireNonNull(StringUtils.appendIfMissing(rootCallbackUrl, "/"), "No root callback address could be determined. You must configure the %s property.".formatted(ENV_CALLBACK_ROOT_URL));
+			if (messagingCallbackUrl.isEmpty()) {
+				messagingCallbackUrl = inferCallbackURL("MessagingClient", rootCallbackUrl);
+			}
+			if (validationCallbackUrl.isEmpty()) {
+				validationCallbackUrl = inferCallbackURL("ValidationClient", rootCallbackUrl);
+			}
+			if (processingCallbackUrl.isEmpty()) {
+				processingCallbackUrl = inferCallbackURL("ProcessingClient", rootCallbackUrl);
+			}
+			ROOT_CALLBACK_URL = rootCallbackUrl;
+			MESSAGING_CALLBACK_URL = messagingCallbackUrl;
+			VALIDATION_CALLBACK_URL = validationCallbackUrl;
+			PROCESSING_CALLBACK_URL = processingCallbackUrl;
+			HANDLER_API_ROOT = rootCallbackUrl+HANDLER_API_SEGMENT+"/";
+			// Determine callback URLs - end.
 			// Temp storage properties - start.
 			TEMP_STORAGE_ENABLED = config.getBoolean("gitb.engine.storage.enabled", Boolean.TRUE);
 			TEMP_STORAGE_LOCATION = config.getString("gitb.engine.storage.location", "./temp/session/");

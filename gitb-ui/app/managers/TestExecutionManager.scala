@@ -174,6 +174,7 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
     if (system.version.nonEmpty) {
       addConfig(systemConfiguration, Constants.systemConfiguration_version, system.version.get)
     }
+    addConfig(systemConfiguration, Constants.systemConfiguration_apiKey, system.apiKey)
     val systemProperties = PrerequisiteUtil.withValidPrerequisites(systemManager.getSystemParameterValues(systemId))
     if (systemProperties.nonEmpty) {
       systemProperties.foreach{ property =>
