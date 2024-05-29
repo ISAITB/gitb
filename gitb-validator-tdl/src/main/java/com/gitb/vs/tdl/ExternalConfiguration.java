@@ -143,12 +143,33 @@ public class ExternalConfiguration {
         }
     }
 
-    public static class ProcessingHandlerConfiguration {
+    public static class BaseHandlerConfig {
+
+        private boolean deprecated = false;
+        private String replacement;
+
+        public boolean isDeprecated() {
+            return deprecated;
+        }
+
+        public void setDeprecated(boolean deprecated) {
+            this.deprecated = deprecated;
+        }
+
+        public String getReplacement() {
+            return replacement;
+        }
+
+        public void setReplacement(String replacement) {
+            this.replacement = replacement;
+        }
+    }
+
+    public static class ProcessingHandlerConfiguration extends BaseHandlerConfig {
 
         private final Map<String, BasicConfiguration> operations = new HashMap<>();
         private final Set<String> requiredConfigs = new HashSet<>();
         private final Set<String> optionalConfigs = new HashSet<>();
-        private boolean deprecated = false;
 
         public Map<String, BasicConfiguration> getOperations() {
             return operations;
@@ -162,13 +183,6 @@ public class ExternalConfiguration {
             return optionalConfigs;
         }
 
-        public boolean isDeprecated() {
-            return deprecated;
-        }
-
-        public void setDeprecated(boolean deprecated) {
-            this.deprecated = deprecated;
-        }
     }
 
     public static class ValidationHandlerConfiguration extends BasicConfiguration {
@@ -185,11 +199,10 @@ public class ExternalConfiguration {
         }
     }
 
-    public static class BasicConfiguration {
+    public static class BasicConfiguration extends BaseHandlerConfig {
 
         private final Set<String> requiredInputs = new HashSet<>();
         private final Set<String> optionalInputs = new HashSet<>();
-        private boolean deprecated = false;
 
         public Set<String> getRequiredInputs() {
             return requiredInputs;
@@ -199,13 +212,6 @@ public class ExternalConfiguration {
             return optionalInputs;
         }
 
-        public boolean isDeprecated() {
-            return deprecated;
-        }
-
-        public void setDeprecated(boolean deprecated) {
-            this.deprecated = deprecated;
-        }
     }
 
 }

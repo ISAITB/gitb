@@ -4,6 +4,7 @@ import com.gitb.core.Configuration;
 import com.gitb.tdl.Process;
 import com.gitb.tdl.*;
 import com.gitb.vs.tdl.ErrorCode;
+import com.gitb.vs.tdl.ExternalConfiguration;
 import com.gitb.vs.tdl.util.Utils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -27,6 +28,8 @@ public class CheckHandlers extends AbstractTestCaseObserver {
         if (stepObj instanceof BeginTransaction) {
             String handler = ((BeginTransaction) stepObj).getHandler();
             if (checkHandlerBeforeInputValidations(handler, context.getExternalConfiguration().getEmbeddedMessagingHandlers().keySet(), ErrorCode.INVALID_EMBEDDED_MESSAGING_HANDLER_REFERENCE)) {
+                // Check deprecation.
+                checkDeprecation(handler, context.getExternalConfiguration().getEmbeddedMessagingHandlers().get(handler));
                 // Check configs.
                 checkConfigs(
                         ((BeginTransaction)stepObj).getConfig(),
@@ -47,6 +50,8 @@ public class CheckHandlers extends AbstractTestCaseObserver {
                 handler = ((Send) stepObj).getHandler();
             }
             if (checkHandlerBeforeInputValidations(handler, context.getExternalConfiguration().getEmbeddedMessagingHandlers().keySet(), ErrorCode.INVALID_EMBEDDED_MESSAGING_HANDLER_REFERENCE)) {
+                // Check deprecation.
+                checkDeprecation(handler, context.getExternalConfiguration().getEmbeddedMessagingHandlers().get(handler));
                 // Check inputs and configs.
                 checkConfigs(
                         ((Send) stepObj).getConfig(),
@@ -74,6 +79,8 @@ public class CheckHandlers extends AbstractTestCaseObserver {
                 handler = ((ReceiveOrListen) stepObj).getHandler();
             }
             if (checkHandlerBeforeInputValidations(handler, context.getExternalConfiguration().getEmbeddedMessagingHandlers().keySet(), ErrorCode.INVALID_EMBEDDED_MESSAGING_HANDLER_REFERENCE)) {
+                // Check deprecation.
+                checkDeprecation(handler, context.getExternalConfiguration().getEmbeddedMessagingHandlers().get(handler));
                 // Check inputs and configs.
                 checkConfigs(
                         ((ReceiveOrListen) stepObj).getConfig(),
@@ -95,6 +102,8 @@ public class CheckHandlers extends AbstractTestCaseObserver {
         } else if (stepObj instanceof BeginProcessingTransaction) {
             String handler = ((BeginProcessingTransaction) stepObj).getHandler();
             if (checkHandlerBeforeInputValidations(handler, context.getExternalConfiguration().getEmbeddedProcessingHandlers().keySet(), ErrorCode.INVALID_EMBEDDED_PROCESSING_HANDLER_REFERENCE)) {
+                // Check deprecation.
+                checkDeprecation(handler, context.getExternalConfiguration().getEmbeddedProcessingHandlers().get(handler));
                 // Check configs.
                 checkConfigs(
                         ((BeginProcessingTransaction)stepObj).getConfig(),
@@ -118,6 +127,9 @@ public class CheckHandlers extends AbstractTestCaseObserver {
                 handler = ((Process) stepObj).getHandler();
             }
             if (checkHandlerBeforeInputValidations(handler, context.getExternalConfiguration().getEmbeddedProcessingHandlers().keySet(), ErrorCode.INVALID_EMBEDDED_PROCESSING_HANDLER_REFERENCE)) {
+                // Check deprecation.
+                checkDeprecation(handler, context.getExternalConfiguration().getEmbeddedProcessingHandlers().get(handler));
+                // Check operation.
                 String operation = ((Process) stepObj).getOperation();
                 if (operation == null) {
                     operation = ((Process) stepObj).getOperationAttribute();
@@ -151,6 +163,8 @@ public class CheckHandlers extends AbstractTestCaseObserver {
         } else if (stepObj instanceof Verify) {
             String handler = ((Verify) stepObj).getHandler();
             if (checkHandlerBeforeInputValidations(handler, context.getExternalConfiguration().getEmbeddedValidationHandlers().keySet(), ErrorCode.INVALID_EMBEDDED_VALIDATION_HANDLER_REFERENCE)) {
+                // Check deprecation.
+                checkDeprecation(handler, context.getExternalConfiguration().getEmbeddedValidationHandlers().get(handler));
                 // Check inputs and configs.
                 checkConfigs(
                         ((Verify) stepObj).getConfig(),
@@ -199,6 +213,16 @@ public class CheckHandlers extends AbstractTestCaseObserver {
             }
             for (String remainingRequiredConfig: remainingRequiredConfigs) {
                 addReportItem(ErrorCode.MISSING_HANDLER_CONFIG, currentTestCase.getId(), Utils.stepNameWithScriptlet(currentStep, currentScriptlet), handlerName, remainingRequiredConfig);
+            }
+        }
+    }
+
+    private void checkDeprecation(String handlerName, ExternalConfiguration.BaseHandlerConfig config) {
+        if (config.isDeprecated()) {
+            if (config.getReplacement() == null) {
+                addReportItem(ErrorCode.DEPRECATED_HANDLER, currentTestCase.getId(), Utils.stepNameWithScriptlet(currentStep, currentScriptlet), handlerName);
+            } else {
+                addReportItem(ErrorCode.DEPRECATED_HANDLER_WITH_REPLACEMENT, currentTestCase.getId(), Utils.stepNameWithScriptlet(currentStep, currentScriptlet), handlerName, config.getReplacement());
             }
         }
     }

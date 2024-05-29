@@ -151,7 +151,7 @@ public class VariableResolver implements XPathVariableResolver {
                     }
                 }
                 if (Utils.SYSTEM_MAP.equals(entry.getKey()) && !Utils.isVariableExpression(entry.getValue().containerExpression)) {
-                    if (!Utils.SYSTEM_MAP__FULL_NAME.equals(entry.getValue().containerExpression) && !Utils.SYSTEM_MAP__SHORT_NAME.equals(entry.getValue().containerExpression) && !Utils.SYSTEM_MAP__VERSION.equals(entry.getValue().containerExpression)) {
+                    if (!Utils.SYSTEM_MAP__FULL_NAME.equals(entry.getValue().containerExpression) && !Utils.SYSTEM_MAP__SHORT_NAME.equals(entry.getValue().containerExpression) && !Utils.SYSTEM_MAP__VERSION.equals(entry.getValue().containerExpression) && !Utils.SYSTEM_MAP__API_KEY.equals(entry.getValue().containerExpression)) {
                         provider.getContext().recordCustomSystemProperty(entry.getValue().containerExpression);
                     }
                 }
