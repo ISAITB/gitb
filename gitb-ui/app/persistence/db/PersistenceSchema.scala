@@ -86,7 +86,7 @@ object PersistenceSchema {
     def fullname = column[String]("fname")
     def description = column[Option[String]]("description", O.SqlType("TEXT"))
     def version = column[Option[String]]("version")
-    def apiKey = column[Option[String]]("api_key")
+    def apiKey = column[String]("api_key")
     def badgeKey = column[String]("badge_key")
     def owner = column[Long]("owner")
     def * = (id, shortname, fullname, description, version, apiKey, badgeKey, owner) <> (Systems.tupled, Systems.unapply)
@@ -779,7 +779,7 @@ object PersistenceSchema {
     def fullname = column[String]("fname")
     def version = column[Option[String]]("version")
     def description = column[Option[String]]("description", O.SqlType("TEXT"))
-    def apiKey = column[Option[String]]("api_key")
+    def apiKey = column[String]("api_key")
     def badgeKey = column[String]("badge_key")
     def snapshotId = column[Long]("snapshot_id")
     def * = (id :: shortname :: fullname :: version :: description :: apiKey :: badgeKey :: snapshotId :: HNil).mapTo[ConformanceSnapshotSystem]

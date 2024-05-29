@@ -42,6 +42,8 @@ public class PropertyConstants {
     public static final String SESSION_MAP__TEST_CASE_ID = "testCaseId";
     public static final String SESSION_MAP__TEST_ENGINE_VERSION = "testEngineVersion";
 
+    public static final String SYSTEM_MAP__API_KEY = "apiKey";
+
     private static final Set<String> BUILT_IN_PROPERTIES = Set.of(DOMAIN_MAP, ORGANISATION_MAP, SYSTEM_MAP, SESSION_MAP, STEP_STATUS_MAP, STEP_SUCCESS_MAP, TEST_SUCCESS);
 
     public static boolean isBuiltInProperty(String name) {

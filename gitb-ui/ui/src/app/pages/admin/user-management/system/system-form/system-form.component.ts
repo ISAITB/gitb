@@ -5,6 +5,8 @@ import { DataService } from 'src/app/services/data.service';
 import { CommunityService } from 'src/app/services/community.service';
 import { SystemService } from 'src/app/services/system.service';
 import { System } from 'src/app/types/system';
+import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
+import { PopupService } from 'src/app/services/popup.service';
 
 @Component({
   selector: 'app-system-form',
@@ -22,11 +24,14 @@ export class SystemFormComponent implements OnInit, AfterViewInit {
   @Input() readonly = false
 
   otherSystems: System[] = []
+  apiKeyUpdatePending = false
 
   constructor(
     public dataService: DataService,
     private communityService: CommunityService,
     private systemService: SystemService,
+    private confirmationDialogService: ConfirmationDialogService,
+    private popupService: PopupService
   ) { }
 
   ngOnInit(): void {
@@ -69,5 +74,20 @@ export class SystemFormComponent implements OnInit, AfterViewInit {
     } else if (this.system.copySystemParameters) {
       this.propertyData.edit = false
     }
-  }  
+  }
+
+  updateApiKey(): void {
+    this.confirmationDialogService.confirmed("Confirm update", "Are you sure you want to update the API key value?", "Update", "Cancel")
+    .subscribe(() => {
+      this.apiKeyUpdatePending = true
+      this.systemService.updateSystemApiKey(this.system.id!)
+      .subscribe((newApiKey) => {
+        this.system.apiKey = newApiKey
+        this.popupService.success(this.dataService.labelSystem()+" API key updated.")
+      }).add(() => {
+        this.apiKeyUpdatePending = false
+      })
+    })
+  }
+
 }

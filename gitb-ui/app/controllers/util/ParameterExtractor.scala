@@ -427,7 +427,7 @@ object ParameterExtractor {
     val descr = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.SYSTEM_DESC)
     val version = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.SYSTEM_VERSION)
     val owner:Long = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.ORGANIZATION_ID).toLong
-    Systems(0L, sname, fname, descr, version, None, "", owner)
+    Systems(0L, sname, fname, descr, version, CryptoUtil.generateApiKey(), "", owner)
   }
 
 	def extractDomain(request:Request[AnyContent]):Domain = {

@@ -67,7 +67,6 @@ GET     /api/suts/:sut_id/availableStatements   @controllers.ConformanceService.
 GET	    /api/vendor/systems                     @controllers.SystemService.getSystemsByOrganization()
 POST	/api/vendor/systems/register            @controllers.SystemService.registerSystemWithOrganization()
 POST    /api/suts/:sut_id/apiKey                @controllers.SystemService.updateSystemApiKey(sut_id: Long)
-DELETE  /api/suts/:sut_id/apiKey                @controllers.SystemService.deleteSystemApiKey(sut_id: Long)
 
 # Test Case management API
 GET	    /api/actorDomain/:actor_id              @controllers.ConformanceService.getDomainOfActor(actor_id: Long)

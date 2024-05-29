@@ -326,12 +326,6 @@ class SystemService @Inject() (implicit ec: ExecutionContext, repositoryUtils: R
     ResponseConstructor.constructStringResponse(newApiKey)
   }
 
-  def deleteSystemApiKey(systemId: Long) = authorizedAction { request =>
-    authorizationManager.canUpdateSystemApiKey(request, systemId)
-    systemManager.deleteSystemApiKey(systemId)
-    ResponseConstructor.constructEmptyResponse
-  }
-
   def ownSystemHasTests(systemId: Long) = authorizedAction { request =>
     authorizationManager.canViewSystem(request, systemId)
     val hasTests = testResultManager.testSessionsExistForSystem(systemId)

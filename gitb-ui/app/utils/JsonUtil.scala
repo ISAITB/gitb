@@ -94,7 +94,7 @@ object JsonUtil {
       json = json.append(Json.obj(
         "id" -> system.id,
         "name" -> system.name,
-        "key" -> (if (system.key.isDefined) system.key.get else JsNull)
+        "key" -> system.key
       ))
     }
     json
@@ -693,6 +693,7 @@ object JsonUtil {
       "fname" -> system.fullname,
       "description" -> (if(system.description.isDefined) system.description.get else JsNull),
       "version" -> (if(system.version.isDefined) system.version.get else JsNull),
+      "apiKey" -> system.apiKey,
       "owner" -> system.owner
     )
     json

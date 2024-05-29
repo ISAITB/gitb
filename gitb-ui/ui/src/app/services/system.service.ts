@@ -264,13 +264,6 @@ export class SystemService {
     })
   }
 
-  deleteSystemApiKey(systemId: number) {
-    return this.restService.delete<void>({
-      path: ROUTES.controllers.SystemService.deleteSystemApiKey(systemId).url,
-      authenticate: true
-    })
-  }
-
   ownSystemHasTests(systemId: number) {
     return this.restService.get<{hasTests: boolean}>({
       path: ROUTES.controllers.SystemService.ownSystemHasTests(systemId).url,

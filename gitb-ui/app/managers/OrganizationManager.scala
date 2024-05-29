@@ -162,7 +162,7 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils, systemMan
         systems.foreach { otherSystem =>
           actions += (
             for {
-              newSystemId <- systemManager.registerSystem(Systems(0L, otherSystem.shortname, otherSystem.fullname, otherSystem.description, otherSystem.version, None, CryptoUtil.generateApiKey(), toOrganisation), communityId, None, None, None, setPropertiesWithDefaultValues = true, onSuccessCalls)
+              newSystemId <- systemManager.registerSystem(Systems(0L, otherSystem.shortname, otherSystem.fullname, otherSystem.description, otherSystem.version, CryptoUtil.generateApiKey(), CryptoUtil.generateApiKey(), toOrganisation), communityId, None, None, None, setPropertiesWithDefaultValues = true, onSuccessCalls)
               createdSystemInfo <- {
                 DBIO.successful(Some(List[SystemCreationDbInfo](new SystemCreationDbInfo(newSystemId, None))))
               }

@@ -1,13 +1,13 @@
 package models
 
-case class Systems(id:Long, shortname:String, fullname:String, description:Option[String], version:Option[String], apiKey: Option[String], badgeKey: String, owner:Long) {
+case class Systems(id:Long, shortname:String, fullname:String, description:Option[String], version:Option[String], apiKey: String, badgeKey: String, owner:Long) {
 
   def withOrganizationId(id:Long): Systems = {
     Systems(this.id, this.shortname, this.fullname, this.description, this.version, this.apiKey, this.badgeKey, id)
   }
 
   def withApiKey(apiKey: String): Systems = {
-    Systems(this.id, this.shortname, this.fullname, this.description, this.version, Some(apiKey), this.badgeKey, this.owner)
+    Systems(this.id, this.shortname, this.fullname, this.description, this.version, apiKey, this.badgeKey, this.owner)
   }
 
   def withBadgeKey(badgeKey: String): Systems = {
@@ -16,7 +16,7 @@ case class Systems(id:Long, shortname:String, fullname:String, description:Optio
 
 }
 
-class System(_id: Long, _shortname: String, _fullname:String, _description:Option[String], _version:Option[String], _apiKey: Option[String], _badgeKey: String,
+class System(_id: Long, _shortname: String, _fullname:String, _description:Option[String], _version:Option[String], _apiKey: String, _badgeKey: String,
                _owner:Option[Organizations], _admins:Option[List[Users]])
 {
   var id:Long = _id
@@ -24,7 +24,7 @@ class System(_id: Long, _shortname: String, _fullname:String, _description:Optio
   var fullname:String = _fullname
   var description:Option[String] = _description
   var version:Option[String] = _version
-  var apiKey: Option[String] = _apiKey
+  var apiKey: String = _apiKey
   var badgeKey: String = _badgeKey
   var owner:Option[Organizations] = _owner
   var admins:Option[List[Users]] = _admins

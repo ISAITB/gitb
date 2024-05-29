@@ -42,7 +42,6 @@ export class ApiKeyInfoComponent implements OnInit {
   organisationUpdatePending = false
   organisationDeletePending = false
   systemUpdatePending: {[key: number]: boolean} = {}
-  systemDeletePending: {[key: number]: boolean} = {}
   dataStatus = {status: Constants.STATUS.NONE}
 
   snapshotKeysLoading = false
@@ -155,20 +154,6 @@ export class ApiKeyInfoComponent implements OnInit {
         this.popupService.success(this.dataService.labelOrganisation()+" API key deleted.")
       }).add(() => {
         this.organisationDeletePending = false
-      })
-    })
-  }
-
-  deleteSystemKey(systemId: number): void {
-    this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this API key?", "Delete", "Cancel")
-    .subscribe(() => {
-      this.systemDeletePending[systemId] = true
-      this.systemService.deleteSystemApiKey(systemId)
-      .subscribe(() => {
-        this.selectedSystem!.key = undefined
-        this.popupService.success(this.dataService.labelSystem()+" API key deleted.")
-      }).add(() => {
-        this.systemDeletePending[systemId] = false
       })
     })
   }

@@ -82,10 +82,8 @@
                                         <app-api-key-text idName="system" name="system"
                                             [key]="selectedSystem.key"
                                             [supportUpdate]="canUpdate"
-                                            [supportDelete]="canUpdate"
+                                            [supportDelete]="false"
                                             [updatePending]="systemUpdatePending[selectedSystem.id]"
-                                            [deletePending]="systemDeletePending[selectedSystem.id]"
-                                            (delete)="deleteSystemKey(selectedSystem.id)"
                                             (update)="updateSystemKey(selectedSystem.id)"></app-api-key-text>
                                     } @else if (canUpdate && selectedSnapshot == undefined) {
                                         <button class="btn btn-secondary" (click)="newSystemKey(selectedSystem.id)" [pending]="systemUpdatePending[selectedSystem.id]">Generate API key</button>

@@ -125,7 +125,7 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils, apiHelper: Auto
 
   def registerSystemInternal(system: Systems, checkApiKeyUniqueness: Boolean): DBIO[Long] = {
     for {
-      replaceApiKey <- if (checkApiKeyUniqueness && system.apiKey.isDefined) {
+      replaceApiKey <- if (checkApiKeyUniqueness) {
         PersistenceSchema.systems.filter(_.apiKey === system.apiKey).exists.result
       } else {
         DBIO.successful(false)
@@ -260,7 +260,7 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils, apiHelper: Auto
     triggerHelper.triggersFor(result._1, systemId, Some(result._2))
   }
 
-  def updateSystemProfileInternal(userId: Option[Long], communityId: Option[Long], systemId: Long, sname: String, fname: String, description: Option[String], version: Option[String], apiKey: Option[Option[String]], badgeKey: Option[String], otherSystem: Option[Long], propertyValues: Option[List[SystemParameterValues]], propertyFiles: Option[Map[Long, FileInfo]], copySystemParameters: Boolean, copyStatementParameters: Boolean, checkApiKeyUniqueness: Boolean, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[List[Long]] = {
+  def updateSystemProfileInternal(userId: Option[Long], communityId: Option[Long], systemId: Long, sname: String, fname: String, description: Option[String], version: Option[String], apiKey: Option[String], badgeKey: Option[String], otherSystem: Option[Long], propertyValues: Option[List[SystemParameterValues]], propertyFiles: Option[Map[Long, FileInfo]], copySystemParameters: Boolean, copyStatementParameters: Boolean, checkApiKeyUniqueness: Boolean, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[List[Long]] = {
     for {
       _ <- PersistenceSchema.systems.filter(_.id === systemId).map(s => (s.shortname, s.fullname, s.version, s.description)).update(sname, fname, version, description)
       _ <- {
@@ -269,14 +269,14 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils, apiHelper: Auto
           // Update the API key conditionally.
           actions += (for {
             replaceApiKey <- {
-              if (apiKey.isDefined && apiKey.get.isDefined && checkApiKeyUniqueness) {
-                PersistenceSchema.systems.filter(_.apiKey === apiKey.get.get).filter(_.id =!= systemId).exists.result
+              if (checkApiKeyUniqueness) {
+                PersistenceSchema.systems.filter(_.apiKey === apiKey.get).filter(_.id =!= systemId).exists.result
               } else {
                 DBIO.successful(false)
               }
             }
             _ <- {
-              val apiKeyToUse = if (replaceApiKey) Some(CryptoUtil.generateApiKey()) else apiKey.get
+              val apiKeyToUse = if (replaceApiKey) CryptoUtil.generateApiKey() else apiKey.get
               PersistenceSchema.systems.filter(_.id === systemId).map(_.apiKey).update(apiKeyToUse)
             }
           } yield ())
@@ -285,7 +285,7 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils, apiHelper: Auto
           // Update the badge key conditionally.
           actions += (for {
             replaceBadgeKey <- {
-              if (badgeKey.isDefined && checkApiKeyUniqueness) {
+              if (checkApiKeyUniqueness) {
                 PersistenceSchema.systems.filter(_.badgeKey === badgeKey.get).filter(_.id =!= systemId).exists.result
               } else {
                 DBIO.successful(false)
@@ -813,15 +813,11 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils, apiHelper: Auto
 
   def updateSystemApiKey(systemId: Long): String = {
     val newApiKey = CryptoUtil.generateApiKey()
-    updateSystemApiKeyInternal(systemId, Some(newApiKey))
+    updateSystemApiKeyInternal(systemId, newApiKey)
     newApiKey
   }
 
-  def deleteSystemApiKey(systemId: Long): Unit = {
-    updateSystemApiKeyInternal(systemId, None)
-  }
-
-  private def updateSystemApiKeyInternal(systemId: Long, apiKey: Option[String]): Unit = {
+  private def updateSystemApiKeyInternal(systemId: Long, apiKey: String): Unit = {
     exec(PersistenceSchema.systems.filter(_.id === systemId).map(_.apiKey).update(apiKey).transactionally)
   }
 

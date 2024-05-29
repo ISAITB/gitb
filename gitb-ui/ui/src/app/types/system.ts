@@ -7,6 +7,7 @@ export interface System extends EntityWithId {
     version?: string,
     description?: string,
     hasTests?: boolean,
+    apiKey: string,
     owner: number
 
 }
