@@ -11,15 +11,16 @@ import { DataService } from "src/app/services/data.service"
 import { FileReference } from "src/app/types/file-reference"
 import { ValueType } from "src/app/types/value-type"
 import { ValueWithMetadata } from "src/app/types/value-with-metadata"
+import { BaseComponent } from "src/app/pages/base-component.component"
 
-export abstract class ReportSupport {
+export abstract class ReportSupport extends BaseComponent{
 
     constructor(
         private modalService: BsModalService,
         private reportService: ReportService,
         private htmlService: HtmlService,
         protected dataService: DataService
-    ) {}
+    ) { super() }
 
     private loadedDataUrlReferences: {[key: string]: FileReference} = {}
     private loadedArrayBufferReferences: {[key: string]: FileReference} = {}

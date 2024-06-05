@@ -1,16 +1,16 @@
 @if (context != undefined) {
   <div class="any-content-view" [class.no-margin]="noMargin" [class.no-border]="noBorder" [class.hovering]="hoveringTitle && withItems">
-    @if (name != undefined || value != undefined) {
+    @if (withName || withValue) {
       <div class="any-content-view-container">
         <div class="any-content-view-texts" [class.break-texts]="breakText" (click)="containerClicked();$event.stopPropagation()">
-          @if (name != undefined) {
+          @if (withName) {
             <div class="content-name" [class.with-items]="withItems" (mouseover)="hoverUpdate(true)" (mouseout)="hoverUpdate(false)"><app-collapsing-icon [hidden]="!withItems" [isCollapsed]="collapsed"></app-collapsing-icon>{{name}}</div>
           }
-          @if (value != undefined && showValueInline) {
+          @if (withValue && showValueInline) {
             <div class="content-value" [class.with-name]="withName">{{value}}</div>
           }
         </div>
-        @if (value != undefined) {
+        @if (withValue) {
           <div class="any-content-view-controls">
             <div class="btn-toolbar">
               @if (showValueInline) {

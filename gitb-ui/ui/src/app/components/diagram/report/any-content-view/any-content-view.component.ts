@@ -37,6 +37,7 @@ export class AnyContentViewComponent extends ReportSupport implements OnInit {
   openPending = false
   withItems = false
   withName = false
+  withValue = false
   hoveringTitle = false
   breakText = true
   showName = false
@@ -53,22 +54,30 @@ export class AnyContentViewComponent extends ReportSupport implements OnInit {
   ) { super(modalService, reportService, htmlService, dataService) }
 
   ngOnInit(): void {
-    if (this.context.valueToUse != undefined && this.context.valueToUse.trim().length > 0) {
-      this.value = this.context.valueToUse
-    }
     this.name = this.context.name
-    this.showValueInline = this.value != undefined && (this.context.embeddingMethod != 'BASE64' && !this.isFileReference(this.context) && (this.value.length <= 100 || this.forceDisplay))
-    if (this.showValueInline) {
-      this.breakText = this.value!.indexOf(" ") < 0
+    if (this.textProvided(this.context.valueToUse)) {
+      this.value = this.context.valueToUse
+      this.withValue = true
     }
+    this.withName = this.textProvided(this.name)
     this.withItems = this.context?.item != undefined
-    this.withName = this.name != undefined
     if (this.root) {
       this.collapsed = false
     } else {
-      if (this.name == undefined && this.value == undefined && this.withItems) {
+      if (this.withItems && !this.withName && !this.withValue) {
         this.name = ""
+        this.withName = true
       }
+    }
+    if (!this.withItems && this.withName && !this.withValue) {
+      this.value = this.name
+      this.name = undefined
+      this.withName = false
+      this.withValue = true
+    }    
+    this.showValueInline = this.withValue && (this.context.embeddingMethod != 'BASE64' && !this.isFileReference(this.context) && (this.value!.length <= 100 || this.forceDisplay))
+    if (this.showValueInline) {
+      this.breakText = this.value!.indexOf(" ") < 0
     }
   }
 
