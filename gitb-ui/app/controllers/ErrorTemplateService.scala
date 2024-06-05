@@ -15,7 +15,7 @@ class ErrorTemplateService @Inject() (authorizedAction: AuthorizedAction, cc: Co
    */
   def getErrorTemplatesByCommunity(communityId: Long) = authorizedAction { request =>
     authorizationManager.canManageErrorTemplates(request, communityId)
-    val list = errorTemplateManager.getErrorTemplatesByCommunity(communityId)
+    val list = errorTemplateManager.getErrorTemplatesByCommunityWithoutContent(communityId)
     val json: String = JsonUtil.jsErrorTemplates(list).toString
     ResponseConstructor.constructJsonResponse(json)
   }
@@ -41,7 +41,7 @@ class ErrorTemplateService @Inject() (authorizedAction: AuthorizedAction, cc: Co
   def getErrorTemplateById(templateId: Long) = authorizedAction { request =>
     authorizationManager.canManageErrorTemplate(request, templateId)
     val ln = errorTemplateManager.getErrorTemplateById(templateId)
-    val json: String = JsonUtil.serializeErrorTemplate(Some(ln))
+    val json: String = JsonUtil.serializeErrorTemplate(ln)
     ResponseConstructor.constructJsonResponse(json)
   }
 

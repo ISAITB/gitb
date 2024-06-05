@@ -2057,25 +2057,9 @@ object JsonUtil {
   def serializeOrganization(org:Organization, includeAdminInfo: Boolean):String = {
     // Serialize Organization
     var jOrganization:JsObject = jsOrganization(org.toCaseObject)
-    //
-    if(org.landingPageObj.isDefined){
-      jOrganization = jOrganization ++ Json.obj("landingPages" -> jsLandingPage(org.landingPageObj.get))
-    } else{
-      jOrganization = jOrganization ++ Json.obj("landingPages" -> JsNull)
-    }
-    //
-    if(org.legalNoticeObj.isDefined){
-      jOrganization = jOrganization ++ Json.obj("legalNotices" -> jsLegalNotice(org.legalNoticeObj.get))
-    } else{
-      jOrganization = jOrganization ++ Json.obj("legalNotices" -> JsNull)
-    }
-    //
-    if(org.errorTemplateObj.isDefined){
-      jOrganization = jOrganization ++ Json.obj("errorTemplates" -> jsErrorTemplate(org.errorTemplateObj.get))
-    } else{
-      jOrganization = jOrganization ++ Json.obj("errorTemplates" -> JsNull)
-    }
-    //
+    org.landingPageObj.foreach(x => jOrganization = jOrganization ++ Json.obj("landingPages" -> jsLandingPage(x.toLandingPage())))
+    org.legalNoticeObj.foreach(x => jOrganization = jOrganization ++ Json.obj("legalNotices" -> jsLegalNotice(x.toLegalNotice())))
+    org.errorTemplateObj.foreach(x => jOrganization = jOrganization ++ Json.obj("errorTemplates" -> jsErrorTemplate(x.toErrorTemplate())))
     // Return JSON String
     jOrganization.toString
   }
@@ -2114,14 +2098,14 @@ object JsonUtil {
    * @param landingPage LandingPage object to be converted
    * @return JsObject
    */
-  def jsLandingPage(landingPage:LandingPages):JsObject = {
-    val json = Json.obj(
+  def jsLandingPage(landingPage: LandingPage):JsObject = {
+    var json = Json.obj(
       "id"    -> landingPage.id,
       "name"  -> landingPage.name,
-      "description" -> (if(landingPage.description.isDefined) landingPage.description.get else JsNull),
-      "content"  -> landingPage.content,
       "default" -> landingPage.default
     )
+    landingPage.description.foreach(x => json += ("description" -> JsString(x)))
+    landingPage.content.foreach(x => json += ("content" -> JsString(x)))
     json
   }
 
@@ -2131,14 +2115,14 @@ object JsonUtil {
    * @param legalNotice LegalNotice object to be converted
    * @return JsObject
    */
-  def jsLegalNotice(legalNotice:LegalNotices):JsObject = {
-    val json = Json.obj(
+  def jsLegalNotice(legalNotice: LegalNotice):JsObject = {
+    var json = Json.obj(
       "id"    -> legalNotice.id,
       "name"  -> legalNotice.name,
-      "description" -> (if(legalNotice.description.isDefined) legalNotice.description.get else JsNull),
-      "content"  -> legalNotice.content,
       "default" -> legalNotice.default
     )
+    legalNotice.description.foreach(x => json += ("description" -> JsString(x)))
+    legalNotice.content.foreach(x => json += ("content" -> JsString(x)))
     json
   }
 
@@ -2148,14 +2132,14 @@ object JsonUtil {
     * @param errorTemplate ErrorTemplate object to be converted
     * @return JsObject
     */
-  def jsErrorTemplate(errorTemplate:ErrorTemplates):JsObject = {
-    val json = Json.obj(
+  def jsErrorTemplate(errorTemplate:ErrorTemplate):JsObject = {
+    var json = Json.obj(
       "id"    -> errorTemplate.id,
       "name"  -> errorTemplate.name,
-      "description" -> (if(errorTemplate.description.isDefined) errorTemplate.description.get else JsNull),
-      "content"  -> errorTemplate.content,
       "default" -> errorTemplate.default
     )
+    errorTemplate.description.foreach(x => json += ("description" -> JsString(x)))
+    errorTemplate.content.foreach(x => json += ("content" -> JsString(x)))
     json
   }
 
@@ -2165,9 +2149,9 @@ object JsonUtil {
    * @param list List of LandingPages to be convert
    * @return JsArray
    */
-  def jsLandingPages(list:List[LandingPages]):JsArray = {
+  def jsLandingPages(list: List[LandingPage]): JsArray = {
     var json = Json.arr()
-    list.foreach{ landingPage =>
+    list.foreach { landingPage =>
       json = json.append(jsLandingPage(landingPage))
     }
     json
@@ -2227,7 +2211,7 @@ object JsonUtil {
    * @param list List of LegalNotices to be convert
    * @return JsArray
    */
-  def jsLegalNotices(list:List[LegalNotices]):JsArray = {
+  def jsLegalNotices(list:List[LegalNotice]):JsArray = {
     var json = Json.arr()
     list.foreach{ ln =>
       json = json.append(jsLegalNotice(ln))
@@ -2241,7 +2225,7 @@ object JsonUtil {
     * @param list List of ErrorTemplates to be convert
     * @return JsArray
     */
-  def jsErrorTemplates(list:List[ErrorTemplates]):JsArray = {
+  def jsErrorTemplates(list:List[ErrorTemplate]):JsArray = {
     var json = Json.arr()
     list.foreach{ et =>
       json = json.append(jsErrorTemplate(et))
@@ -2254,14 +2238,9 @@ object JsonUtil {
    * @param landingPage LandingPage object to be converted
    * @return String
    */
-  def serializeLandingPage(landingPage: Option[LandingPage]):String = {
-    //1) Serialize LandingPage
-    val exists = landingPage.isDefined
-    var jLandingPage:JsObject =  jsExists(exists)
-    if (exists) {
-      jLandingPage = jLandingPage ++ jsLandingPage(landingPage.get.toCaseObject)
-    }
-    //3) Return JSON String
+  def serializeLandingPage(landingPage: Option[LandingPages]):String = {
+    var jLandingPage: JsObject = jsExists(landingPage.isDefined)
+    landingPage.foreach(x => jLandingPage = jLandingPage ++ jsLandingPage(x.toLandingPage()))
     jLandingPage.toString
   }
 
@@ -2270,14 +2249,9 @@ object JsonUtil {
    * @param legalNotice LegalNotice object to be converted
    * @return String
    */
-  def serializeLegalNotice(legalNotice: Option[LegalNotice]):String = {
-    //1) Serialize LegalNotice
-    val exists = legalNotice.isDefined
-    var jLegalNotice:JsObject = jsExists(exists)
-    if (exists) {
-      jLegalNotice = jLegalNotice ++ jsLegalNotice(legalNotice.get.toCaseObject)
-    }
-    //3) Return JSON String
+  def serializeLegalNotice(legalNotice: Option[LegalNotices]):String = {
+    var jLegalNotice: JsObject = jsExists(legalNotice.isDefined)
+    legalNotice.foreach(x => jLegalNotice = jLegalNotice ++ jsLegalNotice(x.toLegalNotice()))
     jLegalNotice.toString
   }
 
@@ -2286,14 +2260,9 @@ object JsonUtil {
     * @param errorTemplate ErrorTemplate object to be converted
     * @return String
     */
-  def serializeErrorTemplate(errorTemplate: Option[ErrorTemplate]):String = {
-    //1) Serialize ErrorTemplate
-    val exists = errorTemplate.isDefined
-    var jErrorTemplate:JsObject = jsExists(exists)
-    if (exists) {
-      jErrorTemplate = jErrorTemplate ++ jsErrorTemplate(errorTemplate.get.toCaseObject)
-    }
-    //3) Return JSON String
+  def serializeErrorTemplate(errorTemplate: Option[ErrorTemplates]):String = {
+    var jErrorTemplate: JsObject = jsExists(errorTemplate.isDefined)
+    errorTemplate.foreach(x => jErrorTemplate = jErrorTemplate ++ jsErrorTemplate(x.toErrorTemplate()))
     jErrorTemplate.toString
   }
 

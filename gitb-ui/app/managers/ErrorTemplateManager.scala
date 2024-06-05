@@ -1,11 +1,10 @@
 package managers
 
-import javax.inject.{Inject, Singleton}
 import models._
-import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
 
+import javax.inject.{Inject, Singleton}
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -14,7 +13,19 @@ class ErrorTemplateManager @Inject() (dbConfigProvider: DatabaseConfigProvider) 
 
   import dbConfig.profile.api._
 
-  def logger = LoggerFactory.getLogger("ErrorTemplateManager")
+  /**
+   * Gets all landing pages for the specified community without rich content
+   */
+  def getErrorTemplatesByCommunityWithoutContent(communityId: Long): List[ErrorTemplate] = {
+    exec(
+      PersistenceSchema.errorTemplates
+        .filter(_.community === communityId)
+        .map(x => (x.id, x.name, x.description, x.default))
+        .sortBy(_._2.asc)
+        .result
+        .map(_.toList.map(x => new ErrorTemplate(x._1, x._2, x._3, None, x._4)))
+    )
+  }
 
   /**
    * Gets all error templates for the specified community
@@ -45,9 +56,8 @@ class ErrorTemplateManager @Inject() (dbConfigProvider: DatabaseConfigProvider) 
   /**
    * Gets error template with specified id
    */
-  def getErrorTemplateById(templateId: Long): ErrorTemplate = {
-    val r = exec(getErrorTemplateByIdInternal(templateId))
-    new ErrorTemplate(r.get)
+  def getErrorTemplateById(templateId: Long): Option[ErrorTemplates] = {
+    exec(getErrorTemplateByIdInternal(templateId))
   }
 
   def getErrorTemplateByIdInternal(templateId: Long): DBIO[Option[ErrorTemplates]] = {
@@ -142,13 +152,8 @@ class ErrorTemplateManager @Inject() (dbConfigProvider: DatabaseConfigProvider) 
   /**
    * Gets the default error template for given community
    */
-  def getCommunityDefaultErrorTemplate(communityId: Long): Option[ErrorTemplate] = {
-    val n = exec(PersistenceSchema.errorTemplates.filter(_.community === communityId).filter(_.default === true).result.headOption)
-    val defaultErrorTemplate = n match {
-      case Some(n) => Some(new ErrorTemplate(n))
-      case None => None
-    }
-    defaultErrorTemplate
+  def getCommunityDefaultErrorTemplate(communityId: Long): Option[ErrorTemplates] = {
+    exec(PersistenceSchema.errorTemplates.filter(_.community === communityId).filter(_.default === true).result.headOption)
   }
 
   def deleteErrorTemplateByCommunity(communityId: Long) = {

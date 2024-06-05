@@ -2,22 +2,21 @@ package controllers
 
 import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, ResponseConstructor}
 import exceptions.ErrorCodes
-import javax.inject.Inject
 import managers.{AuthorizationManager, LegalNoticeManager}
 import models.Constants
-import org.slf4j.{Logger, LoggerFactory}
 import play.api.mvc.{AbstractController, ControllerComponents}
 import utils.{HtmlUtil, JsonUtil}
 
+import javax.inject.Inject
+
 class LegalNoticeService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerComponents, legalNoticeManager: LegalNoticeManager, authorizationManager: AuthorizationManager) extends AbstractController(cc) {
-  private final val logger: Logger = LoggerFactory.getLogger(classOf[LegalNoticeService])
 
   /**
    * Gets all legal notices for the specified community
    */
   def getLegalNoticesByCommunity(communityId: Long) = authorizedAction { request =>
     authorizationManager.canManageLegalNotices(request, communityId)
-    val list = legalNoticeManager.getLegalNoticesByCommunity(communityId)
+    val list = legalNoticeManager.getLegalNoticesByCommunityWithoutContent(communityId)
     val json: String = JsonUtil.jsLegalNotices(list).toString
     ResponseConstructor.constructJsonResponse(json)
   }
@@ -43,7 +42,7 @@ class LegalNoticeService @Inject() (authorizedAction: AuthorizedAction, cc: Cont
   def getLegalNoticeById(noticeId: Long) = authorizedAction { request =>
     authorizationManager.canManageLegalNotice(request, noticeId)
     val ln = legalNoticeManager.getLegalNoticeById(noticeId)
-    val json: String = JsonUtil.serializeLegalNotice(Some(ln))
+    val json: String = JsonUtil.serializeLegalNotice(ln)
     ResponseConstructor.constructJsonResponse(json)
   }
 
