@@ -14,7 +14,6 @@ import com.gitb.types.StringType;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpMethod;
@@ -25,15 +24,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
-import java.util.*;
-import java.util.function.Function;
+import java.util.Optional;
 
 import static com.gitb.engine.messaging.handlers.layer.application.http.HttpMessagingHandlerV2.*;
-import static com.gitb.engine.messaging.handlers.utils.MessagingHandlerUtils.getAndConvert;
-import static com.gitb.engine.messaging.handlers.utils.MessagingHandlerUtils.getMapOfValues;
+import static com.gitb.engine.messaging.handlers.utils.MessagingHandlerUtils.*;
 
 @RestController
-public class HttpMessagingServer {
+public class HttpMessagingServer extends AbstractMessagingServer {
 
     private static final Logger LOG = LoggerFactory.getLogger(HttpMessagingServer.class);
 
@@ -42,47 +39,14 @@ public class HttpMessagingServer {
         if (system == null || system.isEmpty()) {
             return ResponseEntity.notFound().build();
         } else {
-            return handleInternal(CallbackManager.getInstance().lookupHandlingData(CallbackType.HTTP, system, (data) -> match(HttpMethod.valueOf(request.getMethod()), extension, Optional.ofNullable(request.getQueryString()), data)), request);
-        }
-    }
-
-    private Boolean match(HttpMethod detectedMethod, String detectedUriExtension, Optional<String> detectedQueryString, Message data) {
-        try {
-            var expectedMethod = HttpMessagingHandlerV2.getMethod(data.getFragments());
-            var expectedUriExtension = getUriExtension(data.getFragments());
-            Function<String, Boolean> uriMatcher = (expectedExtension) -> {
-                String expectedBeforeQueryString;
-                String detectedBeforeQueryString;
-                String expectedAfterQueryString = null;
-                String detectedAfterQueryString = null;
-                if (expectedExtension.indexOf('?') != -1) {
-                    var parts = StringUtils.split(expectedExtension, '?');
-                    expectedBeforeQueryString = StringUtils.appendIfMissing(StringUtils.prependIfMissing(parts[0].toLowerCase(), "/"), "/");
-                    expectedAfterQueryString = parts[1];
-                } else {
-                    expectedBeforeQueryString = StringUtils.appendIfMissing(StringUtils.prependIfMissing(expectedExtension.toLowerCase(), "/"), "/");
-                }
-                detectedBeforeQueryString = StringUtils.appendIfMissing(StringUtils.prependIfMissing(detectedUriExtension.toLowerCase(), "/"), "/");
-                if (detectedQueryString.isPresent()) {
-                    detectedAfterQueryString = detectedQueryString.get();
-                }
-                return Objects.equals(expectedBeforeQueryString, detectedBeforeQueryString) &&
-                        (expectedAfterQueryString == null || Objects.equals(expectedAfterQueryString, detectedAfterQueryString));
-            };
-            if (expectedMethod.isPresent() && expectedUriExtension.isPresent()) {
-                return expectedMethod.get().equals(detectedMethod) && uriMatcher.apply(expectedUriExtension.get());
-            } else if (expectedMethod.isPresent()) {
-                return expectedMethod.get().equals(detectedMethod);
-            } else if (expectedUriExtension.isPresent()) {
-                return uriMatcher.apply(expectedUriExtension.get());
-            } else {
-                // Matching only on the basis of the system key used.
-                return true;
-            }
-        } catch (Exception e) {
-            // Nothing we can do here but log a possible error (one should never be raised however).
-            LOG.error("Unexpected error while performing HTTP request matching", e);
-            return false;
+            return handleInternal(CallbackManager.getInstance().lookupHandlingData(CallbackType.HTTP, system, (data) -> matchIncomingRequest(
+                    HttpMethod.valueOf(request.getMethod()),
+                    extension,
+                    Optional.ofNullable(request.getQueryString()),
+                    data,
+                    () -> getMethod(data.getFragments(), METHOD_ARGUMENT_NAME),
+                    URI_EXTENSION_ARGUMENT_NAME
+            )), request);
         }
     }
 
@@ -92,47 +56,35 @@ public class HttpMessagingServer {
             return ResponseEntity.notFound().build();
         } else {
             try {
-                var inputs = data.get().data().inputs().getFragments();
-                // Test session found.
-                var responseBody = Optional.ofNullable(getAndConvert(inputs, HttpMessagingHandlerV2.BODY_ARGUMENT_NAME, BinaryType.BINARY_DATA_TYPE, BinaryType.class)).map(BinaryType::serializeByDefaultEncoding);
-                var responseHeaders = getMapOfValues(inputs, HttpMessagingHandlerV2.HEADERS_ARGUMENT_NAME);
-                var responseStatus = HttpMessagingHandlerV2.getStatus(inputs, () -> HttpStatus.OK);
                 /*
                  * Prepare response for SUT.
                  */
+                var responseBody = Optional.ofNullable(getAndConvert(data.get().data().inputs().getFragments(), HttpMessagingHandlerV2.BODY_ARGUMENT_NAME, BinaryType.BINARY_DATA_TYPE, BinaryType.class)).map(BinaryType::serializeByDefaultEncoding);
+                var responseHeaders = getMapOfValues(data.get().data().inputs().getFragments(), HttpMessagingHandlerV2.HEADERS_ARGUMENT_NAME);
+                var responseStatus = getStatus(data.get().data().inputs().getFragments(), STATUS_ARGUMENT_NAME, () -> HttpStatus.OK);
+                // Build response.
                 var builder = ResponseEntity.status(responseStatus); // Status
                 // Headers.
                 responseHeaders.forEach((key, value) -> value.forEach(headerValue -> builder.header(key, headerValue)));
                 // Body.
-                responseBody.ifPresent(builder::body);
+                ResponseEntity<byte[]> responseResult = responseBody.map(builder::body).orElse(builder.build());
                 /*
                  * Prepare report for test step.
                  */
                 Message report = new Message();
                 MapType requestMap = new MapType();
+                MapType responseMap = new MapType();
                 report.addInput(REPORT_ITEM_REQUEST, requestMap);
+                report.addInput(REPORT_ITEM_RESPONSE, responseMap);
+                // Request method.
                 requestMap.addItem(REPORT_ITEM_METHOD, new StringType(request.getMethod()));
-                String requestUri = request.getRequestURI();
-                if (request.getQueryString() != null) {
-                    requestUri += "?" + request.getQueryString();
-                }
-                requestMap.addItem(REPORT_ITEM_URI, new StringType(requestUri));
+                // Request URI.
+                requestMap.addItem(REPORT_ITEM_URI, getFullRequestURI(request));
                 // Request headers.
-                Optional<String> requestContentTypeHeader = Optional.empty();
-                if (request.getHeaderNames().hasMoreElements()) {
-                    MapType requestHeaders = new MapType();
-                    request.getHeaderNames().asIterator().forEachRemaining(headerName -> {
-                        var headerValues = new ArrayList<String>();
-                        request.getHeaders(headerName).asIterator().forEachRemaining(headerValues::add);
-                        requestHeaders.addItem(headerName, new StringType(String.join(", ", headerValues)));
-                    });
-                    for (var headerEntry: requestHeaders.getItems().entrySet()) {
-                        if (headerEntry.getKey().equalsIgnoreCase(CONTENT_TYPE)) {
-                            requestContentTypeHeader = Optional.of(headerEntry.getValue().toString());
-                        }
-                    }
-                    requestMap.addItem(REPORT_ITEM_HEADERS, requestHeaders);
-                }
+                Optional<MapType> requestHeaders = getRequestHeaders(request);
+                requestHeaders.ifPresent(headers -> requestMap.addItem(REPORT_ITEM_HEADERS, headers));
+                Optional<String> requestContentTypeHeader = requestHeaders.flatMap(this::getContentTypeHeader);
+                // Request body.
                 DataType requestBodyType = null;
                 if (requestContentTypeHeader.isPresent() && requestContentTypeHeader.get().contains("multipart/form-data")) {
                     // Multipart request parts
@@ -157,7 +109,7 @@ public class HttpMessagingServer {
                         requestBodyType = multipartBodyType;
                     }
                 } else {
-                    // Request body.
+                    // Non-multipart.
                     byte[] requestBodyBytes;
                     try (var in = request.getInputStream()) {
                         requestBodyBytes = IOUtils.toByteArray(in);
@@ -171,34 +123,18 @@ public class HttpMessagingServer {
                 if (requestBodyType != null) {
                     requestMap.addItem(REPORT_ITEM_BODY, requestBodyType);
                 }
-                MapType responseMap = new MapType();
                 // Response status.
                 responseMap.addItem(REPORT_ITEM_STATUS, new StringType(String.valueOf(responseStatus.value())));
                 // Response headers.
-                if (!responseHeaders.isEmpty()) {
-                    MapType responseHeadersItem = new MapType();
-                    responseHeaders.forEach((headerName, headerValues) -> {
-                        responseHeadersItem.addItem(headerName, new StringType(String.join(", ", headerValues)));
-                    });
-                    responseMap.getItems().put(REPORT_ITEM_HEADERS, responseHeadersItem);
-                }
+                getHeadersForReport(responseHeaders).ifPresent(headers -> responseMap.getItems().put(REPORT_ITEM_HEADERS, headers));
                 // Response body.
-                responseBody.ifPresent(value -> {
-                    var bodyItem = new BinaryType(responseBody.get());
-                    if (responseHeaders.containsKey(CONTENT_TYPE)) {
-                        responseHeaders.get(CONTENT_TYPE).stream()
-                                .findFirst()
-                                .flatMap(contentType -> Arrays.stream(StringUtils.split(contentType, ';')).findFirst())
-                                .ifPresent(bodyItem::setContentType);
-                    }
-                    responseMap.addItem(REPORT_ITEM_BODY, bodyItem);
-                });
-                report.addInput(REPORT_ITEM_RESPONSE, responseMap);
+                responseBody.flatMap(body -> getResponseBody(body, responseHeaders)).ifPresent(item -> responseMap.addItem(REPORT_ITEM_BODY, item));
+                // Make callback for step.
                 CallbackManager.getInstance().callbackReceived(data.get().sessionId(), data.get().callId(), MessagingHandlerUtils.generateSuccessReport(report));
                 /*
                  * Return response.
                  */
-                return builder.build();
+                return responseResult;
             } catch (Exception error) {
                 // Pass the caught exception as part of the notification. This will get logged by the relevant session actor.
                 CallbackManager.getInstance().callbackReceived(data.get().sessionId(), data.get().callId(), new GITBEngineInternalError("An unexpected error occurred while processing a HTTP request", error));
