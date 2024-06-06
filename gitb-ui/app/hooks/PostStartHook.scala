@@ -9,6 +9,7 @@ import managers.export.ImportCompleteManager
 import models.Constants
 import models.Enums.UserRole
 import org.apache.commons.io.FileUtils
+import org.apache.commons.io.comparator.NameFileComparator
 import org.apache.commons.lang3.StringUtils
 import org.apache.pekko.actor.ActorSystem
 import org.mindrot.jbcrypt.BCrypt
@@ -20,6 +21,7 @@ import java.io.{File, FileFilter}
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 import java.time.LocalDate
+import java.util
 import java.util.Properties
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
@@ -316,6 +318,8 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext, authenticationMana
     val dataIn = repositoryUtils.getDataInFolder()
     if (dataIn.exists() && dataIn.isDirectory && dataIn.canRead) {
       val containedFiles = dataIn.listFiles()
+      // Make sure the processing order is consistent and matches the file name alphabetical ordering.
+      util.Arrays.sort(containedFiles, NameFileComparator.NAME_INSENSITIVE_COMPARATOR)
       if (containedFiles != null && containedFiles.nonEmpty) {
         val archiveKey = Configurations.DATA_ARCHIVE_KEY
         if (archiveKey.isBlank) {
