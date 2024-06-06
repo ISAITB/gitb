@@ -19,6 +19,10 @@ class DomainManager @Inject() (domainParameterManager: DomainParameterManager, r
     exec(PersistenceSchema.domains.filter(_.id === id).result.head)
   }
 
+  def getByApiKey(apiKey: String): Option[Domain] = {
+    exec(PersistenceSchema.domains.filter(_.apiKey === apiKey).result.headOption)
+  }
+
   /**
    * Checks if domain exists
    */

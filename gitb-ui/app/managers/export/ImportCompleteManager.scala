@@ -1740,20 +1740,54 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
     if (!Configurations.AUTHENTICATION_SSO_ENABLED && (ctx.importTargets.hasAdministrators || ctx.importTargets.hasOrganisationUsers)) {
       referenceUserEmails = importPreviewManager.loadUserEmailSet()
     }
+    // Load the domain ID corresponding to the community's linked domain API key.
+    val domainIdFromArchive = if (canDoAdminOperations) {
+      Option(exportedCommunity.getDomain)
+        .flatMap(domain => domainManager.getByApiKey(domain.getApiKey))
+        .map(_.id)
+    } else {
+      None
+    }
     // If we have users load their emails to ensure we don't end up with duplicates.
     val dbAction = for {
       // Domain
       _ <- {
         if (exportedCommunity.getDomain != null) {
-          var targetDomainId: Option[Long] = None
+          var domainIdFromDatabase: Option[Long] = None
           if (targetCommunity.isDefined && targetCommunity.get.domain.isDefined) {
-            targetDomainId = targetCommunity.get.domain
+            domainIdFromDatabase = targetCommunity.get.domain
           }
-          if (targetDomainId.isDefined || canDoAdminOperations) {
+          var targetDomainId: Option[Long] = None
+          var proceedWithDomainImport = false
+          if (domainIdFromDatabase.isDefined && domainIdFromArchive.isDefined) {
+            if (domainIdFromDatabase.get == domainIdFromArchive.get) {
+              // The community is linked to an existing domain, which is the same domain the community is linked to in the imported archive.
+              targetDomainId = domainIdFromDatabase
+              proceedWithDomainImport = true
+            } else {
+              // The community is linked to an existing domain, which is different from the domain (also existing in the DB) the community is linked to in the imported archive.
+              targetDomainId = domainIdFromArchive
+              proceedWithDomainImport = canDoAdminOperations
+            }
+          } else if (domainIdFromDatabase.isDefined) {
+            // The community is linked to an existing domain, but in the archive it is linked to another domain that does not exist.
+            targetDomainId = domainIdFromDatabase
+            proceedWithDomainImport = true
+          } else if (domainIdFromArchive.isDefined) {
+            // The community is not linked to a domain, but in the archive it is linked to a domain that exists in the DB.
+            targetDomainId = domainIdFromArchive
+            proceedWithDomainImport = canDoAdminOperations
+          } else {
+            // The community is not linked to domain, but in the archive it is linked to a domain that doesn't exist in the DB.
+            targetDomainId = None
+            proceedWithDomainImport = canDoAdminOperations
+          }
+          if (proceedWithDomainImport) {
             /*
              * We only allow a domain import to proceed if the user is a Test Bed administrator or
              * if the target community also has a domain (i.e. this is an update). A community
-             * administrator can never add or delete domains, only update the community's (existing) domain.
+             * administrator can never add domains, delete domains, or update previously unrelated domains;
+             * only update the community's (existing) domain.
              */
             mergeImportItemMaps(ctx.importItemMaps, toImportItemMaps(importItems, ImportItemType.Domain))
             completeDomainImportInternal(exportedCommunity.getDomain, targetDomainId, ctx, canDoAdminOperations)
@@ -2628,7 +2662,9 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
             val exportData = preparationResult._2.get
             // Step 1 - prepare import.
             var importItems: List[ImportItem] = null
-            val previewResult = importPreviewManager.previewCommunityImport(exportData, None, canDoAdminOperations = true)
+            // Check to see if a community can be matched by the defined (in the archive) API key.
+            val targetCommunityId = communityManager.getByApiKey(exportData.getCommunities.getCommunity.get(0).getApiKey).map(_.id)
+            val previewResult = importPreviewManager.previewCommunityImport(exportData, targetCommunityId, canDoAdminOperations = true)
             val items = new ListBuffer[ImportItem]()
             // First add domain.
             if (previewResult._2.isDefined) {
@@ -2645,19 +2681,21 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
             approveImportItems(importItems)
             // Step 2 - Import.
             importSettings.dataFilePath = Some(importPreviewManager.getPendingImportFile(preparationResult._4.get, preparationResult._3.get).get.toPath)
-            completeCommunityImport(exportData, importSettings, importItems, None, canDoAdminOperations = true, None)
+            completeCommunityImport(exportData, importSettings, importItems, targetCommunityId, canDoAdminOperations = true, None)
             // Avoid processing this archive again.
             processingComplete = true
           } else if (preparationResult._2.get.getDomains != null && !preparationResult._2.get.getDomains.getDomain.isEmpty) {
             // Domain import.
             val exportedDomain = preparationResult._2.get.getDomains.getDomain.get(0)
             // Step 1 - prepare import.
-            val importItems = List(importPreviewManager.previewDomainImport(exportedDomain, None, canDoAdminOperations = true))
+            // Check to see if a domain can be matched by the defined (in the archive) API key.
+            val targetDomainId = domainManager.getByApiKey(exportedDomain.getApiKey).map(_.id)
+            val importItems = List(importPreviewManager.previewDomainImport(exportedDomain, targetDomainId, canDoAdminOperations = true))
             // Set all import items to proceed.
             approveImportItems(importItems)
             // Step 2 - Import.
             importSettings.dataFilePath = Some(importPreviewManager.getPendingImportFile(preparationResult._4.get, preparationResult._3.get).get.toPath)
-            completeDomainImport(exportedDomain, importSettings, importItems, None, canAddOrDeleteDomain = true)
+            completeDomainImport(exportedDomain, importSettings, importItems, targetDomainId, canAddOrDeleteDomain = true)
             // Avoid processing this archive again.
             processingComplete = true
           } else if (preparationResult._2.get.getSettings != null) {
