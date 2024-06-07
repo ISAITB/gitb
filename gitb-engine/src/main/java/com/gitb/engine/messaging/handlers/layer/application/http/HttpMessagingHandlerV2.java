@@ -89,10 +89,10 @@ public class HttpMessagingHandlerV2 extends AbstractNonWorkerMessagingHandler {
         String uriToUse;
         HttpRequest.BodyPublisher bodyPublisher;
         DataType requestBodyItem = null;
-        if (HttpMethod.GET.equals(method) || HttpMethod.DELETE.equals(method)) {
+        if (HttpMethod.GET.equals(method) || HttpMethod.DELETE.equals(method) || HttpMethod.HEAD.equals(method) || HttpMethod.OPTIONS.equals(method) || HttpMethod.TRACE.equals(method)) {
             uriToUse = getUriToUse(uri, mergeMapsOfValues(parameters, queryParameters));
             bodyPublisher = HttpRequest.BodyPublishers.noBody();
-        } else if (HttpMethod.POST.equals(method) || HttpMethod.PUT.equals(method)) {
+        } else if (HttpMethod.POST.equals(method) || HttpMethod.PUT.equals(method) || HttpMethod.PATCH.equals(method)) {
             if (body.isPresent() || parts.isPresent()) {
                 if (parameters.isEmpty()) {
                     uriToUse = uri;
