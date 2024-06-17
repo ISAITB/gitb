@@ -56,7 +56,15 @@ object JsonUtil {
       "footerBorderColor" -> theme.footerBorderColor,
       "footerLogoPath" -> theme.footerLogoPath,
       "footerLogoDisplay" -> theme.footerLogoDisplay,
-      "faviconPath" -> theme.faviconPath
+      "faviconPath" -> theme.faviconPath,
+      "primaryButtonColor" -> theme.primaryButtonColor,
+      "primaryButtonLabelColor" -> theme.primaryButtonLabelColor,
+      "primaryButtonHoverColor" -> theme.primaryButtonHoverColor,
+      "primaryButtonActiveColor" -> theme.primaryButtonActiveColor,
+      "secondaryButtonColor" -> theme.secondaryButtonColor,
+      "secondaryButtonLabelColor" -> theme.secondaryButtonLabelColor,
+      "secondaryButtonHoverColor" -> theme.secondaryButtonHoverColor,
+      "secondaryButtonActiveColor" -> theme.secondaryButtonActiveColor
     )
   }
 

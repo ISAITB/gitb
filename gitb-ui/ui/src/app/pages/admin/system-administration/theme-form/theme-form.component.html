@@ -131,6 +131,38 @@
                                 [readonly]="readonly"
                             ></app-color-picker>
                         </div>
+                        <div class="col-auto">
+                            <app-color-picker
+                                label="Primary button labels"
+                                tooltipText="The colour for texts or icons in primary buttons."
+                                [(ngModel)]="theme.primaryButtonLabelColor"
+                                [readonly]="readonly"
+                            ></app-color-picker>
+                        </div>
+                        <div class="col-auto">
+                            <app-color-picker
+                                label="Primary buttons"
+                                tooltipText="The background colour for primary buttons."
+                                [(ngModel)]="theme.primaryButtonColor"
+                                [readonly]="readonly"
+                            ></app-color-picker>
+                        </div>
+                        <div class="col-auto">
+                            <app-color-picker
+                                label="Normal button labels"
+                                tooltipText="The colour for texts or icons in normal buttons."
+                                [(ngModel)]="theme.secondaryButtonLabelColor"
+                                [readonly]="readonly"
+                            ></app-color-picker>
+                        </div>
+                        <div class="col-auto">
+                            <app-color-picker
+                                label="Normal buttons"
+                                tooltipText="The background colour for normal buttons."
+                                [(ngModel)]="theme.secondaryButtonColor"
+                                [readonly]="readonly"
+                            ></app-color-picker>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -142,31 +174,37 @@
         <div class="col-10 offset-1">
             <div class="row mt-3">
                 <label class="col-3 col-form-label text-end">* Favicon:</label>
-                <div class="col-7" [ngSwitch]="readonly">
-                    <div *ngSwitchCase="true" class="input-group">
-                        <input type="text" class="form-control" readonly="readonly" [value]="faviconNameToShow">
-                        <button type="button" class="btn btn-secondary" [pending]="faviconDownloadPending" [icon]="true" (click)="downloadFavicon()" containerClass="shortTooltip" container="body" tooltip="Download" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-download"></i></button>
-                        <button type="button" class="btn btn-secondary" (click)="previewThemeResource(theme.faviconFile, theme.faviconPath, 'Favicon preview')" containerClass="shortTooltip" container="body" tooltip="Preview" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-magnifying-glass"></i></button>
-                    </div>                
-                    <app-file-select *ngSwitchDefault [fileName]="faviconNameToShow" (onUpload)="selectFavicon($event)" [accepts]="acceptedFileTypes" [extraActions]="true">
-                        <button type="button" class="btn btn-secondary" [pending]="faviconDownloadPending" [icon]="true" (click)="downloadFavicon()" containerClass="shortTooltip" container="body" tooltip="Download" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-download"></i></button>
-                        <button type="button" class="btn btn-secondary" (click)="previewThemeResource(theme.faviconFile, theme.faviconPath, 'Favicon preview')" containerClass="shortTooltip" container="body" tooltip="Preview" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-magnifying-glass"></i></button>
-                    </app-file-select>
+                <div class="col-7">
+                    @if (readonly) {
+                        <div class="input-group">
+                            <input type="text" class="form-control" readonly="readonly" [value]="faviconNameToShow">
+                            <button type="button" class="btn btn-secondary" [pending]="faviconDownloadPending" [icon]="true" (click)="downloadFavicon()" containerClass="shortTooltip" container="body" tooltip="Download" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-download"></i></button>
+                            <button type="button" class="btn btn-secondary" (click)="previewThemeResource(theme.faviconFile, theme.faviconPath, 'Favicon preview')" containerClass="shortTooltip" container="body" tooltip="Preview" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-magnifying-glass"></i></button>
+                        </div>                
+                    } @else {
+                        <app-file-select [fileName]="faviconNameToShow" (onUpload)="selectFavicon($event)" [accepts]="acceptedFileTypes" [extraActions]="true">
+                            <button type="button" class="btn btn-secondary" [pending]="faviconDownloadPending" [icon]="true" (click)="downloadFavicon()" containerClass="shortTooltip" container="body" tooltip="Download" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-download"></i></button>
+                            <button type="button" class="btn btn-secondary" (click)="previewThemeResource(theme.faviconFile, theme.faviconPath, 'Favicon preview')" containerClass="shortTooltip" container="body" tooltip="Preview" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-magnifying-glass"></i></button>
+                        </app-file-select>
+                    }
                 </div>
                 <div class="col-auto" app-tooltip tbTooltip="The favicon to use."></div>
             </div>
             <div class="row mt-3">
                 <label class="col-3 col-form-label text-end">* Header logo:</label>
-                <div class="col-7" [ngSwitch]="readonly">
-                    <div *ngSwitchCase="true" class="input-group">
-                        <input type="text" class="form-control" readonly="readonly" [value]="headerLogoNameToShow">
-                        <button type="button" class="btn btn-secondary" [pending]="headerDownloadPending" [icon]="true" (click)="downloadHeaderLogo()" containerClass="shortTooltip" container="body" tooltip="Download" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-download"></i></button>
-                        <button type="button" class="btn btn-secondary" (click)="previewThemeResource(theme.headerLogoFile, theme.headerLogoPath, 'Header logo preview')" containerClass="shortTooltip" container="body" tooltip="Preview" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-magnifying-glass"></i></button>
-                    </div>                
-                    <app-file-select *ngSwitchDefault [fileName]="headerLogoNameToShow" (onUpload)="selectHeaderLogo($event)" [accepts]="acceptedFileTypes" [extraActions]="true">
-                        <button type="button" class="btn btn-secondary" [pending]="headerDownloadPending" [icon]="true" (click)="downloadHeaderLogo()" containerClass="shortTooltip" container="body" tooltip="Download" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-download"></i></button>
-                        <button type="button" class="btn btn-secondary" (click)="previewThemeResource(theme.headerLogoFile, theme.headerLogoPath, 'Header logo preview')" containerClass="shortTooltip" container="body" tooltip="Preview" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-magnifying-glass"></i></button>
-                    </app-file-select>
+                <div class="col-7">
+                    @if (readonly) {
+                        <div class="input-group">
+                            <input type="text" class="form-control" readonly="readonly" [value]="headerLogoNameToShow">
+                            <button type="button" class="btn btn-secondary" [pending]="headerDownloadPending" [icon]="true" (click)="downloadHeaderLogo()" containerClass="shortTooltip" container="body" tooltip="Download" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-download"></i></button>
+                            <button type="button" class="btn btn-secondary" (click)="previewThemeResource(theme.headerLogoFile, theme.headerLogoPath, 'Header logo preview')" containerClass="shortTooltip" container="body" tooltip="Preview" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-magnifying-glass"></i></button>
+                        </div>
+                    } @else {
+                        <app-file-select [fileName]="headerLogoNameToShow" (onUpload)="selectHeaderLogo($event)" [accepts]="acceptedFileTypes" [extraActions]="true">
+                            <button type="button" class="btn btn-secondary" [pending]="headerDownloadPending" [icon]="true" (click)="downloadHeaderLogo()" containerClass="shortTooltip" container="body" tooltip="Download" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-download"></i></button>
+                            <button type="button" class="btn btn-secondary" (click)="previewThemeResource(theme.headerLogoFile, theme.headerLogoPath, 'Header logo preview')" containerClass="shortTooltip" container="body" tooltip="Preview" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-magnifying-glass"></i></button>
+                        </app-file-select>
+                    }
                 </div>
                 <div class="col-auto" app-tooltip tbTooltip="The image to display as a logo at the top of the page above the header."></div>
             </div>
@@ -181,16 +219,19 @@
             <div [collapse]="theme.footerLogoDisplay == 'none'" [isAnimated]="true">
                 <div class="row mt-3">
                     <label class="col-3 col-form-label text-end">* Footer logo:</label>
-                    <div class="col-7" [ngSwitch]="readonly">
-                        <div *ngSwitchCase="true" class="input-group">
-                            <input type="text" class="form-control" readonly="readonly" [value]="footerLogoNameToShow">
-                            <button type="button" class="btn btn-secondary" [pending]="footerDownloadPending" [icon]="true" (click)="downloadFooterLogo()" containerClass="shortTooltip" container="body" tooltip="Download" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-download"></i></button>
-                            <button type="button" class="btn btn-secondary" (click)="previewThemeResource(theme.footerLogoFile, theme.footerLogoPath, 'Footer logo preview')" containerClass="shortTooltip" container="body" tooltip="Preview" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-magnifying-glass"></i></button>
-                        </div>
-                        <app-file-select *ngSwitchDefault [fileName]="footerLogoNameToShow" (onUpload)="selectFooterLogo($event)" [accepts]="acceptedFileTypes" [extraActions]="true">
-                            <button type="button" class="btn btn-secondary" [pending]="footerDownloadPending" [icon]="true" (click)="downloadFooterLogo()" containerClass="shortTooltip" container="body" tooltip="Download" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-download"></i></button>
-                            <button type="button" class="btn btn-secondary" (click)="previewThemeResource(theme.footerLogoFile, theme.footerLogoPath, 'Footer logo preview')" containerClass="shortTooltip" container="body" tooltip="Preview" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-magnifying-glass"></i></button>
-                        </app-file-select>
+                    <div class="col-7">
+                        @if (readonly) {
+                            <div class="input-group">
+                                <input type="text" class="form-control" readonly="readonly" [value]="footerLogoNameToShow">
+                                <button type="button" class="btn btn-secondary" [pending]="footerDownloadPending" [icon]="true" (click)="downloadFooterLogo()" containerClass="shortTooltip" container="body" tooltip="Download" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-download"></i></button>
+                                <button type="button" class="btn btn-secondary" (click)="previewThemeResource(theme.footerLogoFile, theme.footerLogoPath, 'Footer logo preview')" containerClass="shortTooltip" container="body" tooltip="Preview" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-magnifying-glass"></i></button>
+                            </div>
+                        } @else {
+                            <app-file-select [fileName]="footerLogoNameToShow" (onUpload)="selectFooterLogo($event)" [accepts]="acceptedFileTypes" [extraActions]="true">
+                                <button type="button" class="btn btn-secondary" [pending]="footerDownloadPending" [icon]="true" (click)="downloadFooterLogo()" containerClass="shortTooltip" container="body" tooltip="Download" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-download"></i></button>
+                                <button type="button" class="btn btn-secondary" (click)="previewThemeResource(theme.footerLogoFile, theme.footerLogoPath, 'Footer logo preview')" containerClass="shortTooltip" container="body" tooltip="Preview" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-magnifying-glass"></i></button>
+                            </app-file-select>
+                        }
                     </div>
                     <div class="col-auto" app-tooltip tbTooltip="The image to display in the footer."></div>
                 </div>

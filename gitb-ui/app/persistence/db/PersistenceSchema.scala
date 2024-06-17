@@ -866,7 +866,15 @@ object PersistenceSchema {
     def footerLogoPath = column[String] ("footer_logo_path")
     def footerLogoDisplay = column[String] ("footer_logo_display")
     def faviconPath = column[String] ("favicon_path")
-    def * = (id :: key :: description :: active :: custom :: separatorTitleColor :: modalTitleColor :: tableTitleColor :: cardTitleColor :: pageTitleColor :: headingColor :: tabLinkColor :: footerTextColor :: headerBackgroundColor :: headerBorderColor :: headerSeparatorColor :: headerLogoPath :: footerBackgroundColor :: footerBorderColor :: footerLogoPath :: footerLogoDisplay :: faviconPath :: HNil).mapTo[Theme]
+    def primaryButtonColor = column[String] ("primary_btn_color")
+    def primaryButtonLabelColor = column[String] ("primary_btn_label_color")
+    def primaryButtonHoverColor = column[String] ("primary_btn_hover_color")
+    def primaryButtonActiveColor = column[String] ("primary_btn_active_color")
+    def secondaryButtonColor = column[String] ("secondary_btn_color")
+    def secondaryButtonLabelColor = column[String] ("secondary_btn_label_color")
+    def secondaryButtonHoverColor = column[String] ("secondary_btn_hover_color")
+    def secondaryButtonActiveColor = column[String] ("secondary_btn_active_color")
+    def * = (id :: key :: description :: active :: custom :: separatorTitleColor :: modalTitleColor :: tableTitleColor :: cardTitleColor :: pageTitleColor :: headingColor :: tabLinkColor :: footerTextColor :: headerBackgroundColor :: headerBorderColor :: headerSeparatorColor :: headerLogoPath :: footerBackgroundColor :: footerBorderColor :: footerLogoPath :: footerLogoDisplay :: faviconPath :: primaryButtonColor :: primaryButtonLabelColor :: primaryButtonHoverColor :: primaryButtonActiveColor :: secondaryButtonColor :: secondaryButtonLabelColor :: secondaryButtonHoverColor :: secondaryButtonActiveColor :: HNil).mapTo[Theme]
   }
   val themes = TableQuery[ThemesTable]
   val insertTheme = themes returning themes.map(_.id)

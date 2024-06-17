@@ -229,4 +229,12 @@ object Parameters {
   val REFERENCE = "reference"
   val TO = "to"
   val KEYS = "keys"
+  val PRIMARY_BUTTON_COLOR = "primaryButtonColor"
+  val PRIMARY_BUTTON_LABEL_COLOR = "primaryButtonLabelColor"
+  val PRIMARY_BUTTON_HOVER_COLOR = "primaryButtonHoverColor"
+  val PRIMARY_BUTTON_ACTIVE_COLOR = "primaryButtonActiveColor"
+  val SECONDARY_BUTTON_COLOR = "secondaryButtonColor"
+  val SECONDARY_BUTTON_LABEL_COLOR = "secondaryButtonLabelColor"
+  val SECONDARY_BUTTON_HOVER_COLOR = "secondaryButtonHoverColor"
+  val SECONDARY_BUTTON_ACTIVE_COLOR = "secondaryButtonActiveColor"
 }

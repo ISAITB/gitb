@@ -104,7 +104,15 @@ export class SystemConfigurationService {
       footerLogoDisplay: theme.footerLogoDisplay,
       headerLogoPath: theme.headerLogoPath,
       footerLogoPath: theme.footerLogoPath,
-      faviconPath: theme.faviconPath
+      faviconPath: theme.faviconPath,
+      primaryButtonColor: theme.primaryButtonColor,
+      primaryButtonLabelColor: theme.primaryButtonLabelColor,
+      primaryButtonHoverColor: theme.primaryButtonHoverColor,
+      primaryButtonActiveColor: theme.primaryButtonActiveColor,
+      secondaryButtonColor: theme.secondaryButtonColor,
+      secondaryButtonLabelColor: theme.secondaryButtonLabelColor,
+      secondaryButtonHoverColor: theme.secondaryButtonHoverColor,
+      secondaryButtonActiveColor: theme.secondaryButtonActiveColor
     }
     let files: FileParam[]|undefined
     if (theme.headerLogoFile?.file || theme.footerLogoFile?.file || theme.faviconFile?.file) {

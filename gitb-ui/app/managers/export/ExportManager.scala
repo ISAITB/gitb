@@ -679,6 +679,14 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, systemConfigura
           if (!systemConfigurationManager.isBuiltInThemeResource(theme.faviconPath)) {
             exportedTheme.setFaviconContent(MimeUtil.getFileAsDataURL(repositoryUtils.getThemeResource(theme.id, theme.faviconPath).get, DEFAULT_CONTENT_TYPE))
           }
+          exportedTheme.setPrimaryButtonColor(theme.primaryButtonColor)
+          exportedTheme.setPrimaryButtonLabelColor(theme.primaryButtonLabelColor)
+          exportedTheme.setPrimaryButtonHoverColor(theme.primaryButtonHoverColor)
+          exportedTheme.setPrimaryButtonActiveColor(theme.primaryButtonActiveColor)
+          exportedTheme.setSecondaryButtonColor(theme.secondaryButtonColor)
+          exportedTheme.setSecondaryButtonLabelColor(theme.secondaryButtonLabelColor)
+          exportedTheme.setSecondaryButtonHoverColor(theme.secondaryButtonHoverColor)
+          exportedTheme.setSecondaryButtonActiveColor(theme.secondaryButtonActiveColor)
           exportedThemes.getTheme.add(exportedTheme)
         }
         exportedSettings.setThemes(exportedThemes)

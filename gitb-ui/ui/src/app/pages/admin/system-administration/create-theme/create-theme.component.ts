@@ -3,12 +3,12 @@ import { RoutingService } from 'src/app/services/routing.service';
 import { SystemAdministrationTab } from '../system-administration-tab.enum';
 import { Theme } from 'src/app/types/theme';
 import { ActivatedRoute } from '@angular/router';
-import { BaseComponent } from 'src/app/pages/base-component.component';
 import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
 import { Observable, of } from 'rxjs';
 import { SystemConfigurationService } from 'src/app/services/system-configuration.service';
 import { PopupService } from 'src/app/services/popup.service';
 import { DataService } from 'src/app/services/data.service';
+import { BaseThemeFormComponent } from '../base-theme-form.component';
 
 @Component({
   selector: 'app-create-theme',
@@ -16,7 +16,7 @@ import { DataService } from 'src/app/services/data.service';
   styles: [
   ]
 })
-export class CreateThemeComponent extends BaseComponent implements OnInit {
+export class CreateThemeComponent extends BaseThemeFormComponent implements OnInit {
 
   theme!: Theme
   referenceThemeId!: number
@@ -55,8 +55,18 @@ export class CreateThemeComponent extends BaseComponent implements OnInit {
       modalTitleColor: referenceTheme.modalTitleColor,
       pageTitleColor: referenceTheme.pageTitleColor,
       tabLinkColor: referenceTheme.tabLinkColor,
-      tableTitleColor: referenceTheme.tableTitleColor
+      tableTitleColor: referenceTheme.tableTitleColor,
+      primaryButtonColor: referenceTheme.primaryButtonColor,
+      primaryButtonLabelColor: referenceTheme.primaryButtonLabelColor,
+      primaryButtonHoverColor: referenceTheme.primaryButtonHoverColor,
+      primaryButtonActiveColor: referenceTheme.primaryButtonActiveColor,
+      secondaryButtonColor: referenceTheme.secondaryButtonColor,
+      secondaryButtonLabelColor: referenceTheme.secondaryButtonLabelColor,
+      secondaryButtonHoverColor: referenceTheme.secondaryButtonHoverColor,
+      secondaryButtonActiveColor: referenceTheme.secondaryButtonActiveColor
     }
+    this.originalPrimaryButtonColor = this.theme.primaryButtonColor
+    this.originalSecondaryButtonColor = this.theme.secondaryButtonColor
     this.routingService.systemConfigurationBreadcrumbs()
   }
 
@@ -75,6 +85,7 @@ export class CreateThemeComponent extends BaseComponent implements OnInit {
       this.savePending = true
       if (confirmed) {
         this.clearAlerts()
+        this.processButtonColors(this.theme)
         this.systemConfigurationService.createTheme(this.theme, this.referenceThemeId)
         .subscribe((error) => {
           if (this.isErrorDescription(error)) {

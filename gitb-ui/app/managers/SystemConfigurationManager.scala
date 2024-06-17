@@ -10,6 +10,7 @@ import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.{Logger, LoggerFactory}
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
+import slick.collection.heterogeneous.HNil
 import utils.{EmailUtil, JsonUtil, MimeUtil, RepositoryUtils}
 
 import java.io.File
@@ -123,7 +124,15 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
         "  --itb-footer-border-color: " + themeToUse.footerBorderColor + ";\n" +
         "  --itb-footer-logo-path: " + constructLogoPath(themeToUse.id, themeToUse.footerLogoPath) + ";\n" +
         "  --itb-footer-logo-display: " + themeToUse.footerLogoDisplay + ";\n" +
-        "}"
+        "  --itb-btn-primary-color: " + themeToUse.primaryButtonColor + ";\n" +
+        "  --itb-btn-primary-label-color: " + themeToUse.primaryButtonLabelColor + ";\n" +
+        "  --itb-btn-primary-hover-color: " + themeToUse.primaryButtonHoverColor + ";\n" +
+        "  --itb-btn-primary-active-color: " + themeToUse.primaryButtonActiveColor + ";\n" +
+        "  --itb-btn-secondary-color: " + themeToUse.secondaryButtonColor + ";\n" +
+        "  --itb-btn-secondary-label-color: " + themeToUse.secondaryButtonLabelColor + ";\n" +
+        "  --itb-btn-secondary-hover-color: " + themeToUse.secondaryButtonHoverColor + ";\n" +
+        "  --itb-btn-secondary-active-color: " + themeToUse.secondaryButtonActiveColor + ";\n" +
+    "}"
     activeThemeCss = Some(cssContent)
     activeThemeFavicon = Some(themeToUse.faviconPath)
     activeThemeId = Some(themeToUse.id)
@@ -541,16 +550,20 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
           val headerPathToUse = getThemeResourcePathToSave(themeFiles.headerLogo, Some(theme.headerLogoPath), isUpdate = true)
           val footerPathToUse = getThemeResourcePathToSave(themeFiles.footerLogo, Some(theme.footerLogoPath), isUpdate = true)
           val faviconPathToUse = getThemeResourcePathToSave(themeFiles.faviconFile, Some(theme.faviconPath), isUpdate = true)
-          PersistenceSchema.themes.filter(_.id === theme.id).map(x => (
-            x.key, x.description, x.active, x.separatorTitleColor, x.modalTitleColor, x.tableTitleColor, x.cardTitleColor,
-            x.pageTitleColor, x.headingColor, x.tabLinkColor, x.footerTextColor, x.headerBackgroundColor,
-            x.headerBorderColor, x.headerSeparatorColor, x.headerLogoPath, x.footerBackgroundColor,
-            x.footerBorderColor, x.footerLogoPath, x.footerLogoDisplay, x.faviconPath
-          )).update(
-            theme.key, theme.description, theme.active, theme.separatorTitleColor, theme.modalTitleColor, theme.tableTitleColor, theme.cardTitleColor,
-            theme.pageTitleColor, theme.headingColor, theme.tabLinkColor, theme.footerTextColor, theme.headerBackgroundColor,
-            theme.headerBorderColor, theme.headerSeparatorColor, headerPathToUse, theme.footerBackgroundColor,
-            theme.footerBorderColor, footerPathToUse, theme.footerLogoDisplay, faviconPathToUse
+          PersistenceSchema.themes.filter(_.id === theme.id).map(x =>
+            x.key :: x.description :: x.active :: x.separatorTitleColor :: x.modalTitleColor :: x.tableTitleColor :: x.cardTitleColor ::
+            x.pageTitleColor :: x.headingColor :: x.tabLinkColor :: x.footerTextColor :: x.headerBackgroundColor ::
+            x.headerBorderColor :: x.headerSeparatorColor :: x.headerLogoPath :: x.footerBackgroundColor ::
+            x.footerBorderColor :: x.footerLogoPath :: x.footerLogoDisplay :: x.faviconPath ::
+            x.primaryButtonColor :: x.primaryButtonLabelColor :: x.primaryButtonHoverColor :: x.primaryButtonActiveColor ::
+            x.secondaryButtonColor :: x.secondaryButtonLabelColor :: x.secondaryButtonHoverColor :: x.secondaryButtonActiveColor :: HNil
+          ).update(
+            theme.key :: theme.description :: theme.active :: theme.separatorTitleColor :: theme.modalTitleColor :: theme.tableTitleColor :: theme.cardTitleColor ::
+            theme.pageTitleColor :: theme.headingColor :: theme.tabLinkColor :: theme.footerTextColor :: theme.headerBackgroundColor ::
+            theme.headerBorderColor :: theme.headerSeparatorColor :: headerPathToUse :: theme.footerBackgroundColor ::
+            theme.footerBorderColor :: footerPathToUse :: theme.footerLogoDisplay :: faviconPathToUse ::
+            theme.primaryButtonColor :: theme.primaryButtonLabelColor :: theme.primaryButtonHoverColor :: theme.primaryButtonActiveColor ::
+            theme.secondaryButtonColor :: theme.secondaryButtonLabelColor :: theme.secondaryButtonHoverColor :: theme.secondaryButtonActiveColor :: HNil
           ) andThen DBIO.successful(Some(headerPathToUse, footerPathToUse, faviconPathToUse))
         } else {
           DBIO.successful(None)

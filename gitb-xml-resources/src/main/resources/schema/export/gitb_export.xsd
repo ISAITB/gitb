@@ -805,6 +805,14 @@
                     <xsd:element name="footerLogoDisplay" type="xsd:string"/>
                     <xsd:element name="faviconPath" type="xsd:string"/>
                     <xsd:element name="faviconContent" type="xsd:string" minOccurs="0"/>
+                    <xsd:element name="primaryButtonColor" type="xsd:string" minOccurs="0"/>
+                    <xsd:element name="primaryButtonLabelColor" type="xsd:string" minOccurs="0"/>
+                    <xsd:element name="primaryButtonHoverColor" type="xsd:string" minOccurs="0"/>
+                    <xsd:element name="primaryButtonActiveColor" type="xsd:string" minOccurs="0"/>
+                    <xsd:element name="secondaryButtonColor" type="xsd:string" minOccurs="0"/>
+                    <xsd:element name="secondaryButtonLabelColor" type="xsd:string" minOccurs="0"/>
+                    <xsd:element name="secondaryButtonHoverColor" type="xsd:string" minOccurs="0"/>
+                    <xsd:element name="secondaryButtonActiveColor" type="xsd:string" minOccurs="0"/>
                 </xsd:sequence>
                 <xsd:attribute name="active" type="xsd:boolean" default="false"/>
             </xsd:extension>
