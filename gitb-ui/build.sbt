@@ -2,19 +2,26 @@ name := """GITB"""
 version := "1.0-SNAPSHOT"
 maintainer := "DIGIT-ITB@ec.europa.eu"
 
-lazy val root = (project in file(".")).enablePlugins(PlayScala, SbtWeb)
+/*
+Dependency checking is disabled given that the sbt-dependency-check is not updated for the NVP 9+ API.
+To run the dependency check the simplest and fastest approach is to do a sbt dist and then extract the
+libraries from the produced archive and pass them to the ODC CLI. The settings to include for a ODC run
+with the sbt-dependency-check would be as follows.
+
   .settings(dependencyCheckOSSIndexWarnOnlyOnRemoteErrors := Some(true))
   .settings(dependencyCheckFailBuildOnCVSS := 0)
   .settings(dependencyCheckSuppressionFile := Some(file("project/owasp-suppressions.xml")))
+*/
+
+lazy val root = (project in file(".")).enablePlugins(PlayScala, SbtWeb)
 
 scalaVersion := "2.13.12"
 val pekkoVersion = "1.0.2"
-val jacksonVersion = "2.16.1"
+val jacksonVersion = "2.16.2"
 val cxfVersion = "4.0.4"
 val commonsTextVersion = "1.11.0"
-val gitbTypesVersion = "1.22.0"
-val jettyVersion = "11.0.18"
-val bouncyCastleVersion = "1.77"
+val gitbTypesVersion = "1.23.0"
+val bouncyCastleVersion = "1.78.1"
 
 useCoursier := false
 
@@ -33,30 +40,16 @@ libraryDependencies ++= Seq(
   "com.gitb" % "gitb-reports" % "1.0-SNAPSHOT",
   "com.gitb" % "gitb-validator-tdl" % "1.0-SNAPSHOT",
   "com.gitb" % "gitb-xml-resources" % "1.0-SNAPSHOT",
-  "com.mysql" % "mysql-connector-j" % "8.3.0" exclude("com.google.protobuf", "protobuf-java"), // Exclude protobuf as we don't need the X DevAPI.
-  // Setting the Jetty version explicitly to v11.0.18 to resolve CVE-2023-44487. Once
-  // org.apache.cxf:cxf-rt-transports-http-jetty is updated to a non-vulnerable version of Jetty this block can be removed. START ...
-  "org.eclipse.jetty" % "jetty-http" % jettyVersion,
-  "org.eclipse.jetty" % "jetty-io" % jettyVersion,
-  "org.eclipse.jetty" % "jetty-security" % jettyVersion,
-  "org.eclipse.jetty" % "jetty-server" % jettyVersion,
-  "org.eclipse.jetty" % "jetty-util" % jettyVersion,
-  // ... END.
+  "com.mysql" % "mysql-connector-j" % "8.4.0" exclude("com.google.protobuf", "protobuf-java"), // Exclude protobuf as we don't need the X DevAPI.
   "org.apache.pekko" %% "pekko-actor" % pekkoVersion,
   "org.apache.pekko" %% "pekko-actor-typed" % pekkoVersion,
   "org.apache.pekko" %% "pekko-remote" % pekkoVersion,
   "org.apache.pekko" %% "pekko-stream" % pekkoVersion,
   "org.apache.pekko" %% "pekko-slf4j" % pekkoVersion,
   "org.apache.pekko" %% "pekko-serialization-jackson" % pekkoVersion,
-  "org.playframework" %% "play-slick" % "6.0.0",
+  "org.playframework" %% "play-slick" % "6.1.0",
   "org.pac4j" %% "play-pac4j" % "12.0.0-PLAY3.0",
-  "org.pac4j" % "pac4j-cas" % "6.0.1" exclude("org.bouncycastle", "bcpkix-jdk15on"),
-  // Setting the cas-client-* dependencies of pac4j-cas explicitly to resolve CVE-2023-52428. Once pac-4j depends on at
-  // least version 4.0.4 of cas-client-* (leading to a transitive dependency of at least 9.37.2 of nimbus-jose-jwt) this
-  // direct dependency can be removed. START ...
-  "org.apereo.cas.client" % "cas-client-core" % "4.0.4" exclude("org.bouncycastle", "bcpkix-jdk15on"),
-  "org.apereo.cas.client" % "cas-client-support-saml" % "4.0.4" exclude("org.bouncycastle", "bcpkix-jdk15on"),
-  // ... END.
+  "org.pac4j" % "pac4j-cas" % "6.0.2" exclude("org.bouncycastle", "bcpkix-jdk15on"),
   "org.apache.commons" % "commons-lang3" % "3.14.0",
   "com.fasterxml.jackson.module" %% "jackson-module-scala" % jacksonVersion,
   "com.fasterxml.jackson.core" % "jackson-databind" % jacksonVersion,
@@ -70,29 +63,25 @@ libraryDependencies ++= Seq(
   "org.apache.cxf" % "cxf-rt-transports-http" % cxfVersion,
   "org.apache.cxf" % "cxf-rt-transports-http-jetty" % cxfVersion,
   // ---
-  "org.apache.tika" % "tika-core" % "2.9.1",
+  "org.apache.tika" % "tika-core" % "2.9.2",
   "org.webjars" %% "webjars-play" % "3.0.1",
   "org.webjars" % "jquery" % "3.7.1",
-  "org.webjars" % "bootstrap" % "5.3.2",
+  "org.webjars" % "bootstrap" % "5.3.3",
   "com.sun.mail" % "jakarta.mail" % "2.0.1",
-  "jakarta.activation" % "jakarta.activation-api" % "2.1.2",
-  "jakarta.xml.ws" % "jakarta.xml.ws-api" % "4.0.1",
+  "jakarta.activation" % "jakarta.activation-api" % "2.1.3",
+  "jakarta.xml.ws" % "jakarta.xml.ws-api" % "4.0.2",
   "jakarta.jws" % "jakarta.jws-api" % "3.0.0",
-  "jakarta.xml.bind" % "jakarta.xml.bind-api" % "4.0.1",
-  "com.sun.xml.bind" % "jaxb-impl" % "4.0.4",
-  "jakarta.xml.soap" % "jakarta.xml.soap-api" % "3.0.1",
-  "com.sun.xml.messaging.saaj" % "saaj-impl" % "3.0.3",
-  "com.sun.org.apache.xml.internal" % "resolver" % "20050927",
-  "com.sun.xml.stream.buffer" % "streambuffer" % "2.1.0",
-  "com.sun.xml.ws" % "policy" % "4.0.1",
-  "org.glassfish.gmbal" % "gmbal-api-only" % "4.0.3",
+  "jakarta.xml.bind" % "jakarta.xml.bind-api" % "4.0.2",
+  "com.sun.xml.bind" % "jaxb-impl" % "4.0.5",
+  "jakarta.xml.soap" % "jakarta.xml.soap-api" % "3.0.2",
+  "com.sun.xml.messaging.saaj" % "saaj-impl" % "3.0.4", // Needed for SOAP exchanges
   "org.bouncycastle" % "bcmail-jdk18on" % bouncyCastleVersion,
   "org.bouncycastle" % "bcpkix-jdk18on" % bouncyCastleVersion,
-  "org.apache.pdfbox" % "pdfbox" % "2.0.30",
+  "org.apache.pdfbox" % "pdfbox" % "2.0.31",
   "org.jasypt" % "jasypt" % "1.9.3",
   "org.apache.httpcomponents" % "httpclient" % "4.5.14",
-  "org.flywaydb" %% "flyway-play" % "9.0.0",
-  "org.flywaydb" % "flyway-mysql" % "9.16.0",
+  "org.flywaydb" %% "flyway-play" % "9.1.0",
+  "org.flywaydb" % "flyway-mysql" % "10.12.0",
   "com.googlecode.owasp-java-html-sanitizer" % "owasp-java-html-sanitizer" % "20220608.1",
   "net.lingala.zip4j" % "zip4j" % "2.11.5",
   // Specific version overrides (to be removed if no longer needed)

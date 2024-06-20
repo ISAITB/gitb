@@ -34,19 +34,20 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
     val ids = ParameterExtractor.extractLongIdsQueryParameter(request)
     authorizationManager.canViewDomains(request, ids)
     val result = domainManager.getDomains(ids)
-    val json = JsonUtil.jsDomains(result).toString()
+    val withApiKeys = ids.exists(_.nonEmpty)
+    val json = JsonUtil.jsDomains(result, withApiKeys).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
 
   def getDomainOfSpecification(specId: Long): Action[AnyContent] = authorizedAction { request =>
     authorizationManager.canViewDomainBySpecificationId(request, specId)
-    val json = JsonUtil.jsDomain(domainManager.getDomainOfSpecification(specId)).toString()
+    val json = JsonUtil.jsDomain(domainManager.getDomainOfSpecification(specId), withApiKeys = false).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
 
   def getDomainOfActor(actorId: Long): Action[AnyContent] = authorizedAction { request =>
     authorizationManager.canViewActor(request, actorId)
-    val json = JsonUtil.jsDomain(domainManager.getDomainOfActor(actorId)).toString()
+    val json = JsonUtil.jsDomain(domainManager.getDomainOfActor(actorId), withApiKeys = false).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
 
@@ -58,7 +59,7 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
     authorizationManager.canViewDomainByCommunityId(request, communityId)
     val domain = domainManager.getCommunityDomain(communityId)
     if (domain.isDefined) {
-      val json = JsonUtil.jsDomain(domain.get).toString()
+      val json = JsonUtil.jsDomain(domain.get, withApiKeys = false).toString()
       ResponseConstructor.constructJsonResponse(json)
     } else {
       ResponseConstructor.constructEmptyResponse
@@ -1053,7 +1054,7 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
     val publicLabel = ParameterExtractor.optionalBodyParameter(request, Parameters.PUBLIC_LABEL)
     val isPublic = ParameterExtractor.requiredBodyParameter(request, Parameters.PUBLIC).toBoolean
     val snapshot = conformanceManager.createConformanceSnapshot(communityId, label, publicLabel, isPublic)
-    ResponseConstructor.constructJsonResponse(JsonUtil.jsConformanceSnapshot(snapshot, public = false).toString)
+    ResponseConstructor.constructJsonResponse(JsonUtil.jsConformanceSnapshot(snapshot, public = false, withApiKey = true).toString)
   }
 
   def getConformanceSnapshot(snapshotId: Long): Action[AnyContent] = authorizedAction { request =>
@@ -1064,7 +1065,7 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
       authorizationManager.canManageConformanceSnapshot(request, snapshotId)
     }
     val snapshot = conformanceManager.getConformanceSnapshot(snapshotId)
-    ResponseConstructor.constructJsonResponse(JsonUtil.jsConformanceSnapshot(snapshot, public).toString)
+    ResponseConstructor.constructJsonResponse(JsonUtil.jsConformanceSnapshot(snapshot, public, withApiKey = false).toString)
   }
 
   def getConformanceSnapshots(): Action[AnyContent] = authorizedAction { request =>
@@ -1075,9 +1076,10 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
     } else {
       authorizationManager.canManageCommunity(request, communityId)
     }
+    val withApiKeys = ParameterExtractor.optionalBooleanQueryParameter(request, Parameters.KEYS).getOrElse(false)
     val snapshots = conformanceManager.getConformanceSnapshots(communityId, public)
     val latestLabel = conformanceManager.getLatestConformanceStatusLabel(communityId)
-    ResponseConstructor.constructJsonResponse(JsonUtil.jsConformanceSnapshotList(latestLabel, snapshots, public).toString)
+    ResponseConstructor.constructJsonResponse(JsonUtil.jsConformanceSnapshotList(latestLabel, snapshots, public, withApiKeys).toString)
   }
 
   def setLatestConformanceStatusLabel(communityId: Long): Action[AnyContent] = authorizedAction { request =>

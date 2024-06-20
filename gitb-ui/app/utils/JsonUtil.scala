@@ -56,7 +56,15 @@ object JsonUtil {
       "footerBorderColor" -> theme.footerBorderColor,
       "footerLogoPath" -> theme.footerLogoPath,
       "footerLogoDisplay" -> theme.footerLogoDisplay,
-      "faviconPath" -> theme.faviconPath
+      "faviconPath" -> theme.faviconPath,
+      "primaryButtonColor" -> theme.primaryButtonColor,
+      "primaryButtonLabelColor" -> theme.primaryButtonLabelColor,
+      "primaryButtonHoverColor" -> theme.primaryButtonHoverColor,
+      "primaryButtonActiveColor" -> theme.primaryButtonActiveColor,
+      "secondaryButtonColor" -> theme.secondaryButtonColor,
+      "secondaryButtonLabelColor" -> theme.secondaryButtonLabelColor,
+      "secondaryButtonHoverColor" -> theme.secondaryButtonHoverColor,
+      "secondaryButtonActiveColor" -> theme.secondaryButtonActiveColor
     )
   }
 
@@ -94,7 +102,7 @@ object JsonUtil {
       json = json.append(Json.obj(
         "id" -> system.id,
         "name" -> system.name,
-        "key" -> (if (system.key.isDefined) system.key.get else JsNull)
+        "key" -> system.key
       ))
     }
     json
@@ -693,6 +701,7 @@ object JsonUtil {
       "fname" -> system.fullname,
       "description" -> (if(system.description.isDefined) system.description.get else JsNull),
       "version" -> (if(system.version.isDefined) system.version.get else JsNull),
+      "apiKey" -> system.apiKey,
       "owner" -> system.owner
     )
     json
@@ -771,7 +780,7 @@ object JsonUtil {
   def serializeCommunity(community:Community, labels: Option[List[CommunityLabels]], includeAdminInfo: Boolean):String = {
     var jCommunity:JsObject = jsCommunity(community.toCaseObject, includeAdminInfo)
     if(community.domain.isDefined){
-      jCommunity = jCommunity ++ Json.obj("domain" -> jsDomain(community.domain.get))
+      jCommunity = jCommunity ++ Json.obj("domain" -> jsDomain(community.domain.get, withApiKeys = false))
     } else{
       jCommunity = jCommunity ++ Json.obj("domain" -> JsNull)
     }
@@ -786,13 +795,16 @@ object JsonUtil {
    * @param domain Domain object to be converted
    * @return JsObject
    */
-  def jsDomain(domain:Domain):JsObject = {
-    val json = Json.obj(
+  def jsDomain(domain:Domain, withApiKeys: Boolean):JsObject = {
+    var json = Json.obj(
       "id" -> domain.id,
       "sname" -> domain.shortname,
       "fname" -> domain.fullname,
       "description" -> domain.description
     )
+    if (withApiKeys && Configurations.AUTOMATION_API_ENABLED) {
+      json = json.+("apiKey" -> JsString(domain.apiKey))
+    }
     json
   }
 
@@ -826,17 +838,17 @@ object JsonUtil {
    * @param list List of Domains to be converted
    * @return JsArray
    */
-  def jsDomains(list:List[Domain]):JsArray = {
+  def jsDomains(list:List[Domain], withApiKeys: Boolean):JsArray = {
     var json = Json.arr()
     list.foreach{ domain =>
-      json = json.append(jsDomain(domain))
+      json = json.append(jsDomain(domain, withApiKeys))
     }
     json
   }
 
   def jsCommunityDomains(domains: List[Domain], linkedDomain: Option[Long]): JsObject = {
     var json = Json.obj(
-      "domains" -> jsDomains(domains)
+      "domains" -> jsDomains(domains, withApiKeys = false)
     )
     if (linkedDomain.isDefined) {
       json = json + ("linkedDomain" -> JsNumber(linkedDomain.get))
@@ -1125,7 +1137,7 @@ object JsonUtil {
 
   def parseJsConfigurationRequest(json: JsValue): ConfigurationRequest = {
     ConfigurationRequest(
-      domainProperties = parseJsKeyValueArray((json \ "domainProperties").asOpt[JsArray].getOrElse(JsArray.empty)),
+      domainProperties = parseJsDomainParameterConfigurationArray((json \ "domainProperties").asOpt[JsArray].getOrElse(JsArray.empty)),
       organisationProperties = parseJsPartyConfigurationArray((json \ "organisationProperties").asOpt[JsArray].getOrElse(JsArray.empty), "organisation"),
       systemProperties = parseJsPartyConfigurationArray((json \ "systemProperties").asOpt[JsArray].getOrElse(JsArray.empty), "system"),
       statementProperties = parseJsStatementConfigurationArray((json \ "statementProperties").asOpt[JsArray].getOrElse(JsArray.empty))
@@ -1147,6 +1159,18 @@ object JsonUtil {
       PartyConfiguration(
         (json \ partyPropertyName).as[String],
         parseJsKeyValueArray((json \ "properties").asOpt[JsArray].getOrElse(JsArray.empty))
+      )
+    }.toList
+  }
+
+  private def parseJsDomainParameterConfigurationArray(jsonArray: JsArray): List[DomainParameterInfo] = {
+    jsonArray.value.map { json =>
+      DomainParameterInfo(
+        KeyValue(
+          (json \ "key").as[String],
+          (json \ "value").asOpt[String]
+        ),
+        (json \ "domain").asOpt[String]
       )
     }.toList
   }
@@ -1185,11 +1209,14 @@ object JsonUtil {
     var items = Json.arr()
     results.foreach { result =>
       var item = Json.obj(
-        "specification" -> result.specification,
+        "specification" -> result.specificationKey,
         "linked" -> result.linked
       )
       if (result.message.isDefined) {
         item = item + ("message", JsString(result.message.get))
+      }
+      if (result.actors.isDefined && result.actors.get.nonEmpty) {
+        item = item + ("actors", jsTestSuiteSpecificationActorApiKeys(result.actors.get))
       }
       items = items.append(item)
     }
@@ -2038,25 +2065,9 @@ object JsonUtil {
   def serializeOrganization(org:Organization, includeAdminInfo: Boolean):String = {
     // Serialize Organization
     var jOrganization:JsObject = jsOrganization(org.toCaseObject)
-    //
-    if(org.landingPageObj.isDefined){
-      jOrganization = jOrganization ++ Json.obj("landingPages" -> jsLandingPage(org.landingPageObj.get))
-    } else{
-      jOrganization = jOrganization ++ Json.obj("landingPages" -> JsNull)
-    }
-    //
-    if(org.legalNoticeObj.isDefined){
-      jOrganization = jOrganization ++ Json.obj("legalNotices" -> jsLegalNotice(org.legalNoticeObj.get))
-    } else{
-      jOrganization = jOrganization ++ Json.obj("legalNotices" -> JsNull)
-    }
-    //
-    if(org.errorTemplateObj.isDefined){
-      jOrganization = jOrganization ++ Json.obj("errorTemplates" -> jsErrorTemplate(org.errorTemplateObj.get))
-    } else{
-      jOrganization = jOrganization ++ Json.obj("errorTemplates" -> JsNull)
-    }
-    //
+    org.landingPageObj.foreach(x => jOrganization = jOrganization ++ Json.obj("landingPages" -> jsLandingPage(x.toLandingPage())))
+    org.legalNoticeObj.foreach(x => jOrganization = jOrganization ++ Json.obj("legalNotices" -> jsLegalNotice(x.toLegalNotice())))
+    org.errorTemplateObj.foreach(x => jOrganization = jOrganization ++ Json.obj("errorTemplates" -> jsErrorTemplate(x.toErrorTemplate())))
     // Return JSON String
     jOrganization.toString
   }
@@ -2095,14 +2106,14 @@ object JsonUtil {
    * @param landingPage LandingPage object to be converted
    * @return JsObject
    */
-  def jsLandingPage(landingPage:LandingPages):JsObject = {
-    val json = Json.obj(
+  def jsLandingPage(landingPage: LandingPage):JsObject = {
+    var json = Json.obj(
       "id"    -> landingPage.id,
       "name"  -> landingPage.name,
-      "description" -> (if(landingPage.description.isDefined) landingPage.description.get else JsNull),
-      "content"  -> landingPage.content,
       "default" -> landingPage.default
     )
+    landingPage.description.foreach(x => json += ("description" -> JsString(x)))
+    landingPage.content.foreach(x => json += ("content" -> JsString(x)))
     json
   }
 
@@ -2112,14 +2123,14 @@ object JsonUtil {
    * @param legalNotice LegalNotice object to be converted
    * @return JsObject
    */
-  def jsLegalNotice(legalNotice:LegalNotices):JsObject = {
-    val json = Json.obj(
+  def jsLegalNotice(legalNotice: LegalNotice):JsObject = {
+    var json = Json.obj(
       "id"    -> legalNotice.id,
       "name"  -> legalNotice.name,
-      "description" -> (if(legalNotice.description.isDefined) legalNotice.description.get else JsNull),
-      "content"  -> legalNotice.content,
       "default" -> legalNotice.default
     )
+    legalNotice.description.foreach(x => json += ("description" -> JsString(x)))
+    legalNotice.content.foreach(x => json += ("content" -> JsString(x)))
     json
   }
 
@@ -2129,14 +2140,14 @@ object JsonUtil {
     * @param errorTemplate ErrorTemplate object to be converted
     * @return JsObject
     */
-  def jsErrorTemplate(errorTemplate:ErrorTemplates):JsObject = {
-    val json = Json.obj(
+  def jsErrorTemplate(errorTemplate:ErrorTemplate):JsObject = {
+    var json = Json.obj(
       "id"    -> errorTemplate.id,
       "name"  -> errorTemplate.name,
-      "description" -> (if(errorTemplate.description.isDefined) errorTemplate.description.get else JsNull),
-      "content"  -> errorTemplate.content,
       "default" -> errorTemplate.default
     )
+    errorTemplate.description.foreach(x => json += ("description" -> JsString(x)))
+    errorTemplate.content.foreach(x => json += ("content" -> JsString(x)))
     json
   }
 
@@ -2146,9 +2157,9 @@ object JsonUtil {
    * @param list List of LandingPages to be convert
    * @return JsArray
    */
-  def jsLandingPages(list:List[LandingPages]):JsArray = {
+  def jsLandingPages(list: List[LandingPage]): JsArray = {
     var json = Json.arr()
-    list.foreach{ landingPage =>
+    list.foreach { landingPage =>
       json = json.append(jsLandingPage(landingPage))
     }
     json
@@ -2208,7 +2219,7 @@ object JsonUtil {
    * @param list List of LegalNotices to be convert
    * @return JsArray
    */
-  def jsLegalNotices(list:List[LegalNotices]):JsArray = {
+  def jsLegalNotices(list:List[LegalNotice]):JsArray = {
     var json = Json.arr()
     list.foreach{ ln =>
       json = json.append(jsLegalNotice(ln))
@@ -2222,7 +2233,7 @@ object JsonUtil {
     * @param list List of ErrorTemplates to be convert
     * @return JsArray
     */
-  def jsErrorTemplates(list:List[ErrorTemplates]):JsArray = {
+  def jsErrorTemplates(list:List[ErrorTemplate]):JsArray = {
     var json = Json.arr()
     list.foreach{ et =>
       json = json.append(jsErrorTemplate(et))
@@ -2235,14 +2246,9 @@ object JsonUtil {
    * @param landingPage LandingPage object to be converted
    * @return String
    */
-  def serializeLandingPage(landingPage: Option[LandingPage]):String = {
-    //1) Serialize LandingPage
-    val exists = landingPage.isDefined
-    var jLandingPage:JsObject =  jsExists(exists)
-    if (exists) {
-      jLandingPage = jLandingPage ++ jsLandingPage(landingPage.get.toCaseObject)
-    }
-    //3) Return JSON String
+  def serializeLandingPage(landingPage: Option[LandingPages]):String = {
+    var jLandingPage: JsObject = jsExists(landingPage.isDefined)
+    landingPage.foreach(x => jLandingPage = jLandingPage ++ jsLandingPage(x.toLandingPage()))
     jLandingPage.toString
   }
 
@@ -2251,14 +2257,9 @@ object JsonUtil {
    * @param legalNotice LegalNotice object to be converted
    * @return String
    */
-  def serializeLegalNotice(legalNotice: Option[LegalNotice]):String = {
-    //1) Serialize LegalNotice
-    val exists = legalNotice.isDefined
-    var jLegalNotice:JsObject = jsExists(exists)
-    if (exists) {
-      jLegalNotice = jLegalNotice ++ jsLegalNotice(legalNotice.get.toCaseObject)
-    }
-    //3) Return JSON String
+  def serializeLegalNotice(legalNotice: Option[LegalNotices]):String = {
+    var jLegalNotice: JsObject = jsExists(legalNotice.isDefined)
+    legalNotice.foreach(x => jLegalNotice = jLegalNotice ++ jsLegalNotice(x.toLegalNotice()))
     jLegalNotice.toString
   }
 
@@ -2267,14 +2268,9 @@ object JsonUtil {
     * @param errorTemplate ErrorTemplate object to be converted
     * @return String
     */
-  def serializeErrorTemplate(errorTemplate: Option[ErrorTemplate]):String = {
-    //1) Serialize ErrorTemplate
-    val exists = errorTemplate.isDefined
-    var jErrorTemplate:JsObject = jsExists(exists)
-    if (exists) {
-      jErrorTemplate = jErrorTemplate ++ jsErrorTemplate(errorTemplate.get.toCaseObject)
-    }
-    //3) Return JSON String
+  def serializeErrorTemplate(errorTemplate: Option[ErrorTemplates]):String = {
+    var jErrorTemplate: JsObject = jsExists(errorTemplate.isDefined)
+    errorTemplate.foreach(x => jErrorTemplate = jErrorTemplate ++ jsErrorTemplate(x.toErrorTemplate()))
     jErrorTemplate.toString
   }
 
@@ -2313,9 +2309,9 @@ object JsonUtil {
     json
   }
 
-  def jsConformanceSnapshotList(latestLabel: Option[String], snapshots: Iterable[ConformanceSnapshot], public: Boolean): JsObject = {
+  def jsConformanceSnapshotList(latestLabel: Option[String], snapshots: Iterable[ConformanceSnapshot], public: Boolean, withApiKeys: Boolean): JsObject = {
     var json = Json.obj(
-      "snapshots" -> jsConformanceSnapshots(snapshots, public)
+      "snapshots" -> jsConformanceSnapshots(snapshots, public, withApiKeys)
     )
     if (latestLabel.isDefined) {
       json += ("latest" -> JsString(latestLabel.get))
@@ -2323,19 +2319,22 @@ object JsonUtil {
     json
   }
 
-  private def jsConformanceSnapshots(snapshots: Iterable[ConformanceSnapshot], public: Boolean): JsArray = {
+  private def jsConformanceSnapshots(snapshots: Iterable[ConformanceSnapshot], public: Boolean, withApiKeys: Boolean): JsArray = {
     var array = Json.arr()
     snapshots.foreach { snapshot =>
-      array = array.append(jsConformanceSnapshot(snapshot, public))
+      array = array.append(jsConformanceSnapshot(snapshot, public, withApiKeys))
     }
     array
   }
 
-  def jsConformanceSnapshot(snapshot: ConformanceSnapshot, public: Boolean):JsObject = {
+  def jsConformanceSnapshot(snapshot: ConformanceSnapshot, public: Boolean, withApiKey: Boolean):JsObject = {
     var json = Json.obj(
       "id" -> snapshot.id,
       "snapshotTime" -> TimeUtil.serializeTimestamp(snapshot.snapshotTime)
     )
+    if (withApiKey) {
+      json += ("apiKey" -> JsString(snapshot.apiKey))
+    }
     if (public) {
       json += ("label" -> JsString(snapshot.publicLabel.getOrElse(snapshot.label)))
     } else {
@@ -2405,7 +2404,7 @@ object JsonUtil {
     testCaseArray
   }
 
-  def jsTestSuiteDeployInfo(result: TestSuiteUploadResult):JsObject = {
+  def jsTestSuiteDeployInfo(result: TestSuiteUploadResultWithApiKeys):JsObject = {
     var errors = Json.arr()
     var warnings = Json.arr()
     var messages = Json.arr()
@@ -2440,9 +2439,47 @@ object JsonUtil {
     if (messages.value.nonEmpty) {
       json = json.+("messages", messages)
     }
+    // API key identifiers.
+    if (result.testSuiteIdentifier.isDefined) {
+      var identifiers = Json.obj(
+        "testSuite" -> result.testSuiteIdentifier.get
+      )
+      if (result.testCaseIdentifiers.isDefined && result.testCaseIdentifiers.get.nonEmpty) {
+        identifiers = identifiers+("testCases" -> jsStringArray(result.testCaseIdentifiers.get))
+      }
+      if (result.specifications.isDefined && result.specifications.get.nonEmpty) {
+        identifiers = identifiers+("specifications" -> jsTestSuiteSpecificationApiKeys(result.specifications.get))
+      }
+      json = json+("identifiers", identifiers)
+    }
     json
   }
 
+  private def jsTestSuiteSpecificationApiKeys(specifications: Iterable[SpecificationActorApiKeys]): JsArray = {
+    var specArray = Json.arr()
+    specifications.foreach { spec =>
+      var specJson = Json.obj(
+        "name" -> spec.specificationName,
+        "identifier" -> spec.specificationApiKey,
+      )
+      if (spec.actors.isDefined && spec.actors.get.nonEmpty) {
+        specJson = specJson + ("actors" -> jsTestSuiteSpecificationActorApiKeys(spec.actors.get))
+      }
+      specArray = specArray.append(specJson)
+    }
+    specArray
+  }
+
+  private def jsTestSuiteSpecificationActorApiKeys(actors: Iterable[KeyValueRequired]): JsArray = {
+    var actorArray = Json.arr()
+    actors.foreach { actor =>
+      actorArray = actorArray.append(Json.obj(
+        "name" -> actor.key,
+        "identifier" -> actor.value
+      ))
+    }
+    actorArray
+  }
 
   def jsTAR(report: TAR): JsObject = {
     val json = Json.obj(

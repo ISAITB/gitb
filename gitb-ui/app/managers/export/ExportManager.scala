@@ -386,6 +386,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, systemConfigura
     exportedDomain.setShortName(domain.shortname)
     exportedDomain.setFullName(domain.fullname)
     exportedDomain.setDescription(domain.description.orNull)
+    exportedDomain.setApiKey(domain.apiKey)
     // Shared test suites.
     if (exportSettings.testSuites) {
       val testSuites = loadSharedTestSuites(domain.id)
@@ -678,6 +679,14 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, systemConfigura
           if (!systemConfigurationManager.isBuiltInThemeResource(theme.faviconPath)) {
             exportedTheme.setFaviconContent(MimeUtil.getFileAsDataURL(repositoryUtils.getThemeResource(theme.id, theme.faviconPath).get, DEFAULT_CONTENT_TYPE))
           }
+          exportedTheme.setPrimaryButtonColor(theme.primaryButtonColor)
+          exportedTheme.setPrimaryButtonLabelColor(theme.primaryButtonLabelColor)
+          exportedTheme.setPrimaryButtonHoverColor(theme.primaryButtonHoverColor)
+          exportedTheme.setPrimaryButtonActiveColor(theme.primaryButtonActiveColor)
+          exportedTheme.setSecondaryButtonColor(theme.secondaryButtonColor)
+          exportedTheme.setSecondaryButtonLabelColor(theme.secondaryButtonLabelColor)
+          exportedTheme.setSecondaryButtonHoverColor(theme.secondaryButtonHoverColor)
+          exportedTheme.setSecondaryButtonActiveColor(theme.secondaryButtonActiveColor)
           exportedThemes.getTheme.add(exportedTheme)
         }
         exportedSettings.setThemes(exportedThemes)
@@ -1305,7 +1314,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, systemConfigura
               exportedSystem.setFullName(system.fullname)
               exportedSystem.setDescription(system.description.orNull)
               exportedSystem.setVersion(system.version.orNull)
-              exportedSystem.setApiKey(system.apiKey.orNull)
+              exportedSystem.setApiKey(system.apiKey)
               exportedSystem.setBadgeKey(system.badgeKey)
               // System property values.
               if (exportSettings.customProperties && exportSettings.systemPropertyValues && systemParameterValueMap.contains(system.id)) {

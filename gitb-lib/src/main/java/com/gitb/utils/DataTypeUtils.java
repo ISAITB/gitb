@@ -50,6 +50,7 @@ public class DataTypeUtils {
 		AnyContent attachment = new AnyContent();
 		attachment.setName(name);
 		attachment.setType(fragment.getType());
+		attachment.setMimeType(fragment.getContentType());
 
 		String typeToCheck = fragment.getType();
 		if (DataType.isListType(fragment.getType())) {

@@ -133,7 +133,7 @@ public class HttpReceiver extends AbstractTransactionReceiver {
 
             HttpEntity entity = ((HttpEntityEnclosingRequest)request).getEntity();
 
-            BinaryType httpBody = constructHttpBodyFragment(request, entity);
+            BinaryType httpBody = constructHttpBodyFragment(entity);
             message.getFragments().put(HttpMessagingHandler.HTTP_BODY_FIELD_NAME, httpBody);
             message.getFragments().put(HttpMessagingHandler.HTTP_PARTS_FIELD_NAME, getMultipartData(httpBody, request));
 
@@ -217,7 +217,7 @@ public class HttpReceiver extends AbstractTransactionReceiver {
         logger.debug(addMarker(), "Received response entity: " + response);
 
         //check retrieved status code
-        checkStatusCode(configurations, response);
+        Integer statusCode = checkStatusCode(configurations, response);
 
         HttpEntity entity = response.getEntity();
 
@@ -225,9 +225,16 @@ public class HttpReceiver extends AbstractTransactionReceiver {
         message
                 .getFragments()
                 .put(HttpMessagingHandler.HTTP_HEADERS_FIELD_NAME, constructHttpHeadersFragment(response));
-        message
-                .getFragments()
-                .put(HttpMessagingHandler.HTTP_BODY_FIELD_NAME, constructHttpBodyFragment(response, entity));
+        if (statusCode != null) {
+            message
+                    .getFragments()
+                    .put(HttpMessagingHandler.HTTP_STATUS_FIELD_NAME, new StringType(statusCode.toString()));
+            if (statusCode != HttpStatus.SC_NO_CONTENT) {
+                message
+                        .getFragments()
+                        .put(HttpMessagingHandler.HTTP_BODY_FIELD_NAME, constructHttpBodyFragment(entity));
+            }
+        }
 
         return message;
     }
@@ -267,7 +274,8 @@ public class HttpReceiver extends AbstractTransactionReceiver {
         return null;
     }
 
-	private BinaryType constructHttpBodyFragment(HttpMessage request, HttpEntity httpEntity) throws IOException {
+	private BinaryType constructHttpBodyFragment(HttpEntity httpEntity) throws IOException {
+
 		byte[] content = EntityUtils.toByteArray(httpEntity);
 
 		BinaryType messageContent = new BinaryType();
@@ -276,13 +284,18 @@ public class HttpReceiver extends AbstractTransactionReceiver {
 		return messageContent;
 	}
 
-    private void checkStatusCode(List<Configuration> configurations, HttpResponse response) throws Exception {
+    private Integer checkStatusCode(List<Configuration> configurations, HttpResponse response) throws Exception {
         Configuration expectedStatusCode = ConfigurationUtils.getConfiguration(configurations, HttpMessagingHandler.HTTP_STATUS_CODE_CONFIG_NAME);
         if(expectedStatusCode != null) { //here we expect received response status code to match provided status code configuration
             int statusCode = Integer.parseInt(expectedStatusCode.getValue());
             if(response.getStatusLine().getStatusCode() != statusCode){
-                throw new Exception("Expected status code: " + expectedStatusCode + ", but received: " + response.getStatusLine().getStatusCode());
+                throw new Exception("Expected status code: " + expectedStatusCode.getValue() + ", but received: " + response.getStatusLine().getStatusCode());
             }
+        }
+        if (response.getStatusLine() == null) {
+            return null;
+        } else {
+            return response.getStatusLine().getStatusCode();
         }
     }
 }

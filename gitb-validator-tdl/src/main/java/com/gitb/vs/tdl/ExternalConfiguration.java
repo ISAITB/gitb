@@ -91,12 +91,16 @@ public class ExternalConfiguration {
 
     public static class MessagingHandlerConfiguration extends BasicConfiguration {
 
-        private Set<String> requiredTxConfigs = new HashSet<>();
-        private Set<String> optionalTxConfigs = new HashSet<>();
-        private Set<String> requiredSendConfigs = new HashSet<>();
-        private Set<String> optionalSendConfigs = new HashSet<>();
-        private Set<String> requiredReceiveConfigs = new HashSet<>();
-        private Set<String> optionalReceiveConfigs = new HashSet<>();
+        private final Set<String> requiredTxConfigs = new HashSet<>();
+        private final Set<String> optionalTxConfigs = new HashSet<>();
+        private final Set<String> requiredSendConfigs = new HashSet<>();
+        private final Set<String> optionalSendConfigs = new HashSet<>();
+        private final Set<String> requiredReceiveConfigs = new HashSet<>();
+        private final Set<String> optionalReceiveConfigs = new HashSet<>();
+        private final Set<String> requiredSendInputs = new HashSet<>();
+        private final Set<String> optionalSendInputs = new HashSet<>();
+        private final Set<String> requiredReceiveInputs = new HashSet<>();
+        private final Set<String> optionalReceiveInputs = new HashSet<>();
 
         public Set<String> getRequiredTxConfigs() {
             return requiredTxConfigs;
@@ -121,13 +125,51 @@ public class ExternalConfiguration {
         public Set<String> getOptionalReceiveConfigs() {
             return optionalReceiveConfigs;
         }
+
+        public Set<String> getRequiredSendInputs() {
+            return requiredSendInputs;
+        }
+
+        public Set<String> getOptionalSendInputs() {
+            return optionalSendInputs;
+        }
+
+        public Set<String> getRequiredReceiveInputs() {
+            return requiredReceiveInputs;
+        }
+
+        public Set<String> getOptionalReceiveInputs() {
+            return optionalReceiveInputs;
+        }
     }
 
-    public static class ProcessingHandlerConfiguration {
+    public static class BaseHandlerConfig {
 
-        private Map<String, BasicConfiguration> operations = new HashMap<>();
-        private Set<String> requiredConfigs = new HashSet<>();
-        private Set<String> optionalConfigs = new HashSet<>();
+        private boolean deprecated = false;
+        private String replacement;
+
+        public boolean isDeprecated() {
+            return deprecated;
+        }
+
+        public void setDeprecated(boolean deprecated) {
+            this.deprecated = deprecated;
+        }
+
+        public String getReplacement() {
+            return replacement;
+        }
+
+        public void setReplacement(String replacement) {
+            this.replacement = replacement;
+        }
+    }
+
+    public static class ProcessingHandlerConfiguration extends BaseHandlerConfig {
+
+        private final Map<String, BasicConfiguration> operations = new HashMap<>();
+        private final Set<String> requiredConfigs = new HashSet<>();
+        private final Set<String> optionalConfigs = new HashSet<>();
 
         public Map<String, BasicConfiguration> getOperations() {
             return operations;
@@ -145,8 +187,8 @@ public class ExternalConfiguration {
 
     public static class ValidationHandlerConfiguration extends BasicConfiguration {
 
-        private Set<String> requiredConfigs = new HashSet<>();
-        private Set<String> optionalConfigs = new HashSet<>();
+        private final Set<String> requiredConfigs = new HashSet<>();
+        private final Set<String> optionalConfigs = new HashSet<>();
 
         public Set<String> getRequiredConfigs() {
             return requiredConfigs;
@@ -157,10 +199,10 @@ public class ExternalConfiguration {
         }
     }
 
-    public static class BasicConfiguration {
+    public static class BasicConfiguration extends BaseHandlerConfig {
 
-        private Set<String> requiredInputs = new HashSet<>();
-        private Set<String> optionalInputs = new HashSet<>();
+        private final Set<String> requiredInputs = new HashSet<>();
+        private final Set<String> optionalInputs = new HashSet<>();
 
         public Set<String> getRequiredInputs() {
             return requiredInputs;
@@ -169,6 +211,7 @@ public class ExternalConfiguration {
         public Set<String> getOptionalInputs() {
             return optionalInputs;
         }
+
     }
 
 }

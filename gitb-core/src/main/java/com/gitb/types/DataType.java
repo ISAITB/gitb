@@ -20,6 +20,7 @@ public abstract class DataType {
 
     protected String importPath;
     protected String importTestSuite;
+    private String contentType;
 
     public abstract String getType();
 
@@ -98,6 +99,7 @@ public abstract class DataType {
             }
             convertedType.setImportPath(getImportPath());
             convertedType.setImportTestSuite(getImportTestSuite());
+            convertedType.setContentType(getContentType());
         }
         return convertedType;
     }
@@ -154,5 +156,13 @@ public abstract class DataType {
 
     public void setImportTestSuite(String importTestSuite) {
         this.importTestSuite = importTestSuite;
+    }
+
+    public String getContentType() {
+        return contentType;
+    }
+
+    public void setContentType(String contentType) {
+        this.contentType = contentType;
     }
 }

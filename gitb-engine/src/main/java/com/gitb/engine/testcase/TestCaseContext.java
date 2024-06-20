@@ -1,6 +1,7 @@
 package com.gitb.engine.testcase;
 
 import com.gitb.core.*;
+import com.gitb.core.LogLevel;
 import com.gitb.engine.ModuleManager;
 import com.gitb.engine.SessionManager;
 import com.gitb.engine.TestEngineConfiguration;
@@ -147,7 +148,7 @@ public class TestCaseContext {
 		STOPPING
     }
 
-	private com.gitb.core.LogLevel logLevelToSignal = com.gitb.core.LogLevel.DEBUG;
+	private com.gitb.core.LogLevel logLevelToSignal = LogLevel.INFO;
 	private boolean logLevelIsExpression = false;
 	private boolean reportedInvalidLogLevel = false;
 	private Path dataFolder;
@@ -546,7 +547,7 @@ public class TestCaseContext {
 			String resolvedValue = (String) variableResolver.resolveVariable(testCase.getSteps().getLogLevel()).convertTo(DataType.STRING_DATA_TYPE).getValue();
 			String warningMessage = null;
 			if (resolvedValue == null || resolvedValue.isBlank()) {
-				resolvedLevel = com.gitb.core.LogLevel.DEBUG;
+				resolvedLevel = LogLevel.INFO;
 				warningMessage = String.format("Unable to resolve test case log level using expression [%s]. Considering %s as default.", testCase.getSteps().getLogLevel(), resolvedLevel);
 			} else {
 				try {
@@ -555,7 +556,7 @@ public class TestCaseContext {
 						reportedInvalidLogLevel = false;
 					}
 				} catch (Exception e) {
-					resolvedLevel = com.gitb.core.LogLevel.DEBUG;
+					resolvedLevel = LogLevel.INFO;
 					warningMessage = String.format("Invalid test case log level [%s]. Considering %s as default.", resolvedValue, resolvedLevel);
 				}
 			}
@@ -615,9 +616,12 @@ public class TestCaseContext {
 	}
 
 	public void removeProcessingContext(String txId) {
-		if (processingContexts.containsKey(txId)) {
-			SessionManager.getInstance().removeProcessingSession(processingContexts.get(txId).getSession());
-			processingContexts.remove(txId);
+		if (txId != null && processingContexts.containsKey(txId)) {
+			var context = processingContexts.get(txId);
+			if (context != null) {
+				SessionManager.getInstance().removeProcessingSession(context.getSession());
+				processingContexts.remove(txId);
+			}
 		}
 	}
 

@@ -36,6 +36,7 @@ object Constants {
   val systemConfiguration_shortName = "shortName"
   val systemConfiguration_fullName = "fullName"
   val systemConfiguration_version = "version"
+  val systemConfiguration_apiKey = "apiKey"
 
   val PlaceholderOrganisation = "$ORGANISATION"
   val PlaceholderSystem = "$SYSTEM"
@@ -49,7 +50,6 @@ object Constants {
 
   val ProductionMode = "production"
   val DevelopmentMode = "development"
-  val SandboxMode = "sandbox"
 
   val FilterDateFormat = "dd-MM-yyyy HH:mm:ss"
   val AutomationHeader = "ITB_API_KEY"
@@ -61,7 +61,7 @@ object Constants {
   val MimeTypeXML = "application/xml"
 
   // When ending in "-snapshot", this is considered a non-published release.
-  val VersionNumber = "1.22.0"
-  val VersionNumberPostfixForResources = "_1"
+  val VersionNumber = "1.23.0"
+  val VersionNumberPostfixForResources = ""
 
 }

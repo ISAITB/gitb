@@ -67,7 +67,6 @@ GET     /api/suts/:sut_id/availableStatements   @controllers.ConformanceService.
 GET	    /api/vendor/systems                     @controllers.SystemService.getSystemsByOrganization()
 POST	/api/vendor/systems/register            @controllers.SystemService.registerSystemWithOrganization()
 POST    /api/suts/:sut_id/apiKey                @controllers.SystemService.updateSystemApiKey(sut_id: Long)
-DELETE  /api/suts/:sut_id/apiKey                @controllers.SystemService.deleteSystemApiKey(sut_id: Long)
 
 # Test Case management API
 GET	    /api/actorDomain/:actor_id              @controllers.ConformanceService.getDomainOfActor(actor_id: Long)
@@ -392,6 +391,10 @@ POST    /api/rest/testsuite/undeployShared                       @controllers.Te
 POST    /api/rest/testsuite/linkShared                           @controllers.TestSuiteAutomationService.linkShared()
 POST    /api/rest/testsuite/unlinkShared                         @controllers.TestSuiteAutomationService.unlinkShared()
 POST    /api/rest/configure                                      @controllers.ConfigurationAutomationService.configure()
+GET     /api/rest/conformance/:system/:actor                     @controllers.TestAutomationService.statementReport(system: String, actor: String)
+GET     /api/rest/conformance/:system/:actor/:snapshot           @controllers.TestAutomationService.statementReportForSnapshot(system: String, actor: String, snapshot: String)
+PUT     /api/rest/conformance/:system/:actor                     @controllers.TestAutomationService.createStatement(system: String, actor: String)
+DELETE  /api/rest/conformance/:system/:actor                     @controllers.TestAutomationService.deleteStatement(system: String, actor: String)
 
 POST    /api/crumbs                                              @controllers.BreadcrumbService.getBreadcrumbLabels()
 

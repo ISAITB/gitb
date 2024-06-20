@@ -17,6 +17,20 @@ class LandingPageManager @Inject() (dbConfigProvider: DatabaseConfigProvider) ex
   import dbConfig.profile.api._
 
   /**
+   * Gets all landing pages for the specified community without rich content
+   */
+  def getLandingPagesByCommunityWithoutContent(communityId: Long): List[LandingPage] = {
+    exec(
+      PersistenceSchema.landingPages
+        .filter(_.community === communityId)
+        .map(x => (x.id, x.name, x.description, x.default))
+        .sortBy(_._2.asc)
+        .result
+        .map(_.toList.map(x => new LandingPage(x._1, x._2, x._3, None, x._4)))
+    )
+  }
+
+  /**
    * Gets all landing pages for the specified community
    */
   def getLandingPagesByCommunity(communityId: Long): List[LandingPages] = {
@@ -59,9 +73,8 @@ class LandingPageManager @Inject() (dbConfigProvider: DatabaseConfigProvider) ex
   /**
     * Gets landing page with specified id
     */
-  def getLandingPageById(pageId: Long): LandingPage = {
-    val p = exec(getLandingPageByIdInternal(pageId))
-    new LandingPage(p.get)
+  def getLandingPageById(pageId: Long): Option[LandingPages] = {
+    exec(getLandingPageByIdInternal(pageId))
   }
 
   def getLandingPageByIdInternal(pageId: Long): DBIO[Option[LandingPages]] = {
@@ -142,8 +155,8 @@ class LandingPageManager @Inject() (dbConfigProvider: DatabaseConfigProvider) ex
   /**
     * Gets the default landing page for given community
     */
-  def getCommunityDefaultLandingPage(communityId: Long): Option[LandingPage] = {
-    exec(getCommunityDefaultLandingPageInternal(communityId)).map(x => new LandingPage(x))
+  def getCommunityDefaultLandingPage(communityId: Long): Option[LandingPages] = {
+    exec(getCommunityDefaultLandingPageInternal(communityId))
   }
 
   def getCommunityDefaultLandingPageInternal(communityId: Long): DBIO[Option[LandingPages]] = {

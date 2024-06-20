@@ -5,11 +5,11 @@ import { RoutingService } from 'src/app/services/routing.service';
 import { SystemConfigurationService } from 'src/app/services/system-configuration.service';
 import { Theme } from 'src/app/types/theme';
 import { SystemAdministrationTab } from '../system-administration-tab.enum';
-import { BaseComponent } from 'src/app/pages/base-component.component';
 import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
 import { PopupService } from 'src/app/services/popup.service';
 import { Observable, of } from 'rxjs';
 import { DataService } from 'src/app/services/data.service';
+import { BaseThemeFormComponent } from '../base-theme-form.component';
 
 @Component({
   selector: 'app-theme-details',
@@ -17,7 +17,7 @@ import { DataService } from 'src/app/services/data.service';
   styles: [
   ]
 })
-export class ThemeDetailsComponent extends BaseComponent implements OnInit {
+export class ThemeDetailsComponent extends BaseThemeFormComponent implements OnInit {
 
   themeId!: number
   theme!: Theme
@@ -38,6 +38,8 @@ export class ThemeDetailsComponent extends BaseComponent implements OnInit {
   ngOnInit(): void {
     this.themeId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.THEME_ID))
     this.theme = this.route.snapshot.data['theme'] as Theme
+    this.originalPrimaryButtonColor = this.theme.primaryButtonColor
+    this.originalSecondaryButtonColor = this.theme.secondaryButtonColor
     this.initiallyActive = this.theme.active
     this.routingService.systemThemeBreadcrumbs(this.themeId, this.theme.key)
   }
@@ -57,6 +59,7 @@ export class ThemeDetailsComponent extends BaseComponent implements OnInit {
       if (proceed) {
         this.clearAlerts()
         this.savePending = true
+        this.processButtonColors(this.theme)
         this.systemConfigurationService.updateTheme(this.theme)
         .subscribe((error) => {
           if (this.isErrorDescription(error)) {
@@ -78,16 +81,18 @@ export class ThemeDetailsComponent extends BaseComponent implements OnInit {
 
   activate() {
     this.confirmActiveChange().subscribe((proceed) => {
-      this.savePending = true
-      this.systemConfigurationService.activateTheme(this.themeId)
-      .subscribe(() => {
-        this.popupService.success("Theme activated.")
-        this.dataService.refreshCss()
-        this.back()
-      })
-      .add(() => {
-        this.savePending = false
-      })
+      if (proceed) {
+        this.savePending = true
+        this.systemConfigurationService.activateTheme(this.themeId)
+        .subscribe(() => {
+          this.popupService.success("Theme activated.")
+          this.dataService.refreshCss()
+          this.back()
+        })
+        .add(() => {
+          this.savePending = false
+        })
+      }
     })
   }
 

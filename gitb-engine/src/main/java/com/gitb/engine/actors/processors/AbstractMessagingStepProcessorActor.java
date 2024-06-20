@@ -1,5 +1,6 @@
 package com.gitb.engine.actors.processors;
 
+import com.gitb.tr.TestResultType;
 import org.apache.pekko.dispatch.OnFailure;
 import org.apache.pekko.dispatch.OnSuccess;
 import com.gitb.core.*;
@@ -227,7 +228,7 @@ public abstract class AbstractMessagingStepProcessorActor<T extends MessagingSte
         }
     }
 
-    protected OnSuccess<TestStepReportType> handleSuccess(Promise<TestStepReportType> promise, IMessagingHandler handler, TransactionContext transaction) {
+    protected OnSuccess<TestStepReportType> handleSuccess(Promise<TestStepReportType> promise) {
         return new OnSuccess<>() {
             @Override
             public void onSuccess(TestStepReportType result) {
@@ -236,12 +237,24 @@ public abstract class AbstractMessagingStepProcessorActor<T extends MessagingSte
         };
     }
 
-    protected OnFailure handleFailure(Promise<TestStepReportType> promise, IMessagingHandler handler, TransactionContext transaction) {
+    protected OnFailure handleFailure(Promise<TestStepReportType> promise) {
         return new OnFailure() {
             @Override
             public void onFailure(Throwable failure) {
                 promise.tryFailure(failure);
             }
         };
+    }
+
+    protected void signalStepStatus(TestStepReportType result) {
+        if (result != null) {
+            if (result.getResult() == TestResultType.SUCCESS) {
+                updateTestStepStatus(getContext(), StepStatus.COMPLETED, result);
+            } else if (result.getResult() == TestResultType.WARNING) {
+                updateTestStepStatus(getContext(), StepStatus.WARNING, result);
+            } else {
+                updateTestStepStatus(getContext(), StepStatus.ERROR, result);
+            }
+        }
     }
 }

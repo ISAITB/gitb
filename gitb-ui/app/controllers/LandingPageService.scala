@@ -20,7 +20,7 @@ class LandingPageService @Inject() (authorizedAction: AuthorizedAction, cc: Cont
    */
   def getLandingPagesByCommunity(communityId: Long) = authorizedAction { request =>
     authorizationManager.canManageLandingPages(request, communityId)
-    val list = landingPageManager.getLandingPagesByCommunity(communityId)
+    val list = landingPageManager.getLandingPagesByCommunityWithoutContent(communityId)
     val json: String = JsonUtil.jsLandingPages(list).toString
     ResponseConstructor.constructJsonResponse(json)
   }
@@ -46,7 +46,7 @@ class LandingPageService @Inject() (authorizedAction: AuthorizedAction, cc: Cont
   def getLandingPageById(pageId: Long) = authorizedAction { request =>
     authorizationManager.canManageLandingPage(request, pageId)
     val landingPage = landingPageManager.getLandingPageById(pageId)
-    val json: String = JsonUtil.serializeLandingPage(Some(landingPage))
+    val json: String = JsonUtil.serializeLandingPage(landingPage)
     ResponseConstructor.constructJsonResponse(json)
   }
 
@@ -80,7 +80,7 @@ class LandingPageService @Inject() (authorizedAction: AuthorizedAction, cc: Cont
   }
 
   /**
-   * Gets the default legal notice for given community
+   * Gets the default landing page for given community
    */
   def getCommunityDefaultLandingPage() = authorizedAction { request =>
     val communityId = ParameterExtractor.requiredQueryParameter(request, Parameters.COMMUNITY_ID).toLong

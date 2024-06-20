@@ -1,0 +1,1 @@
+ALTER TABLE `conformancesnapshotsystems` MODIFY `api_key` VARCHAR(254) NOT NULL;

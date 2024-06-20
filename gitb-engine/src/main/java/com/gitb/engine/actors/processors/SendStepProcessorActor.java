@@ -1,26 +1,30 @@
 package com.gitb.engine.actors.processors;
 
-import org.apache.pekko.actor.ActorRef;
-import org.apache.pekko.dispatch.Futures;
-import org.apache.pekko.dispatch.OnFailure;
-import org.apache.pekko.dispatch.OnSuccess;
 import com.gitb.core.Configuration;
 import com.gitb.core.ErrorCode;
-import com.gitb.core.StepStatus;
 import com.gitb.engine.actors.ActorSystem;
+import com.gitb.engine.commands.messaging.NotificationReceived;
 import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.messaging.MessagingContext;
 import com.gitb.engine.messaging.TransactionContext;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.exceptions.GITBEngineInternalError;
+import com.gitb.messaging.DeferredMessagingReport;
 import com.gitb.messaging.IMessagingHandler;
 import com.gitb.messaging.Message;
 import com.gitb.messaging.MessagingReport;
 import com.gitb.tdl.Send;
+import com.gitb.tr.TAR;
 import com.gitb.tr.TestResultType;
 import com.gitb.tr.TestStepReportType;
 import com.gitb.types.MapType;
 import com.gitb.utils.ErrorUtils;
+import org.apache.pekko.actor.ActorRef;
+import org.apache.pekko.dispatch.Futures;
+import org.apache.pekko.dispatch.OnFailure;
+import org.apache.pekko.dispatch.OnSuccess;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import scala.concurrent.Future;
 import scala.concurrent.Promise;
 
@@ -30,7 +34,9 @@ import scala.concurrent.Promise;
  * Send step processor actor
  */
 public class SendStepProcessorActor extends AbstractMessagingStepProcessorActor<Send> {
+
 	public static final String NAME = "send-p";
+	private static final Logger logger = LoggerFactory.getLogger(SendStepProcessorActor.class);
 
 	private MessagingContext messagingContext;
 	private TransactionContext transactionContext;
@@ -51,17 +57,7 @@ public class SendStepProcessorActor extends AbstractMessagingStepProcessorActor<
 		promise.future().foreach(new OnSuccess<>() {
 			@Override
 			public void onSuccess(TestStepReportType result) {
-				if (result != null) {
-					if (result.getResult() == TestResultType.SUCCESS) {
-						updateTestStepStatus(context, StepStatus.COMPLETED, result);
-					} else if (result.getResult() == TestResultType.WARNING) {
-						updateTestStepStatus(context, StepStatus.WARNING, result);
-					} else {
-						updateTestStepStatus(context, StepStatus.ERROR, result);
-					}
-				} else {
-					updateTestStepStatus(context, StepStatus.COMPLETED, null);
-				}
+				signalStepStatus(result);
 			}
 		}, context.dispatcher());
 
@@ -84,7 +80,7 @@ public class SendStepProcessorActor extends AbstractMessagingStepProcessorActor<
 
 		final IMessagingHandler messagingHandler = messagingContext.getHandler();
 
-		if(messagingHandler != null) {
+		if (messagingHandler != null) {
 			//id parameter must be set for Send steps, so that sent message
 			//is saved to scope
 			Future<TestStepReportType> future = Futures.future(() -> {
@@ -107,27 +103,53 @@ public class SendStepProcessorActor extends AbstractMessagingStepProcessorActor<
 										step.getConfig(),
 										message
 								);
-
-				if (report != null) {
-					//id parameter must be set for Send steps, so that sent message
-					//is saved to scope
-					if (step.getId() != null && report.getMessage() != null) {
-						Message sentMessage = report.getMessage();
-						MapType map = generateOutputWithMessageFields(sentMessage);
-						scope
-								.createVariable(step.getId())
-								.setValue(map);
-					}
-					return report.getReport();
-				} else {
+				if (report instanceof DeferredMessagingReport deferredReport) {
+					deferredReport.getDeferredReport().thenAccept((completedReport) -> {
+						self().tell(new NotificationReceived(completedReport), self());
+					}).exceptionally(error -> {
+						error(error);
+						return null;
+					});
 					return null;
+				} else if (report != null) {
+					return buildReport(report);
+				} else {
+					TAR tar = new TAR();
+					tar.setResult(TestResultType.SUCCESS);
+					return tar;
 				}
 			}, getContext().dispatcher());
 
-			future.foreach(handleSuccess(promise, messagingHandler, transactionContext), getContext().dispatcher());
-			future.failed().foreach(handleFailure(promise, messagingHandler, transactionContext), getContext().dispatcher());
+			future.foreach(handleSuccess(promise), getContext().dispatcher());
+			future.failed().foreach(handleFailure(promise), getContext().dispatcher());
 		} else {
 			throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Messaging handler is not available"));
+		}
+	}
+
+	private TAR buildReport(MessagingReport report) {
+		//id parameter must be set for Send steps, so that sent message
+		//is saved to scope
+		if (step.getId() != null && report.getMessage() != null) {
+			Message sentMessage = report.getMessage();
+			MapType map = generateOutputWithMessageFields(sentMessage);
+			scope
+					.createVariable(step.getId())
+					.setValue(map);
+		}
+		return report.getReport();
+	}
+
+	@Override
+	public void onReceive(Object message) {
+		try {
+			if (message instanceof NotificationReceived) {
+				signalStepStatus(buildReport(((NotificationReceived) message).getReport()));
+			} else {
+				super.onReceive(message);
+			}
+		} catch (Exception e) {
+			error(e);
 		}
 	}
 

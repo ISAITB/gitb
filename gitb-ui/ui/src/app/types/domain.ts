@@ -5,4 +5,6 @@ export interface Domain extends EntityWithId {
     sname: string
     fname: string
     description?: string
+    apiKey?: string
+    
 }

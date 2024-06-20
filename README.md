@@ -10,7 +10,8 @@ These are:
 In the subsequent sections each of these components will be referred to using their Docker image names\
 (``gitb-srv`` and ``gitb-ui``).
 
-> **Note**  
+> **Note**
+> 
 > This repository is used to build the Test Bed's software components from their source. The simplest approach
 > to use the Test Bed is via its **published Docker images** ([gitb-ui](https://hub.docker.com/r/isaitb/gitb-ui) and [gitb-srv](https://hub.docker.com/r/isaitb/gitb-srv)) for which you can follow the installation
 > guides [for development](https://www.itb.ec.europa.eu/docs/guides/latest/installingTheTestBed/index.html) and [for production](https://www.itb.ec.europa.eu/docs/guides/latest/installingTheTestBedProduction/index.html). All other documentation (guides, tutorials, reference documentation) is available [here](https://joinup.ec.europa.eu/collection/interoperability-test-bed-repository/solution/interoperability-test-bed/documentation-and-resources).

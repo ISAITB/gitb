@@ -8,8 +8,12 @@ import javax.xml.xpath.XPathExpression;
 public class BinaryType extends PrimitiveType {
     private byte[] content;
 
-    public BinaryType(){
-        content = null;
+    public BinaryType() {
+        this(null);
+    }
+
+    public BinaryType(byte[] content) {
+        this.content = content;
     }
 
     @Override

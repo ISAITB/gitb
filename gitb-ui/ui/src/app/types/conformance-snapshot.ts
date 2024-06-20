@@ -5,6 +5,7 @@ export interface ConformanceSnapshot {
     publicLabel?: string
     snapshotTime: string
     hidden?: boolean
+    apiKey?: string
 
     actionPending?: boolean
     deletePending?: boolean

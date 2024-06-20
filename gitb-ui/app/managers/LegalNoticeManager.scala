@@ -13,7 +13,21 @@ class LegalNoticeManager @Inject() (dbConfigProvider: DatabaseConfigProvider) ex
 
   import dbConfig.profile.api._
 
-  private var globalDefaultLegalNotice: Option[LegalNotice] = _
+  private var globalDefaultLegalNotice: Option[Option[LegalNotices]] = None
+
+  /**
+   * Gets all landing pages for the specified community without rich content
+   */
+  def getLegalNoticesByCommunityWithoutContent(communityId: Long): List[LegalNotice] = {
+    exec(
+      PersistenceSchema.legalNotices
+        .filter(_.community === communityId)
+        .map(x => (x.id, x.name, x.description, x.default))
+        .sortBy(_._2.asc)
+        .result
+        .map(_.toList.map(x => new LegalNotice(x._1, x._2, x._3, None, x._4)))
+    )
+  }
 
   /**
    * Gets all legal notices for the specified community
@@ -44,9 +58,8 @@ class LegalNoticeManager @Inject() (dbConfigProvider: DatabaseConfigProvider) ex
   /**
    * Gets legal notice with specified id
    */
-  def getLegalNoticeById(noticeId: Long): LegalNotice = {
-    val l = exec(getLegalNoticeByIdInternal(noticeId))
-    new LegalNotice(l.get)
+  def getLegalNoticeById(noticeId: Long): Option[LegalNotices] = {
+    exec(getLegalNoticeByIdInternal(noticeId))
   }
 
   def getLegalNoticeByIdInternal(noticeId: Long): DBIO[Option[LegalNotices]] = {
@@ -73,7 +86,7 @@ class LegalNoticeManager @Inject() (dbConfigProvider: DatabaseConfigProvider) ex
           actions += q.update(false)
           // Remove global legal notice from the cache
           if (legalNotice.default && legalNotice.community == Constants.DefaultCommunityId) {
-            globalDefaultLegalNotice = null
+            globalDefaultLegalNotice = None
           }
         }
         toDBIO(actions)
@@ -119,7 +132,7 @@ class LegalNoticeManager @Inject() (dbConfigProvider: DatabaseConfigProvider) ex
         }
         // Remove global default notice from cache
         if (communityId == Constants.DefaultCommunityId) {
-          globalDefaultLegalNotice = null
+          globalDefaultLegalNotice = None
         }
         toDBIO(actions)
       }
@@ -141,7 +154,7 @@ class LegalNoticeManager @Inject() (dbConfigProvider: DatabaseConfigProvider) ex
       _ <- {
         if (noticeInfo.isDefined && noticeInfo.get._1 == Constants.DefaultCommunityId && noticeInfo.get._2) {
           // Remove the cached global legal notice
-          globalDefaultLegalNotice = null
+          globalDefaultLegalNotice = None
         }
         DBIO.successful(())
       }
@@ -151,17 +164,13 @@ class LegalNoticeManager @Inject() (dbConfigProvider: DatabaseConfigProvider) ex
   /**
    * Gets the default legal notice for given community
    */
-  def getCommunityDefaultLegalNotice(communityId: Long): Option[LegalNotice] = {
-    if (communityId == Constants.DefaultCommunityId && globalDefaultLegalNotice != null) {
-        globalDefaultLegalNotice
+  def getCommunityDefaultLegalNotice(communityId: Long): Option[LegalNotices] = {
+    if (communityId == Constants.DefaultCommunityId && globalDefaultLegalNotice.isDefined) {
+        globalDefaultLegalNotice.get
     } else {
-      val n = exec(PersistenceSchema.legalNotices.filter(_.community === communityId).filter(_.default === true).result.headOption)
-      val defaultLegalNotice = n match {
-        case Some(n) => Some(new LegalNotice(n))
-        case None => None
-      }
+      val defaultLegalNotice = exec(PersistenceSchema.legalNotices.filter(_.community === communityId).filter(_.default === true).result.headOption)
       if (communityId == Constants.DefaultCommunityId) {
-        globalDefaultLegalNotice = defaultLegalNotice
+        globalDefaultLegalNotice = Some(defaultLegalNotice)
       }
       defaultLegalNotice
     }
@@ -173,7 +182,7 @@ class LegalNoticeManager @Inject() (dbConfigProvider: DatabaseConfigProvider) ex
       _ <- {
         if (communityId == Constants.DefaultCommunityId) {
           // Remove the cached global legal notice
-          globalDefaultLegalNotice = null
+          globalDefaultLegalNotice = None
         }
         DBIO.successful(())
       }

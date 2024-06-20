@@ -25,20 +25,24 @@ export class AnyContentViewComponent extends ReportSupport implements OnInit {
   @Input() sessionId?: string
   @Input() noBorder = false
   @Input() noMargin = false
-  @Input() root = false
+  @Input() root = true
   @Input() forceDisplay = false
+  @Input() preserveName = true
 
   Constants = Constants
 
+  name?: string
   value?: string
   showValueInline = true
   downloadPending = false
   openPending = false
-  collapsed = false
   withItems = false
   withName = false
+  withValue = false
   hoveringTitle = false
   breakText = true
+  showName = false
+  collapsed = true  
 
   constructor(
     private testService: TestService,
@@ -51,15 +55,31 @@ export class AnyContentViewComponent extends ReportSupport implements OnInit {
   ) { super(modalService, reportService, htmlService, dataService) }
 
   ngOnInit(): void {
-    this.value = this.context.valueToUse
-    if (this.value != undefined) {
-      this.showValueInline = this.context.embeddingMethod != 'BASE64' && !this.isFileReference(this.context) && (this.value.length <= 100 || this.forceDisplay)
-      if (this.showValueInline) {
-        this.breakText = this.value.indexOf(" ") < 0
+    this.name = this.context.name
+    if (this.textProvided(this.context.valueToUse)) {
+      this.value = this.context.valueToUse
+      this.withValue = true
+    }
+    this.withName = this.textProvided(this.name)
+    this.withItems = this.context?.item != undefined
+    if (this.root) {
+      this.collapsed = false
+    } else {
+      if (this.withItems && !this.withName && !this.withValue) {
+        this.name = ""
+        this.withName = true
       }
     }
-    this.withItems = this.context?.item != undefined
-    this.withName = this.context?.name != undefined
+    if (!this.withItems && this.withName && !this.withValue && !this.preserveName) {
+      this.value = this.name
+      this.name = undefined
+      this.withName = false
+      this.withValue = true
+    }    
+    this.showValueInline = this.withValue && (this.context.embeddingMethod != 'BASE64' && !this.isFileReference(this.context) && (this.value!.length <= 100 || this.forceDisplay))
+    if (this.showValueInline) {
+      this.breakText = this.value!.indexOf(" ") < 0
+    }
   }
 
   open(lineNumber?: number) {
@@ -148,7 +168,7 @@ export class AnyContentViewComponent extends ReportSupport implements OnInit {
   }
 
   containerClicked() {
-    if (this.context.name != undefined) {
+    if (!this.root) {
       this.collapsed = !this.collapsed
     }
   }

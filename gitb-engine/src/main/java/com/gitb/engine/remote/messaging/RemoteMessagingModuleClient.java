@@ -14,12 +14,11 @@ import com.gitb.messaging.Message;
 import com.gitb.messaging.MessagingReport;
 import com.gitb.ms.Void;
 import com.gitb.ms.*;
+import com.gitb.tdl.MessagingStep;
 import com.gitb.types.DataType;
 import com.gitb.utils.DataTypeUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import jakarta.xml.ws.soap.AddressingFeature;
+
 import java.net.URL;
 import java.util.List;
 import java.util.Map;
@@ -30,7 +29,6 @@ import java.util.Properties;
  */
 public class RemoteMessagingModuleClient extends RemoteServiceClient implements IMessagingHandler {
 
-	private static final Logger LOG = LoggerFactory.getLogger(RemoteMessagingModuleClient.class);
 	private MessagingModule serviceModule;
 
 	public RemoteMessagingModuleClient(URL serviceURL, Properties callProperties, String sessionId) {
@@ -108,7 +106,7 @@ public class RemoteMessagingModuleClient extends RemoteServiceClient implements 
 	}
 
 	@Override
-	public MessagingReport receiveMessage(String sessionId, String transactionId, String callId, String stepId, List<Configuration> configurations, Message inputs, List<Thread> messagingThreads) {
+	public MessagingReport receiveMessage(String sessionId, String transactionId, String callId, MessagingStep step, Message inputs, List<Thread> messagingThreads) {
 		ReceiveRequest request = new ReceiveRequest();
 		request.setCallId(callId);
 		request.setSessionId(sessionId);
@@ -117,7 +115,7 @@ public class RemoteMessagingModuleClient extends RemoteServiceClient implements 
 			AnyContent input = DataTypeUtils.convertDataTypeToAnyContent(fragmentEntry.getKey(), fragmentEntry.getValue());
 			request.getInput().add(input);
 		}
-		call(() -> getServiceClient().receive(request), stepIdMap(stepId));
+		call(() -> getServiceClient().receive(request), stepIdMap(step.getId()));
 		return new DeferredMessagingReport();
 	}
 

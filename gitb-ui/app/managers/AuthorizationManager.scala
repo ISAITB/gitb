@@ -53,6 +53,12 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     setAuthResult(request, ok, "User not allowed to view the organisation's automation keys")
   }
 
+  def canViewOrganisationAutomationKeysInSnapshot(request: RequestWithAttributes[_], organisationId: Long, snapshotId: Long): Boolean = {
+    val userInfo = getUser(getRequestUserId(request))
+    val ok = canViewOrganisation(request, userInfo, organisationId) && canViewConformanceSnapshot(request, userInfo, snapshotId)
+    setAuthResult(request, ok, "User not allowed to view the organisation's automation keys")
+  }
+
   def canLookupConformanceBadge(request: RequestWithAttributes[_]): Boolean = {
     setAuthResult(request, ok = true, "User not allowed to lookup conformance badges")
   }
@@ -98,7 +104,7 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     setAuthResult(request, ok, "User not allowed to update organisation API key")
   }
 
-  def canManageSessionsThroughAutomationApi(request: RequestWithAttributes[_]): Boolean = {
+  def canOrganisationUseAutomationApi(request: RequestWithAttributes[_]): Boolean = {
     var ok = false
     if (Configurations.AUTOMATION_API_ENABLED) {
       val apiKey = request.headers.get(Constants.AutomationHeader)
@@ -1313,8 +1319,11 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
   }
 
   def canViewConformanceSnapshot(request: RequestWithAttributes[_], snapshotId: Long): Boolean = {
+    canViewConformanceSnapshot(request, getUser(getRequestUserId(request)), snapshotId)
+  }
+
+  def canViewConformanceSnapshot(request: RequestWithAttributes[_], userInfo: User, snapshotId: Long): Boolean = {
     var ok = false
-    val userInfo = getUser(getRequestUserId(request))
     if (isTestBedAdmin(userInfo)) {
       ok = true
     } else if (userInfo.organization.isDefined) {

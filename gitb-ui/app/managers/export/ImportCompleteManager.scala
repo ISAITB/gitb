@@ -462,8 +462,10 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
       data.getSeparatorTitleColor, data.getModalTitleColor, data.getTableTitleColor, data.getCardTitleColor,
       data.getPageTitleColor, data.getHeadingColor, data.getTabLinkColor, data.getFooterTextColor,
       data.getHeaderBackgroundColor, data.getHeaderBorderColor, data.getHeaderSeparatorColor, data.getHeaderLogoPath,
-      data.getFooterBackgroundColor, data.getFooterBorderColor, data.getFooterLogoPath, data.getFooterLogoDisplay,
-      data.getFaviconPath
+      data.getFooterBackgroundColor, data.getFooterBorderColor, data.getFooterLogoPath, data.getFooterLogoDisplay, data.getFaviconPath,
+      // Provide default values matching Bootstrap 5
+      Option(data.getPrimaryButtonColor).getOrElse("#337ab7"), Option(data.getPrimaryButtonLabelColor).getOrElse("#FFFFFF"), Option(data.getPrimaryButtonHoverColor).getOrElse("#2b689c"), Option(data.getPrimaryButtonActiveColor).getOrElse("#296292"),
+      Option(data.getSecondaryButtonColor).getOrElse("#6c757d"), Option(data.getSecondaryButtonLabelColor).getOrElse("#FFFFFF"), Option(data.getSecondaryButtonHoverColor).getOrElse("#5c636a"), Option(data.getSecondaryButtonActiveColor).getOrElse("#565e64")
     )
   }
 
@@ -1168,10 +1170,12 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
         processFromArchive(ImportItemType.Domain, exportedDomain, exportedDomain.getId, ctx,
           ImportCallbacks.set(
             (data: com.gitb.xml.export.Domain, item: ImportItem) => {
-              domainManager.createDomainInternal(models.Domain(0L, data.getShortName, data.getFullName, Option(data.getDescription)))
+              val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
+              domainManager.createDomainInternal(models.Domain(0L, data.getShortName, data.getFullName, Option(data.getDescription), apiKey))
             },
             (data: com.gitb.xml.export.Domain, targetKey: String, item: ImportItem) => {
-              domainManager.updateDomainInternal(targetKey.toLong, data.getShortName, data.getFullName, Option(data.getDescription))
+              val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
+              domainManager.updateDomainInternal(targetKey.toLong, data.getShortName, data.getFullName, Option(data.getDescription), Some(apiKey))
             },
             (data: com.gitb.xml.export.Domain, targetKey: Any, item: ImportItem) => {
               // Record this in case we need to do a global cleanup.
@@ -1738,20 +1742,54 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
     if (!Configurations.AUTHENTICATION_SSO_ENABLED && (ctx.importTargets.hasAdministrators || ctx.importTargets.hasOrganisationUsers)) {
       referenceUserEmails = importPreviewManager.loadUserEmailSet()
     }
+    // Load the domain ID corresponding to the community's linked domain API key.
+    val domainIdFromArchive = if (canDoAdminOperations) {
+      Option(exportedCommunity.getDomain)
+        .flatMap(domain => domainManager.getByApiKey(domain.getApiKey))
+        .map(_.id)
+    } else {
+      None
+    }
     // If we have users load their emails to ensure we don't end up with duplicates.
     val dbAction = for {
       // Domain
       _ <- {
         if (exportedCommunity.getDomain != null) {
-          var targetDomainId: Option[Long] = None
+          var domainIdFromDatabase: Option[Long] = None
           if (targetCommunity.isDefined && targetCommunity.get.domain.isDefined) {
-            targetDomainId = targetCommunity.get.domain
+            domainIdFromDatabase = targetCommunity.get.domain
           }
-          if (targetDomainId.isDefined || canDoAdminOperations) {
+          var targetDomainId: Option[Long] = None
+          var proceedWithDomainImport = false
+          if (domainIdFromDatabase.isDefined && domainIdFromArchive.isDefined) {
+            if (domainIdFromDatabase.get == domainIdFromArchive.get) {
+              // The community is linked to an existing domain, which is the same domain the community is linked to in the imported archive.
+              targetDomainId = domainIdFromDatabase
+              proceedWithDomainImport = true
+            } else {
+              // The community is linked to an existing domain, which is different from the domain (also existing in the DB) the community is linked to in the imported archive.
+              targetDomainId = domainIdFromArchive
+              proceedWithDomainImport = canDoAdminOperations
+            }
+          } else if (domainIdFromDatabase.isDefined) {
+            // The community is linked to an existing domain, but in the archive it is linked to another domain that does not exist.
+            targetDomainId = domainIdFromDatabase
+            proceedWithDomainImport = true
+          } else if (domainIdFromArchive.isDefined) {
+            // The community is not linked to a domain, but in the archive it is linked to a domain that exists in the DB.
+            targetDomainId = domainIdFromArchive
+            proceedWithDomainImport = canDoAdminOperations
+          } else {
+            // The community is not linked to domain, but in the archive it is linked to a domain that doesn't exist in the DB.
+            targetDomainId = None
+            proceedWithDomainImport = canDoAdminOperations
+          }
+          if (proceedWithDomainImport) {
             /*
              * We only allow a domain import to proceed if the user is a Test Bed administrator or
              * if the target community also has a domain (i.e. this is an update). A community
-             * administrator can never add or delete domains, only update the community's (existing) domain.
+             * administrator can never add domains, delete domains, or update previously unrelated domains;
+             * only update the community's (existing) domain.
              */
             mergeImportItemMaps(ctx.importItemMaps, toImportItemMaps(importItems, ImportItemType.Domain))
             completeDomainImportInternal(exportedCommunity.getDomain, targetDomainId, ctx, canDoAdminOperations)
@@ -2356,10 +2394,10 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                 dbActions += processFromArchive(ImportItemType.System, exportedSystem, exportedSystem.getId, ctx,
                   ImportCallbacks.set(
                     (data: com.gitb.xml.export.System, item: ImportItem) => {
-                      systemManager.registerSystemInternal(models.Systems(0L, data.getShortName, data.getFullName, Option(data.getDescription), Option(data.getVersion), Option(data.getApiKey), Option(data.getBadgeKey).getOrElse(CryptoUtil.generateApiKey()), item.parentItem.get.targetKey.get.toLong), checkApiKeyUniqueness = true)
+                      systemManager.registerSystemInternal(models.Systems(0L, data.getShortName, data.getFullName, Option(data.getDescription), Option(data.getVersion), Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey()), Option(data.getBadgeKey).getOrElse(CryptoUtil.generateApiKey()), item.parentItem.get.targetKey.get.toLong), checkApiKeyUniqueness = true)
                     },
                     (data: com.gitb.xml.export.System, targetKey: String, item: ImportItem) => {
-                      systemManager.updateSystemProfileInternal(None, targetCommunityId, item.targetKey.get.toLong, data.getShortName, data.getFullName, Option(data.getDescription), Option(data.getVersion), Some(Option(data.getApiKey)), Option(data.getBadgeKey),
+                      systemManager.updateSystemProfileInternal(None, targetCommunityId, item.targetKey.get.toLong, data.getShortName, data.getFullName, Option(data.getDescription), Option(data.getVersion), Option(data.getApiKey), Option(data.getBadgeKey),
                         None, None, None, copySystemParameters = false, copyStatementParameters = false,
                         checkApiKeyUniqueness = true, ctx.onSuccessCalls
                       )
@@ -2626,7 +2664,9 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
             val exportData = preparationResult._2.get
             // Step 1 - prepare import.
             var importItems: List[ImportItem] = null
-            val previewResult = importPreviewManager.previewCommunityImport(exportData, None, canDoAdminOperations = true)
+            // Check to see if a community can be matched by the defined (in the archive) API key.
+            val targetCommunityId = communityManager.getByApiKey(exportData.getCommunities.getCommunity.get(0).getApiKey).map(_.id)
+            val previewResult = importPreviewManager.previewCommunityImport(exportData, targetCommunityId, canDoAdminOperations = true)
             val items = new ListBuffer[ImportItem]()
             // First add domain.
             if (previewResult._2.isDefined) {
@@ -2643,19 +2683,21 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
             approveImportItems(importItems)
             // Step 2 - Import.
             importSettings.dataFilePath = Some(importPreviewManager.getPendingImportFile(preparationResult._4.get, preparationResult._3.get).get.toPath)
-            completeCommunityImport(exportData, importSettings, importItems, None, canDoAdminOperations = true, None)
+            completeCommunityImport(exportData, importSettings, importItems, targetCommunityId, canDoAdminOperations = true, None)
             // Avoid processing this archive again.
             processingComplete = true
           } else if (preparationResult._2.get.getDomains != null && !preparationResult._2.get.getDomains.getDomain.isEmpty) {
             // Domain import.
             val exportedDomain = preparationResult._2.get.getDomains.getDomain.get(0)
             // Step 1 - prepare import.
-            val importItems = List(importPreviewManager.previewDomainImport(exportedDomain, None, canDoAdminOperations = true))
+            // Check to see if a domain can be matched by the defined (in the archive) API key.
+            val targetDomainId = domainManager.getByApiKey(exportedDomain.getApiKey).map(_.id)
+            val importItems = List(importPreviewManager.previewDomainImport(exportedDomain, targetDomainId, canDoAdminOperations = true))
             // Set all import items to proceed.
             approveImportItems(importItems)
             // Step 2 - Import.
             importSettings.dataFilePath = Some(importPreviewManager.getPendingImportFile(preparationResult._4.get, preparationResult._3.get).get.toPath)
-            completeDomainImport(exportedDomain, importSettings, importItems, None, canAddOrDeleteDomain = true)
+            completeDomainImport(exportedDomain, importSettings, importItems, targetDomainId, canAddOrDeleteDomain = true)
             // Avoid processing this archive again.
             processingComplete = true
           } else if (preparationResult._2.get.getSettings != null) {

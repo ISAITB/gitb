@@ -151,7 +151,7 @@ public class SessionContext {
                 }
             }
 
-            if(transactions.size() > 0) {
+            if(!transactions.isEmpty()) {
                 transactionMappings.put(transactionId, transactions);
 
                 return transactions;

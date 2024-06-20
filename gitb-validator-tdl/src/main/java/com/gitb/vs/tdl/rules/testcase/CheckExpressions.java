@@ -443,7 +443,7 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
     }
 
     private void reportCustomPropertyUsage(ErrorCode code, Collection<String> propertyNames) {
-        if (propertyNames.size() > 0) {
+        if (!propertyNames.isEmpty()) {
             addReportItem(code, String.format("[%s]", String.join(", ", propertyNames)));
         }
     }

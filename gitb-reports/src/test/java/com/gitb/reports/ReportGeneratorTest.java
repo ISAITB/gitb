@@ -350,7 +350,7 @@ public class ReportGeneratorTest {
         data.setIncludePageNumbers(false);
 
 //        data.setMessage("<strong>This is the result.</strong><img src=\"%s\"/>".formatted(Path.of("C:\\work\\gitb-repository\\files\\badges\\latest\\1\\SUCCESS.png").toUri()));
-        data.setMessage("<strong>This is the result.</strong><img width=\"100px\" src=\"%s\"/>".formatted(Path.of("reports/images/demo-badge.png").toUri()));
+        data.setMessage("<strong>This is the result.</strong>");
 
         data.setOverallStatus("SUCCESS");
         data.setTestSuites(List.of(

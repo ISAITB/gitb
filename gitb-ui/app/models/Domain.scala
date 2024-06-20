@@ -1,3 +1,3 @@
 package models
 
-case class Domain(id: Long, shortname:String, fullname:String, description:Option[String])
+case class Domain(id: Long, shortname:String, fullname:String, description:Option[String], apiKey: String)

@@ -1,6 +1,6 @@
 import config.Configurations
 import controllers.util.ResponseConstructor
-import managers.{LegalNoticeManager, SystemConfigurationManager}
+import managers.LegalNoticeManager
 import models.{Constants, ErrorPageData}
 import org.apache.commons.lang3.{RandomStringUtils, StringUtils}
 import org.slf4j.LoggerFactory
@@ -12,7 +12,7 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.Future
 
 @Singleton
-class ErrorHandler @Inject() (systemConfigurationManager: SystemConfigurationManager, legalNoticeManager: LegalNoticeManager) extends HttpErrorHandler {
+class ErrorHandler @Inject() (legalNoticeManager: LegalNoticeManager) extends HttpErrorHandler {
 
   private def logger = LoggerFactory.getLogger(this.getClass)
 

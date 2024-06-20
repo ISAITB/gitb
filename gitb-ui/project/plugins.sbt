@@ -4,18 +4,20 @@ resolvers += Resolver.url(
        Resolver.ivyStylePatterns)
 
 // The Play plugin
-addSbtPlugin("org.playframework" % "sbt-plugin" % "3.0.1")
+addSbtPlugin("org.playframework" % "sbt-plugin" % "3.0.3")
 
 // web plugins
 
-addSbtPlugin("com.github.sbt" % "sbt-web" % "1.5.3")
+addSbtPlugin("com.github.sbt" % "sbt-web" % "1.5.5")
 
-addSbtPlugin("com.github.sbt" % "sbt-js-engine" % "1.3.5")
+addSbtPlugin("com.github.sbt" % "sbt-js-engine" % "1.3.6")
 
-addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "2.1.5")
+addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "2.2.0")
 
 // Run with "sbt dependencyTree"
 addDependencyTreePlugin
 
 // Run manually with "sbt dependencyCheck".
-addSbtPlugin("net.vonbuchholtz" % "sbt-dependency-check" % "5.1.0")
+// This is not current used as it doesn't support the latest NVD API.
+// The alternative is to generate a distribution JAR, extract it and then use the ODC via CLI to validate the library JARs.
+// addSbtPlugin("net.vonbuchholtz" % "sbt-dependency-check" % "5.1.0")

@@ -11,6 +11,7 @@ import org.mindrot.jbcrypt.BCrypt
 import play.api.mvc._
 import utils.{ClamAVClient, CryptoUtil, HtmlUtil, JsonUtil, MimeUtil}
 
+import java.awt.Color
 import java.io.File
 import java.util.concurrent.ThreadLocalRandom
 import scala.collection.mutable.ListBuffer
@@ -427,14 +428,14 @@ object ParameterExtractor {
     val descr = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.SYSTEM_DESC)
     val version = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.SYSTEM_VERSION)
     val owner:Long = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.ORGANIZATION_ID).toLong
-    Systems(0L, sname, fname, descr, version, None, "", owner)
+    Systems(0L, sname, fname, descr, version, CryptoUtil.generateApiKey(), "", owner)
   }
 
 	def extractDomain(request:Request[AnyContent]):Domain = {
 		val sname:String = ParameterExtractor.requiredBodyParameter(request, Parameters.SHORT_NAME)
 		val fname:String = ParameterExtractor.requiredBodyParameter(request, Parameters.FULL_NAME)
 		val descr:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DESC)
-		Domain(0L, sname, fname, descr)
+		Domain(0L, sname, fname, descr, CryptoUtil.generateApiKey())
 	}
 
 	def extractSpecification(paramMap:Option[Map[String, Seq[String]]]): Specifications = {
@@ -751,6 +752,11 @@ object ParameterExtractor {
     listStr.split(",").map(_.toLong).toList
   }
 
+  private def darkenColor(original: String): String = {
+    val color = Color.decode(original).darker()
+    "#%02x%02x%02x".formatted(color.getRed, color.getGreen, color.getBlue)
+  }
+
   def extractTheme(request: Request[AnyContent], paramMap: Option[Map[String, Seq[String]]], themeIdToUse: Option[Long] = None): (Option[Theme], Option[ThemeFiles], Option[Result]) = {
     val files = ParameterExtractor.extractFiles(request)
     var resultToReturn: Option[Result] = None
@@ -782,6 +788,21 @@ object ParameterExtractor {
     }
     if (resultToReturn.isEmpty) {
       themeFiles = Some(ThemeFiles(headerLogoFile, footerLogoFile, faviconFile))
+      // Define calculated colours.
+      val primaryButtonColor = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.PRIMARY_BUTTON_COLOR)
+      var primaryButtonHoverColor = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.PRIMARY_BUTTON_HOVER_COLOR)
+      var primaryButtonActiveColor = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.PRIMARY_BUTTON_ACTIVE_COLOR)
+      val secondaryButtonColor = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.SECONDARY_BUTTON_COLOR)
+      var secondaryButtonHoverColor = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.SECONDARY_BUTTON_HOVER_COLOR)
+      var secondaryButtonActiveColor = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.SECONDARY_BUTTON_ACTIVE_COLOR)
+      if (primaryButtonColor == primaryButtonHoverColor || primaryButtonColor == primaryButtonActiveColor) {
+        primaryButtonHoverColor = darkenColor(primaryButtonColor)
+        primaryButtonActiveColor = primaryButtonHoverColor
+      }
+      if (secondaryButtonColor == secondaryButtonHoverColor || secondaryButtonColor == secondaryButtonActiveColor) {
+        secondaryButtonHoverColor = darkenColor(secondaryButtonColor)
+        secondaryButtonActiveColor = secondaryButtonHoverColor
+      }
       theme = Some(Theme(
         themeIdToUse.getOrElse(0L),
         ParameterExtractor.requiredBodyParameter(paramMap, Parameters.KEY),
@@ -807,7 +828,15 @@ object ParameterExtractor {
           .getOrElse(themeFiles.flatMap(_.footerLogo).map(_.name).getOrElse(throw new IllegalStateException("Missing footer logo"))),
         ParameterExtractor.requiredBodyParameter(paramMap, Parameters.FOOTER_LOGO_DISPLAY),
         ParameterExtractor.optionalBodyParameter(paramMap, Parameters.FAVICON_PATH)
-          .getOrElse(themeFiles.flatMap(_.faviconFile).map(_.name).getOrElse(throw new IllegalStateException("Missing favicon")))
+          .getOrElse(themeFiles.flatMap(_.faviconFile).map(_.name).getOrElse(throw new IllegalStateException("Missing favicon"))),
+        primaryButtonColor,
+        ParameterExtractor.requiredBodyParameter(paramMap, Parameters.PRIMARY_BUTTON_LABEL_COLOR),
+        primaryButtonHoverColor,
+        primaryButtonActiveColor,
+        secondaryButtonColor,
+        ParameterExtractor.requiredBodyParameter(paramMap, Parameters.SECONDARY_BUTTON_LABEL_COLOR),
+        secondaryButtonHoverColor,
+        secondaryButtonActiveColor,
       ))
       if (!theme.get.footerLogoDisplay.equals("inherit") && !theme.get.footerLogoDisplay.equals("none")) {
         resultToReturn = Some(ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_PARAM, "Unexpected value for footer logo display."))

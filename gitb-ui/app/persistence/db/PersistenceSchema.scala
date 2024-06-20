@@ -86,7 +86,7 @@ object PersistenceSchema {
     def fullname = column[String]("fname")
     def description = column[Option[String]]("description", O.SqlType("TEXT"))
     def version = column[Option[String]]("version")
-    def apiKey = column[Option[String]]("api_key")
+    def apiKey = column[String]("api_key")
     def badgeKey = column[String]("badge_key")
     def owner = column[Long]("owner")
     def * = (id, shortname, fullname, description, version, apiKey, badgeKey, owner) <> (Systems.tupled, Systems.unapply)
@@ -99,7 +99,8 @@ object PersistenceSchema {
     def shortname = column[String]("sname")
     def fullname = column[String]("fname")
   	def description = column[Option[String]]("description", O.SqlType("TEXT"))
-    def * = (id, shortname, fullname, description) <> (Domain.tupled, Domain.unapply)
+    def apiKey = column[String]("api_key")
+    def * = (id, shortname, fullname, description, apiKey) <> (Domain.tupled, Domain.unapply)
   }
   val domains = TableQuery[DomainsTable]
 
@@ -778,7 +779,7 @@ object PersistenceSchema {
     def fullname = column[String]("fname")
     def version = column[Option[String]]("version")
     def description = column[Option[String]]("description", O.SqlType("TEXT"))
-    def apiKey = column[Option[String]]("api_key")
+    def apiKey = column[String]("api_key")
     def badgeKey = column[String]("badge_key")
     def snapshotId = column[Long]("snapshot_id")
     def * = (id :: shortname :: fullname :: version :: description :: apiKey :: badgeKey :: snapshotId :: HNil).mapTo[ConformanceSnapshotSystem]
@@ -865,7 +866,15 @@ object PersistenceSchema {
     def footerLogoPath = column[String] ("footer_logo_path")
     def footerLogoDisplay = column[String] ("footer_logo_display")
     def faviconPath = column[String] ("favicon_path")
-    def * = (id :: key :: description :: active :: custom :: separatorTitleColor :: modalTitleColor :: tableTitleColor :: cardTitleColor :: pageTitleColor :: headingColor :: tabLinkColor :: footerTextColor :: headerBackgroundColor :: headerBorderColor :: headerSeparatorColor :: headerLogoPath :: footerBackgroundColor :: footerBorderColor :: footerLogoPath :: footerLogoDisplay :: faviconPath :: HNil).mapTo[Theme]
+    def primaryButtonColor = column[String] ("primary_btn_color")
+    def primaryButtonLabelColor = column[String] ("primary_btn_label_color")
+    def primaryButtonHoverColor = column[String] ("primary_btn_hover_color")
+    def primaryButtonActiveColor = column[String] ("primary_btn_active_color")
+    def secondaryButtonColor = column[String] ("secondary_btn_color")
+    def secondaryButtonLabelColor = column[String] ("secondary_btn_label_color")
+    def secondaryButtonHoverColor = column[String] ("secondary_btn_hover_color")
+    def secondaryButtonActiveColor = column[String] ("secondary_btn_active_color")
+    def * = (id :: key :: description :: active :: custom :: separatorTitleColor :: modalTitleColor :: tableTitleColor :: cardTitleColor :: pageTitleColor :: headingColor :: tabLinkColor :: footerTextColor :: headerBackgroundColor :: headerBorderColor :: headerSeparatorColor :: headerLogoPath :: footerBackgroundColor :: footerBorderColor :: footerLogoPath :: footerLogoDisplay :: faviconPath :: primaryButtonColor :: primaryButtonLabelColor :: primaryButtonHoverColor :: primaryButtonActiveColor :: secondaryButtonColor :: secondaryButtonLabelColor :: secondaryButtonHoverColor :: secondaryButtonActiveColor :: HNil).mapTo[Theme]
   }
   val themes = TableQuery[ThemesTable]
   val insertTheme = themes returning themes.map(_.id)

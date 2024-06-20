@@ -24,6 +24,14 @@ export interface Theme {
     footerLogoPath: string,
     footerLogoDisplay: string,
     faviconPath: string,
+    primaryButtonColor: string,
+    primaryButtonLabelColor: string,
+    primaryButtonHoverColor: string,
+    primaryButtonActiveColor: string,
+    secondaryButtonColor: string,
+    secondaryButtonLabelColor: string,
+    secondaryButtonHoverColor: string,
+    secondaryButtonActiveColor: string,
 
     headerLogoFile?: FileData
     footerLogoFile?: FileData

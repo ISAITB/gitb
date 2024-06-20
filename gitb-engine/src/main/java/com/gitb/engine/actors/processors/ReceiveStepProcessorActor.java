@@ -1,14 +1,10 @@
 package com.gitb.engine.actors.processors;
 
-import org.apache.pekko.actor.ActorRef;
-import org.apache.pekko.dispatch.Futures;
-import org.apache.pekko.dispatch.OnFailure;
-import org.apache.pekko.dispatch.OnSuccess;
 import com.gitb.core.Configuration;
 import com.gitb.core.ErrorCode;
 import com.gitb.core.MessagingModule;
-import com.gitb.core.StepStatus;
 import com.gitb.engine.CallbackManager;
+import com.gitb.engine.PropertyConstants;
 import com.gitb.engine.actors.ActorSystem;
 import com.gitb.engine.commands.messaging.NotificationReceived;
 import com.gitb.engine.commands.messaging.TimeoutExpired;
@@ -22,14 +18,18 @@ import com.gitb.messaging.DeferredMessagingReport;
 import com.gitb.messaging.IMessagingHandler;
 import com.gitb.messaging.Message;
 import com.gitb.messaging.MessagingReport;
+import com.gitb.messaging.callback.SessionCallbackData;
 import com.gitb.tr.TAR;
-import com.gitb.tr.TestResultType;
 import com.gitb.tr.TestStepReportType;
 import com.gitb.types.BooleanType;
 import com.gitb.types.MapType;
 import com.gitb.utils.BindingUtils;
 import com.gitb.utils.ErrorUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.pekko.actor.ActorRef;
+import org.apache.pekko.dispatch.Futures;
+import org.apache.pekko.dispatch.OnFailure;
+import org.apache.pekko.dispatch.OnSuccess;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.concurrent.Future;
@@ -39,8 +39,6 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Created by serbay on 9/30/14.
- *
  * Receive step executor actor
  */
 public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorActor<com.gitb.tdl.Receive> {
@@ -56,18 +54,6 @@ public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorAct
 
 	public ReceiveStepProcessorActor(com.gitb.tdl.Receive step, TestCaseScope scope, String stepId) {
 		super(step, scope, stepId);
-	}
-
-	private void signalStepStatus(TestStepReportType result) {
-		if (result != null) {
-			if (result.getResult() == TestResultType.SUCCESS) {
-				updateTestStepStatus(getContext(), StepStatus.COMPLETED, result);
-			} else if (result.getResult() == TestResultType.WARNING) {
-				updateTestStepStatus(getContext(), StepStatus.WARNING, result);
-			} else {
-				updateTestStepStatus(getContext(), StepStatus.ERROR, result);
-			}
-		}
 	}
 
 	@Override
@@ -147,21 +133,29 @@ public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorAct
 							messagingContext.getSessionId(),
 							transactionContext.getTransactionId(),
 							callId,
-							step.getId(),
-							step.getConfig(),
+							step,
 							inputMessage,
 							messagingContext.getMessagingThreads()
 				);
-				if (report instanceof DeferredMessagingReport) {
+				if (report instanceof DeferredMessagingReport deferredReport) {
 					// This means that we should not resolve this step but rather wait for a message to be delivered to the actor.
+					if (deferredReport.getCallbackData() != null) {
+						// Register the data needed to respond when receiving a call.
+						CallbackManager.getInstance().registerCallbackData(new SessionCallbackData(
+								messagingContext.getSessionId(),
+								callId,
+								((MapType) scope.getVariable(PropertyConstants.SYSTEM_MAP).getValue()).getItem(PropertyConstants.SYSTEM_MAP__API_KEY).toString(),
+								deferredReport.getCallbackData())
+						);
+					}
 					return null;
 				} else {
 					return handleMessagingResult(report);
 				}
 			}, context.dispatcher());
 
-			future.foreach(handleSuccess(promise, messagingHandler, transactionContext), getContext().dispatcher());
-			future.failed().foreach(handleFailure(promise, messagingHandler, transactionContext), getContext().dispatcher());
+			future.foreach(handleSuccess(promise), getContext().dispatcher());
+			future.failed().foreach(handleFailure(promise), getContext().dispatcher());
 		} else {
 			throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Messaging handler is not available"));
 		}
@@ -170,10 +164,13 @@ public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorAct
 	@Override
 	public void onReceive(Object message) {
 		try {
-			if (message instanceof NotificationReceived) {
+			if (message instanceof NotificationReceived notificationMessage) {
+				if (notificationMessage.getError() != null) {
+					throw notificationMessage.getError();
+				}
 				logger.debug(addMarker(), "Received notification");
 				receivedResponse = true;
-				signalStepStatus(handleMessagingResult(((NotificationReceived) message).getReport()));
+				signalStepStatus(handleMessagingResult(notificationMessage.getReport()));
 			} else if (message instanceof TimeoutExpired) {
 				if (!receivedResponse) {
 					VariableResolver resolver = new VariableResolver(scope);
@@ -204,7 +201,6 @@ public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorAct
 				super.onReceive(message);
 			}
 		} catch (Exception e) {
-			logger.error(addMarker(), "Processing caught an exception", e);
 			error(e);
 		}
 	}
@@ -230,7 +226,7 @@ public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorAct
 						message.getFragments().put(flagName, new BooleanType(false));
 					}
 				}
-				if (step.getOutput().size() == 0) {
+				if (step.getOutput().isEmpty()) {
 					map = generateOutputWithMessageFields(message);
 				} else {
 					boolean isNameBinding = BindingUtils.isNameBinding(step.getOutput());

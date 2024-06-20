@@ -16,9 +16,9 @@ class WebSocketService @Inject() (implicit system: ActorSystem, cc: ControllerCo
   /**
    * Creates a WebSocket for the client
    */
-  def socket = WebSocket.accept[JsValue, JsValue] { request =>
+  def socket: WebSocket = WebSocket.accept[JsValue, JsValue] { request =>
     //create a handler actor for communication handling
-    ActorFlow.actorRef(out => webSocketActor.props(out))
+    ActorFlow.actorRef(out => webSocketActor.props(out), 16000)
   }
 
 }
