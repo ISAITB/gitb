@@ -20,7 +20,7 @@ val pekkoVersion = "1.0.2"
 val jacksonVersion = "2.16.2"
 val cxfVersion = "4.0.4"
 val commonsTextVersion = "1.11.0"
-val gitbTypesVersion = "1.23.0"
+val gitbTypesVersion = "1.24.0-SNAPSHOT"
 val bouncyCastleVersion = "1.78.1"
 
 useCoursier := false
