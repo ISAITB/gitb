@@ -27,6 +27,7 @@ export class AnyContentViewComponent extends ReportSupport implements OnInit {
   @Input() noMargin = false
   @Input() root = true
   @Input() forceDisplay = false
+  @Input() preserveName = true
 
   Constants = Constants
 
@@ -69,7 +70,7 @@ export class AnyContentViewComponent extends ReportSupport implements OnInit {
         this.withName = true
       }
     }
-    if (!this.withItems && this.withName && !this.withValue) {
+    if (!this.withItems && this.withName && !this.withValue && !this.preserveName) {
       this.value = this.name
       this.name = undefined
       this.withName = false

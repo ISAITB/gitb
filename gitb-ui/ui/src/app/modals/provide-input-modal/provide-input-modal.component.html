@@ -3,50 +3,76 @@
 </div>
 <form>
 	<div class="modal-body provide-input-body" style="overflow-x: auto; overflow-y: hidden;" appFileDropTarget>
-		<div *ngFor="let interaction of interactions; let index = index; let first = first;">
-			<div class="row">
-				<div class="col-12" [class.mt-3]="!first">
-					<!-- request interaction: server asks operator to send inputs -->
-					<div *ngIf="interaction.type == 'request'">
-						<label [attr.for]="'input-'+index" class="form-label">{{interaction.desc}}</label>
-						<ng-container [ngSwitch]="interaction.inputType">
-							<!-- Select single. -->
-							<select *ngSwitchCase="'SELECT_SINGLE'" [name]="'input-'+index" [attr.id]="'input-'+index" class="form-select" [(ngModel)]="interaction.selectedOption">
-								<option value=""></option>
-								<option *ngFor="let option of interaction.optionData" [ngValue]="option">{{option.label}}</option>
-							</select>
-							<!-- Select multiple -->
-							<select *ngSwitchCase="'SELECT_MULTIPLE'" [name]="'input-'+index" [attr.id]="'input-'+index" multiple="true" class="form-select" [(ngModel)]="interaction.selectedOption">
-								<option *ngFor="let option of interaction.optionData" [ngValue]="option">{{option.label}}</option>
-							</select>
-							<!-- Upload -->
-							<div *ngSwitchCase="'UPLOAD'">
-								<app-file-select [fileName]="interaction.file?.name" (onUpload)="onFileSelect(interaction, $event)"></app-file-select>
-							</div>
-							<!-- Code editor -->
-							<ngx-codemirror *ngSwitchCase="'CODE'" #codeMirror (focusChange)="codeEditorFocus($event, 'input-'+index)" [name]="'input-'+index" [attr.id]="'input-'+index" [(ngModel)]="interaction.data" [options]="{lineNumbers:true, smartIndent: false, electricChars: false, mode: interaction.mimeType}" [ngClass]="{'focused': editorFocus['input-'+index]}"></ngx-codemirror>
-							<!-- Text area -->
-							<textarea *ngSwitchCase="'MULTILINE_TEXT'" [name]="'input-'+index" [attr.id]="'input-'+index" class="form-control" [(ngModel)]="interaction.data"></textarea>
-							<!-- Secret -->
-							<app-secret-input *ngSwitchCase="'SECRET'" [name]="'input-'+index" [id]="'input-'+index" [(ngModel)]="interaction.data"></app-secret-input>
-							<!-- Text field -->
-							<input *ngSwitchDefault [name]="'input-'+index" [attr.id]="'input-'+index" type="text" class="form-control" [(ngModel)]="interaction.data"/>
-						</ng-container>
-					</div>
-					<!-- instruction interaction: server shows a message -->
-					<div *ngIf="interaction.type == 'instruction'">
-						<app-any-content-view [context]="instructionAsAnyContent(interaction)" [forceDisplay]="interaction.forceDisplay == true" [fileNameDownload]="interaction.name" [sessionId]="sessionId" [noMargin]="true"></app-any-content-view>
+		@for (interaction of interactions; let first = $first, index = $index; track index) {
+			<div>
+				<div class="row">
+					<div class="col-12" [class.mt-3]="!first">
+						<!-- request interaction: server asks operator to send inputs -->
+						 @if (interaction.type == 'request') {
+							 <div>
+								 <label [attr.for]="'input-'+index" class="form-label">{{interaction.desc}}</label>
+								 @switch (interaction.inputType) {
+									@case ("SELECT_SINGLE") {
+										<!-- Select single. -->
+										<select [name]="'input-'+index" [attr.id]="'input-'+index" class="form-select" [(ngModel)]="interaction.selectedOption">
+											<option value=""></option>
+											@for (option of interaction.optionData; track $index) {
+												<option [ngValue]="option">{{option.label}}</option>
+											}
+										</select>
+									}
+									@case ("SELECT_MULTIPLE") {
+										<!-- Select multiple -->
+										<select [name]="'input-'+index" [attr.id]="'input-'+index" multiple="true" class="form-select" [(ngModel)]="interaction.selectedOption">
+											@for (option of interaction.optionData; track $index) {
+												<option [ngValue]="option">{{option.label}}</option>
+											}
+										</select>
+									}
+									@case ("UPLOAD") {
+										 <!-- Upload -->
+										<div>
+											<app-file-select [fileName]="interaction.file?.name" (onUpload)="onFileSelect(interaction, $event)"></app-file-select>
+										</div>
+									}
+									@case ("CODE") {
+										<!-- Code editor -->
+										<ngx-codemirror #codeMirror (focusChange)="codeEditorFocus($event, 'input-'+index)" [name]="'input-'+index" [attr.id]="'input-'+index" [(ngModel)]="interaction.data" [options]="{lineNumbers:true, smartIndent: false, electricChars: false, mode: interaction.mimeType}" [ngClass]="{'focused': editorFocus['input-'+index]}"></ngx-codemirror>
+									}
+									@case ("MULTILINE_TEXT") {
+										<!-- Text area -->
+										<textarea [name]="'input-'+index" [attr.id]="'input-'+index" class="form-control" [(ngModel)]="interaction.data"></textarea>
+									}
+									@case ("SECRET") {
+										<!-- Secret -->
+										<app-secret-input [name]="'input-'+index" [id]="'input-'+index" [(ngModel)]="interaction.data"></app-secret-input>
+									}
+									@default {
+										<!-- Text field -->
+										<input [name]="'input-'+index" [attr.id]="'input-'+index" type="text" class="form-control" [(ngModel)]="interaction.data"/>
+									}
+								 }
+							 </div>
+						 } @else if (interaction.type == 'instruction') {
+							 <!-- instruction interaction: server shows a message -->
+							 <div>
+								 <app-any-content-view [context]="instructionAsAnyContent(interaction)" [forceDisplay]="interaction.forceDisplay == true" [preserveName]="false" [fileNameDownload]="interaction.name" [sessionId]="sessionId" [noMargin]="true"></app-any-content-view>
+							 </div>
+						 }
 					</div>
 				</div>
 			</div>
-		</div>
+		}
 	</div>
 	<div class="modal-footer">
 		<div class="btn-toolbar">
 			<button type="button" (click)="minimise()" class="btn btn-secondary">Minimise</button>
-			<button type="button" *ngIf="!needsInput" (click)="close()" class="btn btn-secondary">Close</button>
-			<button type="button" *ngIf="needsInput" (click)="reset()" class="btn btn-secondary">Reset</button>
-			<button type="submit" *ngIf="needsInput" (click)="submit()" class="btn btn-secondary">Submit</button>
+			@if (needsInput) {
+				<button type="button" (click)="reset()" class="btn btn-secondary">Reset</button>
+				<button type="submit" (click)="submit()" class="btn btn-secondary">Submit</button>
+			} @else {
+				<button type="button" (click)="close()" class="btn btn-secondary">Close</button>
+			}
 		</div>
 	</div>
 </form>
