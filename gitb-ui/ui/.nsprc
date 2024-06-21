@@ -2,5 +2,9 @@
   "1096815": {
     "active": true,
     "notes": "The patch stated as of TinyMCE v6.8.1+ has been applied."
-  }
+  },
+  "1097670": {
+    "active": true,
+    "notes": "The TinyMCE noneditable_regexp option is never used."
+  }  
 }
