@@ -23,7 +23,7 @@ This repository contains the main application components that are used by the In
 - The **frontend**, responsible for the Test Bed's user interface and its test, user, and configuration
   management features. In terms of Docker images, this component represents the ``gitb-ui`` image.
 
-In the subsequent sections each of these components will be referred to using their Docker image names (``gitb-srv`` and ``gitb-ui``).
+In subsequent sections these components are referred to using their Docker image names (``gitb-srv`` and ``gitb-ui``).
 
 > **Note**
 > 
