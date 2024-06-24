@@ -1,22 +1,51 @@
 # Introduction
 
-The current project contains the main application components that are used by the Interoperability Test Bed.
-These are:
+This repository contains the main application components that are used by the [Interoperability Test Bed](https://joinup.ec.europa.eu/collection/interoperability-test-bed-repository/solution/interoperability-test-bed).
+
+## What is the Interoperability Test Bed?
+
+The Interoperability Test Bed is a service offered by the European Commission’s DIGIT for the **conformance testing** of IT systems.
+It approaches conformance testing by means of scenario-based test cases expressed in the [GITB Test Description Language (TDL)](https://www.itb.ec.europa.eu/docs/tdl/latest/),
+that defines test steps implemented using built-in capabilities or by orchestration of [extension services](https://www.itb.ec.europa.eu/docs/services/latest/).
+
+Test cases typically involve **message exchanges** with a system under test, with **validation** of individual messages and the overall conversation,
+but also steps including control flow, user interactions, and arbitrary processing of test session data. Besides the test engine itself, the Test Bed also
+provides a **rich user interface** for administrators and testers, as well as a **REST API** and **webhooks** for integrations and automation workflows.
+
+DIGIT operates its own [Test Bed instance](https://www.itb.ec.europa.eu/itb/) shared by several projects, but also makes
+available all software as components (shared as public Docker images) that can be installed and used locally.   
+
+## About this repository
+
+This repository contains the main application components that are used by the Interoperability Test Bed. These are:
 - The **test engine**, responsible for executing test cases and reporting their progress and outcome.
   In terms of Docker images, this component represents the ``gitb-srv`` image.
 - The **frontend**, responsible for the Test Bed's user interface and its test, user, and configuration
   management features. In terms of Docker images, this component represents the ``gitb-ui`` image.
 
-In the subsequent sections each of these components will be referred to using their Docker image names\
-(``gitb-srv`` and ``gitb-ui``).
+In subsequent sections these components are referred to using their Docker image names (``gitb-srv`` and ``gitb-ui``).
 
 > **Note**
 > 
 > This repository is used to build the Test Bed's software components from their source. The simplest approach
-> to use the Test Bed is via its **published Docker images** ([gitb-ui](https://hub.docker.com/r/isaitb/gitb-ui) and [gitb-srv](https://hub.docker.com/r/isaitb/gitb-srv)) for which you can follow the installation
-> guides [for development](https://www.itb.ec.europa.eu/docs/guides/latest/installingTheTestBed/index.html) and [for production](https://www.itb.ec.europa.eu/docs/guides/latest/installingTheTestBedProduction/index.html). All other documentation (guides, tutorials, reference documentation) is available [here](https://joinup.ec.europa.eu/collection/interoperability-test-bed-repository/solution/interoperability-test-bed/documentation-and-resources).
->
-> Alternatively, you may also build and launch the Docker service directly from the provided sources. See [here](#build-for-deployment) for details.
+> to use the Test Bed is via its **published Docker images** ([gitb-ui](https://hub.docker.com/r/isaitb/gitb-ui) and [gitb-srv](https://hub.docker.com/r/isaitb/gitb-srv)) following
+> our [installation guide](https://www.itb.ec.europa.eu/docs/guides/latest/installingTheTestBed/index.html).
+> 
+> Alternatively, you may build and launch the Docker service directly from its sources. See [here](#build-for-deployment) for details.
+
+## Documentation
+
+The main documentation hub for the Test Bed is its [Joinup space](https://joinup.ec.europa.eu/collection/interoperability-test-bed-repository/solution/interoperability-test-bed)
+from where you can access all [types of documentation](https://joinup.ec.europa.eu/collection/interoperability-test-bed-repository/solution/interoperability-test-bed/documentation).
+Documentation highlights include:
+- The [developer onboarding guide](https://www.itb.ec.europa.eu/docs/guides/latest/onboardingDevelopers/index.html), that provides a technical overview of how the Test Bed works.
+- The Test Bed's [user guide](https://www.itb.ec.europa.eu/docs/itb-ta/latest/). 
+- The reference documentation for the [GITB TDL](https://www.itb.ec.europa.eu/docs/tdl/latest/) (to author test cases) and [GITB test services](https://www.itb.ec.europa.eu/docs/services/latest/) (to add custom extensions). 
+- The installation guide [for development](https://www.itb.ec.europa.eu/docs/guides/latest/installingTheTestBed/index.html) and [for production](https://www.itb.ec.europa.eu/docs/guides/latest/installingTheTestBedProduction/index.html).
+
+If you are new to the Test Bed you should start with the [developer onboarding guide](https://www.itb.ec.europa.eu/docs/guides/latest/onboardingDevelopers/index.html), and then follow the tutorials
+to [create a first test case](https://www.itb.ec.europa.eu/docs/guides/latest/creatingATestCase/index.html), extend it for [simple messaging needs](https://www.itb.ec.europa.eu/docs/guides/latest/sendingAndReceivingContent/index.html),
+and then for more [complex testing needs](https://www.itb.ec.europa.eu/docs/guides/latest/developingComplexTests/index.html).
 
 # Technology stack
 
