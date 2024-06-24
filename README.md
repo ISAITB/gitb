@@ -31,7 +31,7 @@ In subsequent sections these components are referred to using their Docker image
 > to use the Test Bed is via its **published Docker images** ([gitb-ui](https://hub.docker.com/r/isaitb/gitb-ui) and [gitb-srv](https://hub.docker.com/r/isaitb/gitb-srv)) following
 > our [installation guide](https://www.itb.ec.europa.eu/docs/guides/latest/installingTheTestBed/index.html).
 > 
-> Alternatively, you may also build and launch the Docker service directly from the provided sources. See [here](#build-for-deployment) for details.
+> Alternatively, you may build and launch the Docker service directly from the provided sources. See [here](#build-for-deployment) for details.
 
 ## Documentation
 
