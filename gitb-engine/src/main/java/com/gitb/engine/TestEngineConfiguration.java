@@ -79,6 +79,9 @@ public class TestEngineConfiguration {
 				} else if (!processingCallbackUrl.isEmpty()) {
 					referenceToUse = processingCallbackUrl;
 				} else {
+					referenceToUse = config.getString("gitb.defaultCallbackURL", "");
+				}
+				if (referenceToUse.isEmpty()) {
 					throw new IllegalStateException("No callback addresses were configured for test engine notifications. You must configure at least one of %s, %s, %s or %s the properties.".formatted(ENV_CALLBACK_ROOT_URL, ENV_CALLBACK_MESSAGING_URL, ENV_CALLBACK_VALIDATION_URL, ENV_CALLBACK_PROCESSING_URL));
 				}
 				rootCallbackUrl = inferCallbackURL("", referenceToUse);
