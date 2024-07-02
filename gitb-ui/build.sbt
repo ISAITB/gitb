@@ -16,7 +16,7 @@ with the sbt-dependency-check would be as follows.
 lazy val root = (project in file(".")).enablePlugins(PlayScala, SbtWeb)
 
 scalaVersion := "2.13.12"
-val pekkoVersion = "1.0.2"
+val pekkoVersion = "1.0.3"
 val jacksonVersion = "2.16.2"
 val cxfVersion = "4.0.4"
 val commonsTextVersion = "1.11.0"
@@ -47,7 +47,7 @@ libraryDependencies ++= Seq(
   "org.apache.pekko" %% "pekko-stream" % pekkoVersion,
   "org.apache.pekko" %% "pekko-slf4j" % pekkoVersion,
   "org.apache.pekko" %% "pekko-serialization-jackson" % pekkoVersion,
-  "org.playframework" %% "play-slick" % "6.1.0",
+  "org.playframework" %% "play-slick" % "6.1.1",
   "org.pac4j" %% "play-pac4j" % "12.0.0-PLAY3.0",
   "org.pac4j" % "pac4j-cas" % "6.0.2" exclude("org.bouncycastle", "bcpkix-jdk15on"),
   "org.apache.commons" % "commons-lang3" % "3.14.0",
