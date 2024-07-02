@@ -13,7 +13,7 @@ import org.bouncycastle.cms.SignerInformationStore;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.URI;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -38,7 +38,7 @@ public class ValidationTimeStamp {
         if (tsaUrl != null)
         {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            this.tsaClient = new TSAClient(new URL(tsaUrl), null, null, digest);
+            this.tsaClient = new TSAClient(URI.create(tsaUrl).toURL(), null, null, digest);
         }
     }
 
