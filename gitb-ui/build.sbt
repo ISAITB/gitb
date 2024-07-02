@@ -15,7 +15,7 @@ with the sbt-dependency-check would be as follows.
 
 lazy val root = (project in file(".")).enablePlugins(PlayScala, SbtWeb)
 
-scalaVersion := "2.13.12"
+scalaVersion := "2.13.14"
 val pekkoVersion = "1.0.3"
 val jacksonVersion = "2.16.2"
 val cxfVersion = "4.0.4"

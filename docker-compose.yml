@@ -6,7 +6,7 @@ volumes:
 
 services:
    gitb-redis:
-      image: redis:7.0.11
+      image: redis:7.2.5
       restart: unless-stopped
    gitb-mysql:
       build:
@@ -24,8 +24,7 @@ services:
         dockerfile: etc/docker/build/Dockerfile-srv
       restart: unless-stopped
       environment:
-       - gitb.messaging.server-ip-address=localhost
-       - gitb.messaging.callbackURL=http://localhost:8080/itbsrv/MessagingClient
+       - CALLBACK_ROOT_URL=http://localhost:8080/itbsrv
       ports:
        - "8080:8080"
    gitb-ui:

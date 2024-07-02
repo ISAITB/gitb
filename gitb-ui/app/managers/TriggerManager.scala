@@ -19,6 +19,7 @@ import play.api.libs.ws.WSClient
 import utils.{JsonUtil, MimeUtil, RepositoryUtils}
 
 import java.io.{ByteArrayOutputStream, StringReader}
+import java.net.URI
 import java.nio.charset.{Charset, StandardCharsets}
 import java.nio.file.Files
 import java.util.Base64
@@ -667,7 +668,7 @@ class TriggerManager @Inject()(env: Environment, ws: WSClient, repositoryUtils: 
 
   private def callProcessingService(url: String, fnCallOperation: ProcessingService => JAXBElement[_]): Future[(Boolean, List[String], String)] = {
     Future {
-      val service = new ProcessingServiceService(new java.net.URL(url))
+      val service = new ProcessingServiceService(URI.create(url).toURL)
       val response = fnCallOperation.apply(service.getProcessingServicePort)
       val bos = new ByteArrayOutputStream()
       XMLUtils.marshalToStream(response, bos)
@@ -858,7 +859,7 @@ class TriggerManager @Inject()(env: Environment, ws: WSClient, repositoryUtils: 
   private def callTriggerService(trigger: Triggers, request: ProcessRequest): Future[ProcessResponse] = {
     if (TriggerServiceType.apply(trigger.serviceType) == TriggerServiceType.GITB) {
       Future {
-        val service = new ProcessingServiceService(new java.net.URL(trigger.url))
+        val service = new ProcessingServiceService(URI.create(trigger.url).toURL)
         service.getProcessingServicePort.process(request)
       }
     } else {
