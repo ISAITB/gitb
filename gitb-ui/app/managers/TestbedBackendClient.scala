@@ -6,6 +6,7 @@ import config.Configurations
 import jaxws.HeaderHandlerResolver
 import org.slf4j.{Logger, LoggerFactory}
 
+import java.net.URI
 import javax.inject.Singleton
 
 @Singleton
@@ -13,12 +14,12 @@ class TestbedBackendClient {
 
   private final val logger: Logger = LoggerFactory.getLogger(classOf[TestbedBackendClient])
 
-  private var portInternal: TestbedService = null
+  private var portInternal: TestbedService = _
 
   private def service():TestbedService = {
     if (portInternal == null) {
       logger.info("Creating TestbedService client")
-      val backendURL: java.net.URL = new java.net.URL(Configurations.TESTBED_SERVICE_URL+"?wsdl")
+      val backendURL: java.net.URL = URI.create(Configurations.TESTBED_SERVICE_URL+"?wsdl").toURL
       val service: TestbedService_Service = new TestbedService_Service(backendURL)
       //add header handler resolver to add custom header element for TestbedClient service address
       val handlerResolver = new HeaderHandlerResolver()

@@ -1,5 +1,5 @@
 # Stage 1: Build app
-FROM sbtscala/scala-sbt:eclipse-temurin-jammy-17.0.9_9_1.9.8_2.13.12 AS builder
+FROM sbtscala/scala-sbt:eclipse-temurin-jammy-21.0.2_13_1.10.0_2.13.14 AS builder
 
 # Install nodejs and npm (to build frontend app)
 ENV NVM_DIR /usr/local/nvm
@@ -42,7 +42,7 @@ RUN mkdir -p /app/tmp \
     && mv /app/tmp/gitb-ui/gitb-1.0-SNAPSHOT /app/tmp/gitb-ui/gitb-ui
 
 # Stage 2: Run application
-FROM eclipse-temurin:17-jre-jammy
+FROM eclipse-temurin:21-jre-jammy
 
 ENV PATH /usr/local/gitb-ui/bin:$PATH
 ENV TESTBED_SERVICE_URL http://gitb-srv:8080/itbsrv/TestbedService
