@@ -1,5 +1,6 @@
 package com.gitb.engine.actors.processors;
 
+import com.gitb.engine.actors.ActorSystem;
 import org.apache.pekko.actor.ActorRef;
 import org.apache.pekko.dispatch.Futures;
 import org.apache.pekko.dispatch.OnFailure;
@@ -111,7 +112,7 @@ public class ProcessStepProcessorActor extends AbstractProcessingStepProcessorAc
                 taskPromise.success(produceReport(report, handler));
             }
             return taskPromise.future();
-        }, getContext().dispatcher());
+        }, getContext().getSystem().dispatchers().lookup(ActorSystem.BLOCKING_IO_DISPATCHER));
 
         future.foreach(new OnSuccess<>() {
             @Override

@@ -11,6 +11,7 @@ import com.gitb.utils.ErrorUtils;
 import org.apache.pekko.dispatch.Futures;
 import org.apache.pekko.dispatch.OnFailure;
 import org.apache.pekko.dispatch.OnSuccess;
+import scala.concurrent.ExecutionContext;
 import scala.concurrent.Future;
 import scala.concurrent.Promise;
 
@@ -70,7 +71,7 @@ public abstract class AbstractProcessorActor<T> extends AbstractTestStepActor<T>
 				processing();
 
 				return processor.process(step);
-			}, getContext().dispatcher());
+			}, stepDispatcher());
 
 			future.foreach(new OnSuccess<>() {
 
@@ -87,6 +88,10 @@ public abstract class AbstractProcessorActor<T> extends AbstractTestStepActor<T>
 				}
 			}, getContext().dispatcher());
 		}
+	}
+
+	protected ExecutionContext stepDispatcher() {
+		return getContext().getDispatcher();
 	}
 
 	@Override

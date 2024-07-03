@@ -12,8 +12,9 @@ import com.gitb.ps.*;
 import com.gitb.types.DataType;
 import com.gitb.types.DataTypeFactory;
 import com.gitb.utils.DataTypeUtils;
-
 import jakarta.xml.ws.soap.AddressingFeature;
+import org.apache.cxf.endpoint.Client;
+
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -100,7 +101,9 @@ public class RemoteProcessingModuleClient extends RemoteServiceClient implements
 
     private ProcessingService getServiceClient() {
         TestCaseUtils.prepareRemoteServiceLookup(getCallProperties());
-        return new ProcessingServiceClient(getServiceURL()).getProcessingServicePort(new AddressingFeature(true));
+        var client = new ProcessingServiceClient(getServiceURL()).getProcessingServicePort(new AddressingFeature(true));
+        prepareClient((Client)client);
+        return client;
     }
 
 }
