@@ -23,8 +23,6 @@ import org.apache.pekko.actor.ActorRef;
 import org.apache.pekko.dispatch.Futures;
 import org.apache.pekko.dispatch.OnFailure;
 import org.apache.pekko.dispatch.OnSuccess;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import scala.concurrent.Future;
 import scala.concurrent.Promise;
 
@@ -36,7 +34,6 @@ import scala.concurrent.Promise;
 public class SendStepProcessorActor extends AbstractMessagingStepProcessorActor<Send> {
 
 	public static final String NAME = "send-p";
-	private static final Logger logger = LoggerFactory.getLogger(SendStepProcessorActor.class);
 
 	private MessagingContext messagingContext;
 	private TransactionContext transactionContext;
@@ -118,7 +115,7 @@ public class SendStepProcessorActor extends AbstractMessagingStepProcessorActor<
 					tar.setResult(TestResultType.SUCCESS);
 					return tar;
 				}
-			}, getContext().dispatcher());
+			}, getContext().getSystem().dispatchers().lookup(ActorSystem.BLOCKING_IO_DISPATCHER));
 
 			future.foreach(handleSuccess(promise), getContext().dispatcher());
 			future.failed().foreach(handleFailure(promise), getContext().dispatcher());

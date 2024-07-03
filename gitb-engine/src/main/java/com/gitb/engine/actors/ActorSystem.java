@@ -12,6 +12,7 @@ public class ActorSystem {
 	public static final String ACTOR_SYSTEM_NAME = "test-engine-as";
 
 	public static final String BLOCKING_DISPATCHER = "blocking-processor-dispatcher";
+	public static final String BLOCKING_IO_DISPATCHER = "blocking-io-dispatcher";
 
 	private org.apache.pekko.actor.ActorSystem system;
 

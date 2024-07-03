@@ -152,7 +152,7 @@ public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorAct
 				} else {
 					return handleMessagingResult(report);
 				}
-			}, context.dispatcher());
+			}, getContext().getSystem().dispatchers().lookup(ActorSystem.BLOCKING_IO_DISPATCHER));
 
 			future.foreach(handleSuccess(promise), getContext().dispatcher());
 			future.failed().foreach(handleFailure(promise), getContext().dispatcher());
