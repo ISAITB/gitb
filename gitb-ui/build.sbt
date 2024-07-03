@@ -64,7 +64,6 @@ libraryDependencies ++= Seq(
   "org.apache.cxf" % "cxf-rt-transports-http-jetty" % cxfVersion,
   // ---
   "org.apache.tika" % "tika-core" % "2.9.2",
-  "org.webjars" %% "webjars-play" % "3.0.1",
   "org.webjars" % "jquery" % "3.7.1",
   "org.webjars" % "bootstrap" % "5.3.3",
   "com.sun.mail" % "jakarta.mail" % "2.0.1",
