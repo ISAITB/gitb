@@ -4,13 +4,13 @@ resolvers += Resolver.url(
        Resolver.ivyStylePatterns)
 
 // The Play plugin
-addSbtPlugin("org.playframework" % "sbt-plugin" % "3.0.3")
+addSbtPlugin("org.playframework" % "sbt-plugin" % "3.0.4")
 
 // web plugins
 
-addSbtPlugin("com.github.sbt" % "sbt-web" % "1.5.5")
+addSbtPlugin("com.github.sbt" % "sbt-web" % "1.5.8")
 
-addSbtPlugin("com.github.sbt" % "sbt-js-engine" % "1.3.6")
+addSbtPlugin("com.github.sbt" % "sbt-js-engine" % "1.3.9")
 
 addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "2.2.0")
 
