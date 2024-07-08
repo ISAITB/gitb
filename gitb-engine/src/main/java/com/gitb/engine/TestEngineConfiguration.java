@@ -9,6 +9,9 @@ import org.apache.commons.configuration2.builder.fluent.Configurations;
 import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.apache.commons.lang3.StringUtils;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Objects;
 
 /**
@@ -119,7 +122,7 @@ public class TestEngineConfiguration {
 			TEST_ID_PARAMETER = System.getenv().getOrDefault("remote.testcase.test-id.parameter", config.getString("remote.testcase.test-id.parameter"));
 			RESOURCE_ID_PARAMETER = System.getenv().getOrDefault("remote.testcase.resource-id.parameter", config.getString("remote.testcase.resource-id.parameter"));
 			// Configure also the HMAC information used to authorize remote calls.
-			String hmacKey = System.getenv().getOrDefault("HMAC_KEY", "devKey");
+			String hmacKey = getFromFileConfigOrEnvironment("HMAC_KEY", "devKey");
 			String hmacKeyWindow = System.getenv().getOrDefault("HMAC_WINDOW", "10000");
 			HmacUtils.configure(hmacKey, Long.valueOf(hmacKeyWindow));
 			// Remote test case repository - end.
@@ -128,6 +131,21 @@ public class TestEngineConfiguration {
 			// Embedded messaging handler configuration - end.
 		} catch (ConfigurationException e) {
 			throw new IllegalStateException("Error loading configuration", e);
+		}
+	}
+
+	private static String getFromFileConfigOrEnvironment(String baseName, String defaultValue) {
+		String filePathName = baseName+"_FILE";
+		if (System.getenv().containsKey(filePathName)) {
+			// Load from file.
+            try {
+                return Files.readString(Path.of(System.getenv(filePathName)));
+            } catch (IOException e) {
+                throw new IllegalStateException("Error reading file", e);
+            }
+        } else {
+			// Load from environment variable or the default.
+			return System.getenv().getOrDefault(baseName, defaultValue);
 		}
 	}
 

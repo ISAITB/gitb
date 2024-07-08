@@ -34,6 +34,10 @@ public class HmacUtils {
         HmacUtils.hmacMaxValidityWindow = hmacMaxValidityWindow;
     }
 
+    public static String getKey() {
+        return HmacUtils.hmacSecretKey;
+    }
+
     private static TokenData getTokenDataInternal(String textToSign, String timestamp) {
         Mac mac = org.apache.commons.codec.digest.HmacUtils.getInitializedMac(HmacAlgorithms.HMAC_SHA_256, hmacSecretKey.getBytes(StandardCharsets.UTF_8));
         String content = DigestUtils.md5Hex(textToSign).toUpperCase() + '\n' + timestamp;

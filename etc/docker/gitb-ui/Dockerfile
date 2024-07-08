@@ -8,8 +8,11 @@ ENV DB_DEFAULT_ROOTURL jdbc:mysql://gitb-mysql/
 ENV REDIS_HOST gitb-redis
 
 COPY gitb-ui /usr/local/gitb-ui
+COPY gitb-entrypoint.sh /usr/local/gitb-ui/bin
+RUN chmod +x /usr/local/gitb-ui/bin/gitb-entrypoint.sh
 
 EXPOSE 9000
 EXPOSE 9090
 WORKDIR /usr/local/gitb-ui
-CMD ["gitb"]
+
+ENTRYPOINT ["/usr/local/gitb-ui/bin/gitb-entrypoint.sh"]

@@ -151,9 +151,8 @@ object Configurations {
 
   def loadConfigurations(): Unit = {
     if (!_IS_LOADED) {
-      //Load configuration file
+      // Load configuration file
       val conf:Config = ConfigFactory.load()
-
       //Parse DB Parameters
       DB_DRIVER_CLASS = conf.getString("db.default.driver")
       DB_JDBC_URL     = conf.getString("db.default.url")
@@ -185,7 +184,7 @@ object Configurations {
       EMAIL_SMTP_PORT = Option(fromEnv("EMAIL_SMTP_PORT", null)).map(_.toInt)
       EMAIL_SMTP_AUTH_ENABLED = Option(fromEnv("EMAIL_SMTP_AUTH_ENABLED", conf.getString("email.smtp.auth.enabled")).toBoolean)
       EMAIL_SMTP_AUTH_USERNAME = Option(fromEnv("EMAIL_SMTP_AUTH_USERNAME", null))
-      EMAIL_SMTP_AUTH_PASSWORD = Option(fromEnv("EMAIL_SMTP_AUTH_PASSWORD", null))
+      EMAIL_SMTP_AUTH_PASSWORD = Option(fromEnv("EMAIL_SMTP_AUTH_PASSWORD", conf.getString("email.smtp.auth.password")))
       // Collect as Properties object
       EMAIL_SMTP_SSL_ENABLED = Option(fromEnv("EMAIL_SMTP_SSL_ENABLED", conf.getString("email.smtp.ssl.enabled")).toBoolean)
       val sslProtocolsValue = fromEnv("EMAIL_SMTP_SSL_PROTOCOLS", conf.getString("email.smtp.ssl.protocols")).split(",")
@@ -253,8 +252,8 @@ object Configurations {
       }
 
       // Configure HMAC processing
-      val hmacKey = fromEnv("HMAC_KEY", "devKey")
-      val hmacKeyWindow = fromEnv("HMAC_WINDOW", "10000")
+      val hmacKey = fromEnv("HMAC_KEY", conf.getString("hmac.key"))
+      val hmacKeyWindow = fromEnv("HMAC_WINDOW", conf.getString("hmac.window"))
       HmacUtils.configure(hmacKey, hmacKeyWindow.toLong)
 
       AUTHENTICATION_COOKIE_PATH = fromEnv("AUTHENTICATION_COOKIE_PATH", conf.getString("authentication.cookie.path"))
@@ -316,7 +315,7 @@ object Configurations {
       }
       // Input sanitiser - END
 
-      DATA_ARCHIVE_KEY = fromEnv("DATA_ARCHIVE_KEY", "")
+      DATA_ARCHIVE_KEY = fromEnv("DATA_ARCHIVE_KEY", conf.getString("dataArchive.key"))
       DATA_WEB_INIT_ENABLED = fromEnv("DATA_WEB_INIT_ENABLED", "false").toBoolean
       TEST_SESSION_ARCHIVE_THRESHOLD = fromEnv("TEST_SESSION_ARCHIVE_THRESHOLD", conf.getString("testsession.archive.threshold")).toInt
       TEST_SESSION_EMBEDDED_REPORT_DATA_THRESHOLD = fromEnv("TEST_SESSION_EMBEDDED_REPORT_DATA_THRESHOLD", conf.getString("testsession.embeddedReportData.threshold")).toLong
