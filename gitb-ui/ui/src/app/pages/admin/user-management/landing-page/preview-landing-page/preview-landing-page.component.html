@@ -4,7 +4,9 @@
             <div class="container">
                 <div class="row">
                     <div class="col-12">
-                        <div id="content" *ngIf="previewContent" [innerHtml]="previewContent | sanitizeHtml"></div>
+                        @if (previewContent) {
+                            <div id="content" [innerHtml]="previewContent | sanitizeHtml"></div>
+                        }
                     </div>
                 </div>
             </div>

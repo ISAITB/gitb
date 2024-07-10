@@ -6,12 +6,14 @@
                 <div class="backDiv">
                     <button type="button" class="btn btn-secondary" (click)="back()">Go to conformance statement</button>
                 </div>
-                <ng-container *ngIf="testsToExecute.length > 0">
-                    <div *ngIf="testsToExecute.length > 1" class="optionsDiv btn-toolbar">
-                        <app-checkbox-option-panel label="Options" [options]="testOptions" (updated)="testOptionsUpdated($event)"></app-checkbox-option-panel>
-                    </div>
+                @if (testsToExecute.length > 0) {
+                    @if (testsToExecute.length > 1) {
+                        <div class="optionsDiv btn-toolbar">
+                            <app-checkbox-option-panel label="Options" [options]="testOptions" (updated)="testOptionsUpdated($event)"></app-checkbox-option-panel>
+                        </div>
+                    }
                     <div class="btn-toolbar actionButtonDiv">
-                        <ng-container *ngIf="testsToExecute.length > 1">
+                        @if (testsToExecute.length > 1) {
                             <div class="btn-group" dropdown [isDisabled]="!firstTestStarted || reload">
                                 <button id="button-stop" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-stop">Stop<span class="caret withMargin"></span></button>
                                 <ul id="dropdown-stopType" *dropdownMenu class="dropdown-menu dropdown-menu" role="menu" aria-labelledby="button-stop">
@@ -19,17 +21,19 @@
                                     <li role="menuitem"><a class="dropdown-item" href (click)="stopAll(); $event.preventDefault()">Stop all tests</a></li>
                                 </ul>
                             </div>
-                        </ng-container>
-                        <button *ngIf="testsToExecute.length == 1" type="button" class="btn btn-secondary" [disabled]="!firstTestStarted || stopped || reload" (click)="stop(session!)">Stop</button>
+                        }
+                        @if (testsToExecute.length == 1) {
+                            <button type="button" class="btn btn-secondary" [disabled]="!firstTestStarted || stopped || reload" (click)="stop(session!)">Stop</button>
+                        }
                         <button type="button" class="btn btn-secondary" [disabled]="!firstTestStarted" (click)="reinitialise()">Reset</button>
                         <button type="button" class="btn btn-primary" [disabled]="!nextWaitingToStart" (click)="start(session!)">Start</button>
                     </div>
-                </ng-container>
+                }
             </div>
         </div>
-        <ng-container [ngSwitch]="configCheckStatus.status == Constants.STATUS.FINISHED">
-            <ng-container *ngSwitchCase="true" [ngSwitch]="!statementConfigurationValid || !systemConfigurationValid || !organisationConfigurationValid">
-                <div *ngSwitchCase="true" class="missingConfigurationDiv">
+        @if (configCheckStatus.status == Constants.STATUS.FINISHED) {
+            @if (!statementConfigurationValid || !systemConfigurationValid || !organisationConfigurationValid) {
+                <div class="missingConfigurationDiv">
                     <app-missing-configuration-display 
                         [organisationProperties]="organisationProperties"
                         [organisationConfigurationValid]="organisationConfigurationValid"
@@ -40,122 +44,153 @@
                         (action)="handleMissingConfigurationAction($event)"
                     ></app-missing-configuration-display>
                 </div>
-                <div *ngSwitchDefault [ngSwitch]="testCaseLoadStatus.status == Constants.STATUS.FINISHED" class="table-container rounded">
-                    <table *ngSwitchCase="true" class="table table-directive expandable-table test-case-table">
-                        <thead>
-                            <tr>
-                                <th class="th-min-centered"></th>
-                                <th>Test case</th>
-                                <th>Description</th>
-                                <th class="td-doc" *ngIf="documentationExists" width="1%"></th>
-                                <th class="td-centered" width="1%">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <ng-container *ngFor="let testCase of testsToExecute">
-                                <tr (click)="viewTestCase(testCase)" 
-                                    [class.expandable-table-row-collapsed]="isTestCaseClickable(testCase)"
-                                    [class.no-display]="!testCaseVisible[testCase.id]">
-                                    <td class="td-min-centered" [ngSwitch]="isTestCaseClickable(testCase)">
-                                        <div *ngSwitchCase="false" class="expandable-hidden">
-                                            <app-collapsing-icon [padded]="false" [isCollapsed]="!testCaseExpanded[testCase.id]"></app-collapsing-icon>
-                                        </div>
-                                        <app-collapsing-icon *ngSwitchDefault [padded]="false" [isCollapsed]="!testCaseExpanded[testCase.id]"></app-collapsing-icon>
-                                    </td>
-                                    <td><div class="testCaseName" [class.padded]="documentationExists">{{testCase.sname}}</div></td>
-                                    <td>{{testCase.description}}</td>
-                                    <td class="td-doc" *ngIf="documentationExists"><button *ngIf="testCase.hasDocumentation" type="button" class="btn btn-secondary" (click)="showTestCaseDocumentation(testCase.id); $event.stopPropagation()" containerClass="shortTooltip" tooltip="Documentation" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-info-circle"></i></button></td>
-                                    <td class="td-centered"><div class="progress-icon"><i class="fa-solid testsuite-progress-icon" [ngClass]="progressIcon(testCase.id)"></i></div></td>
+            } @else {
+                <div class="table-container rounded">
+                    @if (testCaseLoadStatus.status == Constants.STATUS.FINISHED) {
+                        <table class="table table-directive expandable-table test-case-table">
+                            <thead>
+                                <tr>
+                                    <th class="th-min-centered"></th>
+                                    <th>Test case</th>
+                                    <th>Description</th>
+                                    @if (documentationExists) {
+                                        <th class="td-doc" width="1%"></th>
+                                    }
+                                    <th class="td-centered" width="1%">Status</th>
                                 </tr>
-                                <tr class="expandable-table-row-expanded" [class.no-display]="!testCaseVisible[testCase.id]">
-                                    <td [attr.colspan]="columnCount" class="expandable-table-expandable-cell">
-                                        <div [collapse]="!testCaseExpanded[testCase.id]" [isAnimated]="true">
-                                            <div class="collapsing-div">
-                                                <div class="card">
-                                                    <div class="card-header my-0">
-                                                        <div class="session-execution-info">
-                                                            <div class="session-table-title">
-                                                                <div class="session-table-title-part" *ngIf="testsToExecute.length > 1">
-                                                                    <div class="session-table-title-label">Test</div>
-                                                                    <div class="session-table-title-value">{{testCaseCounter[testCase.id] + ' of ' + testsToExecute.length}}</div>
-                                                                </div>
-                                                                <div class="session-table-title-part">
-                                                                    <div class="session-table-title-label">Session</div>
-                                                                    <div class="session-table-title-value">
-                                                                        <ng-container [ngSwitch]="testCase.sessionId != undefined">
-                                                                            <app-copy-enabled-text *ngSwitchCase="true" [value]="testCase.sessionId"></app-copy-enabled-text>
-                                                                            <app-pending-block *ngSwitchDefault></app-pending-block>
-                                                                        </ng-container>
+                            </thead>
+                            <tbody>
+                                @for (testCase of testsToExecute; track testCase.id) {
+                                    <tr (click)="viewTestCase(testCase)" 
+                                        [class.expandable-table-row-collapsed]="isTestCaseClickable(testCase)"
+                                        [class.no-display]="!testCaseVisible[testCase.id]">
+                                        <td class="td-min-centered">
+                                            @if (isTestCaseClickable(testCase)) {
+                                                <app-collapsing-icon [padded]="false" [isCollapsed]="!testCaseExpanded[testCase.id]"></app-collapsing-icon>
+                                            } @else {
+                                                <div class="expandable-hidden">
+                                                    <app-collapsing-icon [padded]="false" [isCollapsed]="!testCaseExpanded[testCase.id]"></app-collapsing-icon>
+                                                </div>
+                                            }
+                                        </td>
+                                        <td><div class="testCaseName" [class.padded]="documentationExists">{{testCase.sname}}</div></td>
+                                        <td>{{testCase.description}}</td>
+                                        @if (documentationExists) {
+                                            <td class="td-doc">
+                                                @if (testCase.hasDocumentation) {
+                                                    <button type="button" class="btn btn-secondary" (click)="showTestCaseDocumentation(testCase.id); $event.stopPropagation()" containerClass="shortTooltip" tooltip="Documentation" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-info-circle"></i></button>
+                                                }
+                                            </td>
+                                        }
+                                        <td class="td-centered"><div class="progress-icon"><i class="fa-solid testsuite-progress-icon" [ngClass]="progressIcon(testCase.id)"></i></div></td>
+                                    </tr>
+                                    <tr class="expandable-table-row-expanded" [class.no-display]="!testCaseVisible[testCase.id]">
+                                        <td [attr.colspan]="columnCount" class="expandable-table-expandable-cell">
+                                            <div [collapse]="!testCaseExpanded[testCase.id]" [isAnimated]="true">
+                                                <div class="collapsing-div">
+                                                    <div class="card">
+                                                        <div class="card-header my-0">
+                                                            <div class="session-execution-info">
+                                                                <div class="session-table-title">
+                                                                    @if (testsToExecute.length > 1) {
+                                                                        <div class="session-table-title-part">
+                                                                            <div class="session-table-title-label">Test</div>
+                                                                            <div class="session-table-title-value">{{testCaseCounter[testCase.id] + ' of ' + testsToExecute.length}}</div>
+                                                                        </div>
+                                                                    }
+                                                                    <div class="session-table-title-part">
+                                                                        <div class="session-table-title-label">Session</div>
+                                                                        <div class="session-table-title-value">
+                                                                            @if (testCase.sessionId != undefined) {
+                                                                                <app-copy-enabled-text [value]="testCase.sessionId"></app-copy-enabled-text>
+                                                                            } @else {
+                                                                                <app-pending-block></app-pending-block>
+                                                                            }
+                                                                        </div>
                                                                     </div>
                                                                 </div>
-                                                            </div>
-                                                            <div class="session-table-operations btn-toolbar" *ngIf="stepsOfTests[testCase.id] != undefined">
-                                                                <ng-container *ngIf="interactionStepsOfTests[testCase.id] != undefined && interactionStepsOfTests[testCase.id].length > 0" [ngSwitch]="interactionStepsOfTests[testCase.id].length == 1">
-                                                                    <button *ngSwitchCase="true" type="button" class="btn btn-secondary" (click)="displayPendingInteraction()">View pending interaction</button>
-                                                                    <div *ngSwitchDefault class="btn-group" dropdown>
-                                                                        <button id="button-interactions" dropdownToggle class="btn btn-secondary dropdown-toggle" type="button" aria-controls="dropdown-interactions">View pending interaction<span class="caret withMargin"></span></button>
-                                                                        <ul id="dropdown-interactions" *dropdownMenu class="dropdown-menu" aria-labelledby="button-interactions">
-                                                                            <li *ngFor="let interaction of interactionStepsOfTests[testCase.id]; let index = index">
-                                                                                <a class="dropdown-item" href (click)="displayPendingInteraction(interaction.stepId);$event.preventDefault();">{{labelForPendingInteraction(interaction, index)}}</a>
-                                                                            </li>
-                                                                        </ul>                                                                        
+                                                                @if (stepsOfTests[testCase.id] != undefined) {
+                                                                    <div class="session-table-operations btn-toolbar">
+                                                                        @if (interactionStepsOfTests[testCase.id] != undefined && interactionStepsOfTests[testCase.id].length > 0) {
+                                                                            @if (interactionStepsOfTests[testCase.id].length == 1) {
+                                                                                <button type="button" class="btn btn-secondary" (click)="displayPendingInteraction()">View pending interaction</button>
+                                                                            } @else {
+                                                                                <div class="btn-group" dropdown>
+                                                                                    <button id="button-interactions" dropdownToggle class="btn btn-secondary dropdown-toggle" type="button" aria-controls="dropdown-interactions">View pending interaction<span class="caret withMargin"></span></button>
+                                                                                    <ul id="dropdown-interactions" *dropdownMenu class="dropdown-menu" aria-labelledby="button-interactions">
+                                                                                        @for (interaction of interactionStepsOfTests[testCase.id]; track interaction.stepId; let index = $index) {
+                                                                                            <li>
+                                                                                                <a class="dropdown-item" href (click)="displayPendingInteraction(interaction.stepId);$event.preventDefault();">{{labelForPendingInteraction(interaction, index)}}</a>
+                                                                                            </li>
+                                                                                        }
+                                                                                    </ul>                                                                        
+                                                                                </div>
+                                                                            }
+                                                                        }
+                                                                        <div class="btn-group export-group" dropdown [isDisabled]="!exportEnabled(testCase) || exportPdfPending[testCase.id] || exportXmlPending[testCase.id]">
+                                                                            <button type="button" [disable]="!exportEnabled(testCase) || exportPdfPending[testCase.id] || exportXmlPending[testCase.id]" [pending]="exportPdfPending[testCase.id] || exportXmlPending[testCase.id]" class="btn btn-secondary" (click)="exportPdf(testCase)">Download report</button>
+                                                                            <button id="button-export" type="button" [disabled]="!exportEnabled(testCase) || exportPdfPending[testCase.id] || exportXmlPending[testCase.id]" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
+                                                                                <span class="caret"></span>
+                                                                                <span class="sr-only visually-hidden">Download report</span>
+                                                                            </button>
+                                                                            <ul id="dropdown-export" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-export">
+                                                                                <li role="menuitem"><a class="dropdown-item" href (click)="exportXml(testCase);$event.preventDefault();">Download report as XML</a></li>
+                                                                            </ul>
+                                                                        </div>                                                                                
+                                                                        <div class="viewLogButton">
+                                                                            <button type="button" class="btn btn-secondary position-relative" (click)="viewLog(testCase)">
+                                                                                View log
+                                                                                <span 
+                                                                                    [class.badgeLogErrors]="unreadLogErrors[testCase.id]" 
+                                                                                    [class.badgeLogWarnings]="unreadLogWarnings[testCase.id] && !unreadLogErrors[testCase.id]"                                                                             
+                                                                                    [class.badgeLogMessages]="unreadLogMessages[testCase.id] && !unreadLogWarnings[testCase.id] && !unreadLogErrors[testCase.id]"
+                                                                                    [class.hidden]="!unreadLogErrors[testCase.id] && !unreadLogWarnings[testCase.id] && !unreadLogMessages[testCase.id]" 
+                                                                                    class="buttonBadge position-absolute top-0 start-100 translate-middle border border-light rounded-circle">
+                                                                                </span>                                                                        
+                                                                            </button>
+                                                                        </div>
                                                                     </div>
-                                                                </ng-container>
-                                                                <div class="btn-group export-group" dropdown [isDisabled]="!exportEnabled(testCase) || exportPdfPending[testCase.id] || exportXmlPending[testCase.id]">
-                                                                    <button type="button" [disable]="!exportEnabled(testCase) || exportPdfPending[testCase.id] || exportXmlPending[testCase.id]" [pending]="exportPdfPending[testCase.id] || exportXmlPending[testCase.id]" class="btn btn-secondary" (click)="exportPdf(testCase)">Download report</button>
-                                                                    <button id="button-export" type="button" [disabled]="!exportEnabled(testCase) || exportPdfPending[testCase.id] || exportXmlPending[testCase.id]" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
-                                                                        <span class="caret"></span>
-                                                                        <span class="sr-only visually-hidden">Download report</span>
-                                                                    </button>
-                                                                    <ul id="dropdown-export" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-export">
-                                                                        <li role="menuitem"><a class="dropdown-item" href (click)="exportXml(testCase);$event.preventDefault();">Download report as XML</a></li>
-                                                                    </ul>
-                                                                </div>                                                                                
-                                                                <div class="viewLogButton">
-                                                                    <button type="button" class="btn btn-secondary position-relative" (click)="viewLog(testCase)">
-                                                                        View log
-                                                                        <span 
-                                                                            [class.badgeLogErrors]="unreadLogErrors[testCase.id]" 
-                                                                            [class.badgeLogWarnings]="unreadLogWarnings[testCase.id] && !unreadLogErrors[testCase.id]"                                                                             
-                                                                            [class.badgeLogMessages]="unreadLogMessages[testCase.id] && !unreadLogWarnings[testCase.id] && !unreadLogErrors[testCase.id]"
-                                                                            [class.hidden]="!unreadLogErrors[testCase.id] && !unreadLogWarnings[testCase.id] && !unreadLogMessages[testCase.id]" 
-                                                                            class="buttonBadge position-absolute top-0 start-100 translate-middle border border-light rounded-circle">
-                                                                        </span>                                                                        
-                                                                    </button>
-                                                                </div>
+                                                                }
                                                             </div>
                                                         </div>
-                                                    </div>
-                                                    <div class="card-body" style="overflow-x: auto; overflow-y: hidden;" [ngSwitch]="stepsOfTests[testCase.id] == undefined">
-                                                        <app-pending-block *ngSwitchCase="true"></app-pending-block>
-                                                        <div *ngSwitchDefault class="sessionDiagramDiv">
-                                                            <app-sequence-diagram 
-                                                                [stepsOfTests]="stepsOfTests"
-                                                                [test]="testCase.id+''"
-                                                                [actorInfoOfTests]="actorInfoOfTests"
-                                                                [events]="testEvents[testCase.id]">
-                                                            </app-sequence-diagram>
-                                                            <div class="test-output-container" *ngIf="testCaseOutput[testCase.id]">
-                                                                <alert [type]="alertTypeForStatus(testCaseStatus[testCase.id])" [dismissible]="false">{{testCaseOutput[testCase.id]}}</alert>
-                                                            </div>
+                                                        <div class="card-body" style="overflow-x: auto; overflow-y: hidden;">
+                                                            @if (stepsOfTests[testCase.id] == undefined) {
+                                                                <app-pending-block></app-pending-block>
+                                                            } @else {
+                                                                <div class="sessionDiagramDiv">
+                                                                    <app-sequence-diagram 
+                                                                        [stepsOfTests]="stepsOfTests"
+                                                                        [test]="testCase.id+''"
+                                                                        [actorInfoOfTests]="actorInfoOfTests"
+                                                                        [events]="testEvents[testCase.id]">
+                                                                    </app-sequence-diagram>
+                                                                    @if (testCaseOutput[testCase.id]) {
+                                                                        <div class="test-output-container">
+                                                                            <alert [type]="alertTypeForStatus(testCaseStatus[testCase.id])" [dismissible]="false">{{testCaseOutput[testCase.id]}}</alert>
+                                                                        </div>
+                                                                    }
+                                                                </div>
+                                                            }
                                                         </div>
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    </td>
-                                </tr>
-                            </ng-container>
-                        </tbody>
-                    </table>
-                    <div *ngSwitchDefault class="pendingDiv">
-                        <app-pending-block></app-pending-block>
-                    </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    } @else {
+                        <div class="pendingDiv">
+                            <app-pending-block></app-pending-block>
+                        </div>
+                    }
                 </div>
-            </ng-container>
-            <div *ngSwitchDefault class="pendingDiv">
+            }
+        } @else {
+            <div class="pendingDiv">
                 <app-pending-block></app-pending-block>
             </div>
-        </ng-container>
+        }
     </div>
 </div>

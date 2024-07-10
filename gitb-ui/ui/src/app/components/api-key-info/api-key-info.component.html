@@ -94,7 +94,7 @@
                         @if (apiInfo.specifications.length > 0) {
                             <tr>
                                 <td class="typeLabel">{{dataService.labelSpecification()}}</td>
-                                <td class="typeName" [ngSwitch]="">
+                                <td class="typeName">
                                     @if (apiInfo.specifications.length == 1) {
                                         <input type="text" name="selectedSpecification" [(ngModel)]="selectedSpecification!.name" readonly="readonly" class="form-control"/>
                                     } @else {

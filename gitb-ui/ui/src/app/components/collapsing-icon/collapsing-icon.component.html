@@ -1,4 +1,7 @@
-<ng-container *ngIf="!hidden" [ngSwitch]="asDiv">
-    <div *ngSwitchCase="true" [class.collapsible-icon]="padded"><i class="fa" [ngClass]="{'fa-chevron-circle-right': isCollapsed, 'fa-chevron-circle-down': !isCollapsed }"></i></div>
-    <span *ngSwitchDefault [class.collapsible-icon]="padded"><i class="fa" [ngClass]="{'fa-chevron-circle-right': isCollapsed, 'fa-chevron-circle-down': !isCollapsed }"></i></span>
-</ng-container>
+@if (!hidden) {
+    @if (asDiv) {
+        <div [class.collapsible-icon]="padded"><i class="fa" [ngClass]="{'fa-chevron-circle-right': isCollapsed, 'fa-chevron-circle-down': !isCollapsed }"></i></div>
+    } @else {
+        <span [class.collapsible-icon]="padded"><i class="fa" [ngClass]="{'fa-chevron-circle-right': isCollapsed, 'fa-chevron-circle-down': !isCollapsed }"></i></span>
+    }
+}

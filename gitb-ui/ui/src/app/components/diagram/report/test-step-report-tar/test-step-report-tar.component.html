@@ -1,10 +1,12 @@
-<ng-container>
-  <div class="col-12" *ngIf="hasContextItems">
+@if (hasContextItems) {
+  <div class="col-12" >
     <app-any-content-view [context]="report.context!" [report]="report" [sessionId]="sessionId" [noBorder]="true"></app-any-content-view>
   </div>
-  <ng-container *ngIf="report.reports != null && report.reports.assertionReports != null && report.reports.assertionReports.length > 0">
-    <div class="col-12 countersDiv" *ngIf="report.counters != null && (report.counters.nrOfErrors > 0 || report.counters.nrOfWarnings > 0 || report.counters.nrOfAssertions > 0)">
+}
+@if (report.reports != null && report.reports.assertionReports != null && report.reports.assertionReports.length > 0) {
+  @if (report.counters != null && (report.counters.nrOfErrors > 0 || report.counters.nrOfWarnings > 0 || report.counters.nrOfAssertions > 0)) {
+    <div class="col-12 countersDiv">
       <app-tar-report [reports]="report.reports.assertionReports" [selectable]="true" (selected)="openAssertionReport($event)"></app-tar-report>
     </div>
-  </ng-container>
-</ng-container>
+  }
+}

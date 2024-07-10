@@ -48,33 +48,39 @@
 								</tr>
 							</thead>
 							<tbody class="parametersTable" cdkDropList cdkDropListLockAxis="y" (cdkDropListDropped)="dropParameter($event)">
-								<tr *ngIf="dataStatus.status != Constants.STATUS.FINISHED">
-									<td colspan="8" class="td-data-loading"><span><i class="fa-solid fa-spinner fa-spin-override fa-lg"></i></span></td>
-								</tr>
-								<tr *ngIf="dataStatus.status == Constants.STATUS.FINISHED && parameters.length == 0">
-									<td colspan="8" class="td-no-data"><span>No parameters found</span></td>
-								</tr>
-								<tr class="table-row-directive selectable drag-table-row" 
-									*ngFor="let parameter of parameters"
-									cdkDrag
-									(cdkDragStarted)="draggingParameter = true"
-									(cdkDragEnded)="draggingParameter = false"
-									cdkDragPreviewContainer="parent"
-									[cdkDragDisabled]="parameters.length == 1"
-									(click)="onParameterSelect(parameter)"
-									[class.selectable]="!draggingParameter"
-								>
-									<td class="drag-preview"><div><span>{{parameter.name}}</span></div></td>
-									<td><div><span>{{parameter.testKey}}</span></div></td>
-									<td><div><span>{{parameter.kindLabel}}</span></div></td>
-									<td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': parameter.useLabel, 'fa-times': !parameter.useLabel}"></i></span></div></td>
-									<td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': parameter.adminOnlyLabel, 'fa-times': !parameter.adminOnlyLabel}"></i></span></div></td>
-									<td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': parameter.notForTestsLabel, 'fa-times': !parameter.notForTestsLabel}"></i></span></div></td>
-									<td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': parameter.hidden, 'fa-times': !parameter.hidden}"></i></span></div></td>
-									<td class="drag-handle" (click)="$event.stopPropagation();">
-										<button cdkDragHandle *ngIf="parameters.length > 1" #pop="bs-tooltip" (mousedown)="pop.hide()" class="btn btn-secondary" type="button" containerClass="shortTooltip" container="body" tooltip="Reorder" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i class="fa-solid fa-arrows-up-down"></i></span></button>
-									</td>
-								</tr>
+								@if (dataStatus.status != Constants.STATUS.FINISHED) {
+									<tr>
+										<td colspan="8" class="td-data-loading"><span><i class="fa-solid fa-spinner fa-spin-override fa-lg"></i></span></td>
+									</tr>
+								} @else if (dataStatus.status == Constants.STATUS.FINISHED && parameters.length == 0) {
+									<tr>
+										<td colspan="8" class="td-no-data"><span>No parameters found</span></td>
+									</tr>
+								}
+								@for (parameter of parameters; track parameter.id) {
+									<tr class="table-row-directive selectable drag-table-row" 
+										cdkDrag
+										(cdkDragStarted)="draggingParameter = true"
+										(cdkDragEnded)="draggingParameter = false"
+										cdkDragPreviewContainer="parent"
+										[cdkDragDisabled]="parameters.length == 1"
+										(click)="onParameterSelect(parameter)"
+										[class.selectable]="!draggingParameter"
+									>
+										<td class="drag-preview"><div><span>{{parameter.name}}</span></div></td>
+										<td><div><span>{{parameter.testKey}}</span></div></td>
+										<td><div><span>{{parameter.kindLabel}}</span></div></td>
+										<td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': parameter.useLabel, 'fa-times': !parameter.useLabel}"></i></span></div></td>
+										<td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': parameter.adminOnlyLabel, 'fa-times': !parameter.adminOnlyLabel}"></i></span></div></td>
+										<td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': parameter.notForTestsLabel, 'fa-times': !parameter.notForTestsLabel}"></i></span></div></td>
+										<td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': parameter.hidden, 'fa-times': !parameter.hidden}"></i></span></div></td>
+										<td class="drag-handle" (click)="$event.stopPropagation();">
+											@if (parameters.length > 1) {
+												<button cdkDragHandle #pop="bs-tooltip" (mousedown)="pop.hide()" class="btn btn-secondary" type="button" containerClass="shortTooltip" container="body" tooltip="Reorder" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i class="fa-solid fa-arrows-up-down"></i></span></button>
+											}
+										</td>
+									</tr>
+								}
 							</tbody>
 						</table>
 					</div>

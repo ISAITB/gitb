@@ -9,6 +9,8 @@
 <div class="modal-footer">
     <div class="btn-toolbar">
         <button type="button" class="btn btn-secondary" (click)="close()">Close</button>
-        <button type="button" class="btn btn-secondary" (click)="retry()" *ngIf="withRetry">Retry</button>
+        @if (withRetry) {
+            <button type="button" class="btn btn-secondary" (click)="retry()">Retry</button>
+        }
     </div>
 </div>

@@ -2,20 +2,28 @@
     <div class="summary" (click)="collapsed = !collapsed" [class.hide-border]="!withSummaryBorder">
         <div class="summary-title"><app-collapsing-icon [isCollapsed]="collapsed"></app-collapsing-icon>Details</div>
         <div class="summary-labels">
-            <div *ngIf="errors > 0" class="tag-container">
-                <app-tag label="fa-solid fa-times-circle" [value]="errors + (errors == 1 ?' error':' errors')" [icon]="true" styleClass="summaryErrors"></app-tag>
-            </div>
-            <div *ngIf="warnings > 0" class="tag-container">
-                <app-tag label="fa-solid fa-warning" [value]="warnings + (warnings == 1 ?' warning':' warnings')" [icon]="true" styleClass="summaryWarnings"></app-tag>
-            </div>
-            <div *ngIf="messages > 0" class="tag-container">
-                <app-tag label="fa-solid fa-info-circle" [value]="messages + (messages == 1 ?' message':' messages')" [icon]="true" styleClass="summaryMessages"></app-tag>
-            </div>
+            @if (errors > 0) {
+                <div class="tag-container">
+                    <app-tag label="fa-solid fa-times-circle" [value]="errors + (errors == 1 ?' error':' errors')" [icon]="true" styleClass="summaryErrors"></app-tag>
+                </div>
+            }
+            @if (warnings > 0) {
+                <div class="tag-container">
+                    <app-tag label="fa-solid fa-warning" [value]="warnings + (warnings == 1 ?' warning':' warnings')" [icon]="true" styleClass="summaryWarnings"></app-tag>
+                </div>
+            }
+            @if (messages > 0) {
+                <div class="tag-container">
+                    <app-tag label="fa-solid fa-info-circle" [value]="messages + (messages == 1 ?' message':' messages')" [icon]="true" styleClass="summaryMessages"></app-tag>
+                </div>
+            }
         </div>
     </div>
     <div [collapse]="collapsed" [isAnimated]="true" (collapsed)="withSummaryBorder = false" (expands)="expanding()">
         <div class="details">
-            <app-test-assertion-report *ngFor="let assertionReport of reports" (click)="selectedItem(assertionReport)" [assertionReport]="assertionReport"></app-test-assertion-report>
+            @for (assertionReport of reports; track $index) {
+                <app-test-assertion-report (click)="selectedItem(assertionReport)" [assertionReport]="assertionReport"></app-test-assertion-report>
+            }
         </div>            
     </div>
 </div>

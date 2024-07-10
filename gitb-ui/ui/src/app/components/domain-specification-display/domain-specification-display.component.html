@@ -11,58 +11,78 @@
     <div class="spec-container">
         <app-collapsing-icon [hidden]="!spec.group" [padded]="false" [isCollapsed]="spec.collapsed" [asDiv]="true"></app-collapsing-icon>
         <div class="spec-name" [class.left-margin]="spec.group">{{spec.fname}}</div>
-        <div class="spec-description" *ngIf="spec.description != undefined && spec.description != ''">{{spec.description}}</div>
+        @if (spec.description != undefined && spec.description != '') {
+            <div class="spec-description">{{spec.description}}</div>
+        }
         <div class="right-container">
-            <div class="spec-hidden drag-hide" *ngIf="spec.hidden"><app-hidden-icon></app-hidden-icon></div>
+            @if (spec.hidden) {
+                <div class="spec-hidden drag-hide"><app-hidden-icon></app-hidden-icon></div>
+            }
             <div class="btn-toolbar">
-                <ng-container *ngIf="groups.length > 0" [ngSwitch]="spec.group">
-                    <ng-container *ngSwitchCase="true">
+                @if (groups.length > 0) {
+                    @if (spec.group) {
                         <button id="button-edit" class="btn btn-secondary drag-hide" (click)="editGroup();$event.stopPropagation();" containerClass="shortTooltip" [tooltip]="'Edit '+dataService.labelSpecificationGroupLower()" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i class="fa-solid fa-pencil"></i></span></button>
                         <button id="button-add-option" class="btn btn-secondary drag-hide" (click)="createOption();$event.stopPropagation();" containerClass="shortTooltip" [tooltip]="'Add '+dataService.labelSpecificationInGroupLower()" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i class="fa-solid fa-plus"></i></span></button>
-                    </ng-container>
-                    <ng-container *ngSwitchDefault>
-                        <button id="button-remove-option" *ngIf="spec.groupId != undefined" [disable]="isPending()" [pending]="spec.removePending" [icon]="true" class="btn btn-secondary drag-hide" (click)="removeFromGroup();$event.stopPropagation();" containerClass="shortTooltip" tooltip="Ungroup" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i class="fa-solid fa-arrow-up-right-from-square"></i></span></button>
-                        <div class="btn-group drag-hide" dropdown [isDisabled]="isPending()" *ngIf="(spec.groupId && groups.length > 1) || (!spec.groupId && groups.length > 0)">
-                            <button id="button-copy" (click)="$event.stopPropagation()" [pending]="spec.copyPending" [icon]="true" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-copy" containerClass="shortTooltip" tooltip="Copy" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i class="fa-solid fa-clone"></i></span><span class="caret withMargin"></span></button>
-                            <ul id="dropdown-copy" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-copy">
-                                <ng-container *ngFor="let group of groups">
-                                    <li *ngIf="group.id != spec.groupId" role="menuitem"><a class="dropdown-item" href (click)="copyToGroup(group.id);$event.preventDefault();$event.stopPropagation()">Copy to {{group.sname}}</a></li>
-                                </ng-container>
-                            </ul>
-                        </div>
-                        <div class="btn-group drag-hide" dropdown [isDisabled]="isPending()" *ngIf="(spec.groupId && groups.length > 1) || (!spec.groupId && groups.length > 0)">
-                            <button id="button-move" (click)="$event.stopPropagation()" [pending]="spec.movePending" [icon]="true" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-move" containerClass="shortTooltip" tooltip="Move" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i class="fa-solid fa-arrow-right"></i></span><span class="caret withMargin"></span></button>
-                            <ul id="dropdown-move" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-move">
-                                <ng-container *ngFor="let group of groups">
-                                    <li *ngIf="group.id != spec.groupId" role="menuitem"><a class="dropdown-item" href (click)="moveToGroup(group.id);$event.preventDefault();$event.stopPropagation()">Move to {{group.sname}}</a></li>
-                                </ng-container>
-                            </ul>
-                        </div>
-                    </ng-container>
-                </ng-container>
-                <div class="btn-toolbar drag-handle" *ngIf="!first || !last">
-                    <button cdkDragHandle #pop="bs-tooltip" (mousedown)="pop.hide()" (click)="$event.stopPropagation();" class="btn btn-secondary" type="button" containerClass="shortTooltip" container="body" tooltip="Reorder" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i class="fa-solid fa-arrows-up-down"></i></span></button>
-                </div>
+                    } @else {
+                        @if (spec.groupId != undefined) {
+                            <button id="button-remove-option" [disable]="isPending()" [pending]="spec.removePending" [icon]="true" class="btn btn-secondary drag-hide" (click)="removeFromGroup();$event.stopPropagation();" containerClass="shortTooltip" tooltip="Ungroup" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i class="fa-solid fa-arrow-up-right-from-square"></i></span></button>
+                        }
+                        @if ((spec.groupId && groups.length > 1) || (!spec.groupId && groups.length > 0)) {
+                            <div class="btn-group drag-hide" dropdown [isDisabled]="isPending()">
+                                <button id="button-copy" (click)="$event.stopPropagation()" [pending]="spec.copyPending" [icon]="true" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-copy" containerClass="shortTooltip" tooltip="Copy" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i class="fa-solid fa-clone"></i></span><span class="caret withMargin"></span></button>
+                                <ul id="dropdown-copy" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-copy">
+                                    @for (group of groups; track group.id) {
+                                        @if (group.id != spec.groupId) {
+                                            <li role="menuitem"><a class="dropdown-item" href (click)="copyToGroup(group.id);$event.preventDefault();$event.stopPropagation()">Copy to {{group.sname}}</a></li>
+                                        }
+                                    }
+                                </ul>
+                            </div>
+                            <div class="btn-group drag-hide" dropdown [isDisabled]="isPending()">
+                                <button id="button-move" (click)="$event.stopPropagation()" [pending]="spec.movePending" [icon]="true" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-move" containerClass="shortTooltip" tooltip="Move" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i class="fa-solid fa-arrow-right"></i></span><span class="caret withMargin"></span></button>
+                                <ul id="dropdown-move" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-move">
+                                    @for (group of groups; track group.id) {
+                                        @if (group.id != spec.groupId) {
+                                            <li role="menuitem"><a class="dropdown-item" href (click)="moveToGroup(group.id);$event.preventDefault();$event.stopPropagation()">Move to {{group.sname}}</a></li>
+                                        }
+                                    }
+                                </ul>
+                            </div>
+                        }
+                    }
+                }
+                @if (!first || !last) {
+                    <div class="btn-toolbar drag-handle">
+                        <button cdkDragHandle #pop="bs-tooltip" (mousedown)="pop.hide()" (click)="$event.stopPropagation();" class="btn btn-secondary" type="button" containerClass="shortTooltip" container="body" tooltip="Reorder" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i class="fa-solid fa-arrows-up-down"></i></span></button>
+                    </div>
+                }
             </div>
         </div>
     </div>
-    <div class="option-container-collapsible" [ngSwitch]="spec.options.length == 0" [collapse]="spec.collapsed" [isAnimated]="true" *ngIf="spec.group && spec.options != undefined">
-        <div class="option-container" cdkDropList cdkDropListLockAxis="y" (cdkDropListDropped)="dropSpecification($event)">
-            <div class="no-options" *ngSwitchCase="true">
-                No {{dataService.labelSpecificationInGroupsLower()}} found.
+    @if (spec.group && spec.options != undefined) {
+        <div class="option-container-collapsible" [collapse]="spec.collapsed" [isAnimated]="true">
+            <div class="option-container" cdkDropList cdkDropListLockAxis="y" (cdkDropListDropped)="dropSpecification($event)">
+                @if (spec.options.length == 0) {
+                    <div class="no-options">
+                        No {{dataService.labelSpecificationInGroupsLower()}} found.
+                    </div>
+                } @else {
+                    @for (option of spec.options; track option.id; ) {
+                        <app-domain-specification-display
+                            [spec]="option"
+                            [first]="$first"
+                            [last]="$last"
+                            [groups]="groups"
+                            [dragOngoing]="dragOngoing"
+                            (removeSpec)="propagateRemove($event)"
+                            (moveSpec)="propagateMove($event)"
+                            (copySpec)="propagateCopy($event)"
+                            (dragging)="propagateDrag($event)"
+                            (click)="propagateSelect(option)"
+                        ></app-domain-specification-display>
+                    }
+                }
             </div>
-            <app-domain-specification-display *ngFor="let option of spec.options; let firstOption = first; let lastOption = last"
-                [spec]="option"
-                [first]="firstOption"
-                [last]="lastOption"
-                [groups]="groups"
-                [dragOngoing]="dragOngoing"
-                (removeSpec)="propagateRemove($event)"
-                (moveSpec)="propagateMove($event)"
-                (copySpec)="propagateCopy($event)"
-                (dragging)="propagateDrag($event)"
-                (click)="propagateSelect(option)"
-            ></app-domain-specification-display>
         </div>
-    </div>
+    }
 </div>

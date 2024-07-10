@@ -2,9 +2,11 @@
 	<div class="card mb-0">
 		<div class="card-header">
 			<div class="card-title">{{dataService.labelDomains()}}</div>
-			<div class="btn-toolbar" *ngIf="dataService.isSystemAdmin">
-				<button type="button" class="btn btn-secondary" (click)="create()">Create {{dataService.labelDomainLower()}}</button>
-			</div>
+			@if (dataService.isSystemAdmin) {
+				<div class="btn-toolbar">
+					<button type="button" class="btn btn-secondary" (click)="create()">Create {{dataService.labelDomainLower()}}</button>
+				</div>
+			}
 		</div>
 		<div table-directive 
 			[columns]="tableColumns" 

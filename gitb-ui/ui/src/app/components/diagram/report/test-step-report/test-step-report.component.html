@@ -8,6 +8,10 @@
         </div>
     </div>
 </div>
-<div class="row" app-test-step-report-tar *ngIf="report.type == 'TAR'" [report]="report" [sessionId]="sessionId"></div>
-<div class="row" app-test-step-report-dr *ngIf="report.type == 'DR'" [report]="report"></div>
-<div class="row" app-test-step-report-sr *ngIf="report.type == 'SR'" [report]="report"></div>
+@if (report.type == 'TAR') {
+    <div class="row" app-test-step-report-tar [report]="report" [sessionId]="sessionId"></div>
+} @else if (report.type == 'DR') {
+    <div class="row" app-test-step-report-dr [report]="report"></div>
+} @else if (report.type == 'SR') {
+    <div class="row" app-test-step-report-sr [report]="report"></div>
+}

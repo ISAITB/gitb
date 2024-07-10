@@ -1,10 +1,12 @@
 <div class="input-group colour-input-group">
     <div class="input-group-text">
         <div>{{label}}</div>
-        <div *ngIf="tooltipText != undefined" app-tooltip [inline]="true" [tbTooltip]="tooltipText"></div>
+        @if (tooltipText != undefined) {
+            <div app-tooltip [inline]="true" [tbTooltip]="tooltipText"></div>
+        }
     </div>
-    <ng-container [ngSwitch]="readonly">
-        <input *ngSwitchCase="true" 
+    @if (readonly) {
+        <input
             type="text"
             class="form-control colour-holder-readonly"
             readonly="readonly"
@@ -13,7 +15,8 @@
             [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"
             [style.background]="value"
             (click)="copyColor()">
-        <input *ngSwitchDefault
+    } @else {
+        <input
             type="text"
             class="form-control colour-holder"
             readonly="readonly"
@@ -21,5 +24,5 @@
             [colorPicker]="value!"
             [cpOutputFormat]="'hex'"
             (colorPickerChange)="value = $event">    
-    </ng-container>
+    }
 </div>

@@ -2,68 +2,86 @@
 	<div class="modal-title">Test suite upload</div>
 </div>
 <div class="modal-body" appFileDropTarget>
-	<form [ngSwitch]="step">
-		<div *ngSwitchCase="'initial'">
-			<div class="row mb-3" *ngIf="!sharedTestSuite">
-				<label class="col-3 col-form-label text-end" for="specification">* Target {{dataService.labelSpecificationLower()}}:</label>
-				<div class="col-8">
-					<input *ngIf="availableSpecifications.length == 1" class="form-control" id="specification" name="specification" [(ngModel)]="specifications[0].fname" readonly="readonly"/>
-					<select *ngIf="availableSpecifications.length > 1" [attr.size]="(availableSpecifications.length > 30)?30:availableSpecifications.length" multiple="multiple" class="form-control form-select" id="specification" name="specification" [(ngModel)]="specifications">
-                        <option *ngFor="let specification of availableSpecifications" [ngValue]="specification">{{specification.fname}}</option>
-                    </select>
+	<form>
+		@if (step == 'initial') {
+			<div>
+				@if (!sharedTestSuite) {
+					<div class="row mb-3">
+						<label class="col-3 col-form-label text-end" for="specification">* Target {{dataService.labelSpecificationLower()}}:</label>
+						<div class="col-8">
+							@if (availableSpecifications.length == 1) {
+								<input class="form-control" id="specification" name="specification" [(ngModel)]="specifications[0].fname" readonly="readonly"/>
+							} @else if (availableSpecifications.length > 1) {
+								<select [attr.size]="(availableSpecifications.length > 30)?30:availableSpecifications.length" multiple="multiple" class="form-control form-select" id="specification" name="specification" [(ngModel)]="specifications">
+									@for (specification of availableSpecifications; track $index) {
+										<option [ngValue]="specification">{{specification.fname}}</option>
+									}
+								</select>
+							}
+						</div>
+						<div app-tooltip class="col-auto" [tbTooltip]="'The '+dataService.labelSpecificationLower()+' for which the test suite will be uploaded.'"></div>
+					</div>
+				}
+				<div class="row">
+					<label class="col-3 col-form-label text-end">* Test suite:</label>
+					<div class="col-8">
+						<app-file-select placeholder="Drop or browse for test suite archive ..."
+							[fileName]="file?.name"
+							[accepts]="['application/zip']"
+							(onUpload)="selectArchive($event)"
+							[maxSize]="-1">
+						</app-file-select>
+					</div>
+					<div app-tooltip class="col-auto" tbTooltip="The test suite archive to upload."></div>
 				</div>
-				<div app-tooltip class="col-auto" [tbTooltip]="'The '+dataService.labelSpecificationLower()+' for which the test suite will be uploaded.'"></div>
 			</div>
-			<div class="row">
-				<label class="col-3 col-form-label text-end">* Test suite:</label>
-				<div class="col-8">
-					<app-file-select placeholder="Drop or browse for test suite archive ..."
-						[fileName]="file?.name"
-						[accepts]="['application/zip']"
-						(onUpload)="selectArchive($event)"
-						[maxSize]="-1">
-					</app-file-select>
-				</div>
-				<div app-tooltip class="col-auto" tbTooltip="The test suite archive to upload."></div>
-			</div>
-		</div>
-		<div *ngSwitchCase="'validation'">
-			<div class="row">
-				<div class="col-12">
-					<div class="alert alert-info rounded mb-0" [ngSwitch]="hasValidationErrors || hasValidationWarnings">
-						<ng-container *ngSwitchCase="true" [ngSwitch]="hasValidationErrors">
-							<span *ngSwitchCase="true">The provided test suite completed validation with errors.</span>		
-							<span *ngSwitchDefault>The provided test suite completed validation with warnings.</span> 
-						</ng-container>
-						<ng-container *ngSwitchDefault>
-							<span>The provided test suite was successfully validated.</span>		
-						</ng-container>
+		} @else if (step == 'validation') {
+			<div>
+				<div class="row">
+					<div class="col-12">
+						<div class="alert alert-info rounded mb-0">
+							@if (hasValidationErrors || hasValidationWarnings) {
+								@if (hasValidationErrors) {
+									<span>The provided test suite completed validation with errors.</span>		
+								} @else {
+									<span>The provided test suite completed validation with warnings.</span> 
+								}
+							} @else {
+								<span>The provided test suite was successfully validated.</span>		
+							}
+						</div>
 					</div>
 				</div>
+				@if (validationReportItems != undefined && validationReportItems.length > 0) {
+					<div class="row ts-upload-validation-report">
+						<div class="col-12">
+							<app-tar-report [reports]="validationReportItems"></app-tar-report>
+						</div>
+					</div>
+				}
 			</div>
-			<div class="row ts-upload-validation-report" *ngIf="validationReportItems != undefined && validationReportItems.length > 0">
-				<div class="col-12">
-					<app-tar-report [reports]="validationReportItems"></app-tar-report>
+		} @else if (step == 'replace') {
+			<div>
+				<div class="alert alert-info rounded mb-0">
+					@if (sharedTestSuite) {
+						@if (specificationChoices && specificationChoices.length > 0) {
+							<span>A matching test suite was found with already linked {{dataService.labelSpecificationsLower()}}. Select how the update should take place.</span>
+						} @else {
+							<span>A matching test suite was found. Select how the update should take place.</span>
+						}
+					} @else {
+						@if (!hasMultipleChoices && hasMatchingTestSuite) {
+							<span>A selected {{dataService.labelSpecificationLower()}} already contains this test suite and its data. Select how the update should take place.</span>
+						} @else if (!hasMultipleChoices && !hasMatchingTestSuite) {
+							<span>A selected {{dataService.labelSpecificationLower()}} defines matching data. Select how the update should take place.</span>
+						} @else if (hasMultipleChoices && hasMatchingTestSuite) {
+							<span>Selected {{dataService.labelSpecificationsLower()}} already contain this test suite and its data. Select how the update should take place.</span>
+						} @else if (hasMultipleChoices && !hasMatchingTestSuite) {
+							<span>Selected {{dataService.labelSpecificationsLower()}} define matching data. Select how the update should take place.</span>
+						}
+					}
 				</div>
-			</div>
-		</div>
-		<div *ngSwitchCase="'replace'">
-			<div class="alert alert-info rounded mb-0" [ngSwitch]="sharedTestSuite">
-				<ng-container *ngSwitchCase="true">
-					<ng-container [ngSwitch]="specificationChoices && specificationChoices.length > 0">
-						<span *ngSwitchCase="true">A matching test suite was found with already linked {{dataService.labelSpecificationsLower()}}. Select how the update should take place.</span>
-						<span *ngSwitchDefault>A matching test suite was found. Select how the update should take place.</span>
-					</ng-container>
-				</ng-container>
-				<ng-container *ngSwitchDefault>
-					<span *ngIf="!hasMultipleChoices && hasMatchingTestSuite">A selected {{dataService.labelSpecificationLower()}} already contains this test suite and its data. Select how the update should take place.</span>
-					<span *ngIf="!hasMultipleChoices && !hasMatchingTestSuite">A selected {{dataService.labelSpecificationLower()}} defines matching data. Select how the update should take place.</span>
-					<span *ngIf="hasMultipleChoices && hasMatchingTestSuite">Selected {{dataService.labelSpecificationsLower()}} already contain this test suite and its data. Select how the update should take place.</span>
-					<span *ngIf="hasMultipleChoices && !hasMatchingTestSuite">Selected {{dataService.labelSpecificationsLower()}} define matching data. Select how the update should take place.</span>
-				</ng-container>
-			</div>
-			<ng-container [ngSwitch]="sharedTestSuite">
-				<ng-container *ngSwitchCase="true">
+				@if (sharedTestSuite) {
 					<div class="container-fluid">
 						<div class="row section-choice-container">
 							<div class="col-12 section-choice-title">Test suite definition</div>
@@ -85,60 +103,71 @@
 										</div>
 									</div>
 								</div>
-								<!-- Test cases to update -->
-								<app-test-case-update-list *ngIf="testCasesInArchiveAndDB.length > 0"
-									[title]="'Existing test cases to update ('+testCasesInArchiveAndDB.length+')'"
-									[titleTooltip]="'These are the test cases defined in the provided archive that match existing ones from the '+dataService.labelSpecificationLower()+'. The test steps of each of these will be updated, whereas the metadata (name, description, documentation) and test history will be updated according to your below choices.'"
-									[testCases]="testCasesInArchiveAndDB"
-									[showUpdateDefinition]="true"
-									[showResetTestHistory]="true"
-								></app-test-case-update-list>						
-								<!-- Test cases to add -->
-								<app-test-case-update-list *ngIf="testCasesInArchive.length > 0"
-									[title]="'New test cases to add ('+testCasesInArchive.length+')'"
-									[titleTooltip]="'These are the test cases defined in the provided archive for which no match was found in the '+dataService.labelSpecificationLower()+'. They will be included as new test cases in the test suite.'"
-									[testCases]="testCasesInArchive"
-								></app-test-case-update-list>
-								<!-- Test cases to delete -->
-								<app-test-case-update-list *ngIf="testCasesInDB.length > 0"
-									[title]="'Missing test cases to delete ('+testCasesInDB.length+')'"
-									[titleTooltip]="'These are the test cases that exist in the '+dataService.labelSpecificationLower()+' for which no match was found in the provided archive. They will be deleted from the test suite, with any relevant test sessions considered obsolete.'"
-									[testCases]="testCasesInDB"
-								></app-test-case-update-list>
+								@if (testCasesInArchiveAndDB.length > 0) {
+									<!-- Test cases to update -->
+									<app-test-case-update-list
+										[title]="'Existing test cases to update ('+testCasesInArchiveAndDB.length+')'"
+										[titleTooltip]="'These are the test cases defined in the provided archive that match existing ones from the '+dataService.labelSpecificationLower()+'. The test steps of each of these will be updated, whereas the metadata (name, description, documentation) and test history will be updated according to your below choices.'"
+										[testCases]="testCasesInArchiveAndDB"
+										[showUpdateDefinition]="true"
+										[showResetTestHistory]="true"
+									></app-test-case-update-list>						
+								}
+								@if (testCasesInArchive.length > 0) {
+									<!-- Test cases to add -->
+									<app-test-case-update-list
+										[title]="'New test cases to add ('+testCasesInArchive.length+')'"
+										[titleTooltip]="'These are the test cases defined in the provided archive for which no match was found in the '+dataService.labelSpecificationLower()+'. They will be included as new test cases in the test suite.'"
+										[testCases]="testCasesInArchive"
+									></app-test-case-update-list>
+								}
+								@if (testCasesInDB.length > 0) {
+									<!-- Test cases to delete -->
+									<app-test-case-update-list
+										[title]="'Missing test cases to delete ('+testCasesInDB.length+')'"
+										[titleTooltip]="'These are the test cases that exist in the '+dataService.labelSpecificationLower()+' for which no match was found in the provided archive. They will be deleted from the test suite, with any relevant test sessions considered obsolete.'"
+										[testCases]="testCasesInDB"
+									></app-test-case-update-list>
+								}
 							</div>
 						</div>
 					</div>
-					<div class="section-choice-container" *ngIf="specificationChoices && specificationChoices.length > 0">
-						<div class="section-choice-title expandable" (click)="specificationsCollapsed = !specificationsCollapsed">
-							<app-collapsing-icon [isCollapsed]="specificationsCollapsed"></app-collapsing-icon>Linked {{dataService.labelSpecificationsLower()}} ({{specificationChoices.length}})
-						</div>
-						<div [collapse]="specificationsCollapsed" [isAnimated]="true">
-							<div class="section-choice-actions">
-								<app-test-suite-upload-specification-choices
-									[choices]="specificationChoices"
-									[sharedTestSuite]="sharedTestSuite"
-									(pendingChoices)="choiceUpdate($event)"
-								></app-test-suite-upload-specification-choices>
+					@if (specificationChoices && specificationChoices.length > 0) {
+						<div class="section-choice-container">
+							<div class="section-choice-title expandable" (click)="specificationsCollapsed = !specificationsCollapsed">
+								<app-collapsing-icon [isCollapsed]="specificationsCollapsed"></app-collapsing-icon>Linked {{dataService.labelSpecificationsLower()}} ({{specificationChoices.length}})
+							</div>
+							<div [collapse]="specificationsCollapsed" [isAnimated]="true">
+								<div class="section-choice-actions">
+									<app-test-suite-upload-specification-choices
+										[choices]="specificationChoices"
+										[sharedTestSuite]="sharedTestSuite"
+										(pendingChoices)="choiceUpdate($event)"
+									></app-test-suite-upload-specification-choices>
+								</div>
 							</div>
 						</div>
-					</div>
-				</ng-container>
-				<ng-container *ngSwitchDefault>
+					}
+				} @else {
 					<div class="section-choice-actions-specs">
-						<app-test-suite-upload-specification-choices *ngIf="specificationChoices"
-							[choices]="specificationChoices"
-							[sharedTestSuite]="sharedTestSuite"
-							(pendingChoices)="choiceUpdate($event)"
-						></app-test-suite-upload-specification-choices>
+						@if (specificationChoices) {
+							<app-test-suite-upload-specification-choices
+								[choices]="specificationChoices"
+								[sharedTestSuite]="sharedTestSuite"
+								(pendingChoices)="choiceUpdate($event)"
+							></app-test-suite-upload-specification-choices>
+						}
 					</div>
-				</ng-container>
-			</ng-container>
-		</div>
+				}
+			</div>
+		}
 	</form>
 </div>
 <div class="modal-footer">
 	<div class="btn-toolbar">
 		<button type="button" class="btn btn-secondary" (click)="close()" [disabled]="actionPending">{{step == 'results'?'Close':'Cancel'}}</button>
-		<button *ngIf="proceedVisible()" type="button" class="btn btn-secondary" (click)="proceed()" [disable]="proceedDisabled()" [pending]="actionProceedPending">Proceed</button>
+		@if (proceedVisible()) {
+			<button type="button" class="btn btn-secondary" (click)="proceed()" [disable]="proceedDisabled()" [pending]="actionProceedPending">Proceed</button>
+		}
 	</div>
 </div>

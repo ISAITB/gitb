@@ -2,8 +2,10 @@
     <div class="value-container-inner">
         <div class="value"><span>{{value}}</span></div>
     </div>
-    <div class="value-container-inner-hover" *ngIf="hovering">
-        <div class="value"><span>{{value}}</span></div>
-        <div class="icon" *ngIf="hovering"><i class="fa-solid fa-clipboard" aria-hidden="true"></i></div>
-    </div>
+    @if (hovering) {
+        <div class="value-container-inner-hover">
+            <div class="value"><span>{{value}}</span></div>
+            <div class="icon"><i class="fa-solid fa-clipboard" aria-hidden="true"></i></div>
+        </div>
+    }
 </div>

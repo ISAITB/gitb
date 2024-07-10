@@ -4,48 +4,53 @@
         <div class="card-title">Create conformance statements</div>
       </div>
       <div class="card-body">
-        <div [ngSwitch]="dataStatus.status">
-          <div class="pending-container" *ngSwitchCase="Constants.STATUS.PENDING">
-            <div class="pending-icon"><app-pending-block [pending]="true"></app-pending-block></div>
-            <div class="pending-message">Loading available conformance statements...</div>
-          </div>
-          <ng-container *ngSwitchDefault>
-            <ng-container [ngSwitch]="items.length == 0">
-              <div *ngSwitchCase="true">
-                <div class="alert alert-info rounded mb-0" [ngSwitch]="hasOtherStatements">
-                  <span *ngSwitchCase="true">All available conformance statements are already created.</span>
-                  <span *ngSwitchDefault>There are currently no conformance statements available to create.</span>
+        <div>
+          @if (dataStatus.status == Constants.STATUS.PENDING) {
+            <div class="pending-container">
+              <div class="pending-icon"><app-pending-block [pending]="true"></app-pending-block></div>
+              <div class="pending-message">Loading available conformance statements...</div>
+            </div>
+          } @else {
+            @if (items.length == 0) {
+              <div>
+                <div class="alert alert-info rounded mb-0">
+                  @if (hasOtherStatements) {
+                    <span>All available conformance statements are already created.</span>
+                  } @else {
+                    <span>There are currently no conformance statements available to create.</span>
+                  }
                 </div>
               </div>
-              <ng-container *ngSwitchDefault>
-                <div class="control-container btn-toolbar">
-                  <app-text-filter name="statementFilter" [width]="300" [placeholder]="'Search statements...'" [(ngModel)]="statementFilter" (apply)="searchStatements()"></app-text-filter>
-                  <ng-container *ngIf="items.length > 0">
-                    <div class="btn-group" dropdown>
-                      <button id="button-item-select" [disabled]="visibleItemCount == 0" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-item-select">Select statements<span class="caret withMargin"></span></button>
-                      <ul id="dropdown-item-select" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-item-select">
-                          <li role="menuitem"><a class="dropdown-item" href (click)="toggleCheck(true);$event.preventDefault();">Select all statements</a></li>
-                          <li role="menuitem"><a class="dropdown-item" href (click)="toggleCheck(false);$event.preventDefault();">Unselect all statements</a></li>
-                      </ul>
-                    </div>
-                    <div class="btn-group" dropdown>
-                      <button id="button-item-show" [disabled]="visibleItemCount == 0" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-item-show">View statements<span class="caret withMargin"></span></button>
-                      <ul id="dropdown-item-show" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-item-show">
-                          <li role="menuitem"><a class="dropdown-item" href (click)="toggleCollapse(false);$event.preventDefault();">Expand all statements</a></li>
-                          <li role="menuitem"><a class="dropdown-item" href (click)="toggleCollapse(true);$event.preventDefault();">Collapse all statements</a></li>
-                      </ul>
-                    </div>
-                  </ng-container>
-                </div>
-                <div *ngIf="visibleItemCount == 0" class="no-statements-visible">
+            } @else {
+              <div class="control-container btn-toolbar">
+                <app-text-filter name="statementFilter" [width]="300" [placeholder]="'Search statements...'" [(ngModel)]="statementFilter" (apply)="searchStatements()"></app-text-filter>
+                @if (items.length > 0) {
+                  <div class="btn-group" dropdown>
+                    <button id="button-item-select" [disabled]="visibleItemCount == 0" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-item-select">Select statements<span class="caret withMargin"></span></button>
+                    <ul id="dropdown-item-select" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-item-select">
+                        <li role="menuitem"><a class="dropdown-item" href (click)="toggleCheck(true);$event.preventDefault();">Select all statements</a></li>
+                        <li role="menuitem"><a class="dropdown-item" href (click)="toggleCheck(false);$event.preventDefault();">Unselect all statements</a></li>
+                    </ul>
+                  </div>
+                  <div class="btn-group" dropdown>
+                    <button id="button-item-show" [disabled]="visibleItemCount == 0" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-item-show">View statements<span class="caret withMargin"></span></button>
+                    <ul id="dropdown-item-show" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-item-show">
+                        <li role="menuitem"><a class="dropdown-item" href (click)="toggleCollapse(false);$event.preventDefault();">Expand all statements</a></li>
+                        <li role="menuitem"><a class="dropdown-item" href (click)="toggleCollapse(true);$event.preventDefault();">Collapse all statements</a></li>
+                    </ul>
+                  </div>
+                }
+              </div>
+              @if (visibleItemCount == 0) {
+                <div class="no-statements-visible">
                   No conformance statements were found matching your search text.
                 </div>
-                <div class="statement-container">
-                  <app-conformance-statement-items-display [items]="items" [animated]="animated" (selectionChanged)="selectionChanged($event)"></app-conformance-statement-items-display>
-                </div>
-              </ng-container>
-            </ng-container>
-          </ng-container>
+              }
+              <div class="statement-container">
+                <app-conformance-statement-items-display [items]="items" [animated]="animated" (selectionChanged)="selectionChanged($event)"></app-conformance-statement-items-display>
+              </div>
+            }
+          }
         </div>
       </div>
       <div class="card-footer">

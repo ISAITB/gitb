@@ -34,9 +34,11 @@
                 <app-form-section sectionTitle="Content">
 					<div class="row mt-3">
                         <div class="col-12">
-							<div class="mb-3" *ngIf="dataService.isCommunityAdmin">
-								<app-placeholder-selector [resources]="true" [community]="communityId"></app-placeholder-selector>
-							</div>
+                            @if (dataService.isCommunityAdmin) {
+                                <div class="mb-3">
+                                    <app-placeholder-selector [resources]="true" [community]="communityId"></app-placeholder-selector>
+                                </div>
+                            }
                             <app-editor id="content" name="content" [(ngModel)]="notice.content"></app-editor>
 						</div>
                     </div>                    

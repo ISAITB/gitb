@@ -64,9 +64,11 @@
                 <app-form-section sectionTitle="Documentation" [collapsed]="true" [marginBefore]="true">
 					<div class="row mb-3 mt-3">
 						<div class="offset-1 col-10">
-							<div class="mb-3" *ngIf="dataService.isCommunityAdmin">
-								<app-placeholder-selector [resources]="true" [community]="dataService.vendor?.community"></app-placeholder-selector>
-							</div>
+							@if (dataService.isCommunityAdmin) {
+								<div class="mb-3">
+									<app-placeholder-selector [resources]="true" [community]="dataService.vendor?.community"></app-placeholder-selector>
+								</div>
+							}
 							<div class="editorContainer">
 								<app-editor id="documentation" name="documentation" [(ngModel)]="testCase.documentation"></app-editor>
 								<div app-tooltip class="col-auto" tbTooltip="Extended documentation on the test case that users can click to view before and during test execution. Use this to provide detailed information, prerequisites, steps to follow and references to external resources." [withMargin]="true"></div>
@@ -105,21 +107,18 @@
 			<div class="card-title">Test case preview</div>
 		</div>
         <div class="card-body" style="overflow-x: auto; overflow-y: hidden;">
-            <ng-container [ngSwitch]="diagramLoaded">
-                <ng-container *ngSwitchCase="true">
-                    <div class="diagramContainer" *ngIf="diagramLoaded">
-                        <app-sequence-diagram
-                            [stepsOfTests]="steps"
-                            [test]="testCaseId+''"
-                            [actorInfoOfTests]="actorInfo"
-                            [events]="testEvents[testCaseId]">
-                        </app-sequence-diagram>
-                    </div>
-                </ng-container>
-                <div *ngSwitchDefault>
-                    <app-pending-block [pending]="true" [icon]="true"></app-pending-block>
-                </div>
-            </ng-container>
+			@if (diagramLoaded) {
+				<div class="diagramContainer">
+					<app-sequence-diagram
+						[stepsOfTests]="steps"
+						[test]="testCaseId+''"
+						[actorInfoOfTests]="actorInfo"
+						[events]="testEvents[testCaseId]">
+					</app-sequence-diagram>
+				</div>
+			} @else {
+				<app-pending-block [pending]="true" [icon]="true"></app-pending-block>
+			}
         </div>
     </div>
 </div>

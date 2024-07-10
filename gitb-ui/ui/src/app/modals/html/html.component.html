@@ -1,6 +1,8 @@
-<div class="modal-header" *ngIf="headerText">
-    <div class="modal-title">{{headerText}}</div>
-</div>
+@if (headerText) {
+    <div class="modal-header">
+        <div class="modal-title">{{headerText}}</div>
+    </div>
+}
 <div class="modal-body html-modal">
     <div id="content" [innerHtml]="html | sanitizeHtml"></div>
 </div>

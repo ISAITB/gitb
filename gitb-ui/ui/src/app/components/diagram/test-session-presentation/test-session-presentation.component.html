@@ -1,11 +1,15 @@
-<div *ngIf="session.diagramState" class="test-session-presentation-div">
-    <app-sequence-diagram 
-        [stepsOfTests]="session.diagramState.stepsOfTests"
-        [test]="session.session"
-        [actorInfoOfTests]="session.diagramState.actorInfoOfTests"
-        [events]="session.diagramState.events">
-    </app-sequence-diagram>
-    <div class="test-output-container" *ngIf="session.diagramState.outputMessage">
-        <alert [type]="session.diagramState.outputMessageType!" [dismissible]="false">{{session.diagramState.outputMessage}}</alert>
+@if (session.diagramState) {
+    <div class="test-session-presentation-div">
+        <app-sequence-diagram 
+            [stepsOfTests]="session.diagramState.stepsOfTests"
+            [test]="session.session"
+            [actorInfoOfTests]="session.diagramState.actorInfoOfTests"
+            [events]="session.diagramState.events">
+        </app-sequence-diagram>
+        @if (session.diagramState.outputMessage) {
+            <div class="test-output-container">
+                <alert [type]="session.diagramState.outputMessageType!" [dismissible]="false">{{session.diagramState.outputMessage}}</alert>
+            </div>
+        }
     </div>
-</div>
+}

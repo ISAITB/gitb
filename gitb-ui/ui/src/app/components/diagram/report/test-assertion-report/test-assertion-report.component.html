@@ -3,21 +3,27 @@
         <div class="report-description">
             <span class="report-icon"><i class="fa-solid" [ngClass]="{'fa-info-circle': assertionReport.type == types.INFO, 'fa-warning': assertionReport.type == types.WARNING, 'fa-times-circle': assertionReport.type == types.ERROR}"></i></span>{{description}}
         </div>
-        <div class="report-metadata" *ngIf="assertionReport.value.value != undefined">
-            <div class="report-metadata-key">Assertion ID:</div>
-            <div class="report-metadata-value">{{assertionReport.value.assertionID}}</div>
-        </div>
-        <div class="report-metadata" *ngIf="assertionReport.value.value != undefined">
-            <div class="report-metadata-key">Value:</div>
-            <div class="report-metadata-value">{{assertionReport.value.value}}</div>
-        </div>
-        <div class="report-metadata" *ngIf="assertionReport.extractedLocation == undefined && assertionReport.value.location">
-            <div class="report-metadata-key">Location:</div>
-            <div class="report-metadata-value">{{assertionReport.value.location}}</div>
-        </div>
-        <div class="report-metadata" *ngIf="assertionReport.value.test != undefined">
-            <div class="report-metadata-key">Test:</div>
-            <div class="report-metadata-value">{{assertionReport.value.test}}</div>
-        </div>
+        @if (assertionReport.value.value != undefined) {
+            <div class="report-metadata">
+                <div class="report-metadata-key">Assertion ID:</div>
+                <div class="report-metadata-value">{{assertionReport.value.assertionID}}</div>
+            </div>
+            <div class="report-metadata">
+                <div class="report-metadata-key">Value:</div>
+                <div class="report-metadata-value">{{assertionReport.value.value}}</div>
+            </div>
+        }
+        @if (assertionReport.extractedLocation == undefined && assertionReport.value.location) {
+            <div class="report-metadata">
+                <div class="report-metadata-key">Location:</div>
+                <div class="report-metadata-value">{{assertionReport.value.location}}</div>
+            </div>
+        }
+        @if (assertionReport.value.test != undefined) {
+            <div class="report-metadata">
+                <div class="report-metadata-key">Test:</div>
+                <div class="report-metadata-value">{{assertionReport.value.test}}</div>
+            </div>
+        }
     </div>
 </div>

@@ -2,43 +2,42 @@
 	<div class="modal-title">Preview and test service call</div>
 </div>
 <div class="modal-body">
-    <ng-container [ngSwitch]="editStep">
-        <ng-container *ngSwitchCase="true">
-            <div class="alert alert-info rounded">
-                <span>This is a sample payload based on the configured input data which you may edit and use to call the service to test its operation. If this call results in the service returning output data, it will be displayed but not used for actual updates.</span>
+    @if (editStep) {
+        <div class="alert alert-info rounded">
+            <span>This is a sample payload based on the configured input data which you may edit and use to call the service to test its operation. If this call results in the service returning output data, it will be displayed but not used for actual updates.</span>
+        </div>
+        <div class="editor editor-normal" [class.disable-events]="actionPending">
+            <ngx-codemirror [(ngModel)]="request" [options]="editorOptionsRequest"></ngx-codemirror>
+        </div>
+    } @else {
+        @if (responseSuccess) {
+            <div class="alert alert-success rounded">
+                <span>The service call succeeded and produced the following output. Any output data returned was not used for actual updates.</span>
             </div>
-            <div class="editor editor-normal" [class.disable-events]="actionPending">
-                <ngx-codemirror [(ngModel)]="request" [options]="editorOptionsRequest"></ngx-codemirror>
+            <div class="editor editor-normal">
+                <ngx-codemirror [(ngModel)]="response" [options]="editorOptionsResponse"></ngx-codemirror>
             </div>
-        </ng-container>
-        <ng-container *ngSwitchDefault>
-            <ng-container [ngSwitch]="responseSuccess">
-                <ng-container *ngSwitchCase="true">
-                    <div class="alert alert-success rounded">
-                        <span>The service call succeeded and produced the following output. Any output data returned was not used for actual updates.</span>
-                    </div>
-                    <div class="editor editor-normal">
-                        <ngx-codemirror [(ngModel)]="response" [options]="editorOptionsResponse"></ngx-codemirror>
-                    </div>
-                </ng-container>
-                <ng-container *ngSwitchDefault>
-                    <div class="alert alert-danger rounded">
-                        <span>The service call failed. The errors raised during the call are listed below.</span>
-                    </div>
-                    <div class="editor editor-short">
-                        <ngx-codemirror [(ngModel)]="response" [options]="editorOptionsResponseError"></ngx-codemirror>
-                    </div>
-                </ng-container>
-            </ng-container>
-        </ng-container>
-    </ng-container>
+        } @else {
+            <div class="alert alert-danger rounded">
+                <span>The service call failed. The errors raised during the call are listed below.</span>
+            </div>
+            <div class="editor editor-short">
+                <ngx-codemirror [(ngModel)]="response" [options]="editorOptionsResponseError"></ngx-codemirror>
+            </div>
+        }
+    }
 </div>
 <div class="modal-footer">
     <div class="btn-toolbar">
         <button type="button" class="btn btn-secondary" (click)="close()">{{actionPending?'Cancel':'Close'}}</button>
-        <button type="button" *ngIf="editStep" class="btn btn-secondary" (click)="callService()" [pending]="actionPending">Call service</button>
-        <button type="button" *ngIf="editStep && request != initialRequest" class="btn btn-secondary" (click)="reset()" [disabled]="actionPending">Reset sample payload</button>
-        <button type="button" *ngIf="!editStep" class="btn btn-secondary" (click)="back()">Back</button>
+        @if (editStep) {
+            <button type="button" class="btn btn-secondary" (click)="callService()" [pending]="actionPending">Call service</button>
+            @if (request != initialRequest) {
+                <button type="button" class="btn btn-secondary" (click)="reset()" [disabled]="actionPending">Reset sample payload</button>
+            }
+        } @else {
+            <button type="button" class="btn btn-secondary" (click)="back()">Back</button>
+        }
         <button type="button" class="btn btn-secondary" (click)="copyToClipboard()" [disabled]="actionPending">Copy to clipboard</button>
     </div>
 </div>

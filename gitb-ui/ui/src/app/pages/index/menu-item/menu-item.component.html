@@ -1,13 +1,12 @@
-<div class="menu-item-root" [ngSwitch]="expanded" [class.active]="active">
-    <ng-container *ngSwitchCase="true">
+<div class="menu-item-root" [class.active]="active">
+    @if (expanded) {
         <div class="menu-item">
             <span><i [ngClass]="icon" class="fa-xl"></i></span>
         </div>
         <div class="menu-item-text">{{label}}</div>
-    </ng-container>
-    <ng-container *ngSwitchDefault>
+    } @else {
         <div class="menu-item" (click)="popup.hide()" [tooltip]="label" [isDisabled]="expanded" placement="right" [delay]="500" #popup="bs-tooltip" containerClass="shortTooltip">
             <span><i [ngClass]="icon" class="fa-xl"></i></span>
         </div>
-    </ng-container>
+    }
 </div>

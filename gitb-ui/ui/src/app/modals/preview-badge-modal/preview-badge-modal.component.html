@@ -1,9 +1,12 @@
 <div class="modal-header">
     <div class="modal-title">{{headerText}}</div>
 </div>
-<div class="modal-body" [ngSwitch]="html != undefined">
-    <div *ngSwitchCase="true" id="content" [innerHtml]="html! | sanitizeHtml"></div>
-    <app-pending-block *ngSwitchDefault [pending]="true"></app-pending-block>
+<div class="modal-body">
+    @if (html != undefined) {
+        <div id="content" [innerHtml]="html! | sanitizeHtml"></div>
+    } @else {
+        <app-pending-block [pending]="true"></app-pending-block>
+    }
 </div>
 <div class="modal-footer">
     <div class="btn-toolbar">

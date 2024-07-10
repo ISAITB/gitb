@@ -17,15 +17,19 @@
             </div>
             <div class="card-footer button-container">
                 <div class="btn-toolbar">
-                    <button class="btn btn-secondary" *ngIf="!readonly" type="submit" (click)="updateOrganisation()" [disable]="deletePending || saveDisabled()" [pending]="savePending">Update</button>
+                    @if (!readonly) {
+                        <button class="btn btn-secondary" type="submit" (click)="updateOrganisation()" [disable]="deletePending || saveDisabled()" [pending]="savePending">Update</button>
+                    }
                     <button class="btn btn-secondary" type="button" (click)="manageOrganisationTests()">Manage tests</button>
-                    <ng-container *ngIf="showAdminInfo">
+                    @if (showAdminInfo) {
                         <button class="btn btn-secondary" type="button" (click)="cancelDetailOrganisation()">Back</button>
-                    </ng-container>
+                    }
                 </div>
-                <div class="btn-toolbar btn-toolbar-delete" *ngIf="showAdminInfo">
-                    <button class="btn btn-outline-danger" type="button" (click)="deleteOrganisation()" [disable]="savePending" [pending]="deletePending">Delete</button>
-                </div>
+                @if (showAdminInfo) {
+                    <div class="btn-toolbar btn-toolbar-delete">
+                        <button class="btn btn-outline-danger" type="button" (click)="deleteOrganisation()" [disable]="savePending" [pending]="deletePending">Delete</button>
+                    </div>
+                }
             </div>
         </form>
     </div>
@@ -34,9 +38,11 @@
             <tab (selectTab)="showSystems()" customClass="tabClass">
                 <ng-template tabHeading><app-tab-title icon="fa-solid fa-cube" [text]="dataService.labelSystems()"></app-tab-title></ng-template>
                 <div class="tabPanel">
-                    <div class="tabControls" *ngIf="showCreateSystem">
-                        <button type="button" class="btn btn-secondary" (click)="createSystem()">Create {{dataService.labelSystemLower()}}</button>
-                    </div>
+                    @if (showCreateSystem) {
+                        <div class="tabControls">
+                            <button type="button" class="btn btn-secondary" (click)="createSystem()">Create {{dataService.labelSystemLower()}}</button>
+                        </div>
+                    }
                     <div class="card">
                         <div table-directive 
                             [columns]="systemColumns" 
@@ -49,36 +55,42 @@
                     </div>
                 </div>
             </tab>
-            <tab *ngIf="showUsersTab" (selectTab)="showUsers()" customClass="tabClass">
-                <ng-template tabHeading><app-tab-title icon="fa-solid fa-user" text="Users"></app-tab-title></ng-template>
-                <div class="tabPanel">
-                    <div class="tabControls" *ngIf="showCreateUser">
-                        <button type="button" class="btn btn-secondary" (click)="createUser()">Create user</button>
-                    </div>
-                    <div class="card">
-                        <div table-directive 
-                            [columns]="userColumns" 
-                            [data]="users"
-                            [noDataMessage]="'No users found'"
-                            [loadingStatus]="usersStatus" 
-                            [allowSelect]="showCreateUser"
-                            (onSelect)="userSelect($event)">
+            @if (showUsersTab) {
+                <tab (selectTab)="showUsers()" customClass="tabClass">
+                    <ng-template tabHeading><app-tab-title icon="fa-solid fa-user" text="Users"></app-tab-title></ng-template>
+                    <div class="tabPanel">
+                        @if (showCreateUser) {
+                            <div class="tabControls">
+                                <button type="button" class="btn btn-secondary" (click)="createUser()">Create user</button>
+                            </div>
+                        }
+                        <div class="card">
+                            <div table-directive 
+                                [columns]="userColumns" 
+                                [data]="users"
+                                [noDataMessage]="'No users found'"
+                                [loadingStatus]="usersStatus" 
+                                [allowSelect]="showCreateUser"
+                                (onSelect)="userSelect($event)">
+                            </div>
                         </div>
                     </div>
-                </div>
-            </tab>
-            <tab (selectTab)="showApiInfo()" *ngIf="apiInfoVisible" customClass="tabClass">
-                <ng-template tabHeading><app-tab-title icon="fa-solid fa-key" text="REST API keys"></app-tab-title></ng-template>
-                <div class="tabPanel">
-                    <app-api-key-info 
-                        [organisationId]="orgId" 
-                        [organisationName]="organisation.fname"
-                        [adminOrganisation]="organisation.adminOrganization == true"
-                        [communityId]="communityId"
-                        [loadData]="loadApiInfo">
-                    </app-api-key-info>
-                </div>
-            </tab>
+                </tab>
+            }
+            @if (apiInfoVisible) {
+                <tab (selectTab)="showApiInfo()" customClass="tabClass">
+                    <ng-template tabHeading><app-tab-title icon="fa-solid fa-key" text="REST API keys"></app-tab-title></ng-template>
+                    <div class="tabPanel">
+                        <app-api-key-info 
+                            [organisationId]="orgId" 
+                            [organisationName]="organisation.fname"
+                            [adminOrganisation]="organisation.adminOrganization == true"
+                            [communityId]="communityId"
+                            [loadData]="loadApiInfo">
+                        </app-api-key-info>
+                    </div>
+                </tab>
+            }
         </tabset>
     </div>
 </div>

@@ -29,29 +29,33 @@
 							<div class="btn-group" dropdown (onShown)="loadAvailableSharedTestSuites()" [isDisabled]="unlinkPending">
 								<button id="button-link" [disable]="unlinkPending" [pending]="linkPending" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-link">Link shared test suite<span class="caret withMargin"></span></button>
 								<ul id="dropdown-link" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-link">
-									<li role="menuitem" class="disabled" *ngIf="!availableSharedTestSuitesLoaded">
-										<a class="dropdown-item" href (click)="$event.preventDefault()"><app-pending-block></app-pending-block></a>
-									</li>
-									<ng-container *ngIf="availableSharedTestSuitesLoaded" [ngSwitch]="availableSharedTestSuites.length">
-										<ng-container *ngSwitchCase="0">
+									@if (!availableSharedTestSuitesLoaded) {
+										<li role="menuitem" class="disabled">
+											<a class="dropdown-item" href (click)="$event.preventDefault()"><app-pending-block></app-pending-block></a>
+										</li>
+									} @else {
+										@if (availableSharedTestSuites.length == 0) {
 											<li role="menuitem" class="disabled">
 												<a class="dropdown-item" href (click)="$event.preventDefault()">{{(sharedTestSuites.length > 0)?'All shared test suites are already linked to the '+dataService.labelSpecificationLower():'No shared test suites are defined'}}</a>
 											</li>
-										</ng-container>
-										<ng-container *ngSwitchDefault>
-											<li role="menuitem" *ngFor="let testSuite of availableSharedTestSuites">
-												<a class="dropdown-item" href (click)="linkTestSuite(testSuite); $event.preventDefault()">{{testSuite.identifier}}</a>
-											</li>
-										</ng-container>
-									</ng-container>
+										} @else {
+											@for (testSuite of availableSharedTestSuites; track testSuite.id) {
+												<li role="menuitem">
+													<a class="dropdown-item" href (click)="linkTestSuite(testSuite); $event.preventDefault()">{{testSuite.identifier}}</a>
+												</li>
+											}
+										}
+									}
 								</ul>
 							</div>
 							<div class="btn-group" dropdown [isDisabled]="sharedTestSuites.length == 0 || unlinkPending">
 								<button id="button-unlink" [disable]="sharedTestSuites.length == 0" [pending]="unlinkPending" dropdownToggle type="button" class="btn btn-secondary dropdown-toggle" aria-controls="dropdown-unlink">Unlink shared test suite<span class="caret withMargin"></span></button>
 								<ul id="dropdown-unlink" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-unlink">
-									<li role="menuitem" *ngFor="let testSuite of sharedTestSuites">
-										<a class="dropdown-item" href (click)="unlinkTestSuite(testSuite); $event.preventDefault()">{{testSuite.identifier}}</a>
-									</li>
+									@for (testSuite of sharedTestSuites; track testSuite.id) {
+										<li role="menuitem">
+											<a class="dropdown-item" href (click)="unlinkTestSuite(testSuite); $event.preventDefault()">{{testSuite.identifier}}</a>
+										</li>
+									}
 								</ul>
 							</div>
 						</div>

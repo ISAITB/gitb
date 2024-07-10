@@ -19,29 +19,28 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr *ngFor="let label of labels; let index = index">
-                            <td>
-                                <div>
-                                    <span>{{labelTypeLabel(label.labelType)}}</span>
-                                    <span class="spaced-left" [tooltip]="labelTypeDescription[label.labelType]"><i class="fa-solid fa-question-circle"></i></span>
-                                </div>
-                            </td>
-                            <td>
-                                <input type="checkbox" [name]="'custom'+index" [(ngModel)]="label.custom" (change)="customChecked($event, label)"/>
-                            </td>
-                            <td [ngSwitch]="label.custom">
-                                <div *ngSwitchCase="true"><input [attr.id]="'label-singular-'+label.labelType" type="text" [name]="'singular'+index" [(ngModel)]="label.singularForm" class="form-control"/></div>
-                                <div *ngSwitchDefault><input type="text" [value]="Constants.LABEL_DEFAULT[label.labelType].singularForm" class="form-control" readonly="true"/></div>
-                            </td>
-                            <td [ngSwitch]="label.custom">
-                                <div *ngSwitchCase="true"><input type="text" [name]="'pluralForm'+index" [(ngModel)]="label.pluralForm" class="form-control"/></div>
-                                <div *ngSwitchDefault><input type="text" [value]="Constants.LABEL_DEFAULT[label.labelType].pluralForm" class="form-control" readonly="true"/></div>
-                            </td>
-                            <td [ngSwitch]="label.custom">
-                                <div *ngSwitchCase="true"><input type="checkbox" [name]="'fixedCase'+index" [(ngModel)]="label.fixedCase"/></div>
-                                <div *ngSwitchDefault><input type="checkbox" [checked]="Constants.LABEL_DEFAULT[label.labelType].fixedCase" [disabled]="true"/></div>
-                            </td>
-                        </tr>
+                        @for (label of labels; track index; let index = $index) {
+                            <tr>
+                                <td>
+                                    <div>
+                                        <span>{{labelTypeLabel(label.labelType)}}</span>
+                                        <span class="spaced-left" [tooltip]="labelTypeDescription[label.labelType]"><i class="fa-solid fa-question-circle"></i></span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <input type="checkbox" [name]="'custom'+index" [(ngModel)]="label.custom" (change)="customChecked($event, label)"/>
+                                </td>
+                                @if (label.custom) {
+                                    <td><div><input [attr.id]="'label-singular-'+label.labelType" type="text" [name]="'singular'+index" [(ngModel)]="label.singularForm" class="form-control"/></div></td>
+                                    <td><div><input type="text" [name]="'pluralForm'+index" [(ngModel)]="label.pluralForm" class="form-control"/></div></td>
+                                    <td><div><input type="checkbox" [name]="'fixedCase'+index" [(ngModel)]="label.fixedCase"/></div></td>
+                                } @else {
+                                    <td><div><input type="text" [value]="Constants.LABEL_DEFAULT[label.labelType].singularForm" class="form-control" readonly="true"/></div></td>
+                                    <td><div><input type="text" [value]="Constants.LABEL_DEFAULT[label.labelType].pluralForm" class="form-control" readonly="true"/></div></td>
+                                    <td><div><input type="checkbox" [checked]="Constants.LABEL_DEFAULT[label.labelType].fixedCase" [disabled]="true"/></div></td>
+                                }
+                            </tr>
+                        }
                     </tbody>
                 </table>
             </div>
