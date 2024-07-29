@@ -12,6 +12,7 @@ import models.Enums.UserRole
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.comparator.NameFileComparator
 import org.apache.commons.lang3.StringUtils
+import org.apache.cxf.jaxws.EndpointImpl
 import org.apache.pekko.actor.ActorSystem
 import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
@@ -239,7 +240,12 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext, authenticationMana
   }
 
   private def initialiseTestbedClient(): Unit = {
-    TestbedService.endpoint = Endpoint.publish(Configurations.TESTBED_CLIENT_URL, new TestbedService(actorSystem))
+    val endpoint = Endpoint.create(new TestbedService(actorSystem)).asInstanceOf[EndpointImpl]
+    if (Configurations.TESTBED_CLIENT_URL_INTERNAL != Configurations.TESTBED_CLIENT_URL) {
+      endpoint.setPublishedEndpointUrl(Configurations.TESTBED_CLIENT_URL)
+    }
+    endpoint.publish(Configurations.TESTBED_CLIENT_URL_INTERNAL)
+    TestbedService.endpoint = endpoint
   }
 
   /**

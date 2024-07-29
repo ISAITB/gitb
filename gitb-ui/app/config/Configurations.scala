@@ -35,6 +35,7 @@ object Configurations {
   var TOKEN_LENGTH = 0
   var TESTBED_SERVICE_URL = ""
   var TESTBED_CLIENT_URL = ""
+  var TESTBED_CLIENT_URL_INTERNAL = ""
 	var TEST_CASE_REPOSITORY_PATH = ""
 
   var EMAIL_ENABLED = false
@@ -174,6 +175,7 @@ object Configurations {
       SERVER_REQUEST_TIMEOUT_IN_SECONDS = fromEnv("SERVER_REQUEST_TIMEOUT_IN_SECONDS", conf.getString("server.request.timeout.seconds")).toInt
       TESTBED_SERVICE_URL = conf.getString("testbed.service.url")
       TESTBED_CLIENT_URL  = conf.getString("testbed.client.url")
+      TESTBED_CLIENT_URL_INTERNAL = fromEnv("TESTBED_CLIENT_URL_INTERNAL", TESTBED_CLIENT_URL)
 
       TEST_CASE_REPOSITORY_PATH = conf.getString("testcase.repository.path")
 
