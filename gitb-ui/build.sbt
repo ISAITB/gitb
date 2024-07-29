@@ -19,7 +19,7 @@ scalaVersion := "2.13.14"
 val pekkoVersion = "1.0.3"
 val jacksonVersion = "2.16.2"
 val cxfVersion = "4.0.5"
-val commonsTextVersion = "1.11.0"
+val commonsTextVersion = "1.12.0"
 val gitbTypesVersion = "1.23.1"
 val bouncyCastleVersion = "1.78.1"
 
@@ -50,7 +50,7 @@ libraryDependencies ++= Seq(
   "org.playframework" %% "play-slick" % "6.1.1",
   "org.pac4j" %% "play-pac4j" % "12.0.0-PLAY3.0",
   "org.pac4j" % "pac4j-cas" % "6.0.2" exclude("org.bouncycastle", "bcpkix-jdk15on"),
-  "org.apache.commons" % "commons-lang3" % "3.14.0",
+  "org.apache.commons" % "commons-lang3" % "3.15.0",
   "com.fasterxml.jackson.module" %% "jackson-module-scala" % jacksonVersion,
   "com.fasterxml.jackson.core" % "jackson-databind" % jacksonVersion,
   "com.fasterxml.jackson.core" % "jackson-core" % jacksonVersion,
