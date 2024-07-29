@@ -63,7 +63,9 @@ export class ProvideInputModalComponent implements OnInit, AfterViewInit {
             this.firstCodeIndex = i
           }          
           interaction.data = ''
-        } else if (interaction.inputType != 'UPLOAD') {
+        } else if (interaction.inputType == 'UPLOAD') {
+          interaction.reset = new EventEmitter<void>()
+        } else {
           if (this.firstTextIndex == undefined) {
             this.firstTextIndex = i
           }
@@ -128,6 +130,9 @@ export class ProvideInputModalComponent implements OnInit, AfterViewInit {
       } else {
         // Code editor.
         interaction.data = ''
+      }
+      if (interaction.reset) {
+        interaction.reset.emit()
       }
       delete interaction.selectedOption
       delete interaction.file

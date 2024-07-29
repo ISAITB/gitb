@@ -19,6 +19,7 @@ export class FileSelectComponent implements OnInit {
   @Input() maxSize!: number
   @Input() extraActions = false
   @Input() disableUpload = false
+  @Input() reset?: EventEmitter<void>
   @Output() onUpload: EventEmitter<FileData> = new EventEmitter()
   @ViewChild('fileInput') fileInput?: ElementRef
 
@@ -43,6 +44,13 @@ export class FileSelectComponent implements OnInit {
       this.maxSizeKbs = this.dataService.configuration.savedFileMaxSize
       this.maxSize = Number(this.dataService.configuration.savedFileMaxSize) * 1024
     }
+    if (this.reset) {
+      this.reset.subscribe(() => {
+        if (this.fileInput) {
+          this.fileInput.nativeElement.value = null
+        }
+      })
+    }
     this.dragSupport.onDragStartChange$.subscribe(() => {
       if (!this.disableUpload) {
         this.dragActive = true
@@ -57,7 +65,7 @@ export class FileSelectComponent implements OnInit {
       if (!this.disableUpload) {
         this.dragActive = false
       }
-    })    
+    })
   }
 
   onFileChange() {

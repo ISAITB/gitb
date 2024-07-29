@@ -1,3 +1,4 @@
+import { EventEmitter } from "@angular/core";
 import { FileData } from "./file-data.type";
 import { ValueLabel } from "./value-label";
 
@@ -21,5 +22,7 @@ export interface UserInteraction {
     inputType: "TEXT"|"MULTILINE_TEXT"|"SECRET"|"CODE"|"SELECT_SINGLE"|"SELECT_MULTIPLE"|"UPLOAD"
     mimeType?: string
     forceDisplay?: boolean
+
+    reset?: EventEmitter<void>
 
 }
