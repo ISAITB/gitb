@@ -1,4 +1,4 @@
-FROM mysql:8.4.1
+FROM mysql:8.4.2
 
 ENV MYSQL_ROOT_PASSWORD root
 ENV MYSQL_DATABASE gitb
