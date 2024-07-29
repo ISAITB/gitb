@@ -2,6 +2,7 @@ FROM eclipse-temurin:21-jre-jammy
 
 ENV PATH /usr/local/gitb-ui/bin:$PATH
 ENV TESTBED_SERVICE_URL http://gitb-srv:8080/itbsrv/TestbedService
+ENV TESTBED_CLIENT_URL_INTERNAL http://localhost:9090/TestbedClient
 ENV TESTBED_CLIENT_URL http://gitb-ui:9090/TestbedClient
 ENV DB_DEFAULT_URL jdbc:mysql://gitb-mysql/gitb?characterEncoding=UTF-8&useUnicode=true&autoReconnect=true&useSSL=false&verifyServerCertificate=false&allowPublicKeyRetrieval=true
 ENV DB_DEFAULT_ROOTURL jdbc:mysql://gitb-mysql/
