@@ -32,7 +32,7 @@
         <version.springBoot>3.3.2</version.springBoot>
         <version.gitbTypes>1.23.1</version.gitbTypes>
         <version.bouncycastle>1.78.1</version.bouncycastle>
-        <version.helgerSchematron>8.0.1</version.helgerSchematron>
+        <version.helgerSchematron>8.0.2</version.helgerSchematron>
         <version.metaInfServices>1.9</version.metaInfServices>
         <version.cxf>4.0.5</version.cxf>
         <version.httpComponents>4.5.13</version.httpComponents>
