@@ -63,4 +63,18 @@
         <packageUrl regex="true">^pkg:maven/org\.playframework\.twirl/twirl\-api_2\.13@.*$</packageUrl>
         <cve>CVE-2015-2156</cve>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: org.webjars.bootstrap-5.3.3.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.webjars/bootstrap@.*$</packageUrl>
+        <vulnerabilityName>CVE-2024-6484</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: org.webjars.bootstrap-5.3.3.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.webjars/bootstrap@.*$</packageUrl>
+        <vulnerabilityName>CVE-2024-6531</vulnerabilityName>
+    </suppress>
 </suppressions>
