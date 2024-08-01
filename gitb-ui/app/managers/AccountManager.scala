@@ -116,6 +116,13 @@ class AccountManager @Inject()(dbConfigProvider: DatabaseConfigProvider, landing
           DBIO.successful(None)
         }
       }
+      communityLegalNoticeAppliesAndExists <- {
+        if (legalNotice.isEmpty) {
+          legalNoticeManager.communityHasDefaultLegalNotice(organisation.community)
+        } else {
+          DBIO.successful(false)
+        }
+      }
       errorTemplate <- {
         if (organisation.errorTemplate.isDefined) {
           errorTemplateManager.getErrorTemplateByIdInternal(organisation.errorTemplate.get)
@@ -123,8 +130,8 @@ class AccountManager @Inject()(dbConfigProvider: DatabaseConfigProvider, landing
           DBIO.successful(None)
         }
       }
-    } yield (organisation, landingPage, legalNotice, errorTemplate))
-    new Organization(result._1, result._2.orNull, result._3.orNull, result._4.orNull)
+    } yield (organisation, landingPage, legalNotice, errorTemplate, communityLegalNoticeAppliesAndExists))
+    new Organization(result._1, result._2.orNull, result._3.orNull, result._4.orNull, result._5)
   }
 
   def registerUser(adminId: Long, user: Users) = {

@@ -2052,7 +2052,8 @@ object JsonUtil {
       "savedFileMaxSize" -> config.get("savedFile.maxSize").toLong,
       "mode" -> config.get("mode"),
       "automationApiEnabled" -> config.get("automationApi.enabled").toBoolean,
-      "versionNumber" -> config.get("versionNumber")
+      "versionNumber" -> config.get("versionNumber"),
+      "hasDefaultLegalNotice" -> config.get("hasDefaultLegalNotice").toBoolean
     )
     json
   }
@@ -2062,12 +2063,13 @@ object JsonUtil {
    * @param org Organization object to be converted
    * @return String
    */
-  def serializeOrganization(org:Organization, includeAdminInfo: Boolean):String = {
+  def serializeOrganization(org:Organization):String = {
     // Serialize Organization
     var jOrganization:JsObject = jsOrganization(org.toCaseObject)
     org.landingPageObj.foreach(x => jOrganization = jOrganization ++ Json.obj("landingPages" -> jsLandingPage(x.toLandingPage())))
     org.legalNoticeObj.foreach(x => jOrganization = jOrganization ++ Json.obj("legalNotices" -> jsLegalNotice(x.toLegalNotice())))
     org.errorTemplateObj.foreach(x => jOrganization = jOrganization ++ Json.obj("errorTemplates" -> jsErrorTemplate(x.toErrorTemplate())))
+    jOrganization = jOrganization ++ Json.obj("communityLegalNoticeAppliesAndExists" -> org.communityLegalNoticeAppliesAndExists)
     // Return JSON String
     jOrganization.toString
   }

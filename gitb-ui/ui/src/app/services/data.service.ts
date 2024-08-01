@@ -116,7 +116,8 @@ export class DataService {
       savedFileMaxSize: (this.configuration?.savedFileMaxSize != undefined)?this.configuration!.savedFileMaxSize:5,
       mode: (this.configuration?.mode != undefined)?this.configuration!.mode:'development',
       automationApiEnabled: (this.configuration?.automationApiEnabled != undefined)?this.configuration!.automationApiEnabled:false,
-      versionNumber: (this.configuration?.versionNumber != undefined)?this.configuration!.versionNumber:''
+      versionNumber: (this.configuration?.versionNumber != undefined)?this.configuration!.versionNumber:'',
+      hasDefaultLegalNotice: (this.configuration?.hasDefaultLegalNotice != undefined)?this.configuration!.hasDefaultLegalNotice:false
     }
   }
 

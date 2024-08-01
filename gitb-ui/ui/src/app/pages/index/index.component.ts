@@ -113,17 +113,25 @@ export class IndexComponent implements OnInit, OnDestroy {
 
   userGuideLink() {
 		let link = this.userGuideService.userGuideLink()
-		window.open(link, '_blank')    
   }
 
   showUserGuide():boolean {
 		return this.dataService.configuration != undefined
   }
 
+  showLegalNotice():boolean {
+		let vendor = this.dataService.vendor
+		if (vendor != undefined && (vendor.legalNotices || vendor.communityLegalNoticeAppliesAndExists)) {
+      return true
+    } else {
+      return this.dataService.configuration?.hasDefaultLegalNotice
+    }
+  }
+
   onLegalNotice() {
 		let vendor = this.dataService.vendor
 		if (vendor != undefined && vendor.legalNotices) {
-			this.showLegalNotice(vendor.legalNotices.content!)
+			this.doShowLegalNotice(vendor.legalNotices.content!)
     } else {
       let response: Observable<any>
 			if (vendor) {
@@ -134,13 +142,13 @@ export class IndexComponent implements OnInit, OnDestroy {
       }
       response.subscribe((data) => {
 				if (data.exists == true) {
-          this.showLegalNotice(data.content)
+          this.doShowLegalNotice(data.content)
         }
       })
     }
   }
 
-  showLegalNotice(html: string): void {
+  doShowLegalNotice(html: string): void {
     this.htmlService.showHtml('Legal Notice', html)
   }
 

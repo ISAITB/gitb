@@ -4,6 +4,7 @@ import config.Configurations
 import controllers.util._
 import exceptions.ErrorCodes
 import managers._
+import models.Constants
 import models.Enums.UserRole
 import org.apache.commons.io.FileUtils
 import org.apache.commons.lang3.StringUtils
@@ -17,7 +18,7 @@ import javax.inject.Inject
 import scala.collection.mutable.ListBuffer
 
 
-class AccountService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerComponents, accountManager: AccountManager, userManager: UserManager, organisationManager: OrganizationManager, authorizationManager: AuthorizationManager) extends AbstractController(cc) {
+class AccountService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerComponents, accountManager: AccountManager, legalNoticeManager: LegalNoticeManager, organisationManager: OrganizationManager, authorizationManager: AuthorizationManager) extends AbstractController(cc) {
   private final val logger: Logger = LoggerFactory.getLogger(classOf[AccountService])
   private final val tika = new Tika()
 
@@ -29,7 +30,7 @@ class AccountService @Inject() (authorizedAction: AuthorizedAction, cc: Controll
     val userId = ParameterExtractor.extractUserId(request)
 
     val organization = accountManager.getVendorProfile(userId)
-    val json:String = JsonUtil.serializeOrganization(organization, includeAdminInfo = false)
+    val json:String = JsonUtil.serializeOrganization(organization)
     ResponseConstructor.constructJsonResponse(json)
   }
 
@@ -159,6 +160,7 @@ class AccountService @Inject() (authorizedAction: AuthorizedAction, cc: Controll
     configProperties.put("mode", String.valueOf(Configurations.TESTBED_MODE))
     configProperties.put("automationApi.enabled", String.valueOf(Configurations.AUTOMATION_API_ENABLED))
     configProperties.put("versionNumber", Configurations.versionInfo())
+    configProperties.put("hasDefaultLegalNotice", legalNoticeManager.getCommunityDefaultLegalNotice(Constants.DefaultCommunityId).exists(notice => StringUtils.isNotBlank(notice.content)).toString)
     val json = JsonUtil.serializeConfigurationProperties(configProperties)
     ResponseConstructor.constructJsonResponse(json.toString())
   }

@@ -74,7 +74,7 @@
       <div class="version-div">
         <div class="footer-links">
           @if (showUserGuide()) {
-            <div class="footer-link"><a href (click)="userGuideLink();$event.preventDefault()">User guide</a></div>
+            <div class="footer-link"><a href (click)="userGuideLink();$event.preventDefault()" target="blank">User guide</a></div>
           }
           @if (showProvideFeedback()) {
             <div class="footer-link"><a [href]="provideFeedbackLink()" target="blank">Provide feedback</a></div>
@@ -82,7 +82,9 @@
           @if (showContactUs()) {
             <div class="footer-link"><a href="#" (click)="contactUs();$event.preventDefault()">Contact support</a></div>
           }
-          <div class="footer-link"><a href (click)="onLegalNotice();$event.preventDefault()">Legal notice</a></div>
+          @if (showLegalNotice()) {
+            <div class="footer-link"><a href (click)="onLegalNotice();$event.preventDefault()">Legal notice</a></div>
+          }
           @if (showMoreInfo()) {
             <div class="footer-link"><a [href]="moreInfoLink()" target="blank">Find out more</a></div>
           }
