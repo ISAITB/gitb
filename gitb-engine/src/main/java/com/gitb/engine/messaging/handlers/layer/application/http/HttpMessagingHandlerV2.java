@@ -48,6 +48,7 @@ public class HttpMessagingHandlerV2 extends AbstractNonWorkerMessagingHandler {
     private final static String PARTS_ARGUMENT_NAME = "parts";
     private final static String FOLLOW_REDIRECTS_ARGUMENT_NAME = "followRedirects";
     private final static String CONNECTION_TIMEOUT_ARGUMENT_NAME = "connectionTimeout";
+    private final static String REQUEST_TIMEOUT_ARGUMENT_NAME = "requestTimeout";
 
     public static final String REPORT_ITEM_REQUEST = "request";
     public static final String REPORT_ITEM_RESPONSE = "response";
@@ -89,6 +90,9 @@ public class HttpMessagingHandlerV2 extends AbstractNonWorkerMessagingHandler {
         var connectionTimeout = Optional.ofNullable(getAndConvert(message.getFragments(), CONNECTION_TIMEOUT_ARGUMENT_NAME, DataType.NUMBER_DATA_TYPE, NumberType.class))
                 .map(NumberType::longValue)
                 .orElse(10000L);
+        // The request timeout.
+        var requestTimeout = Optional.ofNullable(getAndConvert(message.getFragments(), REQUEST_TIMEOUT_ARGUMENT_NAME, DataType.NUMBER_DATA_TYPE, NumberType.class))
+                .map(NumberType::longValue);
         // Create request.
         final var builder = HttpRequest.newBuilder();
         String uriToUse;
@@ -172,7 +176,10 @@ public class HttpMessagingHandlerV2 extends AbstractNonWorkerMessagingHandler {
                     .flatMap(contentType -> Arrays.stream(StringUtils.split(contentType, ';')).findFirst())
                     .ifPresent(requestBodyItem::setContentType);
         }
-        builder.uri(URI.create(uriToUse)).method(method.name(), bodyPublisher);
+        builder.uri(URI.create(uriToUse))
+                .method(method.name(), bodyPublisher);
+        // Request timeout.
+        requestTimeout.ifPresent(value -> builder.timeout(Duration.ofMillis(value)));
         DataType finalRequestBodyItem = requestBodyItem;
         // Make request.
         CompletableFuture<HttpResponse<byte[]>> asyncResponse;
