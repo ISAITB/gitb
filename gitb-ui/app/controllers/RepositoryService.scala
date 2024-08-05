@@ -950,10 +950,18 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
     uploadCommunityExportInternal(request, communityId, canDoAdminOperations = false)
   }
 
+  private def emptyForNegativeId(id: Long): Option[Long] = {
+    if (id == -1) {
+      None
+    } else {
+      Some(id)
+    }
+  }
+
   private def uploadCommunityExportInternal(request: Request[AnyContent], communityId: Long, canDoAdminOperations: Boolean) = {
     try {
       processImport(request, requireDomain = false, requireCommunity = true, requireSettings = false, (exportData: Export, settings: ImportSettings) => {
-        val result = importPreviewManager.previewCommunityImport(exportData, Some(communityId), canDoAdminOperations)
+        val result = importPreviewManager.previewCommunityImport(exportData, emptyForNegativeId(communityId), canDoAdminOperations)
         val items = new ListBuffer[ImportItem]()
         // First add domain.
         if (result._2.isDefined) {
@@ -985,7 +993,7 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
   private def uploadDomainExportInternal(request: Request[AnyContent], domainId: Long, canDoAdminOperations: Boolean): Result = {
     try {
       processImport(request, requireDomain = true, requireCommunity = false, requireSettings = false, (exportData: Export, settings: ImportSettings) => {
-        val result = importPreviewManager.previewDomainImport(exportData.getDomains.getDomain.get(0), Some(domainId), canDoAdminOperations)
+        val result = importPreviewManager.previewDomainImport(exportData.getDomains.getDomain.get(0), emptyForNegativeId(domainId), canDoAdminOperations)
         List(result)
       })
     } finally {
@@ -1040,13 +1048,13 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
 
   private def confirmDomainImportInternal(request: Request[AnyContent], domainId: Long, canAddOrDeleteDomain: Boolean) = {
     confirmImportInternal(request, (export: Export, importSettings: ImportSettings, importItems: List[ImportItem]) => {
-      importCompleteManager.completeDomainImport(export.getDomains.getDomain.asScala.head, importSettings, importItems, Some(domainId), canAddOrDeleteDomain)
+      importCompleteManager.completeDomainImport(export.getDomains.getDomain.asScala.head, importSettings, importItems, emptyForNegativeId(domainId), canAddOrDeleteDomain)
     })
   }
 
   private def confirmCommunityImportInternal(request: Request[AnyContent], communityId: Long, canDoAdminOperations: Boolean) = {
     confirmImportInternal(request, (export: Export, importSettings: ImportSettings, importItems: List[ImportItem]) => {
-      importCompleteManager.completeCommunityImport(export, importSettings, importItems, Some(communityId), canDoAdminOperations, Some(ParameterExtractor.extractUserId(request)))
+      importCompleteManager.completeCommunityImport(export, importSettings, importItems, emptyForNegativeId(communityId), canDoAdminOperations, Some(ParameterExtractor.extractUserId(request)))
     })
   }
 

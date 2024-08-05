@@ -73,12 +73,27 @@ class DomainManager @Inject() (domainParameterManager: DomainParameterManager, r
     )
   }
 
-  def createDomainInternal(domain: Domain): DBIO[Long] = {
-    PersistenceSchema.domains.returning(PersistenceSchema.domains.map(_.id)) += domain
+  def createDomainInternal(domain: Domain, checkApiKeyUniqueness: Boolean): DBIO[Long] = {
+    for {
+      replaceApiKey <- {
+        if (checkApiKeyUniqueness) {
+          PersistenceSchema.domains.filter(_.apiKey === domain.apiKey).exists.result
+        } else {
+          DBIO.successful(false)
+        }
+      }
+      newDomainId <- {
+        if (replaceApiKey) {
+          PersistenceSchema.domains.returning(PersistenceSchema.domains.map(_.id)) += domain.withApiKey(CryptoUtil.generateApiKey())
+        } else {
+          PersistenceSchema.domains.returning(PersistenceSchema.domains.map(_.id)) += domain
+        }
+      }
+    } yield newDomainId
   }
 
   def createDomain(domain: Domain): Long = {
-    exec(createDomainInternal(domain))
+    exec(createDomainInternal(domain, checkApiKeyUniqueness = false))
   }
 
   def updateDomain(domainId: Long, shortName: String, fullName: String, description: Option[String]): Unit = {

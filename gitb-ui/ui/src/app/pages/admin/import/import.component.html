@@ -43,13 +43,22 @@
                                         <label class="col-3 col-form-label text-end" for="domain">* Target {{dataService.labelDomainLower()}}:</label>
                                         <div class="col-6">
                                             @if (dataService.isSystemAdmin) {
-                                                <select class="form-control form-select" id="domain" name="domain" [(ngModel)]="domain">
-                                                    @for (domain of domains; track domain.id) {
-                                                        <option [ngValue]="domain">{{domain.fname}}</option>
-                                                    }
-                                                </select>
-                                            }
-                                            @if (dataService.isCommunityAdmin && domain != undefined) {
+                                                <div class="row row-cols-auto align-items-center gx-3">
+                                                    <div class="col-auto">
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="checkbox" id="newDomain" name="newDomain" [(ngModel)]="newDomain">
+                                                            <label class="form-check-label" for="newDomain">New {{dataService.labelDomainLower()}}?</label>
+                                                        </div>
+                                                    </div>
+                                                    <div class="flex-grow-1">
+                                                        <select class="form-control form-select" id="domain" name="domain" [(ngModel)]="domain" [disabled]="newDomain">
+                                                            @for (domain of domains; track domain.id) {
+                                                                <option [ngValue]="domain">{{domain.fname}}</option>
+                                                            }
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            } @else if (dataService.isCommunityAdmin && domain != undefined) {
                                                 <input name="domain" class="form-control" id="domain" [(ngModel)]="domain.fname" readonly="true"/>
                                             }
                                         </div>
@@ -60,13 +69,22 @@
                                         <label class="col-3 col-form-label text-end" for="community">* Target community:</label>
                                         <div class="col-6">
                                             @if (dataService.isSystemAdmin) {
-                                                <select class="form-control form-select" id="community" name="community" [(ngModel)]="community">
-                                                    @for (c of communities; track c.id) {
-                                                        <option [ngValue]="c">{{c.fname}}</option>
-                                                    }
-                                                </select>
-                                            }
-                                            @if (dataService.isCommunityAdmin && community != undefined) {
+                                                <div class="row row-cols-auto align-items-center gx-3">
+                                                    <div class="col-auto">
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="checkbox" id="newCommunity" name="newCommunity" [(ngModel)]="newCommunity">
+                                                            <label class="form-check-label" for="newCommunity">New community?</label>
+                                                        </div>
+                                                    </div>
+                                                    <div class="flex-grow-1">
+                                                        <select class="form-control form-select" id="community" name="community" [(ngModel)]="community" [disabled]="newCommunity">
+                                                            @for (c of communities; track c.id) {
+                                                                <option [ngValue]="c">{{c.fname}}</option>
+                                                            }
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            } @else if (dataService.isCommunityAdmin && community != undefined) {
                                                 <input name="community" class="form-control" id="community" [(ngModel)]="community.fname" readonly="true"/>
                                             }
                                         </div>
@@ -81,7 +99,9 @@
                                             [accepts]="['application/zip']" 
                                             [placeholder]="'Drop or browse for data archive ...'"
                                             [fileName]="archiveData?.name"
-                                            [maxSize]="52428800"></app-file-select>
+                                            [maxSize]="52428800"
+                                            [reset]="resetEmitter"
+                                            ></app-file-select>
                                     </div>
                                     <div app-tooltip class="col-auto" tbTooltip="The archive containing the data to import."></div>
                                 </div>

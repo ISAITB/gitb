@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, EventEmitter, OnDestroy, OnInit } from '@angular/core';
 import { Observable } from 'rxjs';
 import { Constants } from 'src/app/common/constants';
 import { CommunityService } from 'src/app/services/community.service';
@@ -41,6 +41,9 @@ export class ImportComponent extends BaseComponent implements OnInit, OnDestroy 
   archiveData?: FileData
   importItemActionLabels: {[key: number]: string} = {}
   importItemTypeLabels: {[key: number]: string} = {}
+  newDomain = false
+  newCommunity = false
+  resetEmitter = new EventEmitter<void>()
 
   constructor(
     private communityService: CommunityService,
@@ -86,6 +89,7 @@ export class ImportComponent extends BaseComponent implements OnInit, OnDestroy 
     this.settings.createNewData = true
     this.settings.deleteUnmatchedData = true
     this.settings.updateMatchingData = true
+    this.resetEmitter.emit()
     if (this.dataService.isSystemAdmin) {
       this.domain = undefined
       this.community = undefined
@@ -100,8 +104,12 @@ export class ImportComponent extends BaseComponent implements OnInit, OnDestroy 
             this.exportType = 'community'
             this.showDomainOption = false
         }
+        this.newDomain = false
+        this.newCommunity = false
       } else if (this.dataService.isSystemAdmin) {
         this.exportType = undefined
+        this.newDomain = true
+        this.newCommunity = true
       }
     }
   }
@@ -176,16 +184,32 @@ export class ImportComponent extends BaseComponent implements OnInit, OnDestroy 
   }
 
   importDisabled() {
-    return this.importStep1 && !(this.archiveData?.file != undefined && this.textProvided(this.settings.encryptionKey) && (this.exportType == 'domain' && this.domain != undefined || this.exportType == 'community' && this.community != undefined || this.exportType == 'settings'))
+    return this.importStep1 && !(this.archiveData?.file != undefined && this.textProvided(this.settings.encryptionKey) && (this.exportType == 'domain' && (this.newDomain || this.domain != undefined) || this.exportType == 'community' && (this.newCommunity || this.community != undefined) || this.exportType == 'settings'))
+  }
+
+  private getTargetDomainId() {
+    let domainId = -1
+    if (!this.newDomain && this.domain) {
+      domainId = this.domain.id
+    }
+    return domainId
+  }
+
+  private getTargetCommunityId() {
+    let communityId = -1
+    if (!this.newCommunity && this.community) {
+      communityId = this.community.id
+    }
+    return communityId
   }
 
   import() {
     this.pending = true
     let result: Observable<ImportPreview>
     if (this.exportType == 'domain') {
-      result = this.conformanceService.uploadDomainExport(this.domain!.id, this.settings, this.archiveData!)
+      result = this.conformanceService.uploadDomainExport(this.getTargetDomainId(), this.settings, this.archiveData!)
     } else if (this.exportType == 'community') {
-      result = this.communityService.uploadCommunityExport(this.community!.id, this.settings, this.archiveData!)
+      result = this.communityService.uploadCommunityExport(this.getTargetCommunityId(), this.settings, this.archiveData!)
     } else {
       result = this.communityService.uploadSystemSettingsExport(this.settings, this.archiveData!)
     }
@@ -335,9 +359,9 @@ export class ImportComponent extends BaseComponent implements OnInit, OnDestroy 
     this.pending = true
     let result: Observable<void>
     if (this.exportType == 'domain') {
-      result = this.conformanceService.confirmDomainImport(this.domain!.id, this.pendingImportId!, this.settings!, this.cleanImportItems())
+      result = this.conformanceService.confirmDomainImport(this.getTargetDomainId(), this.pendingImportId!, this.settings!, this.cleanImportItems())
     } else if (this.exportType == 'community') {
-      result = this.communityService.confirmCommunityImport(this.community!.id, this.pendingImportId!, this.settings!, this.cleanImportItems())
+      result = this.communityService.confirmCommunityImport(this.getTargetCommunityId(), this.pendingImportId!, this.settings!, this.cleanImportItems())
     } else {
       result = this.communityService.confirmSystemSettingsImport(this.pendingImportId!, this.settings!, this.cleanImportItems())
     }

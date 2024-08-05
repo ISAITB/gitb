@@ -1171,7 +1171,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
           ImportCallbacks.set(
             (data: com.gitb.xml.export.Domain, item: ImportItem) => {
               val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
-              domainManager.createDomainInternal(models.Domain(0L, data.getShortName, data.getFullName, Option(data.getDescription), apiKey))
+              domainManager.createDomainInternal(models.Domain(0L, data.getShortName, data.getFullName, Option(data.getDescription), apiKey), checkApiKeyUniqueness = true)
             },
             (data: com.gitb.xml.export.Domain, targetKey: String, item: ImportItem) => {
               val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
