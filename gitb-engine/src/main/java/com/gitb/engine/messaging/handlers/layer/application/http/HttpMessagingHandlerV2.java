@@ -176,11 +176,12 @@ public class HttpMessagingHandlerV2 extends AbstractNonWorkerMessagingHandler {
         DataType finalRequestBodyItem = requestBodyItem;
         // Make request.
         CompletableFuture<HttpResponse<byte[]>> asyncResponse;
-        try (var client = HttpClient.newBuilder()
-                .connectTimeout(Duration.ofMillis(connectionTimeout))
-                .followRedirects(followRedirects?HttpClient.Redirect.ALWAYS:HttpClient.Redirect.NEVER)
-                .build()) {
-            asyncResponse = client.sendAsync(builder.build(), HttpResponse.BodyHandlers.ofByteArray());
+        try {
+            asyncResponse = HttpClient.newBuilder()
+                    .connectTimeout(Duration.ofMillis(connectionTimeout))
+                    .followRedirects(followRedirects?HttpClient.Redirect.ALWAYS:HttpClient.Redirect.NEVER)
+                    .build()
+                    .sendAsync(builder.build(), HttpResponse.BodyHandlers.ofByteArray());
         } catch (Exception e) {
             throw new IllegalStateException("Error while contacting remote system", e);
         }
