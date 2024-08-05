@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JsonParseException
 import controllers.util.{RequestWithAttributes, ResponseConstructor}
 import exceptions.{AutomationApiException, ErrorCodes, MissingRequiredParameterException}
 import org.slf4j.LoggerFactory
-import play.api.libs.json.{JsValue, Json}
+import play.api.libs.json.{JsResultException, JsValue, Json}
 import play.api.mvc._
 
 abstract class BaseAutomationService(protected val cc: ControllerComponents) extends AbstractController(cc) {
@@ -35,7 +35,7 @@ abstract class BaseAutomationService(protected val cc: ControllerComponents) ext
         result = processFn(json.get)
       }
     } catch {
-      case e: Throwable => handleException(e)
+      case e: Throwable => result = handleException(e)
     }
     result
   }
@@ -45,6 +45,9 @@ abstract class BaseAutomationService(protected val cc: ControllerComponents) ext
       case e: JsonParseException =>
         LOG.warn("Failed to parse automation API payload: "+e.getMessage)
         ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_REQUEST, "Failed to parse provided payload as JSON")
+      case e: JsResultException =>
+        LOG.warn("Failure while parsing JSON payload: "+e.getMessage)
+        ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_REQUEST, "Provided JSON payload was not valid for the requested operation")
       case e: MissingRequiredParameterException =>
         LOG.warn(e.getMessage)
         ResponseConstructor.constructBadRequestResponse(ErrorCodes.MISSING_REQUIRED_CONFIGURATION, e.getMessage)
