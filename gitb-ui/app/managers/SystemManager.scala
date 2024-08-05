@@ -425,7 +425,7 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils, apiHelper: Auto
   def defineConformanceStatementViaApi(organisationKey: String, systemKey: String, actorKey: String): Unit = {
     exec((
       for {
-        statementIds <- apiHelper.getStatementIdsForApiKeys(organisationKey, systemKey, actorKey, None)
+        statementIds <- apiHelper.getStatementIdsForApiKeys(organisationKey, Some(systemKey), Some(actorKey), None, None, None)
         // Check to see if statement already exists
         statementExists <- PersistenceSchema.systemImplementsActors
           .filter(_.systemId === statementIds.systemId)
@@ -575,7 +575,7 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils, apiHelper: Auto
   def deleteConformanceStatementViaApi(organisationKey: String, systemKey: String, actorKey: String): Unit = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction = for {
-      statementIds <- apiHelper.getStatementIdsForApiKeys(organisationKey, systemKey, actorKey, None)
+      statementIds <- apiHelper.getStatementIdsForApiKeys(organisationKey, Some(systemKey), Some(actorKey), None, None, None)
       // Check to see if statement already exists
       statementExists <- PersistenceSchema.systemImplementsActors
         .filter(_.systemId === statementIds.systemId)

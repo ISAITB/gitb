@@ -1083,8 +1083,8 @@ object JsonUtil {
   }
 
   def parseJsTestSessionLaunchRequest(jsonConfig: JsValue, organisationKey: String): TestSessionLaunchRequest = {
-    val system = (jsonConfig \ "system").as[String]
-    val actor = (jsonConfig \ "actor").as[String]
+    val system = (jsonConfig \ "system").asOpt[String]
+    val actor = (jsonConfig \ "actor").asOpt[String]
     val testSuites: List[String] = (jsonConfig \ "testSuite").asOpt[JsArray].getOrElse(JsArray.empty).value.map { jsValue =>
       jsValue.as[JsString].value
     }.toList

@@ -1674,7 +1674,7 @@ class ReportManager @Inject() (communityManager: CommunityManager, apiHelper: Au
   def generateConformanceStatementReportInXMLViaApi(reportPath: Path, organisationKey: String, systemKey: String, actorKey: String, snapshotKey: Option[String]): Path = {
     val idsForReport = exec(for {
       // Load statement IDs.
-      statementIds <- apiHelper.getStatementIdsForApiKeys(organisationKey, systemKey, actorKey, snapshotKey)
+      statementIds <- apiHelper.getStatementIdsForApiKeys(organisationKey, Some(systemKey), Some(actorKey), snapshotKey, None, None)
       // Check that snapshot key was correct.
       _ <- if (snapshotKey.isDefined && statementIds.snapshotId.isEmpty) {
         throw AutomationApiException(ErrorCodes.API_SNAPSHOT_DOES_NOT_EXIST, "Unable to find conformance snapshot based on provided API key")

@@ -224,7 +224,7 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
 
   def processAutomationLaunchRequest(request: TestSessionLaunchRequest): Seq[TestSessionLaunchInfo] = {
     val q = for {
-      statementIds <- apiHelper.getStatementIdsForApiKeys(request.organisation, request.system, request.actor, None)
+      statementIds <- apiHelper.getStatementIdsForApiKeys(request.organisation, request.system, request.actor, None, Some(request.testSuite), Some(request.testCase))
       testCaseData <- {
         var query = PersistenceSchema.conformanceResults
           .join(PersistenceSchema.testSuites).on(_.testsuite === _.id)

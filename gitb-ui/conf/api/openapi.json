@@ -759,11 +759,11 @@
         "type": "object",
         "properties": {
           "system": {
-            "description": "The API KEY identifying the target system.",
+            "description": "The API KEY identifying the target system. This can be skipped in case the target organisation defines a single system.",
             "type": "string"
           },
           "actor": {
-            "description": "The API KEY identifying the target actor.",
+            "description": "The API KEY identifying the target actor. This can be skipped in case you prefer providing test suite and/or test case identifiers to match the target actor. In any case a single conformance statement must be matched based on the provided inputs.",
             "type": "string"
           },
           "forceSequentialExecution": {
@@ -793,10 +793,6 @@
             }
           }
         },
-        "required": [
-          "system",
-          "actor"
-        ],
         "additionalProperties": false
       },
       "InputMapping": {
