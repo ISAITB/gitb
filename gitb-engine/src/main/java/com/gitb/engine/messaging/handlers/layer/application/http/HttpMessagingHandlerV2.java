@@ -89,10 +89,12 @@ public class HttpMessagingHandlerV2 extends AbstractNonWorkerMessagingHandler {
         // The connection timeout.
         var connectionTimeout = Optional.ofNullable(getAndConvert(message.getFragments(), CONNECTION_TIMEOUT_ARGUMENT_NAME, DataType.NUMBER_DATA_TYPE, NumberType.class))
                 .map(NumberType::longValue)
+                .filter(value -> value > 0)
                 .orElse(10000L);
         // The request timeout.
         var requestTimeout = Optional.ofNullable(getAndConvert(message.getFragments(), REQUEST_TIMEOUT_ARGUMENT_NAME, DataType.NUMBER_DATA_TYPE, NumberType.class))
-                .map(NumberType::longValue);
+                .map(NumberType::longValue)
+                .filter(value -> value > 0);
         // Create request.
         final var builder = HttpRequest.newBuilder();
         String uriToUse;
