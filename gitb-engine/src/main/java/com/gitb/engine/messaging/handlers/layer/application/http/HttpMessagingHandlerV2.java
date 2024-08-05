@@ -47,6 +47,7 @@ public class HttpMessagingHandlerV2 extends AbstractNonWorkerMessagingHandler {
     private final static String QUERY_PARAMETERS_ARGUMENT_NAME = "queryParameters";
     private final static String PARTS_ARGUMENT_NAME = "parts";
     private final static String FOLLOW_REDIRECTS_ARGUMENT_NAME = "followRedirects";
+    private final static String CONNECTION_TIMEOUT_ARGUMENT_NAME = "connectionTimeout";
 
     public static final String REPORT_ITEM_REQUEST = "request";
     public static final String REPORT_ITEM_RESPONSE = "response";
@@ -84,6 +85,10 @@ public class HttpMessagingHandlerV2 extends AbstractNonWorkerMessagingHandler {
         });
         // The HTTP headers.
         var headers = getMapOfValues(message.getFragments(), HEADERS_ARGUMENT_NAME);
+        // The connection timeout.
+        var connectionTimeout = Optional.ofNullable(getAndConvert(message.getFragments(), CONNECTION_TIMEOUT_ARGUMENT_NAME, DataType.NUMBER_DATA_TYPE, NumberType.class))
+                .map(NumberType::longValue)
+                .orElse(10000L);
         // Create request.
         final var builder = HttpRequest.newBuilder();
         String uriToUse;
@@ -171,12 +176,11 @@ public class HttpMessagingHandlerV2 extends AbstractNonWorkerMessagingHandler {
         DataType finalRequestBodyItem = requestBodyItem;
         // Make request.
         CompletableFuture<HttpResponse<byte[]>> asyncResponse;
-        try {
-            asyncResponse = HttpClient.newBuilder()
-                    .connectTimeout(Duration.ofSeconds(10))
-                    .followRedirects(followRedirects?HttpClient.Redirect.ALWAYS:HttpClient.Redirect.NEVER)
-                    .build()
-                    .sendAsync(builder.build(), HttpResponse.BodyHandlers.ofByteArray());
+        try (var client = HttpClient.newBuilder()
+                .connectTimeout(Duration.ofMillis(connectionTimeout))
+                .followRedirects(followRedirects?HttpClient.Redirect.ALWAYS:HttpClient.Redirect.NEVER)
+                .build()) {
+            asyncResponse = client.sendAsync(builder.build(), HttpResponse.BodyHandlers.ofByteArray());
         } catch (Exception e) {
             throw new IllegalStateException("Error while contacting remote system", e);
         }
