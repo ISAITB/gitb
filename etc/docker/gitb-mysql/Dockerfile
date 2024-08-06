@@ -1,9 +1,9 @@
 FROM mysql:8.4.2
 
-ENV MYSQL_ROOT_PASSWORD root
-ENV MYSQL_DATABASE gitb
-ENV MYSQL_USER gitb
-ENV MYSQL_PASSWORD gitb
+ENV MYSQL_ROOT_PASSWORD=root
+ENV MYSQL_DATABASE=gitb
+ENV MYSQL_USER=gitb
+ENV MYSQL_PASSWORD=gitb
 
 COPY gitb-entrypoint.sh /usr/local/bin
 COPY gitb.cnf /etc/mysql/conf.d
