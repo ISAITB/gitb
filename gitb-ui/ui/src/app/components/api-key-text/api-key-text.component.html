@@ -1,5 +1,8 @@
 <div class="input-group">
-    <input [name]="name" [attr.id]="idName" [(ngModel)]="key" class="form-control" readonly="true">
+    @if (label) {
+        <span class="input-group-text">{{label}}</span>
+    }
+    <input [name]="name" [attr.id]="idName" [(ngModel)]="key" class="form-control" readonly="true" [style.width]="inputWidth">
     @if (supportUpdate) {
         <button class="btn btn-secondary" type="button" (click)="doUpdate()" [disabled]="updatePending || deletePending" containerClass="shortTooltip" container="body" tooltip="Reset" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'">
             <i class="fa-solid fa-refresh" aria-hidden="true"></i>

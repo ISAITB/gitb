@@ -365,6 +365,15 @@
                                         </div>
                                     </div>
                                     <div class="col-auto">
+                                        <app-api-key-text idName="restApiAdminKey" name="restApiAdminKey"
+                                            [key]="restApiAdminKey" 
+                                            [supportUpdate]="true"
+                                            [updatePending]="updateRestApiAdminKeyPending"
+                                            [label]="'Administration API key'"
+                                            [inputWidth]="'415px'"
+                                            (update)="updateRestApiAdminKey()"></app-api-key-text>
+                                    </div>
+                                    <div class="col-auto">
                                         <button type="submit" class="btn btn-secondary" [pending]="restApiStatus.pending" (click)="saveRestApi()">Save</button>
                                     </div>
                                 </div>

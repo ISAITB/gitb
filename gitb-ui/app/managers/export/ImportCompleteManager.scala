@@ -1033,38 +1033,10 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
               dbActions += processFromArchive(ImportItemType.SystemConfiguration, config, config.getName, ctx,
                 ImportCallbacks.set(
                   (data: com.gitb.xml.export.SystemConfiguration, item: ImportItem) => {
-                    if (systemConfigurationManager.isEditableSystemParameter(data.getName)) {
-                      var valueToSet = Option(data.getValue)
-                      if (valueToSet.isDefined) {
-                        if (data.getName == Constants.DemoAccount) {
-                          // Make sure the demo account ID matches the after-import result for the demo user account.
-                          valueToSet = ctx.processedIdMap.get(ImportItemType.OrganisationUser).flatMap(_.get(valueToSet.get))
-                        } else if (data.getName == Constants.EmailSettings) {
-                          // Make sure SMTP password is encrypted with target master key.
-                          valueToSet = prepareSmtpSettings(valueToSet, ctx.importSettings)
-                        }
-                      }
-                      systemConfigurationManager.updateSystemParameterInternal(data.getName, valueToSet, applySetting = true)
-                    } else {
-                      DBIO.successful(())
-                    }
+                    handleSystemParameter(data, ctx)
                   },
                   (data: com.gitb.xml.export.SystemConfiguration, targetKey: String, item: ImportItem) => {
-                    if (systemConfigurationManager.isEditableSystemParameter(data.getName)) {
-                      var valueToSet = Option(data.getValue)
-                      if (valueToSet.isDefined) {
-                        if (data.getName == Constants.DemoAccount) {
-                          // Make sure the demo account ID matches the after-import result for the demo user account.
-                          valueToSet = ctx.processedIdMap.get(ImportItemType.OrganisationUser).flatMap(_.get(valueToSet.get))
-                        } else if (data.getName == Constants.EmailSettings) {
-                          // Make sure SMTP password is encrypted with target master key.
-                          valueToSet = prepareSmtpSettings(valueToSet, ctx.importSettings)
-                        }
-                      }
-                      systemConfigurationManager.updateSystemParameterInternal(data.getName, valueToSet, applySetting = true)
-                    } else {
-                      DBIO.successful(())
-                    }
+                    handleSystemParameter(data, ctx)
                   }
                 )
               )
@@ -1084,6 +1056,24 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
           )
         }
       } yield ()
+    } else {
+      DBIO.successful(())
+    }
+  }
+
+  private def handleSystemParameter(data: com.gitb.xml.export.SystemConfiguration, ctx: ImportContext): DBIO[_] = {
+    if (systemConfigurationManager.isEditableSystemParameter(data.getName)) {
+      var valueToSet = Option(data.getValue)
+      if (valueToSet.isDefined) {
+        if (data.getName == Constants.DemoAccount) {
+          // Make sure the demo account ID matches the after-import result for the demo user account.
+          valueToSet = ctx.processedIdMap.get(ImportItemType.OrganisationUser).flatMap(_.get(valueToSet.get))
+        } else if (data.getName == Constants.EmailSettings) {
+          // Make sure SMTP password is encrypted with target master key.
+          valueToSet = prepareSmtpSettings(valueToSet, ctx.importSettings)
+        }
+      }
+      systemConfigurationManager.updateSystemParameterInternal(data.getName, valueToSet, applySetting = true)
     } else {
       DBIO.successful(())
     }

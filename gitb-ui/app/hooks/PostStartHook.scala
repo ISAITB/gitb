@@ -17,7 +17,7 @@ import org.apache.pekko.actor.ActorSystem
 import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
 import play.api.{Configuration, Environment}
-import utils.{JsonUtil, RepositoryUtils, TimeUtil, ZipArchiver}
+import utils.{CryptoUtil, JsonUtil, RepositoryUtils, TimeUtil, ZipArchiver}
 
 import java.io.{File, FileFilter}
 import java.nio.charset.StandardCharsets
@@ -106,6 +106,10 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext, authenticationMana
     // REST API.
     if (restApiEnabledConfig.nonEmpty && restApiEnabledConfig.get.parameter.nonEmpty) {
       Configurations.AUTOMATION_API_ENABLED = restApiEnabledConfig.get.parameter.get.toBoolean
+    }
+    val restApiAdminKey = persistedConfigs.find(config => config.config.name == Constants.RestApiAdminKey).map(_.config)
+    if (restApiAdminKey.flatMap(_.parameter).isEmpty) {
+      systemConfigurationManager.updateSystemParameter(Constants.RestApiAdminKey, Some(CryptoUtil.generateApiKey()))
     }
     // Self-registration.
     val selfRegistrationConfig = persistedConfigs.find(config => config.config.name == Constants.SelfRegistrationEnabled).map(_.config)

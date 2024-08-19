@@ -356,6 +356,7 @@ export class Constants {
 	public static SYSTEM_CONFIG = {
 		SESSION_ALIVE_TIME: 'session_alive_time',
 		REST_API_ENABLED: 'rest_api_enabled',
+		REST_API_ADMIN_KEY: 'rest_api_admin_key',
 		SELF_REGISTRATION_ENABLED: 'self_registration_enabled',
 		DEMO_ACCOUNT: 'demo_account',
 		WELCOME_MESSAGE: 'welcome',

@@ -12,6 +12,8 @@ export class ApiKeyTextComponent implements OnInit {
   @Input() key!: string
   @Input() idName!: string
   @Input() name!: string
+  @Input() label?: string
+  @Input() inputWidth?: string
   @Input() supportUpdate = false
   @Input() supportDelete = false
   @Input() updatePending = false

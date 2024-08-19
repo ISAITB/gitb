@@ -253,6 +253,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, systemConfigu
     setting match {
       case Constants.SessionAliveTime => "Test session timeout"
       case Constants.RestApiEnabled => "REST API"
+      case Constants.RestApiAdminKey => "REST API administration API key"
       case Constants.SelfRegistrationEnabled => "Self-registration"
       case Constants.DemoAccount => "Demo account"
       case Constants.WelcomeMessage => "Custom welcome page message"

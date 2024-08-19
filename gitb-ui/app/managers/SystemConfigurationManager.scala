@@ -11,7 +11,7 @@ import org.slf4j.{Logger, LoggerFactory}
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
 import slick.collection.heterogeneous.HNil
-import utils.{EmailUtil, JsonUtil, MimeUtil, RepositoryUtils}
+import utils.{CryptoUtil, EmailUtil, JsonUtil, MimeUtil, RepositoryUtils}
 
 import java.io.File
 import java.sql.Timestamp
@@ -30,7 +30,7 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
 
   private final val logger: Logger = LoggerFactory.getLogger(classOf[SystemConfigurationManager])
   private final val editableSystemConfigurationTypes = Set(
-    Constants.SessionAliveTime, Constants.RestApiEnabled, Constants.SelfRegistrationEnabled,
+    Constants.SessionAliveTime, Constants.RestApiEnabled, Constants.RestApiAdminKey, Constants.SelfRegistrationEnabled,
     Constants.DemoAccount, Constants.WelcomeMessage, Constants.AccountRetentionPeriod,
     Constants.EmailSettings
   )
@@ -237,6 +237,8 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
     var parsedEmailSettings: Option[EmailSettings] = None
     val value = if (name == Constants.EmailSettings && providedValue.isDefined) {
       Some(JsonUtil.jsEmailSettings(processReceivedEmailSettings(providedValue.get), maskPassword = false).toString())
+    } else if (name == Constants.RestApiAdminKey  && providedValue.isEmpty) {
+      Some(CryptoUtil.generateApiKey())
     } else {
       providedValue
     }
@@ -262,6 +264,10 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
               Configurations.AUTOMATION_API_ENABLED = value.get.toBoolean
             }
             DBIO.successful(None)
+          case Constants.RestApiAdminKey =>
+            DBIO.successful(value.map(_ => {
+              SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.RestApiAdminKey, value, None), defaultSetting = false, environmentSetting = false)
+            }))
           case Constants.SelfRegistrationEnabled =>
             if (value.isDefined) {
               Configurations.REGISTRATION_ENABLED = value.get.toBoolean
