@@ -19,7 +19,7 @@
         </div>
         <div class="row mb-3">
             <label class="col-3 col-form-label text-end" for="displayOrder">Display order:</label>
-            <div class="col-1"><input id="displayOrder" name="displayOrder" [(ngModel)]="actor.displayOrder" class="form-control" type="text"></div>
+            <div class="col-1"><input id="displayOrder" name="displayOrder" [(ngModel)]="actor.displayOrder" class="form-control" type="number"></div>
             <div app-tooltip class="col-auto" [tbTooltip]="'A number to be considered in relation to other '+dataService.labelActorsLower()+' that is used to determine the display positioning in test execution diagrams. If unspecified a default positioning is applied based on the test case\'s steps.'"></div>
         </div>
         <div class="row mb-3 pt-1">
