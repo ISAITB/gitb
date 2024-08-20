@@ -1140,6 +1140,18 @@ object JsonUtil {
     TestSuiteUndeployRequest(specification, testSuite, sharedTestSuite)
   }
 
+  def parseJsCreateSpecificationGroupRequest(json: JsValue, communityApiKey: String): CreateSpecificationGroupRequest = {
+    CreateSpecificationGroupRequest(
+      (json \ "shortName").as[String],
+      (json \ "fullName").as[String],
+      (json \ "description").asOpt[String],
+      (json \ "displayOrder").asOpt[Short],
+      (json \ "apiKey").asOpt[String],
+      (json \ "domain").asOpt[String],
+      communityApiKey
+    )
+  }
+
   def parseJsCreateDomainRequest(json: JsValue): CreateDomainRequest = {
     CreateDomainRequest(
       (json \ "shortName").as[String],
@@ -1155,6 +1167,17 @@ object JsonUtil {
       (json \ "shortName").asOpt[String],
       (json \ "fullName").asOpt[String],
       (json \ "description").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
+      communityApiKey
+    )
+  }
+
+  def parseJsUpdateSpecificationGroupRequest(json: JsValue, groupApiKey: String, communityApiKey: String): UpdateSpecificationGroupRequest = {
+    UpdateSpecificationGroupRequest(
+      groupApiKey,
+      (json \ "shortName").asOpt[String],
+      (json \ "fullName").asOpt[String],
+      (json \ "description").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
+      (json \ "displayOrder").asOpt[Short],
       communityApiKey
     )
   }

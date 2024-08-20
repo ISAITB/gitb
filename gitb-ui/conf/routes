@@ -399,6 +399,9 @@ PUT     /api/rest/domain                                         @controllers.re
 POST    /api/rest/domain                                         @controllers.rest.DomainAutomationService.updateDomainOfCommunity()
 POST    /api/rest/domain/:domain                                 @controllers.rest.DomainAutomationService.updateDomain(domain: String)
 DELETE  /api/rest/domain/:domain                                 @controllers.rest.DomainAutomationService.deleteDomain(domain: String)
+PUT     /api/rest/group                                          @controllers.rest.DomainAutomationService.createSpecificationGroup()
+POST    /api/rest/group/:group                                   @controllers.rest.DomainAutomationService.updateSpecificationGroup(group: String)
+DELETE  /api/rest/group/:group                                   @controllers.rest.DomainAutomationService.deleteSpecificationGroup(group: String)
 
 POST    /api/crumbs                                              @controllers.BreadcrumbService.getBreadcrumbLabels()
 

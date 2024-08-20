@@ -1,7 +1,7 @@
 package controllers.rest
 
 import controllers.util.{AuthorizedAction, ResponseConstructor}
-import managers.{AuthorizationManager, DomainManager}
+import managers.{AuthorizationManager, DomainManager, SpecificationManager}
 import models.Constants
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import utils.JsonUtil
@@ -12,6 +12,7 @@ import javax.inject.{Inject, Singleton}
 class DomainAutomationService @Inject() (authorizedAction: AuthorizedAction,
                                          cc: ControllerComponents,
                                          domainManager: DomainManager,
+                                         specificationManager: SpecificationManager,
                                          authorizationManager: AuthorizationManager) extends BaseAutomationService(cc) {
 
   def createDomain(): Action[AnyContent] = authorizedAction { request =>
@@ -51,5 +52,33 @@ class DomainAutomationService @Inject() (authorizedAction: AuthorizedAction,
     })
   }
 
+  def createSpecificationGroup(): Action[AnyContent] = authorizedAction { request =>
+    processAsJson(request, Some(authorizationManager.canManageSpecificationGroupThroughAutomationApi), { body =>
+      val communityKey = request.headers.get(Constants.AutomationHeader).get
+      val input = JsonUtil.parseJsCreateSpecificationGroupRequest(body, communityKey)
+      val savedApiKey = specificationManager.createSpecificationGroupViaAutomationApi(input)
+      ResponseConstructor.constructJsonResponse(JsonUtil.jsApiKey(savedApiKey).toString())
+    })
+  }
+
+  def deleteSpecificationGroup(group: String): Action[AnyContent] = authorizedAction { request =>
+    try {
+      authorizationManager.canManageSpecificationGroupThroughAutomationApi(request)
+      val communityKey = request.headers.get(Constants.AutomationHeader).get
+      specificationManager.deleteSpecificationGroupThroughAutomationApi(group, communityKey)
+      ResponseConstructor.constructEmptyResponse
+    } catch {
+      case e: Throwable => handleException(e)
+    }
+  }
+
+  def updateSpecificationGroup(group: String): Action[AnyContent] = authorizedAction { request =>
+    processAsJson(request, Some(authorizationManager.canManageSpecificationGroupThroughAutomationApi), { body =>
+      val communityKey = request.headers.get(Constants.AutomationHeader).get
+      val input = JsonUtil.parseJsUpdateSpecificationGroupRequest(body, group, communityKey)
+      specificationManager.updateSpecificationGroupThroughAutomationApi(input)
+      ResponseConstructor.constructEmptyResponse
+    })
+  }
 
 }

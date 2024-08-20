@@ -158,4 +158,53 @@ class AutomationApiHelper @Inject()(dbConfigProvider: DatabaseConfigProvider) ex
     } yield statementIds
   }
 
+  def getDomainIdByCommunityApiKey(communityApiKey: String, domainApiKey: Option[String]): DBIO[Long] = {
+    for {
+      // Look-up the community's domain.
+      communityInfo <- PersistenceSchema.communities
+        .filter(_.apiKey === communityApiKey)
+        .map(_.domain)
+        .result
+        .headOption
+      // Make sure a community was matched and return its (optional) domain ID.
+      communityDomainId <- {
+        if (communityInfo.isEmpty) {
+          throw AutomationApiException(ErrorCodes.API_DOMAIN_NOT_FOUND, "No domain found for the provided community API key")
+        } else {
+          DBIO.successful(communityInfo.get)
+        }
+      }
+      // Look-up the domain related to the domain API key (if provided).
+      domainInfo <- {
+        if (domainApiKey.isDefined) {
+          PersistenceSchema.domains
+            .filter(_.apiKey === domainApiKey.get)
+            .map(_.id)
+            .result
+            .headOption
+        } else {
+          DBIO.successful(None)
+        }
+      }
+      // Make consistency checks and return the domain ID.
+      domainId <- {
+        if (domainApiKey.isDefined) {
+          if (domainInfo.isEmpty) {
+            throw AutomationApiException(ErrorCodes.API_DOMAIN_NOT_FOUND, "No domain found for the provided domain API key")
+          } else if (communityDomainId.isDefined && communityDomainId.get != domainInfo.get) {
+            throw AutomationApiException(ErrorCodes.API_DOMAIN_NOT_FOUND, "The provided domain API key did not match the community's domain")
+          } else {
+            DBIO.successful(domainInfo.get)
+          }
+        } else {
+          if (communityDomainId.isEmpty) {
+            throw AutomationApiException(ErrorCodes.API_DOMAIN_NOT_FOUND, "You need to specify the domain API key to identify a specific domain")
+          } else {
+            DBIO.successful(communityDomainId.get)
+          }
+        }
+      }
+    } yield domainId
+  }
+
 }
