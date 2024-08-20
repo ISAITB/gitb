@@ -1,6 +1,8 @@
 package managers
 
+import exceptions.{AutomationApiException, ErrorCodes}
 import models.Enums.TestResultStatus
+import models.automation.{CreateActorRequest, UpdateActorRequest}
 
 import javax.inject.{Inject, Singleton}
 import models.{Actor, Actors, BadgeInfo, Badges}
@@ -14,7 +16,12 @@ import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
-class ActorManager @Inject() (repositoryUtils: RepositoryUtils, testResultManager: TestResultManager, endPointManager: EndPointManager, optionManager: OptionManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class ActorManager @Inject() (repositoryUtils: RepositoryUtils,
+                              testResultManager: TestResultManager,
+                              endPointManager: EndPointManager,
+                              optionManager: OptionManager,
+                              automationApiHelper: AutomationApiHelper,
+                              dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
 
@@ -34,17 +41,38 @@ class ActorManager @Inject() (repositoryUtils: RepositoryUtils, testResultManage
     exec(actor).isDefined
   }
 
-  def deleteActorWrapper(actorId: Long) = {
+  def deleteActorWrapper(actorId: Long): Unit = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction = deleteActor(actorId, onSuccessCalls)
     exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
   }
 
-  def deleteActor(actorId: Long, onSuccessCalls: mutable.ListBuffer[() => _]) = {
+  def deleteActor(actorId: Long, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
     delete(actorId, onSuccessCalls)
   }
 
-  private def delete(actorId: Long, onSuccessCalls: mutable.ListBuffer[() => _]) = {
+  def deleteActorThroughAutomationApi(actorApiKey: String, communityApiKey: String): Unit = {
+    val onSuccessCalls = mutable.ListBuffer[() => _]()
+    val action = for {
+      domainId <- automationApiHelper.getDomainIdByCommunityApiKey(communityApiKey, None)
+      actorId <- PersistenceSchema.actors
+        .filter(_.domain === domainId)
+        .filter(_.apiKey === actorApiKey)
+        .map(_.id)
+        .result
+        .headOption
+      _ <- {
+        if (actorId.isEmpty) {
+          throw AutomationApiException(ErrorCodes.API_ACTOR_NOT_FOUND, "No actor found for the provided API keys")
+        } else {
+          deleteActor(actorId.get, onSuccessCalls)
+        }
+      }
+    } yield ()
+    exec(dbActionFinalisation(Some(onSuccessCalls), None, action).transactionally)
+  }
+
+  private def delete(actorId: Long, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
     for {
       specificationId <- PersistenceSchema.specificationHasActors.filter(_.actorId === actorId).map(_.specId).result.head
       _ <- {
@@ -71,6 +99,55 @@ class ActorManager @Inject() (repositoryUtils: RepositoryUtils, testResultManage
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction = updateActor(id, actorId, name, description, default, hidden, displayOrder, specificationId, None, checkApiKeyUniqueness = false, Some(badges), onSuccessCalls)
     exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
+  }
+
+  def updateActorThroughAutomationApi(updateRequest: UpdateActorRequest): Unit = {
+    val onSuccessCalls = mutable.ListBuffer[() => _]()
+    val action = for {
+      domainId <- automationApiHelper.getDomainIdByCommunityApiKey(updateRequest.communityApiKey, None)
+      // Load existing actor information (actor data and specification ID).
+      actorInfo <- {
+        for {
+          actorInfo <- PersistenceSchema.actors
+            .join(PersistenceSchema.specificationHasActors).on(_.id === _.actorId)
+            .filter(_._1.apiKey === updateRequest.actorApiKey)
+            .filter(_._1.domain === domainId)
+            .map(x => (x._1, x._2.specId))
+            .result
+            .headOption
+          _ <- {
+            if (actorInfo.isEmpty) {
+              throw AutomationApiException(ErrorCodes.API_ACTOR_NOT_FOUND, "No actor found for the provided API keys")
+            } else {
+              DBIO.successful(())
+            }
+          }
+        } yield actorInfo.get
+      }
+      // If the identifier has changed ensure it remains unique.
+      _ <- {
+        if (updateRequest.identifier.isDefined && updateRequest.identifier.get != actorInfo._1.actorId) {
+          ensureActorIdentifierIsUnique(actorInfo._2, updateRequest.identifier.get, Some(actorInfo._1.id))
+        } else {
+          DBIO.successful(())
+        }
+      }
+      _ <- updateActor(
+        actorInfo._1.id,
+        updateRequest.identifier.getOrElse(actorInfo._1.actorId),
+        updateRequest.name.getOrElse(actorInfo._1.name),
+        updateRequest.description.getOrElse(actorInfo._1.description),
+        updateRequest.default.getOrElse(actorInfo._1.default),
+        updateRequest.hidden.getOrElse(actorInfo._1.hidden),
+        updateRequest.displayOrder.getOrElse(actorInfo._1.displayOrder),
+        actorInfo._2,
+        None,
+        checkApiKeyUniqueness = false,
+        None,
+        onSuccessCalls
+      )
+    } yield ()
+    exec(action.transactionally)
   }
 
   def updateActor(id: Long, actorId: String, name: String, description: Option[String], default: Option[Boolean], hidden: Boolean, displayOrder: Option[Short], specificationId: Long, apiKey: Option[String], checkApiKeyUniqueness: Boolean, badges: Option[BadgeInfo], onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
@@ -144,6 +221,74 @@ class ActorManager @Inject() (repositoryUtils: RepositoryUtils, testResultManage
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction = createActor(actor, specificationId, checkApiKeyUniqueness = false, Some(badges), onSuccessCalls)
     exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
+  }
+
+  private def ensureActorIdentifierIsUnique(specificationId: Long, actorIdentifier: String, actorIdToIgnore: Option[Long]): DBIO[_] = {
+    for {
+      actorIdentifierExists <- PersistenceSchema.actors
+        .join(PersistenceSchema.specificationHasActors).on(_.id === _.actorId)
+        .filter(_._1.actorId === actorIdentifier)
+        .filter(_._2.specId === specificationId)
+        .filterOpt(actorIdToIgnore)((q, id) => q._1.id =!= id)
+        .exists
+        .result
+      _ <- {
+        if (actorIdentifierExists) {
+          throw AutomationApiException(ErrorCodes.API_ACTOR_IDENTIFIER_EXISTS, "The specification already defines an actor with the provided identifier")
+        } else {
+          DBIO.successful(())
+        }
+      }
+    } yield ()
+  }
+
+  def createActorThroughAutomationApi(input: CreateActorRequest): String = {
+    val onSuccessCalls = mutable.ListBuffer[() => _]()
+    val action = for {
+      domainId <- automationApiHelper.getDomainIdByCommunityApiKey(input.communityApiKey, None)
+      specificationId <- {
+        for {
+          specificationId <- PersistenceSchema.specifications
+            .filter(_.domain === domainId)
+            .filter(_.apiKey === input.specificationApiKey)
+            .map(_.id)
+            .result
+            .headOption
+          _ <- {
+            if (specificationId.isEmpty) {
+              throw AutomationApiException(ErrorCodes.API_SPECIFICATION_NOT_FOUND, "No specification found for the provided API keys")
+            } else {
+              DBIO.successful(())
+            }
+          }
+        } yield specificationId.get
+      }
+      _ <- ensureActorIdentifierIsUnique(specificationId, input.identifier, None)
+      apiKeyToUse <- {
+        for {
+          generateApiKey <- if (input.apiKey.isEmpty) {
+            DBIO.successful(true)
+          } else {
+            PersistenceSchema.actors.filter(_.apiKey === input.apiKey.get).exists.result
+          }
+          apiKeyToUse <- if (generateApiKey) {
+            DBIO.successful(CryptoUtil.generateApiKey())
+          } else {
+            DBIO.successful(input.apiKey.get)
+          }
+        } yield apiKeyToUse
+      }
+      _ <- {
+        createActor(
+          Actors(0L, input.identifier, input.name, input.description, Some(input.default.getOrElse(false)), input.hidden.getOrElse(false), input.displayOrder, apiKeyToUse, domainId),
+          specificationId,
+          checkApiKeyUniqueness = false,
+          None,
+          onSuccessCalls
+        )
+      }
+    } yield apiKeyToUse
+    exec(action.transactionally)
   }
 
   def createActor(actor: Actors, specificationId: Long, checkApiKeyUniqueness: Boolean, badges: Option[BadgeInfo], onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[Long] = {

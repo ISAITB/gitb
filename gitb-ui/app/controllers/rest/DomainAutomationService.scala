@@ -1,7 +1,7 @@
 package controllers.rest
 
 import controllers.util.{AuthorizedAction, ResponseConstructor}
-import managers.{AuthorizationManager, DomainManager, SpecificationManager}
+import managers.{ActorManager, AuthorizationManager, DomainManager, SpecificationManager}
 import models.Constants
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import utils.JsonUtil
@@ -13,6 +13,7 @@ class DomainAutomationService @Inject() (authorizedAction: AuthorizedAction,
                                          cc: ControllerComponents,
                                          domainManager: DomainManager,
                                          specificationManager: SpecificationManager,
+                                         actorManager: ActorManager,
                                          authorizationManager: AuthorizationManager) extends BaseAutomationService(cc) {
 
   def createDomain(): Action[AnyContent] = authorizedAction { request =>
@@ -56,7 +57,7 @@ class DomainAutomationService @Inject() (authorizedAction: AuthorizedAction,
     processAsJson(request, Some(authorizationManager.canManageSpecificationGroupThroughAutomationApi), { body =>
       val communityKey = request.headers.get(Constants.AutomationHeader).get
       val input = JsonUtil.parseJsCreateSpecificationGroupRequest(body, communityKey)
-      val savedApiKey = specificationManager.createSpecificationGroupViaAutomationApi(input)
+      val savedApiKey = specificationManager.createSpecificationGroupThroughAutomationApi(input)
       ResponseConstructor.constructJsonResponse(JsonUtil.jsApiKey(savedApiKey).toString())
     })
   }
@@ -85,7 +86,7 @@ class DomainAutomationService @Inject() (authorizedAction: AuthorizedAction,
     processAsJson(request, Some(authorizationManager.canManageSpecificationThroughAutomationApi), { body =>
       val communityKey = request.headers.get(Constants.AutomationHeader).get
       val input = JsonUtil.parseJsCreateSpecificationRequest(body, communityKey)
-      val savedApiKey = specificationManager.createSpecificationViaAutomationApi(input)
+      val savedApiKey = specificationManager.createSpecificationThroughAutomationApi(input)
       ResponseConstructor.constructJsonResponse(JsonUtil.jsApiKey(savedApiKey).toString())
     })
   }
@@ -94,7 +95,7 @@ class DomainAutomationService @Inject() (authorizedAction: AuthorizedAction,
     try {
       authorizationManager.canManageSpecificationThroughAutomationApi(request)
       val communityKey = request.headers.get(Constants.AutomationHeader).get
-      specificationManager.deleteSpecificationViaAutomationApi(specification, communityKey)
+      specificationManager.deleteSpecificationThroughAutomationApi(specification, communityKey)
       ResponseConstructor.constructEmptyResponse
     } catch {
       case e: Throwable => handleException(e)
@@ -106,6 +107,35 @@ class DomainAutomationService @Inject() (authorizedAction: AuthorizedAction,
       val communityKey = request.headers.get(Constants.AutomationHeader).get
       val input = JsonUtil.parseJsUpdateSpecificationRequest(body, specification, communityKey)
       specificationManager.updateSpecificationThroughAutomationApi(input)
+      ResponseConstructor.constructEmptyResponse
+    })
+  }
+
+  def createActor(): Action[AnyContent] = authorizedAction { request =>
+    processAsJson(request, Some(authorizationManager.canManageActorThroughAutomationApi), { body =>
+      val communityKey = request.headers.get(Constants.AutomationHeader).get
+      val input = JsonUtil.parseJsCreateActorRequest(body, communityKey)
+      val savedApiKey = actorManager.createActorThroughAutomationApi(input)
+      ResponseConstructor.constructJsonResponse(JsonUtil.jsApiKey(savedApiKey).toString())
+    })
+  }
+
+  def deleteActor(actor: String): Action[AnyContent] = authorizedAction { request =>
+    try {
+      authorizationManager.canManageActorThroughAutomationApi(request)
+      val communityKey = request.headers.get(Constants.AutomationHeader).get
+      actorManager.deleteActorThroughAutomationApi(actor, communityKey)
+      ResponseConstructor.constructEmptyResponse
+    } catch {
+      case e: Throwable => handleException(e)
+    }
+  }
+
+  def updateActor(actor: String): Action[AnyContent] = authorizedAction { request =>
+    processAsJson(request, Some(authorizationManager.canManageActorThroughAutomationApi), { body =>
+      val communityKey = request.headers.get(Constants.AutomationHeader).get
+      val input = JsonUtil.parseJsUpdateActorRequest(body, actor, communityKey)
+      actorManager.updateActorThroughAutomationApi(input)
       ResponseConstructor.constructEmptyResponse
     })
   }

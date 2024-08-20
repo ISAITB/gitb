@@ -1166,6 +1166,20 @@ object JsonUtil {
     )
   }
 
+  def parseJsCreateActorRequest(json: JsValue, communityApiKey: String): CreateActorRequest = {
+    CreateActorRequest(
+      (json \ "identifier").as[String],
+      (json \ "name").as[String],
+      (json \ "description").asOpt[String],
+      (json \ "default").asOpt[Boolean],
+      (json \ "hidden").asOpt[Boolean],
+      (json \ "displayOrder").asOpt[Short].flatMap(x => if (x < 0) None else Some(x)),
+      (json \ "apiKey").asOpt[String],
+      (json \ "specification").as[String],
+      communityApiKey
+    )
+  }
+
   def parseJsCreateDomainRequest(json: JsValue): CreateDomainRequest = {
     CreateDomainRequest(
       (json \ "shortName").as[String],
@@ -1205,6 +1219,19 @@ object JsonUtil {
       (json \ "hidden").asOpt[Boolean],
       (json \ "displayOrder").asOpt[Short],
       (json \ "group").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
+      communityApiKey
+    )
+  }
+
+  def parseJsUpdateActorRequest(json: JsValue, actorApiKey: String, communityApiKey: String): UpdateActorRequest = {
+    UpdateActorRequest(
+      actorApiKey,
+      (json \ "identifier").asOpt[String],
+      (json \ "name").asOpt[String],
+      (json \ "description").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
+      (json \ "default").asOpt[Boolean].map(Some(_)),
+      (json \ "hidden").asOpt[Boolean],
+      (json \ "displayOrder").asOpt[Short].map(x => if (x < 0) None else Some(x)),
       communityApiKey
     )
   }

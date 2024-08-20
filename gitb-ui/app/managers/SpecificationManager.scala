@@ -37,7 +37,7 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils,
     exec(dbActionFinalisation(Some(onSuccessCalls), None, action).transactionally)
   }
 
-  def deleteSpecificationViaAutomationApi(specificationApiKey: String, communityApiKey: String): Unit = {
+  def deleteSpecificationThroughAutomationApi(specificationApiKey: String, communityApiKey: String): Unit = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val action = for {
       domainId <- automationApiHelper.getDomainIdByCommunityApiKey(communityApiKey, None)
@@ -109,7 +109,7 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils,
     exec(createSpecificationGroupInternal(group, checkApiKeyUniqueness = false).transactionally)
   }
 
-  def createSpecificationGroupViaAutomationApi(input: CreateSpecificationGroupRequest): String = {
+  def createSpecificationGroupThroughAutomationApi(input: CreateSpecificationGroupRequest): String = {
     val action = for {
       domainId <- automationApiHelper.getDomainIdByCommunityApiKey(input.communityApiKey, input.domainApiKey)
       apiKeyToUse <- {
@@ -668,7 +668,7 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils,
     }
   }
 
-  def createSpecificationViaAutomationApi(input: CreateSpecificationRequest): String = {
+  def createSpecificationThroughAutomationApi(input: CreateSpecificationRequest): String = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val action = for {
       domainId <- automationApiHelper.getDomainIdByCommunityApiKey(input.communityApiKey, input.domainApiKey)

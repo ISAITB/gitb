@@ -405,6 +405,9 @@ DELETE  /api/rest/group/:group                                   @controllers.re
 PUT     /api/rest/specification                                  @controllers.rest.DomainAutomationService.createSpecification()
 POST    /api/rest/specification/:specification                   @controllers.rest.DomainAutomationService.updateSpecification(specification: String)
 DELETE  /api/rest/specification/:specification                   @controllers.rest.DomainAutomationService.deleteSpecification(specification: String)
+PUT     /api/rest/actor                                          @controllers.rest.DomainAutomationService.createActor()
+POST    /api/rest/actor/:actor                                   @controllers.rest.DomainAutomationService.updateActor(actor: String)
+DELETE  /api/rest/actor/:actor                                   @controllers.rest.DomainAutomationService.deleteActor(actor: String)
 
 POST    /api/crumbs                                              @controllers.BreadcrumbService.getBreadcrumbLabels()
 

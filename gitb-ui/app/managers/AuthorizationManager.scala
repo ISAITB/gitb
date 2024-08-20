@@ -144,6 +144,11 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     ok
   }
 
+  def canManageActorThroughAutomationApi(request: RequestWithAttributes[_]): Boolean = {
+    val ok = restApiEnabledAndValidCommunityKeyDefined(request)
+    setAuthResult(request, ok, "You are not allowed to manage actors through the automation API")
+  }
+
   def canManageSpecificationThroughAutomationApi(request: RequestWithAttributes[_]): Boolean = {
     val ok = restApiEnabledAndValidCommunityKeyDefined(request)
     setAuthResult(request, ok, "You are not allowed to manage specifications through the automation API")
