@@ -455,7 +455,7 @@ object ParameterExtractor {
     val descr: Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DESC)
     val domain = ParameterExtractor.requiredBodyParameter(request, Parameters.DOMAIN_ID).toLong
 
-    SpecificationGroups(0L, sname, fname, descr, 0, domain)
+    SpecificationGroups(0L, sname, fname, descr, 0, CryptoUtil.generateApiKey(), domain)
   }
 
   def extractActor(paramMap:Option[Map[String, Seq[String]]]):Actor = {

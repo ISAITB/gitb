@@ -15,3 +15,12 @@
     </div>
     <div app-tooltip class="col-auto" [tbTooltip]="'This is used to describe the '+dataService.labelSpecificationGroupLower()+'. It is visible to users in relevant search filters.'"></div>
 </div>
+@if (dataService.configuration.automationApiEnabled && group.id != undefined) {
+    <div class="row mb-3">
+        <label class="col-3 col-form-label text-end" for="apiKey">API key:</label>
+        <div class="col-7">
+            <app-api-key-text idName="apiKey" name="apiKey" [key]="group.apiKey!"></app-api-key-text>
+        </div>
+        <div app-tooltip class="col-auto" [tbTooltip]="'The key to use when calling the Test Bed\'s REST API to identify the '+dataService.labelSpecificationGroupLower()+'.'"></div>
+    </div>
+}

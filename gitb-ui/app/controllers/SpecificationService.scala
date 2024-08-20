@@ -125,7 +125,7 @@ class SpecificationService @Inject() (implicit ec: ExecutionContext, authorizedA
   def getSpecificationGroup(groupId: Long) = authorizedAction { request =>
     authorizationManager.canManageSpecificationGroup(request, groupId)
     val group = specificationManager.getSpecificationGroupById(groupId)
-    ResponseConstructor.constructJsonResponse(JsonUtil.jsSpecificationGroup(group).toString())
+    ResponseConstructor.constructJsonResponse(JsonUtil.jsSpecificationGroup(group, withApiKeys = true).toString())
   }
 
   def saveSpecificationOrder() = authorizedAction { request =>

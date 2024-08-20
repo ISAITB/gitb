@@ -413,6 +413,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, systemConfigura
           exportedGroup.setFullName(group.fullname)
           exportedGroup.setDescription(group.description.orNull)
           exportedGroup.setDisplayOrder(group.displayOrder)
+          exportedGroup.setApiKey(group.apiKey)
           exportedDomain.getSpecificationGroups.getGroup.add(exportedGroup)
           exportedSpecificationGroupMap += (group.id -> exportedGroup)
         }

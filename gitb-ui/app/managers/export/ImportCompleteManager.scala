@@ -1161,7 +1161,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
           ImportCallbacks.set(
             (data: com.gitb.xml.export.Domain, item: ImportItem) => {
               val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
-              domainManager.createDomainInternal(models.Domain(0L, data.getShortName, data.getFullName, Option(data.getDescription), apiKey), checkApiKeyUniqueness = true)
+              domainManager.createDomainForImport(models.Domain(0L, data.getShortName, data.getFullName, Option(data.getDescription), apiKey))
             },
             (data: com.gitb.xml.export.Domain, targetKey: String, item: ImportItem) => {
               val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
@@ -1252,10 +1252,12 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
             dbActions += processFromArchive(ImportItemType.SpecificationGroup, exportedGroup, exportedGroup.getId, ctx,
               ImportCallbacks.set(
                 (data: com.gitb.xml.export.SpecificationGroup, item: ImportItem) => {
-                  specificationManager.createSpecificationGroupInternal(models.SpecificationGroups(0L, data.getShortName, data.getFullName, Option(data.getDescription), data.getDisplayOrder, getDomainIdFromParentItem(item)))
+                  val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
+                  specificationManager.createSpecificationGroupInternal(models.SpecificationGroups(0L, data.getShortName, data.getFullName, Option(data.getDescription), data.getDisplayOrder, apiKey, getDomainIdFromParentItem(item)), checkApiKeyUniqueness = true)
                 },
                 (data: com.gitb.xml.export.SpecificationGroup, targetKey: String, item: ImportItem) => {
-                  specificationManager.updateSpecificationGroupInternal(targetKey.toLong, data.getShortName, data.getFullName, Option(data.getDescription), Some(data.getDisplayOrder))
+                  val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
+                  specificationManager.updateSpecificationGroupInternal(targetKey.toLong, data.getShortName, data.getFullName, Option(data.getDescription), Some(data.getDisplayOrder), Some(apiKey), checkApiKeyUniqueness = true)
                 },
                 (data: com.gitb.xml.export.SpecificationGroup, targetKey: Any, item: ImportItem) => {
                   // No action.

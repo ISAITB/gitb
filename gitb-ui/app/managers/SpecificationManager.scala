@@ -16,7 +16,7 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils, testSuit
 
   import dbConfig.profile.api._
 
-  def deleteSpecificationByDomain(domainId: Long, onSuccessCalls: mutable.ListBuffer[() => _]) = {
+  def deleteSpecificationByDomain(domainId: Long, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
     val action = (for {
       ids <- PersistenceSchema.specifications.filter(_.domain === domainId).map(_.id).result
       _ <- DBIO.seq(ids.map(id => deleteSpecificationInternal(id, onSuccessCalls)): _*)
@@ -24,7 +24,7 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils, testSuit
     action
   }
 
-  def deleteSpecification(specId: Long) = {
+  def deleteSpecification(specId: Long): Unit = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val action = deleteSpecificationInternal(specId, onSuccessCalls)
     exec(dbActionFinalisation(Some(onSuccessCalls), None, action).transactionally)
@@ -78,18 +78,28 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils, testSuit
   }
 
   def createSpecificationGroup(group: SpecificationGroups): Long = {
-    exec(createSpecificationGroupInternal(group).transactionally)
+    exec(createSpecificationGroupInternal(group, checkApiKeyUniqueness = false).transactionally)
   }
 
-  def createSpecificationGroupInternal(group: SpecificationGroups):DBIO[Long] = {
-    PersistenceSchema.specificationGroups.returning(PersistenceSchema.specificationGroups.map(_.id)) += group
+  def createSpecificationGroupInternal(group: SpecificationGroups, checkApiKeyUniqueness: Boolean):DBIO[Long] = {
+    for {
+      replaceApiKey <- if (checkApiKeyUniqueness) {
+        PersistenceSchema.specificationGroups.filter(_.apiKey === group.apiKey).exists.result
+      } else {
+        DBIO.successful(false)
+      }
+      newGroupId <- {
+        val groupToUse = if (replaceApiKey) group.withApiKey(CryptoUtil.generateApiKey()) else group
+        PersistenceSchema.specificationGroups.returning(PersistenceSchema.specificationGroups.map(_.id)) += groupToUse
+      }
+    } yield newGroupId
   }
 
   def updateSpecificationGroup(groupId: Long, shortname: String, fullname: String, description: Option[String]): Unit = {
-    exec(updateSpecificationGroupInternal(groupId, shortname, fullname, description, None).transactionally)
+    exec(updateSpecificationGroupInternal(groupId, shortname, fullname, description, None, None, checkApiKeyUniqueness = false).transactionally)
   }
 
-  def updateSpecificationGroupInternal(groupId: Long, shortname: String, fullname: String, description: Option[String], displayOrder: Option[Short]): DBIO[_] = {
+  def updateSpecificationGroupInternal(groupId: Long, shortname: String, fullname: String, description: Option[String], displayOrder: Option[Short], apiKey: Option[String], checkApiKeyUniqueness: Boolean): DBIO[_] = {
     for {
       _ <- PersistenceSchema.specificationGroups
         .filter(_.id === groupId)
@@ -98,6 +108,21 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils, testSuit
       _ <- {
         if (displayOrder.isDefined) {
           PersistenceSchema.specificationGroups.filter(_.id === groupId).map(_.displayOrder).update(displayOrder.get)
+        } else {
+          DBIO.successful(())
+        }
+      }
+      replaceApiKey <- {
+        if (apiKey.isDefined && checkApiKeyUniqueness) {
+          PersistenceSchema.specificationGroups.filter(_.apiKey === apiKey.get).filter(_.id =!= groupId).exists.result
+        } else {
+          DBIO.successful(false)
+        }
+      }
+      _ <- {
+        if (apiKey.isDefined) {
+          val apiKeyToUse = if (replaceApiKey) CryptoUtil.generateApiKey() else apiKey.get
+          PersistenceSchema.specificationGroups.filter(_.id === groupId).map(_.apiKey).update(apiKeyToUse)
         } else {
           DBIO.successful(())
         }
@@ -343,17 +368,17 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils, testSuit
     if (badges.failure.isDefined) repositoryUtils.setSpecificationBadge(specId, badges.failure.get, TestResultStatus.FAILURE.toString, forReport)
   }
 
-  def updateSpecification(specId: Long, sname: String, fname: String, descr: Option[String], hidden:Boolean, groupId: Option[Long], badges: BadgeInfo) = {
+  def updateSpecification(specId: Long, sname: String, fname: String, descr: Option[String], hidden:Boolean, groupId: Option[Long], badges: BadgeInfo): Unit = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction = updateSpecificationInternal(specId, sname, fname, descr, hidden, None, checkApiKeyUniqueness = false, groupId, None, badges, onSuccessCalls)
     exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
   }
 
-  def getSpecificationIdOfActor(actorId: Long) = {
+  def getSpecificationIdOfActor(actorId: Long): Long = {
     exec(PersistenceSchema.specificationHasActors.filter(_.actorId === actorId).result.head)._1
   }
 
-  def getSpecificationOfActor(actorId: Long) = {
+  def getSpecificationOfActor(actorId: Long): Specifications = {
     exec(getSpecificationOfActorInternal(actorId))
   }
 

@@ -655,8 +655,9 @@ object PersistenceSchema {
     def fullname = column[String]("fname")
     def description = column[Option[String]]("description", O.SqlType("TEXT"))
     def displayOrder = column[Short]("display_order")
+    def apiKey = column[String]("api_key")
     def domain = column[Long]("domain")
-    def * = (id, shortname, fullname, description, displayOrder, domain) <> (SpecificationGroups.tupled, SpecificationGroups.unapply)
+    def * = (id, shortname, fullname, description, displayOrder, apiKey, domain) <> (SpecificationGroups.tupled, SpecificationGroups.unapply)
   }
   val specificationGroups = TableQuery[SpecificationGroupsTable]
   val insertSpecificationGroups = specificationGroups returning specificationGroups.map(_.id)

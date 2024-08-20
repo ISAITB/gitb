@@ -7,5 +7,6 @@ export interface SpecificationGroup extends EntityWithId {
     description?: string
     domain: number
     order: number
+    apiKey: string
 
 }

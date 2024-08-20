@@ -328,9 +328,9 @@ export class ImportComponent extends BaseComponent implements OnInit, OnDestroy 
   cancel() {
     let result: Observable<void>
     if (this.exportType == 'domain') {
-      result = this.conformanceService.cancelDomainImport(this.domain!.id, this.pendingImportId!)
+      result = this.conformanceService.cancelDomainImport(this.getTargetDomainId(), this.pendingImportId!)
     } else if (this.exportType == 'community') {
-      result = this.communityService.cancelCommunityImport(this.community!.id, this.pendingImportId!)
+      result = this.communityService.cancelCommunityImport(this.getTargetCommunityId(), this.pendingImportId!)
     } else {
       result = this.communityService.cancelSystemSettingsImport(this.pendingImportId!)
     }

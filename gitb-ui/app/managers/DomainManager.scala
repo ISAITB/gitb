@@ -75,7 +75,13 @@ class DomainManager @Inject() (domainParameterManager: DomainParameterManager, r
     )
   }
 
-  def createDomainInternal(domain: Domain, checkApiKeyUniqueness: Boolean): DBIO[(Long, String)] = {
+  def createDomainForImport(domain: Domain): DBIO[Long] = {
+    for {
+      result <- createDomainInternal(domain, checkApiKeyUniqueness = true)
+    } yield result._1
+  }
+
+  private def createDomainInternal(domain: Domain, checkApiKeyUniqueness: Boolean): DBIO[(Long, String)] = {
     for {
       replaceApiKey <- {
         if (checkApiKeyUniqueness) {

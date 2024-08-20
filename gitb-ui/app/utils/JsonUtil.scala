@@ -918,8 +918,8 @@ object JsonUtil {
     )
   }
 
-  def jsSpecificationGroup(group: SpecificationGroups): JsObject = {
-    Json.obj(
+  def jsSpecificationGroup(group: SpecificationGroups, withApiKeys: Boolean): JsObject = {
+    var json = Json.obj(
       "id" -> group.id,
       "sname" -> group.shortname,
       "fname" -> group.fullname,
@@ -927,6 +927,10 @@ object JsonUtil {
       "domain" -> group.domain,
       "order" -> group.displayOrder
     )
+    if (withApiKeys && Configurations.AUTOMATION_API_ENABLED) {
+      json = json.+("apiKey" -> JsString(group.apiKey))
+    }
+    json
   }
 
   /**
@@ -944,7 +948,7 @@ object JsonUtil {
   def jsSpecificationGroups(list: List[SpecificationGroups]): JsArray = {
     var json = Json.arr()
     list.foreach { group =>
-      json = json.append(jsSpecificationGroup(group))
+      json = json.append(jsSpecificationGroup(group, withApiKeys = false))
     }
     json
   }
