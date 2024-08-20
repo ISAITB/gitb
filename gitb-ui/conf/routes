@@ -402,6 +402,9 @@ DELETE  /api/rest/domain/:domain                                 @controllers.re
 PUT     /api/rest/group                                          @controllers.rest.DomainAutomationService.createSpecificationGroup()
 POST    /api/rest/group/:group                                   @controllers.rest.DomainAutomationService.updateSpecificationGroup(group: String)
 DELETE  /api/rest/group/:group                                   @controllers.rest.DomainAutomationService.deleteSpecificationGroup(group: String)
+PUT     /api/rest/specification                                  @controllers.rest.DomainAutomationService.createSpecification()
+POST    /api/rest/specification/:specification                   @controllers.rest.DomainAutomationService.updateSpecification(specification: String)
+DELETE  /api/rest/specification/:specification                   @controllers.rest.DomainAutomationService.deleteSpecification(specification: String)
 
 POST    /api/crumbs                                              @controllers.BreadcrumbService.getBreadcrumbLabels()
 

@@ -81,4 +81,33 @@ class DomainAutomationService @Inject() (authorizedAction: AuthorizedAction,
     })
   }
 
+  def createSpecification(): Action[AnyContent] = authorizedAction { request =>
+    processAsJson(request, Some(authorizationManager.canManageSpecificationThroughAutomationApi), { body =>
+      val communityKey = request.headers.get(Constants.AutomationHeader).get
+      val input = JsonUtil.parseJsCreateSpecificationRequest(body, communityKey)
+      val savedApiKey = specificationManager.createSpecificationViaAutomationApi(input)
+      ResponseConstructor.constructJsonResponse(JsonUtil.jsApiKey(savedApiKey).toString())
+    })
+  }
+
+  def deleteSpecification(specification: String): Action[AnyContent] = authorizedAction { request =>
+    try {
+      authorizationManager.canManageSpecificationThroughAutomationApi(request)
+      val communityKey = request.headers.get(Constants.AutomationHeader).get
+      specificationManager.deleteSpecificationViaAutomationApi(specification, communityKey)
+      ResponseConstructor.constructEmptyResponse
+    } catch {
+      case e: Throwable => handleException(e)
+    }
+  }
+
+  def updateSpecification(specification: String): Action[AnyContent] = authorizedAction { request =>
+    processAsJson(request, Some(authorizationManager.canManageSpecificationThroughAutomationApi), { body =>
+      val communityKey = request.headers.get(Constants.AutomationHeader).get
+      val input = JsonUtil.parseJsUpdateSpecificationRequest(body, specification, communityKey)
+      specificationManager.updateSpecificationThroughAutomationApi(input)
+      ResponseConstructor.constructEmptyResponse
+    })
+  }
+
 }

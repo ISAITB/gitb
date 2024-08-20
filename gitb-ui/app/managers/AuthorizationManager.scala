@@ -125,21 +125,11 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
   }
 
   def canManageConfigurationThroughAutomationApi(request: RequestWithAttributes[_]): Boolean = {
-    var ok = false
-    if (Configurations.AUTOMATION_API_ENABLED) {
-      val apiKey = request.headers.get(Constants.AutomationHeader)
-      if (apiKey.isDefined) {
-        // Check to see that the API key identifies a community that allows API usage.
-        val community = communityManager.getByApiKey(apiKey.get)
-        if (community.isDefined) {
-          ok = true
-        }
-      }
-    }
+    val ok = restApiEnabledAndValidCommunityKeyDefined(request)
     setAuthResult(request, ok, "You are not allowed to manage configuration properties through the automation API")
   }
 
-  def canManageSpecificationGroupThroughAutomationApi(request: RequestWithAttributes[_]): Boolean = {
+  private def restApiEnabledAndValidCommunityKeyDefined(request: RequestWithAttributes[_]): Boolean = {
     var ok = false
     if (Configurations.AUTOMATION_API_ENABLED) {
       val apiKey = request.headers.get(Constants.AutomationHeader)
@@ -151,7 +141,17 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
         }
       }
     }
-    setAuthResult(request, ok, "You are not allowed to manage this specification group through the automation API")
+    ok
+  }
+
+  def canManageSpecificationThroughAutomationApi(request: RequestWithAttributes[_]): Boolean = {
+    val ok = restApiEnabledAndValidCommunityKeyDefined(request)
+    setAuthResult(request, ok, "You are not allowed to manage specifications through the automation API")
+  }
+
+  def canManageSpecificationGroupThroughAutomationApi(request: RequestWithAttributes[_]): Boolean = {
+    val ok = restApiEnabledAndValidCommunityKeyDefined(request)
+    setAuthResult(request, ok, "You are not allowed to manage specification groups through the automation API")
   }
 
   def canCreateDomainThroughAutomationApi(request: RequestWithAttributes[_]): Boolean = {
@@ -208,17 +208,7 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
   }
 
   def canManageTestSuitesThroughAutomationApi(request: RequestWithAttributes[_]): Boolean = {
-    var ok = false
-    if (Configurations.AUTOMATION_API_ENABLED) {
-      val apiKey = request.headers.get(Constants.AutomationHeader)
-      if (apiKey.isDefined) {
-        // Check to see that the API key identifies a community that allows API usage.
-        val community = communityManager.getByApiKey(apiKey.get)
-        if (community.isDefined) {
-          ok = true
-        }
-      }
-    }
+    val ok = restApiEnabledAndValidCommunityKeyDefined(request)
     setAuthResult(request, ok, "You are not allowed to manage test suites through the automation API")
   }
 

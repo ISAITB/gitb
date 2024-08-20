@@ -1152,6 +1152,20 @@ object JsonUtil {
     )
   }
 
+  def parseJsCreateSpecificationRequest(json: JsValue, communityApiKey: String): CreateSpecificationRequest = {
+    CreateSpecificationRequest(
+      (json \ "shortName").as[String],
+      (json \ "fullName").as[String],
+      (json \ "description").asOpt[String],
+      (json \ "hidden").asOpt[Boolean],
+      (json \ "displayOrder").asOpt[Short],
+      (json \ "apiKey").asOpt[String],
+      (json \ "domain").asOpt[String],
+      (json \ "group").asOpt[String],
+      communityApiKey
+    )
+  }
+
   def parseJsCreateDomainRequest(json: JsValue): CreateDomainRequest = {
     CreateDomainRequest(
       (json \ "shortName").as[String],
@@ -1178,6 +1192,19 @@ object JsonUtil {
       (json \ "fullName").asOpt[String],
       (json \ "description").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
       (json \ "displayOrder").asOpt[Short],
+      communityApiKey
+    )
+  }
+
+  def parseJsUpdateSpecificationRequest(json: JsValue, specificationApiKey: String, communityApiKey: String): UpdateSpecificationRequest = {
+    UpdateSpecificationRequest(
+      specificationApiKey,
+      (json \ "shortName").asOpt[String],
+      (json \ "fullName").asOpt[String],
+      (json \ "description").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
+      (json \ "hidden").asOpt[Boolean],
+      (json \ "displayOrder").asOpt[Short],
+      (json \ "group").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
       communityApiKey
     )
   }

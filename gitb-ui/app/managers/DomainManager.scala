@@ -146,7 +146,7 @@ class DomainManager @Inject() (domainParameterManager: DomainParameterManager, r
           PersistenceSchema.domains.filter(_.id === domain.get.id).map(x => (x.shortname, x.fullname, x.description)).update((
             updateRequest.shortName.getOrElse(domain.get.shortname),
             updateRequest.fullName.getOrElse(domain.get.fullname),
-            updateRequest.description.orElse(Some(domain.get.description)).get
+            updateRequest.description.getOrElse(domain.get.description)
           ))
         }
       }
