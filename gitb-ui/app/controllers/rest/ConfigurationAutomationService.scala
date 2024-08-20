@@ -1,4 +1,4 @@
-package controllers
+package controllers.rest
 
 import controllers.util.{AuthorizedAction, ResponseConstructor}
 import managers.{AuthorizationManager, CommunityManager}

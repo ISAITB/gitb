@@ -1,6 +1,8 @@
 package managers
 
+import exceptions.{AutomationApiException, ErrorCodes}
 import models.Domain
+import models.automation.UpdateDomainRequest
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
 import utils.{CryptoUtil, RepositoryUtils}
@@ -73,7 +75,7 @@ class DomainManager @Inject() (domainParameterManager: DomainParameterManager, r
     )
   }
 
-  def createDomainInternal(domain: Domain, checkApiKeyUniqueness: Boolean): DBIO[Long] = {
+  def createDomainInternal(domain: Domain, checkApiKeyUniqueness: Boolean): DBIO[(Long, String)] = {
     for {
       replaceApiKey <- {
         if (checkApiKeyUniqueness) {
@@ -82,22 +84,68 @@ class DomainManager @Inject() (domainParameterManager: DomainParameterManager, r
           DBIO.successful(false)
         }
       }
+      apiKeyToUse <- {
+        if (replaceApiKey) {
+          DBIO.successful(CryptoUtil.generateApiKey())
+        } else {
+          DBIO.successful(domain.apiKey)
+        }
+      }
       newDomainId <- {
         if (replaceApiKey) {
-          PersistenceSchema.domains.returning(PersistenceSchema.domains.map(_.id)) += domain.withApiKey(CryptoUtil.generateApiKey())
+          PersistenceSchema.domains.returning(PersistenceSchema.domains.map(_.id)) += domain.withApiKey(apiKeyToUse)
         } else {
           PersistenceSchema.domains.returning(PersistenceSchema.domains.map(_.id)) += domain
         }
       }
-    } yield newDomainId
+    } yield (newDomainId, apiKeyToUse)
   }
 
   def createDomain(domain: Domain): Long = {
-    exec(createDomainInternal(domain, checkApiKeyUniqueness = false))
+    exec(createDomainInternal(domain, checkApiKeyUniqueness = false))._1
+  }
+
+  def createDomain(domain: Domain, checkApiKeyUniqueness: Boolean): String = {
+    exec(createDomainInternal(domain, checkApiKeyUniqueness))._2
   }
 
   def updateDomain(domainId: Long, shortName: String, fullName: String, description: Option[String]): Unit = {
     exec(updateDomainInternal(domainId, shortName, fullName, description, None).transactionally)
+  }
+
+  def updateDomainByApiKey(updateRequest: UpdateDomainRequest): Unit = {
+    val action = for {
+      domain <- {
+        if (updateRequest.domainApiKey.isDefined) {
+          PersistenceSchema.domains
+            .filter(_.apiKey === updateRequest.domainApiKey.get)
+            .result
+            .headOption
+        } else if (updateRequest.communityApiKey.isDefined) {
+          PersistenceSchema.communities
+            .join(PersistenceSchema.domains).on(_.domain === _.id)
+            .filter(_._1.apiKey === updateRequest.communityApiKey.get)
+            .filter(_._1.domain.isDefined)
+            .map(_._2)
+            .result
+            .headOption
+        } else {
+          DBIO.successful(None)
+        }
+      }
+      _ <- {
+        if (domain.isEmpty) {
+          throw AutomationApiException(ErrorCodes.API_DOMAIN_NOT_FOUND, "No domain found for the provided API key")
+        } else {
+          PersistenceSchema.domains.filter(_.id === domain.get.id).map(x => (x.shortname, x.fullname, x.description)).update((
+            updateRequest.shortName.getOrElse(domain.get.shortname),
+            updateRequest.fullName.getOrElse(domain.get.fullname),
+            updateRequest.description.orElse(Some(domain.get.description)).get
+          ))
+        }
+      }
+    } yield ()
+    exec(action.transactionally)
   }
 
   def updateDomainInternal(domainId: Long, shortName: String, fullName: String, description: Option[String], apiKey: Option[String]): DBIO[_] = {
@@ -175,6 +223,24 @@ class DomainManager @Inject() (domainParameterManager: DomainParameterManager, r
       dbActionFinalisation(Some(onSuccessCalls), None, action)
         .transactionally
     )
+  }
+
+  def deleteDomainByApiKey(apiKey: String): Unit = {
+    val onSuccessCalls = mutable.ListBuffer[() => _]()
+    val action = for {
+      domainId <- PersistenceSchema.domains.filter(_.apiKey === apiKey)
+        .map(_.id)
+        .result
+        .headOption
+      _ <- {
+        if (domainId.isEmpty) {
+          throw AutomationApiException(ErrorCodes.API_DOMAIN_NOT_FOUND, "No domain found for the provided API key")
+        } else {
+          deleteDomainInternal(domainId.get, onSuccessCalls)
+        }
+      }
+    } yield ()
+    exec(dbActionFinalisation(Some(onSuccessCalls), None, action).transactionally)
   }
 
   private def deleteTransactionByDomain(domainId: Long) = {

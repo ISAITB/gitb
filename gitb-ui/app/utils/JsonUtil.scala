@@ -16,6 +16,7 @@ import models.automation._
 import models.snapshot.ConformanceSnapshot
 import models.theme.Theme
 import org.apache.commons.codec.binary.Base64
+import org.apache.commons.lang3.StringUtils
 import play.api.libs.json.{JsObject, Json, _}
 
 import java.util
@@ -1133,6 +1134,29 @@ object JsonUtil {
     }
     val testSuite = (jsonConfig \ "testSuite").as[String]
     TestSuiteUndeployRequest(specification, testSuite, sharedTestSuite)
+  }
+
+  def parseJsCreateDomainRequest(json: JsValue): CreateDomainRequest = {
+    CreateDomainRequest(
+      (json \ "shortName").as[String],
+      (json \ "fullName").as[String],
+      (json \ "description").asOpt[String],
+      (json \ "apiKey").asOpt[String]
+    )
+  }
+
+  def parseJsUpdateDomainRequest(json: JsValue, domainApiKey: Option[String], communityApiKey: Option[String]): UpdateDomainRequest = {
+    UpdateDomainRequest(
+      domainApiKey,
+      (json \ "shortName").asOpt[String],
+      (json \ "fullName").asOpt[String],
+      (json \ "description").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
+      communityApiKey
+    )
+  }
+
+  def parseJsStringValue(json: JsValue, propertyName: String): String = {
+    (json \ propertyName).as[String]
   }
 
   def parseJsConfigurationRequest(json: JsValue): ConfigurationRequest = {
@@ -2347,6 +2371,10 @@ object JsonUtil {
       json += ("hidden" -> JsBoolean(!snapshot.isPublic))
     }
     json
+  }
+
+  def jsApiKey(apiKey: String): JsObject = {
+    Json.obj("apiKey" -> apiKey)
   }
 
   def jsTestSuiteUploadResult(result: TestSuiteUploadResult):JsObject = {

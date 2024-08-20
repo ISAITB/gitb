@@ -1,4 +1,4 @@
-package controllers
+package controllers.rest
 
 import config.Configurations
 import controllers.util.{AuthorizedAction, ParameterExtractor, RequestWithAttributes, ResponseConstructor}
@@ -22,7 +22,7 @@ import scala.util.Using
 @Singleton
 class TestSuiteAutomationService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerComponents, authorizationManager: AuthorizationManager, repositoryUtils: RepositoryUtils, specificationManager: SpecificationManager, testSuiteManager: TestSuiteManager) extends BaseAutomationService(cc) {
 
-  private val LOG = LoggerFactory.getLogger(this.getClass)
+  private val LOG = LoggerFactory.getLogger(classOf[TestSuiteAutomationService])
 
   private def deployInternal(input: TestSuiteDeployRequest, testSuiteArchive: File, request: Request[AnyContent]) = {
     var response: Result = null

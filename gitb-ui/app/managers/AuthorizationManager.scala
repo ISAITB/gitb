@@ -42,6 +42,8 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
                                      parameterManager: ParameterManager,
                                      testResultManager: TestResultManager,
                                      actorManager: ActorManager,
+                                     systemConfigurationManager: SystemConfigurationManager,
+                                     domainManager: DomainManager,
                                      repositoryUtils: RepositoryUtils,
                                      playSessionStore: SessionStore
                                     ) extends BaseManager(dbConfigProvider) {
@@ -135,6 +137,59 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
       }
     }
     setAuthResult(request, ok, "You are not allowed to manage configuration properties through the automation API")
+  }
+
+  def canCreateDomainThroughAutomationApi(request: RequestWithAttributes[_]): Boolean = {
+    var ok = false
+    if (Configurations.AUTOMATION_API_ENABLED) {
+      val apiKey = request.headers.get(Constants.AutomationHeader)
+      if (apiKey.isDefined) {
+        // Check to see that the API key is the master API key.
+        val masterApiKey = systemConfigurationManager.getSystemConfiguration(Constants.RestApiAdminKey)
+        if (masterApiKey.flatMap(_.parameter).isDefined && masterApiKey.get.parameter.get == apiKey.get) {
+          ok = true
+        }
+      }
+    }
+    setAuthResult(request, ok, "You are not allowed to perform system-level operations through the automation API")
+  }
+
+  def canDeleteDomainThroughAutomationApi(request: RequestWithAttributes[_]): Boolean = {
+    canCreateDomainThroughAutomationApi(request)
+  }
+
+  def canUpdateDomainThroughAutomationApi(request: RequestWithAttributes[_], domainKey: Option[String]): Boolean = {
+    var ok = false
+    if (Configurations.AUTOMATION_API_ENABLED) {
+      val apiKey = request.headers.get(Constants.AutomationHeader)
+      if (apiKey.isDefined) {
+        val masterApiKey = systemConfigurationManager.getSystemConfiguration(Constants.RestApiAdminKey)
+        if (masterApiKey.flatMap(_.parameter).isDefined && masterApiKey.get.parameter.get == apiKey.get) {
+          // The API key matches the master API key.
+          ok = true
+        } else {
+          // The API key must match a community.
+          val community = communityManager.getByApiKey(apiKey.get)
+          if (community.isDefined) {
+            if (community.get.domain.isDefined) {
+              // We can only update the domain linked to the community.
+              if (domainKey.isDefined) {
+                // The provided domain key must match the key of the community's domain.
+                val domain = domainManager.getDomainById(community.get.domain.get)
+                ok = domainKey.get == domain.apiKey
+              } else {
+                // We implicitly match the community's domain.
+                ok = true
+              }
+            } else {
+              // We can update any domain.
+              ok = true
+            }
+          }
+        }
+      }
+    }
+    setAuthResult(request, ok, "You are not allowed to update this domain through the automation API")
   }
 
   def canManageTestSuitesThroughAutomationApi(request: RequestWithAttributes[_]): Boolean = {

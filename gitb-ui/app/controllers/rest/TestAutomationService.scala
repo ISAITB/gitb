@@ -1,4 +1,4 @@
-package controllers
+package controllers.rest
 
 import controllers.util.{AuthorizedAction, RequestWithAttributes, ResponseConstructor}
 import managers.{AuthorizationManager, ReportManager, SystemManager, TestExecutionManager}

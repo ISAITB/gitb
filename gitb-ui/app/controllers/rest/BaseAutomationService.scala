@@ -1,4 +1,4 @@
-package controllers
+package controllers.rest
 
 import com.fasterxml.jackson.core.JsonParseException
 import controllers.util.{RequestWithAttributes, ResponseConstructor}
