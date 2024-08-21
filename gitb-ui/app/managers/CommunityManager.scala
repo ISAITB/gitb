@@ -1,10 +1,11 @@
 package managers
 
 import config.Configurations
+import exceptions.{AutomationApiException, ErrorCodes}
 import models.Enums.OverviewLevelType.OverviewLevelType
 import models.Enums._
 import models._
-import models.automation.{ConfigurationRequest, DomainParameterInfo, PartyConfiguration, StatementConfiguration}
+import models.automation.{ConfigurationRequest, CreateCommunityRequest, DomainParameterInfo, PartyConfiguration, StatementConfiguration, UpdateCommunityRequest}
 import org.apache.commons.lang3.StringUtils
 import persistence.db._
 import play.api.db.slick.DatabaseConfigProvider
@@ -18,7 +19,19 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.language.postfixOps
 
 @Singleton
-class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityResourceManager: CommunityResourceManager, triggerHelper: TriggerHelper, testResultManager: TestResultManager, organizationManager: OrganizationManager, landingPageManager: LandingPageManager, legalNoticeManager: LegalNoticeManager, errorTemplateManager: ErrorTemplateManager, conformanceManager: ConformanceManager, accountManager: AccountManager, triggerManager: TriggerManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
+                                  communityResourceManager: CommunityResourceManager,
+                                  triggerHelper: TriggerHelper,
+                                  testResultManager: TestResultManager,
+                                  organizationManager: OrganizationManager,
+                                  landingPageManager: LandingPageManager,
+                                  legalNoticeManager: LegalNoticeManager,
+                                  errorTemplateManager: ErrorTemplateManager,
+                                  conformanceManager: ConformanceManager,
+                                  accountManager: AccountManager,
+                                  triggerManager: TriggerManager,
+                                  automationApiHelper: AutomationApiHelper,
+                                  dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
 
@@ -174,8 +187,47 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityRes
   /**
     * Creates new community
     */
-  def createCommunity(community: Communities) = {
+  def createCommunity(community: Communities): (Long, Long) = {
     exec(createCommunityInternal(community).transactionally)
+  }
+
+  def createCommunityThroughAutomationApi(input: CreateCommunityRequest): String = {
+    val action = for {
+      apiKeyToUse <- {
+        for {
+          generateApiKey <- if (input.apiKey.isEmpty) {
+            DBIO.successful(true)
+          } else {
+            PersistenceSchema.communities.filter(_.apiKey === input.apiKey.get).exists.result
+          }
+          apiKeyToUse <- if (generateApiKey) {
+            DBIO.successful(CryptoUtil.generateApiKey())
+          } else {
+            DBIO.successful(input.apiKey.get)
+          }
+        } yield apiKeyToUse
+      }
+      domainId <- {
+        if (input.domainApiKey.isEmpty) {
+          DBIO.successful(None)
+        } else {
+          for {
+            domainId <- automationApiHelper.getDomainIdByDomainApiKey(input.domainApiKey.get)
+          } yield Some(domainId)
+        }
+      }
+      _ <- {
+        createCommunityInternal(Communities(0L, input.shortName, input.fullName, input.supportEmail,
+          SelfRegistrationType.NotSupported.id.toShort, None, None, selfRegNotification = false,
+          interactionNotification = input.interactionNotifications.getOrElse(false), input.description, SelfRegistrationRestriction.NoRestriction.id.toShort,
+          selfRegForceTemplateSelection = false, selfRegForceRequiredProperties = false, allowCertificateDownload = false,
+          allowStatementManagement = true, allowSystemManagement = true, allowPostTestOrganisationUpdates = true,
+          allowPostTestSystemUpdates = true, allowPostTestStatementUpdates = true,
+          allowAutomationApi = true, apiKeyToUse, None, domainId
+        ))
+      }
+    } yield apiKeyToUse
+    exec(action.transactionally)
   }
 
   def createCommunityInternal(community: Communities): DBIO[(Long, Long)] = {
@@ -345,6 +397,84 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityRes
     } yield ()
   }
 
+  def updateCommunityThroughAutomationApi(updateRequest: UpdateCommunityRequest, allowDomainChange: Boolean): Unit = {
+    val onSuccess = ListBuffer[() => _]()
+    val action = for {
+      community <- {
+        for {
+          community <- PersistenceSchema.communities
+            .filter(_.apiKey === updateRequest.communityApiKey)
+            .result
+            .headOption
+          _ <- {
+            if (community.isEmpty) {
+              throw AutomationApiException(ErrorCodes.API_COMMUNITY_NOT_FOUND, "No community found for the provided API key")
+            } else {
+              DBIO.successful(())
+            }
+          }
+        } yield community.get
+      }
+      domainIdToUse <- {
+        if (updateRequest.domainApiKey.isDefined) {
+          // We have a domain API key specified.
+          if (updateRequest.domainApiKey.get.isEmpty && community.domain.isEmpty) {
+            // No change for the domain (no domain is defined).
+            DBIO.successful(None)
+          } else if (updateRequest.domainApiKey.get.isEmpty && community.domain.isDefined ||
+                     updateRequest.domainApiKey.get.isDefined && community.domain.isEmpty) {
+            // We are setting or removing the community's domain. We can only do this when authenticating with the master API key.
+            if (allowDomainChange) {
+              if (updateRequest.domainApiKey.get.isDefined) {
+                for {
+                  domainId <- automationApiHelper.getDomainIdByDomainApiKey(updateRequest.domainApiKey.get.get)
+                } yield Some(domainId)
+              } else {
+                DBIO.successful(None)
+              }
+            } else {
+              throw AutomationApiException(ErrorCodes.API_COMMUNITY_DOMAIN_CHANGE_NOT_ALLOWED, "You are not allowed to change the community's domain when using a community API key for the authorisation header")
+            }
+          } else {
+            // Both API keys are defined.
+            for {
+              newDomainId <- automationApiHelper.getDomainIdByDomainApiKey(updateRequest.domainApiKey.get.get)
+              _ <- {
+                if (newDomainId != community.domain.get) {
+                  if (allowDomainChange) {
+                    DBIO.successful(())
+                  } else {
+                    throw AutomationApiException(ErrorCodes.API_COMMUNITY_DOMAIN_CHANGE_NOT_ALLOWED, "You are not allowed to change the community's domain when using a community API key for the authorisation header")
+                  }
+                } else {
+                  DBIO.successful(())
+                }
+              }
+            } yield Some(newDomainId)
+          }
+        } else {
+          // No change requested for the community's domain.
+          DBIO.successful(community.domain)
+        }
+      }
+      _ <- {
+        updateCommunityInternal(community,
+          updateRequest.shortName.getOrElse(community.shortname),
+          updateRequest.fullName.getOrElse(community.fullname),
+          updateRequest.supportEmail.getOrElse(community.supportEmail),
+          community.selfRegType, community.selfRegToken, community.selfRegTokenHelpText, community.selfRegNotification,
+          updateRequest.interactionNotifications.getOrElse(community.interactionNotification),
+          updateRequest.description.getOrElse(community.description),
+          community.selfRegRestriction, community.selfRegForceTemplateSelection, community.selfRegForceRequiredProperties,
+          community.allowCertificateDownload, community.allowStatementManagement, community.allowSystemManagement,
+          community.allowPostTestOrganisationUpdates, community.allowPostTestSystemUpdates, community.allowPostTestStatementUpdates,
+          Some(community.allowAutomationApi), None, domainIdToUse, checkApiKeyUniqueness = false, onSuccess
+        )
+      }
+    } yield ()
+    exec(dbActionFinalisation(Some(onSuccess), None, action).transactionally)
+  }
+
   /**
     * Update community
     */
@@ -355,7 +485,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityRes
                       allowCertificateDownload: Boolean, allowStatementManagement: Boolean, allowSystemManagement: Boolean,
                       allowPostTestOrganisationUpdates: Boolean, allowPostTestSystemUpdates: Boolean,
                       allowPostTestStatementUpdates: Boolean, allowAutomationApi: Option[Boolean],
-                      domainId: Option[Long]) = {
+                      domainId: Option[Long]): Unit = {
 
     val onSuccess = ListBuffer[() => _]()
     val dbAction = for {
@@ -382,8 +512,21 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityRes
     */
   def deleteCommunity(communityId: Long): Unit = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
-    val dbAction = {
-      conformanceManager.deleteConformanceSnapshotsOfCommunity(communityId, onSuccessCalls) andThen
+    val dbAction = deleteCommunityInternal(communityId, onSuccessCalls)
+    exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
+  }
+
+  def deleteCommunityThroughAutomationApi(communityApiKey: String): Unit = {
+    val onSuccessCalls = mutable.ListBuffer[() => _]()
+    val action = for {
+      communityId <- automationApiHelper.getCommunityByCommunityApiKey(communityApiKey)
+      _ <- deleteCommunityInternal(communityId, onSuccessCalls)
+    } yield ()
+    exec(dbActionFinalisation(Some(onSuccessCalls), None, action).transactionally)
+  }
+
+  private def deleteCommunityInternal(communityId: Long, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
+    conformanceManager.deleteConformanceSnapshotsOfCommunity(communityId, onSuccessCalls) andThen
       organizationManager.deleteOrganizationByCommunity(communityId, onSuccessCalls) andThen
       landingPageManager.deleteLandingPageByCommunity(communityId) andThen
       legalNoticeManager.deleteLegalNoticeByCommunity(communityId) andThen
@@ -399,8 +542,6 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, communityRes
       deleteCommunityReportStylesheets(communityId, onSuccessCalls) andThen
       PersistenceSchema.communityLabels.filter(_.community === communityId).delete andThen
       PersistenceSchema.communities.filter(_.id === communityId).delete
-    }
-    exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
   }
 
   private def deleteCommunityReportStylesheets(communityId: Long, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {

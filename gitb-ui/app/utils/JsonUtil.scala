@@ -1189,6 +1189,18 @@ object JsonUtil {
     )
   }
 
+  def parseJsCreateCommunityRequest(json: JsValue): CreateCommunityRequest = {
+    CreateCommunityRequest(
+      (json \ "shortName").as[String],
+      (json \ "fullName").as[String],
+      (json \ "description").asOpt[String],
+      (json \ "supportEmail").asOpt[String],
+      (json \ "interactionNotifications").asOpt[Boolean],
+      (json \ "apiKey").asOpt[String],
+      (json \ "domain").asOpt[String]
+    )
+  }
+
   def parseJsUpdateDomainRequest(json: JsValue, domainApiKey: Option[String], communityApiKey: Option[String]): UpdateDomainRequest = {
     UpdateDomainRequest(
       domainApiKey,
@@ -1196,6 +1208,18 @@ object JsonUtil {
       (json \ "fullName").asOpt[String],
       (json \ "description").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
       communityApiKey
+    )
+  }
+
+  def parseJsUpdateCommunityRequest(json: JsValue, communityApiKey: String): UpdateCommunityRequest = {
+    UpdateCommunityRequest(
+      communityApiKey,
+      (json \ "shortName").asOpt[String],
+      (json \ "fullName").asOpt[String],
+      (json \ "description").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
+      (json \ "supportEmail").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
+      (json \ "interactionNotifications").asOpt[Boolean],
+      (json \ "domain").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
     )
   }
 

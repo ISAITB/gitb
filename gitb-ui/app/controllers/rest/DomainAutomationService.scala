@@ -25,9 +25,9 @@ class DomainAutomationService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def deleteDomain(domain: String): Action[AnyContent] = authorizedAction { request =>
+    authorizationManager.canDeleteDomainThroughAutomationApi(request)
     try {
-      authorizationManager.canDeleteDomainThroughAutomationApi(request)
-      domainManager.deleteDomainByApiKey(domain)
+      domainManager.deleteDomainThroughAutomationApi(domain)
       ResponseConstructor.constructEmptyResponse
     } catch {
       case e: Throwable => handleException(e)
@@ -38,7 +38,7 @@ class DomainAutomationService @Inject() (authorizedAction: AuthorizedAction,
     authorizationManager.canUpdateDomainThroughAutomationApi(request, Some(domain))
     processAsJson(request, None, { body =>
       val input = JsonUtil.parseJsUpdateDomainRequest(body, Some(domain), None)
-      domainManager.updateDomainByApiKey(input)
+      domainManager.updateDomainThroughAutomationApi(input)
       ResponseConstructor.constructEmptyResponse
     })
   }
@@ -48,7 +48,7 @@ class DomainAutomationService @Inject() (authorizedAction: AuthorizedAction,
     processAsJson(request, None, { body =>
       val communityKey = request.headers.get(Constants.AutomationHeader).get
       val input = JsonUtil.parseJsUpdateDomainRequest(body, None, Some(communityKey))
-      domainManager.updateDomainByApiKey(input)
+      domainManager.updateDomainThroughAutomationApi(input)
       ResponseConstructor.constructEmptyResponse
     })
   }
@@ -63,8 +63,8 @@ class DomainAutomationService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def deleteSpecificationGroup(group: String): Action[AnyContent] = authorizedAction { request =>
+    authorizationManager.canManageSpecificationGroupThroughAutomationApi(request)
     try {
-      authorizationManager.canManageSpecificationGroupThroughAutomationApi(request)
       val communityKey = request.headers.get(Constants.AutomationHeader).get
       specificationManager.deleteSpecificationGroupThroughAutomationApi(group, communityKey)
       ResponseConstructor.constructEmptyResponse
@@ -92,8 +92,8 @@ class DomainAutomationService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def deleteSpecification(specification: String): Action[AnyContent] = authorizedAction { request =>
+    authorizationManager.canManageSpecificationThroughAutomationApi(request)
     try {
-      authorizationManager.canManageSpecificationThroughAutomationApi(request)
       val communityKey = request.headers.get(Constants.AutomationHeader).get
       specificationManager.deleteSpecificationThroughAutomationApi(specification, communityKey)
       ResponseConstructor.constructEmptyResponse
@@ -121,8 +121,8 @@ class DomainAutomationService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def deleteActor(actor: String): Action[AnyContent] = authorizedAction { request =>
+    authorizationManager.canManageActorThroughAutomationApi(request)
     try {
-      authorizationManager.canManageActorThroughAutomationApi(request)
       val communityKey = request.headers.get(Constants.AutomationHeader).get
       actorManager.deleteActorThroughAutomationApi(actor, communityKey)
       ResponseConstructor.constructEmptyResponse

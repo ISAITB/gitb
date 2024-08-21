@@ -158,6 +158,40 @@ class AutomationApiHelper @Inject()(dbConfigProvider: DatabaseConfigProvider) ex
     } yield statementIds
   }
 
+  def getCommunityByCommunityApiKey(communityApiKey: String): DBIO[Long] = {
+    for {
+      communityId <- PersistenceSchema.communities
+        .filter(_.apiKey === communityApiKey)
+        .map(_.id)
+        .result
+        .headOption
+      _ <- {
+        if (communityId.isEmpty) {
+          throw AutomationApiException(ErrorCodes.API_COMMUNITY_NOT_FOUND, "No community found for the provided API key")
+        } else {
+          DBIO.successful(())
+        }
+      }
+    } yield communityId.get
+  }
+
+  def getDomainIdByDomainApiKey(domainApiKey: String): DBIO[Long] = {
+    for {
+      newDomainId <- PersistenceSchema.domains
+        .filter(_.apiKey === domainApiKey)
+        .map(_.id)
+        .result
+        .headOption
+      _ <- {
+        if (newDomainId.isEmpty) {
+          throw AutomationApiException(ErrorCodes.API_DOMAIN_NOT_FOUND, "No domain found for the provided API key")
+        } else {
+          DBIO.successful(())
+        }
+      }
+    } yield newDomainId.get
+  }
+
   def getDomainIdByCommunityApiKey(communityApiKey: String, domainApiKey: Option[String]): DBIO[Long] = {
     for {
       // Look-up the community's domain.

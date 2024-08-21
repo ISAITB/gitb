@@ -13,7 +13,14 @@ import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
-class DomainManager @Inject() (domainParameterManager: DomainParameterManager, repositoryUtils: RepositoryUtils, conformanceManager: ConformanceManager, testSuiteManager: TestSuiteManager, specificationManager: SpecificationManager, testResultManager: TestResultManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class DomainManager @Inject() (domainParameterManager: DomainParameterManager,
+                               repositoryUtils: RepositoryUtils,
+                               conformanceManager: ConformanceManager,
+                               testSuiteManager: TestSuiteManager,
+                               specificationManager: SpecificationManager,
+                               testResultManager: TestResultManager,
+                               automationApiHelper: AutomationApiHelper,
+                               dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
 
@@ -119,7 +126,7 @@ class DomainManager @Inject() (domainParameterManager: DomainParameterManager, r
     exec(updateDomainInternal(domainId, shortName, fullName, description, None).transactionally)
   }
 
-  def updateDomainByApiKey(updateRequest: UpdateDomainRequest): Unit = {
+  def updateDomainThroughAutomationApi(updateRequest: UpdateDomainRequest): Unit = {
     val action = for {
       domain <- {
         if (updateRequest.domainApiKey.isDefined) {
@@ -231,20 +238,11 @@ class DomainManager @Inject() (domainParameterManager: DomainParameterManager, r
     )
   }
 
-  def deleteDomainByApiKey(apiKey: String): Unit = {
+  def deleteDomainThroughAutomationApi(apiKey: String): Unit = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val action = for {
-      domainId <- PersistenceSchema.domains.filter(_.apiKey === apiKey)
-        .map(_.id)
-        .result
-        .headOption
-      _ <- {
-        if (domainId.isEmpty) {
-          throw AutomationApiException(ErrorCodes.API_DOMAIN_NOT_FOUND, "No domain found for the provided API key")
-        } else {
-          deleteDomainInternal(domainId.get, onSuccessCalls)
-        }
-      }
+      domainId <- automationApiHelper.getDomainIdByDomainApiKey(apiKey)
+      _ <- deleteDomainInternal(domainId, onSuccessCalls)
     } yield ()
     exec(dbActionFinalisation(Some(onSuccessCalls), None, action).transactionally)
   }

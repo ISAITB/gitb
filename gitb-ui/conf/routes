@@ -408,6 +408,10 @@ DELETE  /api/rest/specification/:specification                   @controllers.re
 PUT     /api/rest/actor                                          @controllers.rest.DomainAutomationService.createActor()
 POST    /api/rest/actor/:actor                                   @controllers.rest.DomainAutomationService.updateActor(actor: String)
 DELETE  /api/rest/actor/:actor                                   @controllers.rest.DomainAutomationService.deleteActor(actor: String)
+PUT     /api/rest/community                                      @controllers.rest.CommunityAutomationService.createCommunity()
+POST    /api/rest/community                                      @controllers.rest.CommunityAutomationService.updateOwnCommunity()
+POST    /api/rest/community/:community                           @controllers.rest.CommunityAutomationService.updateCommunity(community: String)
+DELETE  /api/rest/community/:community                           @controllers.rest.CommunityAutomationService.deleteCommunity(community: String)
 
 POST    /api/crumbs                                              @controllers.BreadcrumbService.getBreadcrumbLabels()
 

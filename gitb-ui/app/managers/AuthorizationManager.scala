@@ -144,6 +144,21 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     ok
   }
 
+  private def restApiEnabledAndValidMasterKeyDefined(request: RequestWithAttributes[_]): Boolean = {
+    var ok = false
+    if (Configurations.AUTOMATION_API_ENABLED) {
+      val apiKey = request.headers.get(Constants.AutomationHeader)
+      if (apiKey.isDefined) {
+        // Check to see that the API key is the master API key.
+        val masterApiKey = systemConfigurationManager.getSystemConfiguration(Constants.RestApiAdminKey)
+        if (masterApiKey.flatMap(_.parameter).isDefined && masterApiKey.get.parameter.get == apiKey.get) {
+          ok = true
+        }
+      }
+    }
+    ok
+  }
+
   def canManageActorThroughAutomationApi(request: RequestWithAttributes[_]): Boolean = {
     val ok = restApiEnabledAndValidCommunityKeyDefined(request)
     setAuthResult(request, ok, "You are not allowed to manage actors through the automation API")
@@ -159,23 +174,32 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     setAuthResult(request, ok, "You are not allowed to manage specification groups through the automation API")
   }
 
+  def canManageAnyCommunityThroughAutomationApi(request: RequestWithAttributes[_]): Boolean = {
+    val ok = restApiEnabledAndValidMasterKeyDefined(request)
+    setAuthResult(request, ok, "You are not allowed to perform system-level operations through the automation API")
+  }
+
+  def canManageCommunityThroughAutomationApi(request: RequestWithAttributes[_]): Boolean = {
+    val ok = restApiEnabledAndValidCommunityKeyDefined(request)
+    setAuthResult(request, ok, "You are not allowed to manage communities through the automation API")
+  }
+
   def canCreateDomainThroughAutomationApi(request: RequestWithAttributes[_]): Boolean = {
-    var ok = false
-    if (Configurations.AUTOMATION_API_ENABLED) {
-      val apiKey = request.headers.get(Constants.AutomationHeader)
-      if (apiKey.isDefined) {
-        // Check to see that the API key is the master API key.
-        val masterApiKey = systemConfigurationManager.getSystemConfiguration(Constants.RestApiAdminKey)
-        if (masterApiKey.flatMap(_.parameter).isDefined && masterApiKey.get.parameter.get == apiKey.get) {
-          ok = true
-        }
-      }
-    }
+    val ok = restApiEnabledAndValidMasterKeyDefined(request)
+    setAuthResult(request, ok, "You are not allowed to perform system-level operations through the automation API")
+  }
+
+  def canCreateCommunityThroughAutomationApi(request: RequestWithAttributes[_]): Boolean = {
+    val ok = restApiEnabledAndValidMasterKeyDefined(request)
     setAuthResult(request, ok, "You are not allowed to perform system-level operations through the automation API")
   }
 
   def canDeleteDomainThroughAutomationApi(request: RequestWithAttributes[_]): Boolean = {
     canCreateDomainThroughAutomationApi(request)
+  }
+
+  def canDeleteCommunityThroughAutomationApi(request: RequestWithAttributes[_]): Boolean = {
+    canCreateCommunityThroughAutomationApi(request)
   }
 
   def canUpdateDomainThroughAutomationApi(request: RequestWithAttributes[_], domainKey: Option[String]): Boolean = {
