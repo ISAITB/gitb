@@ -147,7 +147,7 @@ class ActorManager @Inject() (repositoryUtils: RepositoryUtils,
         onSuccessCalls
       )
     } yield ()
-    exec(action.transactionally)
+    exec(dbActionFinalisation(Some(onSuccessCalls), None, action).transactionally)
   }
 
   def updateActor(id: Long, actorId: String, name: String, description: Option[String], default: Option[Boolean], hidden: Boolean, displayOrder: Option[Short], specificationId: Long, apiKey: Option[String], checkApiKeyUniqueness: Boolean, badges: Option[BadgeInfo], onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
@@ -288,7 +288,7 @@ class ActorManager @Inject() (repositoryUtils: RepositoryUtils,
         )
       }
     } yield apiKeyToUse
-    exec(action.transactionally)
+    exec(dbActionFinalisation(Some(onSuccessCalls), None, action).transactionally)
   }
 
   def createActor(actor: Actors, specificationId: Long, checkApiKeyUniqueness: Boolean, badges: Option[BadgeInfo], onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[Long] = {
