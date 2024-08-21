@@ -5,7 +5,7 @@ import exceptions.{AutomationApiException, ErrorCodes}
 import models.Enums.OverviewLevelType.OverviewLevelType
 import models.Enums._
 import models._
-import models.automation.{ConfigurationRequest, CreateCommunityRequest, DomainParameterInfo, PartyConfiguration, StatementConfiguration, UpdateCommunityRequest}
+import models.automation._
 import org.apache.commons.lang3.StringUtils
 import persistence.db._
 import play.api.db.slick.DatabaseConfigProvider
@@ -30,6 +30,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
                                   conformanceManager: ConformanceManager,
                                   accountManager: AccountManager,
                                   triggerManager: TriggerManager,
+                                  domainParameterManager: DomainParameterManager,
                                   automationApiHelper: AutomationApiHelper,
                                   dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
@@ -1233,54 +1234,53 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
 
   def applyConfigurationViaAutomationApi(communityKey: String, request: ConfigurationRequest): List[String] = {
     val warnings = new ListBuffer[String]()
-    exec(
-      for {
-        communityIds <- PersistenceSchema.communities.filter(_.apiKey === communityKey).map(x => (x.id, x.domain)).result.headOption
-        // Process domain properties
-        _ <- {
-          if (communityIds.isDefined) {
-            if (request.domainProperties.nonEmpty) {
-              updateDomainParametersViaApi(communityIds.get._2, request.domainProperties, warnings)
-            } else {
-              DBIO.successful(())
-            }
+    val dbAction = for {
+      communityIds <- PersistenceSchema.communities.filter(_.apiKey === communityKey).map(x => (x.id, x.domain)).result.headOption
+      // Process domain properties
+      _ <- {
+        if (communityIds.isDefined) {
+          if (request.domainProperties.nonEmpty) {
+            domainParameterManager.updateDomainParametersViaApi(communityIds.get._2, request.domainProperties, warnings)
           } else {
-            warnings += "Community not found for API key [%s].".formatted(communityKey)
             DBIO.successful(())
           }
+        } else {
+          warnings += "Community not found for API key [%s].".formatted(communityKey)
+          DBIO.successful(())
         }
-        // Process organisation properties
-        _ <- {
-          val actions = new ListBuffer[DBIO[_]]
-          if (communityIds.isDefined && request.organisationProperties.nonEmpty) {
-            request.organisationProperties.foreach { updates =>
-              actions += updateOrganisationPropertiesViaApi(updates, communityIds.get._1, warnings)
-            }
+      }
+      // Process organisation properties
+      _ <- {
+        val actions = new ListBuffer[DBIO[_]]
+        if (communityIds.isDefined && request.organisationProperties.nonEmpty) {
+          request.organisationProperties.foreach { updates =>
+            actions += updateOrganisationPropertiesViaApi(updates, communityIds.get._1, warnings)
           }
-          toDBIO(actions)
         }
-        // Process system properties
-        _ <- {
-          val actions = new ListBuffer[DBIO[_]]
-          if (communityIds.isDefined && request.systemProperties.nonEmpty) {
-            request.systemProperties.foreach { updates =>
-              actions += updateSystemPropertiesViaApi(updates, communityIds.get._1, warnings)
-            }
+        toDBIO(actions)
+      }
+      // Process system properties
+      _ <- {
+        val actions = new ListBuffer[DBIO[_]]
+        if (communityIds.isDefined && request.systemProperties.nonEmpty) {
+          request.systemProperties.foreach { updates =>
+            actions += updateSystemPropertiesViaApi(updates, communityIds.get._1, warnings)
           }
-          toDBIO(actions)
         }
-        // Process statement properties
-        _ <- {
-          val actions = new ListBuffer[DBIO[_]]
-          if (communityIds.isDefined && request.statementProperties.nonEmpty) {
-            request.statementProperties.foreach { updates =>
-              actions += updateStatementPropertiesViaApi(updates, communityIds.get._1, communityIds.get._2, warnings)
-            }
+        toDBIO(actions)
+      }
+      // Process statement properties
+      _ <- {
+        val actions = new ListBuffer[DBIO[_]]
+        if (communityIds.isDefined && request.statementProperties.nonEmpty) {
+          request.statementProperties.foreach { updates =>
+            actions += updateStatementPropertiesViaApi(updates, communityIds.get._1, communityIds.get._2, warnings)
           }
-          toDBIO(actions)
         }
-      } yield warnings.toList
-    )
+        toDBIO(actions)
+      }
+    } yield warnings.toList
+    exec(dbAction.transactionally)
   }
 
   private def updateStatementPropertiesViaApi(updateData: StatementConfiguration, communityId: Long, domainId: Option[Long], warnings: ListBuffer[String]): DBIO[_] = {
@@ -1370,67 +1370,6 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
             } else {
               warnings += "Ignoring update for conformance statement property [%s] of system [%s] for actor [%s]. No property with that key is defined for the conformance statement.".formatted(configData.key, updateData.system, updateData.actor)
             }
-          }
-        }
-        toDBIO(actions)
-      }
-    } yield ()
-  }
-
-  private def updateDomainParametersViaApi(domainId: Option[Long], updates: List[DomainParameterInfo], warnings: ListBuffer[String]): DBIO[_] = {
-    for {
-      existingDomainProperties <- {
-        if (updates.nonEmpty) {
-          PersistenceSchema.domainParameters
-            .join(PersistenceSchema.domains).on(_.domain === _.id)
-            .filterOpt(domainId)((q, id) => q._2.id === id)
-            .map(x => (x._1.name, x._1.id, x._1.kind, x._2.apiKey))
-            .result
-            .map { properties =>
-              val keyMap = new mutable.HashMap[String, ListBuffer[(Long, String, String)]]() // Key to (ID, type, domainApiKey)
-              properties.foreach { property =>
-                var propertyList = keyMap.get(property._1)
-                if (propertyList.isEmpty) {
-                  propertyList = Some(new ListBuffer[(Long, String, String)])
-                  keyMap.put(property._1, propertyList.get)
-                }
-                propertyList.get.append((property._2, property._3, property._4))
-              }
-              keyMap.map(x => (x._1, x._2.toList)).toMap
-            }
-        } else {
-          DBIO.successful(Map.empty[String, List[(Long, String, String)]])
-        }
-      }
-      // Update domain properties
-      _ <- {
-        val actions = new ListBuffer[DBIO[_]]()
-        updates.foreach { propertyData =>
-          if (existingDomainProperties.contains(propertyData.parameterInfo.key)) {
-            val matchingProperties = existingDomainProperties(propertyData.parameterInfo.key)
-              .filter(prop => propertyData.domainApiKey.isEmpty || propertyData.domainApiKey.get.equals(prop._3))
-            if (matchingProperties.size == 1) {
-              if (matchingProperties.head._2 == "SIMPLE") {
-                if (propertyData.parameterInfo.value.isDefined) {
-                  // Update
-                  actions += PersistenceSchema.domainParameters
-                    .filter(_.id === matchingProperties.head._1)
-                    .map(_.value)
-                    .update(propertyData.parameterInfo.value)
-                } else {
-                  // Delete
-                  warnings += "Ignoring deletion for domain property [%s]. Domain properties cannot be deleted via automation API.".formatted(propertyData.parameterInfo.key)
-                }
-              } else {
-                warnings += "Ignoring update for domain property [%s]. Only simple properties can be updated via the automation API.".formatted(propertyData.parameterInfo.key)
-              }
-            } else if (matchingProperties.size > 1) {
-              warnings += "Ignoring update for domain property [%s]. Multiple properties were found matching the provided key from different domains. Please specify the domain API key to identify the specific property to update.".formatted(propertyData.parameterInfo.key)
-            } else {
-              warnings += "Ignoring update for domain property [%s]. Property was not found.".formatted(propertyData.parameterInfo.key)
-            }
-          } else {
-            warnings += "Ignoring update for domain property [%s]. Property was not found.".formatted(propertyData.parameterInfo.key)
           }
         }
         toDBIO(actions)

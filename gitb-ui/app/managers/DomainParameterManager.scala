@@ -2,6 +2,7 @@ package managers
 
 import models.DomainParameter
 import models.Enums.TriggerDataType
+import models.automation.DomainParameterInfo
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
 import utils.RepositoryUtils
@@ -13,7 +14,9 @@ import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
-class DomainParameterManager @Inject()(repositoryUtils: RepositoryUtils, triggerManager: TriggerManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class DomainParameterManager @Inject()(repositoryUtils: RepositoryUtils,
+                                       triggerManager: TriggerManager,
+                                       dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
 
@@ -153,6 +156,69 @@ class DomainParameterManager @Inject()(repositoryUtils: RepositoryUtils, trigger
       ids <- PersistenceSchema.domainParameters.filter(_.domain === domainId).map(_.id).result
       _ <- DBIO.seq(ids.map(id => deleteDomainParameter(domainId, id, onSuccessCalls)): _*)
     } yield ()).transactionally
+  }
+
+  def updateDomainParametersViaApi(domainId: Option[Long], updates: List[DomainParameterInfo], warnings: ListBuffer[String]): DBIO[_] = {
+    for {
+      existingDomainProperties <- {
+        if (updates.nonEmpty) {
+          PersistenceSchema.domainParameters
+            .join(PersistenceSchema.domains).on(_.domain === _.id)
+            .filterOpt(domainId)((q, id) => q._2.id === id)
+            .map(x => (x._1.name, x._1.id, x._1.kind, x._2.apiKey, x._2.id))
+            .result
+            .map { properties =>
+              val keyMap = new mutable.HashMap[String, ListBuffer[(Long, String, String, Long)]]() // Key to (ID, type, domainApiKey, domainID)
+              properties.foreach { property =>
+                var propertyList = keyMap.get(property._1)
+                if (propertyList.isEmpty) {
+                  propertyList = Some(new ListBuffer[(Long, String, String, Long)])
+                  keyMap.put(property._1, propertyList.get)
+                }
+                propertyList.get.append((property._2, property._3, property._4, property._5))
+              }
+              keyMap.map(x => (x._1, x._2.toList)).toMap
+            }
+        } else {
+          DBIO.successful(Map.empty[String, List[(Long, String, String, Long)]])
+        }
+      }
+      // Update domain properties
+      _ <- {
+        val actions = new ListBuffer[DBIO[_]]()
+        updates.foreach { propertyData =>
+          if (existingDomainProperties.contains(propertyData.parameterInfo.key)) {
+            val matchingProperties = existingDomainProperties(propertyData.parameterInfo.key)
+              .filter(prop => propertyData.domainApiKey.isEmpty || propertyData.domainApiKey.get.equals(prop._3))
+            if (matchingProperties.size == 1) {
+              val matchingPropertyInfo = matchingProperties.head
+              if (matchingPropertyInfo._2 == "SIMPLE") {
+                if (propertyData.parameterInfo.value.isDefined) {
+                  // Update
+                  actions += PersistenceSchema.domainParameters
+                    .filter(_.id === matchingPropertyInfo._1)
+                    .map(_.value)
+                    .update(propertyData.parameterInfo.value)
+                } else {
+                  // Delete
+                  warnings += "Ignoring deletion for domain property [%s]. Domain properties cannot be deleted via automation API.".formatted(propertyData.parameterInfo.key)
+                }
+              } else {
+                warnings += "Ignoring update for domain property [%s]. Only simple properties can be updated via the automation API.".formatted(propertyData.parameterInfo.key)
+              }
+            } else if (matchingProperties.size > 1) {
+              warnings += "Ignoring update for domain property [%s]. Multiple properties were found matching the provided key from different domains. Please specify the domain API key to identify the specific property to update.".formatted(propertyData.parameterInfo.key)
+            } else {
+              // This case normally never occurs. A property that is not found is never recorded with an empty list.
+              warnings += "Ignoring update for domain property [%s]. Property was not found.".formatted(propertyData.parameterInfo.key)
+            }
+          } else {
+            warnings += "Ignoring update for domain property [%s]. Property was not found.".formatted(propertyData.parameterInfo.key)
+          }
+        }
+        toDBIO(actions)
+      }
+    } yield ()
   }
 
 }
