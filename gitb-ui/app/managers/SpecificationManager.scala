@@ -519,7 +519,7 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils,
         }
       }
     } yield ()
-    exec(action.transactionally)
+    exec(dbActionFinalisation(Some(onSuccessCalls), None, action).transactionally)
   }
 
 
@@ -693,7 +693,7 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils,
         ), checkApiKeyUniqueness = false, BadgeInfo.noBadges(), onSuccessCalls)
       }
     } yield apiKeyToUse
-    exec(action.transactionally)
+    exec(dbActionFinalisation(Some(onSuccessCalls), None, action).transactionally)
   }
 
 }
