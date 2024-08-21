@@ -1152,6 +1152,27 @@ object JsonUtil {
     )
   }
 
+  def parseJsCreateOrganisationRequest(json: JsValue, communityApiKey: String): CreateOrganisationRequest = {
+    CreateOrganisationRequest(
+      (json \ "shortName").as[String],
+      (json \ "fullName").as[String],
+      (json \ "apiKey").asOpt[String],
+      communityApiKey
+    )
+  }
+
+  def parseJsCreateSystemRequest(json: JsValue, communityApiKey: String): CreateSystemRequest = {
+    CreateSystemRequest(
+      (json \ "shortName").as[String],
+      (json \ "fullName").as[String],
+      (json \ "description").asOpt[String],
+      (json \ "version").asOpt[String],
+      (json \ "apiKey").asOpt[String],
+      (json \ "organisation").as[String],
+      communityApiKey
+    )
+  }
+
   def parseJsCreateSpecificationRequest(json: JsValue, communityApiKey: String): CreateSpecificationRequest = {
     CreateSpecificationRequest(
       (json \ "shortName").as[String],
@@ -1230,6 +1251,26 @@ object JsonUtil {
       (json \ "fullName").asOpt[String],
       (json \ "description").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
       (json \ "displayOrder").asOpt[Short],
+      communityApiKey
+    )
+  }
+
+  def parseJsUpdateOrganisationRequest(json: JsValue, organisationApiKey: String, communityApiKey: String): UpdateOrganisationRequest = {
+    UpdateOrganisationRequest(
+      organisationApiKey,
+      (json \ "shortName").asOpt[String],
+      (json \ "fullName").asOpt[String],
+      communityApiKey
+    )
+  }
+
+  def parseJsUpdateSystemRequest(json: JsValue, systemApiKey: String, communityApiKey: String): UpdateSystemRequest = {
+    UpdateSystemRequest(
+      systemApiKey,
+      (json \ "shortName").asOpt[String],
+      (json \ "fullName").asOpt[String],
+      (json \ "description").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
+      (json \ "version").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
       communityApiKey
     )
   }

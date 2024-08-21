@@ -174,6 +174,16 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     setAuthResult(request, ok, "You are not allowed to manage specification groups through the automation API")
   }
 
+  def canManageOrganisationThroughAutomationApi(request: RequestWithAttributes[_]): Boolean = {
+    val ok = restApiEnabledAndValidCommunityKeyDefined(request)
+    setAuthResult(request, ok, "You are not allowed to manage organisations through the automation API")
+  }
+
+  def canManageSystemThroughAutomationApi(request: RequestWithAttributes[_]): Boolean = {
+    val ok = restApiEnabledAndValidCommunityKeyDefined(request)
+    setAuthResult(request, ok, "You are not allowed to manage systems through the automation API")
+  }
+
   def canManageAnyCommunityThroughAutomationApi(request: RequestWithAttributes[_]): Boolean = {
     val ok = restApiEnabledAndValidMasterKeyDefined(request)
     setAuthResult(request, ok, "You are not allowed to perform system-level operations through the automation API")

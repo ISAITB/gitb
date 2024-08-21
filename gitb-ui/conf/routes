@@ -412,6 +412,12 @@ PUT     /api/rest/community                                      @controllers.re
 POST    /api/rest/community                                      @controllers.rest.CommunityAutomationService.updateOwnCommunity()
 POST    /api/rest/community/:community                           @controllers.rest.CommunityAutomationService.updateCommunity(community: String)
 DELETE  /api/rest/community/:community                           @controllers.rest.CommunityAutomationService.deleteCommunity(community: String)
+PUT     /api/rest/organisation                                   @controllers.rest.CommunityAutomationService.createOrganisation()
+POST    /api/rest/organisation/:organisation                     @controllers.rest.CommunityAutomationService.updateOrganisation(organisation: String)
+DELETE  /api/rest/organisation/:organisation                     @controllers.rest.CommunityAutomationService.deleteOrganisation(organisation: String)
+PUT     /api/rest/system                                         @controllers.rest.CommunityAutomationService.createSystem()
+POST    /api/rest/system/:system                                 @controllers.rest.CommunityAutomationService.updateSystem(system: String)
+DELETE  /api/rest/system/:system                                 @controllers.rest.CommunityAutomationService.deleteSystem(system: String)
 
 POST    /api/crumbs                                              @controllers.BreadcrumbService.getBreadcrumbLabels()
 

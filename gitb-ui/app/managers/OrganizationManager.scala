@@ -1,16 +1,15 @@
 package managers
 
 import actors.events.OrganisationUpdatedEvent
-
-import javax.inject.{Inject, Singleton}
+import exceptions.{AutomationApiException, ErrorCodes}
 import models.Enums.{OrganizationType, UserRole}
 import models._
-import models.automation.{ApiKeyActorInfo, ApiKeyInfo, ApiKeySpecificationInfo, ApiKeySystemInfo, ApiKeyTestCaseInfo, ApiKeyTestSuiteInfo}
-import org.slf4j.LoggerFactory
+import models.automation._
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
 import utils.{CryptoUtil, MimeUtil, RepositoryUtils}
 
+import javax.inject.{Inject, Singleton}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -19,11 +18,14 @@ import scala.concurrent.ExecutionContext.Implicits.global
  * Created by VWYNGAET on 26/10/2016.
  */
 @Singleton
-class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils, systemManager: SystemManager, testResultManager: TestResultManager, triggerHelper: TriggerHelper, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
+                                     systemManager: SystemManager,
+                                     testResultManager: TestResultManager,
+                                     triggerHelper: TriggerHelper,
+                                     automationApiHelper: AutomationApiHelper,
+                                     dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
-
-  private def logger = LoggerFactory.getLogger("OrganizationManager")
 
   /**
     * Checks if organization exists (ignoring the default)
@@ -284,12 +286,41 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils, systemMan
   /**
     * Creates new organization
     */
-  def createOrganization(organization: Organizations, otherOrganisationId: Option[Long], propertyValues: Option[List[OrganisationParameterValues]], propertyFiles: Option[Map[Long, FileInfo]], copyOrganisationParameters: Boolean, copySystemParameters: Boolean, copyStatementParameters: Boolean) = {
+  def createOrganization(organization: Organizations, otherOrganisationId: Option[Long], propertyValues: Option[List[OrganisationParameterValues]], propertyFiles: Option[Map[Long, FileInfo]], copyOrganisationParameters: Boolean, copySystemParameters: Boolean, copyStatementParameters: Boolean): Long = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction = createOrganizationWithRelatedData(organization, otherOrganisationId, propertyValues, propertyFiles, copyOrganisationParameters, copySystemParameters, copyStatementParameters, checkApiKeyUniqueness = false, setDefaultPropertyValues = true, onSuccessCalls)
     val orgInfo = exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
     triggerHelper.triggersFor(organization.community, orgInfo)
     orgInfo.organisationId
+  }
+
+  def createOrganisationThroughAutomationApi(input: CreateOrganisationRequest): String = {
+    val action = for {
+      communityId <- automationApiHelper.getCommunityByCommunityApiKey(input.communityApiKey)
+      apiKeyToUse <- {
+        for {
+          generateApiKey <- if (input.apiKey.isEmpty) {
+            DBIO.successful(true)
+          } else {
+            PersistenceSchema.organizations.filter(_.apiKey === input.apiKey.get).exists.result
+          }
+          apiKeyToUse <- if (generateApiKey) {
+            DBIO.successful(CryptoUtil.generateApiKey())
+          } else {
+            DBIO.successful(input.apiKey.get)
+          }
+        } yield apiKeyToUse
+      }
+      createdOrganisationId <- createOrganizationInTrans(Organizations(0L, input.shortName, input.fullName,
+        OrganizationType.Vendor.id.toShort, adminOrganization = false, None, None, None, template = false, None,
+        Some(apiKeyToUse), communityId
+      ))
+    } yield (communityId, apiKeyToUse, new OrganisationCreationDbInfo(createdOrganisationId, None))
+    val result = exec(action.transactionally)
+    // Call triggers (separate transaction).
+    triggerHelper.triggersFor(result._1, result._3)
+    // Return assigned API key.
+    result._2
   }
 
   def isTemplateNameUnique(templateName: String, communityId: Long, organisationIdToIgnore: Option[Long]): Boolean = {
@@ -397,6 +428,41 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils, systemMan
     PersistenceSchema.organizations.filter(_.id === organisationId).map(x => x.community).result.head
   }
 
+  def updateOrganisationThroughAutomationApi(updateRequest: UpdateOrganisationRequest): Unit = {
+    val onSuccessCalls = mutable.ListBuffer[() => _]()
+    val action = for {
+      communityId <- automationApiHelper.getCommunityByCommunityApiKey(updateRequest.communityApiKey)
+      organisation <- {
+        for {
+          organisation <- PersistenceSchema.organizations
+            .filter(_.community === communityId)
+            .filter(_.apiKey === updateRequest.organisationApiKey)
+            .result
+            .headOption
+          _ <- {
+            if (organisation.isEmpty) {
+              throw AutomationApiException(ErrorCodes.API_ORGANISATION_NOT_FOUND, "No organisation found for the provided API keys")
+            } else {
+              DBIO.successful(())
+            }
+          }
+        } yield organisation.get
+      }
+      creationInfo <- updateOrganizationInternal(organisation.id,
+        updateRequest.shortName.getOrElse(organisation.shortname),
+        updateRequest.fullName.getOrElse(organisation.fullname),
+        organisation.landingPage, organisation.legalNotice, organisation.errorTemplate,
+        None, organisation.template, organisation.templateName, None, None, None,
+        copyOrganisationParameters = false, copySystemParameters = false, copyStatementParameters = false,
+        checkApiKeyUniqueness = false, onSuccessCalls
+      )
+    } yield (communityId, organisation.id, creationInfo)
+    val result = exec(dbActionFinalisation(Some(onSuccessCalls), None, action).transactionally)
+    // Call triggers in separate transactions.
+    triggerHelper.publishTriggerEvent(new OrganisationUpdatedEvent(result._1, result._2))
+    triggerHelper.triggersFor(result._1, result._3)
+  }
+
   def updateOrganization(orgId: Long, shortName: String, fullName: String, landingPageId: Option[Long], legalNoticeId: Option[Long], errorTemplateId: Option[Long], otherOrganisation: Option[Long], template: Boolean, templateName: Option[String], propertyValues: Option[List[OrganisationParameterValues]], propertyFiles: Option[Map[Long, FileInfo]], copyOrganisationParameters: Boolean, copySystemParameters: Boolean, copyStatementParameters: Boolean): Unit = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction = for {
@@ -411,7 +477,7 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils, systemMan
   /**
     * Deletes organization by community
     */
-  def deleteOrganizationByCommunity(communityId: Long, onSuccess: mutable.ListBuffer[() => _]) = {
+  def deleteOrganizationByCommunity(communityId: Long, onSuccess: mutable.ListBuffer[() => _]): DBIO[_] = {
     testResultManager.updateForDeletedOrganisationByCommunityId(communityId) andThen
       (for {
         list <- PersistenceSchema.organizations.filter(_.community === communityId).result
@@ -433,7 +499,28 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils, systemMan
     } yield ()
   }
 
-  def deleteOrganization(orgId: Long, onSuccess: mutable.ListBuffer[() => _]) = {
+  def deleteOrganisationThroughAutomationApi(organisationApiKey: String, communityApiKey: String): Unit = {
+    val onSuccessCalls = mutable.ListBuffer[() => _]()
+    val action = for {
+      communityId <- automationApiHelper.getCommunityByCommunityApiKey(communityApiKey)
+      organisationId <- PersistenceSchema.organizations
+        .filter(_.community === communityId)
+        .filter(_.apiKey === organisationApiKey)
+        .map(_.id)
+        .result
+        .headOption
+      _ <- {
+        if (organisationId.isEmpty) {
+          throw AutomationApiException(ErrorCodes.API_ORGANISATION_NOT_FOUND, "No organisation found for the provided API keys")
+        } else {
+          deleteOrganization(organisationId.get, onSuccessCalls)
+        }
+      }
+    } yield ()
+    exec(dbActionFinalisation(Some(onSuccessCalls), None, action).transactionally)
+  }
+
+  def deleteOrganization(orgId: Long, onSuccess: mutable.ListBuffer[() => _]): DBIO[_] = {
     testResultManager.updateForDeletedOrganisation(orgId) andThen
       deleteUserByOrganization(orgId) andThen
       systemManager.deleteSystemByOrganization(orgId, onSuccess) andThen
@@ -457,7 +544,7 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils, systemMan
   /**
     * Deletes all users with specified organization
     */
-  def deleteUserByOrganization(orgId: Long): DBIO[_] = {
+  private def deleteUserByOrganization(orgId: Long): DBIO[_] = {
     PersistenceSchema.users.filter(_.organization === orgId).delete
   }
 
@@ -591,7 +678,7 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils, systemMan
     } yield()
   }
 
-  def saveOrganisationParameterValuesWrapper(userId: Long, orgId: Long, values: List[OrganisationParameterValues], propertyFiles: Map[Long, FileInfo]) = {
+  def saveOrganisationParameterValuesWrapper(userId: Long, orgId: Long, values: List[OrganisationParameterValues], propertyFiles: Map[Long, FileInfo]): Unit = {
     val userRole: Short = exec(PersistenceSchema.users.filter(_.id === userId).map(x => x.role).result).head
     val isAdmin: Boolean = userRole == UserRole.CommunityAdmin.id.toShort || userRole == UserRole.SystemAdmin.id.toShort
     val organisation = getById(orgId)
