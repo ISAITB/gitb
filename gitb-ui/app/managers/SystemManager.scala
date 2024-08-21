@@ -4,6 +4,7 @@ import actors.events.{ConformanceStatementCreatedEvent, ConformanceStatementUpda
 import exceptions.{AutomationApiException, ErrorCodes}
 import models.Enums.{TestResultStatus, UserRole}
 import models._
+import models.automation.{CreateSystemRequest, UpdateSystemRequest}
 import persistence.db._
 import play.api.db.slick.DatabaseConfigProvider
 import utils.{CryptoUtil, MimeUtil, RepositoryUtils}
@@ -17,7 +18,11 @@ import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
-class SystemManager @Inject() (repositoryUtils: RepositoryUtils, apiHelper: AutomationApiHelper, testResultManager: TestResultManager, triggerHelper: TriggerHelper, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class SystemManager @Inject() (repositoryUtils: RepositoryUtils,
+                               apiHelper: AutomationApiHelper,
+                               testResultManager: TestResultManager,
+                               triggerHelper: TriggerHelper,
+                               dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
 
@@ -89,6 +94,53 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils, apiHelper: Auto
 
   private def getCommunityIdForOrganisationId(organisationId: Long): DBIO[Long] = {
     PersistenceSchema.organizations.filter(_.id === organisationId).map(x => x.community).result.head
+  }
+
+  def createSystemThroughAutomationApi(input: CreateSystemRequest): String = {
+    val action = for {
+      communityId <- apiHelper.getCommunityByCommunityApiKey(input.communityApiKey)
+      organisationId <- {
+        for {
+          organisationId <- PersistenceSchema.organizations
+            .filter(_.community === communityId)
+            .filter(_.apiKey === input.organisationApiKey)
+            .map(_.id)
+            .result
+            .headOption
+          _ <- {
+            if (organisationId.isEmpty) {
+              throw AutomationApiException(ErrorCodes.API_ORGANISATION_NOT_FOUND, "No organisation found for the provided API keys")
+            } else {
+              DBIO.successful(())
+            }
+          }
+        } yield organisationId.get
+      }
+      apiKeyToUse <- {
+        for {
+          generateApiKey <- if (input.apiKey.isEmpty) {
+            DBIO.successful(true)
+          } else {
+            PersistenceSchema.systems.filter(_.apiKey === input.apiKey.get).exists.result
+          }
+          apiKeyToUse <- if (generateApiKey) {
+            DBIO.successful(CryptoUtil.generateApiKey())
+          } else {
+            DBIO.successful(input.apiKey.get)
+          }
+        } yield apiKeyToUse
+      }
+      newSystemId <- {
+        registerSystemInternal(Systems(0L, input.shortName, input.fullName, input.description, input.version,
+          apiKeyToUse, CryptoUtil.generateApiKey(), organisationId
+        ), checkApiKeyUniqueness = false)
+      }
+    } yield (communityId, apiKeyToUse, newSystemId)
+    val result = exec(action.transactionally)
+    // Call triggers in separate transactions.
+    triggerHelper.triggersFor(result._1, new SystemCreationDbInfo(result._3, Some(List[Long]())))
+    // Return assigned API key.
+    result._2
   }
 
   def registerSystemWrapper(userId:Long, system: Systems, otherSystem: Option[Long], propertyValues: Option[List[SystemParameterValues]], propertyFiles: Option[Map[Long, FileInfo]], copySystemParameters: Boolean, copyStatementParameters: Boolean) = {
@@ -247,6 +299,45 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils, apiHelper: Auto
       DBIO.seq(actions.toList.map(a => a): _*)
     } else
       DBIO.successful(())
+  }
+
+  def updateSystemThroughAutomationApi(updateRequest: UpdateSystemRequest): Unit = {
+    val onSuccessCalls = mutable.ListBuffer[() => _]()
+    val action = for {
+      communityId <- apiHelper.getCommunityByCommunityApiKey(updateRequest.communityApiKey)
+      system <- {
+        for {
+          system <- PersistenceSchema.systems
+            .join(PersistenceSchema.organizations).on(_.owner === _.id)
+            .filter(_._1.apiKey === updateRequest.systemApiKey)
+            .filter(_._2.community === communityId)
+            .map(_._1)
+            .result
+            .headOption
+          _ <- {
+            if (system.isEmpty) {
+              throw AutomationApiException(ErrorCodes.API_SYSTEM_NOT_FOUND, "No system found for the provided API keys")
+            } else {
+              DBIO.successful(())
+            }
+          }
+        } yield system.get
+      }
+      linkedActorIds <- {
+        updateSystemProfileInternal(None, Some(communityId), system.id,
+          updateRequest.shortName.getOrElse(system.shortname),
+          updateRequest.fullName.getOrElse(system.fullname),
+          updateRequest.description.getOrElse(system.description),
+          updateRequest.version.getOrElse(system.version),
+          None, None, None, None, None,
+          copySystemParameters = false, copyStatementParameters = false, checkApiKeyUniqueness = false, onSuccessCalls
+        )
+      }
+    } yield (communityId, system.id, linkedActorIds)
+    val result = exec(dbActionFinalisation(Some(onSuccessCalls), None, action).transactionally)
+    // Call triggers in separate transactions.
+    triggerHelper.publishTriggerEvent(new SystemUpdatedEvent(result._1, result._2))
+    triggerHelper.triggersFor(result._1, result._2, Some(result._3))
   }
 
   def updateSystemProfile(userId: Long, systemId: Long, sname: String, fname: String, description: Option[String], version: Option[String], otherSystem: Option[Long], propertyValues: Option[List[SystemParameterValues]], propertyFiles: Option[Map[Long, FileInfo]], copySystemParameters: Boolean, copyStatementParameters: Boolean): Unit = {
@@ -695,6 +786,28 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils, apiHelper: Auto
 
   def getConfigurationsWithEndpointIds(system: Long, ids: List[Long]): List[Configs] = {
     exec(PersistenceSchema.configs.filter(_.system === system).filter(_.endpoint inSet ids).result.map(_.toList))
+  }
+
+  def deleteSystemThroughAutomationApi(systemApiKey: String, communityApiKey: String): Unit = {
+    val onSuccessCalls = mutable.ListBuffer[() => _]()
+    val action = for {
+      communityId <- apiHelper.getCommunityByCommunityApiKey(communityApiKey)
+      systemId <- PersistenceSchema.systems
+        .join(PersistenceSchema.organizations).on(_.owner === _.id)
+        .filter(_._1.apiKey === systemApiKey)
+        .filter(_._2.community === communityId)
+        .map(_._1.id)
+        .result
+        .headOption
+        _ <- {
+          if (systemId.isEmpty) {
+            throw AutomationApiException(ErrorCodes.API_SYSTEM_NOT_FOUND, "No system found for the provided API keys")
+          } else {
+            deleteSystem(systemId.get, onSuccessCalls)
+          }
+        }
+    } yield ()
+    exec(dbActionFinalisation(Some(onSuccessCalls), None, action).transactionally)
   }
 
   def deleteSystemWrapper(systemId: Long) = {
