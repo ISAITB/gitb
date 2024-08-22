@@ -80,6 +80,14 @@ object JsonUtil {
     json
   }
 
+  def jsMessages(texts: Iterable[String]): JsValue = {
+    var json = Json.obj()
+    if (texts.nonEmpty) {
+      json = json + ("messages" -> JsonUtil.jsStringArray(texts))
+    }
+    json
+  }
+
   def jsStringArray(texts: Iterable[String]): JsValue = {
     var textArray = Json.arr()
     texts.foreach { text =>
@@ -1333,6 +1341,18 @@ object JsonUtil {
     }.toList
   }
 
+  def parseJsCreateDomainParametersRequest(json: JsValue): List[DomainParameterInfo] = {
+    parseJsDomainParameterConfigurationArray((json \ "domainProperties").asOpt[JsArray].getOrElse(JsArray.empty))
+  }
+
+  def parseJsDeleteDomainParametersRequest(json: JsValue): List[DomainParameterInfo] = {
+    parseJsDomainParameterConfigurationArray((json \ "domainProperties").asOpt[JsArray].getOrElse(JsArray.empty))
+  }
+
+  def parseJsUpdateDomainParametersRequest(json: JsValue): List[DomainParameterInfo] = {
+    parseJsDomainParameterConfigurationArray((json \ "domainProperties").asOpt[JsArray].getOrElse(JsArray.empty))
+  }
+
   private def parseJsDomainParameterConfigurationArray(jsonArray: JsArray): List[DomainParameterInfo] = {
     jsonArray.value.map { json =>
       DomainParameterInfo(
@@ -1340,6 +1360,8 @@ object JsonUtil {
           (json \ "key").as[String],
           (json \ "value").asOpt[String]
         ),
+        (json \ "description").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
+        (json \ "inTests").asOpt[Boolean],
         (json \ "domain").asOpt[String]
       )
     }.toList

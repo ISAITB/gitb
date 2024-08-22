@@ -1240,13 +1240,12 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
       _ <- {
         if (communityIds.isDefined) {
           if (request.domainProperties.nonEmpty) {
-            domainParameterManager.updateDomainParametersViaApi(communityIds.get._2, request.domainProperties, warnings)
+            domainParameterManager.updateDomainParametersViaApiInternal(communityIds.get._2, request.domainProperties, warnings, updateDefinitions = false)
           } else {
             DBIO.successful(())
           }
         } else {
-          warnings += "Community not found for API key [%s].".formatted(communityKey)
-          DBIO.successful(())
+          throw AutomationApiException(ErrorCodes.API_COMMUNITY_NOT_FOUND, "No community found for the provided API key")
         }
       }
       // Process organisation properties

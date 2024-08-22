@@ -1,5 +1,6 @@
 package managers
 
+import exceptions.{AutomationApiException, ErrorCodes}
 import models.DomainParameter
 import models.Enums.TriggerDataType
 import models.automation.DomainParameterInfo
@@ -32,13 +33,13 @@ class DomainParameterManager @Inject()(repositoryUtils: RepositoryUtils,
     } yield id
   }
 
-  def createDomainParameter(parameter: DomainParameter, fileToStore: Option[File]) = {
+  def createDomainParameter(parameter: DomainParameter, fileToStore: Option[File]): Long = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction = createDomainParameterInternal(parameter, fileToStore, onSuccessCalls)
     exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
   }
 
-  def updateDomainParameter(domainId: Long, parameterId: Long, name: String, description: Option[String], kind: String, value: Option[String], inTests: Boolean, contentType: Option[String], fileToStore: Option[File]) = {
+  def updateDomainParameter(domainId: Long, parameterId: Long, name: String, description: Option[String], kind: String, value: Option[String], inTests: Boolean, contentType: Option[String], fileToStore: Option[File]): Unit = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction = updateDomainParameterInternal(domainId, parameterId, name, description, kind, value, inTests, contentType, fileToStore, onSuccessCalls)
     exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
@@ -70,7 +71,7 @@ class DomainParameterManager @Inject()(repositoryUtils: RepositoryUtils,
     }
   }
 
-  def deleteDomainParameterWrapper(domainId: Long, domainParameter: Long) = {
+  def deleteDomainParameterWrapper(domainId: Long, domainParameter: Long): Unit = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction = deleteDomainParameter(domainId, domainParameter, onSuccessCalls)
     exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
@@ -82,7 +83,7 @@ class DomainParameterManager @Inject()(repositoryUtils: RepositoryUtils,
       PersistenceSchema.domainParameters.filter(_.id === domainParameter).delete
   }
 
-  def getDomainParameter(domainParameterId: Long) = {
+  def getDomainParameter(domainParameterId: Long): DomainParameter = {
     exec(PersistenceSchema.domainParameters.filter(_.id === domainParameterId).result.head)
   }
 
@@ -141,7 +142,7 @@ class DomainParameterManager @Inject()(repositoryUtils: RepositoryUtils,
     getDomainParameters(domainId, loadValues = true, None, onlySimple = false)
   }
 
-  def getDomainParameterByDomainAndName(domainId: Long, name: String) = {
+  def getDomainParameterByDomainAndName(domainId: Long, name: String): Option[DomainParameter] = {
     exec(
       PersistenceSchema.domainParameters
         .filter(_.domain === domainId)
@@ -151,14 +152,171 @@ class DomainParameterManager @Inject()(repositoryUtils: RepositoryUtils,
     )
   }
 
-  def deleteDomainParameters(domainId: Long, onSuccessCalls: ListBuffer[() => _]) = {
-    (for {
+  def deleteDomainParameters(domainId: Long, onSuccessCalls: ListBuffer[() => _]): DBIO[_] = {
+    for {
       ids <- PersistenceSchema.domainParameters.filter(_.domain === domainId).map(_.id).result
       _ <- DBIO.seq(ids.map(id => deleteDomainParameter(domainId, id, onSuccessCalls)): _*)
-    } yield ()).transactionally
+    } yield ()
   }
 
-  def updateDomainParametersViaApi(domainId: Option[Long], updates: List[DomainParameterInfo], warnings: ListBuffer[String]): DBIO[_] = {
+  private def getCommunityAndDomainInfoForCommunityApiKey(communityApiKey: String): DBIO[(Long, Option[Long], Option[String])] = {
+    for {
+      communityIds <- {
+        for {
+          communityIds <- PersistenceSchema.communities
+            .joinLeft(PersistenceSchema.domains).on(_.domain === _.id)
+            .filter(_._1.apiKey === communityApiKey)
+            .map(x => (x._1.id, x._1.domain, x._2.map(_.apiKey)))
+            .result
+            .headOption
+          _ <- {
+            if (communityIds.isEmpty) {
+              throw AutomationApiException(ErrorCodes.API_COMMUNITY_NOT_FOUND, "No community found for the provided API key")
+            } else {
+              DBIO.successful(())
+            }
+          }
+        } yield communityIds.get
+      }
+    } yield communityIds
+  }
+
+  private def getDomainParameterInformationForApiUpdate(domainId: Option[Long]): DBIO[Map[String, (Long, Map[String, Long])]] = {
+    for {
+      existingDomainProperties <- {
+        for {
+          // Load the existing domain parameters and their domains.
+          domainPropertyMap <- PersistenceSchema.domainParameters
+            .join(PersistenceSchema.domains).on(_.domain === _.id)
+            .filterOpt(domainId)((q, id) => q._2.id === id)
+            .map(x => (x._2.id, x._2.apiKey, x._1.id, x._1.name)) // Domain ID, Domain API key, Domain parameter ID, Domain parameter name
+            .result
+            .map { data =>
+              val keyMap = new mutable.HashMap[String, (Long, mutable.HashMap[String, Long])]() // Domain API key to (Domain ID, Map of parameter names to parameter IDs)
+              data.foreach { propInfo =>
+                val propertyMap = if (keyMap.contains(propInfo._2)) {
+                  keyMap(propInfo._2)._2
+                } else {
+                  val newPropMap = new mutable.HashMap[String, Long]()
+                  keyMap += (propInfo._2 -> (propInfo._1, newPropMap))
+                  newPropMap
+                }
+                propertyMap += (propInfo._4 -> propInfo._3)
+              }
+              keyMap
+            }
+          // Load also the domains without parameters and add them to overall result.
+          _ <- PersistenceSchema.domains
+            .filterOpt(domainId)((q, id) => q.id === id)
+            .filterNot(_.apiKey inSet domainPropertyMap.keySet)
+            .map(x => (x.id, x.apiKey)) // Domain ID, Domain API key
+            .result
+            .map { domains =>
+              domains.foreach { domain =>
+                domainPropertyMap += (domain._2 -> (domain._1, new mutable.HashMap[String, Long]()))
+              }
+            }
+        } yield domainPropertyMap.map(x => (x._1, (x._2._1, x._2._2.toMap))).toMap
+      }
+    } yield existingDomainProperties
+  }
+
+  def deleteDomainParametersThroughAutomationApi(communityApiKey: String, parameters: List[DomainParameterInfo]): List[String] = {
+    val onSuccessCalls = mutable.ListBuffer[() => _]()
+    val dbAction = for {
+      // Load the community ID, its (optional) domain ID and the domain API key.
+      communityIds <- getCommunityAndDomainInfoForCommunityApiKey(communityApiKey)
+      // Load the information on existing domains and domain parameters.
+      existingDomainProperties <- getDomainParameterInformationForApiUpdate(communityIds._2)
+      // Carry out updates and collect warnings (if any).
+      warnings <- {
+        val warnings = new ListBuffer[String]()
+        val actions = new ListBuffer[DBIO[_]]()
+        parameters.foreach { parameter =>
+          if (parameter.domainApiKey.isEmpty && communityIds._2.isEmpty) {
+            // No domain linked to the community means that a domain API key must be provided for the parameter.
+            warnings += "Ignoring property [%s]. For a community not linked to a domain you must specify the target domain API key.".formatted(parameter.parameterInfo.key)
+          } else if (parameter.domainApiKey.isDefined && !existingDomainProperties.contains(parameter.domainApiKey.get)) {
+            // Domain parameter referencing a domain API key that does not exist.
+            if (communityIds._2.isDefined) {
+              warnings += "Ignoring property [%s]. The specified domain API key [%s] does not match the community's domain.".formatted(parameter.parameterInfo.key, parameter.domainApiKey.get)
+            } else {
+              warnings += "Ignoring property [%s]. The specified domain API key [%s] does not match an existing domain.".formatted(parameter.parameterInfo.key, parameter.domainApiKey.get)
+            }
+          } else if (!existingDomainProperties(communityIds._3.getOrElse(parameter.domainApiKey.get))._2.contains(parameter.parameterInfo.key)) {
+            // The target domain doesn't define a domain parameter with the provided name.
+            warnings += "Ignoring property [%s]. Its domain doesn't define a property with this name.".formatted(parameter.parameterInfo.key)
+          } else {
+            // Delete parameter.
+            val domainInfo = existingDomainProperties(communityIds._3.getOrElse(parameter.domainApiKey.get))
+            val domainId = domainInfo._1
+            val domainParameterId = domainInfo._2(parameter.parameterInfo.key)
+            actions += deleteDomainParameter(domainId, domainParameterId, onSuccessCalls)
+          }
+        }
+        toDBIO(actions) andThen DBIO.successful(warnings.toList)
+      }
+    } yield warnings
+    exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
+  }
+
+  def createDomainParametersThroughAutomationApi(communityApiKey: String, parameters: List[DomainParameterInfo]): List[String] = {
+    val onSuccessCalls = mutable.ListBuffer[() => _]()
+    val dbAction = for {
+      // Load the community ID, its (optional) domain ID and the domain API key.
+      communityIds <- getCommunityAndDomainInfoForCommunityApiKey(communityApiKey)
+      // Load the information on existing domains and domain parameters.
+      existingDomainProperties <- getDomainParameterInformationForApiUpdate(communityIds._2)
+      // Carry out updates and collect warnings (if any).
+      warnings <- {
+        val warnings = new ListBuffer[String]()
+        val actions = new ListBuffer[DBIO[_]]()
+        parameters.foreach { parameter =>
+          if (parameter.parameterInfo.value.isEmpty) {
+            warnings += "Ignoring property [%s] as no value was provided.".formatted(parameter.parameterInfo.key)
+          } else if (parameter.domainApiKey.isEmpty && communityIds._2.isEmpty) {
+            // No domain linked to the community means that a domain API key must be provided for the new parameter.
+            warnings += "Ignoring property [%s]. For a community not linked to a domain you must specify the target domain API key.".formatted(parameter.parameterInfo.key)
+          } else if (parameter.domainApiKey.isDefined && !existingDomainProperties.contains(parameter.domainApiKey.get)) {
+            // Domain property referencing a domain API key that does not exist.
+            if (communityIds._2.isDefined) {
+              warnings += "Ignoring property [%s]. The specified domain API key [%s] does not match the community's domain.".formatted(parameter.parameterInfo.key, parameter.domainApiKey.get)
+            } else {
+              warnings += "Ignoring property [%s]. The specified domain API key [%s] does not match an existing domain.".formatted(parameter.parameterInfo.key, parameter.domainApiKey.get)
+            }
+          } else if (existingDomainProperties(communityIds._3.getOrElse(parameter.domainApiKey.get))._2.contains(parameter.parameterInfo.key)) {
+            // The target domain already defines a domain parameter with the same name.
+            warnings += "Ignoring property [%s]. Its domain already defines a property with the same name.".formatted(parameter.parameterInfo.key)
+          } else {
+            // Create property.
+            actions += createDomainParameterInternal(DomainParameter(0L, parameter.parameterInfo.key,
+              parameter.description.flatten, "SIMPLE",
+              parameter.parameterInfo.value,
+              parameter.inTests.getOrElse(true), None,
+              communityIds._2.getOrElse(existingDomainProperties(parameter.domainApiKey.get)._1)
+            ), None, onSuccessCalls)
+          }
+        }
+        toDBIO(actions) andThen DBIO.successful(warnings.toList)
+      }
+    } yield warnings
+    exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
+  }
+
+  def updateDomainParametersThroughAutomationApi(communityApiKey: String, parameters: List[DomainParameterInfo]): List[String] = {
+    val warnings = new ListBuffer[String]()
+    val dbAction = for {
+      // Load the community ID, its (optional) domain ID and the domain API key.
+      communityIds <- getCommunityAndDomainInfoForCommunityApiKey(communityApiKey)
+      // Carry out updates and collect warnings (if any).
+      _ <- {
+        updateDomainParametersViaApiInternal(communityIds._2, parameters, warnings, updateDefinitions = true)
+      }
+    } yield warnings.toList
+    exec(dbAction.transactionally)
+  }
+
+  def updateDomainParametersViaApiInternal(domainId: Option[Long], updates: List[DomainParameterInfo], warnings: ListBuffer[String], updateDefinitions: Boolean): DBIO[_] = {
     for {
       existingDomainProperties <- {
         if (updates.nonEmpty) {
@@ -193,15 +351,38 @@ class DomainParameterManager @Inject()(repositoryUtils: RepositoryUtils,
             if (matchingProperties.size == 1) {
               val matchingPropertyInfo = matchingProperties.head
               if (matchingPropertyInfo._2 == "SIMPLE") {
-                if (propertyData.parameterInfo.value.isDefined) {
-                  // Update
-                  actions += PersistenceSchema.domainParameters
-                    .filter(_.id === matchingPropertyInfo._1)
-                    .map(_.value)
-                    .update(propertyData.parameterInfo.value)
+                // Update.
+                if (updateDefinitions) {
+                  // Update full definition.
+                  val query = PersistenceSchema.domainParameters.filter(_.id === matchingPropertyInfo._1)
+                  if (propertyData.parameterInfo.value.isDefined) {
+                    // Value.
+                    actions += query
+                      .map(_.value)
+                      .update(propertyData.parameterInfo.value)
+                  }
+                  if (propertyData.description.isDefined) {
+                    // Description.
+                    actions += query
+                      .map(_.desc)
+                      .update(propertyData.description.get)
+                  }
+                  if (propertyData.inTests.isDefined) {
+                    // In tests.
+                    actions += query
+                      .map(_.inTests)
+                      .update(propertyData.inTests.get)
+                  }
                 } else {
-                  // Delete
-                  warnings += "Ignoring deletion for domain property [%s]. Domain properties cannot be deleted via automation API.".formatted(propertyData.parameterInfo.key)
+                  // Update only value.
+                  if (propertyData.parameterInfo.value.isDefined) {
+                    actions += PersistenceSchema.domainParameters.filter(_.id === matchingPropertyInfo._1)
+                      .map(_.value)
+                      .update(propertyData.parameterInfo.value)
+                  } else {
+                    // No value.
+                    warnings += "Ignoring update for domain property [%s] as no value was provided.".formatted(propertyData.parameterInfo.key)
+                  }
                 }
               } else {
                 warnings += "Ignoring update for domain property [%s]. Only simple properties can be updated via the automation API.".formatted(propertyData.parameterInfo.key)
