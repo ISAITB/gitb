@@ -12,7 +12,7 @@ import managers.export.{ExportSettings, ImportItem, ImportSettings}
 import models.Enums.TestSuiteReplacementChoice.TestSuiteReplacementChoice
 import models.Enums._
 import models._
-import models.automation._
+import models.automation.{KeyValueRequired, _}
 import models.snapshot.ConformanceSnapshot
 import models.theme.Theme
 import org.apache.commons.codec.binary.Base64
@@ -1341,30 +1341,67 @@ object JsonUtil {
     }.toList
   }
 
-  def parseJsCreateDomainParametersRequest(json: JsValue): List[DomainParameterInfo] = {
-    parseJsDomainParameterConfigurationArray((json \ "domainProperties").asOpt[JsArray].getOrElse(JsArray.empty))
+  private def jsAllowedPropertyValue(keyValue: KeyValueRequired): JsObject = {
+    Json.obj(
+      "value" -> keyValue.key,
+      "label" -> keyValue.value,
+    )
   }
 
-  def parseJsDeleteDomainParametersRequest(json: JsValue): List[DomainParameterInfo] = {
-    parseJsDomainParameterConfigurationArray((json \ "domainProperties").asOpt[JsArray].getOrElse(JsArray.empty))
+  def jsAllowedPropertyValues(keyValues: List[KeyValueRequired]): JsArray = {
+    var json = Json.arr()
+    keyValues.foreach{ keyValue =>
+      json = json.append(jsAllowedPropertyValue(keyValue))
+    }
+    json
   }
 
-  def parseJsUpdateDomainParametersRequest(json: JsValue): List[DomainParameterInfo] = {
-    parseJsDomainParameterConfigurationArray((json \ "domainProperties").asOpt[JsArray].getOrElse(JsArray.empty))
+  def parseJsCustomPropertyInfo(json: JsValue): CustomPropertyInfo = {
+    CustomPropertyInfo(
+      (json \ "key").as[String],
+      (json \ "name").asOpt[String],
+      (json \ "description").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
+      (json \ "required").asOpt[Boolean],
+      (json \ "editableByUsers").asOpt[Boolean],
+      (json \ "inTests").asOpt[Boolean],
+      (json \ "inExports").asOpt[Boolean],
+      (json \ "inSelfRegistration").asOpt[Boolean],
+      (json \ "hidden").asOpt[Boolean],
+      (json \ "allowedValues").asOpt[JsArray].map(x => parseJsAllowedPropertyValues(x)).map(x => if (x.isEmpty) None else Some(x)),
+      (json \ "displayOrder").asOpt[Short],
+      (json \ "dependsOn").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
+      (json \ "dependsOnValue").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
+      (json \ "defaultValue").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x))
+    )
+  }
+
+  def parseJsAllowedPropertyValues(jsonContent: String): List[KeyValueRequired] = {
+    parseJsAllowedPropertyValues(Json.parse(jsonContent).as[JsArray])
+  }
+
+  private def parseJsAllowedPropertyValues(jsonArray: JsArray): List[KeyValueRequired] = {
+    jsonArray.value.map { json =>
+      KeyValueRequired(
+        (json \ "value").as[String],
+        (json \ "label").as[String]
+      )
+    }.toList
   }
 
   private def parseJsDomainParameterConfigurationArray(jsonArray: JsArray): List[DomainParameterInfo] = {
-    jsonArray.value.map { json =>
-      DomainParameterInfo(
-        KeyValue(
-          (json \ "key").as[String],
-          (json \ "value").asOpt[String]
-        ),
-        (json \ "description").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
-        (json \ "inTests").asOpt[Boolean],
-        (json \ "domain").asOpt[String]
-      )
-    }.toList
+    jsonArray.value.map(parseJsDomainParameterConfiguration).toList
+  }
+
+  def parseJsDomainParameterConfiguration(json: JsValue): DomainParameterInfo = {
+    DomainParameterInfo(
+      KeyValue(
+        (json \ "key").as[String],
+        (json \ "value").asOpt[String]
+      ),
+      (json \ "description").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
+      (json \ "inTests").asOpt[Boolean],
+      (json \ "domain").asOpt[String]
+    )
   }
 
   private def parseJsKeyValueArray(jsonArray: JsArray): List[KeyValue] = {

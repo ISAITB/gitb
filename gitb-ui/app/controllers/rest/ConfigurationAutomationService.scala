@@ -24,30 +24,57 @@ class ConfigurationAutomationService @Inject() (authorizedAction: AuthorizedActi
     })
   }
 
-  def createDomainParameters(): Action[AnyContent] = authorizedAction { request =>
+  def createDomainParameter(): Action[AnyContent] = authorizedAction { request =>
     processAsJson(request, Some(authorizationManager.canManageConfigurationThroughAutomationApi), { body =>
       val communityKey = request.headers.get(Constants.AutomationHeader).get
-      val input = JsonUtil.parseJsCreateDomainParametersRequest(body)
-      val warnings = domainParameterManager.createDomainParametersThroughAutomationApi(communityKey, input)
-      ResponseConstructor.constructJsonResponse(JsonUtil.jsMessages(warnings).toString())
+      val input = JsonUtil.parseJsDomainParameterConfiguration(body)
+      domainParameterManager.createDomainParameterThroughAutomationApi(communityKey, input)
+      ResponseConstructor.constructEmptyResponse
     })
   }
 
-  def deleteDomainParameters(): Action[AnyContent] = authorizedAction { request =>
+  def deleteDomainParameter(): Action[AnyContent] = authorizedAction { request =>
     processAsJson(request, Some(authorizationManager.canManageConfigurationThroughAutomationApi), { body =>
       val communityKey = request.headers.get(Constants.AutomationHeader).get
-      val input = JsonUtil.parseJsDeleteDomainParametersRequest(body)
-      val warnings = domainParameterManager.deleteDomainParametersThroughAutomationApi(communityKey, input)
-      ResponseConstructor.constructJsonResponse(JsonUtil.jsMessages(warnings).toString())
+      val input = JsonUtil.parseJsDomainParameterConfiguration(body)
+      domainParameterManager.deleteDomainParameterThroughAutomationApi(communityKey, input)
+      ResponseConstructor.constructEmptyResponse
     })
   }
 
-  def updateDomainParameters(): Action[AnyContent] = authorizedAction { request =>
+  def updateDomainParameter(): Action[AnyContent] = authorizedAction { request =>
     processAsJson(request, Some(authorizationManager.canManageConfigurationThroughAutomationApi), { body =>
       val communityKey = request.headers.get(Constants.AutomationHeader).get
-      val input = JsonUtil.parseJsUpdateDomainParametersRequest(body)
-      val warnings = domainParameterManager.updateDomainParametersThroughAutomationApi(communityKey, input)
-      ResponseConstructor.constructJsonResponse(JsonUtil.jsMessages(warnings).toString())
+      val input = JsonUtil.parseJsDomainParameterConfiguration(body)
+      domainParameterManager.updateDomainParameterThroughAutomationApi(communityKey, input)
+      ResponseConstructor.constructEmptyResponse
+    })
+  }
+
+  def createOrganisationProperty(): Action[AnyContent] = authorizedAction { request =>
+    processAsJson(request, Some(authorizationManager.canManageConfigurationThroughAutomationApi), { body =>
+      val communityKey = request.headers.get(Constants.AutomationHeader).get
+      val input = JsonUtil.parseJsCustomPropertyInfo(body)
+      communityManager.createOrganisationPropertyDefinitionThroughAutomationApi(communityKey, input)
+      ResponseConstructor.constructEmptyResponse
+    })
+  }
+
+  def deleteOrganisationProperty(): Action[AnyContent] = authorizedAction { request =>
+    processAsJson(request, Some(authorizationManager.canManageConfigurationThroughAutomationApi), { body =>
+      val communityKey = request.headers.get(Constants.AutomationHeader).get
+      val input = JsonUtil.parseJsCustomPropertyInfo(body)
+      communityManager.deleteOrganisationPropertyDefinitionThroughAutomationApi(communityKey, input)
+      ResponseConstructor.constructEmptyResponse
+    })
+  }
+
+  def updateOrganisationProperty(): Action[AnyContent] = authorizedAction { request =>
+    processAsJson(request, Some(authorizationManager.canManageConfigurationThroughAutomationApi), { body =>
+      val communityKey = request.headers.get(Constants.AutomationHeader).get
+      val input = JsonUtil.parseJsCustomPropertyInfo(body)
+      communityManager.updateOrganisationPropertyDefinitionThroughAutomationApi(communityKey, input)
+      ResponseConstructor.constructEmptyResponse
     })
   }
 
