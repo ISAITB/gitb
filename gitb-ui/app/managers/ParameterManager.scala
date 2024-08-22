@@ -110,7 +110,7 @@ class ParameterManager @Inject() (repositoryUtils: RepositoryUtils, dbConfigProv
 
   def updateParameterWrapper(parameterId: Long, name: String, testKey: String, description: Option[String], use: String, kind: String, adminOnly: Boolean, notForTests: Boolean, hidden: Boolean, allowedValues: Option[String], dependsOn: Option[String], dependsOnValue: Option[String], defaultValue: Option[String]): Unit = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
-    val dbAction = updateParameter(parameterId, name, testKey, description, use, kind, adminOnly, notForTests, hidden, allowedValues, dependsOn, dependsOnValue, defaultValue, onSuccessCalls)
+    val dbAction = updateParameter(parameterId, name, testKey, description, use, kind, adminOnly, notForTests, hidden, allowedValues, dependsOn, dependsOnValue, defaultValue, None, onSuccessCalls)
     exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
   }
 
@@ -128,7 +128,7 @@ class ParameterManager @Inject() (repositoryUtils: RepositoryUtils, dbConfigProv
     }
   }
 
-  def updateParameter(parameterId: Long, name: String, testKey: String, description: Option[String], use: String, kind: String, adminOnly: Boolean, notForTests: Boolean, hidden: Boolean, allowedValues: Option[String], dependsOn: Option[String], dependsOnValue: Option[String], defaultValue: Option[String], onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
+  def updateParameter(parameterId: Long, name: String, testKey: String, description: Option[String], use: String, kind: String, adminOnly: Boolean, notForTests: Boolean, hidden: Boolean, allowedValues: Option[String], dependsOn: Option[String], dependsOnValue: Option[String], defaultValue: Option[String], displayOrder: Option[Short], onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
     for {
       existingParameter <- PersistenceSchema.parameters.filter(_.id === parameterId).map(x => (x.endpoint, x.testKey, x.kind)).result.head
       _ <- {
@@ -155,6 +155,13 @@ class ParameterManager @Inject() (repositoryUtils: RepositoryUtils, dbConfigProv
         // Don't update display order here.
         val q = for {p <- PersistenceSchema.parameters if p.id === parameterId} yield (p.desc, p.use, p.kind, p.name, p.testKey, p.adminOnly, p.notForTests, p.hidden, p.allowedValues, p.dependsOn, p.dependsOnValue, p.defaultValue)
         q.update(description, use, kind, name, testKey, adminOnly, notForTests, hidden, allowedValues, dependsOn, dependsOnValue, defaultValue)
+      }
+      _ <- {
+        if (displayOrder.isDefined) {
+          PersistenceSchema.parameters.filter(_.id === parameterId).map(_.displayOrder).update(displayOrder.get)
+        } else {
+          DBIO.successful(())
+        }
       }
     } yield ()
   }

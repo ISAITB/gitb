@@ -1447,7 +1447,8 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                               }
                               parameterManager.updateParameter(targetKey.toLong, labelToUse, data.getName, Option(data.getDescription),
                                 requiredToUse(data.isRequired), propertyTypeToKind(data.getType), !data.isEditable, !data.isInTests, data.isHidden,
-                                Option(data.getAllowedValues), Option(data.getDependsOn), Option(data.getDependsOnValue), Option(data.getDefaultValue), ctx.onSuccessCalls)
+                                Option(data.getAllowedValues), Option(data.getDependsOn), Option(data.getDependsOnValue), Option(data.getDefaultValue),
+                                Option(data.getDisplayOrder), ctx.onSuccessCalls)
                             }
                           )
                         )
@@ -1988,7 +1989,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                   communityManager.createOrganisationParameterInternal(toModelOrganisationParameter(data, item.parentItem.get.targetKey.get.toLong, None))
                 },
                 (data: com.gitb.xml.export.OrganisationProperty, targetKey: String, item: ImportItem) => {
-                  communityManager.updateOrganisationParameterInternal(toModelOrganisationParameter(data, item.parentItem.get.targetKey.get.toLong, Some(targetKey.toLong)), ctx.onSuccessCalls)
+                  communityManager.updateOrganisationParameterInternal(toModelOrganisationParameter(data, item.parentItem.get.targetKey.get.toLong, Some(targetKey.toLong)), updateDisplayOrder = true, ctx.onSuccessCalls)
                 }
               )
             )
@@ -2014,7 +2015,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                   communityManager.createSystemParameterInternal(toModelSystemParameter(data, item.parentItem.get.targetKey.get.toLong, None))
                 },
                 (data: com.gitb.xml.export.SystemProperty, targetKey: String, item: ImportItem) => {
-                  communityManager.updateSystemParameterInternal(toModelSystemParameter(data, item.parentItem.get.targetKey.get.toLong, Some(targetKey.toLong)), ctx.onSuccessCalls)
+                  communityManager.updateSystemParameterInternal(toModelSystemParameter(data, item.parentItem.get.targetKey.get.toLong, Some(targetKey.toLong)), updateDisplayOrder = true, ctx.onSuccessCalls)
                 }
               )
             )
