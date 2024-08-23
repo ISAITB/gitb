@@ -1,9 +1,11 @@
 package managers
 
 import exceptions.{AutomationApiException, ErrorCodes}
-import models.automation.{OrganisationIdsForApi, StatementIds}
+import models.automation.{CustomPropertyInfo, KeyValueRequired, OrganisationIdsForApi, StatementIds}
+import org.apache.commons.lang3.StringUtils
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
+import utils.JsonUtil
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -158,21 +160,27 @@ class AutomationApiHelper @Inject()(dbConfigProvider: DatabaseConfigProvider) ex
     } yield statementIds
   }
 
-  def getCommunityByCommunityApiKey(communityApiKey: String): DBIO[Long] = {
+  def getCommunityIdsByCommunityApiKey(communityApiKey: String): DBIO[(Long, Option[Long])] = {
     for {
-      communityId <- PersistenceSchema.communities
+      communityIds <- PersistenceSchema.communities
         .filter(_.apiKey === communityApiKey)
-        .map(_.id)
+        .map(x => (x.id, x.domain))
         .result
         .headOption
       _ <- {
-        if (communityId.isEmpty) {
+        if (communityIds.isEmpty) {
           throw AutomationApiException(ErrorCodes.API_COMMUNITY_NOT_FOUND, "No community found for the provided API key")
         } else {
           DBIO.successful(())
         }
       }
-    } yield communityId.get
+    } yield communityIds.get
+  }
+
+  def getCommunityByCommunityApiKey(communityApiKey: String): DBIO[Long] = {
+    for {
+      communityIds <- getCommunityIdsByCommunityApiKey(communityApiKey)
+    } yield communityIds._1
   }
 
   def getDomainIdByDomainApiKey(domainApiKey: String): DBIO[Long] = {
@@ -255,6 +263,101 @@ class AutomationApiHelper @Inject()(dbConfigProvider: DatabaseConfigProvider) ex
 
   def getDomainIdByCommunityApiKey(communityApiKey: String, domainApiKey: Option[String]): DBIO[Long] = {
     lookupDomainIdByCommunityApiKeyInternal(communityApiKey, domainApiKey, requireCommunityDomain = true)
+  }
+
+  def getActorIdsByDomainId(domainId: Option[Long], actorApiKey: String, endpointRequired: Boolean): DBIO[(Long, Option[Long])] = {
+    for {
+      // Load actor ID.
+      actorId <- {
+        for {
+          actorId <- PersistenceSchema.actors
+            .filter(_.apiKey === actorApiKey)
+            .filterOpt(domainId)((q, id) => q.domain === id)
+            .map(_.id)
+            .result
+            .headOption
+          _ <- {
+            if (actorId.isEmpty) {
+              throw AutomationApiException(ErrorCodes.API_ACTOR_NOT_FOUND, "No actor found for the provided API key")
+            } else {
+              DBIO.successful(())
+            }
+          }
+        } yield actorId.get
+      }
+      // Load endpoint ID (if exists).
+      endpointId <- {
+        for {
+          endpointId <- PersistenceSchema.endpoints
+            .filter(_.actor === actorId)
+            .map(_.id)
+            .result
+            .headOption
+          _ <- {
+            if (endpointRequired && endpointId.isEmpty) {
+              throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "No property found for the provided API key")
+            } else {
+              DBIO.successful(())
+            }
+          }
+        } yield endpointId
+      }
+    } yield (actorId, endpointId)
+  }
+
+  def propertyUseText(required: Option[Boolean], defaultValue: String = "O"): String = {
+    if (required.isDefined) {
+      "R"
+    } else {
+      defaultValue
+    }
+  }
+
+  def propertyAllowedValuesText(values: Option[List[KeyValueRequired]]): Option[String] = {
+    if (values.isDefined) {
+      val nonEmptyValues = values.get.filter(keyValue => StringUtils.isNotEmpty(keyValue.key) && StringUtils.isNotEmpty(keyValue.value))
+      if (nonEmptyValues.nonEmpty) {
+        Some(JsonUtil.jsAllowedPropertyValues(nonEmptyValues).toString())
+      } else {
+        None
+      }
+    } else {
+      None
+    }
+  }
+
+  def propertyDefaultValue(defaultValue: Option[String], allowedValues: Option[List[KeyValueRequired]]): Option[String] = {
+    if (defaultValue.isDefined) {
+      if (allowedValues.isDefined) {
+        if (allowedValues.get.exists(kv => kv.key == defaultValue.get)) {
+          defaultValue
+        } else {
+          throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "The default value must be one of the defined allowed values")
+        }
+      } else {
+        defaultValue
+      }
+    } else {
+      None
+    }
+  }
+
+  def propertyDependsOnStatus(input: CustomPropertyInfo, dependencyAllowedValues: Option[String]): (Option[Option[String]], Option[Option[String]]) = {
+    var dependsOn = input.dependsOn
+    var dependsOnValue = input.dependsOnValue
+    if (dependsOn.isEmpty || dependsOnValue.isEmpty) {
+      dependsOn = None
+      dependsOnValue = None
+    } else if (dependsOn.get.isEmpty || dependsOnValue.get.isEmpty) {
+      dependsOn = Some(None)
+      dependsOnValue = Some(None)
+    } else if (dependsOnValue.flatten.isDefined
+      && dependencyAllowedValues.isDefined
+      && !JsonUtil.parseJsAllowedPropertyValues(dependencyAllowedValues.get).exists(p => p.key == dependsOnValue.flatten.get)) {
+      // The property we depend upon does not support the configured value.
+      throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "The property [%s] upon which this property depends on does not support the value [%s]".formatted(dependsOn.flatten.get, dependsOnValue.flatten.get))
+    }
+    (dependsOn, dependsOnValue)
   }
 
 }

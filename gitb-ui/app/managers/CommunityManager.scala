@@ -623,24 +623,24 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
       dependency <- checkDependedOrganisationParameterExistence(communityId, input.dependsOn.flatten, property.map(_.id))
       // Proceed with update.
       _ <- {
-        val dependsOnStatus = propertyDependsOnStatus(input, dependency.flatMap(_.allowedValues))
+        val dependsOnStatus = automationApiHelper.propertyDependsOnStatus(input, dependency.flatMap(_.allowedValues))
         updateOrganisationParameterInternal(OrganisationParameters(
           property.get.id,
           input.name.getOrElse(property.get.name),
           input.key,
           input.description.getOrElse(property.get.description),
-          propertyUseText(input.required, property.get.use),
+          automationApiHelper.propertyUseText(input.required, property.get.use),
           "SIMPLE",
           !input.editableByUsers.getOrElse(!property.get.adminOnly),
           !input.inTests.getOrElse(!property.get.notForTests),
           input.inExports.getOrElse(property.get.inExports),
           input.inSelfRegistration.getOrElse(property.get.inSelfRegistration),
           input.hidden.getOrElse(property.get.hidden),
-          input.allowedValues.map(x => propertyAllowedValuesText(x)).getOrElse(property.get.allowedValues),
+          input.allowedValues.map(x => automationApiHelper.propertyAllowedValuesText(x)).getOrElse(property.get.allowedValues),
           input.displayOrder.getOrElse(property.get.displayOrder),
           dependsOnStatus._1.getOrElse(property.get.dependsOn),
           dependsOnStatus._2.getOrElse(property.get.dependsOnValue),
-          propertyDefaultValue(
+          automationApiHelper.propertyDefaultValue(
             input.defaultValue.getOrElse(property.get.defaultValue),
             input.allowedValues.getOrElse(property.get.allowedValues.map(x => JsonUtil.parseJsAllowedPropertyValues(x)))
           ),
@@ -662,23 +662,23 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
       dependency <- checkDependedSystemParameterExistence(communityId, input.dependsOn.flatten, property.map(_.id))
       // Proceed with update.
       _ <- {
-        val dependsOnStatus = propertyDependsOnStatus(input, dependency.flatMap(_.allowedValues))
+        val dependsOnStatus = automationApiHelper.propertyDependsOnStatus(input, dependency.flatMap(_.allowedValues))
         updateSystemParameterInternal(SystemParameters(
           property.get.id,
           input.name.getOrElse(property.get.name),
           input.key,
           input.description.getOrElse(property.get.description),
-          propertyUseText(input.required, property.get.use),
+          automationApiHelper.propertyUseText(input.required, property.get.use),
           "SIMPLE",
           !input.editableByUsers.getOrElse(!property.get.adminOnly),
           !input.inTests.getOrElse(!property.get.notForTests),
           input.inExports.getOrElse(property.get.inExports),
           input.hidden.getOrElse(property.get.hidden),
-          input.allowedValues.map(x => propertyAllowedValuesText(x)).getOrElse(property.get.allowedValues),
+          input.allowedValues.map(x => automationApiHelper.propertyAllowedValuesText(x)).getOrElse(property.get.allowedValues),
           input.displayOrder.getOrElse(property.get.displayOrder),
           dependsOnStatus._1.getOrElse(property.get.dependsOn),
           dependsOnStatus._2.getOrElse(property.get.dependsOnValue),
-          propertyDefaultValue(
+          automationApiHelper.propertyDefaultValue(
             input.defaultValue.getOrElse(property.get.defaultValue),
             input.allowedValues.getOrElse(property.get.allowedValues.map(x => JsonUtil.parseJsAllowedPropertyValues(x)))
           ),
@@ -1745,23 +1745,23 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
       dependency <- checkDependedOrganisationParameterExistence(communityId, input.dependsOn.flatten, None)
       // Create property.
       _ <- {
-        val dependsOnStatus = propertyDependsOnStatus(input, dependency.flatMap(_.allowedValues))
+        val dependsOnStatus = automationApiHelper.propertyDependsOnStatus(input, dependency.flatMap(_.allowedValues))
         createOrganisationParameterInternal(OrganisationParameters(0L,
           input.name.getOrElse(input.key),
           input.key,
           input.description.flatten,
-          propertyUseText(input.required, "O"),
+          automationApiHelper.propertyUseText(input.required),
           "SIMPLE",
           !input.editableByUsers.getOrElse(true),
           !input.inTests.getOrElse(false),
           input.inExports.getOrElse(false),
           input.inSelfRegistration.getOrElse(false),
           input.hidden.getOrElse(false),
-          propertyAllowedValuesText(input.allowedValues.flatten),
+          automationApiHelper.propertyAllowedValuesText(input.allowedValues.flatten),
           input.displayOrder.getOrElse(0),
           dependsOnStatus._1.flatten,
           dependsOnStatus._2.flatten,
-          propertyDefaultValue(input.defaultValue.flatten, input.allowedValues.flatten),
+          automationApiHelper.propertyDefaultValue(input.defaultValue.flatten, input.allowedValues.flatten),
           communityId
         ))
       }
@@ -1779,82 +1779,27 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
       dependency <- checkDependedSystemParameterExistence(communityId, input.dependsOn.flatten, None)
       // Create property.
       _ <- {
-        val dependsOnStatus = propertyDependsOnStatus(input, dependency.flatMap(_.allowedValues))
+        val dependsOnStatus = automationApiHelper.propertyDependsOnStatus(input, dependency.flatMap(_.allowedValues))
         createSystemParameterInternal(SystemParameters(0L,
           input.name.getOrElse(input.key),
           input.key,
           input.description.flatten,
-          propertyUseText(input.required, "O"),
+          automationApiHelper.propertyUseText(input.required),
           "SIMPLE",
           !input.editableByUsers.getOrElse(true),
           !input.inTests.getOrElse(false),
           input.inExports.getOrElse(false),
           input.hidden.getOrElse(false),
-          propertyAllowedValuesText(input.allowedValues.flatten),
+          automationApiHelper.propertyAllowedValuesText(input.allowedValues.flatten),
           input.displayOrder.getOrElse(0),
           dependsOnStatus._1.flatten,
           dependsOnStatus._2.flatten,
-          propertyDefaultValue(input.defaultValue.flatten, input.allowedValues.flatten),
+          automationApiHelper.propertyDefaultValue(input.defaultValue.flatten, input.allowedValues.flatten),
           communityId
         ))
       }
     } yield ()
     exec(dbAction.transactionally)
-  }
-
-  private def propertyDefaultValue(defaultValue: Option[String], allowedValues: Option[List[KeyValueRequired]]): Option[String] = {
-    if (defaultValue.isDefined) {
-      if (allowedValues.isDefined) {
-        if (allowedValues.get.exists(kv => kv.key == defaultValue.get)) {
-          defaultValue
-        } else {
-          throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "The default value must be one of the defined allowed values")
-        }
-      } else {
-        defaultValue
-      }
-    } else {
-      None
-    }
-  }
-
-  private def propertyUseText(required: Option[Boolean], defaultValue: String): String = {
-    if (required.isDefined) {
-      "R"
-    } else {
-      defaultValue
-    }
-  }
-
-  private def propertyAllowedValuesText(values: Option[List[KeyValueRequired]]): Option[String] = {
-    if (values.isDefined) {
-      val nonEmptyValues = values.get.filter(keyValue => StringUtils.isNotEmpty(keyValue.key) && StringUtils.isNotEmpty(keyValue.value))
-      if (nonEmptyValues.nonEmpty) {
-        Some(JsonUtil.jsAllowedPropertyValues(nonEmptyValues).toString())
-      } else {
-        None
-      }
-    } else {
-      None
-    }
-  }
-
-  private def propertyDependsOnStatus(input: CustomPropertyInfo, dependencyAllowedValues: Option[String]): (Option[Option[String]], Option[Option[String]]) = {
-    var dependsOn = input.dependsOn
-    var dependsOnValue = input.dependsOnValue
-    if (dependsOn.isEmpty || dependsOnValue.isEmpty) {
-      dependsOn = None
-      dependsOnValue = None
-    } else if (dependsOn.get.isEmpty || dependsOnValue.get.isEmpty) {
-      dependsOn = Some(None)
-      dependsOnValue = Some(None)
-    } else if (dependsOnValue.flatten.isDefined
-      && dependencyAllowedValues.isDefined
-      && !JsonUtil.parseJsAllowedPropertyValues(dependencyAllowedValues.get).exists(p => p.key == dependsOnValue.flatten.get)) {
-      // The property we depend upon does not support the configured value.
-      throw AutomationApiException(ErrorCodes.API_INVALID_CONFIGURATION_PROPERTY_DEFINITION, "The property [%s] upon which this property depends on does not support the value [%s]".formatted(dependsOn.flatten.get, dependsOnValue.flatten.get))
-    }
-    (dependsOn, dependsOnValue)
   }
 
 }
