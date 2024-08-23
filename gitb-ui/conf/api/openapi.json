@@ -19,12 +19,20 @@
   ],
   "tags": [
     {
+      "name": "Community management",
+      "description": "Operations on communities, organisations and systems."
+    },
+    {
       "name": "Configuration",
       "description": "Operations relevant to configuration actions."
     },
     {
       "name": "Conformance statements",
       "description": "Operations relevant to conformance statements."
+    },
+    {
+      "name": "Domain management",
+      "description": "Operations on domains, specifications, specification groups and actors."
     },
     {
       "name": "Test sessions",
@@ -36,6 +44,435 @@
     }
   ],
   "paths": {
+    "/community": {
+      "put": {
+        "tags": [
+          "Community management"
+        ],
+        "summary": "Create a community.",
+        "security": [
+          {
+            "MasterApiKeyAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "The data for the new community.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCommunityRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Community created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiKeyResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Community management"
+        ],
+        "summary": "Update the community identified by the provided authorisation API key.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "The updates to apply to the target community.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCommunityRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Community updated."
+          },
+          "400": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/community/{community}": {
+      "post": {
+        "tags": [
+          "Community management"
+        ],
+        "summary": "Update a community.",
+        "security": [
+          {
+            "MasterApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "community",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "The key identifying the target community."
+          }
+        ],
+        "requestBody": {
+          "description": "The updates to apply to the target community.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCommunityRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Community updated."
+          },
+          "400": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Community management"
+        ],
+        "summary": "Delete a community.",
+        "security": [
+          {
+            "MasterApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "community",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "The key identifying the target community."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Community deleted."
+          },
+          "400": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/organisation": {
+      "put": {
+        "tags": [
+          "Community management"
+        ],
+        "summary": "Create an organisation.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "The data for the new organisation.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOrganisationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Organisation created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiKeyResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/organisation/{organisation}": {
+      "post": {
+        "tags": [
+          "Community management"
+        ],
+        "summary": "Update an organisation.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organisation",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "The key identifying the target organisation."
+          }
+        ],
+        "requestBody": {
+          "description": "The updates to apply to the target organisation.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateOrganisationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Organisation updated."
+          },
+          "400": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Community management"
+        ],
+        "summary": "Delete a community.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "organisation",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "The key identifying the target organisation."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Organisation deleted."
+          },
+          "400": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/system": {
+      "put": {
+        "tags": [
+          "Community management"
+        ],
+        "summary": "Create a system.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "The data for the new system.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSystemRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "System created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiKeyResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/system/{system}": {
+      "post": {
+        "tags": [
+          "Community management"
+        ],
+        "summary": "Update a system.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "system",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "The key identifying the target system."
+          }
+        ],
+        "requestBody": {
+          "description": "The updates to apply to the target system.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSystemRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "System updated."
+          },
+          "400": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Community management"
+        ],
+        "summary": "Delete a community.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "system",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "The key identifying the target system."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "System deleted."
+          },
+          "400": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/configure": {
       "post": {
         "tags": [
@@ -67,6 +504,537 @@
                 }
               }
             }
+          },
+          "400": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/configure/domain": {
+      "put": {
+        "tags": [
+          "Configuration"
+        ],
+        "summary": "Create a domain parameter.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "The data for the new domain parameter.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DomainParameterCreationInfo"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Domain parameter created."
+          },
+          "400": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Configuration"
+        ],
+        "summary": "Update a domain parameter.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "The domain parameter's identification and updates.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DomainParameterUpdateInfo"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Domain parameter updated."
+          },
+          "400": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/configure/domain/{parameter}": {
+      "delete": {
+        "tags": [
+          "Configuration"
+        ],
+        "summary": "Delete a domain parameter.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "parameter",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "The key identifying the target parameter."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Parameter deleted."
+          },
+          "400": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/configure/domain/{domain}/{parameter}": {
+      "delete": {
+        "tags": [
+          "Configuration"
+        ],
+        "summary": "Delete a domain parameter for the given domain. This operation needs to be used when authenticating with a community API key refering to a community without a specific linked domain.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "domain",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "The API key identifying the target domain."
+          },
+          {
+            "in": "path",
+            "name": "parameter",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "The key identifying the target parameter."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Parameter deleted."
+          },
+          "400": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/configure/organisation": {
+      "put": {
+        "tags": [
+          "Configuration"
+        ],
+        "summary": "Create an organisation property definition.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "The data for the new property.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrganisationPropertyInfo"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Property created."
+          },
+          "400": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Configuration"
+        ],
+        "summary": "Update an organisation property definition.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "The property's identification and updates.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrganisationPropertyInfo"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Property updated."
+          },
+          "400": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/configure/organisation/{property}": {
+      "delete": {
+        "tags": [
+          "Configuration"
+        ],
+        "summary": "Delete an organisation property definition.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "property",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "The key identifying the target property."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Property deleted."
+          },
+          "400": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/configure/system": {
+      "put": {
+        "tags": [
+          "Configuration"
+        ],
+        "summary": "Create a system property definition.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "The data for the new property.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SystemPropertyInfo"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Property created."
+          },
+          "400": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Configuration"
+        ],
+        "summary": "Update a system property definition.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "The property's identification and updates.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SystemPropertyInfo"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Property updated."
+          },
+          "400": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/configure/system/{property}": {
+      "delete": {
+        "tags": [
+          "Configuration"
+        ],
+        "summary": "Delete a system property definition.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "property",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "The key identifying the target property."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Property deleted."
+          },
+          "400": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/configure/actor/{actor}": {
+      "put": {
+        "tags": [
+          "Configuration"
+        ],
+        "summary": "Create a conformance statement (actor) property definition.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "actor",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "The key identifying the target specification actor."
+          }
+        ],
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "The data for the new property.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StatementPropertyInfo"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Property created."
+          },
+          "400": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Configuration"
+        ],
+        "summary": "Update a conformance statement (actor) property definition.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "actor",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "The key identifying the target specification actor."
+          }
+        ],
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "The property's identification and updates.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StatementPropertyInfo"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Property updated."
+          },
+          "400": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/configure/actor/{actor}/{property}": {
+      "delete": {
+        "tags": [
+          "Configuration"
+        ],
+        "summary": "Delete a conformance statement (actor) property definition.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "actor",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "The key identifying the target specification actor."
+          },
+          {
+            "in": "path",
+            "name": "property",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "The key identifying the target property."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Property deleted."
           },
           "400": {
             "description": "The received request was invalid.",
@@ -2201,6 +3169,496 @@
           }
         },
         "additionalProperties": false
+      },
+      "DomainParameterCreationInfo": {
+        "description": "The data for the new domain parameter.",
+        "type": "object",
+        "properties": {
+          "key": {
+            "description": "The unique key used to identify the parameter.",
+            "type": "string"
+          },
+          "value": {
+            "description": "The value to apply for the parameter.",
+            "type": "string"
+          },
+          "description": {
+            "description": "The parameter's description.",
+            "type": "string"
+          },
+          "inTests": {
+            "description": "Whether the parameter should be exposed to test sessions.",
+            "type": "boolean",
+            "default": true
+          },
+          "domain": {
+            "description": "The API key identifying the domain of the parameter. This is required if the community API key used for authentication refers to a community that is not linked to a specific domain.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "value"
+        ],
+        "additionalProperties": false
+      },
+      "DomainParameterUpdateInfo": {
+        "description": "The domain parameter's identification and updates.",
+        "type": "object",
+        "properties": {
+          "key": {
+            "description": "The unique key used to identify the parameter.",
+            "type": "string"
+          },
+          "value": {
+            "description": "The new value to apply for the parameter. Skip this if no update should be made.",
+            "type": "string"
+          },
+          "description": {
+            "description": "The parameter's description. Skip this if no update should be made or set with an empty string to delete the current value.",
+            "type": "string"
+          },
+          "inTests": {
+            "description": "Whether the parameter should be exposed to test sessions. Skip this if no update should be made.",
+            "type": "boolean"
+          },
+          "domain": {
+            "description": "The API key identifying the domain of the parameter. This is required if the community API key used for authentication refers to a community that is not linked to a specific domain.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key"
+        ],
+        "additionalProperties": false
+      },
+      "AllowedPropertyValue": {
+        "description": "An entry for a configuration property representing an allowed value and its display label..",
+        "type": "object",
+        "properties": {
+          "value": {
+            "description": "The property value.",
+            "type": "string"
+          },
+          "label": {
+            "description": "The property's display label.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "value",
+          "label"
+        ],
+        "additionalProperties": false
+      },
+      "OrganisationPropertyInfo": {
+        "description": "The data for the organisation property.",
+        "type": "object",
+        "properties": {
+          "key": {
+            "description": "The unique key used to identify the property.",
+            "type": "string"
+          },
+          "name": {
+            "description": "The property's name. If not set this will be the same as the property's key.",
+            "type": "string"
+          },
+          "description": {
+            "description": "The property's description.",
+            "type": "string"
+          },
+          "required": {
+            "description": "Whether the property must be set before executing test sessions.",
+            "type": "boolean",
+            "default": true
+          },
+          "editableByUsers": {
+            "description": "Whether the property can be set by organisation users.",
+            "type": "boolean",
+            "default": true
+          },
+          "inTests": {
+            "description": "Whether the property should be exposed to test sessions.",
+            "type": "boolean",
+            "default": false
+          },
+          "inExports": {
+            "description": "Whether the property should be included in exports.",
+            "type": "boolean",
+            "default": false
+          },
+          "inSelfRegistration": {
+            "description": "Whether the property should be requested during self-registration.",
+            "type": "boolean",
+            "default": false
+          },
+          "hidden": {
+            "description": "Whether the property should be hidden from organisation users.",
+            "type": "boolean",
+            "default": false
+          },
+          "allowedValues": {
+            "description": "The list of allowed values for the property.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AllowedPropertyValue"
+            }
+          },
+          "displayOrder": {
+            "description": "The display order of the property when presented to users.",
+            "type": "number"
+          },
+          "dependsOn": {
+            "description": "The key of another property upon which this property's applicability depends on (see also dependsOnValue).",
+            "type": "string"
+          },
+          "dependsOnValue": {
+            "description": "If the dependsOn property is set, this is the value that the refered-to property needs to have for this property to be considered applicable.",
+            "type": "string"
+          },
+          "defaultValue": {
+            "description": "The default value of the property when a new organisation is created.",
+            "type": "string"
+          },
+          "domain": {
+            "description": "The API key identifying the domain of the parameter. This is required if the community API key used for authentication refers to a community that is not linked to a specific domain.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key"
+        ],
+        "additionalProperties": false
+      },
+      "SystemPropertyInfo": {
+        "description": "The data for the system property.",
+        "type": "object",
+        "properties": {
+          "key": {
+            "description": "The unique key used to identify the property.",
+            "type": "string"
+          },
+          "name": {
+            "description": "The property's name. If not set this will be the same as the property's key.",
+            "type": "string"
+          },
+          "description": {
+            "description": "The property's description.",
+            "type": "string"
+          },
+          "required": {
+            "description": "Whether the property must be set before executing test sessions.",
+            "type": "boolean",
+            "default": true
+          },
+          "editableByUsers": {
+            "description": "Whether the property can be set by organisation users.",
+            "type": "boolean",
+            "default": true
+          },
+          "inTests": {
+            "description": "Whether the property should be exposed to test sessions.",
+            "type": "boolean",
+            "default": false
+          },
+          "inExports": {
+            "description": "Whether the property should be included in exports.",
+            "type": "boolean",
+            "default": false
+          },
+          "hidden": {
+            "description": "Whether the property should be hidden from organisation users.",
+            "type": "boolean",
+            "default": false
+          },
+          "allowedValues": {
+            "description": "The list of allowed values for the property.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AllowedPropertyValue"
+            }
+          },
+          "displayOrder": {
+            "description": "The display order of the property when presented to users.",
+            "type": "number"
+          },
+          "dependsOn": {
+            "description": "The key of another property upon which this property's applicability depends on (see also dependsOnValue).",
+            "type": "string"
+          },
+          "dependsOnValue": {
+            "description": "If the dependsOn property is set, this is the value that the refered-to property needs to have for this property to be considered applicable.",
+            "type": "string"
+          },
+          "defaultValue": {
+            "description": "The default value of the property when a new system is created.",
+            "type": "string"
+          },
+          "domain": {
+            "description": "The API key identifying the domain of the parameter. This is required if the community API key used for authentication refers to a community that is not linked to a specific domain.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key"
+        ],
+        "additionalProperties": false
+      },
+      "StatementPropertyInfo": {
+        "description": "The data for the statement property.",
+        "type": "object",
+        "properties": {
+          "key": {
+            "description": "The unique key used to identify the property.",
+            "type": "string"
+          },
+          "name": {
+            "description": "The property's name. If not set this will be the same as the property's key.",
+            "type": "string"
+          },
+          "description": {
+            "description": "The property's description.",
+            "type": "string"
+          },
+          "required": {
+            "description": "Whether the property must be set before executing test sessions.",
+            "type": "boolean",
+            "default": true
+          },
+          "editableByUsers": {
+            "description": "Whether the property can be set by organisation users.",
+            "type": "boolean",
+            "default": true
+          },
+          "inTests": {
+            "description": "Whether the property should be exposed to test sessions.",
+            "type": "boolean",
+            "default": false
+          },
+          "inExports": {
+            "description": "Whether the property should be included in exports.",
+            "type": "boolean",
+            "default": false
+          },
+          "hidden": {
+            "description": "Whether the property should be hidden from organisation users.",
+            "type": "boolean",
+            "default": false
+          },
+          "allowedValues": {
+            "description": "The list of allowed values for the property.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AllowedPropertyValue"
+            }
+          },
+          "displayOrder": {
+            "description": "The display order of the property when presented to users.",
+            "type": "number"
+          },
+          "dependsOn": {
+            "description": "The key of another property upon which this property's applicability depends on (see also dependsOnValue).",
+            "type": "string"
+          },
+          "dependsOnValue": {
+            "description": "If the dependsOn property is set, this is the value that the refered-to property needs to have for this property to be considered applicable.",
+            "type": "string"
+          },
+          "defaultValue": {
+            "description": "The default value of the property when a new conformance statement is created.",
+            "type": "string"
+          },
+          "domain": {
+            "description": "The API key identifying the domain of the parameter. This is required if the community API key used for authentication refers to a community that is not linked to a specific domain.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key"
+        ],
+        "additionalProperties": false
+      },
+      "ApiKeyResponse": {
+        "description": "The API key that was assigned to the creation of a new element.",
+        "type": "object",
+        "properties": {
+          "apiKey": {
+            "description": "The API key value.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "apiKey"
+        ],
+        "additionalProperties": false
+      },
+      "CreateCommunityRequest": {
+        "description": "The data used to create a new community.",
+        "type": "object",
+        "properties": {
+          "shortName": {
+            "description": "The community's short name.",
+            "type": "string"
+          },
+          "fullName": {
+            "description": "The community's full name.",
+            "type": "string"
+          },
+          "description": {
+            "description": "The community's description.",
+            "type": "string"
+          },
+          "supportEmail": {
+            "description": "A support email address to receive community-specific notifications at.",
+            "type": "string"
+          },
+          "interactionNotifications": {
+            "description": "Whether to receive notifications for pending interactions by email at the support mailbox (see supportEmail).",
+            "type": "boolean",
+            "default": false
+          },
+          "apiKey": {
+            "description": "The API key to set for the community. If this key is already assigned, a new one will be generated.",
+            "type": "string"
+          },
+          "domain": {
+            "description": "The API key identifying a domain that should be linked to the community.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "shortName",
+          "fullName"
+        ],
+        "additionalProperties": false
+      },
+      "UpdateCommunityRequest": {
+        "description": "The data used to define the updates to make to a target community.",
+        "type": "object",
+        "properties": {
+          "shortName": {
+            "description": "The community's short name. Skip this if no update should be made.",
+            "type": "string"
+          },
+          "fullName": {
+            "description": "The community's full name. Skip this if no update should be made.",
+            "type": "string"
+          },
+          "description": {
+            "description": "The community's description. Skip this if no update should be made or set to an empty string to remove the current value.",
+            "type": "string"
+          },
+          "supportEmail": {
+            "description": "A support email address to receive community-specific notifications at. Skip this if no update should be made or set to an empty string to remove the current value.",
+            "type": "string"
+          },
+          "interactionNotifications": {
+            "description": "Whether to receive notifications for pending interactions by email at the support mailbox (see supportEmail). Skip this if no update should be made.",
+            "type": "boolean"
+          },
+          "domain": {
+            "description": "The API key identifying a domain that should be linked to the community. Skip this if no update should be made or set to an empty string to unlink the community from its existing domain (without deleting the domain).",
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreateOrganisationRequest": {
+        "description": "The data used to create a new organisation.",
+        "type": "object",
+        "properties": {
+          "shortName": {
+            "description": "The organisation's short name.",
+            "type": "string"
+          },
+          "fullName": {
+            "description": "The organisation's full name.",
+            "type": "string"
+          },
+          "apiKey": {
+            "description": "The API key to set for the organisation. If this key is already assigned, a new one will be generated.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "shortName",
+          "fullName"
+        ],
+        "additionalProperties": false
+      },
+      "UpdateOrganisationRequest": {
+        "description": "The data used to define the updates to make to a target organisation.",
+        "type": "object",
+        "properties": {
+          "shortName": {
+            "description": "The organisation's short name. Skip this if no update should be made.",
+            "type": "string"
+          },
+          "fullName": {
+            "description": "The organisation's full name. Skip this if no update should be made.",
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreateSystemRequest": {
+        "description": "The data used to create a new system.",
+        "type": "object",
+        "properties": {
+          "shortName": {
+            "description": "The system's short name.",
+            "type": "string"
+          },
+          "fullName": {
+            "description": "The system's full name.",
+            "type": "string"
+          },
+          "description": {
+            "description": "The system's description.",
+            "type": "string"
+          },
+          "version": {
+            "description": "The system's version information.",
+            "type": "string"
+          },
+          "apiKey": {
+            "description": "The API key to set for the system. If this key is already assigned, a new one will be generated.",
+            "type": "string"
+          },
+          "organisation": {
+            "description": "The API key identifying the organisation in which to create the system.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "shortName",
+          "fullName",
+          "organisation"
+        ],
+        "additionalProperties": false
+      },
+      "UpdateSystemRequest": {
+        "description": "The data used to define the updates to make to a target system.",
+        "type": "object",
+        "properties": {
+          "shortName": {
+            "description": "The system's short name. Skip this if no update should be made.",
+            "type": "string"
+          },
+          "fullName": {
+            "description": "The system's full name. Skip this if no update should be made.",
+            "type": "string"
+          },
+          "description": {
+            "description": "The system's description. Skip this if no update should be made or set to the empty string to remove the current value.",
+            "type": "string"
+          },
+          "version": {
+            "description": "The system's version information. Skip this if no update should be made or set to the empty string to remove the current value.",
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
       }
     },
     "securitySchemes": {
@@ -2212,6 +3670,12 @@
       },
       "CommunityApiKeyAuth": {
         "description": "The API key to identify a specific community.",
+        "type": "apiKey",
+        "in": "header",
+        "name": "ITB_API_KEY"
+      },
+      "MasterApiKeyAuth": {
+        "description": "The API key to identify as the system administrator to perform administrative tasks.",
         "type": "apiKey",
         "in": "header",
         "name": "ITB_API_KEY"
