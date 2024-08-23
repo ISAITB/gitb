@@ -55,7 +55,7 @@ class ConfigurationAutomationService @Inject() (authorizedAction: AuthorizedActi
     processAsJson(request, Some(authorizationManager.canManageConfigurationThroughAutomationApi), { body =>
       val communityKey = request.headers.get(Constants.AutomationHeader).get
       val input = JsonUtil.parseJsCustomPropertyInfo(body)
-      communityManager.createOrganisationPropertyDefinitionThroughAutomationApi(communityKey, input)
+      communityManager.createOrganisationParameterDefinitionThroughAutomationApi(communityKey, input)
       ResponseConstructor.constructEmptyResponse
     })
   }
@@ -64,7 +64,7 @@ class ConfigurationAutomationService @Inject() (authorizedAction: AuthorizedActi
     processAsJson(request, Some(authorizationManager.canManageConfigurationThroughAutomationApi), { body =>
       val communityKey = request.headers.get(Constants.AutomationHeader).get
       val input = JsonUtil.parseJsCustomPropertyInfo(body)
-      communityManager.deleteOrganisationPropertyDefinitionThroughAutomationApi(communityKey, input)
+      communityManager.deleteOrganisationParameterDefinitionThroughAutomationApi(communityKey, input)
       ResponseConstructor.constructEmptyResponse
     })
   }
@@ -73,7 +73,34 @@ class ConfigurationAutomationService @Inject() (authorizedAction: AuthorizedActi
     processAsJson(request, Some(authorizationManager.canManageConfigurationThroughAutomationApi), { body =>
       val communityKey = request.headers.get(Constants.AutomationHeader).get
       val input = JsonUtil.parseJsCustomPropertyInfo(body)
-      communityManager.updateOrganisationPropertyDefinitionThroughAutomationApi(communityKey, input)
+      communityManager.updateOrganisationParameterDefinitionThroughAutomationApi(communityKey, input)
+      ResponseConstructor.constructEmptyResponse
+    })
+  }
+
+  def createSystemProperty(): Action[AnyContent] = authorizedAction { request =>
+    processAsJson(request, Some(authorizationManager.canManageConfigurationThroughAutomationApi), { body =>
+      val communityKey = request.headers.get(Constants.AutomationHeader).get
+      val input = JsonUtil.parseJsCustomPropertyInfo(body)
+      communityManager.createSystemParameterDefinitionThroughAutomationApi(communityKey, input)
+      ResponseConstructor.constructEmptyResponse
+    })
+  }
+
+  def deleteSystemProperty(): Action[AnyContent] = authorizedAction { request =>
+    processAsJson(request, Some(authorizationManager.canManageConfigurationThroughAutomationApi), { body =>
+      val communityKey = request.headers.get(Constants.AutomationHeader).get
+      val input = JsonUtil.parseJsCustomPropertyInfo(body)
+      communityManager.deleteSystemParameterDefinitionThroughAutomationApi(communityKey, input)
+      ResponseConstructor.constructEmptyResponse
+    })
+  }
+
+  def updateSystemProperty(): Action[AnyContent] = authorizedAction { request =>
+    processAsJson(request, Some(authorizationManager.canManageConfigurationThroughAutomationApi), { body =>
+      val communityKey = request.headers.get(Constants.AutomationHeader).get
+      val input = JsonUtil.parseJsCustomPropertyInfo(body)
+      communityManager.updateSystemParameterDefinitionThroughAutomationApi(communityKey, input)
       ResponseConstructor.constructEmptyResponse
     })
   }
