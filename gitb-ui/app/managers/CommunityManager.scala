@@ -103,13 +103,10 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
     */
   def getCommunities(ids: Option[List[Long]], skipDefault: Boolean): List[Communities] = {
     var q = ids match {
-      case Some(idList) => {
+      case Some(idList) =>
+        PersistenceSchema.communities.filter(_.id inSet idList)
+      case None =>
         PersistenceSchema.communities
-          .filter(_.id inSet idList)
-      }
-      case None => {
-        PersistenceSchema.communities
-      }
     }
     if (skipDefault) {
       q = q.filter(_.id =!= Constants.DefaultCommunityId)
@@ -849,12 +846,12 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
     } yield ()
   }
 
-  def updateSystemParameter(parameter: SystemParameters) = {
+  def updateSystemParameter(parameter: SystemParameters): Unit = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     exec(dbActionFinalisation(Some(onSuccessCalls), None, updateSystemParameterInternal(parameter, updateDisplayOrder = false, onSuccessCalls)).transactionally)
   }
 
-  def deleteSystemParameterWrapper(parameterId: Long) = {
+  def deleteSystemParameterWrapper(parameterId: Long): Unit = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction = deleteSystemParameter(parameterId, onSuccessCalls)
     exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
@@ -877,7 +874,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
       PersistenceSchema.systemParameters.filter(_.id === parameterId).delete
   }
 
-  def deleteSystemParametersByCommunity(communityId: Long) = {
+  private def deleteSystemParametersByCommunity(communityId: Long): DBIO[_] = {
     // The values and files are already deleted as part of the system deletes
     PersistenceSchema.systemParameters.filter(_.community === communityId).delete
   }
@@ -939,7 +936,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
       .result).toList
   }
 
-  def getOrganisationParametersForSelfRegistration(communityId: Long): List[OrganisationParameters] = {
+  private def getOrganisationParametersForSelfRegistration(communityId: Long): List[OrganisationParameters] = {
     exec(PersistenceSchema.organisationParameters
       .filter(_.community === communityId)
       .filter(_.inSelfRegistration === true)
@@ -1032,7 +1029,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
     PersistenceSchema.communityLabels += label
   }
 
-  def setCommunityLabelsInternal(communityId: Long, labels: List[CommunityLabels]) = {
+  private def setCommunityLabelsInternal(communityId: Long, labels: List[CommunityLabels]): DBIO[_] = {
     val actions = new ListBuffer[DBIO[_]]()
     // Delete existing labels
     actions += PersistenceSchema.communityLabels.filter(_.community === communityId).delete

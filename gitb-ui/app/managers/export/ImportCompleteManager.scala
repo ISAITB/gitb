@@ -28,7 +28,26 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.Using
 
 @Singleton
-class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigurationManager, domainParameterManager: DomainParameterManager, communityResourceManager: CommunityResourceManager, domainManager: DomainManager, triggerManager: TriggerManager, exportManager: ExportManager, communityManager: CommunityManager, conformanceManager: ConformanceManager, specificationManager: SpecificationManager, actorManager: ActorManager, endpointManager: EndPointManager, parameterManager: ParameterManager, testSuiteManager: TestSuiteManager, landingPageManager: LandingPageManager, legalNoticeManager: LegalNoticeManager, errorTemplateManager: ErrorTemplateManager, organisationManager: OrganizationManager, systemManager: SystemManager, importPreviewManager: ImportPreviewManager, repositoryUtils: RepositoryUtils, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigurationManager,
+                                      domainParameterManager: DomainParameterManager,
+                                      communityResourceManager: CommunityResourceManager,
+                                      domainManager: DomainManager,
+                                      triggerManager: TriggerManager,
+                                      exportManager: ExportManager,
+                                      communityManager: CommunityManager,
+                                      specificationManager: SpecificationManager,
+                                      actorManager: ActorManager,
+                                      endpointManager: EndPointManager,
+                                      parameterManager: ParameterManager,
+                                      testSuiteManager: TestSuiteManager,
+                                      landingPageManager: LandingPageManager,
+                                      legalNoticeManager: LegalNoticeManager,
+                                      errorTemplateManager: ErrorTemplateManager,
+                                      organisationManager: OrganizationManager,
+                                      systemManager: SystemManager,
+                                      importPreviewManager: ImportPreviewManager,
+                                      repositoryUtils: RepositoryUtils,
+                                      dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   private def logger = LoggerFactory.getLogger("ImportCompleteManager")
 
@@ -2498,7 +2517,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                             val systemId = item.parentItem.get.targetKey.get.toLong
                             val key = s"${systemId}_${relatedActorId.get}"
                             if (!hasExisting(ImportItemType.Statement, key, ctx)) {
-                              systemManager.defineConformanceStatement(systemId, relatedSpecId.get, relatedActorId.get, None, setDefaultParameterValues = false) andThen
+                              systemManager.defineConformanceStatement(systemId, relatedSpecId.get, relatedActorId.get, setDefaultParameterValues = false) andThen
                                 DBIO.successful(key)
                             } else {
                               DBIO.successful(())
