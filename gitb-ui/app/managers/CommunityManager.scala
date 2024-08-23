@@ -726,13 +726,13 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
     exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
   }
 
-  def deleteOrganisationParameterDefinitionThroughAutomationApi(communityKey: String, input: CustomPropertyInfo): Unit = {
+  def deleteOrganisationParameterDefinitionThroughAutomationApi(communityKey: String, propertyKey: String): Unit = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction = for {
       // Load community ID.
       communityId <- automationApiHelper.getCommunityByCommunityApiKey(communityKey)
       // Ensure the property exists.
-      property <- checkOrganisationParameterExistence(communityId, input.key, expectedToExist = true, None)
+      property <- checkOrganisationParameterExistence(communityId, propertyKey, expectedToExist = true, None)
       // Delete property
       _ <- {
         deleteOrganisationParameter(property.get.id, onSuccessCalls)
@@ -741,13 +741,13 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
     exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
   }
 
-  def deleteSystemParameterDefinitionThroughAutomationApi(communityKey: String, input: CustomPropertyInfo): Unit = {
+  def deleteSystemParameterDefinitionThroughAutomationApi(communityKey: String, propertyApiKey: String): Unit = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction = for {
       // Load community ID.
       communityId <- automationApiHelper.getCommunityByCommunityApiKey(communityKey)
       // Ensure the property exists.
-      property <- checkSystemParameterExistence(communityId, input.key, expectedToExist = true, None)
+      property <- checkSystemParameterExistence(communityId, propertyApiKey, expectedToExist = true, None)
       // Delete property
       _ <- {
         deleteSystemParameter(property.get.id, onSuccessCalls)

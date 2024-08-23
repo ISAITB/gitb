@@ -12,7 +12,7 @@ import managers.export.{ExportSettings, ImportItem, ImportSettings}
 import models.Enums.TestSuiteReplacementChoice.TestSuiteReplacementChoice
 import models.Enums._
 import models._
-import models.automation.{KeyValueRequired, _}
+import models.automation._
 import models.snapshot.ConformanceSnapshot
 import models.theme.Theme
 import org.apache.commons.codec.binary.Base64
@@ -1389,18 +1389,18 @@ object JsonUtil {
   }
 
   private def parseJsDomainParameterConfigurationArray(jsonArray: JsArray): List[DomainParameterInfo] = {
-    jsonArray.value.map(parseJsDomainParameterConfiguration).toList
+    jsonArray.value.map(x => parseJsDomainParameterConfiguration(x, None, None)).toList
   }
 
-  def parseJsDomainParameterConfiguration(json: JsValue): DomainParameterInfo = {
+  def parseJsDomainParameterConfiguration(json: JsValue, domainApiKey: Option[String] = None, parameterKey: Option[String] = None): DomainParameterInfo = {
     DomainParameterInfo(
       KeyValue(
-        (json \ "key").as[String],
+        parameterKey.getOrElse((json \ "key").as[String]),
         (json \ "value").asOpt[String]
       ),
       (json \ "description").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
       (json \ "inTests").asOpt[Boolean],
-      (json \ "domain").asOpt[String]
+      domainApiKey.orElse((json \ "domain").asOpt[String])
     )
   }
 

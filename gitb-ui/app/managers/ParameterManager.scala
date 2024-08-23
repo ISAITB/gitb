@@ -162,7 +162,7 @@ class ParameterManager @Inject() (repositoryUtils: RepositoryUtils,
     exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction.transactionally))
   }
 
-  def deleteParameterDefinitionThroughAutomationApi(communityApiKey: String, actorApiKey: String, input: CustomPropertyInfo): Unit = {
+  def deleteParameterDefinitionThroughAutomationApi(communityApiKey: String, actorApiKey: String, parameterApiKey: String): Unit = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction = for {
       // Load community IDs.
@@ -170,7 +170,7 @@ class ParameterManager @Inject() (repositoryUtils: RepositoryUtils,
       // Load actor and endpoint IDs.
       actorIds <- automationApiHelper.getActorIdsByDomainId(communityIds._2, actorApiKey, endpointRequired = true)
       // Check for existing property with provided name.
-      parameter <- checkParameterExistence(actorIds._2, input.key, expectedToExist = true, None)
+      parameter <- checkParameterExistence(actorIds._2, parameterApiKey, expectedToExist = true, None)
       // Delete property.
       _ <- {
         delete(parameter.get.id, onSuccessCalls)

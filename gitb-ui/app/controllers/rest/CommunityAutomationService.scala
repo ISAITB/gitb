@@ -25,13 +25,10 @@ class CommunityAutomationService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def deleteCommunity(community: String): Action[AnyContent] = authorizedAction { request =>
-    authorizationManager.canDeleteCommunityThroughAutomationApi(request)
-    try {
+    process(request, Some(authorizationManager.canDeleteCommunityThroughAutomationApi), { _ =>
       communityManager.deleteCommunityThroughAutomationApi(community)
       ResponseConstructor.constructEmptyResponse
-    } catch {
-      case e: Throwable => handleException(e)
-    }
+    })
   }
 
   def updateCommunity(community: String): Action[AnyContent] = authorizedAction { request =>
@@ -61,14 +58,11 @@ class CommunityAutomationService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def deleteOrganisation(organisation: String): Action[AnyContent] = authorizedAction { request =>
-    authorizationManager.canManageOrganisationThroughAutomationApi(request)
-    try {
+    process(request, Some(authorizationManager.canManageOrganisationThroughAutomationApi), { _ =>
       val communityKey = request.headers.get(Constants.AutomationHeader).get
       organisationManager.deleteOrganisationThroughAutomationApi(organisation, communityKey)
       ResponseConstructor.constructEmptyResponse
-    } catch {
-      case e: Throwable => handleException(e)
-    }
+    })
   }
 
   def updateOrganisation(organisation: String): Action[AnyContent] = authorizedAction { request =>
@@ -90,14 +84,11 @@ class CommunityAutomationService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   def deleteSystem(system: String): Action[AnyContent] = authorizedAction { request =>
-    authorizationManager.canManageSystemThroughAutomationApi(request)
-    try {
+    process(request, Some(authorizationManager.canManageSystemThroughAutomationApi), { _ =>
       val communityKey = request.headers.get(Constants.AutomationHeader).get
       systemManager.deleteSystemThroughAutomationApi(system, communityKey)
       ResponseConstructor.constructEmptyResponse
-    } catch {
-      case e: Throwable => handleException(e)
-    }
+    })
   }
 
   def updateSystem(system: String): Action[AnyContent] = authorizedAction { request =>
