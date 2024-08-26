@@ -4,5 +4,7 @@ export interface ImportSettings {
     createNewData?: boolean
     deleteUnmatchedData?: boolean
     updateMatchingData?: boolean
+    shortNameReplacement?: string
+    fullNameReplacement?: string
 
 }

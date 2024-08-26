@@ -46,12 +46,12 @@
                                                 <div class="row row-cols-auto align-items-center gx-3">
                                                     <div class="col-auto">
                                                         <div class="form-check">
-                                                            <input class="form-check-input" type="checkbox" id="newDomain" name="newDomain" [(ngModel)]="newDomain">
+                                                            <input class="form-check-input" type="checkbox" id="newDomain" name="newDomain" [(ngModel)]="newTarget">
                                                             <label class="form-check-label" for="newDomain">New {{dataService.labelDomainLower()}}?</label>
                                                         </div>
                                                     </div>
                                                     <div class="flex-grow-1">
-                                                        <select class="form-control form-select" id="domain" name="domain" [(ngModel)]="domain" [disabled]="newDomain">
+                                                        <select class="form-control form-select" id="domain" name="domain" [(ngModel)]="domain" [disabled]="newTarget">
                                                             @for (domain of domains; track domain.id) {
                                                                 <option [ngValue]="domain">{{domain.fname}}</option>
                                                             }
@@ -72,12 +72,12 @@
                                                 <div class="row row-cols-auto align-items-center gx-3">
                                                     <div class="col-auto">
                                                         <div class="form-check">
-                                                            <input class="form-check-input" type="checkbox" id="newCommunity" name="newCommunity" [(ngModel)]="newCommunity">
+                                                            <input class="form-check-input" type="checkbox" id="newCommunity" name="newCommunity" [(ngModel)]="newTarget">
                                                             <label class="form-check-label" for="newCommunity">New community?</label>
                                                         </div>
                                                     </div>
                                                     <div class="flex-grow-1">
-                                                        <select class="form-control form-select" id="community" name="community" [(ngModel)]="community" [disabled]="newCommunity">
+                                                        <select class="form-control form-select" id="community" name="community" [(ngModel)]="community" [disabled]="newTarget">
                                                             @for (c of communities; track c.id) {
                                                                 <option [ngValue]="c">{{c.fname}}</option>
                                                             }
@@ -89,6 +89,36 @@
                                             }
                                         </div>
                                         <div app-tooltip class="col-auto" tbTooltip="The community for which data will be imported."></div>
+                                    </div>
+                                }
+                                @if (exportType != "settings") {
+                                    <div [collapse]="!newTarget" [isAnimated]="true">
+                                        <div class="row mb-3">
+                                            <div class="col-6 offset-3">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="shortNameCheck" name="shortNameCheck" [(ngModel)]="replaceName">
+                                                    <label class="form-check-label" for="shortNameCheck">Replace name defined in archive?
+                                                        <div class="col-auto d-inline-flex" app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="You can specify a replacement name that will override the one defined in the archive. This could be useful if you are importing this as a copy."></div>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div [collapse]="!replaceName" [isAnimated]="true">
+                                            <div class="row mb-3">
+                                                <label class="col-3 col-form-label text-end" for="shortName">* Short name:</label>
+                                                <div class="col-6">
+                                                    <input id="shortName" name="shortName" [(ngModel)]="settings.shortNameReplacement" class="form-control" type="text">
+                                                </div>
+                                                <div app-tooltip class="col-auto" [tbTooltip]="'A short name used in selection lists and tabular displays where space is limited.'"></div>
+                                            </div>
+                                            <div class="row mb-3">
+                                                <label class="col-3 col-form-label text-end" for="fullName">* Full name:</label>
+                                                <div class="col-6">
+                                                    <input id="fullName" name="fullName" [(ngModel)]="settings.fullNameReplacement" class="form-control" type="text">
+                                                </div>
+                                                <div app-tooltip class="col-auto" [tbTooltip]="'The full name used in reports and detail screens.'"></div>
+                                            </div>
+                                        </div>
                                     </div>
                                 }
                                 <div class="row mb-3">

@@ -1628,6 +1628,8 @@ object JsonUtil {
     val jsonConfig = Json.parse(json).as[JsObject]
     val settings = new ImportSettings()
     settings.encryptionKey = (jsonConfig \ "encryptionKey").asOpt[String]
+    settings.shortNameReplacement = (jsonConfig \ "shortNameReplacement").asOpt[String].filter(StringUtils.isNotBlank(_))
+    settings.fullNameReplacement = (jsonConfig \ "fullNameReplacement").asOpt[String].filter(StringUtils.isNotBlank(_))
     settings
   }
 

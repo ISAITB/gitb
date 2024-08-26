@@ -68,7 +68,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
       mutable.ListBuffer[() => _](),
       mutable.ListBuffer[() => _]()
     )
-    exec(completeFileSystemFinalisation(ctx, completeDomainImportInternal(exportedDomain, targetDomainId, ctx, canAddOrDeleteDomain)).transactionally)
+    exec(completeFileSystemFinalisation(ctx, completeDomainImportInternal(exportedDomain, targetDomainId, ctx, canAddOrDeleteDomain, linkedToCommunity = false)).transactionally)
   }
 
   def completeSystemSettingsImport(exportedSettings: com.gitb.xml.export.Settings, importSettings: ImportSettings, importItems: List[ImportItem], canManageSettings: Boolean, ownUserId: Option[Long]): Unit = {
@@ -1098,7 +1098,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
     }
   }
 
-  private def completeDomainImportInternal(exportedDomain: com.gitb.xml.export.Domain, targetDomainId: Option[Long], ctx: ImportContext, canAddOrDeleteDomain: Boolean): DBIO[_] = {
+  private def completeDomainImportInternal(exportedDomain: com.gitb.xml.export.Domain, targetDomainId: Option[Long], ctx: ImportContext, canAddOrDeleteDomain: Boolean, linkedToCommunity: Boolean): DBIO[_] = {
     var createdDomainId: Option[Long] = None
     // Ensure that a domain cannot be created or added without appropriate access.
     if (!canAddOrDeleteDomain) {
@@ -1180,7 +1180,20 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
           ImportCallbacks.set(
             (data: com.gitb.xml.export.Domain, item: ImportItem) => {
               val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
-              domainManager.createDomainForImport(models.Domain(0L, data.getShortName, data.getFullName, Option(data.getDescription), apiKey))
+              val shortNameToUse = if (!linkedToCommunity && ctx.importSettings.shortNameReplacement.isDefined) {
+                ctx.importSettings.shortNameReplacement.get
+              } else {
+                data.getShortName
+              }
+              val fullNameToUse = if (!linkedToCommunity && ctx.importSettings.fullNameReplacement.isDefined) {
+                ctx.importSettings.fullNameReplacement.get
+              } else {
+                data.getFullName
+              }
+              domainManager.createDomainForImport(models.Domain(0L,
+                shortNameToUse,
+                fullNameToUse,
+                Option(data.getDescription), apiKey))
             },
             (data: com.gitb.xml.export.Domain, targetKey: String, item: ImportItem) => {
               val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
@@ -1804,7 +1817,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
              * only update the community's (existing) domain.
              */
             mergeImportItemMaps(ctx.importItemMaps, toImportItemMaps(importItems, ImportItemType.Domain))
-            completeDomainImportInternal(exportedCommunity.getDomain, targetDomainId, ctx, canDoAdminOperations)
+            completeDomainImportInternal(exportedCommunity.getDomain, targetDomainId, ctx, canDoAdminOperations, linkedToCommunity = true)
           } else {
             DBIO.successful(())
           }
@@ -1820,7 +1833,10 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
               val domainId = determineDomainIdForCommunityUpdate(exportedCommunity, None, ctx)
               val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
               // This returns a tuple: (community ID, admin organisation ID)
-              communityManager.createCommunityInternal(models.Communities(0L, data.getShortName, data.getFullName, Option(data.getSupportEmail),
+              communityManager.createCommunityInternal(models.Communities(0L,
+                ctx.importSettings.shortNameReplacement.getOrElse(data.getShortName),
+                ctx.importSettings.fullNameReplacement.getOrElse(data.getFullName),
+                Option(data.getSupportEmail),
                 selfRegistrationMethodToModel(data.getSelfRegistrationSettings.getMethod), Option(data.getSelfRegistrationSettings.getToken), Option(data.getSelfRegistrationSettings.getTokenHelpText),
                 data.getSelfRegistrationSettings.isNotifications, data.isInteractionNotification, Option(data.getDescription), selfRegistrationRestrictionToModel(data.getSelfRegistrationSettings.getRestriction),
                 data.getSelfRegistrationSettings.isForceTemplateSelection, data.getSelfRegistrationSettings.isForceRequiredProperties,
@@ -2678,7 +2694,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
             var importItems: List[ImportItem] = null
             // Check to see if a community can be matched by the defined (in the archive) API key.
             val targetCommunityId = communityManager.getByApiKey(exportData.getCommunities.getCommunity.get(0).getApiKey).map(_.id)
-            val previewResult = importPreviewManager.previewCommunityImport(exportData, targetCommunityId, canDoAdminOperations = true)
+            val previewResult = importPreviewManager.previewCommunityImport(exportData, targetCommunityId, canDoAdminOperations = true, new ImportSettings)
             val items = new ListBuffer[ImportItem]()
             // First add domain.
             if (previewResult._2.isDefined) {
@@ -2704,7 +2720,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
             // Step 1 - prepare import.
             // Check to see if a domain can be matched by the defined (in the archive) API key.
             val targetDomainId = domainManager.getByApiKey(exportedDomain.getApiKey).map(_.id)
-            val importItems = List(importPreviewManager.previewDomainImport(exportedDomain, targetDomainId, canDoAdminOperations = true))
+            val importItems = List(importPreviewManager.previewDomainImport(exportedDomain, targetDomainId, canDoAdminOperations = true, new ImportSettings))
             // Set all import items to proceed.
             approveImportItems(importItems)
             // Step 2 - Import.

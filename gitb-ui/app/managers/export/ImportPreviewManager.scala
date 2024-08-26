@@ -263,7 +263,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, systemConfigu
     }
   }
 
-  private def previewDomainImportInternal(exportedDomain: com.gitb.xml.export.Domain, targetDomainId: Option[Long], canDoAdminOperations: Boolean): (DomainImportInfo, ImportItem) = {
+  private def previewDomainImportInternal(exportedDomain: com.gitb.xml.export.Domain, targetDomainId: Option[Long], canDoAdminOperations: Boolean, settings: ImportSettings, linkedToCommunity: Boolean): (DomainImportInfo, ImportItem) = {
     var targetDomain: Option[models.Domain] = None
     if (targetDomainId.isDefined) {
       targetDomain = exec(PersistenceSchema.domains
@@ -306,7 +306,12 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, systemConfigu
     } else if (targetDomain.isDefined && !importTargets.hasDomain) {
       importItemDomain = new ImportItem(Some(targetDomain.get.fullname), ImportItemType.Domain, ImportItemMatch.DBOnly, Some(targetDomain.get.id.toString), None)
     } else if (targetDomain.isEmpty && importTargets.hasDomain) {
-      importItemDomain = new ImportItem(Some(exportedDomain.getFullName), ImportItemType.Domain, ImportItemMatch.ArchiveOnly, None, Some(exportedDomain.getId))
+      val nameToUse = if (!linkedToCommunity && settings.fullNameReplacement.isDefined) {
+        settings.fullNameReplacement.get
+      } else {
+        exportedDomain.getFullName
+      }
+      importItemDomain = new ImportItem(Some(nameToUse), ImportItemType.Domain, ImportItemMatch.ArchiveOnly, None, Some(exportedDomain.getId))
     }
     if (canDoAdminOperations || (importItemDomain != null && importItemDomain.itemMatch == ImportItemMatch.Both)) {
       // If the user isn't a Test Bed admin don't show the deletion or creation of a domain as this will anyway be skip when completing the import.
@@ -561,11 +566,11 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, systemConfigu
     previewSystemSettingsImportInternal(exportedSettings, new mutable.HashSet[String]())
   }
 
-  def previewDomainImport(exportedDomain: com.gitb.xml.export.Domain, targetDomainId: Option[Long], canDoAdminOperations: Boolean): ImportItem = {
-    previewDomainImportInternal(exportedDomain, targetDomainId, canDoAdminOperations)._2
+  def previewDomainImport(exportedDomain: com.gitb.xml.export.Domain, targetDomainId: Option[Long], canDoAdminOperations: Boolean, settings: ImportSettings): ImportItem = {
+    previewDomainImportInternal(exportedDomain, targetDomainId, canDoAdminOperations, settings, linkedToCommunity = false)._2
   }
 
-  def previewCommunityImport(exportedData: com.gitb.xml.export.Export, targetCommunityId: Option[Long], canDoAdminOperations: Boolean): (ImportItem, Option[ImportItem], Option[ImportItem]) = {
+  def previewCommunityImport(exportedData: com.gitb.xml.export.Export, targetCommunityId: Option[Long], canDoAdminOperations: Boolean, settings: ImportSettings): (ImportItem, Option[ImportItem], Option[ImportItem]) = {
     var importItemCommunity: ImportItem = null
     var targetCommunity: Option[models.Communities] = None
     if (targetCommunityId.isDefined) {
@@ -582,7 +587,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, systemConfigu
     if (targetCommunity.isDefined) {
       targetDomainId = targetCommunity.get.domain
     }
-    val domainImportResult = previewDomainImportInternal(exportedCommunity.getDomain, targetDomainId, canDoAdminOperations)
+    val domainImportResult = previewDomainImportInternal(exportedCommunity.getDomain, targetDomainId, canDoAdminOperations, settings, linkedToCommunity = true)
     val domainImportInfo = domainImportResult._1
     var importItemDomain: Option[ImportItem] = None
     if (domainImportResult._2 != null) {
@@ -734,7 +739,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, systemConfigu
         }
       }
     } else {
-      importItemCommunity = new ImportItem(Some(exportedCommunity.getFullName), ImportItemType.Community, ImportItemMatch.ArchiveOnly, None, Some(exportedCommunity.getId))
+      importItemCommunity = new ImportItem(Some(settings.fullNameReplacement.getOrElse(exportedCommunity.getFullName)), ImportItemType.Community, ImportItemMatch.ArchiveOnly, None, Some(exportedCommunity.getId))
     }
     // Administrators.
     if (importTargets.hasAdministrators && !Configurations.AUTHENTICATION_SSO_ENABLED) {

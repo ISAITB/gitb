@@ -41,8 +41,8 @@ export class ImportComponent extends BaseComponent implements OnInit, OnDestroy 
   archiveData?: FileData
   importItemActionLabels: {[key: number]: string} = {}
   importItemTypeLabels: {[key: number]: string} = {}
-  newDomain = false
-  newCommunity = false
+  newTarget = false
+  replaceName = false
   resetEmitter = new EventEmitter<void>()
 
   constructor(
@@ -89,11 +89,15 @@ export class ImportComponent extends BaseComponent implements OnInit, OnDestroy 
     this.settings.createNewData = true
     this.settings.deleteUnmatchedData = true
     this.settings.updateMatchingData = true
+    this.settings.shortNameReplacement = undefined
+    this.settings.fullNameReplacement = undefined
     this.resetEmitter.emit()
     if (this.dataService.isSystemAdmin) {
       this.domain = undefined
       this.community = undefined
     }
+    this.newTarget = false
+    this.replaceName = false
     if (full) {
       if (this.dataService.isCommunityAdmin) {
         this.community = this.dataService.community
@@ -104,12 +108,8 @@ export class ImportComponent extends BaseComponent implements OnInit, OnDestroy 
             this.exportType = 'community'
             this.showDomainOption = false
         }
-        this.newDomain = false
-        this.newCommunity = false
       } else if (this.dataService.isSystemAdmin) {
         this.exportType = undefined
-        this.newDomain = true
-        this.newCommunity = true
       }
     }
   }
@@ -184,12 +184,24 @@ export class ImportComponent extends BaseComponent implements OnInit, OnDestroy 
   }
 
   importDisabled() {
-    return this.importStep1 && !(this.archiveData?.file != undefined && this.textProvided(this.settings.encryptionKey) && (this.exportType == 'domain' && (this.newDomain || this.domain != undefined) || this.exportType == 'community' && (this.newCommunity || this.community != undefined) || this.exportType == 'settings'))
+    return this.importStep1 && !(
+      this.archiveData?.file != undefined 
+        && this.textProvided(this.settings.encryptionKey) 
+        && (
+          this.exportType == 'domain' && (
+              (this.newTarget && (!this.replaceName || (this.textProvided(this.settings.shortNameReplacement) && this.textProvided(this.settings.fullNameReplacement)))) 
+              || (!this.newTarget && this.domain != undefined)
+            ) || this.exportType == 'community' && (
+              (this.newTarget && (!this.replaceName || (this.textProvided(this.settings.shortNameReplacement) && this.textProvided(this.settings.fullNameReplacement)))) 
+              || (!this.newTarget && this.community != undefined)
+            ) || this.exportType == 'settings'
+          )
+    )
   }
 
   private getTargetDomainId() {
     let domainId = -1
-    if (!this.newDomain && this.domain) {
+    if (!this.newTarget && this.domain) {
       domainId = this.domain.id
     }
     return domainId
@@ -197,7 +209,7 @@ export class ImportComponent extends BaseComponent implements OnInit, OnDestroy 
 
   private getTargetCommunityId() {
     let communityId = -1
-    if (!this.newCommunity && this.community) {
+    if (!this.newTarget && this.community) {
       communityId = this.community.id
     }
     return communityId
@@ -206,6 +218,10 @@ export class ImportComponent extends BaseComponent implements OnInit, OnDestroy 
   import() {
     this.pending = true
     let result: Observable<ImportPreview>
+    if (!this.replaceName) {
+      this.settings.shortNameReplacement = undefined
+      this.settings.fullNameReplacement = undefined
+    }
     if (this.exportType == 'domain') {
       result = this.conformanceService.uploadDomainExport(this.getTargetDomainId(), this.settings, this.archiveData!)
     } else if (this.exportType == 'community') {

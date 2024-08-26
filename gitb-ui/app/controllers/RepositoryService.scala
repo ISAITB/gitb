@@ -961,7 +961,7 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
   private def uploadCommunityExportInternal(request: Request[AnyContent], communityId: Long, canDoAdminOperations: Boolean) = {
     try {
       processImport(request, requireDomain = false, requireCommunity = true, requireSettings = false, (exportData: Export, settings: ImportSettings) => {
-        val result = importPreviewManager.previewCommunityImport(exportData, emptyForNegativeId(communityId), canDoAdminOperations)
+        val result = importPreviewManager.previewCommunityImport(exportData, emptyForNegativeId(communityId), canDoAdminOperations, settings)
         val items = new ListBuffer[ImportItem]()
         // First add domain.
         if (result._2.isDefined) {
@@ -993,7 +993,7 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
   private def uploadDomainExportInternal(request: Request[AnyContent], domainId: Long, canDoAdminOperations: Boolean): Result = {
     try {
       processImport(request, requireDomain = true, requireCommunity = false, requireSettings = false, (exportData: Export, settings: ImportSettings) => {
-        val result = importPreviewManager.previewDomainImport(exportData.getDomains.getDomain.get(0), emptyForNegativeId(domainId), canDoAdminOperations)
+        val result = importPreviewManager.previewDomainImport(exportData.getDomains.getDomain.get(0), emptyForNegativeId(domainId), canDoAdminOperations, settings)
         List(result)
       })
     } finally {
