@@ -1,5 +1,5 @@
 {
-  "openapi": "3.0.1",
+  "openapi": "3.1.0",
   "info": {
     "title": "Interoperability Test Bed REST API",
     "description": "REST API for machine-to-machine integration with the Test Bed.",
@@ -44,6 +44,566 @@
     }
   ],
   "paths": {
+    "/domain": {
+      "put": {
+        "tags": [
+          "Domain management"
+        ],
+        "summary": "Create a domain.",
+        "security": [
+          {
+            "MasterApiKeyAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "The data for the new domain.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDomainRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Domain created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiKeyResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Domain management"
+        ],
+        "summary": "Update a domain. The target domain is the one linked to the community identified by the community API key provided for authorisation.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "The updates to apply to the target domain.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateDomainRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Domain updated."
+          },
+          "default": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/domain/{domain}": {
+      "post": {
+        "tags": [
+          "Domain management"
+        ],
+        "summary": "Update the domain identified by the provided authorisation API key. If using an community API key for authorisation, the relevant community must be linked to the target domain.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "domain",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "The key identifying the target domain."
+          }
+        ],
+        "requestBody": {
+          "description": "The updates to apply to the target domain.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateDomainRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Domain updated."
+          },
+          "default": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Domain management"
+        ],
+        "summary": "Delete the domain identified by the provided authorisation API key.",
+        "security": [
+          {
+            "MasterApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "domain",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "The key identifying the target domain."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Domain deleted."
+          },
+          "default": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/group": {
+      "put": {
+        "tags": [
+          "Domain management"
+        ],
+        "summary": "Create a specification group.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "The data for the new specification group.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSpecificationGroupRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Specification group created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiKeyResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/group/{group}": {
+      "post": {
+        "tags": [
+          "Domain management"
+        ],
+        "summary": "Update a specification group.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "group",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "The key identifying the target specification group."
+          }
+        ],
+        "requestBody": {
+          "description": "The updates to apply to the target specification group.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSpecificationGroupRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Specification group updated."
+          },
+          "default": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Domain management"
+        ],
+        "summary": "Delete a specification group.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "group",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "The key identifying the target specification group."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Specification group deleted."
+          },
+          "default": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/specification": {
+      "put": {
+        "tags": [
+          "Domain management"
+        ],
+        "summary": "Create a specification.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "The data for the new specification.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSpecificationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Specification created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiKeyResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/specification/{specification}": {
+      "post": {
+        "tags": [
+          "Domain management"
+        ],
+        "summary": "Update a specification.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "specification",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "The key identifying the target specification."
+          }
+        ],
+        "requestBody": {
+          "description": "The updates to apply to the target specification.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSpecificationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Specification updated."
+          },
+          "default": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Domain management"
+        ],
+        "summary": "Delete a specification.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "specification",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "The key identifying the target specification."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Specification deleted."
+          },
+          "default": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/actor": {
+      "put": {
+        "tags": [
+          "Domain management"
+        ],
+        "summary": "Create an actor.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "requestBody": {
+          "description": "The data for the new actor.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateActorRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Actor created.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiKeyResponse"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/actor/{actor}": {
+      "post": {
+        "tags": [
+          "Domain management"
+        ],
+        "summary": "Update an actor.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "actor",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "The key identifying the target actor."
+          }
+        ],
+        "requestBody": {
+          "description": "The updates to apply to the target actor.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateActorRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Actor updated."
+          },
+          "default": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Domain management"
+        ],
+        "summary": "Delete an actor.",
+        "security": [
+          {
+            "CommunityApiKeyAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "actor",
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "description": "The key identifying the target specification."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Actor deleted."
+          },
+          "default": {
+            "description": "The received request was invalid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInformation"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/community": {
       "put": {
         "tags": [
@@ -76,7 +636,7 @@
               }
             }
           },
-          "400": {
+          "default": {
             "description": "The received request was invalid.",
             "content": {
               "application/json": {
@@ -112,7 +672,7 @@
           "200": {
             "description": "Community updated."
           },
-          "400": {
+          "default": {
             "description": "The received request was invalid.",
             "content": {
               "application/json": {
@@ -161,7 +721,7 @@
           "200": {
             "description": "Community updated."
           },
-          "400": {
+          "default": {
             "description": "The received request was invalid.",
             "content": {
               "application/json": {
@@ -198,7 +758,7 @@
           "200": {
             "description": "Community deleted."
           },
-          "400": {
+          "default": {
             "description": "The received request was invalid.",
             "content": {
               "application/json": {
@@ -243,7 +803,7 @@
               }
             }
           },
-          "400": {
+          "default": {
             "description": "The received request was invalid.",
             "content": {
               "application/json": {
@@ -292,7 +852,7 @@
           "200": {
             "description": "Organisation updated."
           },
-          "400": {
+          "default": {
             "description": "The received request was invalid.",
             "content": {
               "application/json": {
@@ -329,7 +889,7 @@
           "200": {
             "description": "Organisation deleted."
           },
-          "400": {
+          "default": {
             "description": "The received request was invalid.",
             "content": {
               "application/json": {
@@ -374,7 +934,7 @@
               }
             }
           },
-          "400": {
+          "default": {
             "description": "The received request was invalid.",
             "content": {
               "application/json": {
@@ -423,7 +983,7 @@
           "200": {
             "description": "System updated."
           },
-          "400": {
+          "default": {
             "description": "The received request was invalid.",
             "content": {
               "application/json": {
@@ -460,7 +1020,7 @@
           "200": {
             "description": "System deleted."
           },
-          "400": {
+          "default": {
             "description": "The received request was invalid.",
             "content": {
               "application/json": {
@@ -505,7 +1065,7 @@
               }
             }
           },
-          "400": {
+          "default": {
             "description": "The received request was invalid.",
             "content": {
               "application/json": {
@@ -543,7 +1103,7 @@
           "200": {
             "description": "Domain parameter created."
           },
-          "400": {
+          "default": {
             "description": "The received request was invalid.",
             "content": {
               "application/json": {
@@ -579,7 +1139,7 @@
           "200": {
             "description": "Domain parameter updated."
           },
-          "400": {
+          "default": {
             "description": "The received request was invalid.",
             "content": {
               "application/json": {
@@ -618,7 +1178,7 @@
           "200": {
             "description": "Parameter deleted."
           },
-          "400": {
+          "default": {
             "description": "The received request was invalid.",
             "content": {
               "application/json": {
@@ -666,7 +1226,7 @@
           "200": {
             "description": "Parameter deleted."
           },
-          "400": {
+          "default": {
             "description": "The received request was invalid.",
             "content": {
               "application/json": {
@@ -704,7 +1264,7 @@
           "200": {
             "description": "Property created."
           },
-          "400": {
+          "default": {
             "description": "The received request was invalid.",
             "content": {
               "application/json": {
@@ -740,7 +1300,7 @@
           "200": {
             "description": "Property updated."
           },
-          "400": {
+          "default": {
             "description": "The received request was invalid.",
             "content": {
               "application/json": {
@@ -779,7 +1339,7 @@
           "200": {
             "description": "Property deleted."
           },
-          "400": {
+          "default": {
             "description": "The received request was invalid.",
             "content": {
               "application/json": {
@@ -817,7 +1377,7 @@
           "200": {
             "description": "Property created."
           },
-          "400": {
+          "default": {
             "description": "The received request was invalid.",
             "content": {
               "application/json": {
@@ -853,7 +1413,7 @@
           "200": {
             "description": "Property updated."
           },
-          "400": {
+          "default": {
             "description": "The received request was invalid.",
             "content": {
               "application/json": {
@@ -892,7 +1452,7 @@
           "200": {
             "description": "Property deleted."
           },
-          "400": {
+          "default": {
             "description": "The received request was invalid.",
             "content": {
               "application/json": {
@@ -941,7 +1501,7 @@
           "200": {
             "description": "Property created."
           },
-          "400": {
+          "default": {
             "description": "The received request was invalid.",
             "content": {
               "application/json": {
@@ -988,7 +1548,7 @@
           "200": {
             "description": "Property updated."
           },
-          "400": {
+          "default": {
             "description": "The received request was invalid.",
             "content": {
               "application/json": {
@@ -1036,7 +1596,7 @@
           "200": {
             "description": "Property deleted."
           },
-          "400": {
+          "default": {
             "description": "The received request was invalid.",
             "content": {
               "application/json": {
@@ -1084,7 +1644,7 @@
           "200": {
             "description": "Conformance statement successfully created."
           },
-          "400": {
+          "default": {
             "description": "The received request was invalid.",
             "content": {
               "application/json": {
@@ -1130,7 +1690,7 @@
           "200": {
             "description": "Conformance statement successfully deleted."
           },
-          "400": {
+          "default": {
             "description": "The received request was invalid.",
             "content": {
               "application/json": {
@@ -1183,7 +1743,7 @@
               }
             }
           },
-          "400": {
+          "default": {
             "description": "The received request was invalid.",
             "content": {
               "application/json": {
@@ -1247,7 +1807,7 @@
               }
             }
           },
-          "400": {
+          "default": {
             "description": "The received request was invalid.",
             "content": {
               "application/json": {
@@ -1293,7 +1853,7 @@
               }
             }
           },
-          "400": {
+          "default": {
             "description": "The received request was invalid.",
             "content": {
               "application/json": {
@@ -1339,7 +1899,7 @@
               }
             }
           },
-          "400": {
+          "default": {
             "description": "The received request was invalid.",
             "content": {
               "application/json": {
@@ -1379,7 +1939,7 @@
             "description": "Test session(s) successfully stopped.",
             "content": {}
           },
-          "400": {
+          "default": {
             "description": "The received request was invalid.",
             "content": {
               "application/json": {
@@ -1425,7 +1985,10 @@
               }
             }
           },
-          "400": {
+          "404": {
+            "description": "No test session was not found matching the provided identifier."
+          },
+          "default": {
             "description": "The received request was invalid.",
             "content": {
               "application/json": {
@@ -1434,9 +1997,6 @@
                 }
               }
             }
-          },
-          "404": {
-            "description": "No test session was not found matching the provided identifier."
           }
         }
       }
@@ -1484,7 +2044,7 @@
               }
             }
           },
-          "400": {
+          "default": {
             "description": "The received request was invalid.",
             "content": {
               "application/json": {
@@ -1540,7 +2100,7 @@
               }
             }
           },
-          "400": {
+          "default": {
             "description": "The received request was invalid.",
             "content": {
               "application/json": {
@@ -1580,7 +2140,7 @@
             "description": "Test suite successfully undeployed.",
             "content": {}
           },
-          "400": {
+          "default": {
             "description": "The received request was invalid.",
             "content": {
               "application/json": {
@@ -1620,7 +2180,7 @@
             "description": "Test suite successfully undeployed.",
             "content": {}
           },
-          "400": {
+          "default": {
             "description": "The received request was invalid.",
             "content": {
               "application/json": {
@@ -1666,7 +2226,7 @@
               }
             }
           },
-          "400": {
+          "default": {
             "description": "The received request was invalid.",
             "content": {
               "application/json": {
@@ -1706,7 +2266,7 @@
             "description": "Test suite successfully unlinked.",
             "content": {}
           },
-          "400": {
+          "default": {
             "description": "The received request was invalid.",
             "content": {
               "application/json": {
@@ -2780,9 +3340,9 @@
           "tags": {
             "description": "The test case/suite's tags.",
             "type": "array",
+            "minItems": 0,
             "items": {
               "type": "object",
-              "minLength": 0,
               "properties": {
                 "tag": {
                   "description": "A test case/suite tag.",
@@ -2882,9 +3442,9 @@
           "steps": {
             "description": "The test step reports.",
             "type": "array",
+            "minItems": 0,
             "items": {
               "type": "object",
-              "minLength": 0,
               "properties": {
                 "step": {
                   "description": "The report for a specific step.",
@@ -3650,12 +4210,260 @@
             "type": "string"
           },
           "description": {
-            "description": "The system's description. Skip this if no update should be made or set to the empty string to remove the current value.",
+            "description": "The system's description. Skip this if no update should be made or provide as an empty string to remove the current value.",
             "type": "string"
           },
           "version": {
-            "description": "The system's version information. Skip this if no update should be made or set to the empty string to remove the current value.",
+            "description": "The system's version information. Skip this if no update should be made or provide as an empty string to remove the current value.",
             "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreateDomainRequest": {
+        "description": "The data used to create a new domain.",
+        "type": "object",
+        "properties": {
+          "shortName": {
+            "description": "The domain's short name.",
+            "type": "string"
+          },
+          "fullName": {
+            "description": "The domain's full name.",
+            "type": "string"
+          },
+          "description": {
+            "description": "The domain's description.",
+            "type": "string"
+          },
+          "apiKey": {
+            "description": "The API key to set for the domain. If this key is already assigned, a new one will be generated.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "shortName",
+          "fullName"
+        ],
+        "additionalProperties": false
+      },
+      "UpdateDomainRequest": {
+        "description": "The data used to define the updates to make to a target domain.",
+        "type": "object",
+        "properties": {
+          "shortName": {
+            "description": "The domain's short name. Skip this if no update should be made.",
+            "type": "string"
+          },
+          "fullName": {
+            "description": "The domain's full name. Skip this if no update should be made.",
+            "type": "string"
+          },
+          "description": {
+            "description": "The domain's description. Skip this if no update should be made or provide as an empty string to remove the current value.",
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreateSpecificationGroupRequest": {
+        "description": "The data used to create a new specification group.",
+        "type": "object",
+        "properties": {
+          "shortName": {
+            "description": "The group's short name.",
+            "type": "string"
+          },
+          "fullName": {
+            "description": "The group's full name.",
+            "type": "string"
+          },
+          "description": {
+            "description": "The group's description.",
+            "type": "string"
+          },
+          "displayOrder": {
+            "description": "The group's display order relative to other groups and specifications.",
+            "type": "number"
+          },
+          "apiKey": {
+            "description": "The API key to set for the group. If this key is already assigned, a new one will be generated.",
+            "type": "string"
+          },
+          "domain": {
+            "description": "The API key of the domain within which to create the group. This can be ommitted if the community identified by the community API key used for authorisation is linked to a specific domain.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "shortName",
+          "fullName"
+        ],
+        "additionalProperties": false
+      },
+      "UpdateSpecificationGroupRequest": {
+        "description": "The data used to define the updates to make to a target specification group.",
+        "type": "object",
+        "properties": {
+          "shortName": {
+            "description": "The group's short name. Skip this if no update should be made.",
+            "type": "string"
+          },
+          "fullName": {
+            "description": "The group's full name. Skip this if no update should be made.",
+            "type": "string"
+          },
+          "description": {
+            "description": "The group's description. Skip this if no update should be made or provide as an empty string to remove the current value.",
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreateSpecificationRequest": {
+        "description": "The data used to create a new specification.",
+        "type": "object",
+        "properties": {
+          "shortName": {
+            "description": "The specification's short name.",
+            "type": "string"
+          },
+          "fullName": {
+            "description": "The specification's full name.",
+            "type": "string"
+          },
+          "description": {
+            "description": "The specification's description.",
+            "type": "string"
+          },
+          "hidden": {
+            "description": "Whether the specification should be hidden.",
+            "type": "boolean",
+            "default": false
+          },
+          "displayOrder": {
+            "description": "The specification's display order relative to other groups and specifications.",
+            "type": "number"
+          },
+          "apiKey": {
+            "description": "The API key to set for the specification. If this key is already assigned, a new one will be generated.",
+            "type": "string"
+          },
+          "group": {
+            "description": "The API key of the specification group within which to create the specification. If not provided the specification will be created directly under the domain.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "shortName",
+          "fullName"
+        ],
+        "additionalProperties": false
+      },
+      "UpdateSpecificationRequest": {
+        "description": "The data used to define the updates to make to a target specification.",
+        "type": "object",
+        "properties": {
+          "shortName": {
+            "description": "The specification's short name. Skip this if no update should be made.",
+            "type": "string"
+          },
+          "fullName": {
+            "description": "The specification's full name. Skip this if no update should be made.",
+            "type": "string"
+          },
+          "description": {
+            "description": "The specification's description. Skip this if no update should be made or provide as an empty string to remove the current value.",
+            "type": "string"
+          },
+          "hidden": {
+            "description": "Whether the specification should be hidden. Skip this if no update should be made.",
+            "type": "boolean"
+          },
+          "displayOrder": {
+            "description": "The specification's display order relative to other groups and specifications. Skip this if no update should be made or set to a negative value to remove the ordering altogether.",
+            "type": "number"
+          },
+          "group": {
+            "description": "The API key of the specification group within which to move the specification. Skip this if no update should be made or provide as an empty string to remove the specification from its current group.",
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreateActorRequest": {
+        "description": "The data used to create a new actor.",
+        "type": "object",
+        "properties": {
+          "identifier": {
+            "description": "The actor's unique identifier in the specification, used to refer to it from test cases.",
+            "type": "string"
+          },
+          "name": {
+            "description": "The actor's display name.",
+            "type": "string"
+          },
+          "description": {
+            "description": "The actor's description.",
+            "type": "string"
+          },
+          "default": {
+            "description": "Whether the actor should be considered as the default choice for new conformance statements within its specification.",
+            "type": "boolean",
+            "default": false
+          },
+          "hidden": {
+            "description": "Whether the actor should be hidden.",
+            "type": "boolean",
+            "default": false
+          },
+          "displayOrder": {
+            "description": "The actor's display order relative to other actors when presented in test execution diagrams.",
+            "type": "number"
+          },
+          "apiKey": {
+            "description": "The API key to set for the actor. If this key is already assigned, a new one will be generated.",
+            "type": "string"
+          },
+          "specification": {
+            "description": "The API key of the specification within which to create the actor.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "identifier",
+          "name",
+          "specification"
+        ],
+        "additionalProperties": false
+      },
+      "UpdateActorRequest": {
+        "description": "The data used to define the updates to make to a target actor.",
+        "type": "object",
+        "properties": {
+          "identifier": {
+            "description": "The actor's unique identifier in the specification, used to refer to it from test cases. Skip this if no update should be made.",
+            "type": "string"
+          },
+          "name": {
+            "description": "The actor's display name. Skip this if no update should be made.",
+            "type": "string"
+          },
+          "description": {
+            "description": "The actor's description. Skip this if no update should be made or provide as an empty string to remove the current value.",
+            "type": "string"
+          },
+          "default": {
+            "description": "Whether the actor should be considered as the default choice for new conformance statements within its specification. Skip this if no update should be made.",
+            "type": "boolean"
+          },
+          "hidden": {
+            "description": "Whether the actor should be hidden. Skip this if no update should be made.",
+            "type": "boolean"
+          },
+          "displayOrder": {
+            "description": "The actor's display order relative to other actors when presented in test execution diagrams. Skip this if no update should be made or set to a negative value to remove the ordering altogether.",
+            "type": "number"
           }
         },
         "additionalProperties": false
