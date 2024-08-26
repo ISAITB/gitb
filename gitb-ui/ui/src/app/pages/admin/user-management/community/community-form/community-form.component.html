@@ -14,12 +14,19 @@
             <div class="mt-3 row">
                 <label class="col-3 col-form-label text-end" for="domainChoice">{{dataService.labelDomain()}}:</label>
                 <div class="col-7">
-                    <select id="domainChoice" class="form-control form-select" name="domain" (change)="domainChanged()" [(ngModel)]="community.domainId">
-                        <option [ngValue]="undefined">--Optional--</option>
-                        @for (domain of domains; track domain.id) {
-                            <option [ngValue]="domain.id">{{domain.sname}}</option>
-                        }
-                    </select>
+                    <div class="row gx-3">
+                        <div class="col-auto d-flex flex-grow-1">
+                            <select id="domainChoice" class="form-control form-select" name="domain" (change)="domainChanged()" [(ngModel)]="community.domainId">
+                                <option [ngValue]="undefined">--Optional--</option>
+                                @for (domain of domains; track domain.id) {
+                                    <option [ngValue]="domain.id">{{domain.sname}}</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-auto">
+                            <button type="button" class="btn btn-secondary" [disabled]="community.domainId == undefined" (click)="viewDomain()">View</button>
+                        </div>
+                    </div>
                 </div>
                  <div class="col-auto" app-tooltip [tbTooltip]="'The linked '+dataService.labelDomainLower()+' determines the '+dataService.labelSpecificationsLower()+' that will be made available for testing to the community\'s members.'"></div>
             </div>
