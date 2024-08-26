@@ -133,6 +133,7 @@ object Configurations {
 
   var API_ROOT = ""
   var AUTOMATION_API_ENABLED = false
+  var AUTOMATION_API_MASTER_KEY: Option[String] = None
   var BUILD_TIMESTAMP = ""
 
   val WELCOME_MESSAGE_DEFAULT = "<h4>The Interoperability Test Bed is a platform for self-service conformance testing against semantic and technical specifications.</h4>"
@@ -324,6 +325,11 @@ object Configurations {
       API_ROOT = conf.getString("apiPrefix")
       PASSWORD_COMPLEXITY_RULE_REGEX = new Regex(conf.getString("passwordComplexityRule"))
       AUTOMATION_API_ENABLED = fromEnv("AUTOMATION_API_ENABLED", "false").toBoolean
+      // Master API key
+      val masterApiKey = fromEnv("AUTOMATION_API_MASTER_KEY", conf.getString("masterApiKey"))
+      if (StringUtils.isNotBlank(masterApiKey)) {
+        AUTOMATION_API_MASTER_KEY = Some(masterApiKey.trim)
+      }
       _IS_LOADED = true
     }
   }

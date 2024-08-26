@@ -14,7 +14,10 @@ fi
 if [[ -n "$MASTER_PASSWORD_FILE" ]] ; then 
     echo "masterPassword=$(cat $MASTER_PASSWORD_FILE)" >> /usr/local/gitb-ui/conf/overrides.conf;
 fi
-if [[ -n "$HMAC_KEY_FILE" ]] ; then 
+if [[ -n "$AUTOMATION_API_MASTER_KEY_FILE" ]] ; then
+    echo "masterApiKey=$(cat $AUTOMATION_API_MASTER_KEY_FILE)" >> /usr/local/gitb-ui/conf/overrides.conf;
+fi
+if [[ -n "$HMAC_KEY_FILE" ]] ; then
     echo "hmac.key=$(cat $HMAC_KEY_FILE)" >> /usr/local/gitb-ui/conf/overrides.conf;
 fi
 if [[ -n "$DATA_ARCHIVE_KEY_FILE" ]] ; then 

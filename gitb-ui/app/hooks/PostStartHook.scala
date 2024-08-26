@@ -109,7 +109,8 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext, authenticationMana
     }
     val restApiAdminKey = persistedConfigs.find(config => config.config.name == Constants.RestApiAdminKey).map(_.config)
     if (restApiAdminKey.flatMap(_.parameter).isEmpty) {
-      systemConfigurationManager.updateSystemParameter(Constants.RestApiAdminKey, Some(CryptoUtil.generateApiKey()))
+      val initialApiKeyValue = Configurations.AUTOMATION_API_MASTER_KEY.getOrElse(CryptoUtil.generateApiKey())
+      systemConfigurationManager.updateSystemParameter(Constants.RestApiAdminKey, Some(initialApiKeyValue))
     }
     // Self-registration.
     val selfRegistrationConfig = persistedConfigs.find(config => config.config.name == Constants.SelfRegistrationEnabled).map(_.config)
