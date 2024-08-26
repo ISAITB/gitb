@@ -200,27 +200,27 @@ class AutomationApiHelper @Inject()(dbConfigProvider: DatabaseConfigProvider) ex
     } yield newDomainId.get
   }
 
-  private def lookupDomainIdByCommunityApiKeyInternal(communityApiKey: String, domainApiKey: Option[String], requireCommunityDomain: Boolean): DBIO[Long] = {
+  def getDomainIdByCommunity(communityApiKey: String): DBIO[Option[Long]] = {
+    for {
+      communityDomainId <- PersistenceSchema.communities
+        .filter(_.apiKey === communityApiKey)
+        .map(_.domain)
+        .result
+        .headOption
+      _ <- {
+        if (communityDomainId.isEmpty) {
+          throw AutomationApiException(ErrorCodes.API_COMMUNITY_NOT_FOUND, "No community found for the provided API key")
+        } else {
+          DBIO.successful(())
+        }
+      }
+    } yield communityDomainId.get
+  }
+
+  def getDomainIdByCommunityOrDomainApiKey(communityApiKey: String, domainApiKey: Option[String]): DBIO[Long] = {
     for {
       // Look-up the community's domain.
-      communityDomainId <- {
-        for {
-          communityDomainId <- PersistenceSchema.communities
-            .filter(_.apiKey === communityApiKey)
-            .map(_.domain)
-            .result
-            .headOption
-          _ <- {
-            if (communityDomainId.isEmpty) {
-              throw AutomationApiException(ErrorCodes.API_COMMUNITY_NOT_FOUND, "No community found for the provided API key")
-            } else if (requireCommunityDomain) {
-              throw AutomationApiException(ErrorCodes.API_COMMUNITY_NOT_FOUND, "No domain found for the provided community API key")
-            } else {
-              DBIO.successful(())
-            }
-          }
-        } yield communityDomainId.get
-      }
+      communityDomainId <- getDomainIdByCommunity(communityApiKey)
       // Look-up the domain related to the domain API key (if provided).
       domainId <- {
         if (domainApiKey.isDefined) {
@@ -255,14 +255,6 @@ class AutomationApiHelper @Inject()(dbConfigProvider: DatabaseConfigProvider) ex
         }
       }
     } yield domainIdToReturn
-  }
-
-  def getDomainIdByCommunityOrDomainApiKey(communityApiKey: String, domainApiKey: Option[String]): DBIO[Long] = {
-    lookupDomainIdByCommunityApiKeyInternal(communityApiKey, domainApiKey, requireCommunityDomain = false)
-  }
-
-  def getDomainIdByCommunityApiKey(communityApiKey: String, domainApiKey: Option[String]): DBIO[Long] = {
-    lookupDomainIdByCommunityApiKeyInternal(communityApiKey, domainApiKey, requireCommunityDomain = true)
   }
 
   def getActorIdsByDomainId(domainId: Option[Long], actorApiKey: String, endpointRequired: Boolean): DBIO[(Long, Option[Long])] = {

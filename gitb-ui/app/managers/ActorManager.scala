@@ -54,9 +54,9 @@ class ActorManager @Inject() (repositoryUtils: RepositoryUtils,
   def deleteActorThroughAutomationApi(actorApiKey: String, communityApiKey: String): Unit = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val action = for {
-      domainId <- automationApiHelper.getDomainIdByCommunityApiKey(communityApiKey, None)
+      domainId <- automationApiHelper.getDomainIdByCommunity(communityApiKey)
       actorId <- PersistenceSchema.actors
-        .filter(_.domain === domainId)
+        .filterOpt(domainId)((q, id) => q.domain === id)
         .filter(_.apiKey === actorApiKey)
         .map(_.id)
         .result
@@ -104,14 +104,14 @@ class ActorManager @Inject() (repositoryUtils: RepositoryUtils,
   def updateActorThroughAutomationApi(updateRequest: UpdateActorRequest): Unit = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val action = for {
-      domainId <- automationApiHelper.getDomainIdByCommunityApiKey(updateRequest.communityApiKey, None)
+      domainId <- automationApiHelper.getDomainIdByCommunity(updateRequest.communityApiKey)
       // Load existing actor information (actor data and specification ID).
       actorInfo <- {
         for {
           actorInfo <- PersistenceSchema.actors
             .join(PersistenceSchema.specificationHasActors).on(_.id === _.actorId)
+            .filterOpt(domainId)((q, id) => q._1.domain === id)
             .filter(_._1.apiKey === updateRequest.actorApiKey)
-            .filter(_._1.domain === domainId)
             .map(x => (x._1, x._2.specId))
             .result
             .headOption
@@ -245,25 +245,25 @@ class ActorManager @Inject() (repositoryUtils: RepositoryUtils,
   def createActorThroughAutomationApi(input: CreateActorRequest): String = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val action = for {
-      domainId <- automationApiHelper.getDomainIdByCommunityApiKey(input.communityApiKey, None)
-      specificationId <- {
+      domainId <- automationApiHelper.getDomainIdByCommunity(input.communityApiKey)
+      specificationIds <- {
         for {
-          specificationId <- PersistenceSchema.specifications
-            .filter(_.domain === domainId)
+          specificationIds <- PersistenceSchema.specifications
+            .filterOpt(domainId)((q, id) => q.domain === id)
             .filter(_.apiKey === input.specificationApiKey)
-            .map(_.id)
+            .map(x => (x.id, x.domain))
             .result
             .headOption
           _ <- {
-            if (specificationId.isEmpty) {
+            if (specificationIds.isEmpty) {
               throw AutomationApiException(ErrorCodes.API_SPECIFICATION_NOT_FOUND, "No specification found for the provided API keys")
             } else {
               DBIO.successful(())
             }
           }
-        } yield specificationId.get
+        } yield specificationIds.get
       }
-      _ <- ensureActorIdentifierIsUnique(specificationId, input.identifier, None)
+      _ <- ensureActorIdentifierIsUnique(specificationIds._1, input.identifier, None)
       apiKeyToUse <- {
         for {
           generateApiKey <- if (input.apiKey.isEmpty) {
@@ -280,8 +280,8 @@ class ActorManager @Inject() (repositoryUtils: RepositoryUtils,
       }
       _ <- {
         createActor(
-          Actors(0L, input.identifier, input.name, input.description, Some(input.default.getOrElse(false)), input.hidden.getOrElse(false), input.displayOrder, apiKeyToUse, domainId),
-          specificationId,
+          Actors(0L, input.identifier, input.name, input.description, Some(input.default.getOrElse(false)), input.hidden.getOrElse(false), input.displayOrder, apiKeyToUse, specificationIds._2),
+          specificationIds._1,
           checkApiKeyUniqueness = false,
           None,
           onSuccessCalls

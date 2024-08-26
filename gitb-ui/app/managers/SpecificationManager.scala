@@ -40,9 +40,9 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils,
   def deleteSpecificationThroughAutomationApi(specificationApiKey: String, communityApiKey: String): Unit = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val action = for {
-      domainId <- automationApiHelper.getDomainIdByCommunityApiKey(communityApiKey, None)
+      domainId <- automationApiHelper.getDomainIdByCommunity(communityApiKey)
       specificationId <- PersistenceSchema.specifications
-        .filter(_.domain === domainId)
+        .filterOpt(domainId)((q, id) => q.domain === id)
         .filter(_.apiKey === specificationApiKey)
         .map(_.id)
         .result
@@ -111,7 +111,7 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils,
 
   def createSpecificationGroupThroughAutomationApi(input: CreateSpecificationGroupRequest): String = {
     val action = for {
-      domainId <- automationApiHelper.getDomainIdByCommunityApiKey(input.communityApiKey, input.domainApiKey)
+      domainId <- automationApiHelper.getDomainIdByCommunityOrDomainApiKey(input.communityApiKey, input.domainApiKey)
       apiKeyToUse <- {
         for {
           generateApiKey <- if (input.apiKey.isEmpty) {
@@ -136,13 +136,13 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils,
   def deleteSpecificationGroupThroughAutomationApi(groupApiKey: String, communityApiKey: String): Unit = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val action = for {
-      domainId <- automationApiHelper.getDomainIdByCommunityApiKey(communityApiKey, None)
+      domainId <- automationApiHelper.getDomainIdByCommunity(communityApiKey)
       groupId <- PersistenceSchema.specificationGroups
-          .filter(_.domain === domainId)
-          .filter(_.apiKey === groupApiKey)
-          .map(_.id)
-          .result
-          .headOption
+        .filterOpt(domainId)((q, id) => q.domain === id)
+        .filter(_.apiKey === groupApiKey)
+        .map(_.id)
+        .result
+        .headOption
       _ <- {
         if (groupId.isEmpty) {
           throw AutomationApiException(ErrorCodes.API_SPECIFICATION_GROUP_NOT_FOUND, "No specification group found for the provided API keys")
@@ -170,10 +170,10 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils,
 
   def updateSpecificationGroupThroughAutomationApi(updateRequest: UpdateSpecificationGroupRequest): Unit = {
     val action = for {
-      domainId <- automationApiHelper.getDomainIdByCommunityApiKey(updateRequest.communityApiKey, None)
+      domainId <- automationApiHelper.getDomainIdByCommunity(updateRequest.communityApiKey)
       group <- PersistenceSchema.specificationGroups
+        .filterOpt(domainId)((q, id) => q.domain === id)
         .filter(_.apiKey === updateRequest.groupApiKey)
-        .filter(_.domain === domainId)
         .result
         .headOption
       _ <- {
@@ -479,7 +479,7 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils,
   def updateSpecificationThroughAutomationApi(updateRequest: UpdateSpecificationRequest): Unit = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val action = for {
-      domainId <- automationApiHelper.getDomainIdByCommunityApiKey(updateRequest.communityApiKey, None)
+      domainId <- automationApiHelper.getDomainIdByCommunity(updateRequest.communityApiKey)
       groupId <- {
         if (updateRequest.groupApiKey.isEmpty) {
           // No change.
@@ -495,8 +495,8 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils,
         }
       }
       specification <- PersistenceSchema.specifications
+        .filterOpt(domainId)((q, id) => q.domain === id)
         .filter(_.apiKey === updateRequest.specificationApiKey)
-        .filter(_.domain === domainId)
         .result
         .headOption
       _ <- {
@@ -646,12 +646,12 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils,
     exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
   }
 
-  private def getGroupIdToUseForApiKey(domainId: Long, groupApiKey: Option[String]): DBIO[Option[Long]] = {
+  private def getGroupIdToUseForApiKey(domainId: Option[Long], groupApiKey: Option[String]): DBIO[Option[Long]] = {
     if (groupApiKey.isDefined) {
       for {
         groupIdToUse <- PersistenceSchema.specificationGroups
+          .filterOpt(domainId)((q, id) => q.domain === id)
           .filter(_.apiKey === groupApiKey.get)
-          .filter(_.domain === domainId)
           .map(_.id)
           .result
           .headOption
@@ -671,7 +671,7 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils,
   def createSpecificationThroughAutomationApi(input: CreateSpecificationRequest): String = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val action = for {
-      domainId <- automationApiHelper.getDomainIdByCommunityApiKey(input.communityApiKey, input.domainApiKey)
+      domainId <- automationApiHelper.getDomainIdByCommunityOrDomainApiKey(input.communityApiKey, input.domainApiKey)
       apiKeyToUse <- {
         for {
           generateApiKey <- if (input.apiKey.isEmpty) {
@@ -686,7 +686,7 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils,
           }
         } yield apiKeyToUse
       }
-      groupIdToUse <- getGroupIdToUseForApiKey(domainId, input.groupApiKey)
+      groupIdToUse <- getGroupIdToUseForApiKey(Some(domainId), input.groupApiKey)
       _ <- {
         createSpecificationsInternal(Specifications(0L, input.shortName, input.fullName, input.description,
           input.hidden.getOrElse(false), apiKeyToUse, domainId, input.displayOrder.getOrElse(0), groupIdToUse
