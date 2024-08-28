@@ -4340,6 +4340,10 @@
           "group": {
             "description": "The API key of the specification group within which to create the specification. If not provided the specification will be created directly under the domain.",
             "type": "string"
+          },
+          "domain": {
+            "description": "The API key of the domain within which to create the specification. This can be omitted if the community identified by the community API key used for authorisation is linked to a specific domain.",
+            "type": "string"
           }
         },
         "required": [
