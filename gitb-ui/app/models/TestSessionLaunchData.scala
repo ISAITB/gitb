@@ -14,4 +14,17 @@ case class TestSessionLaunchData(
                                   systemParameters: ActorConfiguration,
                                   testCaseToInputMap: Option[Map[Long, List[AnyContent]]],
                                   sessionIdsToAssign: Option[Map[Long, String]],
-                                  forceSequentialExecution: Boolean)
+                                  forceSequentialExecution: Boolean) {
+
+  def newWithoutTestCaseIds(testCaseIds: Set[Long]): TestSessionLaunchData = {
+    TestSessionLaunchData(
+      communityId, organisationId, systemId, actorId,
+      testCases.filterNot(testCaseIds.contains),
+      statementParameters, domainParameters, organisationParameters, systemParameters,
+      testCaseToInputMap.map(_.removedAll(testCaseIds)),
+      sessionIdsToAssign.map(_.removedAll(testCaseIds)),
+      forceSequentialExecution
+    )
+  }
+
+}

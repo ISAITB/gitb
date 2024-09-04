@@ -1,7 +1,7 @@
 package managers
 
 import actors.SessionManagerActor
-import actors.events.sessions.PrepareTestSessionsEvent
+import actors.events.sessions.{PrepareTestSessionsEvent, TerminateSessionsEvent}
 import com.gitb.core.{ActorConfiguration, AnyContent, Configuration, ValueEmbeddingEnumeration}
 import exceptions.{AutomationApiException, ErrorCodes, MissingRequiredParameterException}
 import models.Enums.InputMappingMatchType
@@ -392,7 +392,7 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
   }
 
   def processAutomationStopRequest(organisationKey: String, sessionIds: List[String]): Unit = {
-    val verifiedSessionIds = exec(
+    val sessionData = exec(
       for {
         organisationData <- apiHelper.loadOrganisationDataForAutomationProcessing(organisationKey)
         _ <- apiHelper.checkOrganisationForAutomationApiUse(organisationData)
@@ -401,9 +401,12 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
             .filter(_.testSessionId inSet sessionIds)
             .map(x => x.testSessionId)
             .result
-      } yield verifiedSessionIds
+      } yield (organisationData.get.organisationId, verifiedSessionIds)
     )
-    verifiedSessionIds.foreach { sessionId =>
+    // Signal stop to session manager (for tests that haven't started yet)
+    getSessionManagerActor().tell(TerminateSessionsEvent(sessionData._1, sessionIds.toSet), ActorRef.noSender)
+    // Signal stop to test engine (for already tests that are already running).
+    sessionData._2.foreach { sessionId =>
       testbedClient.stop(sessionId)
     }
   }

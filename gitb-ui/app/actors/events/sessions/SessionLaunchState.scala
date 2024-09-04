@@ -34,6 +34,24 @@ case class SessionLaunchState (
     }
   }
 
+  def newWithoutTestSessions(testSessions: Set[String]): SessionLaunchState = {
+    if (data.exists(_.sessionIdsToAssign.isDefined)) {
+      val testCaseIdsToRemove = data.get.sessionIdsToAssign.get.filter(x => testSessions.contains(x._2)).keys.toSet
+      if (testCaseIdsToRemove.nonEmpty) {
+        SessionLaunchState(
+          data.map(_.newWithoutTestCaseIds(testCaseIdsToRemove)),
+          startedTestSessions,
+          completedTestSessions,
+          testCaseDefinitionCache.removedAll(testCaseIdsToRemove)
+        )
+      } else {
+        this
+      }
+    } else {
+      this
+    }
+  }
+
   def newWithLoadedTestCaseDefinition(testCaseId: Long, definition: TestCase): SessionLaunchState = {
     SessionLaunchState(data, startedTestSessions, completedTestSessions, testCaseDefinitionCache + (testCaseId -> definition))
   }
@@ -44,6 +62,10 @@ case class SessionLaunchState (
 
   def hasActiveTestSessions(): Boolean = {
     completedTestSessions.size != startedTestSessions.size || !completedTestSessions.subsetOf(startedTestSessions.keySet)
+  }
+
+  def testSessionCount(): Int = {
+    data.map(_.testCases.size).getOrElse(0)
   }
 
 }
