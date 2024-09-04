@@ -14,6 +14,11 @@ object Parameters {
   val KEY_PASS   = "key_pass"
   val KEYSTORE_PASS   = "keystore_pass"
   val ENABLE = "enable"
+  val USE_STYLE_SHEET = "useStylesheet"
+  val SIGN_PDF_REPORTS = "signPdfReports"
+  val USE_CUSTOM_PDF_REPORTS = "useCustomPdfReports"
+  val USE_CUSTOM_PDFS_WITH_CUSTOM_XML = "useCustomPdfReportsWithCustomXml"
+  val CUSTOM_PDF_SERVICE = "customPdfService"
 
   //Dashboard filter parameters
   val COMMUNITY_IDS = "community_ids"

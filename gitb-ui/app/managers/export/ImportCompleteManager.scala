@@ -1,6 +1,7 @@
 package managers.export
 
 import com.gitb.xml.export.{SelfRegistrationRestriction => _, _}
+import com.gitb.xml.export.ReportType
 import config.Configurations
 import managers._
 import managers.testsuite.TestSuitePaths
@@ -47,6 +48,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                                       systemManager: SystemManager,
                                       importPreviewManager: ImportPreviewManager,
                                       repositoryUtils: RepositoryUtils,
+                                      reportManager: ReportManager,
                                       dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   private def logger = LoggerFactory.getLogger("ImportCompleteManager")
@@ -176,7 +178,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                     // Default handling methods.
                     // Assign the ID generated for this from the DB. This will be used for FK associations from children.
                     importItem.get.targetKey = Some(newId.toString)
-                    // Add to processed ID map..
+                    // Add to processed ID map.
                     addIdToProcessedIdMap(itemType, itemId, newId.toString, ctx)
                   }
                   // Custom post-create method.
@@ -529,6 +531,29 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
     models.ErrorTemplates(0L, data.getName, Option(data.getDescription), data.getContent, data.isDefault, communityId)
   }
 
+  private def toModelReportSetting(data: com.gitb.xml.export.CommunityReportSetting, communityId: Long): models.CommunityReportSettings = {
+    models.CommunityReportSettings(toModelReportType(data.getReportType).id.toShort, data.isSignPdfs, data.isCustomPdfs, data.isCustomPdfsWithCustomXml, Option(data.getCustomPdfService), communityId)
+  }
+
+  private def toModelReportType(data: com.gitb.xml.export.ReportType): models.Enums.ReportType.ReportType = {
+    val reportType = data match {
+      case ReportType.CONFORMANCE_OVERVIEW =>
+        models.Enums.ReportType.ConformanceOverviewReport
+      case ReportType.CONFORMANCE_STATEMENT =>
+        models.Enums.ReportType.ConformanceStatementReport
+      case ReportType.TEST_CASE =>
+        models.Enums.ReportType.TestCaseReport
+      case ReportType.TEST_STEP =>
+        models.Enums.ReportType.TestStepReport
+      case ReportType.CONFORMANCE_STATEMENT_CERTIFICATE =>
+        models.Enums.ReportType.ConformanceStatementCertificate
+      case ReportType.CONFORMANCE_OVERVIEW_CERTIFICATE =>
+        models.Enums.ReportType.ConformanceOverviewCertificate
+      case _ => throw new IllegalArgumentException("Unknown report type [%s]".formatted(data.value()))
+    }
+    reportType
+  }
+
   private def toModelTriggerEventType(eventType: com.gitb.xml.export.TriggerEventType): Short = {
     require(eventType != null, "Enum value cannot be null")
     eventType match {
@@ -593,7 +618,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
         } else {
           dataId = Some(-1)
         }
-        // This might be referring to a organisation, system or domain property that does not exist
+        // This might be referring to an organisation, system or domain property that does not exist
         if (dataId.isDefined) {
           modelDataItemsToProcess += models.TriggerData(toModelTriggerDataType(dataItem.getDataType), dataId.get, modelTriggerId.getOrElse(0L))
         }
@@ -1013,7 +1038,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                   (data: com.gitb.xml.export.SystemAdministrator, targetKey: String, item: ImportItem) => {
                     /*
                       We don't update the email as this must anyway be already matching (this was how the user was found
-                      to be existing. Not updating the email avoids the need to check that the email is unique with respect
+                      to be existing). Not updating the email avoids the need to check that the email is unique with respect
                       to other users.
                      */
                     val query = for {
@@ -1887,7 +1912,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
             communityManager.deleteConformanceCertificateSettings(communityId.get)
           } else {
             // Update/Add
-            communityManager.updateConformanceCertificateSettingsInternal(
+            reportManager.updateConformanceCertificateSettingsInternal(
                 models.ConformanceCertificate(
                   0L, Option(exportedCommunity.getConformanceCertificateSettings.getTitle),
                   exportedCommunity.getConformanceCertificateSettings.isAddTitle, exportedCommunity.getConformanceCertificateSettings.isAddMessage, exportedCommunity.getConformanceCertificateSettings.isAddResultOverview,
@@ -1918,7 +1943,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
             communityManager.deleteConformanceOverviewCertificateSettings(communityId.get)
           } else {
             // Update/Add
-            communityManager.updateConformanceOverviewCertificateSettingsInternal(
+            reportManager.updateConformanceOverviewCertificateSettingsInternal(
               toModelConformanceOverCertificateSettingsWithMessages(exportedCommunity.getConformanceOverviewCertificateSettings, communityId.get, ctx)
             )
           }
@@ -1949,32 +1974,44 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
           var hasConformanceStatement = false
           var hasTestCase = false
           var hasTestStep = false
+          var hasConformanceOverviewCertificate = false
+          var hasConformanceStatementCertificate = false
           exportedCommunity.getReportStylesheets.getStylesheet.forEach { stylesheet =>
             val tempFile = stringToTempFile(stylesheet.getContent).toPath
-            val reportType = stylesheet.getReportType match {
-              case ReportType.CONFORMANCE_OVERVIEW =>
-                hasConformanceOverview = true
-                XmlReportType.ConformanceOverviewReport
-              case ReportType.CONFORMANCE_STATEMENT =>
-                hasConformanceStatement = true
-                XmlReportType.ConformanceStatementReport
-              case ReportType.TEST_CASE =>
-                hasTestCase = true
-                XmlReportType.TestCaseReport
-              case _ =>
-                hasTestStep = true
-                XmlReportType.TestStepReport
+            val reportType = toModelReportType(stylesheet.getReportType)
+            reportType match {
+              case models.Enums.ReportType.ConformanceOverviewReport => hasConformanceOverview = true
+              case models.Enums.ReportType.ConformanceStatementReport => hasConformanceStatement = true
+              case models.Enums.ReportType.TestCaseReport => hasTestCase = true
+              case models.Enums.ReportType.TestStepReport => hasTestStep = true
+              case models.Enums.ReportType.ConformanceStatementCertificate => hasConformanceStatementCertificate = true
+              case models.Enums.ReportType.ConformanceOverviewCertificate => hasConformanceOverviewCertificate = true
             }
             ctx.onSuccessCalls += (() => repositoryUtils.saveCommunityReportStylesheet(communityId.get, reportType, tempFile))
             ctx.onSuccessCalls += (() => if (Files.exists(tempFile)) { FileUtils.deleteQuietly(tempFile.toFile) })
             ctx.onFailureCalls += (() => if (Files.exists(tempFile)) { FileUtils.deleteQuietly(tempFile.toFile) })
           }
-          if (!hasConformanceOverview) ctx.onSuccessCalls += (() => repositoryUtils.deleteCommunityReportStylesheet(communityId.get, XmlReportType.ConformanceOverviewReport))
-          if (!hasConformanceStatement) ctx.onSuccessCalls += (() => repositoryUtils.deleteCommunityReportStylesheet(communityId.get, XmlReportType.ConformanceStatementReport))
-          if (!hasTestCase) ctx.onSuccessCalls += (() => repositoryUtils.deleteCommunityReportStylesheet(communityId.get, XmlReportType.TestCaseReport))
-          if (!hasTestStep) ctx.onSuccessCalls += (() => repositoryUtils.deleteCommunityReportStylesheet(communityId.get, XmlReportType.TestStepReport))
+          if (!hasConformanceOverview) ctx.onSuccessCalls += (() => repositoryUtils.deleteCommunityReportStylesheet(communityId.get, models.Enums.ReportType.ConformanceOverviewReport))
+          if (!hasConformanceStatement) ctx.onSuccessCalls += (() => repositoryUtils.deleteCommunityReportStylesheet(communityId.get, models.Enums.ReportType.ConformanceStatementReport))
+          if (!hasTestCase) ctx.onSuccessCalls += (() => repositoryUtils.deleteCommunityReportStylesheet(communityId.get, models.Enums.ReportType.TestCaseReport))
+          if (!hasTestStep) ctx.onSuccessCalls += (() => repositoryUtils.deleteCommunityReportStylesheet(communityId.get, models.Enums.ReportType.TestStepReport))
+          if (!hasConformanceOverviewCertificate) ctx.onSuccessCalls += (() => repositoryUtils.deleteCommunityReportStylesheet(communityId.get, models.Enums.ReportType.ConformanceOverviewCertificate))
+          if (!hasConformanceStatementCertificate) ctx.onSuccessCalls += (() => repositoryUtils.deleteCommunityReportStylesheet(communityId.get, models.Enums.ReportType.ConformanceStatementCertificate))
         }
         DBIO.successful(())
+      }
+      // Community report settings
+      _ <- {
+        val communityId = getProcessedDbId(exportedCommunity, ImportItemType.Community, ctx)
+        if (communityId.isDefined && exportedCommunity.getReportSettings != null) {
+          val dbActions = ListBuffer[DBIO[_]]()
+          exportedCommunity.getReportSettings.getReportSetting.forEach { exportedSetting =>
+            dbActions += reportManager.updateReportSettingsInternal(toModelReportSetting(exportedSetting, communityId.get), None, ctx.onSuccessCalls)
+          }
+          toDBIO(dbActions)
+        } else {
+          DBIO.successful(())
+        }
       }
       // Custom labels
       _ <- {
@@ -2217,7 +2254,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                 (data: com.gitb.xml.export.CommunityAdministrator, targetKey: String, item: ImportItem) => {
                   /*
                     We don't update the email as this must anyway be already matching (this was how the user was found
-                    to be existing. Not updating the email avoids the need to check that the email is unique with respect
+                    to be existing). Not updating the email avoids the need to check that the email is unique with respect
                     to other users.
                    */
                   val query = for {
@@ -2324,7 +2361,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                     (data: com.gitb.xml.export.OrganisationUser, targetKey: String, item: ImportItem) => {
                       /*
                         We don't update the email as this must anyway be already matching (this was how the user was found
-                        to be existing. Not updating the email avoids the need to check that the email is unique with respect
+                        to be existing). Not updating the email avoids the need to check that the email is unique with respect
                         to other users.
                        */
                       val q = for { u <- PersistenceSchema.users.filter(_.id === targetKey.toLong) } yield (u.name, u.password, u.onetimePassword, u.role)

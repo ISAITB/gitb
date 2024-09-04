@@ -36,7 +36,7 @@ export class ConformanceCertificateModalComponent {
   ) { }
 
   choiceChanged() {
-    if (this.choice == Constants.REPORT_OPTION_CHOICE.CERTIFICATE) {
+    if (this.choice == Constants.REPORT_OPTION_CHOICE.CERTIFICATE && this.settings) {
       if (!this.messageLoaded) {
         this.messagePending = true
         this.conformanceService.getResolvedMessageForConformanceStatementCertificate(this.communityId, this.systemId, this.actorId, this.snapshotId)
@@ -75,7 +75,7 @@ export class ConformanceCertificateModalComponent {
       fileName = "conformance_certificate.pdf"
       contentType = "application/pdf"
       if (this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin) {
-        exportObservable = this.reportService.exportConformanceCertificate(this.communityId, this.actorId, this.systemId, this.settings!, this.snapshotId)
+        exportObservable = this.reportService.exportConformanceCertificate(this.communityId, this.actorId, this.systemId, this.settings, this.snapshotId)
       } else {
         exportObservable = this.reportService.exportOwnConformanceCertificateReport(this.actorId, this.systemId, this.snapshotId)
       }

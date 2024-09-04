@@ -12,6 +12,8 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Organisation } from '../types/organisation.type';
 import { ErrorTemplate } from '../types/error-template';
 import { ErrorDescription } from '../types/error-description';
+import { DataService } from './data.service';
+import { CodeEditorModalComponent } from '../components/code-editor-modal/code-editor-modal.component';
 
 @Injectable({
   providedIn: 'root'
@@ -23,7 +25,8 @@ export class ErrorService {
   constructor(
     private confirmationDialogService: ConfirmationDialogService,
     private modalService: BsModalService,
-    private baseRestService: BaseRestService
+    private baseRestService: BaseRestService,
+    private dataService: DataService
   ) { }
 
   customErrorHandler(title: string|undefined, message: string, error: string|ErrorData|ErrorDataArrayBuffer): Observable<any> {
@@ -197,4 +200,34 @@ export class ErrorService {
       })
     }
   }
+
+  popupErrorsArray(errorArray: string[]|undefined, title?: string, contentType?: string) {
+    let content = this.dataService.errorArrayToString(errorArray)
+    if (contentType == undefined) {
+      contentType = 'text/plain'
+    } else if (contentType == 'application/json') {
+      content = this.dataService.prettifyJSON(content)
+    }
+    let titleToUse = title
+    if (titleToUse == undefined) {
+      titleToUse = 'Error message(s)'
+    }
+    this.modalService.show(CodeEditorModalComponent, {
+      class: 'modal-lg',
+      initialState: {
+        documentName: titleToUse,
+        editorOptions: {
+          value: content,
+          readOnly: true,
+          copy: true,
+          lineNumbers: false,
+          smartIndent: false,
+          electricChars: false,
+          styleClass: 'editor-short',
+          mode: contentType
+        }
+      }
+    })
+  }
+
 }

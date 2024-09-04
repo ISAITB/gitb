@@ -1,4 +1,4 @@
-export interface TriggerCallResult {
+export interface ServiceCallResult {
 
     success: boolean
     texts: string[]

@@ -69,6 +69,13 @@ object JsonUtil {
     )
   }
 
+  def jsErrorMessages(texts: List[String], contentType: String): JsObject = {
+    var json = jsTextArray(texts)
+    json += ("success", JsBoolean(false))
+    json += ("contentType", JsString(contentType))
+    json
+  }
+
   def jsTextArray(texts: List[String]): JsObject = {
     var textArray = Json.arr()
     texts.foreach { text =>
@@ -2505,6 +2512,19 @@ object JsonUtil {
     var jErrorTemplate: JsObject = jsExists(errorTemplate.isDefined)
     errorTemplate.foreach(x => jErrorTemplate = jErrorTemplate ++ jsErrorTemplate(x.toErrorTemplate()))
     jErrorTemplate.toString
+  }
+
+  def jsReportSettings(settings: CommunityReportSettings, stylesheetExists: Boolean): JsObject = {
+    var json = Json.obj(
+    "stylesheetExists" -> stylesheetExists,
+    "signPdfs" -> settings.signPdfs,
+    "customPdfs" -> settings.customPdfs,
+    "customPdfsWithCustomXml" -> settings.customPdfsWithCustomXml
+    )
+    if (settings.customPdfService.isDefined) {
+      json += ("customPdfService" -> JsString(settings.customPdfService.get))
+    }
+    json
   }
 
   def jsExists(bool:Boolean):JsObject = {

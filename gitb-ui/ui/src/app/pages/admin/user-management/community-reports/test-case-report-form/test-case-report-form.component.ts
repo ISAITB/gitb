@@ -4,6 +4,9 @@ import { ReportService } from 'src/app/services/report.service';
 import { PopupService } from 'src/app/services/popup.service';
 import { BsModalService } from 'ngx-bootstrap/modal';
 import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
+import { ConformanceService } from 'src/app/services/conformance.service';
+import { PreviewConfig } from '../community-xml-report-form/preview-config';
+import { ErrorService } from 'src/app/services/error.service';
 
 @Component({
   selector: 'app-test-case-report-form',
@@ -12,23 +15,28 @@ import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.
 export class TestCaseReportFormComponent extends CommunityXmlReportFormComponent {
 
   constructor(
+    conformanceService: ConformanceService,    
     reportService: ReportService,
     popupService: PopupService,
     modalService: BsModalService,
-    confirmationDialogService: ConfirmationDialogService
-  ) { super(reportService, popupService, modalService, confirmationDialogService) }
+    confirmationDialogService: ConfirmationDialogService,
+    errorService: ErrorService
+  ) { super(conformanceService, reportService, popupService, modalService, confirmationDialogService, errorService) }
 
-  getIdValue(): string {
-    return "stylesheetForTestCaseReport"
-  }
-  getReportType(): number {
-    return this.Constants.XML_REPORT_TYPE.TEST_CASE_REPORT
-  }
-  getPreviewTitle(): string {
-    return "Test case report preview"
-  }
-  getPreviewFileName(): string {
-    return "test_report.xml"
+  getPreviewConfig(): PreviewConfig {
+    return {
+      baseIdValue: "testCaseReport",
+      previewFileNamePdf: "test_report.pdf",
+      previewFileNameXml: "test_report.xml",
+      previewTitleXml: "Test case report preview",
+      reportType: this.Constants.REPORT_TYPE.TEST_CASE_REPORT,
+      previewOptions: [
+        [
+          { label: "XML report", isXml: true },
+          { label: "PDF report", isXml: false }
+        ]
+      ]
+    }
   }
 
 }

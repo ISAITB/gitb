@@ -797,22 +797,6 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
     }
   }
 
-  def updateConformanceCertificateSettings(communityId: Long): Action[AnyContent] = authorizedAction { request =>
-    authorizationManager.canUpdateConformanceCertificateSettings(request, communityId)
-    val jsSettings = ParameterExtractor.requiredBodyParameter(request, Parameters.SETTINGS)
-    val settings = JsonUtil.parseJsConformanceCertificateSettings(jsSettings, communityId)
-    communityManager.updateConformanceCertificateSettings(settings)
-    ResponseConstructor.constructEmptyResponse
-  }
-
-  def updateConformanceOverviewCertificateSettings(communityId: Long): Action[AnyContent] = authorizedAction { request =>
-    authorizationManager.canUpdateConformanceCertificateSettings(request, communityId)
-    val jsSettings = ParameterExtractor.requiredBodyParameter(request, Parameters.SETTINGS)
-    val settings = JsonUtil.parseJsConformanceOverviewCertificateWithMessages(jsSettings, communityId)
-    communityManager.updateConformanceOverviewCertificateSettings(settings)
-    ResponseConstructor.constructEmptyResponse
-  }
-
   def saveCommunityKeystore(communityId: Long): Action[AnyContent] = authorizedAction { request =>
     authorizationManager.canUpdateConformanceCertificateSettings(request, communityId)
     try {

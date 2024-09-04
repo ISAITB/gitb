@@ -26,6 +26,7 @@ import { CommunityTab } from '../community/community-details/community-tab.enum'
 import { StatementParameterMinimal } from 'src/app/types/statement-parameter-minimal';
 import { TestTriggerModalComponent } from './test-trigger-modal/test-trigger-modal.component';
 import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
+import { ErrorService } from 'src/app/services/error.service';
 
 @Component({
   selector: 'app-trigger',
@@ -82,7 +83,8 @@ export class TriggerComponent extends BaseComponent implements OnInit, AfterView
     private communityService: CommunityService,
     private confirmationDialogService: ConfirmationDialogService,
     private popupService: PopupService,
-    public dataService: DataService
+    public dataService: DataService,
+    private errorService: ErrorService
   ) {
     super();
   }
@@ -367,7 +369,7 @@ export class TriggerComponent extends BaseComponent implements OnInit, AfterView
           }
         })
       } else {
-        this.popupErrorsArray(result.texts, result.contentType)
+        this.errorService.popupErrorsArray(result.texts, undefined, result.contentType)
       }
     }).add(() => {
       this.testPending = false
@@ -410,32 +412,7 @@ export class TriggerComponent extends BaseComponent implements OnInit, AfterView
       const output = JSON.parse(errorJson)
       arrayToUse = output.texts
     }
-    this.popupErrorsArray(arrayToUse)
-  }
-
-  popupErrorsArray(errorArray: string[]|undefined, contentType?: string) {
-    let content = this.dataService.errorArrayToString(errorArray)
-    if (contentType == undefined) {
-      contentType = 'text/plain'
-    } else if (contentType == 'application/json') {
-      content = this.dataService.prettifyJSON(content)
-    }
-    this.modalService.show(CodeEditorModalComponent, {
-      class: 'modal-lg',
-      initialState: {
-        documentName: 'Error message(s)',
-        editorOptions: {
-          value: content,
-          readOnly: true,
-          copy: true,
-          lineNumbers: false,
-          smartIndent: false,
-          electricChars: false,
-          styleClass: 'editor-short',
-          mode: contentType
-        }
-      }
-    })
+    this.errorService.popupErrorsArray(arrayToUse)
   }
 
   viewLatestErrors() {

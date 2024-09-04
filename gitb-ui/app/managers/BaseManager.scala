@@ -55,7 +55,7 @@ abstract class BaseManager @Inject() (dbConfigProvider: DatabaseConfigProvider) 
 		})
 	}
 
-	protected def extractFailureDetails(error: Throwable): List[String] = {
+	def extractFailureDetails(error: Throwable): List[String] = {
 		val messages = new ListBuffer[Option[String]]()
 		val handledErrors = new ListBuffer[Throwable]()
 		extractFailureDetailsInternal(error, handledErrors, messages)

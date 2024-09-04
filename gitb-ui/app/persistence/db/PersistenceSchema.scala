@@ -472,6 +472,17 @@ object PersistenceSchema {
   val errorTemplates = TableQuery[ErrorTemplatesTable]
   val insertErrorTemplate = errorTemplates returning errorTemplates.map(_.id)
 
+  class CommunityReportSettingsTable(tag: Tag) extends Table[CommunityReportSettings](tag, "CommunityReportSettings") {
+    def reportType = column[Short]("report_type")
+    def signPdfs = column[Boolean]("sign_pdf")
+    def customPdfs = column[Boolean]("custom_pdf")
+    def customPdfsWithCustomXml = column[Boolean]("custom_pdf_with_custom_xml")
+    def customPdfService  = column[Option[String]]("custom_pdf_service")
+    def community = column[Long]("community")
+    def * = (reportType, signPdfs, customPdfs, customPdfsWithCustomXml, customPdfService, community) <> (CommunityReportSettings.tupled, CommunityReportSettings.unapply)
+  }
+  val communityReportSettings = TableQuery[CommunityReportSettingsTable]
+
   class ConformanceCertificatesTable(tag: Tag) extends Table[ConformanceCertificate](tag, "ConformanceCertificates") {
     def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
     def title = column[Option[String]]("title", O.SqlType("TEXT"))

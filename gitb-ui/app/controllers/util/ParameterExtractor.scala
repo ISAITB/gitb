@@ -5,7 +5,7 @@ import exceptions.{ErrorCodes, InvalidRequestException}
 import models.Enums._
 import controllers.util.Parameters
 import models.theme.{Theme, ThemeFiles}
-import models.{Actor, Badges, Communities, CommunityResources, Constants, Domain, Endpoints, ErrorTemplates, FileInfo, LandingPages, LegalNotices, NamedFile, OrganisationParameterValues, Organizations, SpecificationGroups, Specifications, SystemParameterValues, Systems, Trigger, TriggerData, Triggers, Users}
+import models.{Actor, Badges, Communities, CommunityReportSettings, CommunityResources, Constants, Domain, Endpoints, ErrorTemplates, FileInfo, LandingPages, LegalNotices, NamedFile, OrganisationParameterValues, Organizations, SpecificationGroups, Specifications, SystemParameterValues, Systems, Trigger, TriggerData, Triggers, Users}
 import org.apache.commons.lang3.StringUtils
 import org.mindrot.jbcrypt.BCrypt
 import play.api.mvc._
@@ -290,6 +290,15 @@ object ParameterExtractor {
 
   def validCommunitySelfRegType(selfRegType: Short): Boolean = {
     selfRegType == SelfRegistrationType.NotSupported.id.toShort || selfRegType == SelfRegistrationType.PublicListing.id.toShort || selfRegType == SelfRegistrationType.PublicListingWithToken.id.toShort || selfRegType == SelfRegistrationType.Token.id.toShort
+  }
+
+  def extractCommunityReportSettings(paramMap:  Option[Map[String, Seq[String]]], communityId: Long): CommunityReportSettings = {
+    val reportType = ReportType.apply(ParameterExtractor.requiredBodyParameter(paramMap, Parameters.TYPE).toShort)
+    val signPdfReports = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.SIGN_PDF_REPORTS).toBoolean
+    val useCustomPdfReports = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.USE_CUSTOM_PDF_REPORTS).toBoolean
+    val useCustomPdfReportsWithCustomXml = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.USE_CUSTOM_PDFS_WITH_CUSTOM_XML).toBoolean
+    val customPdfService = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.CUSTOM_PDF_SERVICE)
+    CommunityReportSettings(reportType.id.toShort, signPdfReports, useCustomPdfReports, useCustomPdfReportsWithCustomXml, customPdfService.filter(StringUtils.isNotBlank), communityId)
   }
 
   def extractCommunityInfo(request:Request[AnyContent]):Communities = {

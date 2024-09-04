@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { ROUTES } from '../common/global';
-import { TriggerCallResult } from '../types/trigger-call-result';
+import { ServiceCallResult } from '../types/service-call-result';
 import { ErrorDescription } from '../types/error-description';
 import { Trigger } from '../types/trigger';
 import { TriggerDataItem } from '../types/trigger-data-item';
@@ -63,7 +63,7 @@ export class TriggerService {
   }
 
   test(url: string, serviceType: number, payload: string, communityId: number) {
-    return this.restService.post<TriggerCallResult>({
+    return this.restService.post<ServiceCallResult>({
       path: ROUTES.controllers.TriggerService.testTriggerCall().url,
       authenticate: true,
       data: {
@@ -118,7 +118,7 @@ export class TriggerService {
   }
 
   testTriggerEndpoint(url: string, serviceType: number, communityId: number) {
-    return this.restService.post<TriggerCallResult>({
+    return this.restService.post<ServiceCallResult>({
       path: ROUTES.controllers.TriggerService.testTriggerEndpoint().url,
       authenticate: true,
       data: {

@@ -3,7 +3,7 @@ import { BsModalService } from 'ngx-bootstrap/modal';
 import { ConformanceCertificateModalComponent } from '../modals/conformance-certificate-modal/conformance-certificate-modal.component';
 import { ConformanceCertificateSettings } from '../types/conformance-certificate-settings';
 import { ConformanceService } from './conformance.service';
-import { Observable, mergeMap, of } from 'rxjs';
+import { Observable, forkJoin, mergeMap, of } from 'rxjs';
 import { ConformanceOverviewCertificateModalComponent } from '../modals/conformance-overview-certificate-modal/conformance-overview-certificate-modal.component';
 import { ConformanceOverviewCertificateSettings } from '../types/conformance-overview-certificate-settings';
 import { ReportService } from './report.service';
@@ -58,10 +58,16 @@ export class ReportSupportService {
       return of(true)
     } else {
       if (this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin) {
-        return this.conformanceService.getConformanceCertificateSettings(communityId)
-        .pipe(
+        const $reportSettings = this.reportService.loadReportSettings(communityId, Constants.REPORT_TYPE.CONFORMANCE_STATEMENT_CERTIFICATE)
+        const $certificateSettings = this.conformanceService.getConformanceCertificateSettings(communityId)
+        return forkJoin([$reportSettings, $certificateSettings]).pipe(
           mergeMap((data) => {
-            this.showConformanceStatementModal(communityId, actorId, systemId, snapshotId, 'pdf', data, true)
+            let certificateSettingsToUse = data[1]
+            if (data[0].customPdfs) {
+              // Don't present settings to override as we're using a custom generation service.
+              certificateSettingsToUse = undefined
+            }
+            this.showConformanceStatementModal(communityId, actorId, systemId, snapshotId, 'pdf', certificateSettingsToUse, true)
             return of(true)
           })
         )
@@ -96,16 +102,23 @@ export class ReportSupportService {
     } else {
       if (this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin) {
         // Get the overview certificate settings for the admin to verify before producing a certificate (if that choice is selected)
-        return this.conformanceService.getConformanceOverviewCertificateSettingsWithApplicableMessage(communityId, reportLevel, identifier, snapshotId)
+        const $reportSettings = this.reportService.loadReportSettings(communityId, Constants.REPORT_TYPE.CONFORMANCE_OVERVIEW_CERTIFICATE)
+        const $certificateSettings = this.conformanceService.getConformanceOverviewCertificateSettingsWithApplicableMessage(communityId, reportLevel, identifier, snapshotId)
+        return forkJoin([$reportSettings, $certificateSettings])
           .pipe(
-            mergeMap((settings) => {
-              if (settings) {
-                if ((reportLevel == 'all' && settings.enableAllLevel) ||
-                  (reportLevel == 'domain' && settings.enableDomainLevel) ||
-                  (reportLevel == 'group' && settings.enableGroupLevel) ||
-                  (reportLevel == 'specification' && settings.enableSpecificationLevel)) {
+            mergeMap((data) => {
+              if (data[1]) {
+                if ((reportLevel == 'all' && data[1].enableAllLevel) ||
+                  (reportLevel == 'domain' && data[1].enableDomainLevel) ||
+                  (reportLevel == 'group' && data[1].enableGroupLevel) ||
+                  (reportLevel == 'specification' && data[1].enableSpecificationLevel)) {
+                    let certificateSettingsToUse: ConformanceOverviewCertificateSettings|undefined = data[1]
+                    if (data[0].customPdfs) {
+                      // Don't present settings to override as we're using a custom generation service.
+                      certificateSettingsToUse = undefined
+                    }
                     // This can either be a report or a certificate
-                    this.showConformanceOverviewModal(communityId, systemId, identifier, reportLevel, snapshotId, settings)
+                    this.showConformanceOverviewModal(communityId, systemId, identifier, reportLevel, snapshotId, certificateSettingsToUse)
                     return of(true)
                 } else {
                   // This can only be a report as the certificate settings don't foresee support for the requested reporting level

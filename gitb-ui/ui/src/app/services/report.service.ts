@@ -17,6 +17,7 @@ import { FileParam } from '../types/file-param.type';
 import { Constants } from '../common/constants';
 import { ConformanceCertificateSettings } from '../types/conformance-certificate-settings';
 import { ConformanceOverviewCertificateSettings } from '../types/conformance-overview-certificate-settings';
+import { CommunityReportSettings } from '../types/community-report-settings';
 
 @Injectable({
   providedIn: 'root'
@@ -307,9 +308,9 @@ export class ReportService {
     })    
   }
 
-  reportStylesheetExists(communityId: number, reportType: number) {
-    return this.restService.get<{exists: boolean}>({
-      path: ROUTES.controllers.RepositoryService.reportStylesheetExists(communityId).url,
+  loadReportSettings(communityId: number, reportType: number) {
+    return this.restService.get<CommunityReportSettings>({
+      path: ROUTES.controllers.RepositoryService.loadReportSettings(communityId).url,
       authenticate: true,
       params: {
         type: reportType
@@ -328,29 +329,73 @@ export class ReportService {
     })
   }
 
-  updateReportStylesheet(communityId: number, enabled: boolean, reportType: number, file?: FileData) {
-    let files: FileParam[]|undefined
-    if (enabled && file?.file) {
-      files = [{ param: "file", data: file.file}]
+  private reportSettingsToData(reportType: number, useStylesheet: boolean, settings: CommunityReportSettings): any {
+    let data: any = {
+      type: reportType,
+      useStylesheet: useStylesheet,
+      signPdfReports: settings.signPdfs,
+      useCustomPdfReports: settings.customPdfs,
+      useCustomPdfReportsWithCustomXml: settings.customPdfsWithCustomXml,
     }
-    return this.restService.post<{exists: boolean}>({
-      path: ROUTES.controllers.RepositoryService.updateReportStylesheet(communityId).url,
+    if (settings.customPdfService != undefined) {
+      data.customPdfService = settings.customPdfService
+    }
+    return data
+  }
+
+  updateReportSettings(communityId: number, reportType: number, useStylesheet: boolean, stylesheet: FileData|undefined, settings: CommunityReportSettings) {
+    let files: FileParam[]|undefined
+    const data = this.reportSettingsToData(reportType, useStylesheet, settings)
+    if (useStylesheet && stylesheet?.file) {
+      files = [{ param: "file", data: stylesheet.file}]
+    }
+    return this.restService.post<void>({
+      path: ROUTES.controllers.RepositoryService.updateReportSettings(communityId).url,
       authenticate: true,
       files: files,
-      data: {
-        enable: enabled,
-        type: reportType
-      }
+      data: data
     })    
   }
 
-  exportDemoReportInXML(communityId: number, reportType: number, enabled: boolean, file?: FileData, data?: {[key: string]: any}) {
+  exportDemoReportPdf(communityId: number, reportType: number, reportSettings: CommunityReportSettings, useStyleSheet: boolean, file?: FileData, data?: {[key: string]: any}) {
     let path: string
-    if (reportType == Constants.XML_REPORT_TYPE.CONFORMANCE_OVERVIEW_REPORT) {
+    if (reportType == Constants.REPORT_TYPE.CONFORMANCE_OVERVIEW_REPORT) {
+      path = ROUTES.controllers.RepositoryService.exportDemoConformanceOverviewReport(communityId).url
+    } else if (reportType == Constants.REPORT_TYPE.CONFORMANCE_STATEMENT_REPORT) {
+      path = ROUTES.controllers.RepositoryService.exportDemoConformanceStatementReport(communityId).url
+    } else if (reportType == Constants.REPORT_TYPE.TEST_CASE_REPORT) {
+      path = ROUTES.controllers.RepositoryService.exportDemoTestCaseReport(communityId).url
+    } else {
+      path = ROUTES.controllers.RepositoryService.exportDemoTestStepReport(communityId).url
+    }
+    let files: FileParam[]|undefined
+    if (useStyleSheet && file?.file) {
+      files = [{ param: "file", data: file.file}]
+    }
+    let dataToUse = this.reportSettingsToData(reportType, useStyleSheet, reportSettings)
+    if (data != undefined) {
+      for (let dataItem in data) {
+        // Add extra data items for specific report types.
+        dataToUse[dataItem] = data[dataItem]
+      }
+    }
+    return this.restService.post<HttpResponse<ArrayBuffer>>({
+      path: path,
+      authenticate: true,
+      files: files,
+      data: dataToUse,
+      arrayBuffer: true,
+      httpResponse: true
+    })     
+  }
+
+  exportDemoReportXml(communityId: number, reportType: number, enabled: boolean, file?: FileData, data?: {[key: string]: any}) {
+    let path: string
+    if (reportType == Constants.REPORT_TYPE.CONFORMANCE_OVERVIEW_REPORT) {
       path = ROUTES.controllers.RepositoryService.exportDemoConformanceOverviewReportInXML(communityId).url
-    } else if (reportType == Constants.XML_REPORT_TYPE.CONFORMANCE_STATEMENT_REPORT) {
+    } else if (reportType == Constants.REPORT_TYPE.CONFORMANCE_STATEMENT_REPORT) {
       path = ROUTES.controllers.RepositoryService.exportDemoConformanceStatementReportInXML(communityId).url
-    } else if (reportType == Constants.XML_REPORT_TYPE.TEST_CASE_REPORT) {
+    } else if (reportType == Constants.REPORT_TYPE.TEST_CASE_REPORT) {
       path = ROUTES.controllers.RepositoryService.exportDemoTestCaseReportInXML(communityId).url
     } else {
       path = ROUTES.controllers.RepositoryService.exportDemoTestStepReportInXML(communityId).url
@@ -374,27 +419,69 @@ export class ReportService {
     })      
   }
 
-  exportDemoConformanceCertificateReport(communityId: number, settings: ConformanceCertificateSettings) {
-    return this.restService.post<ArrayBuffer>({
-      path: ROUTES.controllers.RepositoryService.exportDemoConformanceCertificateReport(communityId).url,
-      data: {
-        settings: JSON.stringify(settings)
-      },
+  updateConformanceCertificateSettings(communityId: number, reportSettings: CommunityReportSettings, certificateSettings: ConformanceCertificateSettings, stylesheet?: FileData) {
+    let files: FileParam[]|undefined
+    if (reportSettings.customPdfsWithCustomXml && stylesheet?.file) {
+      files = [{ param: "file", data: stylesheet.file}]
+    }
+    let dataToUse = this.reportSettingsToData(Constants.REPORT_TYPE.CONFORMANCE_STATEMENT_CERTIFICATE, reportSettings.customPdfsWithCustomXml, reportSettings)
+    dataToUse["settings"] = JSON.stringify(certificateSettings)
+    return this.restService.post<void>({
+      path: ROUTES.controllers.RepositoryService.updateConformanceCertificateSettings(communityId).url,
       authenticate: true,
-      arrayBuffer: true
+      data: dataToUse,
+      files: files
     })
   }
 
-  exportDemoConformanceOverviewCertificateReport(communityId: number, settings: ConformanceOverviewCertificateSettings, reportLevel: string, reportLevelIdentifier?: number) {
-    return this.restService.post<ArrayBuffer>({
-      path: ROUTES.controllers.RepositoryService.exportDemoConformanceOverviewCertificateReport(communityId).url,
-      data: {
-        settings: JSON.stringify(settings),
-        level: reportLevel,
-        id: reportLevelIdentifier
-      },
+  updateConformanceOverviewCertificateSettings(communityId: number, reportSettings: CommunityReportSettings, certificateSettings: ConformanceOverviewCertificateSettings, stylesheet?: FileData) {
+    let files: FileParam[]|undefined
+    if (reportSettings.customPdfsWithCustomXml && stylesheet?.file) {
+      files = [{ param: "file", data: stylesheet.file}]
+    }
+    let dataToUse = this.reportSettingsToData(Constants.REPORT_TYPE.CONFORMANCE_OVERVIEW_CERTIFICATE, reportSettings.customPdfsWithCustomXml, reportSettings)
+    dataToUse["settings"] = JSON.stringify(certificateSettings)
+    return this.restService.post<void>({
+      path: ROUTES.controllers.RepositoryService.updateConformanceOverviewCertificateSettings(communityId).url,
       authenticate: true,
-      arrayBuffer: true
+      data: dataToUse,
+      files: files
+    })
+  }
+
+  exportDemoConformanceCertificateReport(communityId: number, reportSettings: CommunityReportSettings, certificateSettings: ConformanceCertificateSettings, stylesheet?: FileData) {
+    let files: FileParam[]|undefined
+    if (reportSettings.customPdfsWithCustomXml && stylesheet?.file) {
+      files = [{ param: "file", data: stylesheet.file}]
+    }
+    let dataToUse = this.reportSettingsToData(Constants.REPORT_TYPE.CONFORMANCE_STATEMENT_CERTIFICATE, reportSettings.customPdfsWithCustomXml, reportSettings)
+    dataToUse["settings"] = JSON.stringify(certificateSettings)
+    return this.restService.post<HttpResponse<ArrayBuffer>>({
+      path: ROUTES.controllers.RepositoryService.exportDemoConformanceCertificateReport(communityId).url,
+      data: dataToUse,
+      authenticate: true,
+      arrayBuffer: true,
+      httpResponse: true,
+      files: files
+    })
+  }
+
+  exportDemoConformanceOverviewCertificateReport(communityId: number, reportSettings: CommunityReportSettings, certificateSettings: ConformanceOverviewCertificateSettings, reportLevel: string, reportLevelIdentifier?: number, stylesheet?: FileData) {
+    let files: FileParam[]|undefined
+    if (reportSettings.customPdfsWithCustomXml && stylesheet?.file) {
+      files = [{ param: "file", data: stylesheet.file}]
+    }
+    let dataToUse = this.reportSettingsToData(Constants.REPORT_TYPE.CONFORMANCE_OVERVIEW_CERTIFICATE, reportSettings.customPdfsWithCustomXml, reportSettings)
+    dataToUse["settings"] = JSON.stringify(certificateSettings)
+    dataToUse["level"] = reportLevel
+    dataToUse["id"] = reportLevelIdentifier
+    return this.restService.post<HttpResponse<ArrayBuffer>>({
+      path: ROUTES.controllers.RepositoryService.exportDemoConformanceOverviewCertificateReport(communityId).url,
+      data: dataToUse,
+      files: files,
+      authenticate: true,
+      arrayBuffer: true,
+      httpResponse: true
     })
   }
 
@@ -428,27 +515,28 @@ export class ReportService {
     })
   }
 
-  exportConformanceOverviewCertificate(communityId: number, systemId: number, domainId: number|undefined, groupId: number|undefined, specId: number|undefined, settings: ConformanceOverviewCertificateSettings, snapshotId: number|undefined) {
-    let settingsData: any = {}
-    if (settings != undefined) {
-      settingsData.title = settings.title
-      settingsData.includeTitle = settings.includeTitle == true
-      settingsData.includeMessage = settings.includeMessage == true
-      settingsData.includeTestStatus = settings.includeTestStatus == true
-      settingsData.includeTestCases = settings.includeTestCases == true
-      settingsData.includeTestCaseDetails = settings.includeTestCaseDetails == true
-      settingsData.includeDetails = settings.includeDetails == true
-      settingsData.includeSignature = settings.includeSignature == true
-      settingsData.includePageNumbers = settings.includePageNumbers == true
-      if (settingsData.includeMessage) {
-        settingsData.messages = settings.messages
-      }
-    }    
+  exportConformanceOverviewCertificate(communityId: number, systemId: number, domainId: number|undefined, groupId: number|undefined, specId: number|undefined, settings: ConformanceOverviewCertificateSettings|undefined, snapshotId: number|undefined) {
     let data: any = {
-      settings: JSON.stringify(settingsData),
       system_id: systemId,
       community_id: communityId,
     }
+    if (settings != undefined) {
+      let settingsData: any = {
+        title: settings.title,
+        includeTitle: settings.includeTitle == true,
+        includeMessage: settings.includeMessage == true,
+        includeTestStatus: settings.includeTestStatus == true,
+        includeTestCases: settings.includeTestCases == true,
+        includeTestCaseDetails: settings.includeTestCaseDetails == true,
+        includeDetails: settings.includeDetails == true,
+        includeSignature: settings.includeSignature == true,
+        includePageNumbers: settings.includePageNumbers == true
+      }
+      if (settingsData.includeMessage) {
+        settingsData.messages = settings.messages
+      }
+      data.settings = JSON.stringify(settingsData)
+    }    
     if (domainId != undefined) data.domain_id = domainId
     if (groupId != undefined) data.group_id = groupId
     if (specId != undefined) data.spec_id = specId
@@ -477,26 +565,27 @@ export class ReportService {
     })
   }
 
-  exportConformanceCertificate(communityId: number, actorId: number, systemId: number, settings: ConformanceCertificateSettings, snapshotId?: number) {
-    let settingsData: any = {}
-    if (settings != undefined) {
-      settingsData.title = settings.title
-      settingsData.includeTitle = settings.includeTitle == true
-      settingsData.includeMessage = settings.includeMessage == true
-      settingsData.includeTestStatus = settings.includeTestStatus == true
-      settingsData.includeTestCases = settings.includeTestCases == true
-      settingsData.includeDetails = settings.includeDetails == true
-      settingsData.includeSignature = settings.includeSignature == true
-      settingsData.includePageNumbers = settings.includePageNumbers == true
-      if (settingsData.includeMessage) {
-        settingsData.message = settings.message
-      }
-    }
+  exportConformanceCertificate(communityId: number, actorId: number, systemId: number, settings: ConformanceCertificateSettings|undefined, snapshotId?: number) {
     let data: any = {
-      settings: JSON.stringify(settingsData),
       community_id: communityId,
       actor_id: actorId,
       system_id: systemId
+    }
+    if (settings != undefined) {
+      let settingsData: any = {
+        title: settings.title,
+        includeTitle: settings.includeTitle == true,
+        includeMessage: settings.includeMessage == true,
+        includeTestStatus: settings.includeTestStatus == true,
+        includeTestCases: settings.includeTestCases == true,
+        includeDetails: settings.includeDetails == true,
+        includeSignature: settings.includeSignature == true,
+        includePageNumbers: settings.includePageNumbers == true
+      }
+      if (settingsData.includeMessage) {
+        settingsData.message = settings.message
+      }
+      data.settings = JSON.stringify(settingsData)
     }
     if (snapshotId != undefined) {
       data.snapshot = snapshotId

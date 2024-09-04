@@ -9,6 +9,8 @@ import { Observable, map, of, share } from 'rxjs';
 import { BsModalService } from 'ngx-bootstrap/modal';
 import { BaseCertificateSettingsFormComponent } from '../base-certificate-settings-form.component';
 import { ReportService } from 'src/app/services/report.service';
+import { HttpResponse } from '@angular/common/http';
+import { ErrorService } from 'src/app/services/error.service';
 
 @Component({
   selector: 'app-conformance-certificate-form',
@@ -28,7 +30,8 @@ export class ConformanceCertificateFormComponent extends BaseCertificateSettings
     modalService: BsModalService,
     popupService: PopupService,
     public dataService: DataService,
-  ) { super(conformanceService, modalService, popupService, reportService) }
+    errorService: ErrorService
+  ) { super(conformanceService, modalService, popupService, reportService, errorService) }
 
   getPlaceholders(): PlaceholderInfo[] {
     return [
@@ -82,12 +85,16 @@ export class ConformanceCertificateFormComponent extends BaseCertificateSettings
     return settingsToUse
   }
 
-  exportDemoReport(): Observable<ArrayBuffer> {
-    return this.reportService.exportDemoConformanceCertificateReport(this.communityId, this.prepareSettingsForUse())
+  exportDemoReport(): Observable<HttpResponse<ArrayBuffer>> {
+    return this.reportService.exportDemoConformanceCertificateReport(this.communityId, this.reportSettings!, this.prepareSettingsForUse(), this.uploadedStylesheet)
   }
 
   updateSettings(): Observable<any> {
-    return this.conformanceService.updateConformanceCertificateSettings(this.communityId, this.prepareSettingsForUse())
+    return this.reportService.updateConformanceCertificateSettings(this.communityId, this.reportSettings!, this.prepareSettingsForUse(), this.uploadedStylesheet)
+  }
+
+  getReportType(): number {
+    return Constants.REPORT_TYPE.CONFORMANCE_STATEMENT_CERTIFICATE
   }
 
 }

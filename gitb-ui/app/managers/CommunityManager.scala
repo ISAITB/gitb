@@ -11,6 +11,7 @@ import persistence.db._
 import play.api.db.slick.DatabaseConfigProvider
 import utils.{CryptoUtil, JsonUtil, MimeUtil, RepositoryUtils}
 
+import java.nio.file.Path
 import java.util
 import javax.inject.{Inject, Singleton}
 import scala.collection.mutable
@@ -1295,75 +1296,6 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
         DBIO.successful(None)
       }
     } yield result
-  }
-
-  def updateConformanceCertificateSettingsInternal(data: ConformanceCertificate): DBIO[_] = {
-    for {
-      existingId <- PersistenceSchema.conformanceCertificates.filter(_.community === data.community).map(_.id).result.headOption
-      _ <- {
-        if (existingId.isEmpty) {
-          // Create settings
-          PersistenceSchema.insertConformanceCertificate += data
-        } else {
-          // Update settings
-          PersistenceSchema.conformanceCertificates.filter(_.id === existingId)
-            .map(x => (x.title, x.message, x.includePageNumbers, x.includeTitle, x.includeDetails, x.includeMessage, x.includeSignature, x.includeTestCases, x.includeTestStatus))
-            .update((data.title, data.message, data.includePageNumbers, data.includeTitle, data.includeDetails, data.includeMessage, data.includeSignature, data.includeTestCases, data.includeTestStatus))
-        }
-      }
-    } yield ()
-  }
-
-  def updateConformanceOverviewCertificateSettingsInternal(data: ConformanceOverviewCertificateWithMessages): DBIO[_] = {
-    for {
-      existingId <- PersistenceSchema.conformanceOverviewCertificates.filter(_.community === data.settings.community).map(_.id).result.headOption
-      _ <- {
-        if (existingId.isEmpty) {
-          // Create settings
-          PersistenceSchema.insertConformanceOverviewCertificate += data.settings
-        } else {
-          // Update settings
-          PersistenceSchema.conformanceOverviewCertificates.filter(_.id === existingId)
-            .map(x => (x.title, x.includePageNumbers, x.includeTitle, x.includeDetails, x.includeMessage, x.includeSignature, x.includeStatements, x.includeStatementDetails, x.includeStatementStatus, x.enableAllLevel, x.enableDomainLevel, x.enableGroupLevel, x.enableSpecificationLevel))
-            .update((data.settings.title, data.settings.includePageNumbers, data.settings.includeTitle, data.settings.includeDetails, data.settings.includeMessage, data.settings.includeSignature, data.settings.includeStatements, data.settings.includeStatementDetails, data.settings.includeStatementStatus, data.settings.enableAllLevel, data.settings.enableDomainLevel, data.settings.enableGroupLevel, data.settings.enableSpecificationLevel))
-        }
-      }
-      _ <- {
-        val actions = new ListBuffer[DBIO[_]]()
-        val updatedIds = new mutable.HashSet[Long]()
-        // Update matching messages
-        if (data.settings.includeMessage) {
-          data.messages.foreach { message =>
-            if (message.id != 0L) {
-              updatedIds += message.id
-              actions += PersistenceSchema.conformanceOverviewCertificateMessages.filter(_.id === message.id).map(_.message).update(message.message)
-            }
-          }
-        }
-        // Delete other existing messages
-        actions += PersistenceSchema.conformanceOverviewCertificateMessages
-          .filter(_.community === data.settings.community)
-          .filterNot(_.id inSet updatedIds)
-          .delete
-        // Insert new messages
-        if (data.settings.includeMessage) {
-          data.messages.foreach { message =>
-            if (message.id == 0L) {
-              actions += (PersistenceSchema.conformanceOverviewCertificateMessages += message)
-            }
-          }
-        }
-        toDBIO(actions)
-      }
-    } yield ()
-  }
-
-  def updateConformanceCertificateSettings(conformanceCertificate: ConformanceCertificate): Unit = {
-    exec(updateConformanceCertificateSettingsInternal(conformanceCertificate).transactionally)
-  }
-
-  def updateConformanceOverviewCertificateSettings(settings: ConformanceOverviewCertificateWithMessages): Unit = {
-    exec(updateConformanceOverviewCertificateSettingsInternal(settings).transactionally)
   }
 
   def deleteConformanceCertificateSettings(communityId: Long): DBIO[_] = {

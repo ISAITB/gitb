@@ -38,6 +38,7 @@
                     <xsd:element name="organisations" type="Organisations" minOccurs="0"/>
                     <xsd:element name="administrators" type="CommunityAdministrators" minOccurs="0"/>
                     <xsd:element name="reportStylesheets" type="CommunityReportStylesheets" minOccurs="0"/>
+                    <xsd:element name="reportSettings" type="CommunityReportSettings" minOccurs="0"/>
                 </xsd:sequence>
                 <xsd:attribute name="domain" type="xsd:IDREF"/>
                 <xsd:attribute name="allowCertificateDownload" type="xsd:boolean" default="false"/>
@@ -62,12 +63,23 @@
         </xsd:sequence>
         <xsd:attribute name="reportType" type="ReportType" use="required"/>
     </xsd:complexType>
+    <xsd:complexType name="CommunityReportSetting">
+        <xsd:sequence>
+            <xsd:element name="customPdfService" type="xsd:string" minOccurs="0"/>
+        </xsd:sequence>
+        <xsd:attribute name="reportType" type="ReportType" use="required"/>
+        <xsd:attribute name="signPdfs" type="xsd:boolean" default="false"/>
+        <xsd:attribute name="customPdfs" type="xsd:boolean" default="false"/>
+        <xsd:attribute name="customPdfsWithCustomXml" type="xsd:boolean" default="false"/>
+    </xsd:complexType>
     <xsd:simpleType name="ReportType">
         <xsd:restriction base="xsd:string">
             <xsd:enumeration value="CONFORMANCE_OVERVIEW"/>
             <xsd:enumeration value="CONFORMANCE_STATEMENT"/>
             <xsd:enumeration value="TEST_CASE"/>
             <xsd:enumeration value="TEST_STEP"/>
+            <xsd:enumeration value="CONFORMANCE_OVERVIEW_CERTIFICATE"/>
+            <xsd:enumeration value="CONFORMANCE_STATEMENT_CERTIFICATE"/>
         </xsd:restriction>
     </xsd:simpleType>
     <xsd:complexType name="ConformanceCertificateSettings">
@@ -334,6 +346,11 @@
         <xsd:sequence>
             <xsd:element name="name" type="xsd:string"/>
             <xsd:element name="content" type="xsd:string"/>
+        </xsd:sequence>
+    </xsd:complexType>
+    <xsd:complexType name="CommunityReportSettings">
+        <xsd:sequence>
+            <xsd:element name="reportSetting" type="CommunityReportSetting" maxOccurs="unbounded"/>
         </xsd:sequence>
     </xsd:complexType>
     <xsd:complexType name="CommunityResource">

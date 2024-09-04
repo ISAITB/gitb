@@ -36,6 +36,7 @@ import { CommunityKeystore } from '../types/community-keystore';
 import { ConformanceOverviewCertificateSettings } from '../types/conformance-overview-certificate-settings';
 import { BadgePlaceholderInfo } from '../modals/conformance-certificate-modal/badge-placeholder-info';
 import { Constants } from '../common/constants';
+import { CommunityReportSettings } from '../types/community-report-settings';
 
 @Injectable({
   providedIn: 'root'
@@ -385,26 +386,6 @@ export class ConformanceService {
 			authenticate: true,
 			arrayBuffer: true
 		})
-  }
-
-  updateConformanceCertificateSettings(communityId: number, settings: ConformanceCertificateSettings) {
-    return this.restService.post<void>({
-      path: ROUTES.controllers.ConformanceService.updateConformanceCertificateSettings(communityId).url,
-      authenticate: true,
-      data: {
-        settings: JSON.stringify(settings)
-      }
-    })
-  }
-
-  updateConformanceOverviewCertificateSettings(communityId: number, settings: ConformanceOverviewCertificateSettings) {
-    return this.restService.post<void>({
-      path: ROUTES.controllers.ConformanceService.updateConformanceOverviewCertificateSettings(communityId).url,
-      authenticate: true,
-      data: {
-        settings: JSON.stringify(settings)
-      }
-    })
   }
 
   conformanceOverviewCertificateEnabled(communityId: number, reportLevel: 'all'|'domain'|'specification'|'group') {

@@ -1,7 +1,7 @@
 import { Component, EventEmitter } from '@angular/core';
 import { BaseCertificateSettingsFormComponent } from '../base-certificate-settings-form.component';
 import { ConformanceOverviewCertificateSettings } from 'src/app/types/conformance-overview-certificate-settings';
-import { Observable, forkJoin, map, share } from 'rxjs';
+import { Observable, forkJoin, map, mergeMap, share } from 'rxjs';
 import { PlaceholderInfo } from 'src/app/components/placeholder-selector/placeholder-info';
 import { Constants } from 'src/app/common/constants';
 import { ConformanceService } from 'src/app/services/conformance.service';
@@ -15,6 +15,8 @@ import { Specification } from 'src/app/types/specification';
 import { filter, find } from 'lodash';
 import { ConformanceOverviewMessage } from '../conformance-overview-message';
 import { ReportService } from 'src/app/services/report.service';
+import { HttpResponse } from '@angular/common/http';
+import { ErrorService } from 'src/app/services/error.service';
 
 @Component({
   selector: 'app-conformance-overview-certificate-form',
@@ -29,6 +31,9 @@ export class ConformanceOverviewCertificateFormComponent extends BaseCertificate
   messageLevelSelectionCollapsed = true
   specificMessageSettingPending = false
   specificMessageSetting = false
+  anyLevelEnabled = false
+  messageBlockAnimated = true
+  levelAnimated = false
 
   messageLevel: 'all'|'domain'|'group'|'specification' = 'all'
   domains?: Domain[]
@@ -67,7 +72,8 @@ export class ConformanceOverviewCertificateFormComponent extends BaseCertificate
     popupService: PopupService,
     public dataService: DataService,
     private specificationService: SpecificationService,
-  ) { super(conformanceService, modalService, popupService, reportService) }
+    errorService: ErrorService
+  ) { super(conformanceService, modalService, popupService, reportService, errorService) }
 
   getSettings(): Observable<ConformanceOverviewCertificateSettings | undefined> {
     return this.conformanceService.getConformanceOverviewCertificateSettings(this.communityId)
@@ -129,16 +135,16 @@ export class ConformanceOverviewCertificateFormComponent extends BaseCertificate
     return settingsToUse
   }
 
-  exportDemoReport(level: string): Observable<ArrayBuffer> {
+  exportDemoReport(level: string): Observable<HttpResponse<ArrayBuffer>> {
     let identifier: number|undefined
     if (this.currentMessageKey?.level == level) {
       identifier = this.currentMessageKey.identifier
     }
-    return this.reportService.exportDemoConformanceOverviewCertificateReport(this.communityId, this.prepareSettingsForUse(), level, identifier)
+    return this.reportService.exportDemoConformanceOverviewCertificateReport(this.communityId, this.reportSettings!, this.prepareSettingsForUse(), level, identifier, this.uploadedStylesheet)
   }
 
   updateSettings(): Observable<any> {
-    return this.conformanceService.updateConformanceOverviewCertificateSettings(this.communityId, this.prepareSettingsForUse())
+    return this.reportService.updateConformanceOverviewCertificateSettings(this.communityId, this.reportSettings!, this.prepareSettingsForUse(), this.uploadedStylesheet)
   }
 
   private placeholderForDomain(indexed?: boolean) {
@@ -246,6 +252,8 @@ export class ConformanceOverviewCertificateFormComponent extends BaseCertificate
             if (this.settings.enableSpecificationLevel) this.messageLevel = "specification"
           }
         }
+        this.messageBlockAnimated = false
+        this.reportEnabledOptionChanged()
       })
       , share()
     )
@@ -257,6 +265,11 @@ export class ConformanceOverviewCertificateFormComponent extends BaseCertificate
         this.applyMessage(messageDefinition, messageDefinition.message)
       }
     }
+  }
+
+  levelBlockExpanded() {
+    this.messageBlockAnimated = true
+    this.focusFirstTextField()
   }
 
   reportEnabledOptionChanged() {
@@ -273,6 +286,10 @@ export class ConformanceOverviewCertificateFormComponent extends BaseCertificate
           this.messageLevelChanged()
         }
       }
+      const newValue = this.settings != undefined && (this.settings.enableAllLevel! || this.settings.enableDomainLevel! || this.settings.enableGroupLevel! || this.settings.enableSpecificationLevel!)
+      this.messageBlockAnimated = newValue == this.anyLevelEnabled
+      this.anyLevelEnabled = newValue
+      this.levelAnimated = true
     }, 1)
   }
 
@@ -512,6 +529,10 @@ export class ConformanceOverviewCertificateFormComponent extends BaseCertificate
       this.currentMessageKey = undefined
       this.currentMessageContent = undefined
     }
+  }
+
+  getReportType(): number {
+    return Constants.REPORT_TYPE.CONFORMANCE_OVERVIEW_CERTIFICATE
   }
 
 }

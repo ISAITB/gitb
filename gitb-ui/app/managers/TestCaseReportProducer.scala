@@ -9,7 +9,6 @@ import com.gitb.tr.{TAR, TestCaseOverviewReportType, TestCaseStepReportType, Tes
 import com.gitb.utils.{XMLDateTimeUtils, XMLUtils}
 import models.{CommunityLabels, Constants, SessionFolderInfo}
 import org.apache.commons.codec.net.URLCodec
-import org.apache.commons.io.FileUtils
 import org.apache.commons.lang3.StringUtils
 import org.slf4j.{Logger, LoggerFactory}
 import persistence.db.PersistenceSchema
@@ -19,7 +18,7 @@ import utils.RepositoryUtils
 import java.io.{File, StringReader}
 import java.nio.file.{Files, Path, Paths}
 import java.text.SimpleDateFormat
-import java.util.Date
+import java.util.{Date, UUID}
 import javax.inject.{Inject, Singleton}
 import javax.xml.transform.stream.StreamSource
 import scala.collection.mutable.ListBuffer
@@ -42,25 +41,23 @@ class TestCaseReportProducer @Inject() (reportHelper: ReportHelper, testResultMa
     val testResult = testResultManager.getTestResultForSessionWrapper(sessionId)
     if (testResult.isDefined) {
       val reportData = contentType match {
-        // The "vX" postfix is used to make sure we generate (but also subsequently cache) new versions of the step report
-        case Some(Constants.MimeTypePDF) => (".v2.pdf", (list: ListBuffer[TitledTestStepReportType], exportedReportPath: File, testCase: Option[models.TestCase], session: String) => {
+        case Some(Constants.MimeTypePDF) => (".report.pdf", (list: ListBuffer[TitledTestStepReportType], exportedReportPath: File, testCase: Option[models.TestCase], session: String) => {
           generateDetailedTestCaseReportPdf(list, exportedReportPath.getAbsolutePath, testCase, session, labelSupplier.getOrElse(() => Map.empty[Short, CommunityLabels]).apply(), reportSpecSupplier.getOrElse(() => reportHelper.createReportSpecs()).apply())
         })
         case _ => (".report.xml", (list: ListBuffer[TitledTestStepReportType], exportedReportPath: File, testCase: Option[models.TestCase], session: String) => {
           generateDetailedTestCaseReportXml(list, exportedReportPath.getAbsolutePath, testCase, session)
         })
       }
-      var exportedReport: File = null
-      if (testResult.get._1.endTime.isEmpty) {
-        // This name will be unique to ensure that a report generated for a pending session never gets cached.
-        exportedReport = new File(sessionFolderInfo.path.toFile, "report_" + System.currentTimeMillis() + reportData._1)
-        FileUtils.forceDeleteOnExit(exportedReport)
+      val exportedReport = if (testResult.get._1.endTime.isEmpty || contentType.contains(Constants.MimeTypePDF)) {
+        // This name will be unique to ensure that a report generated for a pending session never gets cached. Also PDF reports are never cached.
+        new File(sessionFolderInfo.path.toFile, UUID.randomUUID().toString + reportData._1)
       } else {
-        exportedReport = new File(sessionFolderInfo.path.toFile, "report" + reportData._1)
+        // XML reports for completed test sessions are cached as they will never change.
+        new File(sessionFolderInfo.path.toFile, "report" + reportData._1)
       }
-      val testcasePresentation = XMLUtils.unmarshal(classOf[TestCase], new StreamSource(new StringReader(testResult.get._2)))
       if (!exportedReport.exists() && testResult.get._1.testCaseId.isDefined) {
         val testCase = testCaseManager.getTestCase(testResult.get._1.testCaseId.get.toString)
+        val testcasePresentation = XMLUtils.unmarshal(classOf[TestCase], new StreamSource(new StringReader(testResult.get._2)))
         val list = getListOfTestSteps(testcasePresentation, sessionFolderInfo.path.toFile)
         reportData._2.apply(list, exportedReport, testCase, sessionId)
       }
@@ -190,15 +187,13 @@ class TestCaseReportProducer @Inject() (reportHelper: ReportHelper, testResultMa
     }
     // Needed if no reports have been received.
     Files.createDirectories(reportPath.getParent)
-    val fos = Files.newOutputStream(reportPath)
-    try {
-      ReportGenerator.getInstance().writeTestCaseOverviewReport(overview, fos, specs)
-      fos.flush()
-    } catch {
-      case e: Exception =>
-        throw new IllegalStateException("Unable to generate PDF report", e)
-    } finally {
-      if (fos != null) fos.close()
+    Using.resource(Files.newOutputStream(reportPath)) { fos =>
+      try {
+        ReportGenerator.getInstance().writeTestCaseOverviewReport(overview, fos, specs)
+      } catch {
+        case e: Exception =>
+          throw new IllegalStateException("Unable to generate PDF report", e)
+      }
     }
     reportPath
   }

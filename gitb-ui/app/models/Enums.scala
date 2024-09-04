@@ -135,9 +135,9 @@ object Enums {
     val SpecificationLevel:OverviewLevelType = Value(4, "specification")
   }
 
-  object XmlReportType extends Enumeration(1) {
-    type XmlReportType = Value
-    val ConformanceStatementReport, ConformanceOverviewReport, TestCaseReport, TestStepReport = Value
+  object ReportType extends Enumeration(1) {
+    type ReportType = Value
+    val ConformanceStatementReport, ConformanceOverviewReport, TestCaseReport, TestStepReport, ConformanceStatementCertificate, ConformanceOverviewCertificate = Value
   }
 
 }
