@@ -30,6 +30,7 @@ export class ExportComponent extends BaseComponent implements OnInit {
   allDomainData = false
   allOrganisationData = false
   allSystemSettingData = false
+  formCollapsed = true
   settings: ExportSettings = {
     landingPages: false,
     errorTemplates: false,
@@ -149,6 +150,9 @@ export class ExportComponent extends BaseComponent implements OnInit {
         this.exportType = undefined
       }    
     }
+    setTimeout(() => {
+      this.formCollapsed = this.exportType == undefined
+    })
   }
 
   allCommunityDataChanged() {

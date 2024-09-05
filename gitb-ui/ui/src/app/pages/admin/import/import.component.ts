@@ -43,6 +43,8 @@ export class ImportComponent extends BaseComponent implements OnInit, OnDestroy 
   importItemTypeLabels: {[key: number]: string} = {}
   newTarget = false
   replaceName = false
+  formCollapsed = true
+  newTargetAnimated = false
   resetEmitter = new EventEmitter<void>()
 
   constructor(
@@ -112,6 +114,12 @@ export class ImportComponent extends BaseComponent implements OnInit, OnDestroy 
         this.exportType = undefined
       }
     }
+    if (this.exportType == 'domain' && this.domains.length == 0 || this.exportType == 'community' && this.communities.length == 0) {
+      this.newTarget = true
+    }
+    setTimeout(() => {
+      this.formCollapsed = this.exportType == undefined
+    })
   }
 
   uploadArchive(file: FileData) {

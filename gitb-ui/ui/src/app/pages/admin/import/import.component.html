@@ -36,7 +36,7 @@
                                 </div>
                             </div>
                         }
-                        <div [collapse]="!exportType" [isAnimated]="true">
+                        <div [collapse]="formCollapsed" [isAnimated]="true" (expanded)="newTargetAnimated = true">
                             <div>
                                 @if (exportType == 'domain') {
                                     <div class="row mb-3">
@@ -46,12 +46,12 @@
                                                 <div class="row row-cols-auto align-items-center gx-3">
                                                     <div class="col-auto">
                                                         <div class="form-check">
-                                                            <input class="form-check-input" type="checkbox" id="newDomain" name="newDomain" [(ngModel)]="newTarget">
+                                                            <input [disabled]="domains.length == 0" class="form-check-input" type="checkbox" id="newDomain" name="newDomain" [(ngModel)]="newTarget">
                                                             <label class="form-check-label" for="newDomain">New {{dataService.labelDomainLower()}}?</label>
                                                         </div>
                                                     </div>
                                                     <div class="flex-grow-1">
-                                                        <select class="form-control form-select" id="domain" name="domain" [(ngModel)]="domain" [disabled]="newTarget">
+                                                        <select class="form-control form-select" id="domain" name="domain" [(ngModel)]="domain" [disabled]="newTarget || domains.length == 0">
                                                             @for (domain of domains; track domain.id) {
                                                                 <option [ngValue]="domain">{{domain.fname}}</option>
                                                             }
@@ -72,12 +72,12 @@
                                                 <div class="row row-cols-auto align-items-center gx-3">
                                                     <div class="col-auto">
                                                         <div class="form-check">
-                                                            <input class="form-check-input" type="checkbox" id="newCommunity" name="newCommunity" [(ngModel)]="newTarget">
+                                                            <input [disabled]="communities.length == 0" class="form-check-input" type="checkbox" id="newCommunity" name="newCommunity" [(ngModel)]="newTarget">
                                                             <label class="form-check-label" for="newCommunity">New community?</label>
                                                         </div>
                                                     </div>
                                                     <div class="flex-grow-1">
-                                                        <select class="form-control form-select" id="community" name="community" [(ngModel)]="community" [disabled]="newTarget">
+                                                        <select class="form-control form-select" id="community" name="community" [(ngModel)]="community" [disabled]="newTarget || communities.length == 0">
                                                             @for (c of communities; track c.id) {
                                                                 <option [ngValue]="c">{{c.fname}}</option>
                                                             }
@@ -92,7 +92,7 @@
                                     </div>
                                 }
                                 @if (exportType != "settings") {
-                                    <div [collapse]="!newTarget" [isAnimated]="true">
+                                    <div [collapse]="!newTarget" [isAnimated]="newTargetAnimated">
                                         <div class="row mb-3">
                                             <div class="col-6 offset-3">
                                                 <div class="form-check">
@@ -142,7 +142,7 @@
                                     </div>
                                     <div app-tooltip class="col-auto" tbTooltip="Provide the password that was used to encrypt the export archive."></div>
                                 </div>
-                                <div class="row mb-3 pt-2">
+                                <div class="row pt-2">
                                     <legend class="col-3 col-form-label text-end pt-0">* Default import actions:</legend>
                                     <div class="col-7">
                                         <div class="form-check form-check-inline">
