@@ -27,9 +27,12 @@ class AccountManager @Inject()(dbConfigProvider: DatabaseConfigProvider, landing
     exec(q.update(None, UserSSOStatus.NotLinked.id.toShort).transactionally)
   }
 
-  def migrateAccount(userId: Long, userInfo: ActualUserInfo) = {
-    val q = for {u <- PersistenceSchema.users if u.id === userId} yield (u.ssoUid, u.ssoEmail, u.name, u.ssoStatus)
-    exec(q.update(Some(userInfo.uid), Some(userInfo.email), userInfo.firstName+" "+userInfo.lastName, UserSSOStatus.Linked.id.toShort).transactionally)
+  def migrateAccount(userId: Long, userInfo: ActualUserInfo): Unit = {
+    val dbAction = PersistenceSchema.users
+        .filter(_.id === userId)
+        .map(x => (x.ssoUid, x.ssoEmail, x.name, x.ssoStatus, x.onetimePassword))
+        .update((Some(userInfo.uid), Some(userInfo.email), userInfo.firstName+" "+userInfo.lastName, UserSSOStatus.Linked.id.toShort, false))
+    exec(dbAction.transactionally)
   }
 
   def getUnlinkedUserAccountsForEmail(email: String): List[UserAccount] = {
