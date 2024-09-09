@@ -61,6 +61,11 @@ object Constants {
   val MimeTypePDF = "application/pdf"
   val MimeTypeXML = "application/xml"
 
+  val UserAttributeEmail = "email"
+  val UserAttributeFirstName = "firstName"
+  val UserAttributeLastName = "lastName"
+  val UserAttributeAuthenticationLevel = "authLevel"
+
   // When ending in "-snapshot", this is considered a non-published release.
   val VersionNumber = "1.24.0-snapshot"
   val VersionNumberPostfixForResources = ""

@@ -70,7 +70,10 @@ class SecurityModule extends AbstractModule {
   @Provides
   def provideCasClient() = {
     val casConfiguration = new ExtendedCasConfiguration()
-    casConfiguration.setLoginUrl(Configurations.AUTHENTICATION_SSO_LOGIN_URL)
+    // The login URL is used for the initial redirect.
+    casConfiguration.setLoginUrl(buildLoginUrl())
+    // The prefix URL will be used to build the ticket validation URL.
+    casConfiguration.setPrefixUrl(buildPrefixUrl())
     if (Configurations.AUTHENTICATION_SSO_CAS_VERSION == 2) {
       casConfiguration.setProtocol(CasProtocol.CAS20)
     } else {
@@ -81,6 +84,20 @@ class SecurityModule extends AbstractModule {
     casClient.setMultiProfile(true)
     casClient.setAjaxRequestResolver(new DefaultAjaxRequestResolver)
     casClient
+  }
+
+  private def buildLoginUrl(): String = {
+    // If an authentication level is specified we append it to the login URL.
+    if (Configurations.AUTHENTICATION_SSO_AUTHENTICATION_LEVEL.nonEmpty) {
+      "%s?%s=%s".formatted(Configurations.AUTHENTICATION_SSO_LOGIN_URL, Configurations.AUTHENTICATION_SSO_AUTHENTICATION_LEVEL_PARAMETER, Configurations.AUTHENTICATION_SSO_AUTHENTICATION_LEVEL.get)
+    } else {
+      Configurations.AUTHENTICATION_SSO_LOGIN_URL
+    }
+  }
+
+  private def buildPrefixUrl(): String = {
+    // The prefix URL is the login URL without the "/login" suffix.
+    Configurations.AUTHENTICATION_SSO_PREFIX_URL.getOrElse(Configurations.AUTHENTICATION_SSO_LOGIN_URL.replaceFirst("/login$", "/"))
   }
 
   @Provides

@@ -2,6 +2,7 @@ package config
 
 import com.gitb.utils.HmacUtils
 import com.typesafe.config.{Config, ConfigFactory}
+import ecas.AuthenticationLevel
 import models.Constants
 import org.apache.commons.lang3.StringUtils
 
@@ -97,12 +98,16 @@ object Configurations {
   var AUTHENTICATION_SSO_ENABLED = false
   var AUTHENTICATION_SSO_IN_MIGRATION_PERIOD = false
   var AUTHENTICATION_SSO_LOGIN_URL = ""
+  var AUTHENTICATION_SSO_PREFIX_URL: Option[String] = None
+  var AUTHENTICATION_SSO_AUTHENTICATION_LEVEL: Option[AuthenticationLevel] = None
+  var AUTHENTICATION_SSO_AUTHENTICATION_LEVEL_PARAMETER = "authenticationLevel"
   var AUTHENTICATION_SSO_CALLBACK_URL = ""
   var AUTHENTICATION_SSO_CAS_VERSION: Short = 2
   var AUTHENTICATION_SSO_CUSTOM_PARAMETERS__USER_DETAILS: String = "userDetails"
   var AUTHENTICATION_SSO_USER_ATTRIBUTES__EMAIL: String = "email"
   var AUTHENTICATION_SSO_USER_ATTRIBUTES__FIRST_NAME: String = "firstName"
   var AUTHENTICATION_SSO_USER_ATTRIBUTES__LAST_NAME: String = "lastName"
+  var AUTHENTICATION_SSO_USER_ATTRIBUTES__AUTHENTICATION_LEVEL: String = "authenticationLevel"
   var AUTHENTICATION_SSO_TICKET_VALIDATION_URL_SUFFIX: String = "laxValidate"
 
   var DEMOS_ENABLED = false
@@ -263,6 +268,9 @@ object Configurations {
       AUTHENTICATION_SSO_ENABLED = fromEnv("AUTHENTICATION_SSO_ENABLED", conf.getString("authentication.sso.enabled")).toBoolean
       AUTHENTICATION_SSO_IN_MIGRATION_PERIOD = fromEnv("AUTHENTICATION_SSO_IN_MIGRATION_PERIOD", conf.getString("authentication.sso.inMigrationPeriod")).toBoolean
       AUTHENTICATION_SSO_LOGIN_URL = fromEnv("AUTHENTICATION_SSO_LOGIN_URL", conf.getString("authentication.sso.url.login"))
+      AUTHENTICATION_SSO_PREFIX_URL = Option(fromEnv("AUTHENTICATION_SSO_PREFIX_URL", "")).filter(StringUtils.isNotBlank)
+      AUTHENTICATION_SSO_AUTHENTICATION_LEVEL = Option(fromEnv("AUTHENTICATION_SSO_AUTHENTICATION_LEVEL", conf.getString("authentication.sso.authenticationLevel"))).filter(StringUtils.isNotBlank).map(AuthenticationLevel.fromName)
+      AUTHENTICATION_SSO_AUTHENTICATION_LEVEL_PARAMETER = fromEnv("AUTHENTICATION_SSO_AUTHENTICATION_LEVEL_PARAMETER", conf.getString("authentication.sso.authenticationLevelParameter"))
       AUTHENTICATION_SSO_CALLBACK_URL = fromEnv("AUTHENTICATION_SSO_CALLBACK_URL", conf.getString("authentication.sso.url.callback"))
       AUTHENTICATION_SSO_CAS_VERSION = fromEnv("AUTHENTICATION_SSO_CAS_VERSION", conf.getString("authentication.sso.casVersion")).toShort
 
@@ -270,6 +278,7 @@ object Configurations {
       AUTHENTICATION_SSO_USER_ATTRIBUTES__EMAIL = fromEnv("AUTHENTICATION_SSO_USER_ATTRIBUTES__EMAIL", conf.getString("authentication.sso.userAttributes.email"))
       AUTHENTICATION_SSO_USER_ATTRIBUTES__FIRST_NAME = fromEnv("AUTHENTICATION_SSO_USER_ATTRIBUTES__FIRST_NAME", conf.getString("authentication.sso.userAttributes.firstName"))
       AUTHENTICATION_SSO_USER_ATTRIBUTES__LAST_NAME = fromEnv("AUTHENTICATION_SSO_USER_ATTRIBUTES__LAST_NAME", conf.getString("authentication.sso.userAttributes.lastName"))
+      AUTHENTICATION_SSO_USER_ATTRIBUTES__AUTHENTICATION_LEVEL = fromEnv("AUTHENTICATION_SSO_USER_ATTRIBUTES__AUTHENTICATION_LEVEL", conf.getString("authentication.sso.userAttributes.authenticationLevel"))
       AUTHENTICATION_SSO_TICKET_VALIDATION_URL_SUFFIX = fromEnv("AUTHENTICATION_SSO_TICKET_VALIDATION_URL_SUFFIX", conf.getString("authentication.sso.ticketValidationUrlSuffix"))
 
       DEMOS_ENABLED = fromEnv("DEMOS_ENABLED", conf.getString("demos.enabled")).toBoolean

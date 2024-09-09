@@ -1932,9 +1932,9 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
       var firstName: String = null
       var lastName: String = null
       if (userAttributes != null) {
-        email = userAttributes.get("email").asInstanceOf[String]
-        firstName = userAttributes.get("firstName").asInstanceOf[String]
-        lastName = userAttributes.get("lastName").asInstanceOf[String]
+        email = userAttributes.get(Constants.UserAttributeEmail).asInstanceOf[String]
+        firstName = userAttributes.get(Constants.UserAttributeFirstName).asInstanceOf[String]
+        lastName = userAttributes.get(Constants.UserAttributeLastName).asInstanceOf[String]
       }
       if (uid == null || email == null || firstName == null || lastName == null) {
         logger.error("User profile did not contain expected information [" + uid + "][" + email + "][" + firstName + "][" + lastName + "]")
