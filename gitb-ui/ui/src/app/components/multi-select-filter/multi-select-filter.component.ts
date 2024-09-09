@@ -6,7 +6,7 @@ import { EntityWithId } from '../../types/entity-with-id';
 import { filter, find } from 'lodash';
 import { FilterValues } from '../test-filter/filter-values';
 import { FilterUpdate } from '../test-filter/filter-update';
-import { Observable, Subscription, of } from 'rxjs';
+import { Observable, Subscription, map, of, share } from 'rxjs';
 
 @Component({
   selector: 'app-multi-select-filter',
@@ -32,7 +32,6 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
   openToLeft = false
   loadPending = false
   textValue = ''
-  focusInterval?: any
 
   replaceItemsSubscription?: Subscription
   replaceSelectedItemsSubscription?: Subscription
@@ -40,7 +39,7 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
 
   /*
    * ID of the displayed item to array of the hidden items.
-   * The 'applicable' flag is used to cover the case of items with the same name that  
+   * The 'applicable' flag is used to cover the case of items with the same name that
    * are hidden and should not be returned as part of the filter's values.
    * This is needed when we change the values of upstream selections (e.g. a specification of a test suite).
    */
@@ -129,10 +128,6 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
   }
 
   ngOnDestroy(): void {
-    if (this.focusInterval) {
-      clearInterval(this.focusInterval)
-      this.focusInterval = undefined
-    }
     if (this.replaceItemsSubscription) this.replaceItemsSubscription.unsubscribe()
     if (this.replaceSelectedItemsSubscription) this.replaceSelectedItemsSubscription.unsubscribe()
     if (this.clearItemsSubscription) this.clearItemsSubscription.unsubscribe()
@@ -145,7 +140,7 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
     }
   }
 
-  @HostListener('document:keyup.escape', ['$event'])  
+  @HostListener('document:keyup.escape', ['$event'])
   escapeRegistered(event: KeyboardEvent) {
     if (this.formVisible && this.typeahead) {
       if (this.textValue == '') {
@@ -157,11 +152,14 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
     }
   }
 
-  @HostListener('document:keyup.enter', ['$event'])  
+  @HostListener('document:keyup.enter', ['$event'])
   enterRegistered(event: KeyboardEvent) {
     if (this.formVisible && this.typeahead) {
       if (this.visibleAvailableItems?.length == 1) {
         this.availableItemClicked(this.visibleAvailableItems[0])
+      }
+      if (this.hasCheckedSelectedItem) {
+        this.applyItems()
       }
     }
   }
@@ -178,7 +176,7 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
         this.filterLabel = "("+this.selectedItems.length+")"
       }
     }
-  } 
+  }
 
   private hasCheckedItems(itemMap: ItemMap<T>) {
     for (let itemId in itemMap) {
@@ -195,21 +193,15 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
     } else {
       this.formVisible = true
       this.openToLeft = this.shouldOpenToLeft()
-      this.loadData()
-      if (this.typeahead) {
-        setTimeout(() => {
-          if (this.filterTextElement) {
-            this.filterTextElement.nativeElement.focus()
-          }
-          if (this.focusInterval == undefined) {
-            this.focusInterval = setInterval(() => {
-              if (this.filterTextElement) {
-                this.filterTextElement.nativeElement.focus()
-              }
-            }, 500)
-          }
-        })
-      }
+      this.loadData().subscribe(() => {
+        if (this.typeahead) {
+          setTimeout(() => {
+            if (this.filterTextElement) {
+              this.filterTextElement.nativeElement.focus()
+            }
+          }, 1)
+        }
+      })
     }
   }
 
@@ -237,7 +229,7 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
     if (this.selectedSelectedItems[id]) {
       return true
     } else if (this.itemsWithSameValue[id]) {
-      return find(this.itemsWithSameValue[id], (entry) => { 
+      return find(this.itemsWithSameValue[id], (entry) => {
         return entry.applicable && entry.item.id == id
       }) != undefined
     }
@@ -261,7 +253,7 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
     this.itemsWithSameValue[visibleItem.id].push({ applicable: true, item: itemToHide })
   }
 
-  private loadData() {
+  private loadData(): Observable<any> {
     this.selectedAvailableItems = {}
     this.itemsWithSameValue = {}
     let loadObservable: Observable<T[]>
@@ -272,36 +264,38 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
     } else {
       loadObservable = of(this.availableItems)
     }
-    loadObservable.subscribe((items) => {
-      const newSelectedAvailableItems: ItemMap<T> = {}
-      const newAvailableItems: T[] = []
-      for (let item of items) {
-        if (this.config.singleSelection == true) {
-          newAvailableItems.push(item)
-          newSelectedAvailableItems[item.id] = { selected: false, item: item }
-        } else {
-          if (!this.isSelected(item.id)) {
-            let matchingItem = this.findItemWithSameTextValue(newAvailableItems, item)
-            if (matchingItem) {
-              this.recordItemWithSameTextValue(matchingItem, item)
-            } else {
-              matchingItem = this.findItemWithSameTextValue(this.selectedItems, item)
+    return loadObservable.pipe(
+      map((items) => {
+        this.loadPending = false
+        const newSelectedAvailableItems: ItemMap<T> = {}
+        const newAvailableItems: T[] = []
+        for (let item of items) {
+          if (this.config.singleSelection == true) {
+            newAvailableItems.push(item)
+            newSelectedAvailableItems[item.id] = { selected: false, item: item }
+          } else {
+            if (!this.isSelected(item.id)) {
+              let matchingItem = this.findItemWithSameTextValue(newAvailableItems, item)
               if (matchingItem) {
                 this.recordItemWithSameTextValue(matchingItem, item)
               } else {
-                newAvailableItems.push(item)
-                newSelectedAvailableItems[item.id] = { selected: false, item: item }
+                matchingItem = this.findItemWithSameTextValue(this.selectedItems, item)
+                if (matchingItem) {
+                  this.recordItemWithSameTextValue(matchingItem, item)
+                } else {
+                  newAvailableItems.push(item)
+                  newSelectedAvailableItems[item.id] = { selected: false, item: item }
+                }
               }
             }
           }
         }
-      }
-      this.selectedAvailableItems = newSelectedAvailableItems
-      this.availableItems = newAvailableItems
-      this.visibleAvailableItems = this.availableItems
-    }).add(() => {
-      this.loadPending = false
-    })
+        this.selectedAvailableItems = newSelectedAvailableItems
+        this.availableItems = newAvailableItems
+        this.visibleAvailableItems = this.availableItems
+      }),
+      share()
+    )
   }
 
   searchApplied() {
