@@ -44,7 +44,7 @@ class TestCaseReportProducer @Inject() (reportHelper: ReportHelper, testResultMa
         case Some(Constants.MimeTypePDF) => (".report.pdf", (list: ListBuffer[TitledTestStepReportType], exportedReportPath: File, testCase: Option[models.TestCase], session: String) => {
           generateDetailedTestCaseReportPdf(list, exportedReportPath.getAbsolutePath, testCase, session, labelSupplier.getOrElse(() => Map.empty[Short, CommunityLabels]).apply(), reportSpecSupplier.getOrElse(() => reportHelper.createReportSpecs()).apply())
         })
-        case _ => (".report.xml", (list: ListBuffer[TitledTestStepReportType], exportedReportPath: File, testCase: Option[models.TestCase], session: String) => {
+        case _ => (".report.v2.xml", (list: ListBuffer[TitledTestStepReportType], exportedReportPath: File, testCase: Option[models.TestCase], session: String) => {
           generateDetailedTestCaseReportXml(list, exportedReportPath.getAbsolutePath, testCase, session)
         })
       }
@@ -213,7 +213,10 @@ class TestCaseReportProducer @Inject() (reportHelper: ReportHelper, testResultMa
       //convert string in xml format into its object representation
       val report = XMLUtils.unmarshal(classOf[TestStepStatus], new StreamSource(new StringReader(string)))
       stepReport.setWrapped(report.getReport)
-      if (report.getReport != null && report.getReport.isInstanceOf[TAR] && report.getReport.asInstanceOf[TAR].getReports != null && report.getReport.asInstanceOf[TAR].getReports.getReports.isEmpty) {
+      if (report.getReport != null && report.getReport.isInstanceOf[TAR]
+        && report.getReport.asInstanceOf[TAR].getReports != null
+        && report.getReport.asInstanceOf[TAR].getReports.getReports.isEmpty
+        && report.getReport.asInstanceOf[TAR].getReports.getInfoOrWarningOrError.isEmpty) {
         // If not set to null this would result in an empty element that is not schema-valid.
         report.getReport.asInstanceOf[TAR].setReports(null)
       }
