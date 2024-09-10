@@ -1073,4 +1073,11 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 		item.setValue(s"___[[$fileUuid]]___")
 	}
 
+	def getReportTempFile(suffix: String): Path = {
+		Paths.get(
+			getTempReportFolder().getAbsolutePath,
+			UUID.randomUUID().toString+suffix
+		)
+	}
+
 }

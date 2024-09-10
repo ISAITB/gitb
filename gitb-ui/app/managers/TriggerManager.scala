@@ -21,7 +21,7 @@ import utils.{JsonUtil, MimeUtil, RepositoryUtils}
 import java.io.{ByteArrayOutputStream, StringReader}
 import java.net.URI
 import java.nio.charset.{Charset, StandardCharsets}
-import java.nio.file.Files
+import java.nio.file.{Files, Path}
 import java.util.Base64
 import javax.inject.{Inject, Singleton}
 import javax.xml.namespace.QName
@@ -38,7 +38,7 @@ class TriggerManager @Inject()(env: Environment,
                                ws: WSClient,
                                repositoryUtils: RepositoryUtils,
                                triggerDataLoader: TriggerDataLoader,
-                               testCaseReportProducer: TestCaseReportProducer,
+                               reportManager: ReportManager,
                                dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
@@ -536,20 +536,17 @@ class TriggerManager @Inject()(env: Environment,
               populateAnyContent(testReportData, "testReport", "string", getSampleTestReport(), None)
             } else {
               val testReportAsString: Option[String] = fromCache(dataCache, "testReportData", () => {
-
-
-
-
-                val reportData = testCaseReportProducer.generateDetailedTestCaseReport(testSessionId.get, Some(Constants.MimeTypeXML), None)
-                if (reportData._1.isDefined) {
-                  val reportAsString = Some(Files.readString(reportData._1.get))
-                  if (reportData._2.archived) {
-                    FileUtils.deleteQuietly(reportData._2.path.toFile)
+                var reportContent: Option[String] = None
+                var reportPath: Option[Path] = None
+                try {
+                  reportPath = reportManager.generateTestCaseReport(repositoryUtils.getReportTempFile(".xml"), testSessionId.get, Constants.MimeTypeXML, Some(trigger.trigger.community), None)
+                  reportContent = reportPath.filter(Files.exists(_)).map(Files.readString)
+                } finally {
+                  if (reportPath.exists(Files.exists(_))) {
+                    FileUtils.deleteQuietly(reportPath.get.toFile)
                   }
-                  reportAsString
-                } else {
-                  None
                 }
+                reportContent
               })
               if (testReportAsString.isDefined) {
                 populateAnyContent(testReportData, "testReport", "string", testReportAsString.get, None)

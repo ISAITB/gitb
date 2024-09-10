@@ -23,7 +23,6 @@ import utils._
 
 import java.io._
 import java.nio.file.{Files, Path, Paths}
-import java.util.UUID
 import javax.inject.Inject
 import javax.xml.namespace.QName
 import javax.xml.transform.stream.StreamSource
@@ -1273,10 +1272,7 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext,
   }
 
   private def getReportTempFile(suffix: String): Path = {
-    Paths.get(
-      repositoryUtils.getTempReportFolder().getAbsolutePath,
-      UUID.randomUUID().toString+suffix
-    )
+    repositoryUtils.getReportTempFile(suffix)
   }
 
 }

@@ -3,14 +3,13 @@ package controllers.rest
 import controllers.util.{AuthorizedAction, RequestWithAttributes, ResponseConstructor}
 import exceptions.{AutomationApiException, ErrorCodes}
 import managers.{AuthorizationManager, ReportManager, SystemManager, TestExecutionManager}
-import models.{Constants, SessionFolderInfo}
+import models.Constants
 import org.apache.commons.io.FileUtils
 import play.api.http.MimeTypes
 import play.api.mvc._
 import utils.{JsonUtil, RepositoryUtils}
 
-import java.nio.file.{Files, Path, Paths}
-import java.util.UUID
+import java.nio.file.{Files, Path}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -149,10 +148,7 @@ class TestAutomationService @Inject() (authorizedAction: AuthorizedAction,
   }
 
   private def getReportTempFile(suffix: String): Path = {
-    Paths.get(
-      repositoryUtils.getTempReportFolder().getAbsolutePath,
-      UUID.randomUUID().toString+suffix
-    )
+    repositoryUtils.getReportTempFile(suffix)
   }
 
 }
