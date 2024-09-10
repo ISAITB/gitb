@@ -783,8 +783,8 @@ class ReportManager @Inject() (communityManager: CommunityManager,
     applyXsltToReportAndPrettyPrint(reportPath, transformer)
   }
 
-  def generateTestCaseReport(reportPath: Path, sessionId: String, contentType: String, userId: Option[Long]): Option[Path] = {
-    val communityId = resolveCommunityId(sessionId, userId)
+  def generateTestCaseReport(reportPath: Path, sessionId: String, contentType: String, requestedCommunityId: Option[Long], requestedUserId: Option[Long]): Option[Path] = {
+    val communityId = requestedCommunityId.orElse(resolveCommunityId(sessionId, requestedUserId))
     val reportSettings = if (communityId.isDefined) {
       Some(getReportSettings(communityId.get, ReportType.TestCaseReport))
     } else {
@@ -830,8 +830,8 @@ class ReportManager @Inject() (communityManager: CommunityManager,
           // Label provider
           if (communityId.isDefined) {
             Some(() => communityLabelManager.getLabels(communityId.get))
-          } else if (userId.isDefined) {
-            Some(() => communityLabelManager.getLabelsByUserId(userId.get))
+          } else if (requestedUserId.isDefined) {
+            Some(() => communityLabelManager.getLabelsByUserId(requestedUserId.get))
           } else {
             None
           },

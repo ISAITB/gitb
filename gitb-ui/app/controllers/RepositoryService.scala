@@ -306,11 +306,11 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext,
   def exportTestCaseReport(): Action[AnyContent] = authorizedAction { request =>
     val session = ParameterExtractor.requiredQueryParameter(request, Parameters.SESSION_ID)
     authorizationManager.canViewTestResultForSession(request, session)
-    val contentType = request.headers.get("Accept").getOrElse(Constants.MimeTypeXML)
+    val contentType = request.headers.get(Constants.AcceptHeader).getOrElse(Constants.MimeTypeXML)
     val suffix = if (contentType == Constants.MimeTypePDF) ".pdf" else ".xml"
     val reportPath = getReportTempFile(suffix)
     try {
-      val reportFile = reportManager.generateTestCaseReport(reportPath, session, contentType, ParameterExtractor.extractOptionalUserId(request))
+      val reportFile = reportManager.generateTestCaseReport(reportPath, session, contentType, None, ParameterExtractor.extractOptionalUserId(request))
       if (reportFile.isDefined) {
         Ok.sendFile(
           content = reportFile.get.toFile,

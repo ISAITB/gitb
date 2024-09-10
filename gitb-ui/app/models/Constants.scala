@@ -54,12 +54,15 @@ object Constants {
 
   val FilterDateFormat = "dd-MM-yyyy HH:mm:ss"
   val AutomationHeader = "ITB_API_KEY"
+  val AcceptHeader = "Accept"
 
   val defaultPage = 1L
   val defaultLimit = 10L
 
+  val MimeTypeAny = "*/*"
   val MimeTypePDF = "application/pdf"
   val MimeTypeXML = "application/xml"
+  val MimeTypeTextXML = "text/xml"
 
   val UserAttributeEmail = "email"
   val UserAttributeFirstName = "firstName"

@@ -1,6 +1,7 @@
 package controllers.rest
 
 import controllers.util.{AuthorizedAction, RequestWithAttributes, ResponseConstructor}
+import exceptions.{AutomationApiException, ErrorCodes}
 import managers.{AuthorizationManager, ReportManager, SystemManager, TestExecutionManager}
 import models.{Constants, SessionFolderInfo}
 import org.apache.commons.io.FileUtils
@@ -8,13 +9,19 @@ import play.api.http.MimeTypes
 import play.api.mvc._
 import utils.{JsonUtil, RepositoryUtils}
 
-import java.nio.file.{Path, Paths}
+import java.nio.file.{Files, Path, Paths}
 import java.util.UUID
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
-class TestAutomationService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerComponents, reportManager: ReportManager,  repositoryUtils: RepositoryUtils, authorizationManager: AuthorizationManager, systemManager: SystemManager, testExecutionManager: TestExecutionManager) extends BaseAutomationService(cc) {
+class TestAutomationService @Inject() (authorizedAction: AuthorizedAction,
+                                       cc: ControllerComponents,
+                                       reportManager: ReportManager,
+                                       repositoryUtils: RepositoryUtils,
+                                       authorizationManager: AuthorizationManager,
+                                       systemManager: SystemManager,
+                                       testExecutionManager: TestExecutionManager) extends BaseAutomationService(cc) {
 
   def start: Action[AnyContent] = authorizedAction { request =>
     processAsJson(request, Some(authorizationManager.canOrganisationUseAutomationApi),
@@ -52,28 +59,40 @@ class TestAutomationService @Inject() (authorizedAction: AuthorizedAction, cc: C
     )
   }
 
+  private def determineReportType(request: RequestWithAttributes[AnyContent]): String = {
+    request.headers.get(Constants.AcceptHeader)
+      .map(x => {
+        if (x == Constants.MimeTypeTextXML || x == Constants.MimeTypeAny) {
+          Constants.MimeTypeXML
+        } else if (x != Constants.MimeTypeXML && x != Constants.MimeTypePDF) {
+          throw AutomationApiException(ErrorCodes.INVALID_REQUEST, "Unsupported report type [%s] requested through %s header".formatted(x, Constants.AcceptHeader))
+        } else {
+          x
+        }
+      }).getOrElse(Constants.MimeTypeXML)
+  }
+
   def report(sessionId: String): Action[AnyContent] = authorizedAction { request =>
     authorizationManager.canOrganisationUseAutomationApi(request)
-    var reportData: Option[(Path, SessionFolderInfo)] = None
+    var report: Option[Path] = None
     try {
       val organisationKey = request.headers.get(Constants.AutomationHeader).get
-      reportData = testExecutionManager.processAutomationReportRequest(organisationKey, sessionId)
-      if (reportData.isDefined) {
+      val contentType = determineReportType(request)
+      val suffix = if (contentType == Constants.MimeTypePDF) ".pdf" else ".xml"
+      report = testExecutionManager.processAutomationReportRequest(getReportTempFile(suffix), organisationKey, sessionId, contentType)
+      if (report.isDefined) {
         Ok.sendFile(
-          content = reportData.get._1.toFile,
-          onClose = () => {
-            if (reportData.get._2.archived) {
-              FileUtils.deleteQuietly(reportData.get._2.path.toFile)
-            }
-          }
-        ).as(MimeTypes.XML)
+          content = report.get.toFile,
+          fileName = _ => Some("test_report"+suffix),
+          onClose = () => FileUtils.deleteQuietly(report.get.toFile)
+        ).as(contentType)
       } else {
         NotFound
       }
     } catch {
       case e: Throwable =>
-        if (reportData.isDefined && reportData.get._2.archived) {
-          FileUtils.deleteQuietly(reportData.get._2.path.toFile)
+        if (report.exists(Files.exists(_))) {
+          FileUtils.deleteQuietly(report.get.toFile)
         }
         handleException(e)
     }

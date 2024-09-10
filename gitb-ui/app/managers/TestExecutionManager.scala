@@ -411,7 +411,7 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
     }
   }
 
-  def processAutomationReportRequest(organisationKey: String, sessionId: String): Option[(Path, SessionFolderInfo)] = {
+  def processAutomationReportRequest(reportPath: Path, organisationKey: String, sessionId: String, contentType: String): Option[Path] = {
     val result = exec(
       for {
         organisationData <- apiHelper.loadOrganisationDataForAutomationProcessing(organisationKey)
@@ -419,19 +419,13 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
         sessionData <- PersistenceSchema.testResults
           .filter(_.organizationId === organisationData.get.organisationId)
           .filter(_.testSessionId === sessionId)
-          .map(x => x.testSessionId)
+          .map(_.testSessionId)
           .result
           .headOption
-      } yield sessionData
+      } yield (organisationData.get.communityId, sessionData)
     )
-    if (result.isDefined) {
-      val reportData = testCaseReportProducer.generateDetailedTestCaseReport(result.get, Some(Constants.MimeTypeXML), None)
-      if (reportData._1.isDefined) {
-        Some((reportData._1.get, reportData._2))
-      } else {
-        logger.warn("No test case overview report could be produced for session [" + result.get + "]")
-        None
-      }
+    if (result._2.isDefined) {
+      reportManager.generateTestCaseReport(reportPath, result._2.get, contentType, Some(result._1), None)
     } else {
       None
     }

@@ -34,7 +34,12 @@ import scala.jdk.CollectionConverters.CollectionHasAsScala
 import scala.util.{Failure, Success}
 
 @Singleton
-class TriggerManager @Inject()(env: Environment, ws: WSClient, repositoryUtils: RepositoryUtils, triggerDataLoader: TriggerDataLoader, testCaseReportProducer: TestCaseReportProducer, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class TriggerManager @Inject()(env: Environment,
+                               ws: WSClient,
+                               repositoryUtils: RepositoryUtils,
+                               triggerDataLoader: TriggerDataLoader,
+                               testCaseReportProducer: TestCaseReportProducer,
+                               dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
 
@@ -531,6 +536,10 @@ class TriggerManager @Inject()(env: Environment, ws: WSClient, repositoryUtils: 
               populateAnyContent(testReportData, "testReport", "string", getSampleTestReport(), None)
             } else {
               val testReportAsString: Option[String] = fromCache(dataCache, "testReportData", () => {
+
+
+
+
                 val reportData = testCaseReportProducer.generateDetailedTestCaseReport(testSessionId.get, Some(Constants.MimeTypeXML), None)
                 if (reportData._1.isDefined) {
                   val reportAsString = Some(Files.readString(reportData._1.get))
