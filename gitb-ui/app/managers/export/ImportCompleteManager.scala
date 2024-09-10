@@ -34,6 +34,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
                                       communityResourceManager: CommunityResourceManager,
                                       domainManager: DomainManager,
                                       triggerManager: TriggerManager,
+                                      triggerHelper: TriggerHelper,
                                       exportManager: ExportManager,
                                       communityManager: CommunityManager,
                                       specificationManager: SpecificationManager,
@@ -2202,7 +2203,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
       _ <- {
         processRemaining(ImportItemType.Trigger, ctx,
           (targetKey: String, item: ImportItem) => {
-            triggerManager.deleteTriggerInternal(targetKey.toLong)
+            triggerHelper.deleteTriggerInternal(targetKey.toLong)
           }
         )
       }

@@ -16,7 +16,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
 class DomainParameterManager @Inject()(repositoryUtils: RepositoryUtils,
-                                       triggerManager: TriggerManager,
+                                       triggerHelper: TriggerHelper,
                                        automationApiHelper: AutomationApiHelper,
                                        dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
@@ -80,7 +80,7 @@ class DomainParameterManager @Inject()(repositoryUtils: RepositoryUtils,
 
   def deleteDomainParameter(domainId: Long, domainParameter: Long, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
     onSuccessCalls += (() => repositoryUtils.deleteDomainParameterFile(domainId, domainParameter))
-    triggerManager.deleteTriggerDataByDataType(domainParameter, TriggerDataType.DomainParameter) andThen
+    triggerHelper.deleteTriggerDataByDataType(domainParameter, TriggerDataType.DomainParameter) andThen
       PersistenceSchema.domainParameters.filter(_.id === domainParameter).delete
   }
 

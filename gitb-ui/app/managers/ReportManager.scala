@@ -15,6 +15,7 @@ import models.Enums.OverviewLevelType.OverviewLevelType
 import models.Enums.ReportType.ReportType
 import models.Enums.{ConformanceStatementItemType, OverviewLevelType, ReportType, TestResultStatus}
 import models._
+import models.automation.TestSessionStatus
 import models.statement._
 import org.apache.commons.codec.binary.Base64
 import org.apache.commons.io.{FileUtils, IOUtils}
@@ -2771,6 +2772,63 @@ class ReportManager @Inject() (communityManager: CommunityManager,
         toDBIO(actions)
       }
     } yield ()
+  }
+
+  def processAutomationReportRequest(reportPath: Path, organisationKey: String, sessionId: String, contentType: String): Option[Path] = {
+    val result = exec(
+      for {
+        organisationData <- apiHelper.loadOrganisationDataForAutomationProcessing(organisationKey)
+        _ <- apiHelper.checkOrganisationForAutomationApiUse(organisationData)
+        sessionData <- PersistenceSchema.testResults
+          .filter(_.organizationId === organisationData.get.organisationId)
+          .filter(_.testSessionId === sessionId)
+          .map(_.testSessionId)
+          .result
+          .headOption
+      } yield (organisationData.get.communityId, sessionData)
+    )
+    if (result._2.isDefined) {
+      generateTestCaseReport(reportPath, result._2.get, contentType, Some(result._1), None)
+    } else {
+      None
+    }
+  }
+
+  def processAutomationStatusRequest(organisationKey: String, sessionIds: List[String], withLogs: Boolean, withReports: Boolean): Seq[TestSessionStatus] = {
+    val result = exec(
+      for {
+        organisationData <- apiHelper.loadOrganisationDataForAutomationProcessing(organisationKey)
+        _ <- apiHelper.checkOrganisationForAutomationApiUse(organisationData)
+        sessionData <- PersistenceSchema.testResults
+          .filter(_.organizationId === organisationData.get.organisationId)
+          .filter(_.testSessionId inSet sessionIds)
+          .map(x => (x.testSessionId, x.startTime, x.endTime, x.result, x.outputMessage))
+          .result
+      } yield (organisationData.get.communityId, sessionData)
+    )
+    val communityId = result._1
+    val sessionData = result._2
+    sessionData.map { result =>
+      val logs = if (withLogs) {
+        testResultManager.getTestSessionLog(result._1, Some(result._2), isExpected = true)
+      } else {
+        None
+      }
+      val reportContent = if (withReports) {
+        var report: Option[Path] = None
+        try {
+          report = generateTestCaseReport(repositoryUtils.getReportTempFile(".xml"), result._1, Constants.MimeTypeXML, Some(communityId), None)
+          report.filter(Files.exists(_)).map(Files.readString)
+        } finally {
+          if (report.exists(Files.exists(_))) {
+            FileUtils.deleteQuietly(report.get.toFile)
+          }
+        }
+      } else {
+        None
+      }
+      TestSessionStatus(result._1, result._2, result._3, result._4, result._5, logs, reportContent)
+    }
   }
 
 }

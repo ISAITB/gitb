@@ -39,6 +39,7 @@ class TriggerManager @Inject()(env: Environment,
                                repositoryUtils: RepositoryUtils,
                                triggerDataLoader: TriggerDataLoader,
                                reportManager: ReportManager,
+                               triggerHelper: TriggerHelper,
                                dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
@@ -80,15 +81,27 @@ class TriggerManager @Inject()(env: Environment,
   }
 
   def getTriggerAndDataById(triggerId: Long): Trigger = {
-    new Trigger(
-      exec(PersistenceSchema.triggers.filter(_.id === triggerId).result.head),
-      Some(exec(PersistenceSchema.triggerData.filter(_.trigger === triggerId).result).toList)
+    exec(
+      for {
+        trigger <- PersistenceSchema.triggers.filter(_.id === triggerId).result.head
+        triggerData <- PersistenceSchema.triggerData.filter(_.trigger === triggerId).result
+      } yield new Trigger(trigger, Some(triggerData.toList))
     )
   }
 
   def getTriggerAndDataByCommunityId(communityId: Long): List[Trigger] = {
-    val triggerList = exec(PersistenceSchema.triggers.filter(_.community === communityId).result).toList
-    val triggerDataList = exec(PersistenceSchema.triggerData.join(PersistenceSchema.triggers).on(_.trigger === _.id).filter(_._2.community === communityId).map(x => x._1).result).toList
+    val result = exec(
+      for {
+        triggerList <- PersistenceSchema.triggers.filter(_.community === communityId).result
+        triggerDataList <- PersistenceSchema.triggerData
+          .join(PersistenceSchema.triggers).on(_.trigger === _.id)
+          .filter(_._2.community === communityId)
+          .map(x => x._1)
+          .result
+      } yield (triggerList.toList, triggerDataList.toList)
+    )
+    val triggerList = result._1
+    val triggerDataList = result._2
     val triggerDataMap = mutable.Map[Long, ListBuffer[TriggerData]]()
     triggerDataList.foreach { dataItem =>
       var items = triggerDataMap.get(dataItem.trigger)
@@ -108,7 +121,7 @@ class TriggerManager @Inject()(env: Environment,
     }
   }
 
-  def getTriggersAndDataByCommunityAndType(communityId: Long, eventType: TriggerEventType): Option[List[Trigger]] = {
+  private def getTriggersAndDataByCommunityAndType(communityId: Long, eventType: TriggerEventType): Option[List[Trigger]] = {
     val result = exec(
       for {
         triggers <- PersistenceSchema.triggers
@@ -167,78 +180,6 @@ class TriggerManager @Inject()(env: Environment,
       setTriggerDataInternal(trigger.trigger.id, trigger.data, isNewTrigger = false)
   }
 
-  def deleteTrigger(triggerId: Long): Unit = {
-    exec(deleteTriggerInternal(triggerId).transactionally)
-  }
-
-  private[managers] def deleteTriggersByCommunity(communityId: Long): DBIO[_] = {
-    for {
-      triggerIds <- PersistenceSchema.triggers.filter(_.community === communityId).map(x => x.id).result
-      _ <- {
-        val dbActions = ListBuffer[DBIO[_]]()
-        triggerIds.foreach { triggerId =>
-          dbActions += deleteTriggerInternal(triggerId)
-        }
-        toDBIO(dbActions)
-      }
-    } yield ()
-  }
-
-  private[managers] def deleteTriggerInternal(triggerId: Long): DBIO[_] = {
-    deleteTriggerDataInternal(triggerId) andThen
-      PersistenceSchema.triggers.filter(_.id === triggerId).delete
-  }
-
-  def deleteTriggerDataOfCommunityAndDomain(communityId: Long, domainId: Long): DBIO[_] = {
-    for {
-      domainParameterIds <- {
-        PersistenceSchema.domainParameters.filter(_.domain === domainId).map(x => x.id).result
-      }
-      triggerDataToDelete <- {
-        PersistenceSchema.triggerData
-          .join(PersistenceSchema.triggers).on(_.trigger === _.id)
-          .filter(_._2.community === communityId)
-          .filter(_._1.dataType === TriggerDataType.DomainParameter.id.toShort)
-          .filter(_._1.dataId inSet domainParameterIds)
-          .map(x => x._1)
-          .result
-      }
-      _ <- {
-        val actions = ListBuffer[DBIO[_]]()
-        triggerDataToDelete.foreach { data =>
-          actions += PersistenceSchema.triggerData
-            .filter(_.dataId === data.dataId)
-            .filter(_.dataType === data.dataType)
-            .filter(_.trigger === data.trigger)
-            .delete
-        }
-        toDBIO(actions)
-      }
-    } yield ()
-  }
-
-  private def deleteTriggerDataInternal(triggerId: Long): DBIO[_] = {
-    PersistenceSchema.triggerData.filter(_.trigger === triggerId).delete
-  }
-
-  private def setTriggerDataInternal(triggerId: Long, data: Option[List[TriggerData]], isNewTrigger: Boolean): DBIO[_] = {
-    val dbActions = ListBuffer[DBIO[_]]()
-    if (!isNewTrigger) {
-      // Delete previous data (only if needed - new)
-      dbActions += deleteTriggerDataInternal(triggerId)
-    }
-    if (data.isDefined) {
-      data.get.foreach { dataItem =>
-        dbActions += (PersistenceSchema.triggerData += TriggerData(dataItem.dataType, dataItem.dataId, triggerId))
-      }
-    }
-    toDBIO(dbActions)
-  }
-
-  private[managers] def deleteTriggerDataByDataType(dataId: Long, dataType: TriggerDataType): DBIO[_] = {
-    PersistenceSchema.triggerData.filter(_.dataId === dataId).filter(_.dataType === dataType.id.toShort).delete
-  }
-
   private def hasTriggerDataType(data: List[TriggerData], dataType: TriggerDataType): Boolean = {
     data.foreach { dataItem =>
       if (TriggerDataType.apply(dataItem.dataType) == dataType) {
@@ -267,7 +208,7 @@ class TriggerManager @Inject()(env: Environment,
     result
   }
 
-  private def getOrInitiatizeContentMap(name: String, map: Option[AnyContent]): Option[AnyContent] = {
+  private def getOrInitializeContentMap(name: String, map: Option[AnyContent]): Option[AnyContent] = {
     if (map.isDefined) {
       map
     } else {
@@ -422,12 +363,12 @@ class TriggerManager @Inject()(env: Environment,
         TriggerDataType.apply(dataItem.dataType) match {
           case TriggerDataType.Community =>
             val data:(String, String) = fromCache(dataCache, "communityData", () => exec(PersistenceSchema.communities.filter(_.id === trigger.trigger.community).map(x => (x.shortname, x.fullname)).result.head))
-            communityData = getOrInitiatizeContentMap("community", communityData)
+            communityData = getOrInitializeContentMap("community", communityData)
             communityData.get.getItem.add(toAnyContent("id", "number", trigger.trigger.community.toString, None))
             communityData.get.getItem.add(toAnyContent("shortName", "string", data._1, None))
             communityData.get.getItem.add(toAnyContent("fullName", "string", data._2, None))
           case TriggerDataType.Organisation =>
-            organisationData = getOrInitiatizeContentMap("organisation", organisationData)
+            organisationData = getOrInitializeContentMap("organisation", organisationData)
             val organisationId:Option[Long] = fromCache(dataCache, "organisationId", () => TriggerCallbacks.organisationId(callbacks))
             if (organisationId.isEmpty) {
               organisationData.get.getItem.add(toAnyContent("id", "number", "123", None))
@@ -442,7 +383,7 @@ class TriggerManager @Inject()(env: Environment,
               }
             }
           case TriggerDataType.System =>
-            systemData = getOrInitiatizeContentMap("system", systemData)
+            systemData = getOrInitializeContentMap("system", systemData)
             val systemId:Option[Long] = fromCache(dataCache, "systemId", () => TriggerCallbacks.systemId(callbacks))
             if (systemId.isEmpty) {
               systemData.get.getItem.add(toAnyContent("id", "number", "123", None))
@@ -457,7 +398,7 @@ class TriggerManager @Inject()(env: Environment,
               }
             }
           case TriggerDataType.Specification =>
-            specificationData = getOrInitiatizeContentMap("specification", specificationData)
+            specificationData = getOrInitializeContentMap("specification", specificationData)
             val actorId:Option[Long] = fromCache(dataCache, "actorId", () => TriggerCallbacks.actorId(callbacks))
             var specificationId:Option[Long] = None
             if (actorId.isDefined) {
@@ -476,7 +417,7 @@ class TriggerManager @Inject()(env: Environment,
               }
             }
           case TriggerDataType.Actor =>
-            actorData = getOrInitiatizeContentMap("actor", actorData)
+            actorData = getOrInitializeContentMap("actor", actorData)
             val actorId:Option[Long] = fromCache(dataCache, "actorId", () => TriggerCallbacks.actorId(callbacks))
             if (actorId.isEmpty) {
               actorData.get.getItem.add(toAnyContent("id", "number", "123", None))
@@ -491,7 +432,7 @@ class TriggerManager @Inject()(env: Environment,
               }
             }
           case TriggerDataType.TestSession =>
-            testSessionData = getOrInitiatizeContentMap("testSession", testSessionData)
+            testSessionData = getOrInitializeContentMap("testSession", testSessionData)
             val testSessionId:Option[String] = fromCache(dataCache, "testSessionId", () => TriggerCallbacks.testSessionId(callbacks))
             if (testSessionId.isEmpty) {
               testSessionData.get.getItem.add(toAnyContent("testSuiteIdentifier", "string", "TestSuiteID", None))
@@ -530,7 +471,7 @@ class TriggerManager @Inject()(env: Environment,
               testSessionData.get.getItem.add(toAnyContent("testSessionIdentifier", "string", testSession._3, None))
             }
           case TriggerDataType.TestReport =>
-            testReportData = getOrInitiatizeContentMap("testReport", testReportData)
+            testReportData = getOrInitializeContentMap("testReport", testReportData)
             val testSessionId:Option[String] = fromCache(dataCache, "testSessionId", () => TriggerCallbacks.testSessionId(callbacks))
             if (testSessionId.isEmpty) {
               populateAnyContent(testReportData, "testReport", "string", getSampleTestReport(), None)
@@ -553,7 +494,7 @@ class TriggerManager @Inject()(env: Environment,
               }
             }
           case TriggerDataType.OrganisationParameter =>
-            orgParamData = getOrInitiatizeContentMap("organisationProperties", orgParamData)
+            orgParamData = getOrInitializeContentMap("organisationProperties", orgParamData)
             val paramInfo = organisationParameterData.get(dataItem.dataId)
             if (paramInfo.isDefined) {
               if ("BINARY".equals(paramInfo.get._2)) {
@@ -567,7 +508,7 @@ class TriggerManager @Inject()(env: Environment,
               }
             }
           case TriggerDataType.SystemParameter =>
-            sysParamData = getOrInitiatizeContentMap("systemProperties", sysParamData)
+            sysParamData = getOrInitializeContentMap("systemProperties", sysParamData)
             val paramInfo = systemParameterData.get(dataItem.dataId)
             if (paramInfo.isDefined) {
               if ("BINARY".equals(paramInfo.get._2)) {
@@ -581,7 +522,7 @@ class TriggerManager @Inject()(env: Environment,
               }
             }
           case TriggerDataType.StatementParameter =>
-            statementParamData = getOrInitiatizeContentMap("statementProperties", statementParamData)
+            statementParamData = getOrInitializeContentMap("statementProperties", statementParamData)
             val paramKey = statementParameterKeys.get(dataItem.dataId)
             if (paramKey.isDefined) {
               val paramInfo = statementParameterData.get(paramKey.get)
@@ -598,7 +539,7 @@ class TriggerManager @Inject()(env: Environment,
               }
             }
           case TriggerDataType.DomainParameter =>
-            domainParamData = getOrInitiatizeContentMap("domainParameters", domainParamData)
+            domainParamData = getOrInitializeContentMap("domainParameters", domainParamData)
             val paramInfo = domainParameterData.get(dataItem.dataId)
             if (paramInfo.isDefined) {
               if ("BINARY".equals(paramInfo.get._2)) {
@@ -754,7 +695,7 @@ class TriggerManager @Inject()(env: Environment,
     }
   }
 
-  def getParameterValue(item: AnyContent, parameterType: String, handleBinary: Array[Byte] => _): (String, Option[String]) = {
+  private def getParameterValue(item: AnyContent, parameterType: String, handleBinary: Array[Byte] => _): (String, Option[String]) = {
     var value: Option[String] = None
     var contentType: Option[String] = None
     var encoding = StandardCharsets.UTF_8
@@ -926,6 +867,20 @@ class TriggerManager @Inject()(env: Environment,
   private def recordTriggerResultInternal(triggerId: Long, success: Boolean, message: Option[String]): DBIO[_] = {
     val q = for { t <- PersistenceSchema.triggers.filter(_.id === triggerId) } yield (t.latestResultOk, t.latestResultOutput)
     q.update(Some(success), message)
+  }
+
+  private def setTriggerDataInternal(triggerId: Long, data: Option[List[TriggerData]], isNewTrigger: Boolean): DBIO[_] = {
+    val dbActions = ListBuffer[DBIO[_]]()
+    if (!isNewTrigger) {
+      // Delete previous data (only if needed - new)
+      dbActions += triggerHelper.deleteTriggerDataInternal(triggerId)
+    }
+    if (data.isDefined) {
+      data.get.foreach { dataItem =>
+        dbActions += (PersistenceSchema.triggerData += TriggerData(dataItem.dataType, dataItem.dataId, triggerId))
+      }
+    }
+    toDBIO(dbActions)
   }
 
 }

@@ -2,16 +2,16 @@ package controllers
 
 import controllers.util._
 import exceptions.ErrorCodes
-import javax.inject.Inject
-import managers.{AuthorizationManager, TriggerManager}
+import managers.{AuthorizationManager, TriggerHelper, TriggerManager}
 import models.Enums.TriggerServiceType
 import play.api.libs.json.{JsBoolean, JsString, Json}
 import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents}
 import utils.JsonUtil
 
+import javax.inject.Inject
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class TriggerService @Inject()(authorizedAction: AuthorizedAction, cc: ControllerComponents, triggerManager: TriggerManager, authorizationManager: AuthorizationManager) extends AbstractController(cc) {
+class TriggerService @Inject()(authorizedAction: AuthorizedAction, cc: ControllerComponents, triggerManager: TriggerManager, triggerHelper: TriggerHelper, authorizationManager: AuthorizationManager) extends AbstractController(cc) {
 
   def getTriggersByCommunity(communityId: Long): Action[AnyContent] = authorizedAction { request =>
     authorizationManager.canManageTriggers(request, communityId)
@@ -53,7 +53,7 @@ class TriggerService @Inject()(authorizedAction: AuthorizedAction, cc: Controlle
 
   def deleteTrigger(triggerId: Long): Action[AnyContent] = authorizedAction { request =>
     authorizationManager.canManageTrigger(request, triggerId)
-    triggerManager.deleteTrigger(triggerId)
+    triggerHelper.deleteTrigger(triggerId)
     ResponseConstructor.constructEmptyResponse
   }
 

@@ -11,7 +11,6 @@ import persistence.db._
 import play.api.db.slick.DatabaseConfigProvider
 import utils.{CryptoUtil, JsonUtil, MimeUtil, RepositoryUtils}
 
-import java.nio.file.Path
 import java.util
 import javax.inject.{Inject, Singleton}
 import scala.collection.mutable
@@ -30,7 +29,6 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
                                   errorTemplateManager: ErrorTemplateManager,
                                   conformanceManager: ConformanceManager,
                                   accountManager: AccountManager,
-                                  triggerManager: TriggerManager,
                                   domainParameterManager: DomainParameterManager,
                                   automationApiHelper: AutomationApiHelper,
                                   dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
@@ -261,7 +259,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
       // New domain doesn't match previous domain. Remove conformance statements for previous domain.
       actions += conformanceManager.deleteConformanceStatementsForDomainAndCommunity(community.domain.get, community.id, onSuccess)
       // Remove also any trigger data that referred to domain parameters.
-      actions += triggerManager.deleteTriggerDataOfCommunityAndDomain(community.id, community.domain.get)
+      actions += triggerHelper.deleteTriggerDataOfCommunityAndDomain(community.id, community.domain.get)
     } else if (community.domain.isEmpty && domainId.isDefined) {
       // Domain set for community that was not previously linked to a domain. Remove statements for other domains.
       val action = for {
@@ -521,7 +519,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
       landingPageManager.deleteLandingPageByCommunity(communityId) andThen
       legalNoticeManager.deleteLegalNoticeByCommunity(communityId) andThen
       errorTemplateManager.deleteErrorTemplateByCommunity(communityId) andThen
-      triggerManager.deleteTriggersByCommunity(communityId) andThen
+      triggerHelper.deleteTriggersByCommunity(communityId) andThen
       testResultManager.updateForDeletedCommunity(communityId) andThen
       deleteConformanceCertificateSettings(communityId) andThen
       deleteConformanceOverviewCertificateSettings(communityId) andThen
@@ -759,7 +757,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
 
   def deleteOrganisationParameter(parameterId: Long, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
     onSuccessCalls += (() => repositoryUtils.deleteOrganisationPropertiesFolder(parameterId))
-    triggerManager.deleteTriggerDataByDataType(parameterId, TriggerDataType.OrganisationParameter) andThen
+    triggerHelper.deleteTriggerDataByDataType(parameterId, TriggerDataType.OrganisationParameter) andThen
       PersistenceSchema.organisationParameterValues.filter(_.parameter === parameterId).delete andThen
       (for {
         existingParameter <- PersistenceSchema.organisationParameters.filter(_.id === parameterId).map(x => (x.community, x.testKey, x.kind)).result.head
@@ -860,7 +858,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
 
   def deleteSystemParameter(parameterId: Long, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
     onSuccessCalls += (() => repositoryUtils.deleteSystemPropertiesFolder(parameterId))
-    triggerManager.deleteTriggerDataByDataType(parameterId, TriggerDataType.SystemParameter) andThen
+    triggerHelper.deleteTriggerDataByDataType(parameterId, TriggerDataType.SystemParameter) andThen
     PersistenceSchema.systemParameterValues.filter(_.parameter === parameterId).delete andThen
       (for {
         existingParameter <- PersistenceSchema.systemParameters.filter(_.id === parameterId).map(x => (x.community, x.testKey, x.kind)).result.head

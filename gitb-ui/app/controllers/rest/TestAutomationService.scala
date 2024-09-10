@@ -52,7 +52,7 @@ class TestAutomationService @Inject() (authorizedAction: AuthorizedAction,
         val sessionIds = query._1
         val withLogs = query._2
         val withReports = query._3
-        val statusItems = testExecutionManager.processAutomationStatusRequest(organisationKey, sessionIds, withLogs, withReports)
+        val statusItems = reportManager.processAutomationStatusRequest(organisationKey, sessionIds, withLogs, withReports)
         ResponseConstructor.constructJsonResponse(JsonUtil.jsTestSessionStatusInfo(statusItems).toString())
       }
     )
@@ -78,7 +78,7 @@ class TestAutomationService @Inject() (authorizedAction: AuthorizedAction,
       val organisationKey = request.headers.get(Constants.AutomationHeader).get
       val contentType = determineReportType(request)
       val suffix = if (contentType == Constants.MimeTypePDF) ".pdf" else ".xml"
-      report = testExecutionManager.processAutomationReportRequest(getReportTempFile(suffix), organisationKey, sessionId, contentType)
+      report = reportManager.processAutomationReportRequest(getReportTempFile(suffix), organisationKey, sessionId, contentType)
       if (report.isDefined) {
         Ok.sendFile(
           content = report.get.toFile,

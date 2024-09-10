@@ -106,7 +106,12 @@ object ConformanceManager {
 }
 
 @Singleton
-class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils, domainParameterManager: DomainParameterManager, systemManager: SystemManager, endpointManager: EndPointManager, parameterManager: ParameterManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils,
+																		domainParameterManager: DomainParameterManager,
+																		systemManager: SystemManager,
+																		endpointManager: EndPointManager,
+																		parameterManager: ParameterManager,
+																		dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
 	import dbConfig.profile.api._
 
