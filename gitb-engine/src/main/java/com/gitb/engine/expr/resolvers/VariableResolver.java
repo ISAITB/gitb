@@ -147,7 +147,7 @@ public class VariableResolver implements XPathVariableResolver{
                 }
             } else {
                 DataType containerVariable = scopeVariable.getValue();
-                result = resolveVariable(containerVariable, indexOrKeyExpression);
+                result = resolveVariable(containerVariable, indexOrKeyExpression, tolerateMissing);
             }
         } catch (Exception e) {
             logger.warn(MarkerFactory.getDetachedMarker(scope.getContext().getSessionId()), "An exception occurred when resolving variable [" + variableExpression + "]", e);
@@ -240,11 +240,11 @@ public class VariableResolver implements XPathVariableResolver{
      */
     private String resolveIndexOrKeyExpression(String indexOrKeyExpression){
 	    Matcher variableExpressionMatcher = VARIABLE_EXPRESSION_PATTERN.matcher(indexOrKeyExpression);
-	    if(variableExpressionMatcher.matches()) {
+	    if (variableExpressionMatcher.matches()) {
 		    DataType tempValue = resolveVariable(indexOrKeyExpression);
-		    if(tempValue instanceof NumberType || tempValue instanceof StringType){
+		    if (tempValue instanceof NumberType || tempValue instanceof StringType) {
 			    return tempValue.getValue().toString();
-		    }else{
+		    } else {
 			    throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Index of a container variable should be either String or Number, not [" + tempValue.getType() + "]!"));
 		    }
 	    } else {
@@ -256,9 +256,9 @@ public class VariableResolver implements XPathVariableResolver{
      * Resolve Variable value from the Container Value and indexOrKeyExpression part if exists
      * @param containerValue - Value of the container
      * @param keyOrIndexExpressions - The remaining expression (optional) for accessing the items in a container
-     * @return
+     * @param tolerateMissing Whether the variable we are looking for can be missing.
      */
-    private DataType resolveVariable(DataType containerValue, String keyOrIndexExpressions){
+    private DataType resolveVariable(DataType containerValue, String keyOrIndexExpressions, boolean tolerateMissing){
         DataType tempValue = containerValue;
 	    String expression = keyOrIndexExpressions;
         //If we are accessing an item in a container type
@@ -274,7 +274,10 @@ public class VariableResolver implements XPathVariableResolver{
 
 		        tempValue = resolveItemInContainer(tempValue, indexOrKey);
 		        expression = matcher.group(3);
-	        } while(expression.length() > 0);
+                if (tempValue == null && tolerateMissing) {
+                    return null;
+                }
+	        } while (!expression.isEmpty());
         }
         return tempValue;
     }
@@ -287,7 +290,7 @@ public class VariableResolver implements XPathVariableResolver{
      */
     private DataType resolveItemInContainer(DataType container, String keyOrIndex){
         if(!(container instanceof ContainerType)){
-            throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Invalid variable reference, you can use index or key only on container types"));
+            throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Invalid variable reference. You can use index or key only on container types but encountered type was [%s]".formatted((container == null)?"null":container.getType())));
         }
         if (container instanceof ListType) {
             try {
