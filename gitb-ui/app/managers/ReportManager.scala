@@ -2002,7 +2002,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
     generateConformanceStatementReportInXML(reportPath, transformer, addTestCases, conformanceInfo, isDemo = true)
   }
 
-  def generateConformanceStatementReportInXMLViaApi(reportPath: Path, organisationKey: String, systemKey: String, actorKey: String, snapshotKey: Option[String]): Path = {
+  def generateConformanceStatementReportViaApi(reportPath: Path, organisationKey: String, systemKey: String, actorKey: String, snapshotKey: Option[String], contentType: String): Path = {
     val idsForReport = exec(for {
       // Load statement IDs.
       statementIds <- apiHelper.getStatementIdsForApiKeys(organisationKey, Some(systemKey), Some(actorKey), snapshotKey, None, None)
@@ -2038,7 +2038,12 @@ class ReportManager @Inject() (communityManager: CommunityManager,
         }
       }
     } yield statementIds)
-    generateConformanceStatementReportInXML(reportPath, addTestCases = true, idsForReport.actorId, idsForReport.systemId, idsForReport.communityId, idsForReport.snapshotId)
+    if (contentType == Constants.MimeTypePDF) {
+      val labels = communityLabelManager.getLabels(idsForReport.communityId)
+      generateConformanceStatementReport(reportPath, addTestCases = true, idsForReport.actorId, idsForReport.systemId, labels, idsForReport.communityId, idsForReport.snapshotId)
+    } else {
+      generateConformanceStatementReportInXML(reportPath, addTestCases = true, idsForReport.actorId, idsForReport.systemId, idsForReport.communityId, idsForReport.snapshotId)
+    }
   }
 
   def generateConformanceStatementReportInXML(reportPath: Path, addTestCases: Boolean, actorId: Long, systemId: Long, communityId: Long, snapshotId: Option[Long]): Path = {

@@ -132,12 +132,14 @@ class TestAutomationService @Inject() (authorizedAction: AuthorizedAction,
     var report: Option[Path] = None
     try {
       val organisationKey = request.headers.get(Constants.AutomationHeader).get
-      val reportPath = getReportTempFile(".xml")
-      report = Some(reportManager.generateConformanceStatementReportInXMLViaApi(reportPath, organisationKey, systemKey, actorKey, snapshotKey))
+      val contentType = determineReportType(request)
+      val suffix = if (contentType == Constants.MimeTypePDF) ".pdf" else ".xml"
+      report = Some(reportManager.generateConformanceStatementReportViaApi(getReportTempFile(suffix), organisationKey, systemKey, actorKey, snapshotKey, contentType))
       Ok.sendFile(
         content = report.get.toFile,
+        fileName = _ => Some("conformance_report"+suffix),
         onClose = () => FileUtils.deleteQuietly(report.get.toFile)
-      ).as(MimeTypes.XML)
+      ).as(contentType)
     } catch {
       case e: Throwable =>
         if (report.isDefined) {
