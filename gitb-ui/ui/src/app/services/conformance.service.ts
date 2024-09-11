@@ -721,25 +721,29 @@ export class ConformanceService {
     })
   }
 
-  createParameter(name: string, testKey: string, description: string|undefined, use: string, kind: string, adminOnly: boolean, notForTests: boolean, hidden: boolean, allowedValues: string|undefined, dependsOn: string|undefined, dependsOnValue: string|undefined, defaultValue: string|undefined, endpointId: number) {
-    return this.restService.post<EndpointParameter>({
+  createParameter(name: string, testKey: string, description: string|undefined, use: string, kind: string, adminOnly: boolean, notForTests: boolean, hidden: boolean, allowedValues: string|undefined, dependsOn: string|undefined, dependsOnValue: string|undefined, defaultValue: string|undefined, endpointId: number|undefined, actorId: number) {
+    const data:any = {
+      name: name,
+      test_key: testKey,
+      description: description,
+      use: use,
+      kind: kind,
+      admin_only: adminOnly,
+      not_for_tests: notForTests,
+      hidden: hidden,
+      allowedValues: allowedValues,
+      dependsOn: dependsOn,
+      dependsOnValue: dependsOnValue,
+      defaultValue: defaultValue,
+      actor_id: actorId
+    }
+    if (endpointId) {
+      data.endpoint_id = endpointId
+    }
+    return this.restService.post<{endpoint: number}>({
       path: ROUTES.controllers.ConformanceService.createParameter().url,
       authenticate: true,
-      data: {
-        name: name,
-        test_key: testKey,
-        description: description,
-        use: use,
-        kind: kind,
-        admin_only: adminOnly,
-        not_for_tests: notForTests,
-        hidden: hidden,
-        allowedValues: allowedValues,
-        dependsOn: dependsOn,
-        dependsOnValue: dependsOnValue,
-        defaultValue: defaultValue,
-        endpoint_id: endpointId
-      }
+      data: data
     })
   }
 

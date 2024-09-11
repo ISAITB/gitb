@@ -21,21 +21,40 @@
 	<div>
 		<tabset>
 			<tab customClass="tabClass">
-                <ng-template tabHeading><app-tab-title icon="fa-solid fa-gear" [text]="dataService.labelEndpoints()"></app-tab-title></ng-template>
+                <ng-template tabHeading><app-tab-title icon="fa-solid fa-gear" text="Configuration properties"></app-tab-title></ng-template>
 				<div class="tabPanel">
-					<div class="tabControls">
-						<button type="button" class="btn btn-secondary" (click)="createEndpoint()">Create {{dataService.labelEndpointLower()}}</button>
-					</div>
-					<div class="card">
-						<div table-directive 
-							[columns]="endpointTableColumns"
-							[data]="endpointRepresentations"
-							[noDataMessage]="'No '+dataService.labelEndpointsLower()+' found'"
-							[loadingStatus]="dataStatus" 
-							[allowSelect]="true"
-							(onSelect)="onEndpointSelect($event)">
-						</div>
-					</div>
+					@if (dataStatus.status != Constants.STATUS.FINISHED) {
+						<app-pending-block></app-pending-block>
+					} @else {
+						@if (endpoints.length == 0) {
+							<app-endpoint-parameter-tab-content 
+								[actorId]="actorId"
+								[parametersLoaded]="parametersLoaded"
+								[manageEndpoints]="true"
+								(createEndpoint)="createEndpoint()"></app-endpoint-parameter-tab-content>							
+						} @else if (endpoints.length == 1) {
+							<app-endpoint-parameter-tab-content 
+								[actorId]="actorId"
+								[endpointId]="endpoints[0].id" 
+								[parametersLoaded]="parametersLoaded"
+								[manageEndpoints]="true"
+								(createEndpoint)="createEndpoint()"></app-endpoint-parameter-tab-content>							
+						} @else {
+							<div class="tabControls">
+								<button type="button" class="btn btn-secondary" (click)="createEndpoint()">Create {{dataService.labelEndpointLower()}}</button>
+							</div>
+							<div class="card">
+								<div table-directive 
+									[columns]="endpointTableColumns"
+									[data]="endpointRepresentations"
+									[noDataMessage]="'No '+dataService.labelEndpointsLower()+' found'"
+									[loadingStatus]="dataStatus" 
+									[allowSelect]="true"
+									(onSelect)="onEndpointSelect($event)">
+								</div>
+							</div>
+						}
+					}
 				</div>
 			</tab>
 		</tabset>

@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, OnInit } from '@angular/core';
+import { AfterViewInit, Component, EventEmitter, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { Constants } from 'src/app/common/constants';
 import { BaseComponent } from 'src/app/pages/base-component.component';
@@ -13,6 +13,7 @@ import { Endpoint } from 'src/app/types/endpoint';
 import { TableColumnDefinition } from 'src/app/types/table-column-definition.type';
 import { EndpointRepresentation } from './endpoint-representation';
 import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
+import { EndpointParameter } from 'src/app/types/endpoint-parameter';
 
 @Component({
   selector: 'app-actor-details',
@@ -36,6 +37,7 @@ export class ActorDetailsComponent extends BaseComponent implements OnInit, Afte
   ]
   savePending = false
   deletePending = false
+  parametersLoaded = new EventEmitter<EndpointParameter[]|undefined>()
 
   constructor(
     private conformanceService: ConformanceService,
@@ -84,6 +86,15 @@ export class ActorDetailsComponent extends BaseComponent implements OnInit, Afte
           'parameters': parameters.join(', ')
         }
       })
+      if (this.endpoints.length == 0) {
+        setTimeout(() => {
+          this.parametersLoaded.emit([])
+        }, 1)
+      } else if (this.endpoints.length == 1) {
+        setTimeout(() => {
+          this.parametersLoaded.emit(this.endpoints[0].parameters)
+        }, 1)
+      }
     }).add(() => {
       this.dataStatus.status = Constants.STATUS.FINISHED
     })

@@ -512,7 +512,7 @@ object ParameterExtractor {
     val desc:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DESC)
     val use:String = ParameterExtractor.requiredBodyParameter(request, Parameters.USE)
     val kind:String = ParameterExtractor.requiredBodyParameter(request, Parameters.KIND)
-    val endpointId:Long = ParameterExtractor.requiredBodyParameter(request, Parameters.ENDPOINT_ID).toLong
+    val endpointId:Long = ParameterExtractor.optionalBodyParameter(request, Parameters.ENDPOINT_ID).map(_.toLong).getOrElse(0L)
     val adminOnly = ParameterExtractor.requiredBodyParameter(request, Parameters.ADMIN_ONLY).toBoolean
     val notForTests = ParameterExtractor.requiredBodyParameter(request, Parameters.NOT_FOR_TESTS).toBoolean
     var hidden = ParameterExtractor.requiredBodyParameter(request, Parameters.HIDDEN).toBoolean

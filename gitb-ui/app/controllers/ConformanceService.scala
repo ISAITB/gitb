@@ -296,13 +296,21 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
   }
 
   def createParameter(): Action[AnyContent] = authorizedAction { request =>
+    val actorId = ParameterExtractor.requiredBodyParameter(request, Parameters.ACTOR_ID).toLong
+    authorizationManager.canManageActor(request, actorId)
     val parameter = ParameterExtractor.extractParameter(request)
-    authorizationManager.canCreateParameter(request, parameter.endpoint)
-    if (parameterManager.checkParameterExistsForEndpoint(parameter.name, parameter.endpoint, None)) {
-      ResponseConstructor.constructBadRequestResponse(500, "A parameter with this name already exists for the "+communityLabelManager.getLabel(request, LabelType.Endpoint, single = true, lowercase = true)+".")
+    if (parameter.endpoint == 0L) {
+      // New endpoint.
+      val createdIds = parameterManager.createParameterAndEndpoint(parameter, actorId)
+      ResponseConstructor.constructJsonResponse(JsonUtil.jsEndpointId(createdIds._1).toString)
     } else {
-      parameterManager.createParameterWrapper(parameter)
-      ResponseConstructor.constructEmptyResponse
+      // Existing endpoint.
+      if (parameterManager.checkParameterExistsForEndpoint(parameter.name, parameter.endpoint, None)) {
+        ResponseConstructor.constructBadRequestResponse(500, "A parameter with this name already exists for the " + communityLabelManager.getLabel(request, LabelType.Endpoint, single = true, lowercase = true) + ".")
+      } else {
+        parameterManager.createParameterWrapper(parameter)
+        ResponseConstructor.constructJsonResponse(JsonUtil.jsEndpointId(parameter.endpoint).toString)
+      }
     }
   }
 

@@ -197,6 +197,7 @@ import { CommunityKeystoreModalComponent } from './modals/community-keystore-mod
 import { ConformanceOverviewCertificateFormComponent } from './pages/admin/user-management/community-reports/conformance-overview-certificate-form/conformance-overview-certificate-form.component';
 import { StatementControlsComponent } from './components/statement-controls/statement-controls.component';
 import { ConformanceOverviewCertificateModalComponent } from './modals/conformance-overview-certificate-modal/conformance-overview-certificate-modal.component';
+import { EndpointParameterTabContentComponent } from './pages/admin/domain-management/endpoint/endpoint-parameter-tab-content/endpoint-parameter-tab-content.component';
 
 @NgModule({ declarations: [
         AppComponent,
@@ -377,7 +378,8 @@ import { ConformanceOverviewCertificateModalComponent } from './modals/conforman
         CommunityKeystoreModalComponent,
         ConformanceOverviewCertificateFormComponent,
         StatementControlsComponent,
-        ConformanceOverviewCertificateModalComponent
+        ConformanceOverviewCertificateModalComponent,
+        EndpointParameterTabContentComponent
     ],
     bootstrap: [AppComponent], imports: [ColorPickerModule,
         BrowserModule,

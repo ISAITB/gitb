@@ -2600,6 +2600,10 @@ object JsonUtil {
     json
   }
 
+  def jsEndpointId(endpointId: Long): JsObject = {
+    Json.obj("endpoint" -> endpointId)
+  }
+
   def jsApiKey(apiKey: String): JsObject = {
     Json.obj("apiKey" -> apiKey)
   }

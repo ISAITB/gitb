@@ -27,63 +27,10 @@
 			<tab customClass="tabClass">
                 <ng-template tabHeading><app-tab-title icon="fa-solid fa-sliders" text="Parameters"></app-tab-title></ng-template>
 				<div class="tabPanel">
-					<div class="tabControls">
-						<div class="btn-toolbar">
-							<button type="button" class="btn btn-secondary" [disable]="orderParametersDisabled" [pending]="orderPending" (click)="orderParameters()">Save parameter order</button>
-							<button type="button" class="btn btn-secondary" (click)="addParameter()">Create parameter</button>
-						</div>
-					</div>
-					<div class="card table-container rounded">
-						<table class="table table-directive thick">
-							<thead>
-								<tr>
-									<th>Label</th>
-									<th>Key</th>
-									<th>Type</th>
-									<th class="min-width">Required</th>
-									<th class="min-width">Editable</th>
-									<th class="min-width">In&nbsp;tests</th>
-									<th class="min-width">Hidden</th>
-									<th class="min-width"></th>
-								</tr>
-							</thead>
-							<tbody class="parametersTable" cdkDropList cdkDropListLockAxis="y" (cdkDropListDropped)="dropParameter($event)">
-								@if (dataStatus.status != Constants.STATUS.FINISHED) {
-									<tr>
-										<td colspan="8" class="td-data-loading"><span><i class="fa-solid fa-spinner fa-spin-override fa-lg"></i></span></td>
-									</tr>
-								} @else if (dataStatus.status == Constants.STATUS.FINISHED && parameters.length == 0) {
-									<tr>
-										<td colspan="8" class="td-no-data"><span>No parameters found</span></td>
-									</tr>
-								}
-								@for (parameter of parameters; track parameter.id) {
-									<tr class="table-row-directive selectable drag-table-row" 
-										cdkDrag
-										(cdkDragStarted)="draggingParameter = true"
-										(cdkDragEnded)="draggingParameter = false"
-										cdkDragPreviewContainer="parent"
-										[cdkDragDisabled]="parameters.length == 1"
-										(click)="onParameterSelect(parameter)"
-										[class.selectable]="!draggingParameter"
-									>
-										<td class="drag-preview"><div><span>{{parameter.name}}</span></div></td>
-										<td><div><span>{{parameter.testKey}}</span></div></td>
-										<td><div><span>{{parameter.kindLabel}}</span></div></td>
-										<td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': parameter.useLabel, 'fa-times': !parameter.useLabel}"></i></span></div></td>
-										<td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': parameter.adminOnlyLabel, 'fa-times': !parameter.adminOnlyLabel}"></i></span></div></td>
-										<td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': parameter.notForTestsLabel, 'fa-times': !parameter.notForTestsLabel}"></i></span></div></td>
-										<td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': parameter.hidden, 'fa-times': !parameter.hidden}"></i></span></div></td>
-										<td class="drag-handle" (click)="$event.stopPropagation();">
-											@if (parameters.length > 1) {
-												<button cdkDragHandle #pop="bs-tooltip" (mousedown)="pop.hide()" class="btn btn-secondary" type="button" containerClass="shortTooltip" container="body" tooltip="Reorder" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><span><i class="fa-solid fa-arrows-up-down"></i></span></button>
-											}
-										</td>
-									</tr>
-								}
-							</tbody>
-						</table>
-					</div>
+					<app-endpoint-parameter-tab-content 
+						[actorId]="actorId"
+						[endpointId]="endpointId" 
+						[parametersLoaded]="parametersLoaded"></app-endpoint-parameter-tab-content>
 				</div>
 			</tab>
 		</tabset>

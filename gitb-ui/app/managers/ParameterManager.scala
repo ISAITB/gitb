@@ -30,6 +30,14 @@ class ParameterManager @Inject() (repositoryUtils: RepositoryUtils,
     exec(parameterQuery.result.headOption).isDefined
   }
 
+  def createParameterAndEndpoint(parameter: models.Parameters, actorId: Long): (Long, Long) = {
+    val dbAction = for {
+      endpointId <- PersistenceSchema.endpoints.returning(PersistenceSchema.endpoints.map(_.id)) += Endpoints(0L, "config", None, actorId)
+      parameterId <- createParameter(parameter.withEndpoint(endpointId, None))
+    } yield (endpointId, parameterId)
+    exec(dbAction.transactionally)
+  }
+
   def createParameterWrapper(parameter: models.Parameters): Long = {
     exec(createParameter(parameter).transactionally)
   }
