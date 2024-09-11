@@ -1706,7 +1706,7 @@
         "tags": [
           "Conformance statements"
         ],
-        "summary": "Get a conformance statement report for a system and actor pair considering the latest conformance testing status.",
+        "summary": "Get a conformance statement report for a system and actor pair considering the latest conformance testing status. The report can be produced in either XML or PDF depending on the provided 'Accept' header (XML being the default).",
         "security": [
           {
             "OrganisationApiKeyAuth": []
@@ -1740,6 +1740,12 @@
                 "schema": {
                   "$ref": "#/components/schemas/ConformanceStatementReport"
                 }
+              },
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
               }
             }
           },
@@ -1761,7 +1767,7 @@
         "tags": [
           "Conformance statements"
         ],
-        "summary": "Get a conformance statement report for a system and actor pair considering a given conformance snapshot.",
+        "summary": "Get a conformance statement report for a system and actor pair considering a given conformance snapshot. The report can be produced in either XML or PDF depending on the provided 'Accept' header (XML being the default).",
         "security": [
           {
             "OrganisationApiKeyAuth": []
@@ -1803,6 +1809,12 @@
               "application/xml": {
                 "schema": {
                   "$ref": "#/components/schemas/ConformanceStatementReport"
+                }
+              },
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
                 }
               }
             }
@@ -1957,7 +1969,7 @@
         "tags": [
           "Test sessions"
         ],
-        "summary": "Retrieve a test session report in the GITB TRL XML format.",
+        "summary": "Retrieve a test session report. The report can be produced in either XML or PDF depending on the provided 'Accept' header (XML being the default).",
         "security": [
           {
             "OrganisationApiKeyAuth": []
@@ -1981,6 +1993,12 @@
               "application/xml": {
                 "schema": {
                   "$ref": "#/components/schemas/TestCaseOverviewReport"
+                }
+              },
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
                 }
               }
             }
