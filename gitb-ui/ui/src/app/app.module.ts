@@ -128,7 +128,6 @@ import { CopyEnabledTextComponent } from './components/copy-enabled-text/copy-en
 import { SanitizeHtmlPipe } from './pipes/sanitize-html.pipe';
 import { ApiKeyTextComponent } from './components/api-key-text/api-key-text.component';
 import { ApiKeyInfoComponent } from './components/api-key-info/api-key-info.component';
-import { MissingConfigurationDisplayComponent } from './components/missing-configuration-display/missing-configuration-display.component';
 import { SimulatedConfigurationDisplayModalComponent } from './components/simulated-configuration-display-modal/simulated-configuration-display-modal.component';
 import { SessionLogModalComponent } from './components/session-log-modal/session-log-modal.component';
 import { BaseCodeEditorModalComponent } from './components/base-code-editor-modal/base-code-editor-modal.component';
@@ -310,7 +309,6 @@ import { CustomPropertyPanelComponent } from './components/custom-property-panel
         CopyEnabledTextComponent,
         ApiKeyTextComponent,
         ApiKeyInfoComponent,
-        MissingConfigurationDisplayComponent,
         SimulatedConfigurationDisplayModalComponent,
         SessionLogModalComponent,
         BaseCodeEditorModalComponent,

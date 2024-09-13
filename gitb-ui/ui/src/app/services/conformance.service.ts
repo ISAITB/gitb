@@ -36,7 +36,6 @@ import { CommunityKeystore } from '../types/community-keystore';
 import { ConformanceOverviewCertificateSettings } from '../types/conformance-overview-certificate-settings';
 import { BadgePlaceholderInfo } from '../modals/conformance-certificate-modal/badge-placeholder-info';
 import { Constants } from '../common/constants';
-import { CommunityReportSettings } from '../types/community-report-settings';
 import { SystemParameter } from '../types/system-parameter';
 import { OrganisationParameter } from '../types/organisation-parameter';
 
@@ -47,8 +46,7 @@ export class ConformanceService {
 
   constructor(
     private restService: RestService,
-    private dataService: DataService,
-    private htmlService: HtmlService
+    private dataService: DataService
   ) { }
 
   getDomains(ids?: number[]) {
