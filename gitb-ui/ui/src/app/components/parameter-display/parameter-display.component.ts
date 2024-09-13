@@ -2,7 +2,6 @@ import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { DataService } from 'src/app/services/data.service';
 import { filter } from 'lodash'
 import { Parameter } from 'src/app/types/parameter';
-import { SystemService } from 'src/app/services/system.service';
 import { Constants } from 'src/app/common/constants';
 
 @Component({
@@ -16,9 +15,10 @@ export class ParameterDisplayComponent<T extends Parameter> implements OnInit {
   @Input() parameters!: T[]
   @Input() showValues = false
   @Input() onlyMissing = false
+  @Input() onlyRequired = false
   @Input() editable = false
   @Input() canEdit?: (p: T) => boolean
-  @Input() parameterLabel = 'Parameter'
+  @Input() parameterLabel = 'Property'
   @Input() styleAsNestedTable = false
   @Output() edit = new EventEmitter<T>()
   @Output() download = new EventEmitter<T>()
@@ -29,8 +29,7 @@ export class ParameterDisplayComponent<T extends Parameter> implements OnInit {
   showActions = false
 
   constructor(
-    private dataService: DataService,
-    private systemService: SystemService
+    private dataService: DataService
   ) { }
 
   ngOnInit(): void {
@@ -45,6 +44,7 @@ export class ParameterDisplayComponent<T extends Parameter> implements OnInit {
     if (this.parameters != undefined) {
       this.parameters = filter(this.parameters, (parameter) => {
         return (!this.onlyMissing || (parameter.configured == undefined || !parameter.configured)) && (this.isAdmin || !parameter.hidden) && (parameter.prerequisiteOk == undefined || parameter.prerequisiteOk)
+          && (!this.onlyRequired || this.isRequired(parameter))
       })
     }
   }

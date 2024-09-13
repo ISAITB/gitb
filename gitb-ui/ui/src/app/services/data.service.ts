@@ -917,6 +917,7 @@ export class DataService {
 	checkPropertyVisibility(properties: Parameter[]) {
 		const results: ConfigurationPropertyVisibility = {
 			hasProperties: false,
+      hasVisibleProperties: false,
 			hasMissingProperties: false,
 			hasVisibleMissingRequiredProperties: false,
 			hasVisibleMissingOptionalProperties: false,
@@ -926,6 +927,9 @@ export class DataService {
 		if (properties != undefined && properties.length > 0) {
 			results.hasProperties = true
 			for (let prop of properties) {
+        if (!prop.hidden) {
+          results.hasVisibleProperties = true
+        }
 				if (!prop.configured) {
 					results.hasMissingProperties = true
 					if (prop.hidden) {
@@ -950,6 +954,9 @@ export class DataService {
             }
           }
         }
+      }
+      if (results.hasProperties && (this.isCommunityAdmin || this.isSystemAdmin)) {
+        results.hasVisibleProperties = true
       }
     }
 		return results

@@ -41,9 +41,9 @@ export class MissingConfigurationModalComponent implements OnInit {
     this.organisationPropertyVisibility = this.dataService.checkPropertyVisibility(this.organisationProperties!)
     this.systemPropertyVisibility = this.dataService.checkPropertyVisibility(this.systemProperties!)
     this.statementPropertyVisibility = this.dataService.checkPropertyVisibility(this.statementProperties)
-    this.showOrganisationProperties = this.organisationPropertyVisibility.hasVisibleMissingRequiredProperties || this.organisationPropertyVisibility.hasVisibleMissingOptionalProperties
-    this.showSystemProperties = this.systemPropertyVisibility.hasVisibleMissingRequiredProperties || this.systemPropertyVisibility.hasVisibleMissingOptionalProperties
-    this.showStatementProperties = this.statementPropertyVisibility.hasVisibleMissingRequiredProperties || this.statementPropertyVisibility.hasVisibleMissingOptionalProperties
+    this.showOrganisationProperties = this.organisationPropertyVisibility.hasVisibleMissingRequiredProperties
+    this.showSystemProperties = this.systemPropertyVisibility.hasVisibleMissingRequiredProperties
+    this.showStatementProperties = this.statementPropertyVisibility.hasVisibleMissingRequiredProperties
     this.somethingIsVisible = this.showOrganisationProperties || this.showSystemProperties || this.showStatementProperties
     this.requiredPropertiesAreHidden = this.organisationPropertyVisibility.hasNonVisibleMissingRequiredProperties || this.systemPropertyVisibility.hasNonVisibleMissingRequiredProperties || this.statementPropertyVisibility.hasNonVisibleMissingRequiredProperties
   }

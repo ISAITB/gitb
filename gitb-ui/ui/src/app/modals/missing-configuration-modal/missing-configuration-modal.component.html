@@ -8,13 +8,13 @@
 				@if (requiredPropertiesAreHidden) {
 					 <!-- Something is not visible -->
 					<div class="alert alert-info rounded">
-						<p>Required information is needed before tests can be launched. Review this below and complete it accordingly.</p>
-						<span><b>Note: </b></span><span>Certain additional configuration must be completed for you by an administrator before you can proceed with testing.</span>
+						<p>Required information is needed before tests can be launched. Please review this below.</p>
+						<span><b>Note: </b></span><span>Certain additional configuration must be completed for you by an administrator before starting tests.</span>
 					</div>
 				 } @else {
 					<!-- Everything is visible -->
 					<div class="alert alert-info rounded">
-						<span>Required information is needed before tests can be launched. Review this below and complete it accordingly.</span>
+						<span>Required information is needed before tests can be launched. Please review this below.</span>
 					</div>
 				 }
 				 @if (showOrganisationProperties) {
@@ -25,9 +25,9 @@
 						 <app-parameter-display 
 							 [parameters]="organisationProperties" 
 							 [onlyMissing]="true" 
+							 [onlyRequired]="true" 
 							 [showValues]="false" 
-							 [editable]="false"
-							 [parameterLabel]="'Property'"></app-parameter-display>
+							 [editable]="false"></app-parameter-display>
 					 </div>
 				 }
 				 @if (showSystemProperties) {
@@ -38,9 +38,9 @@
 						 <app-parameter-display 
 							 [parameters]="systemProperties" 
 							 [onlyMissing]="true" 
+							 [onlyRequired]="true" 
 							 [showValues]="false" 
-							 [editable]="false"
-							 [parameterLabel]="'Property'"></app-parameter-display>
+							 [editable]="false"></app-parameter-display>
 					 </div>
 				 }
 				 @if (showStatementProperties) {
@@ -51,9 +51,9 @@
 						 <app-parameter-display 
 							 [parameters]="statementProperties" 
 							 [onlyMissing]="true" 
+							 [onlyRequired]="true" 
 							 [showValues]="false" 
-							 [editable]="false"
-							 [parameterLabel]="'Property'"></app-parameter-display>
+							 [editable]="false"></app-parameter-display>
 					 </div>
 				 }
 			</div>

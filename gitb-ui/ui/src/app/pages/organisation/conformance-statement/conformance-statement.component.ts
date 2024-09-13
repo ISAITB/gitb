@@ -30,6 +30,7 @@ import { SystemParameter } from 'src/app/types/system-parameter';
 import { ConformanceStatementTab } from './conformance-statement-tab';
 import { ConformanceTestCase } from './conformance-test-case';
 import { ConformanceTestSuite } from './conformance-test-suite';
+import { ConfigurationPropertyVisibility } from 'src/app/types/configuration-property-visibility';
 
 @Component({
   selector: 'app-conformance-statement',
@@ -103,6 +104,9 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
   organisationPropertiesCollapsed = false
   systemPropertiesCollapsed = false
   statementPropertiesCollapsed = false
+  organisationPropertyVisibility?: ConfigurationPropertyVisibility
+  systemPropertyVisibility?: ConfigurationPropertyVisibility
+  statementPropertyVisibility?: ConfigurationPropertyVisibility
 
   constructor(
     public dataService: DataService,
@@ -297,6 +301,10 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
         this.systemProperties = data[1]
         // Statement properties
         this.statementProperties = data[2]
+        // Determine visibility of properties
+        this.organisationPropertyVisibility = this.dataService.checkPropertyVisibility(this.organisationProperties)
+        this.systemPropertyVisibility = this.dataService.checkPropertyVisibility(this.systemProperties)
+        this.statementPropertyVisibility = this.dataService.checkPropertyVisibility(this.statementProperties)
       }).add(() => {
         this.loadingConfiguration.status = Constants.STATUS.FINISHED
       })
