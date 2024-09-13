@@ -118,7 +118,6 @@ import { CreateConformanceStatementComponent } from './pages/organisation/create
 import { ConformanceStatementComponent } from './pages/organisation/conformance-statement/conformance-statement.component';
 import { MissingConfigurationModalComponent } from './modals/missing-configuration-modal/missing-configuration-modal.component';
 import { TestExecutionComponent } from './pages/test-execution/test-execution.component';
-import { EndpointDisplayComponent } from './components/endpoint-display/endpoint-display.component';
 import { ParameterDisplayComponent } from './components/parameter-display/parameter-display.component';
 import { ProvideInputModalComponent } from './modals/provide-input-modal/provide-input-modal.component';
 import { SecretInputComponent } from './components/secret-input/secret-input.component';
@@ -301,7 +300,6 @@ import { CustomPropertyPanelComponent } from './components/custom-property-panel
         ConformanceStatementComponent,
         MissingConfigurationModalComponent,
         TestExecutionComponent,
-        EndpointDisplayComponent,
         ParameterDisplayComponent,
         ProvideInputModalComponent,
         SecretInputComponent,
