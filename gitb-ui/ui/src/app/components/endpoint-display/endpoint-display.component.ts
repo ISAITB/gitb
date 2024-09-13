@@ -1,7 +1,7 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { ConformanceEndpoint } from 'src/app/pages/organisation/conformance-statement/conformance-endpoint';
 import { DataService } from 'src/app/services/data.service';
-import { SystemConfigurationParameter } from 'src/app/types/system-configuration-parameter';
+import { EndpointParameter } from 'src/app/types/endpoint-parameter';
 
 @Component({
   selector: 'app-endpoint-display',
@@ -14,10 +14,10 @@ export class EndpointDisplayComponent implements OnInit {
   @Input() endpoint!: ConformanceEndpoint
   @Input() showValues = false
   @Input() editable = false
-  @Input() canEdit!: (p: SystemConfigurationParameter) => boolean
+  @Input() canEdit!: (p: EndpointParameter) => boolean
   @Input() hideEndpointInfo = true
-  @Output() edit = new EventEmitter<SystemConfigurationParameter>()
-  @Output() download = new EventEmitter<SystemConfigurationParameter>()
+  @Output() edit = new EventEmitter<EndpointParameter>()
+  @Output() download = new EventEmitter<EndpointParameter>()
 
   constructor(
     public dataService: DataService
@@ -26,11 +26,11 @@ export class EndpointDisplayComponent implements OnInit {
   ngOnInit(): void {
   }
 
-  onEdit(parameter: SystemConfigurationParameter) {
+  onEdit(parameter: EndpointParameter) {
     this.edit.emit(parameter)
   }
 
-  onDownload(parameter: SystemConfigurationParameter) {
+  onDownload(parameter: EndpointParameter) {
     this.download.emit(parameter)
   }
 

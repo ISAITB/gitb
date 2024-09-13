@@ -13,5 +13,6 @@ export interface ConformanceTestSuite extends SpecificationReferenceInfo {
     expanded?: boolean
     hasOptionalTestCases?: boolean
     hasDisabledTestCases?: boolean
+    executionPending?: boolean
 
 }

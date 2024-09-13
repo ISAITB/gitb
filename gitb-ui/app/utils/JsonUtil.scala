@@ -1567,6 +1567,22 @@ object JsonUtil {
     list
   }
 
+  def parseJsConfigs(json:String, systemId: Long): List[Configs] = {
+    val jsArray = Json.parse(json).as[JsArray].value
+    var list:List[Configs] = List()
+    jsArray.foreach { jsonConfig =>
+      val value = (jsonConfig \ "value").asOpt[String]
+      list ::= Configs(
+        systemId,
+        (jsonConfig \ "parameter").as[Long],
+        (jsonConfig \ "endpoint").as[Long],
+        value.get,
+        None
+      )
+    }
+    list
+  }
+
   private def parseJsImportItem(jsonConfig: JsValue, parentItem: Option[ImportItem]): ImportItem = {
     val item = new ImportItem(
       (jsonConfig \ "name").asOpt[String],
@@ -3049,6 +3065,28 @@ object JsonUtil {
 
   def jsOrganisationParametersWithValue(param: OrganisationParametersWithValue, includeValues: Boolean): JsObject = {
     var json = jsOrganisationParameter(param.parameter)
+    json = json.+("configured" -> JsBoolean(param.value.isDefined))
+    if (includeValues) {
+      if (param.value.isDefined && param.parameter.kind != "SECRET") {
+        json = json.+("value" -> JsString(param.value.get.value))
+        if (param.value.get.contentType.isDefined && param.parameter.kind == "BINARY") {
+          json = json.+("mimeType" -> JsString(param.value.get.contentType.get))
+        }
+      }
+    }
+    json
+  }
+
+  def jsParametersWithValues(list: List[ParametersWithValue], includeValues: Boolean):JsArray = {
+    var json = Json.arr()
+    list.foreach { parameter =>
+      json = json.append(jsParametersWithValue(parameter, includeValues))
+    }
+    json
+  }
+
+  def jsParametersWithValue(param: ParametersWithValue, includeValues: Boolean): JsObject = {
+    var json = jsParameter(param.parameter)
     json = json.+("configured" -> JsBoolean(param.value.isDefined))
     if (includeValues) {
       if (param.value.isDefined && param.parameter.kind != "SECRET") {

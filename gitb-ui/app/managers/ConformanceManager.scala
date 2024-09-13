@@ -1,10 +1,11 @@
 package managers
 
+import actors.events.ConformanceStatementUpdatedEvent
 import com.gitb.tr.TestResultType
 import config.Configurations
 import managers.ConformanceManager._
-import models.Enums.{ConformanceStatementItemType, OrganizationType}
-import models._
+import models.Enums.{ConformanceStatementItemType, OrganizationType, UserRole}
+import models.{FileInfo, _}
 import models.snapshot._
 import models.statement.{ConformanceItemTreeData, ConformanceStatementResults}
 import org.apache.commons.lang3.StringUtils
@@ -12,7 +13,7 @@ import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
 import slick.lifted.{Query, Rep}
 import utils.TimeUtil.dateFromFilterString
-import utils.{CryptoUtil, RepositoryUtils, TimeUtil}
+import utils.{CryptoUtil, MimeUtil, RepositoryUtils, TimeUtil}
 
 import java.io.File
 import java.sql.Timestamp
@@ -111,6 +112,9 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils,
 																		systemManager: SystemManager,
 																		endpointManager: EndPointManager,
 																		parameterManager: ParameterManager,
+																		organisationManager: OrganizationManager,
+																		repositoryUtils: RepositoryUtils,
+																		triggerHelper: TriggerHelper,
 																		dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
 	import dbConfig.profile.api._
@@ -159,7 +163,7 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils,
 				.result
 				.map(_.toSet)
 			results <- {
-				val specificationToVisibleSutActorMap = new mutable.HashMap[Long, mutable.HashSet[Long]]() // Specification ID to actor map (actors that are SUTs and are not set as hidden.
+				val specificationToVisibleSutActorMap = new mutable.HashMap[Long, mutable.HashSet[Long]]() // Specification ID to actor map (actors that are SUTs and are not set as hidden).
 				// Map specifications to actors that are non-visible and SUTs.
 				actors.foreach(x => {
 					if (actorsWithTestCases.contains(x._1)) {
@@ -908,6 +912,129 @@ class ConformanceManager @Inject() (repositoryUtil: RepositoryUtils,
 		sortedItems.sortWith((a, b) => {
 			(a.displayOrder < b.displayOrder) || (a.displayOrder == b.displayOrder && a.name.compareTo(b.name) < 0)
 		}).toSeq
+	}
+
+	def updateStatementConfiguration(userId: Long, systemId: Long, actorId: Long,
+																	 organisationPropertyValues: Option[List[OrganisationParameterValues]],
+																	 systemPropertyValues: Option[List[SystemParameterValues]],
+																	 statementPropertyValues: Option[List[Configs]],
+																	 organisationPropertyFiles: Map[Long, FileInfo],
+																	 systemPropertyFiles: Map[Long, FileInfo],
+																	 statementPropertyFiles: Map[Long, FileInfo]
+																	): Unit = {
+		val onSuccessCalls = mutable.ListBuffer[() => _]()
+		val dbAction = for {
+			// Check if the user is the admin (to see if she can update admin-only properties).
+			isAdmin <- PersistenceSchema.users.filter(_.id === userId).map(x => x.role).result.head.map(x => {
+				x == UserRole.CommunityAdmin.id.toShort || x == UserRole.SystemAdmin.id.toShort
+			})
+			// Retrieve community ID.
+			systemIds <- PersistenceSchema.systems
+				.join(PersistenceSchema.organizations).on(_.owner === _.id)
+				.filter(_._1.id === systemId)
+				.map(x => (x._1.id, x._1.owner, x._2.community)) // (system ID, organisation ID, community ID)
+				.result
+				.head
+			// Update organisation properties.
+			_ <- {
+				if (organisationPropertyValues.isDefined) {
+					organisationManager.saveOrganisationParameterValues(systemIds._2, systemIds._3, isAdmin, organisationPropertyValues.get, organisationPropertyFiles, onSuccessCalls)
+				} else {
+					DBIO.successful(())
+				}
+			}
+			// Update system properties.
+			_ <- {
+				if (systemPropertyValues.isDefined) {
+					systemManager.saveSystemParameterValues(systemId, systemIds._3, isAdmin, systemPropertyValues.get, systemPropertyFiles, onSuccessCalls)
+				} else {
+					DBIO.successful(())
+				}
+			}
+			// Update statement properties.
+			_ <- {
+				if (statementPropertyValues.isDefined) {
+					saveStatementParameterValues(systemId, actorId, isAdmin, statementPropertyValues.get, statementPropertyFiles, onSuccessCalls)
+				} else {
+					DBIO.successful(())
+				}
+			}
+		} yield systemIds._3 // communityID
+		val communityId = exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
+		triggerHelper.publishTriggerEvent(new ConformanceStatementUpdatedEvent(communityId, systemId, actorId))
+
+	}
+
+	private def saveStatementParameterValues(systemId: Long, actorId: Long, isAdmin: Boolean, values: List[Configs], files: Map[Long, FileInfo], onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
+		for {
+			providedParameters <- {
+				val tempMap = new mutable.HashMap[Long, Configs]()
+				values.foreach{ v =>
+					tempMap += (v.parameter -> v)
+				}
+				DBIO.successful(tempMap.toMap)
+			}
+			// Load parameter definitions for the actor
+			parameterDefinitions <- PersistenceSchema.parameters
+				.join(PersistenceSchema.endpoints).on(_.endpoint === _.id)
+				.filter(_._2.actor === actorId)
+				.map(_._1)
+				.result
+			// Make updates
+			_ <- {
+				val actions = new ListBuffer[DBIO[_]]()
+				parameterDefinitions.foreach { parameterDefinition =>
+					if ((!parameterDefinition.adminOnly && !parameterDefinition.hidden) || isAdmin) {
+						val matchedProvidedParameter = providedParameters.get(parameterDefinition.id)
+						if (matchedProvidedParameter.isDefined) {
+							// Create or update
+							if (parameterDefinition.kind != "SECRET" || (parameterDefinition.kind == "SECRET" && matchedProvidedParameter.get.value != "")) {
+								// Special case: No update for secret parameters that are defined but not updated.
+								var valueToSet = matchedProvidedParameter.get.value
+								var existingBinaryNotUpdated = false
+								var contentTypeToSet: Option[String] = None
+								if (parameterDefinition.kind == "SECRET") {
+									// Encrypt secret value at rest.
+									valueToSet = MimeUtil.encryptString(valueToSet)
+								} else if (parameterDefinition.kind == "BINARY") {
+									// Store file.
+									if (files.contains(parameterDefinition.id)) {
+										contentTypeToSet = files(parameterDefinition.id).contentType
+										onSuccessCalls += (() => repositoryUtils.setStatementParameterFile(parameterDefinition.id, systemId, files(parameterDefinition.id).file))
+									} else {
+										existingBinaryNotUpdated = true
+									}
+								}
+								if (!existingBinaryNotUpdated) {
+									actions += PersistenceSchema.configs.filter(_.parameter === parameterDefinition.id).filter(_.system === systemId).delete
+									actions += (PersistenceSchema.configs += Configs(systemId, matchedProvidedParameter.get.parameter, parameterDefinition.endpoint, valueToSet, contentTypeToSet))
+								}
+							}
+						} else {
+							// Delete existing (if present)
+							onSuccessCalls += (() => repositoryUtils.deleteStatementParameterFile(parameterDefinition.id, systemId))
+							actions += PersistenceSchema.configs.filter(_.parameter === parameterDefinition.id).filter(_.system === systemId).delete
+						}
+					}
+				}
+				if (actions.nonEmpty) {
+					DBIO.seq(actions.toList.map(a => a): _*)
+				} else {
+					DBIO.successful(())
+				}
+			}
+		} yield ()
+	}
+
+	def getStatementParameterValues(systemId: Long, actorId: Long): List[ParametersWithValue] = {
+		exec(PersistenceSchema.parameters
+			.join(PersistenceSchema.endpoints).on(_.endpoint === _.id)
+			.joinLeft(PersistenceSchema.configs).on((p, v) => p._1.id === v.parameter && v.system === systemId)
+			.filter(_._1._2.actor === actorId)
+			.sortBy(x => (x._1._2.id.asc, x._1._1.displayOrder.asc, x._1._1.name.asc))
+			.map(x => (x._1._1, x._2))
+			.result
+		).toList.map(r => new ParametersWithValue(r._1, r._2))
 	}
 
 	def getSystemConfigurationStatus(systemId: Long, actorId: Long): List[SystemConfigurationEndpoint] = {

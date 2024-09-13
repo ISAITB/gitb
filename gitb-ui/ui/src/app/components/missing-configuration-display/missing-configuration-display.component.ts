@@ -1,9 +1,8 @@
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
-import { DataService } from 'src/app/services/data.service';
-import { OrganisationParameterWithValue } from 'src/app/types/organisation-parameter-with-value';
-import { SystemConfigurationParameter } from 'src/app/types/system-configuration-parameter';
-import { SystemParameterWithValue } from 'src/app/types/system-parameter-with-value';
-import { MissingConfigurationAction } from './missing-configuration-action';
+import { Component, Input, OnInit } from '@angular/core';
+import { SystemParameter } from 'src/app/types/system-parameter';
+import { OrganisationParameter } from 'src/app/types/organisation-parameter';
+import { ConfigurationPropertyVisibility } from 'src/app/types/configuration-property-visibility';
+import { EndpointParameter } from 'src/app/types/endpoint-parameter';
 
 @Component({
   selector: 'app-missing-configuration-display',
@@ -12,13 +11,16 @@ import { MissingConfigurationAction } from './missing-configuration-action';
 })
 export class MissingConfigurationDisplayComponent implements OnInit {
 
-  @Input() organisationProperties!: OrganisationParameterWithValue[]
+  @Input() organisationProperties!: OrganisationParameter[]
   @Input() organisationConfigurationValid!: boolean
-  @Input() systemProperties!: SystemParameterWithValue[]
+  @Input() systemProperties!: SystemParameter[]
   @Input() systemConfigurationValid!: boolean
-  @Input() statementProperties!: SystemConfigurationParameter[]
+  @Input() statementProperties!: EndpointParameter[]
   @Input() configurationValid!: boolean
-  @Output() action = new EventEmitter<MissingConfigurationAction>()
+  @Input() organisationPropertyVisibility!: ConfigurationPropertyVisibility
+  @Input() systemPropertyVisibility!: ConfigurationPropertyVisibility
+  @Input() statementPropertyVisibility!: ConfigurationPropertyVisibility
+
 
   showOrganisationProperties = false
   showSystemProperties = false
@@ -27,31 +29,14 @@ export class MissingConfigurationDisplayComponent implements OnInit {
   requiredPropertiesAreHidden = false
 
 
-  constructor(
-    private dataService: DataService
-  ) { }
+  constructor() { }
 
   ngOnInit(): void {
-    const organisationPropertyVisibility = this.dataService.checkPropertyVisibility(this.organisationProperties!)
-    const systemPropertyVisibility = this.dataService.checkPropertyVisibility(this.systemProperties!)
-    const statementPropertyVisibility = this.dataService.checkPropertyVisibility(this.statementProperties)
-    this.showOrganisationProperties = organisationPropertyVisibility.hasVisibleMissingRequiredProperties || organisationPropertyVisibility.hasVisibleMissingOptionalProperties
-    this.showSystemProperties = systemPropertyVisibility.hasVisibleMissingRequiredProperties || systemPropertyVisibility.hasVisibleMissingOptionalProperties
-    this.showStatementProperties = statementPropertyVisibility.hasVisibleMissingRequiredProperties || statementPropertyVisibility.hasVisibleMissingOptionalProperties
+    this.showOrganisationProperties = this.organisationPropertyVisibility.hasVisibleMissingRequiredProperties || this.organisationPropertyVisibility.hasVisibleMissingOptionalProperties
+    this.showSystemProperties = this.systemPropertyVisibility.hasVisibleMissingRequiredProperties || this.systemPropertyVisibility.hasVisibleMissingOptionalProperties
+    this.showStatementProperties = this.statementPropertyVisibility.hasVisibleMissingRequiredProperties || this.statementPropertyVisibility.hasVisibleMissingOptionalProperties
     this.somethingIsVisible = this.showOrganisationProperties || this.showSystemProperties || this.showStatementProperties
-    this.requiredPropertiesAreHidden = organisationPropertyVisibility.hasNonVisibleMissingRequiredProperties || systemPropertyVisibility.hasNonVisibleMissingRequiredProperties || statementPropertyVisibility.hasNonVisibleMissingRequiredProperties
-  }
-
-  toOrganisationProperties() {
-    this.action.emit(MissingConfigurationAction.viewOrganisation)
-  }
-
-  toSystemProperties() {
-    this.action.emit(MissingConfigurationAction.viewSystem)
-  }
-
-  toConfigurationProperties() {
-    this.action.emit(MissingConfigurationAction.viewStatement)
+    this.requiredPropertiesAreHidden = this.organisationPropertyVisibility.hasNonVisibleMissingRequiredProperties || this.systemPropertyVisibility.hasNonVisibleMissingRequiredProperties || this.statementPropertyVisibility.hasNonVisibleMissingRequiredProperties
   }
 
 }

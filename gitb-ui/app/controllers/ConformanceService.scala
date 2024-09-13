@@ -21,6 +21,7 @@ import java.nio.file.{Files, Paths, StandardCopyOption}
 import java.security.cert.{Certificate, CertificateExpiredException, CertificateNotYetValidException, X509Certificate}
 import java.security.{KeyStore, NoSuchAlgorithmException}
 import javax.inject.Inject
+import scala.collection.mutable
 import scala.concurrent.ExecutionContext
 import scala.util.Using
 
@@ -950,14 +951,53 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
     }
   }
 
-  def getSystemConfigurations(): Action[AnyContent] = authorizedAction { request =>
+  def updateStatementConfiguration(): Action[AnyContent] = authorizedAction { request =>
+    try {
+      val paramMap = ParameterExtractor.paramMap(request)
+      val system = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.SYSTEM_ID).toLong
+      val actor = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.ACTOR_ID).toLong
+      authorizationManager.canUpdateSystem(request, system)
+
+      val organisationFiles = new mutable.HashMap[Long, FileInfo]()
+      val systemFiles = new mutable.HashMap[Long, FileInfo]()
+      val statementFiles = new mutable.HashMap[Long, FileInfo]()
+
+      val files = ParameterExtractor.extractFiles(request)
+      files.foreach { entry =>
+        val parts = entry._1.split('_')
+        val ownerId = parts(1).toLong
+        if (parts(0) == "org") {
+          organisationFiles += (ownerId -> entry._2)
+        } else if (parts(0) == "sys") {
+          systemFiles += (ownerId -> entry._2)
+        } else if (parts(0) == "stm") {
+          statementFiles += (ownerId -> entry._2)
+        } else {
+          throw new IllegalArgumentException("Invalid name for uploaded file [%s]".formatted(entry._1))
+        }
+      }
+      if (Configurations.ANTIVIRUS_SERVER_ENABLED && ParameterExtractor.virusPresentInFiles(files.map(entry => entry._2.file))) {
+        ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "File failed virus scan.")
+      } else {
+        val userId = ParameterExtractor.extractUserId(request)
+        val organisationParameters = ParameterExtractor.extractOrganisationParameterValues(paramMap, Parameters.ORGANISATION_PARAMETERS, optional = true)
+        val systemParameters = ParameterExtractor.extractSystemParameterValues(paramMap, Parameters.SYSTEM_PARAMETERS, optional = true)
+        val statementParameters = ParameterExtractor.extractStatementParameterValues(paramMap, Parameters.STATEMENT_PARAMETERS, optional = true, system)
+        conformanceManager.updateStatementConfiguration(userId, system, actor, organisationParameters, systemParameters, statementParameters, organisationFiles.toMap, systemFiles.toMap, statementFiles.toMap)
+        ResponseConstructor.constructEmptyResponse
+      }
+    } finally {
+      if (request.body.asMultipartFormData.isDefined) request.body.asMultipartFormData.get.files.foreach { file => FileUtils.deleteQuietly(file.ref) }
+    }
+  }
+
+  def getStatementParameterValues(): Action[AnyContent] = authorizedAction { request =>
     val system = ParameterExtractor.requiredQueryParameter(request, Parameters.SYSTEM_ID).toLong
     authorizationManager.canViewEndpointConfigurationsForSystem(request, system)
     val actor = ParameterExtractor.requiredQueryParameter(request, Parameters.ACTOR_ID).toLong
-    val configs = conformanceManager.getSystemConfigurationStatus(system, actor)
-    val isAdmin = accountManager.checkUserRole(ParameterExtractor.extractUserId(request), UserRole.SystemAdmin, UserRole.CommunityAdmin)
-    val json = JsonUtil.jsSystemConfigurationEndpoints(configs, addValues = true, isAdmin)
-    ResponseConstructor.constructJsonResponse(json.toString)
+    val values = conformanceManager.getStatementParameterValues(system, actor)
+    val json: String = JsonUtil.jsParametersWithValues(values, includeValues = true).toString
+    ResponseConstructor.constructJsonResponse(json)
   }
 
   def checkConfigurations(): Action[AnyContent] = authorizedAction { request =>

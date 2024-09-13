@@ -118,7 +118,6 @@ import { CreateConformanceStatementComponent } from './pages/organisation/create
 import { ConformanceStatementComponent } from './pages/organisation/conformance-statement/conformance-statement.component';
 import { MissingConfigurationModalComponent } from './modals/missing-configuration-modal/missing-configuration-modal.component';
 import { TestExecutionComponent } from './pages/test-execution/test-execution.component';
-import { EditEndpointConfigurationModalComponent } from './modals/edit-endpoint-configuration-modal/edit-endpoint-configuration-modal.component';
 import { EndpointDisplayComponent } from './components/endpoint-display/endpoint-display.component';
 import { ParameterDisplayComponent } from './components/parameter-display/parameter-display.component';
 import { ProvideInputModalComponent } from './modals/provide-input-modal/provide-input-modal.component';
@@ -198,6 +197,7 @@ import { ConformanceOverviewCertificateFormComponent } from './pages/admin/user-
 import { StatementControlsComponent } from './components/statement-controls/statement-controls.component';
 import { ConformanceOverviewCertificateModalComponent } from './modals/conformance-overview-certificate-modal/conformance-overview-certificate-modal.component';
 import { EndpointParameterTabContentComponent } from './pages/admin/domain-management/endpoint/endpoint-parameter-tab-content/endpoint-parameter-tab-content.component';
+import { CustomPropertyPanelComponent } from './components/custom-property-panel/custom-property-panel.component';
 
 @NgModule({ declarations: [
         AppComponent,
@@ -302,7 +302,6 @@ import { EndpointParameterTabContentComponent } from './pages/admin/domain-manag
         ConformanceStatementComponent,
         MissingConfigurationModalComponent,
         TestExecutionComponent,
-        EditEndpointConfigurationModalComponent,
         EndpointDisplayComponent,
         ParameterDisplayComponent,
         ProvideInputModalComponent,
@@ -379,7 +378,8 @@ import { EndpointParameterTabContentComponent } from './pages/admin/domain-manag
         ConformanceOverviewCertificateFormComponent,
         StatementControlsComponent,
         ConformanceOverviewCertificateModalComponent,
-        EndpointParameterTabContentComponent
+        EndpointParameterTabContentComponent,
+        CustomPropertyPanelComponent
     ],
     bootstrap: [AppComponent], imports: [ColorPickerModule,
         BrowserModule,

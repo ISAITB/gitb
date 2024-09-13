@@ -13,7 +13,7 @@ export class OptionalCustomPropertyFormComponent implements OnInit {
   @Input() tbColOffset = 1
   @Input() tbColInputLess = 0
   @Input() tbReadonly = false
-  @Input() tbPropertyType!: 'organisation'|'system'
+  @Input() tbPropertyType!: 'organisation'|'system'|'statement'
   @Input() tbOwner?: number
   @Input() tbSetDefaults = false
 

@@ -1,39 +1,64 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { BsModalRef } from 'ngx-bootstrap/modal';
-import { MissingConfigurationAction } from 'src/app/components/missing-configuration-display/missing-configuration-action';
 import { ConfigurationPropertyVisibility } from 'src/app/types/configuration-property-visibility';
-import { OrganisationParameterWithValue } from 'src/app/types/organisation-parameter-with-value';
-import { SystemConfigurationParameter } from 'src/app/types/system-configuration-parameter';
-import { SystemParameterWithValue } from 'src/app/types/system-parameter-with-value';
+import { OrganisationParameter } from 'src/app/types/organisation-parameter';
+import { SystemParameter } from 'src/app/types/system-parameter';
+import { MissingConfigurationAction } from './missing-configuration-action';
+import { DataService } from 'src/app/services/data.service';
+import { EndpointParameter } from 'src/app/types/endpoint-parameter';
 
 @Component({
   selector: 'app-missing-configuration-modal',
   templateUrl: './missing-configuration-modal.component.html',
-  styles: [
-  ]
+  styleUrls: [ './missing-configuration-modal.component.less']
 })
 export class MissingConfigurationModalComponent implements OnInit {
 
-  @Input() organisationProperties!: OrganisationParameterWithValue[]
+  @Input() organisationProperties!: OrganisationParameter[]
   @Input() organisationConfigurationValid!: boolean
-  @Input() systemProperties!: SystemParameterWithValue[]
+  @Input() systemProperties!: SystemParameter[]
   @Input() systemConfigurationValid!: boolean
-  @Input() statementProperties!: SystemConfigurationParameter[]
+  @Input() statementProperties!: EndpointParameter[]
   @Input() configurationValid!: boolean
-  @Input() organisationPropertyVisibility!: ConfigurationPropertyVisibility
-  @Input() systemPropertyVisibility!: ConfigurationPropertyVisibility
-  @Input() statementPropertyVisibility!: ConfigurationPropertyVisibility
   @Output() action = new EventEmitter<MissingConfigurationAction>()
 
+  organisationPropertyVisibility!: ConfigurationPropertyVisibility
+  systemPropertyVisibility!: ConfigurationPropertyVisibility
+  statementPropertyVisibility!: ConfigurationPropertyVisibility
+
+  showOrganisationProperties = false
+  showSystemProperties = false
+  showStatementProperties = false
+  somethingIsVisible = false
+  requiredPropertiesAreHidden = false
+
   constructor(
-    private modalRef: BsModalRef
+    private modalRef: BsModalRef,
+    private dataService: DataService
   ) { }
 
-  ngOnInit(): void {}
+  ngOnInit(): void {
+    this.organisationPropertyVisibility = this.dataService.checkPropertyVisibility(this.organisationProperties!)
+    this.systemPropertyVisibility = this.dataService.checkPropertyVisibility(this.systemProperties!)
+    this.statementPropertyVisibility = this.dataService.checkPropertyVisibility(this.statementProperties)
+    this.showOrganisationProperties = this.organisationPropertyVisibility.hasVisibleMissingRequiredProperties || this.organisationPropertyVisibility.hasVisibleMissingOptionalProperties
+    this.showSystemProperties = this.systemPropertyVisibility.hasVisibleMissingRequiredProperties || this.systemPropertyVisibility.hasVisibleMissingOptionalProperties
+    this.showStatementProperties = this.statementPropertyVisibility.hasVisibleMissingRequiredProperties || this.statementPropertyVisibility.hasVisibleMissingOptionalProperties
+    this.somethingIsVisible = this.showOrganisationProperties || this.showSystemProperties || this.showStatementProperties
+    this.requiredPropertiesAreHidden = this.organisationPropertyVisibility.hasNonVisibleMissingRequiredProperties || this.systemPropertyVisibility.hasNonVisibleMissingRequiredProperties || this.statementPropertyVisibility.hasNonVisibleMissingRequiredProperties
+  }
 
-  close(action?: MissingConfigurationAction) {
-    if (action != undefined) {
-      this.action.emit(action)
+  view() {
+    this.close(true)
+  }
+
+  close(view?: boolean) {
+    if (view == true) {
+      this.action.emit({
+        viewOrganisationProperties: this.showOrganisationProperties,
+        viewSystemProperties: this.showSystemProperties,
+        viewStatementProperties: this.showStatementProperties
+      })
     }
     this.modalRef.hide()
   }

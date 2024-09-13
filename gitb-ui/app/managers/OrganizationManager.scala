@@ -607,21 +607,18 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils,
       providedParameters <- DBIO.successful(values.map(x => (x.parameter, x)).toMap)
       // Load existing parameter values (needed to check prerequisites that are admin-only and hidden - only needed if we're enforcing required values.
       existingSimpleValues <- {
-        var existingSimpleValues: Option[Map[Long, OrganisationParameterValues]] = None
         if (requireMandatoryPropertyValues && !isSelfRegistration) {
-          // We only load these if we're not doing a self-registration. In a self-registration there will never be previously existing values.
-          existingSimpleValues = Some(
-            exec(
-              PersistenceSchema.organisationParameterValues
-                .join(PersistenceSchema.organisationParameters).on(_.parameter === _.id)
-                .filter(_._1.organisation === orgId)
-                .filter(_._2.kind === "SIMPLE")
-                .map(x => x._1)
-                .result
-            ).map(x => (x.parameter, x)).toMap
-          )
+          for {
+            simpleValueList <- PersistenceSchema.organisationParameterValues
+              .join(PersistenceSchema.organisationParameters).on(_.parameter === _.id)
+              .filter(_._1.organisation === orgId)
+              .filter(_._2.kind === "SIMPLE")
+              .map(x => x._1)
+              .result
+          } yield Some(simpleValueList.map(x => (x.parameter, x)).toMap)
+        } else {
+          DBIO.successful(None)
         }
-        DBIO.successful(existingSimpleValues)
       }
       // Load parameter definitions for the organisation's community.
       parameterDefinitions <- PersistenceSchema.organisationParameters.filter(_.community === communityId).result

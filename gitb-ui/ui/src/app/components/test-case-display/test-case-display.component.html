@@ -39,7 +39,7 @@
                                 <button type="button" class="btn btn-secondary" [icon]="true" (click)="onExportTestCasePdf(testCase)" [pending]="exportPdfPending[testCase.id]" containerClass="shortTooltip" tooltip="Export (PDF)" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-regular fa-file-pdf"></i></button>
                             }
                             @if (showExecute) {
-                                <button class="btn btn-primary" (click)="onTestSelect(testCase)" containerClass="shortTooltip" tooltip="Run" [disabled]="testCase.disabled" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-play"></i></button>
+                                <button class="btn btn-primary" (click)="onTestSelect(testCase)" [pending]="testCase.executionPending" [icon]="true" containerClass="shortTooltip" tooltip="Run" [disabled]="testCase.disabled" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-play"></i></button>
                             }
                         </div>
                     }

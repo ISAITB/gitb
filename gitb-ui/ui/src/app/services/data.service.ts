@@ -15,7 +15,6 @@ import { NumberSet } from '../types/number-set';
 import { Organisation } from '../types/organisation.type';
 import { Parameter } from '../types/parameter';
 import { SystemConfigurationEndpoint } from '../types/system-configuration-endpoint';
-import { SystemConfigurationParameter } from '../types/system-configuration-parameter';
 import { TypedLabelConfig } from '../types/typed-label-config.type'
 import { UserAccount } from '../types/user-account';
 import { User } from '../types/user.type';
@@ -33,6 +32,7 @@ import { HttpResponse } from '@angular/common/http';
 import { EntityWithId } from '../types/entity-with-id';
 import { ConformanceTestSuite } from '../pages/organisation/conformance-statement/conformance-test-suite';
 import { ConformanceStatementItem } from '../types/conformance-statement-item';
+import { EndpointParameter } from '../types/endpoint-parameter';
 
 @Injectable({
   providedIn: 'root'
@@ -467,13 +467,17 @@ export class DataService {
     return valid
   }
 
-  customPropertiesForPost(properties: CustomProperty[]|undefined): CustomPropertySubmissionInfo {
+  customPropertiesForPost(properties: CustomProperty[]|undefined, fileKeyPrefix?: string): CustomPropertySubmissionInfo {
+    let filePrefixToUse = (fileKeyPrefix == undefined)?'file_':fileKeyPrefix+'_'
     let propValues = []
     let files: FileParam[] = []
     if (properties) {
       for (let property of properties) {
         let propValue:any = {}
         propValue.parameter = Number(property.id)
+        if (property.endpoint) {
+          propValue.endpoint = Number(property.endpoint)
+        }
         if (property.kind == 'SECRET') {
           if (property.changeValue && property.value && property.value.trim().length > 0) {
             propValue.value = property.value.trim()
@@ -484,7 +488,7 @@ export class DataService {
           if (property.file?.file != undefined) {
             propValue.value = ''
             files.push({
-              param: 'file_'+propValue.parameter,
+              param: filePrefixToUse+propValue.parameter,
               data: property.file.file
             })
           } else if (property.configured) {
@@ -975,7 +979,7 @@ export class DataService {
 		return true
   }
 
-  getEndpointParametersToDisplay(endpoints: SystemConfigurationEndpoint[]): SystemConfigurationParameter[] {
+  getEndpointParametersToDisplay(endpoints: SystemConfigurationEndpoint[]): EndpointParameter[] {
     if (endpoints.length > 0) {
 			for (let endpoint of endpoints) {
         let endpointValid = this.isConfigurationOfEndpointValid(endpoint)

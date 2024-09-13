@@ -5,7 +5,7 @@ import exceptions.{ErrorCodes, InvalidRequestException}
 import models.Enums._
 import controllers.util.Parameters
 import models.theme.{Theme, ThemeFiles}
-import models.{Actor, Badges, Communities, CommunityReportSettings, CommunityResources, Constants, Domain, Endpoints, ErrorTemplates, FileInfo, LandingPages, LegalNotices, NamedFile, OrganisationParameterValues, Organizations, SpecificationGroups, Specifications, SystemParameterValues, Systems, Trigger, TriggerData, Triggers, Users}
+import models.{Actor, Badges, Communities, CommunityReportSettings, CommunityResources, Configs, Constants, Domain, Endpoints, ErrorTemplates, FileInfo, LandingPages, LegalNotices, NamedFile, OrganisationParameterValues, Organizations, SpecificationGroups, Specifications, SystemParameterValues, Systems, Trigger, TriggerData, Triggers, Users}
 import org.apache.commons.lang3.StringUtils
 import org.mindrot.jbcrypt.BCrypt
 import play.api.mvc._
@@ -95,6 +95,20 @@ object ParameterExtractor {
     } else {
       val valuesJson = requiredBodyParameter(paramMap, parameterName)
       values = Some(JsonUtil.parseJsSystemParameterValues(valuesJson))
+    }
+    values
+  }
+
+  def extractStatementParameterValues(paramMap:Option[Map[String, Seq[String]]], parameterName: String, optional: Boolean, systemId: Long): Option[List[Configs]] = {
+    var values: Option[List[Configs]] = None
+    if (optional) {
+      val valuesJson = optionalBodyParameter(paramMap, parameterName)
+      if (valuesJson.isDefined) {
+        values = Some(JsonUtil.parseJsConfigs(valuesJson.get, systemId))
+      }
+    } else {
+      val valuesJson = requiredBodyParameter(paramMap, parameterName)
+      values = Some(JsonUtil.parseJsConfigs(valuesJson, systemId))
     }
     values
   }

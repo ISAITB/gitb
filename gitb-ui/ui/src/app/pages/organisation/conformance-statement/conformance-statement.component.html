@@ -212,30 +212,61 @@
 		</tab>
 		@if (!isReadonly) {
 			<tab (selectTab)="loadConfigurations()" customClass="tabClass">
-				<ng-template tabHeading><app-tab-title icon="fa-solid fa-sliders" text="Configuration parameters"></app-tab-title></ng-template>
+				<ng-template tabHeading><app-tab-title icon="fa-solid fa-sliders" text="Configuration properties"></app-tab-title></ng-template>
 				<div class="tabPanel">
 					@if (loadingConfiguration.status != Constants.STATUS.FINISHED) {
 						<app-pending-block></app-pending-block>
-					} @else if (endpointRepresentations.length == 0) {
+					} @else {
+						@if (organisationProperties.length == 0 && systemProperties.length == 0 && statementProperties.length == 0) {
+							<!-- TODO check for non-visible properties -->
+							<div class="card card-body noConfigurationDiv">
+								<span>No configuration parameters are foreseen for this conformance statement.</span>
+							</div>
+						} @else {
+							<div class="tabControls">
+								<button type="button" class="btn btn-secondary" (click)="updateConfiguration()" [disable]="updateConfigurationPending || updateConfigurationDisabled()" [pending]="updateConfigurationPending">Update configuration</button>
+							</div>
+							<app-custom-property-panel
+								[properties]="organisationProperties"
+								[propertyType]="'organisation'"
+								[owner]="organisationId"
+								[header]="'Organisation properties'"
+								[collapsed]="organisationPropertiesCollapsed"></app-custom-property-panel>
+							<app-custom-property-panel
+								[properties]="systemProperties"
+								[propertyType]="'system'"
+								[owner]="systemId"
+								[header]="'System properties'"
+								[collapsed]="systemPropertiesCollapsed"></app-custom-property-panel>
+							<!-- TODO check multiple endpoints -->
+							<app-custom-property-panel
+								[properties]="statementProperties"
+								[propertyType]="'statement'"
+								[owner]="systemId"
+								[header]="'Conformance statement properties'"
+								[collapsed]="statementPropertiesCollapsed"></app-custom-property-panel>
+						}
+						<!-- @if (endpointRepresentations.length == 0) {
 						<div class="card card-body noConfigurationDiv">
 							<span>No configuration parameters are foreseen for this conformance statement.</span>
 						</div>
-					} @else {
-						<div class="endpointPanelContainer" [ngClass]="{'list-group': hasMultipleEndpoints}">
-						@for (endpoint of endpointRepresentations; track endpoint.id) {
-							<div class="card endpoint endpointPanel" [ngClass]="{'list-group-item': hasMultipleEndpoints}">
-								<app-endpoint-display
-									[endpoint]="endpoint"
-									[hideEndpointInfo]="!hasMultipleEndpoints"
-									[editable]="!dataService.isVendorUser"
-									[canEdit]="canEditParameter"
-									[showValues]="true"
-									(edit)="onParameterSelect($event)"
-									(download)="onParameterDownload($event)"
-								></app-endpoint-display>
+						} @else {
+							<div class="endpointPanelContainer" [ngClass]="{'list-group': hasMultipleEndpoints}">
+							@for (endpoint of endpointRepresentations; track endpoint.id) {
+								<div class="card endpoint endpointPanel" [ngClass]="{'list-group-item': hasMultipleEndpoints}">
+									<app-endpoint-display
+										[endpoint]="endpoint"
+										[hideEndpointInfo]="!hasMultipleEndpoints"
+										[editable]="!dataService.isVendorUser"
+										[canEdit]="canEditParameter"
+										[showValues]="true"
+										(edit)="onParameterSelect($event)"
+										(download)="onParameterDownload($event)"
+									></app-endpoint-display>
+								</div>
+							}
 							</div>
-						}
-						</div>
+						} -->
 					}
 				</div>
 			</tab>

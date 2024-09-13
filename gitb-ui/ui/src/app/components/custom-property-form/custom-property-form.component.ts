@@ -25,7 +25,7 @@ export class CustomPropertyFormComponent implements OnInit {
   @Input() tbShowFormHeader = true
   @Input() tbShowRequiredAsterisks = true
   @Input() tbAdmin?: boolean
-  @Input() tbPropertyType!: 'organisation'|'system'
+  @Input() tbPropertyType!: 'organisation'|'system'|'statement'
   @Input() tbOwner?: number
   @Input() tbExpandable = false
   @Input() tbCollapsed: boolean|undefined
@@ -180,8 +180,10 @@ export class CustomPropertyFormComponent implements OnInit {
       let fn: Observable<ArrayBuffer>
       if (this.tbPropertyType == 'organisation') {
         fn = this.organisationService.downloadOrganisationParameterFile(this.tbOwner!, property.id)
-      } else {
+      } else if (this.tbPropertyType == 'system') {
         fn = this.systemService.downloadSystemParameterFile(this.tbOwner!, property.id)
+      } else {
+        fn = this.systemService.downloadEndpointConfigurationFile(this.tbOwner!, property.id)
       }
       fn.subscribe((data) => {
         const blobData = new Blob([data], {type: property.mimeType})

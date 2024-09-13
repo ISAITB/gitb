@@ -31,162 +31,142 @@
                 }
             </div>
         </div>
-        @if (configCheckStatus.status == Constants.STATUS.FINISHED) {
-            @if (!statementConfigurationValid || !systemConfigurationValid || !organisationConfigurationValid) {
-                <div class="missingConfigurationDiv">
-                    <app-missing-configuration-display 
-                        [organisationProperties]="organisationProperties"
-                        [organisationConfigurationValid]="organisationConfigurationValid"
-                        [systemProperties]="systemProperties"
-                        [systemConfigurationValid]="systemConfigurationValid"
-                        [statementProperties]="statementProperties"
-                        [configurationValid]="statementConfigurationValid"
-                        (action)="handleMissingConfigurationAction($event)"
-                    ></app-missing-configuration-display>
-                </div>
-            } @else {
-                <div class="table-container rounded">
-                    @if (testCaseLoadStatus.status == Constants.STATUS.FINISHED) {
-                        <table class="table table-directive expandable-table test-case-table">
-                            <thead>
-                                <tr>
-                                    <th class="th-min-centered"></th>
-                                    <th>Test case</th>
-                                    <th>Description</th>
-                                    @if (documentationExists) {
-                                        <th class="td-doc" width="1%"></th>
+        @if (testCaseLoadStatus.status == Constants.STATUS.FINISHED) {
+            <div class="table-container rounded">
+                <table class="table table-directive expandable-table test-case-table">
+                    <thead>
+                        <tr>
+                            <th class="th-min-centered"></th>
+                            <th>Test case</th>
+                            <th>Description</th>
+                            @if (documentationExists) {
+                                <th class="td-doc" width="1%"></th>
+                            }
+                            <th class="td-centered" width="1%">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (testCase of testsToExecute; track testCase.id) {
+                            <tr (click)="viewTestCase(testCase)" 
+                                [class.expandable-table-row-collapsed]="isTestCaseClickable(testCase)"
+                                [class.no-display]="!testCaseVisible[testCase.id]">
+                                <td class="td-min-centered">
+                                    @if (isTestCaseClickable(testCase)) {
+                                        <app-collapsing-icon [padded]="false" [isCollapsed]="!testCaseExpanded[testCase.id]"></app-collapsing-icon>
+                                    } @else {
+                                        <div class="expandable-hidden">
+                                            <app-collapsing-icon [padded]="false" [isCollapsed]="!testCaseExpanded[testCase.id]"></app-collapsing-icon>
+                                        </div>
                                     }
-                                    <th class="td-centered" width="1%">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @for (testCase of testsToExecute; track testCase.id) {
-                                    <tr (click)="viewTestCase(testCase)" 
-                                        [class.expandable-table-row-collapsed]="isTestCaseClickable(testCase)"
-                                        [class.no-display]="!testCaseVisible[testCase.id]">
-                                        <td class="td-min-centered">
-                                            @if (isTestCaseClickable(testCase)) {
-                                                <app-collapsing-icon [padded]="false" [isCollapsed]="!testCaseExpanded[testCase.id]"></app-collapsing-icon>
-                                            } @else {
-                                                <div class="expandable-hidden">
-                                                    <app-collapsing-icon [padded]="false" [isCollapsed]="!testCaseExpanded[testCase.id]"></app-collapsing-icon>
-                                                </div>
-                                            }
-                                        </td>
-                                        <td><div class="testCaseName" [class.padded]="documentationExists">{{testCase.sname}}</div></td>
-                                        <td>{{testCase.description}}</td>
-                                        @if (documentationExists) {
-                                            <td class="td-doc">
-                                                @if (testCase.hasDocumentation) {
-                                                    <button type="button" class="btn btn-secondary" (click)="showTestCaseDocumentation(testCase.id); $event.stopPropagation()" containerClass="shortTooltip" tooltip="Documentation" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-info-circle"></i></button>
-                                                }
-                                            </td>
+                                </td>
+                                <td><div class="testCaseName" [class.padded]="documentationExists">{{testCase.sname}}</div></td>
+                                <td>{{testCase.description}}</td>
+                                @if (documentationExists) {
+                                    <td class="td-doc">
+                                        @if (testCase.hasDocumentation) {
+                                            <button type="button" class="btn btn-secondary" (click)="showTestCaseDocumentation(testCase.id); $event.stopPropagation()" containerClass="shortTooltip" tooltip="Documentation" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-info-circle"></i></button>
                                         }
-                                        <td class="td-centered"><div class="progress-icon"><i class="fa-solid testsuite-progress-icon" [ngClass]="progressIcon(testCase.id)"></i></div></td>
-                                    </tr>
-                                    <tr class="expandable-table-row-expanded" [class.no-display]="!testCaseVisible[testCase.id]">
-                                        <td [attr.colspan]="columnCount" class="expandable-table-expandable-cell">
-                                            <div [collapse]="!testCaseExpanded[testCase.id]" [isAnimated]="true">
-                                                <div class="collapsing-div">
-                                                    <div class="card">
-                                                        <div class="card-header my-0">
-                                                            <div class="session-execution-info">
-                                                                <div class="session-table-title">
-                                                                    @if (testsToExecute.length > 1) {
-                                                                        <div class="session-table-title-part">
-                                                                            <div class="session-table-title-label">Test</div>
-                                                                            <div class="session-table-title-value">{{testCaseCounter[testCase.id] + ' of ' + testsToExecute.length}}</div>
-                                                                        </div>
-                                                                    }
-                                                                    <div class="session-table-title-part">
-                                                                        <div class="session-table-title-label">Session</div>
-                                                                        <div class="session-table-title-value">
-                                                                            @if (testCase.sessionId != undefined) {
-                                                                                <app-copy-enabled-text [value]="testCase.sessionId"></app-copy-enabled-text>
-                                                                            } @else {
-                                                                                <app-pending-block></app-pending-block>
-                                                                            }
-                                                                        </div>
-                                                                    </div>
+                                    </td>
+                                }
+                                <td class="td-centered"><div class="progress-icon"><i class="fa-solid testsuite-progress-icon" [ngClass]="progressIcon(testCase.id)"></i></div></td>
+                            </tr>
+                            <tr class="expandable-table-row-expanded" [class.no-display]="!testCaseVisible[testCase.id]">
+                                <td [attr.colspan]="columnCount" class="expandable-table-expandable-cell">
+                                    <div [collapse]="!testCaseExpanded[testCase.id]" [isAnimated]="true">
+                                        <div class="collapsing-div">
+                                            <div class="card">
+                                                <div class="card-header my-0">
+                                                    <div class="session-execution-info">
+                                                        <div class="session-table-title">
+                                                            @if (testsToExecute.length > 1) {
+                                                                <div class="session-table-title-part">
+                                                                    <div class="session-table-title-label">Test</div>
+                                                                    <div class="session-table-title-value">{{testCaseCounter[testCase.id] + ' of ' + testsToExecute.length}}</div>
                                                                 </div>
-                                                                @if (stepsOfTests[testCase.id] != undefined) {
-                                                                    <div class="session-table-operations btn-toolbar">
-                                                                        @if (interactionStepsOfTests[testCase.id] != undefined && interactionStepsOfTests[testCase.id].length > 0) {
-                                                                            @if (interactionStepsOfTests[testCase.id].length == 1) {
-                                                                                <button type="button" class="btn btn-secondary" (click)="displayPendingInteraction()">View pending interaction</button>
-                                                                            } @else {
-                                                                                <div class="btn-group" dropdown>
-                                                                                    <button id="button-interactions" dropdownToggle class="btn btn-secondary dropdown-toggle" type="button" aria-controls="dropdown-interactions">View pending interaction<span class="caret withMargin"></span></button>
-                                                                                    <ul id="dropdown-interactions" *dropdownMenu class="dropdown-menu" aria-labelledby="button-interactions">
-                                                                                        @for (interaction of interactionStepsOfTests[testCase.id]; track interaction.stepId; let index = $index) {
-                                                                                            <li>
-                                                                                                <a class="dropdown-item" href (click)="displayPendingInteraction(interaction.stepId);$event.preventDefault();">{{labelForPendingInteraction(interaction, index)}}</a>
-                                                                                            </li>
-                                                                                        }
-                                                                                    </ul>                                                                        
-                                                                                </div>
-                                                                            }
-                                                                        }
-                                                                        <div class="btn-group export-group" dropdown [isDisabled]="!exportEnabled(testCase) || exportPdfPending[testCase.id] || exportXmlPending[testCase.id]">
-                                                                            <button type="button" [disable]="!exportEnabled(testCase) || exportPdfPending[testCase.id] || exportXmlPending[testCase.id]" [pending]="exportPdfPending[testCase.id] || exportXmlPending[testCase.id]" class="btn btn-secondary" (click)="exportPdf(testCase)">Download report</button>
-                                                                            <button id="button-export" type="button" [disabled]="!exportEnabled(testCase) || exportPdfPending[testCase.id] || exportXmlPending[testCase.id]" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
-                                                                                <span class="caret"></span>
-                                                                                <span class="sr-only visually-hidden">Download report</span>
-                                                                            </button>
-                                                                            <ul id="dropdown-export" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-export">
-                                                                                <li role="menuitem"><a class="dropdown-item" href (click)="exportXml(testCase);$event.preventDefault();">Download report as XML</a></li>
-                                                                            </ul>
-                                                                        </div>                                                                                
-                                                                        <div class="viewLogButton">
-                                                                            <button type="button" class="btn btn-secondary position-relative" (click)="viewLog(testCase)">
-                                                                                View log
-                                                                                <span 
-                                                                                    [class.badgeLogErrors]="unreadLogErrors[testCase.id]" 
-                                                                                    [class.badgeLogWarnings]="unreadLogWarnings[testCase.id] && !unreadLogErrors[testCase.id]"                                                                             
-                                                                                    [class.badgeLogMessages]="unreadLogMessages[testCase.id] && !unreadLogWarnings[testCase.id] && !unreadLogErrors[testCase.id]"
-                                                                                    [class.hidden]="!unreadLogErrors[testCase.id] && !unreadLogWarnings[testCase.id] && !unreadLogMessages[testCase.id]" 
-                                                                                    class="buttonBadge position-absolute top-0 start-100 translate-middle border border-light rounded-circle">
-                                                                                </span>                                                                        
-                                                                            </button>
-                                                                        </div>
-                                                                    </div>
-                                                                }
+                                                            }
+                                                            <div class="session-table-title-part">
+                                                                <div class="session-table-title-label">Session</div>
+                                                                <div class="session-table-title-value">
+                                                                    @if (testCase.sessionId != undefined) {
+                                                                        <app-copy-enabled-text [value]="testCase.sessionId"></app-copy-enabled-text>
+                                                                    } @else {
+                                                                        <app-pending-block></app-pending-block>
+                                                                    }
+                                                                </div>
                                                             </div>
                                                         </div>
-                                                        <div class="card-body" style="overflow-x: auto; overflow-y: hidden;">
-                                                            @if (stepsOfTests[testCase.id] == undefined) {
-                                                                <app-pending-block></app-pending-block>
-                                                            } @else {
-                                                                <div class="sessionDiagramDiv">
-                                                                    <app-sequence-diagram 
-                                                                        [stepsOfTests]="stepsOfTests"
-                                                                        [test]="testCase.id+''"
-                                                                        [actorInfoOfTests]="actorInfoOfTests"
-                                                                        [events]="testEvents[testCase.id]">
-                                                                    </app-sequence-diagram>
-                                                                    @if (testCaseOutput[testCase.id]) {
-                                                                        <div class="test-output-container">
-                                                                            <alert [type]="alertTypeForStatus(testCaseStatus[testCase.id])" [dismissible]="false">{{testCaseOutput[testCase.id]}}</alert>
+                                                        @if (stepsOfTests[testCase.id] != undefined) {
+                                                            <div class="session-table-operations btn-toolbar">
+                                                                @if (interactionStepsOfTests[testCase.id] != undefined && interactionStepsOfTests[testCase.id].length > 0) {
+                                                                    @if (interactionStepsOfTests[testCase.id].length == 1) {
+                                                                        <button type="button" class="btn btn-secondary" (click)="displayPendingInteraction()">View pending interaction</button>
+                                                                    } @else {
+                                                                        <div class="btn-group" dropdown>
+                                                                            <button id="button-interactions" dropdownToggle class="btn btn-secondary dropdown-toggle" type="button" aria-controls="dropdown-interactions">View pending interaction<span class="caret withMargin"></span></button>
+                                                                            <ul id="dropdown-interactions" *dropdownMenu class="dropdown-menu" aria-labelledby="button-interactions">
+                                                                                @for (interaction of interactionStepsOfTests[testCase.id]; track interaction.stepId; let index = $index) {
+                                                                                    <li>
+                                                                                        <a class="dropdown-item" href (click)="displayPendingInteraction(interaction.stepId);$event.preventDefault();">{{labelForPendingInteraction(interaction, index)}}</a>
+                                                                                    </li>
+                                                                                }
+                                                                            </ul>                                                                        
                                                                         </div>
                                                                     }
+                                                                }
+                                                                <div class="btn-group export-group" dropdown [isDisabled]="!exportEnabled(testCase) || exportPdfPending[testCase.id] || exportXmlPending[testCase.id]">
+                                                                    <button type="button" [disable]="!exportEnabled(testCase) || exportPdfPending[testCase.id] || exportXmlPending[testCase.id]" [pending]="exportPdfPending[testCase.id] || exportXmlPending[testCase.id]" class="btn btn-secondary" (click)="exportPdf(testCase)">Download report</button>
+                                                                    <button id="button-export" type="button" [disabled]="!exportEnabled(testCase) || exportPdfPending[testCase.id] || exportXmlPending[testCase.id]" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split">
+                                                                        <span class="caret"></span>
+                                                                        <span class="sr-only visually-hidden">Download report</span>
+                                                                    </button>
+                                                                    <ul id="dropdown-export" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-export">
+                                                                        <li role="menuitem"><a class="dropdown-item" href (click)="exportXml(testCase);$event.preventDefault();">Download report as XML</a></li>
+                                                                    </ul>
+                                                                </div>                                                                                
+                                                                <div class="viewLogButton">
+                                                                    <button type="button" class="btn btn-secondary position-relative" (click)="viewLog(testCase)">
+                                                                        View log
+                                                                        <span 
+                                                                            [class.badgeLogErrors]="unreadLogErrors[testCase.id]" 
+                                                                            [class.badgeLogWarnings]="unreadLogWarnings[testCase.id] && !unreadLogErrors[testCase.id]"                                                                             
+                                                                            [class.badgeLogMessages]="unreadLogMessages[testCase.id] && !unreadLogWarnings[testCase.id] && !unreadLogErrors[testCase.id]"
+                                                                            [class.hidden]="!unreadLogErrors[testCase.id] && !unreadLogWarnings[testCase.id] && !unreadLogMessages[testCase.id]" 
+                                                                            class="buttonBadge position-absolute top-0 start-100 translate-middle border border-light rounded-circle">
+                                                                        </span>                                                                        
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                </div>
+                                                <div class="card-body" style="overflow-x: auto; overflow-y: hidden;">
+                                                    @if (stepsOfTests[testCase.id] == undefined) {
+                                                        <app-pending-block></app-pending-block>
+                                                    } @else {
+                                                        <div class="sessionDiagramDiv">
+                                                            <app-sequence-diagram 
+                                                                [stepsOfTests]="stepsOfTests"
+                                                                [test]="testCase.id+''"
+                                                                [actorInfoOfTests]="actorInfoOfTests"
+                                                                [events]="testEvents[testCase.id]">
+                                                            </app-sequence-diagram>
+                                                            @if (testCaseOutput[testCase.id]) {
+                                                                <div class="test-output-container">
+                                                                    <alert [type]="alertTypeForStatus(testCaseStatus[testCase.id])" [dismissible]="false">{{testCaseOutput[testCase.id]}}</alert>
                                                                 </div>
                                                             }
                                                         </div>
-                                                    </div>
+                                                    }
                                                 </div>
                                             </div>
-                                        </td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    } @else {
-                        <div class="pendingDiv">
-                            <app-pending-block></app-pending-block>
-                        </div>
-                    }
-                </div>
-            }
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
         } @else {
             <div class="pendingDiv">
                 <app-pending-block></app-pending-block>

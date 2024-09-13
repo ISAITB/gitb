@@ -4,20 +4,15 @@ import config.Configurations
 import controllers.util._
 import exceptions._
 import managers._
-import models.Enums.UserRole
+import models.Systems
 import models.prerequisites.PrerequisiteUtil
-import models.{Configs, Systems}
 import org.apache.commons.io.FileUtils
 import play.api.libs.json.Json
 import play.api.mvc._
 import utils.{JsonUtil, RepositoryUtils}
 
-import java.io.File
 import javax.inject.Inject
-import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext
-import utils.ClamAVClient
-import utils.MimeUtil
 
 class SystemService @Inject() (implicit ec: ExecutionContext, repositoryUtils: RepositoryUtils, testResultManager: TestResultManager, accountManager: AccountManager, authorizedAction: AuthorizedAction, cc: ControllerComponents, systemManager: SystemManager, parameterManager: ParameterManager, testCaseManager: TestCaseManager, authorizationManager: AuthorizationManager, communityLabelManager: CommunityLabelManager) extends AbstractController(cc) {
 
@@ -139,23 +134,7 @@ class SystemService @Inject() (implicit ec: ExecutionContext, repositoryUtils: R
 
 	}
 
-	def getEndpointConfigurations(endpointId: Long) = authorizedAction { request =>
-    val systemId = ParameterExtractor.requiredQueryParameter(request, Parameters.SYSTEM_ID).toLong
-    authorizationManager.canViewEndpointConfigurations(request, systemId, endpointId)
-	  val configs = systemManager.getEndpointConfigurations(endpointId, systemId)
-    val json = JsonUtil.jsConfigs(configs).toString()
-    ResponseConstructor.constructJsonResponse(json)
-  }
-
-  def deleteEndpointConfiguration(endpointId: Long) = authorizedAction { request =>
-    val systemId = ParameterExtractor.requiredQueryParameter(request, Parameters.SYSTEM_ID).toLong
-    val parameterId = ParameterExtractor.requiredQueryParameter(request, Parameters.PARAMETER_ID).toLong
-    authorizationManager.canDeleteEndpointConfiguration(request, systemId, endpointId, parameterId)
-    systemManager.deleteEndpointConfiguration(systemId, parameterId, endpointId)
-    ResponseConstructor.constructEmptyResponse
-  }
-
-  def downloadEndpointConfigurationFile(endpointId: Long) = authorizedAction { request =>
+  def downloadEndpointConfigurationFile() = authorizedAction { request =>
     val systemId = ParameterExtractor.requiredQueryParameter(request, Parameters.SYSTEM_ID).toLong
     authorizationManager.canViewEndpointConfigurationsForSystem(request, systemId)
     val parameterId = ParameterExtractor.requiredQueryParameter(request, Parameters.PARAMETER_ID).toLong
@@ -169,88 +148,6 @@ class SystemService @Inject() (implicit ec: ExecutionContext, repositoryUtils: R
       ResponseConstructor.constructNotFoundResponse(ErrorCodes.INVALID_PARAM, "Parameter was not found")
     }
   }
-
-  def saveEndpointConfiguration(endpointId: Long) = authorizedAction { request =>
-    try {
-      val paramMap = ParameterExtractor.paramMap(request)
-      val files = ParameterExtractor.extractFiles(request)
-      val jsConfig = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.CONFIG)
-      var config = JsonUtil.parseJsConfig(jsConfig)
-      authorizationManager.canEditEndpointConfiguration(request, config)
-      var fileToStore: Option[File] = None
-      if (files.contains(Parameters.FILE)) {
-        fileToStore = Some(files(Parameters.FILE).file)
-        config = config.withContentType(files(Parameters.FILE).contentType)
-      }
-      var response: Result = null
-      if (Configurations.ANTIVIRUS_SERVER_ENABLED && fileToStore.isDefined) {
-        val virusScanner = new ClamAVClient(Configurations.ANTIVIRUS_SERVER_HOST, Configurations.ANTIVIRUS_SERVER_PORT, Configurations.ANTIVIRUS_SERVER_TIMEOUT)
-        val scanResult = virusScanner.scan(fileToStore.get)
-        if (!ClamAVClient.isCleanReply(scanResult)) {
-          response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "Configuration file failed virus scan.")
-        }
-      }
-      if (response == null) {
-        val parameter = parameterManager.getParameterById(config.parameter)
-        if (parameter.isDefined) {
-          if (parameter.get.hidden) {
-            val isAdmin = accountManager.checkUserRole(ParameterExtractor.extractUserId(request), UserRole.SystemAdmin, UserRole.CommunityAdmin)
-            if (!isAdmin) {
-              // Ignore
-              response = ResponseConstructor.constructEmptyResponse
-            }
-          }
-          if (response == null) {
-            // Encrypt value if type is SECRET.
-            if (parameter.get.kind == "SECRET") {
-              config = Configs(config.system, config.parameter, config.endpoint, MimeUtil.encryptString(config.value), None)
-            }
-            systemManager.saveEndpointConfiguration(config, fileToStore)
-            if (parameter.get.kind == "BINARY") {
-              // Get the metadata for the parameter.
-              val contentType = config.contentType.get
-              val extension = MimeUtil.getExtensionFromMimeType(contentType)
-              val json = JsonUtil.jsBinaryMetadata(contentType, extension).toString()
-              response = ResponseConstructor.constructJsonResponse(json)
-            }
-          }
-        }
-      }
-      if (response == null) {
-        response = ResponseConstructor.constructEmptyResponse
-      }
-      response
-    } finally {
-      if (request.body.asMultipartFormData.isDefined) request.body.asMultipartFormData.get.files.foreach { file => FileUtils.deleteQuietly(file.ref) }
-    }
-	}
-
-	def getConfigurationsWithEndpointIds() = authorizedAction { request =>
-    val system = ParameterExtractor.requiredQueryParameter(request, Parameters.SYSTEM_ID).toLong
-    authorizationManager.canViewEndpointConfigurationsForSystem(request, system)
-    val ids = ParameterExtractor.extractLongIdsQueryParameter(request)
-		ids match {
-			case Some(list) => {
-        val configurations = systemManager.getConfigurationsWithEndpointIds(system, list)
-        // Add mime-type and file name extension for binary ones.
-        val configsToReturn = new ListBuffer[models.Config]
-        configurations.foreach { config =>
-          // config.
-          if (MimeUtil.isDataURL(config.value)) {
-            val detectedMimeType = MimeUtil.getMimeTypeFromDataURL(config.value)
-            val extension = MimeUtil.getExtensionFromMimeType(detectedMimeType);
-            configsToReturn += new models.Config(config, detectedMimeType, extension)
-          } else {
-            configsToReturn += new models.Config(config, null, null)
-          }
-        }
-        val json = JsonUtil.jsConfigList(configsToReturn.toList).toString()
-        ResponseConstructor.constructJsonResponse(json)
-      }
-			case None =>
-				ResponseConstructor.constructBadRequestResponse(ErrorCodes.MISSING_PARAMS, Parameters.IDS+" parameter is missing")
-		}
-	}
 
   def getSystemsByOrganization() = authorizedAction { request =>
     val orgId = ParameterExtractor.requiredQueryParameter(request, Parameters.ORGANIZATION_ID).toLong

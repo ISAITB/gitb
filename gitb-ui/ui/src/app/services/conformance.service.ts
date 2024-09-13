@@ -37,6 +37,8 @@ import { ConformanceOverviewCertificateSettings } from '../types/conformance-ove
 import { BadgePlaceholderInfo } from '../modals/conformance-certificate-modal/badge-placeholder-info';
 import { Constants } from '../common/constants';
 import { CommunityReportSettings } from '../types/community-report-settings';
+import { SystemParameter } from '../types/system-parameter';
+import { OrganisationParameter } from '../types/organisation-parameter';
 
 @Injectable({
   providedIn: 'root'
@@ -809,9 +811,9 @@ export class ConformanceService {
     })
   }
 
-  getSystemConfigurations(actorId: number, systemId: number) {
-    return this.restService.get<SystemConfigurationEndpoint[]>({
-      path: ROUTES.controllers.ConformanceService.getSystemConfigurations().url,
+  getStatementParameterValues(actorId: number, systemId: number) {
+    return this.restService.get<EndpointParameter[]>({
+      path: ROUTES.controllers.ConformanceService.getStatementParameterValues().url,
       authenticate: true,
       params: {
         actor_id: actorId,
@@ -1104,6 +1106,29 @@ export class ConformanceService {
       path: ROUTES.controllers.ConformanceService.getConformanceStatement(system, actor).url,
       authenticate: true,
       params: params
+    })
+  }
+
+  updateStatementConfiguration(systemId: number, actorId: number, organisationProperties: OrganisationParameter[], systemProperties: SystemParameter[], statementProperties: EndpointParameter[]) {
+    const data: any = {
+      system_id: systemId,
+      actor_id: actorId
+    }
+    let files: FileParam[] = []
+    const orgProps = this.dataService.customPropertiesForPost(organisationProperties, "org")
+    data.org_params = orgProps.parameterJson
+    files.push(...orgProps.files)
+    const sysProps = this.dataService.customPropertiesForPost(systemProperties, "sys")
+    data.sys_params = sysProps.parameterJson
+    files.push(...sysProps.files)
+    const stmProps = this.dataService.customPropertiesForPost(statementProperties, "stm")
+    data.stm_params = stmProps.parameterJson
+    files.push(...stmProps.files)
+    return this.restService.post<void>({
+      path: ROUTES.controllers.ConformanceService.updateStatementConfiguration().url,
+      data: data,
+      files: files,
+      authenticate: true
     })
   }
 

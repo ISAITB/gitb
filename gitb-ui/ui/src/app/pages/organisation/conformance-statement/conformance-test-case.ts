@@ -18,5 +18,6 @@ export interface ConformanceTestCase extends SpecificationReferenceInfo {
     tags?: string
 
     parsedTags?: TestCaseTag[]
+    executionPending?: boolean
 
 }

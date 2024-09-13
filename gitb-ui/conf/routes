@@ -297,12 +297,9 @@ GET     /api/suite/:suite_id                    @controllers.TestSuiteService.do
 # Endpoint management API
 GET     /api/endpoints                          @controllers.ConformanceService.getEndpoints()
 GET     /api/endpoints/checkConfig              @controllers.ConformanceService.checkConfigurations()
-GET     /api/endpoints/systemConfig             @controllers.ConformanceService.getSystemConfigurations()
-GET     /api/endpoints/:endpoint_id/config      @controllers.SystemService.getEndpointConfigurations(endpoint_id: Long)
-GET     /api/endpoints/config                   @controllers.SystemService.getConfigurationsWithEndpointIds()
-POST    /api/endpoints/:endpoint_id/config      @controllers.SystemService.saveEndpointConfiguration(endpoint_id: Long)
-DELETE  /api/endpoints/:endpoint_id/config      @controllers.SystemService.deleteEndpointConfiguration(endpoint_id: Long)
-GET     /api/endpoints/:endpoint_id/config/download @controllers.SystemService.downloadEndpointConfigurationFile(endpoint_id: Long)
+GET     /api/endpoints/statementConfig          @controllers.ConformanceService.getStatementParameterValues()
+GET     /api/endpoints/config/download          @controllers.SystemService.downloadEndpointConfigurationFile()
+POST    /api/statement/config                   @controllers.ConformanceService.updateStatementConfiguration()
 
 # Report management API
 POST    /api/reports/active                     @controllers.ReportService.getSystemActiveTestResults()
