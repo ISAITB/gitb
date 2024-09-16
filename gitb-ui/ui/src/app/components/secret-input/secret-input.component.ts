@@ -11,17 +11,16 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
       multi: true
     }
   ],
-  styles: ['button {box-shadow: none;outline: none !important;}']
+  styles: ['button {box-shadow: none;outline: none !important; width: 43px; }']
 })
 export class SecretInputComponent implements OnInit, AfterViewInit,  ControlValueAccessor {
 
   @Input() id!: string
   @Input() name!: string
   @Input() autoFocus = false
-  @Input() passwordTabIndex = 0
   @Input() focusChange?: EventEmitter<boolean>
-  @ViewChild("passwordField") passwordField?: ElementRef;
-  @ViewChild("displayButton") displayButton?: ElementRef;
+
+  @ViewChild("passwordField", { static: false }) passwordField?: ElementRef;
   _value?: string
   display = false
   onChange = (_: any) => {}
@@ -56,9 +55,11 @@ export class SecretInputComponent implements OnInit, AfterViewInit,  ControlValu
   writeValue(v: string|undefined): void {
     this._value = v
   }
+
   registerOnChange(fn: any): void {
     this.onChange = fn
   }
+
   registerOnTouched(fn: any): void {
     this.onTouched = fn
   }
@@ -79,10 +80,9 @@ export class SecretInputComponent implements OnInit, AfterViewInit,  ControlValu
     }
   }
 
-  viewButtonOff() {
+  toggleDisplay() {
+    this.display = !this.display
     if (this.display) {
-      this.display = false
-      this.displayButton?.nativeElement.blur();
       setTimeout(() => {
         this.passwordField?.nativeElement.focus()
       }, 1)
