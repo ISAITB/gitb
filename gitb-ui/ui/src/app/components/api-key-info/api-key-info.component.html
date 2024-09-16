@@ -38,7 +38,7 @@
                     <tr>
                         <td class="typeLabel">Conformance snapshot</td>
                         <td class="typeName">
-                            <select name="selectedSnapshot" [(ngModel)]="selectedSnapshot" (change)="snapshotChanged()" class="form-control form-select">
+                            <select name="selectedSnapshot" [(ngModel)]="selectedSnapshot" (change)="snapshotChanged()" class="form-select">
                                 <option [ngValue]="undefined">{{latestSnapshotLabel}}</option>
                                 @for (snapshot of conformanceSnapshots; track snapshot.id) {
                                     <option [ngValue]="snapshot">{{snapshot.label}}</option>
@@ -70,7 +70,7 @@
                                     @if (apiInfo.systems.length == 1) {
                                         <input type="text" name="selectedSystem" [(ngModel)]="selectedSystem.name" readonly="readonly" class="form-control"/>
                                     } @else {
-                                        <select name="selectedSystem" [(ngModel)]="selectedSystem" (change)="systemChanged()" class="form-control form-select">
+                                        <select name="selectedSystem" [(ngModel)]="selectedSystem" (change)="systemChanged()" class="form-select">
                                             @for (system of apiInfo.systems; track system.id) {
                                                 <option [ngValue]="system">{{system.name}}</option>
                                             }
@@ -98,7 +98,7 @@
                                     @if (apiInfo.specifications.length == 1) {
                                         <input type="text" name="selectedSpecification" [(ngModel)]="selectedSpecification!.name" readonly="readonly" class="form-control"/>
                                     } @else {
-                                        <select name="selectedSpecification" [(ngModel)]="selectedSpecification" (change)="specificationChanged()" class="form-control form-select">
+                                        <select name="selectedSpecification" [(ngModel)]="selectedSpecification" (change)="specificationChanged()" class="form-select">
                                             @for (specification of apiInfo.specifications; track $index) {
                                                 <option [ngValue]="specification">{{specification.name}}</option>
                                             }
@@ -121,7 +121,7 @@
                                     @if (selectedSpecification.actors.length == 1) {
                                         <input type="text" name="selectedActor" [(ngModel)]="selectedActor.name" readonly="readonly" class="form-control"/>
                                     } @else {
-                                        <select name="selectedActor" [(ngModel)]="selectedActor" (change)="actorChanged()" class="form-control form-select">
+                                        <select name="selectedActor" [(ngModel)]="selectedActor" (change)="actorChanged()" class="form-select">
                                             @for (actor of selectedSpecification.actors; track actor.key) {
                                                 <option [ngValue]="actor">{{actor.name}}</option>
                                             }
@@ -140,7 +140,7 @@
                                     @if (selectedSpecification.testSuites.length == 1) {
                                         <input type="text" name="selectedTestSuite" [(ngModel)]="selectedTestSuite.name" readonly="readonly" class="form-control"/>
                                     } @else {
-                                        <select name="selectedTestSuite" [(ngModel)]="selectedTestSuite" (change)="testSuiteChanged()" class="form-control form-select">
+                                        <select name="selectedTestSuite" [(ngModel)]="selectedTestSuite" (change)="testSuiteChanged()" class="form-select">
                                             @for (testSuite of selectedSpecification.testSuites; track testSuite.key) {
                                                 <option [ngValue]="testSuite">{{testSuite.name}}</option>
                                             }
@@ -159,7 +159,7 @@
                                     @if (selectedTestSuite.testCases.length == 1) {
                                         <input type="text" name="selectedTestCase" [(ngModel)]="selectedTestCase.name" readonly="readonly" class="form-control"/>
                                     } @else {
-                                        <select name="selectedTestCase" [(ngModel)]="selectedTestCase" (change)="testCaseChanged()" class="form-control form-select">
+                                        <select name="selectedTestCase" [(ngModel)]="selectedTestCase" (change)="testCaseChanged()" class="form-select">
                                             @for (testCase of selectedTestSuite.testCases; track testCase.key) {
                                                 <option [ngValue]="testCase">{{testCase.name}}</option>
                                             }

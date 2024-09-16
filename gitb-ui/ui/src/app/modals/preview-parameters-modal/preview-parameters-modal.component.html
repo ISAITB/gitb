@@ -15,7 +15,7 @@
                 <div class="row mb-3">
                     <label class="col-3 col-form-label text-end" for="mode">Preview mode:</label>
                     <div class="col-8">
-                        <select class="form-control form-select" id="mode" name="mode" [(ngModel)]="mode">
+                        <select class="form-select" id="mode" name="mode" [(ngModel)]="mode">
                             <option value="user">{{dataService.labelOrganisation()}} user</option>
                             @if (hasRegistrationCase) {
                                 <option value="registration">Self-registration screen</option>

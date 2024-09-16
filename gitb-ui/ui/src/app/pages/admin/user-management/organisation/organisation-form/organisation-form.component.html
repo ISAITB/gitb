@@ -26,7 +26,7 @@
                 <div class="row mb-3">
                     <label class="col-3 col-form-label text-end" for="landingPage">Landing page:</label>
                     <div class="col-7">
-                        <select id="landingPage" class="form-control form-select" name="landingPage" [(ngModel)]="organisation.landingPage">
+                        <select id="landingPage" class="form-select" name="landingPage" [(ngModel)]="organisation.landingPage">
                             <option [ngValue]="undefined">--Default Page--</option>
                             @for (page of landingPages; track page.id) {
                                 <option [ngValue]="page.id">{{page.name}}</option>
@@ -39,7 +39,7 @@
                     <div class="row mb-3">
                         <label class="col-3 col-form-label text-end" for="legalNotice">Legal notice:</label>
                         <div class="col-7">
-                            <select id="legalNotice" class="form-control form-select" name="legalNotice" [(ngModel)]="organisation.legalNotice">
+                            <select id="legalNotice" class="form-select" name="legalNotice" [(ngModel)]="organisation.legalNotice">
                                 <option [ngValue]="undefined">--Default Legal Notice--</option>
                                 @for (notice of legalNotices; track notice.id) {
                                     <option [ngValue]="notice.id">{{notice.name}}</option>
@@ -51,7 +51,7 @@
                     <div class="row mb-3">
                         <label class="col-3 col-form-label text-end" for="template">Error template:</label>
                         <div class="col-7">
-                            <select class="form-control form-select" name="errorTemplate" [(ngModel)]="organisation.errorTemplate">
+                            <select class="form-select" name="errorTemplate" [(ngModel)]="organisation.errorTemplate">
                                 <option [ngValue]="undefined">--Default Error Template--</option>
                                 @for (template of errorTemplates; track template.id) {
                                     <option [ngValue]="template.id">{{template.name}}</option>
@@ -64,7 +64,7 @@
                         <div class="row mb-3">
                             <label class="col-3 col-form-label text-end" for="otherOrganisation">Copy test setup from:</label>
                             <div class="col-7">
-                                <select id="otherOrganisation" (change)="copyChanged()" class="form-control form-select" name="otherOrganisation" [(ngModel)]="organisation.otherOrganisations">
+                                <select id="otherOrganisation" (change)="copyChanged()" class="form-select" name="otherOrganisation" [(ngModel)]="organisation.otherOrganisations">
                                     <option [ngValue]="undefined"></option>
                                     @for (organisation of otherOrganisations; track organisation.id) {
                                         <option [ngValue]="organisation.id">{{organisation.sname}}</option>

@@ -23,7 +23,7 @@
                         <div class="row mt-3">
                             <label class="col-3 col-form-label text-end" for="event">* Event type:</label>
                             <div class="col-7">
-                                <select id="event" name="event" (change)="eventTypeChanged()" [(ngModel)]="trigger.eventType" class="form-control form-select">
+                                <select id="event" name="event" (change)="eventTypeChanged()" [(ngModel)]="trigger.eventType" class="form-select">
                                     <optgroup label="{{dataService.labelOrganisation() + ' events'}}">
                                         <option [ngValue]="Constants.TRIGGER_EVENT_TYPE.ORGANISATION_CREATED">{{dataService.triggerEventTypeLabel(Constants.TRIGGER_EVENT_TYPE.ORGANISATION_CREATED)}}</option>
                                         <option [ngValue]="Constants.TRIGGER_EVENT_TYPE.ORGANISATION_UPDATED">{{dataService.triggerEventTypeLabel(Constants.TRIGGER_EVENT_TYPE.ORGANISATION_UPDATED)}}</option>

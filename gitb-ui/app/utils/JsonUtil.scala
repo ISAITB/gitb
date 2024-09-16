@@ -3197,10 +3197,10 @@ object JsonUtil {
     if (settings.to.isDefined && settings.to.get.nonEmpty) json = json + ("to" -> jsStringArray(settings.to.get))
     if (settings.smtpHost.isDefined) json = json + ("host" -> JsString(settings.smtpHost.get))
     if (settings.smtpPort.isDefined) json = json + ("port" -> JsNumber(settings.smtpPort.get))
-    if (settings.authEnabled.isDefined) {
+    if (settings.authEnabled.exists(x => x)) {
       json = json + ("authenticate" -> JsBoolean(settings.authEnabled.get))
-      if (settings.authUsername.isDefined) json = json + ("username" -> JsString(settings.authUsername.get))
-      if (settings.authPassword.isDefined) json = json + ("password" -> JsString(if (maskPassword) "*****" else settings.authPassword.get))
+      if (settings.authUsername.exists(StringUtils.isNoneBlank(_))) json = json + ("username" -> JsString(settings.authUsername.get))
+      if (settings.authPassword.exists(StringUtils.isNoneBlank(_))) json = json + ("password" -> JsString(if (maskPassword) "*****" else settings.authPassword.get))
     }
     if (settings.sslEnabled.isDefined) json = json + ("sslEnabled" -> JsBoolean(settings.sslEnabled.get))
     if (settings.sslProtocols.isDefined && settings.sslProtocols.get.nonEmpty) json = json + ("sslProtocols" -> jsStringArray(settings.sslProtocols.get))

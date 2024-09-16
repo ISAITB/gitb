@@ -18,6 +18,8 @@ export class SecretInputComponent implements OnInit, AfterViewInit,  ControlValu
   @Input() id!: string
   @Input() name!: string
   @Input() autoFocus = false
+  @Input() showAsInvalid? = false
+  @Input() invalidFeedback?: string
   @Input() focusChange?: EventEmitter<boolean>
 
   @ViewChild("passwordField", { static: false }) passwordField?: ElementRef;

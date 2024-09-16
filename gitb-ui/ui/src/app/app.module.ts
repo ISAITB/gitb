@@ -196,6 +196,7 @@ import { StatementControlsComponent } from './components/statement-controls/stat
 import { ConformanceOverviewCertificateModalComponent } from './modals/conformance-overview-certificate-modal/conformance-overview-certificate-modal.component';
 import { EndpointParameterTabContentComponent } from './pages/admin/domain-management/endpoint/endpoint-parameter-tab-content/endpoint-parameter-tab-content.component';
 import { CustomPropertyPanelComponent } from './components/custom-property-panel/custom-property-panel.component';
+import { InvalidFormControlDirective } from './directives/invalid-form-control.directive';
 
 @NgModule({ declarations: [
         AppComponent,
@@ -241,6 +242,7 @@ import { CustomPropertyPanelComponent } from './components/custom-property-panel
         TestAssertionReportComponent,
         CodeEditorModalComponent,
         PendingButtonDirective,
+        InvalidFormControlDirective,
         ScrollToTopComponent,
         ConformanceDashboardComponent,
         ConformanceCertificateModalComponent,

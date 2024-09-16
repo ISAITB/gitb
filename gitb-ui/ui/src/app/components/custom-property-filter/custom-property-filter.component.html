@@ -10,7 +10,7 @@
     } @else {
       <div class="custom-property-filter-container non-applied">
         <div class="property-id">
-          <select name="propInput" (change)="propertyChanged()" [(ngModel)]="propertyInfo.property" class="form-control form-select">
+          <select name="propInput" (change)="propertyChanged()" [(ngModel)]="propertyInfo.property" class="form-select">
               @for (prop of properties; track prop.id) {
                 <option [ngValue]="prop">{{prop.name}}</option>
               }
@@ -22,7 +22,7 @@
           </div>
         } @else if (propertyInfo.property.presetValues) {
           <div class="property-value">
-            <select name="valInputChoice" [(ngModel)]="propertyInfo.valueObj" class="form-control form-select">
+            <select name="valInputChoice" [(ngModel)]="propertyInfo.valueObj" class="form-select">
                 @for (v of propertyInfo.property!.presetValues; track $index) {
                   <option [ngValue]="v">{{v.label}}</option>
                 }

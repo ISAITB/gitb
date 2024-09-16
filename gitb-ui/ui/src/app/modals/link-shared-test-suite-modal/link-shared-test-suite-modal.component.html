@@ -12,7 +12,7 @@
 							@if (availableSpecifications.length == 1) {
 								<input class="form-control" id="specification" name="specification" [(ngModel)]="specifications[0].fname" readonly="readonly"/>
 							} @else if (availableSpecifications.length > 1) {
-								<select [attr.size]="(availableSpecifications.length > 30)?30:availableSpecifications.length" multiple="multiple" class="form-control form-select" id="specification" name="specification" [(ngModel)]="specifications">
+								<select [attr.size]="(availableSpecifications.length > 30)?30:availableSpecifications.length" multiple="multiple" class="form-select" id="specification" name="specification" [(ngModel)]="specifications">
 									@for (specification of availableSpecifications; track $index) {
 										<option [ngValue]="specification">{{specification.fname}}</option>
 									}

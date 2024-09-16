@@ -69,7 +69,7 @@
                         <div class="row mt-3">
                             <label class="col-3 col-form-label text-end" for="template"><span [hidden]="!model.selfRegOption.forceTemplateSelection">* </span>Configuration:</label>
                             <div class="col-7">
-                                <select id="template" name="template" class="form-control form-select" [disabled]="templateReadonly" [(ngModel)]="model.template">
+                                <select id="template" name="template" class="form-select" [disabled]="templateReadonly" [(ngModel)]="model.template">
                                     <option value="" disabled></option>
                                     @for (template of model.selfRegOption.templates; track template.id) {
                                         <option [ngValue]="template">{{template.name}}</option>

@@ -174,7 +174,7 @@
                                         <input type="text" value="" readonly="true" class="form-control" type="text">
                                     }
                                 } @else {
-                                    <select id="messageLevel" class="form-control form-select" name="messageLevel" (change)="messageLevelChanged()" [(ngModel)]="messageLevel">
+                                    <select id="messageLevel" class="form-select" name="messageLevel" (change)="messageLevelChanged()" [(ngModel)]="messageLevel">
                                         @if (settings.enableAllLevel) {
                                             <option value="all">Aggregate status</option>
                                         }
@@ -195,7 +195,7 @@
                                     @if ((messageLevel == "domain" && allDomains && allDomains.length > 0) ||
                                     (messageLevel == "group" && allGroups && allGroups.length > 0) ||
                                     (messageLevel == "specification" && allSpecifications && allSpecifications.length > 0)) {
-                                        <select class="form-control form-select" id="specificMessageSetting" name="specificMessageSetting" [(ngModel)]="specificMessageSetting" (change)="toggleSpecificMessageSetting()">
+                                        <select class="form-select" id="specificMessageSetting" name="specificMessageSetting" [(ngModel)]="specificMessageSetting" (change)="toggleSpecificMessageSetting()">
                                             <option [ngValue]="false">Default message</option>
                                             <option [ngValue]="true">Specific message</option>
                                         </select>
@@ -211,7 +211,7 @@
                                     <label class="col-3 col-form-label text-end" for="domainMessage">{{dataService.labelDomain()}}:</label>
                                     <div class="col-7">
                                         @if (domains.length > 1) {
-                                            <select id="domainMessage" class="form-control form-select" name="domainMessage" (change)="domainChanged()" [(ngModel)]="domainId">
+                                            <select id="domainMessage" class="form-select" name="domainMessage" (change)="domainChanged()" [(ngModel)]="domainId">
                                                 @for (domain of domains; track domain.id) {
                                                     <option [ngValue]="domain.id">{{domain.fname}}</option>
                                                 }
@@ -227,7 +227,7 @@
                                     <label class="col-3 col-form-label text-end" for="groupMessage">{{dataService.labelSpecificationGroup()}}:</label>
                                     <div class="col-7">
                                         @if (groups.length > 1 || (messageLevel == "specification" && groups.length == 1 && specsPerDomain.has(domainId))) {
-                                            <select id="groupMessage" class="form-control form-select" name="groupMessage" (change)="groupChanged()" [(ngModel)]="groupId">
+                                            <select id="groupMessage" class="form-select" name="groupMessage" (change)="groupChanged()" [(ngModel)]="groupId">
                                                 @if (messageLevel == "specification" && specsPerDomain.has(domainId)) {
                                                     <option [ngValue]="noGroup">None</option>
                                                 }
@@ -250,7 +250,7 @@
                                     }
                                     <div class="col-7">
                                         @if (specifications.length > 1) {
-                                            <select id="specMessage" class="form-control form-select" name="specMessage" (change)="specificationChanged()" [(ngModel)]="specificationId">
+                                            <select id="specMessage" class="form-select" name="specMessage" (change)="specificationChanged()" [(ngModel)]="specificationId">
                                                 @for (specification of specifications; track specification.id) {
                                                     <option [ngValue]="specification.id">{{specification.fname}}</option>
                                                 }

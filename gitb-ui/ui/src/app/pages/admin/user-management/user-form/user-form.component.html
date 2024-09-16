@@ -31,7 +31,7 @@
         <div class="row mb-3">
             <label [ngClass]="{'col-3': sso, 'col-4': !sso}" class="col-form-label text-end" for="role">* Role:</label>
             <div class="col-6">
-                <select id="role" #role name="role" class="form-control form-select" [(ngModel)]="user.role">
+                <select id="role" #role name="role" class="form-select" [(ngModel)]="user.role">
                     @for (role of roles; track $index) {
                         <option [ngValue]="role.id">{{role.label}}</option>
                     }

@@ -4,7 +4,7 @@
             <div class="row mb-3">
                 <label class="col-3 col-form-label text-end" for="groupChoice">{{dataService.labelSpecificationGroup()}}:</label>
                 <div class="col-7">
-                    <select id="groupChoice" class="form-control form-select" name="group" [(ngModel)]="specification.group">
+                    <select id="groupChoice" class="form-select" name="group" [(ngModel)]="specification.group">
                         <option [ngValue]="undefined">--Optional--</option>
                         @for (group of specification.groups; track group.id) {
                             <option [ngValue]="group.id">{{group.sname}}</option>

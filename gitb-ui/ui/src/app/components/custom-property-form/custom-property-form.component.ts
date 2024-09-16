@@ -39,6 +39,7 @@ export class CustomPropertyFormComponent implements OnInit {
   innerDivStyle = ''
   private hasPrerequisites = false
   private propertyMap: Record<string, CustomProperty> = {}
+  resetMap: Record<number, EventEmitter<void>> = {}
   private propertiesInvolvedInPrerequisites: string[] = []
   private propertiesInvolvedInPrerequisitesMap: Record<string, boolean> = {}
 
@@ -73,10 +74,15 @@ export class CustomPropertyFormComponent implements OnInit {
     if (this.tbFormPadded) {
       this.innerDivStyle = 'col-'+(11-this.tbColOffset)+' offset-'+this.tbColOffset
     }
-    if (this.tbSetDefaults && this.tbProperties != undefined) {
+    if (this.tbProperties) {
       for (let prop of this.tbProperties) {
-        if (prop.defaultValue != undefined) {
-          prop.value = prop.defaultValue
+        if (this.tbSetDefaults && this.tbProperties != undefined) {
+          if (prop.defaultValue != undefined) {
+            prop.value = prop.defaultValue
+          }
+        }
+        if (prop.kind == "BINARY") {
+          this.resetMap[prop.id] = new EventEmitter<void>()
         }
       }
     }
@@ -152,6 +158,9 @@ export class CustomPropertyFormComponent implements OnInit {
     delete property.file
     property.configured = false
     this.checkPrerequisites(property)
+    if (this.resetMap[property.id]) {
+      this.resetMap[property.id].emit()
+    }
   }
 
   onFileSelect(property: CustomProperty, file: FileData): void {

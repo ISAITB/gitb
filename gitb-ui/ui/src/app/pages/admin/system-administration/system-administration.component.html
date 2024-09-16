@@ -49,7 +49,7 @@
                                             @if (communities.length == 0) {
                                                 <div class="no-data-container">No communities available</div>
                                             } @else {
-                                                <select name="selectedCommunity" [disabled]="!demoAccountEnabled || loadCommunitiesPending || communities.length == 0" [(ngModel)]="selectedCommunity" [compareWith]="dataService.sameId" (change)="selectCommunity()" class="form-control form-select demoSelect">
+                                                <select name="selectedCommunity" [disabled]="!demoAccountEnabled || loadCommunitiesPending || communities.length == 0" [(ngModel)]="selectedCommunity" [compareWith]="dataService.sameId" (change)="selectCommunity()" class="form-select demoSelect">
                                                     @for (community of communities; track community.id) {
                                                         <option [ngValue]="community">{{community.fname}}</option>
                                                     }
@@ -65,7 +65,7 @@
                                                 @if (organisations.length == 0) {
                                                     <div class="no-data-container">No organisations available</div>
                                                 } @else {
-                                                    <select name="selectedOrganisation" [disabled]="!demoAccountEnabled || loadOrganisationsPending || organisations.length == 0" [(ngModel)]="selectedOrganisation" [compareWith]="dataService.sameId" (change)="selectCommunityOrganisation()" class="form-control form-select demoSelect">
+                                                    <select name="selectedOrganisation" [disabled]="!demoAccountEnabled || loadOrganisationsPending || organisations.length == 0" [(ngModel)]="selectedOrganisation" [compareWith]="dataService.sameId" (change)="selectCommunityOrganisation()" class="form-select demoSelect">
                                                         @for (organisation of organisations; track organisation.id) {
                                                             <option [ngValue]="organisation">{{organisation.fname}}</option>
                                                         }
@@ -82,7 +82,7 @@
                                                 @if (users.length == 0) {
                                                     <div class="no-data-container">No non-administrator users available</div>
                                                 } @else {
-                                                    <select name="demoAccount" [disabled]="!demoAccountEnabled || loadUsersPending || users.length == 0" [(ngModel)]="demoAccount" [compareWith]="dataService.sameId" class="form-control form-select demoSelect">
+                                                    <select name="demoAccount" [disabled]="!demoAccountEnabled || loadUsersPending || users.length == 0" [(ngModel)]="demoAccount" [compareWith]="dataService.sameId" class="form-select demoSelect">
                                                         @for (user of users; track user.id) {
                                                             <option [ngValue]="user">{{user.name}}</option>
                                                         }
@@ -147,7 +147,7 @@
                                                     <div class="row mt-3">
                                                         <label class="col-3 col-form-label text-end" for="emailSslProtocols">SSL protocols:</label>
                                                         <div class="col-4 minimum-width-text">
-                                                            <select id="emailSslProtocols" size="6" name="emailSslProtocols" class="form-control form-select" multiple="true" [(ngModel)]="emailSettings.sslProtocols">
+                                                            <select id="emailSslProtocols" size="6" name="emailSslProtocols" class="form-select" multiple="true" [(ngModel)]="emailSettings.sslProtocols">
                                                                 <option value="SSLv2Hello">SSL v2</option>
                                                                 <option value="SSLv3">SSL v3</option>
                                                                 <option value="TLSv1">TLS v1</option>
@@ -275,7 +275,7 @@
                                                     <div class="row mt-3">
                                                         <label class="col-3 col-form-label text-end" for="emailAllowedAttachmentTypes">Allowed attachment types:</label>
                                                         <div class="col-4 minimum-width-text">
-                                                            <select id="emailAllowedAttachmentTypes" size="7" name="emailAllowedAttachmentTypes" class="form-control form-select" multiple="true" [(ngModel)]="emailSettings.allowedAttachmentTypes">
+                                                            <select id="emailAllowedAttachmentTypes" size="7" name="emailAllowedAttachmentTypes" class="form-select" multiple="true" [(ngModel)]="emailSettings.allowedAttachmentTypes">
                                                                 <option value="text/plain">Text (text/plain)</option>
                                                                 <option value="image/gif">GIF (image/gif)</option>
                                                                 <option value="image/png">PNG (image/png)</option>

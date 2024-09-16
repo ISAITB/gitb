@@ -14,7 +14,7 @@
           </div>
           <div>
             @if (!tbImportItem.disableProcessChoice && tbImportItem.process != Constants.IMPORT_ITEM_CHOICE.SKIP_DUE_TO_PARENT) {
-              <select [name]="'choice_'+tbImportItem.id" class="form-control form-select form-select-sm" (click)="$event.stopPropagation();" [(ngModel)]="tbImportItem.selectedProcessOption" (change)="processOptionChanged()">
+              <select [name]="'choice_'+tbImportItem.id" class="form-select form-select-sm" (click)="$event.stopPropagation();" [(ngModel)]="tbImportItem.selectedProcessOption" (change)="processOptionChanged()">
                 @for (option of processOptions; track $index) {
                   <option [ngValue]="option.id">{{option.label}}</option>
                 }

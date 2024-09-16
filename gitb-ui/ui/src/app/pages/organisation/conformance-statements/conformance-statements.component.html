@@ -44,7 +44,7 @@
 								@if (systems.length == 1) {
 									<input type="text" name="system" [(ngModel)]="system!.fname" readonly="readonly" class="form-control"/>
 								} @else {
-									<select name="system" [(ngModel)]="system" (change)="systemChanged(true)" class="form-control form-select">
+									<select name="system" [(ngModel)]="system" (change)="systemChanged(true)" class="form-select">
 										@for (system of systems; track system.id) {
 											<option [ngValue]="system">{{system.fname}}</option>
 										}

@@ -86,7 +86,7 @@
     <div class="row mt-3">
         <label class="col-3 col-form-label text-end" for="depends">Depends on:</label>
         <div class="col-3">
-            <select id="depends" name="depends" class="form-control form-select" [(ngModel)]="parameter.dependsOn" (change)="dependsOnChanged()">
+            <select id="depends" name="depends" class="form-select" [(ngModel)]="parameter.dependsOn" (change)="dependsOnChanged()">
                 <option value=""></option>
                 @for (v of dependsOnTargets; track $index) {
                     <option [value]="v.key">{{v.name}}</option>
@@ -102,7 +102,7 @@
                         </div>
                     } @else {
                         <div>
-                            <select name="dependsOnValue" [(ngModel)]="parameter.dependsOnValue" class="form-control form-select">
+                            <select name="dependsOnValue" [(ngModel)]="parameter.dependsOnValue" class="form-select">
                                 @for (v of dependsOnTargetsMap[parameter.dependsOn].presetValues; track $index) {
                                     <option [value]="v.value">{{v.label}}</option>
                                 }
@@ -182,7 +182,7 @@
             @if (!parameter.hasPresetValues) {
                 <input id="defaultValue" name="defaultValue" [(ngModel)]="parameter.defaultValue" class="form-control" type="text">
             } @else {
-                <select name="defaultValue" [(ngModel)]="parameter.defaultValue" class="form-control form-select">
+                <select name="defaultValue" [(ngModel)]="parameter.defaultValue" class="form-select">
                     <option></option>
                     @for (v of parameter.presetValues; track v) {
                         <option [value]="v.value">{{v.label}}</option>

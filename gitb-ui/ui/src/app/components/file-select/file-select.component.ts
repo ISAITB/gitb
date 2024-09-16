@@ -20,6 +20,8 @@ export class FileSelectComponent implements OnInit {
   @Input() extraActions = false
   @Input() disableUpload = false
   @Input() reset?: EventEmitter<void>
+  @Input() showAsInvalid? = false
+  @Input() invalidFeedback?: string
   @Output() onUpload: EventEmitter<FileData> = new EventEmitter()
   @ViewChild('fileInput') fileInput?: ElementRef
 

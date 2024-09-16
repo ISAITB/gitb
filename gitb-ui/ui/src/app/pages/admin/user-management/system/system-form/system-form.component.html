@@ -62,7 +62,7 @@
                     <div class="row mb-3">
                         <label class="col-3 col-form-label text-end" for="version">Copy test setup from:</label>
                         <div class="col-7">
-                            <select class="form-control form-select" name="otherSystem" [(ngModel)]="system.otherSystems">
+                            <select class="form-select" name="otherSystem" [(ngModel)]="system.otherSystems">
                                 <option value=""></option>
                                 @for (sys of otherSystems; track sys.id) {
                                     <option [ngValue]="sys.id">{{sys.sname}}</option>

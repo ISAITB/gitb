@@ -38,7 +38,7 @@
 							<label class="col-3 col-form-label text-end" for="domain">* {{dataService.labelDomain()}}:</label>
 							<div class="col-7">
 								@if (dataService.isSystemAdmin) {
-									<select [disabled]="domains.length == 0" class="form-control form-select" id="domain" name="domainSelect" [(ngModel)]="domain">
+									<select [disabled]="domains.length == 0" class="form-select" id="domain" name="domainSelect" [(ngModel)]="domain">
 										@for (domain of domains; track domain.id) {
 											<option [ngValue]="domain">{{domain.fname}}</option>
 										}
@@ -55,7 +55,7 @@
 							<label class="col-3 col-form-label text-end" for="community">* Community:</label>
 							<div class="col-7">
 								@if (dataService.isSystemAdmin) {
-									<select [disabled]="communities.length == 0" class="form-control form-select" id="community" [(ngModel)]="community" name="communitySelect">
+									<select [disabled]="communities.length == 0" class="form-select" id="community" [(ngModel)]="community" name="communitySelect">
 										@for (c of communities; track c.id) {
 											<option [ngValue]="c">{{c.fname}}</option>
 										}

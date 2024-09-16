@@ -14,7 +14,7 @@
         <div class="row mb-3">
             <label class="col-3 col-form-label text-end">* Feedback type:</label>
             <div class="col-7">
-                <select class="form-control form-select" name="feedback" [(ngModel)]="feedback">
+                <select class="form-select" name="feedback" [(ngModel)]="feedback">
                     @for (feedbackType of feedbackTypes; track $index) {
                         <option [ngValue]="feedbackType">{{feedbackType.description}}</option>
                     }

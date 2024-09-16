@@ -31,13 +31,15 @@ import { ConformanceStatementTab } from './conformance-statement-tab';
 import { ConformanceTestCase } from './conformance-test-case';
 import { ConformanceTestSuite } from './conformance-test-suite';
 import { ConfigurationPropertyVisibility } from 'src/app/types/configuration-property-visibility';
+import { CustomProperty } from 'src/app/types/custom-property.type';
+import { BaseComponent } from '../../base-component.component';
 
 @Component({
   selector: 'app-conformance-statement',
   templateUrl: './conformance-statement.component.html',
   styleUrls: ['./conformance-statement.component.less']
 })
-export class ConformanceStatementComponent implements OnInit, AfterViewInit {
+export class ConformanceStatementComponent extends BaseComponent implements OnInit, AfterViewInit {
 
   communityId?: number
   communityIdOfStatement!: number
@@ -124,6 +126,7 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
     private reportSupportService: ReportSupportService,
     private communityService: CommunityService
   ) { 
+    super()
     // Access the tab to show via router state to have it cleared upon refresh.
     const navigation = router.getCurrentNavigation()
     if (navigation?.extras?.state) {
@@ -305,6 +308,8 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
         this.organisationPropertyVisibility = this.dataService.checkPropertyVisibility(this.organisationProperties)
         this.systemPropertyVisibility = this.dataService.checkPropertyVisibility(this.systemProperties)
         this.statementPropertyVisibility = this.dataService.checkPropertyVisibility(this.statementProperties)
+        // Highlight validation issues
+        this.setPropertyInvalidStatus()
       }).add(() => {
         this.loadingConfiguration.status = Constants.STATUS.FINISHED
       })
@@ -438,6 +443,20 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
     )
   }
 
+  private isPropertyValid(property: CustomProperty) {
+    if (property.use == "R") {
+      return property.configured
+    } else {
+      return true
+    }
+  }
+
+  private setPropertyInvalidStatus() {
+    this.organisationProperties.forEach(p => p.showAsInvalid = !this.isPropertyValid(p))
+    this.systemProperties.forEach(p => p.showAsInvalid = !this.isPropertyValid(p))
+    this.statementProperties.forEach(p => p.showAsInvalid = !this.isPropertyValid(p))
+  }
+
   private executeHeadless(testCases: ConformanceTestCase[]) {
     const testCaseIds = map(testCases, (test) => { return test.id } )
     this.testService.startHeadlessTestSessions(testCaseIds, this.specId!, this.systemId, this.actorId, this.executionMode == this.executionModeSequential)
@@ -500,12 +519,26 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
       (!this.dataService.customPropertiesValid(this.statementProperties))
   }
 
+  private updatePropertyConfiguredStatus(property: CustomProperty) {
+    if (property.kind == "SIMPLE") {
+      property.configured = this.textProvided(property.value)
+    } else if (property.kind == "SECRET") {
+      property.configured = (property.changeValue == true && this.textProvided(property.value)) || (!property.changeValue && property.configured == true)
+    } else {
+      property.configured = property.configured || property.file != undefined
+    }
+  }
+
   updateConfiguration() {
     this.updateConfigurationPending = true
     this.conformanceService.updateStatementConfiguration(this.systemId, this.actorId, this.organisationProperties, this.systemProperties, this.statementProperties)
     .subscribe(() => {
       this.popupService.success('Configuration updated.')
     }).add(() => {
+      this.organisationProperties.forEach(p => this.updatePropertyConfiguredStatus(p))
+      this.systemProperties.forEach(p => this.updatePropertyConfiguredStatus(p))
+      this.statementProperties.forEach(p => this.updatePropertyConfiguredStatus(p))
+      this.setPropertyInvalidStatus()
       this.updateConfigurationPending = false
     })
   }
