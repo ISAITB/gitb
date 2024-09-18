@@ -33,6 +33,7 @@ import { EntityWithId } from '../types/entity-with-id';
 import { ConformanceTestSuite } from '../pages/organisation/conformance-statement/conformance-test-suite';
 import { ConformanceStatementItem } from '../types/conformance-statement-item';
 import { EndpointParameter } from '../types/endpoint-parameter';
+import { CookieOptions, CookieService } from 'ngx-cookie-service';
 
 @Injectable({
   providedIn: 'root'
@@ -55,6 +56,7 @@ export class DataService {
   private tests?: ConformanceTestCase[]
   public currentLandingPageContent?: string
   private apiRoot?: string
+  public cookiePath?: string
 
   public latestPageChange?: PageChange
   private onBannerChangeSource = new Subject<string>()
@@ -67,7 +69,10 @@ export class DataService {
   private renderer: Renderer2
   triggerEventToDataTypeMap?: {[key: number]: { [key: number]: boolean } }
 
-  constructor(rendererFactory: RendererFactory2) {
+  constructor(
+    rendererFactory: RendererFactory2,
+    private cookieService: CookieService
+  ) {
     this.renderer = rendererFactory.createRenderer(null, null)
     this.configuration = this.emptyAppConfiguration()
     this.destroy()
@@ -88,6 +93,7 @@ export class DataService {
     this.tests = undefined
     this.latestPageChange = undefined
     this.currentLandingPageContent = undefined
+    this.cookiePath = undefined
   }
 
   private emptyAppConfiguration(): AppConfigurationProperties {
@@ -1487,6 +1493,19 @@ export class DataService {
         this.visitConformanceItems(item.items, visitor)
       }
     }
+  }
+
+  setCookie(name:  string, value: string, expires?: Date) {
+    const cookieOptions: CookieOptions = {
+      path: this.cookiePath,
+      sameSite: 'Strict',
+      expires: expires
+    }
+    let protocol = window.location.protocol
+    if (protocol && (protocol.toLowerCase() == 'https')) {
+      cookieOptions.secure = true
+    }
+    this.cookieService.set(name, value, cookieOptions.expires, cookieOptions.path, cookieOptions.domain, cookieOptions.secure, cookieOptions.sameSite)
   }
 
 }

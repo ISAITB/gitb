@@ -4,7 +4,7 @@ import { Subject } from 'rxjs';
 import { LogoutEventInfo } from '../types/logout-event-info.type'
 import { LoginEventInfo } from "../types/login-event-info.type";
 import { Constants } from './../common/constants'
-import { CookieService } from 'ngx-cookie-service'
+import { CookieOptions, CookieService } from 'ngx-cookie-service'
 import { DataService } from './data.service'
 import { Utils } from '../common/utils';
 import { ROUTES } from '../common/global';
@@ -45,20 +45,13 @@ export class AuthProviderService {
     }
     // Handle login event
     this.onLogin$.subscribe((info) => {
-      let accessToken  = info.tokens.access_token
-			let cookieOptions: any = {
-        path: info.path,
-        sameSite: 'strict'
-      }
-			let protocol = window.location.protocol
-			if (protocol && (protocol.toLowerCase() == 'https')) {
-        cookieOptions.secure = true
-      }
+      this.dataService.cookiePath = info.path
+      const accessToken = info.tokens.access_token
+      let expiryDate: Date|undefined
 			if (info.remember) {
-				let expiryDate = new Date(Date.now() + Constants.TOKEN_COOKIE_EXPIRE)
-				cookieOptions.expires = expiryDate
+				expiryDate = new Date(Date.now() + Constants.TOKEN_COOKIE_EXPIRE)
       }
-      this.cookieService.set(this.atKey, accessToken, cookieOptions)
+      this.dataService.setCookie(this.atKey, accessToken, expiryDate)
       this.authenticate(accessToken, info.path)
       this.signalAfterLogin()
     })

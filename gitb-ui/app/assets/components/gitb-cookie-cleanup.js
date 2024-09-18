@@ -8,9 +8,9 @@ function setupLoginOptionElement(elementId, parameter) {
 }
 function option(value) {
     if (value) {
-        document.cookie = 'LOGIN_OPTION='+value;
+        document.cookie = 'LOGIN_OPTION='+value+";SameSite=Strict";
     } else {
-        document.cookie = 'LOGIN_OPTION=none';
+        document.cookie = 'LOGIN_OPTION=none;SameSite=Strict';
     }
     window.location.href = 'app';
 }

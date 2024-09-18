@@ -6,7 +6,6 @@ import { LegalNoticeService } from '../../services/legal-notice.service';
 import { Observable, Subscription } from 'rxjs';
 import { Constants } from 'src/app/common/constants';
 import { AuthProviderService } from '../../services/auth-provider.service'
-import { CookieService } from 'ngx-cookie-service';
 import { BsModalService } from 'ngx-bootstrap/modal';
 import { ContactSupportComponent } from 'src/app/modals/contact-support/contact-support.component';
 import { RoutingService } from 'src/app/services/routing.service';
@@ -34,7 +33,6 @@ export class IndexComponent implements OnInit, OnDestroy {
     private htmlService: HtmlService,
     private legalNoticeService: LegalNoticeService,
     private authProviderService: AuthProviderService,
-    private cookieService: CookieService,
     private modalService: BsModalService,
     public routingService: RoutingService
   ) {}
@@ -61,7 +59,7 @@ export class IndexComponent implements OnInit, OnDestroy {
   }
 
 	switchAccount() {
-    this.cookieService.set(Constants.LOGIN_OPTION_COOKIE_KEY, Constants.LOGIN_OPTION.FORCE_CHOICE)
+    this.dataService.setCookie(Constants.LOGIN_OPTION_COOKIE_KEY, Constants.LOGIN_OPTION.FORCE_CHOICE)
     this.authProviderService.signalLogout({full: false, keepLoginOption: true})
   }
 

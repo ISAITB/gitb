@@ -1,6 +1,5 @@
 import { AfterViewInit, Component, OnInit } from '@angular/core';
 import { BsModalService } from 'ngx-bootstrap/modal';
-import { CookieService } from 'ngx-cookie-service';
 import { Constants } from 'src/app/common/constants';
 import { DisconnectRoleComponent } from 'src/app/modals/disconnect-role/disconnect-role.component';
 import { AccountService } from 'src/app/services/account.service';
@@ -30,7 +29,6 @@ export class ProfileComponent extends BaseComponent implements OnInit, AfterView
     private confirmationDialogService: ConfirmationDialogService,
     private authProviderService: AuthProviderService,
     private accountService: AccountService,
-    private cookieService: CookieService,
     private popupService: PopupService,
     private modalService: BsModalService,
     private routingService: RoutingService
@@ -57,7 +55,7 @@ export class ProfileComponent extends BaseComponent implements OnInit, AfterView
     })
     modalRef.content!.result.subscribe((choice?: number) => {
       if (choice != undefined) {
-        this.cookieService.set(Constants.LOGIN_OPTION_COOKIE_KEY, Constants.LOGIN_OPTION.FORCE_CHOICE)
+        this.dataService.setCookie(Constants.LOGIN_OPTION_COOKIE_KEY, Constants.LOGIN_OPTION.FORCE_CHOICE)
         this.authProviderService.signalLogout({ full: false, keepLoginOption: true })
         if (choice == Constants.DISCONNECT_ROLE_OPTION.CURRENT_PARTIAL) {
 				  this.popupService.success("Role disconnected from your account.")
@@ -73,7 +71,7 @@ export class ProfileComponent extends BaseComponent implements OnInit, AfterView
 	linkOtherRole() {
     this.confirmationDialogService.confirmed("Confirmation", "Before linking another role to your account your current session will be closed. Are you sure you want to proceed?", "Disconnect", "Cancel")
       .subscribe(() => {
-        this.cookieService.set(Constants.LOGIN_OPTION_COOKIE_KEY, Constants.LOGIN_OPTION.LINK_ACCOUNT)
+        this.dataService.setCookie(Constants.LOGIN_OPTION_COOKIE_KEY, Constants.LOGIN_OPTION.LINK_ACCOUNT)
         this.authProviderService.signalLogout({full: false, keepLoginOption: true})
       })
   }
@@ -81,7 +79,7 @@ export class ProfileComponent extends BaseComponent implements OnInit, AfterView
 	register() {
 		this.confirmationDialogService.confirmed("Confirmation", "Before registering another "+this.dataService.labelOrganisationLower()+" your current session will be closed. Are you sure you want to proceed?", "Disconnect", "Cancel")
 		.subscribe(() => {
-      this.cookieService.set(Constants.LOGIN_OPTION_COOKIE_KEY, Constants.LOGIN_OPTION.REGISTER)
+      this.dataService.setCookie(Constants.LOGIN_OPTION_COOKIE_KEY, Constants.LOGIN_OPTION.REGISTER)
       this.authProviderService.signalLogout({full: false, keepLoginOption: true})
     })
   }
