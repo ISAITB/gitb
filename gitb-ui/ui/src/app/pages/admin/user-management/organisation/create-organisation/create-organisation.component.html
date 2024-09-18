@@ -5,11 +5,11 @@
         </div>
         <form>
             <div class="card-body">
-                <app-alert-display [alerts]="alerts" innerClass="col-10 offset-1"></app-alert-display>
                 <app-organisation-form
                     [organisation]="organisation"
                     [communityId]="communityId"
                     [propertyData]="propertyData"
+                    [validation]="validation"
                 ></app-organisation-form>
             </div>
             <div class="card-footer">

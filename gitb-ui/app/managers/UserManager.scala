@@ -164,9 +164,17 @@ class UserManager @Inject() (accountManager: AccountManager, organizationManager
   /**
    * Create system admin
    */
-  def createAdmin(user: Users, communityId: Long) = {
-    val o = exec(PersistenceSchema.organizations.filter(_.community === communityId).filter(_.adminOrganization === true).result.head)
-    exec((PersistenceSchema.insertUser += user.withOrganizationId(o.id)).transactionally)
+  def createAdmin(user: Users, communityId: Long): Unit = {
+    val dbAction = for {
+      organisationId <- PersistenceSchema.organizations
+        .filter(_.community === communityId)
+        .filter(_.adminOrganization === true)
+        .map(_.id)
+        .result
+        .head
+      _ <- PersistenceSchema.insertUser += user.withOrganizationId(organisationId)
+    } yield ()
+    exec(dbAction.transactionally)
   }
 
   /**

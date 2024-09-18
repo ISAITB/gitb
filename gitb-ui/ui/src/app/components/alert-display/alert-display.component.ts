@@ -3,7 +3,8 @@ import { Alert } from 'src/app/types/alert.type';
 
 @Component({
   selector: 'app-alert-display',
-  templateUrl: './alert-display.component.html'
+  templateUrl: './alert-display.component.html',
+  styles: ' .inTab ::ng-deep .alert { margin-bottom: 10px; } '
 })
 export class AlertDisplayComponent {
 

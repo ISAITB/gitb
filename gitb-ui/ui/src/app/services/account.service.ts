@@ -86,7 +86,7 @@ export class AccountService {
   }
 
   updatePassword(password: string, oldPassword: string, errorHandler?: (_:any) => Observable<any>) {
-    return this.restService.post<void>({
+    return this.restService.post<ErrorDescription|void>({
       path: ROUTES.controllers.AccountService.updateUserProfile().url,
       data: {
         password: password,

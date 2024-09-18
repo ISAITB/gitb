@@ -7,6 +7,7 @@ import { OrganisationService } from 'src/app/services/organisation.service';
 import { SystemService } from 'src/app/services/system.service';
 import { Observable } from 'rxjs';
 import { Constants } from 'src/app/common/constants';
+import { ValidationState } from 'src/app/types/validation-state';
 
 @Component({
   selector: 'app-custom-property-form',
@@ -31,6 +32,7 @@ export class CustomPropertyFormComponent implements OnInit {
   @Input() tbCollapsed: boolean|undefined
   @Input() tbSetDefaults = false
   @Input() refresh?: EventEmitter<{props?: CustomProperty[], asterisks: boolean}>
+  @Input() validation?: ValidationState
   @Output() collapseChange = new EventEmitter<boolean>()
 
   Constants = Constants

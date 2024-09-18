@@ -63,7 +63,7 @@
 				</div>
 				<div class="row mt-3">
 					<label class="col-3 col-form-label text-end" for="username">* Username:</label>
-					<div class="col-7"><input id="username" name="username" [(ngModel)]="email" class="form-control" type="text"></div>
+					<div class="col-7"><input id="username" name="username" [(ngModel)]="email" class="form-control" type="text" [invalid]="validation.get('username')"></div>
 					<div app-tooltip class="col-auto" tbTooltip="The username you have been using up to now to log in."></div>
 				</div>
 				<div class="row mt-3">
@@ -77,7 +77,7 @@
 		}
 		@if (choice == Constants.CREATE_ACCOUNT_OPTION.SELF_REGISTER) {
 			<div class="mt-3">
-				<app-self-registration [model]="selfRegData" [selfRegOptions]="selfRegOptions"></app-self-registration>
+				<app-self-registration [model]="selfRegData" [selfRegOptions]="selfRegOptions" [validation]="validation"></app-self-registration>
 			</div>
 		}
 	</div>

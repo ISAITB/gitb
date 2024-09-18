@@ -5,7 +5,6 @@
         </div>
         <form #profileForm="ngForm">
             <div class="card-body">
-                <app-alert-display [alerts]="alerts" innerClass="col-10 offset-1"></app-alert-display>
                 <div class="row">
                     <div class="col-10 offset-1">
                         <div class="row mb-3">
@@ -14,7 +13,7 @@
                                 @if (dataService.configuration.ssoEnabled) {
                                     <p class="form-control-plaintext">{{data.name}}</p>
                                 } @else {
-                                    <input id="name" name="name" type="text" class="form-control" [(ngModel)]="data.name">
+                                    <input id="shortName" name="name" type="text" class="form-control" [(ngModel)]="data.name" [invalid]="validation.get('name')">
                                 }
                             </div>
                             @if (!dataService.configuration.ssoEnabled) {

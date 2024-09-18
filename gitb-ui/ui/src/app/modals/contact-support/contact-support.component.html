@@ -3,11 +3,10 @@
 </div>
 <form>
     <div class="modal-body" appFileDropTarget>
-        <app-alert-display [alerts]="alerts" innerClass="col-10 offset-1"></app-alert-display>
         <div class="row mb-3">
             <label class="col-3 col-form-label text-end">* Contact email:</label>
             <div class="col-7">
-                <input id="contact" name="contact" [(ngModel)]="contactAddress" class="form-control" type="text">
+                <input id="contact" name="contact" [(ngModel)]="contactAddress" class="form-control" type="text" [invalid]="validation.get('email')">
             </div>
             <div app-tooltip class="col-auto" tbTooltip="Specify the email at which you would like to receive feedback regarding your request."></div>
         </div>
@@ -42,7 +41,7 @@
                     <label class="col-3 col-form-label text-end">Attachment(s):</label>
                 }
                 <div class="col-7" [ngClass]="{'offset-3': !first}">
-                    <app-file-select [fileName]="attachment.name" [extraActions]="true" [disableUpload]="true">
+                    <app-file-select [fileName]="attachment.name" [extraActions]="true" [disableUpload]="true" [validation]="validation.get('file'+index)">
                         <button type="button" class="btn btn-secondary" (click)="removeAttachment(index)" container="body" containerClass="shortTooltip" tooltip="Remove" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'"><i class="fa-solid fa-trash"></i></button>
                     </app-file-select>
                 </div>

@@ -1,8 +1,6 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { BsModalRef } from 'ngx-bootstrap/modal';
 import { BaseComponent } from 'src/app/pages/base-component.component';
-import { DataService } from 'src/app/services/data.service';
-import { ErrorService } from 'src/app/services/error.service';
 import { CommunityKeystore } from 'src/app/types/community-keystore';
 import { FileData } from 'src/app/types/file-data.type';
 import { saveAs } from 'file-saver'
@@ -31,8 +29,6 @@ export class CommunityKeystoreModalComponent extends BaseComponent implements On
 
   constructor(
     private modalInstance: BsModalRef,
-    private errorService: ErrorService,
-    private dataService: DataService,
     private confirmationDialogService: ConfirmationDialogService,
     private conformanceService: ConformanceService,
     private popupService: PopupService
@@ -72,12 +68,8 @@ export class CommunityKeystoreModalComponent extends BaseComponent implements On
 
   uploadKeystore(file: FileData) {
     if (file != undefined) {
-      if (file.size >= Number(this.dataService.configuration.savedFileMaxSize) * 1024) {
-        this.errorService.showSimpleErrorMessage('File upload problem', 'The maximum allowed size for the keystore file is '+this.dataService.configuration.savedFileMaxSize+' KBs.')
-      } else {
-        this.settings.keystoreFile = file.file
-        this.keystoreDefined = true
-      }
+      this.settings.keystoreFile = file.file
+      this.keystoreDefined = true
     }
   }
 

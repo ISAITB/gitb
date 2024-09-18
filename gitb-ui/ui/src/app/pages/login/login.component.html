@@ -76,12 +76,12 @@
                                                 <app-alert-display [alerts]="alerts" [innerClass]="(loginOption == Constants.LOGIN_OPTION.REGISTER)?'col-12':'col-10 offset-1'"></app-alert-display>
                                                 @if (loginOption == Constants.LOGIN_OPTION.NONE) {
                                                     @if (onetimePassword || weakPassword) {
-                                                        <div class="row" app-change-password-form [model]="passwordChangeData" [autoFocus]="true"></div>
+                                                        <div class="row" app-change-password-form [model]="passwordChangeData" [autoFocus]="true" [validation]="validation"></div>
                                                     } @else {
                                                         <div class="row mb-3">
                                                             <label class="col-3 col-form-label text-end" for="email">Username:</label>
                                                             <div class="col-7">
-                                                                <input id="email" name="email" type="text" [(ngModel)]="email" class="form-control">
+                                                                <input #emailField id="email" name="email" type="text" [(ngModel)]="email" class="form-control">
                                                             </div>
                                                                 <div class="col-auto" app-tooltip tbTooltip="The username used to identify your account. This was either provided by you or by an administrator on your behalf."></div>
                                                         </div>
@@ -105,7 +105,7 @@
                                                 @if (loginOption == Constants.LOGIN_OPTION.REGISTER && dataService.configuration.registrationEnabled) {
                                                     <div class="row">
                                                         <div class="col-12">
-                                                            <app-self-registration [model]="selfRegData"></app-self-registration>
+                                                            <app-self-registration [model]="selfRegData" [validation]="validation"></app-self-registration>
                                                         </div>
                                                     </div>
                                                 } @else {

@@ -33,6 +33,7 @@ import { ConformanceTestSuite } from './conformance-test-suite';
 import { ConfigurationPropertyVisibility } from 'src/app/types/configuration-property-visibility';
 import { CustomProperty } from 'src/app/types/custom-property.type';
 import { BaseComponent } from '../../base-component.component';
+import { ValidationState } from 'src/app/types/validation-state';
 
 @Component({
   selector: 'app-conformance-statement',
@@ -109,6 +110,7 @@ export class ConformanceStatementComponent extends BaseComponent implements OnIn
   organisationPropertyVisibility?: ConfigurationPropertyVisibility
   systemPropertyVisibility?: ConfigurationPropertyVisibility
   statementPropertyVisibility?: ConfigurationPropertyVisibility
+  propertyValidation = new ValidationState()
 
   constructor(
     public dataService: DataService,
@@ -308,8 +310,12 @@ export class ConformanceStatementComponent extends BaseComponent implements OnIn
         this.organisationPropertyVisibility = this.dataService.checkPropertyVisibility(this.organisationProperties)
         this.systemPropertyVisibility = this.dataService.checkPropertyVisibility(this.systemProperties)
         this.statementPropertyVisibility = this.dataService.checkPropertyVisibility(this.statementProperties)
+        // Initialise validation status
+        this.organisationProperties.forEach((p) => this.propertyValidation.set('organisation'+p.id))
+        this.systemProperties.forEach((p) => this.propertyValidation.set('system'+p.id))
+        this.statementProperties.forEach((p) => this.propertyValidation.set('statement'+p.id))
         // Highlight validation issues
-        this.setPropertyInvalidStatus()
+        this.applyPropertyValidation()
       }).add(() => {
         this.loadingConfiguration.status = Constants.STATUS.FINISHED
       })
@@ -451,10 +457,19 @@ export class ConformanceStatementComponent extends BaseComponent implements OnIn
     }
   }
 
-  private setPropertyInvalidStatus() {
-    this.organisationProperties.forEach(p => p.showAsInvalid = !this.isPropertyValid(p))
-    this.systemProperties.forEach(p => p.showAsInvalid = !this.isPropertyValid(p))
-    this.statementProperties.forEach(p => p.showAsInvalid = !this.isPropertyValid(p))
+  private setPropertyValidation(property: CustomProperty, propertyType: 'organisation'|'system'|'statement') {
+    const invalid = !this.isPropertyValid(property)
+    property.showAsInvalid = invalid
+    this.propertyValidation.update(propertyType+property.id, {
+      invalid: invalid,
+      feedback: (property.kind == "BINARY")?"Required file missing.":"Required value missing."
+    })    
+  }
+
+  private applyPropertyValidation() {
+    this.organisationProperties.forEach(p => this.setPropertyValidation(p, 'organisation'))
+    this.systemProperties.forEach(p => this.setPropertyValidation(p, 'system'))
+    this.statementProperties.forEach(p => this.setPropertyValidation(p, 'statement'))
   }
 
   private executeHeadless(testCases: ConformanceTestCase[]) {
@@ -538,7 +553,7 @@ export class ConformanceStatementComponent extends BaseComponent implements OnIn
       this.organisationProperties.forEach(p => this.updatePropertyConfiguredStatus(p))
       this.systemProperties.forEach(p => this.updatePropertyConfiguredStatus(p))
       this.statementProperties.forEach(p => this.updatePropertyConfiguredStatus(p))
-      this.setPropertyInvalidStatus()
+      this.applyPropertyValidation()
       this.updateConfigurationPending = false
     })
   }

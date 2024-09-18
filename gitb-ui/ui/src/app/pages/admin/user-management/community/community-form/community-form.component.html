@@ -33,7 +33,7 @@
         }
         <div class="mt-3 row">
             <label class="col-3 col-form-label text-end" for="email">Support email:</label>
-            <div class="col-7"><input id="email" name="email" [(ngModel)]="community.email" class="form-control" type="text"></div>
+            <div class="col-7"><input id="email" name="email" [(ngModel)]="community.email" class="form-control" type="text" [invalid]="validation.get('supportEmail')"></div>
             <div class="col-auto" app-tooltip tbTooltip="This email address is used to receive contact form submissions (if supported) from community members and other notifications."></div>
         </div>
         @if (emailEnabled) {

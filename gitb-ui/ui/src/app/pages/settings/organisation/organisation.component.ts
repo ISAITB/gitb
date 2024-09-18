@@ -95,7 +95,6 @@ export class OrganisationComponent extends OrganisationDetailsComponent implemen
   }
 
   override doUpdate() {
-    this.clearAlerts()
     this.savePending = true
     let landingPageIdToUse: number|undefined = undefined
     if (this.showAdminInfo || this.showLandingPage) {

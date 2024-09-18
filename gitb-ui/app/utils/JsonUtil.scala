@@ -3313,7 +3313,7 @@ object JsonUtil {
     }
   }
 
-  def constructErrorMessage(errorCode: Any, errorDesc: String, errorIdentifier: Option[String]): JsObject = {
+  def constructErrorMessage(errorCode: Any, errorDesc: String, errorIdentifier: Option[String], errorHint: Option[String] = None): JsObject = {
     val code = errorCode match {
       case _: Int => "" + errorCode
       case _: String => errorCode.asInstanceOf[String]
@@ -3325,6 +3325,9 @@ object JsonUtil {
     )
     if (errorIdentifier.isDefined) {
       obj = obj.+("error_id" -> JsString(errorIdentifier.get))
+    }
+    if (errorHint.isDefined) {
+      obj = obj.+("error_hint" -> JsString(errorHint.get))
     }
     obj
   }

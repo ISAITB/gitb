@@ -13,6 +13,7 @@ import { CommunityTab } from '../../community/community-details/community-tab.en
 import { KeyValue } from 'src/app/types/key-value';
 import { Constants } from 'src/app/common/constants';
 import { SystemAdministrationTab } from '../../../system-administration/system-administration-tab.enum';
+import { ValidationState } from 'src/app/types/validation-state';
 
 @Component({
   selector: 'app-create-error-template',
@@ -29,6 +30,7 @@ export class CreateErrorTemplateComponent extends BaseComponent implements OnIni
   placeholders: KeyValue[] = []
   savePending = false
   tooltipForDefaultCheck!: string
+  validation = new ValidationState()
 
   constructor(
     private routingService: RoutingService,
@@ -69,7 +71,6 @@ export class CreateErrorTemplateComponent extends BaseComponent implements OnIni
   }
 
   createErrorTemplate() {
-    this.clearAlerts()
     if (this.template.default) {
       this.confirmationDialogService.confirmed("Confirm default", "You are about to change the default error template. Are you sure?", "Change", "Cancel")
       .subscribe(() => {
@@ -81,11 +82,12 @@ export class CreateErrorTemplateComponent extends BaseComponent implements OnIni
   }
 
   doCreate() {
+    this.validation.clearErrors()
     this.savePending = true
     this.errorTemplateService.createErrorTemplate(this.template.name!, this.template.description, this.template.content, this.template.default!, this.communityId)
     .subscribe((data) => {
       if (this.isErrorDescription(data)) {
-        this.addAlertError(data.error_description)
+        this.validation.applyError(data)
       } else {
         this.cancelCreateErrorTemplate()
         this.popupService.success('Error template created.')

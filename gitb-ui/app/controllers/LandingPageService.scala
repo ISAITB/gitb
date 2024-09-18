@@ -36,7 +36,7 @@ class LandingPageService @Inject() (authorizedAction: AuthorizedAction, cc: Cont
       landingPageManager.createLandingPage(landingPage)
       ResponseConstructor.constructEmptyResponse
     } else {
-      ResponseConstructor.constructErrorResponse(ErrorCodes.NAME_EXISTS, "Landing page with name '" + landingPage.name + "' already exists.")
+      ResponseConstructor.constructErrorResponse(ErrorCodes.NAME_EXISTS, "A landing page with this name already exists.", Some("name"))
     }
   }
 
@@ -66,7 +66,7 @@ class LandingPageService @Inject() (authorizedAction: AuthorizedAction, cc: Cont
       landingPageManager.updateLandingPage(pageId, name, description, content, default, communityId)
       ResponseConstructor.constructEmptyResponse
     } else {
-      ResponseConstructor.constructErrorResponse(ErrorCodes.NAME_EXISTS, "Landing page with name '" + name + "' already exists.")
+      ResponseConstructor.constructErrorResponse(ErrorCodes.NAME_EXISTS, "A landing page with this name already exists.", Some("name"))
     }
   }
 

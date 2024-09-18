@@ -3,7 +3,6 @@ import { Parameter } from 'src/app/types/parameter';
 import { cloneDeep } from 'lodash';
 import { BaseParameterModalComponent } from '../base-parameter-modal.component';
 import { DataService } from 'src/app/services/data.service';
-import { ErrorService } from 'src/app/services/error.service';
 import { BsModalRef } from 'ngx-bootstrap/modal';
 import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
 
@@ -23,10 +22,9 @@ export class ParameterDetailsModalComponent extends BaseParameterModalComponent 
 
   constructor(
     dataService: DataService,
-    errorService: ErrorService,
     modalInstance: BsModalRef,
     private confirmationDialogService: ConfirmationDialogService
-  ) { super(dataService, errorService, modalInstance) }
+  ) { super(dataService, modalInstance) }
 
   ngOnInit(): void {
     this.parameter = cloneDeep(this.parameter)
@@ -42,7 +40,7 @@ export class ParameterDetailsModalComponent extends BaseParameterModalComponent 
   }
 
   updateParameter() {
-    if (!this.saveDisabled() && this.validName(this.parameter.name!) && this.validKey(this.parameter.testKey!)) {
+    if (this.validate()) {
       this.updated.emit(this.parameter as Parameter)
       this.modalInstance.hide()
     }
@@ -51,6 +49,7 @@ export class ParameterDetailsModalComponent extends BaseParameterModalComponent 
   deleteParameter() {
     this.confirmationDialogService.confirmedDangerous("Confirm delete", this.confirmMessage, "Delete", "Cancel")
     .subscribe(() => {
+      this.validation.clearErrors()
       this.deleted.emit(this.parameter as Parameter)
       this.modalInstance.hide()
     })

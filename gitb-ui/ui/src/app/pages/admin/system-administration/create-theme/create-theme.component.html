@@ -5,9 +5,7 @@
         </div>
         <form>
             <div class="card-body">
-                <!-- Error messages -->
-                <app-alert-display [alerts]="alerts" innerClass="col-10 offset-1"></app-alert-display>
-                <app-theme-form [theme]="theme" [referenceThemeId]="referenceThemeId"/>
+                <app-theme-form [theme]="theme" [referenceThemeId]="referenceThemeId" [validation]="validation"/>
             </div>
             <div class="card-footer button-container">
                 <div class="btn-toolbar">

@@ -25,7 +25,7 @@ export class CommunityAdminDetailsComponent extends BaseComponent implements OnI
   disableDeleteButton = false
   changePassword = false
   savePending = false
-  deletePending = false  
+  deletePending = false
 
   constructor(
     private routingService: RoutingService,
@@ -60,7 +60,6 @@ export class CommunityAdminDetailsComponent extends BaseComponent implements OnI
   }
 
   updateAdmin() {
-    this.clearAlerts()
     let newPassword: string|undefined
     if (this.changePassword) {
       newPassword = this.user.password
@@ -79,11 +78,16 @@ export class CommunityAdminDetailsComponent extends BaseComponent implements OnI
   deleteAdmin() {
     this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this administrator?", "Delete", "Cancel")
     .subscribe(() => {
+      this.clearAlerts()
       this.deletePending = true
       this.userService.deleteAdmin(this.userId)
-      .subscribe(() => {
-        this.cancelDetailAdmin()
-        this.popupService.success('Administrator deleted.')
+      .subscribe((result) => {
+        if (this.isErrorDescription(result)) {
+          this.addAlertError(result.error_description)
+        } else {
+          this.cancelDetailAdmin()
+          this.popupService.success('Administrator deleted.')
+        }
       }).add(() => {
         this.deletePending = false
       })

@@ -9,6 +9,7 @@ import { RoutingService } from 'src/app/services/routing.service';
 import { CommunityTab } from '../../community/community-details/community-tab.enum';
 import { OrganisationFormData } from '../organisation-form/organisation-form-data';
 import { Constants } from 'src/app/common/constants';
+import { ValidationState } from 'src/app/types/validation-state';
 
 @Component({
   selector: 'app-create-organisation',
@@ -26,6 +27,7 @@ export class CreateOrganisationComponent extends BaseComponent implements OnInit
     propertyType: 'organisation'
   }
   savePending = false
+  validation = new ValidationState()
 
   constructor(
     public dataService: DataService,
@@ -44,12 +46,12 @@ export class CreateOrganisationComponent extends BaseComponent implements OnInit
   }
 
   createOrganisation() {
-    this.clearAlerts()
+    this.validation.clearErrors()
     this.savePending = true
     this.organisationService.createOrganisation(this.organisation.sname!, this.organisation.fname!, this.organisation.landingPage, this.organisation.legalNotice, this.organisation.errorTemplate, this.organisation.otherOrganisations, this.communityId, this.organisation.template!, this.organisation.templateName, this.propertyData.edit, this.propertyData.properties, this.organisation.copyOrganisationParameters!, this.organisation.copySystemParameters!, this.organisation.copyStatementParameters!)
     .subscribe((result) => {
-      if (result?.error_code != undefined) {
-        this.addAlertError(result.error_description)
+      if (this.isErrorDescription(result)) {
+        this.validation.applyError(result)
       } else {
         this.cancelCreateOrganisation()
         this.popupService.success(this.dataService.labelOrganisation()+" created.")

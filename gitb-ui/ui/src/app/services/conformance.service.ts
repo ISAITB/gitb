@@ -27,7 +27,6 @@ import { StatementParameterMinimal } from '../types/statement-parameter-minimal'
 import { ConformanceStatementItemInfo } from '../types/conformance-statement-item-info';
 import { ConformanceSnapshot } from '../types/conformance-snapshot';
 import { BadgesInfo } from '../components/manage-badges/badges-info';
-import { HtmlService } from './html.service';
 import { HttpResponse } from '@angular/common/http';
 import { ConformanceStatementItem } from '../types/conformance-statement-item';
 import { ConformanceStatementWithResults } from '../types/conformance-statement-with-results';
@@ -38,6 +37,7 @@ import { BadgePlaceholderInfo } from '../modals/conformance-certificate-modal/ba
 import { Constants } from '../common/constants';
 import { SystemParameter } from '../types/system-parameter';
 import { OrganisationParameter } from '../types/organisation-parameter';
+import { ErrorDescription } from '../types/error-description';
 
 @Injectable({
   providedIn: 'root'
@@ -530,7 +530,7 @@ export class ConformanceService {
     } else {
       params.value = domainParameterValue
     }
-    return this.restService.post<void>({
+    return this.restService.post<ErrorDescription|void>({
       path: ROUTES.controllers.ConformanceService.updateDomainParameter(domainId, domainParameterId).url,
       authenticate: true,
       data: {
@@ -560,7 +560,7 @@ export class ConformanceService {
     } else {
       params.value = domainParameterValue as string
     }
-    return this.restService.post<void>({
+    return this.restService.post<ErrorDescription|void>({
       path: ROUTES.controllers.ConformanceService.createDomainParameter(domainId).url,
       authenticate: true,
       data: {

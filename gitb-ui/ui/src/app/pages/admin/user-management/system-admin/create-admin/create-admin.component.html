@@ -5,11 +5,9 @@
         </div>
         <form>
             <div class="card-body">
-                <!-- Error messages -->
-                <app-alert-display [alerts]="alerts" innerClass="col-10 offset-1"></app-alert-display>
                 <div class="row">
                     <div class="col-11">
-                        <app-user-form [new]="true" [admin]="true" [user]="user" [sso]="dataService.configuration.ssoEnabled"></app-user-form>
+                        <app-user-form [new]="true" [admin]="true" [user]="user" [sso]="dataService.configuration.ssoEnabled" [validation]="validation"></app-user-form>
                     </div>
                 </div>
                 <div class="row">

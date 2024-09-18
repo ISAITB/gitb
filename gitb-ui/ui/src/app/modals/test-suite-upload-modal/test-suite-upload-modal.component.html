@@ -3,6 +3,7 @@
 </div>
 <div class="modal-body" appFileDropTarget>
 	<form>
+		<app-alert-display [alerts]="alerts"></app-alert-display>
 		@if (step == 'initial') {
 			<div>
 				@if (!sharedTestSuite) {

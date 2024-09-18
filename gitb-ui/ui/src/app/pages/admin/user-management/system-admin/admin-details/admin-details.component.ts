@@ -59,7 +59,6 @@ export class AdminDetailsComponent extends BaseComponent implements OnInit, Afte
   }
 
   updateAdmin() {
-    this.clearAlerts()
     let newPassword: string|undefined
     if (this.changePassword) {
       newPassword = this.user.password
@@ -78,11 +77,16 @@ export class AdminDetailsComponent extends BaseComponent implements OnInit, Afte
   deleteAdmin() {
     this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this administrator?", "Delete", "Cancel")
     .subscribe(() => {
+      this.clearAlerts()
       this.deletePending = true
       this.userService.deleteAdmin(this.userId)
-      .subscribe(() => {
-        this.cancelDetailAdmin()
-        this.popupService.success('Administrator deleted.')
+      .subscribe((result) => {
+        if (this.isErrorDescription(result)) {
+          this.addAlertError(result.error_description)
+        } else {
+          this.cancelDetailAdmin()
+          this.popupService.success('Administrator deleted.')
+        }
       }).add(() => {
         this.deletePending = false
       })

@@ -27,6 +27,7 @@ import { StatementParameterMinimal } from 'src/app/types/statement-parameter-min
 import { TestTriggerModalComponent } from './test-trigger-modal/test-trigger-modal.component';
 import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
 import { ErrorService } from 'src/app/services/error.service';
+import { ValidationState } from 'src/app/types/validation-state';
 
 @Component({
   selector: 'app-trigger',
@@ -73,6 +74,7 @@ export class TriggerComponent extends BaseComponent implements OnInit, AfterView
     testReport: {dataType: Constants.TRIGGER_DATA_TYPE.TEST_REPORT, visible: true, selected: false}
   }
   Constants = Constants
+  validation = new ValidationState()
 
   constructor(
     private routingService: RoutingService,
@@ -305,7 +307,7 @@ export class TriggerComponent extends BaseComponent implements OnInit, AfterView
   }
 
   save() {
-    this.clearAlerts()
+    this.validation.clearErrors()
     this.savePending = true
     let callResult: Observable<ErrorDescription|undefined>
     if (this.update) {
@@ -314,8 +316,8 @@ export class TriggerComponent extends BaseComponent implements OnInit, AfterView
       callResult = this.triggerService.createTrigger(this.trigger.name!, this.trigger.description, this.trigger.operation, this.trigger.active, this.trigger.url!, this.trigger.eventType!, this.trigger.serviceType!, this.communityId, this.dataItemsToSave())
     }
     callResult.subscribe((data) => {
-      if (data?.error_code != undefined) {
-        this.addAlertError(data.error_description)
+      if (this.isErrorDescription(data)) {
+        this.validation.applyError(data)
       } else {
         if (this.update) {
           this.popupService.success('Trigger updated.')
@@ -331,7 +333,7 @@ export class TriggerComponent extends BaseComponent implements OnInit, AfterView
   }
 
   delete() {
-    this.clearAlerts()
+    this.validation.clearErrors()
     this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this trigger?", "Delete", "Cancel")
     .subscribe(() => {
       this.deletePending = true

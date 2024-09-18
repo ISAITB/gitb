@@ -11,6 +11,7 @@ import { CommunityTab } from '../../community/community-details/community-tab.en
 import { Constants } from 'src/app/common/constants';
 import { SystemAdministrationTab } from '../../../system-administration/system-administration-tab.enum';
 import { HtmlService } from 'src/app/services/html.service';
+import { ValidationState } from 'src/app/types/validation-state';
 
 @Component({
   selector: 'app-create-legal-notice',
@@ -26,6 +27,7 @@ export class CreateLegalNoticeComponent extends BaseComponent implements OnInit,
   }
   savePending = false
   tooltipForDefaultCheck!: string
+  validation = new ValidationState()
 
   constructor(
     private routingService: RoutingService,
@@ -62,7 +64,6 @@ export class CreateLegalNoticeComponent extends BaseComponent implements OnInit,
   }
 
   createLegalNotice() {
-    this.clearAlerts()
     if (this.notice.default) {
       this.confirmationDialogService.confirmed("Confirm default", "You are about to change the default legal notice. Are you sure?", "Change", "Cancel")
       .subscribe(() => {
@@ -74,11 +75,12 @@ export class CreateLegalNoticeComponent extends BaseComponent implements OnInit,
   }
 
   doCreate() {
+    this.validation.clearErrors()
     this.savePending = true
     this.legalNoticeService.createLegalNotice(this.notice.name!, this.notice.description, this.notice.content, this.notice.default!, this.communityId)
     .subscribe((data) => {
       if (this.isErrorDescription(data)) {
-        this.addAlertError(data.error_description)
+        this.validation.applyError(data)
       } else {
         this.cancelCreateLegalNotice()
         this.popupService.success('Legal notice created.')

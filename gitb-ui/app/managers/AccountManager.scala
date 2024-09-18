@@ -158,29 +158,43 @@ class AccountManager @Inject()(dbConfigProvider: DatabaseConfigProvider, landing
     user
   }
 
-  def updateUserProfile(userId: Long, name: Option[String], password: Option[String], oldpassword: Option[String]) = {
-    val actions = new ListBuffer[DBIO[_]]()
-    //1) Update name of the user
-    if (name.isDefined) {
-      val q = for {u <- PersistenceSchema.users if u.id === userId} yield (u.name)
-      actions += q.update(name.get)
-    }
-    //2) Update password of the user (passwords must be different
-    if (password.isDefined && oldpassword.isDefined && (password.get.trim != oldpassword.get.trim)) {
-      //2.1) but first, check his old password if it is correct
-      val user = exec(PersistenceSchema.users.filter(_.id === userId).result.headOption)
-      if (user.isDefined && BCrypt.checkpw(oldpassword.get.trim, user.get.password.trim)) {
-        //2.1.1) password correct, replace it with the new one
-        val q = for {u <- PersistenceSchema.users if u.id === userId} yield (u.password, u.onetimePassword)
-        actions += q.update(BCrypt.hashpw(password.get.trim, BCrypt.gensalt()), false)
-      } else {
-        //2.1.2) incorrect password => send Invalid Credentials error
-        throw InvalidRequestException(ErrorCodes.INVALID_CREDENTIALS, "Invalid credentials")
+  def updateUserProfile(userId: Long, name: Option[String], password: Option[String], oldPassword: Option[String]): Unit = {
+    val dbAction = for {
+      // Update name.
+      _ <- {
+        if (name.isDefined) {
+          PersistenceSchema.users.filter(_.id === userId).map(_.name).update(name.get)
+        } else {
+          DBIO.successful(())
+        }
       }
-    }
-    if (actions.nonEmpty) {
-      exec(DBIO.seq(actions.toList.map(a => a): _*).transactionally)
-    }
+      // Check and update password.
+      _ <- {
+        if (password.isDefined && oldPassword.isDefined && (password.get.trim != oldPassword.get.trim)) {
+          for {
+            // Load current password for user.
+            currentPassword <- PersistenceSchema.users
+              .filter(_.id === userId)
+              .map(_.password)
+              .result.headOption
+            _ <- {
+              if (currentPassword.isDefined && BCrypt.checkpw(oldPassword.get.trim, currentPassword.get)) {
+                // Provided password matches.
+                PersistenceSchema.users.filter(_.id === userId)
+                  .map(x => (x.password, x.onetimePassword))
+                  .update((BCrypt.hashpw(password.get.trim, BCrypt.gensalt()), false))
+              } else {
+                // Invalid password.
+                throw InvalidRequestException(ErrorCodes.INVALID_CREDENTIALS, "Incorrect password.")
+              }
+            }
+          } yield ()
+        } else {
+          DBIO.successful(())
+        }
+      }
+    } yield ()
+    exec(dbAction.transactionally)
   }
 
   def getVendorUsers(userId: Long): List[Users] = {

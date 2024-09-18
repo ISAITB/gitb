@@ -7,6 +7,7 @@ import { Domain } from 'src/app/types/domain';
 import { IdLabel } from 'src/app/types/id-label';
 import { find } from 'lodash';
 import { RoutingService } from 'src/app/services/routing.service';
+import { ValidationState } from 'src/app/types/validation-state';
 
 @Component({
   selector: 'app-community-form',
@@ -19,6 +20,7 @@ export class CommunityFormComponent extends BaseComponent implements OnInit {
   @Input() community!: Partial<Community>
   @Input() domains: Partial<Domain>[] = []
   @Input() admin = false
+  @Input() validation!: ValidationState
   selfRegEnabled = false
   ssoEnabled = false
   emailEnabled = false

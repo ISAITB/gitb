@@ -11,7 +11,6 @@ import { BaseTabbedComponent } from 'src/app/pages/base-tabbed-component';
 import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
 import { ConformanceService } from 'src/app/services/conformance.service';
 import { DataService } from 'src/app/services/data.service';
-import { ErrorService } from 'src/app/services/error.service';
 import { PopupService } from 'src/app/services/popup.service';
 import { RoutingService } from 'src/app/services/routing.service';
 import { SpecificationService } from 'src/app/services/specification.service';
@@ -66,8 +65,7 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
     private route: ActivatedRoute,
     router: Router,
     private popupService: PopupService,
-    private modalService: BsModalService,
-    private errorService: ErrorService
+    private modalService: BsModalService
   ) { super(router) }
 
   loadTab(tabIndex: number): void {
@@ -198,6 +196,7 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
 
   linkTestSuite(testSuite: TestSuite) {
     this.linkPending = true
+    this.clearAlerts()
     this.conformanceService.linkSharedTestSuite(testSuite.id, [this.specificationId]).pipe(
       mergeMap((result) => {
         if (result.needsConfirmation) {
@@ -246,7 +245,7 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
     } else {
       msg = 'An error occurred while processing the test suite: Response was empty'
     }
-    this.errorService.showSimpleErrorMessage("Link error", msg)
+    this.addAlertError(msg)
   }
 
   unlinkTestSuite(testSuite: TestSuite) {

@@ -4,6 +4,7 @@ import { Constants } from 'src/app/common/constants';
 import { DataService } from 'src/app/services/data.service';
 import { Parameter } from 'src/app/types/parameter';
 import { ParameterReference } from 'src/app/types/parameter-reference';
+import { ValidationState } from 'src/app/types/validation-state';
 
 @Component({
   selector: 'app-parameter-form',
@@ -19,6 +20,7 @@ export class ParameterFormComponent implements OnInit, AfterViewInit {
   @Input() hideInExport!: boolean
   @Input() hideInRegistration!: boolean
   @Input() existingValues!: ParameterReference[]
+  @Input() validation!: ValidationState
 
   Constants = Constants
 

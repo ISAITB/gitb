@@ -534,15 +534,15 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
       var response: Result = null
       val domainParameter = JsonUtil.parseJsDomainParameter(jsDomainParameter, None, domainId)
       if (domainParameterManager.getDomainParameterByDomainAndName(domainId, domainParameter.name).isDefined) {
-        response = ResponseConstructor.constructBadRequestResponse(500, s"A parameter with this name already exists for the ${communityLabelManager.getLabel(request, models.Enums.LabelType.Domain, single = true, lowercase = true)}.")
+        response = ResponseConstructor.constructErrorResponse(ErrorCodes.NAME_EXISTS, "A parameter with this name already exists.", Some("name"))
       } else {
         if (domainParameter.kind == "BINARY") {
           if (fileToStore.isDefined) {
             if (Configurations.ANTIVIRUS_SERVER_ENABLED && ParameterExtractor.virusPresentInFiles(List(fileToStore.get))) {
-              response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "File failed virus scan.")
+              response = ResponseConstructor.constructErrorResponse(ErrorCodes.VIRUS_FOUND, "File failed virus scan.", Some("file"))
             }
           } else {
-            response = ResponseConstructor.constructBadRequestResponse(500, "No file provided for binary parameter.")
+            response = ResponseConstructor.constructErrorResponse(ErrorCodes.INVALID_REQUEST, "No file provided for binary parameter.", Some("file"))
           }
         }
       }
@@ -576,7 +576,7 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
       val domainParameter = JsonUtil.parseJsDomainParameter(jsDomainParameter, Some(domainParameterId), domainId)
       val existingDomainParameter = domainParameterManager.getDomainParameterByDomainAndName(domainId, domainParameter.name)
       if (existingDomainParameter.isDefined && (existingDomainParameter.get.id != domainParameterId)) {
-        result = ResponseConstructor.constructBadRequestResponse(500, s"A parameter with this name already exists for the ${communityLabelManager.getLabel(request, models.Enums.LabelType.Domain, single = true, lowercase = true)}.")
+        result = ResponseConstructor.constructErrorResponse(ErrorCodes.NAME_EXISTS, "A parameter with this name already exists.", Some("name"))
       } else if (domainParameter.kind == "BINARY") {
         if (fileToStore.isDefined) {
           if (Configurations.ANTIVIRUS_SERVER_ENABLED && ParameterExtractor.virusPresentInFiles(List(fileToStore.get))) {

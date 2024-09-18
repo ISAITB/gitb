@@ -13,7 +13,6 @@ import { EmailSettings } from '../types/email-settings';
 })
 export class SystemConfigurationService {
 
-
   constructor(private restService: RestService) { }
 
   getConfigurationValues() {
@@ -77,7 +76,7 @@ export class SystemConfigurationService {
   }
 
   deleteTheme(themeId: number) {
-    return this.restService.delete<ErrorDescription|void>({
+    return this.restService.delete<void>({
       path: ROUTES.controllers.SystemConfigurationService.deleteTheme(themeId).url,
       authenticate: true
     })

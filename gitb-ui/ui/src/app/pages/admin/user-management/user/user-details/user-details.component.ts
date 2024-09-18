@@ -14,6 +14,7 @@ import { User } from 'src/app/types/user.type';
 import { OrganisationTab } from '../../organisation/organisation-details/OrganisationTab';
 import { Constants } from 'src/app/common/constants';
 import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
+import { ValidationState } from 'src/app/types/validation-state';
 
 @Component({
   selector: 'app-user-details',
@@ -34,6 +35,7 @@ export class UserDetailsComponent extends BaseComponent implements OnInit, After
   changePassword = false
   fromCommunityManagement!: boolean
   isSelf = false
+  validation = new ValidationState()
 
   @ViewChild("role") roleField?: ElementRef;
 
@@ -96,6 +98,7 @@ export class UserDetailsComponent extends BaseComponent implements OnInit, After
 
   updateUser() {
     this.clearAlerts()
+    this.validation.clearErrors()
     const isSSO = this.dataService.configuration.ssoEnabled
     let ok = true
     let emailCheckResult = this.emptyEmailCheck()
@@ -122,18 +125,26 @@ export class UserDetailsComponent extends BaseComponent implements OnInit, After
               }
             }
             return this.userService.updateUserProfile(this.userId, newName, this.user.role!, newPassword).pipe(
-              map(() => {
-                this.cancelDetailUser()
-                this.popupService.success('User updated.')
-                this.dataService.breadcrumbUpdate({ id: this.userId, type: BreadcrumbType.organisationUser, label: this.dataService.userDisplayName(this.user)})
+              map((result) => {
+                if (this.isErrorDescription(result)) {
+                  if (!this.validation.applyError(result)) {
+                    this.addAlertError(result.error_description)
+                  }
+                } else {
+                  this.cancelDetailUser()
+                  this.popupService.success('User updated.')
+                  this.dataService.breadcrumbUpdate({ id: this.userId, type: BreadcrumbType.organisationUser, label: this.dataService.userDisplayName(this.user)})
+                }
               })
             )
           } else {
-            if (this.dataService.configuration.ssoEnabled) {
-              this.addAlertError('A user with this email address has already been registered with the specified role for this organisation.')
+            let feedback: string
+            if (isSSO) {
+              feedback = "A user with this email address has already been registered with the specified role for this organisation."
             } else {
-              this.addAlertError('A user with this username has already been registered.')
+              feedback = "A user with this username has already been registered."
             }
+            this.validation.invalid('role', feedback)
             return EMPTY
           }
         }),
@@ -146,12 +157,13 @@ export class UserDetailsComponent extends BaseComponent implements OnInit, After
 
   deleteUser() {
     this.clearAlerts()
+    this.validation.clearErrors()
     this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this user?", "Delete", "Cancel")
     .subscribe(() => {
       this.deletePending = true
       this.userService.deleteVendorUser(this.userId)
       .subscribe((data) => {
-        if (data?.error_description != undefined) {
+        if (this.isErrorDescription(data)) {
           this.addAlertError(data.error_description)
         } else {
           this.cancelDetailUser()

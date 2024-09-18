@@ -18,7 +18,8 @@
                             [showOrganisation]="fromCommunityManagement"
                             [roleReadonly]="isSelf"
                             [showChangePassword]="!isSelf"
-                            (passwordChanged)="changePassword = $event"></app-user-form>
+                            (passwordChanged)="changePassword = $event"
+                            [validation]="validation"></app-user-form>
                     </div>
                 </div>
                 @if (!dataService.configuration.ssoEnabled) {

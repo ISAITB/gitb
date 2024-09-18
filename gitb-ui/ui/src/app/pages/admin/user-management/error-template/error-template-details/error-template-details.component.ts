@@ -14,6 +14,7 @@ import { Constants } from 'src/app/common/constants';
 import { KeyValue } from 'src/app/types/key-value';
 import { SystemAdministrationTab } from '../../../system-administration/system-administration-tab.enum';
 import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
+import { ValidationState } from 'src/app/types/validation-state';
 
 @Component({
   selector: 'app-error-template-details',
@@ -32,6 +33,7 @@ export class ErrorTemplateDetailsComponent extends BaseComponent implements OnIn
   deletePending = false
   placeholders: KeyValue[] = []
   tooltipForDefaultCheck!: string
+  validation = new ValidationState()
 
   constructor(
     public dataService: DataService,
@@ -88,11 +90,12 @@ export class ErrorTemplateDetailsComponent extends BaseComponent implements OnIn
   }
 
   doUpdate(copy: boolean) {
+    this.validation.clearErrors()
     this.savePending = true
     this.errorTemplateService.updateErrorTemplate(this.templateId, this.template.name!, this.template.description, this.template.content, this.template.default!, this.communityId)
     .subscribe((data) => {
       if (this.isErrorDescription(data)) {
-        this.addAlertError(data.error_description)
+        this.validation.applyError(data)
       } else {
         if (copy) {
           this.copyErrorTemplate()
@@ -123,6 +126,7 @@ export class ErrorTemplateDetailsComponent extends BaseComponent implements OnIn
     this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this error template?", "Delete", "Cancel")
     .subscribe(() => {
       this.deletePending = true
+      this.validation.clearErrors()
       this.errorTemplateService.deleteErrorTemplate(this.templateId)
       .subscribe(() => {
         this.cancelDetailErrorTemplate()

@@ -32,7 +32,7 @@ class LegalNoticeService @Inject() (authorizedAction: AuthorizedAction, cc: Cont
       legalNoticeManager.createLegalNotice(legalNotice)
       ResponseConstructor.constructEmptyResponse
     } else {
-      ResponseConstructor.constructErrorResponse(ErrorCodes.NAME_EXISTS, "Legal notice with name '" + legalNotice.name + "' already exists.")
+      ResponseConstructor.constructErrorResponse(ErrorCodes.NAME_EXISTS, "A legal notice with this name already exists.", Some("name"))
     }
   }
 
@@ -62,7 +62,7 @@ class LegalNoticeService @Inject() (authorizedAction: AuthorizedAction, cc: Cont
       legalNoticeManager.updateLegalNotice(noticeId, name, description, content, default, communityId)
       ResponseConstructor.constructEmptyResponse
     } else {
-      ResponseConstructor.constructErrorResponse(ErrorCodes.NAME_EXISTS, "Legal notice with name '" + name + "' already exists.")
+      ResponseConstructor.constructErrorResponse(ErrorCodes.NAME_EXISTS, "A legal notice with this name already exists.", Some("name"))
     }
   }
 

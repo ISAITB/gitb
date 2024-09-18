@@ -10,6 +10,7 @@ import { DataService } from 'src/app/services/data.service';
 import { PopupService } from 'src/app/services/popup.service';
 import { BaseComponent } from '../../base-component.component';
 import { RoutingService } from 'src/app/services/routing.service';
+import { ValidationState } from 'src/app/types/validation-state';
 
 @Component({
   selector: 'app-profile',
@@ -22,6 +23,7 @@ export class ProfileComponent extends BaseComponent implements OnInit, AfterView
   spinner = false
   edit = false
   data:{name?: string, email?: string, role?: string} = {}
+  validation = new ValidationState()
 
   constructor(
     public dataService: DataService,
@@ -111,10 +113,10 @@ export class ProfileComponent extends BaseComponent implements OnInit, AfterView
   }
 
 	checkForm() {
-		this.clearAlerts()
+		this.validation.clearErrors()
     let valid = true
 		if (!this.textProvided(this.data!.name)) {
-			this.addAlertError('Your name can not be empty.')
+      this.validation.invalid('name', 'Your name cannot be empty.')
 			this.data!.name = this.dataService.user!.name
       valid = false
     }

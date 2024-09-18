@@ -37,12 +37,12 @@ object ResponseConstructor extends Results{
       Configurations.SERVER_REQUEST_TIMEOUT_IN_SECONDS + " seconds", None))
   }
 
-  def constructErrorMessage(errorCode: Any, errorDesc:String, errorIdentifier: Option[String]): String = {
-    JsonUtil.constructErrorMessage(errorCode, errorDesc, errorIdentifier).toString()
+  private def constructErrorMessage(errorCode: Any, errorDesc:String, errorIdentifier: Option[String], errorHint: Option[String] = None): String = {
+    JsonUtil.constructErrorMessage(errorCode, errorDesc, errorIdentifier, errorHint).toString()
   }
 
-  def constructErrorResponse(errorCode: Int, errorDesc: String):Result = {
-    Ok(constructErrorMessage(errorCode, errorDesc, None)).as(JSON)
+  def constructErrorResponse(errorCode: Int, errorDesc: String, errorHint: Option[String] = None):Result = {
+    Ok(constructErrorMessage(errorCode, errorDesc, None, errorHint)).as(JSON)
   }
 
   def constructEmptyResponse:Result = {

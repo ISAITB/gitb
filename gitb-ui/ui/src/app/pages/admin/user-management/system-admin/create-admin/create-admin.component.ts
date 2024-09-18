@@ -9,6 +9,7 @@ import { mergeMap, map, share } from 'rxjs/operators'
 import { EMPTY } from 'rxjs';
 import { RoutingService } from 'src/app/services/routing.service';
 import { SystemAdministrationTab } from '../../../system-administration/system-administration-tab.enum';
+import { ValidationState } from 'src/app/types/validation-state';
 
 @Component({
   selector: 'app-create-admin',
@@ -21,6 +22,7 @@ export class CreateAdminComponent extends BaseComponent implements OnInit, After
   user: Partial<User> = {}
   isSSO = false
   savePending = false
+  validation = new ValidationState()
 
   constructor(
     public dataService: DataService,
@@ -42,6 +44,16 @@ export class CreateAdminComponent extends BaseComponent implements OnInit, After
     this.isSSO = this.dataService.configuration.ssoEnabled
   }
 
+  private reportThatUserExists() {
+    let feedback: string
+    if (this.isSSO) {
+      feedback = 'An administrator with this email address has already been registered.'
+    } else {
+      feedback = 'An administrator with this username has already been registered.'
+    }
+    this.validation.invalid('email', feedback)
+  }
+
   saveDisabled() {
     if (this.isSSO) {
       return !this.textProvided(this.user.email)
@@ -61,28 +73,32 @@ export class CreateAdminComponent extends BaseComponent implements OnInit, After
   }
 
   createAdmin() {
-    this.clearAlerts()
+    this.validation.clearErrors()
     let ok = true
     if (this.isSSO) {
-      ok = this.requireValidEmail(this.user.email, "Please enter a valid email address.")
+      ok = this.isValidEmail(this.user.email)
+      if (!ok) {
+        this.validation.invalid('email', 'Please enter a valid email address.')
+      }
+    } else {
+      ok = this.isValidUsername(this.user.email)
+      if (!ok) {
+        this.validation.invalid('email', 'The username cannot contain spaces.')
+      }
     }
     if (ok) {
       this.savePending = true
       this.checkEmail(this.user.email!).pipe(
         mergeMap((data) => {
           if (data.available) {
-            return this.userService.createSystemAdmin(this.user.name!, this.user.email!, this.user.password!).pipe(
+            return this.userService.createSystemAdmin(this.user.name!.trim(), this.user.email!.trim(), this.user.password!.trim()).pipe(
               map(() => {
                 this.cancelCreateAdmin()
                 this.popupService.success('Administrator created.')
               })
             )
           } else {
-            if (this.dataService.configuration.ssoEnabled) {
-              this.addAlertError('An administrator with this email address has already been registered.')
-            } else {
-              this.addAlertError('An administrator with this username has already been registered.')
-            }
+            this.reportThatUserExists()
             return EMPTY
           }
         }),

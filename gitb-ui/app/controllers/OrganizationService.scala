@@ -118,7 +118,7 @@ class OrganizationService @Inject() (implicit ec: ExecutionContext, repositoryUt
         ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "File failed virus scan.")
       } else {
         if (organization.template && !organizationManager.isTemplateNameUnique(organization.templateName.get, organization.community, None)) {
-          ResponseConstructor.constructErrorResponse(ErrorCodes.DUPLICATE_ORGANISATION_TEMPLATE, "The provided template name is already in use.")
+          ResponseConstructor.constructErrorResponse(ErrorCodes.DUPLICATE_ORGANISATION_TEMPLATE, "The provided template name is already in use.", Some("template"))
         } else {
           organizationManager.createOrganization(organization, otherOrganisation, values, Some(files), copyOrganisationParameters, copySystemParameters, copyStatementParameters)
           ResponseConstructor.constructEmptyResponse
@@ -159,7 +159,7 @@ class OrganizationService @Inject() (implicit ec: ExecutionContext, repositoryUt
           templateName = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.TEMPLATE_NAME)
         }
         if (template && !organizationManager.isTemplateNameUnique(templateName.get, organizationManager.getById(orgId).get.community, Some(orgId))) {
-          ResponseConstructor.constructErrorResponse(ErrorCodes.DUPLICATE_ORGANISATION_TEMPLATE, "The provided template name is already in use.")
+          ResponseConstructor.constructErrorResponse(ErrorCodes.DUPLICATE_ORGANISATION_TEMPLATE, "The provided template name is already in use.", Some("template"))
         } else {
           organizationManager.updateOrganization(orgId, shortName, fullName, landingPageId, legalNoticeId, errorTemplateId, otherOrganisation, template, templateName, values, Some(files), copyOrganisationParameters, copySystemParameters, copyStatementParameters)
           ResponseConstructor.constructEmptyResponse

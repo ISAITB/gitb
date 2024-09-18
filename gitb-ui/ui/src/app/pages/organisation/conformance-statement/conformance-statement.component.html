@@ -231,7 +231,8 @@
 									[propertyType]="'organisation'"
 									[owner]="organisationId"
 									[header]="'Organisation properties'"
-									[collapsed]="organisationPropertiesCollapsed"></app-custom-property-panel>
+									[collapsed]="organisationPropertiesCollapsed"
+									[validation]="propertyValidation"></app-custom-property-panel>
 							}
 							@if (systemPropertyVisibility.hasVisibleProperties) {
 								<app-custom-property-panel
@@ -239,7 +240,8 @@
 									[propertyType]="'system'"
 									[owner]="systemId"
 									[header]="'System properties'"
-									[collapsed]="systemPropertiesCollapsed"></app-custom-property-panel>
+									[collapsed]="systemPropertiesCollapsed"
+									[validation]="propertyValidation"></app-custom-property-panel>
 							}
 							@if (statementPropertyVisibility.hasVisibleProperties) {
 								<app-custom-property-panel
@@ -247,7 +249,8 @@
 									[propertyType]="'statement'"
 									[owner]="systemId"
 									[header]="'Conformance statement properties'"
-									[collapsed]="statementPropertiesCollapsed"></app-custom-property-panel>
+									[collapsed]="statementPropertiesCollapsed"
+									[validation]="propertyValidation"></app-custom-property-panel>
 							}
 						}
 					}

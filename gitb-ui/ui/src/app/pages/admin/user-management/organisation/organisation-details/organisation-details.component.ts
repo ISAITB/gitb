@@ -18,6 +18,7 @@ import { TabsetComponent } from 'ngx-bootstrap/tabs';
 import { SystemService } from 'src/app/services/system.service';
 import { System } from 'src/app/types/system';
 import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
+import { ValidationState } from 'src/app/types/validation-state';
 
 @Component({
   selector: 'app-organisation-details',
@@ -57,6 +58,7 @@ export class OrganisationDetailsComponent extends BaseComponent implements OnIni
   readonly!: boolean
   apiInfoVisible?: boolean
   fromCommunityManagement?: boolean
+  validation = new ValidationState()
 
   loadApiInfo = new EventEmitter<void>()
 
@@ -234,12 +236,12 @@ export class OrganisationDetailsComponent extends BaseComponent implements OnIni
   }
 
   doUpdate() {
-    this.clearAlerts()
+    this.validation.clearErrors()
     this.savePending = true
     this.organisationService.updateOrganisation(this.orgId, this.organisation.sname!, this.organisation.fname!, this.organisation.landingPage, this.organisation.legalNotice, this.organisation.errorTemplate, this.organisation.otherOrganisations, this.organisation.template!, this.organisation.templateName, this.propertyData.edit, this.propertyData.properties, this.organisation.copyOrganisationParameters!, this.organisation.copySystemParameters!, this.organisation.copyStatementParameters!)
     .subscribe((result) => {
-      if (result?.error_code != undefined) {
-        this.addAlertError(result.error_description)
+      if (this.isErrorDescription(result)) {
+        this.validation.applyError(result)
       } else {
         this.popupService.success(this.dataService.labelOrganisation()+" updated.")
         this.dataService.breadcrumbUpdate({ id: this.orgId, type: BreadcrumbType.organisation, label: this.organisation.sname })

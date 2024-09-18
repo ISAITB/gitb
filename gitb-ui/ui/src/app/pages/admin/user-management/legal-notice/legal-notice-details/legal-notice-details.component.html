@@ -5,14 +5,12 @@
         </div>
         <form>
             <div class="card-body">
-                <!-- Error messages -->
-                <app-alert-display [alerts]="alerts" innerClass="col-10 offset-1"></app-alert-display>
                 <!-- legal notice form -->
                 <div class="row">
                     <div class="col-10 offset-1">
                         <div class="row mb-3">
                             <label class="col-3 col-form-label text-end" for="name">* Name:</label>
-                            <div class="col-7"><input id="name" name="name" [(ngModel)]="notice.name" class="form-control" type="text"></div>
+                            <div class="col-7"><input id="name" name="name" [(ngModel)]="notice.name" class="form-control" type="text" [invalid]="validation.get('name')"></div>
                             <div app-tooltip class="col-auto" tbTooltip="The name of the legal notice that will identify it and be displayed in selection lists."></div>
                         </div>
                         <div class="row mb-3">

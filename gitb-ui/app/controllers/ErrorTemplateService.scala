@@ -31,7 +31,7 @@ class ErrorTemplateService @Inject() (authorizedAction: AuthorizedAction, cc: Co
       errorTemplateManager.createErrorTemplate(errorTemplate)
       ResponseConstructor.constructEmptyResponse
     } else {
-      ResponseConstructor.constructErrorResponse(ErrorCodes.NAME_EXISTS, "Error template with name '" + errorTemplate.name + "' already exists.")
+      ResponseConstructor.constructErrorResponse(ErrorCodes.NAME_EXISTS, "An error template with this name already exists.", Some("name"))
     }
   }
 
@@ -61,7 +61,7 @@ class ErrorTemplateService @Inject() (authorizedAction: AuthorizedAction, cc: Co
       errorTemplateManager.updateErrorTemplate(templateId, name, description, content, default, communityId)
       ResponseConstructor.constructEmptyResponse
     } else {
-      ResponseConstructor.constructErrorResponse(ErrorCodes.NAME_EXISTS, "Error template with name '" + name + "' already exists.")
+      ResponseConstructor.constructErrorResponse(ErrorCodes.NAME_EXISTS, "An error template with this name already exists.", Some("name"))
     }
   }
 

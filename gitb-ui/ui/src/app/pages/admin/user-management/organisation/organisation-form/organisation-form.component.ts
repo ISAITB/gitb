@@ -11,6 +11,7 @@ import { LandingPage } from 'src/app/types/landing-page';
 import { LegalNotice } from 'src/app/types/legal-notice';
 import { Organisation } from 'src/app/types/organisation.type';
 import { OrganisationFormData } from './organisation-form-data';
+import { ValidationState } from 'src/app/types/validation-state';
 
 @Component({
   selector: 'app-organisation-form',
@@ -26,6 +27,7 @@ export class OrganisationFormComponent implements OnInit, AfterViewInit {
   @Input() showAdminInfo = true
   @Input() showLandingPage = false
   @Input() readonly = false
+  @Input() validation!: ValidationState
 
   selfRegEnabled = false
   landingPages: LandingPage[] = []

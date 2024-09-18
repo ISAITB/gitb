@@ -10,6 +10,7 @@ import { PopupService } from 'src/app/services/popup.service';
 import { Observable, of } from 'rxjs';
 import { DataService } from 'src/app/services/data.service';
 import { BaseThemeFormComponent } from '../base-theme-form.component';
+import { ValidationState } from 'src/app/types/validation-state';
 
 @Component({
   selector: 'app-theme-details',
@@ -25,6 +26,7 @@ export class ThemeDetailsComponent extends BaseThemeFormComponent implements OnI
   deletePending = false
   copyPending = false
   initiallyActive!: boolean
+  validation = new ValidationState()
 
   constructor(
     private route: ActivatedRoute,
@@ -57,13 +59,13 @@ export class ThemeDetailsComponent extends BaseThemeFormComponent implements OnI
     }
     proceedObservable.subscribe((proceed) => {
       if (proceed) {
-        this.clearAlerts()
         this.savePending = true
         this.processButtonColors(this.theme)
+        this.validation.clearErrors()
         this.systemConfigurationService.updateTheme(this.theme)
         .subscribe((error) => {
           if (this.isErrorDescription(error)) {
-            this.addAlertError(error.error_description)
+            this.validation.applyError(error)
           } else {
             this.popupService.success("Theme updated.")
             if (this.initiallyActive || this.theme.active) {
@@ -105,19 +107,14 @@ export class ThemeDetailsComponent extends BaseThemeFormComponent implements OnI
     }
     this.confirmationDialogService.confirmedDangerous("Confirm delete", message, "Delete", "Cancel")
     .subscribe(() => {
-      this.clearAlerts()
       this.deletePending = true
       this.systemConfigurationService.deleteTheme(this.themeId)
-      .subscribe((error) => {
-        if (this.isErrorDescription(error)) {
-          this.addAlertError(error.error_description)
-        } else {
-          this.popupService.success("Theme deleted.")
-          if (this.initiallyActive) {
-            this.dataService.refreshCss()
-          }
-          this.back()
+      .subscribe(() => {
+        this.popupService.success("Theme deleted.")
+        if (this.initiallyActive) {
+          this.dataService.refreshCss()
         }
+        this.back()
       })
       .add(() => {
         this.deletePending = false

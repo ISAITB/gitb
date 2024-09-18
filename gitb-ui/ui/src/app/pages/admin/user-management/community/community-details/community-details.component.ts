@@ -31,6 +31,7 @@ import { CreateEditCommunityResourceModalComponent } from 'src/app/modals/create
 import { saveAs } from 'file-saver';
 import { CommunityResourceBulkUploadModalComponent } from 'src/app/modals/community-resource-bulk-upload-modal/community-resource-bulk-upload-modal.component';
 import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
+import { ValidationState } from 'src/app/types/validation-state';
 
 @Component({
   selector: 'app-community-details',
@@ -127,6 +128,7 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
   selectingForDeleteResources = false
 
   clearResourceSelections = new EventEmitter<void>()
+  validation = new ValidationState()
 
   constructor(
     public dataService: DataService,
@@ -510,9 +512,15 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
   }
 
   updateCommunity() {
-    this.clearAlerts()
-    const emailValid = !this.textProvided(this.community.email) || this.requireValidEmail(this.community.email, "Please enter a valid support email.")
-    const notificationValid = !this.community.selfRegNotification || this.requireText(this.community.email, "A support email needs to be defined to support notifications.")
+    this.validation.clearErrors()
+    const emailValid = !this.textProvided(this.community.email) || this.isValidEmail(this.community.email)
+    if (!emailValid) {
+      this.validation.invalid("supportEmail", "Please enter a valid support email.")
+    }
+    const notificationValid = !this.community.selfRegNotification || this.textProvided(this.community.email)
+    if (!notificationValid) {
+      this.validation.invalid("supportEmail", "A support email needs to be defined to support notifications.")
+    }
     if (emailValid && notificationValid) {
       let descriptionToUse: string|undefined
       if (!this.community.sameDescriptionAsDomain) {

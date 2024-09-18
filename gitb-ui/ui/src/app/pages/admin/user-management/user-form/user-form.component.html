@@ -13,7 +13,7 @@
 }
 <div class="row mb-3">
     <label [ngClass]="{'col-3': sso, 'col-4': !sso}" class="col-form-label text-end" for="email">@if (new) {<span>* </span>} {{sso?'Email:':'Username:'}}</label>
-    <div class="col-6"><input id="email" name="email" [(ngModel)]="user.email" class="form-control" type="text" [readonly]="!new"></div>
+    <div class="col-6"><input id="email" name="email" [(ngModel)]="user.email" class="form-control" type="text" [readonly]="!new" [invalid]="validation?.get('email')"></div>
     @if (sso) {
         <div app-tooltip class="col-auto" tbTooltip="The email address linked to the user's EU Login account."></div>
     } @else {
@@ -31,7 +31,7 @@
         <div class="row mb-3">
             <label [ngClass]="{'col-3': sso, 'col-4': !sso}" class="col-form-label text-end" for="role">* Role:</label>
             <div class="col-6">
-                <select id="role" #role name="role" class="form-select" [(ngModel)]="user.role">
+                <select id="role" #role name="role" class="form-select" [(ngModel)]="user.role" [invalid]="validation?.get('role')">
                     @for (role of roles; track $index) {
                         <option [ngValue]="role.id">{{role.label}}</option>
                     }

@@ -1,5 +1,6 @@
 import { Component, Input } from '@angular/core';
 import { CustomProperty } from 'src/app/types/custom-property.type';
+import { ValidationState } from 'src/app/types/validation-state';
 
 @Component({
   selector: 'app-custom-property-panel',
@@ -13,6 +14,7 @@ export class CustomPropertyPanelComponent {
   @Input() owner!: number
   @Input() header!: string
   @Input() collapsed = false
+  @Input() validation!: ValidationState
 
   hovering = false
   headerCollapsed = false

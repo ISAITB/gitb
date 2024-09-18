@@ -107,7 +107,7 @@
                             <div [collapse]="!organisation.template" [isAnimated]="true" (expanded)="templateChoiceChanged()">
                                 <div class="row mb-3">
                                     <label class="col-3 col-form-label text-end" for="templateName">* Template name:</label>
-                                    <div class="col-7"><input id="templateName" name="templateName" [(ngModel)]="organisation.templateName" class="form-control" type="text"></div>
+                                    <div class="col-7"><input id="templateName" name="templateName" [(ngModel)]="organisation.templateName" class="form-control" type="text" [invalid]="validation.get('template')"></div>
                                     <div app-tooltip class="col-auto" tbTooltip="The name to display in the self-registration screen for this template configuration."></div>
                                 </div>
                             </div>

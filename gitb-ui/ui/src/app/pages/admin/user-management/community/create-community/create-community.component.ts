@@ -8,6 +8,7 @@ import { PopupService } from 'src/app/services/popup.service';
 import { RoutingService } from 'src/app/services/routing.service';
 import { Community } from 'src/app/types/community';
 import { Domain } from 'src/app/types/domain';
+import { ValidationState } from 'src/app/types/validation-state';
 
 @Component({
   selector: 'app-create-community',
@@ -31,6 +32,7 @@ export class CreateCommunityComponent extends BaseComponent implements OnInit, A
   }
   domains: Domain[] = []
   savePending = false
+  validation = new ValidationState()
 
   constructor(
     private routingService: RoutingService,
@@ -66,9 +68,15 @@ export class CreateCommunityComponent extends BaseComponent implements OnInit, A
   }
 
   createCommunity() {
-    this.clearAlerts()
-    const emailValid = !this.textProvided(this.community.email) || this.requireValidEmail(this.community.email, "Please enter a valid support email.")
-    const notificationValid = !this.community.selfRegNotification || this.requireText(this.community.email, "A support email needs to be defined to support notifications.")
+    this.validation.clearErrors()
+    const emailValid = !this.textProvided(this.community.email) || this.isValidEmail(this.community.email)
+    if (!emailValid) {
+      this.validation.invalid("supportEmail", "Please enter a valid support email.")
+    }
+    const notificationValid = !this.community.selfRegNotification || this.textProvided(this.community.email)
+    if (!notificationValid) {
+      this.validation.invalid("supportEmail", "A support email needs to be defined to support notifications.")
+    }
     if (emailValid && notificationValid) {
       let descriptionToUse: string|undefined
       if (!this.community.sameDescriptionAsDomain) {

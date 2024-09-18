@@ -20,21 +20,23 @@
                 </div>
             </div>
             <app-form-section sectionTitle="Community">
-                <div table-directive
-                    class="self-reg-option-table mt-3"
-                    [rowStyle]="optionRowStyle" 
-                    [columns]="communityColumns"
-                    [data]="selfRegOptions"
-                    [allowSelect]="true"
-                    (onSelect)="communitySelected($event)"
-                ></div>
+                <div>
+                    <div table-directive
+                        class="self-reg-option-table mt-3"
+                        [rowStyle]="optionRowStyle" 
+                        [columns]="communityColumns"
+                        [data]="selfRegOptions"
+                        [allowSelect]="true"
+                        (onSelect)="communitySelected($event)"
+                        [invalid]="validation?.get('community')"></div>
+                </div>
                 <div [collapse]="!model.selfRegOption?.communityId" [isAnimated]="true">
                     @if (model.selfRegOption?.selfRegType == Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING_WITH_TOKEN) {
                         <div>
                             <div class="row mt-3">
                                 <label class="col-3 col-form-label text-end" for="token">* Registration token:</label>
                                 <div class="col-7">
-                                    <input id="token" [(ngModel)]="model.selfRegToken" class="form-control" type="text"/>
+                                    <input id="token" [(ngModel)]="model.selfRegToken" class="form-control" type="text" [invalid]="validation?.get('token')"/>
                                 </div>
                                 <div app-tooltip class="col-auto" tbTooltip="A community-specific token needs to be provided to allow registration. You need to request this from the community's administrator."></div>
                             </div>
@@ -69,7 +71,7 @@
                         <div class="row mt-3">
                             <label class="col-3 col-form-label text-end" for="template"><span [hidden]="!model.selfRegOption.forceTemplateSelection">* </span>Configuration:</label>
                             <div class="col-7">
-                                <select id="template" name="template" class="form-select" [disabled]="templateReadonly" [(ngModel)]="model.template">
+                                <select id="template" name="template" class="form-select" [disabled]="templateReadonly" [(ngModel)]="model.template" [invalid]="validation?.get('template')">
                                     <option value="" disabled></option>
                                     @for (template of model.selfRegOption.templates; track template.id) {
                                         <option [ngValue]="template">{{template.name}}</option>
@@ -111,14 +113,14 @@
                         <div class="row mb-3">
                             <label class="col-3 col-form-label text-end" for="adminEmail">* Username:</label>
                             <div class="col-7">
-                                <input id="adminEmail" [(ngModel)]="model.adminEmail" class="form-control" type="text"/>
+                                <input id="adminEmail" [(ngModel)]="model.adminEmail" class="form-control" type="text" [invalid]="validation?.get('adminEmail')"/>
                             </div>
                             <div app-tooltip class="col-auto" tbTooltip="This is your account's username."></div>
                         </div>
                         <div class="row">
                             <label class="col-3 col-form-label text-end" for="adminPassword">* Password:</label>
                             <div class="col-7">
-                                <app-secret-input id="adminPassword" name="adminPassword" [(ngModel)]="model.adminPassword"></app-secret-input>
+                                <app-secret-input id="adminPassword" name="adminPassword" [(ngModel)]="model.adminPassword" [validation]="validation?.get('new')"></app-secret-input>
                             </div>
                             <div app-tooltip class="col-auto" tbTooltip="The account's password, to be provided with the username when logging in."></div>
                         </div>

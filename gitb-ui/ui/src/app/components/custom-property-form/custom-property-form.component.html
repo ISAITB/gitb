@@ -37,7 +37,7 @@
                             }
                           </p>
                         } @else {
-                          <select (change)="checkPrerequisites(property, true)" [attr.id]="'prop-'+property.id" name="{{'prop-'+property.id}}" [(ngModel)]="property.value" class="form-select" [invalid]="property.showAsInvalid" [feedback]="'Required value missing.'">
+                          <select (change)="checkPrerequisites(property, true)" [attr.id]="'prop-'+property.id" name="{{'prop-'+property.id}}" [(ngModel)]="property.value" class="form-select" [invalid]="validation?.get(tbPropertyType+property.id)">
                             <option value=""></option>
                             @for (v of property.presetValues; track $index) {
                               <option [ngValue]="v.value">{{v.label}}</option>
@@ -52,7 +52,7 @@
                             }
                           </p>
                         } @else {
-                          <input (change)="checkPrerequisites(property, true)" [attr.id]="'prop-'+property.id" name="{{'prop-'+property.id}}" [(ngModel)]="property.value" class="form-control" [invalid]="property.showAsInvalid" [feedback]="'Required value missing.'" type="text"/>
+                          <input (change)="checkPrerequisites(property, true)" [attr.id]="'prop-'+property.id" name="{{'prop-'+property.id}}" [(ngModel)]="property.value" class="form-control" [invalid]="validation?.get(tbPropertyType+property.id)" type="text"/>
                         }
                       }
                     </div>
@@ -76,12 +76,12 @@
                           <div class="col-auto flex-grow-1">
                             @if (property.changeValue == undefined || !property.changeValue) {
                               @if (property.configured) {
-                                <input type="text" [readonly]="true" class="form-control" [invalid]="property.showAsInvalid" [feedback]="'Required value missing.'" value="*****">
+                                <input type="text" [readonly]="true" class="form-control" [invalid]="validation?.get(tbPropertyType+property.id)" value="*****">
                               } @else {
-                                <input type="text" [readonly]="true" class="form-control" [invalid]="property.showAsInvalid" [feedback]="'Required value missing.'">
+                                <input type="text" [readonly]="true" class="form-control" [invalid]="validation?.get(tbPropertyType+property.id)">
                               }
                             } @else {
-                              <app-secret-input [attr.id]="'prop-'+property.id" name="{{'prop-'+property.id}}" [(ngModel)]="property.value" [showAsInvalid]="property.showAsInvalid" [invalidFeedback]="'Required value missing.'"></app-secret-input>
+                              <app-secret-input [attr.id]="'prop-'+property.id" name="{{'prop-'+property.id}}" [(ngModel)]="property.value" [invalid]="validation?.get(tbPropertyType+property.id)"></app-secret-input>
                             }
                           </div>
                         </div>
@@ -101,7 +101,7 @@
                           </p>                            
                         </div>
                       } @else {
-                        <app-file-select [fileName]="fileName(property)" [showAsInvalid]="property.showAsInvalid" [invalidFeedback]="'Required file missing.'" (onUpload)="onFileSelect(property, $event)" placeholder="Drop or browse for file ..." [extraActions]="true" [reset]="resetMap[property.id]">
+                        <app-file-select [fileName]="fileName(property)" [validation]="validation?.get(tbPropertyType+property.id)" (onUpload)="onFileSelect(property, $event)" placeholder="Drop or browse for file ..." [extraActions]="true" [reset]="resetMap[property.id]">
                           @if (property.value != undefined) {
                             <button type="button" class="btn btn-secondary" (click)="downloadProperty(property)" containerClass="shortTooltip" tooltip="Download" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'" container="body"><i class="fa-solid fa-download"></i></button>
                             <button type="button" class="btn btn-secondary" (click)="removeFile(property)" containerClass="shortTooltip" tooltip="Remove" [delay]="Constants.TOOLTIP_DELAY" [triggers]="'mouseover:mouseout'" container="body"><i class="fa-solid fa-trash"></i></button>

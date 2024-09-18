@@ -12,6 +12,7 @@ import { Constants } from 'src/app/common/constants';
 import { SystemAdministrationTab } from '../../../system-administration/system-administration-tab.enum';
 import { HtmlService } from 'src/app/services/html.service';
 import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
+import { ValidationState } from 'src/app/types/validation-state';
 
 @Component({
   selector: 'app-legal-notice-details',
@@ -29,6 +30,7 @@ export class LegalNoticeDetailsComponent extends BaseComponent implements OnInit
   copyPending = false
   deletePending = false
   tooltipForDefaultCheck!: string
+  validation = new ValidationState()
 
   constructor(
     public dataService: DataService,
@@ -81,11 +83,12 @@ export class LegalNoticeDetailsComponent extends BaseComponent implements OnInit
   }
 
   doUpdate(copy: boolean) {
+    this.validation.clearErrors()
     this.savePending = true
     this.legalNoticeService.updateLegalNotice(this.noticeId, this.notice.name!, this.notice.description, this.notice.content, this.notice.default!, this.communityId)
     .subscribe((data) => {
       if (this.isErrorDescription(data)) {
-        this.addAlertError(data.error_description)
+        this.validation.applyError(data)
       } else {
         if (copy) {
           this.copyLegalNotice()
@@ -115,6 +118,7 @@ export class LegalNoticeDetailsComponent extends BaseComponent implements OnInit
   deleteLegalNotice() {
     this.confirmationDialogService.confirmedDangerous("Confirm delete", "Are you sure you want to delete this legal notice?", "Delete", "Cancel")
     .subscribe(() => {
+      this.validation.clearErrors()
       this.deletePending = true
       this.legalNoticeService.deleteLegalNotice(this.noticeId)
       .subscribe(() => {

@@ -1,5 +1,5 @@
 import { HttpClient, HttpResponse } from '@angular/common/http';
-import { AfterViewInit, Component, OnInit } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { BsModalService } from 'ngx-bootstrap/modal';
 import { CookieService } from 'ngx-cookie-service';
 import { forkJoin, Observable, of, throwError } from 'rxjs';
@@ -24,12 +24,15 @@ import { LoginResultOk } from 'src/app/types/login-result-ok';
 import { SelfRegistrationModel } from 'src/app/types/self-registration-model.type';
 import { BaseComponent } from '../base-component.component';
 import { SelfRegistrationOption } from 'src/app/types/self-registration-option.type';
+import { ValidationState } from 'src/app/types/validation-state';
 
 @Component({
   selector: 'app-login',
   templateUrl: './login.component.html'
 })
 export class LoginComponent extends BaseComponent implements OnInit, AfterViewInit {
+
+  @ViewChild("emailField", { static: false }) emailField?: ElementRef;
 
   spinner = false
   createPending = false
@@ -45,6 +48,7 @@ export class LoginComponent extends BaseComponent implements OnInit, AfterViewIn
   weakPassword = false
   passwordChangeData: PasswordChangeData = {}
   loginInProgress = false
+  validation = new ValidationState()
 
   constructor(
     private authProvider: AuthProviderService,
@@ -74,7 +78,7 @@ export class LoginComponent extends BaseComponent implements OnInit, AfterViewIn
         // Invalid login option
         this.loginOption = Constants.LOGIN_OPTION.NONE
       }
-  
+
       if (this.loginOption == Constants.LOGIN_OPTION.REGISTER) {
         if (this.dataService.configuration.ssoEnabled) {
           this.createAccount(this.loginOption)
@@ -95,7 +99,7 @@ export class LoginComponent extends BaseComponent implements OnInit, AfterViewIn
 
   ngAfterViewInit(): void {
     if (this.loginOption == Constants.LOGIN_OPTION.NONE && !this.dataService.configuration.ssoEnabled) {
-      this.dataService.focus('email')
+      this.emailField?.nativeElement.focus()
     }
   }
 
@@ -149,12 +153,12 @@ export class LoginComponent extends BaseComponent implements OnInit, AfterViewIn
       },
       headers: Utils.createHttpHeaders()
     }
-    this.loginInternal(config)  
+    this.loginInternal(config)
   }
 
   private makeAuthenticationPost(path: string, postData: any): Observable<HttpResponse<any>> {
     return this.httpClient.post(
-      this.dataService.completePath(path), 
+      this.dataService.completePath(path),
       Utils.objectToFormRequest(postData).toString(),
       {
         observe: 'response',
@@ -169,7 +173,7 @@ export class LoginComponent extends BaseComponent implements OnInit, AfterViewIn
     this.makeAuthenticationPost(config.path, config.data).subscribe((result: HttpResponse<LoginResultOk|LoginResultActionNeeded>) => {
       // Login successful.
       if (this.isLoginActionNeeded(result.body)) {
-        this.spinner = false        
+        this.spinner = false
         // Correct authentication but we need to replace the password to complete the login.
         this.onetimePassword = result.body.onetime != undefined && result.body.onetime
         this.weakPassword = result.body.weakPassword != undefined && result.body.weakPassword
@@ -177,7 +181,7 @@ export class LoginComponent extends BaseComponent implements OnInit, AfterViewIn
         this.completeLogin(result)
       } else {
         // This case should never occur.
-        this.spinner = false        
+        this.spinner = false
         this.addAlertError('You are unable to log in at this time due to an unexpected error.')
       }
     })
@@ -199,8 +203,8 @@ export class LoginComponent extends BaseComponent implements OnInit, AfterViewIn
       path = (<LoginResultOk>result.body).path!
     }
     this.loginState = {
-      tokens: result.body, 
-      path: path, 
+      tokens: result.body,
+      path: path,
       remember: this.rememberMe
     }
     this.authProvider.signalLogin(this.loginState)
@@ -223,7 +227,7 @@ export class LoginComponent extends BaseComponent implements OnInit, AfterViewIn
     // Clear password fields
     this.password = ''
     this.passwordChangeData = {}
-    return throwError(error)
+    return throwError(() => error)
   }
 
   cancelLogin() {
@@ -237,12 +241,12 @@ export class LoginComponent extends BaseComponent implements OnInit, AfterViewIn
 
 	registerDisabled(): boolean {
     return this.spinner || !(
-			this.selfRegData.selfRegOption != undefined && this.selfRegData.selfRegOption.communityId && 
-			(this.selfRegData.selfRegOption.selfRegType != Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING_WITH_TOKEN || this.textProvided(this.selfRegData.selfRegToken)) && 
+			this.selfRegData.selfRegOption != undefined && this.selfRegData.selfRegOption.communityId &&
+			(this.selfRegData.selfRegOption.selfRegType != Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING_WITH_TOKEN || this.textProvided(this.selfRegData.selfRegToken)) &&
 			(!this.selfRegData.selfRegOption.forceTemplateSelection || (this.selfRegData.selfRegOption.templates == undefined || this.selfRegData.selfRegOption.templates.length == 0) || this.selfRegData.template != undefined) &&
 			(!this.selfRegData.selfRegOption.forceRequiredProperties || this.dataService.customPropertiesValid(this.selfRegData.selfRegOption.organisationProperties, true)) &&
 			this.textProvided(this.selfRegData.orgShortName) && this.textProvided(this.selfRegData.orgFullName) &&
-			this.textProvided(this.selfRegData.adminName) && this.textProvided(this.selfRegData.adminEmail) && 
+			this.textProvided(this.selfRegData.adminName) && this.textProvided(this.selfRegData.adminEmail) &&
 			this.textProvided(this.selfRegData.adminPassword)
 		)
   }
@@ -260,7 +264,7 @@ export class LoginComponent extends BaseComponent implements OnInit, AfterViewIn
       this.communityService.selfRegister(this.selfRegData.selfRegOption!.communityId!, token, this.selfRegData.orgShortName!, this.selfRegData.orgFullName!, templateId, this.selfRegData.selfRegOption!.organisationProperties, this.selfRegData.adminName!, this.selfRegData.adminEmail!, this.selfRegData.adminPassword!)
       .subscribe((data) => {
         if (this.isErrorDescription(data)) {
-          this.addAlertError(data.error_description)
+          this.validation.applyError(data)
         } else {
           // All ok.
           this.loginViaCredentials(this.selfRegData.adminEmail!, this.selfRegData.adminPassword!)
@@ -285,7 +289,16 @@ export class LoginComponent extends BaseComponent implements OnInit, AfterViewIn
 
 	checkRegisterForm() {
     this.clearAlerts()
-		return this.requireComplexPassword(this.selfRegData.adminPassword, 'Your password does not match required complexity rules. It must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one digit and one symbol.')
+    this.validation.clearErrors()
+    const passwordValid = this.isComplexPassword(this.selfRegData.adminPassword)
+    if (!passwordValid) {
+      this.validation.invalid('new', this.getPasswordComplexityAlertMessage())
+    }
+    const usernameValid = this.isValidUsername(this.selfRegData.adminEmail)
+    if (!usernameValid) {
+      this.validation.invalid('adminEmail', 'The username cannot contain spaces.')
+    }
+		return passwordValid && usernameValid
   }
 
   replaceDisabled() {
@@ -295,18 +308,21 @@ export class LoginComponent extends BaseComponent implements OnInit, AfterViewIn
 
   private getPasswordComplexityAlertMessage() {
     if (this.weakPassword) {
-      return 'The new password does not match required complexity rules.'
+      return 'Password does not match required complexity rules.'
     } else {
-      return 'The new password does not match required complexity rules. It must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one digit and one symbol.'
+      return 'Password does not match required complexity rules. It must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one digit and one symbol.'
     }
   }
 
   replacePassword() {
     if (!this.replaceDisabled()) {
       this.clearAlerts()
-      const sameCheck = this.requireDifferent(this.passwordChangeData.currentPassword, this.passwordChangeData.newPassword, 'The password you provided is the same as the current one.')
-      const complexCheck = this.requireComplexPassword(this.passwordChangeData.newPassword, this.getPasswordComplexityAlertMessage())
-      if (sameCheck && complexCheck) {
+      this.validation.clearErrors()
+      if (!this.isDifferent(this.passwordChangeData.currentPassword, this.passwordChangeData.newPassword)) {
+        this.validation.invalid('new', 'The password you provided is the same as the current one.')
+      } else if (!this.isComplexPassword(this.passwordChangeData.newPassword)) {
+        this.validation.invalid('new', this.getPasswordComplexityAlertMessage())
+      } else {
         // Proceed.
         this.spinner = true
         const data = {
@@ -315,9 +331,13 @@ export class LoginComponent extends BaseComponent implements OnInit, AfterViewIn
           old_password: this.passwordChangeData.currentPassword
         }
         this.makeAuthenticationPost(ROUTES.controllers.AuthenticationService.replaceOnetimePassword().url, data).subscribe((result: HttpResponse<any>) => {
-          // Password replacement was ok - complete login.
-          this.completeLogin(result)
-          this.popupService.success('Your password has been updated.')
+          if (this.isErrorDescription(result.body)) {
+            this.validation.applyError(result.body)
+          } else {
+            // Password replacement was ok - complete login.
+            this.completeLogin(result)
+            this.popupService.success('Your password has been updated.')
+          }
         }).add(() => {
           this.spinner = false
         })

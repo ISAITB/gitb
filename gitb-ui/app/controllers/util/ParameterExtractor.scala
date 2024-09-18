@@ -113,6 +113,20 @@ object ParameterExtractor {
     values
   }
 
+  def virusPresentInNamedFiles(values: Iterable[NamedFile]): Option[NamedFile] = {
+    if (Configurations.ANTIVIRUS_SERVER_ENABLED) {
+      val virusScanner = new ClamAVClient(Configurations.ANTIVIRUS_SERVER_HOST, Configurations.ANTIVIRUS_SERVER_PORT, Configurations.ANTIVIRUS_SERVER_TIMEOUT)
+      values.foreach { value =>
+        // Check for virus. Do this regardless of the type of parameter as this can be changed later on.
+        val scanResult = virusScanner.scan(value.file)
+        if (!ClamAVClient.isCleanReply(scanResult)) {
+          return Some(value)
+        }
+      }
+    }
+    None // No virus
+  }
+
   def virusPresentInFiles(values: Iterable[File]): Boolean = {
     val virusScanner = new ClamAVClient(Configurations.ANTIVIRUS_SERVER_HOST, Configurations.ANTIVIRUS_SERVER_PORT, Configurations.ANTIVIRUS_SERVER_TIMEOUT)
     values.foreach { value =>
@@ -790,23 +804,26 @@ object ParameterExtractor {
     var faviconFile: Option[NamedFile] = None
     val filesToScan = new ListBuffer[NamedFile]
     if (files.contains(Parameters.HEADER_LOGO_FILE)) {
-      headerLogoFile = Some(NamedFile(files(Parameters.HEADER_LOGO_FILE).file, files(Parameters.HEADER_LOGO_FILE).name))
+      headerLogoFile = Some(NamedFile(files(Parameters.HEADER_LOGO_FILE).file, files(Parameters.HEADER_LOGO_FILE).name, Some(Parameters.HEADER_LOGO_FILE)))
       filesToScan += headerLogoFile.get
     }
     if (files.contains(Parameters.FOOTER_LOGO_FILE)) {
-      footerLogoFile = Some(NamedFile(files(Parameters.FOOTER_LOGO_FILE).file, files(Parameters.FOOTER_LOGO_FILE).name))
+      footerLogoFile = Some(NamedFile(files(Parameters.FOOTER_LOGO_FILE).file, files(Parameters.FOOTER_LOGO_FILE).name, Some(Parameters.FOOTER_LOGO_FILE)))
       filesToScan += footerLogoFile.get
     }
     if (files.contains(Parameters.FAVICON_FILE)) {
-      faviconFile = Some(NamedFile(files(Parameters.FAVICON_FILE).file, files(Parameters.FAVICON_FILE).name))
+      faviconFile = Some(NamedFile(files(Parameters.FAVICON_FILE).file, files(Parameters.FAVICON_FILE).name, Some(Parameters.FAVICON_FILE)))
       filesToScan += faviconFile.get
     }
     if (filesToScan.nonEmpty) {
-      if (Configurations.ANTIVIRUS_SERVER_ENABLED && ParameterExtractor.virusPresentInFiles(filesToScan.toList.map(_.file))) {
-        resultToReturn = Some(ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "Files failed virus scan."))
+      resultToReturn = ParameterExtractor.virusPresentInNamedFiles(filesToScan.toList).map { _ =>
+        ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "Files failed virus scan.")
       }
-      if (resultToReturn.isEmpty && filesToScan.exists(p => !imageMimeTypes.contains(MimeUtil.getMimeType(p.file.toPath)))) {
-        resultToReturn = Some(ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_REQUEST, "Only image files are allowed."))
+      if (resultToReturn.isEmpty) {
+        val filesWithWrongType = filesToScan.filter(p => !imageMimeTypes.contains(MimeUtil.getMimeType(p.file.toPath)))
+        if (filesWithWrongType.nonEmpty) {
+          resultToReturn = Some(ResponseConstructor.constructErrorResponse(ErrorCodes.INVALID_REQUEST, "Only image files are allowed.", Some(filesWithWrongType.flatMap(_.identifier).mkString(","))))
+        }
       }
     }
     if (resultToReturn.isEmpty) {

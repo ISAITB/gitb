@@ -1,5 +1,8 @@
-import { AfterViewInit, Component, ElementRef, EventEmitter, forwardRef, Input, OnInit, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, EventEmitter, forwardRef, Input, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { ReplaySubject, Subscription } from 'rxjs';
+import { Constants } from 'src/app/common/constants';
+import { InvalidFormControlConfig } from 'src/app/types/invalid-form-control-config';
 
 @Component({
   selector: 'app-secret-input',
@@ -13,20 +16,22 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
   ],
   styles: ['button {box-shadow: none;outline: none !important; width: 43px; }']
 })
-export class SecretInputComponent implements OnInit, AfterViewInit,  ControlValueAccessor {
+export class SecretInputComponent implements OnInit, AfterViewInit,  ControlValueAccessor, OnDestroy {
 
   @Input() id!: string
   @Input() name!: string
   @Input() autoFocus = false
-  @Input() showAsInvalid? = false
-  @Input() invalidFeedback?: string
+  @Input() validation?: ReplaySubject<InvalidFormControlConfig>
   @Input() focusChange?: EventEmitter<boolean>
 
   @ViewChild("passwordField", { static: false }) passwordField?: ElementRef;
   _value?: string
   display = false
+  hasValidation = false
+  validationStateSubscription?: Subscription
   onChange = (_: any) => {}
   onTouched = () => {}
+  Constants = Constants
 
   constructor() { }
 
@@ -70,24 +75,31 @@ export class SecretInputComponent implements OnInit, AfterViewInit,  ControlValu
     if (this.focusChange) {
       this.focusChange.subscribe((focus) => {
         if (this.passwordField != undefined) {
-          setTimeout(() => {
-            if (focus) {
-              this.passwordField?.nativeElement.focus()
-            } else {
-              this.passwordField?.nativeElement.blur()
-            }
-          }, 1)
+          if (focus) {
+            this.passwordField.nativeElement.focus()
+          } else {
+            this.passwordField.nativeElement.blur()
+          }
         }        
+      })
+    }
+    if (this.validation) {
+      this.validationStateSubscription = this.validation.subscribe((status) => {
+        this.hasValidation = status.invalid == true && status.feedback != undefined
       })
     }
   }
 
   toggleDisplay() {
     this.display = !this.display
-    if (this.display) {
-      setTimeout(() => {
-        this.passwordField?.nativeElement.focus()
-      }, 1)
+    setTimeout(() => {
+      this.passwordField?.nativeElement.focus()
+    }, 1)
+  }
+
+  ngOnDestroy(): void {
+    if (this.validationStateSubscription) {
+      this.validationStateSubscription.unsubscribe()
     }
   }
 

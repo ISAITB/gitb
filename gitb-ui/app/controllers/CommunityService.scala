@@ -152,7 +152,7 @@ class CommunityService @Inject() (implicit ec: ExecutionContext, authorizedActio
       } else {
         organisationAdmin = ParameterExtractor.extractAdminInfo(paramMap, None, Some(false))
         if (!CryptoUtil.isAcceptedPassword(organisationAdmin.password)) {
-          response = ResponseConstructor.constructErrorResponse(ErrorCodes.INVALID_CREDENTIALS, "The provided password does not match minimum complexity requirements.")
+          response = ResponseConstructor.constructErrorResponse(ErrorCodes.INVALID_CREDENTIALS, "The provided password does not match minimum complexity requirements.", Some("new"))
         }
       }
 
@@ -163,28 +163,28 @@ class CommunityService @Inject() (implicit ec: ExecutionContext, authorizedActio
         if (community.isDefined) {
           // Check in case template selection is required
           if (community.get.selfRegForceTemplateSelection && templateId.isEmpty) {
-            response = ResponseConstructor.constructErrorResponse(ErrorCodes.MISSING_PARAMS, "A configuration template must be selected.")
+            response = ResponseConstructor.constructErrorResponse(ErrorCodes.MISSING_PARAMS, "A configuration template must be selected.", Some("template"))
           }
           if (response == null) {
             // Check that the token (if required) matches
             if (community.get.selfRegType == SelfRegistrationType.PublicListingWithToken.id.toShort
               && selfRegToken.isDefined && community.get.selfRegToken.isDefined
               && community.get.selfRegToken.get != selfRegToken.get) {
-              response = ResponseConstructor.constructErrorResponse(ErrorCodes.INCORRECT_SELFREG_TOKEN, "The provided token is incorrect.")
+              response = ResponseConstructor.constructErrorResponse(ErrorCodes.INCORRECT_SELFREG_TOKEN, "The provided token is incorrect.", Some("token"))
             }
           }
           if (response == null) {
             if (Configurations.AUTHENTICATION_SSO_ENABLED) {
               // Check to see whether self-registration restrictions are in force (only if SSO)
               if (community.get.selfRegRestriction == SelfRegistrationRestriction.UserEmail.id.toShort && communityManager.existsOrganisationWithSameUserEmail(community.get.id, actualUserInfo.get.email)) {
-                response = ResponseConstructor.constructErrorResponse(ErrorCodes.SELF_REG_RESTRICTION_USER_EMAIL, "You are already registered in this community.")
+                response = ResponseConstructor.constructErrorResponse(ErrorCodes.SELF_REG_RESTRICTION_USER_EMAIL, "You are already registered in this community.", Some("community"))
               } else if (community.get.selfRegRestriction == SelfRegistrationRestriction.UserEmailDomain.id.toShort && communityManager.existsOrganisationWithSameUserEmailDomain(community.get.id, actualUserInfo.get.email)) {
-                response = ResponseConstructor.constructErrorResponse(ErrorCodes.SELF_REG_RESTRICTION_USER_EMAIL_DOMAIN, "Your organisation is already registered in this community.")
+                response = ResponseConstructor.constructErrorResponse(ErrorCodes.SELF_REG_RESTRICTION_USER_EMAIL_DOMAIN, "Your organisation is already registered in this community.", Some("community"))
               }
             } else {
               // Check the user email (only if not SSO)
               if (!authenticationManager.checkEmailAvailability(organisationAdmin.email, None, None, None)) {
-                response = ResponseConstructor.constructErrorResponse(ErrorCodes.EMAIL_EXISTS, "The provided username is already defined.")
+                response = ResponseConstructor.constructErrorResponse(ErrorCodes.EMAIL_EXISTS, "The provided username is already defined.", Some("adminEmail"))
               }
             }
           }

@@ -5,12 +5,12 @@ import { BaseComponent } from 'src/app/pages/base-component.component';
 import { AuthService } from 'src/app/services/auth.service';
 import { CommunityService } from 'src/app/services/community.service';
 import { DataService } from 'src/app/services/data.service';
-import { ErrorService } from 'src/app/services/error.service';
 import { PopupService } from 'src/app/services/popup.service';
 import { ActualUserInfo } from 'src/app/types/actual-user-info';
 import { SelfRegistrationModel } from 'src/app/types/self-registration-model.type';
 import { SelfRegistrationOption } from 'src/app/types/self-registration-option.type';
 import { UserAccount } from 'src/app/types/user-account';
+import { ValidationState } from 'src/app/types/validation-state';
 
 @Component({
   selector: 'app-link-account',
@@ -29,10 +29,10 @@ export class LinkAccountComponent extends BaseComponent implements OnInit {
   selfRegData: SelfRegistrationModel = {}
   email?:string
   password?:string
+  validation = new ValidationState()
 
   constructor(
     public dataService: DataService,
-    private errorService: ErrorService,
     private authService: AuthService,
     private communityService: CommunityService,
     public modalRef: BsModalRef,
@@ -92,6 +92,7 @@ export class LinkAccountComponent extends BaseComponent implements OnInit {
 
   create() {
     this.createPending = true
+    this.validation.clearErrors()
     if (this.choice == Constants.CREATE_ACCOUNT_OPTION.LINK) {
       this.authService.linkFunctionalAccount(this.selectedAccountId).subscribe((data) => {
         this.dataService.setActualUser(data as ActualUserInfo)
@@ -103,7 +104,7 @@ export class LinkAccountComponent extends BaseComponent implements OnInit {
     } else if (this.choice == Constants.CREATE_ACCOUNT_OPTION.MIGRATE) {
       this.authService.migrateFunctionalAccount(this.email!, this.password!).subscribe((data) => {
         if (this.isErrorDescription(data)) {
-          this.errorService.showSimpleErrorMessage('Unable to migrate account', data.error_description!)
+          this.validation.applyError(data)
         } else {
           this.dataService.setActualUser(data as ActualUserInfo)
           this.modalRef.hide()
@@ -124,7 +125,7 @@ export class LinkAccountComponent extends BaseComponent implements OnInit {
       this.communityService.selfRegister(this.selfRegData.selfRegOption!.communityId!, token, this.selfRegData.orgShortName!, this.selfRegData.orgFullName!, templateId, this.selfRegData.selfRegOption!.organisationProperties, undefined, undefined, undefined)
       .subscribe((data) => {
         if (this.isErrorDescription(data)) {
-          this.errorService.showSimpleErrorMessage('Unable to register', data.error_description!)
+          this.validation.applyError(data)
         } else {
           this.dataService.setActualUser(data as ActualUserInfo)
           this.modalRef.hide()

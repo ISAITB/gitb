@@ -28,7 +28,7 @@ class TriggerService @Inject()(authorizedAction: AuthorizedAction, cc: Controlle
       triggerManager.createTrigger(trigger)
       ResponseConstructor.constructEmptyResponse
     } else {
-      ResponseConstructor.constructErrorResponse(ErrorCodes.NAME_EXISTS, "Trigger with name '" + trigger.trigger.name + "' already exists.")
+      ResponseConstructor.constructErrorResponse(ErrorCodes.NAME_EXISTS, "A trigger with this name already exists.", Some("name"))
     }
   }
 
@@ -47,7 +47,7 @@ class TriggerService @Inject()(authorizedAction: AuthorizedAction, cc: Controlle
       triggerManager.updateTrigger(triggerInfo)
       ResponseConstructor.constructEmptyResponse
     } else {
-      ResponseConstructor.constructErrorResponse(ErrorCodes.NAME_EXISTS, "Trigger with name '" + triggerInfo.trigger.name + "' already exists.")
+      ResponseConstructor.constructErrorResponse(ErrorCodes.NAME_EXISTS, "A trigger with this name already exists.", Some("name"))
     }
   }
 
