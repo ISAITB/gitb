@@ -4,7 +4,7 @@ import { Subject } from 'rxjs';
 import { LogoutEventInfo } from '../types/logout-event-info.type'
 import { LoginEventInfo } from "../types/login-event-info.type";
 import { Constants } from './../common/constants'
-import { CookieOptions, CookieService } from 'ngx-cookie-service'
+import { CookieService } from 'ngx-cookie-service'
 import { DataService } from './data.service'
 import { Utils } from '../common/utils';
 import { ROUTES } from '../common/global';
@@ -16,7 +16,7 @@ import { RoutingService } from './routing.service';
 export class AuthProviderService {
 
   private onLoginSource = new Subject<LoginEventInfo>()
-  private afterLoginSource = new Subject<any>()
+  private afterLoginSource = new Subject<LoginEventInfo>()
   private onLogoutSource = new Subject<LogoutEventInfo>()
   private onLogoutCompleteSource = new Subject<void>()
   private authenticated: boolean = false
@@ -24,7 +24,6 @@ export class AuthProviderService {
   private logoutOngoing: boolean = false
   private cookiePath?: string
   private atKey = Constants.ACCESS_TOKEN_COOKIE_KEY
-  private loginOptionKey = Constants.LOGIN_OPTION_COOKIE_KEY
   public accessToken?: string
 
   public onLogin$ = this.onLoginSource.asObservable()
@@ -53,40 +52,52 @@ export class AuthProviderService {
       }
       this.dataService.setCookie(this.atKey, accessToken, expiryDate)
       this.authenticate(accessToken, info.path)
-      this.signalAfterLogin()
+      this.signalAfterLogin(info)
     })
     // Handle post-login event
-    this.afterLogin$.subscribe(() => {
-      this.routingService.toHome()
+    this.afterLogin$.subscribe((loginInfo) => {
+      const previousLocation = this.dataService.retrieveLocationData(loginInfo.userId)
+      if (previousLocation) {
+        // Return to previous location
+        this.routingService.toURL(previousLocation)
+      } else {
+        // Go to home page
+        this.routingService.toHome()
+      }
     })
     // Handle logout event
     this.onLogout$.subscribe((info) => {
 			if (!this.logoutOngoing && (info.full || this.isAuthenticated())) {
+        const clearAllSessionInfo = info.full && (info.fromExpiry == undefined || !info.fromExpiry)
         this.logoutOngoing = true
-        this.httpClient.post(
+        let logout$ = this.httpClient.post(
           this.dataService.completePath(ROUTES.controllers.AuthenticationService.logout().url), 
-          Utils.objectToFormRequest({full: info.full}).toString(),
+          Utils.objectToFormRequest({full: clearAllSessionInfo}).toString(),
           {
             headers: Utils.createHttpHeaders(this.accessToken)
           }
-        ).subscribe(() => {
+        )
+        logout$.subscribe(() => {
           console.debug('Successfully signalled logout')
         }).add(() => {
-          this.dataService.destroy()
-          if (localStorage) {
-            localStorage.clear()
-          }
+          this.dataService.destroy(clearAllSessionInfo)
           this.cookieService.delete(this.atKey)
 					if (this.cookiePath) {
             this.cookieService.delete(this.atKey, this.cookiePath)
           }
 					if (!info || !info.keepLoginOption) {
-            this.cookieService.delete(this.loginOptionKey)
-          }
-					this.deauthenticate()
+            this.dataService.clearLoginOption()
+          }          
+					this.deAuthenticate()
 					if (info.full) {
-            let url = window.location.href
-            window.location.href = url.substring(0, url.indexOf('app#'))
+            const url = window.location.href
+            if (info.fromExpiry) {
+              // Go to login screen.
+              window.location.href = url.substring(0, url.indexOf('#'))
+            } else {
+              // Go to welcome screen.
+              window.location.href = url.substring(0, url.indexOf('app#'))
+            }
           } else {
             this.routingService.toLogin().finally(() => {
               this.onLogoutCompleteSource.next()
@@ -105,8 +116,8 @@ export class AuthProviderService {
     this.onLogoutSource.next(info)
   }
 
-  signalAfterLogin() {
-    this.afterLoginSource.next({})
+  signalAfterLogin(info: LoginEventInfo) {
+    this.afterLoginSource.next(info)
   }
 
   authenticate(accessToken: string, cookiePath?: string) {
@@ -116,7 +127,7 @@ export class AuthProviderService {
     this.accessToken = accessToken
   }
 
-	deauthenticate() {
+	deAuthenticate() {
 		this.authenticated = false
 		this.logoutOngoing = false
     delete this.cookiePath

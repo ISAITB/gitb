@@ -69,6 +69,11 @@ export class DataService {
   private renderer: Renderer2
   triggerEventToDataTypeMap?: {[key: number]: { [key: number]: boolean } }
 
+  private static STORAGE_TESTS = "com.itb.tests"
+  private static STORAGE_LOCATION = "com.itb.location"
+  private static STORAGE_USER = "com.itb.user"
+  private static STORAGE_LOGIN_OPTION = "com.itb.loginOption"
+
   constructor(
     rendererFactory: RendererFactory2,
     private cookieService: CookieService
@@ -78,7 +83,7 @@ export class DataService {
     this.destroy()
   }
 
-  destroy() {
+  destroy(full?: boolean) {
     this.actualUser = undefined
     this.user = undefined
     this.vendor = undefined
@@ -94,6 +99,13 @@ export class DataService {
     this.latestPageChange = undefined
     this.currentLandingPageContent = undefined
     this.cookiePath = undefined
+    if (sessionStorage) {
+      sessionStorage.removeItem(DataService.STORAGE_TESTS)
+      if (full) {
+        sessionStorage.removeItem(DataService.STORAGE_LOCATION)
+        sessionStorage.removeItem(DataService.STORAGE_USER)
+      }
+    }    
   }
 
   private emptyAppConfiguration(): AppConfigurationProperties {
@@ -138,6 +150,9 @@ export class DataService {
 
   setUser(user: User) {
     this.user = user
+    if (sessionStorage && user.id != undefined) {
+      sessionStorage.setItem(DataService.STORAGE_USER, user.id+'')
+    }
     if (this.actualUser) {
       this.setActualUser(this.actualUser)
     }
@@ -1015,8 +1030,8 @@ export class DataService {
   }
 
   getTestsToExecute(): ConformanceTestCase[]|undefined {
-    if (localStorage) {
-      const cachedTests = localStorage.getItem('tests')
+    if (sessionStorage) {
+      const cachedTests = sessionStorage.getItem(DataService.STORAGE_TESTS)
       if (cachedTests) {
         return JSON.parse(cachedTests)
       } else {
@@ -1028,16 +1043,16 @@ export class DataService {
   }
 
 	setTestsToExecute(tests: ConformanceTestCase[]) {
-    if (localStorage) {
-      localStorage.setItem('tests', JSON.stringify(tests))
+    if (sessionStorage) {
+      sessionStorage.setItem(DataService.STORAGE_TESTS, JSON.stringify(tests))
     } else {
       this.tests = tests
     }
   }
 
   clearTestsToExecute() {
-    if (localStorage) {
-      localStorage.removeItem('tests')
+    if (sessionStorage) {
+      sessionStorage.removeItem('tests')
     }
     this.tests = undefined
   }
@@ -1506,6 +1521,65 @@ export class DataService {
       cookieOptions.secure = true
     }
     this.cookieService.set(name, value, cookieOptions.expires, cookieOptions.path, cookieOptions.domain, cookieOptions.secure, cookieOptions.sameSite)
+  }
+
+  recordLocationData(location: string) {
+    if (sessionStorage) sessionStorage.setItem(DataService.STORAGE_LOCATION, location)
+  }
+
+  clearLocationData() {
+    if (sessionStorage) {
+      sessionStorage.removeItem(DataService.STORAGE_LOCATION)
+      sessionStorage.removeItem(DataService.STORAGE_USER)
+    }
+  }
+
+  checkLocationUser(): number|undefined {
+    if (sessionStorage) {
+      const user = sessionStorage.getItem(DataService.STORAGE_USER)
+      if (user) {
+        return Number(user)
+      }
+    }
+    return undefined
+  }
+
+  retrieveLocationData(currentUserId: number|undefined): string|undefined {
+    if (sessionStorage) {
+      const location = sessionStorage.getItem(DataService.STORAGE_LOCATION)
+      const user = sessionStorage.getItem(DataService.STORAGE_USER)
+      this.clearLocationData()
+      if (location && user && currentUserId != undefined) {
+        const userId = Number(user)
+        if (userId == currentUserId) {
+          return location
+        }
+      }
+    }
+    return undefined
+  }
+
+  recordLoginOption(option: string) {
+    if (sessionStorage) {
+      sessionStorage.setItem(DataService.STORAGE_LOGIN_OPTION, option)
+    }
+  }
+
+  retrieveLoginOption(): string|undefined {
+    if (sessionStorage) {
+      const option = sessionStorage.getItem(DataService.STORAGE_LOGIN_OPTION)
+      if (option) {
+        sessionStorage.removeItem(DataService.STORAGE_LOGIN_OPTION)
+        return option
+      }
+    }
+    return undefined
+  }
+
+  clearLoginOption() {
+    if (sessionStorage) {
+      sessionStorage.removeItem(DataService.STORAGE_LOGIN_OPTION)
+    }
   }
 
 }

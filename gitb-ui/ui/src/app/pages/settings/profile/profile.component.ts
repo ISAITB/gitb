@@ -55,7 +55,7 @@ export class ProfileComponent extends BaseComponent implements OnInit, AfterView
     })
     modalRef.content!.result.subscribe((choice?: number) => {
       if (choice != undefined) {
-        this.dataService.setCookie(Constants.LOGIN_OPTION_COOKIE_KEY, Constants.LOGIN_OPTION.FORCE_CHOICE)
+        this.dataService.recordLoginOption(Constants.LOGIN_OPTION.FORCE_CHOICE)
         this.authProviderService.signalLogout({ full: false, keepLoginOption: true })
         if (choice == Constants.DISCONNECT_ROLE_OPTION.CURRENT_PARTIAL) {
 				  this.popupService.success("Role disconnected from your account.")
@@ -71,7 +71,7 @@ export class ProfileComponent extends BaseComponent implements OnInit, AfterView
 	linkOtherRole() {
     this.confirmationDialogService.confirmed("Confirmation", "Before linking another role to your account your current session will be closed. Are you sure you want to proceed?", "Disconnect", "Cancel")
       .subscribe(() => {
-        this.dataService.setCookie(Constants.LOGIN_OPTION_COOKIE_KEY, Constants.LOGIN_OPTION.LINK_ACCOUNT)
+        this.dataService.recordLoginOption(Constants.LOGIN_OPTION.LINK_ACCOUNT)
         this.authProviderService.signalLogout({full: false, keepLoginOption: true})
       })
   }
@@ -79,7 +79,7 @@ export class ProfileComponent extends BaseComponent implements OnInit, AfterView
 	register() {
 		this.confirmationDialogService.confirmed("Confirmation", "Before registering another "+this.dataService.labelOrganisationLower()+" your current session will be closed. Are you sure you want to proceed?", "Disconnect", "Cancel")
 		.subscribe(() => {
-      this.dataService.setCookie(Constants.LOGIN_OPTION_COOKIE_KEY, Constants.LOGIN_OPTION.REGISTER)
+      this.dataService.recordLoginOption(Constants.LOGIN_OPTION.REGISTER)
       this.authProviderService.signalLogout({full: false, keepLoginOption: true})
     })
   }

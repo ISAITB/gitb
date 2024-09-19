@@ -1,7 +1,6 @@
 import { HttpClient, HttpResponse } from '@angular/common/http';
 import { AfterViewInit, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { BsModalService } from 'ngx-bootstrap/modal';
-import { CookieService } from 'ngx-cookie-service';
 import { forkJoin, Observable, of, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { Constants } from 'src/app/common/constants';
@@ -52,7 +51,6 @@ export class LoginComponent extends BaseComponent implements OnInit, AfterViewIn
 
   constructor(
     private authProvider: AuthProviderService,
-    private cookieService: CookieService,
     public dataService: DataService,
     private httpClient: HttpClient,
     private routingService: RoutingService,
@@ -70,7 +68,7 @@ export class LoginComponent extends BaseComponent implements OnInit, AfterViewIn
 		if (this.authProvider.isAuthenticated()) {
       this.routingService.toHome()
     } else {
-      this.loginOption = this.cookieService.get(Constants.LOGIN_OPTION_COOKIE_KEY)
+      this.loginOption = this.dataService.retrieveLoginOption()
       if (!this.loginOption) {
         this.loginOption = Constants.LOGIN_OPTION.NONE
       }
@@ -78,7 +76,6 @@ export class LoginComponent extends BaseComponent implements OnInit, AfterViewIn
         // Invalid login option
         this.loginOption = Constants.LOGIN_OPTION.NONE
       }
-
       if (this.loginOption == Constants.LOGIN_OPTION.REGISTER) {
         if (this.dataService.configuration.ssoEnabled) {
           this.createAccount(this.loginOption)
@@ -87,9 +84,23 @@ export class LoginComponent extends BaseComponent implements OnInit, AfterViewIn
         this.createAccount(this.loginOption)
       } else if (this.loginOption == Constants.LOGIN_OPTION.DEMO) {
         this.loginViaSelection(this.dataService.configuration.demosAccount)
-      } else {
-        if (this.dataService.actualUser && this.dataService.actualUser.accounts && this.dataService.actualUser.accounts.length == 1 && this.loginOption != Constants.LOGIN_OPTION.FORCE_CHOICE) {
-          this.loginViaSelection(this.dataService.actualUser.accounts[0].id)
+      } else if (this.loginOption != Constants.LOGIN_OPTION.FORCE_CHOICE && this.dataService.actualUser && this.dataService.actualUser.accounts) {
+        // Check to see if we can automate the functional account selection.
+        let userIdToConnectWith: number|undefined
+        if (this.dataService.actualUser.accounts.length == 1) {
+          // The user is linked to a single functional account. Automate its selection.
+          userIdToConnectWith = this.dataService.actualUser.accounts[0].id
+        } else if (this.dataService.actualUser.accounts.length > 1) { 
+          const previousUser = this.dataService.checkLocationUser()
+          if (previousUser != undefined) {
+            const matchedUser = this.dataService.actualUser.accounts.find((account) => account.id == previousUser)
+            if (matchedUser) {
+              userIdToConnectWith = matchedUser.id
+            }
+          }
+        }
+        if (userIdToConnectWith != undefined) {
+          this.loginViaSelection(userIdToConnectWith)
         }
       }
     }
@@ -197,12 +208,17 @@ export class LoginComponent extends BaseComponent implements OnInit, AfterViewIn
 
   private completeLogin(result: HttpResponse<LoginResultOk|LoginResultActionNeeded>) {
     let path = '/'
+    let userId: number|undefined
     if (result.headers.get('ITB-PATH')) {
       path = result.headers.get('ITB-PATH')!
-    } else if (result.body != undefined && (<LoginResultOk>result.body).path != undefined) {
-      path = (<LoginResultOk>result.body).path!
+    } else if (result.body != undefined && this.isLoginOk(result.body)) {
+      userId = result.body.user_id
+      if (result.body.path) {
+        path = result.body.path
+      }
     }
     this.loginState = {
+      userId: userId,
       tokens: result.body,
       path: path,
       remember: this.rememberMe

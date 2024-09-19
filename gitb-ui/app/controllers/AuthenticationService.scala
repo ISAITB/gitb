@@ -92,7 +92,7 @@ class AuthenticationService @Inject() (authorizedAction: AuthorizedAction, cc: C
   private def completeAccessTokenLogin(userId: Long): Result = {
     val tokens = authManager.generateTokens(userId)
     disableDataBootstrap()
-    ResponseConstructor.constructOauthResponse(tokens)
+    ResponseConstructor.constructOauthResponse(tokens, userId)
   }
 
   def replaceOnetimePassword = authorizedAction { request =>

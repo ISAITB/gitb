@@ -65,8 +65,9 @@ object ResponseConstructor extends Results{
     Ok("{"+"\"available\":"+isAvailable+"}").as(JSON)
   }
 
-  def constructOauthResponse(tokens:Token):Result = {
+  def constructOauthResponse(tokens: Token, userId: Long):Result = {
     Ok("{" +
+      "\"user_id\":"+userId+"," +
       "\"path\":\"" + Configurations.AUTHENTICATION_COOKIE_PATH + "\"," +
       "\"access_token\":\"" + tokens.access_token + "\"," +
       "\"token_type\":\"Bearer\"," +

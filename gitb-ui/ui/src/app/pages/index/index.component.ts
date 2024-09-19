@@ -59,7 +59,7 @@ export class IndexComponent implements OnInit, OnDestroy {
   }
 
 	switchAccount() {
-    this.dataService.setCookie(Constants.LOGIN_OPTION_COOKIE_KEY, Constants.LOGIN_OPTION.FORCE_CHOICE)
+    this.dataService.recordLoginOption(Constants.LOGIN_OPTION.FORCE_CHOICE)
     this.authProviderService.signalLogout({full: false, keepLoginOption: true})
   }
 

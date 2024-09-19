@@ -13,7 +13,6 @@ export class Constants {
 
 	public static TOKEN_COOKIE_EXPIRE = 2592000000 // 1 month in millis
 	public static ACCESS_TOKEN_COOKIE_KEY = 'tat'
-	public static LOGIN_OPTION_COOKIE_KEY = 'LOGIN_OPTION'
 
 	public static TEST_ENGINE_ACTOR_ID = 'com.gitb.TestEngine'
 	public static TESTER_ACTOR_ID = 'com.gitb.Operator'
