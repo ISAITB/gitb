@@ -4,7 +4,7 @@
             <div class="card-title">{{dataService.labelDomain()}} details</div>
         </div>
         <form>
-            <div class="card-body">
+            <div class="card-body" [pending]="!loaded" focus="shortName">
                 <div class="row">
                     <div class="col-10 offset-1">
                         @if (domain) {
@@ -15,14 +15,14 @@
             </div>
             <div class="card-footer button-container">
                 <div class="btn-toolbar">
-                    <button type="submit" (click)="saveDomainChanges()" class="btn btn-secondary" [disable]="deletePending || saveDisabled()" [pending]="savePending">Save changes</button>
+                    <button type="submit" (click)="saveDomainChanges()" class="btn btn-secondary" [disable]="!loaded || deletePending || saveDisabled()" [pending]="savePending">Save changes</button>
                     @if (dataService.isSystemAdmin || (dataService.isCommunityAdmin && !dataService.community!.domainId)) {
                         <button type="button" (click)="back()" class="btn btn-secondary">Back</button>
                     }
                 </div>
                 @if (dataService.isSystemAdmin) {
                     <div class="btn-toolbar btn-toolbar-delete">
-                        <button type="button" (click)="deleteDomain()" class="btn btn-outline-danger" [disable]="savePending" [pending]="deletePending">Delete</button>
+                        <button type="button" (click)="deleteDomain()" class="btn btn-outline-danger" [disable]="!loaded || savePending" [pending]="deletePending">Delete</button>
                     </div>
                 }
             </div>

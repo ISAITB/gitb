@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, EventEmitter, OnInit } from '@angular/core';
+import { Component, EventEmitter, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { Constants } from 'src/app/common/constants';
 import { BaseComponent } from 'src/app/pages/base-component.component';
@@ -18,13 +18,14 @@ import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
   styles: [
   ]
 })
-export class EndpointDetailsComponent extends BaseComponent implements OnInit, AfterViewInit {
+export class EndpointDetailsComponent extends BaseComponent implements OnInit {
 
   endpointId!: number
   actorId!: number
   domainId!: number
   specificationId!: number
   endpoint: Partial<EndpointData> = {}
+  loaded = false
   savePending = false
   deletePending = false
   parametersLoaded = new EventEmitter<EndpointParameter[]|undefined>
@@ -38,10 +39,6 @@ export class EndpointDetailsComponent extends BaseComponent implements OnInit, A
     public dataService: DataService,
     private popupService: PopupService
   ) { super() }
-
-  ngAfterViewInit(): void {
-		this.dataService.focus('name')
-  }
 
   ngOnInit(): void {
 		this.endpointId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.ENDPOINT_ID))
@@ -57,6 +54,8 @@ export class EndpointDetailsComponent extends BaseComponent implements OnInit, A
 			this.endpoint = data[0]
       this.parametersLoaded.emit(this.endpoint.parameters)
       this.routingService.endpointBreadcrumbs(this.domainId, this.specificationId, this.actorId, this.endpointId, this.endpoint.name!)
+    }).add(() => {
+      this.loaded = true
     })
   }
 

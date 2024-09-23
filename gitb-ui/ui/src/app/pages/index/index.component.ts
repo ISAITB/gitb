@@ -10,6 +10,7 @@ import { BsModalService } from 'ngx-bootstrap/modal';
 import { ContactSupportComponent } from 'src/app/modals/contact-support/contact-support.component';
 import { RoutingService } from 'src/app/services/routing.service';
 import { MenuItem } from 'src/app/types/menu-item.enum';
+import { PopupService } from 'src/app/services/popup.service';
 
 @Component({
   selector: 'app-index',
@@ -34,7 +35,8 @@ export class IndexComponent implements OnInit, OnDestroy {
     private legalNoticeService: LegalNoticeService,
     private authProviderService: AuthProviderService,
     private modalService: BsModalService,
-    public routingService: RoutingService
+    public routingService: RoutingService,
+    private popupService: PopupService
   ) {}
 
   ngOnInit(): void {
@@ -156,6 +158,19 @@ export class IndexComponent implements OnInit, OnDestroy {
 
   toggleMenu() {
     this.menuExpanded = !this.menuExpanded
+  }
+
+  copyExternalLink() {
+    if (this.dataService.user?.id) {
+      let currentLocation = window.location.href
+      const externalLocation = currentLocation
+        .replace("/#/", `/${this.dataService.user.id}/`)
+        .replace("#/", `/${this.dataService.user.id}/`)
+      this.dataService.copyToClipboard(externalLocation).subscribe(() => {
+        this.popupService.success("Link copied to clipboard.")
+      })
+    }
+
   }
 
 }

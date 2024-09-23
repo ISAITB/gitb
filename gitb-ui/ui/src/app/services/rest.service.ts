@@ -2,12 +2,12 @@ import { Injectable } from '@angular/core';
 import { Observable, throwError } from 'rxjs';
 
 import { HttpRequestConfig } from '../types/http-request-config.type'
-import { catchError } from 'rxjs/operators';
+import { catchError, map, share } from 'rxjs/operators';
 import { AuthProviderService } from './auth-provider.service'
-import { ConfirmationDialogService } from './confirmation-dialog.service'
 import { ErrorService } from './error.service';
 import { BaseRestService } from './base-rest.service';
 import { DataService } from './data.service';
+import { RoutingService } from './routing.service';
 
 @Injectable({
   providedIn: 'root'
@@ -17,9 +17,9 @@ export class RestService {
   constructor(
     private baseRestService: BaseRestService,
     private authProviderService: AuthProviderService,
-    private confirmationDialogService: ConfirmationDialogService,
     private errorService: ErrorService,
-    private dataService: DataService
+    private dataService: DataService,
+    private routingService: RoutingService
   ) { }
 
   private call<T>(callFn: () => Observable<T>, errorHandler?: (_:any) => Observable<any>): Observable<T> {
@@ -79,7 +79,7 @@ export class RestService {
             observer.next()
             observer.complete()
           } else {
-            this.confirmationDialogService.invalidSessionNotification().subscribe((processed) => {
+            this.errorService.showInvalidSessionNotification().subscribe((processed) => {
               if (processed) {
                 this.authProviderService.signalLogout({full: true, fromExpiry: true})
               }
@@ -92,6 +92,15 @@ export class RestService {
           observer.complete()
         }
       })
+    } else if (error && error.status && error.status == 403) {
+      console.warn(`Access forbidden: ${error.error?.error_description}`)
+      result = this.errorService.showUnauthorisedAccessError().pipe(
+        map((shown) => {
+          if (shown) {
+            this.routingService.toHome()
+          }
+        }
+      ), share())
     } else {
       if (errorHandler) {
         // Custom error handling.

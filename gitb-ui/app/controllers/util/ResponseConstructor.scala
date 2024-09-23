@@ -77,4 +77,8 @@ object ResponseConstructor extends Results{
     ).as(JSON)
   }
 
+  def createRequestedUrlCookie(requestedUrl: String): Cookie = {
+    Cookie("ITB_REQUESTED_URL", requestedUrl, None, "/", None, requestedUrl.toLowerCase.startsWith("https://"), httpOnly = false, Some(Cookie.SameSite.Strict))
+  }
+
 }

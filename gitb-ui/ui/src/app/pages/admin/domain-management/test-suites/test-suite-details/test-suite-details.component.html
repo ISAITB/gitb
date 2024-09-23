@@ -4,7 +4,7 @@
 			<div class="card-title">Test suite details</div>
 		</div>
 		<form>
-			<div class="card-body">
+			<div class="card-body" [pending]="!loaded" focus="name">
 				@if (testSuite.shared) {
 					<div class="alert alert-info rounded">
 						<span>This test suite is designed to be shared across multiple {{dataService.labelSpecificationsLower()}}. Any changes made will apply to all its linked {{dataService.labelSpecificationsLower()}}.</span>
@@ -65,12 +65,12 @@
 			</div>
 			<div class="card-footer button-container">
 				<div class="btn-toolbar">
-					<button (click)="saveChanges()" type="submit" class="btn btn-secondary" [disable]="downloadPending || deletePending || saveDisabled()" [pending]="savePending">Save changes</button>
-					<button (click)="download()" type="button" class="btn btn-secondary" [disable]="savePending || deletePending" [pending]="downloadPending">Download</button>
+					<button (click)="saveChanges()" type="submit" class="btn btn-secondary" [disable]="!loaded || downloadPending || deletePending || saveDisabled()" [pending]="savePending">Save changes</button>
+					<button (click)="download()" type="button" class="btn btn-secondary" [disable]="!loaded || savePending || deletePending" [pending]="downloadPending">Download</button>
 					<button (click)="back()" type="button" class="btn btn-secondary">Back</button>
 				</div>
 				<div class="btn-toolbar btn-toolbar-delete">
-					<button (click)="delete()" type="button" class="btn btn-outline-danger" [disable]="savePending || downloadPending" [pending]="deletePending">Delete</button>
+					<button (click)="delete()" type="button" class="btn btn-outline-danger" [disable]="!loaded || savePending || downloadPending" [pending]="deletePending">Delete</button>
 				</div>
 			</div>
 		</form>

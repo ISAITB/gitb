@@ -197,6 +197,7 @@ import { ConformanceOverviewCertificateModalComponent } from './modals/conforman
 import { EndpointParameterTabContentComponent } from './pages/admin/domain-management/endpoint/endpoint-parameter-tab-content/endpoint-parameter-tab-content.component';
 import { CustomPropertyPanelComponent } from './components/custom-property-panel/custom-property-panel.component';
 import { InvalidFormControlDirective } from './directives/invalid-form-control.directive';
+import { PendingDivComponent } from './components/pending-div/pending-div.component';
 
 @NgModule({ declarations: [
         AppComponent,
@@ -377,7 +378,8 @@ import { InvalidFormControlDirective } from './directives/invalid-form-control.d
         StatementControlsComponent,
         ConformanceOverviewCertificateModalComponent,
         EndpointParameterTabContentComponent,
-        CustomPropertyPanelComponent
+        CustomPropertyPanelComponent,
+        PendingDivComponent
     ],
     bootstrap: [AppComponent], imports: [ColorPickerModule,
         BrowserModule,

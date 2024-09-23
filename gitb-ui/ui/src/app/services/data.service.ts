@@ -72,6 +72,7 @@ export class DataService {
   private static STORAGE_TESTS = "com.itb.tests"
   private static STORAGE_LOCATION = "com.itb.location"
   private static STORAGE_USER = "com.itb.user"
+  private static STORAGE_USER_OPTIONAL = "com.itb.userOptional"
   private static STORAGE_LOGIN_OPTION = "com.itb.loginOption"
 
   constructor(
@@ -438,16 +439,15 @@ export class DataService {
 
   focus(inputId: string|undefined, delay?: number) {
     if (inputId) {
-      if (!inputId.startsWith('#')) {
-        inputId = '#' + inputId
-      }
       let timeToWait = 1
       if (delay) {
         timeToWait = Number(delay)
       }
       setTimeout(() => {
-        const element = this.renderer.selectRootElement(inputId)
-        element.focus()
+        const element = document.getElementById(inputId)
+        if (element) {
+          element.focus()
+        }
       }, timeToWait)
     }
   }
@@ -1531,6 +1531,7 @@ export class DataService {
     if (sessionStorage) {
       sessionStorage.removeItem(DataService.STORAGE_LOCATION)
       sessionStorage.removeItem(DataService.STORAGE_USER)
+      sessionStorage.removeItem(DataService.STORAGE_USER_OPTIONAL)
     }
   }
 
@@ -1544,16 +1545,15 @@ export class DataService {
     return undefined
   }
 
-  retrieveLocationData(currentUserId: number|undefined): string|undefined {
+  retrieveLocationData(currentUserId: number): string|undefined {
     if (sessionStorage) {
       const location = sessionStorage.getItem(DataService.STORAGE_LOCATION)
       const user = sessionStorage.getItem(DataService.STORAGE_USER)
+      const userOptional = sessionStorage.getItem(DataService.STORAGE_USER_OPTIONAL)
+      const skipUserCheck = userOptional != null && userOptional != undefined && Boolean(userOptional)
       this.clearLocationData()
-      if (location && user && currentUserId != undefined) {
-        const userId = Number(user)
-        if (userId == currentUserId) {
-          return location
-        }
+      if (location && (skipUserCheck || (user && currentUserId != undefined && Number(user) == currentUserId))) {
+        return location
       }
     }
     return undefined
@@ -1580,6 +1580,50 @@ export class DataService {
     if (sessionStorage) {
       sessionStorage.removeItem(DataService.STORAGE_LOGIN_OPTION)
     }
+  }
+
+  applyRequestedRoute(): boolean {
+    let hasRequestedRoute = false
+    const requestedUrl = this.cookieService.get("ITB_REQUESTED_URL")
+    if (requestedUrl) {
+      this.cookieService.delete("ITB_REQUESTED_URL", "/")
+      let requestedPath: string|undefined
+      if (requestedUrl.indexOf("://") != -1) {
+        // This is a complete URL.
+        // http://localhost:9000/app/7/admin/users/community/86
+        const currentUrl = window.location.href
+        const hashIndex = currentUrl.indexOf("#")
+        let baseUrl: string
+        if (hashIndex != -1) {
+          baseUrl = currentUrl.substring(0, hashIndex)
+        } else {
+          baseUrl = currentUrl
+        }
+        if (requestedUrl.startsWith(baseUrl)) {
+          requestedPath = requestedUrl.substring(baseUrl.length)
+        }
+      } else if (requestedUrl.startsWith("/app")) {
+        requestedPath = requestedUrl.substring(requestedUrl.indexOf("/app")+4)
+      } else {
+        requestedPath = requestedUrl
+      }
+      if (requestedPath && requestedPath.length > 1) {
+        if (requestedPath.charAt(0) == "/") {
+          requestedPath = requestedPath.substring(1)
+        }
+        const firstSlashIndex = requestedPath.indexOf("/")
+        if (firstSlashIndex != -1) {
+          // The first part of the URL is the user ID.
+          const userIdPart = requestedPath.substring(0, firstSlashIndex)
+          const pathPart = requestedPath.substring(firstSlashIndex)
+          sessionStorage.setItem(DataService.STORAGE_USER, userIdPart)
+          sessionStorage.setItem(DataService.STORAGE_USER_OPTIONAL, "true")
+          sessionStorage.setItem(DataService.STORAGE_LOCATION, pathPart)
+          hasRequestedRoute = true
+        }
+      }
+    }
+    return hasRequestedRoute
   }
 
 }

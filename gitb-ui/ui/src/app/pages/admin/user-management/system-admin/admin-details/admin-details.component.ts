@@ -13,9 +13,7 @@ import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
 
 @Component({
   selector: 'app-admin-details',
-  templateUrl: './admin-details.component.html',
-  styles: [
-  ]
+  templateUrl: './admin-details.component.html'
 })
 export class AdminDetailsComponent extends BaseComponent implements OnInit, AfterViewInit {
 
@@ -25,6 +23,8 @@ export class AdminDetailsComponent extends BaseComponent implements OnInit, Afte
   changePassword = false
   savePending = false
   deletePending = false
+  loaded = false
+  focusField?: string
 
   constructor(
     public dataService: DataService,
@@ -36,20 +36,22 @@ export class AdminDetailsComponent extends BaseComponent implements OnInit, Afte
   ) { super() }
 
   ngAfterViewInit(): void {
-    if (!this.dataService.configuration.ssoEnabled) {
-      this.dataService.focus('name')
-    }
   }
 
   ngOnInit(): void {
     this.userId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.USER_ID))
     this.disableDeleteButton = Number(this.dataService.user!.id) == Number(this.userId)
+    if (!this.dataService.configuration.ssoEnabled) {
+      this.focusField = 'name'
+    }
     this.userService.getUserById(this.userId)
     .subscribe((data) => {
       this.user = data!
       this.user.ssoStatusText = this.dataService.userStatus(this.user.ssoStatus)
       this.user.roleText = this.Constants.USER_ROLE_LABEL[this.user.role!]
       this.routingService.testBedAdminBreadcrumbs(this.userId, this.dataService.userDisplayName(this.user))
+    }).add(() => {
+      this.loaded = true
     })
     this.routingService.testBedAdminBreadcrumbs(this.userId)
   }

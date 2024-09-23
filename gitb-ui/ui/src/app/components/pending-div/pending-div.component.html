@@ -1,0 +1,5 @@
+@if (_pending) {
+    <app-pending-block [pending]="true"></app-pending-block>
+} @else {
+    <ng-content></ng-content>
+}

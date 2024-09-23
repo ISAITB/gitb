@@ -38,55 +38,69 @@ export class RoutingService {
          * we always know what menu item applies through the navigate() method.
          */
         setTimeout(() => {
-          if (event.url.startsWith('/home')) {
-            this.dataService.changePage({ menuItem: MenuItem.home })
-          } else if (event.url.startsWith('/login')) {
-            this.dataService.changePage({ menuItem: MenuItem.login })
-          } else if (event.url.startsWith('/settings/profile')) {
-            this.dataService.changePage({ menuItem: MenuItem.myProfile })
-          } else if (event.url.startsWith('/settings/organisation')) {
-            this.dataService.changePage({ menuItem: MenuItem.myOrganisation })
-          } else if (event.url.startsWith('/settings/password')) {
-            this.dataService.changePage({ menuItem: MenuItem.changePassword })
-          } else if (event.url.startsWith('/admin/sessions')) {
-            this.dataService.changePage({ menuItem: MenuItem.sessionDashboard })
-          } else if (event.url.startsWith('/admin/conformance')) {
-            this.dataService.changePage({ menuItem: MenuItem.conformanceDashboard })
-          } else if (event.url.startsWith('/admin/conformance')) {
-            this.dataService.changePage({ menuItem: MenuItem.conformanceDashboard })
-          } else if (event.url.startsWith('/admin/domains')) {
-            this.dataService.changePage({ menuItem: MenuItem.domainManagement })
-          } else if (event.url.startsWith('/admin/users')) {
-            this.dataService.changePage({ menuItem: MenuItem.communityManagement })
-          } else if (event.url.startsWith('/admin/export')) {
-            this.dataService.changePage({ menuItem: MenuItem.dataExport })
-          } else if (event.url.startsWith('/admin/import')) {
-            this.dataService.changePage({ menuItem: MenuItem.dataImport })
-          } else if (event.url.startsWith('/admin/system')) {
-            this.dataService.changePage({ menuItem: MenuItem.systemAdministration })
-          } else if (event.url.startsWith('/organisation/conformance')) {
-            this.dataService.changePage({ menuItem: MenuItem.myConformanceStatements })
-          } else if (event.url.startsWith('/organisation/tests')) {
-            this.dataService.changePage({ menuItem: MenuItem.myTestSessions })
-          } else if (event.url.startsWith('/organisation/test')) {
-            this.dataService.changePage({ menuItem: MenuItem.myConformanceStatements })
-          } else if (event.url.startsWith('/organisation')) {
-            this.dataService.changePage({ menuItem: MenuItem.myOrganisation })
-          }
+          this.changePageForURL(event.url)
         }, 1)
       }
     })
   }
 
+  private changePageForURL(url: string) {
+    if (url.startsWith('/home')) {
+      this.dataService.changePage({ menuItem: MenuItem.home })
+    } else if (url.startsWith('/login')) {
+      this.dataService.changePage({ menuItem: MenuItem.login })
+    } else if (url.startsWith('/settings/profile')) {
+      this.dataService.changePage({ menuItem: MenuItem.myProfile })
+    } else if (url.startsWith('/settings/organisation')) {
+      this.dataService.changePage({ menuItem: MenuItem.myOrganisation })
+    } else if (url.startsWith('/settings/password')) {
+      this.dataService.changePage({ menuItem: MenuItem.changePassword })
+    } else if (url.startsWith('/admin/sessions')) {
+      this.dataService.changePage({ menuItem: MenuItem.sessionDashboard })
+    } else if (url.startsWith('/admin/conformance')) {
+      this.dataService.changePage({ menuItem: MenuItem.conformanceDashboard })
+    } else if (url.startsWith('/admin/conformance')) {
+      this.dataService.changePage({ menuItem: MenuItem.conformanceDashboard })
+    } else if (url.startsWith('/admin/domains')) {
+      this.dataService.changePage({ menuItem: MenuItem.domainManagement })
+    } else if (url.startsWith('/admin/users')) {
+      this.dataService.changePage({ menuItem: MenuItem.communityManagement })
+    } else if (url.startsWith('/admin/export')) {
+      this.dataService.changePage({ menuItem: MenuItem.dataExport })
+    } else if (url.startsWith('/admin/import')) {
+      this.dataService.changePage({ menuItem: MenuItem.dataImport })
+    } else if (url.startsWith('/admin/system')) {
+      this.dataService.changePage({ menuItem: MenuItem.systemAdministration })
+    } else if (url.startsWith('/organisation/conformance')) {
+      this.dataService.changePage({ menuItem: MenuItem.myConformanceStatements })
+    } else if (url.startsWith('/organisation/tests')) {
+      this.dataService.changePage({ menuItem: MenuItem.myTestSessions })
+    } else if (url.startsWith('/organisation/test')) {
+      this.dataService.changePage({ menuItem: MenuItem.myConformanceStatements })
+    } else if (url.startsWith('/organisation')) {
+      this.dataService.changePage({ menuItem: MenuItem.myOrganisation })
+    }
+  }
+
   toURL(url: string) {
-    this.router.navigateByUrl(url).catch((error) => {
+    this.changePageForURL(url)
+    return this.router.navigateByUrl(url).catch((error) => {
       console.error("Unable to restore view at: "+url, error.stack)
-      this.toHome()
+      return this.toHome()
     })
   }
 
   toHome() {
     return this.navigate(MenuItem.home, ['home'])
+  }
+
+  toStartPage(userId: number) {
+    const previousLocation = this.dataService.retrieveLocationData(userId)
+    if (previousLocation) {
+      this.toURL(previousLocation)
+    } else {
+      this.toHome()
+    }
   }
 
   toLogin() {

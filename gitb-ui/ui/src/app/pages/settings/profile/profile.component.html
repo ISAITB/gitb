@@ -8,12 +8,12 @@
                 <div class="row">
                     <div class="col-10 offset-1">
                         <div class="row mb-3">
-                            <label class="col-2 col-form-label text-end" for="shortName">@if (!dataService.configuration.ssoEnabled) {<span>* </span>}Name:</label>
+                            <label class="col-2 col-form-label text-end" for="name">@if (!dataService.configuration.ssoEnabled) {<span>* </span>}Name:</label>
                             <div class="col-7">
                                 @if (dataService.configuration.ssoEnabled) {
                                     <p class="form-control-plaintext">{{data.name}}</p>
                                 } @else {
-                                    <input id="shortName" name="name" type="text" class="form-control" [(ngModel)]="data.name" [invalid]="validation.get('name')">
+                                    <input id="name" name="name" type="text" class="form-control" [(ngModel)]="data.name" [invalid]="validation.get('name')">
                                 }
                             </div>
                             @if (!dataService.configuration.ssoEnabled) {
@@ -21,13 +21,13 @@
                             }
                         </div>
                         <div class="row mb-3">
-                            <label class="col-2 col-form-label text-end" for="fullName">{{dataService.configuration.ssoEnabled?'Email:':'Username:'}}</label>
+                            <legend class="col-2 col-form-label text-end">{{dataService.configuration.ssoEnabled?'Email:':'Username:'}}</legend>
                             <div class="col-7">
                                 <p class="form-control-plaintext">{{data.email}}</p>
                             </div>
                         </div>
                         <div class="row mb-3">
-                            <label class="col-2 col-form-label text-end" for="fullName">Role:</label>
+                            <legend class="col-2 col-form-label text-end">Role:</legend>
                             <div class="col-7">
                                 <p class="form-control-plaintext">{{data.role}}</p>
                             </div>

@@ -55,6 +55,7 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
   deletePending = false
   linkPending = false
   unlinkPending = false
+  loaded = false
 
   constructor(
     public dataService: DataService,
@@ -77,7 +78,6 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
   }
 
   ngAfterViewInit(): void {
-		this.dataService.focus('shortName')
     this.showTab()
   }
 
@@ -114,6 +114,8 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
     forkJoin([groupObservable, specObservable]).subscribe((data) => {
       this.specification.groups = data[0]
       this.routingService.specificationBreadcrumbs(this.domainId, this.specificationId, this.breadcrumbLabel())
+    }).add(() => {
+      this.loaded = true
     })
   }
 

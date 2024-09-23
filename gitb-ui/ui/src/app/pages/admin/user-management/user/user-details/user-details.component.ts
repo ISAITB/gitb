@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { EMPTY, Observable } from 'rxjs';
 import { map, mergeMap, share } from 'rxjs/operators';
@@ -22,7 +22,7 @@ import { ValidationState } from 'src/app/types/validation-state';
   styles: [
   ]
 })
-export class UserDetailsComponent extends BaseComponent implements OnInit, AfterViewInit {
+export class UserDetailsComponent extends BaseComponent implements OnInit {
 
   communityId!: number
   orgId!: number
@@ -36,8 +36,8 @@ export class UserDetailsComponent extends BaseComponent implements OnInit, After
   fromCommunityManagement!: boolean
   isSelf = false
   validation = new ValidationState()
-
-  @ViewChild("role") roleField?: ElementRef;
+  loaded = false
+  focusField = "name"
 
   constructor(
     private routingService: RoutingService,
@@ -49,15 +49,10 @@ export class UserDetailsComponent extends BaseComponent implements OnInit, After
     private popupService: PopupService
   ) { super() }
 
-  ngAfterViewInit(): void {
-    if (this.dataService.configuration.ssoEnabled) {
-      this.roleField?.nativeElement.focus()
-    } else {
-      this.dataService.focus('name')
-    }
-  }
-
   ngOnInit(): void {
+    if (this.dataService.configuration.ssoEnabled) {
+      this.focusField = "role"
+    }
     this.fromCommunityManagement = this.route.snapshot.paramMap.has(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID)
     if (this.fromCommunityManagement) {
       this.communityId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID))
@@ -78,6 +73,8 @@ export class UserDetailsComponent extends BaseComponent implements OnInit, After
       this.user.roleText = this.Constants.USER_ROLE_LABEL[this.user.role!]
       this.originalRoleId = this.user.role!
       this.routingService.organisationUserBreadcrumbs(this.communityId, this.orgId, this.userId, this.dataService.userDisplayName(this.user))
+    }).add(() => {
+      this.loaded = true
     })
   }
 

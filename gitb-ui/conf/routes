@@ -12,6 +12,7 @@ POST     /callback      @org.pac4j.play.CallbackController.callback(request: Req
 # Single endpoint for serving AngularJS
 GET     /                                   @controllers.Application.index()
 GET     /app                                @controllers.Application.app()
+GET     /app/*path                          @controllers.Application.appWithRequestedPath(path: String)
 OPTIONS /*all                               @controllers.Application.preFlight(all: String)
 GET     /assets/javascripts/routes          @controllers.Application.javascriptRoutes()
 

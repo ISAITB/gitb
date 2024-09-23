@@ -4,22 +4,22 @@
             <div class="card-title">Community details</div>
         </div>
         <form>
-            <div class="card-body">
+            <div class="card-body" [pending]="!loaded" focus="sname">
                 <app-community-form [community]="community" [admin]="dataService.isSystemAdmin" [domains]="domains" [validation]="validation"></app-community-form>
             </div>
             <div class="card-footer button-container">
                 <div class="btn-toolbar">
-                    <button class="btn btn-secondary" type="submit" (click)="updateCommunity()" [disable]="deletePending || saveDisabled()" [pending]="savePending">Save changes</button>
-                    <button class="btn btn-secondary" type="button" (click)="updateReportSettings()" [disabled]="savePending || deletePending">Edit report settings</button>
-                    <button class="btn btn-secondary" type="button" (click)="updateParameters()" [disabled]="savePending || deletePending">Edit custom member properties</button>
-                    <button class="btn btn-secondary" type="button" (click)="editLabels()" [disabled]="savePending || deletePending">Edit labels</button>
+                    <button class="btn btn-secondary" type="submit" (click)="updateCommunity()" [disable]="!loaded || deletePending || saveDisabled()" [pending]="savePending">Save changes</button>
+                    <button class="btn btn-secondary" type="button" (click)="updateReportSettings()" [disabled]="!loaded || savePending || deletePending">Edit report settings</button>
+                    <button class="btn btn-secondary" type="button" (click)="updateParameters()" [disabled]="!loaded || savePending || deletePending">Edit custom member properties</button>
+                    <button class="btn btn-secondary" type="button" (click)="editLabels()" [disabled]="!loaded || savePending || deletePending">Edit labels</button>
                     @if (dataService.isSystemAdmin) {
                         <button class="btn btn-secondary" type="button" (click)="cancelCommunityDetail()">Back</button>
                     }
                 </div>
                 @if (dataService.isSystemAdmin) {
                     <div class="btn-toolbar btn-toolbar-delete">
-                        <button class="btn btn-outline-danger" type="button" (click)="deleteCommunity()" [disable]="savePending" [pending]="deletePending">Delete</button>
+                        <button class="btn btn-outline-danger" type="button" (click)="deleteCommunity()" [disable]="!loaded || savePending" [pending]="deletePending">Delete</button>
                     </div>
                 }
             </div>

@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { Constants } from 'src/app/common/constants';
 import { BaseComponent } from 'src/app/pages/base-component.component';
 import { CommunityService } from 'src/app/services/community.service';
@@ -16,7 +16,7 @@ import { ValidationState } from 'src/app/types/validation-state';
   styles: [
   ]
 })
-export class CreateCommunityComponent extends BaseComponent implements OnInit, AfterViewInit {
+export class CreateCommunityComponent extends BaseComponent implements OnInit {
 
   community: Partial<Community> = {
     selfRegType: Constants.SELF_REGISTRATION_TYPE.NOT_SUPPORTED,
@@ -32,6 +32,7 @@ export class CreateCommunityComponent extends BaseComponent implements OnInit, A
   }
   domains: Domain[] = []
   savePending = false
+  loaded = false
   validation = new ValidationState()
 
   constructor(
@@ -42,14 +43,12 @@ export class CreateCommunityComponent extends BaseComponent implements OnInit, A
     private popupService: PopupService
   ) { super() }
 
-  ngAfterViewInit(): void {
-    this.dataService.focus('sname')
-  }
-
   ngOnInit(): void {
     this.conformanceService.getDomains()
     .subscribe((data) => {
       this.domains = data
+    }).add(() => {
+      this.loaded = true
     })
   }
 

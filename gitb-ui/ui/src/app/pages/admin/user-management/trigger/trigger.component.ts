@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { BsModalService } from 'ngx-bootstrap/modal';
 import { Constants } from 'src/app/common/constants';
@@ -14,7 +14,7 @@ import { OrganisationParameter } from 'src/app/types/organisation-parameter';
 import { SystemParameter } from 'src/app/types/system-parameter';
 import { Trigger } from 'src/app/types/trigger';
 import { remove } from 'lodash'
-import { forkJoin, Observable } from 'rxjs';
+import { forkJoin, Observable, of } from 'rxjs';
 import { DomainParameter } from 'src/app/types/domain-parameter';
 import { map, share } from 'rxjs/operators';
 import { TriggerDataItem } from 'src/app/types/trigger-data-item';
@@ -28,13 +28,14 @@ import { TestTriggerModalComponent } from './test-trigger-modal/test-trigger-mod
 import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
 import { ErrorService } from 'src/app/services/error.service';
 import { ValidationState } from 'src/app/types/validation-state';
+import { TriggerInfo } from 'src/app/types/trigger-info';
 
 @Component({
   selector: 'app-trigger',
   templateUrl: './trigger.component.html',
   styleUrls: [ './trigger.component.less' ]
 })
-export class TriggerComponent extends BaseComponent implements OnInit, AfterViewInit {
+export class TriggerComponent extends BaseComponent implements OnInit {
 
   communityId!: number
   triggerId?: number
@@ -75,6 +76,7 @@ export class TriggerComponent extends BaseComponent implements OnInit, AfterView
   }
   Constants = Constants
   validation = new ValidationState()
+  loaded = false
 
   constructor(
     private routingService: RoutingService,
@@ -89,9 +91,6 @@ export class TriggerComponent extends BaseComponent implements OnInit, AfterView
     private errorService: ErrorService
   ) {
     super();
-  }
-  ngAfterViewInit(): void {
-    this.dataService.focus('name')
   }
 
   ngOnInit(): void {
@@ -169,78 +168,81 @@ export class TriggerComponent extends BaseComponent implements OnInit, AfterView
         share()
       ))
     }
-
-    forkJoin(loadPromises).subscribe(() => {
+    const data$ = forkJoin(loadPromises)
+    let trigger$: Observable<TriggerInfo|undefined> = of(undefined)
+    if (this.update) {
+      trigger$ = this.triggerService.getTriggerById(this.triggerId!)
+    }
+    forkJoin([trigger$, data$]).subscribe((data) => {
       if (this.update) {
-        this.triggerService.getTriggerById(this.triggerId!)
-        .subscribe((data) => {
-          this.trigger = data.trigger
-          this.routingService.triggerBreadcrumbs(this.communityId, this.triggerId!, this.trigger.name!)
-          if (this.trigger.latestResultOk != undefined) {
-            if (this.trigger.latestResultOk) {
-              this.applyStatusValues(this.statusTextOk)
-            } else {
-              this.applyStatusValues(this.statusTextError)
-            }
+        if (data[0]) {
+          this.trigger = data[0].trigger
+        }
+        this.routingService.triggerBreadcrumbs(this.communityId, this.triggerId!, this.trigger.name!)
+        if (this.trigger.latestResultOk != undefined) {
+          if (this.trigger.latestResultOk) {
+            this.applyStatusValues(this.statusTextOk)
           } else {
-            this.applyStatusValues(this.statusTextUnknown)
+            this.applyStatusValues(this.statusTextError)
           }
-          if (data.data != undefined) {
-            for (let item of data.data) {
-              if (item.dataType == Constants.TRIGGER_DATA_TYPE.COMMUNITY) {
-                this.triggerData.community.selected = true
-              } else if (item.dataType == Constants.TRIGGER_DATA_TYPE.ORGANISATION) {
-                this.triggerData.organisation.selected = true
-              } else if (item.dataType == Constants.TRIGGER_DATA_TYPE.SYSTEM) {
-                this.triggerData.system.selected = true
-              } else if (item.dataType == Constants.TRIGGER_DATA_TYPE.SPECIFICATION) {
-                this.triggerData.specification.selected = true
-              } else if (item.dataType == Constants.TRIGGER_DATA_TYPE.ACTOR) {
-                this.triggerData.actor.selected = true
-              } else if (item.dataType == Constants.TRIGGER_DATA_TYPE.TEST_SESSION) {
-                this.triggerData.testSession.selected = true
-              } else if (item.dataType == Constants.TRIGGER_DATA_TYPE.TEST_REPORT) {
-                this.triggerData.testReport.selected = true
-              } else if (item.dataType == Constants.TRIGGER_DATA_TYPE.ORGANISATION_PARAMETER) {
-                this.triggerData.organisationParameter.selected = true
-                if (this.organisationParameterMap[item.dataId] != undefined) {
-                  this.organisationParameterMap[item.dataId].selected = true
-                }
-              } else if (item.dataType == Constants.TRIGGER_DATA_TYPE.SYSTEM_PARAMETER) {
-                this.triggerData.systemParameter.selected = true
-                if (this.systemParameterMap[item.dataId] != undefined) {
-                  this.systemParameterMap[item.dataId].selected = true
-                }
-              } else if (item.dataType == Constants.TRIGGER_DATA_TYPE.DOMAIN_PARAMETER) {
-                this.triggerData.domainParameter.selected = true
-                if (this.domainParameterMap[item.dataId] != undefined) {
-                  this.domainParameterMap[item.dataId].selected = true
-                }
-              } else if (item.dataType == Constants.TRIGGER_DATA_TYPE.STATEMENT_PARAMETER) {
-                this.triggerData.statementParameter.selected = true
-                if (this.statementParameterMap[item.dataId] != undefined) {
-                  this.statementParameterMap[item.dataId].selected = true
-                }
+        } else {
+          this.applyStatusValues(this.statusTextUnknown)
+        }
+        if (data[0]?.data != undefined) {
+          for (let item of data[0].data) {
+            if (item.dataType == Constants.TRIGGER_DATA_TYPE.COMMUNITY) {
+              this.triggerData.community.selected = true
+            } else if (item.dataType == Constants.TRIGGER_DATA_TYPE.ORGANISATION) {
+              this.triggerData.organisation.selected = true
+            } else if (item.dataType == Constants.TRIGGER_DATA_TYPE.SYSTEM) {
+              this.triggerData.system.selected = true
+            } else if (item.dataType == Constants.TRIGGER_DATA_TYPE.SPECIFICATION) {
+              this.triggerData.specification.selected = true
+            } else if (item.dataType == Constants.TRIGGER_DATA_TYPE.ACTOR) {
+              this.triggerData.actor.selected = true
+            } else if (item.dataType == Constants.TRIGGER_DATA_TYPE.TEST_SESSION) {
+              this.triggerData.testSession.selected = true
+            } else if (item.dataType == Constants.TRIGGER_DATA_TYPE.TEST_REPORT) {
+              this.triggerData.testReport.selected = true
+            } else if (item.dataType == Constants.TRIGGER_DATA_TYPE.ORGANISATION_PARAMETER) {
+              this.triggerData.organisationParameter.selected = true
+              if (this.organisationParameterMap[item.dataId] != undefined) {
+                this.organisationParameterMap[item.dataId].selected = true
+              }
+            } else if (item.dataType == Constants.TRIGGER_DATA_TYPE.SYSTEM_PARAMETER) {
+              this.triggerData.systemParameter.selected = true
+              if (this.systemParameterMap[item.dataId] != undefined) {
+                this.systemParameterMap[item.dataId].selected = true
+              }
+            } else if (item.dataType == Constants.TRIGGER_DATA_TYPE.DOMAIN_PARAMETER) {
+              this.triggerData.domainParameter.selected = true
+              if (this.domainParameterMap[item.dataId] != undefined) {
+                this.domainParameterMap[item.dataId].selected = true
+              }
+            } else if (item.dataType == Constants.TRIGGER_DATA_TYPE.STATEMENT_PARAMETER) {
+              this.triggerData.statementParameter.selected = true
+              if (this.statementParameterMap[item.dataId] != undefined) {
+                this.statementParameterMap[item.dataId].selected = true
               }
             }
           }
-          this.eventTypeChanged()
-        })
-      } else {
-        this.eventTypeChanged()
+        }
       }
+      this.eventTypeChanged()
+    }).add(() => {
+      this.loaded = true
     })
   }
 
   saveDisabled() {
     return !(
-      !this.savePending && !this.deletePending && this.textProvided(this.trigger.name) && this.textProvided(this.trigger.url) && this.trigger.eventType != undefined && this.trigger.serviceType != undefined
+      this.loaded && !this.savePending && !this.deletePending && this.textProvided(this.trigger.name) && this.textProvided(this.trigger.url) && this.trigger.eventType != undefined && this.trigger.serviceType != undefined
     )
   }
 
   deleteDisabled() {
     return !(
-      !this.savePending && !this.deletePending
+      this.loaded && !this.savePending && !this.deletePending
     )
   }
 

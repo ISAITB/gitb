@@ -1,29 +1,29 @@
 <div class="row">
     @if (readonly) {
         <div class="col-10 offset-1">
-            <div class="row mb-3">
+            <div class="row">
                 <label class="col-3 col-form-label text-end">Short name:</label>
                 <div class="col-7"><p class="form-control-plaintext">{{organisation.sname}}</p></div>
             </div>
-            <div class="row mb-3">
+            <div class="row mt-3">
                 <label class="col-3 col-form-label text-end">Full name:</label>
                 <div class="col-7"><p class="form-control-plaintext">{{organisation.fname}}</p></div>
             </div>
         </div>
     } @else {
         <div class="col-10 offset-1">
-            <div class="row mb-3">
+            <div class="row">
                 <label class="col-3 col-form-label text-end" for="sname">* Short name:</label>
                 <div class="col-7"><input id="sname" name="sname" [(ngModel)]="organisation.sname" class="form-control" type="text"></div>
                 <div app-tooltip class="col-auto" [tbTooltip]="'A short name to refer to the '+dataService.labelOrganisationLower()+' used in selection lists and tabular displays where space is limited.'"></div>
             </div>
-            <div class="row mb-3">
+            <div class="row mt-3">
                 <label class="col-3 col-form-label text-end" for="fname">* Full name:</label>
                 <div class="col-7"><input id="fname" name="fname" [(ngModel)]="organisation.fname" class="form-control" type="text"></div>
                 <div app-tooltip class="col-auto" [tbTooltip]="'The full name of the '+dataService.labelOrganisationLower()+' used in reports and detail screens.'"></div>
             </div>
             @if (showAdminInfo || showLandingPage) {
-                <div class="row mb-3">
+                <div class="row mt-3">
                     <label class="col-3 col-form-label text-end" for="landingPage">Landing page:</label>
                     <div class="col-7">
                         <select id="landingPage" class="form-select" name="landingPage" [(ngModel)]="organisation.landingPage">
@@ -36,7 +36,7 @@
                     <div app-tooltip class="col-auto" [tbTooltip]="'You can provide a specific landing page for the '+dataService.labelOrganisationLower()+' with custom information. If unspecified the community default applies.'"></div>
                 </div>
                 @if (showAdminInfo) {
-                    <div class="row mb-3">
+                    <div class="row mt-3">
                         <label class="col-3 col-form-label text-end" for="legalNotice">Legal notice:</label>
                         <div class="col-7">
                             <select id="legalNotice" class="form-select" name="legalNotice" [(ngModel)]="organisation.legalNotice">
@@ -48,7 +48,7 @@
                         </div>
                         <div app-tooltip class="col-auto" [tbTooltip]="'You can provide a specific legal notice for the '+dataService.labelOrganisationLower()+' with custom information. If unspecified the community default applies.'"></div>
                     </div>
-                    <div class="row mb-3">
+                    <div class="row mt-3">
                         <label class="col-3 col-form-label text-end" for="template">Error template:</label>
                         <div class="col-7">
                             <select class="form-select" name="errorTemplate" [(ngModel)]="organisation.errorTemplate">
@@ -61,7 +61,7 @@
                         <div app-tooltip class="col-auto" [tbTooltip]="'You can provide a specific error template for the '+dataService.labelOrganisationLower()+' with custom information. If unspecified the community default applies.'"></div>
                     </div>
                     @if (otherOrganisations.length) {
-                        <div class="row mb-3">
+                        <div class="row mt-3">
                             <label class="col-3 col-form-label text-end" for="otherOrganisation">Copy test setup from:</label>
                             <div class="col-7">
                                 <select id="otherOrganisation" (change)="copyChanged()" class="form-select" name="otherOrganisation" [(ngModel)]="organisation.otherOrganisations">
@@ -75,7 +75,7 @@
                         </div>
                     }
                     <div [collapse]="!organisation.otherOrganisations" [isAnimated]="true">
-                        <div class="row mb-3 pt-1">
+                        <div class="row mt-3 pt-1">
                             <legend class="col-3 col-form-label text-end pt-0">Copy also:</legend>
                             <div class="col-7">
                                 <div class="form-check form-check-inline">
@@ -95,7 +95,7 @@
                     </div>
                     @if (selfRegEnabled) {
                         <div>
-                            <div class="row mb-3 pt-1">
+                            <div class="row mt-3 pt-1">
                                 <label class="col-3 col-form-label text-end pt-0" for="asTemplate">Publish as template:</label>
                                 <div class="col-7">
                                     <div class="form-check">
@@ -105,7 +105,7 @@
                                 </div>
                             </div>
                             <div [collapse]="!organisation.template" [isAnimated]="true" (expanded)="templateChoiceChanged()">
-                                <div class="row mb-3">
+                                <div class="row mt-3">
                                     <label class="col-3 col-form-label text-end" for="templateName">* Template name:</label>
                                     <div class="col-7"><input id="templateName" name="templateName" [(ngModel)]="organisation.templateName" class="form-control" type="text" [invalid]="validation.get('template')"></div>
                                     <div app-tooltip class="col-auto" tbTooltip="The name to display in the self-registration screen for this template configuration."></div>
@@ -119,11 +119,13 @@
     }
 </div>
 @if (!organisation.copyOrganisationParameters) {
-    <app-optional-custom-property-form
-        [tbPropertyData]="propertyData"
-        [tbPropertyType]="'organisation'"
-        [tbOwner]="organisation.id"
-        [tbSetDefaults]="organisation.id == undefined"
-        [tbReadonly]="readonly"
-        [tbColInputLess]="1"></app-optional-custom-property-form>
+    <div class="mt-3">
+        <app-optional-custom-property-form
+            [tbPropertyData]="propertyData"
+            [tbPropertyType]="'organisation'"
+            [tbOwner]="organisation.id"
+            [tbSetDefaults]="organisation.id == undefined"
+            [tbReadonly]="readonly"
+            [tbColInputLess]="1"></app-optional-custom-property-form>
+    </div>
 }

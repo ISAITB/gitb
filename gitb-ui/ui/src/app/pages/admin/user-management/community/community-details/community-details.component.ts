@@ -32,6 +32,7 @@ import { saveAs } from 'file-saver';
 import { CommunityResourceBulkUploadModalComponent } from 'src/app/modals/community-resource-bulk-upload-modal/community-resource-bulk-upload-modal.component';
 import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
 import { ValidationState } from 'src/app/types/validation-state';
+import { Observable, of } from 'rxjs';
 
 @Component({
   selector: 'app-community-details',
@@ -48,6 +49,7 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
   legalNoticeStatus = {status: Constants.STATUS.NONE}
   triggerStatus = {status: Constants.STATUS.NONE}
   resourcesStatus = {status: Constants.STATUS.NONE}
+  loaded = false
   savePending = false
   deletePending = false
   communityId!: number
@@ -156,7 +158,6 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
   }
 
   ngAfterViewInit(): void {
-    this.dataService.focus('sname')
     setTimeout(() => {
       this.triggerTab(this.tabToShow)
     })
@@ -180,15 +181,18 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
     if (this.dataService.configuration.registrationEnabled) {
       this.organizationColumns.push({ field: 'templateName', title: 'Set as template', sortable: true })
     }
-    if (this.dataService.isSystemAdmin) {
-      this.conformanceService.getDomains()
-      .subscribe((data) => {
-        this.domains = data
-      })
-    }
     this.routingService.communityBreadcrumbs(this.communityId, this.community.sname)
     // Setup tab triggers
     this.setupTabs()
+    let domains$: Observable<Domain[]> = of([])
+    if (this.dataService.isSystemAdmin) {
+      domains$ = this.conformanceService.getDomains()
+    }
+    domains$.subscribe((data) => {
+      this.domains = data
+    }).add(() => {
+      this.loaded = true
+    })
   }
 
   private setupTabs() {

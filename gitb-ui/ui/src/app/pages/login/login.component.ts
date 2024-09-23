@@ -11,7 +11,6 @@ import { LinkAccountComponent } from 'src/app/modals/link-account/link-account.c
 import { AuthProviderService } from 'src/app/services/auth-provider.service';
 import { AuthService } from 'src/app/services/auth.service';
 import { CommunityService } from 'src/app/services/community.service';
-import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
 import { DataService } from 'src/app/services/data.service';
 import { ErrorService } from 'src/app/services/error.service';
 import { PopupService } from 'src/app/services/popup.service';
@@ -54,7 +53,6 @@ export class LoginComponent extends BaseComponent implements OnInit, AfterViewIn
     public dataService: DataService,
     private httpClient: HttpClient,
     private routingService: RoutingService,
-    private confirmationDialogService: ConfirmationDialogService,
     private communityService: CommunityService,
     private authService: AuthService,
     private errorService: ErrorService,
@@ -65,8 +63,10 @@ export class LoginComponent extends BaseComponent implements OnInit, AfterViewIn
   }
 
   ngOnInit(): void {
-		if (this.authProvider.isAuthenticated()) {
-      this.routingService.toHome()
+    this.dataService.applyRequestedRoute()
+		if (this.authProvider.isAuthenticated() && this.dataService.user?.id) {
+      this.loginInProgress = true
+      this.routingService.toStartPage(this.dataService.user.id)
     } else {
       this.loginOption = this.dataService.retrieveLoginOption()
       if (!this.loginOption) {
@@ -231,8 +231,10 @@ export class LoginComponent extends BaseComponent implements OnInit, AfterViewIn
     if (error.status == 401) {
       if (this.dataService.configuration.ssoEnabled) {
         // We need to re-login to EU Login.
-        this.confirmationDialogService.invalidSessionNotification().subscribe(() => {
-          this.authProvider.signalLogout({full: true})
+        this.errorService.showInvalidSessionNotification().subscribe((shown) => {
+          if (shown) {
+            this.authProvider.signalLogout({full: true})
+          }
         })
       } else {
         this.addAlertError('Invalid credentials.')

@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { BaseComponent } from 'src/app/pages/base-component.component';
 import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
@@ -18,11 +18,9 @@ import { ValidationState } from 'src/app/types/validation-state';
 
 @Component({
   selector: 'app-error-template-details',
-  templateUrl: './error-template-details.component.html',
-  styles: [
-  ]
+  templateUrl: './error-template-details.component.html'
 })
-export class ErrorTemplateDetailsComponent extends BaseComponent implements OnInit, AfterViewInit {
+export class ErrorTemplateDetailsComponent extends BaseComponent implements OnInit {
 
   communityId!: number
   templateId!: number
@@ -34,6 +32,7 @@ export class ErrorTemplateDetailsComponent extends BaseComponent implements OnIn
   placeholders: KeyValue[] = []
   tooltipForDefaultCheck!: string
   validation = new ValidationState()
+  loaded = false
 
   constructor(
     public dataService: DataService,
@@ -44,10 +43,6 @@ export class ErrorTemplateDetailsComponent extends BaseComponent implements OnIn
     private popupService: PopupService,
     private errorService: ErrorService
   ) { super() }
-
-  ngAfterViewInit(): void {
-    this.dataService.focus('name')
-  }
 
   ngOnInit(): void {
     if (this.route.snapshot.paramMap.has(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID)) {
@@ -71,11 +66,13 @@ export class ErrorTemplateDetailsComponent extends BaseComponent implements OnIn
       } else {
         this.routingService.errorTemplateBreadcrumbs(this.communityId, this.templateId, this.template.name!)
       }
+    }).add(() => {
+      this.loaded = true
     })
   }
 
   saveDisabled() {
-    return !this.textProvided(this.template.name) || !this.textProvided(this.template.content)
+    return !this.loaded || !this.textProvided(this.template.name) || !this.textProvided(this.template.content)
   }
 
   updateErrorTemplate(copy: boolean) {

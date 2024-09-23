@@ -59,6 +59,7 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
   deletePending = false
   saveOrderPending = false
   dragOngoing = false
+  loaded = false
 
   constructor(
     public dataService: DataService,
@@ -83,7 +84,6 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
   }
 
   ngAfterViewInit(): void {
-		this.dataService.focus('shortName')
     this.showTab()
   }
 
@@ -93,6 +93,8 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
     .subscribe((data) => {
       this.domain = data[0]
       this.routingService.domainBreadcrumbs(this.domainId, this.domain.sname!)
+    }).add(() => {
+      this.loaded = true
     })
     this.loadSpecifications()
   }

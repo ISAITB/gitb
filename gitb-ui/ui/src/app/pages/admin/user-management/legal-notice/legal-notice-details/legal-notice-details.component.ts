@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { BaseComponent } from 'src/app/pages/base-component.component';
 import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
@@ -16,11 +16,9 @@ import { ValidationState } from 'src/app/types/validation-state';
 
 @Component({
   selector: 'app-legal-notice-details',
-  templateUrl: './legal-notice-details.component.html',
-  styles: [
-  ]
+  templateUrl: './legal-notice-details.component.html'
 })
-export class LegalNoticeDetailsComponent extends BaseComponent implements OnInit, AfterViewInit {
+export class LegalNoticeDetailsComponent extends BaseComponent implements OnInit {
 
   communityId!: number
   noticeId!: number
@@ -31,6 +29,7 @@ export class LegalNoticeDetailsComponent extends BaseComponent implements OnInit
   deletePending = false
   tooltipForDefaultCheck!: string
   validation = new ValidationState()
+  loaded = false
 
   constructor(
     public dataService: DataService,
@@ -41,10 +40,6 @@ export class LegalNoticeDetailsComponent extends BaseComponent implements OnInit
     private popupService: PopupService,
     private htmlService: HtmlService
     ) { super() }
-
-  ngAfterViewInit(): void {
-    this.dataService.focus('name')
-  }
 
   ngOnInit(): void {
     if (this.route.snapshot.paramMap.has(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID)) {
@@ -64,11 +59,13 @@ export class LegalNoticeDetailsComponent extends BaseComponent implements OnInit
       } else {
         this.routingService.legalNoticeBreadcrumbs(this.communityId, this.noticeId, this.notice.name!)
       }
+    }).add(() => {
+      this.loaded = true
     })
   }
 
   saveDisabled() {
-    return !this.textProvided(this.notice.name) || !this.textProvided(this.notice.content)
+    return !this.loaded || !this.textProvided(this.notice.name) || !this.textProvided(this.notice.content)
   }
 
   updateLegalNotice(copy: boolean) {

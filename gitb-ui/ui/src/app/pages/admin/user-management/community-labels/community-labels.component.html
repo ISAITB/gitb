@@ -19,26 +19,32 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @for (label of labels; track index; let index = $index) {
+                        @if (loaded) {
+                            @for (label of labels; track index; let index = $index) {
+                                <tr>
+                                    <td>
+                                        <div>
+                                            <span>{{labelTypeLabel(label.labelType)}}</span>
+                                            <span class="spaced-left" [tooltip]="labelTypeDescription[label.labelType]"><i class="fa-solid fa-question-circle"></i></span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <input type="checkbox" [name]="'custom'+index" [(ngModel)]="label.custom" (change)="customChecked($event, label)"/>
+                                    </td>
+                                    @if (label.custom) {
+                                        <td><div><input [attr.id]="'label-singular-'+label.labelType" type="text" [name]="'singular'+index" [(ngModel)]="label.singularForm" class="form-control"/></div></td>
+                                        <td><div><input type="text" [name]="'pluralForm'+index" [(ngModel)]="label.pluralForm" class="form-control"/></div></td>
+                                        <td><div><input type="checkbox" [name]="'fixedCase'+index" [(ngModel)]="label.fixedCase"/></div></td>
+                                    } @else {
+                                        <td><div><input type="text" [value]="Constants.LABEL_DEFAULT[label.labelType].singularForm" class="form-control" readonly="true"/></div></td>
+                                        <td><div><input type="text" [value]="Constants.LABEL_DEFAULT[label.labelType].pluralForm" class="form-control" readonly="true"/></div></td>
+                                        <td><div><input type="checkbox" [checked]="Constants.LABEL_DEFAULT[label.labelType].fixedCase" [disabled]="true"/></div></td>
+                                    }
+                                </tr>
+                            }
+                        } @else {
                             <tr>
-                                <td>
-                                    <div>
-                                        <span>{{labelTypeLabel(label.labelType)}}</span>
-                                        <span class="spaced-left" [tooltip]="labelTypeDescription[label.labelType]"><i class="fa-solid fa-question-circle"></i></span>
-                                    </div>
-                                </td>
-                                <td>
-                                    <input type="checkbox" [name]="'custom'+index" [(ngModel)]="label.custom" (change)="customChecked($event, label)"/>
-                                </td>
-                                @if (label.custom) {
-                                    <td><div><input [attr.id]="'label-singular-'+label.labelType" type="text" [name]="'singular'+index" [(ngModel)]="label.singularForm" class="form-control"/></div></td>
-                                    <td><div><input type="text" [name]="'pluralForm'+index" [(ngModel)]="label.pluralForm" class="form-control"/></div></td>
-                                    <td><div><input type="checkbox" [name]="'fixedCase'+index" [(ngModel)]="label.fixedCase"/></div></td>
-                                } @else {
-                                    <td><div><input type="text" [value]="Constants.LABEL_DEFAULT[label.labelType].singularForm" class="form-control" readonly="true"/></div></td>
-                                    <td><div><input type="text" [value]="Constants.LABEL_DEFAULT[label.labelType].pluralForm" class="form-control" readonly="true"/></div></td>
-                                    <td><div><input type="checkbox" [checked]="Constants.LABEL_DEFAULT[label.labelType].fixedCase" [disabled]="true"/></div></td>
-                                }
+                                <td colspan="5" class="td-data-loading"><span><i class="fa-solid fa-spinner fa-spin-override fa-lg"></i></span></td>
                             </tr>
                         }
                     </tbody>
@@ -46,7 +52,7 @@
             </div>
             <div class="card-footer">
                 <div class="btn-toolbar">
-                    <button class="btn btn-secondary" type="submit" (click)="save()" [disable]="saveDisabled()" [pending]="busy">Save</button>
+                    <button class="btn btn-secondary" type="submit" (click)="save()" [disable]="!loaded || saveDisabled()" [pending]="busy">Save</button>
                     <button class="btn btn-secondary" type="button" (click)="cancel()">Back</button>
                 </div>
             </div>

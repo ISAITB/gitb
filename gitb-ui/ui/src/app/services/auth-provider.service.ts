@@ -56,14 +56,7 @@ export class AuthProviderService {
     })
     // Handle post-login event
     this.afterLogin$.subscribe((loginInfo) => {
-      const previousLocation = this.dataService.retrieveLocationData(loginInfo.userId)
-      if (previousLocation) {
-        // Return to previous location
-        this.routingService.toURL(previousLocation)
-      } else {
-        // Go to home page
-        this.routingService.toHome()
-      }
+      this.routingService.toStartPage(loginInfo.userId!)
     })
     // Handle logout event
     this.onLogout$.subscribe((info) => {

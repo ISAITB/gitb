@@ -11,6 +11,8 @@ import { SystemService } from 'src/app/services/system.service';
 import { OrganisationTab } from '../../organisation/organisation-details/OrganisationTab';
 import { Constants } from 'src/app/common/constants';
 import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
+import { forkJoin, Observable, of } from 'rxjs';
+import { System } from 'src/app/types/system';
 
 @Component({
   selector: 'app-system-details',
@@ -29,11 +31,13 @@ export class SystemDetailsComponent extends BaseComponent implements OnInit {
     edit: false,
     propertyType: 'system'
   }
+  otherSystems: System[] = []
   savePending = false
   deletePending = false
   fromCommunityManagement!: boolean
   readonly!: boolean
   showDelete!: boolean
+  loaded = false
 
   constructor(
     private route: ActivatedRoute,
@@ -61,14 +65,30 @@ export class SystemDetailsComponent extends BaseComponent implements OnInit {
     if (viewPropertiesParam != undefined) {
       this.propertyData.edit = Boolean(viewPropertiesParam)
     }
-    this.systemService.getSystemById(this.systemId)
-    .subscribe((data) => {
-      this.system = data
+    this.propertyData.owner = this.system.id
+    const loadSystem$ = this.systemService.getSystemById(this.systemId)
+    const loadProperties$ = this.systemService.getSystemParameterValues(this.system.id)
+    let otherSystems$: Observable<System[]>
+    if (this.fromCommunityManagement) {
+      otherSystems$ = this.systemService.getSystemsByOrganisation(this.organisationId)
+    } else {
+      otherSystems$ = of([])
+    }
+    forkJoin([loadSystem$, loadProperties$, otherSystems$]).subscribe((data) => {
+      this.system = data[0]
       if (this.system.owner == this.dataService.vendor?.id) {
         this.routingService.ownSystemBreadcrumbs(this.systemId, this.system.sname!)
       } else {
         this.routingService.systemBreadcrumbs(this.communityId, this.organisationId, undefined, this.systemId, this.system.sname!)
       }
+      this.propertyData.properties = data[1]
+      for (let system of data[2]) {
+        if (this.system.id == undefined || Number(system.id) != Number(this.system.id)) {
+          this.otherSystems.push(system)
+        }
+      }
+    }).add(() => {
+      this.loaded = true
     })
   }
 

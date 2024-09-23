@@ -21,6 +21,7 @@ export class SpecificationGroupDetailsComponent extends BaseComponent implements
   groupId!: number
   deletePending = false
   savePending = false
+  loaded = false
 
   constructor(
     public dataService: DataService,
@@ -38,6 +39,8 @@ export class SpecificationGroupDetailsComponent extends BaseComponent implements
     .subscribe((data) => {
       this.group = data
       this.routingService.specificationGroupBreadcrumbs(this.domainId, this.groupId, this.group.sname!)
+    }).add(() => {
+      this.loaded = true
     })
   }
 

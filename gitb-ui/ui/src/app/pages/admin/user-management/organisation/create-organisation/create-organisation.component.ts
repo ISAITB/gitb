@@ -10,6 +10,15 @@ import { CommunityTab } from '../../community/community-details/community-tab.en
 import { OrganisationFormData } from '../organisation-form/organisation-form-data';
 import { Constants } from 'src/app/common/constants';
 import { ValidationState } from 'src/app/types/validation-state';
+import { forkJoin, Observable, of } from 'rxjs';
+import { LandingPage } from 'src/app/types/landing-page';
+import { LegalNotice } from 'src/app/types/legal-notice';
+import { ErrorTemplate } from 'src/app/types/error-template';
+import { LandingPageService } from 'src/app/services/landing-page.service';
+import { LegalNoticeService } from 'src/app/services/legal-notice.service';
+import { ErrorTemplateService } from 'src/app/services/error-template.service';
+import { CommunityService } from 'src/app/services/community.service';
+import { Organisation } from 'src/app/types/organisation.type';
 
 @Component({
   selector: 'app-create-organisation',
@@ -26,6 +35,11 @@ export class CreateOrganisationComponent extends BaseComponent implements OnInit
     edit: false,
     propertyType: 'organisation'
   }
+  landingPages: LandingPage[] = []
+  legalNotices: LegalNotice[] = []
+  errorTemplates: ErrorTemplate[] = []
+  otherOrganisations: Organisation[] = []
+  loaded = false
   savePending = false
   validation = new ValidationState()
 
@@ -34,11 +48,29 @@ export class CreateOrganisationComponent extends BaseComponent implements OnInit
     private routingService: RoutingService,
     private route: ActivatedRoute,
     private organisationService: OrganisationService,
-    private popupService: PopupService
+    private popupService: PopupService,
+    private landingPageService: LandingPageService,
+    private legalNoticeService: LegalNoticeService,
+    private errorTemplateService: ErrorTemplateService,
+    private communityService: CommunityService
   ) { super() }
 
   ngOnInit(): void {
     this.communityId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID))
+    const properties$ = this.communityService.getOrganisationParameters(this.communityId)
+    const otherOrganisations$ = this.organisationService.getOrganisationsByCommunity(this.communityId)
+    const landingPages$ = this.landingPageService.getLandingPagesByCommunity(this.communityId)
+    const legalNotices$ = this.legalNoticeService.getLegalNoticesByCommunity(this.communityId)
+    const errorTemplates$ = this.errorTemplateService.getErrorTemplatesByCommunity(this.communityId)
+    forkJoin([properties$, otherOrganisations$, landingPages$, legalNotices$, errorTemplates$]).subscribe((data) => {
+      this.propertyData.properties = data[0]
+      this.otherOrganisations = data[1]
+      this.landingPages = data[2]
+      this.legalNotices = data[3]
+      this.errorTemplates = data[4]
+    }).add(() => {
+      this.loaded = true
+    })
   }
 
   saveDisabled() {

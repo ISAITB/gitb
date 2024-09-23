@@ -4,7 +4,7 @@
             <div class="card-title">{{dataService.labelSystem()}} details</div>
         </div>
         <form>
-            <div class="card-body">
+            <div class="card-body" [pending]="!loaded" focus="sname">
                 <app-system-form
                     [system]="system"
                     [communityId]="communityId"
@@ -12,19 +12,20 @@
                     [propertyData]="propertyData"
                     [showAdminInfo]="fromCommunityManagement"
                     [readonly]="readonly"
+                    [otherSystems]="otherSystems"
                 ></app-system-form>
             </div>
             <div class="card-footer button-container">
                 <div class="btn-toolbar">
                     @if (!readonly) {
-                        <button class="btn btn-secondary" type="submit" (click)="update()" [disable]="deletePending || !saveEnabled()" [pending]="savePending">Update</button>
+                        <button class="btn btn-secondary" type="submit" (click)="update()" [disable]="!loaded || deletePending || !saveEnabled()" [pending]="savePending">Update</button>
                     }
                     <button class="btn btn-secondary" type="button" (click)="manageSystemTests()">Manage tests</button>
                     <button class="btn btn-secondary" type="button" (click)="cancel()">Back</button>
                 </div>
                 @if (showDelete) {
                     <div class="btn-toolbar btn-toolbar-delete">
-                        <button class="btn btn-outline-danger" type="button" (click)="delete()" [disable]="savePending" [pending]="deletePending">Delete</button>
+                        <button class="btn btn-outline-danger" type="button" (click)="delete()" [disable]="!loaded || savePending" [pending]="deletePending">Delete</button>
                     </div>
                 }
             </div>

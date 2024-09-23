@@ -4,7 +4,7 @@
             <div class="card-title">{{dataService.labelOrganisation()}} details</div>
         </div>
         <form>
-            <div class="card-body">
+            <div class="card-body" [pending]="!loaded" focus="sname">
                 <app-organisation-form
                     [organisation]="organisation"
                     [communityId]="communityId"
@@ -13,24 +13,30 @@
                     [showLandingPage]="showLandingPage"
                     [readonly]="readonly"
                     [validation]="validation"
+                    [landingPages]="landingPages"
+                    [legalNotices]="legalNotices"
+                    [errorTemplates]="errorTemplates"
+                    [otherOrganisations]="otherOrganisations"
                 ></app-organisation-form>
             </div>
-            <div class="card-footer button-container">
-                <div class="btn-toolbar">
-                    @if (!readonly) {
-                        <button class="btn btn-secondary" type="submit" (click)="updateOrganisation()" [disable]="deletePending || saveDisabled()" [pending]="savePending">Update</button>
-                    }
-                    <button class="btn btn-secondary" type="button" (click)="manageOrganisationTests()">Manage tests</button>
+            @if (organisation.id) {
+                <div class="card-footer button-container">
+                    <div class="btn-toolbar">
+                        @if (!readonly) {
+                            <button class="btn btn-secondary" type="submit" (click)="updateOrganisation()" [disable]="!loaded || deletePending || saveDisabled()" [pending]="savePending">Update</button>
+                        }
+                        <button class="btn btn-secondary" type="button" (click)="manageOrganisationTests()">Manage tests</button>
+                        @if (showAdminInfo) {
+                            <button class="btn btn-secondary" type="button" (click)="cancelDetailOrganisation()">Back</button>
+                        }
+                    </div>
                     @if (showAdminInfo) {
-                        <button class="btn btn-secondary" type="button" (click)="cancelDetailOrganisation()">Back</button>
+                        <div class="btn-toolbar btn-toolbar-delete">
+                            <button class="btn btn-outline-danger" type="button" (click)="deleteOrganisation()" [disable]="!loaded || savePending" [pending]="deletePending">Delete</button>
+                        </div>
                     }
                 </div>
-                @if (showAdminInfo) {
-                    <div class="btn-toolbar btn-toolbar-delete">
-                        <button class="btn btn-outline-danger" type="button" (click)="deleteOrganisation()" [disable]="savePending" [pending]="deletePending">Delete</button>
-                    </div>
-                }
-            </div>
+            }
         </form>
     </div>
     <div>

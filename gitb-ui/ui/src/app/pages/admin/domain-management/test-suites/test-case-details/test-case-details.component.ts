@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { mergeMap, Observable, share, map } from 'rxjs';
 import { find, remove, sortBy } from 'lodash';
@@ -26,13 +26,14 @@ import { TestCaseTag } from 'src/app/types/test-case-tag';
   templateUrl: './test-case-details.component.html',
   styleUrls: [ './test-case-details.component.less' ]
 })
-export class TestCaseDetailsComponent extends BaseComponent implements OnInit, AfterViewInit {
+export class TestCaseDetailsComponent extends BaseComponent implements OnInit {
 
   testCase: Partial<TestCase> = {}
   domainId!: number
   specificationId?:number
   testSuiteId!:number
   testCaseId!:number
+  loaded = false
   pending = false
   diagramLoaded = false
   steps: {[key: string]: StepData[]} = {}
@@ -53,10 +54,6 @@ export class TestCaseDetailsComponent extends BaseComponent implements OnInit, A
     private reportService: ReportService,
     private modalService: BsModalService
   ) { super() }
-
-  ngAfterViewInit(): void {
-		this.dataService.focus('name')
-  }
 
   ngOnInit(): void {
     this.domainId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID))
@@ -80,6 +77,8 @@ export class TestCaseDetailsComponent extends BaseComponent implements OnInit, A
       } else {
         this.routingService.sharedTestCaseBreadcrumbs(this.domainId, this.testSuiteId, this.testCaseId, this.testCase.identifier!)
       }
+    }).add(() => {
+      this.loaded = true
     })
     this.testEvents[this.testCaseId] = new DiagramEvents()    
     this.getTestCaseDefinition(this.testCaseId).subscribe(() => {}).add(() => {
@@ -142,7 +141,7 @@ export class TestCaseDetailsComponent extends BaseComponent implements OnInit, A
   }
 
 	saveDisabled() {
-		return !this.textProvided(this.testCase?.sname)
+		return !this.loaded || !this.textProvided(this.testCase?.sname)
   }
 
   getTestCaseDefinition(testCaseToLookup: number): Observable<void> {

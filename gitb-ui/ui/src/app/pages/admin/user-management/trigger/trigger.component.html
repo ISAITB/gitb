@@ -4,7 +4,7 @@
             <div class="card-title">{{ (update?'Update':'Create') + ' trigger' }}</div>
         </div>
         <form>
-            <div class="card-body">
+            <div class="card-body" [pending]="!loaded" focus="name">
                 <!-- Trigger form -->
                 <div class="row">
                     <div class="col-10 offset-1">

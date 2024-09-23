@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Observable, Subscriber, throwError } from 'rxjs';
+import { mergeMap, Observable, of, Subscriber, throwError } from 'rxjs';
 import { ErrorDataArrayBuffer } from '../types/error-data-array-buffer.type';
 import { ErrorData } from '../types/error-data.type';
 import { ConfirmationDialogService } from './confirmation-dialog.service';
@@ -60,7 +60,7 @@ export class ErrorService {
 
   showErrorMessageWithRetry(error: undefined|string|ErrorData|ErrorDataArrayBuffer|HttpErrorResponse, withRetry: boolean): Observable<boolean> {
     return new Observable<boolean>((observer) => {
-      if (this.confirmationDialogService.sessionNotificationOpen) {
+      if (this.errorCurrentlyDisplayed) {
         observer.next()
         observer.complete()
       } else {
@@ -228,6 +228,34 @@ export class ErrorService {
         }
       }
     })
+  }
+
+  showInvalidSessionNotification(): Observable<boolean> {
+    if (!this.errorCurrentlyDisplayed) {
+      this.errorCurrentlyDisplayed = true
+      return this.confirmationDialogService.notified("Invalid session", "Your current session is invalid. You will now return to the login screen to reconnect.", "Close").pipe(
+        mergeMap(() => {
+          this.errorCurrentlyDisplayed = false
+          return of(true)
+        })
+      )
+    } else {
+      return of(false)      
+    }
+  }
+
+  showUnauthorisedAccessError(): Observable<boolean> {
+    if (!this.errorCurrentlyDisplayed) {
+      this.errorCurrentlyDisplayed = true
+      return this.confirmationDialogService.notified("Access forbidden", "You don't have access to view this information. Close this popup to return to the home page.", "Close").pipe(
+        mergeMap(() => {
+          this.errorCurrentlyDisplayed = false
+          return of(true)
+        })
+      )
+    } else {
+      return of(false)
+    }
   }
 
 }

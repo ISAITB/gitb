@@ -4,7 +4,7 @@
             <div class="card-title">User details</div>
         </div>
         <form>
-            <div class="card-body">
+            <div class="card-body" [pending]="!loaded" [focus]="focusField">
                 <!-- Error messages -->
                 <app-alert-display [alerts]="alerts" innerClass="col-10 offset-1"></app-alert-display>
                 <div class="row">
@@ -32,12 +32,12 @@
             </div>
             <div class="card-footer button-container">
                 <div class="btn-toolbar">
-                    <button class="btn btn-secondary" type="submit" (click)="updateUser()" [disable]="deletePending || saveDisabled()" [pending]="savePending">Update</button>
+                    <button class="btn btn-secondary" type="submit" (click)="updateUser()" [disable]="!loaded || deletePending || saveDisabled()" [pending]="savePending">Update</button>
                     <button class="btn btn-secondary" type="button" (click)="cancelDetailUser()">Back</button>
                 </div>
                 @if (!isSelf) {
                     <div class="btn-toolbar btn-toolbar-delete">
-                        <button class="btn btn-outline-danger" type="button" (click)="deleteUser()" [disable]="savePending" [pending]="deletePending">Delete</button>
+                        <button class="btn btn-outline-danger" type="button" (click)="deleteUser()" [disable]="!loaded || savePending" [pending]="deletePending">Delete</button>
                     </div>
                 }
             </div>

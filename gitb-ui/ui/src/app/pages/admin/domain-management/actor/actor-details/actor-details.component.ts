@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, EventEmitter, OnInit } from '@angular/core';
+import { Component, EventEmitter, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { Constants } from 'src/app/common/constants';
 import { BaseComponent } from 'src/app/pages/base-component.component';
@@ -14,6 +14,7 @@ import { TableColumnDefinition } from 'src/app/types/table-column-definition.typ
 import { EndpointRepresentation } from './endpoint-representation';
 import { BreadcrumbType } from 'src/app/types/breadcrumb-type';
 import { EndpointParameter } from 'src/app/types/endpoint-parameter';
+import { forkJoin } from 'rxjs';
 
 @Component({
   selector: 'app-actor-details',
@@ -21,7 +22,7 @@ import { EndpointParameter } from 'src/app/types/endpoint-parameter';
   styles: [
   ]
 })
-export class ActorDetailsComponent extends BaseComponent implements OnInit, AfterViewInit {
+export class ActorDetailsComponent extends BaseComponent implements OnInit {
 
   actor: Partial<Actor> = {}
   endpoints: Endpoint[] = []
@@ -35,6 +36,7 @@ export class ActorDetailsComponent extends BaseComponent implements OnInit, Afte
     { field: 'desc', title: 'Description' }, 
     { field: 'parameters', title: 'Parameters' }
   ]
+  loaded = false
   savePending = false
   deletePending = false
   parametersLoaded = new EventEmitter<EndpointParameter[]|undefined>()
@@ -49,17 +51,16 @@ export class ActorDetailsComponent extends BaseComponent implements OnInit, Afte
     public dataService: DataService
   ) { super() }
 
-  ngAfterViewInit(): void {
-    this.dataService.focus('id')
-  }
-
   ngOnInit(): void {
     this.domainId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID))
     this.specificationId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.SPECIFICATION_ID))
     this.actorId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.ACTOR_ID))
-    this.conformanceService.getActor(this.actorId, this.specificationId)
-    .subscribe((data) => {
-      this.actor = data
+
+    const actor$ = this.conformanceService.getActor(this.actorId, this.specificationId)
+    const endpoints$ = this.conformanceService.getEndpointsForActor(this.actorId)
+
+    forkJoin([actor$, endpoints$]).subscribe((data) => {
+      this.actor = data[0]
       if (this.actor.badges) {
         this.actor.badges.specificationId = this.specificationId
         this.actor.badges.actorId = this.actorId
@@ -70,11 +71,7 @@ export class ActorDetailsComponent extends BaseComponent implements OnInit, Afte
         this.actor.badges.otherBadgeForReportActive = this.actor.badges.otherForReport != undefined && this.actor.badges.otherForReport.enabled!
         this.actor.badges.failureBadgeForReportActive = this.actor.badges.failureForReport != undefined && this.actor.badges.failureForReport.enabled!
       }
-      this.routingService.actorBreadcrumbs(this.domainId, this.specificationId, this.actorId, this.actor.actorId)
-    })
-    this.conformanceService.getEndpointsForActor(this.actorId)
-    .subscribe((data) => {
-      this.endpoints = data
+      this.endpoints = data[1]
       this.endpointRepresentations = this.endpoints.map((endpoint) => {
         const parameters = endpoint.parameters.map((parameter) => {
           return parameter.name
@@ -95,8 +92,10 @@ export class ActorDetailsComponent extends BaseComponent implements OnInit, Afte
           this.parametersLoaded.emit(this.endpoints[0].parameters)
         }, 1)
       }
+      this.routingService.actorBreadcrumbs(this.domainId, this.specificationId, this.actorId, this.actor.actorId)
     }).add(() => {
       this.dataStatus.status = Constants.STATUS.FINISHED
+      this.loaded = true
     })
   }
 
@@ -131,6 +130,7 @@ export class ActorDetailsComponent extends BaseComponent implements OnInit, Afte
 
   saveDisabled() {
     return !(
+      this.loaded &&
       this.textProvided(this.actor?.actorId) && 
       this.textProvided(this.actor?.name) && 
       this.numberOrEmpty(this.actor?.displayOrder) &&
