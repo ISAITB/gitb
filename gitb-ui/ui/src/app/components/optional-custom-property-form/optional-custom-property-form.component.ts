@@ -16,6 +16,7 @@ export class OptionalCustomPropertyFormComponent implements OnInit {
   @Input() tbPropertyType!: 'organisation'|'system'|'statement'
   @Input() tbOwner?: number
   @Input() tbSetDefaults = false
+  @Input() tbTopMargin = false
 
   isAdmin = false
 

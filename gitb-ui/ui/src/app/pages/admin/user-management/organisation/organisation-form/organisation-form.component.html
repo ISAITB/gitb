@@ -119,13 +119,12 @@
     }
 </div>
 @if (!organisation.copyOrganisationParameters) {
-    <div class="mt-3">
-        <app-optional-custom-property-form
-            [tbPropertyData]="propertyData"
-            [tbPropertyType]="'organisation'"
-            [tbOwner]="organisation.id"
-            [tbSetDefaults]="organisation.id == undefined"
-            [tbReadonly]="readonly"
-            [tbColInputLess]="1"></app-optional-custom-property-form>
-    </div>
+    <app-optional-custom-property-form
+        [tbPropertyData]="propertyData"
+        [tbPropertyType]="'organisation'"
+        [tbOwner]="organisation.id"
+        [tbSetDefaults]="organisation.id == undefined"
+        [tbReadonly]="readonly"
+        [tbColInputLess]="1"
+        [tbTopMargin]="true"></app-optional-custom-property-form>
 }

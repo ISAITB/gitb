@@ -92,13 +92,12 @@
     }
 </div>
 @if (!system.copySystemParameters) {
-    <div class="mt-3">
-        <app-optional-custom-property-form
-            [tbPropertyData]="propertyData"
-            [tbPropertyType]="'system'"
-            [tbOwner]="system.id"
-            [tbColInputLess]="1"
-            [tbReadonly]="readonly"
-            [tbSetDefaults]="system.id == undefined"></app-optional-custom-property-form>
-    </div>
+    <app-optional-custom-property-form
+        [tbPropertyData]="propertyData"
+        [tbPropertyType]="'system'"
+        [tbOwner]="system.id"
+        [tbColInputLess]="1"
+        [tbReadonly]="readonly"
+        [tbSetDefaults]="system.id == undefined"
+        [tbTopMargin]="true"></app-optional-custom-property-form>
 }
