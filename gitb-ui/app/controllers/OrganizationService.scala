@@ -3,23 +3,20 @@ package controllers
 import config.Configurations
 import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, ResponseConstructor}
 import exceptions.ErrorCodes
-
-import javax.inject.Inject
 import managers.{AuthorizationManager, OrganizationManager, TestResultManager, UserManager}
 import models.prerequisites.PrerequisiteUtil
 import org.apache.commons.io.FileUtils
-import org.slf4j.{Logger, LoggerFactory}
 import play.api.libs.json.Json
-import play.api.mvc.{AbstractController, ControllerComponents, Result}
+import play.api.mvc.{AbstractController, ControllerComponents}
 import utils.{JsonUtil, RepositoryUtils}
 
+import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 
 /**
  * Created by VWYNGAET on 26/10/2016.
  */
 class OrganizationService @Inject() (implicit ec: ExecutionContext, repositoryUtils: RepositoryUtils, authorizedAction: AuthorizedAction, cc: ControllerComponents, organizationManager: OrganizationManager, userManager: UserManager, authorizationManager: AuthorizationManager, testResultManager: TestResultManager) extends AbstractController(cc) {
-  private final val logger: Logger = LoggerFactory.getLogger(classOf[OrganizationService])
 
   /**
    * Gets all organizations except the default organization for system administrators
