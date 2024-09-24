@@ -21,6 +21,7 @@ function eraseCookies() {
         sessionStorage.clear();
     }
     let cookiePath = document.getElementById('cp-div').textContent;
+    document.cookie = 'ITB_REQUESTED_URL=;expires=Thu, 01 Jan 1970 00:00:01 GMT;';
     document.cookie = 'tat=;expires=Thu, 01 Jan 1970 00:00:01 GMT;';
     document.cookie = 'tat=;path='+cookiePath+';expires=Thu, 01 Jan 1970 00:00:01 GMT;';
 }
