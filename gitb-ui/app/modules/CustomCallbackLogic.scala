@@ -22,11 +22,14 @@ class CustomCallbackLogic extends DefaultCallbackLogic {
       ctx.sessionStore().set(ctx.webContext(), Pac4jConstants.REQUESTED_URL, null)
       // Add in a cookie the originally requested URL to allow the frontend client to perform correct navigation.
       val playCookie = ResponseConstructor.createRequestedUrlCookie(requestedUrl)
-      val cookie = new Cookie(playCookie.name, playCookie.value)
-      cookie.setHttpOnly(playCookie.httpOnly)
-      cookie.setSameSitePolicy(playCookie.sameSite.getOrElse(SameSite.Strict).value)
-      cookie.setSecure(playCookie.secure)
-      ctx.webContext().addResponseCookie(cookie)
+      if (playCookie.isDefined) {
+        val cookie = new Cookie(playCookie.get.name, playCookie.get.value)
+        cookie.setHttpOnly(playCookie.get.httpOnly)
+        cookie.setSameSitePolicy(playCookie.get.sameSite.getOrElse(SameSite.Strict).value)
+        cookie.setSecure(playCookie.get.secure)
+        cookie.setPath(playCookie.get.path)
+        ctx.webContext().addResponseCookie(cookie)
+      }
     }
     // Return a redirect to the default URL.
     HttpActionHelper.buildRedirectUrlAction(ctx.webContext(), new FoundAction(defaultUrl).getLocation)

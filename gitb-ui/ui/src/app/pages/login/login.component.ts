@@ -209,16 +209,17 @@ export class LoginComponent extends BaseComponent implements OnInit, AfterViewIn
   private completeLogin(result: HttpResponse<LoginResultOk|LoginResultActionNeeded>) {
     let path = '/'
     let userId: number|undefined
-    if (result.headers.get('ITB-PATH')) {
-      path = result.headers.get('ITB-PATH')!
-    } else if (result.body != undefined && this.isLoginOk(result.body)) {
+    if (this.isLoginOk(result.body)) {
       userId = result.body.user_id
       if (result.body.path) {
         path = result.body.path
       }
     }
+    if (result.headers.get('ITB-PATH')) {
+      path = result.headers.get('ITB-PATH')!
+    }
     this.loginState = {
-      userId: userId,
+      userId: userId!,
       tokens: result.body,
       path: path,
       remember: this.rememberMe

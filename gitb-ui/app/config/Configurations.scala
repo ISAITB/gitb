@@ -143,6 +143,7 @@ object Configurations {
 
   val WELCOME_MESSAGE_DEFAULT = "<h4>The Interoperability Test Bed is a platform for self-service conformance testing against semantic and technical specifications.</h4>"
   var WELCOME_MESSAGE: String = WELCOME_MESSAGE_DEFAULT
+  var SESSION_COOKIE_SECURE: Boolean = false
 
   def versionInfo(): String = {
     if (Constants.VersionNumber.toLowerCase.endsWith("snapshot")) {
@@ -339,6 +340,8 @@ object Configurations {
       if (StringUtils.isNotBlank(masterApiKey)) {
         AUTOMATION_API_MASTER_KEY = Some(masterApiKey.trim)
       }
+      // Session cookie
+      SESSION_COOKIE_SECURE = fromEnv("SESSION_SECURE", conf.getString("play.http.session.secure")).toBoolean
       _IS_LOADED = true
     }
   }

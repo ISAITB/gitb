@@ -62,7 +62,12 @@ class Application @Inject() (implicit ec: ExecutionContext, cc: ControllerCompon
 
   def appWithRequestedPath(path: String): Action[AnyContent] = defaultAction { request =>
     if (StringUtils.isNoneBlank(path)) {
-      handleAppLoad().withCookies(ResponseConstructor.createRequestedUrlCookie(request.uri))
+      val cookie = ResponseConstructor.createRequestedUrlCookie(request.uri)
+      if (cookie.isDefined) {
+        handleAppLoad().withCookies(cookie.get)
+      } else {
+        handleAppLoad()
+      }
     } else {
       handleAppLoad()
     }

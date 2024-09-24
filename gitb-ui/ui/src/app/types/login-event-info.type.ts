@@ -1,6 +1,6 @@
 export interface LoginEventInfo {
 
-    userId?: number,
+    userId: number,
     tokens: any,
     path: string,
     remember: boolean

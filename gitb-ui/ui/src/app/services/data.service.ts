@@ -1517,14 +1517,19 @@ export class DataService {
       expires: expires
     }
     let protocol = window.location.protocol
-    if (protocol && (protocol.toLowerCase() == 'https')) {
+    if (protocol && (protocol.toLowerCase().startsWith('https'))) {
       cookieOptions.secure = true
     }
     this.cookieService.set(name, value, cookieOptions.expires, cookieOptions.path, cookieOptions.domain, cookieOptions.secure, cookieOptions.sameSite)
   }
 
   recordLocationData(location: string) {
-    if (sessionStorage) sessionStorage.setItem(DataService.STORAGE_LOCATION, location)
+    if (sessionStorage) {
+      if (this.user && this.user.id) {
+        sessionStorage.setItem(DataService.STORAGE_USER, this.user.id+'')
+      }
+      sessionStorage.setItem(DataService.STORAGE_LOCATION, location)
+    }
   }
 
   clearLocationData() {
@@ -1590,7 +1595,6 @@ export class DataService {
       let requestedPath: string|undefined
       if (requestedUrl.indexOf("://") != -1) {
         // This is a complete URL.
-        // http://localhost:9000/app/7/admin/users/community/86
         const currentUrl = window.location.href
         const hashIndex = currentUrl.indexOf("#")
         let baseUrl: string

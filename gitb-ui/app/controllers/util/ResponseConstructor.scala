@@ -77,8 +77,17 @@ object ResponseConstructor extends Results{
     ).as(JSON)
   }
 
-  def createRequestedUrlCookie(requestedUrl: String): Cookie = {
-    Cookie("ITB_REQUESTED_URL", requestedUrl, None, "/", None, requestedUrl.toLowerCase.startsWith("https://"), httpOnly = false, Some(Cookie.SameSite.Strict))
+  def createRequestedUrlCookie(requestedUrl: String): Option[Cookie] = {
+    var urlToUse = requestedUrl
+    val appIndex = urlToUse.indexOf("/app")
+    if (appIndex != -1) {
+      urlToUse = urlToUse.substring(appIndex+4)
+    }
+    if (urlToUse.isBlank) {
+      None
+    } else {
+      Some(Cookie("ITB_REQUESTED_URL", urlToUse, None, "/", None, Configurations.SESSION_COOKIE_SECURE, httpOnly = false, Some(Cookie.SameSite.Strict)))
+    }
   }
 
 }

@@ -56,7 +56,7 @@ export class AuthProviderService {
     })
     // Handle post-login event
     this.afterLogin$.subscribe((loginInfo) => {
-      this.routingService.toStartPage(loginInfo.userId!)
+      this.routingService.toStartPage(loginInfo.userId)
     })
     // Handle logout event
     this.onLogout$.subscribe((info) => {
