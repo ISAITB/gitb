@@ -34,7 +34,7 @@
                 }
             </tr>
         </thead>
-        <tbody [class.disable-events]="contentRefreshing">
+        <tbody>
             @if (loadingStatus && loadingStatus.status != Constants.STATUS.FINISHED) {
                 <tr>
                     <td [attr.colspan]="columnCount" class="td-data-loading"><span><i class="fa-solid fa-spinner fa-spin-override fa-lg"></i></span></td>
@@ -47,6 +47,7 @@
             @for (row of data; let i = $index; track row) {
                 <tr table-row-directive
                     class="table-row-directive expandable-table-row-collapsed session-table-row" 
+                    [class.disable-events]="contentRefreshing"
                     [ngClass]="rowClass(row)" 
                     (click)="onExpand(row)"
                     [data]="row"
