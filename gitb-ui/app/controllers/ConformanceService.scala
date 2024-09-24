@@ -217,14 +217,14 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
    * Gets actors defined  for the spec
    */
   def getSpecActors(spec_id: Long): Action[AnyContent] = authorizedAction { request =>
-    authorizationManager.canViewActorsBySpecificationId(request, spec_id)
+    authorizationManager.canManageSpecification(request, spec_id)
     val actors = actorManager.getActorsWithSpecificationId(None, Some(List(spec_id)))
     val json = JsonUtil.jsActorsNonCase(actors).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
 
   def getSpecTestSuites(spec_id: Long): Action[AnyContent] = authorizedAction { request =>
-    authorizationManager.canViewTestSuitesBySpecificationId(request, spec_id)
+    authorizationManager.canManageSpecification(request, spec_id)
     val testSuites = testSuiteManager.getTestSuitesWithSpecificationId(spec_id)
     val json = JsonUtil.jsTestSuitesList(testSuites).toString()
     ResponseConstructor.constructJsonResponse(json)

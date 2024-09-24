@@ -1715,24 +1715,12 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     canViewSpecifications(request, Some(List(specId)))
   }
 
-  def canViewTestCasesByActorId(request: RequestWithAttributes[_], actor_id: Long):Boolean = {
-    canViewActor(request, actor_id)
-  }
-
-  def canViewTestSuitesBySpecificationId(request: RequestWithAttributes[_], spec_id: Long):Boolean = {
-    canViewSpecifications(request, Some(List(spec_id)))
-  }
-
   def canViewActorsBySpecificationId(request: RequestWithAttributes[_], spec_id: Long):Boolean = {
     canViewSpecifications(request, Some(List(spec_id)))
   }
 
   def canViewSpecificationsByDomainId(request: RequestWithAttributes[_], domain_id: Long):Boolean = {
     canViewDomains(request, Some(List(domain_id)))
-  }
-
-  def canViewActorsBySpecificationIds(request: RequestWithAttributes[_], ids: Option[List[Long]]):Boolean = {
-    canViewSpecifications(request, ids)
   }
 
   private def specificationsMatchDomain(specs: Iterable[Specifications], domainId: Long): Boolean = {
