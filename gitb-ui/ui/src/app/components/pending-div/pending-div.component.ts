@@ -3,7 +3,8 @@ import { DataService } from 'src/app/services/data.service';
 
 @Component({
   selector: 'div[pending]',
-  templateUrl: './pending-div.component.html'
+  templateUrl: './pending-div.component.html',
+  styleUrls: ['./pending-div.component.less']
 })
 export class PendingDivComponent implements AfterViewInit {
 
