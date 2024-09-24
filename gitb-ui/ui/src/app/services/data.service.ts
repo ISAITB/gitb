@@ -1630,4 +1630,42 @@ export class DataService {
     return hasRequestedRoute
   }
 
+  copyExternalLink(parameters?: Record<string, string>): Observable<string|undefined> {
+    if (this.user?.id) {
+      let currentLocation = window.location.href
+      let externalLocation = currentLocation
+        .replace("/#/", `/${this.user.id}/`)
+        .replace("#/", `/${this.user.id}/`)
+      if (parameters) {
+        let queryString = ""
+        let first = true
+        Object.entries(parameters).forEach((param) => {
+          // Check to see if the parameter is already present, and if so replace it.
+          const regExp = new RegExp(`(.+[&?]?${param[0]}=)([a-zA-z0-9\-\_]+)(&?.*)`, 'g')
+          if (externalLocation.match(regExp)) {
+            externalLocation = externalLocation.replace(regExp, `$1${param[1]}$3`)
+          } else {
+            // Append to new querystring.
+            if (first) {
+              first = false
+            } else {
+              queryString += "&"
+            }
+            queryString += `${param[0]}=${encodeURIComponent(param[1])}`
+          }
+        })
+        if (queryString.length > 0) {
+          if (externalLocation.indexOf("?") == -1) {
+            externalLocation += `?${queryString}`
+          } else {
+            externalLocation += `&${queryString}`
+          }
+        }
+      }
+      return this.copyToClipboard(externalLocation)
+    } else {
+      return of(undefined)
+    }
+  }
+
 }

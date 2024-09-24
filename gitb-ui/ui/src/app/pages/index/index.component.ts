@@ -161,16 +161,11 @@ export class IndexComponent implements OnInit, OnDestroy {
   }
 
   copyExternalLink() {
-    if (this.dataService.user?.id) {
-      let currentLocation = window.location.href
-      const externalLocation = currentLocation
-        .replace("/#/", `/${this.dataService.user.id}/`)
-        .replace("#/", `/${this.dataService.user.id}/`)
-      this.dataService.copyToClipboard(externalLocation).subscribe(() => {
+    this.dataService.copyExternalLink().subscribe((value) => {
+      if (value) {
         this.popupService.success("Link copied to clipboard.")
-      })
-    }
-
+      }
+    })
   }
 
 }

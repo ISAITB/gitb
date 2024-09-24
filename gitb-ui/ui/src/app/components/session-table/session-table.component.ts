@@ -16,6 +16,7 @@ import { TestResultReport } from 'src/app/types/test-result-report';
 import { LogLevel } from 'src/app/types/log-level';
 import { TestInteractionData } from 'src/app/types/test-interaction-data';
 import { filter, find } from 'lodash';
+import { PopupService } from 'src/app/services/popup.service';
 
 @Component({
   selector: '[app-session-table]',
@@ -45,7 +46,8 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
     private modalService: BsModalService,
     private routingService: RoutingService,
     private testService: TestService,
-    public dataService: DataService
+    public dataService: DataService,
+    private popupService: PopupService
   ) { super() }
 
   ngOnInit(): void {
@@ -349,5 +351,15 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
     setTimeout(() => {
       this.diagramCollapsedFinished[session] = value
     }, 1)
+  }
+
+  copyLink(row: TestResultForDisplay) {
+    const params: Record<string, string> = {}
+    params[Constants.NAVIGATION_QUERY_PARAM.TEST_SESSION_ID] = row.session
+    this.dataService.copyExternalLink(params).subscribe((value) => {
+      if (value) {
+        this.popupService.success("Link copied to clipboard.")
+      }
+    })
   }
 }

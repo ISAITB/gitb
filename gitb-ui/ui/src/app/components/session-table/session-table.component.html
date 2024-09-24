@@ -116,6 +116,8 @@
                                         }
                                     </div>
                                     <div class="btn-toolbar goto-controls">
+                                        <!-- Copy link -->
+                                        <button type="button" class="btn btn-secondary" (click)="copyLink(row)">Copy link</button>
                                         <!-- View statement -->
                                         @if (showToStatement(row)) {
                                             <button type="button" class="btn btn-secondary" (click)="toStatement(row)">View statement</button>
