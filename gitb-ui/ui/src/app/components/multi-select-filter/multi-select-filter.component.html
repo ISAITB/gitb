@@ -49,7 +49,7 @@
                     }
                     <button type="button" class="btn btn-secondary" (click)="close()">Close</button>
                     @if (hasCheckedSelectedItem) {
-                        <button type="button" class="btn btn-secondary" (click)="clearSelectedItems()">Clear selected items</button>
+                        <button type="button" class="btn btn-secondary" (click)="clearSelectedItems(); $event.stopPropagation()">Clear selected items</button>
                     }
                 </div>
             }

@@ -390,6 +390,7 @@ export class MultiSelectFilterComponent<T extends EntityWithId> implements OnIni
   clearSelectedItems() {
     this.clearSelectedItemMap(this.selectedSelectedItems)
     this.clearSelectedItemMap(this.selectedAvailableItems)
+    this.updateCheckFlag()
   }
 
   private clearSelectedItemMap(itemMap: ItemMap<T>) {
