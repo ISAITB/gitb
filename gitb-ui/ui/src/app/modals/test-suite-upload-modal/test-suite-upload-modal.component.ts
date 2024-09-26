@@ -1,6 +1,6 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { BsModalRef } from 'ngx-bootstrap/modal';
-import { Observable } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { Constants } from 'src/app/common/constants';
 import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
 import { ConformanceService } from 'src/app/services/conformance.service';
@@ -19,6 +19,8 @@ import { PendingTestSuiteUploadChoiceTestCase } from './pending-test-suite-uploa
 import { ValidationReportItem } from './validation-report-item';
 import { AssertionReport } from 'src/app/components/diagram/assertion-report';
 import { BaseComponent } from 'src/app/pages/base-component.component';
+import { MultiSelectConfig } from 'src/app/components/multi-select-filter/multi-select-config';
+import { FilterUpdate } from 'src/app/components/test-filter/filter-update';
 
 @Component({
   selector: 'app-test-suite-upload-modal',
@@ -58,6 +60,7 @@ export class TestSuiteUploadModalComponent extends BaseComponent implements OnIn
   testCasesInArchiveAndDB: TestSuiteUploadTestCaseChoice[] = []
   testCasesInArchive: TestSuiteUploadTestCaseChoice[] = []
   testCasesInDB: TestSuiteUploadTestCaseChoice[] = []
+  selectConfig!: MultiSelectConfig<Specification>
 
   constructor(
     public dataService: DataService,
@@ -73,6 +76,19 @@ export class TestSuiteUploadModalComponent extends BaseComponent implements OnIn
         this.specifications.push(this.availableSpecifications[0])
       }
     }
+    this.selectConfig = {
+      name: "specification",
+      textField: "fname",
+      clearItems: new EventEmitter<void>(),
+      replaceItems: new EventEmitter<Specification[]>(),
+      replaceSelectedItems: new EventEmitter<Specification[]>(),
+      filterLabel: `Select ${this.dataService.labelSpecificationsLower()}...`,
+      loader: () => of(this.availableSpecifications)
+    }
+  }
+
+  specificationsChanged(update: FilterUpdate<Specification>) {
+    this.specifications = update.values.active
   }
 
   proceedDisabled() {

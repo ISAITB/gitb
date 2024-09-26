@@ -13,11 +13,7 @@
 							@if (availableSpecifications.length == 1) {
 								<input class="form-control" id="specification" name="specification" [(ngModel)]="specifications[0].fname" readonly="readonly"/>
 							} @else if (availableSpecifications.length > 1) {
-								<select [attr.size]="(availableSpecifications.length > 30)?30:availableSpecifications.length" multiple="multiple" class="form-select" id="specification" name="specification" [(ngModel)]="specifications">
-									@for (specification of availableSpecifications; track $index) {
-										<option [ngValue]="specification">{{specification.fname}}</option>
-									}
-								</select>
+								<app-multi-select-filter [config]="selectConfig" (apply)="specificationsChanged($event)"></app-multi-select-filter>
 							}
 						</div>
 						<div app-tooltip class="col-auto" [tbTooltip]="'The '+dataService.labelSpecificationLower()+' with which this shared test suite will be linked.'"></div>

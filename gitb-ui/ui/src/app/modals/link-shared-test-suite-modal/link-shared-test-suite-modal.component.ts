@@ -8,6 +8,9 @@ import { PendingTestSuiteUploadChoice } from '../test-suite-upload-modal/pending
 import { SpecificationChoice } from '../test-suite-upload-modal/specification-choice';
 import { TestSuiteUploadResult } from '../test-suite-upload-modal/test-suite-upload-result';
 import { BaseComponent } from 'src/app/pages/base-component.component';
+import { of } from 'rxjs';
+import { MultiSelectConfig } from 'src/app/components/multi-select-filter/multi-select-config';
+import { FilterUpdate } from 'src/app/components/test-filter/filter-update';
 
 @Component({
   selector: 'app-link-shared-test-suite-modal',
@@ -30,6 +33,7 @@ export class LinkSharedTestSuiteModalComponent extends BaseComponent implements 
   hasMultipleChoices = false
   skipCount = 0
   hasChoicesToComplete = false
+  selectConfig!: MultiSelectConfig<Specification>
   
   constructor(
     public dataService: DataService,
@@ -42,10 +46,23 @@ export class LinkSharedTestSuiteModalComponent extends BaseComponent implements 
     if (this.availableSpecifications.length == 1) {
       this.specifications.push(this.availableSpecifications[0])
     }
+    this.selectConfig = {
+      name: "specification",
+      textField: "fname",
+      clearItems: new EventEmitter<void>(),
+      replaceItems: new EventEmitter<Specification[]>(),
+      replaceSelectedItems: new EventEmitter<Specification[]>(),
+      filterLabel: `Select ${this.dataService.labelSpecificationsLower()}...`,
+      loader: () => of(this.availableSpecifications)
+    }
     if (this.step == 'confirm') {
       // We are requested only to show the result of a link action.
       this.showSpecificationChoices()
     }
+  }
+
+  specificationsChanged(update: FilterUpdate<Specification>) {
+    this.specifications = update.values.active
   }
 
   proceedDisabled() {
