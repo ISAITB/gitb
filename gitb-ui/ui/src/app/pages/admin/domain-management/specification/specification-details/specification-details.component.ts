@@ -284,7 +284,7 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
 
 	saveSpecificationChanges() {
     this.savePending = true
-		this.specificationService.updateSpecification(this.specificationId, this.specification.sname!, this.specification.fname!, this.specification.description, this.specification.hidden, this.specification.group, this.specification.badges!)
+		this.specificationService.updateSpecification(this.specificationId, this.specification.sname!, this.specification.fname!, this.specification.description, this.specification.reportMetadata, this.specification.hidden, this.specification.group, this.specification.badges!)
 		.subscribe(() => {
 			this.popupService.success(this.dataService.labelSpecification()+' updated.')
       this.dataService.breadcrumbUpdate({id: this.specificationId, type: BreadcrumbType.specification, label: this.breadcrumbLabel()})

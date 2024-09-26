@@ -73,7 +73,7 @@ export class CreateSpecificationComponent extends BaseComponent implements OnIni
 	createSpecification() {
 		if (!this.saveDisabled()) {
       this.pending = true
-      this.conformanceService.createSpecification(this.specification.sname!, this.specification.fname!, this.specification.description, this.specification.hidden, this.domainId, this.specification.group, this.specification.badges!)
+      this.conformanceService.createSpecification(this.specification.sname!, this.specification.fname!, this.specification.description, this.specification.reportMetadata, this.specification.hidden, this.domainId, this.specification.group, this.specification.badges!)
       .subscribe(() => {
         this.routingService.toDomain(this.domainId)
         this.popupService.success(this.dataService.labelSpecification()+' created.')

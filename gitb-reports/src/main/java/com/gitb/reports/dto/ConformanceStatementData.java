@@ -12,12 +12,16 @@ public class ConformanceStatementData {
     private String testActor;
     private String testActorInternal;
     private String testActorDescription;
+    private String testActorReportMetadata;
     private String testSpecification;
     private String testSpecificationDescription;
+    private String testSpecificationReportMetadata;
     private String testSpecificationGroup;
     private String testSpecificationGroupDescription;
+    private String testSpecificationGroupReportMetadata;
     private String testDomain;
     private String testDomainDescription;
+    private String testDomainReportMetadata;
     private String lastUpdated;
     private int completedTests = 0;
     private int failedTests = 0;
@@ -237,5 +241,37 @@ public class ConformanceStatementData {
 
     public void setTestDomainDescription(String testDomainDescription) {
         this.testDomainDescription = testDomainDescription;
+    }
+
+    public String getTestActorReportMetadata() {
+        return testActorReportMetadata;
+    }
+
+    public void setTestActorReportMetadata(String testActorReportMetadata) {
+        this.testActorReportMetadata = testActorReportMetadata;
+    }
+
+    public String getTestSpecificationReportMetadata() {
+        return testSpecificationReportMetadata;
+    }
+
+    public void setTestSpecificationReportMetadata(String testSpecificationReportMetadata) {
+        this.testSpecificationReportMetadata = testSpecificationReportMetadata;
+    }
+
+    public String getTestSpecificationGroupReportMetadata() {
+        return testSpecificationGroupReportMetadata;
+    }
+
+    public void setTestSpecificationGroupReportMetadata(String testSpecificationGroupReportMetadata) {
+        this.testSpecificationGroupReportMetadata = testSpecificationGroupReportMetadata;
+    }
+
+    public String getTestDomainReportMetadata() {
+        return testDomainReportMetadata;
+    }
+
+    public void setTestDomainReportMetadata(String testDomainReportMetadata) {
+        this.testDomainReportMetadata = testDomainReportMetadata;
     }
 }

@@ -95,9 +95,9 @@ class ActorManager @Inject() (repositoryUtils: RepositoryUtils,
     } yield ()
   }
 
-  def updateActorWrapper(id: Long, actorId: String, name: String, description: Option[String], default: Option[Boolean], hidden: Boolean, displayOrder: Option[Short], specificationId: Long, badges: BadgeInfo): Unit = {
+  def updateActorWrapper(id: Long, actorId: String, name: String, description: Option[String], reportMetadata: Option[String], default: Option[Boolean], hidden: Boolean, displayOrder: Option[Short], specificationId: Long, badges: BadgeInfo): Unit = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
-    val dbAction = updateActor(id, actorId, name, description, default, hidden, displayOrder, specificationId, None, checkApiKeyUniqueness = false, Some(badges), onSuccessCalls)
+    val dbAction = updateActor(id, actorId, name, description, reportMetadata, default, hidden, displayOrder, specificationId, None, checkApiKeyUniqueness = false, Some(badges), onSuccessCalls)
     exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
   }
 
@@ -137,6 +137,7 @@ class ActorManager @Inject() (repositoryUtils: RepositoryUtils,
         updateRequest.identifier.getOrElse(actorInfo._1.actorId),
         updateRequest.name.getOrElse(actorInfo._1.name),
         updateRequest.description.getOrElse(actorInfo._1.description),
+        updateRequest.reportMetadata.getOrElse(actorInfo._1.reportMetadata),
         updateRequest.default.getOrElse(actorInfo._1.default),
         updateRequest.hidden.getOrElse(actorInfo._1.hidden),
         updateRequest.displayOrder.getOrElse(actorInfo._1.displayOrder),
@@ -150,7 +151,7 @@ class ActorManager @Inject() (repositoryUtils: RepositoryUtils,
     exec(dbActionFinalisation(Some(onSuccessCalls), None, action).transactionally)
   }
 
-  def updateActor(id: Long, actorId: String, name: String, description: Option[String], default: Option[Boolean], hidden: Boolean, displayOrder: Option[Short], specificationId: Long, apiKey: Option[String], checkApiKeyUniqueness: Boolean, badges: Option[BadgeInfo], onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
+  def updateActor(id: Long, actorId: String, name: String, description: Option[String], reportMetadata: Option[String], default: Option[Boolean], hidden: Boolean, displayOrder: Option[Short], specificationId: Long, apiKey: Option[String], checkApiKeyUniqueness: Boolean, badges: Option[BadgeInfo], onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
     var defaultToSet: Option[Boolean] = null
     if (default.isEmpty) {
       defaultToSet = Some(false)
@@ -159,8 +160,8 @@ class ActorManager @Inject() (repositoryUtils: RepositoryUtils,
     }
     (for  {
       _ <- {
-        val q1 = for {a <- PersistenceSchema.actors if a.id === id} yield (a.name, a.desc, a.actorId, a.default, a.hidden, a.displayOrder)
-        q1.update((name, description, actorId, defaultToSet, hidden, displayOrder))
+        val q1 = for {a <- PersistenceSchema.actors if a.id === id} yield (a.name, a.desc, a.reportMetadata, a.actorId, a.default, a.hidden, a.displayOrder)
+        q1.update((name, description, reportMetadata, actorId, defaultToSet, hidden, displayOrder))
       }
       replaceApiKey <- {
         if (apiKey.isDefined && checkApiKeyUniqueness) {
@@ -280,7 +281,7 @@ class ActorManager @Inject() (repositoryUtils: RepositoryUtils,
       }
       _ <- {
         createActor(
-          Actors(0L, input.identifier, input.name, input.description, Some(input.default.getOrElse(false)), input.hidden.getOrElse(false), input.displayOrder, apiKeyToUse, specificationIds._2),
+          Actors(0L, input.identifier, input.name, input.description, input.reportMetadata, Some(input.default.getOrElse(false)), input.hidden.getOrElse(false), input.displayOrder, apiKeyToUse, specificationIds._2),
           specificationIds._1,
           checkApiKeyUniqueness = false,
           None,

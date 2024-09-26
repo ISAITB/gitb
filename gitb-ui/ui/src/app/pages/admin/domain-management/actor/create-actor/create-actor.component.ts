@@ -64,7 +64,7 @@ export class CreateActorComponent extends BaseComponent implements OnInit, After
 	createActor() {
 		if (!this.saveDisabled()) {
       this.savePending = true
-      this.conformanceService.createActor(this.actor.actorId!, this.actor.name!, this.actor.description, this.actor.default, this.actor.hidden, this.actor.displayOrder, this.domainId, this.specificationId, this.actor.badges!)
+      this.conformanceService.createActor(this.actor.actorId!, this.actor.name!, this.actor.description, this.actor.reportMetadata, this.actor.default, this.actor.hidden, this.actor.displayOrder, this.domainId, this.specificationId, this.actor.badges!)
       .subscribe(() => {
         this.cancel()
         this.popupService.success(this.dataService.labelActor()+' created.')

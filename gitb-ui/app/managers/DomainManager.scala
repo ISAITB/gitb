@@ -122,8 +122,8 @@ class DomainManager @Inject() (domainParameterManager: DomainParameterManager,
     exec(createDomainInternal(domain, checkApiKeyUniqueness))._2
   }
 
-  def updateDomain(domainId: Long, shortName: String, fullName: String, description: Option[String]): Unit = {
-    exec(updateDomainInternal(domainId, shortName, fullName, description, None).transactionally)
+  def updateDomain(domainId: Long, shortName: String, fullName: String, description: Option[String], reportMetadata: Option[String]): Unit = {
+    exec(updateDomainInternal(domainId, shortName, fullName, description, reportMetadata, None).transactionally)
   }
 
   def updateDomainThroughAutomationApi(updateRequest: UpdateDomainRequest): Unit = {
@@ -150,10 +150,11 @@ class DomainManager @Inject() (domainParameterManager: DomainParameterManager,
         if (domain.isEmpty) {
           throw AutomationApiException(ErrorCodes.API_DOMAIN_NOT_FOUND, "No domain found for the provided API key")
         } else {
-          PersistenceSchema.domains.filter(_.id === domain.get.id).map(x => (x.shortname, x.fullname, x.description)).update((
+          PersistenceSchema.domains.filter(_.id === domain.get.id).map(x => (x.shortname, x.fullname, x.description, x.reportMetadata)).update((
             updateRequest.shortName.getOrElse(domain.get.shortname),
             updateRequest.fullName.getOrElse(domain.get.fullname),
-            updateRequest.description.getOrElse(domain.get.description)
+            updateRequest.description.getOrElse(domain.get.description),
+            updateRequest.reportMetadata.getOrElse(domain.get.reportMetadata)
           ))
         }
       }
@@ -161,7 +162,7 @@ class DomainManager @Inject() (domainParameterManager: DomainParameterManager,
     exec(action.transactionally)
   }
 
-  def updateDomainInternal(domainId: Long, shortName: String, fullName: String, description: Option[String], apiKey: Option[String]): DBIO[_] = {
+  def updateDomainInternal(domainId: Long, shortName: String, fullName: String, description: Option[String], reportMetadata: Option[String], apiKey: Option[String]): DBIO[_] = {
     for {
       replaceApiKey <- {
         if (apiKey.isDefined) {
@@ -174,12 +175,12 @@ class DomainManager @Inject() (domainParameterManager: DomainParameterManager,
         if (apiKey.isDefined) {
           val apiKeyToUse = if (replaceApiKey) CryptoUtil.generateApiKey() else apiKey.get
           PersistenceSchema.domains.filter(_.id === domainId)
-            .map(x => (x.shortname, x.fullname, x.description, x.apiKey))
-            .update((shortName, fullName, description, apiKeyToUse))
+            .map(x => (x.shortname, x.fullname, x.description, x.reportMetadata, x.apiKey))
+            .update((shortName, fullName, description, reportMetadata, apiKeyToUse))
         } else {
           PersistenceSchema.domains.filter(_.id === domainId)
-            .map(x => (x.shortname, x.fullname, x.description))
-            .update((shortName, fullName, description))
+            .map(x => (x.shortname, x.fullname, x.description, x.reportMetadata))
+            .update((shortName, fullName, description, reportMetadata))
         }
       }
       _ <- {

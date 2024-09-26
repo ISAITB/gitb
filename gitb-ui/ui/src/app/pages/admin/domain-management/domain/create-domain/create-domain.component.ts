@@ -38,7 +38,7 @@ export class CreateDomainComponent extends BaseComponent implements OnInit, Afte
 	createDomain() {
 		if (!this.saveDisabled()) {
       this.pending = true
-			this.conformanceService.createDomain(this.domain.sname!, this.domain.fname!, this.domain.description)
+			this.conformanceService.createDomain(this.domain.sname!, this.domain.fname!, this.domain.description, this.domain.reportMetadata)
       .subscribe(() => {
         this.popupService.success(this.dataService.labelDomain()+' created.')
         this.routingService.toDomains()

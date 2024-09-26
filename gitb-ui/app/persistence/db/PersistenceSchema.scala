@@ -99,8 +99,9 @@ object PersistenceSchema {
     def shortname = column[String]("sname")
     def fullname = column[String]("fname")
   	def description = column[Option[String]]("description", O.SqlType("TEXT"))
+    def reportMetadata = column[Option[String]]("report_metadata", O.SqlType("TEXT"))
     def apiKey = column[String]("api_key")
-    def * = (id, shortname, fullname, description, apiKey) <> (Domain.tupled, Domain.unapply)
+    def * = (id, shortname, fullname, description, reportMetadata, apiKey) <> (Domain.tupled, Domain.unapply)
   }
   val domains = TableQuery[DomainsTable]
 
@@ -109,12 +110,13 @@ object PersistenceSchema {
     def shortname = column[String]("sname")
     def fullname = column[String]("fname")
     def description = column[Option[String]]("description", O.SqlType("TEXT"))
+    def reportMetadata = column[Option[String]]("report_metadata", O.SqlType("TEXT"))
     def hidden = column[Boolean]("is_hidden")
     def apiKey = column[String]("api_key")
     def domain = column[Long]("domain")
     def displayOrder = column[Short]("display_order")
     def group = column[Option[Long]]("spec_group")
-    def * = (id, shortname, fullname, description, hidden, apiKey, domain, displayOrder, group) <> (Specifications.tupled, Specifications.unapply)
+    def * = (id, shortname, fullname, description, reportMetadata, hidden, apiKey, domain, displayOrder, group) <> (Specifications.tupled, Specifications.unapply)
   }
   val specifications = TableQuery[SpecificationsTable]
   val insertSpecification = specifications returning specifications.map(_.id)
@@ -124,12 +126,13 @@ object PersistenceSchema {
     def actorId = column[String]("actorId")
     def name    = column[String]("name")
     def desc    = column[Option[String]]("description", O.SqlType("TEXT"))
+    def reportMetadata = column[Option[String]]("report_metadata", O.SqlType("TEXT"))
     def default = column[Option[Boolean]]("is_default")
     def hidden = column[Boolean]("is_hidden")
     def displayOrder = column[Option[Short]]("display_order")
     def apiKey = column[String]("api_key")
     def domain  = column[Long]("domain")
-    def * = (id, actorId, name, desc, default, hidden, displayOrder, apiKey, domain) <> (Actors.tupled, Actors.unapply)
+    def * = (id, actorId, name, desc, reportMetadata, default, hidden, displayOrder, apiKey, domain) <> (Actors.tupled, Actors.unapply)
   }
   val actors = TableQuery[ActorsTable]
   val insertActor = actors returning actors.map(_.id)
@@ -665,10 +668,11 @@ object PersistenceSchema {
     def shortname = column[String]("sname")
     def fullname = column[String]("fname")
     def description = column[Option[String]]("description", O.SqlType("TEXT"))
+    def reportMetadata = column[Option[String]]("report_metadata", O.SqlType("TEXT"))
     def displayOrder = column[Short]("display_order")
     def apiKey = column[String]("api_key")
     def domain = column[Long]("domain")
-    def * = (id, shortname, fullname, description, displayOrder, apiKey, domain) <> (SpecificationGroups.tupled, SpecificationGroups.unapply)
+    def * = (id, shortname, fullname, description, reportMetadata, displayOrder, apiKey, domain) <> (SpecificationGroups.tupled, SpecificationGroups.unapply)
   }
   val specificationGroups = TableQuery[SpecificationGroupsTable]
   val insertSpecificationGroups = specificationGroups returning specificationGroups.map(_.id)
@@ -745,10 +749,11 @@ object PersistenceSchema {
     def actorId = column[String]("actorId")
     def name = column[String]("name")
     def description = column[Option[String]]("description", O.SqlType("TEXT"))
+    def reportMetadata = column[Option[String]]("report_metadata", O.SqlType("TEXT"))
     def visible = column[Boolean]("visible")
     def apiKey = column[String]("api_key")
     def snapshotId = column[Long]("snapshot_id")
-    def * = (id :: actorId :: name :: description :: visible :: apiKey :: snapshotId :: HNil).mapTo[ConformanceSnapshotActor]
+    def * = (id :: actorId :: name :: description :: reportMetadata :: visible :: apiKey :: snapshotId :: HNil).mapTo[ConformanceSnapshotActor]
   }
   val conformanceSnapshotActors = TableQuery[ConformanceSnapshotActorsTable]
 
@@ -757,10 +762,11 @@ object PersistenceSchema {
     def shortname = column[String]("sname")
     def fullname = column[String]("fname")
     def description = column[Option[String]]("description", O.SqlType("TEXT"))
+    def reportMetadata = column[Option[String]]("report_metadata", O.SqlType("TEXT"))
     def apiKey = column[String]("api_key")
     def displayOrder = column[Short]("display_order")
     def snapshotId = column[Long]("snapshot_id")
-    def * = (id :: shortname :: fullname :: description :: apiKey :: displayOrder :: snapshotId :: HNil).mapTo[ConformanceSnapshotSpecification]
+    def * = (id :: shortname :: fullname :: description :: reportMetadata :: apiKey :: displayOrder :: snapshotId :: HNil).mapTo[ConformanceSnapshotSpecification]
   }
   val conformanceSnapshotSpecifications = TableQuery[ConformanceSnapshotSpecificationsTable]
 
@@ -769,9 +775,10 @@ object PersistenceSchema {
     def shortname = column[String]("sname")
     def fullname = column[String]("fname")
     def description = column[Option[String]]("description", O.SqlType("TEXT"))
+    def reportMetadata = column[Option[String]]("report_metadata", O.SqlType("TEXT"))
     def displayOrder = column[Short]("display_order")
     def snapshotId = column[Long]("snapshot_id")
-    def * = (id :: shortname :: fullname :: description :: displayOrder :: snapshotId :: HNil).mapTo[ConformanceSnapshotSpecificationGroup]
+    def * = (id :: shortname :: fullname :: description :: reportMetadata :: displayOrder :: snapshotId :: HNil).mapTo[ConformanceSnapshotSpecificationGroup]
   }
   val conformanceSnapshotSpecificationGroups = TableQuery[ConformanceSnapshotSpecificationGroupsTable]
 
@@ -780,8 +787,9 @@ object PersistenceSchema {
     def shortname = column[String]("sname")
     def fullname = column[String]("fname")
     def description = column[Option[String]]("description", O.SqlType("TEXT"))
+    def reportMetadata = column[Option[String]]("report_metadata", O.SqlType("TEXT"))
     def snapshotId = column[Long]("snapshot_id")
-    def * = (id :: shortname :: fullname :: description :: snapshotId :: HNil).mapTo[ConformanceSnapshotDomain]
+    def * = (id :: shortname :: fullname :: description :: reportMetadata :: snapshotId :: HNil).mapTo[ConformanceSnapshotDomain]
   }
   val conformanceSnapshotDomains = TableQuery[ConformanceSnapshotDomainsTable]
 

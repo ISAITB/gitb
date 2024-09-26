@@ -893,10 +893,10 @@ class ReportManager @Inject() (communityManager: CommunityManager,
       0L, "Sample community",
       0L, "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Organisation, single = true, lowercase = true),
       0L, systemName, "", Some(systemName+" description"), Some("v1.0.0"),
-      domainId, domainName, domainName, Some(domainName+" description"),
-      actorId, actorName, actorName, Some(actorName+" description"), "",
-      specificationId, specificationName, specificationName, Some(specificationName+" description"), 0,
-      Some(groupId), Some(groupName), Some(groupName), Some(groupName+" description"), Some(0),
+      domainId, domainName, domainName, Some(domainName+" description"), Some(domainName+" metadata"),
+      actorId, actorName, actorName, Some(actorName+" description"), Some(actorName+" metadata") ,"",
+      specificationId, specificationName, specificationName, Some(specificationName+" description"), Some(specificationName+" metadata"), 0,
+      Some(groupId), Some(groupName), Some(groupName), Some(groupName+" description"), Some(groupName+" metadata"), Some(0),
       specificationName, specificationName,
       Some(testSuiteIndex), Some("Sample test suite "+testSuiteIndex), Some("Description for Sample test suite "+testSuiteIndex), None, None, None, "1.0",
       Some(testCaseIndex), Some("Sample test case "+testCaseIndex), Some("Description for Sample test case "+testCaseIndex), Some(false), Some(false), None,  None, None, None, None, "1.0",
@@ -1107,10 +1107,13 @@ class ReportManager @Inject() (communityManager: CommunityManager,
       reportLevel,
       conformanceOverview.headOption.map(_.domainNameFull),
       conformanceOverview.headOption.flatMap(_.domainDescription),
+      conformanceOverview.headOption.flatMap(_.domainReportMetadata),
       conformanceOverview.headOption.flatMap(_.specificationGroupNameFull),
       conformanceOverview.headOption.flatMap(_.specificationGroupDescription),
+      conformanceOverview.headOption.flatMap(_.specificationGroupReportMetadata),
       conformanceOverview.headOption.map(_.specificationGroupOptionNameFull),
       conformanceOverview.headOption.flatMap(_.specificationDescription),
+      conformanceOverview.headOption.flatMap(_.specificationReportMetadata),
       conformanceOverview.headOption.map(_.organizationId),
       conformanceOverview.headOption.map(_.organizationName),
       conformanceOverview.headOption.map(_.systemId),
@@ -1268,6 +1271,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
     }
     xmlItem.get.setName(item.name)
     xmlItem.get.setDescription(item.description.orNull)
+    xmlItem.get.setMetadata(item.reportMetadata.orNull)
     xmlItem.get
   }
 
@@ -1358,12 +1362,14 @@ class ReportManager @Inject() (communityManager: CommunityManager,
         report.getOverview.getDefinition.setDomain(new ConformanceItemInformation)
         report.getOverview.getDefinition.getDomain.setName(conformanceData.domainName.orNull)
         report.getOverview.getDefinition.getDomain.setDescription(conformanceData.domainDescription.orNull)
+        report.getOverview.getDefinition.getDomain.setMetadata(conformanceData.domainReportMetadata.orNull)
       }
       if (conformanceData.reportLevel == OverviewLevelType.SpecificationGroupLevel) {
         if (conformanceData.groupName.isDefined) {
           report.getOverview.getDefinition.setSpecificationGroup(new ConformanceItemInformation)
           report.getOverview.getDefinition.getSpecificationGroup.setName(conformanceData.groupName.orNull)
           report.getOverview.getDefinition.getSpecificationGroup.setDescription(conformanceData.groupDescription.orNull)
+          report.getOverview.getDefinition.getSpecificationGroup.setMetadata(conformanceData.groupReportMetadata.orNull)
         }
       } else if (conformanceData.reportLevel == OverviewLevelType.SpecificationLevel) {
         if (conformanceData.specificationName.isDefined) {
@@ -1371,10 +1377,12 @@ class ReportManager @Inject() (communityManager: CommunityManager,
             report.getOverview.getDefinition.setSpecificationGroup(new ConformanceItemInformation)
             report.getOverview.getDefinition.getSpecificationGroup.setName(conformanceData.groupName.orNull)
             report.getOverview.getDefinition.getSpecificationGroup.setDescription(conformanceData.groupDescription.orNull)
+            report.getOverview.getDefinition.getSpecificationGroup.setMetadata(conformanceData.groupReportMetadata.orNull)
           }
           report.getOverview.getDefinition.setSpecification(new ConformanceItemInformation)
           report.getOverview.getDefinition.getSpecification.setName(conformanceData.specificationName.orNull)
           report.getOverview.getDefinition.getSpecification.setDescription(conformanceData.specificationDescription.orNull)
+          report.getOverview.getDefinition.getSpecification.setMetadata(conformanceData.specificationReportMetadata.orNull)
         }
       }
     }
@@ -1404,20 +1412,24 @@ class ReportManager @Inject() (communityManager: CommunityManager,
         statement.getDefinition.setDomain(new ConformanceItemInformation)
         statement.getDefinition.getDomain.setName(conformanceStatement.getTestDomain)
         statement.getDefinition.getDomain.setDescription(conformanceStatement.getTestDomainDescription)
+        statement.getDefinition.getDomain.setMetadata(conformanceStatement.getTestDomainReportMetadata)
         // Specification group
         if (conformanceStatement.getTestSpecificationGroup != null) {
           statement.getDefinition.setSpecificationGroup(new ConformanceItemInformation)
           statement.getDefinition.getSpecificationGroup.setName(conformanceStatement.getTestSpecificationGroup)
           statement.getDefinition.getSpecificationGroup.setDescription(conformanceStatement.getTestSpecificationGroupDescription)
+          statement.getDefinition.getSpecificationGroup.setMetadata(conformanceStatement.getTestSpecificationGroupReportMetadata)
         }
         // Specification
         statement.getDefinition.setSpecification(new ConformanceItemInformation)
         statement.getDefinition.getSpecification.setName(conformanceStatement.getTestSpecification)
         statement.getDefinition.getSpecification.setDescription(conformanceStatement.getTestSpecificationDescription)
+        statement.getDefinition.getSpecification.setMetadata(conformanceStatement.getTestSpecificationReportMetadata)
         // Actor
         statement.getDefinition.setActor(new ConformanceItemInformation)
         statement.getDefinition.getActor.setName(conformanceStatement.getTestActorInternal) // We use getTestActorInternal as it is always populated
         statement.getDefinition.getActor.setDescription(conformanceStatement.getTestActorDescription)
+        statement.getDefinition.getActor.setMetadata(conformanceStatement.getTestActorReportMetadata)
         // Party information
         statement.getDefinition.setParty(getPartyDefinitionForXmlReport(conformanceData.organisationId.get, conformanceData.organisationName.get, conformanceData.systemId.get, conformanceData.systemName.get, conformanceData.systemVersion, conformanceData.systemDescription, communityId, isDemo))
         // Last update
@@ -1887,6 +1899,7 @@ class ReportManager @Inject() (communityManager: CommunityManager,
     val newItem = new ConformanceItem
     newItem.setName(item.name)
     newItem.setDescription(item.description.orNull)
+    newItem.setReportMetadata(item.reportMetadata.orNull)
     /*
      * Record names of conformance items before we iterate children. Like this e.g. a spec will always have the name of its domain and group.
      * The only case where we will use these names is when we record the results at leaf level in which case we'll have everything available.
@@ -1894,18 +1907,22 @@ class ReportManager @Inject() (communityManager: CommunityManager,
     if (item.itemType == ConformanceStatementItemType.DOMAIN) {
       reportData.domainName = Some(newItem.getName)
       reportData.domainDescription = Option(newItem.getDescription)
+      reportData.domainReportMetadata = Option(newItem.getReportMetadata)
     }
     if (item.itemType == ConformanceStatementItemType.SPECIFICATION_GROUP) {
       reportData.groupName = Some(newItem.getName)
       reportData.groupDescription = Option(newItem.getDescription)
+      reportData.groupReportMetadata = Option(newItem.getReportMetadata)
     }
     if (item.itemType == ConformanceStatementItemType.SPECIFICATION) {
       reportData.specName = Some(newItem.getName)
       reportData.specDescription = Option(newItem.getDescription)
+      reportData.specReportMetadata = Option(newItem.getReportMetadata)
     }
     if (item.itemType == ConformanceStatementItemType.ACTOR) {
       reportData.actorName = Some(newItem.getName)
       reportData.actorDescription = Option(newItem.getDescription)
+      reportData.actorReportMetadata = Option(newItem.getReportMetadata)
     }
     if (item.items.isDefined) {
       val children = toConformanceItems(item.items.get, Some(newItem), reportData)
@@ -1935,15 +1952,19 @@ class ReportManager @Inject() (communityManager: CommunityManager,
       newItem.getData.setUndefinedTests(counters.other.toInt)
       newItem.getData.setTestDomain(reportData.domainName.orNull)
       newItem.getData.setTestDomainDescription(reportData.domainDescription.orNull)
+      newItem.getData.setTestDomainReportMetadata(reportData.domainReportMetadata.orNull)
       newItem.getData.setTestSpecificationGroup(reportData.groupName.orNull)
       newItem.getData.setTestSpecificationGroupDescription(reportData.groupDescription.orNull)
+      newItem.getData.setTestSpecificationGroupReportMetadata(reportData.groupReportMetadata.orNull)
       newItem.getData.setTestSpecification(reportData.specName.orNull)
       newItem.getData.setTestSpecificationDescription(reportData.specDescription.orNull)
+      newItem.getData.setTestSpecificationReportMetadata(reportData.specReportMetadata.orNull)
       if (item.itemType == ConformanceStatementItemType.ACTOR && item.actorToShow) {
         newItem.getData.setTestActor(reportData.actorName.orNull)
       }
       newItem.getData.setTestActorInternal(reportData.actorName.orNull)
       newItem.getData.setTestActorDescription(reportData.actorDescription.orNull)
+      newItem.getData.setTestActorReportMetadata(reportData.actorReportMetadata.orNull)
       if (item.results.get.testSuites.isDefined) {
         newItem.getData.setTestSuites(new util.ArrayList[com.gitb.reports.dto.TestSuiteOverview]())
         item.results.get.testSuites.get.foreach { testSuite =>
@@ -2129,17 +2150,21 @@ class ReportManager @Inject() (communityManager: CommunityManager,
     report.getStatement.getDefinition.setDomain(new ConformanceItemInformation)
     report.getStatement.getDefinition.getDomain.setName(conformanceData.domainNameFull)
     report.getStatement.getDefinition.getDomain.setDescription(conformanceData.domainDescription.orNull)
+    report.getStatement.getDefinition.getDomain.setMetadata(conformanceData.domainReportMetadata.orNull)
     if (conformanceData.specificationGroupNameFull.isDefined) {
       report.getStatement.getDefinition.setSpecificationGroup(new ConformanceItemInformation)
       report.getStatement.getDefinition.getSpecificationGroup.setName(conformanceData.specificationGroupNameFull.orNull)
       report.getStatement.getDefinition.getSpecificationGroup.setDescription(conformanceData.specificationGroupDescription.orNull)
+      report.getStatement.getDefinition.getSpecificationGroup.setMetadata(conformanceData.specificationGroupReportMetadata.orNull)
     }
     report.getStatement.getDefinition.setSpecification(new ConformanceItemInformation)
     report.getStatement.getDefinition.getSpecification.setName(conformanceData.specificationNameFull)
     report.getStatement.getDefinition.getSpecification.setDescription(conformanceData.specificationDescription.orNull)
+    report.getStatement.getDefinition.getSpecification.setMetadata(conformanceData.specificationReportMetadata.orNull)
     report.getStatement.getDefinition.setActor(new ConformanceItemInformation)
     report.getStatement.getDefinition.getActor.setName(conformanceData.actorFull)
     report.getStatement.getDefinition.getActor.setDescription(conformanceData.actorDescription.orNull)
+    report.getStatement.getDefinition.getActor.setMetadata(conformanceData.actorReportMetadata.orNull)
     // Party information
     report.getStatement.getDefinition.setParty(getPartyDefinitionForXmlReport(conformanceData.organizationId, conformanceData.organizationName, conformanceData.systemId, conformanceData.systemName, conformanceData.systemVersion, conformanceData.systemDescription, conformanceData.communityId, isDemo))
     // Test overview
@@ -2842,12 +2867,16 @@ private class ReportData(
   val skipDomain: Boolean,
   var domainName: Option[String] = None,
   var domainDescription: Option[String] = None,
+  var domainReportMetadata: Option[String] = None,
   var groupName: Option[String] = None,
   var groupDescription: Option[String] = None,
+  var groupReportMetadata: Option[String] = None,
   var specName: Option[String] = None,
   var specDescription: Option[String] = None,
+  var specReportMetadata: Option[String] = None,
   var actorName: Option[String] = None,
-  var actorDescription: Option[String] = None
+  var actorDescription: Option[String] = None,
+  var actorReportMetadata: Option[String] = None
 ) {}
 
 private class ConformanceOverviewTracker(var withIndexes: Boolean) {

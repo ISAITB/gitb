@@ -189,7 +189,7 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
 
 	saveDomainChanges() {
     this.savePending = true
-		this.conformanceService.updateDomain(this.domainId, this.domain.sname!, this.domain.fname!, this.domain.description)
+		this.conformanceService.updateDomain(this.domainId, this.domain.sname!, this.domain.fname!, this.domain.description, this.domain.reportMetadata)
     .subscribe(() => {
       this.popupService.success(this.dataService.labelDomain()+' updated.')
       this.dataService.breadcrumbUpdate({id: this.domainId, type: BreadcrumbType.domain, label: this.domain.sname!})

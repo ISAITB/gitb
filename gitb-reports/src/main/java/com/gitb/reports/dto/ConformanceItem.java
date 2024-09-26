@@ -8,6 +8,7 @@ public class ConformanceItem {
 
     private String name;
     private String description;
+    private String reportMetadata;
     private String overallStatus;
     private ConformanceStatementData data;
     private List<ConformanceItem> items;
@@ -26,6 +27,14 @@ public class ConformanceItem {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public String getReportMetadata() {
+        return reportMetadata;
+    }
+
+    public void setReportMetadata(String reportMetadata) {
+        this.reportMetadata = reportMetadata;
     }
 
     public String getOverallStatus() {

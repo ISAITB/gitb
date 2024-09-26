@@ -449,26 +449,28 @@ export class ConformanceService {
     })
   }
 
-  updateDomain(domainId: number, shortName: string, fullName: string, description?: string) {
+  updateDomain(domainId: number, shortName: string, fullName: string, description?: string, reportMetadata?: string) {
     return this.restService.post<void>({
       path: ROUTES.controllers.ConformanceService.updateDomain(domainId).url,
       data: {
         sname: shortName,
         fname: fullName,
-        description: description
+        description: description,
+        metadata: reportMetadata
       },
       authenticate: true
     })
   }
 
-  createDomain(shortName: string, fullName: string, description?: string) {
+  createDomain(shortName: string, fullName: string, description?: string, reportMetadata?: string) {
     return this.restService.post<void>({
       path: ROUTES.controllers.ConformanceService.createDomain().url,
       authenticate: true,
       data: {
         sname: shortName,
         fname: fullName,
-        description: description
+        description: description,
+        metadata: reportMetadata
       }
     })
   }
@@ -610,7 +612,7 @@ export class ConformanceService {
     })
   }
 
-  createSpecification(shortName: string, fullName: string, description: string|undefined, hidden: boolean|undefined, domainId: number, groupId: number|undefined, badges: BadgesInfo) {
+  createSpecification(shortName: string, fullName: string, description: string|undefined, reportMetadata: string|undefined, hidden: boolean|undefined, domainId: number, groupId: number|undefined, badges: BadgesInfo) {
     const params:any = {
       sname: shortName,
       fname: fullName,
@@ -623,6 +625,9 @@ export class ConformanceService {
     if (description != undefined) {
       params.description = description
     }
+    if (reportMetadata != undefined) {
+      params.metadata = reportMetadata
+    }    
     if (groupId != undefined) {
       params.group_id = groupId
     }
@@ -667,7 +672,7 @@ export class ConformanceService {
     })
   }
 
-  createActor(shortName: string, fullName: string, description: string|undefined, defaultActor: boolean|undefined, hiddenActor: boolean|undefined, displayOrder: number|undefined, domainId: number, specificationId: number, badges: BadgesInfo) {
+  createActor(shortName: string, fullName: string, description: string|undefined, reportMetadata: string|undefined,defaultActor: boolean|undefined, hiddenActor: boolean|undefined, displayOrder: number|undefined, domainId: number, specificationId: number, badges: BadgesInfo) {
     if (hiddenActor == undefined) {
       hiddenActor = false
     }
@@ -678,6 +683,7 @@ export class ConformanceService {
         actor_id: shortName,
         name: fullName,
         description: description,
+        metadata: reportMetadata,
         default: defaultActor,
         hidden: hiddenActor,
         domain_id: domainId,

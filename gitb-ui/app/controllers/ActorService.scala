@@ -35,7 +35,7 @@ class ActorService @Inject() (implicit ec: ExecutionContext, authorizedAction: A
         if (badgeInfoForReport._2.nonEmpty) {
           badgeInfoForReport._2.get
         } else {
-          actorManager.updateActorWrapper(actorId, actor.actorId, actor.name, actor.description, actor.default, actor.hidden, actor.displayOrder, specificationId, BadgeInfo(badgeInfo._1.get, badgeInfoForReport._1.get))
+          actorManager.updateActorWrapper(actorId, actor.actorId, actor.name, actor.description, actor.reportMetadata, actor.default, actor.hidden, actor.displayOrder, specificationId, BadgeInfo(badgeInfo._1.get, badgeInfoForReport._1.get))
           ResponseConstructor.constructEmptyResponse
         }
       }

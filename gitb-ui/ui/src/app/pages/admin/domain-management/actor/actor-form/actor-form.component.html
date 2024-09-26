@@ -18,6 +18,13 @@
             <div app-tooltip class="col-auto" [tbTooltip]="'This description is presented to users to explain the purpose of the '+dataService.labelActorLower()+' when managing conformance statements.'"></div>
         </div>
         <div class="row mt-3">
+            <label class="col-3 col-form-label text-end" for="metadata">Report metadata:</label>
+            <div class="col-7">
+                <textarea id="metadata" name="metadata" [(ngModel)]="actor.reportMetadata" class="form-control"></textarea>
+            </div>
+            <div app-tooltip class="col-auto" [tbTooltip]="'This is optional, free-text metadata for the '+dataService.labelActorLower()+' that if specified will be included in XML reports. This is not included in PDF reports nor presented on the user interface.'"></div>
+        </div>
+        <div class="row mt-3">
             <label class="col-3 col-form-label text-end" for="displayOrder">Display order:</label>
             <div class="col-1"><input id="displayOrder" name="displayOrder" [(ngModel)]="actor.displayOrder" class="form-control" type="number"></div>
             <div app-tooltip class="col-auto" [tbTooltip]="'A number to be considered in relation to other '+dataService.labelActorsLower()+' that is used to determine the display positioning in test execution diagrams. If unspecified a default positioning is applied based on the test case\'s steps.'"></div>

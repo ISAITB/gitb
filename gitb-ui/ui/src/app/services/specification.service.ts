@@ -23,7 +23,7 @@ export class SpecificationService {
     })
   }
 
-  updateSpecification(specId: number, shortName: string, fullName: string, description: string|undefined, hidden: boolean|undefined, groupId: number|undefined, badges: BadgesInfo) {
+  updateSpecification(specId: number, shortName: string, fullName: string, description: string|undefined, reportMetadata: string|undefined, hidden: boolean|undefined, groupId: number|undefined, badges: BadgesInfo) {
     const params:any = {
       sname: shortName,
       fname: fullName,
@@ -35,6 +35,9 @@ export class SpecificationService {
     }
     if (description != undefined) {
       params.description = description
+    }
+    if (reportMetadata != undefined) {
+      params.metadata = reportMetadata
     }
     const files = this.dataService.parametersForBadgeUpdate(badges, params)
     return this.restService.post<void>({
@@ -88,26 +91,28 @@ export class SpecificationService {
     })
   }
 
-  createSpecificationGroup(shortName: string, fullName: string, description: string|undefined, domainId: number) {
+  createSpecificationGroup(shortName: string, fullName: string, description: string|undefined, reportMetadata: string|undefined, domainId: number) {
     return this.restService.post<void>({
       path: ROUTES.controllers.SpecificationService.createSpecificationGroup().url,
       data: {
         sname: shortName,
         fname: fullName,
         description: description,
+        metadata: reportMetadata,
         domain_id: domainId
       },
       authenticate: true
     })
   }
 
-  updateSpecificationGroup(groupId: number, shortName: string, fullName: string, description: string|undefined) {
+  updateSpecificationGroup(groupId: number, shortName: string, fullName: string, description: string|undefined, reportMetadata: string|undefined) {
     return this.restService.post<void>({
       path: ROUTES.controllers.SpecificationService.updateSpecificationGroup(groupId).url,
       data: {
         sname: shortName,
         fname: fullName,
-        description: description
+        description: description,
+        metadata: reportMetadata
       },
       authenticate: true
     })

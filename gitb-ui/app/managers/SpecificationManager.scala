@@ -127,7 +127,7 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils,
         } yield apiKeyToUse
       }
       _ <- {
-        createSpecificationGroupInternal(SpecificationGroups(0L, input.shortName, input.fullName, input.description, input.displayOrder.getOrElse(0), apiKeyToUse, domainId), checkApiKeyUniqueness = false)
+        createSpecificationGroupInternal(SpecificationGroups(0L, input.shortName, input.fullName, input.description, input.reportMetadata, input.displayOrder.getOrElse(0), apiKeyToUse, domainId), checkApiKeyUniqueness = false)
       }
     } yield apiKeyToUse
     exec(action.transactionally)
@@ -185,6 +185,7 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils,
             updateRequest.shortName.getOrElse(group.get.shortname),
             updateRequest.fullName.getOrElse(group.get.fullname),
             updateRequest.description.getOrElse(group.get.description),
+            updateRequest.reportMetadata.getOrElse(group.get.reportMetadata),
             updateRequest.displayOrder,
             None,
             checkApiKeyUniqueness = false
@@ -195,16 +196,16 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils,
     exec(action.transactionally)
   }
 
-  def updateSpecificationGroup(groupId: Long, shortname: String, fullname: String, description: Option[String]): Unit = {
-    exec(updateSpecificationGroupInternal(groupId, shortname, fullname, description, None, None, checkApiKeyUniqueness = false).transactionally)
+  def updateSpecificationGroup(groupId: Long, shortname: String, fullname: String, description: Option[String], reportMetadata: Option[String]): Unit = {
+    exec(updateSpecificationGroupInternal(groupId, shortname, fullname, description, reportMetadata, None, None, checkApiKeyUniqueness = false).transactionally)
   }
 
-  def updateSpecificationGroupInternal(groupId: Long, shortname: String, fullname: String, description: Option[String], displayOrder: Option[Short], apiKey: Option[String], checkApiKeyUniqueness: Boolean): DBIO[_] = {
+  def updateSpecificationGroupInternal(groupId: Long, shortname: String, fullname: String, description: Option[String], reportMetadata: Option[String], displayOrder: Option[Short], apiKey: Option[String], checkApiKeyUniqueness: Boolean): DBIO[_] = {
     for {
       _ <- PersistenceSchema.specificationGroups
         .filter(_.id === groupId)
-        .map(x => (x.shortname, x.fullname, x.description))
-        .update(shortname, fullname, description)
+        .map(x => (x.shortname, x.fullname, x.description, x.reportMetadata))
+        .update(shortname, fullname, description, reportMetadata)
       _ <- {
         if (displayOrder.isDefined) {
           PersistenceSchema.specificationGroups.filter(_.id === groupId).map(_.displayOrder).update(displayOrder.get)
@@ -245,7 +246,7 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils,
         spec <- PersistenceSchema.specifications.filter(_.id === specificationId).result.head
         // Create copy.
         newSpecId <- PersistenceSchema.insertSpecification += Specifications(
-          0L, spec.shortname, spec.fullname, spec.description,
+          0L, spec.shortname, spec.fullname, spec.description, spec.reportMetadata,
           spec.hidden, CryptoUtil.generateApiKey(), spec.domain, 0, Some(groupId)
         )
         // Copy actors, endpoints and parameters.
@@ -270,7 +271,7 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils,
     for {
       // Actor.
       newActorId <- PersistenceSchema.insertActor += Actors(
-        0L, actor.actorId, actor.name, actor.description,
+        0L, actor.actorId, actor.name, actor.description, actor.reportMetadata,
         actor.default, actor.hidden, actor.displayOrder, CryptoUtil.generateApiKey(), actor.domain
       )
       // Specification link.
@@ -407,11 +408,11 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils,
     } yield idsToReturn)
   }
 
-  def updateSpecificationInternal(specId: Long, sname: String, fname: String, descr: Option[String], hidden:Boolean, apiKey: Option[String], checkApiKeyUniqueness: Boolean, groupId: Option[Long], displayOrder: Option[Short], badges: Option[BadgeInfo], onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
+  def updateSpecificationInternal(specId: Long, sname: String, fname: String, descr: Option[String], reportMetadata: Option[String], hidden:Boolean, apiKey: Option[String], checkApiKeyUniqueness: Boolean, groupId: Option[Long], displayOrder: Option[Short], badges: Option[BadgeInfo], onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
     for {
       _ <- {
-        val q = for {s <- PersistenceSchema.specifications if s.id === specId} yield (s.shortname, s.fullname, s.description, s.hidden, s.group)
-        q.update(sname, fname, descr, hidden, groupId) andThen
+        val q = for {s <- PersistenceSchema.specifications if s.id === specId} yield (s.shortname, s.fullname, s.description, s.reportMetadata, s.hidden, s.group)
+        q.update(sname, fname, descr, reportMetadata, hidden, groupId) andThen
           testResultManager.updateForUpdatedSpecification(specId, sname)
       }
       _ <- {
@@ -470,9 +471,9 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils,
     if (badges.failure.isDefined) repositoryUtils.setSpecificationBadge(specId, badges.failure.get, TestResultStatus.FAILURE.toString, forReport)
   }
 
-  def updateSpecification(specId: Long, sname: String, fname: String, descr: Option[String], hidden:Boolean, groupId: Option[Long], badges: BadgeInfo): Unit = {
+  def updateSpecification(specId: Long, sname: String, fname: String, descr: Option[String], reportMetadata: Option[String], hidden:Boolean, groupId: Option[Long], badges: BadgeInfo): Unit = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
-    val dbAction = updateSpecificationInternal(specId, sname, fname, descr, hidden, None, checkApiKeyUniqueness = false, groupId, None, Some(badges), onSuccessCalls)
+    val dbAction = updateSpecificationInternal(specId, sname, fname, descr, reportMetadata, hidden, None, checkApiKeyUniqueness = false, groupId, None, Some(badges), onSuccessCalls)
     exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
   }
 
@@ -508,6 +509,7 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils,
             updateRequest.shortName.getOrElse(specification.get.shortname),
             updateRequest.fullName.getOrElse(specification.get.fullname),
             updateRequest.description.getOrElse(specification.get.description),
+            updateRequest.reportMetadata.getOrElse(specification.get.reportMetadata),
             updateRequest.hidden.getOrElse(specification.get.hidden),
             None,
             checkApiKeyUniqueness = false,
@@ -688,7 +690,7 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils,
       }
       groupIdToUse <- getGroupIdToUseForApiKey(Some(domainId), input.groupApiKey)
       _ <- {
-        createSpecificationsInternal(Specifications(0L, input.shortName, input.fullName, input.description,
+        createSpecificationsInternal(Specifications(0L, input.shortName, input.fullName, input.description, input.reportMetadata,
           input.hidden.getOrElse(false), apiKeyToUse, domainId, input.displayOrder.getOrElse(0), groupIdToUse
         ), checkApiKeyUniqueness = false, BadgeInfo.noBadges(), onSuccessCalls)
       }

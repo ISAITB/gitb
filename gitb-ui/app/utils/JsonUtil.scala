@@ -816,7 +816,8 @@ object JsonUtil {
       "id" -> domain.id,
       "sname" -> domain.shortname,
       "fname" -> domain.fullname,
-      "description" -> domain.description
+      "description" -> domain.description,
+      "reportMetadata" -> domain.reportMetadata
     )
     if (withApiKeys && Configurations.AUTOMATION_API_ENABLED) {
       json = json.+("apiKey" -> JsString(domain.apiKey))
@@ -890,6 +891,7 @@ object JsonUtil {
       "sname"   -> spec.shortname,
       "fname"   -> spec.fullname,
       "description" -> (if(spec.description.isDefined) spec.description.get else JsNull),
+      "reportMetadata" -> (if(spec.reportMetadata.isDefined) spec.reportMetadata.get else JsNull),
       "hidden" -> spec.hidden,
       "domain"  -> spec.domain,
       "group" -> spec.group,
@@ -939,6 +941,7 @@ object JsonUtil {
       "sname" -> group.shortname,
       "fname" -> group.fullname,
       "description" -> (if (group.description.isDefined) group.description.get else JsNull),
+      "reportMetadata" -> (if (group.reportMetadata.isDefined) group.reportMetadata.get else JsNull),
       "domain" -> group.domain,
       "order" -> group.displayOrder
     )
@@ -979,6 +982,7 @@ object JsonUtil {
       "actorId" -> actor.actorId,
       "name"   -> actor.name,
       "description" -> (if(actor.description.isDefined) actor.description.get else JsNull),
+      "reportMetadata" -> (if(actor.reportMetadata.isDefined) actor.reportMetadata.get else JsNull),
       "default" -> (if(actor.default.isDefined) actor.default.get else JsNull),
       "hidden" -> actor.hidden,
       "displayOrder" -> (if(actor.displayOrder.isDefined) actor.displayOrder.get else JsNull),
@@ -993,6 +997,7 @@ object JsonUtil {
       "actorId" -> actor.actorId,
       "name"   -> actor.name,
       "description" -> (if(actor.description.isDefined) actor.description.get else JsNull),
+      "reportMetadata" -> (if(actor.reportMetadata.isDefined) actor.reportMetadata.get else JsNull),
       "default" -> (if(actor.default.isDefined) actor.default.get else JsNull),
       "hidden" -> actor.hidden,
       "displayOrder" -> (if(actor.displayOrder.isDefined) actor.displayOrder.get else JsNull),
@@ -1160,6 +1165,7 @@ object JsonUtil {
       (json \ "shortName").as[String],
       (json \ "fullName").as[String],
       (json \ "description").asOpt[String],
+      (json \ "reportMetadata").asOpt[String],
       (json \ "displayOrder").asOpt[Short],
       (json \ "apiKey").asOpt[String],
       (json \ "domain").asOpt[String],
@@ -1193,6 +1199,7 @@ object JsonUtil {
       (json \ "shortName").as[String],
       (json \ "fullName").as[String],
       (json \ "description").asOpt[String],
+      (json \ "reportMetadata").asOpt[String],
       (json \ "hidden").asOpt[Boolean],
       (json \ "displayOrder").asOpt[Short],
       (json \ "apiKey").asOpt[String],
@@ -1207,6 +1214,7 @@ object JsonUtil {
       (json \ "identifier").as[String],
       (json \ "name").as[String],
       (json \ "description").asOpt[String],
+      (json \ "reportMetadata").asOpt[String],
       (json \ "default").asOpt[Boolean],
       (json \ "hidden").asOpt[Boolean],
       (json \ "displayOrder").asOpt[Short].flatMap(x => if (x < 0) None else Some(x)),
@@ -1221,6 +1229,7 @@ object JsonUtil {
       (json \ "shortName").as[String],
       (json \ "fullName").as[String],
       (json \ "description").asOpt[String],
+      (json \ "reportMetadata").asOpt[String],
       (json \ "apiKey").asOpt[String]
     )
   }
@@ -1243,6 +1252,7 @@ object JsonUtil {
       (json \ "shortName").asOpt[String],
       (json \ "fullName").asOpt[String],
       (json \ "description").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
+      (json \ "reportMetadata").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
       communityApiKey
     )
   }
@@ -1265,6 +1275,7 @@ object JsonUtil {
       (json \ "shortName").asOpt[String],
       (json \ "fullName").asOpt[String],
       (json \ "description").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
+      (json \ "reportMetadata").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
       (json \ "displayOrder").asOpt[Short],
       communityApiKey
     )
@@ -1296,6 +1307,7 @@ object JsonUtil {
       (json \ "shortName").asOpt[String],
       (json \ "fullName").asOpt[String],
       (json \ "description").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
+      (json \ "reportMetadata").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
       (json \ "hidden").asOpt[Boolean],
       (json \ "displayOrder").asOpt[Short],
       (json \ "group").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
@@ -1309,6 +1321,7 @@ object JsonUtil {
       (json \ "identifier").asOpt[String],
       (json \ "name").asOpt[String],
       (json \ "description").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
+      (json \ "reportMetadata").asOpt[String].map(x => if (StringUtils.isBlank(x)) None else Some(x)),
       (json \ "default").asOpt[Boolean].map(Some(_)),
       (json \ "hidden").asOpt[Boolean],
       (json \ "displayOrder").asOpt[Short].map(x => if (x < 0) None else Some(x)),

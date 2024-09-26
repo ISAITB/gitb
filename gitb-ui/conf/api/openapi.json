@@ -4242,6 +4242,10 @@
             "description": "The domain's description.",
             "type": "string"
           },
+          "reportMetadata": {
+            "description": "The domain's additional metadata for XML reports.",
+            "type": "string"
+          },
           "apiKey": {
             "description": "The API key to set for the domain. If this key is already assigned, a new one will be generated.",
             "type": "string"
@@ -4268,6 +4272,10 @@
           "description": {
             "description": "The domain's description. Skip this if no update should be made or provide as an empty string to remove the current value.",
             "type": "string"
+          },
+          "reportMetadata": {
+            "description": "The domain's additional metadata for XML reports.",
+            "type": "string"
           }
         },
         "additionalProperties": false
@@ -4286,6 +4294,10 @@
           },
           "description": {
             "description": "The group's description.",
+            "type": "string"
+          },
+          "reportMetadata": {
+            "description": "The group's additional metadata for XML reports.",
             "type": "string"
           },
           "displayOrder": {
@@ -4322,6 +4334,10 @@
           "description": {
             "description": "The group's description. Skip this if no update should be made or provide as an empty string to remove the current value.",
             "type": "string"
+          },
+          "reportMetadata": {
+            "description": "The group's additional metadata for XML reports.",
+            "type": "string"
           }
         },
         "additionalProperties": false
@@ -4340,6 +4356,10 @@
           },
           "description": {
             "description": "The specification's description.",
+            "type": "string"
+          },
+          "reportMetadata": {
+            "description": "The specification's additional metadata for XML reports.",
             "type": "string"
           },
           "hidden": {
@@ -4386,6 +4406,10 @@
             "description": "The specification's description. Skip this if no update should be made or provide as an empty string to remove the current value.",
             "type": "string"
           },
+          "reportMetadata": {
+            "description": "The specification's additional metadata for XML reports.",
+            "type": "string"
+          },
           "hidden": {
             "description": "Whether the specification should be hidden. Skip this if no update should be made.",
             "type": "boolean"
@@ -4415,6 +4439,10 @@
           },
           "description": {
             "description": "The actor's description.",
+            "type": "string"
+          },
+          "reportMetadata": {
+            "description": "The actor's additional metadata for XML reports.",
             "type": "string"
           },
           "default": {
@@ -4461,6 +4489,10 @@
           },
           "description": {
             "description": "The actor's description. Skip this if no update should be made or provide as an empty string to remove the current value.",
+            "type": "string"
+          },
+          "reportMetadata": {
+            "description": "The actor's additional metadata for XML reports.",
             "type": "string"
           },
           "default": {

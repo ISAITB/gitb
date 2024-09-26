@@ -4,6 +4,7 @@ case class CreateSpecificationRequest(
                                 shortName: String,
                                 fullName: String,
                                 description: Option[String],
+                                reportMetadata: Option[String],
                                 hidden: Option[Boolean],
                                 displayOrder: Option[Short],
                                 apiKey: Option[String],

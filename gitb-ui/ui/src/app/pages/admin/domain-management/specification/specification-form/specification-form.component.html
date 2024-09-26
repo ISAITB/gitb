@@ -31,6 +31,13 @@
             </div>
             <div app-tooltip class="col-auto" [tbTooltip]="'This is used to describe the '+dataService.labelSpecificationLower()+'. It is visible to users when managing conformance statements.'"></div>
         </div>
+        <div class="row mt-3">
+            <label class="col-3 col-form-label text-end" for="metadata">Report metadata:</label>
+            <div class="col-7">
+                <textarea id="metadata" name="metadata" [(ngModel)]="specification.reportMetadata" class="form-control"></textarea>
+            </div>
+            <div app-tooltip class="col-auto" [tbTooltip]="'This is optional, free-text metadata for the '+dataService.labelSpecificationLower()+' that if specified will be included in XML reports. This is not included in PDF reports nor presented on the user interface.'"></div>
+        </div>
         <div class="row mt-3 pt-1">
             <label class="col-3 col-form-label text-end pt-0" for="hidden">Hidden:</label>
             <div class="col-7">

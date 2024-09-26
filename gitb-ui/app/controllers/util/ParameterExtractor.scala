@@ -469,30 +469,33 @@ object ParameterExtractor {
   }
 
 	def extractDomain(request:Request[AnyContent]):Domain = {
-		val sname:String = ParameterExtractor.requiredBodyParameter(request, Parameters.SHORT_NAME)
-		val fname:String = ParameterExtractor.requiredBodyParameter(request, Parameters.FULL_NAME)
-		val descr:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DESC)
-		Domain(0L, sname, fname, descr, CryptoUtil.generateApiKey())
+		val sname = ParameterExtractor.requiredBodyParameter(request, Parameters.SHORT_NAME)
+		val fname = ParameterExtractor.requiredBodyParameter(request, Parameters.FULL_NAME)
+		val descr = ParameterExtractor.optionalBodyParameter(request, Parameters.DESC)
+    val reportMetadata = ParameterExtractor.optionalBodyParameter(request, Parameters.METADATA)
+		Domain(0L, sname, fname, descr, reportMetadata, CryptoUtil.generateApiKey())
 	}
 
 	def extractSpecification(paramMap:Option[Map[String, Seq[String]]]): Specifications = {
-		val sname:String = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.SHORT_NAME)
-		val fname:String = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.FULL_NAME)
-		val descr:Option[String] = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.DESC)
+		val sname = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.SHORT_NAME)
+		val fname = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.FULL_NAME)
+		val descr = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.DESC)
+    val reportMetadata = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.METADATA)
     val hidden = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.HIDDEN).toBoolean
 		val domain = ParameterExtractor.optionalLongBodyParameter(paramMap, Parameters.DOMAIN_ID)
     val group = ParameterExtractor.optionalLongBodyParameter(paramMap, Parameters.GROUP_ID)
 
-    Specifications(0L, sname, fname, descr, hidden, CryptoUtil.generateApiKey(), domain.getOrElse(0L), 0, group)
+    Specifications(0L, sname, fname, descr, reportMetadata, hidden, CryptoUtil.generateApiKey(), domain.getOrElse(0L), 0, group)
 	}
 
   def extractSpecificationGroup(request: Request[AnyContent]): SpecificationGroups = {
-    val sname: String = ParameterExtractor.requiredBodyParameter(request, Parameters.SHORT_NAME)
-    val fname: String = ParameterExtractor.requiredBodyParameter(request, Parameters.FULL_NAME)
-    val descr: Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DESC)
+    val sname = ParameterExtractor.requiredBodyParameter(request, Parameters.SHORT_NAME)
+    val fname = ParameterExtractor.requiredBodyParameter(request, Parameters.FULL_NAME)
+    val descr = ParameterExtractor.optionalBodyParameter(request, Parameters.DESC)
+    val reportMetadata = ParameterExtractor.optionalBodyParameter(request, Parameters.METADATA)
     val domain = ParameterExtractor.requiredBodyParameter(request, Parameters.DOMAIN_ID).toLong
 
-    SpecificationGroups(0L, sname, fname, descr, 0, CryptoUtil.generateApiKey(), domain)
+    SpecificationGroups(0L, sname, fname, descr, reportMetadata, 0, CryptoUtil.generateApiKey(), domain)
   }
 
   def extractActor(paramMap:Option[Map[String, Seq[String]]]):Actor = {
@@ -503,6 +506,7 @@ object ParameterExtractor {
 		val actorId:String = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.ACTOR_ID)
 		val name:String = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.NAME)
 		val description:Option[String] = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.DESCRIPTION)
+    val reportMetadata:Option[String] = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.METADATA)
     var default:Option[Boolean] = None
     val defaultStr = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.ACTOR_DEFAULT)
     if (defaultStr.isDefined) {
@@ -516,7 +520,7 @@ object ParameterExtractor {
     if (displayOrderStr.isDefined) {
       displayOrder = Some(displayOrderStr.get.toShort)
     }
-    new Actor(id, actorId, name, description, default, hidden, displayOrder, None, None, None, None)
+    new Actor(id, actorId, name, description, reportMetadata, default, hidden, displayOrder, None, None, None, None)
 	}
 
   def extractEndpoint(request:Request[AnyContent]):Endpoints = {

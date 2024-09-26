@@ -252,8 +252,9 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
       val shortName:String = ParameterExtractor.requiredBodyParameter(request, Parameters.SHORT_NAME)
       val fullName:String = ParameterExtractor.requiredBodyParameter(request, Parameters.FULL_NAME)
       val description:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DESC)
+      val reportMetadata:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.METADATA)
 
-      domainManager.updateDomain(domainId, shortName, fullName, description)
+      domainManager.updateDomain(domainId, shortName, fullName, description, reportMetadata)
       ResponseConstructor.constructEmptyResponse
     } else{
       throw NotFoundException(ErrorCodes.SYSTEM_NOT_FOUND, communityLabelManager.getLabel(request, LabelType.Domain) + " with ID '" + domainId + "' not found.")

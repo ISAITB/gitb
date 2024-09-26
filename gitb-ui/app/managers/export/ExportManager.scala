@@ -401,6 +401,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
     exportedDomain.setShortName(domain.shortname)
     exportedDomain.setFullName(domain.fullname)
     exportedDomain.setDescription(domain.description.orNull)
+    exportedDomain.setReportMetadata(domain.reportMetadata.orNull)
     exportedDomain.setApiKey(domain.apiKey)
     // Shared test suites.
     if (exportSettings.testSuites) {
@@ -427,6 +428,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
           exportedGroup.setShortName(group.shortname)
           exportedGroup.setFullName(group.fullname)
           exportedGroup.setDescription(group.description.orNull)
+          exportedGroup.setReportMetadata(group.reportMetadata.orNull)
           exportedGroup.setDisplayOrder(group.displayOrder)
           exportedGroup.setApiKey(group.apiKey)
           exportedDomain.getSpecificationGroups.getGroup.add(exportedGroup)
@@ -443,6 +445,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
           exportedSpecification.setShortName(specification.shortname)
           exportedSpecification.setFullName(specification.fullname)
           exportedSpecification.setDescription(specification.description.orNull)
+          exportedSpecification.setReportMetadata(specification.reportMetadata.orNull)
           exportedSpecification.setApiKey(specification.apiKey)
           exportedSpecification.setHidden(specification.hidden)
           exportedSpecification.setDisplayOrder(specification.displayOrder)
@@ -473,6 +476,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
               exportedActor.setName(actor.name)
               exportedActor.setApiKey(actor.apiKey)
               exportedActor.setDescription(actor.description.orNull)
+              exportedActor.setReportMetadata(actor.reportMetadata.orNull)
               if (actor.default.isDefined) {
                 exportedActor.setDefault(actor.default.get)
               } else {
