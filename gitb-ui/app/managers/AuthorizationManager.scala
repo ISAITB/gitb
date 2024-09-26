@@ -1710,6 +1710,10 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     checkTestBedAdmin(request)
   }
 
+  def canDeleteAnyDomain(request: RequestWithAttributes[_]):Boolean = {
+    checkTestBedAdmin(request)
+  }
+
   def canViewActor(request: RequestWithAttributes[_], actor_id: Long): Boolean = {
     val specId = specificationManager.getSpecificationIdOfActor(actor_id)
     canViewSpecifications(request, Some(List(specId)))

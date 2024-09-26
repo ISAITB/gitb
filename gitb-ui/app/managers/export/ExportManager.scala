@@ -1475,4 +1475,16 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils,
     result
   }
 
+  def exportDeletions(communityKeys: List[String], domainKeys: List[String]): com.gitb.xml.export.Export = {
+    val exportData = new Export
+    exportData.setDeletions(new Deletions)
+    communityKeys.foreach { key =>
+      exportData.getDeletions.getCommunity.add(key)
+    }
+    domainKeys.foreach { key =>
+      exportData.getDeletions.getDomain.add(key)
+    }
+    exportData
+  }
+
 }

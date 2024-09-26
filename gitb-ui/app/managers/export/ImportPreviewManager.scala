@@ -26,6 +26,7 @@ import javax.xml.transform.stream.{StreamResult, StreamSource}
 import javax.xml.xpath.XPathFactory
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
+import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
 class ImportPreviewManager @Inject()(exportManager: ExportManager, systemConfigurationManager: SystemConfigurationManager, communityManager: CommunityManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
@@ -570,6 +571,43 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, systemConfigu
     previewDomainImportInternal(exportedDomain, targetDomainId, canDoAdminOperations, settings, linkedToCommunity = false)._2
   }
 
+  def previewDeletionsImport(exportedDeletions: com.gitb.xml.export.Deletions): List[ImportItem] = {
+    val importItems = new ListBuffer[ImportItem]
+    val results = exec(for {
+      communities <- {
+        if (exportedDeletions.getCommunity.isEmpty) {
+          DBIO.successful(Seq.empty)
+        } else {
+          PersistenceSchema.communities
+            .filter(_.apiKey inSet exportedDeletions.getCommunity.asScala)
+            .map(x => (x.id, x.fullname))
+            .sortBy(_._2.asc)
+            .result
+        }
+      }
+      domains <- {
+        if (exportedDeletions.getDomain.isEmpty) {
+          DBIO.successful(Seq.empty)
+        } else {
+          PersistenceSchema.domains
+            .filter(_.apiKey inSet exportedDeletions.getDomain.asScala)
+            .map(x => (x.id, x.fullname))
+            .sortBy(_._2.asc)
+            .result
+        }
+      }
+    } yield (communities, domains))
+    // Communities
+    results._1.foreach { communityInfo =>
+      importItems += new ImportItem(Some(communityInfo._2), ImportItemType.Community, ImportItemMatch.DBOnly, Some(communityInfo._1.toString), None)
+    }
+    // Domains
+    results._2.foreach { domainInfo =>
+      importItems += new ImportItem(Some(domainInfo._2), ImportItemType.Domain, ImportItemMatch.DBOnly, Some(domainInfo._1.toString), None)
+    }
+    importItems.toList
+  }
+
   def previewCommunityImport(exportedData: com.gitb.xml.export.Export, targetCommunityId: Option[Long], canDoAdminOperations: Boolean, settings: ImportSettings): (ImportItem, Option[ImportItem], Option[ImportItem]) = {
     var importItemCommunity: ImportItem = null
     var targetCommunity: Option[models.Communities] = None
@@ -624,7 +662,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, systemConfigu
     // Process system settings. Do this here to use the loaded reference user emails.
     var importItemSettings: Option[ImportItem] = None
     if (canDoAdminOperations && exportedData.getSettings != null) {
-      // Only a Test Bed administrator can process system settings. We will not show these as options tot he user.
+      // Only a Test Bed administrator can process system settings. We will not show these as options to the user.
       importItemSettings = Some(previewSystemSettingsImportInternal(exportedData.getSettings, referenceUserEmails))
     }
     if (targetCommunity.isDefined) {
@@ -1211,7 +1249,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, systemConfigu
     Thread.currentThread().getContextClassLoader.getResourceAsStream(xsdPath)
   }
 
-  def prepareImportPreview(tempArchiveFile: File, importSettings: ImportSettings, requireDomain: Boolean, requireCommunity: Boolean, requireSettings: Boolean): (Option[(Int, String)], Option[Export], Option[String], Option[Path]) = {
+  def prepareImportPreview(tempArchiveFile: File, importSettings: ImportSettings, requireDomain: Boolean, requireCommunity: Boolean, requireSettings: Boolean, requireDeletions: Boolean): (Option[(Int, String)], Option[Export], Option[String], Option[Path]) = {
     var errorInformation: Option[(Int, String)] = None
     var exportData: Option[Export] = None
     var pendingImportId: Option[String] = None
@@ -1311,6 +1349,12 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, systemConfigu
                     if (exportData.get.getSettings == null) {
                       deleteUploadFolder = true
                       errorInformation = Some(ErrorCodes.INVALID_REQUEST, "The provided archive does not include system settings to process.")
+                    }
+                  }
+                  if (requireDeletions && errorInformation.isEmpty) {
+                    if (exportData.get.getDeletions == null || (exportData.get.getDeletions.getDomain.isEmpty && exportData.get.getDeletions.getCommunity.isEmpty)) {
+                      deleteUploadFolder = true
+                      errorInformation = Some(ErrorCodes.INVALID_REQUEST, "The provided archive does not include any deletions to process.")
                     }
                   }
                 }

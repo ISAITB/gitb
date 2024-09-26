@@ -28,6 +28,8 @@ export interface ExportSettings {
     defaultErrorTemplates: boolean
     systemAdministrators: boolean
     systemConfigurations: boolean
+    communitiesToDelete?: string[]
+    domainsToDelete?: string[]
     encryptionKey?: string
 
 }

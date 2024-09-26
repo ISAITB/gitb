@@ -15,6 +15,8 @@ import { BaseComponent } from '../../base-component.component';
 import { ImportItemState } from './import-item-state';
 import { ImportItemStateGroup } from './import-item-state-group';
 import { RoutingService } from 'src/app/services/routing.service';
+import { ValidationState } from 'src/app/types/validation-state';
+import { ErrorDescription } from 'src/app/types/error-description';
 
 @Component({
   selector: 'app-import',
@@ -45,6 +47,8 @@ export class ImportComponent extends BaseComponent implements OnInit, OnDestroy 
   replaceName = false
   formCollapsed = true
   newTargetAnimated = false
+  formAnimated = false
+  validation = new ValidationState()
   resetEmitter = new EventEmitter<void>()
 
   constructor(
@@ -79,6 +83,8 @@ export class ImportComponent extends BaseComponent implements OnInit, OnDestroy 
   }
 
   resetSettings(full?: boolean) {
+    this.validation.clearErrors()
+    this.formAnimated = false
     this.itemId = 0
     this.importStep1 = true
     this.importStep2 = false
@@ -117,6 +123,7 @@ export class ImportComponent extends BaseComponent implements OnInit, OnDestroy 
     if (this.exportType == 'domain' && this.domains.length == 0 || this.exportType == 'community' && this.communities.length == 0) {
       this.newTarget = true
     }
+    this.formAnimated = true
     setTimeout(() => {
       this.formCollapsed = this.exportType == undefined
     })
@@ -199,11 +206,14 @@ export class ImportComponent extends BaseComponent implements OnInit, OnDestroy 
           this.exportType == 'domain' && (
               (this.newTarget && (!this.replaceName || (this.textProvided(this.settings.shortNameReplacement) && this.textProvided(this.settings.fullNameReplacement)))) 
               || (!this.newTarget && this.domain != undefined)
-            ) || this.exportType == 'community' && (
+          ) || 
+          this.exportType == 'community' && (
               (this.newTarget && (!this.replaceName || (this.textProvided(this.settings.shortNameReplacement) && this.textProvided(this.settings.fullNameReplacement)))) 
               || (!this.newTarget && this.community != undefined)
-            ) || this.exportType == 'settings'
-          )
+          ) || 
+          this.exportType == 'settings' || 
+          this.exportType == 'deletions'
+        )
     )
   }
 
@@ -224,8 +234,9 @@ export class ImportComponent extends BaseComponent implements OnInit, OnDestroy 
   }
 
   import() {
+    this.validation.clearErrors()
     this.pending = true
-    let result: Observable<ImportPreview>
+    let result: Observable<ImportPreview|ErrorDescription>
     if (!this.replaceName) {
       this.settings.shortNameReplacement = undefined
       this.settings.fullNameReplacement = undefined
@@ -234,36 +245,42 @@ export class ImportComponent extends BaseComponent implements OnInit, OnDestroy 
       result = this.conformanceService.uploadDomainExport(this.getTargetDomainId(), this.settings, this.archiveData!)
     } else if (this.exportType == 'community') {
       result = this.communityService.uploadCommunityExport(this.getTargetCommunityId(), this.settings, this.archiveData!)
-    } else {
+    } else if (this.exportType == 'settings') {
       result = this.communityService.uploadSystemSettingsExport(this.settings, this.archiveData!)
+    } else {
+      result = this.conformanceService.uploadDeletionsExport(this.settings, this.archiveData!)
     }
     result.subscribe((data) => {
-      this.importStep1 = false
-      this.importStep2 = true
-      this.setupImportItemLabels()
-      this.pendingImportId = data.pendingImportId
-      let importItemStates: ImportItemStateGroup[]|undefined
-      if (data.importItems != undefined) {
-        importItemStates = []
-        const groupMap:{[key: number]: ImportItemStateGroup} = {}
-        for (let item of data.importItems) {
-          const state = this.toImportItemState(item)
-          if (groupMap[item.type] == undefined) {
-            groupMap[item.type] = {
-              type: item.type,
-              typeLabel: this.typeDescription(item.type),
-              open: false,
-              items: []
+      if (this.isErrorDescription(data)) {
+        this.validation.applyError(data)
+      } else {
+        this.setupImportItemLabels()
+        this.pendingImportId = data.pendingImportId
+        let importItemStates: ImportItemStateGroup[]|undefined
+        if (data.importItems != undefined) {
+          importItemStates = []
+          const groupMap:{[key: number]: ImportItemStateGroup} = {}
+          for (let item of data.importItems) {
+            const state = this.toImportItemState(item)
+            if (groupMap[item.type] == undefined) {
+              groupMap[item.type] = {
+                type: item.type,
+                typeLabel: this.typeDescription(item.type),
+                open: false,
+                items: []
+              }
+              importItemStates.push(groupMap[item.type])
             }
-            importItemStates.push(groupMap[item.type])
+            groupMap[item.type].items.push(state)
+      
+            importItemStates.push()
           }
-          groupMap[item.type].items.push(state)
-    
-          importItemStates.push()
         }
+        this.importItemGroups = importItemStates
+        this.archiveData = undefined
+        this.importStep1 = false
+        this.importStep2 = true
       }
-      this.importItemGroups = importItemStates
-      this.archiveData = undefined
     }).add(() => {
       this.pending = false
     })
@@ -386,8 +403,10 @@ export class ImportComponent extends BaseComponent implements OnInit, OnDestroy 
       result = this.conformanceService.confirmDomainImport(this.getTargetDomainId(), this.pendingImportId!, this.settings!, this.cleanImportItems())
     } else if (this.exportType == 'community') {
       result = this.communityService.confirmCommunityImport(this.getTargetCommunityId(), this.pendingImportId!, this.settings!, this.cleanImportItems())
-    } else {
+    } else if (this.exportType == 'settings') {
       result = this.communityService.confirmSystemSettingsImport(this.pendingImportId!, this.settings!, this.cleanImportItems())
+    } else {
+      result = this.conformanceService.confirmDeletionsImport(this.pendingImportId!, this.settings!, this.cleanImportItems())
     }
     result.subscribe(() => {
       this.resetSettings(true)

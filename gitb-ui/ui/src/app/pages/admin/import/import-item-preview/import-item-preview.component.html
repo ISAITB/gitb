@@ -40,7 +40,7 @@
 <ng-template #itemGroupTemplate>
   <div class="import-item-group-container" [class.no-bottom-margin]="skipGroupDisplay">
     @for (group of tbImportItem.groups; track $index) {
-      <div app-import-item-group-preview [tbImportItemGroup]="group" (processStatusChange)="childProcessStatusUpdated()"></div>
+      <div app-import-item-group-preview [tbImportItemGroup]="group" [importType]="importType" (processStatusChange)="childProcessStatusUpdated()"></div>
     }
   </div>
 </ng-template>

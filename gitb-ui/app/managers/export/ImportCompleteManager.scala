@@ -90,13 +90,105 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
     exec(completeFileSystemFinalisation(ctx, completeSystemSettingsImportInternal(exportedSettings, ctx, canManageSettings, ownUserId, new mutable.HashSet[String]())).transactionally)
   }
 
-  private def toImportItemMaps(importItems: List[ImportItem], itemType: ImportItemType): ImportItemMaps = {
+  def completeDeletionsImport(exportedDeletions: com.gitb.xml.export.Deletions, importSettings: ImportSettings, importItems: List[ImportItem]): Unit = {
+    if (exportedDeletions != null && (!exportedDeletions.getDomain.isEmpty || !exportedDeletions.getCommunity.isEmpty)) {
+      val ctx = ImportContext(
+        importSettings,
+        toImportItemMaps(importItems, List(ImportItemType.Domain, ImportItemType.Community)),
+        ExistingIds.init(),
+        ImportTargets.fromImportItems(importItems),
+        mutable.Map[ImportItemType, mutable.Map[String, String]](),
+        mutable.Map[Long, mutable.Map[String, Long]](),
+        mutable.Map[Long, (Option[List[TestCases]], Map[String, (Long, Boolean)])](),
+        mutable.ListBuffer[() => _](),
+        mutable.ListBuffer[() => _]()
+      )
+      // Load existing data
+      if (ctx.importTargets.hasDomain) {
+        exec(PersistenceSchema.domains.map(_.id).result).foreach { domainId =>
+          ctx.existingIds.map(ImportItemType.Domain) += domainId.toString
+        }
+      }
+      if (ctx.importTargets.hasCommunity) {
+        exec(PersistenceSchema.communities.map(_.id).result).foreach { communityId =>
+          ctx.existingIds.map(ImportItemType.Community) += communityId.toString
+        }
+      }
+      val dbAction = for {
+        // Domains
+        _ <- {
+          val dbActions = ListBuffer[DBIO[_]]()
+          if (exportedDeletions.getDomain != null) {
+            exportedDeletions.getDomain.asScala.foreach { domain =>
+              dbActions += processFromArchive(ImportItemType.Domain, domain, domain, ctx,
+                ImportCallbacks.set(
+                  (_: String, _: ImportItem) => DBIO.successful(()),
+                  (_: String, _: String, _: ImportItem) => DBIO.successful(())
+                )
+              )
+            }
+          }
+          toDBIO(dbActions)
+        }
+        _ <- {
+          processRemaining(ImportItemType.Domain, ctx,
+            (targetKey: String, _: ImportItem) => {
+              domainManager.deleteDomainInternal(targetKey.toLong, ctx.onSuccessCalls)
+            }
+          )
+        }
+        // Communities
+        _ <- {
+          val dbActions = ListBuffer[DBIO[_]]()
+          if (exportedDeletions.getCommunity != null) {
+            exportedDeletions.getCommunity.asScala.foreach { community =>
+              dbActions += processFromArchive(ImportItemType.Community, community, community, ctx,
+                ImportCallbacks.set(
+                  (_: String, _: ImportItem) => DBIO.successful(()),
+                  (_: String, _: String, _: ImportItem) => DBIO.successful(())
+                )
+              )
+            }
+          }
+          toDBIO(dbActions)
+        }
+        _ <- {
+          processRemaining(ImportItemType.Community, ctx,
+            (targetKey: String, _: ImportItem) => {
+              communityManager.deleteCommunityInternal(targetKey.toLong, ctx.onSuccessCalls)
+            }
+          )
+        }
+      } yield ()
+      exec(completeFileSystemFinalisation(ctx, dbAction).transactionally)
+    }
+  }
+
+  private def toImportItemMaps(importItems: List[ImportItem], itemTypes: List[ImportItemType]): ImportItemMaps = {
+    if (itemTypes.isEmpty) {
+      ImportItemMaps.empty()
+    } else if (itemTypes.size == 1) {
+      toImportItemMaps(importItems, itemType = itemTypes.head)
+    } else {
+      val maps = ImportItemMaps.empty()
+      itemTypes.foreach { itemType =>
+        maps.merge(toImportItemMaps(importItems, itemType = itemTypes.head, failIfNotFound = false))
+      }
+      maps
+    }
+  }
+
+  private def toImportItemMaps(importItems: List[ImportItem], itemType: ImportItemType, failIfNotFound: Boolean = true): ImportItemMaps = {
     importItems.foreach { item =>
       if (item.itemType == itemType) {
         return ImportItemMaps(item.toSourceMap(), item.toTargetMap())
       }
     }
-    throw new IllegalArgumentException("Expected data from import items not found ["+itemType.id+"].")
+    if (failIfNotFound) {
+      throw new IllegalArgumentException("Expected data from import items not found ["+itemType.id+"].")
+    } else {
+      ImportItemMaps.empty()
+    }
   }
 
   private def mergeImportItemMaps(existingMap: ImportItemMaps, newMap: ImportItemMaps): Unit = {
@@ -2719,7 +2811,7 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
       logger.info("Processing data archive ["+archive.getName+"]")
       val importSettings = new ImportSettings()
       importSettings.encryptionKey = Some(archiveKey)
-      val preparationResult = importPreviewManager.prepareImportPreview(archive, importSettings, requireDomain = false, requireCommunity = false, requireSettings = false)
+      val preparationResult = importPreviewManager.prepareImportPreview(archive, importSettings, requireDomain = false, requireCommunity = false, requireSettings = false, requireDeletions = false)
       try {
         if (preparationResult._1.isDefined) {
           errorMessage = Some(preparationResult._1.get._2)
@@ -2776,6 +2868,18 @@ class ImportCompleteManager @Inject()(systemConfigurationManager: SystemConfigur
             // Step 2 - Import.
             importSettings.dataFilePath = Some(importPreviewManager.getPendingImportFile(preparationResult._4.get, preparationResult._3.get).get.toPath)
             completeSystemSettingsImport(exportedSettings, importSettings, importItems, canManageSettings = true, None)
+            // Avoid processing this archive again.
+            processingComplete = true
+          } else if (preparationResult._2.get.getDeletions != null) {
+            // Deletions import.
+            val exportedDeletions = preparationResult._2.get.getDeletions
+            // Step 1 - prepare import.
+            val importItems = importPreviewManager.previewDeletionsImport(exportedDeletions)
+            // Set all import items to proceed.
+            approveImportItems(importItems)
+            // Step 2 - Import.
+            importSettings.dataFilePath = Some(importPreviewManager.getPendingImportFile(preparationResult._4.get, preparationResult._3.get).get.toPath)
+            completeDeletionsImport(exportedDeletions, importSettings, importItems)
             // Avoid processing this archive again.
             processingComplete = true
           } else {

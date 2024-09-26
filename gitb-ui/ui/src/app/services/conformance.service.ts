@@ -49,10 +49,13 @@ export class ConformanceService {
     private dataService: DataService
   ) { }
 
-  getDomains(ids?: number[]) {
+  getDomains(ids?: number[], withApiKeys?: boolean) {
     let params:any = {}
     if (ids !== undefined && ids.length > 0) {
       params['ids'] = ids.join(',')
+    }
+    if (withApiKeys != undefined) {
+      params['keys'] = withApiKeys == true
     }
     return this.restService.get<Domain[]>({
       path: ROUTES.controllers.ConformanceService.getDomains().url,
@@ -764,6 +767,17 @@ export class ConformanceService {
     })
   }
 
+  exportDeletions(settings: ExportSettings) {
+    return this.restService.post<ArrayBuffer>({
+      path: ROUTES.controllers.RepositoryService.exportDeletions().url,
+      data: {
+        values: JSON.stringify(settings)
+      },
+      authenticate: true,
+      arrayBuffer: true
+    })
+  }
+
   uploadDomainExport(domainId: number, settings: ImportSettings, archiveData: FileData) {
     let pathToUse
     if (this.dataService.isSystemAdmin) {
@@ -771,8 +785,19 @@ export class ConformanceService {
     } else {
       pathToUse = ROUTES.controllers.RepositoryService.uploadDomainExportCommunityAdmin(domainId).url
     }
-    return this.restService.post<ImportPreview>({
+    return this.restService.post<ImportPreview|ErrorDescription>({
       path: pathToUse,
+      files: [{param: 'file', data: archiveData.file!}],
+      data: {
+        settings: JSON.stringify(settings)
+      },
+      authenticate: true
+    })
+  }
+
+  uploadDeletionsExport(settings: ImportSettings, archiveData: FileData) {
+    return this.restService.post<ImportPreview|ErrorDescription>({
+      path: ROUTES.controllers.RepositoryService.uploadDeletionsExport().url,
       files: [{param: 'file', data: archiveData.file!}],
       data: {
         settings: JSON.stringify(settings)
@@ -808,6 +833,18 @@ export class ConformanceService {
       authenticate: true
     })
   }
+
+  confirmDeletionsImport(pendingImportId: string, settings: ImportSettings, items: ImportItem[]) {
+    return this.restService.post<void>({
+      path: ROUTES.controllers.RepositoryService.confirmDeletionsImport().url,
+      data: {
+        settings: JSON.stringify(settings),
+        pending_id: pendingImportId,
+        items: JSON.stringify(items)
+      },
+      authenticate: true
+    })
+  }  
 
   getStatementParameterValues(actorId: number, systemId: number) {
     return this.restService.get<EndpointParameter[]>({

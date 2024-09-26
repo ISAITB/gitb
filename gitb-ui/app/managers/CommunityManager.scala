@@ -513,7 +513,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils,
     exec(dbActionFinalisation(Some(onSuccessCalls), None, action).transactionally)
   }
 
-  private def deleteCommunityInternal(communityId: Long, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
+  def deleteCommunityInternal(communityId: Long, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
     conformanceManager.deleteConformanceSnapshotsOfCommunity(communityId, onSuccessCalls) andThen
       organizationManager.deleteOrganizationByCommunity(communityId, onSuccessCalls) andThen
       landingPageManager.deleteLandingPageByCommunity(communityId) andThen

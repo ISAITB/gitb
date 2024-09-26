@@ -21,7 +21,7 @@
     <div [collapse]="!group.open" [isAnimated]="true" (collapsed)="childrenCollapsed()" (expands)="childrenExpanding()">
         <div class="import-item-group-items">
           @for (groupItem of group.items; track $index) {
-            <div app-import-item-preview class="import-item-group-item" [tbImportItem]="groupItem" (processStatusChange)="childProcessStatusUpdated()"></div>
+            <div app-import-item-preview class="import-item-group-item" [tbImportItem]="groupItem" [importType]="importType" (processStatusChange)="childProcessStatusUpdated()"></div>
           }
         </div>
     </div>

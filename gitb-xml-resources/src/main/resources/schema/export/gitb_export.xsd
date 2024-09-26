@@ -7,6 +7,7 @@
             <xsd:element name="domains" type="Domains" minOccurs="0"/>
             <xsd:element name="communities" type="Communities" minOccurs="0"/>
             <xsd:element name="settings" type="Settings" minOccurs="0"/>
+            <xsd:element name="deletions" type="Deletions" minOccurs="0"/>
         </xsd:sequence>
         <xsd:attribute name="version" type="xsd:string" use="required"/>
         <xsd:attribute name="timestamp" type="xsd:dateTime" use="required"/>
@@ -850,5 +851,11 @@
                 <xsd:attribute name="name" type="xsd:string" use="required"/>
             </xsd:extension>
         </xsd:complexContent>
+    </xsd:complexType>
+    <xsd:complexType name="Deletions">
+        <xsd:sequence>
+            <xsd:element name="community" type="xsd:string" minOccurs="0" maxOccurs="unbounded"/>
+            <xsd:element name="domain" type="xsd:string" minOccurs="0" maxOccurs="unbounded"/>
+        </xsd:sequence>
     </xsd:complexType>
 </xsd:schema>

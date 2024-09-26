@@ -31,6 +31,8 @@ class ExportSettings {
   var defaultErrorTemplates: Boolean = false
   var systemConfigurations: Boolean = false
   var encryptionKey: Option[String] = None
+  var communitiesToDelete: Option[List[String]] = None
+  var domainsToDelete: Option[List[String]] = None
 
   def hasSystemSettings(): Boolean = {
     themes || systemAdministrators || defaultLandingPages || defaultLegalNotices || defaultErrorTemplates || systemConfigurations
@@ -68,6 +70,8 @@ class ExportSettings {
       copy.defaultErrorTemplates = false
       copy.systemConfigurations = false
       copy.encryptionKey = this.encryptionKey
+      copy.communitiesToDelete = this.communitiesToDelete
+      copy.domainsToDelete = this.domainsToDelete
       copy
     } else {
       this

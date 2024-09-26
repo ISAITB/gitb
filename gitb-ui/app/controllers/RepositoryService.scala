@@ -18,7 +18,7 @@ import org.apache.commons.codec.net.URLCodec
 import org.apache.commons.io.FileUtils
 import org.apache.commons.lang3.StringUtils
 import org.slf4j.LoggerFactory
-import play.api.mvc._
+import play.api.mvc.{Action, _}
 import utils._
 
 import java.io._
@@ -1016,6 +1016,13 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext,
     })
   }
 
+  def exportDeletions(): Action[AnyContent] = authorizedAction { request =>
+    authorizationManager.canDeleteAnyDomain(request)
+    exportInternal(request, includeSettings = false, (exportSettings: ExportSettings) => {
+      exportManager.exportDeletions(exportSettings.communitiesToDelete.getOrElse(List.empty[String]), exportSettings.domainsToDelete.getOrElse(List.empty[String]))
+    })
+  }
+
   private def exportInternal(request: Request[AnyContent], includeSettings: Boolean, fnExportData: ExportSettings => Export) = {
     // Get export settings to apply.
     val exportSettings = JsonUtil.parseJsExportSettings(requiredBodyParameter(request, Parameters.VALUES), includeSettings)
@@ -1049,16 +1056,16 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext,
     }
   }
 
-  private def processImport(request: Request[AnyContent], requireDomain: Boolean, requireCommunity: Boolean, requireSettings: Boolean, fnImportData: (Export, ImportSettings) => List[ImportItem]) = {
+  private def processImport(request: Request[AnyContent], requireDomain: Boolean, requireCommunity: Boolean, requireSettings: Boolean, requireDeletions: Boolean, fnImportData: (Export, ImportSettings) => List[ImportItem]) = {
     // Get import settings.
     val paramMap = ParameterExtractor.paramMap(request)
     val files = ParameterExtractor.extractFiles(request)
     val importSettings = JsonUtil.parseJsImportSettings(ParameterExtractor.requiredBodyParameter(paramMap, Parameters.SETTINGS))
     if (files.contains(Parameters.FILE)) {
-      val result = importPreviewManager.prepareImportPreview(files(Parameters.FILE).file, importSettings, requireDomain, requireCommunity, requireSettings)
+      val result = importPreviewManager.prepareImportPreview(files(Parameters.FILE).file, importSettings, requireDomain, requireCommunity, requireSettings, requireDeletions)
       if (result._1.isDefined) {
         // We have an error.
-        ResponseConstructor.constructBadRequestResponse(result._1.get._1, result._1.get._2)
+        ResponseConstructor.constructErrorResponse(result._1.get._1, result._1.get._2, Some("archive"))
       } else {
         // All ok.
         try {
@@ -1083,9 +1090,20 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext,
   def uploadSystemSettingsExport(): Action[AnyContent] = authorizedAction { request =>
     try {
       authorizationManager.canManageSystemSettings(request)
-      processImport(request, requireDomain = false, requireCommunity = false, requireSettings = true, (exportData: Export, settings: ImportSettings) => {
+      processImport(request, requireDomain = false, requireCommunity = false, requireSettings = true, requireDeletions = false, (exportData: Export, settings: ImportSettings) => {
         val result = importPreviewManager.previewSystemSettingsImport(exportData.getSettings)
         List(result)
+      })
+    } finally {
+      if (request.body.asMultipartFormData.isDefined) request.body.asMultipartFormData.get.files.foreach { file => FileUtils.deleteQuietly(file.ref) }
+    }
+  }
+
+  def uploadDeletionsExport(): Action[AnyContent] = authorizedAction { request =>
+    try {
+      authorizationManager.canDeleteAnyDomain(request)
+      processImport(request, requireDomain = false, requireCommunity = false, requireSettings = false, requireDeletions = true, (exportData: Export, settings: ImportSettings) => {
+        importPreviewManager.previewDeletionsImport(exportData.getDeletions)
       })
     } finally {
       if (request.body.asMultipartFormData.isDefined) request.body.asMultipartFormData.get.files.foreach { file => FileUtils.deleteQuietly(file.ref) }
@@ -1112,7 +1130,7 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext,
 
   private def uploadCommunityExportInternal(request: Request[AnyContent], communityId: Long, canDoAdminOperations: Boolean) = {
     try {
-      processImport(request, requireDomain = false, requireCommunity = true, requireSettings = false, (exportData: Export, settings: ImportSettings) => {
+      processImport(request, requireDomain = false, requireCommunity = true, requireSettings = false, requireDeletions = false, (exportData: Export, settings: ImportSettings) => {
         val result = importPreviewManager.previewCommunityImport(exportData, emptyForNegativeId(communityId), canDoAdminOperations, settings)
         val items = new ListBuffer[ImportItem]()
         // First add domain.
@@ -1144,7 +1162,7 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext,
 
   private def uploadDomainExportInternal(request: Request[AnyContent], domainId: Long, canDoAdminOperations: Boolean): Result = {
     try {
-      processImport(request, requireDomain = true, requireCommunity = false, requireSettings = false, (exportData: Export, settings: ImportSettings) => {
+      processImport(request, requireDomain = true, requireCommunity = false, requireSettings = false, requireDeletions = false, (exportData: Export, settings: ImportSettings) => {
         val result = importPreviewManager.previewDomainImport(exportData.getDomains.getDomain.get(0), emptyForNegativeId(domainId), canDoAdminOperations, settings)
         List(result)
       })
@@ -1234,6 +1252,13 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext,
     authorizationManager.canManageSystemSettings(request)
     confirmImportInternal(request, (export: Export, importSettings: ImportSettings, importItems: List[ImportItem]) => {
       importCompleteManager.completeSystemSettingsImport(export.getSettings, importSettings, importItems, canManageSettings = true, Some(ParameterExtractor.extractUserId(request)))
+    })
+  }
+
+  def confirmDeletionsImport: Action[AnyContent] = authorizedAction { request =>
+    authorizationManager.canDeleteAnyDomain(request)
+    confirmImportInternal(request, (export: Export, importSettings: ImportSettings, importItems: List[ImportItem]) => {
+      importCompleteManager.completeDeletionsImport(export.getDeletions, importSettings, importItems)
     })
   }
 

@@ -12,6 +12,7 @@ import { ImportItemStateGroup } from '../import-item-state-group';
 export class ImportItemGroupPreviewComponent implements OnInit {
 
   @Input() tbImportItemGroup!: ImportItemStateGroup
+  @Input() importType!: string
   @Output() processStatusChange = new EventEmitter<void>()
   Constants = Constants
   group!: ImportItemStateGroup

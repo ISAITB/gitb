@@ -1637,6 +1637,14 @@ object JsonUtil {
     list.toList
   }
 
+  def parseStringArray(json: Option[JsValue]): Option[List[String]] = {
+    json.map(x => {
+      x.as[JsArray].value.iterator.map { value =>
+        value.as[JsString].value
+      }.toList
+    })
+  }
+
   def parseStringArray(json: JsValue): List[String] = {
     json.as[JsArray].value.iterator.map { value =>
       value.as[JsString].value
@@ -1712,6 +1720,9 @@ object JsonUtil {
       settings.defaultErrorTemplates = false
       settings.systemConfigurations = false
     }
+    // Deletions
+    settings.communitiesToDelete = parseStringArray((jsonConfig \ "communitiesToDelete").asOpt[JsArray])
+    settings.domainsToDelete = parseStringArray((jsonConfig \ "domainsToDelete").asOpt[JsArray])
     settings.encryptionKey = (jsonConfig \ "encryptionKey").asOpt[String]
     settings
   }

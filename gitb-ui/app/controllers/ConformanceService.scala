@@ -35,7 +35,8 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
     val ids = ParameterExtractor.extractLongIdsQueryParameter(request)
     authorizationManager.canViewDomains(request, ids)
     val result = domainManager.getDomains(ids)
-    val withApiKeys = ids.exists(_.nonEmpty)
+    val withApiKeys = ParameterExtractor.optionalBooleanQueryParameter(request, Parameters.KEYS)
+      .getOrElse(ids.exists(_.nonEmpty))
     val json = JsonUtil.jsDomains(result, withApiKeys).toString()
     ResponseConstructor.constructJsonResponse(json)
   }

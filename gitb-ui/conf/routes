@@ -172,8 +172,11 @@ POST    /api/dashboard/finished                 @controllers.ReportService.getFi
 GET     /api/system/configs                     @controllers.SystemConfigurationService.getConfigurationValues()
 POST    /api/system/configs                     @controllers.SystemConfigurationService.updateConfigurationValue()
 POST    /api/system/export                      @controllers.RepositoryService.exportSystemSettings()
+POST    /api/system/exportDeletions             @controllers.RepositoryService.exportDeletions()
 POST    /api/system/import/preview              @controllers.RepositoryService.uploadSystemSettingsExport()
+POST    /api/system/importDeletions/preview     @controllers.RepositoryService.uploadDeletionsExport()
 POST    /api/system/import/confirm              @controllers.RepositoryService.confirmSystemSettingsImport()
+POST    /api/system/importDeletions/confirm     @controllers.RepositoryService.confirmDeletionsImport()
 POST    /api/system/import/cancel               @controllers.RepositoryService.cancelSystemSettingsImport()
 
 POST    /api/dashboard/suites/search            @controllers.TestSuiteService.searchTestSuites()
