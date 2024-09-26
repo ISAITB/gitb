@@ -382,7 +382,7 @@ export class SessionDashboardComponent implements OnInit {
     if (!testResult.obsolete) {
       testResult.exportPending = true
       this.onReportExport(testResult, 'application/pdf', 'report.pdf')
-      .subscribe(() => {
+      .subscribe(() => {}).add(() => {
         testResult.exportPending = false
       })
     }
@@ -392,7 +392,7 @@ export class SessionDashboardComponent implements OnInit {
     if (!testResult.obsolete) {
       testResult.actionPending = true
       this.onReportExport(testResult, 'application/xml', 'report.xml')
-      .subscribe(() => {
+      .subscribe(() => {}).add(() => {
         testResult.actionPending = false
       })
     }
