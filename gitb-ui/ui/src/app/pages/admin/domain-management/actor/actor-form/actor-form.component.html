@@ -1,28 +1,28 @@
 <div class="row">
     <div class="col-10 offset-1">
-        <div class="row mb-3">
+        <div class="row">
             <label class="col-3 col-form-label text-end" for="id">* ID:</label>
             <div class="col-7"><input id="id" name="id" [(ngModel)]="actor.actorId" class="form-control" type="text"></div>
             <div app-tooltip class="col-auto" [tbTooltip]="'This identifier is used within test suites and test cases to refer to the '+dataService.labelActorLower()+'.'"></div>
         </div>
-        <div class="row mb-3">
+        <div class="row mt-3">
             <label class="col-3 col-form-label text-end" for="name">* Name:</label>
             <div class="col-7"><input id="name" name="name" [(ngModel)]="actor.name" class="form-control" type="text"></div>
             <div app-tooltip class="col-auto" [tbTooltip]="'This is used to refer to the '+dataService.labelActorLower()+' in all screens and reports.'"></div>
         </div>
-        <div class="row mb-3">
+        <div class="row mt-3">
             <label class="col-3 col-form-label text-end" for="description">Description:</label>
             <div class="col-7">
                 <textarea id="description" name="description" [(ngModel)]="actor.description" class="form-control"></textarea>
             </div>
             <div app-tooltip class="col-auto" [tbTooltip]="'This description is presented to users to explain the purpose of the '+dataService.labelActorLower()+' when managing conformance statements.'"></div>
         </div>
-        <div class="row mb-3">
+        <div class="row mt-3">
             <label class="col-3 col-form-label text-end" for="displayOrder">Display order:</label>
             <div class="col-1"><input id="displayOrder" name="displayOrder" [(ngModel)]="actor.displayOrder" class="form-control" type="number"></div>
             <div app-tooltip class="col-auto" [tbTooltip]="'A number to be considered in relation to other '+dataService.labelActorsLower()+' that is used to determine the display positioning in test execution diagrams. If unspecified a default positioning is applied based on the test case\'s steps.'"></div>
         </div>
-        <div class="row mb-3 pt-1">
+        <div class="row mt-3 pt-1">
             <label class="col-3 col-form-label text-end pt-0" for="default">Specification default:</label>
             <div class="col-7">
                 <div class="form-check">
@@ -31,7 +31,7 @@
                 </div>
             </div>
         </div>
-        <div class="row mb-3 pt-1">
+        <div class="row mt-3 pt-1">
             <label class="col-3 col-form-label text-end pt-0" for="hidden">Hidden:</label>
             <div class="col-7">
                 <div class="form-check">
@@ -41,7 +41,7 @@
             </div>
         </div>
         @if (dataService.configuration.automationApiEnabled && actor.id != undefined) {
-            <div class="row mb-3">
+            <div class="row mt-3">
                 <label class="col-3 col-form-label text-end" for="hidden">API key:</label>
                 <div class="col-7">
                     <app-api-key-text idName="apiKey" name="apiKey" [key]="actor.apiKey!"></app-api-key-text>
