@@ -25,6 +25,7 @@ import javax.xml.xpath.XPathVariableResolver;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.regex.MatchResult;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -71,7 +72,7 @@ public class VariableResolver implements XPathVariableResolver{
         try {
             documentBuilder = XMLUtils.getSecureDocumentBuilderFactory().newDocumentBuilder();
         } catch (ParserConfigurationException e) {
-            e.printStackTrace();
+            logger.error("Error configuring parser", e);
         }
     }
 
@@ -132,8 +133,8 @@ public class VariableResolver implements XPathVariableResolver{
         return Pair.of(matcher.group(1), variableExpression.substring(matcher.end(1)));
     }
 
-    public DataType resolveVariable(String variableExpression, boolean tolerateMissing) {
-        DataType result = null;
+    public Optional<DataType> resolveVariable(String variableExpression, boolean tolerateMissing) {
+        Optional<DataType> result = Optional.empty();
         var variableName = extractVariableNameFromExpression(variableExpression);
         try {
             String containerVariableName = variableName.getLeft();
@@ -143,17 +144,17 @@ public class VariableResolver implements XPathVariableResolver{
             if (scopeVariable == null || !scopeVariable.isDefined()) {
                 // No variable could be matched.
                 if (!tolerateMissing && scope.getContext().getCurrentState() != TestCaseContext.TestCaseStateEnum.OUTPUT) {
-                    logger.warn(MarkerFactory.getDetachedMarker(scope.getContext().getSessionId()), "No variable could be located in the session context for expression [" + variableExpression + "]");
+                    logger.warn(MarkerFactory.getDetachedMarker(scope.getContext().getSessionId()), "No variable could be located in the session context for expression [{}]", variableExpression);
                 }
             } else {
                 DataType containerVariable = scopeVariable.getValue();
                 result = resolveVariable(containerVariable, indexOrKeyExpression, tolerateMissing);
             }
         } catch (Exception e) {
-            logger.warn(MarkerFactory.getDetachedMarker(scope.getContext().getSessionId()), "An exception occurred when resolving variable [" + variableExpression + "]", e);
+            logger.warn(MarkerFactory.getDetachedMarker(scope.getContext().getSessionId()), "An exception occurred when resolving variable [{}]", variableExpression, e);
         }
-        if (result == null && !tolerateMissing) {
-            result = new StringType();
+        if (result.isEmpty() && !tolerateMissing) {
+            result = Optional.of(new StringType());
         }
         return result;
     }
@@ -165,7 +166,7 @@ public class VariableResolver implements XPathVariableResolver{
 	 * @return
 	 */
 	public DataType resolveVariable(String variableExpression) {
-	    return resolveVariable(variableExpression, false);
+	    return resolveVariable(variableExpression, false).orElseThrow();
 	}
 
     public StringType resolveVariableAsString(String variableExpression) {
@@ -258,7 +259,7 @@ public class VariableResolver implements XPathVariableResolver{
      * @param keyOrIndexExpressions - The remaining expression (optional) for accessing the items in a container
      * @param tolerateMissing Whether the variable we are looking for can be missing.
      */
-    private DataType resolveVariable(DataType containerValue, String keyOrIndexExpressions, boolean tolerateMissing){
+    private Optional<DataType> resolveVariable(DataType containerValue, String keyOrIndexExpressions, boolean tolerateMissing){
         DataType tempValue = containerValue;
 	    String expression = keyOrIndexExpressions;
         //If we are accessing an item in a container type
@@ -275,11 +276,11 @@ public class VariableResolver implements XPathVariableResolver{
 		        tempValue = resolveItemInContainer(tempValue, indexOrKey);
 		        expression = matcher.group(3);
                 if (tempValue == null && tolerateMissing) {
-                    return null;
+                    return Optional.empty();
                 }
 	        } while (!expression.isEmpty());
         }
-        return tempValue;
+        return Optional.ofNullable(tempValue);
     }
 
     /**

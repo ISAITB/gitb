@@ -1,6 +1,7 @@
 package com.gitb.engine.actors.processors;
 
 import com.gitb.engine.actors.ActorSystem;
+import com.gitb.engine.processing.handlers.AbstractProcessingHandler;
 import org.apache.pekko.actor.ActorRef;
 import org.apache.pekko.dispatch.Futures;
 import org.apache.pekko.dispatch.OnFailure;
@@ -99,6 +100,9 @@ public class ProcessStepProcessorActor extends AbstractProcessingStepProcessorAc
                 operation = step.getOperation();
             } else if (step.getOperationAttribute() != null) {
                 operation = step.getOperationAttribute();
+            }
+            if (handler instanceof AbstractProcessingHandler builtInHandler) {
+                builtInHandler.setScope(scope);
             }
             ProcessingReport report = handler.process(context.getSession(), step.getId(), operation, getData(handler, operation));
             Promise<TestStepReportType> taskPromise = Futures.promise();

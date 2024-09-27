@@ -42,7 +42,7 @@ public class AssignProcessor implements IProcessor {
 		    String containerVariableExpression = matcher.group(1);
 		    //The remaining part
 		    String keyExpression = matcher.group(2);
-			DataType lValue = variableResolver.resolveVariable(containerVariableExpression, true);
+			DataType lValue = variableResolver.resolveVariable(containerVariableExpression, true).orElse(null);
 			if (lValue == null) {
 				// New variable
 				lValue = createIntermediateMaps(variableResolver, containerVariableExpression);
@@ -97,7 +97,7 @@ public class AssignProcessor implements IProcessor {
 	    } else {
 	    	// Regular assignment.
 			String expectedReturnType = assign.getType();
-			DataType lValue = variableResolver.resolveVariable(toExpression, true);
+			DataType lValue = variableResolver.resolveVariable(toExpression, true).orElse(null);
 			if (lValue != null) {
 				// Existing variable
 				if (lValue instanceof ListType && assign.isAppend()) {
@@ -176,7 +176,7 @@ public class AssignProcessor implements IProcessor {
 		DataType resultingMap = null;
 		expression = addExpressionStart(expression);
 		if (VariableResolver.isVariableReference(expression)) {
-			resultingMap = variableResolver.resolveVariable(expression, true);
+			resultingMap = variableResolver.resolveVariable(expression, true).orElse(null);
 		}
 		if (resultingMap == null) {
 			expression = stripExpressionStart(expression);
