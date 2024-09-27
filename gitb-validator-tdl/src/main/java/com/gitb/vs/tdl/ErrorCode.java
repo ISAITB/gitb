@@ -139,7 +139,8 @@ public enum ErrorCode {
     MISSING_PROCESSING_OPERATION(                       "TDL-118", "%s [%s] in step %s does not specify which operation to perform. Handler %s defines multiple operations (%s), so the step may fail or at least may not be deterministic.", WARNING, true),
     DUPLICATE_TEST_CASE_REFERENCE(                      "TDL-119", "The test suite references the same test case multiple times [%s].", ERROR),
     DEPRECATED_HANDLER(                                 "TDL-120", "%s [%s] in step %s refers to deprecated handler %s.", WARNING, true),
-    DEPRECATED_HANDLER_WITH_REPLACEMENT(                "TDL-121", "%s [%s] in step %s refers to deprecated handler %s. Consider using the %s handler instead.", WARNING, true)
+    DEPRECATED_HANDLER_WITH_REPLACEMENT(                "TDL-121", "%s [%s] in step %s refers to deprecated handler %s. Consider using the %s handler instead.", WARNING, true),
+    SCRIPTLET_EMPTY_AND_DEFAULT_INPUTS(                 "TDL-122", "Scriptlet [%s] defines an input parameter [%s] that is set as empty by default but is also provided with default values. The provided default values will be ignored.", WARNING, false)
     ;
 
     private final String code;

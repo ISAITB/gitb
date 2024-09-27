@@ -16,6 +16,11 @@ public class CheckDataTypes extends AbstractTestCaseObserver {
     }
 
     @Override
+    public void handleInputParameter(InputParameter param) {
+        handleVariable(param);
+    }
+
+    @Override
     public void handleVariable(Variable var) {
         checkDataType(var.getType());
         if (var.getValue() != null && var.getType() != null) {

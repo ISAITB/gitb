@@ -120,6 +120,11 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
     }
 
     @Override
+    public void handleInputParameter(InputParameter param) {
+        handleVariable(param);
+    }
+
+    @Override
     public void handleVariable(Variable var) {
         recordVariable(var.getName(), var.getType());
     }

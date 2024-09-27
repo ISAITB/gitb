@@ -99,7 +99,7 @@ public class CheckScriptletReferences extends AbstractTestCaseObserver {
                             }
                             // Remove from the expected inputs the ones for which we have default values defined by the scriptlet.
                             if (resolvedScriptlet.getParams() != null) {
-                                resolvedScriptlet.getParams().getVar().stream().filter(variable -> !variable.getValue().isEmpty()).forEach(variableWithDefaultValue -> requiredInputs.remove(variableWithDefaultValue.getName()));
+                                resolvedScriptlet.getParams().getVar().stream().filter(variable -> !variable.getValue().isEmpty() || variable.isDefaultEmpty()).forEach(variableWithDefaultValue -> requiredInputs.remove(variableWithDefaultValue.getName()));
                             }
                             // Now for everything that remains report missing values.
                             for (var expectedInput: requiredInputs) {

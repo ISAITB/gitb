@@ -178,7 +178,7 @@ public class CallStepProcessorActor extends AbstractTestStepActor<CallStep> {
 						value = new StringType(step.getInputAttribute());
 					}
 					value = value.convertTo(variable.getType());
-					setContextVariable(childScope, value, null, variable);
+					setContextVariable(childScope, value, variable.getName());
 					parameters.remove(variable.getName());
 				}
 			} else {
@@ -196,10 +196,15 @@ public class CallStepProcessorActor extends AbstractTestStepActor<CallStep> {
 			}
 			if (!parameters.isEmpty()) {
 				// Consider also default values for parameters.
-				scriptlet.getParams().getVar().forEach(variable -> {
-					if (parameters.contains(variable.getName()) && !variable.getValue().isEmpty()) {
-						setContextVariable(childScope, DataTypeFactory.getInstance().create(variable), null, variable);
-						parameters.remove(variable.getName());
+				scriptlet.getParams().getVar().forEach(parameter -> {
+					if (parameters.contains(parameter.getName())) {
+						if (parameter.isDefaultEmpty()) {
+							setContextVariable(childScope, DataTypeFactory.getInstance().create(parameter.getType()), parameter.getName());
+							parameters.remove(parameter.getName());
+						} else if (!parameter.getValue().isEmpty()) {
+							setContextVariable(childScope, DataTypeFactory.getInstance().create(parameter), parameter.getName());
+							parameters.remove(parameter.getName());
+						}
 					}
 				});
 				// Remove optional parameters that have no provided values.
@@ -289,15 +294,15 @@ public class CallStepProcessorActor extends AbstractTestStepActor<CallStep> {
 		DataType resolvedValue = expressionHandler.processExpression(input, variable.getType());
 		DataType valueToSet = DataTypeFactory.getInstance().create(variable.getType());
 		valueToSet.copyFrom(resolvedValue, variable.getType());
-		setContextVariable(childScope, valueToSet, input.getName(), variable);
+		String name = input.getName();
+		if (name == null) {
+			name = variable.getName();
+		}
+		setContextVariable(childScope, valueToSet, name);
 	}
 
-	private void setContextVariable(TestCaseScope childScope, DataType value, String variableName, Variable variable) {
-		if (variableName == null) {
-			childScope.createVariable(variable.getName()).setValue(value);
-		} else {
-			childScope.createVariable(variableName).setValue(value);
-		}
+	private void setContextVariable(TestCaseScope childScope, DataType value, String variableName) {
+		childScope.createVariable(variableName).setValue(value);
 	}
 
 	public static ActorRef create(ActorContext context, CallStep step, TestCaseScope scope, String stepId) throws Exception {

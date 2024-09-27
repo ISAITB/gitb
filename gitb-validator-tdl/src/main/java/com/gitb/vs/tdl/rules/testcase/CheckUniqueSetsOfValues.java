@@ -71,6 +71,11 @@ public class CheckUniqueSetsOfValues extends AbstractTestCaseObserver {
     }
 
     @Override
+    public void handleInputParameter(InputParameter param) {
+        handleVariable(param);
+    }
+
+    @Override
     public void handleVariable(Variable var) {
         super.handleVariable(var);
         if (section == TestCaseSection.SCRIPTLET_PARAMETERS) {

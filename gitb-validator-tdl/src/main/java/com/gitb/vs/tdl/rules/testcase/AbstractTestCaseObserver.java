@@ -64,6 +64,11 @@ public class AbstractTestCaseObserver implements TestCaseObserver {
     }
 
     @Override
+    public void handleInputParameter(InputParameter param) {
+        currentStep = param;
+    }
+
+    @Override
     public void handleVariable(Variable var) {
         currentStep = var;
     }
