@@ -1,5 +1,6 @@
 package com.gitb.engine.actors.processors;
 
+import com.gitb.tdl.*;
 import org.apache.pekko.actor.ActorRef;
 import com.gitb.core.ErrorCode;
 import com.gitb.core.StepStatus;
@@ -11,10 +12,6 @@ import com.gitb.engine.testcase.TestCaseContext;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.engine.utils.TestCaseUtils;
 import com.gitb.exceptions.GITBEngineInternalError;
-import com.gitb.tdl.Binding;
-import com.gitb.tdl.CallStep;
-import com.gitb.tdl.Scriptlet;
-import com.gitb.tdl.Variable;
 import com.gitb.types.DataType;
 import com.gitb.types.DataTypeFactory;
 import com.gitb.types.MapType;
@@ -205,8 +202,10 @@ public class CallStepProcessorActor extends AbstractTestStepActor<CallStep> {
 						parameters.remove(variable.getName());
 					}
 				});
+				// Remove optional parameters that have no provided values.
+				scriptlet.getParams().getVar().stream().filter(InputParameter::isOptional).map(Variable::getName).toList().forEach(parameters::remove);
 				if (!parameters.isEmpty()) {
-					throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, String.format("%s: All scriptlet parameters must either be provided explicitly via call inputs or have default values. No values could be determined for parameters [%s].", getScriptletErrorDescription(), StringUtils.join(parameters, ", "))));
+					throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, String.format("%s: All required scriptlet parameters must either be provided explicitly via call inputs or have default values. No values could be determined for parameters [%s].", getScriptletErrorDescription(), StringUtils.join(parameters, ", "))));
 				}
 			}
 		}

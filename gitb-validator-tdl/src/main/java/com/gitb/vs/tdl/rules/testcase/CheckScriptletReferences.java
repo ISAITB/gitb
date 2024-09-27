@@ -77,9 +77,13 @@ public class CheckScriptletReferences extends AbstractTestCaseObserver {
                                 addReportItem(ErrorCode.DOUBLE_CALL_INPUTS, currentTestCase.getId(), path);
                             }
                             var expectedInputs = new HashSet<String>();
+                            var requiredInputs = new HashSet<String>();
                             if (resolvedScriptlet.getParams() != null) {
                                 for (var variable: resolvedScriptlet.getParams().getVar()) {
                                     expectedInputs.add(variable.getName());
+                                    if (!variable.isOptional()) {
+                                        requiredInputs.add(variable.getName());
+                                    }
                                 }
                             }
                             if (expectedInputs.size() == 1 && inputAttribute != null) {
@@ -95,10 +99,10 @@ public class CheckScriptletReferences extends AbstractTestCaseObserver {
                             }
                             // Remove from the expected inputs the ones for which we have default values defined by the scriptlet.
                             if (resolvedScriptlet.getParams() != null) {
-                                resolvedScriptlet.getParams().getVar().stream().filter(variable -> !variable.getValue().isEmpty()).forEach(variableWithDefaultValue -> expectedInputs.remove(variableWithDefaultValue.getName()));
+                                resolvedScriptlet.getParams().getVar().stream().filter(variable -> !variable.getValue().isEmpty()).forEach(variableWithDefaultValue -> requiredInputs.remove(variableWithDefaultValue.getName()));
                             }
                             // Now for everything that remains report missing values.
-                            for (var expectedInput: expectedInputs) {
+                            for (var expectedInput: requiredInputs) {
                                 addReportItem(ErrorCode.MISSING_SCRIPTLET_INPUT, currentTestCase.getId(), path, expectedInput);
                             }
                             // Check outputs.
