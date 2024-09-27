@@ -167,7 +167,6 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 				throw new GITBEngineInternalError("Invalid command [" + message.getClass().getName() + "]");
 			}
 		} catch (Exception e) {
-			logger.error(addMarker(), "Processing caught an exception", e);
 			error(e);
 		}
 	}
