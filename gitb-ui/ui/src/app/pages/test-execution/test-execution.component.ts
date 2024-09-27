@@ -1228,7 +1228,7 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
   exportPdf(testCase: ConformanceTestCase) {
     this.exportPdfPending[testCase.id] = true
     this.onExportTestCase(testCase, 'application/pdf', 'test_case_report.pdf')
-    .subscribe(() => {
+    .subscribe(() => {}).add(() => {
       this.exportPdfPending[testCase.id] = false
     })
   }
@@ -1236,7 +1236,7 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
   exportXml(testCase: ConformanceTestCase) {
     this.exportXmlPending[testCase.id] = true
     this.onExportTestCase(testCase, 'application/xml', 'test_case_report.xml')
-    .subscribe(() => {
+    .subscribe(() => {}).add(() => {
       this.exportXmlPending[testCase.id] = false
     })
   }
