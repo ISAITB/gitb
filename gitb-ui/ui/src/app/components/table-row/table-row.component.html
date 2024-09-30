@@ -1,6 +1,6 @@
 @if (checkboxEnabled) {
     <td class="td-min-centered" (click)="$event.stopPropagation();">
-        <input type="checkbox" [(ngModel)]="data.checked" (change)="check()">
+        <input class="form-check-input" type="checkbox" [(ngModel)]="data.checked" (change)="check()">
     </td>
 }
 @if (expandableRowProperty != undefined) {

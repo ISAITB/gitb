@@ -29,16 +29,16 @@
                                         </div>
                                     </td>
                                     <td>
-                                        <div class="form_check"><input type="checkbox" class="form-check-input" [name]="'custom'+index" [(ngModel)]="label.custom" (change)="customChecked($event, label)"/></div>
+                                        <input type="checkbox" class="form-check-input" [name]="'custom'+index" [(ngModel)]="label.custom" (change)="customChecked($event, label)"/>
                                     </td>
                                     @if (label.custom) {
                                         <td><div><input [attr.id]="'label-singular-'+label.labelType" type="text" [name]="'singular'+index" [(ngModel)]="label.singularForm" class="form-control"/></div></td>
                                         <td><div><input type="text" [name]="'pluralForm'+index" [(ngModel)]="label.pluralForm" class="form-control"/></div></td>
-                                        <td><div class="form_check"><input type="checkbox" class="form-check-input" [name]="'fixedCase'+index" [(ngModel)]="label.fixedCase"/></div></td>
+                                        <td><input type="checkbox" class="form-check-input" [name]="'fixedCase'+index" [(ngModel)]="label.fixedCase"/></td>
                                     } @else {
                                         <td><div><input type="text" [value]="Constants.LABEL_DEFAULT[label.labelType].singularForm" class="form-control" readonly="true"/></div></td>
                                         <td><div><input type="text" [value]="Constants.LABEL_DEFAULT[label.labelType].pluralForm" class="form-control" readonly="true"/></div></td>
-                                        <td><div class="form_check"><input type="checkbox" class="form-check-input" [checked]="Constants.LABEL_DEFAULT[label.labelType].fixedCase" [disabled]="true"/></div></td>
+                                        <td><input type="checkbox" class="form-check-input" [checked]="Constants.LABEL_DEFAULT[label.labelType].fixedCase" [disabled]="true"/></td>
                                     }
                                 </tr>
                             }
