@@ -15,8 +15,6 @@ import { BreadcrumbType } from '../types/breadcrumb-type';
 })
 export class RoutingService {
 
-  private navigationMethodExecuted = false
-
   constructor(
     private router: Router,
     private dataService: DataService
@@ -31,7 +29,7 @@ export class RoutingService {
         if (!event.url.startsWith('/login')) {
           this.dataService.recordLocationData(event.url)
         }
-      } else if (!this.navigationMethodExecuted && event instanceof NavigationEnd) {
+      } else if (event instanceof NavigationEnd) {
         /*
          * We only need to do this matching if we are coming to a page without going through
          * one of the navigation methods (e.g. after a refresh). In other cases we skip this as
@@ -531,8 +529,6 @@ export class RoutingService {
   }
 
   private navigate(menuItem: MenuItem, commands: any[], extras?: NavigationExtras|undefined) {
-    this.dataService.changePage({ menuItem: menuItem })
-    this.navigationMethodExecuted = true
     return this.router.navigate(commands, extras)
   }
 

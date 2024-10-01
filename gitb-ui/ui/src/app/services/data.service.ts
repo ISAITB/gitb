@@ -1,4 +1,4 @@
-import { Injectable, Renderer2, RendererFactory2 } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { Observable, Subject, mergeMap, of } from 'rxjs';
 import { Constants } from '../common/constants'
 import { ObjectWithId } from '../components/test-filter/object-with-id';
@@ -34,6 +34,7 @@ import { ConformanceTestSuite } from '../pages/organisation/conformance-statemen
 import { ConformanceStatementItem } from '../types/conformance-statement-item';
 import { EndpointParameter } from '../types/endpoint-parameter';
 import { CookieOptions, CookieService } from 'ngx-cookie-service';
+import { LocationData } from '../types/location-data';
 
 @Injectable({
   providedIn: 'root'
@@ -57,6 +58,8 @@ export class DataService {
   public currentLandingPageContent?: string
   private apiRoot?: string
   public cookiePath?: string
+  private locationData?: LocationData
+  private loginOption?: string
 
   public latestPageChange?: PageChange
   private onBannerChangeSource = new Subject<string>()
@@ -66,7 +69,6 @@ export class DataService {
   private onBreadcrumbChangeSource = new Subject<BreadcrumbChange>()
   public onBreadcrumbChange$ = this.onBreadcrumbChangeSource.asObservable()
 
-  private renderer: Renderer2
   triggerEventToDataTypeMap?: {[key: number]: { [key: number]: boolean } }
 
   private static STORAGE_TESTS = "com.itb.tests"
@@ -76,10 +78,8 @@ export class DataService {
   private static STORAGE_LOGIN_OPTION = "com.itb.loginOption"
 
   constructor(
-    rendererFactory: RendererFactory2,
     private cookieService: CookieService
   ) {
-    this.renderer = rendererFactory.createRenderer(null, null)
     this.configuration = this.emptyAppConfiguration()
     this.destroy()
   }
@@ -103,10 +103,9 @@ export class DataService {
     if (sessionStorage) {
       sessionStorage.removeItem(DataService.STORAGE_TESTS)
       if (full) {
-        sessionStorage.removeItem(DataService.STORAGE_LOCATION)
-        sessionStorage.removeItem(DataService.STORAGE_USER)
+        this.removeLocationData()
       }
-    }    
+    }
   }
 
   private emptyAppConfiguration(): AppConfigurationProperties {
@@ -151,8 +150,8 @@ export class DataService {
 
   setUser(user: User) {
     this.user = user
-    if (sessionStorage && user.id != undefined) {
-      sessionStorage.setItem(DataService.STORAGE_USER, user.id+'')
+    if (user.id != undefined) {
+      this.setLocationUser(user.id)
     }
     if (this.actualUser) {
       this.setActualUser(this.actualUser)
@@ -1151,7 +1150,7 @@ export class DataService {
             }
             document.addEventListener("copy", listener, false)
             document.execCommand("copy");
-            document.removeEventListener("copy", listener, false);            
+            document.removeEventListener("copy", listener, false);
           }
         }
       } else {
@@ -1422,7 +1421,7 @@ export class DataService {
   badgesValid(badges: BadgesInfo|undefined) {
     let valid = false
     if (badges?.enabled) {
-      if (badges.success.enabled && badges.other.enabled 
+      if (badges.success.enabled && badges.other.enabled
           && (!badges.successBadgeForReportActive || badges.successForReport.enabled)
           && (!badges.otherBadgeForReportActive || badges.otherForReport.enabled)
           && (!badges.failureBadgeActive || (badges.failure.enabled && (!badges.failureBadgeForReportActive || badges.failureForReport.enabled)))) {
@@ -1523,16 +1522,61 @@ export class DataService {
     this.cookieService.set(name, value, cookieOptions.expires, cookieOptions.path, cookieOptions.domain, cookieOptions.secure, cookieOptions.sameSite)
   }
 
-  recordLocationData(location: string) {
-    if (sessionStorage) {
-      if (this.user && this.user.id) {
-        sessionStorage.setItem(DataService.STORAGE_USER, this.user.id+'')
-      }
-      sessionStorage.setItem(DataService.STORAGE_LOCATION, location)
+  recordLocationDataOrRequestedRoute(location: string) {
+    const applied = this.applyRequestedRoute()
+    if (!applied && location != '/home') {
+      this.recordLocationData(location)
     }
   }
 
-  clearLocationData() {
+  private setLocationUser(userId: number) {
+    if (this.locationData == undefined) {
+      this.locationData = {}
+    }
+    this.locationData.user = userId
+    if (sessionStorage) {
+      sessionStorage.setItem(DataService.STORAGE_USER, userId.toString())
+    }
+  }
+
+  private setLocationData(location: string, user: number|undefined, userIsOptional: boolean): void {
+    if (this.locationData == undefined) {
+      this.locationData = {}
+    }
+    this.locationData.user = user
+    this.locationData.userOptional = userIsOptional
+    this.locationData.location = location
+    if (sessionStorage) {
+      sessionStorage.setItem(DataService.STORAGE_LOCATION, location)
+      if (user) {
+        sessionStorage.setItem(DataService.STORAGE_USER, user.toString())
+      }
+      if (userIsOptional) {
+        sessionStorage.setItem(DataService.STORAGE_USER_OPTIONAL, "true")
+      }
+    }
+  }
+
+  private getLocationData(): LocationData {
+    if (this.locationData == undefined) {
+      if (sessionStorage) {
+        const location = sessionStorage.getItem(DataService.STORAGE_LOCATION)
+        const user = sessionStorage.getItem(DataService.STORAGE_USER)
+        const userIsOptional = sessionStorage.getItem(DataService.STORAGE_USER_OPTIONAL)
+        this.locationData = {
+          location: (location == null)?undefined:location,
+          user: (user == null)?undefined:Number(user),
+          userOptional: (userIsOptional == undefined)?undefined:(userIsOptional == "true")
+        }
+      } else {
+        this.locationData = {}
+      }
+    }
+    return this.locationData
+  }
+
+  private removeLocationData(): void {
+    this.locationData = {}
     if (sessionStorage) {
       sessionStorage.removeItem(DataService.STORAGE_LOCATION)
       sessionStorage.removeItem(DataService.STORAGE_USER)
@@ -1540,48 +1584,56 @@ export class DataService {
     }
   }
 
+  recordLocationData(location: string) {
+    this.setLocationData(location, this.user?.id, false)
+  }
+
+  clearLocationData() {
+    this.removeLocationData()
+  }
+
   checkLocationUser(): number|undefined {
-    if (sessionStorage) {
-      const user = sessionStorage.getItem(DataService.STORAGE_USER)
-      if (user) {
-        return Number(user)
-      }
-    }
-    return undefined
+    return this.getLocationData().user
   }
 
   retrieveLocationData(currentUserId: number): string|undefined {
-    if (sessionStorage) {
-      const location = sessionStorage.getItem(DataService.STORAGE_LOCATION)
-      const user = sessionStorage.getItem(DataService.STORAGE_USER)
-      const userOptional = sessionStorage.getItem(DataService.STORAGE_USER_OPTIONAL)
-      const skipUserCheck = userOptional != null && userOptional != undefined && Boolean(userOptional)
-      this.clearLocationData()
-      if (location && (skipUserCheck || (user && currentUserId != undefined && Number(user) == currentUserId))) {
-        return location
-      }
+    const locationData = this.getLocationData()
+    if (locationData.location && (locationData.userOptional == true || (locationData.user && currentUserId != undefined && locationData.user == currentUserId))) {
+      this.removeLocationData()
+      return locationData.location
+    } else {
+      this.removeLocationData()
+      return undefined
     }
-    return undefined
   }
 
   recordLoginOption(option: string) {
+    this.loginOption = option
     if (sessionStorage) {
       sessionStorage.setItem(DataService.STORAGE_LOGIN_OPTION, option)
     }
   }
 
   retrieveLoginOption(): string|undefined {
-    if (sessionStorage) {
+    let optionToReturn: string|undefined
+    if (this.loginOption) {
+      optionToReturn = this.loginOption
+      this.loginOption = undefined
+      if (sessionStorage) {
+        sessionStorage.removeItem(DataService.STORAGE_LOGIN_OPTION)
+      }
+    } else if (sessionStorage) {
       const option = sessionStorage.getItem(DataService.STORAGE_LOGIN_OPTION)
       if (option) {
+        optionToReturn = option
         sessionStorage.removeItem(DataService.STORAGE_LOGIN_OPTION)
-        return option
       }
     }
-    return undefined
+    return optionToReturn
   }
 
   clearLoginOption() {
+    this.loginOption = undefined
     if (sessionStorage) {
       sessionStorage.removeItem(DataService.STORAGE_LOGIN_OPTION)
     }
@@ -1590,7 +1642,7 @@ export class DataService {
   applyRequestedRoute(): boolean {
     let hasRequestedRoute = false
     const requestedUrl = this.cookieService.get("ITB_REQUESTED_URL")
-    if (requestedUrl) {
+    if (requestedUrl && requestedUrl.length > 0) {
       this.cookieService.delete("ITB_REQUESTED_URL", "/")
       let requestedPath: string|undefined
       if (requestedUrl.indexOf("://") != -1) {
@@ -1620,9 +1672,7 @@ export class DataService {
           // The first part of the URL is the user ID.
           const userIdPart = requestedPath.substring(0, firstSlashIndex)
           const pathPart = requestedPath.substring(firstSlashIndex)
-          sessionStorage.setItem(DataService.STORAGE_USER, userIdPart)
-          sessionStorage.setItem(DataService.STORAGE_USER_OPTIONAL, "true")
-          sessionStorage.setItem(DataService.STORAGE_LOCATION, pathPart)
+          this.setLocationData(pathPart, Number(userIdPart), true)
           hasRequestedRoute = true
         }
       }

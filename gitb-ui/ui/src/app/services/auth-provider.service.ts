@@ -64,7 +64,7 @@ export class AuthProviderService {
         const clearAllSessionInfo = info.full && (info.fromExpiry == undefined || !info.fromExpiry)
         this.logoutOngoing = true
         let logout$ = this.httpClient.post(
-          this.dataService.completePath(ROUTES.controllers.AuthenticationService.logout().url), 
+          this.dataService.completePath(ROUTES.controllers.AuthenticationService.logout().url),
           Utils.objectToFormRequest({full: clearAllSessionInfo}).toString(),
           {
             headers: Utils.createHttpHeaders(this.accessToken)
@@ -80,7 +80,7 @@ export class AuthProviderService {
           }
 					if (!info || !info.keepLoginOption) {
             this.dataService.clearLoginOption()
-          }          
+          }
 					this.deAuthenticate()
 					if (info.full) {
             const url = window.location.href

@@ -20,6 +20,7 @@ export class RouteAuthenticationGuard  {
     route: ActivatedRouteSnapshot,
     state: RouterStateSnapshot): Observable<boolean | UrlTree> | Promise<boolean | UrlTree> | boolean | UrlTree {
       if (state.url !== '/login' && (!this.authProviderService.isAuthenticated() || this.dataService.user?.id == undefined)) {
+        this.dataService.recordLocationDataOrRequestedRoute(state.url)
         return this.routingService.toLogin()
       }
       return true;      
