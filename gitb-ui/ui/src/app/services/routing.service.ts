@@ -95,9 +95,9 @@ export class RoutingService {
   toStartPage(userId: number) {
     const previousLocation = this.dataService.retrieveLocationData(userId)
     if (previousLocation) {
-      this.toURL(previousLocation)
+      return this.toURL(previousLocation)
     } else {
-      this.toHome()
+      return this.toHome()
     }
   }
 

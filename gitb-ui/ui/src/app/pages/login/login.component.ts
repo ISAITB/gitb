@@ -14,7 +14,6 @@ import { CommunityService } from 'src/app/services/community.service';
 import { DataService } from 'src/app/services/data.service';
 import { ErrorService } from 'src/app/services/error.service';
 import { PopupService } from 'src/app/services/popup.service';
-import { RoutingService } from 'src/app/services/routing.service';
 import { HttpRequestConfig } from 'src/app/types/http-request-config.type';
 import { LoginEventInfo } from 'src/app/types/login-event-info.type';
 import { LoginResultActionNeeded } from 'src/app/types/login-result-action-needed';
@@ -52,7 +51,6 @@ export class LoginComponent extends BaseComponent implements OnInit, AfterViewIn
     private authProvider: AuthProviderService,
     public dataService: DataService,
     private httpClient: HttpClient,
-    private routingService: RoutingService,
     private communityService: CommunityService,
     private authService: AuthService,
     private errorService: ErrorService,
@@ -63,45 +61,39 @@ export class LoginComponent extends BaseComponent implements OnInit, AfterViewIn
   }
 
   ngOnInit(): void {
-    this.dataService.applyRequestedRoute()
-		if (this.authProvider.isAuthenticated() && this.dataService.user?.id) {
-      this.loginInProgress = true
-      this.routingService.toStartPage(this.dataService.user.id)
-    } else {
-      this.loginOption = this.dataService.retrieveLoginOption()
-      if (!this.loginOption) {
-        this.loginOption = Constants.LOGIN_OPTION.NONE
-      }
-      if ((this.loginOption == Constants.LOGIN_OPTION.REGISTER && !this.dataService.configuration.registrationEnabled) || (this.loginOption == Constants.LOGIN_OPTION.DEMO && !this.dataService.configuration.demosEnabled) || (this.loginOption == Constants.LOGIN_OPTION.MIGRATE && (!this.dataService.configuration.ssoEnabled || !this.dataService.configuration.ssoInMigration))) {
-        // Invalid login option
-        this.loginOption = Constants.LOGIN_OPTION.NONE
-      }
-      if (this.loginOption == Constants.LOGIN_OPTION.REGISTER) {
-        if (this.dataService.configuration.ssoEnabled) {
-          this.createAccount(this.loginOption)
-        }
-      } else if (this.loginOption == Constants.LOGIN_OPTION.MIGRATE || this.loginOption == Constants.LOGIN_OPTION.LINK_ACCOUNT) {
+    this.loginOption = this.dataService.retrieveLoginOption()
+    if (!this.loginOption) {
+      this.loginOption = Constants.LOGIN_OPTION.NONE
+    }
+    if ((this.loginOption == Constants.LOGIN_OPTION.REGISTER && !this.dataService.configuration.registrationEnabled) || (this.loginOption == Constants.LOGIN_OPTION.DEMO && !this.dataService.configuration.demosEnabled) || (this.loginOption == Constants.LOGIN_OPTION.MIGRATE && (!this.dataService.configuration.ssoEnabled || !this.dataService.configuration.ssoInMigration))) {
+      // Invalid login option
+      this.loginOption = Constants.LOGIN_OPTION.NONE
+    }
+    if (this.loginOption == Constants.LOGIN_OPTION.REGISTER) {
+      if (this.dataService.configuration.ssoEnabled) {
         this.createAccount(this.loginOption)
-      } else if (this.loginOption == Constants.LOGIN_OPTION.DEMO) {
-        this.loginViaSelection(this.dataService.configuration.demosAccount)
-      } else if (this.loginOption != Constants.LOGIN_OPTION.FORCE_CHOICE && this.dataService.actualUser && this.dataService.actualUser.accounts) {
-        // Check to see if we can automate the functional account selection.
-        let userIdToConnectWith: number|undefined
-        if (this.dataService.actualUser.accounts.length == 1) {
-          // The user is linked to a single functional account. Automate its selection.
-          userIdToConnectWith = this.dataService.actualUser.accounts[0].id
-        } else if (this.dataService.actualUser.accounts.length > 1) { 
-          const previousUser = this.dataService.checkLocationUser()
-          if (previousUser != undefined) {
-            const matchedUser = this.dataService.actualUser.accounts.find((account) => account.id == previousUser)
-            if (matchedUser) {
-              userIdToConnectWith = matchedUser.id
-            }
+      }
+    } else if (this.loginOption == Constants.LOGIN_OPTION.MIGRATE || this.loginOption == Constants.LOGIN_OPTION.LINK_ACCOUNT) {
+      this.createAccount(this.loginOption)
+    } else if (this.loginOption == Constants.LOGIN_OPTION.DEMO) {
+      this.loginViaSelection(this.dataService.configuration.demosAccount)
+    } else if (this.loginOption != Constants.LOGIN_OPTION.FORCE_CHOICE && this.dataService.actualUser && this.dataService.actualUser.accounts) {
+      // Check to see if we can automate the functional account selection.
+      let userIdToConnectWith: number|undefined
+      if (this.dataService.actualUser.accounts.length == 1) {
+        // The user is linked to a single functional account. Automate its selection.
+        userIdToConnectWith = this.dataService.actualUser.accounts[0].id
+      } else if (this.dataService.actualUser.accounts.length > 1) { 
+        const previousUser = this.dataService.checkLocationUser()
+        if (previousUser != undefined) {
+          const matchedUser = this.dataService.actualUser.accounts.find((account) => account.id == previousUser)
+          if (matchedUser) {
+            userIdToConnectWith = matchedUser.id
           }
         }
-        if (userIdToConnectWith != undefined) {
-          this.loginViaSelection(userIdToConnectWith)
-        }
+      }
+      if (userIdToConnectWith != undefined) {
+        this.loginViaSelection(userIdToConnectWith)
       }
     }
     this.dataService.changeBanner(this.loginInProgress?'Home':'Welcome to the Interoperability Test Bed')

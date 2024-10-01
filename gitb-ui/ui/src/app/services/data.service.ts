@@ -1540,6 +1540,14 @@ export class DataService {
   }
 
   private setLocationData(location: string, user: number|undefined, userIsOptional: boolean): void {
+    /*
+     * We record location data both as direct properties of this class as well as in the sessionStorage.
+     * This is because the sessionStorage, even if synchronous does not always flush its state in time for
+     * a read that follows immediately after. This means that if we write to the session storage and then
+     * immediately read from it, we may not see the change. This happens on rare occasions but to avoid it
+     * altogether we also keep a copy as direct properties (i.e. the sessionStorage is only used if e.g. we
+     * are coming from a page refresh).
+     */
     if (this.locationData == undefined) {
       this.locationData = {}
     }
@@ -1586,10 +1594,6 @@ export class DataService {
 
   recordLocationData(location: string) {
     this.setLocationData(location, this.user?.id, false)
-  }
-
-  clearLocationData() {
-    this.removeLocationData()
   }
 
   checkLocationUser(): number|undefined {
