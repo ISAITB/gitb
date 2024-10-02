@@ -1,5 +1,5 @@
 <div class="page tests">
-    <app-test-filter [filterState]="filterState" [organisationId]="organisationId" (onApply)="goFirstPage()"></app-test-filter>
+    <app-test-filter [filterState]="filterState" [organisationId]="organisationId" (onApply)="applyFilters()"></app-test-filter>
     <div class="card">
         <div class="card-header clickable" (click)="activeSessionsCollapsed = !activeSessionsCollapsed" [class.collapsed]="activeSessionsCollapsedFinished">
             <div class="card-title"><app-collapsing-icon [isCollapsed]="activeSessionsCollapsed"></app-collapsing-icon>Active test sessions</div>

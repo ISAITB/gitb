@@ -112,6 +112,11 @@ export class OrganisationTestsComponent implements OnInit {
     this.getCompletedTests()
   }
 
+  applyFilters() {
+    this.sessionIdToShow = undefined
+    this.goFirstPage()
+  }
+
   goFirstPage() {
     this.currentPage = 1
     this.queryDatabase()

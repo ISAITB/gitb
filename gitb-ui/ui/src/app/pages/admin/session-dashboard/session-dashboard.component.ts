@@ -336,6 +336,11 @@ export class SessionDashboardComponent implements OnInit {
     this.getCompletedTests()
   }
 
+  filterControlApplied() {
+    this.sessionIdToShow = undefined
+    this.applyFilters()
+  }
+
   applyFilters() {
     this.currentPage = 1
     this.queryDatabase()
