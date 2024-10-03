@@ -74,6 +74,13 @@ export class SpecificationService {
     })
   }
 
+  getDomainSpecificationGroups(domainId: number) {
+    return this.restService.get<SpecificationGroup[]>({
+      path: ROUTES.controllers.SpecificationService.getDomainSpecificationGroups(domainId).url,
+      authenticate: true
+    })
+  }
+
   getSpecificationGroups(domainId: number) {
     return this.restService.get<SpecificationGroup[]>({
       path: ROUTES.controllers.SpecificationService.getSpecificationGroups().url,

@@ -72,6 +72,8 @@ POST    /api/suts/:sut_id/apiKey                @controllers.SystemService.updat
 # Test Case management API
 GET	    /api/actorDomain/:actor_id              @controllers.ConformanceService.getDomainOfActor(actor_id: Long)
 GET	    /api/specDomain                         @controllers.ConformanceService.getDomainOfSpecification(spec_id: Long)
+GET     /api/domains/:domain_id                 @controllers.ConformanceService.getDomain(domain_id: Long)
+GET     /api/domains/:domain_id/groups          @controllers.SpecificationService.getDomainSpecificationGroups(domain_id: Long)
 GET	    /api/domains                            @controllers.ConformanceService.getDomains()
 GET	    /api/domains/community                  @controllers.ConformanceService.getCommunityDomain()
 GET	    /api/applicabledomains/community        @controllers.ConformanceService.getCommunityDomains()

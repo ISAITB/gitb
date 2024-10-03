@@ -98,7 +98,7 @@ export class TestSuiteDetailsComponent extends BaseComponent implements OnInit {
       this.linkedSpecifications = []
       this.unlinkedSpecifications = []
       const loadLinked = this.testSuiteService.getLinkedSpecifications(this.testSuiteId)
-      const loadUnlinked = this.conformanceService.getSpecifications(this.domainId)
+      const loadUnlinked = this.conformanceService.getDomainSpecifications(this.domainId)
       forkJoin([loadLinked, loadUnlinked]).subscribe((results) => {
         this.linkedSpecifications = results[0]
         const currentIds = this.dataService.asSet(this.linkedSpecifications.map((x) => x.id))

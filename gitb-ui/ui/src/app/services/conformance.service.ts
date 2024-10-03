@@ -49,6 +49,13 @@ export class ConformanceService {
     private dataService: DataService
   ) { }
 
+  getDomain(domainId: number) {
+    return this.restService.get<Domain>({
+      path: ROUTES.controllers.ConformanceService.getDomain(domainId).url,
+      authenticate: true
+    })
+  }
+
   getDomains(ids?: number[], withApiKeys?: boolean) {
     let params:any = {}
     if (ids !== undefined && ids.length > 0) {
@@ -98,7 +105,7 @@ export class ConformanceService {
     })
   }
 
-  getSpecifications(domainId: number, withGroups?: boolean) {
+  getDomainSpecifications(domainId: number, withGroups?: boolean) {
     let params: any = {}
     if (withGroups != undefined) {
       params['groups'] = withGroups

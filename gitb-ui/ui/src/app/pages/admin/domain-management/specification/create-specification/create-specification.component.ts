@@ -42,7 +42,7 @@ export class CreateSpecificationComponent extends BaseComponent implements OnIni
     if (groupId) {
       this.specification.group = Number(groupId)
     }
-    this.specificationService.getSpecificationGroups(this.domainId)
+    this.specificationService.getDomainSpecificationGroups(this.domainId)
     .subscribe((data) => {
       this.specification.groups = data
     })    

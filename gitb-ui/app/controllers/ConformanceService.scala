@@ -28,6 +28,13 @@ import scala.util.Using
 class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAction: AuthorizedAction, cc: ControllerComponents, reportManager: ReportManager, systemManager: SystemManager, endpointManager: EndPointManager, specificationManager: SpecificationManager, domainParameterManager: DomainParameterManager, domainManager: DomainManager, communityManager: CommunityManager, conformanceManager: ConformanceManager, accountManager: AccountManager, actorManager: ActorManager, testSuiteManager: TestSuiteManager, testResultManager: TestResultManager, testCaseManager: TestCaseManager, parameterManager: ParameterManager, authorizationManager: AuthorizationManager, communityLabelManager: CommunityLabelManager, repositoryUtils: RepositoryUtils) extends AbstractController(cc) {
   private final val logger: Logger = LoggerFactory.getLogger(classOf[ConformanceService])
 
+  def getDomain(domainId: Long): Action[AnyContent] = authorizedAction { request =>
+    authorizationManager.canManageDomain(request, domainId)
+    val result = domainManager.getDomains(Some(List(domainId))).head
+    val json = JsonUtil.jsDomain(result, withApiKeys = true).toString()
+    ResponseConstructor.constructJsonResponse(json)
+  }
+
   /**
    * Gets the list of domains
    */

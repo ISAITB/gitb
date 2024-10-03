@@ -89,9 +89,9 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
 
   ngOnInit(): void {
     this.domainId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID))
-    this.conformanceService.getDomains([this.domainId])
+    this.conformanceService.getDomain(this.domainId)
     .subscribe((data) => {
-      this.domain = data[0]
+      this.domain = data
       this.routingService.domainBreadcrumbs(this.domainId, this.domain.sname!)
     }).add(() => {
       this.loaded = true
@@ -111,8 +111,8 @@ export class DomainDetailsComponent extends BaseTabbedComponent implements OnIni
     if (this.specificationStatus.status == Constants.STATUS.NONE || force) {
       this.specificationStatus.status = Constants.STATUS.PENDING
       this.domainSpecifications = []
-      const specsObservable = this.conformanceService.getSpecifications(this.domainId, false)
-      const specGroupsObservable = this.specificationService.getSpecificationGroups(this.domainId)
+      const specsObservable = this.conformanceService.getDomainSpecifications(this.domainId, false)
+      const specGroupsObservable = this.specificationService.getDomainSpecificationGroups(this.domainId)
       forkJoin([specsObservable, specGroupsObservable]).subscribe((results) => {
         this.specificationGroups = results[1]
         this.hasGroups = this.specificationGroups.length > 0

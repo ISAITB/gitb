@@ -84,7 +84,7 @@ export class SpecificationDetailsComponent extends BaseTabbedComponent implement
   ngOnInit(): void {
     this.domainId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID))
     this.specificationId = Number(this.route.snapshot.paramMap.get(Constants.NAVIGATION_PATH_PARAM.SPECIFICATION_ID))
-    const groupObservable = this.specificationService.getSpecificationGroups(this.domainId)
+    const groupObservable = this.specificationService.getDomainSpecificationGroups(this.domainId)
     .pipe(
       mergeMap((data) => {
         return of(data)
