@@ -65,6 +65,8 @@ import { ThemeDetailsComponent } from './pages/admin/system-administration/theme
 import { Theme } from './types/theme';
 import { SystemConfigurationService } from './services/system-configuration.service';
 import { CommunityReportsComponent } from './pages/admin/user-management/community-reports/community-reports.component';
+import { AdminViewGuard } from './resolvers/admin-view-guard';
+import { SystemAdminViewGuard } from './resolvers/system-admin-view-guard';
 
 const themeResolver: ResolveFn<Theme> = (route: ActivatedRouteSnapshot, state: RouterStateSnapshot) => {
   return inject(SystemConfigurationService).getTheme(Number(route.paramMap.get(Constants.NAVIGATION_PATH_PARAM.THEME_ID)!))
@@ -93,14 +95,14 @@ const routes: Routes = [
         ]
       },
       // Administration
-      { path: 'admin', resolve: { profile: ProfileResolver }, children: [
+      { path: 'admin', resolve: { profile: ProfileResolver }, canActivate: [AdminViewGuard], children: [
           // Session dashboard
           { path: 'sessions', component: SessionDashboardComponent },
           // Conformance dashboard
           { path: 'conformance', component: ConformanceDashboardComponent },
           // Domain management
-          { path: 'domains', component: DomainManagementComponent },
-          { path: 'domains/create', component: CreateDomainComponent },
+          { path: 'domains', component: DomainManagementComponent, canActivate: [SystemAdminViewGuard] },
+          { path: 'domains/create', component: CreateDomainComponent, canActivate: [SystemAdminViewGuard] },
           { path: 'domains/:'+Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID, component: DomainDetailsComponent },
           { path: 'domains/:'+Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID+'/testsuites/:'+Constants.NAVIGATION_PATH_PARAM.TEST_SUITE_ID, component: TestSuiteDetailsComponent },
           { path: 'domains/:'+Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID+'/testsuites/:'+Constants.NAVIGATION_PATH_PARAM.TEST_SUITE_ID+'/testcases/:'+Constants.NAVIGATION_PATH_PARAM.TEST_CASE_ID, component: TestCaseDetailsComponent },
@@ -115,8 +117,8 @@ const routes: Routes = [
           { path: 'domains/:'+Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID+'/specifications/:'+Constants.NAVIGATION_PATH_PARAM.SPECIFICATION_ID+'/actors/:'+Constants.NAVIGATION_PATH_PARAM.ACTOR_ID+'/endpoints/create', component: CreateEndpointComponent },
           { path: 'domains/:'+Constants.NAVIGATION_PATH_PARAM.DOMAIN_ID+'/specifications/:'+Constants.NAVIGATION_PATH_PARAM.SPECIFICATION_ID+'/actors/:'+Constants.NAVIGATION_PATH_PARAM.ACTOR_ID+'/endpoints/:'+Constants.NAVIGATION_PATH_PARAM.ENDPOINT_ID, component: EndpointDetailsComponent },
           // Community management
-          { path: 'users' , component: UserManagementComponent },
-          { path: 'users/community/create' , component: CreateCommunityComponent },
+          { path: 'users' , component: UserManagementComponent, canActivate: [SystemAdminViewGuard] },
+          { path: 'users/community/create' , component: CreateCommunityComponent, canActivate: [SystemAdminViewGuard] },
           { path: 'users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID, component: CommunityDetailsComponent, resolve: { community: CommunityResolver} },
           { path: 'users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/admin/create', component: CreateCommunityAdminComponent },
           { path: 'users/community/:'+Constants.NAVIGATION_PATH_PARAM.COMMUNITY_ID+'/admin/:'+Constants.NAVIGATION_PATH_PARAM.USER_ID, component: CommunityAdminDetailsComponent },
@@ -146,17 +148,19 @@ const routes: Routes = [
           { path: 'export', component: ExportComponent },
           { path: 'import', component: ImportComponent },
           // System administration
-          { path: 'system', component: SystemAdministrationComponent },
-          { path: 'system/admin/create' , component: CreateAdminComponent },
-          { path: 'system/admin/:'+Constants.NAVIGATION_PATH_PARAM.USER_ID, component: AdminDetailsComponent },
-          { path: 'system/pages/create', component: CreateLandingPageComponent, resolve: { base: LandingPageResolver } },
-          { path: 'system/pages/:'+Constants.NAVIGATION_PATH_PARAM.LANDING_PAGE_ID, component: LandingPageDetailsComponent },
-          { path: 'system/notices/create', component: CreateLegalNoticeComponent, resolve: { base: LegalNoticeResolver } },
-          { path: 'system/notices/:'+Constants.NAVIGATION_PATH_PARAM.LEGAL_NOTICE_ID, component: LegalNoticeDetailsComponent },
-          { path: 'system/errortemplates/create', component: CreateErrorTemplateComponent, resolve: { base: ErrorTemplateResolver } },
-          { path: 'system/errortemplates/:'+Constants.NAVIGATION_PATH_PARAM.ERROR_TEMPLATE_ID, component: ErrorTemplateDetailsComponent },
-          { path: 'system/themes/create/:'+Constants.NAVIGATION_PATH_PARAM.THEME_ID, component: CreateThemeComponent, resolve: { theme: themeResolver } },
-          { path: 'system/themes/:'+Constants.NAVIGATION_PATH_PARAM.THEME_ID, component: ThemeDetailsComponent, resolve: { theme: themeResolver } },
+          { path: 'system', canActivate: [SystemAdminViewGuard], children: [
+            { path: '' , component: SystemAdministrationComponent },
+            { path: 'admin/create' , component: CreateAdminComponent },
+            { path: 'admin/:'+Constants.NAVIGATION_PATH_PARAM.USER_ID, component: AdminDetailsComponent },
+            { path: 'pages/create', component: CreateLandingPageComponent, resolve: { base: LandingPageResolver } },
+            { path: 'pages/:'+Constants.NAVIGATION_PATH_PARAM.LANDING_PAGE_ID, component: LandingPageDetailsComponent },
+            { path: 'notices/create', component: CreateLegalNoticeComponent, resolve: { base: LegalNoticeResolver } },
+            { path: 'notices/:'+Constants.NAVIGATION_PATH_PARAM.LEGAL_NOTICE_ID, component: LegalNoticeDetailsComponent },
+            { path: 'errortemplates/create', component: CreateErrorTemplateComponent, resolve: { base: ErrorTemplateResolver } },
+            { path: 'errortemplates/:'+Constants.NAVIGATION_PATH_PARAM.ERROR_TEMPLATE_ID, component: ErrorTemplateDetailsComponent },
+            { path: 'themes/create/:'+Constants.NAVIGATION_PATH_PARAM.THEME_ID, component: CreateThemeComponent, resolve: { theme: themeResolver } },
+            { path: 'themes/:'+Constants.NAVIGATION_PATH_PARAM.THEME_ID, component: ThemeDetailsComponent, resolve: { theme: themeResolver } },
+          ]}
         ]
       },
       // My tests
