@@ -117,7 +117,23 @@
                                     </div>
                                     <div class="btn-toolbar goto-controls">
                                         <!-- Copy link -->
-                                        <button type="button" class="btn btn-secondary" (click)="copyLink(row)">Copy link</button>
+                                        @if (copyForOtherRoleOption) {
+                                            <div class="btn-group" dropdown>
+                                                <button type="button" class="btn btn-secondary" (click)="copyLink(row)">Copy link</button>
+                                                <button id="button-link" type="button" dropdownToggle class="btn btn-secondary dropdown-toggle dropdown-toggle-split"><span class="caret"></span></button>
+                                                <ul id="dropdown-link" *dropdownMenu class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="button-link">
+                                                    <li role="menuitem"><a class="dropdown-item" href (click)="copyLink(row, true);$event.preventDefault();">
+                                                        @if (dataService.isSystemAdmin || dataService.isCommunityAdmin) {
+                                                            Copy link for {{dataService.labelOrganisationLower()}}
+                                                        } @else {
+                                                            Copy link for administrator
+                                                        }
+                                                    </a></li>
+                                                </ul>
+                                            </div>
+                                        } @else {
+                                            <button type="button" class="btn btn-secondary" (click)="copyLink(row)">Copy link</button>
+                                        }
                                         <!-- View statement -->
                                         @if (showToStatement(row)) {
                                             <button type="button" class="btn btn-secondary" (click)="toStatement(row)">View statement</button>

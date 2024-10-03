@@ -26,7 +26,8 @@
                 (onDelete)="stopSession($event)"
                 (onRefresh)="refreshForSession($event)"
                 [refreshComplete]="sessionRefreshCompleteEmitter"
-                [contentRefreshing]="filterState.updatePending">
+                [contentRefreshing]="filterState.updatePending"
+                [copyForOtherRoleOption]="dataService.isVendorUser || dataService.isVendorAdmin">
             </div>
         </div>
     </div>
@@ -72,7 +73,8 @@
                 [prevDisabled]="isPreviousPageDisabled"
                 [rowStyle]="rowStyle"
                 [checkboxEnabled]="false"
-                [contentRefreshing]="filterState.updatePending">
+                [contentRefreshing]="filterState.updatePending"
+                [copyForOtherRoleOption]="dataService.isVendorUser || dataService.isVendorAdmin">
             </div>
         </div>
     </div>

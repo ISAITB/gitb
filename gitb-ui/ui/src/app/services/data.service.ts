@@ -1684,12 +1684,34 @@ export class DataService {
     return hasRequestedRoute
   }
 
-  copyExternalLink(parameters?: Record<string, string>): Observable<string|undefined> {
+  private replaceLinkSection(link: string, basePart: string, userIdPart: string, routePath?: string) {
+    const index = link.indexOf(basePart)
+    if (index != -1) {
+      const before = link.substring(0, index)
+      const after = link.substring(index + basePart.length)
+      link = before + userIdPart
+      if (routePath) {
+        if (routePath.startsWith("/")) {
+          link += routePath.substring(1)
+        } else {
+          link += routePath
+        }
+      } else {
+        if (after.startsWith("/")) {
+          link += after.substring(1)
+        } else {
+          link += after
+        }
+      }
+    }
+    return link
+  }
+
+  copyExternalLink(parameters?: Record<string, string>, routePath?: string): Observable<string|undefined> {
     if (this.user?.id) {
-      let currentLocation = window.location.href
-      let externalLocation = currentLocation
-        .replace("/#/", `/${this.user.id}/`)
-        .replace("#/", `/${this.user.id}/`)
+      let externalLocation = window.location.href
+      externalLocation = this.replaceLinkSection(externalLocation, "/#/", `/${this.user.id}/`, routePath)
+      externalLocation = this.replaceLinkSection(externalLocation, "#/", `/${this.user.id}/`, routePath)
       if (parameters) {
         let queryString = ""
         let first = true

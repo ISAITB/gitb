@@ -29,6 +29,7 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
   @Input() expandedCounter?: { count: number }
   @Input() supportRefresh = false
   @Input() refreshComplete?: EventEmitter<TestResultReport|undefined>
+  @Input() copyForOtherRoleOption = false
   @Input() showCheckbox?: EventEmitter<boolean>
   @Output() onRefresh = new EventEmitter<TestResultForDisplay>()
 
@@ -353,10 +354,18 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
     }, 1)
   }
 
-  copyLink(row: TestResultForDisplay) {
+  copyLink(row: TestResultForDisplay, forOtherRole?: boolean) {
     const params: Record<string, string> = {}
     params[Constants.NAVIGATION_QUERY_PARAM.TEST_SESSION_ID] = row.session
-    this.dataService.copyExternalLink(params).subscribe((value) => {
+    let routePath: string|undefined
+    if (forOtherRole) {
+      if (this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin) {
+        routePath = `/organisation/tests/${row.organizationId}`
+      } else {
+        routePath = '/admin/sessions'
+      }
+    }
+    this.dataService.copyExternalLink(params, routePath).subscribe((value) => {
       if (value) {
         this.popupService.success("Link copied to clipboard.")
       }
