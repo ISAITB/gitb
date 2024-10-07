@@ -76,7 +76,9 @@ export class AnyContentViewComponent extends ReportSupport implements OnInit {
       this.withName = false
       this.withValue = true
     }    
-    this.showValueInline = this.withValue && (this.context.embeddingMethod != 'BASE64' && !this.isFileReference(this.context) && (this.value!.length <= 100 || this.forceDisplay))
+    this.showValueInline = this.withValue 
+      && (!this.isFileReference(this.context) && (this.value!.length <= 100 || this.forceDisplay))
+      && !(this.context.embeddingMethod == 'BASE64' && this.textProvided(this.context.valueToUse))
     if (this.showValueInline) {
       this.breakText = this.value!.indexOf(" ") < 0
     }
@@ -100,7 +102,7 @@ export class AnyContentViewComponent extends ReportSupport implements OnInit {
 
   private toBlob(mimeType: string) {
     let bb: Blob
-    if (this.context!.embeddingMethod == 'BASE64') {
+    if (this.context!.embeddingMethod == 'BASE64' || this.dataService.isImageType(mimeType)) {
       bb = this.dataService.b64toBlob(this.context.value!, mimeType)
     } else {
       bb = new Blob([this.context.value!], {type: mimeType})
@@ -115,7 +117,7 @@ export class AnyContentViewComponent extends ReportSupport implements OnInit {
       .subscribe((data) => {
         if (data.dataAsBytes) {
           const bb = new Blob([data.dataAsBytes], {type: data.mimeType})
-          if (this.fileNameDownload != undefined) {
+          if (this.fileNameDownload != undefined && this.preserveName) {
             saveAs(bb, this.fileNameDownload)
           } else {
             saveAs(bb, 'file'+this.extension(data.mimeType))

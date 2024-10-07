@@ -244,10 +244,11 @@ export class ReportService {
     })
   }
 
-  getTestStepReportDataAsDataUrl(sessionId: string, dataId: string) {
+  getTestStepReportDataAsDataUrl(sessionId: string, dataId: string, mimeType: string|undefined) {
     return this.restService.get<FileReference>({
       path: ROUTES.controllers.RepositoryService.getTestStepReportDataAsDataUrl(sessionId, dataId).url,
-      authenticate: true
+      authenticate: true,
+      accept: mimeType
     })
   }
 

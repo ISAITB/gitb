@@ -184,13 +184,22 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext,
         NotFound
       } else {
         val requestedMimeType = request.headers.get(ACCEPT)
-        val mimeTypeToUse = if (requestedMimeType.isEmpty || requestedMimeType.get.contains("*")) {
-          Option(MimeUtil.getMimeType(dataFile.get)).getOrElse("application/octet-stream")
+        val detectedMimeType = Option(MimeUtil.getMimeType(dataFile.get))
+        var mimeTypeToUse: Option[String] = None
+        var dataUrl: Option[String] = None
+        if (requestedMimeType.isEmpty || requestedMimeType.get.contains("*")) {
+          mimeTypeToUse = detectedMimeType
+          dataUrl = Some(MimeUtil.getFileAsDataURL(dataFile.get.toFile, mimeTypeToUse.getOrElse("application/octet-stream")))
         } else {
-          requestedMimeType.getOrElse("application/octet-stream")
+          mimeTypeToUse = requestedMimeType
+          if (MimeUtil.isImageType(requestedMimeType.get) && detectedMimeType.exists(_.equals("text/plain"))) {
+            // This is an image stored as a base64-encoded string.
+            dataUrl = Some(MimeUtil.base64AsDataURL(Files.readString(dataFile.get), requestedMimeType.get))
+          } else {
+            dataUrl = Some(MimeUtil.getFileAsDataURL(dataFile.get.toFile, requestedMimeType.get))
+          }
         }
-        val dataUrl = MimeUtil.getFileAsDataURL(dataFile.get.toFile, mimeTypeToUse)
-        ResponseConstructor.constructJsonResponse(JsonUtil.jsFileReference(dataUrl, mimeTypeToUse).toString())
+        ResponseConstructor.constructJsonResponse(JsonUtil.jsFileReference(dataUrl.get, mimeTypeToUse.getOrElse("application/octet-stream")).toString())
       }
     } finally {
       if (sessionFolderInfo.archived) {
