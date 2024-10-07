@@ -52,7 +52,7 @@ export class IndexComponent implements OnInit, OnDestroy {
     })
     this.logoutCompleteSubscription = this.authProviderService.onLogoutComplete$.subscribe(() => {
       this.logoutInProgress = false
-    })    
+    })
   }
 
   ngOnDestroy(): void {
@@ -113,6 +113,7 @@ export class IndexComponent implements OnInit, OnDestroy {
 
   userGuideLink() {
 		let link = this.userGuideService.userGuideLink()
+		window.open(link, '_blank')
   }
 
   showUserGuide():boolean {

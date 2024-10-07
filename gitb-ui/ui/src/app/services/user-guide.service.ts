@@ -97,6 +97,7 @@ export class UserGuideService {
     this.paths['/admin/export'] = this.setPath('', '', 'exportimport/index.html#export-data')
     this.paths['/admin/import'] = this.setPath('', '', 'exportimport/index.html#import-data')
     this.paths['/admin/system'] = this.setPath('', '', '', 'systemAdministration/index.html')
+    this.paths['/admin/system/'] = this.setPath('', '', '', 'systemAdministration/index.html')
     this.paths['/admin/system/admin/create'] = this.setPath('', '', '', 'systemAdministration/index.html#manage-system-administrators')
     this.paths['/admin/system/admin/:'+Constants.NAVIGATION_PATH_PARAM.USER_ID] = this.setPath('', '', '', 'systemAdministration/index.html#manage-system-administrators')
     this.paths['/admin/system/pages/create'] = this.setPath('', '', '', 'systemAdministration/index.html#create-landing-page')
