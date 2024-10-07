@@ -36,10 +36,10 @@
         <version.metaInfServices>1.9</version.metaInfServices>
         <version.cxf>4.0.5</version.cxf>
         <version.httpComponents>4.5.13</version.httpComponents>
-        <version.commonsCodec>1.16.0</version.commonsCodec>
+        <version.commonsCodec>1.17.1</version.commonsCodec>
         <version.reflections>0.10.2</version.reflections>
-        <version.commonsIo>2.15.1</version.commonsIo>
-        <version.commonsLang3>3.14.0</version.commonsLang3>
+        <version.commonsIo>2.17.0</version.commonsIo>
+        <version.commonsLang3>3.17.0</version.commonsLang3>
         <version.tika>2.9.2</version.tika>
         <version.xerces>2.12.2</version.xerces>
         <version.jaxbApi>4.0.2</version.jaxbApi>

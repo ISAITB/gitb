@@ -50,7 +50,7 @@ libraryDependencies ++= Seq(
   "org.playframework" %% "play-slick" % "6.1.1",
   "org.pac4j" %% "play-pac4j" % "12.0.0-PLAY3.0",
   "org.pac4j" % "pac4j-cas" % "6.0.2" exclude("org.bouncycastle", "bcpkix-jdk15on"), // Needs to stay at 6.0.2 to match Play Jackson version (at 2.16.2)
-  "org.apache.commons" % "commons-lang3" % "3.15.0",
+  "org.apache.commons" % "commons-lang3" % "3.17.0",
   "com.fasterxml.jackson.module" %% "jackson-module-scala" % jacksonVersion,
   "com.fasterxml.jackson.core" % "jackson-databind" % jacksonVersion,
   "com.fasterxml.jackson.core" % "jackson-core" % jacksonVersion,
