@@ -75,7 +75,7 @@ GET	    /api/specDomain                         @controllers.ConformanceService.
 GET     /api/domains/:domain_id                 @controllers.ConformanceService.getDomain(domain_id: Long)
 GET     /api/domains/:domain_id/groups          @controllers.SpecificationService.getDomainSpecificationGroups(domain_id: Long)
 GET	    /api/domains                            @controllers.ConformanceService.getDomains()
-GET	    /api/domains/community                  @controllers.ConformanceService.getCommunityDomain()
+GET	    /api/domain/community                   @controllers.ConformanceService.getCommunityDomain()
 GET	    /api/applicabledomains/community        @controllers.ConformanceService.getCommunityDomains()
 POST    /api/domains/conformance                @controllers.ConformanceService.getConformanceOverview()
 POST    /api/domains/conformance/snapshot       @controllers.ConformanceService.createConformanceSnapshot()
