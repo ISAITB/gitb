@@ -1407,7 +1407,7 @@ INSERT INTO `schema_version` VALUES
 (111,'111','Button theming','SQL','V111__Button_theming.sql',-44417178,'gitb',CURRENT_TIMESTAMP(),1,1),
 (112,'112','Delete stored default master password', 'SQL', 'V112__Delete_stored_default_master_password.sql', -215143895, 'gitb', CURRENT_TIMESTAMP(), 1, 1),
 (113,'113','Specification group API keys', 'SQL', 'V113__Specification_group_API_keys.sql', -277162903, 'gitb', CURRENT_TIMESTAMP(), 1, 1),
-(114,'114','Set specification group api keys', 'JDBC', 'db.migration.default.V114__Set_specification_group_api_keys', , 'gitb', CURRENT_TIMESTAMP(), 1, 1),
+(114,'114','Set specification group api keys', 'JDBC', 'db.migration.default.V114__Set_specification_group_api_keys', NULL, 'gitb', CURRENT_TIMESTAMP(), 1, 1),
 (115,'115','Specification group API keys not null', 'SQL', 'V115__Specification_group_API_keys_not_null.sql', 416615516, 'gitb', CURRENT_TIMESTAMP(), 1, 1),
 (116,'116','Report settings', 'SQL', 'V116__Report_settings.sql', -14344712, 'gitb', CURRENT_TIMESTAMP(), 1, 1),
 (117,'117','XML report metadata', 'SQL', 'V117__XML_report_metadata.sql', -2009734919, 'gitb', CURRENT_TIMESTAMP(), 1, 1);
