@@ -613,7 +613,7 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 	}
 
 	def generateTestSuiteFileName(): String = {
-		val fileName = "ts_"+RandomStringUtils.random(10, false, true)
+		val fileName = "ts_"+RandomStringUtils.secure().next(10, false, true)
 		fileName
 	}
 

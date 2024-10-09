@@ -117,10 +117,10 @@ class TestSuiteAutomationService @Inject() (authorizedAction: AuthorizedAction, 
         // JSON request.
         response = processAsJson(request, None, { body =>
           val input = JsonUtil.parseJsTestSuiteDeployRequest(body, sharedTestSuite)
-          val testSuiteFileName = "ts_" + RandomStringUtils.random(10, false, true) + ".zip"
+          val testSuiteFileName = "ts_" + RandomStringUtils.secure.next(10, false, true) + ".zip"
           val testSuiteFile = Paths.get(
             repositoryUtils.getTempFolder().getAbsolutePath,
-            RandomStringUtils.random(10, false, true),
+            RandomStringUtils.secure.next(10, false, true),
             testSuiteFileName
           )
           testSuiteFile.toFile.getParentFile.mkdirs()

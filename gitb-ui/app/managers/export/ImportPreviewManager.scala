@@ -1267,8 +1267,8 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, systemConfigu
         }
       }
       if (errorInformation.isEmpty) {
-        val importFileName = s"export_${RandomStringUtils.random(10, false, true)}.zip"
-        pendingImportId = Some(RandomStringUtils.random(10, false, true))
+        val importFileName = s"export_${RandomStringUtils.secure().next(10, false, true)}.zip"
+        pendingImportId = Some(RandomStringUtils.secure().next(10, false, true))
         val zipFile = Paths.get(
           getPendingFolder().getAbsolutePath,
           pendingImportId.get,

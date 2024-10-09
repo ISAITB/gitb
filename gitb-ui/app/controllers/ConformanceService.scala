@@ -435,7 +435,7 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
         authorizationManager.canManageDomain(request, domainId)
       }
       var response:Result = null
-      val testSuiteFileName = "ts_"+RandomStringUtils.random(10, false, true)+".zip"
+      val testSuiteFileName = "ts_"+RandomStringUtils.secure().next(10, false, true)+".zip"
       ParameterExtractor.extractFiles(request).get(Parameters.FILE) match {
         case Some(testSuite) =>
           if (Configurations.ANTIVIRUS_SERVER_ENABLED) {
@@ -448,7 +448,7 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
           if (response == null) {
             val file = Paths.get(
               repositoryUtils.getTempFolder().getAbsolutePath,
-              RandomStringUtils.random(10, false, true),
+              RandomStringUtils.secure().next(10, false, true),
               testSuiteFileName
             ).toFile
             file.getParentFile.mkdirs()
