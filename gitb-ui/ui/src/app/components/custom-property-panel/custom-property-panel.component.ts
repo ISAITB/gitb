@@ -15,6 +15,8 @@ export class CustomPropertyPanelComponent {
   @Input() header!: string
   @Input() collapsed = false
   @Input() validation!: ValidationState
+  @Input() topMargin = true
+  @Input() readonly = false
 
   hovering = false
   headerCollapsed = false

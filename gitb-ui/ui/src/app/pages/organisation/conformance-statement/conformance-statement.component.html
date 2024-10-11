@@ -222,9 +222,11 @@
 								<span>No configuration properties are foreseen for this conformance statement.</span>
 							</div>
 						} @else {
-							<div class="tabControls">
-								<button type="button" class="btn btn-secondary" (click)="updateConfiguration()" [disable]="updateConfigurationPending || updateConfigurationDisabled()" [pending]="updateConfigurationPending">Update configuration</button>
-							</div>
+							@if (canEditOrganisationConfiguration || canEditSystemConfiguration || canEditStatementConfiguration) {
+								<div class="tabControls">
+									<button type="button" class="btn btn-secondary" (click)="updateConfiguration()" [disable]="updateConfigurationPending || updateConfigurationDisabled()" [pending]="updateConfigurationPending">Update configuration</button>
+								</div>
+							}
 							@if (organisationPropertyVisibility.hasVisibleProperties) {
 								<app-custom-property-panel
 									[properties]="organisationProperties"
@@ -232,7 +234,9 @@
 									[owner]="organisationId"
 									[header]="'Organisation properties'"
 									[collapsed]="organisationPropertiesCollapsed"
-									[validation]="propertyValidation"></app-custom-property-panel>
+									[validation]="propertyValidation"
+									[topMargin]="canEditOrganisationConfiguration || canEditSystemConfiguration || canEditStatementConfiguration"
+									[readonly]="!dataService.isCommunityAdmin && !dataService.isSystemAdmin && !canEditOrganisationConfiguration"></app-custom-property-panel>
 							}
 							@if (systemPropertyVisibility.hasVisibleProperties) {
 								<app-custom-property-panel
@@ -241,7 +245,9 @@
 									[owner]="systemId"
 									[header]="'System properties'"
 									[collapsed]="systemPropertiesCollapsed"
-									[validation]="propertyValidation"></app-custom-property-panel>
+									[validation]="propertyValidation"
+									[topMargin]="canEditOrganisationConfiguration || canEditSystemConfiguration || canEditStatementConfiguration || (organisationPropertyVisibility.hasVisibleProperties)"
+									[readonly]="!dataService.isCommunityAdmin && !dataService.isSystemAdmin && !canEditSystemConfiguration"></app-custom-property-panel>
 							}
 							@if (statementPropertyVisibility.hasVisibleProperties) {
 								<app-custom-property-panel
@@ -250,7 +256,9 @@
 									[owner]="systemId"
 									[header]="'Conformance statement properties'"
 									[collapsed]="statementPropertiesCollapsed"
-									[validation]="propertyValidation"></app-custom-property-panel>
+									[validation]="propertyValidation"
+									[topMargin]="canEditOrganisationConfiguration || canEditSystemConfiguration || canEditStatementConfiguration || organisationPropertyVisibility.hasVisibleProperties || systemPropertyVisibility.hasVisibleProperties"
+									[readonly]="!dataService.isCommunityAdmin && !dataService.isSystemAdmin && !canEditStatementConfiguration"></app-custom-property-panel>
 							}
 						}
 					}

@@ -69,9 +69,11 @@ export class ConformanceStatementComponent extends BaseComponent implements OnIn
   collapsedDetails = false
   collapsedDetailsFinished = false
   hasBadge = false
-  
   hasDisabledTests = false
   hasOptionalTests = false
+  canEditOrganisationConfiguration = false
+  canEditSystemConfiguration = false
+  canEditStatementConfiguration = false
 
   showResults = new Set<string>([Constants.TEST_CASE_RESULT.SUCCESS, Constants.TEST_CASE_RESULT.FAILURE, Constants.TEST_CASE_RESULT.UNDEFINED]);
   showOptional = true
@@ -204,6 +206,9 @@ export class ConformanceStatementComponent extends BaseComponent implements OnIn
       this.conformanceStatus = statementData.results.summary.result
       this.allTestsSuccessful = this.conformanceStatus == Constants.TEST_CASE_RESULT.SUCCESS
       this.hasBadge = statementData.results.summary.hasBadge
+      this.canEditOrganisationConfiguration = this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin || (this.dataService.isVendorAdmin && (this.dataService.community!.allowPostTestOrganisationUpdates || !this.hasTests))
+      this.canEditSystemConfiguration = this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin || (this.dataService.isVendorAdmin && (this.dataService.community!.allowPostTestSystemUpdates || !this.hasTests))
+      this.canEditStatementConfiguration = this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin || (this.dataService.isVendorAdmin && (this.dataService.community!.allowPostTestStatementUpdates || !this.hasTests))
       this.prepareTestFilter()
       this.applySearchFilters()
     }).add(() => {

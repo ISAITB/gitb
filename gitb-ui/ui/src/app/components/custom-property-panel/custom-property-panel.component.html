@@ -1,5 +1,5 @@
 @if (properties.length > 0) {
-    <div class="panelContainer mt-2" [class.hovering]="hovering">
+    <div class="panelContainer" [class.mt-2]="topMargin" [class.hovering]="hovering">
         <div class="panelHeader" [class.isCollapsed]="headerCollapsed" (click)="collapsed = !collapsed" (mouseenter)="hovering = true" (mouseleave)="hovering = false">
             <div><app-collapsing-icon [isCollapsed]="collapsed" [asDiv]="true"></app-collapsing-icon></div>
             <div class="panelTitle">{{header}}</div>
@@ -8,7 +8,7 @@
             <div class="panelContent pb-3">
                 <app-custom-property-form 
                     [tbProperties]="properties" 
-                    [tbReadonly]="false"
+                    [tbReadonly]="readonly"
                     [tbPropertyType]="propertyType"
                     [tbOwner]="owner"
                     [tbShowFormHeader]="false"
