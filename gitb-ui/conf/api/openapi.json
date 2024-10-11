@@ -2438,10 +2438,6 @@
       "SessionStatusRequest": {
         "type": "object",
         "description": "Query parameters and information options for the test sessions to lookup.",
-        "additionalProperties": false,
-        "required": [
-          "session"
-        ],
         "properties": {
           "session": {
             "description": "The session identifier(s) to look up.",
@@ -2460,7 +2456,11 @@
             "type": "boolean",
             "default": false
           }
-        }
+        },
+        "additionalProperties": false,
+        "required": [
+          "session"
+        ]
       },
       "SessionStatusResponse": {
         "description": "Response for the test session status operation.",
@@ -3811,7 +3811,7 @@
         "additionalProperties": false
       },
       "AllowedPropertyValue": {
-        "description": "An entry for a configuration property representing an allowed value and its display label..",
+        "description": "An entry for a configuration property representing an allowed value and its display label.",
         "type": "object",
         "properties": {
           "value": {
