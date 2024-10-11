@@ -561,13 +561,47 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils,
   }
 
   private def mergeSpecsWithGroups(data: Seq[(Specifications, Option[SpecificationGroups])]): Seq[Specifications] = {
-    data.map { specData =>
-      if (specData._2.isEmpty) {
-        specData._1
-      } else {
-        specData._1.withGroupNames(specData._2.get.shortname, specData._2.get.fullname)
+    // First map specification options to groups
+    val groupSpecs = mutable.HashMap[Long, ListBuffer[Specifications]]()
+    data.foreach { specData =>
+      if (specData._2.nonEmpty) {
+        var specList = groupSpecs.get(specData._2.get.id)
+        if (specList.isEmpty) {
+          specList = Some(ListBuffer[Specifications]())
+          groupSpecs += (specData._2.get.id -> specList.get)
+        }
+        specList.get += specData._1
       }
-    }.sortBy(_.shortname)
+    }
+    // Now sort top-level specifications and groups together.
+    var specsOrGroups = ListBuffer[Specifications]()
+    val addedGroups = mutable.HashSet[Long]()
+    data.foreach { specData =>
+      if (specData._2.nonEmpty) {
+        if (!addedGroups.contains(specData._2.get.id) && groupSpecs.contains(specData._2.get.id)) {
+          // Create a placeholder specification with the group's data for the sort
+          specsOrGroups += Specifications(0L, specData._2.get.shortname, specData._2.get.fullname, None, None, hidden = false, specData._2.get.apiKey, specData._2.get.domain, specData._2.get.displayOrder, Some(specData._2.get.id))
+          // Remember we added this group as we want to add it only once
+          addedGroups += specData._2.get.id
+        }
+      } else {
+        specsOrGroups += specData._1
+      }
+    }
+    specsOrGroups = specsOrGroups.sortBy(x => (x.displayOrder, x.shortname))
+    // Replace the group placeholders with the options that we sort in the context of each group
+    val specsToReturn = ListBuffer[Specifications]()
+    specsOrGroups.foreach { specData =>
+      if (specData.group.isEmpty) {
+        specsToReturn += specData
+      } else {
+        val sortedOptions = groupSpecs(specData.group.get).sortBy(x => (x.displayOrder, x.shortname))
+        sortedOptions.foreach { option =>
+          specsToReturn += option.withGroupNames(specData.shortname, specData.fullname)
+        }
+      }
+    }
+    specsToReturn.toList
   }
 
   def getSpecifications(ids: Option[Iterable[Long]] = None, domainIds: Option[List[Long]] = None, groupIds: Option[List[Long]] = None, withGroups: Boolean = false): Seq[Specifications] = {
@@ -588,7 +622,7 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils,
           .filterOpt(ids)((q, ids) => q.id inSet ids)
           .filterOpt(domainIds)((q, domainIds) => q.domain inSet domainIds)
           .filterOpt(groupIds)((q, groupIds) => q.group inSet groupIds)
-          .sortBy(_.shortname.asc)
+          .sortBy(x => (x.displayOrder.asc, x.shortname.asc))
           .result
           .map(_.toList)
       )
@@ -610,7 +644,7 @@ class SpecificationManager @Inject() (repositoryUtils: RepositoryUtils,
       exec(
         PersistenceSchema.specifications
           .filter(_.domain === domain)
-          .sortBy(_.shortname.asc)
+          .sortBy(x => (x.displayOrder.asc, x.shortname.asc))
           .result
       )
     }
