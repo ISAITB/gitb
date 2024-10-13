@@ -113,7 +113,7 @@ export abstract class CommunityXmlReportFormComponent extends BaseReportSettings
         this.modalService.show(CodeEditorModalComponent, {
           class: 'modal-lg',
           initialState: {
-            documentName: this.config.previewFileNameXml,
+            documentName: this.config.previewTitleXml,
             editorOptions: {
               value: data,
               readOnly: true,
