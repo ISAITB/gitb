@@ -45,7 +45,7 @@
                         <div [collapse]="formCollapsed" [isAnimated]="formAnimated" (expanded)="newTargetAnimated = true">
                             <div>
                                 @if (exportType == 'domain') {
-                                    <div class="row mt-3">
+                                    <div class="row" [class.mt-3]="showDomainOption || dataService.isSystemAdmin">
                                         <label class="col-3 col-form-label text-end" for="domain">* Target {{dataService.labelDomainLower()}}:</label>
                                         <div class="col-6">
                                             @if (dataService.isSystemAdmin) {
@@ -64,6 +64,12 @@
                                                         </select>
                                                     </div>
                                                 </div>
+                                            } @else if (dataService.isCommunityAdmin && dataService.community?.domainId == undefined) {
+                                                <select class="form-select" id="domain" name="domain" [(ngModel)]="domain" [disabled]="newTarget || domains.length == 0">
+                                                    @for (domain of domains; track domain.id) {
+                                                        <option [ngValue]="domain">{{domain.fname}}</option>
+                                                    }
+                                                </select>
                                             } @else if (dataService.isCommunityAdmin && domain != undefined) {
                                                 <input name="domain" class="form-control" id="domain" [(ngModel)]="domain.fname" readonly="true"/>
                                             }
@@ -71,7 +77,7 @@
                                         <div app-tooltip class="col-auto" [tbTooltip]="'The '+dataService.labelDomainLower()+' for which data will be imported.'"></div>
                                     </div>
                                 } @else if (exportType == 'community') {
-                                    <div class="row mt-3">
+                                    <div class="row" [class.mt-3]="showDomainOption || dataService.isSystemAdmin">
                                         <label class="col-3 col-form-label text-end" for="community">* Target community:</label>
                                         <div class="col-6">
                                             @if (dataService.isSystemAdmin) {
@@ -97,7 +103,7 @@
                                         <div app-tooltip class="col-auto" tbTooltip="The community for which data will be imported."></div>
                                     </div>
                                 }
-                                @if (exportType != "settings") {
+                                @if (exportType != "settings" && dataService.isSystemAdmin) {
                                     <div [collapse]="!newTarget" [isAnimated]="newTargetAnimated">
                                         <div class="row mt-3">
                                             <div class="col-6 offset-3">

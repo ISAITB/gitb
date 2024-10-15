@@ -169,4 +169,12 @@ export class IndexComponent implements OnInit, OnDestroy {
     })
   }
 
+  toDomainManagement() {
+    if (this.dataService.isSystemAdmin || this.dataService.community!.domainId == undefined) {
+      return this.routingService.toDomains()
+    } else {
+      return this.routingService.toDomain(this.dataService.community!.domainId!)
+    }
+  }
+
 }

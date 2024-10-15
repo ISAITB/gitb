@@ -1,5 +1,5 @@
 import { Component, EventEmitter, OnInit } from '@angular/core';
-import { forkJoin, Observable, of } from 'rxjs';
+import { forkJoin, mergeMap, Observable, of } from 'rxjs';
 import { CommunityService } from 'src/app/services/community.service';
 import { ConformanceService } from 'src/app/services/conformance.service';
 import { DataService } from 'src/app/services/data.service';
@@ -22,6 +22,7 @@ import { Constants } from 'src/app/common/constants';
 export class ExportComponent extends BaseComponent implements OnInit {
 
   showDomainOption = true
+  includeDomainInCommunityExport = true
   showSystemSettingsOption = true
   pending = false
   community?: Community
@@ -87,41 +88,47 @@ export class ExportComponent extends BaseComponent implements OnInit {
 
   ngOnInit(): void {
     this.resetSettings(true)
+    // Get communities and domains
+    let communities$: Observable<Community[]>
     if (this.dataService.isSystemAdmin) {
-      // Get communities
-      const communities$ = this.communityService.getCommunities([], true)
-      let domains$: Observable<Domain[]>
-      if (this.dataService.isSystemAdmin) {
-        domains$ = this.conformanceService.getDomains([], true)
-      } else {
-        domains$ = this.conformanceService.getDomains()
-      }
-      forkJoin([communities$, domains$]).subscribe((data) => {
-        this.communities = data[0]
-        this.domains = data[1]
-        this.domainsToDeleteConfig = {
-          name: "domainsToDelete",
-          textField: "fname",
-          clearItems: new EventEmitter<void>(),
-          replaceItems: new EventEmitter<Domain[]>(),
-          replaceSelectedItems: new EventEmitter<Domain[]>(),
-          filterLabel: `Select ${this.dataService.labelDomainsLower()}...`,
-          loader: () => of(this.domains)
-        }
-        this.communitiesToDeleteConfig = {
-          name: "communitiesToDelete",
-          textField: "fname",
-          clearItems: new EventEmitter<void>(),
-          replaceItems: new EventEmitter<Community[]>(),
-          replaceSelectedItems: new EventEmitter<Community[]>(),
-          filterLabel: `Select communities...`,
-          loader: () => of(this.communities)
-        }
-        this.loaded = true
-      })
+      communities$ = this.communityService.getCommunities([], true)
     } else {
-      this.loaded = true
+      communities$ = of([this.dataService.community!])
     }
+    let domains$: Observable<Domain[]>
+    if (this.dataService.isSystemAdmin) {
+      domains$ = this.conformanceService.getDomains([], true)
+    } else {
+      domains$ = this.conformanceService.getCommunityDomains(this.dataService.community!.id)
+        .pipe(
+          mergeMap((data) => {
+            return of(data.domains)
+          })
+        )
+    }
+    forkJoin([communities$, domains$]).subscribe((data) => {
+      this.communities = data[0]
+      this.domains = data[1]
+      this.domainsToDeleteConfig = {
+        name: "domainsToDelete",
+        textField: "fname",
+        clearItems: new EventEmitter<void>(),
+        replaceItems: new EventEmitter<Domain[]>(),
+        replaceSelectedItems: new EventEmitter<Domain[]>(),
+        filterLabel: `Select ${this.dataService.labelDomainsLower()}...`,
+        loader: () => of(this.domains)
+      }
+      this.communitiesToDeleteConfig = {
+        name: "communitiesToDelete",
+        textField: "fname",
+        clearItems: new EventEmitter<void>(),
+        replaceItems: new EventEmitter<Community[]>(),
+        replaceSelectedItems: new EventEmitter<Community[]>(),
+        filterLabel: `Select communities...`,
+        loader: () => of(this.communities)
+      }
+      this.loaded = true
+    })
     this.routingService.exportBreadcrumbs()
   }
 
@@ -172,23 +179,20 @@ export class ExportComponent extends BaseComponent implements OnInit {
       this.domain = undefined
       this.community = undefined
       this.showSystemSettingsOption = true
-    } else {
+      this.includeDomainInCommunityExport = true
+    } else if (this.dataService.isCommunityAdmin) {
       this.showSystemSettingsOption = false
+      this.community = this.dataService.community
+      if (this.dataService.community!.domain == undefined) {
+        this.domain = undefined
+        this.includeDomainInCommunityExport = false
+      } else {
+        this.domain = this.dataService.community!.domain
+        this.includeDomainInCommunityExport = true
+      }
     }
     if (full) {
-      if (this.dataService.isCommunityAdmin) {
-        this.community = this.dataService.community
-        if (this.dataService.community!.domain != undefined) {
-            this.domain = this.dataService.community!.domain
-            this.exportType = undefined
-        } else {
-            this.exportType = 'community'
-            this.showDomainOption = false
-        }
-        this.domain = this.dataService.community!.domain
-      } else if (this.dataService.isSystemAdmin) { 
-        this.exportType = undefined
-      }
+      this.exportType = undefined
       this.domainsForDeletion = []
       this.communitiesForDeletion = []
       this.addExtraCommunitiesForDeletion = false

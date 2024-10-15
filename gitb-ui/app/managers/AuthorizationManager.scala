@@ -1665,7 +1665,7 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     } else {
       if (isCommunityAdmin(userInfo) && userInfo.organization.isDefined) {
         val communityDomain = getCommunityDomain(userInfo.organization.get.community)
-        if (communityDomain.isDefined && communityDomain.get == domainId) {
+        if (communityDomain.isEmpty || communityDomain.get == domainId) {
           ok = true
         }
       }

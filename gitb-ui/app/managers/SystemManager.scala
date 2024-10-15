@@ -194,8 +194,9 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils,
         }
       }
       newSysId <- {
-        var sysToUse = if (replaceApiKey) system.withApiKey(CryptoUtil.generateApiKey()) else system
-        sysToUse = if (replaceBadgeKey) system.withBadgeKey(CryptoUtil.generateApiKey()) else sysToUse
+        var sysToUse = system
+        sysToUse = if (replaceApiKey) sysToUse.withApiKey(CryptoUtil.generateApiKey()) else sysToUse
+        sysToUse = if (replaceBadgeKey) sysToUse.withBadgeKey(CryptoUtil.generateApiKey()) else sysToUse
         PersistenceSchema.insertSystem += sysToUse
       }
     } yield newSysId

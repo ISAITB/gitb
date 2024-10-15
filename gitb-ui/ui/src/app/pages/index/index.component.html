@@ -31,9 +31,7 @@
               <app-menu-group label="Administration" [expanded]="menuExpanded"></app-menu-group>
               <app-menu-item (click)="routingService.toConformanceDashboard()" [type]="MenuItem.conformanceDashboard" label="Conformance dashboard" icon="fa-solid fa-gauge-simple-high" [expanded]="menuExpanded"></app-menu-item>
               <app-menu-item (click)="routingService.toSessionDashboard()" [type]="MenuItem.sessionDashboard" label="Session dashboard" icon="fa-solid fa-rectangle-list" [expanded]="menuExpanded"></app-menu-item>
-              @if (dataService.isSystemAdmin || dataService.community?.domainId != undefined) {
-                <app-menu-item (click)="dataService.isSystemAdmin?routingService.toDomains():routingService.toDomain(dataService.community!.domainId!)" [type]="MenuItem.domainManagement" [label]="dataService.labelDomain() +' management'" icon="fa-solid fa-sitemap" [expanded]="menuExpanded"></app-menu-item>
-              }
+              <app-menu-item (click)="toDomainManagement()" [type]="MenuItem.domainManagement" [label]="dataService.labelDomain() +' management'" icon="fa-solid fa-sitemap" [expanded]="menuExpanded"></app-menu-item>
               <app-menu-item (click)="dataService.isSystemAdmin?routingService.toUserManagement():routingService.toCommunity(dataService.community!.id)" [type]="MenuItem.communityManagement" label="Community management" icon="fa-solid fa-people-group" [expanded]="menuExpanded"></app-menu-item>
               <app-menu-item (click)="routingService.toDataExport()" [type]="MenuItem.dataExport" label="Data export" icon="fa-solid fa-file-export" [expanded]="menuExpanded"></app-menu-item>
               <app-menu-item (click)="routingService.toDataImport()" [type]="MenuItem.dataImport" label="Data import" icon="fa-solid fa-file-import" [expanded]="menuExpanded"></app-menu-item>
@@ -95,7 +93,7 @@
             <div class="footer-link"><span class="version-text">{{version}}</span></div>
           }
         </div>
-      </div>    
+      </div>
     </div>
   </div>
 </div>

@@ -1,5 +1,5 @@
 import { Component, EventEmitter, OnDestroy, OnInit } from '@angular/core';
-import { Observable } from 'rxjs';
+import { forkJoin, mergeMap, Observable, of } from 'rxjs';
 import { Constants } from 'src/app/common/constants';
 import { CommunityService } from 'src/app/services/community.service';
 import { ConformanceService } from 'src/app/services/conformance.service';
@@ -61,18 +61,28 @@ export class ImportComponent extends BaseComponent implements OnInit, OnDestroy 
 
   ngOnInit(): void {
     this.resetSettings(true)
+    // Get communities and domains
+    let communities$: Observable<Community[]>
     if (this.dataService.isSystemAdmin) {
-      // Get communities
-      this.communityService.getCommunities([], true)
-      .subscribe((data) => {
-        this.communities = data
-      })
-      // Get domains
-      this.conformanceService.getDomains()
-      .subscribe((data) => {
-        this.domains = data
-      })
+      communities$ = this.communityService.getCommunities([], true)
+    } else {
+      communities$ = of([this.dataService.community!])
     }
+    let domains$: Observable<Domain[]>
+    if (this.dataService.isSystemAdmin) {
+      domains$ = this.conformanceService.getDomains([], true)
+    } else {
+      domains$ = this.conformanceService.getCommunityDomains(this.dataService.community!.id)
+        .pipe(
+          mergeMap((data) => {
+            return of(data.domains)
+          })
+        )
+    }
+    forkJoin([communities$, domains$]).subscribe((data) => {
+      this.communities = data[0]
+      this.domains = data[1]
+    })
     this.routingService.importBreadcrumbs()
   }
 
@@ -103,22 +113,18 @@ export class ImportComponent extends BaseComponent implements OnInit, OnDestroy 
     if (this.dataService.isSystemAdmin) {
       this.domain = undefined
       this.community = undefined
+    } else {
+      this.community = this.dataService.community
+      if (this.dataService.community?.domain == undefined) {
+        this.domain = undefined
+      } else {
+        this.domain = this.dataService.community.domain
+      }
     }
     this.newTarget = false
     this.replaceName = false
     if (full) {
-      if (this.dataService.isCommunityAdmin) {
-        this.community = this.dataService.community
-        if (this.dataService.community?.domain != undefined) {
-            this.domain = this.dataService.community.domain
-            this.exportType = undefined
-        } else {
-            this.exportType = 'community'
-            this.showDomainOption = false
-        }
-      } else if (this.dataService.isSystemAdmin) {
-        this.exportType = undefined
-      }
+      this.exportType = undefined
     }
     if (this.exportType == 'domain' && this.domains.length == 0 || this.exportType == 'community' && this.communities.length == 0) {
       this.newTarget = true
@@ -219,7 +225,7 @@ export class ImportComponent extends BaseComponent implements OnInit, OnDestroy 
 
   private getTargetDomainId() {
     let domainId = -1
-    if (!this.newTarget && this.domain) {
+    if (this.domain && (this.dataService.isCommunityAdmin || !this.newTarget)) {
       domainId = this.domain.id
     }
     return domainId
@@ -227,7 +233,7 @@ export class ImportComponent extends BaseComponent implements OnInit, OnDestroy 
 
   private getTargetCommunityId() {
     let communityId = -1
-    if (!this.newTarget && this.community) {
+    if (this.community && (this.dataService.isCommunityAdmin || !this.newTarget)) {
       communityId = this.community.id
     }
     return communityId
