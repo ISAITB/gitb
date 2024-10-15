@@ -265,6 +265,7 @@ class SystemConfigurationManager @Inject() (testResultManager: TestResultManager
             }
             DBIO.successful(None)
           case Constants.RestApiAdminKey =>
+            Configurations.AUTOMATION_API_MASTER_KEY = value
             DBIO.successful(value.map(_ => {
               SystemConfigurationsWithEnvironment(SystemConfigurations(Constants.RestApiAdminKey, value, None), defaultSetting = false, environmentSetting = false)
             }))
