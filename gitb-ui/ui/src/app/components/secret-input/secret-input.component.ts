@@ -92,9 +92,6 @@ export class SecretInputComponent implements OnInit, AfterViewInit,  ControlValu
 
   toggleDisplay() {
     this.display = !this.display
-    setTimeout(() => {
-      this.passwordField?.nativeElement.focus()
-    }, 1)
   }
 
   ngOnDestroy(): void {
